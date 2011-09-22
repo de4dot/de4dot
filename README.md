@@ -1,6 +1,6 @@
 
 de4dot - Deobfuscator for .NET
-===============================
+==============================
 
 This is still in *BETA*! Report any bugs, problems and/or improvements! In
 case you're reading this somewhere else, the project url is
