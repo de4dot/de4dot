@@ -1,5 +1,5 @@
 
-de4dot -- Deobfuscator for .NET
+de4dot - Deobfuscator for .NET
 ===============================
 
 This is still in *BETA*! Report any bugs, problems and/or improvements! In
@@ -47,10 +47,9 @@ Features explained
 
 ### Supports some popular obfuscators
 
-I won't list the supported obfuscators because it would be outdated soon
-anyway, and I'd forget to update the list. Run `de4dot -h` to get a list of
-the supported obfuscators. It's usually very easy to add support for another
-obfuscator.
+I won't list the supported obfuscators since I'd forget to update it when I
+add support for another one. Run `de4dot -h` to get a list of the supported
+obfuscators. It's usually very easy to add support for another obfuscator.
 
 Other obfuscators are partially supported. Eg. control flow deobfuscation,
 symbol renaming, dynamic string decryption.
