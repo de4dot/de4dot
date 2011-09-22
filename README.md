@@ -51,6 +51,7 @@ I won't list the supported obfuscators because it would be outdated soon
 anyway, and I'd forget to update the list. Run `de4dot -h` to get a list of
 the supported obfuscators. It's usually very easy to add support for another
 obfuscator.
+
 Other obfuscators are partially supported. Eg. control flow deobfuscation,
 symbol renaming, dynamic string decryption.
 
@@ -153,7 +154,7 @@ Detect obfuscator recursively:
 
     de4dot -d -r c:\path1
 
-Dump methods and deobfuscate (currently only CliSecure):
+Dump methods and deobfuscate:
 
     dumpMethods file1
     dumpMethods file2
