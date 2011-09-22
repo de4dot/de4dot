@@ -1,1 +1,9 @@
 *~
+*/obj/
+/dumpMethodsN/Debug/
+/dumpMethodsN/Release/
+*.vcxproj.user
+*.sdf
+*.opensdf
+/Debug/
+/Release/
