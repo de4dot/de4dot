@@ -41,7 +41,8 @@ namespace de4dot.blocks {
 			visited = new Dictionary<BaseBlock, bool>();
 			sorted = new List<BaseBlock>(scopeBlock.BaseBlocks.Count);
 
-			search(scopeBlock.BaseBlocks[0]);
+			if (scopeBlock.BaseBlocks.Count > 0)
+				search(scopeBlock.BaseBlocks[0]);
 			sorted.Reverse();	// It's in reverse order
 
 			// Just in case there's dead code or unreferenced exception blocks

@@ -411,7 +411,7 @@ namespace de4dot {
 				Log.v("Deobfuscating {0} ({1:X8})", method, method.MetadataToken.ToUInt32());
 				Log.indent();
 
-				if (method.HasBody) {
+				if (hasNonEmptyBody(method)) {
 					var blocks = new Blocks(method);
 
 					deob.deobfuscateMethodBegin(blocks);
@@ -432,6 +432,10 @@ namespace de4dot {
 
 				Log.deIndent();
 			}
+		}
+
+		bool hasNonEmptyBody(MethodDefinition method) {
+			return method.HasBody && method.Body.Instructions.Count > 0;
 		}
 
 		void deobfuscateStrings(Blocks blocks) {
@@ -481,7 +485,7 @@ namespace de4dot {
 			Log.v("{0}: {1} ({2:X8})", msg, method, method.MetadataToken.ToUInt32());
 			Log.indent();
 
-			if (method.HasBody) {
+			if (hasNonEmptyBody(method)) {
 				var blocks = new Blocks(method);
 
 				handler(blocks);
