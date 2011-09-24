@@ -22,7 +22,7 @@ using Mono.Cecil.Cil;
 using System.Collections.Generic;
 
 namespace de4dot.blocks {
-	class Instr {
+	public class Instr {
 		Instruction instruction;
 
 		public OpCode OpCode {

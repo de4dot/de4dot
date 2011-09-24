@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Mono.Cecil;
+using de4dot.blocks;
 using de4dot.deobfuscators;
 
 namespace de4dot.renamer {

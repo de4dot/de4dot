@@ -22,7 +22,7 @@ using Mono.Cecil.Cil;
 
 namespace de4dot.blocks {
 	// Contains the filter handler block and the catch handler block.
-	class TryHandlerBlock : ScopeBlock {
+	public class TryHandlerBlock : ScopeBlock {
 		FilterHandlerBlock filterHandlerBlock = new FilterHandlerBlock();
 		HandlerBlock handlerBlock = new HandlerBlock();
 

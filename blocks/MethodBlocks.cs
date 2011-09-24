@@ -1,4 +1,4 @@
-﻿/*
+/*
     Copyright (C) 2011 de4dot@gmail.com
 
     This file is part of de4dot.
@@ -18,10 +18,9 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
 
 namespace de4dot.blocks {
-	class FilterHandlerBlock : ScopeBlock {
+	// Start of a method
+	public class MethodBlocks : ScopeBlock {
 	}
 }

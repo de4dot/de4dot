@@ -17,13 +17,22 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-namespace de4dot.blocks {
-	abstract class BaseBlock {
-		BaseBlock parent = null;
+using System.Collections.Generic;
 
-		public BaseBlock Parent {
-			get { return parent; }
-			set { parent = value; }
+namespace de4dot.blocks {
+	// This is the block inside try { }.
+	public class TryBlock : ScopeBlock {
+		// The first one is the most nested one and the last one is the
+		// outer most handler. I.e., the exceptions are written to the
+		// image in the same order they're saved here.
+		List<TryHandlerBlock> handlerBlocks = new List<TryHandlerBlock>();
+
+		public List<TryHandlerBlock> TryHandlerBlocks {
+			get { return handlerBlocks; }
+		}
+
+		public void addTryHandler(TryHandlerBlock tryHandlerBlock) {
+			handlerBlocks.Add(tryHandlerBlock);
 		}
 	}
 }

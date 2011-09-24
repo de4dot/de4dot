@@ -17,18 +17,11 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-namespace AssemblyData {
-	public enum StringDecrypterType {
-		Delegate,
-		Emulate,
-	}
+using System.Collections.Generic;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
 
-	public interface IAssemblyService {
-		void doNothing();
-		void loadAssembly(string filename);
-		void setStringDecrypterType(StringDecrypterType type);
-		int defineStringDecrypter(int methodToken, int typeToken = 0);
-		object[] decryptStrings(int stringDecrypterMethod, object[] args);
-		void exit();
+namespace de4dot.blocks {
+	public class FilterHandlerBlock : ScopeBlock {
 	}
 }

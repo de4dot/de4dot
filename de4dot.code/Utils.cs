@@ -173,19 +173,5 @@ namespace de4dot {
 		public static string getPathOfOurFile(string filename) {
 			return Path.Combine(getOurBaseDir(), filename);
 		}
-
-		public static IDictionary<T, int> createObjectToIndexDictionary<T>(IList<T> objs) {
-			var dict = new Dictionary<T, int>();
-			for (int i = 0; i < objs.Count; i++)
-				dict[objs[i]] = i;
-			return dict;
-		}
-
-		public static List<TOut> convert<TIn, TOut>(IEnumerable<TIn> list) where TIn : TOut {
-			var olist = new List<TOut>();
-			foreach (var l in list)
-				olist.Add(l);
-			return olist;
-		}
 	}
 }

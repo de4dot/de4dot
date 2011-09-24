@@ -54,27 +54,12 @@
     <Compile Include="AssemblyClient\NewProcessAssemblyServerLoader.cs" />
     <Compile Include="AssemblyClient\SameAppDomainAssemblyServerLoader.cs" />
     <Compile Include="AssemblyResolver.cs" />
-    <Compile Include="blocks\BaseBlock.cs" />
-    <Compile Include="blocks\Block.cs" />
-    <Compile Include="blocks\Blocks.cs" />
-    <Compile Include="blocks\BlocksSorter.cs" />
-    <Compile Include="blocks\CodeGenerator.cs" />
-    <Compile Include="blocks\CondBranchDeobfuscator.cs" />
-    <Compile Include="blocks\FilterHandlerBlock.cs" />
-    <Compile Include="blocks\ForwardScanOrder.cs" />
-    <Compile Include="blocks\HandlerBlock.cs" />
-    <Compile Include="blocks\Instr.cs" />
-    <Compile Include="blocks\InstructionListParser.cs" />
-    <Compile Include="blocks\MethodBlocks.cs" />
-    <Compile Include="blocks\ScopeBlock.cs" />
-    <Compile Include="blocks\SwitchControlFlowDeobfuscator.cs" />
-    <Compile Include="blocks\TryBlock.cs" />
-    <Compile Include="blocks\TryHandlerBlock.cs" />
     <Compile Include="CommandLineParser.cs" />
     <Compile Include="deobfuscators\CliSecure\Deobfuscator.cs" />
     <Compile Include="deobfuscators\CliSecure\ProxyDelegateFinder.cs" />
     <Compile Include="deobfuscators\DeobfuscatorBase.cs" />
     <Compile Include="deobfuscators\DeobfuscatorInfoBase.cs" />
+    <Compile Include="deobfuscators\DeobUtils.cs" />
     <Compile Include="deobfuscators\Dotfuscator\Deobfuscator.cs" />
     <Compile Include="deobfuscators\Eazfuscator\Deobfuscator.cs" />
     <Compile Include="deobfuscators\ExceptionLoggerRemover.cs" />
@@ -102,11 +87,9 @@
     <Compile Include="deobfuscators\SmartAssembly\StringEncoderClassFinder.cs" />
     <Compile Include="deobfuscators\SmartAssembly\TamperProtectionRemover.cs" />
     <Compile Include="deobfuscators\Unknown\Deobfuscator.cs" />
-    <Compile Include="DotNetUtils.cs" />
     <Compile Include="FilesDeobfuscator.cs" />
     <Compile Include="IObfuscatedFile.cs" />
     <Compile Include="Log.cs" />
-    <Compile Include="MemberReferenceHelper.cs" />
     <Compile Include="AssemblyModule.cs" />
     <Compile Include="NameRegexes.cs" />
     <Compile Include="ObfuscatedFile.cs" />
@@ -133,6 +116,10 @@
     <ProjectReference Include="..\AssemblyData\AssemblyData.csproj">
       <Project>{FBD84077-9D35-41FE-89DF-8D79EFE0B595}</Project>
       <Name>AssemblyData</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\blocks\blocks.csproj">
+      <Project>{045B96F2-AF80-4C4C-8D27-E38635AC705E}</Project>
+      <Name>blocks</Name>
     </ProjectReference>
     <ProjectReference Include="..\cecil\Mono.Cecil.csproj">
       <Project>{D68133BD-1E63-496E-9EDE-4FBDBF77B486}</Project>

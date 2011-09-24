@@ -17,10 +17,13 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using System.Collections.Generic;
-
 namespace de4dot.blocks {
-	// Start of a method
-	class MethodBlocks : ScopeBlock {
+	public abstract class BaseBlock {
+		BaseBlock parent = null;
+
+		public BaseBlock Parent {
+			get { return parent; }
+			set { parent = value; }
+		}
 	}
 }

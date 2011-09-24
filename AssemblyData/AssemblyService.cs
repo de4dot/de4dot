@@ -60,6 +60,10 @@ namespace AssemblyData {
 				stringDecrypter = new DelegateStringDecrypter();
 				break;
 
+			case StringDecrypterType.Emulate:
+				stringDecrypter = new EmuStringDecrypter();
+				break;
+
 			default:
 				throw new ApplicationException(string.Format("Unknown StringDecrypterType {0}", type));
 			}

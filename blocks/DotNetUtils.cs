@@ -19,12 +19,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
-namespace de4dot {
-	class CallCounter {
+namespace de4dot.blocks {
+	public class CallCounter {
 		Dictionary<MethodReferenceAndDeclaringTypeKey, int> calls = new Dictionary<MethodReferenceAndDeclaringTypeKey, int>();
 
 		public void add(MethodReference calledMethod) {
@@ -47,7 +46,7 @@ namespace de4dot {
 		}
 	}
 
-	class MethodCalls {
+	public class MethodCalls {
 		Dictionary<string, int> methodCalls = new Dictionary<string, int>(StringComparer.Ordinal);
 
 		public void addMethodCalls(MethodDefinition method) {
@@ -78,7 +77,7 @@ namespace de4dot {
 		}
 	}
 
-	static class DotNetUtils {
+	public static class DotNetUtils {
 		public static bool isLdcI4(Instruction instruction) {
 			return isLdcI4(instruction.OpCode.Code);
 		}
@@ -472,21 +471,6 @@ namespace de4dot {
 				list.Add(instr);
 			}
 			return list;
-		}
-
-		public static void decryptAndAddResources(ModuleDefinition module, string encryptedName, Func<byte[]> decryptResource) {
-			Log.v("Decrypting resources, name: {0}", Utils.toCsharpString(encryptedName));
-			var decryptedResourceData = decryptResource();
-			if (decryptedResourceData == null)
-				throw new ApplicationException("decryptedResourceData is null");
-			var resourceModule = ModuleDefinition.ReadModule(new MemoryStream(decryptedResourceData));
-
-			Log.indent();
-			foreach (var rsrc in resourceModule.Resources) {
-				Log.v("Adding decrypted resource {0}", Utils.toCsharpString(rsrc.Name));
-				module.Resources.Add(rsrc);
-			}
-			Log.deIndent();
 		}
 
 		public static bool hasReturnValue(IMethodSignature method) {

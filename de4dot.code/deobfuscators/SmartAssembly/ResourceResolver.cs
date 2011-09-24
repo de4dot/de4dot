@@ -20,6 +20,7 @@
 using System;
 using System.IO;
 using Mono.Cecil;
+using de4dot.blocks;
 
 namespace de4dot.deobfuscators.SmartAssembly {
 	class ResourceResolver {
@@ -46,7 +47,7 @@ namespace de4dot.deobfuscators.SmartAssembly {
 			if (resource == null)
 				return null;
 
-			DotNetUtils.decryptAndAddResources(module, resource.Name, () => assemblyResolver.removeDecryptedResource(resource));
+			DeobUtils.decryptAndAddResources(module, resource.Name, () => assemblyResolver.removeDecryptedResource(resource));
 			mergedIt = true;
 			return resource;
 		}

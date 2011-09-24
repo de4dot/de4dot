@@ -20,9 +20,8 @@
 using System;
 using System.Collections.Generic;
 using Mono.Cecil.Cil;
-using de4dot.blocks;
 
-namespace de4dot {
+namespace de4dot.blocks {
 	class SwitchControlFlowDeobfuscator {
 		Blocks blocks;
 		Dictionary<Block, bool> foundBlocks = new Dictionary<Block, bool>();

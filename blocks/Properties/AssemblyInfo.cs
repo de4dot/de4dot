@@ -1,4 +1,4 @@
-/*
+﻿/*
     Copyright (C) 2011 de4dot@gmail.com
 
     This file is part of de4dot.
@@ -17,22 +17,18 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using System.Collections.Generic;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
-namespace de4dot.blocks {
-	// This is the block inside try { }.
-	class TryBlock : ScopeBlock {
-		// The first one is the most nested one and the last one is the
-		// outer most handler. I.e., the exceptions are written to the
-		// image in the same order they're saved here.
-		List<TryHandlerBlock> handlerBlocks = new List<TryHandlerBlock>();
-
-		public List<TryHandlerBlock> TryHandlerBlocks {
-			get { return handlerBlocks; }
-		}
-
-		public void addTryHandler(TryHandlerBlock tryHandlerBlock) {
-			handlerBlocks.Add(tryHandlerBlock);
-		}
-	}
-}
+[assembly: AssemblyTitle("blocks")]
+[assembly: AssemblyDescription("Modifies Mono.Cecil MethodDefinition bodies")]
+[assembly: AssemblyConfiguration("")]
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyProduct("blocks")]
+[assembly: AssemblyCopyright("Copyright (C) 2011 de4dot@gmail.com")]
+[assembly: AssemblyTrademark("")]
+[assembly: AssemblyCulture("")]
+[assembly: ComVisible(false)]
+[assembly: AssemblyVersion("1.0.0.3405")]
+[assembly: AssemblyFileVersion("1.0.0.3405")]

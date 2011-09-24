@@ -264,7 +264,7 @@ namespace de4dot.deobfuscators.CliSecure {
 			if (resource == null)
 				return;
 
-			DotNetUtils.decryptAndAddResources(module, resource.Name, () => decryptResource(resource));
+			DeobUtils.decryptAndAddResources(module, resource.Name, () => decryptResource(resource));
 
 			addResourceToBeRemoved(resource, "Encrypted resource");
 			if (rsrcDecryptMethod != null)

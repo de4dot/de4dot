@@ -21,7 +21,7 @@ using System.Collections.Generic;
 using Mono.Cecil.Cil;
 using de4dot.blocks;
 
-namespace de4dot {
+namespace de4dot.blocks {
 	abstract class CondBranchDeobfuscator {
 		ScopeBlock scopeBlock;
 		IEnumerable<Block> blocks;

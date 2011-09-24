@@ -23,7 +23,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 
 namespace de4dot.blocks {
-	class Blocks {
+	public class Blocks {
 		MethodDefinition method;
 		IList<VariableDefinition> locals;
 		MethodBlocks methodBlocks;
@@ -52,17 +52,19 @@ namespace de4dot.blocks {
 				scopeBlock.deobfuscateLeaveObfuscation();
 		}
 
-		public void deobfuscate() {
+		public int deobfuscate() {
 			foreach (var scopeBlock in getAllScopeBlocks(methodBlocks))
 				scopeBlock.deobfuscate(this);
 
-			removeDeadBlocks();
+			int numDeadBlocks = removeDeadBlocks();
 
 			foreach (var scopeBlock in getAllScopeBlocks(methodBlocks)) {
 				scopeBlock.mergeBlocks();
 				scopeBlock.repartitionBlocks();
 				scopeBlock.deobfuscateLeaveObfuscation();
 			}
+
+			return numDeadBlocks;
 		}
 
 		IEnumerable<ScopeBlock> getAllScopeBlocks(ScopeBlock scopeBlock) {
@@ -72,10 +74,8 @@ namespace de4dot.blocks {
 			return list;
 		}
 
-		void removeDeadBlocks() {
-			int numDeadBlocks = new DeadBlocksRemover(methodBlocks).remove();
-			if (numDeadBlocks > 0)
-				Log.v("Removed {0} dead block(s)", numDeadBlocks);
+		int removeDeadBlocks() {
+			return new DeadBlocksRemover(methodBlocks).remove();
 		}
 
 		class DeadBlocksRemover {

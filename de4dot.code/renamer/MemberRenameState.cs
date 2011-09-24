@@ -18,6 +18,7 @@
 */
 
 using System.Collections.Generic;
+using de4dot.blocks;
 
 namespace de4dot.renamer {
 	class MemberRenameState {

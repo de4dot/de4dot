@@ -22,7 +22,7 @@ using System.Collections.Generic;
 using Mono.Cecil.Cil;
 
 namespace de4dot.blocks {
-	class Block : BaseBlock {
+	public class Block : BaseBlock {
 		List<Instr> instructions = new List<Instr>();
 
 		// List of all explicit (non-fall-through) targets. It's just one if it's a normal

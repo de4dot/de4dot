@@ -23,6 +23,6 @@ using Mono.Cecil.Cil;
 
 namespace de4dot.blocks {
 	// This is the block inside catch(xxx) { }.
-	class HandlerBlock : ScopeBlock {
+	public class HandlerBlock : ScopeBlock {
 	}
 }

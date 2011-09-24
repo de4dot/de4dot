@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using de4dot.blocks;
 
 namespace de4dot {
 	// If it's a non-generic memberref, you could use GetMemberReference() to get a cached

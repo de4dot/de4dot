@@ -239,6 +239,7 @@ namespace de4dot {
 				break;
 
 			case DecrypterType.Delegate:
+			case DecrypterType.Emulate:
 				checkSupportedStringDecrypter(StringFeatures.AllowDynamicDecryption);
 				assemblyClient = assemblyClientFactory.create();
 				assemblyClient.connect();
@@ -272,6 +273,8 @@ namespace de4dot {
 
 			if (options.StringDecrypterType == DecrypterType.Delegate)
 				assemblyClient.Service.setStringDecrypterType(AssemblyData.StringDecrypterType.Delegate);
+			else if (options.StringDecrypterType == DecrypterType.Emulate)
+				assemblyClient.Service.setStringDecrypterType(AssemblyData.StringDecrypterType.Emulate);
 			else
 				throw new ApplicationException(string.Format("Invalid string decrypter type '{0}'", options.StringDecrypterType));
 
@@ -415,8 +418,11 @@ namespace de4dot {
 					var blocks = new Blocks(method);
 
 					deob.deobfuscateMethodBegin(blocks);
-					if (options.ControlFlowDeobfuscation)
-						blocks.deobfuscate();
+					if (options.ControlFlowDeobfuscation) {
+						int numDeadBlocks = blocks.deobfuscate();
+						if (numDeadBlocks > 0)
+							Log.v("Removed {0} dead block(s)", numDeadBlocks);
+					}
 					deobfuscateStrings(blocks);
 					deob.deobfuscateMethodEnd(blocks);
 					if (options.ControlFlowDeobfuscation)
@@ -444,6 +450,7 @@ namespace de4dot {
 				break;
 
 			case DecrypterType.Delegate:
+			case DecrypterType.Emulate:
 				dynamicStringDecrypter.decrypt(blocks);
 				break;
 

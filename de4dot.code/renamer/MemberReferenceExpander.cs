@@ -19,6 +19,7 @@
 
 using System;
 using Mono.Cecil;
+using de4dot.blocks;
 
 namespace de4dot.renamer {
 	abstract class Expander {

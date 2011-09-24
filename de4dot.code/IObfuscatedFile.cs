@@ -26,6 +26,7 @@ namespace de4dot {
 		None,
 		Static,
 		Delegate,
+		Emulate,
 	}
 
 	interface IObfuscatedFile {

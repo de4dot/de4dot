@@ -37,6 +37,7 @@
     <Compile Include="AssemblyServer.cs" />
     <Compile Include="AssemblyService.cs" />
     <Compile Include="DelegateStringDecrypter.cs" />
+    <Compile Include="EmuStringDecrypter.cs" />
     <Compile Include="IAssemblyService.cs" />
     <Compile Include="IStringDecrypter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -45,6 +46,16 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System.Runtime.Remoting" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\blocks\blocks.csproj">
+      <Project>{045B96F2-AF80-4C4C-8D27-E38635AC705E}</Project>
+      <Name>blocks</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\cecil\Mono.Cecil.csproj">
+      <Project>{D68133BD-1E63-496E-9EDE-4FBDBF77B486}</Project>
+      <Name>Mono.Cecil</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

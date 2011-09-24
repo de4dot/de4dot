@@ -21,8 +21,8 @@ using System;
 using System.Collections.Generic;
 using Mono.Cecil;
 
-namespace de4dot {
-	enum CecilType {
+namespace de4dot.blocks {
+	public enum CecilType {
 		ArrayType,
 		ByReferenceType,
 		EventDefinition,
@@ -44,7 +44,7 @@ namespace de4dot {
 		TypeReference,
 	}
 
-	class FieldReferenceKey {
+	public class FieldReferenceKey {
 		FieldReference fieldRef;
 
 		public FieldReference FieldReference {
@@ -71,7 +71,7 @@ namespace de4dot {
 		}
 	}
 
-	class PropertyReferenceKey {
+	public class PropertyReferenceKey {
 		PropertyReference propRef;
 
 		public PropertyReference PropertyReference {
@@ -98,7 +98,7 @@ namespace de4dot {
 		}
 	}
 
-	class EventReferenceKey {
+	public class EventReferenceKey {
 		EventReference eventRef;
 
 		public EventReference EventReference {
@@ -125,7 +125,7 @@ namespace de4dot {
 		}
 	}
 
-	class MethodReferenceKey {
+	public class MethodReferenceKey {
 		MethodReference methodRef;
 
 		public MethodReference MethodReference {
@@ -152,7 +152,7 @@ namespace de4dot {
 		}
 	}
 
-	class FieldReferenceAndDeclaringTypeKey {
+	public class FieldReferenceAndDeclaringTypeKey {
 		FieldReference fieldRef;
 
 		public FieldReference FieldReference {
@@ -181,7 +181,7 @@ namespace de4dot {
 		}
 	}
 
-	class MethodReferenceAndDeclaringTypeKey {
+	public class MethodReferenceAndDeclaringTypeKey {
 		MethodReference methodRef;
 
 		public MethodReference MethodReference {
@@ -210,7 +210,7 @@ namespace de4dot {
 		}
 	}
 
-	static class MemberReferenceHelper {
+	public static class MemberReferenceHelper {
 		static Dictionary<Type, CecilType> typeToCecilTypeDict = new Dictionary<Type, CecilType>();
 		static MemberReferenceHelper() {
 			typeToCecilTypeDict[typeof(ArrayType)] = CecilType.ArrayType;

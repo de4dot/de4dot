@@ -19,6 +19,7 @@
 
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using de4dot.blocks;
 
 namespace de4dot.deobfuscators.SmartAssembly {
 	class ResourceResolverInfo : ResolverInfoBase {

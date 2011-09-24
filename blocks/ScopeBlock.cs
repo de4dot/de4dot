@@ -24,7 +24,7 @@ using Mono.Cecil.Cil;
 namespace de4dot.blocks {
 	// A normal branch may not transfer out of a protected block (try block), filter handler,
 	// an exception handler block, or a method.
-	abstract class ScopeBlock : BaseBlock {
+	public abstract class ScopeBlock : BaseBlock {
 		protected List<BaseBlock> baseBlocks;
 
 		public List<BaseBlock> BaseBlocks {
