@@ -19,18 +19,17 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Reflection;
-using System.Reflection.Emit;
+using AssemblyData.methodsrewriter;
 
 namespace AssemblyData {
 	class EmuStringDecrypter : IStringDecrypter {
-		delegate string DecryptString(object[] args);
 		List<DecryptInfo> decryptInfos = new List<DecryptInfo>();
+		MethodsRewriter methodsRewriter = new MethodsRewriter();
 
 		class DecryptInfo {
 			public MethodInfo method;
-			public DecryptString decryptString;
+			public RewrittenMethod decryptString;
 
 			public DecryptInfo(MethodInfo method) {
 				this.method = method;
@@ -53,8 +52,9 @@ namespace AssemblyData {
 			return result;
 		}
 
-		DecryptString createDecryptString(MethodInfo method) {
-			throw new System.NotImplementedException();	//TODO:
+		RewrittenMethod createDecryptString(MethodInfo method) {
+			methodsRewriter.createMethod(method);
+			return methodsRewriter.createDelegate(method);
 		}
 	}
 }

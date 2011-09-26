@@ -206,6 +206,10 @@ namespace de4dot.blocks {
 			return type != null && type.BaseType != null && type.BaseType.FullName == "System.MulticastDelegate";
 		}
 
+		public static bool isSameAssembly(TypeReference type, string assembly) {
+			return MemberReferenceHelper.getCanonicalizedScopeName(type.Scope) == assembly.ToLowerInvariant();
+		}
+
 		public static bool isMethod(MethodReference method, string returnType, string parameters) {
 			return method != null && method.FullName == returnType + " " + method.DeclaringType.FullName + "::" + method.Name + parameters;
 		}
@@ -563,6 +567,22 @@ namespace de4dot.blocks {
 			default:
 				throw new ApplicationException(string.Format("Unknown pop StackBehavior {0}", stackBehavior));
 			}
+		}
+
+		public static AssemblyNameReference getAssemblyNameReference(IMetadataScope scope) {
+			if (scope is ModuleDefinition) {
+				var moduleDefinition = (ModuleDefinition)scope;
+				return moduleDefinition.Assembly.Name;
+			}
+			else if (scope is AssemblyNameReference)
+				return (AssemblyNameReference)scope;
+
+			throw new ApplicationException(string.Format("Unknown IMetadataScope type: {0}", scope.GetType()));
+		}
+
+		public static string getFullAssemblyName(IMetadataScope scope) {
+			var asmRef = getAssemblyNameReference(scope);
+			return asmRef.FullName;
 		}
 	}
 }

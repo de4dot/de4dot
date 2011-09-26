@@ -44,6 +44,33 @@ namespace de4dot.blocks {
 		TypeReference,
 	}
 
+	public class TypeReferenceKey {
+		TypeReference typeRef;
+
+		public TypeReference TypeReference {
+			get { return typeRef; }
+		}
+
+		public TypeReferenceKey(TypeReference typeRef) {
+			this.typeRef = typeRef;
+		}
+
+		public override int GetHashCode() {
+			return MemberReferenceHelper.typeHashCode(typeRef);
+		}
+
+		public override bool Equals(object obj) {
+			var other = obj as TypeReferenceKey;
+			if (other == null)
+				return false;
+			return MemberReferenceHelper.compareTypes(typeRef, other.typeRef);
+		}
+
+		public override string ToString() {
+			return typeRef.ToString();
+		}
+	}
+
 	public class FieldReferenceKey {
 		FieldReference fieldRef;
 
@@ -255,7 +282,7 @@ namespace de4dot.blocks {
 			return string.Format("[{0}]{1}", getCanonicalizedScopeName(scope), fullName);
 		}
 
-		static string getCanonicalizedScopeName(IMetadataScope scope) {
+		public static string getCanonicalizedScopeName(IMetadataScope scope) {
 			var name = scope.Name.ToLowerInvariant();
 			if (scope is ModuleDefinition) {
 				if (name.EndsWith(".exe", StringComparison.Ordinal) || name.EndsWith(".dll", StringComparison.Ordinal))
