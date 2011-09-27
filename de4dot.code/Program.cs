@@ -55,13 +55,7 @@ namespace de4dot {
 				Log.e("ERROR: {0}", ex.Message);
 			}
 			catch (Exception ex) {
-				var line = new string('-', 78);
-				Log.e("\n\nERROR: Caught an exception:\n\n");
-				Log.e(line);
-				Log.e("Message: {0}", ex.Message);
-				Log.e("Type: {0}", ex.GetType());
-				Log.e(line);
-				Log.e("\n\nStack trace:\n{0}", ex.StackTrace);
+				Utils.printStackTrace(ex);
 				return 1;
 			}
 

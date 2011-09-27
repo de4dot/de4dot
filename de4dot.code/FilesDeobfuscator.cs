@@ -36,6 +36,7 @@ namespace de4dot {
 			public bool RenameSymbols { get; set; }
 			public bool ControlFlowDeobfuscation { get; set; }
 			public bool KeepObfuscatorTypes { get; set; }
+			public bool OneFileAtATime { get; set; }
 			public DecrypterType? DefaultStringDecrypterType { get; set; }
 			public List<string> DefaultStringDecrypterMethods { get; private set; }
 			public IAssemblyClientFactory AssemblyClientFactory { get; set; }
@@ -63,8 +64,34 @@ namespace de4dot {
 		public void doIt() {
 			if (options.DetectObfuscators)
 				loadAllFiles();
+			else if (options.OneFileAtATime)
+				deobfuscateOneAtATime();
 			else
 				deobfuscateAll();
+		}
+
+		void deobfuscateOneAtATime() {
+			loadAllFiles();
+
+			foreach (var file in options.Files) {
+				try {
+					file.deobfuscateBegin();
+					file.deobfuscate();
+					file.deobfuscateEnd();
+
+					if (options.RenameSymbols)
+						new DefinitionsRenamer(new List<IObfuscatedFile> { file }).renameAll();
+
+					file.save();
+				}
+				catch (Exception ex) {
+					Log.w("Could not deobfuscate {0}. Use -v to see stack trace", file.Filename);
+					Utils.printStackTrace(ex, Log.LogLevel.verbose);
+				}
+				finally {
+					file.deobfuscateCleanUp();
+				}
+			}
 		}
 
 		void deobfuscateAll() {

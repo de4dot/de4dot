@@ -44,7 +44,7 @@ namespace de4dot {
 			indentLevel--;
 		}
 
-		static void log(LogLevel l, string format, params object[] args) {
+		public static void log(LogLevel l, string format, params object[] args) {
 			if (l > logLevel)
 				return;
 			string indent = new string(' ', indentLevel * indentSize);

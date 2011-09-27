@@ -135,6 +135,9 @@ namespace de4dot {
 			miscOptions.Add(new NoArgOption(null, "keep-types", "Keep obfuscator types, fields, methods", () => {
 				filesOptions.KeepObfuscatorTypes = true;
 			}));
+			miscOptions.Add(new NoArgOption(null, "one-file", "Deobfuscate one file at a time", () => {
+				filesOptions.OneFileAtATime = true;
+			}));
 			miscOptions.Add(new NoArgOption("v", null, "Verbose", () => {
 				Log.logLevel = Log.LogLevel.verbose;
 			}));

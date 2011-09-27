@@ -173,5 +173,15 @@ namespace de4dot {
 		public static string getPathOfOurFile(string filename) {
 			return Path.Combine(getOurBaseDir(), filename);
 		}
+
+		public static void printStackTrace(Exception ex, Log.LogLevel logLevel = Log.LogLevel.error) {
+			var line = new string('-', 78);
+			Log.log(logLevel, "\n\nERROR: Caught an exception:\n\n");
+			Log.log(logLevel, line);
+			Log.log(logLevel, "Message: {0}", ex.Message);
+			Log.log(logLevel, "Type: {0}", ex.GetType());
+			Log.log(logLevel, line);
+			Log.log(logLevel, "\n\nStack trace:\n{0}", ex.StackTrace);
+		}
 	}
 }
