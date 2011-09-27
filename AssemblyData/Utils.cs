@@ -69,6 +69,10 @@ namespace AssemblyData {
 	static class Utils {
 		static Random random = new Random();
 
+		public static uint getRandomUint() {
+			return (uint)(random.NextDouble() * uint.MaxValue);
+		}
+
 		public static Type getDelegateType(Type returnType, Type[] args) {
 			Type[] types;
 			if (returnType == typeof(void)) {

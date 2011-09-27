@@ -23,8 +23,6 @@ using Mono.Cecil;
 
 namespace AssemblyData.methodsrewriter {
 	interface IMethodsRewriter {
-		Type getRtType(TypeReference typeReference);
-		object getRtObject(MemberReference memberReference);
 		Type getDelegateType(MethodBase methodBase);
 	}
 }

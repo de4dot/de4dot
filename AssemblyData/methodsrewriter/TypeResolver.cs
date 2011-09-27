@@ -21,73 +21,31 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using Mono.Cecil;
+using de4dot.blocks;
 
 namespace AssemblyData.methodsrewriter {
 	class TypeResolver {
 		public Type type;
-		Dictionary<string, List<MethodBase>> methods;
-		Dictionary<string, List<FieldInfo>> fields;
+		Dictionary<TypeReferenceKey, TypeInstanceResolver> typeRefToInstance = new Dictionary<TypeReferenceKey, TypeInstanceResolver>();
 
 		public TypeResolver(Type type) {
 			this.type = type;
 		}
 
-		public FieldInfo resolve(FieldReference fieldReference) {
-			initFields();
-
-			List<FieldInfo> list;
-			if (!fields.TryGetValue(fieldReference.Name, out list))
-				return null;
-
-			foreach (var field in list) {
-				if (ResolverUtils.compareFields(field, fieldReference))
-					return field;
-			}
-
-			return null;
+		TypeInstanceResolver getTypeInstance(TypeReference typeReference) {
+			var key = new TypeReferenceKey(typeReference);
+			TypeInstanceResolver instance;
+			if (!typeRefToInstance.TryGetValue(key, out instance))
+				typeRefToInstance[key] = instance = new TypeInstanceResolver(type, typeReference);
+			return instance;
 		}
 
-		void initFields() {
-			if (fields != null)
-				return;
-			fields = new Dictionary<string, List<FieldInfo>>(StringComparer.Ordinal);
-
-			var flags = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
-			foreach (var field in type.GetFields(flags)) {
-				List<FieldInfo> list;
-				if (!fields.TryGetValue(field.Name, out list))
-					fields[field.Name] = list = new List<FieldInfo>();
-				list.Add(field);
-			}
+		public FieldInfo resolve(FieldReference fieldReference) {
+			return getTypeInstance(fieldReference.DeclaringType).resolve(fieldReference);
 		}
 
 		public MethodBase resolve(MethodReference methodReference) {
-			initMethods();
-
-			List<MethodBase> list;
-			if (!methods.TryGetValue(methodReference.Name, out list))
-				return null;
-
-			foreach (var method in list) {
-				if (ResolverUtils.compareMethods(method, methodReference))
-					return method;
-			}
-
-			return null;
-		}
-
-		void initMethods() {
-			if (methods != null)
-				return;
-			methods = new Dictionary<string, List<MethodBase>>(StringComparer.Ordinal);
-
-			var flags = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
-			foreach (var method in ResolverUtils.getMethodBases(type, flags)) {
-				List<MethodBase> list;
-				if (!methods.TryGetValue(method.Name, out list))
-					methods[method.Name] = list = new List<MethodBase>();
-				list.Add(method);
-			}
+			return getTypeInstance(methodReference.DeclaringType).resolve(methodReference);
 		}
 	}
 }

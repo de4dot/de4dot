@@ -51,12 +51,14 @@
     <Compile Include="methodsrewriter\Operand.cs" />
     <Compile Include="methodsrewriter\Resolver.cs" />
     <Compile Include="methodsrewriter\ResolverUtils.cs" />
+    <Compile Include="methodsrewriter\TypeInstanceResolver.cs" />
     <Compile Include="methodsrewriter\TypeResolver.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SimpleData.cs" />
     <Compile Include="Utils.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="System" />
     <Reference Include="System.Runtime.Remoting" />
   </ItemGroup>
   <ItemGroup>

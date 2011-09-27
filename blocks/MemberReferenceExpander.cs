@@ -19,10 +19,9 @@
 
 using System;
 using Mono.Cecil;
-using de4dot.blocks;
 
-namespace de4dot.renamer {
-	abstract class Expander {
+namespace de4dot.blocks {
+	public abstract class Expander {
 		protected bool modified = false;
 
 		protected void checkModified(object a, object b) {
@@ -31,7 +30,7 @@ namespace de4dot.renamer {
 		}
 	}
 
-	class TypeReferenceExpander : Expander {
+	public class TypeReferenceExpander : Expander {
 		TypeReference typeReference;
 		GenericInstanceType git;
 
@@ -144,7 +143,7 @@ namespace de4dot.renamer {
 		}
 	}
 
-	abstract class MultiTypeExpander : Expander {
+	public abstract class MultiTypeExpander : Expander {
 		GenericInstanceType git;
 
 		public MultiTypeExpander(GenericInstanceType git) {
@@ -162,7 +161,7 @@ namespace de4dot.renamer {
 		}
 	}
 
-	class MethodReferenceExpander : MultiTypeExpander {
+	public class MethodReferenceExpander : MultiTypeExpander {
 		MethodReference methodReference;
 
 		public MethodReferenceExpander(MethodReference methodReference, GenericInstanceType git)
@@ -194,7 +193,21 @@ namespace de4dot.renamer {
 		}
 	}
 
-	class EventReferenceExpander : MultiTypeExpander {
+	public class FieldReferenceExpander : MultiTypeExpander {
+		FieldReference fieldReference;
+
+		public FieldReferenceExpander(FieldReference fieldReference, GenericInstanceType git)
+			: base(git) {
+			this.fieldReference = fieldReference;
+		}
+
+		public FieldReference expand() {
+			var fr = new FieldReference(fieldReference.Name, expandType(fieldReference.FieldType));
+			return getResult(fieldReference, fr);
+		}
+	}
+
+	public class EventReferenceExpander : MultiTypeExpander {
 		EventReference eventReference;
 
 		public EventReferenceExpander(EventReference eventReference, GenericInstanceType git)
@@ -208,7 +221,7 @@ namespace de4dot.renamer {
 		}
 	}
 
-	class PropertyReferenceExpander : MultiTypeExpander {
+	public class PropertyReferenceExpander : MultiTypeExpander {
 		PropertyReference propertyReference;
 
 		public PropertyReferenceExpander(PropertyReference propertyReference, GenericInstanceType git)

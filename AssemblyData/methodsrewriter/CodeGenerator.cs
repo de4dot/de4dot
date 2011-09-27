@@ -56,6 +56,7 @@ namespace AssemblyData.methodsrewriter {
 		}
 
 		IMethodsRewriter methodsRewriter;
+		string methodName;
 		IList<Instruction> allInstructions;
 		IList<ExceptionHandler> allExceptionHandlers;
 		ILGenerator ilg;
@@ -69,13 +70,15 @@ namespace AssemblyData.methodsrewriter {
 		List<LocalBuilder> locals;
 		List<Label> labels;
 		Dictionary<Instruction, int> instrToIndex;
+		Stack<ExceptionHandler> exceptionHandlersStack;
 
 		public Type DelegateType {
 			get { return delegateType; }
 		}
 
-		public CodeGenerator(IMethodsRewriter methodsRewriter) {
+		public CodeGenerator(IMethodsRewriter methodsRewriter, string methodName) {
 			this.methodsRewriter = methodsRewriter;
+			this.methodName = methodName;
 		}
 
 		public void setMethodInfo(MMethod methodInfo) {
@@ -89,7 +92,7 @@ namespace AssemblyData.methodsrewriter {
 			this.allInstructions = allInstructions;
 			this.allExceptionHandlers = allExceptionHandlers;
 
-			var dm = new DynamicMethod("emulated_" + methodInfo.methodBase.Name, methodReturnType, methodParameters, methodsRewriter.GetType(), true);
+			var dm = new DynamicMethod(methodName, methodReturnType, methodParameters, methodInfo.methodBase.Module, true);
 			var lastInstr = allInstructions[allInstructions.Count - 1];
 			ilg = dm.GetILGenerator(lastInstr.Offset + lastInstr.GetSize());
 
@@ -97,7 +100,9 @@ namespace AssemblyData.methodsrewriter {
 			initLocals();
 			initLabels();
 
+			exceptionHandlersStack = new Stack<ExceptionHandler>();
 			for (int i = 0; i < allInstructions.Count; i++) {
+				updateExceptionHandlers(i);
 				var instr = allInstructions[i];
 				ilg.MarkLabel(labels[i]);
 				if (instr.Operand is Operand)
@@ -105,8 +110,64 @@ namespace AssemblyData.methodsrewriter {
 				else
 					writeInstr(instr);
 			}
+			updateExceptionHandlers(-1);
 
 			return dm.CreateDelegate(delegateType);
+		}
+
+		Instruction getExceptionInstruction(int instructionIndex) {
+			return instructionIndex < 0 ? null : allInstructions[instructionIndex];
+		}
+
+		void updateExceptionHandlers(int instructionIndex) {
+			var instr = getExceptionInstruction(instructionIndex);
+			updateExceptionHandlers(instr);
+			if (addTryStart(instr))
+				updateExceptionHandlers(instr);
+		}
+
+		void updateExceptionHandlers(Instruction instr) {
+			while (exceptionHandlersStack.Count > 0) {
+				var ex = exceptionHandlersStack.Peek();
+				if (ex.TryEnd == instr) {
+				}
+				if (ex.FilterStart == instr) {
+				}
+				if (ex.HandlerStart == instr) {
+					if (ex.HandlerType == ExceptionHandlerType.Finally)
+						ilg.BeginFinallyBlock();
+					else
+						ilg.BeginCatchBlock(Resolver.getRtType(ex.CatchType));
+				}
+				if (ex.HandlerEnd == instr) {
+					exceptionHandlersStack.Pop();
+					if (exceptionHandlersStack.Count == 0 || !isSameTryBlock(ex, exceptionHandlersStack.Peek()))
+						ilg.EndExceptionBlock();
+				}
+				else
+					break;
+			}
+		}
+
+		bool addTryStart(Instruction instr) {
+			var list = new List<ExceptionHandler>();
+			foreach (var ex in allExceptionHandlers) {
+				if (ex.TryStart == instr)
+					list.Add(ex);
+			}
+			list.Reverse();
+
+			foreach (var ex in list) {
+				if (exceptionHandlersStack.Count == 0 || !isSameTryBlock(ex, exceptionHandlersStack.Peek()))
+					ilg.BeginExceptionBlock();
+				exceptionHandlersStack.Push(ex);
+			}
+
+			return list.Count > 0;
+		}
+
+		static bool isSameTryBlock(ExceptionHandler ex1, ExceptionHandler ex2) {
+			return ex1.TryStart == ex2.TryStart && ex1.TryEnd == ex2.TryEnd;
 		}
 
 		void initInstrToIndex() {
@@ -118,7 +179,7 @@ namespace AssemblyData.methodsrewriter {
 		void initLocals() {
 			locals = new List<LocalBuilder>();
 			foreach (var local in methodInfo.methodDefinition.Body.Variables)
-				locals.Add(ilg.DeclareLocal(methodsRewriter.getRtType(local.VariableType), local.IsPinned));
+				locals.Add(ilg.DeclareLocal(Resolver.getRtType(local.VariableType), local.IsPinned));
 			tempObjLocal = ilg.DeclareLocal(typeof(object));
 			tempObjArrayLocal = ilg.DeclareLocal(typeof(object[]));
 		}
@@ -250,7 +311,7 @@ namespace AssemblyData.methodsrewriter {
 			case OperandType.InlineType:
 			case OperandType.InlineMethod:
 			case OperandType.InlineField:
-				var obj = methodsRewriter.getRtObject((MemberReference)instr.Operand);
+				var obj = Resolver.getRtObject((MemberReference)instr.Operand);
 				if (obj is ConstructorInfo)
 					ilg.Emit(opcode, (ConstructorInfo)obj);
 				else if (obj is MethodInfo)
@@ -278,7 +339,6 @@ namespace AssemblyData.methodsrewriter {
 			case OperandType.ShortInlineVar:
 				ilg.Emit(opcode, checked((byte)getLocalIndex((VariableDefinition)instr.Operand)));
 				break;
-
 
 			case OperandType.InlineSig:	//TODO:
 			default:

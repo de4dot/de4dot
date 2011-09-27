@@ -40,5 +40,9 @@ namespace AssemblyData.methodsrewriter {
 			this.type = type;
 			this.data = data;
 		}
+
+		public override string ToString() {
+			return "{" + type + " => " + data + "}";
+		}
 	}
 }

@@ -34,10 +34,55 @@ using ROpCodes = System.Reflection.Emit.OpCodes;
 namespace AssemblyData.methodsrewriter {
 	delegate object RewrittenMethod(object[] args);
 
+	class MethodsFinder {
+		Dictionary<Module, MethodsModule> moduleToMethods = new Dictionary<Module, MethodsModule>();
+
+		class MethodsModule {
+			const int MAX_METHODS = 30;
+			List<MethodBase> methods = new List<MethodBase>(MAX_METHODS);
+			int next;
+
+			public MethodsModule(Module module) {
+				var flags = BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
+
+				foreach (var type in module.GetTypes()) {
+					if (methods.Count >= MAX_METHODS)
+						break;
+					foreach (var method in type.GetMethods(flags)) {
+						if (methods.Count >= MAX_METHODS)
+							break;
+						methods.Add(method);
+					}
+				}
+
+				foreach (var method in module.GetMethods(flags)) {
+					if (methods.Count >= MAX_METHODS)
+						break;
+					methods.Add(method);
+				}
+			}
+
+			public MethodBase getNext() {
+				return methods[next++ % methods.Count];
+			}
+		}
+
+		public MethodBase getMethod(Module module) {
+			MethodsModule methodsModule;
+			if (!moduleToMethods.TryGetValue(module, out methodsModule))
+				moduleToMethods[module] = methodsModule = new MethodsModule(module);
+			return methodsModule.getNext();
+		}
+	}
+
 	class MethodsRewriter : IMethodsRewriter {
-		Dictionary<Module, MModule> modules = new Dictionary<Module, MModule>();
+		MethodsFinder methodsFinder = new MethodsFinder();
 		Dictionary<MethodBase, NewMethodInfo> realMethodToNewMethod = new Dictionary<MethodBase, NewMethodInfo>();
 		List<NewMethodInfo> newMethodInfos = new List<NewMethodInfo>();
+
+		// There's no documented way to get a dynamic method's MethodInfo. If we name the
+		// method and it's a unique random name, we can still find the emulated method.
+		Dictionary<string, NewMethodInfo> delegateNameToNewMethodInfo = new Dictionary<string, NewMethodInfo>(StringComparer.Ordinal);
 
 		class NewMethodInfo {
 			// Original method
@@ -53,101 +98,26 @@ namespace AssemblyData.methodsrewriter {
 
 			public RewrittenMethod rewrittenMethod;
 
-			public NewMethodInfo(MethodBase oldMethod) {
+			// Name of method used by delegateInstance
+			public string delegateMethodName;
+
+			// Name of method used by rewrittenMethod
+			public string rewrittenMethodName;
+
+			public NewMethodInfo(MethodBase oldMethod, int delegateIndex, string delegateMethodName, string rewrittenMethodName) {
 				this.oldMethod = oldMethod;
+				this.delegateIndex = delegateIndex;
+				this.delegateMethodName = delegateMethodName;
+				this.rewrittenMethodName = rewrittenMethodName;
 			}
-		}
 
-		MModule loadAssembly(Module module) {
-			MModule info;
-			if (modules.TryGetValue(module, out info))
-				return info;
-
-			info = new MModule(module, ModuleDefinition.ReadModule(module.FullyQualifiedName));
-			modules[module] = info;
-			return info;
-		}
-
-		MModule getModule(ModuleDefinition moduleDefinition) {
-			foreach (var mm in modules.Values) {
-				if (mm.moduleDefinition == moduleDefinition)
-					return mm;
+			public bool isRewrittenMethod(string name) {
+				return name == rewrittenMethodName;
 			}
-			return null;
-		}
 
-		MModule getModule(AssemblyNameReference assemblyRef) {
-			foreach (var mm in modules.Values) {
-				var asm = mm.moduleDefinition.Assembly;
-				if (asm.Name.FullName == assemblyRef.FullName)
-					return mm;
+			public bool isDelegateMethod(string name) {
+				return name == delegateMethodName;
 			}
-			return null;
-		}
-
-		MModule getModule(IMetadataScope scope) {
-			if (scope is ModuleDefinition)
-				return getModule((ModuleDefinition)scope);
-			else if (scope is AssemblyNameReference)
-				return getModule((AssemblyNameReference)scope);
-
-			return null;
-		}
-
-		MType getType(TypeReference typeReference) {
-			var module = getModule(typeReference.Scope);
-			if (module != null)
-				return module.getType(typeReference);
-			return null;
-		}
-
-		MMethod getMethod(MethodReference methodReference) {
-			var module = getModule(methodReference.DeclaringType.Scope);
-			if (module != null)
-				return module.getMethod(methodReference);
-			return null;
-		}
-
-		MField getField(FieldReference fieldReference) {
-			var module = getModule(fieldReference.DeclaringType.Scope);
-			if (module != null)
-				return module.getField(fieldReference);
-			return null;
-		}
-
-		public object getRtObject(MemberReference memberReference) {
-			if (memberReference is TypeReference)
-				return getRtType((TypeReference)memberReference);
-			else if (memberReference is FieldReference)
-				return getRtField((FieldReference)memberReference);
-			else if (memberReference is MethodReference)
-				return getRtMethod((MethodReference)memberReference);
-
-			throw new ApplicationException(string.Format("Unknown MemberReference: {0}", memberReference));
-		}
-
-		public Type getRtType(TypeReference typeReference) {
-			var mtype = getType(typeReference);
-			if (mtype != null)
-				return mtype.type;
-
-			return Resolver.resolve(typeReference);
-		}
-
-		public FieldInfo getRtField(FieldReference fieldReference) {
-			var mfield = getField(fieldReference);
-			if (mfield != null)
-				return mfield.fieldInfo;
-
-			return Resolver.resolve(fieldReference);
-		}
-
-		public MethodBase getRtMethod(MethodReference methodReference) {
-			var mmethod = getMethod(methodReference);
-			if (mmethod != null)
-				return mmethod.methodBase;
-
-			return Resolver.resolve(methodReference);
 		}
 
 		public Type getDelegateType(MethodBase methodBase) {
@@ -159,12 +129,13 @@ namespace AssemblyData.methodsrewriter {
 			if (newMethodInfo.rewrittenMethod != null)
 				return newMethodInfo.rewrittenMethod;
 
-			var dm = new DynamicMethod("method_" + newMethodInfo.oldMethod.Name, typeof(object), new Type[] { GetType(), typeof(object[]) }, GetType(), true);
+			var dm = new DynamicMethod(newMethodInfo.rewrittenMethodName, typeof(object), new Type[] { GetType(), typeof(object[]) }, newMethodInfo.oldMethod.Module, true);
 			var ilg = dm.GetILGenerator();
 
 			ilg.Emit(ROpCodes.Ldarg_0);
 			ilg.Emit(ROpCodes.Ldc_I4, newMethodInfo.delegateIndex);
 			ilg.Emit(ROpCodes.Call, GetType().GetMethod("rtGetDelegateInstance", BindingFlags.DeclaredOnly | BindingFlags.NonPublic | BindingFlags.Instance));
+			ilg.Emit(ROpCodes.Castclass, newMethodInfo.delegateType);
 
 			var args = newMethodInfo.oldMethod.GetParameters();
 			for (int i = 0; i < args.Length; i++) {
@@ -192,20 +163,29 @@ namespace AssemblyData.methodsrewriter {
 			return newMethodInfo.rewrittenMethod;
 		}
 
+		string getDelegateMethodName(string methodName) {
+			string name = null;
+			do {
+				name = string.Format(" {0} DMN {1:X8} ", methodName, Utils.getRandomUint());
+			} while (delegateNameToNewMethodInfo.ContainsKey(name));
+			return name;
+		}
+
 		public void createMethod(MethodBase realMethod) {
 			if (realMethodToNewMethod.ContainsKey(realMethod))
 				return;
-			var newMethodInfo = new NewMethodInfo(realMethod);
-			newMethodInfo.delegateIndex = newMethodInfos.Count;
+			var newMethodInfo = new NewMethodInfo(realMethod, newMethodInfos.Count, getDelegateMethodName(realMethod.Name), getDelegateMethodName(realMethod.Name));
 			newMethodInfos.Add(newMethodInfo);
+			delegateNameToNewMethodInfo[newMethodInfo.delegateMethodName] = newMethodInfo;
+			delegateNameToNewMethodInfo[newMethodInfo.rewrittenMethodName] = newMethodInfo;
 			realMethodToNewMethod[realMethod] = newMethodInfo;
 
-			var moduleInfo = loadAssembly(realMethod.Module);
+			var moduleInfo = Resolver.loadAssembly(realMethod.Module);
 			var methodInfo = moduleInfo.getMethod(realMethod);
 			if (!methodInfo.methodDefinition.HasBody || methodInfo.methodDefinition.Body.Instructions.Count == 0)
 				throw new ApplicationException(string.Format("Method {0} ({1:X8}) has no body", methodInfo.methodDefinition, methodInfo.methodDefinition.MetadataToken.ToUInt32()));
 
-			var codeGenerator = new CodeGenerator(this);
+			var codeGenerator = new CodeGenerator(this, newMethodInfo.delegateMethodName);
 			codeGenerator.setMethodInfo(methodInfo);
 			newMethodInfo.delegateType = codeGenerator.DelegateType;
 
@@ -273,7 +253,7 @@ namespace AssemblyData.methodsrewriter {
 						}
 					}
 
-					var method = getMethod((MethodReference)instr.Operand);
+					var method = Resolver.getMethod((MethodReference)instr.Operand);
 					if (method != null) {
 						createMethod(method.methodBase);
 						var newMethodInfo = realMethodToNewMethod[method.methodBase];
@@ -340,13 +320,61 @@ namespace AssemblyData.methodsrewriter {
 			return list;
 		}
 
+		static FieldInfo getStackTraceStackFramesField() {
+			var flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+			return ResolverUtils.getFieldThrow(typeof(StackTrace), typeof(StackFrame[]), flags, "Could not find StackTrace's frames (StackFrame[]) field");
+		}
+
+		static FieldInfo getStackFrameMethodField() {
+			var flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+			return ResolverUtils.getFieldThrow(typeof(StackFrame), typeof(MethodBase), flags, "Could not find StackFrame's method (MethodBase) field");
+		}
+
+		static void writeMethodBase(StackFrame frame, MethodBase method) {
+			var methodField = getStackFrameMethodField();
+			methodField.SetValue(frame, method);
+			if (frame.GetMethod() != method)
+				throw new ApplicationException(string.Format("Could not set new method: {0}", method));
+		}
+
+		NewMethodInfo getNewMethodInfo(string name) {
+			NewMethodInfo info;
+			delegateNameToNewMethodInfo.TryGetValue(name, out info);
+			return info;
+		}
+
 		// Called after the StackTrace ctor has been called.
 		static StackTrace static_rtFixStackTrace(StackTrace stackTrace, MethodsRewriter self) {
 			return self.rtFixStackTrace(stackTrace);
 		}
 
 		StackTrace rtFixStackTrace(StackTrace stackTrace) {
-			//TODO:
+			var framesField = getStackTraceStackFramesField();
+			var frames = (StackFrame[])framesField.GetValue(stackTrace);
+
+			var newFrames = new List<StackFrame>(frames.Length);
+			foreach (var frame in frames) {
+				var method = frame.GetMethod();
+				var info = getNewMethodInfo(method.Name);
+				if (info == null) {
+					newFrames.Add(frame);
+				}
+				else if (info.isRewrittenMethod(method.Name)) {
+					// Write random method from the same module
+					writeMethodBase(frame, methodsFinder.getMethod(info.oldMethod.Module));
+					newFrames.Add(frame);
+				}
+				else if (info.isDelegateMethod(method.Name)) {
+					// Write original method
+					writeMethodBase(frame, info.oldMethod);
+					newFrames.Add(frame);
+				}
+				else {
+					throw new ApplicationException("BUG: Shouldn't be here");
+				}
+			}
+
+			framesField.SetValue(stackTrace, newFrames.ToArray());
 			return stackTrace;
 		}
 

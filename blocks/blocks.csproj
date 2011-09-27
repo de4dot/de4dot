@@ -43,6 +43,7 @@
     <Compile Include="HandlerBlock.cs" />
     <Compile Include="Instr.cs" />
     <Compile Include="InstructionListParser.cs" />
+    <Compile Include="MemberReferenceExpander.cs" />
     <Compile Include="MemberReferenceHelper.cs" />
     <Compile Include="MethodBlocks.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

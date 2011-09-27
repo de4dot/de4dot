@@ -24,8 +24,101 @@ using Mono.Cecil;
 using de4dot.blocks;
 
 namespace AssemblyData.methodsrewriter {
-	public static class Resolver {
+	static class Resolver {
 		static Dictionary<string, AssemblyResolver> assemblyResolvers = new Dictionary<string, AssemblyResolver>(StringComparer.Ordinal);
+		static Dictionary<Module, MModule> modules = new Dictionary<Module, MModule>();
+
+		public static MModule loadAssembly(Module module) {
+			MModule info;
+			if (modules.TryGetValue(module, out info))
+				return info;
+
+			info = new MModule(module, ModuleDefinition.ReadModule(module.FullyQualifiedName));
+			modules[module] = info;
+			return info;
+		}
+
+		static MModule getModule(ModuleDefinition moduleDefinition) {
+			foreach (var mm in modules.Values) {
+				if (mm.moduleDefinition == moduleDefinition)
+					return mm;
+			}
+			return null;
+		}
+
+		static MModule getModule(AssemblyNameReference assemblyRef) {
+			foreach (var mm in modules.Values) {
+				var asm = mm.moduleDefinition.Assembly;
+				if (asm.Name.FullName == assemblyRef.FullName)
+					return mm;
+			}
+			return null;
+		}
+
+		public static MModule getModule(IMetadataScope scope) {
+			if (scope is ModuleDefinition)
+				return getModule((ModuleDefinition)scope);
+			else if (scope is AssemblyNameReference)
+				return getModule((AssemblyNameReference)scope);
+
+			return null;
+		}
+
+		public static MType getType(TypeReference typeReference) {
+			var module = getModule(typeReference.Scope);
+			if (module != null)
+				return module.getType(typeReference);
+			return null;
+		}
+
+		public static MMethod getMethod(MethodReference methodReference) {
+			var module = getModule(methodReference.DeclaringType.Scope);
+			if (module != null)
+				return module.getMethod(methodReference);
+			return null;
+		}
+
+		public static MField getField(FieldReference fieldReference) {
+			var module = getModule(fieldReference.DeclaringType.Scope);
+			if (module != null)
+				return module.getField(fieldReference);
+			return null;
+		}
+
+		public static object getRtObject(MemberReference memberReference) {
+			if (memberReference is TypeReference)
+				return getRtType((TypeReference)memberReference);
+			else if (memberReference is FieldReference)
+				return getRtField((FieldReference)memberReference);
+			else if (memberReference is MethodReference)
+				return getRtMethod((MethodReference)memberReference);
+
+			throw new ApplicationException(string.Format("Unknown MemberReference: {0}", memberReference));
+		}
+
+		public static Type getRtType(TypeReference typeReference) {
+			var mtype = getType(typeReference);
+			if (mtype != null)
+				return mtype.type;
+
+			return Resolver.resolve(typeReference);
+		}
+
+		public static FieldInfo getRtField(FieldReference fieldReference) {
+			var mfield = getField(fieldReference);
+			if (mfield != null)
+				return mfield.fieldInfo;
+
+			return Resolver.resolve(fieldReference);
+		}
+
+		public static MethodBase getRtMethod(MethodReference methodReference) {
+			var mmethod = getMethod(methodReference);
+			if (mmethod != null)
+				return mmethod.methodBase;
+
+			return Resolver.resolve(methodReference);
+		}
 
 		static AssemblyResolver getAssemblyResolver(IMetadataScope scope) {
 			var asmName = DotNetUtils.getFullAssemblyName(scope);
@@ -35,7 +128,7 @@ namespace AssemblyData.methodsrewriter {
 			return resolver;
 		}
 
-		public static Type resolve(TypeReference typeReference) {
+		static Type resolve(TypeReference typeReference) {
 			var elemType = typeReference.GetElementType();
 			var resolver = getAssemblyResolver(elemType.Scope);
 			var resolvedType = resolver.resolve(elemType);
@@ -44,7 +137,7 @@ namespace AssemblyData.methodsrewriter {
 			throw new ApplicationException(string.Format("Could not resolve type {0} ({1:X8}) in assembly {2}", typeReference, typeReference.MetadataToken.ToUInt32(), resolver));
 		}
 
-		public static FieldInfo resolve(FieldReference fieldReference) {
+		static FieldInfo resolve(FieldReference fieldReference) {
 			var resolver = getAssemblyResolver(fieldReference.DeclaringType.Scope);
 			var fieldInfo = resolver.resolve(fieldReference);
 			if (fieldInfo != null)
@@ -52,7 +145,7 @@ namespace AssemblyData.methodsrewriter {
 			throw new ApplicationException(string.Format("Could not resolve field {0} ({1:X8}) in assembly {2}", fieldReference, fieldReference.MetadataToken.ToUInt32(), resolver));
 		}
 
-		public static MethodBase resolve(MethodReference methodReference) {
+		static MethodBase resolve(MethodReference methodReference) {
 			var resolver = getAssemblyResolver(methodReference.DeclaringType.Scope);
 			var methodBase = resolver.resolve(methodReference);
 			if (methodBase != null)

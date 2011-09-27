@@ -91,9 +91,10 @@ namespace AssemblyData.methodsrewriter {
 
 			for (int i = 0; i < aGpargs.Length; i++) {
 				var aArg = aGpargs[i];
+				var bArg = bGpargs[i];
 				if (aArg.IsGenericParameter)
 					continue;
-				if (!compareTypes(aArg, bGpargs[i]))
+				if (!compareTypes(aArg, bArg))
 					return false;
 			}
 
@@ -245,6 +246,75 @@ namespace AssemblyData.methodsrewriter {
 				yield return ctor;
 			foreach (var m in type.GetMethods(flags))
 				yield return m;
+		}
+
+		class CachedMemberInfo {
+			Type type;
+			Type memberType;
+			public CachedMemberInfo(Type type, Type memberType) {
+				this.type = type;
+				this.memberType = memberType;
+			}
+
+			public override int GetHashCode() {
+				return type.GetHashCode() ^ memberType.GetHashCode();
+			}
+
+			public override bool Equals(object obj) {
+				var other = obj as CachedMemberInfo;
+				if (other == null)
+					return false;
+				return type == other.type && memberType == other.memberType;
+			}
+		}
+
+		static Dictionary<CachedMemberInfo, FieldInfo> cachedFieldInfos = new Dictionary<CachedMemberInfo, FieldInfo>();
+		public static FieldInfo getField(Type type, Type fieldType, BindingFlags flags) {
+			var key = new CachedMemberInfo(type, fieldType);
+			FieldInfo fieldInfo;
+			if (cachedFieldInfos.TryGetValue(key, out fieldInfo))
+				return fieldInfo;
+
+			foreach (var field in type.GetFields(flags)) {
+				if (field.FieldType == fieldType) {
+					cachedFieldInfos[key] = field;
+					return field;
+				}
+			}
+			return null;
+		}
+
+		public static FieldInfo getFieldThrow(Type type, Type fieldType, BindingFlags flags, string msg) {
+			var info = getField(type, fieldType, flags);
+			if (info != null)
+				return info;
+			throw new ApplicationException(msg);
+		}
+
+		public static List<FieldInfo> getFields(Type type, Type fieldType, BindingFlags flags) {
+			var list = new List<FieldInfo>();
+			foreach (var field in type.GetFields(flags)) {
+				if (field.FieldType == fieldType)
+					list.Add(field);
+			}
+			return list;
+		}
+
+		public static Type makeInstanceType(Type type, TypeReference typeReference) {
+			var git = typeReference as GenericInstanceType;
+			if (git == null)
+				return type;
+			var types = new Type[git.GenericArguments.Count];
+			bool isTypeDef = true;
+			for (int i = 0; i < git.GenericArguments.Count; i++) {
+				var arg = git.GenericArguments[i];
+				if (!(arg is GenericParameter))
+					isTypeDef = false;
+				types[i] = Resolver.getRtType(arg);
+			}
+			if (isTypeDef)
+				return type;
+			return type.MakeGenericType(types);
 		}
 	}
 }
