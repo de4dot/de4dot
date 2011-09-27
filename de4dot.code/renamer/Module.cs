@@ -92,6 +92,15 @@ namespace de4dot.renamer {
 
 		public void renameResources() {
 			var renamedTypes = new List<Renamed>(getRenamedTypeNames());
+
+			// Rename the longest names first. Otherwise eg. b.g.resources could be renamed
+			// Class0.g.resources instead of Class1.resources when b.g was renamed Class1.
+			renamedTypes.Sort((a, b) => {
+				if (a.OldName.Length > b.OldName.Length) return -1;
+				if (a.OldName.Length < b.OldName.Length) return 1;
+				return 0;
+			});
+
 			renameResourceNamesInCode(renamedTypes);
 			renameResources(renamedTypes);
 		}
@@ -102,6 +111,15 @@ namespace de4dot.renamer {
 			foreach (var renamed in renamedTypes)
 				oldToNewTypeName[renamed.OldName] = renamed.NewName;
 
+			List<string> validResourceNames = new List<string>();
+			if (ModuleDefinition.Resources != null) {
+				foreach (var resource in ModuleDefinition.Resources) {
+					var name = resource.Name;
+					if (name.EndsWith(".resources", StringComparison.Ordinal))
+						validResourceNames.Add(name);
+				}
+			}
+
 			foreach (var method in allMethods) {
 				if (!method.HasBody)
 					continue;
@@ -111,19 +129,33 @@ namespace de4dot.renamer {
 					var s = (string)instr.Operand;
 
 					string newName = null;
-					if (oldToNewTypeName.ContainsKey(s))
+					string oldName = null;
+					if (oldToNewTypeName.ContainsKey(s)) {
+						oldName = s;
 						newName = oldToNewTypeName[s];
+					}
 					else if (s.EndsWith(".resources", StringComparison.Ordinal)) {
 						// This should rarely, if ever, execute...
 						foreach (var renamed in renamedTypes) {	// Slow loop
 							var newName2 = renameResourceString(s, renamed.OldName, renamed.NewName);
 							if (newName2 != s) {
 								newName = newName2;
+								oldName = renamed.OldName;
 								break;
 							}
 						}
 					}
 					if (newName == null)
+						continue;
+
+					bool isValid = false;
+					foreach (var validName in validResourceNames) {
+						if (validName.StartsWith(oldName, StringComparison.Ordinal)) {
+							isValid = true;
+							break;
+						}
+					}
+					if (!isValid)
 						continue;
 
 					if (s == "" || !obfuscatedFile.RenameResourcesInCode)
