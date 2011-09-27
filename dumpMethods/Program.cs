@@ -68,7 +68,8 @@ namespace dumpMethods {
 		delegate void CallCctor();
 		static int Main(string[] args) {
 			try {
-				Console.OutputEncoding = new UTF8Encoding(false);
+				if (Console.OutputEncoding.IsSingleByte)
+					Console.OutputEncoding = new UTF8Encoding(false);
 
 				var files = parseCommandLine(args);
 				if (files.Count != 1)
