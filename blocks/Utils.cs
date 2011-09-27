@@ -1,14 +1,14 @@
 ﻿using System.Collections.Generic;
 
 namespace de4dot.blocks {
-	internal delegate TResult Func<out TResult>();
-	internal delegate TResult Func<in T, out TResult>(T arg);
-	internal delegate TResult Func<in T1, in T2, out TResult>(T1 arg1, T2 arg2);
-	internal delegate TResult Func<in T1, in T2, in T3, out TResult>(T1 arg1, T2 arg2, T3 arg3);
+	internal delegate TResult Func<TResult>();
+	internal delegate TResult Func<T, TResult>(T arg);
+	internal delegate TResult Func<T1, T2, TResult>(T1 arg1, T2 arg2);
+	internal delegate TResult Func<T1, T2, T3, TResult>(T1 arg1, T2 arg2, T3 arg3);
 	internal delegate void Action();
-	internal delegate void Action<in T>(T arg);
-	internal delegate void Action<in T1, in T2>(T1 arg1, T2 arg2);
-	internal delegate void Action<in T1, in T2, in T3>(T1 arg1, T2 arg2, T3 arg3);
+	internal delegate void Action<T>(T arg);
+	internal delegate void Action<T1, T2>(T1 arg1, T2 arg2);
+	internal delegate void Action<T1, T2, T3>(T1 arg1, T2 arg2, T3 arg3);
 
 	public class Tuple<T1, T2> {
 		public T1 Item1 { get; set; }
