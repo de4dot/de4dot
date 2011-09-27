@@ -396,7 +396,7 @@ namespace de4dot {
 			}
 		}
 
-		public void add(MethodDefinition method, Func<MethodReference, object[], string> handler) {
+		public void add(MethodDefinition method, Func<MethodDefinition, object[], string> handler) {
 			if (method != null)
 				stringDecrypters[new MethodReferenceAndDeclaringTypeKey(method)] = handler;
 		}
