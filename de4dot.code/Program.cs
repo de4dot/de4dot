@@ -40,7 +40,8 @@ namespace de4dot {
 			Utils.startUpArch = startUpArch;
 
 			try {
-				Console.OutputEncoding = new UTF8Encoding(false);
+				if (Console.OutputEncoding.IsSingleByte)
+					Console.OutputEncoding = new UTF8Encoding(false);
 
 				Log.n("");
 				Log.n("de4dot v{0} (BETA) Copyright (C) 2011 de4dot@gmail.com", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
