@@ -22,13 +22,6 @@ using de4dot.deobfuscators;
 using Mono.Cecil;
 
 namespace de4dot {
-	public enum DecrypterType {
-		None,
-		Static,
-		Delegate,
-		Emulate,
-	}
-
 	interface IObfuscatedFile {
 		ModuleDefinition ModuleDefinition { get; }
 		IDeobfuscator Deobfuscator { get; }

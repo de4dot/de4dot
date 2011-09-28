@@ -87,7 +87,7 @@ namespace de4dot {
 			public bool KeepObfuscatorTypes { get; set; }
 
 			public Options() {
-				StringDecrypterType = DecrypterType.Static;
+				StringDecrypterType = DecrypterType.Default;
 				StringDecrypterMethods = new List<string>();
 			}
 		}
@@ -159,18 +159,28 @@ namespace de4dot {
 			if (deob == null)
 				throw new ApplicationException("Could not detect obfuscator!");
 
+			if (options.StringDecrypterType == DecrypterType.Default)
+				options.StringDecrypterType = deob.DefaultDecrypterType;
+			if (options.StringDecrypterType == DecrypterType.Default)
+				options.StringDecrypterType = DecrypterType.Static;
+
 			deob.Operations = createOperations();
 		}
 
 		IOperations createOperations() {
 			var op = new Operations();
 
-			if (options.StringDecrypterType == DecrypterType.None)
+			switch (options.StringDecrypterType) {
+			case DecrypterType.None:
 				op.DecryptStrings = OpDecryptString.None;
-			else if (options.StringDecrypterType == DecrypterType.Static)
+				break;
+			case DecrypterType.Static:
 				op.DecryptStrings = OpDecryptString.Static;
-			else
+				break;
+			default:
 				op.DecryptStrings = OpDecryptString.Dynamic;
+				break;
+			}
 
 			op.RenameSymbols = options.RenameSymbols;
 			op.KeepObfuscatorTypes = options.KeepObfuscatorTypes;

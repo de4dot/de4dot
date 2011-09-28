@@ -62,6 +62,7 @@ namespace de4dot.deobfuscators.Eazfuscator {
 		public Deobfuscator(Options options)
 			: base(options) {
 			this.options = options;
+			DefaultDecrypterType = DecrypterType.Emulate;
 		}
 
 		public override int detect() {

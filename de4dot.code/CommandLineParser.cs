@@ -76,6 +76,7 @@ namespace de4dot {
 
 		static CommandLineParser() {
 			stringDecrypterTypes.add(DecrypterType.None, "none", "Don't decrypt strings");
+			stringDecrypterTypes.add(DecrypterType.Default, "default", "Use default string decrypter type (usually static)");
 			stringDecrypterTypes.add(DecrypterType.Static, "static", "Use static string decrypter if available");
 			stringDecrypterTypes.add(DecrypterType.Delegate, "delegate", "Use a delegate to call the real string decrypter");
 			stringDecrypterTypes.add(DecrypterType.Emulate, "emulate", "Call real string decrypter and emulate certain instructions");

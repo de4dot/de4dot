@@ -27,6 +27,14 @@ namespace de4dot.deobfuscators {
 		bool RenameResourcesInCode { get; }
 	}
 
+	public enum DecrypterType {
+		Default,
+		None,
+		Static,
+		Delegate,
+		Emulate,
+	}
+
 	[Flags]
 	enum StringFeatures {
 		AllowNoDecryption,
@@ -41,7 +49,8 @@ namespace de4dot.deobfuscators {
 		Func<string, bool> IsValidName { get; }
 		IDeobfuscatorOptions TheOptions { get; }
 		IOperations Operations { get; set; }
-		StringFeatures StringFeatures { get; set; }
+		StringFeatures StringFeatures { get; }
+		DecrypterType DefaultDecrypterType { get; }
 
 		// This is non-null only in init(), detect() and deobfuscateBegin().
 		IDeobfuscatedFile DeobfuscatedFile { get; set; }

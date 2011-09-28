@@ -66,6 +66,7 @@ namespace de4dot.deobfuscators {
 		public IOperations Operations { get; set; }
 		public IDeobfuscatedFile DeobfuscatedFile { get; set; }
 		public virtual StringFeatures StringFeatures { get; set; }
+		public DecrypterType DefaultDecrypterType { get; set; }
 
 		public abstract string Type { get; }
 		public abstract string Name { get; }
@@ -77,6 +78,7 @@ namespace de4dot.deobfuscators {
 		public DeobfuscatorBase(OptionsBase optionsBase) {
 			this.optionsBase = optionsBase;
 			StringFeatures = StringFeatures.AllowAll;
+			DefaultDecrypterType = DecrypterType.Static;
 		}
 
 		public virtual void init(ModuleDefinition module, IList<MemberReference> memberReferences) {
