@@ -34,6 +34,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="AssemblyResolver.cs" />
     <Compile Include="AssemblyServer.cs" />
     <Compile Include="AssemblyService.cs" />
     <Compile Include="DelegateStringDecrypter.cs" />
@@ -60,6 +61,7 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Runtime.Remoting" />
+    <Reference Include="System.XML" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\blocks\blocks.csproj">

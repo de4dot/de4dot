@@ -18,6 +18,7 @@
 */
 
 using System;
+using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
@@ -170,6 +171,19 @@ namespace AssemblyData {
 			}
 			ilg.Emit(OpCodes.Call, method);
 			ilg.Emit(OpCodes.Ret);
+		}
+
+		public static string getFullPath(string path) {
+			try {
+				return Path.GetFullPath(path);
+			}
+			catch (Exception) {
+				return path;
+			}
+		}
+
+		public static string getDirName(string name) {
+			return Path.GetDirectoryName(name);
 		}
 	}
 }

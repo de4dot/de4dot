@@ -18,6 +18,7 @@
 */
 
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
 
@@ -26,6 +27,7 @@ namespace AssemblyData {
 		IStringDecrypter stringDecrypter = null;
 		ManualResetEvent exitEvent = new ManualResetEvent(false);
 		Assembly assembly = null;
+		AssemblyResolver assemblyResolver = new AssemblyResolver();
 
 		public void doNothing() {
 		}
@@ -44,7 +46,7 @@ namespace AssemblyData {
 			if (assembly != null)
 				throw new ApplicationException("Only one assembly can be explicitly loaded");
 			try {
-				assembly = Assembly.LoadFrom(filename);
+				assembly = assemblyResolver.load(filename);
 			}
 			catch (BadImageFormatException) {
 				throw new ApplicationException(string.Format("Could not load assembly {0}. Maybe it's 32-bit or 64-bit only?", filename));
