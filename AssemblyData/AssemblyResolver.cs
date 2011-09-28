@@ -103,7 +103,7 @@ namespace AssemblyData {
 			addAssemblySearchPath(dirName);
 
 			try {
-				using (var xmlStream = new FileStream(configFilename, FileMode.Open)) {
+				using (var xmlStream = new FileStream(configFilename, FileMode.Open, FileAccess.Read, FileShare.Read)) {
 					var doc = new XmlDocument();
 					doc.Load(XmlReader.Create(xmlStream));
 					foreach (var tmp in doc.GetElementsByTagName("probing")) {
