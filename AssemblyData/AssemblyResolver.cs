@@ -61,9 +61,8 @@ namespace AssemblyData {
 			var asmName = new AssemblyName(args.Name);
 			foreach (var path in assemblySearchPaths) {
 				foreach (var ext in assemblyExtensions) {
-					string filename;
 					try {
-						filename = Path.Combine(path, asmName.Name + ext);
+						var filename = Path.Combine(path, asmName.Name + ext);
 						if (!new FileInfo(filename).Exists)
 							continue;
 						addConfigFile(filename + ".config");
