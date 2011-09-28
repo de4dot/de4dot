@@ -52,7 +52,7 @@ add support for another one. Run `de4dot -h` to get a list of the supported
 obfuscators. It's usually very easy to add support for another obfuscator.
 
 Other obfuscators are partially supported. Eg. control flow deobfuscation,
-symbol renaming, dynamic string decryption.
+symbol renaming, and dynamic string decryption could possibly work.
 
 ### Deobfuscates control flow
 
