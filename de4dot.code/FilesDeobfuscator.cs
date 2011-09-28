@@ -167,9 +167,12 @@ namespace de4dot {
 				catch (BadImageFormatException) {
 					return;		// Not a .NET file
 				}
-				catch (Exception ex) {
-					Log.w("Could not load file: {0}. Use -v to see stack trace.", file.Filename);
-					Utils.printStackTrace(ex, Log.LogLevel.verbose);
+				catch (NullReferenceException) {
+					Log.w("Could not load file: {0}", file.Filename);
+					return;
+				}
+				catch (IOException) {
+					Log.w("Could not load file: {0}", file.Filename);
 					return;
 				}
 
