@@ -168,11 +168,11 @@ namespace de4dot {
 					return;		// Not a .NET file
 				}
 				catch (NullReferenceException) {
-					Log.w("Could not load file: {0}", file.Filename);
+					Log.w("Could not load file (null ref): {0}", file.Filename);
 					return;
 				}
 				catch (IOException) {
-					Log.w("Could not load file: {0}", file.Filename);
+					Log.w("Could not load file (io exception): {0}", file.Filename);
 					return;
 				}
 
