@@ -347,7 +347,10 @@ namespace AssemblyData.methodsrewriter {
 		}
 
 		ROpCode convertOpCode(OpCode opcode) {
-			return cecilToReflection[opcode];
+			ROpCode ropcode;
+			if (cecilToReflection.TryGetValue(opcode, out ropcode))
+				return ropcode;
+			return ROpCodes.Nop;
 		}
 	}
 }
