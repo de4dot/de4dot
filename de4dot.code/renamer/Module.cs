@@ -127,6 +127,8 @@ namespace de4dot.renamer {
 					if (instr.OpCode != OpCodes.Ldstr)
 						continue;
 					var s = (string)instr.Operand;
+					if (string.IsNullOrEmpty(s))
+						continue;	// Ignore emtpy strings since we'll get lots of false warnings
 
 					string newName = null;
 					string oldName = null;
