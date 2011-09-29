@@ -469,6 +469,8 @@ namespace de4dot.renamer {
 		}
 
 		public MethodDefinition resolve(MethodReference methodReference) {
+			if (methodReference.DeclaringType == null)
+				return null;
 			var modules = findModules(methodReference.DeclaringType.Scope);
 			if (modules == null)
 				return null;
@@ -483,6 +485,8 @@ namespace de4dot.renamer {
 		}
 
 		public FieldDefinition resolve(FieldReference fieldReference) {
+			if (fieldReference.DeclaringType == null)
+				return null;
 			var modules = findModules(fieldReference.DeclaringType.Scope);
 			if (modules == null)
 				return null;
