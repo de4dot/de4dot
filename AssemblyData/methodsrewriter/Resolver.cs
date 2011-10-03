@@ -65,6 +65,8 @@ namespace AssemblyData.methodsrewriter {
 		}
 
 		public static MType getType(TypeReference typeReference) {
+			if (typeReference == null)
+				return null;
 			var module = getModule(typeReference.Scope);
 			if (module != null)
 				return module.getType(typeReference);
@@ -72,6 +74,8 @@ namespace AssemblyData.methodsrewriter {
 		}
 
 		public static MMethod getMethod(MethodReference methodReference) {
+			if (methodReference == null)
+				return null;
 			var module = getModule(methodReference.DeclaringType.Scope);
 			if (module != null)
 				return module.getMethod(methodReference);
@@ -79,6 +83,8 @@ namespace AssemblyData.methodsrewriter {
 		}
 
 		public static MField getField(FieldReference fieldReference) {
+			if (fieldReference == null)
+				return null;
 			var module = getModule(fieldReference.DeclaringType.Scope);
 			if (module != null)
 				return module.getField(fieldReference);
@@ -86,7 +92,9 @@ namespace AssemblyData.methodsrewriter {
 		}
 
 		public static object getRtObject(MemberReference memberReference) {
-			if (memberReference is TypeReference)
+			if (memberReference == null)
+				return null;
+			else if (memberReference is TypeReference)
 				return getRtType((TypeReference)memberReference);
 			else if (memberReference is FieldReference)
 				return getRtField((FieldReference)memberReference);
@@ -129,6 +137,8 @@ namespace AssemblyData.methodsrewriter {
 		}
 
 		static Type resolve(TypeReference typeReference) {
+			if (typeReference == null)
+				return null;
 			var elemType = typeReference.GetElementType();
 			var resolver = getAssemblyResolver(elemType.Scope);
 			var resolvedType = resolver.resolve(elemType);
@@ -138,6 +148,8 @@ namespace AssemblyData.methodsrewriter {
 		}
 
 		static FieldInfo resolve(FieldReference fieldReference) {
+			if (fieldReference == null)
+				return null;
 			var resolver = getAssemblyResolver(fieldReference.DeclaringType.Scope);
 			var fieldInfo = resolver.resolve(fieldReference);
 			if (fieldInfo != null)
@@ -146,6 +158,8 @@ namespace AssemblyData.methodsrewriter {
 		}
 
 		static MethodBase resolve(MethodReference methodReference) {
+			if (methodReference == null)
+				return null;
 			var resolver = getAssemblyResolver(methodReference.DeclaringType.Scope);
 			var methodBase = resolver.resolve(methodReference);
 			if (methodBase != null)

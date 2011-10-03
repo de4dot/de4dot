@@ -270,7 +270,8 @@ namespace de4dot.blocks {
 		}
 
 		public static bool verifyType(TypeReference typeReference, string assembly, string type, string extra = "") {
-			return MemberReferenceHelper.getCanonicalizedTypeRefName(typeReference.GetElementType()) == "[" + assembly + "]" + type &&
+			return typeReference != null &&
+				MemberReferenceHelper.getCanonicalizedTypeRefName(typeReference.GetElementType()) == "[" + assembly + "]" + type &&
 				typeReference.FullName == type + extra;
 		}
 
