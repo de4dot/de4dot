@@ -19,6 +19,7 @@
 
 using System;
 using System.Runtime.Remoting;
+using System.Runtime.Serialization;
 using System.Threading;
 using AssemblyData;
 
@@ -80,6 +81,9 @@ namespace de4dot.AssemblyClient {
 				}
 				catch (RemotingException) {
 					// Couldn't connect
+				}
+				catch (SerializationException) {
+					// For this: "End of Stream encountered before parsing was completed."
 				}
 				service = null;
 			}
