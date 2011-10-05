@@ -82,9 +82,9 @@ namespace de4dot.blocks {
 			if (!LastInstr.isBr())
 				return;
 
-			if (fallThrough != null || targets == null || targets.Count != 1)
+			if (fallThrough != null || (LastInstr.Operand != null && (targets == null || targets.Count != 1)))
 				throw new ApplicationException("Invalid block state when last instr is a br/br.s");
-			fallThrough = targets[0];
+			fallThrough = LastInstr.Operand != null ? targets[0] : null;
 			targets = null;
 			instructions.RemoveAt(instructions.Count - 1);
 		}

@@ -78,7 +78,9 @@ namespace de4dot.blocks {
 				switch (instr.OpCode.OperandType) {
 				case OperandType.ShortInlineBrTarget:
 				case OperandType.InlineBrTarget:
-					targets = new List<int> { instrToIndex[(Instruction)instr.Operand] };
+					var targetInstr = instr.Operand as Instruction;
+					if (targetInstr != null)
+						targets = new List<int> { instrToIndex[targetInstr] };
 					break;
 
 				case OperandType.InlineSwitch:
@@ -138,7 +140,9 @@ namespace de4dot.blocks {
 				switch (lastInstr.OpCode.OperandType) {
 				case OperandType.ShortInlineBrTarget:
 				case OperandType.InlineBrTarget:
-					block.Targets = new List<Block> { instrToBlock[instrToIndex[(Instruction)lastInstr.Operand]] };
+					var targetInstr = lastInstr.Operand as Instruction;
+					if (targetInstr != null)
+						block.Targets = new List<Block> { instrToBlock[instrToIndex[targetInstr]] };
 					break;
 
 				case OperandType.InlineSwitch:
