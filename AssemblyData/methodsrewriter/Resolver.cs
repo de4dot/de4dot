@@ -49,7 +49,7 @@ namespace AssemblyData.methodsrewriter {
 		static MModule getModule(AssemblyNameReference assemblyRef) {
 			foreach (var mm in modules.Values) {
 				var asm = mm.moduleDefinition.Assembly;
-				if (asm.Name.FullName == assemblyRef.FullName)
+				if (asm != null && asm.Name.FullName == assemblyRef.FullName)
 					return mm;
 			}
 			return null;

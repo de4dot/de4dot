@@ -429,6 +429,8 @@ namespace de4dot.blocks {
 
 		public static IEnumerable<CustomAttribute> findAttributes(AssemblyDefinition asm, TypeReference attr) {
 			var list = new List<CustomAttribute>();
+			if (asm == null)
+				return list;
 			foreach (var cattr in asm.CustomAttributes) {
 				if (MemberReferenceHelper.compareTypes(attr, cattr.AttributeType))
 					list.Add(cattr);

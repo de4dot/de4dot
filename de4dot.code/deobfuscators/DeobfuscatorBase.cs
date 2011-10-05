@@ -287,7 +287,8 @@ namespace de4dot.deobfuscators {
 			Log.v("Removing custom attributes");
 			Log.indent();
 			deleteCustomAttributes(module.CustomAttributes);
-			deleteCustomAttributes(module.Assembly.CustomAttributes);
+			if (module.Assembly != null)
+				deleteCustomAttributes(module.Assembly.CustomAttributes);
 			Log.deIndent();
 		}
 
@@ -312,7 +313,8 @@ namespace de4dot.deobfuscators {
 			Log.v("Removing other attributes");
 			Log.indent();
 			deleteOtherAttributes(module.CustomAttributes);
-			deleteOtherAttributes(module.Assembly.CustomAttributes);
+			if (module.Assembly != null)
+				deleteOtherAttributes(module.Assembly.CustomAttributes);
 			Log.deIndent();
 		}
 

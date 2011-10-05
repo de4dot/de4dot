@@ -41,10 +41,16 @@ namespace de4dot.renamer {
 
 			public void add(Module module) {
 				ModuleHash moduleHash;
-				var key = module.ModuleDefinition.Assembly.ToString();
+				var key = getModuleKey(module);
 				if (!assemblyHash.TryGetValue(key, out moduleHash))
 					assemblyHash[key] = moduleHash = new ModuleHash();
 				moduleHash.add(module);
+			}
+
+			string getModuleKey(Module module) {
+				if (module.ModuleDefinition.Assembly != null)
+					return module.ModuleDefinition.Assembly.ToString();
+				return Utils.getBaseName(module.ModuleDefinition.FullyQualifiedName);
 			}
 
 			public ModuleHash lookup(string assemblyName) {
@@ -60,7 +66,8 @@ namespace de4dot.renamer {
 			Module mainModule = null;
 
 			public void add(Module module) {
-				if (ReferenceEquals(module.ModuleDefinition.Assembly.MainModule, module.ModuleDefinition)) {
+				var asm = module.ModuleDefinition.Assembly;
+				if (asm != null && ReferenceEquals(asm.MainModule, module.ModuleDefinition)) {
 					if (mainModule != null)
 						throw new UserException(string.Format("Two modules in the same assembly are main modules. If 32-bit vs 64-bit, don't use both assemblies at the same time! \"{0}\" and \"{1}\"", module.ModuleDefinition.FullyQualifiedName, mainModule.ModuleDefinition.FullyQualifiedName));
 					mainModule = module;

@@ -111,7 +111,7 @@ namespace de4dot {
 		void addModule(ModuleDefinition module) {
 			pushMember(module.EntryPoint);
 			access(() => addCustomAttributes(module.CustomAttributes));
-			if (module == module.Assembly.MainModule) {
+			if (module.Assembly != null && module == module.Assembly.MainModule) {
 				var asm = module.Assembly;
 				access(() => addCustomAttributes(asm.CustomAttributes));
 				addSecurityDeclarations(asm.SecurityDeclarations);

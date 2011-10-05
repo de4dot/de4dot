@@ -41,15 +41,17 @@ namespace de4dot {
 		}
 
 		public void addModule(ModuleDefinition module) {
-			var assembly = module.Assembly;
-			var name = assembly.Name.FullName;
-			if (!addedAssemblies.ContainsKey(name) && cache.ContainsKey(name))
-				throw new ApplicationException(string.Format("Assembly {0} was loaded by other code.", name));
-			addedAssemblies[name] = true;
-
 			var dir = Path.GetDirectoryName(module.FullyQualifiedName);
 			addSearchDirectory(dir);
-			RegisterAssembly(assembly);
+
+			var assembly = module.Assembly;
+			if (assembly != null) {
+				var name = assembly.Name.FullName;
+				if (!addedAssemblies.ContainsKey(name) && cache.ContainsKey(name))
+					throw new ApplicationException(string.Format("Assembly {0} was loaded by other code.", name));
+				addedAssemblies[name] = true;
+				RegisterAssembly(assembly);
+			}
 		}
 	}
 }

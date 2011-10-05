@@ -45,7 +45,7 @@ namespace de4dot {
 		}
 
 		public void save(string newFilename) {
-			module.Assembly.Write(newFilename);
+			module.Write(newFilename);
 		}
 
 		void readMethodsFile() {
