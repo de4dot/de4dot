@@ -80,7 +80,7 @@ namespace de4dot.deobfuscators.Unknown {
 					return "DeployLX CodeVeil";
 				if (type.FullName == "CryptoObfuscator.ProtectedWithCryptoObfuscatorAttribute")
 					return "Crypto Obfuscator";
-				if (type.FullName == "AssemblyObfuscatedByGoliath" || type.FullName == "Goliath.NET.Obfuscator.Attribute.ObfuscatedByGoliath")
+				if (type.FullName.Contains("ObfuscatedByGoliath"))
 					return "Goliath .NET";
 				if (type.FullName == "Xenocode.Client.Attributes.AssemblyAttributes.ProcessedByXenocode")
 					return "Xenocode";
@@ -88,31 +88,14 @@ namespace de4dot.deobfuscators.Unknown {
 					return "DNGuard HVM";
 				if (type.FullName == "InfaceMaxtoCode")
 					return "MaxtoCode";
+				if (type.Name.Contains("();\t"))
+					return "Manco .NET Obfuscator";
+				if (Regex.IsMatch(type.FullName, @"^EMyPID_\d+_$"))
+					return "BitHelmet";
+				if (type.FullName == "NineRays.Decompiler.NotDecompile")
+					return "Spices.Net Obfuscator";
 			}
-			return checkDotNetReactor() ?? checkCryptoObfuscator() ?? checkMancoObfuscator();
-		}
-
-		string checkDotNetReactor() {
-			foreach (var type in module.Types) {
-				if (Regex.IsMatch(type.Name, @"^<PrivateImplementationDetails>\{[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}\}$")) {
-					foreach (var method in type.Methods) {
-						if (!method.IsStatic)
-							continue;
-						if (Regex.IsMatch(method.Name, @"^CS\$\d+\$[0-9A-F]{4}$"))
-							return ".NET Reactor";
-					}
-					foreach (var field in type.Fields) {
-						if (!field.IsStatic)
-							continue;
-						if (Regex.IsMatch(field.FieldType.Name, @"^__StaticArrayInitTypeSize=[1-9]\d*$") ||
-							Regex.IsMatch(field.Name, @"^fieldimpl[1-9]\d*$") ||
-							Regex.IsMatch(field.Name, @"^\$\$method0x6[0-9a-f]{6}-\d+$") ||
-							Regex.IsMatch(field.Name, @"^CS\$\d+\$[0-9A-F]{4}$"))
-							return ".NET Reactor";
-					}
-				}
-			}
-			return null;
+			return checkCryptoObfuscator();
 		}
 
 		string checkCryptoObfuscator() {
@@ -120,27 +103,11 @@ namespace de4dot.deobfuscators.Unknown {
 			foreach (var type in module.Types) {
 				if (type.Namespace != "A")
 					continue;
-				if (Regex.IsMatch(type.Name, "^c[0-9a-f]{32}$") || Regex.IsMatch(type.Name, "^A[A-Z]*$")) {
-					if (++matched >= 20)
+				if (Regex.IsMatch(type.Name, "^c[0-9a-f]{32}$"))
+					return "Crypto Obfuscator";
+				else if (Regex.IsMatch(type.Name, "^A[A-Z]*$")) {
+					if (++matched >= 10)
 						return "Crypto Obfuscator";
-				}
-			}
-			return null;
-		}
-
-		string checkMancoObfuscator() {
-			int matched = 0;
-			const string substr = "();\t";
-			foreach (var type in module.GetTypes()) {
-				if (type.Name.Contains(substr)) {
-					if (++matched >= 20)
-						return "Manco .NET Obfuscator";
-				}
-				foreach (var field in type.Fields) {
-					if (field.Name.Contains(substr)) {
-						if (++matched >= 20)
-							return "Manco .NET Obfuscator";
-					}
 				}
 			}
 			return null;
