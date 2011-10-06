@@ -71,9 +71,9 @@ namespace AssemblyData {
 			}
 		}
 
-		public int defineStringDecrypter(int methodToken, int typeToken) {
+		public int defineStringDecrypter(int methodToken) {
 			checkStringDecrypter();
-			var methodInfo = findMethod(methodToken, typeToken);
+			var methodInfo = findMethod(methodToken);
 			if (methodInfo == null)
 				throw new ApplicationException(string.Format("Could not find method {0:X8}", methodToken));
 			if (methodInfo.ReturnType != typeof(string))
@@ -100,26 +100,13 @@ namespace AssemblyData {
 			return null;
 		}
 
-		MethodInfo findMethod(int methodToken, int typeToken) {
+		MethodInfo findMethod(int methodToken) {
 			checkAssembly();
 
-			const BindingFlags bindingFlags = BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static;
-
 			foreach (var module in assembly.GetModules()) {
-				foreach (var method in module.GetMethods(bindingFlags)) {
-					if (method.MetadataToken == methodToken)
-						return method;
-				}
-			}
-
-			foreach (var type in assembly.GetTypes()) {
-				if (type.MetadataToken == typeToken || typeToken == 0) {
-					var methods = type.GetMethods(bindingFlags);
-					foreach (var method in methods) {
-						if (method.MetadataToken == methodToken)
-							return method;
-					}
-				}
+				var method = module.ResolveMethod(methodToken) as MethodInfo;
+				if (method != null)
+					return method;
 			}
 
 			return null;
