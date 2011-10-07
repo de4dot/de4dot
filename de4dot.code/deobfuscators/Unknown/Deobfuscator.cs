@@ -94,6 +94,8 @@ namespace de4dot.deobfuscators.Unknown {
 					return "BitHelmet";
 				if (type.FullName == "NineRays.Decompiler.NotDecompile")
 					return "Spices.Net Obfuscator";
+				if (type.FullName == "YanoAttribute")
+					return "Yano Obfuscator";
 			}
 			return checkCryptoObfuscator();
 		}
