@@ -256,6 +256,8 @@ namespace de4dot.deobfuscators.SmartAssembly {
 					if (initdInfo != null)
 						break;
 
+					assemblyResolverInfo.findTypes();
+					resourceResolverInfo.findTypes();
 					decryptResources();
 				}
 
