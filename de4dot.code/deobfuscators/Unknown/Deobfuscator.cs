@@ -72,8 +72,8 @@ namespace de4dot.deobfuscators.Unknown {
 
 		string scanTypes() {
 			foreach (var type in module.Types) {
-				if (type.FullName == "BabelAttribute")
-					return "Babel .NET";
+				if (type.FullName == "BabelAttribute" || type.FullName == "BabelObfuscatorAttribute")
+					return "Babel Obfuscator";
 				if (type.Namespace == "___codefort")
 					return "CodeFort";
 				if (type.FullName == "____KILL")
@@ -81,7 +81,7 @@ namespace de4dot.deobfuscators.Unknown {
 				if (type.FullName == "CryptoObfuscator.ProtectedWithCryptoObfuscatorAttribute")
 					return "Crypto Obfuscator";
 				if (type.FullName.Contains("ObfuscatedByGoliath"))
-					return "Goliath .NET";
+					return "Goliath .NET Obfuscator";
 				if (type.FullName == "Xenocode.Client.Attributes.AssemblyAttributes.ProcessedByXenocode")
 					return "Xenocode";
 				if (type.FullName == "ZYXDNGuarder")
@@ -91,7 +91,7 @@ namespace de4dot.deobfuscators.Unknown {
 				if (type.Name.Contains("();\t"))
 					return "Manco .NET Obfuscator";
 				if (Regex.IsMatch(type.FullName, @"^EMyPID_\d+_$"))
-					return "BitHelmet";
+					return "BitHelmet Obfuscator";
 				if (type.FullName == "NineRays.Decompiler.NotDecompile")
 					return "Spices.Net Obfuscator";
 				if (type.FullName == "YanoAttribute")
