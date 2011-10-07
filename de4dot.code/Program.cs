@@ -57,6 +57,7 @@ namespace de4dot {
 			}
 			catch (Exception ex) {
 				Utils.printStackTrace(ex);
+				Log.e("\nTry the latest version before reporting this problem!");
 				return 1;
 			}
 
