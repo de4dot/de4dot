@@ -422,7 +422,7 @@ namespace de4dot.renamer {
 			case TypeAttributes.NestedFamORAssem:
 				return NestingType.isGlobalType();
 			default:
-				throw new ApplicationException(string.Format("Unknown nested type visibility mask: {0}", mask));
+				return false;
 			}
 		}
 
