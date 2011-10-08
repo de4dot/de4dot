@@ -189,7 +189,6 @@ namespace de4dot {
 		}
 
 		void detectObfuscator(IEnumerable<IDeobfuscator> deobfuscators) {
-			IList<MemberReference> memberReferences = new List<MemberReference>(module.GetMemberReferences());
 
 			// The deobfuscators may call methods to deobfuscate control flow and decrypt
 			// strings (statically) in order to detect the obfuscator.
@@ -197,8 +196,8 @@ namespace de4dot {
 				savedMethodBodies = new SavedMethodBodies();
 
 			foreach (var deob in deobfuscators) {
+				deob.init(module);
 				deob.DeobfuscatedFile = this;
-				deob.init(module, memberReferences);
 			}
 
 			if (options.ForcedObfuscatorType != null) {
@@ -209,17 +208,37 @@ namespace de4dot {
 					}
 				}
 			}
-			else {
-				int detectVal = 0;
-				foreach (var deob in deobfuscators) {
-					int val = deob.detect();
+			else
+				this.deob = earlyDetectObfuscator(deobfuscators) ?? detectObfuscator2(deobfuscators);
+		}
+
+		IDeobfuscator earlyDetectObfuscator(IEnumerable<IDeobfuscator> deobfuscators) {
+			IDeobfuscator detected = null;
+			int detectVal = 0;
+			foreach (var deob in deobfuscators) {
+				int val = deob.earlyDetect();
+				if (val > 0)
 					Log.v("{0,3}: {1}", val, deob.Type);
-					if (val > detectVal) {
-						detectVal = val;
-						this.deob = deob;
-					}
+				if (val > detectVal) {
+					detectVal = val;
+					detected = deob;
 				}
 			}
+			return detected;
+		}
+
+		IDeobfuscator detectObfuscator2(IEnumerable<IDeobfuscator> deobfuscators) {
+			IDeobfuscator detected = null;
+			int detectVal = 0;
+			foreach (var deob in deobfuscators) {
+				int val = deob.detect();
+				Log.v("{0,3}: {1}", val, deob.Type);
+				if (val > detectVal) {
+					detectVal = val;
+					detected = deob;
+				}
+			}
+			return detected;
 		}
 
 		public void save() {

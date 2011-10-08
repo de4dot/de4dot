@@ -106,9 +106,8 @@ namespace de4dot.deobfuscators.SmartAssembly {
 			StringFeatures = StringFeatures.AllowStaticDecryption;
 		}
 
-		public override void init(ModuleDefinition module, IList<MemberReference> memberReferences) {
-			base.init(module, memberReferences);
-			proxyDelegateFinder = new ProxyDelegateFinder(module, memberReferences);
+		public override void init(ModuleDefinition module) {
+			base.init(module);
 			automatedErrorReportingFinder = new AutomatedErrorReportingFinder(module);
 			tamperProtectionRemover = new TamperProtectionRemover(module);
 		}
@@ -134,6 +133,7 @@ namespace de4dot.deobfuscators.SmartAssembly {
 		}
 
 		protected override void scanForObfuscatorInternal() {
+			proxyDelegateFinder = new ProxyDelegateFinder(module);
 			findSmartAssemblyAttributes();
 			findAutomatedErrorReportingType();
 			memoryManagerInfo = new MemoryManagerInfo(module);

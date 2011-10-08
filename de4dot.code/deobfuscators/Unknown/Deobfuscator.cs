@@ -42,7 +42,7 @@ namespace de4dot.deobfuscators.Unknown {
 	}
 
 	class Deobfuscator : DeobfuscatorBase {
-		string obfuscatorName = "Unknown Obfuscator";
+		string obfuscatorName;
 
 		internal class Options : OptionsBase {
 		}
@@ -52,22 +52,34 @@ namespace de4dot.deobfuscators.Unknown {
 		}
 
 		public override string Name {
-			get { return obfuscatorName; }
+			get { return obfuscatorName ?? "Unknown Obfuscator"; }
 		}
 
 		public Deobfuscator(Options options)
 			: base(options) {
 		}
 
-		public override int detect() {
-			scanForObfuscator();
-			return 1;
+		void setName(string name) {
+			if (obfuscatorName == null && name != null)
+				obfuscatorName = name;
 		}
 
-		protected override void scanForObfuscatorInternal() {
-			var name = scanTypes();
-			if (name != null)
-				obfuscatorName = name;
+		public override int earlyDetect() {
+			setName(earlyScanTypes());
+			return obfuscatorName != null ? 1 : 0;
+		}
+
+		string earlyScanTypes() {
+			foreach (var type in module.Types) {
+				if (type.FullName == "ConfusedByAttribute")
+					return "Confuser";
+			}
+			return null;
+		}
+
+		public override int detect() {
+			setName(scanTypes());
+			return 1;
 		}
 
 		string scanTypes() {
@@ -96,8 +108,6 @@ namespace de4dot.deobfuscators.Unknown {
 					return "Spices.Net Obfuscator";
 				if (type.FullName == "YanoAttribute")
 					return "Yano Obfuscator";
-				if (type.FullName == "ConfusedByAttribute")
-					return "Confuser";
 			}
 			return checkCryptoObfuscator();
 		}

@@ -23,8 +23,8 @@ using Mono.Cecil;
 
 namespace de4dot.deobfuscators.CliSecure {
 	class ProxyDelegateFinder : ProxyDelegateFinderBase {
-		public ProxyDelegateFinder(ModuleDefinition module, IList<MemberReference> memberReferences)
-			: base(module, memberReferences) {
+		public ProxyDelegateFinder(ModuleDefinition module)
+			: base(module) {
 		}
 
 		protected override void getCallInfo(FieldDefinition field, out int methodIndex, out bool isVirtual) {

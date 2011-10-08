@@ -40,8 +40,8 @@ namespace de4dot.deobfuscators.SmartAssembly {
 				specialCharsDict[specialChars[i]] = i;
 		}
 
-		public ProxyDelegateFinder(ModuleDefinition module, IList<MemberReference> memberReferences)
-			: base(module, memberReferences) {
+		public ProxyDelegateFinder(ModuleDefinition module)
+			: base(module) {
 		}
 
 		protected override void getCallInfo(FieldDefinition field, out int methodIndex, out bool isVirtual) {

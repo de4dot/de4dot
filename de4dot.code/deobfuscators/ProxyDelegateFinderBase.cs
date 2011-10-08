@@ -54,9 +54,9 @@ namespace de4dot.deobfuscators {
 			get { return delegateCreatorMethod != null; }
 		}
 
-		public ProxyDelegateFinderBase(ModuleDefinition module, IList<MemberReference> memberReferences) {
+		public ProxyDelegateFinderBase(ModuleDefinition module) {
 			this.module = module;
-			this.memberReferences = memberReferences;
+			this.memberReferences = new List<MemberReference>(module.GetMemberReferences());
 		}
 
 		public void setDelegateCreatorMethod(MethodDefinition delegateCreatorMethod) {

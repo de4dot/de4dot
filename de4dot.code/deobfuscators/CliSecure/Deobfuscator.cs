@@ -100,9 +100,8 @@ namespace de4dot.deobfuscators.CliSecure {
 			this.options = options;
 		}
 
-		public override void init(ModuleDefinition module, IList<MemberReference> memberReferences) {
-			base.init(module, memberReferences);
-			proxyDelegateFinder = new ProxyDelegateFinder(module, memberReferences);
+		public override void init(ModuleDefinition module) {
+			base.init(module);
 		}
 
 		public override int detect() {
@@ -121,6 +120,7 @@ namespace de4dot.deobfuscators.CliSecure {
 		}
 
 		protected override void scanForObfuscatorInternal() {
+			proxyDelegateFinder = new ProxyDelegateFinder(module);
 			findCliSecureAttribute();
 			findCliSecureRtType();
 			findStringDecryptBuffer();

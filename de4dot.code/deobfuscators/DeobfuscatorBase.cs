@@ -81,8 +81,12 @@ namespace de4dot.deobfuscators {
 			DefaultDecrypterType = DecrypterType.Static;
 		}
 
-		public virtual void init(ModuleDefinition module, IList<MemberReference> memberReferences) {
+		public virtual void init(ModuleDefinition module) {
 			this.module = module;
+		}
+
+		public virtual int earlyDetect() {
+			return 0;
 		}
 
 		protected void scanForObfuscator() {

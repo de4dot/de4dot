@@ -52,10 +52,15 @@ namespace de4dot.deobfuscators {
 		StringFeatures StringFeatures { get; }
 		DecrypterType DefaultDecrypterType { get; }
 
-		// This is non-null only in init(), detect() and deobfuscateBegin().
+		// This is non-null only in detect() and deobfuscateBegin().
 		IDeobfuscatedFile DeobfuscatedFile { get; set; }
 
-		void init(ModuleDefinition module, IList<MemberReference> memberReferences);
+		void init(ModuleDefinition module);
+
+		// Same as detect() but may be used by deobfuscators to detect obfuscator that decrypt
+		// metadata at runtime. Code in detect() assume they can access everything. 0 should be
+		// returned if not detected.
+		int earlyDetect();
 
 		// Returns 0 if it's not detected, or > 0 if detected (higher value => more likely true)
 		int detect();
