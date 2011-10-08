@@ -147,7 +147,7 @@ namespace de4dot.renamer {
 							}
 						}
 					}
-					if (newName == null)
+					if (newName == null || string.IsNullOrEmpty(oldName))
 						continue;
 
 					bool isValid = false;
