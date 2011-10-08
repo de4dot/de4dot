@@ -63,17 +63,21 @@ namespace de4dot {
 
 		public void doIt() {
 			if (options.DetectObfuscators)
-				loadAllFiles();
+				detectObfuscators();
 			else if (options.OneFileAtATime)
 				deobfuscateOneAtATime();
 			else
 				deobfuscateAll();
 		}
 
-		void deobfuscateOneAtATime() {
-			loadAllFiles();
+		void detectObfuscators() {
+			foreach (var file in loadAllFiles()) {
+				AssemblyResolver.Instance.removeModule(file.ModuleDefinition);
+			}
+		}
 
-			foreach (var file in options.Files) {
+		void deobfuscateOneAtATime() {
+			foreach (var file in loadAllFiles()) {
 				try {
 					file.deobfuscateBegin();
 					file.deobfuscate();
@@ -95,13 +99,13 @@ namespace de4dot {
 		}
 
 		void deobfuscateAll() {
-			loadAllFiles();
-			deobfuscateAllFiles();
-			renameAllFiles();
-			saveAllFiles();
+			var allFiles = new List<IObfuscatedFile>(loadAllFiles());
+			deobfuscateAllFiles(allFiles);
+			renameAllFiles(allFiles);
+			saveAllFiles(allFiles);
 		}
 
-		void loadAllFiles() {
+		IEnumerable<IObfuscatedFile> loadAllFiles() {
 			var loader = new DotNetFileLoader(new DotNetFileLoader.Options {
 				PossibleFiles  = options.Files,
 				SearchDirs = options.SearchDirs,
@@ -113,14 +117,13 @@ namespace de4dot {
 				ControlFlowDeobfuscation = options.ControlFlowDeobfuscation,
 				KeepObfuscatorTypes = options.KeepObfuscatorTypes,
 			});
-			options.Files = loader.load();
+			return loader.load();
 		}
 
 		class DotNetFileLoader {
 			Options options;
 			Dictionary<string, bool> allFiles = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
 			Dictionary<string, bool> visitedDirectory = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
-			IList<IObfuscatedFile> files;
 
 			public class Options {
 				public IEnumerable<IObfuscatedFile> PossibleFiles { get; set; }
@@ -138,23 +141,23 @@ namespace de4dot {
 				this.options = options;
 			}
 
-			public IList<IObfuscatedFile> load() {
-				files = new List<IObfuscatedFile>();
+			public IEnumerable<IObfuscatedFile> load() {
+				foreach (var file in options.PossibleFiles) {
+					if (add(file))
+						yield return file;
+				}
 
-				foreach (var file in options.PossibleFiles)
-					add(file);
-
-				foreach (var searchDir in options.SearchDirs)
-					recursiveAdd(searchDir);
-
-				return files;
+				foreach (var searchDir in options.SearchDirs) {
+					foreach (var file in loadFiles(searchDir))
+						yield return file;
+				}
 			}
 
-			void add(IObfuscatedFile file, bool skipUnknownObfuscator = false) {
+			bool add(IObfuscatedFile file, bool skipUnknownObfuscator = false) {
 				var key = Utils.getFullPath(file.Filename);
 				if (allFiles.ContainsKey(key)) {
 					Log.w("Ingoring duplicate file: {0}", file.Filename);
-					return;
+					return false;
 				}
 				allFiles[key] = true;
 
@@ -162,62 +165,77 @@ namespace de4dot {
 					file.load(options.CreateDeobfuscators());
 				}
 				catch (NotSupportedException) {
-					return;		// Eg. unsupported architecture
+					return false;	// Eg. unsupported architecture
 				}
 				catch (BadImageFormatException) {
-					return;		// Not a .NET file
+					return false;	// Not a .NET file
+				}
+				catch (UnauthorizedAccessException) {
+					Log.w("Could not load file (not authorized): {0}", file.Filename);
+					return false;
 				}
 				catch (NullReferenceException) {
 					Log.w("Could not load file (null ref): {0}", file.Filename);
-					return;
+					return false;
 				}
 				catch (IOException) {
 					Log.w("Could not load file (io exception): {0}", file.Filename);
-					return;
+					return false;
 				}
 
 				var deob = file.Deobfuscator;
 				if (skipUnknownObfuscator && deob is deobfuscators.Unknown.Deobfuscator) {
 					Log.v("Skipping unknown obfuscator: {0}", file.Filename);
+					return false;
 				}
 				else {
 					Log.n("Detected {0} ({1})", deob.Name, file.Filename);
-					files.Add(file);
 					createDirectories(Path.GetDirectoryName(file.NewFilename));
+					return true;
 				}
 			}
 
-			void recursiveAdd(SearchDir searchDir) {
-				DirectoryInfo di;
+			IEnumerable<IObfuscatedFile> loadFiles(SearchDir searchDir) {
+				DirectoryInfo di = null;
+				bool ok = false;
 				try {
 					di = new DirectoryInfo(searchDir.InputDirectory);
-					if (!di.Exists)
-						return;
+					if (di.Exists)
+						ok = true;
 				}
 				catch (System.Security.SecurityException) {
-					return;
 				}
 				catch (ArgumentException) {
-					return;
 				}
-				doDirectoryInfo(searchDir, di);
+				if (ok) {
+					foreach (var filename in doDirectoryInfo(searchDir, di)) {
+						var obfuscatedFile = createObfuscatedFile(searchDir, filename);
+						if (obfuscatedFile != null)
+							yield return obfuscatedFile;
+					}					
+				}
 			}
 
-			void recursiveAdd(SearchDir searchDir, IEnumerable<FileSystemInfo> fileSystemInfos) {
+			IEnumerable<string> recursiveAdd(SearchDir searchDir, IEnumerable<FileSystemInfo> fileSystemInfos) {
 				foreach (var fsi in fileSystemInfos) {
-					if ((int)(fsi.Attributes & FileAttributes.Directory) != 0)
-						doDirectoryInfo(searchDir, (DirectoryInfo)fsi);
-					else
-						doFileInfo(searchDir, (FileInfo)fsi);
+					if ((int)(fsi.Attributes & FileAttributes.Directory) != 0) {
+						foreach (var filename in doDirectoryInfo(searchDir, (DirectoryInfo)fsi))
+							yield return filename;
+					}
+					else {
+						var fi = (FileInfo)fsi;
+						if (fi.Exists)
+							yield return fi.FullName;
+					}
 				}
 			}
 
-			void doDirectoryInfo(SearchDir searchDir, DirectoryInfo di) {
+			IEnumerable<string> doDirectoryInfo(SearchDir searchDir, DirectoryInfo di) {
 				if (!di.Exists)
-					return;
+					return null;
 
 				if (visitedDirectory.ContainsKey(di.FullName))
-					return;
+					return null;
 				visitedDirectory[di.FullName] = true;
 
 				FileSystemInfo[] fsinfos;
@@ -225,20 +243,17 @@ namespace de4dot {
 					fsinfos = di.GetFileSystemInfos();
 				}
 				catch (UnauthorizedAccessException) {
-					return;
+					return null;
 				}
 				catch (IOException) {
-					return;
+					return null;
 				}
-				recursiveAdd(searchDir, fsinfos);
+				return recursiveAdd(searchDir, fsinfos);
 			}
 
-			void doFileInfo(SearchDir searchDir, FileInfo fi) {
-				if (!fi.Exists)
-					return;
-
+			IObfuscatedFile createObfuscatedFile(SearchDir searchDir, string filename) {
 				var fileOptions = new ObfuscatedFile.Options {
-					Filename = Utils.getFullPath(fi.FullName),
+					Filename = Utils.getFullPath(filename),
 					RenameSymbols = options.RenameSymbols,
 					ControlFlowDeobfuscation = options.ControlFlowDeobfuscation,
 					KeepObfuscatorTypes = options.KeepObfuscatorTypes,
@@ -263,7 +278,10 @@ namespace de4dot {
 						throw new UserException(string.Format("Input and output filename is the same: {0}", fileOptions.Filename));
 				}
 
-				add(new ObfuscatedFile(fileOptions, options.AssemblyClientFactory), searchDir.SkipUnknownObfuscators);
+				var obfuscatedFile = new ObfuscatedFile(fileOptions, options.AssemblyClientFactory);
+				if (add(obfuscatedFile, searchDir.SkipUnknownObfuscators))
+					return obfuscatedFile;
+				return null;
 			}
 
 			void createDirectories(string path) {
@@ -275,29 +293,29 @@ namespace de4dot {
 			}
 		}
 
-		void deobfuscateAllFiles() {
+		void deobfuscateAllFiles(IEnumerable<IObfuscatedFile> allFiles) {
 			try {
-				foreach (var file in options.Files)
+				foreach (var file in allFiles)
 					file.deobfuscateBegin();
-				foreach (var file in options.Files) {
+				foreach (var file in allFiles) {
 					file.deobfuscate();
 					file.deobfuscateEnd();
 				}
 			}
 			finally {
-				foreach (var file in options.Files)
+				foreach (var file in allFiles)
 					file.deobfuscateCleanUp();
 			}
 		}
 
-		void renameAllFiles() {
+		void renameAllFiles(IEnumerable<IObfuscatedFile> allFiles) {
 			if (!options.RenameSymbols)
 				return;
-			new DefinitionsRenamer(options.Files).renameAll();
+			new DefinitionsRenamer(allFiles).renameAll();
 		}
 
-		void saveAllFiles() {
-			foreach (var file in options.Files)
+		void saveAllFiles(IEnumerable<IObfuscatedFile> allFiles) {
+			foreach (var file in allFiles)
 				file.save();
 		}
 
