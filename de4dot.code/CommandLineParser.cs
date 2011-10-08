@@ -104,7 +104,7 @@ namespace de4dot {
 					exitError("Missing -r option");
 				searchDir.OutputDirectory = val;
 			}));
-			miscOptions.Add(new NoArgOption("ru", null, "Skip recursively found files with unknown obfuscator", () => {
+			miscOptions.Add(new NoArgOption("ru", null, "Skip recursively found files with unsupported obfuscator", () => {
 				if (searchDir == null)
 					exitError("Missing -r option");
 				searchDir.SkipUnknownObfuscators = true;
