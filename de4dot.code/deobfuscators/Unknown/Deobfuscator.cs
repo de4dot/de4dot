@@ -96,6 +96,8 @@ namespace de4dot.deobfuscators.Unknown {
 					return "Spices.Net Obfuscator";
 				if (type.FullName == "YanoAttribute")
 					return "Yano Obfuscator";
+				if (type.FullName == "ConfusedByAttribute")
+					return "Confuser";
 			}
 			return checkCryptoObfuscator();
 		}
