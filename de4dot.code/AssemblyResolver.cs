@@ -53,5 +53,15 @@ namespace de4dot {
 				RegisterAssembly(assembly);
 			}
 		}
+
+		public void removeModule(ModuleDefinition module) {
+			var assembly = module.Assembly;
+			if (assembly == null)
+				return;
+
+			var name = assembly.Name.FullName;
+			addedAssemblies.Remove(name);
+			cache.Remove(name);
+		}
 	}
 }
