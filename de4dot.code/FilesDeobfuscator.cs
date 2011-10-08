@@ -87,6 +87,8 @@ namespace de4dot {
 						new DefinitionsRenamer(new List<IObfuscatedFile> { file }).renameAll();
 
 					file.save();
+
+					AssemblyResolver.Instance.removeModule(file.ModuleDefinition);
 				}
 				catch (Exception ex) {
 					Log.w("Could not deobfuscate {0}. Use -v to see stack trace", file.Filename);
