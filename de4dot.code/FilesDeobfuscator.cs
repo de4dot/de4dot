@@ -268,7 +268,7 @@ namespace de4dot {
 					var inDir = Utils.getFullPath(searchDir.InputDirectory);
 					var outDir = Utils.getFullPath(searchDir.OutputDirectory);
 
-					if (!fileOptions.Filename.StartsWith(inDir, StringComparison.OrdinalIgnoreCase))
+					if (!Utils.StartsWith(fileOptions.Filename, inDir, StringComparison.OrdinalIgnoreCase))
 						throw new UserException(string.Format("Filename {0} does not start with inDir {1}", fileOptions.Filename, inDir));
 
 					var subDirs = fileOptions.Filename.Substring(inDir.Length);

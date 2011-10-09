@@ -398,7 +398,7 @@ namespace de4dot.deobfuscators {
 
 			foreach (var name in namesToPossiblyRemove) {
 				foreach (var moduleRef in module.ModuleReferences) {
-					if (moduleRef.Name.StartsWith(name, StringComparison.OrdinalIgnoreCase))
+					if (Utils.StartsWith(moduleRef.Name, name, StringComparison.OrdinalIgnoreCase))
 						addModuleReferenceToBeRemoved(moduleRef, reason);
 				}
 			}

@@ -183,5 +183,13 @@ namespace de4dot {
 			Log.log(logLevel, line);
 			Log.log(logLevel, "\n\nStack trace:\n{0}", ex.StackTrace);
 		}
+
+		// This fixes a mono (tested 2.10.5) String.StartsWith() bug. NB: stringComparison must be
+		// Ordinal or OrdinalIgnoreCase!
+		public static bool StartsWith(string left, string right, StringComparison stringComparison) {
+			if (left.Length < right.Length)
+				return false;
+			return left.Substring(0, right.Length).Equals(right, stringComparison);
+		}
 	}
 }

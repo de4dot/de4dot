@@ -142,7 +142,7 @@ namespace de4dot.deobfuscators.SmartAssembly {
 
 		void findSmartAssemblyAttributes() {
 			foreach (var type in module.Types) {
-				if (type.FullName.StartsWith("SmartAssembly.Attributes.PoweredByAttribute", StringComparison.Ordinal)) {
+				if (Utils.StartsWith(type.FullName, "SmartAssembly.Attributes.PoweredByAttribute", StringComparison.Ordinal)) {
 					foundSmartAssemblyAttribute = true;
 					addAttributeToBeRemoved(type, "Obfuscator attribute");
 					initializeVersion(type);

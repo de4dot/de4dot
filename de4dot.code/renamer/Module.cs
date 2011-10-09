@@ -78,7 +78,7 @@ namespace de4dot.renamer {
 		}
 
 		static string renameResourceString(string s, string oldTypeName, string newTypeName) {
-			if (!s.StartsWith(oldTypeName, StringComparison.Ordinal))
+			if (!Utils.StartsWith(s, oldTypeName, StringComparison.Ordinal))
 				return s;
 			if (s.Length == oldTypeName.Length)
 				return newTypeName;
@@ -152,7 +152,7 @@ namespace de4dot.renamer {
 
 					bool isValid = false;
 					foreach (var validName in validResourceNames) {
-						if (validName.StartsWith(oldName, StringComparison.Ordinal)) {
+						if (Utils.StartsWith(validName, oldName, StringComparison.Ordinal)) {
 							isValid = true;
 							break;
 						}

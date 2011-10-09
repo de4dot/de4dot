@@ -326,7 +326,7 @@ namespace de4dot {
 
 			foreach (var val in options.StringDecrypterMethods) {
 				var tokenStr = val.Trim();
-				if (tokenStr.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+				if (Utils.StartsWith(tokenStr, "0x", StringComparison.OrdinalIgnoreCase))
 					tokenStr = tokenStr.Substring(2);
 				int methodToken;
 				if (int.TryParse(tokenStr, NumberStyles.HexNumber, null, out methodToken))
@@ -398,14 +398,14 @@ namespace de4dot {
 				remaining = "";
 			}
 
-			if (remaining.StartsWith("(", StringComparison.Ordinal)) {
+			if (Utils.StartsWith(remaining, "(", StringComparison.Ordinal)) {
 				stringArgs = remaining;
 			}
 			else if (remaining.Length > 0)
 				throw new UserException(string.Format("Invalid method desc: '{0}'", methodDesc));
 
 			if (stringArgs != null) {
-				if (stringArgs.StartsWith("(", StringComparison.Ordinal))
+				if (Utils.StartsWith(stringArgs, "(", StringComparison.Ordinal))
 					stringArgs = stringArgs.Substring(1);
 				if (stringArgs.EndsWith(")", StringComparison.Ordinal))
 					stringArgs = stringArgs.Substring(0, stringArgs.Length - 1);
