@@ -336,7 +336,6 @@ namespace de4dot.deobfuscators {
 			if (!module.HasResources || resourcesToRemove.Count == 0)
 				return;
 
-			var resources = module.Resources;
 			Log.v("Removing resources");
 			Log.indent();
 			foreach (var info in resourcesToRemove) {
@@ -383,7 +382,6 @@ namespace de4dot.deobfuscators {
 			if (!module.HasResources)
 				return;
 
-			var resources = module.Resources;
 			foreach (var name in namesToPossiblyRemove) {
 				foreach (var resource in module.Resources) {
 					if (resource.Name == name) {
