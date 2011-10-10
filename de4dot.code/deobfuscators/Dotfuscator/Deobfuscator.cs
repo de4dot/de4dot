@@ -110,7 +110,7 @@ namespace de4dot.deobfuscators.Dotfuscator {
 			if (s == null)
 				return;
 
-			var val = System.Text.RegularExpressions.Regex.Match(s, @"^(\d+:\d+:\d+:\d+\.\d+\.\d+\.\d+)$");
+			var val = System.Text.RegularExpressions.Regex.Match(s, @"^(\d+(?::\d+)*\.\d+(?:\.\d+)*)$");
 			if (val.Groups.Count < 2)
 				return;
 			obfuscatorName = "Dotfuscator " + val.Groups[1].ToString();
