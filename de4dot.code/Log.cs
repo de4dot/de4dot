@@ -33,23 +33,32 @@ namespace de4dot {
 			veryverbose,
 		}
 		public static LogLevel logLevel = LogLevel.normal;
+		public static string indentString = "";
+
+		public static bool isAtLeast(LogLevel ll) {
+			return logLevel >= ll;
+		}
+
+		static void initIndentString() {
+			indentString = new string(' ', indentLevel * indentSize);
+		}
 
 		public static void indent() {
 			indentLevel++;
+			initIndentString();
 		}
 
 		public static void deIndent() {
 			if (indentLevel <= 0)
 				throw new ApplicationException("Can't de-indent!");
 			indentLevel--;
+			initIndentString();
 		}
 
 		public static void log(LogLevel l, string format, params object[] args) {
-			if (l > logLevel)
+			if (!isAtLeast(l))
 				return;
-			string indent = new string(' ', indentLevel * indentSize);
-			if (l <= LogLevel.warning)
-				indent = "";
+			var indent = l <= LogLevel.warning ? "" : indentString;
 			Console.WriteLine(indent + format, args);
 		}
 

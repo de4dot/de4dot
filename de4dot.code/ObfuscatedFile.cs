@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Text;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using de4dot.deobfuscators;
@@ -439,6 +440,7 @@ namespace de4dot {
 			deob.DeobfuscatedFile = null;
 
 			Log.v("Deobfuscating methods");
+			var methodPrinter = new MethodPrinter();
 			foreach (var method in allMethods) {
 				Log.v("Deobfuscating {0} ({1:X8})", method, method.MetadataToken.ToUInt32());
 				Log.indent();
@@ -461,11 +463,160 @@ namespace de4dot {
 					IList<ExceptionHandler> allExceptionHandlers;
 					blocks.getCode(out allInstructions, out allExceptionHandlers);
 					DotNetUtils.restoreBody(method, allInstructions, allExceptionHandlers);
+
+					const Log.LogLevel dumpLogLevel = Log.LogLevel.veryverbose;
+					if (Log.isAtLeast(dumpLogLevel)) {
+						Log.log(dumpLogLevel, "Deobfuscated code:");
+						Log.indent();
+						methodPrinter.print(dumpLogLevel, allInstructions, allExceptionHandlers);
+						Log.deIndent();
+					}
 				}
 
 				removeNoInliningAttribute(method);
 
 				Log.deIndent();
+			}
+		}
+
+		class MethodPrinter {
+			Log.LogLevel logLevel;
+			IList<Instruction> allInstructions;
+			IList<ExceptionHandler> allExceptionHandlers;
+			Dictionary<Instruction, bool> targets = new Dictionary<Instruction, bool>();
+
+			class ExInfo {
+				public List<ExceptionHandler> tryStarts = new List<ExceptionHandler>();
+				public List<ExceptionHandler> tryEnds = new List<ExceptionHandler>();
+				public List<ExceptionHandler> filterStarts = new List<ExceptionHandler>();
+				public List<ExceptionHandler> handlerStarts = new List<ExceptionHandler>();
+				public List<ExceptionHandler> handlerEnds = new List<ExceptionHandler>();
+			}
+			Dictionary<Instruction, ExInfo> exInfos = new Dictionary<Instruction, ExInfo>();
+			ExInfo lastExInfo;
+
+			public void print(Log.LogLevel logLevel, IList<Instruction> allInstructions, IList<ExceptionHandler> allExceptionHandlers) {
+				try {
+					this.logLevel = logLevel;
+					this.allInstructions = allInstructions;
+					this.allExceptionHandlers = allExceptionHandlers;
+					lastExInfo = new ExInfo();
+					print();
+				}
+				finally {
+					this.allInstructions = null;
+					this.allExceptionHandlers = null;
+					targets.Clear();
+					exInfos.Clear();
+					lastExInfo = null;
+				}
+			}
+
+			void initTargets() {
+				foreach (var instr in allInstructions) {
+					switch (instr.OpCode.OperandType) {
+					case OperandType.ShortInlineBrTarget:
+					case OperandType.InlineBrTarget:
+						var targetInstr = instr.Operand as Instruction;
+						if (targetInstr != null)
+							targets[targetInstr] = true;
+						break;
+
+					case OperandType.InlineSwitch:
+						foreach (var targetInstr2 in (Instruction[])instr.Operand) {
+							if (targetInstr2 != null)
+								targets[targetInstr2] = true;
+						}
+						break;
+					}
+				}
+			}
+
+			void initExHandlers() {
+				foreach (var ex in allExceptionHandlers) {
+					if (ex.TryStart != null) {
+						getExInfo(ex.TryStart).tryStarts.Add(ex);
+						getExInfo(ex.TryEnd).tryEnds.Add(ex);
+					}
+					if (ex.FilterStart != null)
+						getExInfo(ex.FilterStart).filterStarts.Add(ex);
+					if (ex.HandlerStart != null) {
+						getExInfo(ex.HandlerStart).handlerStarts.Add(ex);
+						getExInfo(ex.HandlerEnd).handlerEnds.Add(ex);
+					}
+				}
+			}
+
+			ExInfo getExInfo(Instruction instruction) {
+				if (instruction == null)
+					return lastExInfo;
+				ExInfo exInfo;
+				if (!exInfos.TryGetValue(instruction, out exInfo))
+					exInfos[instruction] = exInfo = new ExInfo();
+				return exInfo;
+			}
+
+			void print() {
+				initTargets();
+				initExHandlers();
+
+				Log.indent();
+				foreach (var instr in allInstructions) {
+					ExInfo exInfo;
+					if (exInfos.TryGetValue(instr, out exInfo))
+						printExInfo(exInfo);
+					if (targets.ContainsKey(instr)) {
+						Log.deIndent();
+						Log.log(logLevel, "{0}:", instr.GetLabelString());
+						Log.indent();
+					}
+					var instrString = instr.GetOpCodeString();
+					var operandString = instr.GetOperandString();
+					var memberReference = instr.Operand as MemberReference;
+					if (operandString == "")
+						Log.log(logLevel, "{0}", instrString);
+					else if (memberReference != null)
+						Log.log(logLevel, "{0,-9} {1} // {2:X8}", instrString, operandString, memberReference.MetadataToken.ToUInt32());
+					else
+						Log.log(logLevel, "{0,-9} {1}", instrString, operandString);
+				}
+				printExInfo(lastExInfo);
+				Log.deIndent();
+			}
+
+			void printExInfo(ExInfo exInfo) {
+				Log.deIndent();
+				foreach (var ex in exInfo.tryStarts)
+					Log.log(logLevel, "// try start: {0}", getExceptionString(ex));
+				foreach (var ex in exInfo.tryEnds)
+					Log.log(logLevel, "// try end: {0}", getExceptionString(ex));
+				foreach (var ex in exInfo.filterStarts)
+					Log.log(logLevel, "// filter start: {0}", getExceptionString(ex));
+				foreach (var ex in exInfo.handlerStarts)
+					Log.log(logLevel, "// handler start: {0}", getExceptionString(ex));
+				foreach (var ex in exInfo.handlerEnds)
+					Log.log(logLevel, "// handler end: {0}", getExceptionString(ex));
+				Log.indent();
+			}
+
+			string getExceptionString(ExceptionHandler ex) {
+				var sb = new StringBuilder();
+				if (ex.TryStart != null)
+					sb.Append(string.Format("TRY: {0}-{1}", getOffset(ex.TryStart), getOffset(ex.TryEnd)));
+				if (ex.FilterStart != null)
+					sb.Append(string.Format(", FILTER: {0}", getOffset(ex.FilterStart)));
+				if (ex.HandlerStart != null)
+					sb.Append(string.Format(", HANDLER: {0}-{1}", getOffset(ex.HandlerStart), getOffset(ex.HandlerEnd)));
+				sb.Append(string.Format(", TYPE: {0}", ex.HandlerType));
+				if (ex.CatchType != null)
+					sb.Append(string.Format(", CATCH: {0}", ex.CatchType));
+				return sb.ToString();
+			}
+
+			string getOffset(Instruction instr) {
+				if (instr == null)
+					return "END";
+				return string.Format("{0:X4}", instr.Offset);
 			}
 		}
 
