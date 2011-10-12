@@ -141,24 +141,54 @@ namespace de4dot.deobfuscators.SmartAssembly {
 		}
 
 		void findSmartAssemblyAttributes() {
+			bool foundVersion = false;
 			foreach (var type in module.Types) {
 				if (Utils.StartsWith(type.FullName, "SmartAssembly.Attributes.PoweredByAttribute", StringComparison.Ordinal)) {
 					foundSmartAssemblyAttribute = true;
 					addAttributeToBeRemoved(type, "Obfuscator attribute");
-					initializeVersion(type);
+					foundVersion |= initializeVersion(type);
 				}
 			}
+
+			if (!foundVersion)
+				guessVersion();
 		}
 
-		void initializeVersion(TypeDefinition attr) {
+		bool initializeVersion(TypeDefinition attr) {
 			var s = DotNetUtils.getCustomArgAsString(getAssemblyAttribute(attr), 0);
 			if (s == null)
-				return;
+				return false;
 
 			var val = System.Text.RegularExpressions.Regex.Match(s, @"^Powered by (SmartAssembly \d+\.\d+\.\d+\.\d+)$");
 			if (val.Groups.Count < 2)
-				return;
+				return false;
 			obfuscatorName = val.Groups[1].ToString();
+			return true;
+		}
+
+		void guessVersion() {
+			if (isVersion4x())
+				obfuscatorName = "SmartAssembly 4.x";
+			else
+				obfuscatorName = "SmartAssembly 5.0/5.1";
+		}
+
+		bool isVersion4x() {
+			var namespaces = new Dictionary<string, int>(StringComparer.Ordinal);
+			foreach (var type in module.Types) {
+				var ns = type.Namespace;
+				if (!namespaces.ContainsKey(ns))
+					namespaces[ns] = 0;
+				if (type.IsPublic || type.HasFields || type.HasMethods || type.HasProperties || type.HasEvents)
+					continue;
+				namespaces[ns]++;
+			}
+
+			foreach (int count in namespaces.Values) {
+				if (count < 1)
+					return false;
+			}
+			return true;
 		}
 
 		void findAutomatedErrorReportingType() {
