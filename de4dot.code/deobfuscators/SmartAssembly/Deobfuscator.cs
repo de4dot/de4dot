@@ -179,7 +179,7 @@ namespace de4dot.deobfuscators.SmartAssembly {
 				var ns = type.Namespace;
 				if (!namespaces.ContainsKey(ns))
 					namespaces[ns] = 0;
-				if (type.IsPublic || type.HasFields || type.HasMethods || type.HasProperties || type.HasEvents)
+				if (type.Name != "" || type.IsPublic || type.HasFields || type.HasMethods || type.HasProperties || type.HasEvents)
 					continue;
 				namespaces[ns]++;
 			}
