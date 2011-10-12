@@ -96,7 +96,7 @@ namespace de4dot.deobfuscators.SmartAssembly {
 		bool isAutomatedErrorReportingMethodHelper(MethodDefinition method) {
 			if (!method.HasBody || !method.IsStatic || method.Name == ".ctor")
 				return false;
-			if (DotNetUtils.hasReturnValue(method))
+			if (DotNetUtils.hasReturnValue(method) && method.MethodReturnType.ReturnType.FullName != "System.Exception")
 				return false;
 			if (method.Parameters.Count == 0)
 				return false;
@@ -112,9 +112,8 @@ namespace de4dot.deobfuscators.SmartAssembly {
 		bool isAutomatedErrorReportingMethod(MethodDefinition method) {
 			if (!method.HasBody || !method.IsStatic || method.Name == ".ctor")
 				return false;
-			if (!DotNetUtils.isMethod(method, "System.Void", "(System.Exception,System.Object[])"))
-				return false;
-			return true;
+			return DotNetUtils.isMethod(method, "System.Void", "(System.Exception,System.Object[])") ||
+				DotNetUtils.isMethod(method, "System.Exception", "(System.Exception,System.Object[])");
 		}
 
 		void initUnhandledExceptionFilterMethods() {
