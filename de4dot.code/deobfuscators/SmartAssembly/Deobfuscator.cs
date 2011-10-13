@@ -69,6 +69,8 @@ namespace de4dot.deobfuscators.SmartAssembly {
 
 	class Deobfuscator : DeobfuscatorBase {
 		Options options;
+		bool foundVersion = false;
+		string poweredByAttributeString = null;
 		string obfuscatorName = "SmartAssembly";
 		bool foundSmartAssemblyAttribute = false;
 
@@ -98,6 +100,13 @@ namespace de4dot.deobfuscators.SmartAssembly {
 
 		public override string Name {
 			get { return obfuscatorName; }
+		}
+
+		string ObfuscatorName {
+			set {
+				obfuscatorName = value;
+				foundVersion = true;
+			}
 		}
 
 		public Deobfuscator(Options options)
@@ -138,44 +147,129 @@ namespace de4dot.deobfuscators.SmartAssembly {
 			findAutomatedErrorReportingType();
 			memoryManagerInfo = new MemoryManagerInfo(module);
 			proxyDelegateFinder.findDelegateCreator(module);
-		}
-
-		void findSmartAssemblyAttributes() {
-			bool foundVersion = false;
-			foreach (var type in module.Types) {
-				if (Utils.StartsWith(type.FullName, "SmartAssembly.Attributes.PoweredByAttribute", StringComparison.Ordinal)) {
-					foundSmartAssemblyAttribute = true;
-					addAttributeToBeRemoved(type, "Obfuscator attribute");
-					foundVersion |= initializeVersion(type);
-				}
-			}
 
 			if (!foundVersion)
 				guessVersion();
 		}
 
-		bool initializeVersion(TypeDefinition attr) {
+		void findSmartAssemblyAttributes() {
+			foreach (var type in module.Types) {
+				if (Utils.StartsWith(type.FullName, "SmartAssembly.Attributes.PoweredByAttribute", StringComparison.Ordinal)) {
+					foundSmartAssemblyAttribute = true;
+					addAttributeToBeRemoved(type, "Obfuscator attribute");
+					initializeVersion(type);
+				}
+			}
+		}
+
+		void initializeVersion(TypeDefinition attr) {
 			var s = DotNetUtils.getCustomArgAsString(getAssemblyAttribute(attr), 0);
 			if (s == null)
-				return false;
+				return;
+
+			poweredByAttributeString = s;
 
 			var val = System.Text.RegularExpressions.Regex.Match(s, @"^Powered by (SmartAssembly \d+\.\d+\.\d+\.\d+)$");
 			if (val.Groups.Count < 2)
-				return false;
-			obfuscatorName = val.Groups[1].ToString();
-			return true;
+				return;
+			ObfuscatorName = val.Groups[1].ToString();
+			return;
 		}
 
 		void guessVersion() {
-			if (isVersion4x())
-				obfuscatorName = "SmartAssembly 4.x";
-			else
-				obfuscatorName = "SmartAssembly 5.0/5.1";
+			if (poweredByAttributeString == "Powered by SmartAssembly") {
+				ObfuscatorName = "SmartAssembly 5.0/5.1";
+				return;
+			}
+
+			if (poweredByAttributeString == "Powered by {smartassembly}") {
+				// It's SA 1.x - 4.x
+
+				if (hasEmptyClassesInEveryNamespace() || proxyDelegateFinder.Detected) {
+					ObfuscatorName = "SmartAssembly 4.x";
+					return;
+				}
+
+				int ver = checkTypeIdAttribute();
+				if (ver == 2) {
+					ObfuscatorName = "SmartAssembly 2.x";
+					return;
+				}
+				if (ver == 1) {
+					ObfuscatorName = "SmartAssembly 1.x-2.x";
+					return;
+				}
+
+				if (hasModuleCctor()) {
+					ObfuscatorName = "SmartAssembly 3.x";
+					return;
+				}
+
+				ObfuscatorName = "SmartAssembly 1.x-4.x";
+				return;
+			}
 		}
 
-		bool isVersion4x() {
+		int checkTypeIdAttribute() {
+			var type = getTypeIdAttribute();
+			if (type == null)
+				return -1;
+
+			var fields = type.Fields;
+			if (fields.Count == 1)
+				return 1;	// 1.x: int ID
+			if (fields.Count == 2)
+				return 2;	// 2.x: int ID, static int AssemblyID
+			return -1;
+		}
+
+		TypeDefinition getTypeIdAttribute() {
+			Dictionary<TypeDefinition, bool> attrs = null;
+			int counter = 0;
+			foreach (var type in module.GetTypes()) {
+				counter++;
+				var cattrs = type.CustomAttributes;
+				if (cattrs.Count == 0)
+					return null;
+
+				var attrs2 = new Dictionary<TypeDefinition, bool>();
+				foreach (var cattr in cattrs) {
+					if (!DotNetUtils.isMethod(cattr.Constructor, "System.Void", "(System.Int32)"))
+						continue;
+					var attrType = cattr.AttributeType as TypeDefinition;
+					if (attrType == null)
+						continue;
+					if (attrs != null && !attrs.ContainsKey(attrType))
+						continue;
+					attrs2[attrType] = true;
+				}
+				attrs = attrs2;
+
+				if (attrs.Count == 0)
+					return null;
+				if (attrs.Count == 1 && counter >= 30)
+					break;
+			}
+
+			if (attrs == null)
+				return null;
+			foreach (var type in attrs.Keys)
+				return type;
+			return null;
+		}
+
+		bool hasModuleCctor() {
+			var type = getModuleType();
+			if (type == null)
+				return false;
+			return DotNetUtils.getMethod(type, ".cctor") != null;
+		}
+
+		bool hasEmptyClassesInEveryNamespace() {
 			var namespaces = new Dictionary<string, int>(StringComparer.Ordinal);
 			foreach (var type in module.Types) {
+				if (type.FullName == "<Module>")
+					continue;
 				var ns = type.Namespace;
 				if (!namespaces.ContainsKey(ns))
 					namespaces[ns] = 0;
