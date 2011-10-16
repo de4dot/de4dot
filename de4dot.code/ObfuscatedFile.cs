@@ -26,6 +26,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using de4dot.deobfuscators;
 using de4dot.blocks;
+using de4dot.blocks.cflow;
 using de4dot.AssemblyClient;
 
 namespace de4dot {
@@ -441,6 +442,7 @@ namespace de4dot {
 
 			Log.v("Deobfuscating methods");
 			var methodPrinter = new MethodPrinter();
+			var cflowObfuscator = new BlocksControlFlowDeobfuscator();
 			foreach (var method in allMethods) {
 				Log.v("Deobfuscating {0} ({1:X8})", method, method.MetadataToken.ToUInt32());
 				Log.indent();
@@ -450,7 +452,9 @@ namespace de4dot {
 
 					deob.deobfuscateMethodBegin(blocks);
 					if (options.ControlFlowDeobfuscation) {
-						int numDeadBlocks = blocks.deobfuscate();
+						cflowObfuscator.init(blocks);
+						cflowObfuscator.deobfuscate();
+						int numDeadBlocks = cflowObfuscator.NumberOfRemovedDeadBlocks;
 						if (numDeadBlocks > 0)
 							Log.v("Removed {0} dead block(s)", numDeadBlocks);
 					}

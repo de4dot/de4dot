@@ -218,7 +218,7 @@ namespace de4dot.deobfuscators {
 				if (stack <= 0)
 					return null;
 				var instr = instrs[i];
-				DotNetUtils.updateStack(instr.Instruction, ref stack);
+				DotNetUtils.updateStack(instr.Instruction, ref stack, false);
 				if (stack < 0)
 					return null;
 

@@ -483,25 +483,43 @@ namespace de4dot.blocks {
 			return !MemberReferenceHelper.verifyType(method.MethodReturnType.ReturnType, "mscorlib", "System.Void");
 		}
 
-		public static void updateStack(Instruction instr, ref int stack) {
-			if (instr.OpCode.FlowControl == FlowControl.Call) {
-				var method = (IMethodSignature)instr.Operand;
-				if (hasReturnValue(method))
-					stack++;
-				if (method.HasThis && instr.OpCode.Code == Code.Newobj)
-					stack++;
-
-				if (method.HasParameters)
-					stack -= method.Parameters.Count;
-				if (method.HasThis && instr.OpCode.Code != Code.Newobj)
-					stack--;
-			}
+		public static void updateStack(Instruction instr, ref int stack, bool methodHasReturnValue) {
+			int pushes, pops;
+			calculateStackUsage(instr, methodHasReturnValue, out pushes, out pops);
+			if (pops == -1)
+				stack = 0;
 			else
-				updateStack_nonCall(instr, ref stack);
+				stack += pushes - pops;
 		}
 
-		static void updateStack_nonCall(Instruction instr, ref int stack) {
+		// Sets pops to -1 if the stack is supposed to be cleared
+		public static void calculateStackUsage(Instruction instr, bool methodHasReturnValue, out int pushes, out int pops) {
+			if (instr.OpCode.FlowControl == FlowControl.Call)
+				calculateStackUsage_call(instr, out pushes, out pops);
+			else
+				calculateStackUsage_nonCall(instr, methodHasReturnValue, out pushes, out pops);
+		}
+
+		static void calculateStackUsage_call(Instruction instr, out int pushes, out int pops) {
+			pushes = 0;
+			pops = 0;
+
+			var method = (IMethodSignature)instr.Operand;
+			if (hasReturnValue(method) || (instr.OpCode.Code == Code.Newobj && method.HasThis))
+				pushes++;
+
+			if (method.HasParameters)
+				pops += method.Parameters.Count;
+			if (method.HasThis && instr.OpCode.Code != Code.Newobj)
+				pops++;
+		}
+
+		// Sets pops to -1 if the stack is supposed to be cleared
+		static void calculateStackUsage_nonCall(Instruction instr, bool methodHasReturnValue, out int pushes, out int pops) {
 			StackBehaviour stackBehavior;
+
+			pushes = 0;
+			pops = 0;
 
 			stackBehavior = instr.OpCode.StackBehaviourPush;
 			switch (stackBehavior) {
@@ -514,11 +532,11 @@ namespace de4dot.blocks {
 			case StackBehaviour.Pushr4:
 			case StackBehaviour.Pushr8:
 			case StackBehaviour.Pushref:
-				stack++;
+				pushes++;
 				break;
 
 			case StackBehaviour.Push1_push1:
-				stack += 2;
+				pushes += 2;
 				break;
 
 			case StackBehaviour.Varpush:	// only call, calli, callvirt which are handled elsewhere
@@ -534,7 +552,7 @@ namespace de4dot.blocks {
 			case StackBehaviour.Pop1:
 			case StackBehaviour.Popi:
 			case StackBehaviour.Popref:
-				stack--;
+				pops++;
 				break;
 
 			case StackBehaviour.Pop1_pop1:
@@ -545,7 +563,7 @@ namespace de4dot.blocks {
 			case StackBehaviour.Popi_popr8:
 			case StackBehaviour.Popref_pop1:
 			case StackBehaviour.Popref_popi:
-				stack -= 2;
+				pops += 2;
 				break;
 
 			case StackBehaviour.Popi_popi_popi:
@@ -554,16 +572,16 @@ namespace de4dot.blocks {
 			case StackBehaviour.Popref_popi_popr4:
 			case StackBehaviour.Popref_popi_popr8:
 			case StackBehaviour.Popref_popi_popref:
-				stack -= 3;
+				pops += 3;
 				break;
 
 			case StackBehaviour.PopAll:
-				stack = 0;
+				pops = -1;
 				break;
 
 			case StackBehaviour.Varpop:	// call, calli, callvirt, newobj (all handled elsewhere), and ret
-				// It's RET. Ignore decrementing stack once if method returns something
-				// since it's not important and we don't know whether it returns anything.
+				if (methodHasReturnValue)
+					pops++;
 				break;
 
 			default:
@@ -583,8 +601,14 @@ namespace de4dot.blocks {
 		}
 
 		public static string getFullAssemblyName(IMetadataScope scope) {
+			//TODO: Returning scope.Name is probably best since the method could fail.
 			var asmRef = getAssemblyNameReference(scope);
 			return asmRef.FullName;
+		}
+
+		public static bool isAssembly(IMetadataScope scope, string assemblySimpleName) {
+			return scope.Name == assemblySimpleName ||
+				scope.Name.StartsWith(assemblySimpleName + ",", StringComparison.Ordinal);
 		}
 	}
 }

@@ -168,6 +168,11 @@ namespace de4dot.blocks {
 			replaceLastInstrsWithBranch(numInstrs, target);
 		}
 
+		public void replaceBccWithBranch(bool isTaken) {
+			Block target = isTaken ? targets[0] : fallThrough;
+			replaceLastInstrsWithBranch(1, target);
+		}
+
 		public void removeDeadBlock() {
 			if (sources.Count != 0)
 				throw new ApplicationException("Trying to remove a non-dead block");

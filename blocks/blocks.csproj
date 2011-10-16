@@ -35,8 +35,14 @@
     <Compile Include="Block.cs" />
     <Compile Include="Blocks.cs" />
     <Compile Include="BlocksSorter.cs" />
+    <Compile Include="cflow\BlockControlFlowDeobfuscator.cs" />
+    <Compile Include="cflow\InstructionEmulator.cs" />
+    <Compile Include="cflow\Value.cs" />
+    <Compile Include="cflow\ValueStack.cs" />
     <Compile Include="CodeGenerator.cs" />
     <Compile Include="CondBranchDeobfuscator.cs" />
+    <Compile Include="cflow\BlocksControlFlowDeobfuscator.cs" />
+    <Compile Include="DeadBlocksRemover.cs" />
     <Compile Include="DotNetUtils.cs" />
     <Compile Include="FilterHandlerBlock.cs" />
     <Compile Include="ForwardScanOrder.cs" />
