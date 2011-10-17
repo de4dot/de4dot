@@ -669,7 +669,7 @@ namespace de4dot.blocks.cflow {
 			else if (val1.valueType == ValueType.Null && val2.valueType == ValueType.Null)
 				valueStack.push(new Int32Value(1));
 			else
-				Int32Value.createUnknownBool();
+				valueStack.push(Int32Value.createUnknownBool());
 		}
 
 		void emulate_Cgt(Instruction instr) {
@@ -681,7 +681,7 @@ namespace de4dot.blocks.cflow {
 			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64)
 				valueStack.push(Int64Value.Cgt((Int64Value)val1, (Int64Value)val2));
 			else
-				Int32Value.createUnknownBool();
+				valueStack.push(Int32Value.createUnknownBool());
 		}
 
 		void emulate_Cgt_Un(Instruction instr) {
@@ -693,7 +693,7 @@ namespace de4dot.blocks.cflow {
 			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64)
 				valueStack.push(Int64Value.Cgt_Un((Int64Value)val1, (Int64Value)val2));
 			else
-				Int32Value.createUnknownBool();
+				valueStack.push(Int32Value.createUnknownBool());
 		}
 
 		void emulate_Clt(Instruction instr) {
@@ -705,7 +705,7 @@ namespace de4dot.blocks.cflow {
 			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64)
 				valueStack.push(Int64Value.Clt((Int64Value)val1, (Int64Value)val2));
 			else
-				Int32Value.createUnknownBool();
+				valueStack.push(Int32Value.createUnknownBool());
 		}
 
 		void emulate_Clt_Un(Instruction instr) {
@@ -717,7 +717,7 @@ namespace de4dot.blocks.cflow {
 			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64)
 				valueStack.push(Int64Value.Clt_Un((Int64Value)val1, (Int64Value)val2));
 			else
-				Int32Value.createUnknownBool();
+				valueStack.push(Int32Value.createUnknownBool());
 		}
 
 		void emulate_Unbox_Any(Instruction instr) {
