@@ -37,6 +37,9 @@
     <Compile Include="BlocksSorter.cs" />
     <Compile Include="cflow\BlockControlFlowDeobfuscator.cs" />
     <Compile Include="cflow\InstructionEmulator.cs" />
+    <Compile Include="cflow\Int32Value.cs" />
+    <Compile Include="cflow\Int64Value.cs" />
+    <Compile Include="cflow\Real8Value.cs" />
     <Compile Include="cflow\Value.cs" />
     <Compile Include="cflow\ValueStack.cs" />
     <Compile Include="CodeGenerator.cs" />

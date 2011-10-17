@@ -71,6 +71,12 @@ namespace de4dot.blocks.cflow {
 			}
 		}
 
+		bool emulateBranch(int stackArgs, Bool3 cond) {
+			if (cond == Bool3.Unknown)
+				return false;
+			return emulateBranch(stackArgs, cond == Bool3.True);
+		}
+
 		bool emulateBranch(int stackArgs, bool isTaken) {
 			// Pop the arguments to the bcc instruction. The dead code remover will get rid of the
 			// pop and any pushed arguments. Insert the pops just before the bcc instr.
@@ -85,461 +91,133 @@ namespace de4dot.blocks.cflow {
 			var val2 = instructionEmulator.pop();
 			var val1 = instructionEmulator.pop();
 
-			//TODO: If it's an unknown int32/64, push 1 if val1 is same ref as val2
-
-			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32) {
-				var int1 = (Int32Value)val1;
-				var int2 = (Int32Value)val2;
-				return emulateBranch(2, int1.value == int2.value);
-			}
-			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64) {
-				var long1 = (Int64Value)val1;
-				var long2 = (Int64Value)val2;
-				return emulateBranch(2, long1.value == long2.value);
-			}
-			else if (val1.valueType == ValueType.Real8 && val2.valueType == ValueType.Real8) {
-				var real1 = (Real8Value)val1;
-				var real2 = (Real8Value)val2;
-				return emulateBranch(2, real1.value == real2.value);
-			}
-			else if (val1.valueType == ValueType.Null && val2.valueType == ValueType.Null) {
+			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32)
+				return emulateBranch(2, Int32Value.compareEq((Int32Value)val1, (Int32Value)val2));
+			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64)
+				return emulateBranch(2, Int64Value.compareEq((Int64Value)val1, (Int64Value)val2));
+			else if (val1.valueType == ValueType.Null && val2.valueType == ValueType.Null)
 				return emulateBranch(2, true);
-			}
-			else {
+			else
 				return false;
-			}
 		}
 
 		bool emulate_Bne_Un() {
 			var val2 = instructionEmulator.pop();
 			var val1 = instructionEmulator.pop();
 
-			//TODO: If it's an unknown int32/64, push 1 if val1 is same ref as val2
-
-			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32) {
-				var int1 = (Int32Value)val1;
-				var int2 = (Int32Value)val2;
-				return emulateBranch(2, (uint)int1.value != (uint)int2.value);
-			}
-			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64) {
-				var long1 = (Int64Value)val1;
-				var long2 = (Int64Value)val2;
-				return emulateBranch(2, (ulong)long1.value != (ulong)long2.value);
-			}
-			else if (val1.valueType == ValueType.Real8 && val2.valueType == ValueType.Real8) {
-				var real1 = (Real8Value)val1;
-				var real2 = (Real8Value)val2;
-				return emulateBranch(2, real1.value != real2.value);
-			}
-			else if (val1.valueType == ValueType.Null && val2.valueType == ValueType.Null) {
+			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32)
+				return emulateBranch(2, Int32Value.compareNeq((Int32Value)val1, (Int32Value)val2));
+			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64)
+				return emulateBranch(2, Int64Value.compareNeq((Int64Value)val1, (Int64Value)val2));
+			else if (val1.valueType == ValueType.Null && val2.valueType == ValueType.Null)
 				return emulateBranch(2, false);
-			}
-			else {
+			else
 				return false;
-			}
 		}
 
 		bool emulate_Bge() {
 			var val2 = instructionEmulator.pop();
 			var val1 = instructionEmulator.pop();
 
-			//TODO: Support floats
-
-			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32) {
-				var int1 = (Int32Value)val1;
-				var int2 = (Int32Value)val2;
-				return emulateBranch(2, int1.value >= int2.value);
-			}
-			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64) {
-				var long1 = (Int64Value)val1;
-				var long2 = (Int64Value)val2;
-				return emulateBranch(2, long1.value >= long2.value);
-			}
-			else if (val1.valueType == ValueType.Int32) {
-				var int1 = (Int32Value)val1;
-				if (int1.value == int.MaxValue)
-					return emulateBranch(2, true);	// max >= x => true
-				else
-					return false;
-			}
-			else if (val2.valueType == ValueType.Int32) {
-				var int2 = (Int32Value)val2;
-				if (int2.value == int.MinValue)
-					return emulateBranch(2, true);	// x >= min => true
-				else
-					return false;
-			}
-			else if (val1.valueType == ValueType.Int64) {
-				var long1 = (Int64Value)val1;
-				if (long1.value == long.MaxValue)
-					return emulateBranch(2, true);	// max >= x => true
-				else
-					return false;
-			}
-			else if (val2.valueType == ValueType.Int64) {
-				var long2 = (Int64Value)val2;
-				if (long2.value == long.MinValue)
-					return emulateBranch(2, true);	// x >= min => true
-				else
-					return false;
-			}
-			else {
+			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32)
+				return emulateBranch(2, Int32Value.compareGe((Int32Value)val1, (Int32Value)val2));
+			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64)
+				return emulateBranch(2, Int64Value.compareGe((Int64Value)val1, (Int64Value)val2));
+			else
 				return false;
-			}
 		}
 
 		bool emulate_Bge_Un() {
 			var val2 = instructionEmulator.pop();
 			var val1 = instructionEmulator.pop();
 
-			//TODO: Support floats
-
-			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32) {
-				var int1 = (Int32Value)val1;
-				var int2 = (Int32Value)val2;
-				return emulateBranch(2, (uint)int1.value >= (uint)int2.value);
-			}
-			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64) {
-				var long1 = (Int64Value)val1;
-				var long2 = (Int64Value)val2;
-				return emulateBranch(2, (ulong)long1.value >= (ulong)long2.value);
-			}
-			else if (val1.valueType == ValueType.Int32) {
-				var int1 = (Int32Value)val1;
-				if ((uint)int1.value == uint.MaxValue)
-					return emulateBranch(2, true);	// max >= x => true
-				else
-					return false;
-			}
-			else if (val2.valueType == ValueType.Int32) {
-				var int2 = (Int32Value)val2;
-				if ((uint)int2.value == uint.MinValue)
-					return emulateBranch(2, true);	// x >= min => true
-				else
-					return false;
-			}
-			else if (val1.valueType == ValueType.Int64) {
-				var long1 = (Int64Value)val1;
-				if ((ulong)long1.value == ulong.MaxValue)
-					return emulateBranch(2, true);	// max >= x => true
-				else
-					return false;
-			}
-			else if (val2.valueType == ValueType.Int64) {
-				var long2 = (Int64Value)val2;
-				if ((ulong)long2.value == ulong.MinValue)
-					return emulateBranch(2, true);	// x >= min => true
-				else
-					return false;
-			}
-			else {
+			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32)
+				return emulateBranch(2, Int32Value.compareGe_Un((Int32Value)val1, (Int32Value)val2));
+			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64)
+				return emulateBranch(2, Int64Value.compareGe_Un((Int64Value)val1, (Int64Value)val2));
+			else
 				return false;
-			}
 		}
 
 		bool emulate_Bgt() {
 			var val2 = instructionEmulator.pop();
 			var val1 = instructionEmulator.pop();
 
-			//TODO: Support floats
-
-			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32) {
-				var int1 = (Int32Value)val1;
-				var int2 = (Int32Value)val2;
-				return emulateBranch(2, int1.value > int2.value);
-			}
-			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64) {
-				var long1 = (Int64Value)val1;
-				var long2 = (Int64Value)val2;
-				return emulateBranch(2, long1.value > long2.value);
-			}
-			else if (val1.valueType == ValueType.Int32) {
-				var int1 = (Int32Value)val1;
-				if (int1.value == int.MinValue)
-					return emulateBranch(2, false);	// min > x => false
-				else
-					return false;
-			}
-			else if (val2.valueType == ValueType.Int32) {
-				var int2 = (Int32Value)val2;
-				if (int2.value == int.MaxValue)
-					return emulateBranch(2, false);	// x > max => false
-				else
-					return false;
-			}
-			else if (val1.valueType == ValueType.Int64) {
-				var long1 = (Int64Value)val1;
-				if (long1.value == long.MinValue)
-					return emulateBranch(2, false);	// min > x => false
-				else
-					return false;
-			}
-			else if (val2.valueType == ValueType.Int64) {
-				var long2 = (Int64Value)val2;
-				if (long2.value == long.MaxValue)
-					return emulateBranch(2, false);	// x > max => false
-				else
-					return false;
-			}
-			else {
+			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32)
+				return emulateBranch(2, Int32Value.compareGt((Int32Value)val1, (Int32Value)val2));
+			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64)
+				return emulateBranch(2, Int64Value.compareGt((Int64Value)val1, (Int64Value)val2));
+			else
 				return false;
-			}
 		}
 
 		bool emulate_Bgt_Un() {
 			var val2 = instructionEmulator.pop();
 			var val1 = instructionEmulator.pop();
 
-			//TODO: Support floats
-
-			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32) {
-				var int1 = (Int32Value)val1;
-				var int2 = (Int32Value)val2;
-				return emulateBranch(2, (uint)int1.value > (uint)int2.value);
-			}
-			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64) {
-				var long1 = (Int64Value)val1;
-				var long2 = (Int64Value)val2;
-				return emulateBranch(2, (ulong)long1.value > (ulong)long2.value);
-			}
-			else if (val1.valueType == ValueType.Int32) {
-				var int1 = (Int32Value)val1;
-				if ((uint)int1.value == uint.MinValue)
-					return emulateBranch(2, false);	// min > x => false
-				else
-					return false;
-			}
-			else if (val2.valueType == ValueType.Int32) {
-				var int2 = (Int32Value)val2;
-				if ((uint)int2.value == uint.MaxValue)
-					return emulateBranch(2, false);	// x > max => false
-				else
-					return false;
-			}
-			else if (val1.valueType == ValueType.Int64) {
-				var long1 = (Int64Value)val1;
-				if ((ulong)long1.value == ulong.MinValue)
-					return emulateBranch(2, false);	// min > x => false
-				else
-					return false;
-			}
-			else if (val2.valueType == ValueType.Int64) {
-				var long2 = (Int64Value)val2;
-				if ((ulong)long2.value == ulong.MaxValue)
-					return emulateBranch(2, false);	// x > max => false
-				else
-					return false;
-			}
-			else {
+			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32)
+				return emulateBranch(2, Int32Value.compareGt_Un((Int32Value)val1, (Int32Value)val2));
+			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64)
+				return emulateBranch(2, Int64Value.compareGt_Un((Int64Value)val1, (Int64Value)val2));
+			else
 				return false;
-			}
 		}
 
 		bool emulate_Ble() {
 			var val2 = instructionEmulator.pop();
 			var val1 = instructionEmulator.pop();
 
-			//TODO: Support floats
-
-			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32) {
-				var int1 = (Int32Value)val1;
-				var int2 = (Int32Value)val2;
-				return emulateBranch(2, int1.value <= int2.value);
-			}
-			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64) {
-				var long1 = (Int64Value)val1;
-				var long2 = (Int64Value)val2;
-				return emulateBranch(2, long1.value <= long2.value);
-			}
-			else if (val1.valueType == ValueType.Int32) {
-				var int1 = (Int32Value)val1;
-				if (int1.value == int.MinValue)
-					return emulateBranch(2, true);	// min <= x => true
-				else
-					return false;
-			}
-			else if (val2.valueType == ValueType.Int32) {
-				var int2 = (Int32Value)val2;
-				if (int2.value == int.MaxValue)
-					return emulateBranch(2, true);	// x <= max => true
-				else
-					return false;
-			}
-			else if (val1.valueType == ValueType.Int64) {
-				var long1 = (Int64Value)val1;
-				if (long1.value == long.MinValue)
-					return emulateBranch(2, true);	// min <= x => true
-				else
-					return false;
-			}
-			else if (val2.valueType == ValueType.Int64) {
-				var long2 = (Int64Value)val2;
-				if (long2.value == long.MaxValue)
-					return emulateBranch(2, true);	// x <= max => true
-				else
-					return false;
-			}
-			else {
+			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32)
+				return emulateBranch(2, Int32Value.compareLe((Int32Value)val1, (Int32Value)val2));
+			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64)
+				return emulateBranch(2, Int64Value.compareLe((Int64Value)val1, (Int64Value)val2));
+			else
 				return false;
-			}
 		}
 
 		bool emulate_Ble_Un() {
 			var val2 = instructionEmulator.pop();
 			var val1 = instructionEmulator.pop();
 
-			//TODO: Support floats
-
-			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32) {
-				var int1 = (Int32Value)val1;
-				var int2 = (Int32Value)val2;
-				return emulateBranch(2, (uint)int1.value <= (uint)int2.value);
-			}
-			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64) {
-				var long1 = (Int64Value)val1;
-				var long2 = (Int64Value)val2;
-				return emulateBranch(2, (ulong)long1.value <= (ulong)long2.value);
-			}
-			else if (val1.valueType == ValueType.Int32) {
-				var int1 = (Int32Value)val1;
-				if ((uint)int1.value == uint.MinValue)
-					return emulateBranch(2, true);	// min <= x => true
-				else
-					return false;
-			}
-			else if (val2.valueType == ValueType.Int32) {
-				var int2 = (Int32Value)val2;
-				if ((uint)int2.value == uint.MaxValue)
-					return emulateBranch(2, true);	// x <= max => true
-				else
-					return false;
-			}
-			else if (val1.valueType == ValueType.Int64) {
-				var long1 = (Int64Value)val1;
-				if ((ulong)long1.value == ulong.MinValue)
-					return emulateBranch(2, true);	// min <= x => true
-				else
-					return false;
-			}
-			else if (val2.valueType == ValueType.Int64) {
-				var long2 = (Int64Value)val2;
-				if ((ulong)long2.value == ulong.MaxValue)
-					return emulateBranch(2, true);	// x <= max => true
-				else
-					return false;
-			}
-			else {
+			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32)
+				return emulateBranch(2, Int32Value.compareLe_Un((Int32Value)val1, (Int32Value)val2));
+			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64)
+				return emulateBranch(2, Int64Value.compareLe_Un((Int64Value)val1, (Int64Value)val2));
+			else
 				return false;
-			}
 		}
 
 		bool emulate_Blt() {
 			var val2 = instructionEmulator.pop();
 			var val1 = instructionEmulator.pop();
 
-			//TODO: Support floats
-
-			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32) {
-				var int1 = (Int32Value)val1;
-				var int2 = (Int32Value)val2;
-				return emulateBranch(2, int1.value < int2.value);
-			}
-			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64) {
-				var long1 = (Int64Value)val1;
-				var long2 = (Int64Value)val2;
-				return emulateBranch(2, long1.value < long2.value);
-			}
-			else if (val1.valueType == ValueType.Int32) {
-				var int1 = (Int32Value)val1;
-				if (int1.value == int.MaxValue)
-					return emulateBranch(2, false);	// max < x => false
-				else
-					return false;
-			}
-			else if (val2.valueType == ValueType.Int32) {
-				var int2 = (Int32Value)val2;
-				if (int2.value == int.MinValue)
-					return emulateBranch(2, false);	// x < min => false
-				else
-					return false;
-			}
-			else if (val1.valueType == ValueType.Int64) {
-				var long1 = (Int64Value)val1;
-				if (long1.value == long.MaxValue)
-					return emulateBranch(2, false);	// max < x => false
-				else
-					return false;
-			}
-			else if (val2.valueType == ValueType.Int64) {
-				var long2 = (Int64Value)val2;
-				if (long2.value == long.MinValue)
-					return emulateBranch(2, false);	// x < min => false
-				else
-					return false;
-			}
-			else {
+			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32)
+				return emulateBranch(2, Int32Value.compareLt((Int32Value)val1, (Int32Value)val2));
+			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64)
+				return emulateBranch(2, Int64Value.compareLt((Int64Value)val1, (Int64Value)val2));
+			else
 				return false;
-			}
 		}
 
 		bool emulate_Blt_Un() {
 			var val2 = instructionEmulator.pop();
 			var val1 = instructionEmulator.pop();
 
-			//TODO: Support floats
-
-			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32) {
-				var int1 = (Int32Value)val1;
-				var int2 = (Int32Value)val2;
-				return emulateBranch(2, (uint)int1.value < (uint)int2.value);
-			}
-			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64) {
-				var long1 = (Int64Value)val1;
-				var long2 = (Int64Value)val2;
-				return emulateBranch(2, (ulong)long1.value < (ulong)long2.value);
-			}
-			else if (val1.valueType == ValueType.Int32) {
-				var int1 = (Int32Value)val1;
-				if ((uint)int1.value == uint.MaxValue)
-					return emulateBranch(2, false);	// max < x => false
-				else
-					return false;
-			}
-			else if (val2.valueType == ValueType.Int32) {
-				var int2 = (Int32Value)val2;
-				if ((uint)int2.value == uint.MinValue)
-					return emulateBranch(2, false);	// x < min => false
-				else
-					return false;
-			}
-			else if (val1.valueType == ValueType.Int64) {
-				var long1 = (Int64Value)val1;
-				if ((ulong)long1.value == ulong.MaxValue)
-					return emulateBranch(2, false);	// max < x => false
-				else
-					return false;
-			}
-			else if (val2.valueType == ValueType.Int64) {
-				var long2 = (Int64Value)val2;
-				if ((ulong)long2.value == ulong.MinValue)
-					return emulateBranch(2, false);	// x < min => false
-				else
-					return false;
-			}
-			else {
+			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32)
+				return emulateBranch(2, Int32Value.compareLt_Un((Int32Value)val1, (Int32Value)val2));
+			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64)
+				return emulateBranch(2, Int64Value.compareLt_Un((Int64Value)val1, (Int64Value)val2));
+			else
 				return false;
-			}
 		}
 
 		bool emulate_Brfalse() {
 			var val1 = instructionEmulator.pop();
 
-			//TODO: Support floats
-
 			if (val1.valueType == ValueType.Int32)
-				return emulateBranch(1, ((Int32Value)val1).value == 0);
+				return emulateBranch(1, Int32Value.compareFalse((Int32Value)val1));
 			else if (val1.valueType == ValueType.Int64)
-				return emulateBranch(1, ((Int64Value)val1).value == 0);
+				return emulateBranch(1, Int64Value.compareFalse((Int64Value)val1));
 			else if (val1.valueType == ValueType.Null)
 				return emulateBranch(1, true);
 			else
@@ -549,12 +227,10 @@ namespace de4dot.blocks.cflow {
 		bool emulate_Brtrue() {
 			var val1 = instructionEmulator.pop();
 
-			//TODO: Support floats
-
 			if (val1.valueType == ValueType.Int32)
-				return emulateBranch(1, ((Int32Value)val1).value != 0);
+				return emulateBranch(1, Int32Value.compareTrue((Int32Value)val1));
 			else if (val1.valueType == ValueType.Int64)
-				return emulateBranch(1, ((Int64Value)val1).value != 0);
+				return emulateBranch(1, Int64Value.compareTrue((Int64Value)val1));
 			else if (val1.valueType == ValueType.Null)
 				return emulateBranch(1, false);
 			else

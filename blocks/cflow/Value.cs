@@ -28,6 +28,12 @@ namespace de4dot.blocks.cflow {
 		String,
 	}
 
+	enum Bool3 {
+		Unknown = -1,
+		False,
+		True,
+	}
+
 	abstract class Value {
 		public readonly ValueType valueType;
 
@@ -69,45 +75,6 @@ namespace de4dot.blocks.cflow {
 
 		public override string ToString() {
 			return string.Format("box({0})", value.ToString());
-		}
-	}
-
-	class Int32Value : Value {
-		public readonly int value;
-
-		public Int32Value(int value)
-			: base(ValueType.Int32) {
-			this.value = value;
-		}
-
-		public override string ToString() {
-			return value.ToString();
-		}
-	}
-
-	class Int64Value : Value {
-		public readonly long value;
-
-		public Int64Value(long value)
-			: base(ValueType.Int64) {
-			this.value = value;
-		}
-
-		public override string ToString() {
-			return value.ToString() + "L";
-		}
-	}
-
-	class Real8Value : Value {
-		public readonly double value;
-
-		public Real8Value(double value)
-			: base(ValueType.Real8) {
-			this.value = value;
-		}
-
-		public override string ToString() {
-			return value.ToString() + "D";
 		}
 	}
 
