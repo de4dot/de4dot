@@ -196,6 +196,8 @@ namespace de4dot.blocks.cflow {
 		public static Int32Value Sub(Int32Value a, Int32Value b) {
 			if (a.allBitsValid() && b.allBitsValid())
 				return new Int32Value(a.value - b.value);
+			if (ReferenceEquals(a, b))
+				return new Int32Value(0);
 			return createUnknown();
 		}
 
