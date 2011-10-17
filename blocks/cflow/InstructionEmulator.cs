@@ -52,6 +52,8 @@ namespace de4dot.blocks.cflow {
 		}
 
 		static Value getDefaultValue(TypeReference typeReference) {
+			if (typeReference == null)
+				return new UnknownValue();
 			if (!typeReference.IsValueType)
 				return NullValue.Instance;
 			else if (DotNetUtils.isAssembly(typeReference.Scope, "mscorlib")) {
@@ -76,6 +78,8 @@ namespace de4dot.blocks.cflow {
 		}
 
 		static Value getUnknownValue(TypeReference typeReference) {
+			if (typeReference == null)
+				return new UnknownValue();
 			if (DotNetUtils.isAssembly(typeReference.Scope, "mscorlib")) {
 				switch (typeReference.FullName) {
 				case "System.Boolean":	return Int32Value.createUnknownBool();
@@ -223,12 +227,54 @@ namespace de4dot.blocks.cflow {
 			case Code.Call:		emulate_Call(instr); break;
 			case Code.Callvirt:	emulate_Callvirt(instr); break;
 
-			case Code.Add_Ovf:
-			case Code.Add_Ovf_Un:
-			case Code.Sub_Ovf:
-			case Code.Sub_Ovf_Un:
-			case Code.Mul_Ovf:
-			case Code.Mul_Ovf_Un:
+			case Code.Castclass: emulate_Castclass(instr); break;
+			case Code.Isinst:	emulate_Isinst(instr); break;
+
+			case Code.Add_Ovf: emulateIntOps2(); break;
+			case Code.Add_Ovf_Un: emulateIntOps2(); break;
+			case Code.Sub_Ovf: emulateIntOps2(); break;
+			case Code.Sub_Ovf_Un: emulateIntOps2(); break;
+			case Code.Mul_Ovf: emulateIntOps2(); break;
+			case Code.Mul_Ovf_Un: emulateIntOps2(); break;
+
+			case Code.Conv_Ovf_I1:
+			case Code.Conv_Ovf_I1_Un: valueStack.pop(); valueStack.push(Int32Value.createUnknown()); break;
+			case Code.Conv_Ovf_I2:
+			case Code.Conv_Ovf_I2_Un: valueStack.pop(); valueStack.push(Int32Value.createUnknown()); break;
+			case Code.Conv_Ovf_I4:
+			case Code.Conv_Ovf_I4_Un: valueStack.pop(); valueStack.push(Int32Value.createUnknown()); break;
+			case Code.Conv_Ovf_I8:
+			case Code.Conv_Ovf_I8_Un: valueStack.pop(); valueStack.push(Int64Value.createUnknown()); break;
+			case Code.Conv_Ovf_U1:
+			case Code.Conv_Ovf_U1_Un: valueStack.pop(); valueStack.push(Int32Value.createUnknownUInt8()); break;
+			case Code.Conv_Ovf_U2:
+			case Code.Conv_Ovf_U2_Un: valueStack.pop(); valueStack.push(Int32Value.createUnknownUInt16()); break;
+			case Code.Conv_Ovf_U4:
+			case Code.Conv_Ovf_U4_Un: valueStack.pop(); valueStack.push(Int32Value.createUnknown()); break;
+			case Code.Conv_Ovf_U8:
+			case Code.Conv_Ovf_U8_Un: valueStack.pop(); valueStack.push(Int64Value.createUnknown()); break;
+
+			case Code.Ldelem_I1: valueStack.pop(2); valueStack.push(Int32Value.createUnknown()); break;
+			case Code.Ldelem_I2: valueStack.pop(2); valueStack.push(Int32Value.createUnknown()); break;
+			case Code.Ldelem_I4: valueStack.pop(2); valueStack.push(Int32Value.createUnknown()); break;
+			case Code.Ldelem_I8: valueStack.pop(2); valueStack.push(Int64Value.createUnknown()); break;
+			case Code.Ldelem_U1: valueStack.pop(2); valueStack.push(Int32Value.createUnknownUInt8()); break;
+			case Code.Ldelem_U2: valueStack.pop(2); valueStack.push(Int32Value.createUnknownUInt16()); break;
+			case Code.Ldelem_U4: valueStack.pop(2); valueStack.push(Int32Value.createUnknown()); break;
+
+			case Code.Ldind_I1:	valueStack.pop(); valueStack.push(Int32Value.createUnknown()); break;
+			case Code.Ldind_I2:	valueStack.pop(); valueStack.push(Int32Value.createUnknown()); break;
+			case Code.Ldind_I4:	valueStack.pop(); valueStack.push(Int32Value.createUnknown()); break;
+			case Code.Ldind_I8:	valueStack.pop(); valueStack.push(Int64Value.createUnknown()); break;
+			case Code.Ldind_U1:	valueStack.pop(); valueStack.push(Int32Value.createUnknownUInt8()); break;
+			case Code.Ldind_U2:	valueStack.pop(); valueStack.push(Int32Value.createUnknownUInt16()); break;
+			case Code.Ldind_U4:	valueStack.pop(); valueStack.push(Int32Value.createUnknown()); break;
+
+			case Code.Ldlen:	valueStack.pop(); valueStack.push(Int32Value.createUnknown()); break;
+			case Code.Sizeof:	valueStack.push(Int32Value.createUnknown()); break;
+
+			case Code.Ldfld:	emulate_Ldfld(instr); break;
+			case Code.Ldsfld:	emulate_Ldsfld(instr); break;
 
 			case Code.Unbox:
 
@@ -262,32 +308,15 @@ namespace de4dot.blocks.cflow {
 			case Code.Brtrue:
 			case Code.Brtrue_S:
 			case Code.Br:
-			case Code.Break:
 			case Code.Br_S:
+			case Code.Break:
 			case Code.Calli:
-			case Code.Castclass:
 			case Code.Ckfinite:
 			case Code.Constrained:
 			case Code.Conv_I:
 			case Code.Conv_Ovf_I:
-			case Code.Conv_Ovf_I1:
-			case Code.Conv_Ovf_I1_Un:
-			case Code.Conv_Ovf_I2:
-			case Code.Conv_Ovf_I2_Un:
-			case Code.Conv_Ovf_I4:
-			case Code.Conv_Ovf_I4_Un:
-			case Code.Conv_Ovf_I8:
-			case Code.Conv_Ovf_I8_Un:
 			case Code.Conv_Ovf_I_Un:
 			case Code.Conv_Ovf_U:
-			case Code.Conv_Ovf_U1:
-			case Code.Conv_Ovf_U1_Un:
-			case Code.Conv_Ovf_U2:
-			case Code.Conv_Ovf_U2_Un:
-			case Code.Conv_Ovf_U4:
-			case Code.Conv_Ovf_U4_Un:
-			case Code.Conv_Ovf_U8:
-			case Code.Conv_Ovf_U8_Un:
 			case Code.Conv_Ovf_U_Un:
 			case Code.Conv_U:
 			case Code.Cpblk:
@@ -296,38 +325,20 @@ namespace de4dot.blocks.cflow {
 			case Code.Endfinally:
 			case Code.Initblk:
 			case Code.Initobj:
-			case Code.Isinst:
 			case Code.Jmp:
 			case Code.Ldelema:
 			case Code.Ldelem_Any:
 			case Code.Ldelem_I:
-			case Code.Ldelem_I1:
-			case Code.Ldelem_I2:
-			case Code.Ldelem_I4:
-			case Code.Ldelem_I8:
 			case Code.Ldelem_R4:
 			case Code.Ldelem_R8:
 			case Code.Ldelem_Ref:
-			case Code.Ldelem_U1:
-			case Code.Ldelem_U2:
-			case Code.Ldelem_U4:
-			case Code.Ldfld:
 			case Code.Ldflda:
 			case Code.Ldftn:
 			case Code.Ldind_I:
-			case Code.Ldind_I1:
-			case Code.Ldind_I2:
-			case Code.Ldind_I4:
-			case Code.Ldind_I8:
 			case Code.Ldind_R4:
 			case Code.Ldind_R8:
 			case Code.Ldind_Ref:
-			case Code.Ldind_U1:
-			case Code.Ldind_U2:
-			case Code.Ldind_U4:
-			case Code.Ldlen:
 			case Code.Ldobj:
-			case Code.Ldsfld:
 			case Code.Ldsflda:
 			case Code.Ldtoken:
 			case Code.Ldvirtftn:
@@ -345,7 +356,6 @@ namespace de4dot.blocks.cflow {
 			case Code.Refanyval:
 			case Code.Ret:
 			case Code.Rethrow:
-			case Code.Sizeof:
 			case Code.Stelem_Any:
 			case Code.Stelem_I:
 			case Code.Stelem_I1:
@@ -766,6 +776,51 @@ namespace de4dot.blocks.cflow {
 				valueStack.push(getUnknownValue(method.MethodReturnType.ReturnType));
 			else
 				valueStack.push(pushes);
+		}
+
+		void emulate_Castclass(Instruction instr) {
+			var val1 = valueStack.pop();
+
+			if (val1.valueType == ValueType.Null)
+				valueStack.push(val1);
+			else
+				valueStack.pushUnknown();
+		}
+
+		void emulate_Isinst(Instruction instr) {
+			var val1 = valueStack.pop();
+
+			if (val1.valueType == ValueType.Null)
+				valueStack.push(val1);
+			else
+				valueStack.pushUnknown();
+		}
+
+		void emulate_Ldfld(Instruction instr) {
+			var val1 = valueStack.pop();
+			emulateLoadField(instr.Operand as FieldReference);
+		}
+
+		void emulate_Ldsfld(Instruction instr) {
+			emulateLoadField(instr.Operand as FieldReference);
+		}
+
+		void emulateLoadField(FieldReference fieldReference) {
+			if (fieldReference != null)
+				valueStack.push(getUnknownValue(fieldReference.FieldType));
+			else
+				valueStack.pushUnknown();
+		}
+
+		void emulateIntOps2() {
+			var val2 = valueStack.pop();
+			var val1 = valueStack.pop();
+			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32)
+				valueStack.push(Int32Value.createUnknown());
+			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64)
+				valueStack.push(Int64Value.createUnknown());
+			else
+				valueStack.pushUnknown();
 		}
 	}
 }
