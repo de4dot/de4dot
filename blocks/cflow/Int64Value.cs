@@ -105,6 +105,8 @@ namespace de4dot.blocks.cflow {
 		public static Int64Value Add(Int64Value a, Int64Value b) {
 			if (a.allBitsValid() && b.allBitsValid())
 				return new Int64Value(a.value + b.value);
+			if (ReferenceEquals(a, b))
+				return new Int64Value(a.value << 1, (a.validMask << 1) | 1);
 			return createUnknown();
 		}
 
@@ -112,7 +114,7 @@ namespace de4dot.blocks.cflow {
 			if (a.allBitsValid() && b.allBitsValid())
 				return new Int64Value(a.value - b.value);
 			if (ReferenceEquals(a, b))
-				return new Int32Value(0);
+				return new Int64Value(0);
 			return createUnknown();
 		}
 
@@ -145,7 +147,7 @@ namespace de4dot.blocks.cflow {
 		public static Int64Value Div_Un(Int64Value a, Int64Value b) {
 			if (a.allBitsValid() && b.allBitsValid()) {
 				try {
-					return new Int64Value((int)((uint)a.value / (uint)b.value));
+					return new Int64Value((long)((ulong)a.value / (ulong)b.value));
 				}
 				catch (ArithmeticException) {
 					return createUnknown();
@@ -173,7 +175,7 @@ namespace de4dot.blocks.cflow {
 		public static Int64Value Rem_Un(Int64Value a, Int64Value b) {
 			if (a.allBitsValid() && b.allBitsValid()) {
 				try {
-					return new Int64Value((int)((uint)a.value % (uint)b.value));
+					return new Int64Value((long)((ulong)a.value % (ulong)b.value));
 				}
 				catch (ArithmeticException) {
 					return createUnknown();
@@ -256,7 +258,7 @@ namespace de4dot.blocks.cflow {
 			switch (b) {
 			case Bool3.False:	return new Int32Value(0);
 			case Bool3.True:	return new Int32Value(1);
-			default:			return Int32Value.createUnknown();
+			default:			return Int32Value.createUnknownBool();
 			}
 		}
 
@@ -303,19 +305,19 @@ namespace de4dot.blocks.cflow {
 		public static Bool3 compareGt(Int64Value a, Int64Value b) {
 			if (a.allBitsValid() && b.allBitsValid())
 				return a.value > b.value ? Bool3.True : Bool3.False;
-			if (a.hasValue(int.MinValue))
+			if (a.hasValue(long.MinValue))
 				return Bool3.False;	// min > x => false
-			if (b.hasValue(int.MaxValue))
+			if (b.hasValue(long.MaxValue))
 				return Bool3.False;	// x > max => false
 			return Bool3.Unknown;
 		}
 
 		public static Bool3 compareGt_Un(Int64Value a, Int64Value b) {
 			if (a.allBitsValid() && b.allBitsValid())
-				return (uint)a.value > (uint)b.value ? Bool3.True : Bool3.False;
-			if (a.hasValue(uint.MinValue))
+				return (ulong)a.value > (ulong)b.value ? Bool3.True : Bool3.False;
+			if (a.hasValue(ulong.MinValue))
 				return Bool3.False;	// min > x => false
-			if (b.hasValue(uint.MaxValue))
+			if (b.hasValue(ulong.MaxValue))
 				return Bool3.False;	// x > max => false
 			return Bool3.Unknown;
 		}
@@ -323,59 +325,59 @@ namespace de4dot.blocks.cflow {
 		public static Bool3 compareGe(Int64Value a, Int64Value b) {
 			if (a.allBitsValid() && b.allBitsValid())
 				return a.value >= b.value ? Bool3.True : Bool3.False;
-			if (a.hasValue(int.MaxValue))
-				return Bool3.False;	// max >= x => true
-			if (b.hasValue(int.MinValue))
-				return Bool3.False;	// x >= min => true
+			if (a.hasValue(long.MaxValue))
+				return Bool3.True;	// max >= x => true
+			if (b.hasValue(long.MinValue))
+				return Bool3.True;	// x >= min => true
 			return Bool3.Unknown;
 		}
 
 		public static Bool3 compareGe_Un(Int64Value a, Int64Value b) {
 			if (a.allBitsValid() && b.allBitsValid())
-				return (uint)a.value >= (uint)b.value ? Bool3.True : Bool3.False;
-			if (a.hasValue(uint.MaxValue))
-				return Bool3.False;	// max >= x => true
-			if (b.hasValue(uint.MinValue))
-				return Bool3.False;	// x >= min => true
+				return (ulong)a.value >= (ulong)b.value ? Bool3.True : Bool3.False;
+			if (a.hasValue(ulong.MaxValue))
+				return Bool3.True;	// max >= x => true
+			if (b.hasValue(ulong.MinValue))
+				return Bool3.True;	// x >= min => true
 			return Bool3.Unknown;
 		}
 
 		public static Bool3 compareLe(Int64Value a, Int64Value b) {
 			if (a.allBitsValid() && b.allBitsValid())
 				return a.value <= b.value ? Bool3.True : Bool3.False;
-			if (a.hasValue(int.MinValue))
-				return Bool3.False;	// min <= x => true
-			if (b.hasValue(int.MaxValue))
-				return Bool3.False;	// x <= max => true
+			if (a.hasValue(long.MinValue))
+				return Bool3.True;	// min <= x => true
+			if (b.hasValue(long.MaxValue))
+				return Bool3.True;	// x <= max => true
 			return Bool3.Unknown;
 		}
 
 		public static Bool3 compareLe_Un(Int64Value a, Int64Value b) {
 			if (a.allBitsValid() && b.allBitsValid())
-				return (uint)a.value <= (uint)b.value ? Bool3.True : Bool3.False;
-			if (a.hasValue(uint.MinValue))
-				return Bool3.False;	// min <= x => true
-			if (b.hasValue(uint.MaxValue))
-				return Bool3.False;	// x <= max => true
+				return (ulong)a.value <= (ulong)b.value ? Bool3.True : Bool3.False;
+			if (a.hasValue(ulong.MinValue))
+				return Bool3.True;	// min <= x => true
+			if (b.hasValue(ulong.MaxValue))
+				return Bool3.True;	// x <= max => true
 			return Bool3.Unknown;
 		}
 
 		public static Bool3 compareLt(Int64Value a, Int64Value b) {
 			if (a.allBitsValid() && b.allBitsValid())
 				return a.value < b.value ? Bool3.True : Bool3.False;
-			if (a.hasValue(int.MaxValue))
+			if (a.hasValue(long.MaxValue))
 				return Bool3.False;	// max < x => false
-			if (b.hasValue(int.MinValue))
+			if (b.hasValue(long.MinValue))
 				return Bool3.False;	// x < min => false
 			return Bool3.Unknown;
 		}
 
 		public static Bool3 compareLt_Un(Int64Value a, Int64Value b) {
 			if (a.allBitsValid() && b.allBitsValid())
-				return (uint)a.value < (uint)b.value ? Bool3.True : Bool3.False;
-			if (a.hasValue(uint.MaxValue))
+				return (ulong)a.value < (ulong)b.value ? Bool3.True : Bool3.False;
+			if (a.hasValue(ulong.MaxValue))
 				return Bool3.False;	// max < x => false
-			if (b.hasValue(uint.MinValue))
+			if (b.hasValue(ulong.MinValue))
 				return Bool3.False;	// x < min => false
 			return Bool3.Unknown;
 		}

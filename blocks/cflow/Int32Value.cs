@@ -190,6 +190,8 @@ namespace de4dot.blocks.cflow {
 		public static Int32Value Add(Int32Value a, Int32Value b) {
 			if (a.allBitsValid() && b.allBitsValid())
 				return new Int32Value(a.value + b.value);
+			if (ReferenceEquals(a, b))
+				return new Int32Value(a.value << 1, (a.validMask << 1) | 1);
 			return createUnknown();
 		}
 
@@ -341,7 +343,7 @@ namespace de4dot.blocks.cflow {
 			switch (b) {
 			case Bool3.False:	return new Int32Value(0);
 			case Bool3.True:	return new Int32Value(1);
-			default:			return createUnknown();
+			default:			return createUnknownBool();
 			}
 		}
 
@@ -409,9 +411,9 @@ namespace de4dot.blocks.cflow {
 			if (a.allBitsValid() && b.allBitsValid())
 				return a.value >= b.value ? Bool3.True : Bool3.False;
 			if (a.hasValue(int.MaxValue))
-				return Bool3.False;	// max >= x => true
+				return Bool3.True;	// max >= x => true
 			if (b.hasValue(int.MinValue))
-				return Bool3.False;	// x >= min => true
+				return Bool3.True;	// x >= min => true
 			return Bool3.Unknown;
 		}
 
@@ -419,9 +421,9 @@ namespace de4dot.blocks.cflow {
 			if (a.allBitsValid() && b.allBitsValid())
 				return (uint)a.value >= (uint)b.value ? Bool3.True : Bool3.False;
 			if (a.hasValue(uint.MaxValue))
-				return Bool3.False;	// max >= x => true
+				return Bool3.True;	// max >= x => true
 			if (b.hasValue(uint.MinValue))
-				return Bool3.False;	// x >= min => true
+				return Bool3.True;	// x >= min => true
 			return Bool3.Unknown;
 		}
 
@@ -429,9 +431,9 @@ namespace de4dot.blocks.cflow {
 			if (a.allBitsValid() && b.allBitsValid())
 				return a.value <= b.value ? Bool3.True : Bool3.False;
 			if (a.hasValue(int.MinValue))
-				return Bool3.False;	// min <= x => true
+				return Bool3.True;	// min <= x => true
 			if (b.hasValue(int.MaxValue))
-				return Bool3.False;	// x <= max => true
+				return Bool3.True;	// x <= max => true
 			return Bool3.Unknown;
 		}
 
@@ -439,9 +441,9 @@ namespace de4dot.blocks.cflow {
 			if (a.allBitsValid() && b.allBitsValid())
 				return (uint)a.value <= (uint)b.value ? Bool3.True : Bool3.False;
 			if (a.hasValue(uint.MinValue))
-				return Bool3.False;	// min <= x => true
+				return Bool3.True;	// min <= x => true
 			if (b.hasValue(uint.MaxValue))
-				return Bool3.False;	// x <= max => true
+				return Bool3.True;	// x <= max => true
 			return Bool3.Unknown;
 		}
 
