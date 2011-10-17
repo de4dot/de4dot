@@ -73,6 +73,10 @@ namespace de4dot.blocks.cflow {
 			return hasValue(0);
 		}
 
+		public bool isNonZero() {
+			return (value & validMask) != 0;
+		}
+
 		public bool hasValue(int value) {
 			return allBitsValid() && this.value == value;
 		}
@@ -224,6 +228,8 @@ namespace de4dot.blocks.cflow {
 					return createUnknown();
 				}
 			}
+			if (ReferenceEquals(a, b) && a.isNonZero())
+				return new Int32Value(1);
 			if (b.hasValue(1))
 				return a;
 			return createUnknown();
@@ -238,6 +244,8 @@ namespace de4dot.blocks.cflow {
 					return createUnknown();
 				}
 			}
+			if (ReferenceEquals(a, b) && a.isNonZero())
+				return new Int32Value(1);
 			if (b.hasValue(1))
 				return a;
 			return createUnknown();
@@ -252,7 +260,7 @@ namespace de4dot.blocks.cflow {
 					return createUnknown();
 				}
 			}
-			if (b.hasValue(1))
+			if ((ReferenceEquals(a, b) && a.isNonZero()) || b.hasValue(1))
 				return new Int32Value(0);
 			return createUnknown();
 		}
@@ -266,7 +274,7 @@ namespace de4dot.blocks.cflow {
 					return createUnknown();
 				}
 			}
-			if (b.hasValue(1))
+			if ((ReferenceEquals(a, b) && a.isNonZero()) || b.hasValue(1))
 				return new Int32Value(0);
 			return createUnknown();
 		}
