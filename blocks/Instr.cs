@@ -134,22 +134,32 @@ namespace de4dot.blocks {
 
 		// Return true if it's one of the stloc instructions
 		public bool isStloc() {
-			return OpCode == OpCodes.Stloc ||
-					OpCode == OpCodes.Stloc_0 ||
-					OpCode == OpCodes.Stloc_1 ||
-					OpCode == OpCodes.Stloc_2 ||
-					OpCode == OpCodes.Stloc_3 ||
-					OpCode == OpCodes.Stloc_S;
+			switch (OpCode.Code) {
+			case Code.Stloc:
+			case Code.Stloc_0:
+			case Code.Stloc_1:
+			case Code.Stloc_2:
+			case Code.Stloc_3:
+			case Code.Stloc_S:
+				return true;
+			default:
+				return false;
+			}
 		}
 
 		// Returns true if it's one of the ldloc instructions
 		public bool isLdloc() {
-			return OpCode == OpCodes.Ldloc ||
-					OpCode == OpCodes.Ldloc_0 ||
-					OpCode == OpCodes.Ldloc_1 ||
-					OpCode == OpCodes.Ldloc_2 ||
-					OpCode == OpCodes.Ldloc_3 ||
-					OpCode == OpCodes.Ldloc_S;
+			switch (OpCode.Code) {
+			case Code.Ldloc:
+			case Code.Ldloc_0:
+			case Code.Ldloc_1:
+			case Code.Ldloc_2:
+			case Code.Ldloc_3:
+			case Code.Ldloc_S:
+				return true;
+			default:
+				return false;
+			}
 		}
 
 		public bool isNop() {

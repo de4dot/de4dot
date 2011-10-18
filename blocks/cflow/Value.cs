@@ -37,6 +37,34 @@ namespace de4dot.blocks.cflow {
 	abstract class Value {
 		public readonly ValueType valueType;
 
+		public bool isUnknown() {
+			return valueType == ValueType.Unknown;
+		}
+
+		public bool isNull() {
+			return valueType == ValueType.Null;
+		}
+
+		public bool isBoxed() {
+			return valueType == ValueType.Boxed;
+		}
+
+		public bool isInt32() {
+			return valueType == ValueType.Int32;
+		}
+
+		public bool isInt64() {
+			return valueType == ValueType.Int64;
+		}
+
+		public bool isReal8() {
+			return valueType == ValueType.Real8;
+		}
+
+		public bool isString() {
+			return valueType == ValueType.String;
+		}
+
 		protected Value(ValueType valueType) {
 			this.valueType = valueType;
 		}

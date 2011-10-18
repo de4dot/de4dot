@@ -102,11 +102,11 @@ namespace de4dot.blocks.cflow {
 			return new UnknownValue();
 		}
 
-		Value getArg(int i) {
+		public Value getArg(int i) {
 			return getValue(args, i);
 		}
 
-		Value getArg(ParameterDefinition arg) {
+		public Value getArg(ParameterDefinition arg) {
 			return getArg(arg.Index);
 		}
 
@@ -121,11 +121,11 @@ namespace de4dot.blocks.cflow {
 			return new UnknownValue();
 		}
 
-		Value getLocal(int i) {
+		public Value getLocal(int i) {
 			return getValue(locals, i);
 		}
 
-		Value getLocal(VariableDefinition local) {
+		public Value getLocal(VariableDefinition local) {
 			return getLocal(local.Index);
 		}
 
@@ -142,6 +142,11 @@ namespace de4dot.blocks.cflow {
 
 		public Value pop() {
 			return valueStack.pop();
+		}
+
+		public void emulate(IEnumerable<Instr> instructions) {
+			foreach (var instr in instructions)
+				emulate(instr.Instruction);
 		}
 
 		public void emulate(Instruction instr) {
@@ -482,11 +487,11 @@ namespace de4dot.blocks.cflow {
 			var val2 = valueStack.pop();
 			var val1 = valueStack.pop();
 
-			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32)
+			if (val1.isInt32() && val2.isInt32())
 				valueStack.push(Int32Value.Add((Int32Value)val1, (Int32Value)val2));
-			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64)
+			else if (val1.isInt64() && val2.isInt64())
 				valueStack.push(Int64Value.Add((Int64Value)val1, (Int64Value)val2));
-			else if (val1.valueType == ValueType.Real8 && val2.valueType == ValueType.Real8)
+			else if (val1.isReal8() && val2.isReal8())
 				valueStack.push(Real8Value.Add((Real8Value)val1, (Real8Value)val2));
 			else
 				valueStack.pushUnknown();
@@ -496,11 +501,11 @@ namespace de4dot.blocks.cflow {
 			var val2 = valueStack.pop();
 			var val1 = valueStack.pop();
 
-			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32)
+			if (val1.isInt32() && val2.isInt32())
 				valueStack.push(Int32Value.Sub((Int32Value)val1, (Int32Value)val2));
-			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64)
+			else if (val1.isInt64() && val2.isInt64())
 				valueStack.push(Int64Value.Sub((Int64Value)val1, (Int64Value)val2));
-			else if (val1.valueType == ValueType.Real8 && val2.valueType == ValueType.Real8)
+			else if (val1.isReal8() && val2.isReal8())
 				valueStack.push(Real8Value.Sub((Real8Value)val1, (Real8Value)val2));
 			else
 				valueStack.pushUnknown();
@@ -510,11 +515,11 @@ namespace de4dot.blocks.cflow {
 			var val2 = valueStack.pop();
 			var val1 = valueStack.pop();
 
-			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32)
+			if (val1.isInt32() && val2.isInt32())
 				valueStack.push(Int32Value.Mul((Int32Value)val1, (Int32Value)val2));
-			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64)
+			else if (val1.isInt64() && val2.isInt64())
 				valueStack.push(Int64Value.Mul((Int64Value)val1, (Int64Value)val2));
-			else if (val1.valueType == ValueType.Real8 && val2.valueType == ValueType.Real8)
+			else if (val1.isReal8() && val2.isReal8())
 				valueStack.push(Real8Value.Mul((Real8Value)val1, (Real8Value)val2));
 			else
 				valueStack.pushUnknown();
@@ -524,11 +529,11 @@ namespace de4dot.blocks.cflow {
 			var val2 = valueStack.pop();
 			var val1 = valueStack.pop();
 
-			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32)
+			if (val1.isInt32() && val2.isInt32())
 				valueStack.push(Int32Value.Div((Int32Value)val1, (Int32Value)val2));
-			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64)
+			else if (val1.isInt64() && val2.isInt64())
 				valueStack.push(Int64Value.Div((Int64Value)val1, (Int64Value)val2));
-			else if (val1.valueType == ValueType.Real8 && val2.valueType == ValueType.Real8)
+			else if (val1.isReal8() && val2.isReal8())
 				valueStack.push(Real8Value.Div((Real8Value)val1, (Real8Value)val2));
 			else
 				valueStack.pushUnknown();
@@ -538,9 +543,9 @@ namespace de4dot.blocks.cflow {
 			var val2 = valueStack.pop();
 			var val1 = valueStack.pop();
 
-			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32)
+			if (val1.isInt32() && val2.isInt32())
 				valueStack.push(Int32Value.Div_Un((Int32Value)val1, (Int32Value)val2));
-			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64)
+			else if (val1.isInt64() && val2.isInt64())
 				valueStack.push(Int64Value.Div_Un((Int64Value)val1, (Int64Value)val2));
 			else
 				valueStack.pushUnknown();
@@ -550,11 +555,11 @@ namespace de4dot.blocks.cflow {
 			var val2 = valueStack.pop();
 			var val1 = valueStack.pop();
 
-			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32)
+			if (val1.isInt32() && val2.isInt32())
 				valueStack.push(Int32Value.Rem((Int32Value)val1, (Int32Value)val2));
-			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64)
+			else if (val1.isInt64() && val2.isInt64())
 				valueStack.push(Int64Value.Rem((Int64Value)val1, (Int64Value)val2));
-			else if (val1.valueType == ValueType.Real8 && val2.valueType == ValueType.Real8)
+			else if (val1.isReal8() && val2.isReal8())
 				valueStack.push(Real8Value.Rem((Real8Value)val1, (Real8Value)val2));
 			else
 				valueStack.pushUnknown();
@@ -564,9 +569,9 @@ namespace de4dot.blocks.cflow {
 			var val2 = valueStack.pop();
 			var val1 = valueStack.pop();
 
-			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32)
+			if (val1.isInt32() && val2.isInt32())
 				valueStack.push(Int32Value.Rem_Un((Int32Value)val1, (Int32Value)val2));
-			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64)
+			else if (val1.isInt64() && val2.isInt64())
 				valueStack.push(Int64Value.Rem_Un((Int64Value)val1, (Int64Value)val2));
 			else
 				valueStack.pushUnknown();
@@ -575,11 +580,11 @@ namespace de4dot.blocks.cflow {
 		void emulate_Neg(Instruction instr) {
 			var val1 = valueStack.pop();
 
-			if (val1.valueType == ValueType.Int32)
+			if (val1.isInt32())
 				valueStack.push(Int32Value.Neg((Int32Value)val1));
-			else if (val1.valueType == ValueType.Int64)
+			else if (val1.isInt64())
 				valueStack.push(Int64Value.Neg((Int64Value)val1));
-			else if (val1.valueType == ValueType.Real8)
+			else if (val1.isReal8())
 				valueStack.push(Real8Value.Neg((Real8Value)val1));
 			else
 				valueStack.pushUnknown();
@@ -589,9 +594,9 @@ namespace de4dot.blocks.cflow {
 			var val2 = valueStack.pop();
 			var val1 = valueStack.pop();
 
-			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32)
+			if (val1.isInt32() && val2.isInt32())
 				valueStack.push(Int32Value.And((Int32Value)val1, (Int32Value)val2));
-			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64)
+			else if (val1.isInt64() && val2.isInt64())
 				valueStack.push(Int64Value.And((Int64Value)val1, (Int64Value)val2));
 			else
 				valueStack.pushUnknown();
@@ -601,9 +606,9 @@ namespace de4dot.blocks.cflow {
 			var val2 = valueStack.pop();
 			var val1 = valueStack.pop();
 
-			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32)
+			if (val1.isInt32() && val2.isInt32())
 				valueStack.push(Int32Value.Or((Int32Value)val1, (Int32Value)val2));
-			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64)
+			else if (val1.isInt64() && val2.isInt64())
 				valueStack.push(Int64Value.Or((Int64Value)val1, (Int64Value)val2));
 			else
 				valueStack.pushUnknown();
@@ -613,9 +618,9 @@ namespace de4dot.blocks.cflow {
 			var val2 = valueStack.pop();
 			var val1 = valueStack.pop();
 
-			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32)
+			if (val1.isInt32() && val2.isInt32())
 				valueStack.push(Int32Value.Xor((Int32Value)val1, (Int32Value)val2));
-			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64)
+			else if (val1.isInt64() && val2.isInt64())
 				valueStack.push(Int64Value.Xor((Int64Value)val1, (Int64Value)val2));
 			else
 				valueStack.pushUnknown();
@@ -624,9 +629,9 @@ namespace de4dot.blocks.cflow {
 		void emulate_Not(Instruction instr) {
 			var val1 = valueStack.pop();
 
-			if (val1.valueType == ValueType.Int32)
+			if (val1.isInt32())
 				valueStack.push(Int32Value.Not((Int32Value)val1));
-			else if (val1.valueType == ValueType.Int64)
+			else if (val1.isInt64())
 				valueStack.push(Int64Value.Not((Int64Value)val1));
 			else
 				valueStack.pushUnknown();
@@ -636,9 +641,9 @@ namespace de4dot.blocks.cflow {
 			var val2 = valueStack.pop();
 			var val1 = valueStack.pop();
 
-			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32)
+			if (val1.isInt32() && val2.isInt32())
 				valueStack.push(Int32Value.Shl((Int32Value)val1, (Int32Value)val2));
-			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int32)
+			else if (val1.isInt64() && val2.isInt32())
 				valueStack.push(Int64Value.Shl((Int64Value)val1, (Int32Value)val2));
 			else
 				valueStack.pushUnknown();
@@ -648,9 +653,9 @@ namespace de4dot.blocks.cflow {
 			var val2 = valueStack.pop();
 			var val1 = valueStack.pop();
 
-			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32)
+			if (val1.isInt32() && val2.isInt32())
 				valueStack.push(Int32Value.Shr((Int32Value)val1, (Int32Value)val2));
-			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int32)
+			else if (val1.isInt64() && val2.isInt32())
 				valueStack.push(Int64Value.Shr((Int64Value)val1, (Int32Value)val2));
 			else
 				valueStack.pushUnknown();
@@ -660,9 +665,9 @@ namespace de4dot.blocks.cflow {
 			var val2 = valueStack.pop();
 			var val1 = valueStack.pop();
 
-			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32)
+			if (val1.isInt32() && val2.isInt32())
 				valueStack.push(Int32Value.Shr_Un((Int32Value)val1, (Int32Value)val2));
-			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int32)
+			else if (val1.isInt64() && val2.isInt32())
 				valueStack.push(Int64Value.Shr_Un((Int64Value)val1, (Int32Value)val2));
 			else
 				valueStack.pushUnknown();
@@ -672,11 +677,11 @@ namespace de4dot.blocks.cflow {
 			var val2 = valueStack.pop();
 			var val1 = valueStack.pop();
 
-			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32)
+			if (val1.isInt32() && val2.isInt32())
 				valueStack.push(Int32Value.Ceq((Int32Value)val1, (Int32Value)val2));
-			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64)
+			else if (val1.isInt64() && val2.isInt64())
 				valueStack.push(Int64Value.Ceq((Int64Value)val1, (Int64Value)val2));
-			else if (val1.valueType == ValueType.Null && val2.valueType == ValueType.Null)
+			else if (val1.isNull() && val2.isNull())
 				valueStack.push(new Int32Value(1));
 			else
 				valueStack.push(Int32Value.createUnknownBool());
@@ -686,9 +691,9 @@ namespace de4dot.blocks.cflow {
 			var val2 = valueStack.pop();
 			var val1 = valueStack.pop();
 
-			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32)
+			if (val1.isInt32() && val2.isInt32())
 				valueStack.push(Int32Value.Cgt((Int32Value)val1, (Int32Value)val2));
-			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64)
+			else if (val1.isInt64() && val2.isInt64())
 				valueStack.push(Int64Value.Cgt((Int64Value)val1, (Int64Value)val2));
 			else
 				valueStack.push(Int32Value.createUnknownBool());
@@ -698,9 +703,9 @@ namespace de4dot.blocks.cflow {
 			var val2 = valueStack.pop();
 			var val1 = valueStack.pop();
 
-			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32)
+			if (val1.isInt32() && val2.isInt32())
 				valueStack.push(Int32Value.Cgt_Un((Int32Value)val1, (Int32Value)val2));
-			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64)
+			else if (val1.isInt64() && val2.isInt64())
 				valueStack.push(Int64Value.Cgt_Un((Int64Value)val1, (Int64Value)val2));
 			else
 				valueStack.push(Int32Value.createUnknownBool());
@@ -710,9 +715,9 @@ namespace de4dot.blocks.cflow {
 			var val2 = valueStack.pop();
 			var val1 = valueStack.pop();
 
-			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32)
+			if (val1.isInt32() && val2.isInt32())
 				valueStack.push(Int32Value.Clt((Int32Value)val1, (Int32Value)val2));
-			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64)
+			else if (val1.isInt64() && val2.isInt64())
 				valueStack.push(Int64Value.Clt((Int64Value)val1, (Int64Value)val2));
 			else
 				valueStack.push(Int32Value.createUnknownBool());
@@ -722,9 +727,9 @@ namespace de4dot.blocks.cflow {
 			var val2 = valueStack.pop();
 			var val1 = valueStack.pop();
 
-			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32)
+			if (val1.isInt32() && val2.isInt32())
 				valueStack.push(Int32Value.Clt_Un((Int32Value)val1, (Int32Value)val2));
-			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64)
+			else if (val1.isInt64() && val2.isInt64())
 				valueStack.push(Int64Value.Clt_Un((Int64Value)val1, (Int64Value)val2));
 			else
 				valueStack.push(Int32Value.createUnknownBool());
@@ -732,7 +737,7 @@ namespace de4dot.blocks.cflow {
 
 		void emulate_Unbox_Any(Instruction instr) {
 			var val1 = valueStack.pop();
-			if (val1.valueType == ValueType.Boxed)
+			if (val1.isBoxed())
 				valueStack.push(((BoxedValue)val1).value);
 			else
 				valueStack.pushUnknown();
@@ -781,7 +786,7 @@ namespace de4dot.blocks.cflow {
 		void emulate_Castclass(Instruction instr) {
 			var val1 = valueStack.pop();
 
-			if (val1.valueType == ValueType.Null)
+			if (val1.isNull())
 				valueStack.push(val1);
 			else
 				valueStack.pushUnknown();
@@ -790,7 +795,7 @@ namespace de4dot.blocks.cflow {
 		void emulate_Isinst(Instruction instr) {
 			var val1 = valueStack.pop();
 
-			if (val1.valueType == ValueType.Null)
+			if (val1.isNull())
 				valueStack.push(val1);
 			else
 				valueStack.pushUnknown();
@@ -815,9 +820,9 @@ namespace de4dot.blocks.cflow {
 		void emulateIntOps2() {
 			var val2 = valueStack.pop();
 			var val1 = valueStack.pop();
-			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32)
+			if (val1.isInt32() && val2.isInt32())
 				valueStack.push(Int32Value.createUnknown());
-			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64)
+			else if (val1.isInt64() && val2.isInt64())
 				valueStack.push(Int64Value.createUnknown());
 			else
 				valueStack.pushUnknown();

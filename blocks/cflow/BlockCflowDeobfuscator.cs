@@ -22,7 +22,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 
 namespace de4dot.blocks.cflow {
-	class BlockControlFlowDeobfuscator {
+	class BlockCflowDeobfuscator {
 		Block block;
 		InstructionEmulator instructionEmulator = new InstructionEmulator();
 
@@ -95,11 +95,11 @@ namespace de4dot.blocks.cflow {
 			var val2 = instructionEmulator.pop();
 			var val1 = instructionEmulator.pop();
 
-			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32)
+			if (val1.isInt32() && val2.isInt32())
 				return emulateBranch(2, Int32Value.compareEq((Int32Value)val1, (Int32Value)val2));
-			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64)
+			else if (val1.isInt64() && val2.isInt64())
 				return emulateBranch(2, Int64Value.compareEq((Int64Value)val1, (Int64Value)val2));
-			else if (val1.valueType == ValueType.Null && val2.valueType == ValueType.Null)
+			else if (val1.isNull() && val2.isNull())
 				return emulateBranch(2, true);
 			else
 				return false;
@@ -109,11 +109,11 @@ namespace de4dot.blocks.cflow {
 			var val2 = instructionEmulator.pop();
 			var val1 = instructionEmulator.pop();
 
-			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32)
+			if (val1.isInt32() && val2.isInt32())
 				return emulateBranch(2, Int32Value.compareNeq((Int32Value)val1, (Int32Value)val2));
-			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64)
+			else if (val1.isInt64() && val2.isInt64())
 				return emulateBranch(2, Int64Value.compareNeq((Int64Value)val1, (Int64Value)val2));
-			else if (val1.valueType == ValueType.Null && val2.valueType == ValueType.Null)
+			else if (val1.isNull() && val2.isNull())
 				return emulateBranch(2, false);
 			else
 				return false;
@@ -123,9 +123,9 @@ namespace de4dot.blocks.cflow {
 			var val2 = instructionEmulator.pop();
 			var val1 = instructionEmulator.pop();
 
-			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32)
+			if (val1.isInt32() && val2.isInt32())
 				return emulateBranch(2, Int32Value.compareGe((Int32Value)val1, (Int32Value)val2));
-			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64)
+			else if (val1.isInt64() && val2.isInt64())
 				return emulateBranch(2, Int64Value.compareGe((Int64Value)val1, (Int64Value)val2));
 			else
 				return false;
@@ -135,9 +135,9 @@ namespace de4dot.blocks.cflow {
 			var val2 = instructionEmulator.pop();
 			var val1 = instructionEmulator.pop();
 
-			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32)
+			if (val1.isInt32() && val2.isInt32())
 				return emulateBranch(2, Int32Value.compareGe_Un((Int32Value)val1, (Int32Value)val2));
-			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64)
+			else if (val1.isInt64() && val2.isInt64())
 				return emulateBranch(2, Int64Value.compareGe_Un((Int64Value)val1, (Int64Value)val2));
 			else
 				return false;
@@ -147,9 +147,9 @@ namespace de4dot.blocks.cflow {
 			var val2 = instructionEmulator.pop();
 			var val1 = instructionEmulator.pop();
 
-			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32)
+			if (val1.isInt32() && val2.isInt32())
 				return emulateBranch(2, Int32Value.compareGt((Int32Value)val1, (Int32Value)val2));
-			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64)
+			else if (val1.isInt64() && val2.isInt64())
 				return emulateBranch(2, Int64Value.compareGt((Int64Value)val1, (Int64Value)val2));
 			else
 				return false;
@@ -159,9 +159,9 @@ namespace de4dot.blocks.cflow {
 			var val2 = instructionEmulator.pop();
 			var val1 = instructionEmulator.pop();
 
-			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32)
+			if (val1.isInt32() && val2.isInt32())
 				return emulateBranch(2, Int32Value.compareGt_Un((Int32Value)val1, (Int32Value)val2));
-			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64)
+			else if (val1.isInt64() && val2.isInt64())
 				return emulateBranch(2, Int64Value.compareGt_Un((Int64Value)val1, (Int64Value)val2));
 			else
 				return false;
@@ -171,9 +171,9 @@ namespace de4dot.blocks.cflow {
 			var val2 = instructionEmulator.pop();
 			var val1 = instructionEmulator.pop();
 
-			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32)
+			if (val1.isInt32() && val2.isInt32())
 				return emulateBranch(2, Int32Value.compareLe((Int32Value)val1, (Int32Value)val2));
-			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64)
+			else if (val1.isInt64() && val2.isInt64())
 				return emulateBranch(2, Int64Value.compareLe((Int64Value)val1, (Int64Value)val2));
 			else
 				return false;
@@ -183,9 +183,9 @@ namespace de4dot.blocks.cflow {
 			var val2 = instructionEmulator.pop();
 			var val1 = instructionEmulator.pop();
 
-			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32)
+			if (val1.isInt32() && val2.isInt32())
 				return emulateBranch(2, Int32Value.compareLe_Un((Int32Value)val1, (Int32Value)val2));
-			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64)
+			else if (val1.isInt64() && val2.isInt64())
 				return emulateBranch(2, Int64Value.compareLe_Un((Int64Value)val1, (Int64Value)val2));
 			else
 				return false;
@@ -195,9 +195,9 @@ namespace de4dot.blocks.cflow {
 			var val2 = instructionEmulator.pop();
 			var val1 = instructionEmulator.pop();
 
-			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32)
+			if (val1.isInt32() && val2.isInt32())
 				return emulateBranch(2, Int32Value.compareLt((Int32Value)val1, (Int32Value)val2));
-			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64)
+			else if (val1.isInt64() && val2.isInt64())
 				return emulateBranch(2, Int64Value.compareLt((Int64Value)val1, (Int64Value)val2));
 			else
 				return false;
@@ -207,9 +207,9 @@ namespace de4dot.blocks.cflow {
 			var val2 = instructionEmulator.pop();
 			var val1 = instructionEmulator.pop();
 
-			if (val1.valueType == ValueType.Int32 && val2.valueType == ValueType.Int32)
+			if (val1.isInt32() && val2.isInt32())
 				return emulateBranch(2, Int32Value.compareLt_Un((Int32Value)val1, (Int32Value)val2));
-			else if (val1.valueType == ValueType.Int64 && val2.valueType == ValueType.Int64)
+			else if (val1.isInt64() && val2.isInt64())
 				return emulateBranch(2, Int64Value.compareLt_Un((Int64Value)val1, (Int64Value)val2));
 			else
 				return false;
@@ -218,11 +218,11 @@ namespace de4dot.blocks.cflow {
 		bool emulate_Brfalse() {
 			var val1 = instructionEmulator.pop();
 
-			if (val1.valueType == ValueType.Int32)
+			if (val1.isInt32())
 				return emulateBranch(1, Int32Value.compareFalse((Int32Value)val1));
-			else if (val1.valueType == ValueType.Int64)
+			else if (val1.isInt64())
 				return emulateBranch(1, Int64Value.compareFalse((Int64Value)val1));
-			else if (val1.valueType == ValueType.Null)
+			else if (val1.isNull())
 				return emulateBranch(1, true);
 			else
 				return false;
@@ -231,11 +231,11 @@ namespace de4dot.blocks.cflow {
 		bool emulate_Brtrue() {
 			var val1 = instructionEmulator.pop();
 
-			if (val1.valueType == ValueType.Int32)
+			if (val1.isInt32())
 				return emulateBranch(1, Int32Value.compareTrue((Int32Value)val1));
-			else if (val1.valueType == ValueType.Int64)
+			else if (val1.isInt64())
 				return emulateBranch(1, Int64Value.compareTrue((Int64Value)val1));
-			else if (val1.valueType == ValueType.Null)
+			else if (val1.isNull())
 				return emulateBranch(1, false);
 			else
 				return false;
@@ -244,22 +244,14 @@ namespace de4dot.blocks.cflow {
 		bool emulate_Switch() {
 			var val1 = instructionEmulator.pop();
 
-			if (val1.valueType != ValueType.Int32)
+			if (!val1.isInt32())
+				return false;
+			var target = CflowUtils.getSwitchTarget(block.Targets, block.FallThrough, (Int32Value)val1);
+			if (target == null)
 				return false;
 
-			var int1 = (Int32Value)val1;
-			if (!int1.allBitsValid())
-				return false;
-
-			int index = int1.value;
-			var targets = block.Targets;
-			Block newTarget;
-			if (targets == null || index < 0 || index >= targets.Count)
-				newTarget = block.FallThrough;
-			else
-				newTarget = targets[index];
 			popPushedArgs(1);
-			block.replaceSwitchWithBranch(newTarget);
+			block.replaceSwitchWithBranch(target);
 			return true;
 		}
 	}

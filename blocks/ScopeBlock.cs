@@ -241,7 +241,8 @@ namespace de4dot.blocks {
 
 		// For each block, if it has only one target, and the target has only one source, then
 		// merge them into one block.
-		public void mergeBlocks() {
+		public int mergeBlocks() {
+			int mergedBlocks = 0;
 			var blocks = findBlocks();
 			for (int i = 0; i < blocks.Count; i++) {
 				var block = blocks[i];
@@ -263,7 +264,10 @@ namespace de4dot.blocks {
 				if (targetIndex < i)
 					i--;
 				i--;				// Redo since there may be more blocks we can merge
+				mergedBlocks++;
 			}
+
+			return mergedBlocks;
 		}
 
 		// If bb is in baseBlocks (a direct child), return bb. If bb is a BaseBlock in a

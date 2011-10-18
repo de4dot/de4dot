@@ -21,8 +21,8 @@ using System.Collections.Generic;
 using Mono.Cecil.Cil;
 
 namespace de4dot.blocks.cflow {
-	public class BlocksControlFlowDeobfuscator {
-		BlockControlFlowDeobfuscator blockControlFlowDeobfuscator = new BlockControlFlowDeobfuscator();
+	public class BlocksCflowDeobfuscator {
+		BlockCflowDeobfuscator blockControlFlowDeobfuscator = new BlockCflowDeobfuscator();
 		Blocks blocks;
 		int numRemovedDeadBlocks;
 
@@ -36,28 +36,41 @@ namespace de4dot.blocks.cflow {
 		}
 
 		public void deobfuscate() {
+			var allBlocks = new List<Block>();
+			var switchCflowDeobfuscator = new SwitchCflowDeobfuscator();
 			bool changed;
 			do {
 				changed = false;
-				removeDeadBlocks();
-				mergeBlocks();
-				foreach (var block in blocks.MethodBlocks.getAllBlocks()) {
+				changed |= removeDeadBlocks();
+				changed |= mergeBlocks();
+
+				allBlocks.Clear();
+				allBlocks.AddRange(blocks.MethodBlocks.getAllBlocks());
+
+				foreach (var block in allBlocks) {
 					var lastInstr = block.LastInstr;
 					if (!DotNetUtils.isConditionalBranch(lastInstr.OpCode.Code) && lastInstr.OpCode.Code != Code.Switch)
 						continue;
 					blockControlFlowDeobfuscator.init(block, blocks.Method.Parameters, blocks.Locals);
 					changed |= blockControlFlowDeobfuscator.deobfuscate();
 				}
+
+				switchCflowDeobfuscator.init(blocks, allBlocks);
+				changed |= switchCflowDeobfuscator.deobfuscate();
 			} while (changed);
 		}
 
-		void removeDeadBlocks() {
-			numRemovedDeadBlocks += new DeadBlocksRemover(blocks.MethodBlocks).remove();
+		bool removeDeadBlocks() {
+			int count = new DeadBlocksRemover(blocks.MethodBlocks).remove();
+			numRemovedDeadBlocks += count;
+			return count > 0;
 		}
 
-		void mergeBlocks() {
+		bool mergeBlocks() {
+			bool changed = false;
 			foreach (var scopeBlock in getAllScopeBlocks(blocks.MethodBlocks))
-				scopeBlock.mergeBlocks();
+				changed |= scopeBlock.mergeBlocks() > 0;
+			return changed;
 		}
 
 		IEnumerable<ScopeBlock> getAllScopeBlocks(ScopeBlock scopeBlock) {

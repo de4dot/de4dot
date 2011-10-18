@@ -442,7 +442,7 @@ namespace de4dot {
 
 			Log.v("Deobfuscating methods");
 			var methodPrinter = new MethodPrinter();
-			var cflowObfuscator = new BlocksControlFlowDeobfuscator();
+			var cflowObfuscator = new BlocksCflowDeobfuscator();
 			foreach (var method in allMethods) {
 				Log.v("Deobfuscating {0} ({1:X8})", method, method.MetadataToken.ToUInt32());
 				Log.indent();
