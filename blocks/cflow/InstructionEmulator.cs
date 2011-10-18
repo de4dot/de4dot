@@ -230,11 +230,11 @@ namespace de4dot.blocks.cflow {
 			case Code.Castclass: emulate_Castclass(instr); break;
 			case Code.Isinst:	emulate_Isinst(instr); break;
 
-			case Code.Add_Ovf: emulateIntOps2(); break;
+			case Code.Add_Ovf:	emulateIntOps2(); break;
 			case Code.Add_Ovf_Un: emulateIntOps2(); break;
-			case Code.Sub_Ovf: emulateIntOps2(); break;
+			case Code.Sub_Ovf:	emulateIntOps2(); break;
 			case Code.Sub_Ovf_Un: emulateIntOps2(); break;
-			case Code.Mul_Ovf: emulateIntOps2(); break;
+			case Code.Mul_Ovf:	emulateIntOps2(); break;
 			case Code.Mul_Ovf_Un: emulateIntOps2(); break;
 
 			case Code.Conv_Ovf_I1:
@@ -261,6 +261,7 @@ namespace de4dot.blocks.cflow {
 			case Code.Ldelem_U1: valueStack.pop(2); valueStack.push(Int32Value.createUnknownUInt8()); break;
 			case Code.Ldelem_U2: valueStack.pop(2); valueStack.push(Int32Value.createUnknownUInt16()); break;
 			case Code.Ldelem_U4: valueStack.pop(2); valueStack.push(Int32Value.createUnknown()); break;
+			case Code.Ldelem_Any:valueStack.pop(2); valueStack.push(getUnknownValue(instr.Operand as TypeReference)); break;
 
 			case Code.Ldind_I1:	valueStack.pop(); valueStack.push(Int32Value.createUnknown()); break;
 			case Code.Ldind_I2:	valueStack.pop(); valueStack.push(Int32Value.createUnknown()); break;
@@ -327,7 +328,6 @@ namespace de4dot.blocks.cflow {
 			case Code.Initobj:
 			case Code.Jmp:
 			case Code.Ldelema:
-			case Code.Ldelem_Any:
 			case Code.Ldelem_I:
 			case Code.Ldelem_R4:
 			case Code.Ldelem_R8:

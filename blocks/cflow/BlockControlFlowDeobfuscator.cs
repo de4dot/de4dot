@@ -65,6 +65,7 @@ namespace de4dot.blocks.cflow {
 			case Code.Brfalse_S:return emulate_Brfalse();
 			case Code.Brtrue:
 			case Code.Brtrue_S:	return emulate_Brtrue();
+			case Code.Switch:	return emulate_Switch();
 
 			default:
 				return false;
@@ -78,13 +79,16 @@ namespace de4dot.blocks.cflow {
 		}
 
 		bool emulateBranch(int stackArgs, bool isTaken) {
+			popPushedArgs(stackArgs);
+			block.replaceBccWithBranch(isTaken);
+			return true;
+		}
+
+		void popPushedArgs(int stackArgs) {
 			// Pop the arguments to the bcc instruction. The dead code remover will get rid of the
 			// pop and any pushed arguments. Insert the pops just before the bcc instr.
 			for (int i = 0; i < stackArgs; i++)
 				block.insert(block.Instructions.Count - 1, Instruction.Create(OpCodes.Pop));
-
-			block.replaceBccWithBranch(isTaken);
-			return true;
 		}
 
 		bool emulate_Beq() {
@@ -235,6 +239,28 @@ namespace de4dot.blocks.cflow {
 				return emulateBranch(1, false);
 			else
 				return false;
+		}
+
+		bool emulate_Switch() {
+			var val1 = instructionEmulator.pop();
+
+			if (val1.valueType != ValueType.Int32)
+				return false;
+
+			var int1 = (Int32Value)val1;
+			if (!int1.allBitsValid())
+				return false;
+
+			int index = int1.value;
+			var targets = block.Targets;
+			Block newTarget;
+			if (targets == null || index < 0 || index >= targets.Count)
+				newTarget = block.FallThrough;
+			else
+				newTarget = targets[index];
+			popPushedArgs(1);
+			block.replaceSwitchWithBranch(newTarget);
+			return true;
 		}
 	}
 }

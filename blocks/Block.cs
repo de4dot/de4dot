@@ -173,6 +173,12 @@ namespace de4dot.blocks {
 			replaceLastInstrsWithBranch(1, target);
 		}
 
+		public void replaceSwitchWithBranch(Block target) {
+			if (LastInstr.OpCode.Code != Code.Switch)
+				throw new ApplicationException("Last instruction is not a switch");
+			replaceLastInstrsWithBranch(1, target);
+		}
+
 		public void removeDeadBlock() {
 			if (sources.Count != 0)
 				throw new ApplicationException("Trying to remove a non-dead block");

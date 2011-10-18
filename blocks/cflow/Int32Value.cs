@@ -41,7 +41,7 @@ namespace de4dot.blocks.cflow {
 			return validMask != NO_UNKNOWN_BITS;
 		}
 
-		bool allBitsValid() {
+		public bool allBitsValid() {
 			return !hasUnknownBits();
 		}
 
