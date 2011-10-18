@@ -442,7 +442,7 @@ namespace de4dot {
 
 			Log.v("Deobfuscating methods");
 			var methodPrinter = new MethodPrinter();
-			var cflowObfuscator = new BlocksCflowDeobfuscator();
+			var cflowDeobfuscator = new BlocksCflowDeobfuscator();
 			foreach (var method in allMethods) {
 				Log.v("Deobfuscating {0} ({1:X8})", method, method.MetadataToken.ToUInt32());
 				Log.indent();
@@ -452,9 +452,9 @@ namespace de4dot {
 
 					deob.deobfuscateMethodBegin(blocks);
 					if (options.ControlFlowDeobfuscation) {
-						cflowObfuscator.init(blocks);
-						cflowObfuscator.deobfuscate();
-						int numDeadBlocks = cflowObfuscator.NumberOfRemovedDeadBlocks;
+						cflowDeobfuscator.init(blocks);
+						cflowDeobfuscator.deobfuscate();
+						int numDeadBlocks = cflowDeobfuscator.NumberOfRemovedDeadBlocks;
 						if (numDeadBlocks > 0)
 							Log.v("Removed {0} dead block(s)", numDeadBlocks);
 					}

@@ -22,7 +22,7 @@ using Mono.Cecil.Cil;
 
 namespace de4dot.blocks.cflow {
 	public class BlocksCflowDeobfuscator {
-		BlockCflowDeobfuscator blockControlFlowDeobfuscator = new BlockCflowDeobfuscator();
+		BlockCflowDeobfuscator blockCflowDeobfuscator = new BlockCflowDeobfuscator();
 		Blocks blocks;
 		int numRemovedDeadBlocks;
 
@@ -41,8 +41,8 @@ namespace de4dot.blocks.cflow {
 			bool changed;
 			do {
 				changed = false;
-				changed |= removeDeadBlocks();
-				changed |= mergeBlocks();
+				removeDeadBlocks();
+				mergeBlocks();
 
 				allBlocks.Clear();
 				allBlocks.AddRange(blocks.MethodBlocks.getAllBlocks());
@@ -51,8 +51,8 @@ namespace de4dot.blocks.cflow {
 					var lastInstr = block.LastInstr;
 					if (!DotNetUtils.isConditionalBranch(lastInstr.OpCode.Code) && lastInstr.OpCode.Code != Code.Switch)
 						continue;
-					blockControlFlowDeobfuscator.init(block, blocks.Method.Parameters, blocks.Locals);
-					changed |= blockControlFlowDeobfuscator.deobfuscate();
+					blockCflowDeobfuscator.init(block, blocks.Method.Parameters, blocks.Locals);
+					changed |= blockCflowDeobfuscator.deobfuscate();
 				}
 
 				switchCflowDeobfuscator.init(blocks, allBlocks);
