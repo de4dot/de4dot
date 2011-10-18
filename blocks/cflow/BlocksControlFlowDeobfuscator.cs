@@ -18,6 +18,7 @@
 */
 
 using System.Collections.Generic;
+using Mono.Cecil.Cil;
 
 namespace de4dot.blocks.cflow {
 	public class BlocksControlFlowDeobfuscator {
@@ -41,7 +42,9 @@ namespace de4dot.blocks.cflow {
 				removeDeadBlocks();
 				mergeBlocks();
 				foreach (var block in blocks.MethodBlocks.getAllBlocks()) {
-					//TODO: Only do this if it's a bcc block. switch blocks should use other code.
+					var lastInstr = block.LastInstr;
+					if (!DotNetUtils.isConditionalBranch(lastInstr.OpCode.Code) && lastInstr.OpCode.Code != Code.Switch)
+						continue;
 					blockControlFlowDeobfuscator.init(block, blocks.Method.Parameters, blocks.Locals);
 					changed |= blockControlFlowDeobfuscator.deobfuscate();
 				}
