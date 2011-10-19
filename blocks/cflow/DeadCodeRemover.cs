@@ -321,7 +321,7 @@ namespace de4dot.blocks.cflow {
 
 				var startInstr = block.Instructions[index];
 				int startInstrPushes, startInstrPops;
-				DotNetUtils.calculateStackUsage(startInstr.Instruction, false, out startInstrPushes, out startInstrPops);
+				calculateStackUsage(startInstr.Instruction, false, out startInstrPushes, out startInstrPops);
 
 				if (startInstrPops == 0)
 					return true;
@@ -335,7 +335,7 @@ namespace de4dot.blocks.cflow {
 					index--;
 
 					int pushes, pops;
-					DotNetUtils.calculateStackUsage(instr.Instruction, methodHasReturnValue, out pushes, out pops);
+					calculateStackUsage(instr.Instruction, methodHasReturnValue, out pushes, out pops);
 					if (pops < 0)
 						return false;	// eg. leave
 
@@ -344,7 +344,7 @@ namespace de4dot.blocks.cflow {
 						if (!find(ref index, addIt && !otherExpr))
 							return false;
 					}
-					else {
+					else if (pushes != 0 || pops != 0) {
 						if (addIt)
 							addIndex(index);
 					}
@@ -361,6 +361,15 @@ namespace de4dot.blocks.cflow {
 			void addIndex(int index) {
 				deadInstructions.Add(index);
 			}
+		}
+
+		static void calculateStackUsage(Instruction instr, bool methodHasReturnValue, out int pushes, out int pops) {
+			if (instr.OpCode.Code == Code.Dup) {
+				pushes = 1;
+				pops = 0;
+			}
+			else
+				DotNetUtils.calculateStackUsage(instr, false, out pushes, out pops);
 		}
 	}
 }
