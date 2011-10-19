@@ -53,6 +53,9 @@ namespace de4dot.blocks.cflow {
 						allDeadInstructions.Add(i);
 					break;
 
+				case Code.Leave:
+				case Code.Leave_S:
+				case Code.Endfinally:
 				case Code.Pop:
 					instructionExpressionFinder.init(block, false);
 					if (!instructionExpressionFinder.find(i))
@@ -327,46 +330,45 @@ namespace de4dot.blocks.cflow {
 				if (index < 0)
 					return false;
 
-				if (addIt)
-					addIndex(index);
-
 				var startInstr = block.Instructions[index];
 				int startInstrPushes, startInstrPops;
 				calculateStackUsage(startInstr.Instruction, false, out startInstrPushes, out startInstrPops);
 
+				// Don't add it if it clears the stack (eg. leave)
+				if (addIt && startInstrPops >= 0)
+					addIndex(index);
+
 				if (startInstrPops == 0)
 					return true;
-				if (startInstrPops < 0)
-					return false;	// Eg. leave
 
 				while (index > 0) {
 					var instr = block.Instructions[index - 1];
 					if (startInstrPops == 0 && instr.OpCode.OpCodeType != OpCodeType.Prefix)
 						break;
-					index--;
 
 					int pushes, pops;
 					calculateStackUsage(instr.Instruction, methodHasReturnValue, out pushes, out pops);
 					if (pops < 0)
-						return false;	// eg. leave
+						break;	// eg. leave
+					index--;
 
 					if (pops > 0) {	// if instr uses any args
 						bool otherExpr = pops > 0 && pushes == 0;
 						if (!find(ref index, addIt && !otherExpr))
-							return false;
+							break;
 					}
 					else if (pushes != 0 || pops != 0) {
 						if (addIt)
 							addIndex(index);
 					}
-					if (pushes > 0) {
+					if (pushes > 0 && startInstrPops >= 0) {
 						if (pushes > startInstrPops)
 							return false;
 						startInstrPops -= pushes;
 					}
 				}
 
-				return startInstrPops == 0;
+				return startInstrPops <= 0;
 			}
 
 			void addIndex(int index) {
