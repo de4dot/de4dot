@@ -38,6 +38,7 @@ namespace de4dot.blocks.cflow {
 		public void deobfuscate() {
 			var allBlocks = new List<Block>();
 			var switchCflowDeobfuscator = new SwitchCflowDeobfuscator();
+			var deadCodeRemover = new DeadCodeRemover();
 			bool changed;
 			do {
 				changed = false;
@@ -57,6 +58,9 @@ namespace de4dot.blocks.cflow {
 
 				switchCflowDeobfuscator.init(blocks, allBlocks);
 				changed |= switchCflowDeobfuscator.deobfuscate();
+
+				deadCodeRemover.init(allBlocks);
+				changed |= deadCodeRemover.remove();
 			} while (changed);
 		}
 

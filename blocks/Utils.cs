@@ -41,5 +41,13 @@ namespace de4dot.blocks {
 				olist.Add(l);
 			return olist;
 		}
+
+		public static IEnumerable<T> unique<T>(IEnumerable<T> values) {
+			// HashSet is only available in .NET 3.5 and later.
+			var dict = new Dictionary<T, bool>();
+			foreach (var val in values)
+				dict[val] = true;
+			return dict.Keys;
+		}
 	}
 }

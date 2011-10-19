@@ -37,6 +37,7 @@
     <Compile Include="BlocksSorter.cs" />
     <Compile Include="cflow\BlockCflowDeobfuscator.cs" />
     <Compile Include="cflow\CflowUtils.cs" />
+    <Compile Include="cflow\DeadCodeRemover.cs" />
     <Compile Include="cflow\InstructionEmulator.cs" />
     <Compile Include="cflow\Int32Value.cs" />
     <Compile Include="cflow\Int64Value.cs" />
