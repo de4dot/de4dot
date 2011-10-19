@@ -37,43 +37,44 @@ namespace de4dot.blocks.cflow {
 				if (switchBlock.LastInstr.OpCode.Code != Code.Switch)
 					continue;
 				if (isSwitchTopOfStack(switchBlock))
-					changed |= topOfstackDeobfuscate(switchBlock);
-				else if (isSwitchLocal(switchBlock))
-					changed |= localDeobfuscate(switchBlock);
+					changed |= deobfuscateTos(switchBlock);
+				else if (isLdlocBranch(switchBlock, true))
+					changed |= deobfuscateLdloc(switchBlock);
+				else if (isStLdlocBranch(switchBlock, true))
+					changed |= deobfuscateStLdloc(switchBlock);
 			}
 			return changed;
 		}
 
-		bool isSwitchTopOfStack(Block switchBlock) {
+		static bool isSwitchTopOfStack(Block switchBlock) {
 			return switchBlock.Instructions.Count == 1;
 		}
 
-		bool topOfstackDeobfuscate(Block switchBlock) {
+		static bool isLdlocBranch(Block switchBlock, bool isSwitch) {
+			int numInstrs = 1 + (isSwitch ? 1 : 0);
+			return switchBlock.Instructions.Count == numInstrs && switchBlock.Instructions[0].isLdloc();
+		}
+
+		bool isStLdlocBranch(Block switchBlock, bool isSwitch) {
+			int numInstrs = 2 + (isSwitch ? 1 : 0);
+			return switchBlock.Instructions.Count == numInstrs &&
+				switchBlock.Instructions[0].isStloc() &&
+				switchBlock.Instructions[1].isLdloc() &&
+				Instr.getLocalVar(blocks.Locals, switchBlock.Instructions[0]) == Instr.getLocalVar(blocks.Locals, switchBlock.Instructions[1]);
+		}
+
+		bool deobfuscateTos(Block switchBlock) {
 			bool changed = false;
 			if (switchBlock.Targets == null)
 				return changed;
 			var targets = new List<Block>(switchBlock.Targets);
-			foreach (var source in new List<Block>(switchBlock.Sources)) {
-				if (!isBranchBlock(source))
-					continue;
-				instructionEmulator.init(false, blocks.Method.Parameters, blocks.Locals);
-				instructionEmulator.emulate(source.Instructions);
 
-				var target = getSwitchTarget(targets, switchBlock.FallThrough, source, instructionEmulator.pop());
-				if (target == null)
-					continue;
-				source.replaceLastNonBranchWithBranch(0, target);
-				source.add(new Instr(Instruction.Create(OpCodes.Pop)));
-				changed = true;
-			}
+			changed |= deobfuscateTos(targets, switchBlock.FallThrough, switchBlock);
+
 			return changed;
 		}
 
-		bool isSwitchLocal(Block switchBlock) {
-			return switchBlock.Instructions.Count == 2 && switchBlock.Instructions[0].isLdloc();
-		}
-
-		bool localDeobfuscate(Block switchBlock) {
+		bool deobfuscateLdloc(Block switchBlock) {
 			bool changed = false;
 
 			var switchVariable = Instr.getLocalVar(blocks.Locals, switchBlock.Instructions[0]);
@@ -83,20 +84,123 @@ namespace de4dot.blocks.cflow {
 			if (switchBlock.Targets == null)
 				return changed;
 			var targets = new List<Block>(switchBlock.Targets);
-			foreach (var source in new List<Block>(switchBlock.Sources)) {
+
+			changed |= deobfuscateLdloc(targets, switchBlock.FallThrough, switchBlock, switchVariable);
+
+			return changed;
+		}
+
+		bool deobfuscateStLdloc(Block switchBlock) {
+			bool changed = false;
+
+			var switchVariable = Instr.getLocalVar(blocks.Locals, switchBlock.Instructions[0]);
+			if (switchVariable == null)
+				return changed;
+
+			if (switchBlock.Targets == null)
+				return changed;
+			var targets = new List<Block>(switchBlock.Targets);
+
+			changed |= deobfuscateStLdloc(targets, switchBlock.FallThrough, switchBlock);
+
+			return changed;
+		}
+
+		// Switch deobfuscation when block uses stloc N, ldloc N to load switch constant
+		//	blk1:
+		//		ldc.i4 X
+		//		br swblk
+		//	swblk:
+		//		stloc N
+		//		ldloc N
+		//		switch (......)
+		bool deobfuscateStLdloc(IList<Block> switchTargets, Block switchFallThrough, Block block) {
+			bool changed = false;
+			foreach (var source in new List<Block>(block.Sources)) {
 				if (!isBranchBlock(source))
 					continue;
 				instructionEmulator.init(false, blocks.Method.Parameters, blocks.Locals);
 				instructionEmulator.emulate(source.Instructions);
 
-				var target = getSwitchTarget(targets, switchBlock.FallThrough, source, instructionEmulator.getLocal(switchVariable));
+				var target = getSwitchTarget(switchTargets, switchFallThrough, source, instructionEmulator.pop());
+				if (target == null)
+					continue;
+				source.replaceLastNonBranchWithBranch(0, target);
+				source.add(new Instr(Instruction.Create(OpCodes.Pop)));
+				changed = true;
+			}
+			return changed;
+		}
+
+		// Switch deobfuscation when block uses ldloc N to load switch constant
+		//	blk1:
+		//		ldc.i4 X
+		//		stloc N
+		//		br swblk
+		//	swblk:
+		//		ldloc N
+		//		switch (......)
+		bool deobfuscateLdloc(IList<Block> switchTargets, Block switchFallThrough, Block block, VariableDefinition switchVariable) {
+			bool changed = false;
+			foreach (var source in new List<Block>(block.Sources)) {
+				if (!isBranchBlock(source))
+					continue;
+				instructionEmulator.init(false, blocks.Method.Parameters, blocks.Locals);
+				instructionEmulator.emulate(source.Instructions);
+
+				var target = getSwitchTarget(switchTargets, switchFallThrough, source, instructionEmulator.getLocal(switchVariable));
 				if (target == null)
 					continue;
 				source.replaceLastNonBranchWithBranch(0, target);
 				changed = true;
 			}
-
 			return changed;
+		}
+
+		// Switch deobfuscation when block has switch contant on TOS:
+		//	blk1:
+		//		ldc.i4 X
+		//		br swblk
+		//	swblk:
+		//		switch (......)
+		bool deobfuscateTos(IList<Block> switchTargets, Block switchFallThrough, Block block) {
+			bool changed = false;
+			foreach (var source in new List<Block>(block.Sources)) {
+				if (!isBranchBlock(source))
+					continue;
+				instructionEmulator.init(false, blocks.Method.Parameters, blocks.Locals);
+				instructionEmulator.emulate(source.Instructions);
+
+				var target = getSwitchTarget(switchTargets, switchFallThrough, source, instructionEmulator.pop());
+				if (target == null) {
+					changed |= deobfuscateTos_Ldloc(switchTargets, switchFallThrough, source);
+				}
+				else {
+					source.replaceLastNonBranchWithBranch(0, target);
+					source.add(new Instr(Instruction.Create(OpCodes.Pop)));
+					changed = true;
+				}
+			}
+			return changed;
+		}
+
+		//		ldloc N
+		//		br swblk
+		// or
+		//		stloc N
+		//		ldloc N
+		//		br swblk
+		bool deobfuscateTos_Ldloc(IList<Block> switchTargets, Block switchFallThrough, Block block) {
+			if (isLdlocBranch(block, false)) {
+				var switchVariable = Instr.getLocalVar(blocks.Locals, block.Instructions[0]);
+				if (switchVariable == null)
+					return false;
+				return deobfuscateLdloc(switchTargets, switchFallThrough, block, switchVariable);
+			}
+			else if (isStLdlocBranch(block, false))
+				return deobfuscateStLdloc(switchTargets, switchFallThrough, block);
+
+			return false;
 		}
 
 		bool isBranchBlock(Block block) {
