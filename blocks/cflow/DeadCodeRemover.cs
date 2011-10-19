@@ -45,15 +45,26 @@ namespace de4dot.blocks.cflow {
 			var instructions = block.Instructions;
 			for (int i = 0; i < instructions.Count; i++) {
 				var instr = instructions[i];
-				if (instr.OpCode.Code != Code.Pop)
-					continue;
+				switch (instr.OpCode.Code) {
+				case Code.Nop:
+					// The NOP is recreated if the block is empty so don't remove it if it's
+					// the only instruction.
+					if (instructions.Count > 1)
+						allDeadInstructions.Add(i);
+					break;
 
-				instructionExpressionFinder.init(block, false);
-				if (!instructionExpressionFinder.find(i))
-					continue;
-				if (!okInstructions(block, instructionExpressionFinder.DeadInstructions))
-					continue;
-				allDeadInstructions.AddRange(instructionExpressionFinder.DeadInstructions);
+				case Code.Pop:
+					instructionExpressionFinder.init(block, false);
+					if (!instructionExpressionFinder.find(i))
+						continue;
+					if (!okInstructions(block, instructionExpressionFinder.DeadInstructions))
+						continue;
+					allDeadInstructions.AddRange(instructionExpressionFinder.DeadInstructions);
+					break;
+
+				default:
+					break;
+				}
 			}
 
 			block.remove(allDeadInstructions);
