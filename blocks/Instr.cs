@@ -42,7 +42,8 @@ namespace de4dot.blocks {
 			get { return instruction; }
 		}
 
-		// Returns the variable or null if it's not a ldloc/stloc instruction
+		// Returns the variable or null if it's not a ldloc/stloc instruction. It does not return
+		// a local variable if it's a ldloca/ldloca.s instruction.
 		public static VariableDefinition getLocalVar(IList<VariableDefinition> locals, Instr instr) {
 			switch (instr.OpCode.Code) {
 			case Code.Ldloc:

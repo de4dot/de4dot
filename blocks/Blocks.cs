@@ -81,5 +81,126 @@ namespace de4dot.blocks {
 		public void getCode(out IList<Instruction> allInstructions, out IList<ExceptionHandler> allExceptionHandlers) {
 			new CodeGenerator(methodBlocks).getCode(out allInstructions, out allExceptionHandlers);
 		}
+
+		struct LocalVariableInfo {
+			public Block block;
+			public int index;
+			public LocalVariableInfo(Block block, int index) {
+				this.block = block;
+				this.index = index;
+			}
+		}
+
+		public int optimizeLocals() {
+			if (locals.Count == 0)
+				return 0;
+
+			var allBlocks = new List<Block>(methodBlocks.getAllBlocks());
+			var usedLocals = new Dictionary<VariableDefinition, List<LocalVariableInfo>>();
+			foreach (var block in allBlocks) {
+				for (int i = 0; i < block.Instructions.Count; i++) {
+					var instr = block.Instructions[i];
+					VariableDefinition local;
+					switch (instr.OpCode.Code) {
+					case Code.Ldloc:
+					case Code.Ldloc_S:
+					case Code.Ldloc_0:
+					case Code.Ldloc_1:
+					case Code.Ldloc_2:
+					case Code.Ldloc_3:
+					case Code.Stloc:
+					case Code.Stloc_S:
+					case Code.Stloc_0:
+					case Code.Stloc_1:
+					case Code.Stloc_2:
+					case Code.Stloc_3:
+						local = Instr.getLocalVar(locals, instr);
+						break;
+
+					case Code.Ldloca_S:
+					case Code.Ldloca:
+						local = (VariableDefinition)instr.Operand;
+						break;
+
+					default:
+						local = null;
+						break;
+					}
+					if (local == null)
+						continue;
+
+					List<LocalVariableInfo> list;
+					if (!usedLocals.TryGetValue(local, out list))
+						usedLocals[local] = list = new List<LocalVariableInfo>();
+					list.Add(new LocalVariableInfo(block, i));
+					if (usedLocals.Count == locals.Count)
+						return 0;
+				}
+			}
+
+			int newIndex = -1;
+			var newLocals = new List<VariableDefinition>(usedLocals.Count);
+			foreach (var local in usedLocals.Keys) {
+				newIndex++;
+				newLocals.Add(local);
+				foreach (var info in usedLocals[local])
+					info.block.Instructions[info.index] = new Instr(optimizeLocalInstr(info.block.Instructions[info.index], local, (uint)newIndex));
+			}
+
+			int numRemoved = locals.Count - newLocals.Count;
+			locals.Clear();
+			foreach (var local in newLocals)
+				locals.Add(local);
+			return numRemoved;
+		}
+
+		static Instruction optimizeLocalInstr(Instr instr, VariableDefinition local, uint newIndex) {
+			switch (instr.OpCode.Code) {
+			case Code.Ldloc:
+			case Code.Ldloc_S:
+			case Code.Ldloc_0:
+			case Code.Ldloc_1:
+			case Code.Ldloc_2:
+			case Code.Ldloc_3:
+				if (newIndex == 0)
+					return Instruction.Create(OpCodes.Ldloc_0);
+				if (newIndex == 1)
+					return Instruction.Create(OpCodes.Ldloc_1);
+				if (newIndex == 2)
+					return Instruction.Create(OpCodes.Ldloc_2);
+				if (newIndex == 3)
+					return Instruction.Create(OpCodes.Ldloc_3);
+				if (newIndex <= 0xFF)
+					return Instruction.Create(OpCodes.Ldloc_S, local);
+				return Instruction.Create(OpCodes.Ldloc, local);
+
+			case Code.Stloc:
+			case Code.Stloc_S:
+			case Code.Stloc_0:
+			case Code.Stloc_1:
+			case Code.Stloc_2:
+			case Code.Stloc_3:
+				if (newIndex == 0)
+					return Instruction.Create(OpCodes.Stloc_0);
+				if (newIndex == 1)
+					return Instruction.Create(OpCodes.Stloc_1);
+				if (newIndex == 2)
+					return Instruction.Create(OpCodes.Stloc_2);
+				if (newIndex == 3)
+					return Instruction.Create(OpCodes.Stloc_3);
+				if (newIndex <= 0xFF)
+					return Instruction.Create(OpCodes.Stloc_S, local);
+				return Instruction.Create(OpCodes.Stloc, local);
+
+			case Code.Ldloca_S:
+			case Code.Ldloca:
+				if (newIndex <= 0xFF)
+					return Instruction.Create(OpCodes.Ldloca_S, local);
+				return Instruction.Create(OpCodes.Ldloca, local);
+
+			default:
+				throw new ApplicationException("Invalid ld/st local instruction");
+			}
+		}
 	}
 }
