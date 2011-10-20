@@ -377,12 +377,7 @@ namespace de4dot.blocks.cflow {
 		}
 
 		static void calculateStackUsage(Instruction instr, bool methodHasReturnValue, out int pushes, out int pops) {
-			if (instr.OpCode.Code == Code.Dup) {
-				pushes = 1;
-				pops = 0;
-			}
-			else
-				DotNetUtils.calculateStackUsage(instr, false, out pushes, out pops);
+			DotNetUtils.calculateStackUsage(instr, false, out pushes, out pops);
 		}
 	}
 }
