@@ -95,9 +95,8 @@ namespace de4dot.blocks {
 			if (locals.Count == 0)
 				return 0;
 
-			var allBlocks = new List<Block>(methodBlocks.getAllBlocks());
 			var usedLocals = new Dictionary<VariableDefinition, List<LocalVariableInfo>>();
-			foreach (var block in allBlocks) {
+			foreach (var block in methodBlocks.getAllBlocks()) {
 				for (int i = 0; i < block.Instructions.Count; i++) {
 					var instr = block.Instructions[i];
 					VariableDefinition local;
