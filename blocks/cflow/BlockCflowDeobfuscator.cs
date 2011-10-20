@@ -84,6 +84,8 @@ namespace de4dot.blocks.cflow {
 				return false;
 			if (method.Parameters.Count > 0)
 				return false;
+			if (!method.IsStatic)
+				return false;
 			if (!MemberReferenceHelper.verifyType(method.MethodReturnType.ReturnType, "mscorlib", "System.Boolean"))
 				return false;
 			var body = method.Body;
