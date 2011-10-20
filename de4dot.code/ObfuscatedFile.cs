@@ -460,6 +460,7 @@ namespace de4dot {
 						int numRemovedLocals = blocks.optimizeLocals();
 						if (numRemovedLocals > 0)
 							Log.v("Removed {0} unused local(s)", numRemovedLocals);
+						blocks.repartitionBlocks();
 					}
 					deobfuscateStrings(blocks);
 					deob.deobfuscateMethodEnd(blocks);

@@ -201,5 +201,10 @@ namespace de4dot.blocks {
 				throw new ApplicationException("Invalid ld/st local instruction");
 			}
 		}
+
+		public void repartitionBlocks() {
+			foreach (var scopeBlock in getAllScopeBlocks(methodBlocks))
+				scopeBlock.repartitionBlocks();
+		}
 	}
 }
