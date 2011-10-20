@@ -53,6 +53,16 @@ namespace de4dot.blocks.cflow {
 						allDeadInstructions.Add(i);
 					break;
 
+				case Code.Dup:
+					if (i + 1 >= instructions.Count)
+						break;
+					if (instructions[i + 1].OpCode.Code != Code.Pop)
+						break;
+					allDeadInstructions.Add(i);
+					allDeadInstructions.Add(i + 1);
+					i++;
+					break;
+
 				case Code.Leave:
 				case Code.Leave_S:
 				case Code.Endfinally:
@@ -69,9 +79,11 @@ namespace de4dot.blocks.cflow {
 					break;
 				}
 			}
+			if (allDeadInstructions.Count == 0)
+				return false;
 
 			block.remove(allDeadInstructions);
-			return allDeadInstructions.Count > 0;
+			return true;
 		}
 
 		bool okInstructions(Block block, IEnumerable<int> indexes) {
