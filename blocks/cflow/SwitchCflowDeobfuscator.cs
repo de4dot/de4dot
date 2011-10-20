@@ -204,9 +204,18 @@ namespace de4dot.blocks.cflow {
 		}
 
 		bool isBranchBlock(Block block) {
-			if (block.FallThrough != null)
-				return block.Targets == null || block.Targets.Count == 0;
-			return block.Targets != null && block.Targets.Count == 1;
+			if (block.Targets != null)
+				return false;
+			if (block.FallThrough == null)
+				return false;
+			switch (block.LastInstr.OpCode.Code) {
+			case Code.Switch:
+			case Code.Leave:
+			case Code.Leave_S:
+				return false;
+			default:
+				return true;
+			}
 		}
 
 		Block getSwitchTarget(IList<Block> targets, Block fallThrough, Block source, Value value) {
