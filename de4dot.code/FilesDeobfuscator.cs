@@ -172,6 +172,10 @@ namespace de4dot {
 				catch (BadImageFormatException) {
 					return false;	// Not a .NET file
 				}
+				catch (ArgumentOutOfRangeException) {
+					Log.w("Could not load file (argument out of range): {0}", file.Filename);
+					return false;
+				}
 				catch (UnauthorizedAccessException) {
 					Log.w("Could not load file (not authorized): {0}", file.Filename);
 					return false;
