@@ -26,9 +26,9 @@ namespace de4dot.blocks.cflow {
 		Block block;
 		InstructionEmulator instructionEmulator = new InstructionEmulator();
 
-		public void init(Block block, IList<ParameterDefinition> args, IList<VariableDefinition> locals) {
+		public void init(Blocks blocks, Block block) {
 			this.block = block;
-			instructionEmulator.init(false, args, locals);
+			instructionEmulator.init(blocks.Method.HasThis, false, blocks.Method.Parameters, blocks.Locals);
 		}
 
 		// Returns true if code was updated, false otherwise

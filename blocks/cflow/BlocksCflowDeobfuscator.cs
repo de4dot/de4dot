@@ -53,7 +53,7 @@ namespace de4dot.blocks.cflow {
 					var lastInstr = block.LastInstr;
 					if (!DotNetUtils.isConditionalBranch(lastInstr.OpCode.Code) && lastInstr.OpCode.Code != Code.Switch)
 						continue;
-					blockCflowDeobfuscator.init(block, blocks.Method.Parameters, blocks.Locals);
+					blockCflowDeobfuscator.init(blocks, block);
 					changed |= blockCflowDeobfuscator.deobfuscate();
 				}
 

@@ -119,7 +119,7 @@ namespace de4dot.blocks.cflow {
 			foreach (var source in new List<Block>(block.Sources)) {
 				if (!isBranchBlock(source))
 					continue;
-				instructionEmulator.init(false, blocks.Method.Parameters, blocks.Locals);
+				instructionEmulator.init(blocks.Method.HasThis, false, blocks.Method.Parameters, blocks.Locals);
 				instructionEmulator.emulate(source.Instructions);
 
 				var target = getSwitchTarget(switchTargets, switchFallThrough, source, instructionEmulator.pop());
@@ -145,7 +145,7 @@ namespace de4dot.blocks.cflow {
 			foreach (var source in new List<Block>(block.Sources)) {
 				if (!isBranchBlock(source))
 					continue;
-				instructionEmulator.init(false, blocks.Method.Parameters, blocks.Locals);
+				instructionEmulator.init(blocks.Method.HasThis, false, blocks.Method.Parameters, blocks.Locals);
 				instructionEmulator.emulate(source.Instructions);
 
 				var target = getSwitchTarget(switchTargets, switchFallThrough, source, instructionEmulator.getLocal(switchVariable));
@@ -168,7 +168,7 @@ namespace de4dot.blocks.cflow {
 			foreach (var source in new List<Block>(block.Sources)) {
 				if (!isBranchBlock(source))
 					continue;
-				instructionEmulator.init(false, blocks.Method.Parameters, blocks.Locals);
+				instructionEmulator.init(blocks.Method.HasThis, false, blocks.Method.Parameters, blocks.Locals);
 				instructionEmulator.emulate(source.Instructions);
 
 				var target = getSwitchTarget(switchTargets, switchFallThrough, source, instructionEmulator.pop());

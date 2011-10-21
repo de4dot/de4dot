@@ -30,12 +30,14 @@ namespace de4dot.blocks.cflow {
 		List<Value> args = new List<Value>();
 		List<Value> locals = new List<Value>();
 
-		public void init(bool initLocals, IList<ParameterDefinition> parameterDefinitions, IList<VariableDefinition> variableDefinitions) {
+		public void init(bool hasThis, bool initLocals, IList<ParameterDefinition> parameterDefinitions, IList<VariableDefinition> variableDefinitions) {
 			this.parameterDefinitions = parameterDefinitions;
 			this.variableDefinitions = variableDefinitions;
 			valueStack.init();
 
 			args.Clear();
+			if (hasThis)
+				args.Add(new UnknownValue());
 			foreach (var arg in parameterDefinitions)
 				args.Add(getUnknownValue(arg.ParameterType));
 
