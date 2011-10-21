@@ -492,6 +492,7 @@ namespace de4dot {
 			IList<Instruction> allInstructions;
 			IList<ExceptionHandler> allExceptionHandlers;
 			Dictionary<Instruction, bool> targets = new Dictionary<Instruction, bool>();
+			Dictionary<Instruction, string> labels = new Dictionary<Instruction, string>();
 
 			class ExInfo {
 				public List<ExceptionHandler> tryStarts = new List<ExceptionHandler>();
@@ -515,6 +516,7 @@ namespace de4dot {
 					this.allInstructions = null;
 					this.allExceptionHandlers = null;
 					targets.Clear();
+					labels.Clear();
 					exInfos.Clear();
 					lastExInfo = null;
 				}
@@ -525,19 +527,37 @@ namespace de4dot {
 					switch (instr.OpCode.OperandType) {
 					case OperandType.ShortInlineBrTarget:
 					case OperandType.InlineBrTarget:
-						var targetInstr = instr.Operand as Instruction;
-						if (targetInstr != null)
-							targets[targetInstr] = true;
+						setTarget(instr.Operand as Instruction);
 						break;
 
 					case OperandType.InlineSwitch:
-						foreach (var targetInstr2 in (Instruction[])instr.Operand) {
-							if (targetInstr2 != null)
-								targets[targetInstr2] = true;
-						}
+						foreach (var targetInstr in (Instruction[])instr.Operand)
+							setTarget(targetInstr);
 						break;
 					}
 				}
+
+				foreach (var ex in allExceptionHandlers) {
+					setTarget(ex.TryStart);
+					setTarget(ex.TryEnd);
+					setTarget(ex.FilterStart);
+					setTarget(ex.HandlerStart);
+					setTarget(ex.HandlerEnd);
+				}
+
+				var sortedTargets = new List<Instruction>(targets.Keys);
+				sortedTargets.Sort((a, b) => {
+					if (a.Offset < b.Offset) return -1;
+					if (a.Offset > b.Offset) return 1;
+					return 0;
+				});
+				for (int i = 0; i < sortedTargets.Count; i++)
+					labels[sortedTargets[i]] = string.Format("label_{0}", i);
+			}
+
+			void setTarget(Instruction instr) {
+				if (instr != null)
+					targets[instr] = true;
 			}
 
 			void initExHandlers() {
@@ -570,16 +590,16 @@ namespace de4dot {
 
 				Log.indent();
 				foreach (var instr in allInstructions) {
+					if (targets.ContainsKey(instr)) {
+						Log.deIndent();
+						Log.log(logLevel, "{0}:", getLabel(instr));
+						Log.indent();
+					}
 					ExInfo exInfo;
 					if (exInfos.TryGetValue(instr, out exInfo))
 						printExInfo(exInfo);
-					if (targets.ContainsKey(instr)) {
-						Log.deIndent();
-						Log.log(logLevel, "{0}:", instr.GetLabelString());
-						Log.indent();
-					}
 					var instrString = instr.GetOpCodeString();
-					var operandString = instr.GetOperandString();
+					var operandString = getOperandString(instr);
 					var memberReference = instr.Operand as MemberReference;
 					if (operandString == "")
 						Log.log(logLevel, "{0}", instrString);
@@ -590,6 +610,25 @@ namespace de4dot {
 				}
 				printExInfo(lastExInfo);
 				Log.deIndent();
+			}
+
+			string getOperandString(Instruction instr) {
+				if (instr.Operand is Instruction)
+					return getLabel((Instruction)instr.Operand);
+				else if (instr.Operand is Instruction[]) {
+					var sb = new StringBuilder();
+					var targets = (Instruction[])instr.Operand;
+					for (int i = 0; i < targets.Length; i++) {
+						if (i > 0)
+							sb.Append(',');
+						sb.Append(getLabel(targets[i]));
+					}
+					return sb.ToString();
+				}
+				else if (instr.Operand is string)
+					return Utils.toCsharpString((string)instr.Operand);
+				else
+					return instr.GetOperandString();
 			}
 
 			void printExInfo(ExInfo exInfo) {
@@ -610,21 +649,21 @@ namespace de4dot {
 			string getExceptionString(ExceptionHandler ex) {
 				var sb = new StringBuilder();
 				if (ex.TryStart != null)
-					sb.Append(string.Format("TRY: {0}-{1}", getOffset(ex.TryStart), getOffset(ex.TryEnd)));
+					sb.Append(string.Format("TRY: {0}-{1}", getLabel(ex.TryStart), getLabel(ex.TryEnd)));
 				if (ex.FilterStart != null)
-					sb.Append(string.Format(", FILTER: {0}", getOffset(ex.FilterStart)));
+					sb.Append(string.Format(", FILTER: {0}", getLabel(ex.FilterStart)));
 				if (ex.HandlerStart != null)
-					sb.Append(string.Format(", HANDLER: {0}-{1}", getOffset(ex.HandlerStart), getOffset(ex.HandlerEnd)));
+					sb.Append(string.Format(", HANDLER: {0}-{1}", getLabel(ex.HandlerStart), getLabel(ex.HandlerEnd)));
 				sb.Append(string.Format(", TYPE: {0}", ex.HandlerType));
 				if (ex.CatchType != null)
 					sb.Append(string.Format(", CATCH: {0}", ex.CatchType));
 				return sb.ToString();
 			}
 
-			string getOffset(Instruction instr) {
+			string getLabel(Instruction instr) {
 				if (instr == null)
-					return "END";
-				return string.Format("{0:X4}", instr.Offset);
+					return "<end>";
+				return labels[instr];
 			}
 		}
 
