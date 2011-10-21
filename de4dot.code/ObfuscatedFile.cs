@@ -449,17 +449,14 @@ namespace de4dot {
 
 				if (hasNonEmptyBody(method)) {
 					var blocks = new Blocks(method);
+					int numRemovedLocals = 0;
+					int oldNumInstructions = method.Body.Instructions.Count;
 
 					deob.deobfuscateMethodBegin(blocks);
 					if (options.ControlFlowDeobfuscation) {
 						cflowDeobfuscator.init(blocks);
 						cflowDeobfuscator.deobfuscate();
-						int numDeadBlocks = cflowDeobfuscator.NumberOfRemovedDeadBlocks;
-						if (numDeadBlocks > 0)
-							Log.v("Removed {0} dead block(s)", numDeadBlocks);
-						int numRemovedLocals = blocks.optimizeLocals();
-						if (numRemovedLocals > 0)
-							Log.v("Removed {0} unused local(s)", numRemovedLocals);
+						numRemovedLocals = blocks.optimizeLocals();
 						blocks.repartitionBlocks();
 					}
 					deobfuscateStrings(blocks);
@@ -469,6 +466,12 @@ namespace de4dot {
 					IList<ExceptionHandler> allExceptionHandlers;
 					blocks.getCode(out allInstructions, out allExceptionHandlers);
 					DotNetUtils.restoreBody(method, allInstructions, allExceptionHandlers);
+
+					if (numRemovedLocals > 0)
+						Log.v("Removed {0} unused local(s)", numRemovedLocals);
+					int numRemovedInstructions = oldNumInstructions - method.Body.Instructions.Count;
+					if (numRemovedInstructions > 0)
+						Log.v("Removed {0} dead instruction(s)", numRemovedInstructions);
 
 					const Log.LogLevel dumpLogLevel = Log.LogLevel.veryverbose;
 					if (Log.isAtLeast(dumpLogLevel)) {

@@ -29,15 +29,9 @@ namespace de4dot.blocks.cflow {
 		DeadCodeRemover deadCodeRemover = new DeadCodeRemover();
 		DeadStoreRemover deadStoreRemover = new DeadStoreRemover();
 		StLdlocFixer stLdlocFixer = new StLdlocFixer();
-		int numRemovedDeadBlocks;
-
-		public int NumberOfRemovedDeadBlocks {
-			get { return numRemovedDeadBlocks; }
-		}
 
 		public void init(Blocks blocks) {
 			this.blocks = blocks;
-			numRemovedDeadBlocks = 0;
 		}
 
 		public void deobfuscate() {
@@ -127,9 +121,7 @@ namespace de4dot.blocks.cflow {
 		}
 
 		bool removeDeadBlocks() {
-			int count = new DeadBlocksRemover(blocks.MethodBlocks).remove();
-			numRemovedDeadBlocks += count;
-			return count > 0;
+			return new DeadBlocksRemover(blocks.MethodBlocks).remove() > 0;
 		}
 
 		bool mergeBlocks() {
