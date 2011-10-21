@@ -74,7 +74,6 @@ namespace de4dot.blocks.cflow {
 		}
 
 		public static Int64Value Conv_U8(Int32Value a) {
-			//TODO: Doc says that result is sign-extended. You zero-extend it. Is that correct?
 			long value = (long)(ulong)(uint)a.value;
 			ulong validMask = a.validMask | (NO_UNKNOWN_BITS << 32);
 			return new Int64Value(value, validMask);

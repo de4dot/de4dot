@@ -114,14 +114,12 @@ namespace de4dot.blocks.cflow {
 		}
 
 		public static Int32Value Conv_U1(int value, uint validMask) {
-			//TODO: Doc says that result is sign-extended. You zero-extend it. Is that correct?
 			value = (int)(byte)value;
 			validMask |= NO_UNKNOWN_BITS << 8;
 			return new Int32Value(value, validMask);
 		}
 
 		public static Int32Value Conv_U1(Real8Value a) {
-			//TODO: Doc says that result is sign-extended. You zero-extend it. Is that correct?
 			return new Int32Value((int)(byte)a.value);
 		}
 
@@ -155,14 +153,12 @@ namespace de4dot.blocks.cflow {
 		}
 
 		public static Int32Value Conv_U2(int value, uint validMask) {
-			//TODO: Doc says that result is sign-extended. You zero-extend it. Is that correct?
 			value = (int)(ushort)value;
 			validMask |= NO_UNKNOWN_BITS << 16;
 			return new Int32Value(value, validMask);
 		}
 
 		public static Int32Value Conv_U2(Real8Value a) {
-			//TODO: Doc says that result is sign-extended. You zero-extend it. Is that correct?
 			return new Int32Value((int)(ushort)a.value);
 		}
 
