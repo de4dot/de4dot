@@ -389,7 +389,7 @@ namespace AssemblyData.methodsrewriter {
 		}
 
 		Assembly rtGetAssembly_TypeArg(Type type) {
-			return Assembly.GetAssembly(type);	//TODO:
+			return Assembly.GetAssembly(type);
 		}
 
 		Delegate rtGetDelegateInstance(int delegateIndex) {
