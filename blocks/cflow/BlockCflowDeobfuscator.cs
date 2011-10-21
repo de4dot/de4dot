@@ -23,10 +23,12 @@ using Mono.Cecil.Cil;
 
 namespace de4dot.blocks.cflow {
 	class BlockCflowDeobfuscator {
+		Blocks blocks;
 		Block block;
 		InstructionEmulator instructionEmulator = new InstructionEmulator();
 
 		public void init(Blocks blocks, Block block) {
+			this.blocks = blocks;
 			this.block = block;
 			instructionEmulator.init(blocks.Method.HasThis, false, blocks.Method.Parameters, blocks.Locals);
 		}
@@ -100,6 +102,10 @@ namespace de4dot.blocks.cflow {
 				ldci4 = (Instruction)ldci4.Operand;
 			if (ldci4 == null || !DotNetUtils.isLdcI4(ldci4) || ldci4.Next == null || ldci4.Next.OpCode.Code != Code.Ret)
 				return false;
+
+			if (!MemberReferenceHelper.compareTypes(method.DeclaringType, blocks.Method.DeclaringType))
+				return false;
+
 			int val = DotNetUtils.getLdcI4Value(ldci4);
 			block.Instructions[instrIndex] = new Instr(Instruction.Create(OpCodes.Ldc_I4, val));
 			return true;
