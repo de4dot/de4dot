@@ -127,7 +127,7 @@ namespace de4dot {
 			miscOptions.Add(new OneArgOption(null, "default-strtok", "Default string decrypter method token or [type::][name][(args,...)]", "method", (val) => {
 				defaultStringDecrypterMethods.Add(val);
 			}));
-			miscOptions.Add(new NoArgOption(null, "no-control-flow-deob", "No control flow deobfuscation (NOT recommended)", () => {
+			miscOptions.Add(new NoArgOption(null, "no-cflow-deob", "No control flow deobfuscation (NOT recommended)", () => {
 				filesOptions.ControlFlowDeobfuscation = false;
 			}));
 			miscOptions.Add(new NoArgOption(null, "load-new-process", "Load executed assemblies into a new process", () => {
