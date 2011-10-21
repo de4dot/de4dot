@@ -85,6 +85,26 @@ namespace de4dot.blocks.cflow {
 			return hasValue((int)value);
 		}
 
+		public Int32Value toBoolean() {
+			return new Int32Value(value & 1, validMask | (NO_UNKNOWN_BITS << 1));
+		}
+
+		public Int32Value toInt8() {
+			return Conv_I1(this);
+		}
+
+		public Int32Value toUInt8() {
+			return Conv_U1(this);
+		}
+
+		public Int32Value toInt16() {
+			return Conv_I2(this);
+		}
+
+		public Int32Value toUInt16() {
+			return Conv_U2(this);
+		}
+
 		public static Int32Value Conv_U1(Int32Value a) {
 			return Conv_U1(a.value, a.validMask);
 		}

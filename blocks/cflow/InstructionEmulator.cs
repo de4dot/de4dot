@@ -59,11 +59,11 @@ namespace de4dot.blocks.cflow {
 			else if (DotNetUtils.isAssembly(typeReference.Scope, "mscorlib")) {
 				switch (typeReference.FullName) {
 				case "System.Boolean":
-				case "System.Byte":
 				case "System.SByte":
+				case "System.Byte":
 				case "System.Int16":
-				case "System.Int32":
 				case "System.UInt16":
+				case "System.Int32":
 				case "System.UInt32":
 					return new Int32Value(0);
 				case "System.Int64":
@@ -83,17 +83,63 @@ namespace de4dot.blocks.cflow {
 			if (DotNetUtils.isAssembly(typeReference.Scope, "mscorlib")) {
 				switch (typeReference.FullName) {
 				case "System.Boolean":	return Int32Value.createUnknownBool();
-				case "System.Byte":		return Int32Value.createUnknownUInt8();
 				case "System.SByte":	return Int32Value.createUnknown();
+				case "System.Byte":		return Int32Value.createUnknownUInt8();
 				case "System.Int16":	return Int32Value.createUnknown();
-				case "System.Int32":	return Int32Value.createUnknown();
 				case "System.UInt16":	return Int32Value.createUnknownUInt16();
+				case "System.Int32":	return Int32Value.createUnknown();
 				case "System.UInt32":	return Int32Value.createUnknown();
 				case "System.Int64":	return Int64Value.createUnknown();
 				case "System.UInt64":	return Int64Value.createUnknown();
 				}
 			}
 			return new UnknownValue();
+		}
+
+		static Value truncateValue(Value value, TypeReference typeReference) {
+			if (typeReference == null)
+				return value;
+			if (DotNetUtils.isAssembly(typeReference.Scope, "mscorlib")) {
+				switch (typeReference.FullName) {
+				case "System.Boolean":
+					if (value.isInt32())
+						return ((Int32Value)value).toBoolean();
+					return Int32Value.createUnknownBool();
+
+				case "System.SByte":
+					if (value.isInt32())
+						return ((Int32Value)value).toInt8();
+					return Int32Value.createUnknown();
+
+				case "System.Byte":
+					if (value.isInt32())
+						return ((Int32Value)value).toUInt8();
+					return Int32Value.createUnknownUInt8();
+
+				case "System.Int16":
+					if (value.isInt32())
+						return ((Int32Value)value).toInt16();
+					return Int32Value.createUnknown();
+
+				case "System.UInt16":
+					if (value.isInt32())
+						return ((Int32Value)value).toUInt16();
+					return Int32Value.createUnknownUInt16();
+
+				case "System.Int32":
+				case "System.UInt32":
+					if (value.isInt32())
+						return value;
+					return Int32Value.createUnknown();
+
+				case "System.Int64":
+				case "System.UInt64":
+					if (value.isInt64())
+						return value;
+					return Int64Value.createUnknown();
+				}
+			}
+			return value;
 		}
 
 		static Value getValue(List<Value> list, int i) {
@@ -112,7 +158,7 @@ namespace de4dot.blocks.cflow {
 
 		void setArg(int index, Value value) {
 			if (0 <= index && index < args.Count)
-				args[index] = value;
+				args[index] = truncateValue(value, parameterDefinitions[index].ParameterType);
 		}
 
 		Value getUnknownArg(int index) {
@@ -131,7 +177,7 @@ namespace de4dot.blocks.cflow {
 
 		void setLocal(int index, Value value) {
 			if (0 <= index && index < locals.Count)
-				locals[index] = value;
+				locals[index] = truncateValue(value, variableDefinitions[index].VariableType);
 		}
 
 		Value getUnknownLocal(int index) {
@@ -744,14 +790,10 @@ namespace de4dot.blocks.cflow {
 		}
 
 		void emulate_Starg(int index) {
-			//TODO: You should truncate the value if necessary, eg. from int32 -> bool,
-			//		int32 -> int16, double -> float, etc.
 			setArg(index, valueStack.pop());
 		}
 
 		void emulate_Stloc(int index) {
-			//TODO: You should truncate the value if necessary, eg. from int32 -> bool,
-			//		int32 -> int16, double -> float, etc.
 			setLocal(index, valueStack.pop());
 		}
 
