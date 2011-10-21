@@ -42,12 +42,17 @@ namespace de4dot.blocks.cflow {
 
 		public void deobfuscate() {
 			bool changed;
+			int iterations = -1;
 			do {
+				iterations++;
 				changed = false;
 				removeDeadBlocks();
 				mergeBlocks();
 
 				blocks.MethodBlocks.getAllBlocks(allBlocks);
+
+				if (iterations == 0)
+					changed |= fixDotfuscatorLoop();
 
 				foreach (var block in allBlocks) {
 					var lastInstr = block.LastInstr;
@@ -71,6 +76,54 @@ namespace de4dot.blocks.cflow {
 					changed |= stLdlocFixer.fix();
 				}
 			} while (changed);
+		}
+
+		// Hack for old Dotfuscator
+		bool fixDotfuscatorLoop() {
+			/*
+			blk1:
+				...
+				ldc.i4.x
+			blk2:
+				dup
+				dup
+				ldc.i4.y
+				some_op
+				bcc blk2
+			blk3:
+				pop
+				...
+			*/
+			bool changed = false;
+			foreach (var block in allBlocks) {
+				if (block.Instructions.Count != 5)
+					continue;
+				var instructions = block.Instructions;
+				if (instructions[0].OpCode.Code != Code.Dup)
+					continue;
+				if (instructions[1].OpCode.Code != Code.Dup)
+					continue;
+				if (!instructions[2].isLdcI4())
+					continue;
+				if (instructions[3].OpCode.Code != Code.Sub && instructions[3].OpCode.Code != Code.Add)
+					continue;
+				if (instructions[4].OpCode.Code != Code.Blt && instructions[4].OpCode.Code != Code.Blt_S &&
+					instructions[4].OpCode.Code != Code.Bgt && instructions[4].OpCode.Code != Code.Bgt_S)
+					continue;
+				if (block.Sources.Count != 2)
+					continue;
+				var prev = block.Sources[0];
+				if (prev == block)
+					prev = block.Sources[1];
+				if (prev == null || !prev.LastInstr.isLdcI4())
+					continue;
+				var next = block.FallThrough;
+				if (next.FirstInstr.OpCode.Code != Code.Pop)
+					continue;
+				block.replaceLastInstrsWithBranch(5, next);
+				changed = true;
+			}
+			return changed;
 		}
 
 		bool removeDeadBlocks() {
