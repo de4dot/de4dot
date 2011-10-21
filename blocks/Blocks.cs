@@ -47,26 +47,6 @@ namespace de4dot.blocks {
 			methodBlocks = new InstructionListParser(body.Instructions, body.ExceptionHandlers).parse();
 		}
 
-		public void deobfuscateLeaveObfuscation() {
-			foreach (var scopeBlock in getAllScopeBlocks(methodBlocks))
-				scopeBlock.deobfuscateLeaveObfuscation();
-		}
-
-		public int deobfuscate() {
-			foreach (var scopeBlock in getAllScopeBlocks(methodBlocks))
-				scopeBlock.deobfuscate(this);
-
-			int numDeadBlocks = removeDeadBlocks();
-
-			foreach (var scopeBlock in getAllScopeBlocks(methodBlocks)) {
-				scopeBlock.mergeBlocks();
-				scopeBlock.repartitionBlocks();
-				scopeBlock.deobfuscateLeaveObfuscation();
-			}
-
-			return numDeadBlocks;
-		}
-
 		IEnumerable<ScopeBlock> getAllScopeBlocks(ScopeBlock scopeBlock) {
 			var list = new List<ScopeBlock>();
 			list.Add(scopeBlock);

@@ -81,106 +81,6 @@ namespace de4dot.blocks {
 			return blocks;
 		}
 
-		public void deobfuscateLeaveObfuscation() {
-			foreach (var block in findBlocks())
-				deobfuscateLeaveObfuscation(block);
-		}
-
-		void deobfuscateLeaveObfuscation(Block block) {
-			var instrs = block.Instructions;
-			int index = instrs.Count - 1;
-			if (index <= 0)
-				return;
-			var lastInstr = instrs[index];
-			if (!lastInstr.isLeave() && lastInstr.OpCode != OpCodes.Endfinally && lastInstr.OpCode != OpCodes.Rethrow)
-				return;
-
-			int end = index;
-			int start = end;
-			if (start <= 0)
-				return;
-			while (start > 0) {
-				var instr = instrs[--start];
-
-				bool valid = false;
-				switch (instr.OpCode.Code) {
-				case Code.Dup:
-				case Code.Ldarg:
-				case Code.Ldarg_0:
-				case Code.Ldarg_1:
-				case Code.Ldarg_2:
-				case Code.Ldarg_3:
-				case Code.Ldarga:
-				case Code.Ldarga_S:
-				case Code.Ldarg_S:
-				case Code.Ldc_I4:
-				case Code.Ldc_I4_0:
-				case Code.Ldc_I4_1:
-				case Code.Ldc_I4_2:
-				case Code.Ldc_I4_3:
-				case Code.Ldc_I4_4:
-				case Code.Ldc_I4_5:
-				case Code.Ldc_I4_6:
-				case Code.Ldc_I4_7:
-				case Code.Ldc_I4_8:
-				case Code.Ldc_I4_M1:
-				case Code.Ldc_I4_S:
-				case Code.Ldc_I8:
-				case Code.Ldc_R4:
-				case Code.Ldc_R8:
-				case Code.Ldftn:
-				case Code.Ldloc:
-				case Code.Ldloc_0:
-				case Code.Ldloc_1:
-				case Code.Ldloc_2:
-				case Code.Ldloc_3:
-				case Code.Ldloca:
-				case Code.Ldloca_S:
-				case Code.Ldloc_S:
-				case Code.Ldnull:
-				case Code.Ldsfld:
-				case Code.Ldsflda:
-				case Code.Ldstr:
-				case Code.Ldtoken:
-				case Code.Nop:
-					valid = true;
-					break;
-				}
-				if (!valid) {
-					start++;
-					break;
-				}
-			}
-
-			int num = end - start;
-			if (num > 0)
-				block.remove(start, num);
-		}
-
-		public void deobfuscate(Blocks blocks) {
-			while (true) {
-				mergeBlocks();
-
-				bool removed = false;
-				removed |= removeNops();
-				removed |= deobfuscateConditionalBranches();
-				if (!removed)
-					break;
-			}
-
-			var switchDeobfuscator = new SwitchControlFlowDeobfuscator(blocks);
-			switchDeobfuscator.deobfuscate(this);
-		}
-
-		bool removeNops() {
-			bool removed = false;
-
-			foreach (var block in findBlocks()) 
-				removed |= block.removeNops();
-
-			return removed;
-		}
-
 		internal bool getLdcValue(Instr instr, out int value) {
 			if (Code.Ldc_I4_0 <= instr.OpCode.Code && instr.OpCode.Code <= Code.Ldc_I4_8)
 				value = instr.OpCode.Code - Code.Ldc_I4_0;
@@ -195,13 +95,6 @@ namespace de4dot.blocks {
 				return false;
 			}
 			return true;
-		}
-
-		bool deobfuscateConditionalBranches() {
-			bool removed = false;
-			removed |= new BrFalseDeobfuscator(this, findBlocks((block) => block.LastInstr.isBrfalse())).deobfuscate();
-			removed |= new BrTrueDeobfuscator(this, findBlocks((block) => block.LastInstr.isBrtrue())).deobfuscate();
-			return removed;
 		}
 
 		// Remove the block if it's a dead block. If it has refs to other dead blocks, those

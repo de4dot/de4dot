@@ -464,8 +464,6 @@ namespace de4dot {
 					}
 					deobfuscateStrings(blocks);
 					deob.deobfuscateMethodEnd(blocks);
-					if (options.ControlFlowDeobfuscation)
-						blocks.deobfuscateLeaveObfuscation();
 
 					IList<Instruction> allInstructions;
 					IList<ExceptionHandler> allExceptionHandlers;
@@ -737,7 +735,11 @@ namespace de4dot {
 			if (check(method, SimpleDeobFlags.HasDeobfuscated))
 				return;
 
-			deobfuscate(method, "Deobfuscating control flow", (blocks) => blocks.deobfuscate());
+			deobfuscate(method, "Deobfuscating control flow", (blocks) => {
+				var cflowDeobfuscator = new BlocksCflowDeobfuscator();
+				cflowDeobfuscator.init(blocks);
+				cflowDeobfuscator.deobfuscate();
+			});
 		}
 
 		void ISimpleDeobfuscator.decryptStrings(MethodDefinition method, IDeobfuscator theDeob) {

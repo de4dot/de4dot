@@ -112,42 +112,6 @@ namespace de4dot.blocks {
 				remove(index, 1);
 		}
 
-		// Removes all instructions that do nothing, nop and eg. ldc/pop, etc.
-		public bool removeNops() {
-			bool removed = false;
-
-			bool keepLooping = true;
-			while (keepLooping) {
-				var instrsToRemove = new List<int>();
-				for (int i = 0; i < Instructions.Count; i++) {
-					var instr = Instructions[i];
-					if (instr.OpCode.Code == Code.Nop) {
-						// The nop instruction is auto created when we access LastInstr so
-						// make we don't get an infinite loop.
-						if (Instructions.Count != 1)
-							instrsToRemove.Add(i);
-						continue;
-					}
-					if (i + 1 >= Instructions.Count)
-						continue;
-					var next = Instructions[i + 1];
-					if (instr.isSimpleLoad() && next.isPop()) {
-						instrsToRemove.Add(i);
-						instrsToRemove.Add(i + 1);
-						i++;
-						continue;
-					}
-				}
-				keepLooping = instrsToRemove.Count != 0;
-				if (keepLooping) {
-					removed = true;
-					remove(instrsToRemove);
-				}
-			}
-
-			return removed;
-		}
-
 		// Replace the last instructions with a branch to target
 		public void replaceLastInstrsWithBranch(int numInstrs, Block target) {
 			if (numInstrs < 0 || numInstrs > instructions.Count)
