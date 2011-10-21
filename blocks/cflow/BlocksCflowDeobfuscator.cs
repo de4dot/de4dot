@@ -24,6 +24,11 @@ namespace de4dot.blocks.cflow {
 	public class BlocksCflowDeobfuscator {
 		BlockCflowDeobfuscator blockCflowDeobfuscator = new BlockCflowDeobfuscator();
 		Blocks blocks;
+		List<Block> allBlocks = new List<Block>();
+		SwitchCflowDeobfuscator switchCflowDeobfuscator = new SwitchCflowDeobfuscator();
+		DeadCodeRemover deadCodeRemover = new DeadCodeRemover();
+		DeadStoreRemover deadStoreRemover = new DeadStoreRemover();
+		StLdlocFixer stLdlocFixer = new StLdlocFixer();
 		int numRemovedDeadBlocks;
 
 		public int NumberOfRemovedDeadBlocks {
@@ -36,11 +41,6 @@ namespace de4dot.blocks.cflow {
 		}
 
 		public void deobfuscate() {
-			var allBlocks = new List<Block>();
-			var switchCflowDeobfuscator = new SwitchCflowDeobfuscator();
-			var deadCodeRemover = new DeadCodeRemover();
-			var deadStoreRemover = new DeadStoreRemover();
-			var stLdlocFixer = new StLdlocFixer();
 			bool changed;
 			do {
 				changed = false;
