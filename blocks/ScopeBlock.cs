@@ -40,18 +40,23 @@ namespace de4dot.blocks {
 		}
 
 		public IList<BaseBlock> getAllBaseBlocks() {
-			return getAllBlocks(new List<BaseBlock>());
+			return getTheBlocks(new List<BaseBlock>());
 		}
 
 		public IList<Block> getAllBlocks() {
-			return getAllBlocks(new List<Block>());
+			return getTheBlocks(new List<Block>());
+		}
+
+		public IList<Block> getAllBlocks(IList<Block> allBlocks) {
+			allBlocks.Clear();
+			return getTheBlocks(allBlocks);
 		}
 
 		public IList<ScopeBlock> getAllScopeBlocks() {
-			return getAllBlocks(new List<ScopeBlock>());
+			return getTheBlocks(new List<ScopeBlock>());
 		}
 
-		IList<T> getAllBlocks<T>(IList<T> list) where T : BaseBlock {
+		public IList<T> getTheBlocks<T>(IList<T> list) where T : BaseBlock {
 			addBlocks(list, this);
 			return list;
 		}
@@ -319,7 +324,7 @@ namespace de4dot.blocks {
 			// Get removed blocks and make sure they're not referenced by remaining code
 			var removedBlocks = new List<Block>();
 			foreach (var handler in tryBlock.TryHandlerBlocks)
-				handler.getAllBlocks(removedBlocks);
+				handler.getTheBlocks(removedBlocks);
 			if (!verifyNoExternalRefs(removedBlocks))
 				throw new ApplicationException("Removed blocks are referenced by remaining code");
 

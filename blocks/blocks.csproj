@@ -38,10 +38,12 @@
     <Compile Include="cflow\BlockCflowDeobfuscator.cs" />
     <Compile Include="cflow\CflowUtils.cs" />
     <Compile Include="cflow\DeadCodeRemover.cs" />
+    <Compile Include="cflow\DeadStoreRemover.cs" />
     <Compile Include="cflow\InstructionEmulator.cs" />
     <Compile Include="cflow\Int32Value.cs" />
     <Compile Include="cflow\Int64Value.cs" />
     <Compile Include="cflow\Real8Value.cs" />
+    <Compile Include="cflow\StLdlocFixer.cs" />
     <Compile Include="cflow\SwitchCflowDeobfuscator.cs" />
     <Compile Include="cflow\Value.cs" />
     <Compile Include="cflow\ValueStack.cs" />

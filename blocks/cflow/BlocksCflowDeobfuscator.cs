@@ -39,14 +39,15 @@ namespace de4dot.blocks.cflow {
 			var allBlocks = new List<Block>();
 			var switchCflowDeobfuscator = new SwitchCflowDeobfuscator();
 			var deadCodeRemover = new DeadCodeRemover();
+			var deadStoreRemover = new DeadStoreRemover();
+			var stLdlocFixer = new StLdlocFixer();
 			bool changed;
 			do {
 				changed = false;
 				removeDeadBlocks();
 				mergeBlocks();
 
-				allBlocks.Clear();
-				allBlocks.AddRange(blocks.MethodBlocks.getAllBlocks());
+				blocks.MethodBlocks.getAllBlocks(allBlocks);
 
 				foreach (var block in allBlocks) {
 					var lastInstr = block.LastInstr;
@@ -59,8 +60,16 @@ namespace de4dot.blocks.cflow {
 				switchCflowDeobfuscator.init(blocks, allBlocks);
 				changed |= switchCflowDeobfuscator.deobfuscate();
 
+				deadStoreRemover.init(blocks, allBlocks);
+				changed |= deadStoreRemover.remove();
+
 				deadCodeRemover.init(allBlocks);
 				changed |= deadCodeRemover.remove();
+
+				if (!changed) {
+					stLdlocFixer.init(allBlocks, blocks.Locals);
+					changed |= stLdlocFixer.fix();
+				}
 			} while (changed);
 		}
 

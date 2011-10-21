@@ -21,6 +21,8 @@ using System.Collections.Generic;
 using Mono.Cecil.Cil;
 
 namespace de4dot.blocks.cflow {
+	// Removes dead code that is the result of one of our optimizations, or created by the
+	// obfuscator.
 	class DeadCodeRemover {
 		List<Block> allBlocks;
 		List<int> allDeadInstructions = new List<int>();
@@ -42,6 +44,7 @@ namespace de4dot.blocks.cflow {
 		bool remove(Block block) {
 			allDeadInstructions.Clear();
 
+			bool changed = false;
 			var instructions = block.Instructions;
 			for (int i = 0; i < instructions.Count; i++) {
 				var instr = instructions[i];
@@ -79,11 +82,13 @@ namespace de4dot.blocks.cflow {
 					break;
 				}
 			}
-			if (allDeadInstructions.Count == 0)
-				return false;
 
-			block.remove(allDeadInstructions);
-			return true;
+			if (allDeadInstructions.Count > 0) {
+				block.remove(allDeadInstructions);
+				changed = true;
+			}
+
+			return changed;
 		}
 
 		bool okInstructions(Block block, IEnumerable<int> indexes) {
