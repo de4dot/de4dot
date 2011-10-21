@@ -46,7 +46,7 @@ namespace de4dot.blocks.cflow {
 			for (int i = 0; i < instructions.Count; i++) {
 				var instr = instructions[i];
 				switch (instr.OpCode.Code) {
-				// Xenocode generates stloc + ldloc. Replace it with dup + stloc. It will eventually
+				// Xenocode generates stloc + ldloc (bool). Replace it with dup + stloc. It will eventually
 				// become dup + pop and be removed.
 				case Code.Stloc:
 				case Code.Stloc_S:
@@ -58,7 +58,10 @@ namespace de4dot.blocks.cflow {
 						break;
 					if (!instructions[i + 1].isLdloc())
 						break;
-					if (Instr.getLocalVar(locals, instr) != Instr.getLocalVar(locals, instructions[i + 1]))
+					var local = Instr.getLocalVar(locals, instr);
+					if (local.VariableType.FullName != "System.Boolean")
+						continue;
+					if (local != Instr.getLocalVar(locals, instructions[i + 1]))
 						break;
 					instructions[i] = new Instr(Instruction.Create(OpCodes.Dup));
 					instructions[i + 1] = instr;
