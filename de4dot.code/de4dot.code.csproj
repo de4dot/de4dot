@@ -57,11 +57,13 @@
     <Compile Include="CommandLineParser.cs" />
     <Compile Include="deobfuscators\CliSecure\Deobfuscator.cs" />
     <Compile Include="deobfuscators\CliSecure\ProxyDelegateFinder.cs" />
+    <Compile Include="deobfuscators\CryptoObfuscator\AntiDebugger.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\AssemblyResolver.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\Deobfuscator.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\ResourceDecrypter.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\ResourceResolver.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\StringDecrypter.cs" />
+    <Compile Include="deobfuscators\CryptoObfuscator\TamperDetection.cs" />
     <Compile Include="deobfuscators\DeobfuscatorBase.cs" />
     <Compile Include="deobfuscators\DeobfuscatorInfoBase.cs" />
     <Compile Include="deobfuscators\DeobUtils.cs" />

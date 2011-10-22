@@ -25,8 +25,11 @@ using de4dot.blocks;
 namespace de4dot.deobfuscators.CryptoObfuscator {
 	class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		const string DEFAULT_REGEX = @"!^[A-Z]{1,3}(?:`\d+)?$&!^c[0-9a-f]{32}(?:`\d+)?$&" + DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
+		BoolOption removeTamperProtection;
+
 		public DeobfuscatorInfo()
 			: base("co", DEFAULT_REGEX) {
+			removeTamperProtection = new BoolOption(null, makeArgName("tamper"), "Remove tamper protection code", true);
 		}
 
 		internal static string ObfuscatorType {
@@ -40,11 +43,13 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 		public override IDeobfuscator createDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
 				ValidNameRegex = validNameRegex.get(),
+				RemoveTamperProtection = removeTamperProtection.get(),
 			});
 		}
 
 		protected override IEnumerable<Option> getOptionsInternal() {
 			return new List<Option>() {
+				removeTamperProtection,
 			};
 		}
 	}
@@ -59,8 +64,11 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 		ResourceResolver resourceResolver;
 		AssemblyResolver assemblyResolver;
 		StringDecrypter stringDecrypter;
+		TamperDetection tamperDetection;
+		AntiDebugger antiDebugger;
 
 		internal class Options : OptionsBase {
+			public bool RemoveTamperProtection { get; set; }
 		}
 
 		public override string Type {
@@ -91,6 +99,8 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 				val += 10;
 			if (stringDecrypter.Detected)
 				val += 10;
+			if (tamperDetection.Detected)
+				val += 10;
 
 			return val;
 		}
@@ -107,7 +117,9 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 				foundObfuscatedSymbols = true;
 
 			stringDecrypter = new StringDecrypter(module);
-			stringDecrypter.detect();
+			stringDecrypter.find();
+			tamperDetection = new TamperDetection(module);
+			tamperDetection.find();
 		}
 
 		void initializeVersion(TypeDefinition attr) {
@@ -153,7 +165,11 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 				staticStringDecrypter.add(stringDecrypter.StringDecrypterMethod, (method, args) => {
 					return stringDecrypter.decrypt((int)args[0]);
 				});
+				DeobfuscatedFile.stringDecryptersAdded();
 			}
+
+			antiDebugger = new AntiDebugger(module, DeobfuscatedFile, this);
+			antiDebugger.find();
 
 			dumpEmbeddedAssemblies();
 		}

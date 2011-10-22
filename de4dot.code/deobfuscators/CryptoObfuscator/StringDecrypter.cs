@@ -45,7 +45,7 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 			this.module = module;
 		}
 
-		public void detect() {
+		public void find() {
 			TypeDefinition type;
 			MethodDefinition method;
 			if (!findStringDecrypterType(out type, out method))
