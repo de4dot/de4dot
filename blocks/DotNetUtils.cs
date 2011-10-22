@@ -468,6 +468,10 @@ namespace de4dot.blocks {
 		public static IList<Instruction> getInstructions(IList<Instruction> instructions, int i, params OpCode[] opcodes) {
 			if (i + opcodes.Length > instructions.Count)
 				return null;
+			if (opcodes.Length == 0)
+				return new List<Instruction>();
+			if (opcodes[0] != instructions[i].OpCode)
+				return null;
 
 			var list = new List<Instruction>(opcodes.Length);
 			for (int j = 0; j < opcodes.Length; j++) {

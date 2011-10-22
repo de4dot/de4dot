@@ -90,8 +90,6 @@ namespace de4dot.deobfuscators.Unknown {
 					return "CodeFort";
 				if (type.FullName == "____KILL")
 					return "DeployLX CodeVeil";
-				if (type.FullName == "CryptoObfuscator.ProtectedWithCryptoObfuscatorAttribute")
-					return "Crypto Obfuscator";
 				if (type.FullName.Contains("ObfuscatedByGoliath"))
 					return "Goliath .NET Obfuscator";
 				if (type.FullName == "Xenocode.Client.Attributes.AssemblyAttributes.ProcessedByXenocode")
@@ -108,21 +106,6 @@ namespace de4dot.deobfuscators.Unknown {
 					return "Spices.Net Obfuscator";
 				if (type.FullName == "YanoAttribute")
 					return "Yano Obfuscator";
-			}
-			return checkCryptoObfuscator();
-		}
-
-		string checkCryptoObfuscator() {
-			int matched = 0;
-			foreach (var type in module.Types) {
-				if (type.Namespace != "A")
-					continue;
-				if (Regex.IsMatch(type.Name, "^c[0-9a-f]{32}$"))
-					return "Crypto Obfuscator";
-				else if (Regex.IsMatch(type.Name, "^A[A-Z]*$")) {
-					if (++matched >= 10)
-						return "Crypto Obfuscator";
-				}
 			}
 			return null;
 		}

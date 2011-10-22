@@ -191,5 +191,12 @@ namespace de4dot {
 				return false;
 			return left.Substring(0, right.Length).Equals(right, stringComparison);
 		}
+
+		public static string getAssemblySimpleName(string name) {
+			int i = name.IndexOf(',');
+			if (i < 0)
+				return name;
+			return name.Substring(0, i);
+		}
 	}
 }

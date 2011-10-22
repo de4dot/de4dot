@@ -68,7 +68,7 @@ namespace de4dot.deobfuscators.SmartAssembly {
 				info.assemblyName = Encoding.UTF8.GetString(Convert.FromBase64String(encName));
 				info.resourceName = rsrcName;
 				info.resource = DotNetUtils.getResource(module, rsrcName) as EmbeddedResource;
-				info.simpleName = SA_Utils.getAssemblySimpleName(info.assemblyName);
+				info.simpleName = Utils.getAssemblySimpleName(info.assemblyName);
 
 				return info;
 			}

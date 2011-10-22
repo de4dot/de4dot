@@ -53,7 +53,7 @@ namespace de4dot.deobfuscators.SmartAssembly {
 				if (s == null || calledMethod == null)
 					continue;
 
-				resource = DotNetUtils.getResource(module, SA_Utils.getAssemblySimpleName(s)) as EmbeddedResource;
+				resource = DotNetUtils.getResource(module, Utils.getAssemblySimpleName(s)) as EmbeddedResource;
 				if (resource != null)
 					break;
 			}

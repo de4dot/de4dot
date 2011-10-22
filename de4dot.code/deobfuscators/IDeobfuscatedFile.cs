@@ -19,7 +19,7 @@
 
 namespace de4dot.deobfuscators {
 	interface IDeobfuscatedFile : ISimpleDeobfuscator {
-		void createAssemblyFile(byte[] data, string assemblyName);
+		void createAssemblyFile(byte[] data, string assemblyName, string extension = null);
 		void stringDecryptersAdded();
 	}
 }

@@ -57,6 +57,10 @@
     <Compile Include="CommandLineParser.cs" />
     <Compile Include="deobfuscators\CliSecure\Deobfuscator.cs" />
     <Compile Include="deobfuscators\CliSecure\ProxyDelegateFinder.cs" />
+    <Compile Include="deobfuscators\CryptoObfuscator\AssemblyResolver.cs" />
+    <Compile Include="deobfuscators\CryptoObfuscator\Deobfuscator.cs" />
+    <Compile Include="deobfuscators\CryptoObfuscator\ResourceDecrypter.cs" />
+    <Compile Include="deobfuscators\CryptoObfuscator\ResourceResolver.cs" />
     <Compile Include="deobfuscators\DeobfuscatorBase.cs" />
     <Compile Include="deobfuscators\DeobfuscatorInfoBase.cs" />
     <Compile Include="deobfuscators\DeobUtils.cs" />
@@ -80,7 +84,6 @@
     <Compile Include="deobfuscators\SmartAssembly\ResourceDecrypterInfo.cs" />
     <Compile Include="deobfuscators\SmartAssembly\ResourceResolver.cs" />
     <Compile Include="deobfuscators\SmartAssembly\ResourceResolverInfo.cs" />
-    <Compile Include="deobfuscators\SmartAssembly\SA_Utils.cs" />
     <Compile Include="deobfuscators\SmartAssembly\SimpleZipInfo.cs" />
     <Compile Include="deobfuscators\SmartAssembly\StringDecrypter.cs" />
     <Compile Include="deobfuscators\SmartAssembly\StringDecrypterInfo.cs" />

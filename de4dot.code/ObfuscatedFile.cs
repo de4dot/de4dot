@@ -749,9 +749,11 @@ namespace de4dot {
 			deobfuscate(method, "Static string decryption", (blocks) => theDeob.deobfuscateStrings(blocks));
 		}
 
-		void IDeobfuscatedFile.createAssemblyFile(byte[] data, string assemblyName) {
+		void IDeobfuscatedFile.createAssemblyFile(byte[] data, string assemblyName, string extension) {
+			if (extension == null)
+				extension = ".dll";
 			var baseDir = Utils.getDirName(options.NewFilename);
-			var newName = Path.Combine(baseDir, assemblyName + ".dll");
+			var newName = Path.Combine(baseDir, assemblyName + extension);
 			Log.n("Creating file {0}", newName);
 			using (var writer = new BinaryWriter(new FileStream(newName, FileMode.Create))) {
 				writer.Write(data);
