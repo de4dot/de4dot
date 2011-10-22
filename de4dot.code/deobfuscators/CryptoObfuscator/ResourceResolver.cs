@@ -17,6 +17,7 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using de4dot.blocks;
@@ -26,6 +27,7 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 		ModuleDefinition module;
 		ResourceDecrypter resourceDecrypter;
 		TypeDefinition resolverType;
+		bool mergedIt = false;
 
 		public ResourceResolver(ModuleDefinition module, ResourceDecrypter resourceDecrypter) {
 			this.module = module;
@@ -46,6 +48,19 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 				if (checkType(tuple.Item1, method))
 					break;
 			}
+		}
+
+		public EmbeddedResource mergeResources() {
+			if (mergedIt)
+				return null;
+
+			var resource = DotNetUtils.getResource(module, module.Assembly.Name.Name) as EmbeddedResource;
+			if (resource == null)
+				throw new ApplicationException("Could not find encrypted resources");
+
+			DeobUtils.decryptAndAddResources(module, resource.Name, () => resourceDecrypter.decrypt(resource.GetResourceStream()));
+			mergedIt = true;
+			return resource;
 		}
 
 		bool checkType(TypeDefinition type, MethodDefinition initMethod) {

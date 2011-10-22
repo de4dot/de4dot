@@ -58,6 +58,7 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 		ResourceDecrypter resourceDecrypter;
 		ResourceResolver resourceResolver;
 		AssemblyResolver assemblyResolver;
+		StringDecrypter stringDecrypter;
 
 		internal class Options : OptionsBase {
 		}
@@ -88,6 +89,8 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 				val += 100;
 			else if (foundObfuscatedSymbols)
 				val += 10;
+			if (stringDecrypter.Detected)
+				val += 10;
 
 			return val;
 		}
@@ -102,6 +105,9 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 			}
 			if (checkCryptoObfuscator())
 				foundObfuscatedSymbols = true;
+
+			stringDecrypter = new StringDecrypter(module);
+			stringDecrypter.detect();
 		}
 
 		void initializeVersion(TypeDefinition attr) {
@@ -140,7 +146,22 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 			resourceResolver.find();
 			assemblyResolver.find();
 
+			decryptResources();
+			stringDecrypter.init(resourceDecrypter);
+			if (stringDecrypter.StringDecrypterMethod != null) {
+				staticStringDecrypter.add(stringDecrypter.StringDecrypterMethod, (method, args) => {
+					return stringDecrypter.decrypt((int)args[0]);
+				});
+			}
+
 			dumpEmbeddedAssemblies();
+		}
+
+		void decryptResources() {
+			var rsrc = resourceResolver.mergeResources();
+			if (rsrc == null)
+				return;
+			addResourceToBeRemoved(rsrc, "Encrypted resources");
 		}
 
 		void dumpEmbeddedAssemblies() {
@@ -155,7 +176,16 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 		void dumpEmbeddedFile(EmbeddedResource resource, string assemblyName, bool isAssembly) {
 			string extension = isAssembly ? ".dll" : ".pdb";
 			DeobfuscatedFile.createAssemblyFile(resourceDecrypter.decrypt(resource.GetResourceStream()), Utils.getAssemblySimpleName(assemblyName), extension);
-			addResourceToBeRemoved(resource, string.Format("Embedded assembly{0}: {1}", isAssembly ? "" : " (pdb)", assemblyName));
+			string reason = isAssembly ? string.Format("Embedded assembly: {0}", assemblyName) :
+										 string.Format("Embedded pdb: {0}", assemblyName);
+			addResourceToBeRemoved(resource, reason);
+		}
+
+		public override IEnumerable<string> getStringDecrypterMethods() {
+			var list = new List<string>();
+			if (stringDecrypter.StringDecrypterMethod != null)
+				list.Add(stringDecrypter.StringDecrypterMethod.MetadataToken.ToInt32().ToString("X8"));
+			return list;
 		}
 	}
 }
