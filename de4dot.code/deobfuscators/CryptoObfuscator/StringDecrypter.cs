@@ -37,6 +37,10 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 			get { return stringDecrypterMethod; }
 		}
 
+		public EmbeddedResource StringResource {
+			get { return stringResource; }
+		}
+
 		public StringDecrypter(ModuleDefinition module) {
 			this.module = module;
 		}

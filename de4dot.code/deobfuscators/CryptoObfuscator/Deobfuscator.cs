@@ -149,6 +149,7 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 			decryptResources();
 			stringDecrypter.init(resourceDecrypter);
 			if (stringDecrypter.StringDecrypterMethod != null) {
+				addResourceToBeRemoved(stringDecrypter.StringResource, "Encrypted strings");
 				staticStringDecrypter.add(stringDecrypter.StringDecrypterMethod, (method, args) => {
 					return stringDecrypter.decrypt((int)args[0]);
 				});
