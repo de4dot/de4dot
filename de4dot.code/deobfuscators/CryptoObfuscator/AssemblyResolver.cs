@@ -28,7 +28,7 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 	class AssemblyResolver {
 		ModuleDefinition module;
 		TypeDefinition resolverType;
-		List<AssemblyInfo> assemblyInfos;
+		List<AssemblyInfo> assemblyInfos = new List<AssemblyInfo>();
 
 		public class AssemblyInfo {
 			public string assemblyName;
