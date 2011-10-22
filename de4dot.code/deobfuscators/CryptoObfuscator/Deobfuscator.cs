@@ -136,7 +136,7 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 
 			resourceDecrypter = new ResourceDecrypter(module);
 			resourceResolver = new ResourceResolver(module, resourceDecrypter);
-			assemblyResolver = new AssemblyResolver(module, resourceDecrypter);
+			assemblyResolver = new AssemblyResolver(module);
 			resourceResolver.find();
 			assemblyResolver.find();
 

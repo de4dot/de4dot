@@ -27,7 +27,6 @@ using de4dot.blocks;
 namespace de4dot.deobfuscators.CryptoObfuscator {
 	class AssemblyResolver {
 		ModuleDefinition module;
-		ResourceDecrypter resourceDecrypter;
 		TypeDefinition resolverType;
 		List<AssemblyInfo> assemblyInfos;
 
@@ -50,9 +49,8 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 			get { return assemblyInfos; }
 		}
 
-		public AssemblyResolver(ModuleDefinition module, ResourceDecrypter resourceDecrypter) {
+		public AssemblyResolver(ModuleDefinition module) {
 			this.module = module;
-			this.resourceDecrypter = resourceDecrypter;
 		}
 
 		public void find() {

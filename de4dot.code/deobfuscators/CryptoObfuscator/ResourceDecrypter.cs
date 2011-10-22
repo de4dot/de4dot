@@ -64,12 +64,13 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 			if ((flags & 2) != 0) {
 				var memStream = new MemoryStream((int)resourceStream.Length);
 				sourceStream.Position = 0;
-				var inflater = new DeflateStream(sourceStream, CompressionMode.Decompress);
-				while (true) {
-					int count = inflater.Read(buffer1, 0, buffer1.Length);
-					if (count <= 0)
-						break;
-					memStream.Write(buffer1, 0, count);
+				using (var inflater = new DeflateStream(sourceStream, CompressionMode.Decompress)) {
+					while (true) {
+						int count = inflater.Read(buffer1, 0, buffer1.Length);
+						if (count <= 0)
+							break;
+						memStream.Write(buffer1, 0, count);
+					}
 				}
 
 				sourceStream = memStream;
