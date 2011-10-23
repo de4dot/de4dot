@@ -17,8 +17,10 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Collections.Generic;
 using Mono.Cecil;
+using Mono.Cecil.Cil;
 using de4dot.blocks;
 
 namespace de4dot.deobfuscators.SmartAssembly {
@@ -35,6 +37,8 @@ namespace de4dot.deobfuscators.SmartAssembly {
 			'\x9E', '\x9F',
 		};
 
+		IList<MemberReference> memberReferences;
+
 		static ProxyDelegateFinder() {
 			for (int i = 0; i < specialChars.Length; i++)
 				specialCharsDict[specialChars[i]] = i;
@@ -42,17 +46,38 @@ namespace de4dot.deobfuscators.SmartAssembly {
 
 		public ProxyDelegateFinder(ModuleDefinition module)
 			: base(module) {
+			this.memberReferences = new List<MemberReference>(module.GetMemberReferences());
 		}
 
-		protected override void getCallInfo(FieldDefinition field, out int methodIndex, out bool isVirtual) {
-			isVirtual = false;
+		protected override object checkCctor(TypeDefinition type, MethodDefinition cctor) {
+			var instrs = cctor.Body.Instructions;
+			if (instrs.Count != 3)
+				return null;
+			if (!DotNetUtils.isLdcI4(instrs[0].OpCode.Code))
+				return null;
+			if (instrs[1].OpCode != OpCodes.Call || !isDelegateCreatorMethod(instrs[1].Operand as MethodDefinition))
+				return null;
+			if (instrs[2].OpCode != OpCodes.Ret)
+				return null;
+
+			int delegateToken = 0x02000001 + DotNetUtils.getLdcI4Value(instrs[0]);
+			if (type.MetadataToken.ToInt32() != delegateToken) {
+				Log.w("Delegate token is not current type");
+				return null;
+			}
+
+			return new object();
+		}
+
+		protected override void getCallInfo(object context, FieldDefinition field, out MethodReference calledMethod, out OpCode callOpcode) {
+			callOpcode = OpCodes.Call;
 			string name = field.Name;
 
-			methodIndex = 0;
+			int methodIndex = 0;
 			for (int i = name.Length - 1; i >= 0; i--) {
 				char c = name[i];
 				if (c == '~') {
-					isVirtual = true;
+					callOpcode = OpCodes.Callvirt;
 					break;
 				}
 
@@ -60,6 +85,9 @@ namespace de4dot.deobfuscators.SmartAssembly {
 				if (specialCharsDict.TryGetValue(c, out val))
 					methodIndex = methodIndex * specialChars.Length + val;
 			}
+			if (methodIndex >= memberReferences.Count)
+				throw new ApplicationException(string.Format("methodIndex ({0}) >= memberReferences.Count ({1})", methodIndex, memberReferences.Count));
+			calledMethod = memberReferences[methodIndex] as MethodReference;
 		}
 
 		public void findDelegateCreator(ModuleDefinition module) {

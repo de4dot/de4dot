@@ -60,6 +60,7 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 		bool foundCryptoObfuscatorAttribute = false;
 		bool foundObfuscatedSymbols = false;
 
+		ProxyDelegateFinder proxyDelegateFinder;
 		ResourceDecrypter resourceDecrypter;
 		ResourceResolver resourceResolver;
 		AssemblyResolver assemblyResolver;
@@ -102,6 +103,8 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 				val += 10;
 			if (tamperDetection.Detected)
 				val += 10;
+			if (proxyDelegateFinder.Detected)
+				val += 10;
 
 			return val;
 		}
@@ -117,6 +120,8 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 			if (checkCryptoObfuscator())
 				foundObfuscatedSymbols = true;
 
+			proxyDelegateFinder = new ProxyDelegateFinder(module);
+			proxyDelegateFinder.findDelegateCreator(module);
 			stringDecrypter = new StringDecrypter(module);
 			stringDecrypter.find();
 			tamperDetection = new TamperDetection(module);
@@ -182,7 +187,19 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 			addTypeToBeRemoved(antiDebugger.AntiDebuggerType, "Anti-debugger type");
 			addTypeToBeRemoved(stringDecrypter.StringDecrypterType, "String decrypter type");
 
+			proxyDelegateFinder.find();
+
 			dumpEmbeddedAssemblies();
+		}
+
+		public override void deobfuscateMethodEnd(Blocks blocks) {
+			proxyDelegateFinder.deobfuscate(blocks);
+			base.deobfuscateMethodEnd(blocks);
+		}
+
+		public override void deobfuscateEnd() {
+			removeProxyDelegates(proxyDelegateFinder);
+			base.deobfuscateEnd();
 		}
 
 		void decryptResources() {

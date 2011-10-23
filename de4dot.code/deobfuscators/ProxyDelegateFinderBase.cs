@@ -25,46 +25,60 @@ using de4dot.blocks;
 
 namespace de4dot.deobfuscators {
 	abstract class ProxyDelegateFinderBase {
-		ModuleDefinition module;
-		IList<MemberReference> memberReferences;
-		MethodDefinition delegateCreatorMethod;
+		protected ModuleDefinition module;
+		List<MethodDefinition> delegateCreatorMethods = new List<MethodDefinition>();
 		Dictionary<TypeDefinition, bool> delegateTypesDict = new Dictionary<TypeDefinition, bool>();
 		Dictionary<FieldReferenceAndDeclaringTypeKey, DelegateInfo> fieldToDelegateInfo = new Dictionary<FieldReferenceAndDeclaringTypeKey, DelegateInfo>();
+		Dictionary<MethodDefinition, FieldDefinition> proxyMethodToField = new Dictionary<MethodDefinition, FieldDefinition>();
 
 		class DelegateInfo {
 			public MethodReference methodRef;	// Method we should call
 			public FieldDefinition field;		// Field holding the Delegate instance
-			public bool isVirtual;
-			public DelegateInfo(FieldDefinition field, MethodReference methodRef, bool isVirtual) {
+			public OpCode callOpcode;
+			public DelegateInfo(FieldDefinition field, MethodReference methodRef, OpCode callOpcode) {
 				this.field = field;
 				this.methodRef = methodRef;
-				this.isVirtual = isVirtual;
+				this.callOpcode = callOpcode;
 			}
 		}
 
 		public int RemovedDelegateCreatorCalls { get; set; }
+
 		public IEnumerable<TypeDefinition> DelegateTypes {
 			get { return delegateTypesDict.Keys; }
 		}
-		public MethodDefinition DelegateCreatorMethod {
-			get { return delegateCreatorMethod; }
+
+		public IEnumerable<TypeDefinition> DelegateCreatorTypes {
+			get {
+				foreach (var method in delegateCreatorMethods)
+					yield return method.DeclaringType;
+			}
 		}
 
 		public bool Detected {
-			get { return delegateCreatorMethod != null; }
+			get { return delegateCreatorMethods.Count != 0; }
 		}
 
 		public ProxyDelegateFinderBase(ModuleDefinition module) {
 			this.module = module;
-			this.memberReferences = new List<MemberReference>(module.GetMemberReferences());
 		}
 
 		public void setDelegateCreatorMethod(MethodDefinition delegateCreatorMethod) {
-			this.delegateCreatorMethod = delegateCreatorMethod;
+			if (delegateCreatorMethod == null)
+				return;
+			delegateCreatorMethods.Add(delegateCreatorMethod);
+		}
+
+		protected bool isDelegateCreatorMethod(MethodDefinition method) {
+			foreach (var m in delegateCreatorMethods) {
+				if (m == method)
+					return true;
+			}
+			return false;
 		}
 
 		public void find() {
-			if (delegateCreatorMethod == null)
+			if (delegateCreatorMethods.Count == 0)
 				return;
 
 			Log.v("Finding all proxy delegates");
@@ -77,47 +91,44 @@ namespace de4dot.deobfuscators {
 				if (!type.HasFields)
 					continue;
 
-				var instrs = cctor.Body.Instructions;
-				if (instrs.Count != 3)
+				object context = checkCctor(type, cctor);
+				if (context == null)
 					continue;
-				if (!DotNetUtils.isLdcI4(instrs[0].OpCode.Code))
-					continue;
-				if (instrs[1].OpCode != OpCodes.Call || instrs[1].Operand != delegateCreatorMethod)
-					continue;
-				if (instrs[2].OpCode != OpCodes.Ret)
-					continue;
-
-				int delegateToken = 0x02000001 + DotNetUtils.getLdcI4Value(instrs[0]);
-				if (type.MetadataToken.ToInt32() != delegateToken) {
-					Log.w("Delegate token is not current type");
-					continue;
-				}
 
 				Log.v("Found proxy delegate: {0} ({1:X8})", type, type.MetadataToken.ToUInt32());
 				RemovedDelegateCreatorCalls++;
+				onFoundProxyDelegate(type);
+
 				Log.indent();
 				foreach (var field in type.Fields) {
 					if (!field.IsStatic || field.IsPublic)
 						continue;
 
-					int methodIndex;
-					bool isVirtual;
-					getCallInfo(field, out methodIndex, out isVirtual);
-					if (methodIndex >= memberReferences.Count)
-						throw new ApplicationException(string.Format("methodIndex ({0}) >= memberReferences.Count ({1})", methodIndex, memberReferences.Count));
+					MethodReference calledMethod;
+					OpCode callOpcode;
+					getCallInfo(context, field, out calledMethod, out callOpcode);
 
-					var methodRef = memberReferences[methodIndex] as MethodReference;
-					if (methodRef == null)
-						throw new ApplicationException("methodRef is null");
-					fieldToDelegateInfo[new FieldReferenceAndDeclaringTypeKey(field)] = new DelegateInfo(field, methodRef, isVirtual);
-					Log.v("Field: {0}, Virtual: {1}, Method: {2}, RID: {3}", field.Name, isVirtual, methodRef, methodIndex + 1);
+					if (calledMethod == null)
+						throw new ApplicationException("calledMethod is null");
+					fieldToDelegateInfo[new FieldReferenceAndDeclaringTypeKey(field)] = new DelegateInfo(field, calledMethod, callOpcode);
+					Log.v("Field: {0}, Opcode: {1}, Method: {2} ({3:X8})", field.Name, callOpcode, calledMethod, calledMethod.MetadataToken.ToUInt32());
 				}
 				Log.deIndent();
 				delegateTypesDict[type] = true;
 			}
 		}
 
-		protected abstract void getCallInfo(FieldDefinition field, out int methodIndex, out bool isVirtual);
+		protected virtual void onFoundProxyDelegate(TypeDefinition type) {
+		}
+
+		protected abstract object checkCctor(TypeDefinition type, MethodDefinition cctor);
+		protected abstract void getCallInfo(object context, FieldDefinition field, out MethodReference calledMethod, out OpCode callOpcode);
+
+		protected void add(MethodDefinition proxyMethod, FieldDefinition proxyField) {
+			if (proxyMethod == null || proxyField == null)
+				return;
+			proxyMethodToField[proxyMethod] = proxyField;
+		}
 
 		MethodDefinition findMethod(TypeDefinition type, string name) {
 			if (!type.HasMethods)
@@ -158,23 +169,35 @@ namespace de4dot.deobfuscators {
 			foreach (var block in allBlocks) {
 				var instrs = block.Instructions;
 				for (int i = 0; i < instrs.Count; i++) {
-					var ldsfld = instrs[i];
-					if (ldsfld.OpCode != OpCodes.Ldsfld)
-						continue;
-					var di = getDelegateInfo(ldsfld.Operand as FieldReference);
-					if (di == null)
-						continue;
+					var instr = instrs[i];
+					if (instr.OpCode == OpCodes.Ldsfld) {
+						var di = getDelegateInfo(instr.Operand as FieldReference);
+						if (di == null)
+							continue;
 
-					var visited = new Dictionary<Block, bool>();
-					var callInfo = findProxyCall(di, block, i, visited, 1);
-					if (callInfo != null) {
-						add(removeInfos, block, i, null);
-						add(removeInfos, callInfo.Block, callInfo.Index, di);
+						var visited = new Dictionary<Block, bool>();
+						var callInfo = findProxyCall(di, block, i, visited, 1);
+						if (callInfo != null) {
+							add(removeInfos, block, i, null);
+							add(removeInfos, callInfo.Block, callInfo.Index, di);
+						}
+						else {
+							Log.w("Could not fix proxy call. Method: {0} ({1:X8}), Proxy type: {2} ({3:X8})",
+								blocks.Method, blocks.Method.MetadataToken.ToInt32(),
+								di.field.DeclaringType, di.field.DeclaringType.MetadataToken.ToInt32());
+						}
 					}
-					else {
-						Log.w("Could not fix proxy call. Method: {0} ({1:X8}), Proxy type: {2} ({3:X8})",
-							blocks.Method, blocks.Method.MetadataToken.ToInt32(),
-							di.field.DeclaringType, di.field.DeclaringType.MetadataToken.ToInt32());
+					else if (instr.OpCode == OpCodes.Call) {
+						var method = instr.Operand as MethodDefinition;
+						if (method == null)
+							continue;
+						FieldDefinition field;
+						if (!proxyMethodToField.TryGetValue(method, out field))
+							continue;
+						var di = getDelegateInfo(field);
+						if (di == null)
+							continue;
+						add(removeInfos, block, i, di);
 					}
 				}
 			}
@@ -184,7 +207,7 @@ namespace de4dot.deobfuscators {
 				var removeIndexes = new List<int>(list.Count);
 				foreach (var info in list) {
 					if (info.IsCall) {
-						var opcode = info.DelegateInfo.isVirtual ? OpCodes.Callvirt : OpCodes.Call;
+						var opcode = info.DelegateInfo.callOpcode;
 						var newInstr = Instruction.Create(opcode, info.DelegateInfo.methodRef);
 						block.replace(info.Index, 1, newInstr);
 					}

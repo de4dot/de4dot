@@ -470,7 +470,7 @@ namespace de4dot.deobfuscators {
 		protected void removeProxyDelegates(ProxyDelegateFinderBase proxyDelegateFinder) {
 			addTypesToBeRemoved(proxyDelegateFinder.DelegateTypes, "Proxy delegate type");
 			if (proxyDelegateFinder.RemovedDelegateCreatorCalls > 0)
-				addTypeToBeRemoved(proxyDelegateFinder.DelegateCreatorMethod.DeclaringType, "Proxy delegate creator type");
+				addTypesToBeRemoved(proxyDelegateFinder.DelegateCreatorTypes, "Proxy delegate creator type");
 		}
 
 		protected TypeDefinition getModuleType() {
