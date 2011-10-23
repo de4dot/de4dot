@@ -174,9 +174,6 @@ namespace de4dot.deobfuscators {
 			}
 
 			public void removeAll(Blocks blocks) {
-				if (blocks.Method.Name != ".cctor")
-					return;
-
 				var allBlocks = blocks.MethodBlocks.getAllBlocks();
 
 				removeAll(allBlocks, blocks, blocks.Method.Name);

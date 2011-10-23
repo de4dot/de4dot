@@ -171,6 +171,15 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 			antiDebugger = new AntiDebugger(module, DeobfuscatedFile, this);
 			antiDebugger.find();
 
+			addModuleCctorInitCallToBeRemoved(resourceResolver.ResolverMethod);
+			addModuleCctorInitCallToBeRemoved(assemblyResolver.ResolverMethod);
+			addCallToBeRemoved(module.EntryPoint, tamperDetection.TamperMethod);
+			addCallToBeRemoved(module.EntryPoint, antiDebugger.AntiDebuggerMethod);
+			addTypeToBeRemoved(resourceResolver.ResolverType, "Resource resolver type");
+			addTypeToBeRemoved(assemblyResolver.ResolverType, "Assembly resolver type");
+			addTypeToBeRemoved(tamperDetection.TamperType, "Tamper detection type");
+			addTypeToBeRemoved(antiDebugger.AntiDebuggerType, "Anti-debugger type");
+
 			dumpEmbeddedAssemblies();
 		}
 

@@ -28,6 +28,14 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 		TypeDefinition antiDebuggerType;
 		MethodDefinition antiDebuggerMethod;
 
+		public TypeDefinition AntiDebuggerType {
+			get { return antiDebuggerType; }
+		}
+
+		public MethodDefinition AntiDebuggerMethod {
+			get { return antiDebuggerMethod; }
+		}
+
 		public AntiDebugger(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
 			this.module = module;
 			this.simpleDeobfuscator = simpleDeobfuscator;

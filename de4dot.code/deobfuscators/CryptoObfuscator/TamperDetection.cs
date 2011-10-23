@@ -30,6 +30,14 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 			get { return tamperMethod != null; }
 		}
 
+		public TypeDefinition TamperType {
+			get { return tamperType; }
+		}
+
+		public MethodDefinition TamperMethod {
+			get { return tamperMethod; }
+		}
+
 		public TamperDetection(ModuleDefinition module) {
 			this.module = module;
 		}

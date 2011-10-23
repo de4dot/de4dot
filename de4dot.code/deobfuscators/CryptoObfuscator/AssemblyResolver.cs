@@ -28,6 +28,7 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 	class AssemblyResolver {
 		ModuleDefinition module;
 		TypeDefinition resolverType;
+		MethodDefinition resolverMethod;
 		List<AssemblyInfo> assemblyInfos = new List<AssemblyInfo>();
 
 		public class AssemblyInfo {
@@ -47,6 +48,14 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 
 		public List<AssemblyInfo> AssemblyInfos {
 			get { return assemblyInfos; }
+		}
+
+		public TypeDefinition ResolverType {
+			get { return resolverType; }
+		}
+
+		public MethodDefinition ResolverMethod {
+			get { return resolverMethod; }
 		}
 
 		public AssemblyResolver(ModuleDefinition module) {
@@ -85,6 +94,7 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 				return false;
 
 			resolverType = type;
+			resolverMethod = initMethod;
 			assemblyInfos = newAssemblyInfos;
 			return true;
 		}

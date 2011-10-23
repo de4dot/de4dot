@@ -27,7 +27,16 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 		ModuleDefinition module;
 		ResourceDecrypter resourceDecrypter;
 		TypeDefinition resolverType;
+		MethodDefinition resolverMethod;
 		bool mergedIt = false;
+
+		public TypeDefinition ResolverType {
+			get { return resolverType; }
+		}
+
+		public MethodDefinition ResolverMethod {
+			get { return resolverMethod; }
+		}
 
 		public ResourceResolver(ModuleDefinition module, ResourceDecrypter resourceDecrypter) {
 			this.module = module;
@@ -88,6 +97,7 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 					continue;
 
 				resolverType = type;
+				resolverMethod = initMethod;
 				return true;
 			}
 
