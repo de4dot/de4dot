@@ -292,7 +292,7 @@ namespace de4dot.deobfuscators.SmartAssembly {
 		public override void deobfuscateBegin() {
 			base.deobfuscateBegin();
 			if (options.RemoveMemoryManager)
-				addCctorInitCallToBeRemoved(memoryManagerInfo.CctorInitMethod);
+				addModuleCctorInitCallToBeRemoved(memoryManagerInfo.CctorInitMethod);
 			initDecrypters();
 			proxyDelegateFinder.find();
 		}
@@ -309,8 +309,8 @@ namespace de4dot.deobfuscators.SmartAssembly {
 			assemblyResolverInfo.findTypes();
 			resourceResolverInfo.findTypes();
 
-			addCctorInitCallToBeRemoved(assemblyResolverInfo.CallResolverMethod);
-			addCctorInitCallToBeRemoved(resourceResolverInfo.CallResolverMethod);
+			addModuleCctorInitCallToBeRemoved(assemblyResolverInfo.CallResolverMethod);
+			addModuleCctorInitCallToBeRemoved(resourceResolverInfo.CallResolverMethod);
 
 			resourceDecrypterInfo.setSimpleZipType(getGlobalSimpleZipType(), DeobfuscatedFile);
 

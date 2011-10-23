@@ -47,7 +47,7 @@ namespace de4dot.deobfuscators {
 		IList<RemoveInfo<ModuleReference>> modrefsToRemove = new List<RemoveInfo<ModuleReference>>();
 		List<string> namesToPossiblyRemove = new List<string>();
 		bool scanForObfuscatorCalled = false;
-		Dictionary<MethodReferenceAndDeclaringTypeKey, MethodDefinition> cctorInitCallsToRemove = new Dictionary<MethodReferenceAndDeclaringTypeKey, MethodDefinition>();
+		MethodCallRemover methodCallRemover = new MethodCallRemover();
 
 		internal class OptionsBase : IDeobfuscatorOptions {
 			public bool RenameResourcesInCode { get; set; }
@@ -109,7 +109,7 @@ namespace de4dot.deobfuscators {
 		}
 
 		public virtual void deobfuscateMethodEnd(Blocks blocks) {
-			removeInitializeMethodCalls(blocks);
+			removeMethodCalls(blocks);
 		}
 
 		public virtual void deobfuscateStrings(Blocks blocks) {
@@ -139,37 +139,103 @@ namespace de4dot.deobfuscators {
 			return new List<string>();
 		}
 
-		public void addCctorInitCallToBeRemoved(MethodDefinition method) {
-			if (method == null)
-				return;
-			if (method.Parameters.Count != 0)
-				throw new ApplicationException(string.Format("Method takes params: {0}", method));
-			if (DotNetUtils.hasReturnValue(method))
-				throw new ApplicationException(string.Format("Method has a return value: {0}", method));
-			cctorInitCallsToRemove[new MethodReferenceAndDeclaringTypeKey(method)] = method;
-		}
+		class MethodCallRemover {
+			Dictionary<string, Dictionary<MethodReferenceAndDeclaringTypeKey, bool>> methodNameInfos = new Dictionary<string, Dictionary<MethodReferenceAndDeclaringTypeKey, bool>>(StringComparer.Ordinal);
+			Dictionary<MethodReferenceAndDeclaringTypeKey, Dictionary<MethodReferenceAndDeclaringTypeKey, bool>> methodRefInfos = new Dictionary<MethodReferenceAndDeclaringTypeKey, Dictionary<MethodReferenceAndDeclaringTypeKey, bool>>();
 
-		void removeInitializeMethodCalls(Blocks blocks) {
-			if (blocks.Method.Name != ".cctor")
-				return;
+			void checkMethod(MethodReference methodToBeRemoved) {
+				if (methodToBeRemoved.Parameters.Count != 0)
+					throw new ApplicationException(string.Format("Method takes params: {0}", methodToBeRemoved));
+				if (DotNetUtils.hasReturnValue(methodToBeRemoved))
+					throw new ApplicationException(string.Format("Method has a return value: {0}", methodToBeRemoved));
+			}
 
-			foreach (var block in blocks.MethodBlocks.getAllBlocks()) {
+			public void add(string method, MethodReference methodToBeRemoved) {
+				if (methodToBeRemoved == null)
+					return;
+				checkMethod(methodToBeRemoved);
+
+				Dictionary<MethodReferenceAndDeclaringTypeKey, bool> dict;
+				if (!methodNameInfos.TryGetValue(method, out dict))
+					methodNameInfos[method] = dict = new Dictionary<MethodReferenceAndDeclaringTypeKey, bool>();
+				dict[new MethodReferenceAndDeclaringTypeKey(methodToBeRemoved)] = true;
+			}
+
+			public void add(MethodDefinition method, MethodReference methodToBeRemoved) {
+				if (method == null || methodToBeRemoved == null)
+					return;
+				checkMethod(methodToBeRemoved);
+
+				Dictionary<MethodReferenceAndDeclaringTypeKey, bool> dict;
+				var methodKey = new MethodReferenceAndDeclaringTypeKey(method);
+				if (!methodRefInfos.TryGetValue(methodKey, out dict))
+					methodRefInfos[methodKey] = dict = new Dictionary<MethodReferenceAndDeclaringTypeKey, bool>();
+				dict[new MethodReferenceAndDeclaringTypeKey(methodToBeRemoved)] = true;
+			}
+
+			public void removeAll(Blocks blocks) {
+				if (blocks.Method.Name != ".cctor")
+					return;
+
+				var allBlocks = blocks.MethodBlocks.getAllBlocks();
+
+				removeAll(allBlocks, blocks, blocks.Method.Name);
+				removeAll(allBlocks, blocks, blocks.Method);
+			}
+
+			void removeAll(IList<Block> allBlocks, Blocks blocks, string method) {
+				Dictionary<MethodReferenceAndDeclaringTypeKey, bool> info;
+				if (!methodNameInfos.TryGetValue(method, out info))
+					return;
+
+				removeCalls(allBlocks, blocks, info);
+			}
+
+			void removeAll(IList<Block> allBlocks, Blocks blocks, MethodDefinition method) {
+				Dictionary<MethodReferenceAndDeclaringTypeKey, bool> info;
+				if (!methodRefInfos.TryGetValue(new MethodReferenceAndDeclaringTypeKey(method), out info))
+					return;
+
+				removeCalls(allBlocks, blocks, info);
+			}
+
+			void removeCalls(IList<Block> allBlocks, Blocks blocks, Dictionary<MethodReferenceAndDeclaringTypeKey, bool> info) {
 				var instrsToDelete = new List<int>();
-				for (int i = 0; i < block.Instructions.Count; i++) {
-					var instr = block.Instructions[i];
-					if (instr.OpCode == OpCodes.Call) {
+				foreach (var block in allBlocks) {
+					instrsToDelete.Clear();
+					for (int i = 0; i < block.Instructions.Count; i++) {
+						var instr = block.Instructions[i];
+						if (instr.OpCode != OpCodes.Call)
+							continue;
 						var destMethod = instr.Operand as MethodReference;
 						if (destMethod == null)
 							continue;
+
 						var key = new MethodReferenceAndDeclaringTypeKey(destMethod);
-						if (cctorInitCallsToRemove.ContainsKey(key)) {
+						if (info.ContainsKey(key)) {
 							Log.v("Removed call to {0}", destMethod);
 							instrsToDelete.Add(i);
 						}
 					}
+					block.remove(instrsToDelete);
 				}
-				block.remove(instrsToDelete);
 			}
+		}
+
+		public void addCctorInitCallToBeRemoved(MethodReference methodToBeRemoved) {
+			methodCallRemover.add(".cctor", methodToBeRemoved);
+		}
+
+		public void addModuleCctorInitCallToBeRemoved(MethodReference methodToBeRemoved) {
+			methodCallRemover.add(DotNetUtils.getMethod(DotNetUtils.getModuleType(module), ".cctor"), methodToBeRemoved);
+		}
+
+		public void addCallToBeRemoved(MethodDefinition method, MethodReference methodToBeRemoved) {
+			methodCallRemover.add(method, methodToBeRemoved);
+		}
+
+		void removeMethodCalls(Blocks blocks) {
+			methodCallRemover.removeAll(blocks);
 		}
 
 		protected void addMethodsToBeRemoved(IEnumerable<MethodDefinition> methods, string reason) {
