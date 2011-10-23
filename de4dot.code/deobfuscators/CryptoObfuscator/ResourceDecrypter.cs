@@ -76,6 +76,15 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 				sourceStream = memStream;
 			}
 
+			if ((flags & 4) != 0) {
+				var memStream = new MemoryStream((int)resourceStream.Length);
+				sourceStream.Position = 0;
+				for (int i = 0; i < sourceStream.Length; i++)
+					memStream.WriteByte((byte)~sourceStream.ReadByte());
+
+				sourceStream = memStream;
+			}
+
 			if (sourceStream is MemoryStream) {
 				var memStream = (MemoryStream)sourceStream;
 				return memStream.ToArray();
