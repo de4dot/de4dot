@@ -82,6 +82,7 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 		public Deobfuscator(Options options)
 			: base(options) {
 			this.options = options;
+			StringFeatures = StringFeatures.AllowStaticDecryption | StringFeatures.AllowDynamicDecryption;
 		}
 
 		public override void init(ModuleDefinition module) {
@@ -179,6 +180,7 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 			addTypeToBeRemoved(assemblyResolver.ResolverType, "Assembly resolver type");
 			addTypeToBeRemoved(tamperDetection.TamperType, "Tamper detection type");
 			addTypeToBeRemoved(antiDebugger.AntiDebuggerType, "Anti-debugger type");
+			addTypeToBeRemoved(stringDecrypter.StringDecrypterType, "String decrypter type");
 
 			dumpEmbeddedAssemblies();
 		}

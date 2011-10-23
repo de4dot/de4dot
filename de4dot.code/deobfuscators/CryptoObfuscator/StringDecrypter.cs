@@ -33,6 +33,10 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 			get { return stringDecrypterType != null; }
 		}
 
+		public TypeDefinition StringDecrypterType {
+			get { return stringDecrypterType; }
+		}
+
 		public MethodDefinition StringDecrypterMethod {
 			get { return stringDecrypterMethod; }
 		}
