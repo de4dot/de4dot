@@ -37,6 +37,7 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 		public byte[] decrypt(Stream resourceStream) {
 			byte flags = (byte)resourceStream.ReadByte();
 			Stream sourceStream = resourceStream;
+			bool didSomething = false;
 
 			if ((flags & 1) != 0) {
 				var memStream = new MemoryStream((int)resourceStream.Length);
@@ -59,6 +60,7 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 					}
 				}
 				sourceStream = memStream;
+				didSomething = true;
 			}
 
 			if ((flags & 2) != 0) {
@@ -74,6 +76,7 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 				}
 
 				sourceStream = memStream;
+				didSomething = true;
 			}
 
 			if ((flags & 4) != 0) {
@@ -83,9 +86,10 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 					memStream.WriteByte((byte)~sourceStream.ReadByte());
 
 				sourceStream = memStream;
+				didSomething = true;
 			}
 
-			if (sourceStream is MemoryStream) {
+			if (didSomething && sourceStream is MemoryStream) {
 				var memStream = (MemoryStream)sourceStream;
 				return memStream.ToArray();
 			}
