@@ -65,7 +65,7 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 
 			var resource = DotNetUtils.getResource(module, module.Assembly.Name.Name) as EmbeddedResource;
 			if (resource == null)
-				throw new ApplicationException("Could not find encrypted resources");
+				return null;
 
 			DeobUtils.decryptAndAddResources(module, resource.Name, () => resourceDecrypter.decrypt(resource.GetResourceStream()));
 			mergedIt = true;

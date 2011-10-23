@@ -121,7 +121,7 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 				foundObfuscatedSymbols = true;
 
 			proxyDelegateFinder = new ProxyDelegateFinder(module);
-			proxyDelegateFinder.findDelegateCreator(module);
+			proxyDelegateFinder.findDelegateCreator();
 			stringDecrypter = new StringDecrypter(module);
 			stringDecrypter.find();
 			tamperDetection = new TamperDetection(module);
@@ -211,18 +211,15 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 
 		void dumpEmbeddedAssemblies() {
 			foreach (var info in assemblyResolver.AssemblyInfos) {
-				dumpEmbeddedFile(info.resource, info.assemblyName, true);
+				dumpEmbeddedFile(info.resource, info.assemblyName, ".dll", string.Format("Embedded assembly: {0}", info.assemblyName));
 
 				if (info.symbolsResource != null)
-					dumpEmbeddedFile(info.symbolsResource, info.assemblyName, false);
+					dumpEmbeddedFile(info.symbolsResource, info.assemblyName, ".pdb", string.Format("Embedded pdb: {0}", info.assemblyName));
 			}
 		}
 
-		void dumpEmbeddedFile(EmbeddedResource resource, string assemblyName, bool isAssembly) {
-			string extension = isAssembly ? ".dll" : ".pdb";
+		void dumpEmbeddedFile(EmbeddedResource resource, string assemblyName, string extension, string reason) {
 			DeobfuscatedFile.createAssemblyFile(resourceDecrypter.decrypt(resource.GetResourceStream()), Utils.getAssemblySimpleName(assemblyName), extension);
-			string reason = isAssembly ? string.Format("Embedded assembly: {0}", assemblyName) :
-										 string.Format("Embedded pdb: {0}", assemblyName);
 			addResourceToBeRemoved(resource, reason);
 		}
 

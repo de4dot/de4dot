@@ -110,7 +110,7 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 			calledMethod = module.LookupToken(ctx.methodToken) as MethodReference;
 		}
 
-		public void findDelegateCreator(ModuleDefinition module) {
+		public void findDelegateCreator() {
 			foreach (var type in module.Types) {
 				var createMethod = getProxyCreateMethod(type);
 				if (createMethod == null)
@@ -134,13 +134,13 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 			foreach (var m in type.Methods) {
 				if (m.Name == ".ctor" || m.Name == ".cctor")
 					continue;
-				if (createMethod == null || DotNetUtils.isMethod(m, "System.Void", "(System.Int32,System.Int32,System.Int32)")) {
+				if (createMethod == null && DotNetUtils.isMethod(m, "System.Void", "(System.Int32,System.Int32,System.Int32)")) {
 					createMethod = m;
 					continue;
 				}
 				return null;
 			}
-			if (!createMethod.HasBody)
+			if (createMethod == null || !createMethod.HasBody)
 				return null;
 			if (type.HasEvents || type.HasProperties)
 				return null;
