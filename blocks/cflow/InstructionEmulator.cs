@@ -29,6 +29,7 @@ namespace de4dot.blocks.cflow {
 		IList<VariableDefinition> variableDefinitions;
 		List<Value> args = new List<Value>();
 		List<Value> locals = new List<Value>();
+		int argBase;
 
 		public void init(bool hasThis, bool initLocals, IList<ParameterDefinition> parameterDefinitions, IList<VariableDefinition> variableDefinitions) {
 			this.parameterDefinitions = parameterDefinitions;
@@ -36,8 +37,11 @@ namespace de4dot.blocks.cflow {
 			valueStack.init();
 
 			args.Clear();
-			if (hasThis)
+			argBase = 0;
+			if (hasThis) {
+				argBase = 1;
 				args.Add(new UnknownValue());
+			}
 			foreach (var arg in parameterDefinitions)
 				args.Add(getUnknownValue(arg.ParameterType));
 
@@ -154,19 +158,28 @@ namespace de4dot.blocks.cflow {
 			return getValue(args, i);
 		}
 
+		int index(ParameterDefinition arg) {
+			return arg.Index + argBase;
+		}
+
 		public Value getArg(ParameterDefinition arg) {
-			return getArg(arg.Index);
+			return getArg(index(arg));
+		}
+
+		TypeReference getArgType(int index) {
+			index -= argBase;
+			if (0 <= index && index < parameterDefinitions.Count)
+				return parameterDefinitions[index].ParameterType;
+			return null;
 		}
 
 		void setArg(int index, Value value) {
 			if (0 <= index && index < args.Count)
-				args[index] = truncateValue(value, parameterDefinitions[index].ParameterType);
+				args[index] = truncateValue(value, getArgType(index));
 		}
 
 		Value getUnknownArg(int index) {
-			if (0 <= index && index < parameterDefinitions.Count)
-				return getUnknownValue(parameterDefinitions[index].ParameterType);
-			return new UnknownValue();
+			return getUnknownValue(getArgType(index));
 		}
 
 		public Value getLocal(int i) {
@@ -200,7 +213,7 @@ namespace de4dot.blocks.cflow {
 		public void emulate(Instruction instr) {
 			switch (instr.OpCode.Code) {
 			case Code.Starg:
-			case Code.Starg_S:	emulate_Starg(((ParameterDefinition)instr.Operand).Index); break;
+			case Code.Starg_S:	emulate_Starg((ParameterDefinition)instr.Operand); break;
 			case Code.Stloc:
 			case Code.Stloc_S:	emulate_Stloc(((VariableDefinition)instr.Operand).Index); break;
 			case Code.Stloc_0:	emulate_Stloc(0); break;
@@ -222,7 +235,7 @@ namespace de4dot.blocks.cflow {
 			case Code.Ldloc_3:	valueStack.push(getLocal(3)); break;
 
 			case Code.Ldarga:
-			case Code.Ldarga_S:	emulate_Ldarga(((ParameterDefinition)instr.Operand).Index); break;
+			case Code.Ldarga_S:	emulate_Ldarga((ParameterDefinition)instr.Operand); break;
 			case Code.Ldloca:
 			case Code.Ldloca_S:	emulate_Ldloca(((VariableDefinition)instr.Operand).Index); break;
 
@@ -791,17 +804,17 @@ namespace de4dot.blocks.cflow {
 				valueStack.pushUnknown();
 		}
 
-		void emulate_Starg(int index) {
-			setArg(index, valueStack.pop());
+		void emulate_Starg(ParameterDefinition arg) {
+			setArg(index(arg), valueStack.pop());
 		}
 
 		void emulate_Stloc(int index) {
 			setLocal(index, valueStack.pop());
 		}
 
-		void emulate_Ldarga(int index) {
+		void emulate_Ldarga(ParameterDefinition arg) {
 			valueStack.pushUnknown();
-			setArg(index, getUnknownArg(index));
+			setArg(index(arg), getUnknownArg(index(arg)));
 		}
 
 		void emulate_Ldloca(int index) {

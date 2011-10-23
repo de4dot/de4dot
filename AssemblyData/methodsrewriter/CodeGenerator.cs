@@ -257,6 +257,8 @@ namespace AssemblyData.methodsrewriter {
 		}
 
 		int getArgIndex(ParameterDefinition arg) {
+			if (ResolverUtils.hasThis(methodInfo.methodBase))
+				return arg.Index + 1;
 			return arg.Index;
 		}
 
