@@ -123,7 +123,7 @@ namespace de4dot.blocks.cflow {
 
 		bool inlineOtherMethod(int patchIndex, MethodDefinition method, Instruction instr, int instrIndex) {
 			int loadIndex = 0;
-			int methodArgsCount = (method.HasThis ? 1 : 0) + method.Parameters.Count;
+			int methodArgsCount = DotNetUtils.getArgsCount(method);
 			while (instr != null && loadIndex < methodArgsCount) {
 				switch (instr.OpCode.Code) {
 				case Code.Ldarg:
@@ -190,8 +190,6 @@ namespace de4dot.blocks.cflow {
 				if (instr == null)
 					return null;
 				index = instructions.IndexOf(instr);
-				if (index < 0)
-					return null;
 			}
 			return null;
 		}
