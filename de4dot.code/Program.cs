@@ -32,6 +32,7 @@ namespace de4dot {
 				new de4dot.deobfuscators.CliSecure.DeobfuscatorInfo(),
 				new de4dot.deobfuscators.CryptoObfuscator.DeobfuscatorInfo(),
 				new de4dot.deobfuscators.Dotfuscator.DeobfuscatorInfo(),
+				new de4dot.deobfuscators.dotNET_Reactor.DeobfuscatorInfo(),
 				new de4dot.deobfuscators.Eazfuscator.DeobfuscatorInfo(),
 				new de4dot.deobfuscators.SmartAssembly.DeobfuscatorInfo(),
 			};
