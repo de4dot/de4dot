@@ -23,15 +23,23 @@ using Mono.Cecil.Cil;
 
 namespace de4dot.blocks.cflow {
 	class MethodCallInliner {
+		// We can't catch all infinite loops, so inline methods at most this many times
+		const int MAX_ITERATIONS = 10;
+
 		Blocks blocks;
 		Block block;
+		int iteration;
 
 		public void init(Blocks blocks, Block block) {
 			this.blocks = blocks;
 			this.block = block;
+			this.iteration = 0;
 		}
 
 		public bool deobfuscate() {
+			if (iteration++ >= MAX_ITERATIONS)
+				return false;
+
 			bool changed = false;
 			var instructions = block.Instructions;
 			for (int i = 0; i < instructions.Count; i++) {
@@ -45,6 +53,8 @@ namespace de4dot.blocks.cflow {
 		bool inlineMethod(Instruction callInstr, int instrIndex) {
 			var method = callInstr.Operand as MethodDefinition;
 			if (method == null)
+				return false;
+			if (MemberReferenceHelper.compareMethodReferenceAndDeclaringType(method, blocks.Method))
 				return false;
 
 			if (!method.IsStatic)
