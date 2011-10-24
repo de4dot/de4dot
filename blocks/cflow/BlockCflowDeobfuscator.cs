@@ -40,8 +40,6 @@ namespace de4dot.blocks.cflow {
 				return false;
 			for (int i = 0; i < instructions.Count - 1; i++) {
 				var instr = instructions[i].Instruction;
-				if (patchBoolCallMethod(instr, i))
-					instr = instructions[i].Instruction;
 				instructionEmulator.emulate(instr);
 			}
 
@@ -75,40 +73,6 @@ namespace de4dot.blocks.cflow {
 			default:
 				return false;
 			}
-		}
-
-		// This is a hack for .NET Reactor
-		bool patchBoolCallMethod(Instruction instr, int instrIndex) {
-			if (instr.OpCode.Code != Code.Call)
-				return false;
-			var method = instr.Operand as MethodDefinition;
-			if (method == null)
-				return false;
-			if (method.Parameters.Count > 0)
-				return false;
-			if (!method.IsStatic)
-				return false;
-			if (!MemberReferenceHelper.verifyType(method.MethodReturnType.ReturnType, "mscorlib", "System.Boolean"))
-				return false;
-			var body = method.Body;
-			if (body == null)
-				return false;
-			var instrs = body.Instructions;
-			if (instrs.Count > 10)
-				return false;
-
-			var ldci4 = instrs[0];
-			if (ldci4.OpCode.Code == Code.Br || ldci4.OpCode.Code == Code.Br_S)
-				ldci4 = (Instruction)ldci4.Operand;
-			if (ldci4 == null || !DotNetUtils.isLdcI4(ldci4) || ldci4.Next == null || ldci4.Next.OpCode.Code != Code.Ret)
-				return false;
-
-			if (!MemberReferenceHelper.compareTypes(method.DeclaringType, blocks.Method.DeclaringType))
-				return false;
-
-			int val = DotNetUtils.getLdcI4Value(ldci4);
-			block.Instructions[instrIndex] = new Instr(Instruction.Create(OpCodes.Ldc_I4, val));
-			return true;
 		}
 
 		bool emulateBranch(int stackArgs, Bool3 cond) {

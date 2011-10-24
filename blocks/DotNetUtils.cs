@@ -357,6 +357,15 @@ namespace de4dot.blocks {
 			return null;
 		}
 
+		public static Instruction clone(Instruction instr) {
+			return new Instruction {
+				Offset = instr.Offset,
+				OpCode = instr.OpCode,
+				Operand = instr.Operand,
+				SequencePoint = instr.SequencePoint,
+			};
+		}
+
 		public static void copyBody(MethodDefinition method, out IList<Instruction> instructions, out IList<ExceptionHandler> exceptionHandlers) {
 			if (method == null || !method.HasBody) {
 				instructions = new List<Instruction>();
@@ -370,15 +379,8 @@ namespace de4dot.blocks {
 			exceptionHandlers = new List<ExceptionHandler>(oldExHandlers.Count);
 			var oldToIndex = Utils.createObjectToIndexDictionary(oldInstrs);
 
-			foreach (var oldInstr in oldInstrs) {
-				var newInstr = new Instruction {
-					Offset = oldInstr.Offset,
-					OpCode = oldInstr.OpCode,
-					Operand = oldInstr.Operand,
-					SequencePoint = oldInstr.SequencePoint,
-				};
-				instructions.Add(newInstr);
-			}
+			foreach (var oldInstr in oldInstrs)
+				instructions.Add(clone(oldInstr));
 
 			foreach (var newInstr in instructions) {
 				var operand = newInstr.Operand;
@@ -613,6 +615,47 @@ namespace de4dot.blocks {
 		public static bool isAssembly(IMetadataScope scope, string assemblySimpleName) {
 			return scope.Name == assemblySimpleName ||
 				scope.Name.StartsWith(assemblySimpleName + ",", StringComparison.Ordinal);
+		}
+
+		public static int getArgIndex(MethodReference method, Instruction instr) {
+			switch (instr.OpCode.Code) {
+			case Code.Ldarg_0: return 0;
+			case Code.Ldarg_1: return 1;
+			case Code.Ldarg_2: return 2;
+			case Code.Ldarg_3: return 3;
+
+			case Code.Ldarga:
+			case Code.Ldarga_S:
+			case Code.Ldarg:
+			case Code.Ldarg_S:
+				return getArgIndex(method, instr.Operand as ParameterDefinition);
+			}
+
+			return -1;
+		}
+
+		public static int getArgIndex(MethodReference method, ParameterDefinition arg) {
+			if (arg == null)
+				return -1;
+			if (method.HasThis)
+				return arg.Index + 1;
+			return arg.Index;
+		}
+
+		public static List<TypeReference> getArgs(MethodReference method) {
+			var args = new List<TypeReference>(method.Parameters.Count + 1);
+			if (method.HasThis)
+				args.Add(method.DeclaringType);
+			foreach (var arg in method.Parameters)
+				args.Add(arg.ParameterType);
+			return args;
+		}
+
+		public static int getArgsCount(MethodReference method) {
+			int count = method.Parameters.Count;
+			if (method.HasThis)
+				count++;
+			return count;
 		}
 	}
 }
