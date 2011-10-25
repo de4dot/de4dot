@@ -50,6 +50,8 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 	class Deobfuscator : DeobfuscatorBase {
 		Options options;
 
+		MethodsDecrypter methodsDecrypter;
+
 		internal class Options : OptionsBase {
 		}
 
@@ -75,10 +77,15 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 
 			int val = 0;
 
+			if (methodsDecrypter.Detected)
+				val = 100;
+
 			return val;
 		}
 
 		protected override void scanForObfuscatorInternal() {
+			methodsDecrypter = new MethodsDecrypter(module);
+			methodsDecrypter.find();
 		}
 
 		public override void deobfuscateBegin() {
