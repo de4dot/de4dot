@@ -86,6 +86,17 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			methodsDecrypter.find();
 		}
 
+		public override byte[] getDecryptedModule() {
+			return methodsDecrypter.decrypt(DeobfuscatedFile);
+		}
+
+		public override IDeobfuscator moduleReloaded(ModuleDefinition module) {
+			var newOne = new Deobfuscator(options);
+			newOne.setModule(module);
+			newOne.methodsDecrypter = new MethodsDecrypter(module, methodsDecrypter);
+			return newOne;
+		}
+
 		public override void deobfuscateBegin() {
 			base.deobfuscateBegin();
 		}
