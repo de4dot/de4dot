@@ -28,7 +28,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		}
 
 		internal static string ObfuscatorType {
-			get { return "DotNetReactor"; }
+			get { return "dotNetReactor"; }
 		}
 
 		public override string Type {
@@ -72,9 +72,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			base.init(module);
 		}
 
-		public override int detect() {
-			scanForObfuscator();
-
+		protected override int detectInternal() {
 			int val = 0;
 
 			if (methodsDecrypter.Detected)
@@ -83,7 +81,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			return val;
 		}
 
-		protected override void scanForObfuscatorInternal() {
+		protected override void scanForObfuscator() {
 			methodsDecrypter = new MethodsDecrypter(module);
 			methodsDecrypter.find();
 		}

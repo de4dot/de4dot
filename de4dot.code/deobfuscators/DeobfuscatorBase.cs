@@ -46,7 +46,6 @@ namespace de4dot.deobfuscators {
 		IList<RemoveInfo<Resource>> resourcesToRemove = new List<RemoveInfo<Resource>>();
 		IList<RemoveInfo<ModuleReference>> modrefsToRemove = new List<RemoveInfo<ModuleReference>>();
 		List<string> namesToPossiblyRemove = new List<string>();
-		bool scanForObfuscatorCalled = false;
 		MethodCallRemover methodCallRemover = new MethodCallRemover();
 
 		internal class OptionsBase : IDeobfuscatorOptions {
@@ -82,6 +81,10 @@ namespace de4dot.deobfuscators {
 		}
 
 		public virtual void init(ModuleDefinition module) {
+			setModule(module);
+		}
+
+		protected void setModule(ModuleDefinition module) {
 			this.module = module;
 		}
 
@@ -89,20 +92,23 @@ namespace de4dot.deobfuscators {
 			return 0;
 		}
 
-		protected void scanForObfuscator() {
-			if (scanForObfuscatorCalled)
-				return;
-			scanForObfuscatorCalled = true;
-			scanForObfuscatorInternal();
+		public virtual int detect() {
+			scanForObfuscator();
+			return detectInternal();
 		}
 
-		protected virtual void scanForObfuscatorInternal() {
+		protected abstract void scanForObfuscator();
+		protected abstract int detectInternal();
+
+		public virtual byte[] getDecryptedModule() {
+			return null;
 		}
 
-		public abstract int detect();
+		public virtual IDeobfuscator moduleReloaded(ModuleDefinition module) {
+			throw new ApplicationException("moduleReloaded() must be overridden by the deobfuscator");
+		}
 
 		public virtual void deobfuscateBegin() {
-			scanForObfuscator();
 		}
 
 		public virtual void deobfuscateMethodBegin(Blocks blocks) {

@@ -104,9 +104,7 @@ namespace de4dot.deobfuscators.CliSecure {
 			base.init(module);
 		}
 
-		public override int detect() {
-			scanForObfuscator();
-
+		protected override int detectInternal() {
 			int val = 0;
 
 			if (cliSecureRtType != null || foundCliSecureAttribute)
@@ -119,7 +117,7 @@ namespace de4dot.deobfuscators.CliSecure {
 			return val;
 		}
 
-		protected override void scanForObfuscatorInternal() {
+		protected override void scanForObfuscator() {
 			proxyDelegateFinder = new ProxyDelegateFinder(module);
 			findCliSecureAttribute();
 			findCliSecureRtType();

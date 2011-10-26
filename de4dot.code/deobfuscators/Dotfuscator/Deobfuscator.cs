@@ -76,9 +76,7 @@ namespace de4dot.deobfuscators.Dotfuscator {
 			this.options = options;
 		}
 
-		public override int detect() {
-			scanForObfuscator();
-
+		protected override int detectInternal() {
 			int val = 0;
 
 			if (foundDotfuscatorAttribute)
@@ -89,7 +87,7 @@ namespace de4dot.deobfuscators.Dotfuscator {
 			return val;
 		}
 
-		protected override void scanForObfuscatorInternal() {
+		protected override void scanForObfuscator() {
 			findDotfuscatorAttribute();
 			findStringDecrypterMethods();
 		}

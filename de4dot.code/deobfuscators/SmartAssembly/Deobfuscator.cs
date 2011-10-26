@@ -121,9 +121,7 @@ namespace de4dot.deobfuscators.SmartAssembly {
 			tamperProtectionRemover = new TamperProtectionRemover(module);
 		}
 
-		public override int detect() {
-			scanForObfuscator();
-
+		protected override int detectInternal() {
 			int val = 0;
 
 			if (foundSmartAssemblyAttribute)
@@ -141,7 +139,7 @@ namespace de4dot.deobfuscators.SmartAssembly {
 			return val;
 		}
 
-		protected override void scanForObfuscatorInternal() {
+		protected override void scanForObfuscator() {
 			proxyDelegateFinder = new ProxyDelegateFinder(module);
 			findSmartAssemblyAttributes();
 			findAutomatedErrorReportingType();

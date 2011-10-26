@@ -65,14 +65,13 @@ namespace de4dot.deobfuscators.Eazfuscator {
 			DefaultDecrypterType = DecrypterType.Emulate;
 		}
 
-		public override int detect() {
-			scanForObfuscator();
+		protected override int detectInternal() {
 			if (decryptStringMethod != null)
 				return 100;
 			return 0;
 		}
 
-		protected override void scanForObfuscatorInternal() {
+		protected override void scanForObfuscator() {
 			findStringDecrypterMethod();
 		}
 

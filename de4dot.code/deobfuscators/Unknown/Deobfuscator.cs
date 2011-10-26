@@ -77,9 +77,12 @@ namespace de4dot.deobfuscators.Unknown {
 			return null;
 		}
 
-		public override int detect() {
+		protected override int detectInternal() {
 			setName(scanTypes());
 			return 1;
+		}
+
+		protected override void scanForObfuscator() {
 		}
 
 		string scanTypes() {

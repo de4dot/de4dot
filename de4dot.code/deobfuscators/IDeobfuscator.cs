@@ -62,8 +62,17 @@ namespace de4dot.deobfuscators {
 		// returned if not detected.
 		int earlyDetect();
 
-		// Returns 0 if it's not detected, or > 0 if detected (higher value => more likely true)
+		// Returns 0 if it's not detected, or > 0 if detected (higher value => more likely true).
+		// This method is always called.
 		int detect();
+
+		// If the obfuscator has encrypted parts of the file, then this method should return the
+		// decrypted file. Return null if it's not been encrypted.
+		byte[] getDecryptedModule();
+
+		// This is only called if getDecryptedModule() != null, and after the module has been
+		// reloaded. Should return a new IDeobfuscator with the same options and the new module.
+		IDeobfuscator moduleReloaded(ModuleDefinition module);
 
 		// Called before all other deobfuscation methods
 		void deobfuscateBegin();

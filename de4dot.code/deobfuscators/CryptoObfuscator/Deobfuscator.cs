@@ -90,9 +90,7 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 			base.init(module);
 		}
 
-		public override int detect() {
-			scanForObfuscator();
-
+		protected override int detectInternal() {
 			int val = 0;
 
 			if (foundCryptoObfuscatorAttribute)
@@ -109,7 +107,7 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 			return val;
 		}
 
-		protected override void scanForObfuscatorInternal() {
+		protected override void scanForObfuscator() {
 			foreach (var type in module.Types) {
 				if (type.FullName == "CryptoObfuscator.ProtectedWithCryptoObfuscatorAttribute") {
 					foundCryptoObfuscatorAttribute = true;
