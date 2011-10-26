@@ -75,7 +75,7 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 
 		protected override void onFoundProxyDelegate(TypeDefinition type) {
 			foreach (var method in type.Methods) {
-				if (!method.IsStatic || !method.HasBody || method.Name == ".ctor")
+				if (!method.IsStatic || !method.HasBody || method.Name == ".cctor")
 					continue;
 
 				var instructions = method.Body.Instructions;
