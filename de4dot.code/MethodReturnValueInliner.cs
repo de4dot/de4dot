@@ -168,7 +168,7 @@ namespace de4dot {
 		// Returns null if method is not a method we should inline
 		protected abstract CallResult createCallResult(MethodReference method, Block block, int callInstrIndex);
 
-		public void decrypt(Blocks theBlocks) {
+		public int decrypt(Blocks theBlocks) {
 			try {
 				blocks = theBlocks;
 				callResults = new List<CallResult>();
@@ -177,6 +177,7 @@ namespace de4dot {
 				findAllCallResults();
 				inlineAllCalls();
 				inlineReturnValues();
+				return callResults.Count;
 			}
 			finally {
 				blocks = null;
