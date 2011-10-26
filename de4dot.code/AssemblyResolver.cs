@@ -41,8 +41,8 @@ namespace de4dot {
 		}
 
 		public void addModule(ModuleDefinition module) {
-			var dir = Path.GetDirectoryName(module.FullyQualifiedName);
-			addSearchDirectory(dir);
+			if (module.FullyQualifiedName != "")
+				addSearchDirectory(Path.GetDirectoryName(module.FullyQualifiedName));
 
 			var assembly = module.Assembly;
 			if (assembly != null) {
