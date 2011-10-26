@@ -32,6 +32,10 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			get { return encryptedResource.ResourceDecrypterMethod != null; }
 		}
 
+		public MethodDefinition BoolDecrypterMethod {
+			get { return encryptedResource.ResourceDecrypterMethod; }
+		}
+
 		public BooleanDecrypter(ModuleDefinition module) {
 			this.module = module;
 			this.encryptedResource = new EncryptedResource(module);

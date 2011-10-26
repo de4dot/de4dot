@@ -56,6 +56,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		MethodsDecrypter methodsDecrypter;
 		StringDecrypter stringDecrypter;
 		BooleanDecrypter booleanDecrypter;
+		BoolValueInliner boolValueInliner;
 
 		internal class Options : OptionsBase {
 		}
@@ -134,6 +135,11 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 
 			stringDecrypter.init(peImage, DeobfuscatedFile);
 			booleanDecrypter.init(fileData, DeobfuscatedFile);
+			boolValueInliner = new BoolValueInliner();
+
+			boolValueInliner.add(booleanDecrypter.BoolDecrypterMethod, (method, args) => {
+				return booleanDecrypter.decrypt((int)args[0]);
+			});
 
 			foreach (var info in stringDecrypter.DecrypterInfos) {
 				staticStringDecrypter.add(info.method, (method2, args) => {
@@ -144,6 +150,9 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		}
 
 		public override void deobfuscateMethodEnd(Blocks blocks) {
+			if (boolValueInliner.HasHandlers)
+				boolValueInliner.decrypt(blocks);
+
 			base.deobfuscateMethodEnd(blocks);
 		}
 
