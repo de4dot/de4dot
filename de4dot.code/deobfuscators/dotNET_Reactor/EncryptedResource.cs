@@ -38,6 +38,10 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			set { resourceDecrypterMethod = value; }
 		}
 
+		public EmbeddedResource EncryptedDataResource {
+			get { return encryptedDataResource; }
+		}
+
 		public EncryptedResource(ModuleDefinition module) {
 			this.module = module;
 		}

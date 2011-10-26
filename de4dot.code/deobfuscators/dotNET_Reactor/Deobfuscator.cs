@@ -163,6 +163,17 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				});
 			}
 			DeobfuscatedFile.stringDecryptersAdded();
+
+			if (Operations.DecryptStrings != OpDecryptString.None)
+				addResourceToBeRemoved(stringDecrypter.StringsResource, "Encrypted strings");
+			if (options.DecryptMethods) {
+				addResourceToBeRemoved(methodsDecrypter.MethodsResource, "Encrypted methods");
+				addCctorInitCallToBeRemoved(methodsDecrypter.MethodsDecrypterMethod);
+			}
+			if (options.DecryptBools)
+				addResourceToBeRemoved(booleanDecrypter.BooleansResource, "Encrypted booleans");
+			if (Operations.DecryptStrings != OpDecryptString.None && options.DecryptMethods && options.DecryptBools)
+				addTypeToBeRemoved(methodsDecrypter.MethodsDecrypterMethod.DeclaringType, "Decrypter type");
 		}
 
 		public override bool deobfuscateOther(Blocks blocks) {

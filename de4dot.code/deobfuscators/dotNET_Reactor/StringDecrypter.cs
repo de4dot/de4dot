@@ -49,6 +49,10 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			get { return encryptedResource.ResourceDecrypterMethod != null; }
 		}
 
+		public EmbeddedResource StringsResource {
+			get { return encryptedResource.EncryptedDataResource; }
+		}
+
 		public IEnumerable<DecrypterInfo> DecrypterInfos {
 			get { return decrypterInfos; }
 		}
