@@ -24,8 +24,13 @@ using de4dot.blocks;
 
 namespace de4dot.deobfuscators.dotNET_Reactor {
 	class DeobfuscatorInfo : DeobfuscatorInfoBase {
+		BoolOption decryptMethods;
+		BoolOption decryptBools;
+
 		public DeobfuscatorInfo()
 			: base("dr") {
+			decryptMethods = new BoolOption(null, makeArgName("methods"), "Decrypt methods", true);
+			decryptBools = new BoolOption(null, makeArgName("bools"), "Decrypt booleans", true);
 		}
 
 		internal static string ObfuscatorType {
@@ -39,11 +44,15 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		public override IDeobfuscator createDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
 				ValidNameRegex = validNameRegex.get(),
+				DecryptMethods = decryptMethods.get(),
+				DecryptBools = decryptBools.get(),
 			});
 		}
 
 		protected override IEnumerable<Option> getOptionsInternal() {
 			return new List<Option>() {
+				decryptMethods,
+				decryptBools,
 			};
 		}
 	}
@@ -59,6 +68,8 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		BoolValueInliner boolValueInliner;
 
 		internal class Options : OptionsBase {
+			public bool DecryptMethods { get; set; }
+			public bool DecryptBools { get; set; }
 		}
 
 		public override string Type {
@@ -113,6 +124,9 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			}
 			peImage = new PE.PeImage(fileData);
 
+			if (!options.DecryptMethods)
+				return null;
+
 			if (!methodsDecrypter.decrypt(peImage, DeobfuscatedFile))
 				return null;
 
@@ -137,9 +151,11 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			booleanDecrypter.init(fileData, DeobfuscatedFile);
 			boolValueInliner = new BoolValueInliner();
 
-			boolValueInliner.add(booleanDecrypter.BoolDecrypterMethod, (method, args) => {
-				return booleanDecrypter.decrypt((int)args[0]);
-			});
+			if (options.DecryptBools) {
+				boolValueInliner.add(booleanDecrypter.BoolDecrypterMethod, (method, args) => {
+					return booleanDecrypter.decrypt((int)args[0]);
+				});
+			}
 
 			foreach (var info in stringDecrypter.DecrypterInfos) {
 				staticStringDecrypter.add(info.method, (method2, args) => {
