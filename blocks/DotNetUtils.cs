@@ -657,5 +657,21 @@ namespace de4dot.blocks {
 				count++;
 			return count;
 		}
+
+		public static Instruction createLdci4(int value) {
+			if (value == -1) return Instruction.Create(OpCodes.Ldc_I4_M1);
+			if (value == 0) return Instruction.Create(OpCodes.Ldc_I4_0);
+			if (value == 1) return Instruction.Create(OpCodes.Ldc_I4_1);
+			if (value == 2) return Instruction.Create(OpCodes.Ldc_I4_2);
+			if (value == 3) return Instruction.Create(OpCodes.Ldc_I4_3);
+			if (value == 4) return Instruction.Create(OpCodes.Ldc_I4_4);
+			if (value == 5) return Instruction.Create(OpCodes.Ldc_I4_5);
+			if (value == 6) return Instruction.Create(OpCodes.Ldc_I4_6);
+			if (value == 7) return Instruction.Create(OpCodes.Ldc_I4_7);
+			if (value == 8) return Instruction.Create(OpCodes.Ldc_I4_8);
+			if (sbyte.MinValue <= value && value <= sbyte.MaxValue)
+				return Instruction.Create(OpCodes.Ldc_I4_S, (sbyte)value);
+			return Instruction.Create(OpCodes.Ldc_I4, value);
+		}
 	}
 }
