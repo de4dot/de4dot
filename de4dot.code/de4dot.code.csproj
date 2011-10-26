@@ -69,6 +69,7 @@
     <Compile Include="deobfuscators\DeobfuscatorInfoBase.cs" />
     <Compile Include="deobfuscators\DeobUtils.cs" />
     <Compile Include="deobfuscators\Dotfuscator\Deobfuscator.cs" />
+    <Compile Include="deobfuscators\dotNET_Reactor\BooleanDecrypter.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\Deobfuscator.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\EncryptedResource.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\LocalTypes.cs" />

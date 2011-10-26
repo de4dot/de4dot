@@ -55,6 +55,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		byte[] fileData;
 		MethodsDecrypter methodsDecrypter;
 		StringDecrypter stringDecrypter;
+		BooleanDecrypter booleanDecrypter;
 
 		internal class Options : OptionsBase {
 		}
@@ -79,14 +80,20 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		protected override int detectInternal() {
 			int val = 0;
 
-			if (methodsDecrypter.Detected)
+			if (methodsDecrypter.Detected || stringDecrypter.Detected || booleanDecrypter.Detected)
 				val += 100;
-			else if (stringDecrypter.Detected)
-				val += 100;
-			if (methodsDecrypter.Detected && stringDecrypter.Detected)
-				val += 10;
+
+			int sum = convert(methodsDecrypter.Detected) +
+					convert(stringDecrypter.Detected) +
+					convert(booleanDecrypter.Detected);
+			if (sum > 1)
+				val += 10 * (sum - 1);
 
 			return val;
+		}
+
+		static int convert(bool b) {
+			return b ? 1 : 0;
 		}
 
 		protected override void scanForObfuscator() {
@@ -94,6 +101,8 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			methodsDecrypter.find();
 			stringDecrypter = new StringDecrypter(module);
 			stringDecrypter.find();
+			booleanDecrypter = new BooleanDecrypter(module);
+			booleanDecrypter.find();
 		}
 
 		public override byte[] getDecryptedModule() {
@@ -112,9 +121,11 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		public override IDeobfuscator moduleReloaded(ModuleDefinition module) {
 			var newOne = new Deobfuscator(options);
 			newOne.setModule(module);
+			newOne.fileData = fileData;
 			newOne.peImage = new PE.PeImage(fileData);
 			newOne.methodsDecrypter = new MethodsDecrypter(module, methodsDecrypter);
 			newOne.stringDecrypter = new StringDecrypter(module, stringDecrypter);
+			newOne.booleanDecrypter = new BooleanDecrypter(module, booleanDecrypter);
 			return newOne;
 		}
 
@@ -122,6 +133,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			base.deobfuscateBegin();
 
 			stringDecrypter.init(peImage, DeobfuscatedFile);
+			booleanDecrypter.init(fileData, DeobfuscatedFile);
 
 			foreach (var info in stringDecrypter.DecrypterInfos) {
 				staticStringDecrypter.add(info.method, (method2, args) => {
