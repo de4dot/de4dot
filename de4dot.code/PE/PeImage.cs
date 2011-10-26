@@ -84,5 +84,15 @@ namespace de4dot.PE {
 			seek(rvaToOffset(rva));
 			writer.Write(data);
 		}
+
+		public int readInt32(uint rva) {
+			seek(rvaToOffset(rva));
+			return reader.ReadInt32();
+		}
+
+		public byte[] readBytes(uint rva, int size) {
+			seek(rvaToOffset(rva));
+			return reader.ReadBytes(size);
+		}
 	}
 }
