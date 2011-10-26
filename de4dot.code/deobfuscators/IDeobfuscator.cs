@@ -37,9 +37,9 @@ namespace de4dot.deobfuscators {
 
 	[Flags]
 	enum StringFeatures {
-		AllowNoDecryption,
-		AllowStaticDecryption,
-		AllowDynamicDecryption,
+		AllowNoDecryption = 1,
+		AllowStaticDecryption = 2,
+		AllowDynamicDecryption = 4,
 		AllowAll = AllowNoDecryption | AllowStaticDecryption | AllowDynamicDecryption,
 	}
 
