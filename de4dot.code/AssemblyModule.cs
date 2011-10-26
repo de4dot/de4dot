@@ -48,6 +48,18 @@ namespace de4dot {
 			module.Write(newFilename);
 		}
 
+		public ModuleDefinition reload(byte[] newModuleData) {
+			var assemblyResolver = AssemblyResolver.Instance;
+			assemblyResolver.removeModule(module);
+			dumpedMethods = new Dictionary<uint, DumpedMethod>();
+
+			var readerParameters = new ReaderParameters(ReadingMode.Deferred);
+			readerParameters.AssemblyResolver = assemblyResolver;
+			module = ModuleDefinition.ReadModule(new MemoryStream(newModuleData), readerParameters);
+			assemblyResolver.addModule(module);
+			return module;
+		}
+
 		void readMethodsFile() {
 			if (new FileInfo(methodsFilename).Exists) {
 				using (var reader = new BinaryReader(File.Open(methodsFilename, FileMode.Open, FileAccess.Read, FileShare.Read))) {
