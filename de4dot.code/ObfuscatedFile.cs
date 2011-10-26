@@ -160,7 +160,10 @@ namespace de4dot {
 			detectObfuscator(deobfuscators);
 			if (deob == null)
 				throw new ApplicationException("Could not detect obfuscator!");
+			initializeDeobfuscator();
+		}
 
+		void initializeDeobfuscator() {
 			if (options.StringDecrypterType == DecrypterType.Default)
 				options.StringDecrypterType = deob.DefaultDecrypterType;
 			if (options.StringDecrypterType == DecrypterType.Default)
@@ -205,13 +208,20 @@ namespace de4dot {
 			if (options.ForcedObfuscatorType != null) {
 				foreach (var deob in deobfuscators) {
 					if (string.Equals(options.ForcedObfuscatorType, deob.Type, StringComparison.OrdinalIgnoreCase)) {
+						deob.earlyDetect();
+						deob.detect();
 						this.deob = deob;
 						return;
 					}
 				}
 			}
-			else
-				this.deob = earlyDetectObfuscator(deobfuscators) ?? detectObfuscator2(deobfuscators);
+			else {
+				this.deob = earlyDetectObfuscator(deobfuscators);
+				if (this.deob == null)
+					this.deob = detectObfuscator2(deobfuscators);
+				else
+					this.deob.detect();
+			}
 		}
 
 		IDeobfuscator earlyDetectObfuscator(IEnumerable<IDeobfuscator> deobfuscators) {
@@ -290,9 +300,24 @@ namespace de4dot {
 		public void deobfuscate() {
 			Log.n("Cleaning {0}", options.Filename);
 			initAssemblyClient();
+
+			var newModuleData = deob.getDecryptedModule();
+			if (newModuleData != null)
+				reloadModule(newModuleData);
+
 			deob.deobfuscateBegin();
 			deobfuscateMethods();
 			deob.deobfuscateEnd();
+		}
+
+		void reloadModule(byte[] newModuleData) {
+			Log.v("Decrypted data. Reloading decrypted data (original filename: {0})", Filename);
+			module = assemblyModule.reload(newModuleData);
+			allMethods = getAllMethods();
+			deob = deob.moduleReloaded(module);
+			initializeDeobfuscator();
+			deob.DeobfuscatedFile = this;
+			updateDynamicStringDecrypter();
 		}
 
 		void initAssemblyClient() {
