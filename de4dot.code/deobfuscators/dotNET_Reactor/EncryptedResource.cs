@@ -44,16 +44,20 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 
 		public EncryptedResource(ModuleDefinition module, EncryptedResource oldOne) {
 			this.module = module;
-			resourceDecrypterMethod = module.LookupToken(oldOne.resourceDecrypterMethod.MetadataToken.ToInt32()) as MethodDefinition;
-			encryptedDataResource = DotNetUtils.getResource(module, oldOne.encryptedDataResource.Name) as EmbeddedResource;
+			if (oldOne.resourceDecrypterMethod != null)
+				resourceDecrypterMethod = module.LookupToken(oldOne.resourceDecrypterMethod.MetadataToken.ToInt32()) as MethodDefinition;
+			if (oldOne.encryptedDataResource != null)
+				encryptedDataResource = DotNetUtils.getResource(module, oldOne.encryptedDataResource.Name) as EmbeddedResource;
 			key = oldOne.key;
 			iv = oldOne.iv;
 
-			if (resourceDecrypterMethod == null || encryptedDataResource == null || key == null || iv == null)
+			if (resourceDecrypterMethod == null && oldOne.resourceDecrypterMethod != null)
+				throw new ApplicationException("Could not initialize EncryptedResource");
+			if (encryptedDataResource == null && oldOne.encryptedDataResource != null)
 				throw new ApplicationException("Could not initialize EncryptedResource");
 		}
 
-		public bool couldBeResourceDecrypter(MethodDefinition method) {
+		public bool couldBeResourceDecrypter(MethodDefinition method, IList<string> additionalTypes) {
 			if (!method.IsStatic)
 				return false;
 			if (method.Body == null)
@@ -61,18 +65,16 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			if (method.Body.Instructions.Count < 1000)
 				return false;
 
-			var localTypes = new LocalTypes(method.Body.Variables);
-			var requiredTypes = new string[] {
+			var localTypes = new LocalTypes(method);
+			var requiredTypes = new List<string> {
 				"System.Byte[]",
-				"System.Diagnostics.StackFrame",
-				"System.IntPtr",
 				"System.IO.BinaryReader",
 				"System.IO.MemoryStream",
-				"System.Reflection.Assembly",
 				"System.Security.Cryptography.CryptoStream",
 				"System.Security.Cryptography.ICryptoTransform",
 				"System.Security.Cryptography.RijndaelManaged",
 			};
+			requiredTypes.AddRange(additionalTypes);
 			if (!localTypes.all(requiredTypes))
 				return false;
 

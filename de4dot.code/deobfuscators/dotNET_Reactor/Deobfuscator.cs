@@ -17,6 +17,7 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System.IO;
 using System.Collections.Generic;
 using Mono.Cecil;
 using de4dot.blocks;
@@ -50,7 +51,10 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 	class Deobfuscator : DeobfuscatorBase {
 		Options options;
 
+		PE.PeImage peImage;
+		byte[] fileData;
 		MethodsDecrypter methodsDecrypter;
+		StringDecrypter stringDecrypter;
 
 		internal class Options : OptionsBase {
 		}
@@ -76,7 +80,11 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			int val = 0;
 
 			if (methodsDecrypter.Detected)
-				val = 100;
+				val += 100;
+			else if (stringDecrypter.Detected)
+				val += 100;
+			if (methodsDecrypter.Detected && stringDecrypter.Detected)
+				val += 10;
 
 			return val;
 		}
@@ -84,21 +92,43 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		protected override void scanForObfuscator() {
 			methodsDecrypter = new MethodsDecrypter(module);
 			methodsDecrypter.find();
+			stringDecrypter = new StringDecrypter(module);
+			stringDecrypter.find();
 		}
 
 		public override byte[] getDecryptedModule() {
-			return methodsDecrypter.decrypt(DeobfuscatedFile);
+			using (var fileStream = new FileStream(module.FullyQualifiedName, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+				fileData = new byte[(int)fileStream.Length];
+				fileStream.Read(fileData, 0, fileData.Length);
+			}
+			peImage = new PE.PeImage(fileData);
+
+			if (!methodsDecrypter.decrypt(peImage, DeobfuscatedFile))
+				return null;
+
+			return fileData;
 		}
 
 		public override IDeobfuscator moduleReloaded(ModuleDefinition module) {
 			var newOne = new Deobfuscator(options);
 			newOne.setModule(module);
+			newOne.peImage = new PE.PeImage(fileData);
 			newOne.methodsDecrypter = new MethodsDecrypter(module, methodsDecrypter);
+			newOne.stringDecrypter = new StringDecrypter(module, stringDecrypter);
 			return newOne;
 		}
 
 		public override void deobfuscateBegin() {
 			base.deobfuscateBegin();
+
+			stringDecrypter.init(peImage, DeobfuscatedFile);
+
+			foreach (var info in stringDecrypter.DecrypterInfos) {
+				staticStringDecrypter.add(info.method, (method2, args) => {
+					return stringDecrypter.decrypt(method2, (int)args[0]);
+				});
+			}
+			DeobfuscatedFile.stringDecryptersAdded();
 		}
 
 		public override void deobfuscateMethodEnd(Blocks blocks) {
@@ -111,6 +141,8 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 
 		public override IEnumerable<string> getStringDecrypterMethods() {
 			var list = new List<string>();
+			foreach (var info in stringDecrypter.DecrypterInfos)
+				list.Add(info.method.MetadataToken.ToInt32().ToString("X8"));
 			return list;
 		}
 	}

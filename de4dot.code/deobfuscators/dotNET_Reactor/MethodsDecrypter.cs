@@ -46,6 +46,11 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		}
 
 		public void find() {
+			var additionalTypes = new string[] {
+				"System.Diagnostics.StackFrame",
+				"System.IntPtr",
+				"System.Reflection.Assembly",
+			};
 			var checkedMethods = new Dictionary<MethodReferenceAndDeclaringTypeKey, bool>();
 			var callCounter = new CallCounter();
 			int typesLeft = 30;
@@ -63,7 +68,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 						checkedMethods[key] = true;
 						if (!DotNetUtils.isMethod(method, "System.Void", "()"))
 							continue;
-						if (!encryptedResource.couldBeResourceDecrypter(method))
+						if (!encryptedResource.couldBeResourceDecrypter(method, additionalTypes))
 							continue;
 					}
 					callCounter.add(method);
@@ -73,9 +78,9 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			encryptedResource.ResourceDecrypterMethod = (MethodDefinition)callCounter.most();
 		}
 
-		public byte[] decrypt(ISimpleDeobfuscator simpleDeobfuscator) {
+		public bool decrypt(PE.PeImage peImage, ISimpleDeobfuscator simpleDeobfuscator) {
 			if (encryptedResource.ResourceDecrypterMethod == null)
-				return null;
+				return false;
 
 			encryptedResource.init(simpleDeobfuscator);
 			initXorKey();
@@ -94,46 +99,40 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				}
 			}
 
-			using (var fileStream = new FileStream(module.FullyQualifiedName, FileMode.Open, FileAccess.Read, FileShare.Read)) {
-				byte[] fileData = new byte[(int)fileStream.Length];
-				fileStream.Read(fileData, 0, fileData.Length);
-				var peImage = new PE.PeImage(fileData);
-
-				var methodsDataReader = new BinaryReader(new MemoryStream(methodsData));
-				int patchCount = methodsDataReader.ReadInt32();
-				int mode = methodsDataReader.ReadInt32();
-				if (!useXorKey || mode == 1) {
-					for (int i = 0; i < patchCount; i++) {
-						uint rva = methodsDataReader.ReadUInt32();
-						uint data = methodsDataReader.ReadUInt32();
-						peImage.write(rva, BitConverter.GetBytes(data));
-					}
-					while (methodsDataReader.BaseStream.Position < methodsData.Length - 1) {
-						uint rva = methodsDataReader.ReadUInt32();
-						uint token = methodsDataReader.ReadUInt32();
-						int size = methodsDataReader.ReadInt32();
-						if (size > 0)
-							peImage.write(rva, methodsDataReader.ReadBytes(size));
-					}
+			var methodsDataReader = new BinaryReader(new MemoryStream(methodsData));
+			int patchCount = methodsDataReader.ReadInt32();
+			int mode = methodsDataReader.ReadInt32();
+			if (!useXorKey || mode == 1) {
+				for (int i = 0; i < patchCount; i++) {
+					uint rva = methodsDataReader.ReadUInt32();
+					uint data = methodsDataReader.ReadUInt32();
+					peImage.write(rva, BitConverter.GetBytes(data));
 				}
-				else {
-					for (int i = 0; i < patchCount; i++) {
-						uint rva = methodsDataReader.ReadUInt32();
-						uint data = methodsDataReader.ReadUInt32();
-						peImage.write(rva, BitConverter.GetBytes(data));
-					}
-					int count = methodsDataReader.ReadInt32();
-					while (methodsDataReader.BaseStream.Position < methodsData.Length - 1) {
-						uint rva = methodsDataReader.ReadUInt32();
-						uint token = methodsDataReader.ReadUInt32();
-						int size = methodsDataReader.ReadInt32();
-						if (size > 0)
-							peImage.write(rva, methodsDataReader.ReadBytes(size));
-					}
+				while (methodsDataReader.BaseStream.Position < methodsData.Length - 1) {
+					uint rva = methodsDataReader.ReadUInt32();
+					uint token = methodsDataReader.ReadUInt32();
+					int size = methodsDataReader.ReadInt32();
+					if (size > 0)
+						peImage.write(rva, methodsDataReader.ReadBytes(size));
 				}
-
-				return fileData;
 			}
+			else {
+				for (int i = 0; i < patchCount; i++) {
+					uint rva = methodsDataReader.ReadUInt32();
+					uint data = methodsDataReader.ReadUInt32();
+					peImage.write(rva, BitConverter.GetBytes(data));
+				}
+				int count = methodsDataReader.ReadInt32();
+				while (methodsDataReader.BaseStream.Position < methodsData.Length - 1) {
+					uint rva = methodsDataReader.ReadUInt32();
+					uint token = methodsDataReader.ReadUInt32();
+					int size = methodsDataReader.ReadInt32();
+					if (size > 0)
+						peImage.write(rva, methodsDataReader.ReadBytes(size));
+				}
+			}
+
+			return true;
 		}
 
 		void initXorKey() {

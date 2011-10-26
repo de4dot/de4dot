@@ -19,11 +19,16 @@
 
 using System;
 using System.Collections.Generic;
+using Mono.Cecil;
 using Mono.Cecil.Cil;
 
 namespace de4dot.deobfuscators.dotNET_Reactor {
 	class LocalTypes {
 		Dictionary<string, int> localTypes = new Dictionary<string, int>(StringComparer.Ordinal);
+
+		public LocalTypes(MethodDefinition method)
+			: this(method.Body.Variables) {
+		}
 
 		public LocalTypes(IList<VariableDefinition> locals) {
 			foreach (var local in locals) {
@@ -38,7 +43,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			return localTypes.ContainsKey(typeFullName);
 		}
 
-		public bool all(string[] types) {
+		public bool all(IList<string> types) {
 			foreach (var typeName in types) {
 				if (!exists(typeName))
 					return false;
