@@ -481,9 +481,18 @@ namespace de4dot {
 					if (options.ControlFlowDeobfuscation) {
 						cflowDeobfuscator.init(blocks);
 						cflowDeobfuscator.deobfuscate();
+					}
+
+					if (deob.deobfuscateOther(blocks) && options.ControlFlowDeobfuscation) {
+						cflowDeobfuscator.init(blocks);
+						cflowDeobfuscator.deobfuscate();
+					}
+
+					if (options.ControlFlowDeobfuscation) {
 						numRemovedLocals = blocks.optimizeLocals();
 						blocks.repartitionBlocks();
 					}
+
 					deobfuscateStrings(blocks);
 					deob.deobfuscateMethodEnd(blocks);
 

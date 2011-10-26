@@ -80,6 +80,9 @@ namespace de4dot.deobfuscators {
 		// Called before the code is deobfuscated
 		void deobfuscateMethodBegin(Blocks blocks);
 
+		// Return true if we should deobfuscate control flow again
+		bool deobfuscateOther(Blocks blocks);
+
 		// Called after deobfuscateMethodBegin() but before deobfuscateMethodEnd()
 		void deobfuscateStrings(Blocks blocks);
 

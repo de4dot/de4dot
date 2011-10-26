@@ -149,10 +149,13 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			DeobfuscatedFile.stringDecryptersAdded();
 		}
 
-		public override void deobfuscateMethodEnd(Blocks blocks) {
+		public override bool deobfuscateOther(Blocks blocks) {
 			if (boolValueInliner.HasHandlers)
-				boolValueInliner.decrypt(blocks);
+				return boolValueInliner.decrypt(blocks) > 0;
+			return false;
+		}
 
+		public override void deobfuscateMethodEnd(Blocks blocks) {
 			base.deobfuscateMethodEnd(blocks);
 		}
 

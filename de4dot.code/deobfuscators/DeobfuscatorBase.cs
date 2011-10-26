@@ -123,6 +123,10 @@ namespace de4dot.deobfuscators {
 				staticStringDecrypter.decrypt(blocks);
 		}
 
+		public virtual bool deobfuscateOther(Blocks blocks) {
+			return false;
+		}
+
 		public virtual void deobfuscateEnd() {
 			if (!Operations.KeepObfuscatorTypes) {
 				deleteEmptyCctors();
