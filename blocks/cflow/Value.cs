@@ -18,7 +18,7 @@
 */
 
 namespace de4dot.blocks.cflow {
-	enum ValueType : byte {
+	public enum ValueType : byte {
 		Unknown,
 		Null,
 		Boxed,
@@ -28,13 +28,13 @@ namespace de4dot.blocks.cflow {
 		String,
 	}
 
-	enum Bool3 {
+	public enum Bool3 {
 		Unknown = -1,
 		False,
 		True,
 	}
 
-	abstract class Value {
+	public abstract class Value {
 		public readonly ValueType valueType;
 
 		public bool isUnknown() {
@@ -70,7 +70,7 @@ namespace de4dot.blocks.cflow {
 		}
 	}
 
-	class UnknownValue : Value {
+	public class UnknownValue : Value {
 		public UnknownValue()
 			: base(ValueType.Unknown) {
 		}
@@ -80,7 +80,7 @@ namespace de4dot.blocks.cflow {
 		}
 	}
 
-	class NullValue : Value {
+	public class NullValue : Value {
 		// There's only one type of null
 		public static readonly NullValue Instance = new NullValue();
 
@@ -93,7 +93,7 @@ namespace de4dot.blocks.cflow {
 		}
 	}
 
-	class BoxedValue : Value {
+	public class BoxedValue : Value {
 		public readonly Value value;
 
 		public BoxedValue(Value value)
@@ -106,7 +106,7 @@ namespace de4dot.blocks.cflow {
 		}
 	}
 
-	class StringValue : Value {
+	public class StringValue : Value {
 		public readonly string value;
 
 		public StringValue(string value)

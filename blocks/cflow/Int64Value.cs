@@ -20,7 +20,7 @@
 using System;
 
 namespace de4dot.blocks.cflow {
-	class Int64Value : Value {
+	public class Int64Value : Value {
 		const ulong NO_UNKNOWN_BITS = ulong.MaxValue;
 		public readonly long value;
 		public readonly ulong validMask;

@@ -18,7 +18,7 @@
 */
 
 namespace de4dot.blocks.cflow {
-	class Real8Value : Value {
+	public class Real8Value : Value {
 		public readonly double value;
 
 		public Real8Value(double value)

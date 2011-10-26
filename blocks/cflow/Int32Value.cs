@@ -20,7 +20,7 @@
 using System;
 
 namespace de4dot.blocks.cflow {
-	class Int32Value : Value {
+	public class Int32Value : Value {
 		const uint NO_UNKNOWN_BITS = uint.MaxValue;
 		public readonly int value;
 		public readonly uint validMask;

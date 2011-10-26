@@ -23,13 +23,20 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 
 namespace de4dot.blocks.cflow {
-	class InstructionEmulator {
+	public class InstructionEmulator {
 		ValueStack valueStack = new ValueStack();
 		IList<ParameterDefinition> parameterDefinitions;
 		IList<VariableDefinition> variableDefinitions;
 		List<Value> args = new List<Value>();
 		List<Value> locals = new List<Value>();
 		int argBase;
+
+		public InstructionEmulator() {
+		}
+
+		public InstructionEmulator(bool hasThis, bool initLocals, IList<ParameterDefinition> parameterDefinitions, IList<VariableDefinition> variableDefinitions) {
+			init(hasThis, initLocals, parameterDefinitions, variableDefinitions);
+		}
 
 		public void init(bool hasThis, bool initLocals, IList<ParameterDefinition> parameterDefinitions, IList<VariableDefinition> variableDefinitions) {
 			this.parameterDefinitions = parameterDefinitions;
@@ -199,6 +206,10 @@ namespace de4dot.blocks.cflow {
 			if (0 <= index && index < variableDefinitions.Count)
 				return getUnknownValue(variableDefinitions[index].VariableType);
 			return new UnknownValue();
+		}
+
+		public void push(Value value) {
+			valueStack.push(value);
 		}
 
 		public Value pop() {
