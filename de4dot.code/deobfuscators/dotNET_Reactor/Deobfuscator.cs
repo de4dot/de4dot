@@ -147,7 +147,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		public override void deobfuscateBegin() {
 			base.deobfuscateBegin();
 
-			stringDecrypter.init(peImage, DeobfuscatedFile);
+			stringDecrypter.init(peImage, fileData, DeobfuscatedFile);
 			booleanDecrypter.init(fileData, DeobfuscatedFile);
 			boolValueInliner = new BoolValueInliner();
 

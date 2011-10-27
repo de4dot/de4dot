@@ -55,7 +55,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 
 		public void find() {
 			var additionalTypes = new string[] {
-				"System.Diagnostics.StackFrame",
+//				"System.Diagnostics.StackFrame",	//TODO: Not in DNR <= 3.7.0.3
 				"System.IntPtr",
 				"System.Reflection.Assembly",
 			};
@@ -73,14 +73,17 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 					var method = info.Item2;
 					var key = new MethodReferenceAndDeclaringTypeKey(method);
 					if (!checkedMethods.ContainsKey(key)) {
-						checkedMethods[key] = true;
+						checkedMethods[key] = false;
 						if (info.Item1.BaseType == null || info.Item1.BaseType.FullName != "System.Object")
 							continue;
 						if (!DotNetUtils.isMethod(method, "System.Void", "()"))
 							continue;
 						if (!encryptedResource.couldBeResourceDecrypter(method, additionalTypes))
 							continue;
+						checkedMethods[key] = true;
 					}
+					else if (!checkedMethods[key])
+						continue;
 					callCounter.add(method);
 				}
 			}
@@ -116,7 +119,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			int tmp = methodsDataReader.ReadInt32();
 			methodsDataReader.BaseStream.Position -= 4;
 			if ((tmp & 0xFF000000) == 0x06000000) {
-				// It's method token + rva. DNR <= 3.9.0.1 ???
+				// It's method token + rva. DNR 3.7.0.3 - 3.9.0.1
 				methodsDataReader.BaseStream.Position += 8 * patchCount;
 				patchCount = methodsDataReader.ReadInt32();
 				mode = methodsDataReader.ReadInt32();

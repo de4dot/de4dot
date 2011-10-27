@@ -33,6 +33,14 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		MethodDefinition otherStringDecrypter;
 		byte[] decryptedData;
 		PE.PeImage peImage;
+		byte[] fileData;
+		StringDecrypterVersion stringDecrypterVersion;
+
+		enum StringDecrypterVersion {
+			UNKNOWN = 0,
+			VER_37,		// 3.7-
+			VER_38,		// 3.8+
+		}
 
 		public class DecrypterInfo {
 			public MethodDefinition method;
@@ -69,6 +77,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 
 		public StringDecrypter(ModuleDefinition module, StringDecrypter oldOne) {
 			this.module = module;
+			this.stringDecrypterVersion = oldOne.stringDecrypterVersion;
 			this.encryptedResource = new EncryptedResource(module, oldOne.encryptedResource);
 			foreach (var oldInfo in oldOne.decrypterInfos) {
 				var method = module.LookupToken(oldInfo.method.MetadataToken.ToInt32()) as MethodDefinition;
@@ -134,10 +143,11 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			}
 		}
 
-		public void init(PE.PeImage peImage, ISimpleDeobfuscator simpleDeobfuscator) {
+		public void init(PE.PeImage peImage, byte[] fileData, ISimpleDeobfuscator simpleDeobfuscator) {
 			if (encryptedResource.ResourceDecrypterMethod == null)
 				return;
 			this.peImage = peImage;
+			this.fileData = fileData;
 
 			foreach (var info in decrypterInfos) {
 				simpleDeobfuscator.deobfuscate(info.method);
@@ -187,10 +197,19 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				if (newKey == null || newIv == null)
 					continue;
 
+				initializeStringDecrypterVersion(method);
 				key = newKey;
 				iv = newIv;
 				return;
 			}
+		}
+
+		void initializeStringDecrypterVersion(MethodDefinition method) {
+			var localTypes = new LocalTypes(method);
+			if (localTypes.exists("System.IntPtr"))
+				stringDecrypterVersion = StringDecrypterVersion.VER_38;
+			else
+				stringDecrypterVersion = StringDecrypterVersion.VER_37;
 		}
 
 		DecrypterInfo getDecrypterInfo(MethodDefinition method) {
@@ -209,9 +228,21 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				return Encoding.Unicode.GetString(decryptedData, offset + 4, length);
 			}
 			else {
-				uint rva = BitConverter.ToUInt32(decryptedData, offset);
-				int length = peImage.readInt32(rva);
-				var encryptedStringData = peImage.readBytes(rva + 4, length);
+				byte[] encryptedStringData;
+				if (stringDecrypterVersion == StringDecrypterVersion.VER_37) {
+					int fileOffset = BitConverter.ToInt32(decryptedData, offset);
+					int length = BitConverter.ToInt32(fileData, fileOffset);
+					encryptedStringData = new byte[length];
+					Array.Copy(fileData, fileOffset + 4, encryptedStringData, 0, length);
+				}
+				else if (stringDecrypterVersion == StringDecrypterVersion.VER_38) {
+					uint rva = BitConverter.ToUInt32(decryptedData, offset);
+					int length = peImage.readInt32(rva);
+					encryptedStringData = peImage.readBytes(rva + 4, length);
+				}
+				else
+					throw new ApplicationException("Unknown string decrypter version");
+
 				byte[] decryptedStringData;
 				using (var aes = new RijndaelManaged()) {
 					aes.Mode = CipherMode.CBC;
@@ -224,8 +255,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		}
 
 		public string decrypt(string s) {
-			var data = Convert.FromBase64String(s);
-			return Encoding.Unicode.GetString(data, 0, data.Length);
+			return Encoding.Unicode.GetString(Convert.FromBase64String(s));
 		}
 	}
 }
