@@ -214,26 +214,29 @@ namespace de4dot {
 				if (callResult == null)
 					continue;
 
-				callResults.Add(callResult);
-				findArgs(callResult);
+				if (findArgs(callResult))
+					callResults.Add(callResult);
 			}
 		}
 
-		void findArgs(CallResult callResult) {
+		bool findArgs(CallResult callResult) {
 			var block = callResult.block;
 			var method = callResult.getMethodReference();
 			int numArgs = method.Parameters.Count + (method.HasThis ? 1 : 0);
 			var args = new object[numArgs];
 
 			int instrIndex = callResult.callEndIndex - 1;
-			for (int i = numArgs - 1; i >= 0; i--)
-				getArg(method, block, ref args[i], ref instrIndex);
+			for (int i = numArgs - 1; i >= 0; i--) {
+				if (!getArg(method, block, ref args[i], ref instrIndex))
+					return false;
+			}
 
 			callResult.args = args;
 			callResult.callStartIndex = instrIndex + 1;
+			return true;
 		}
 
-		void getArg(MethodReference method, Block block, ref object arg, ref int instrIndex) {
+		bool getArg(MethodReference method, Block block, ref object arg, ref int instrIndex) {
 			while (true) {
 				if (instrIndex < 0)
 					throw new ApplicationException(string.Format("Could not find all arguments to method {0}", method));
@@ -280,10 +283,13 @@ namespace de4dot {
 					break;
 
 				default:
-					throw new ApplicationException(string.Format("Could not find all arguments to method {0}, instr: {1}", method, instr));
+					Log.v("Could not find all arguments to method {0}, instr: {1}", method, instr);
+					return false;
 				}
 				break;
 			}
+
+			return true;
 		}
 
 		void inlineReturnValues() {
