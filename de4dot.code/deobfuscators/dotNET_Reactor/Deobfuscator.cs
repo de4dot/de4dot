@@ -34,7 +34,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		}
 
 		internal static string ObfuscatorType {
-			get { return "dotNetReactor"; }
+			get { return "dotNet_Reactor"; }
 		}
 
 		public override string Type {
