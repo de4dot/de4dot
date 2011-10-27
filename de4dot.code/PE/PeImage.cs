@@ -27,6 +27,8 @@ namespace de4dot.PE {
 		FileHeader fileHeader;
 		OptionalHeader optionalHeader;
 		SectionHeader[] sectionHeaders;
+		Cor20Header cor20Header;
+		SectionHeader dotNetSection;
 
 		public PeImage(byte[] data)
 			: this(new MemoryStream(data)) {
@@ -41,6 +43,10 @@ namespace de4dot.PE {
 
 		void seek(uint position) {
 			reader.BaseStream.Position = position;
+		}
+
+		void seekRva(uint rva) {
+			seek(rvaToOffset(rva));
 		}
 
 		void skip(int bytes) {
@@ -62,6 +68,15 @@ namespace de4dot.PE {
 			sectionHeaders = new SectionHeader[fileHeader.numberOfSections];
 			for (int i = 0; i < sectionHeaders.Length; i++)
 				sectionHeaders[i] = new SectionHeader(reader);
+
+			uint netOffset = optionalHeader.dataDirectories[14].virtualAddress;
+			if (netOffset != 0) {
+				seekRva(netOffset);
+				cor20Header = new Cor20Header(reader);
+				dotNetSection = getSectionHeader(netOffset);
+				seekRva(cor20Header.metaData.virtualAddress);
+				cor20Header.initMetadataTable(reader);
+			}
 		}
 
 		SectionHeader getSectionHeader(uint rva) {
@@ -80,18 +95,43 @@ namespace de4dot.PE {
 			return rva - section.virtualAddress + section.pointerToRawData;
 		}
 
+		bool intersect(uint offset1, uint length1, uint offset2, uint length2) {
+			return !(offset1 + length1 <= offset2 || offset2 + length2 <= offset1);
+		}
+
+		bool intersect(uint offset, uint length, IFileLocation location) {
+			return intersect(offset, length, location.Offset, location.Length);
+		}
+
+		public bool dotNetSafeWrite(uint rva, byte[] data) {
+			if (cor20Header != null) {
+				uint offset = rvaToOffset(rva);
+				uint length = (uint)data.Length;
+
+				if (!dotNetSection.isInside(offset, length))
+					return false;
+				if (intersect(offset, length, cor20Header))
+					return false;
+				if (intersect(offset, length, cor20Header.MetadataOffset, cor20Header.MetadataHeaderLength))
+					return false;
+			}
+
+			write(rva, data);
+			return true;
+		}
+
 		public void write(uint rva, byte[] data) {
-			seek(rvaToOffset(rva));
+			seekRva(rva);
 			writer.Write(data);
 		}
 
 		public int readInt32(uint rva) {
-			seek(rvaToOffset(rva));
+			seekRva(rva);
 			return reader.ReadInt32();
 		}
 
 		public byte[] readBytes(uint rva, int size) {
-			seek(rvaToOffset(rva));
+			seekRva(rva);
 			return reader.ReadBytes(size);
 		}
 	}

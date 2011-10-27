@@ -26,7 +26,7 @@ namespace de4dot.PE {
 		amd64 = 0x8664,
 	}
 
-	class FileHeader {
+	class FileHeader : IFileLocation {
 		public Machine machine;
 		public ushort numberOfSections;
 		public uint timeDateStamp;
@@ -35,7 +35,17 @@ namespace de4dot.PE {
 		public ushort sizeOfOptionalHeader;
 		public ushort characteristics;
 
+		uint offset;
+		public uint Offset {
+			get { return offset; }
+		}
+
+		public uint Length {
+			get { return 5 * 4; }
+		}
+
 		public FileHeader(BinaryReader reader) {
+			offset = (uint)reader.BaseStream.Position;
 			machine = (Machine)reader.ReadUInt16();
 			numberOfSections = reader.ReadUInt16();
 			timeDateStamp = reader.ReadUInt32();

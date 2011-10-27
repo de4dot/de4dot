@@ -20,16 +20,7 @@
 using System.IO;
 
 namespace de4dot.PE {
-	struct DataDirectory {
-		public uint virtualAddress;
-		public uint size;
-
-		public override string ToString() {
-			return string.Format("{0:X8} {1:X8}", virtualAddress, size);
-		}
-	}
-
-	class OptionalHeader {
+	class OptionalHeader : IFileLocation {
 		public ushort magic;
 		public byte majorLinkerVersion;
 		public byte minorLinkerVersion;
@@ -62,7 +53,17 @@ namespace de4dot.PE {
 		public uint numberOfRvaAndSizes;
 		public DataDirectory[] dataDirectories;
 
+		uint offset, length;
+		public uint Offset {
+			get { return offset; }
+		}
+
+		public uint Length {
+			get { return length; }
+		}
+
 		public OptionalHeader(BinaryReader reader) {
+			offset = (uint)reader.BaseStream.Position;
 			magic = reader.ReadUInt16();
 			majorLinkerVersion = reader.ReadByte();
 			minorLinkerVersion = reader.ReadByte();
@@ -96,10 +97,9 @@ namespace de4dot.PE {
 			numberOfRvaAndSizes = reader.ReadUInt32();
 
 			dataDirectories = new DataDirectory[16];
-			for (int i = 0; i < dataDirectories.Length; i++) {
-				dataDirectories[i].virtualAddress = reader.ReadUInt32();
-				dataDirectories[i].size = reader.ReadUInt32();
-			}
+			for (int i = 0; i < dataDirectories.Length; i++)
+				dataDirectories[i].read(reader);
+			length = (uint)reader.BaseStream.Position - offset;
 		}
 
 		ulong read4Or8(BinaryReader reader) {

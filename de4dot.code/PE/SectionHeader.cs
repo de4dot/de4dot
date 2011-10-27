@@ -21,7 +21,7 @@ using System.IO;
 using System.Text;
 
 namespace de4dot.PE {
-	class SectionHeader {
+	class SectionHeader : IFileLocation {
 		public byte[] name;
 		public uint virtualSize;
 		public uint virtualAddress;
@@ -34,7 +34,17 @@ namespace de4dot.PE {
 		public uint characteristics;
 		public string displayName;
 
+		uint offset;
+		public uint Offset {
+			get { return offset; }
+		}
+
+		public uint Length {
+			get { return 10 * 4; }
+		}
+
 		public SectionHeader(BinaryReader reader) {
+			offset = (uint)reader.BaseStream.Position;
 			name = reader.ReadBytes(8);
 			virtualSize = reader.ReadUInt32();
 			virtualAddress = reader.ReadUInt32();
@@ -53,6 +63,10 @@ namespace de4dot.PE {
 				sb.Append((char)c);
 			}
 			displayName = sb.ToString();
+		}
+
+		public bool isInside(uint offset, uint length) {
+			return offset >= pointerToRawData && offset + length <= pointerToRawData + sizeOfRawData;
 		}
 
 		public override string ToString() {

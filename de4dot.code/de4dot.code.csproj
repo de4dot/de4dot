@@ -109,7 +109,10 @@
     <Compile Include="NameRegexes.cs" />
     <Compile Include="ObfuscatedFile.cs" />
     <Compile Include="Option.cs" />
+    <Compile Include="PE\Cor20Header.cs" />
+    <Compile Include="PE\DataDirectory.cs" />
     <Compile Include="PE\FileHeader.cs" />
+    <Compile Include="PE\IFileLocation.cs" />
     <Compile Include="PE\OptionalHeader.cs" />
     <Compile Include="PE\PeImage.cs" />
     <Compile Include="PE\SectionHeader.cs" />
