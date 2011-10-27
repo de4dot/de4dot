@@ -38,9 +38,15 @@ namespace de4dot.blocks.cflow {
 			var instructions = block.Instructions;
 			if (instructions.Count == 0)
 				return false;
-			for (int i = 0; i < instructions.Count - 1; i++) {
-				var instr = instructions[i].Instruction;
-				instructionEmulator.emulate(instr);
+			try {
+				for (int i = 0; i < instructions.Count - 1; i++) {
+					var instr = instructions[i].Instruction;
+					instructionEmulator.emulate(instr);
+				}
+			}
+			catch (System.NullReferenceException) {
+				// Here if eg. invalid metadata token in a call instruction (operand is null)
+				return false;
 			}
 
 			switch (block.LastInstr.OpCode.Code) {

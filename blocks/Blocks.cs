@@ -183,8 +183,16 @@ namespace de4dot.blocks {
 		}
 
 		public void repartitionBlocks() {
-			foreach (var scopeBlock in getAllScopeBlocks(methodBlocks))
-				scopeBlock.repartitionBlocks();
+			foreach (var scopeBlock in getAllScopeBlocks(methodBlocks)) {
+				try {
+					scopeBlock.repartitionBlocks();
+				}
+				catch (NullReferenceException) {
+					//TODO: Send this message to the log
+					Console.WriteLine("Null ref exception! Invalid metadata token in code? Method: {0:X8}: {1}", method.MetadataToken.ToUInt32(), method.FullName);
+					return;
+				}
+			}
 		}
 	}
 }

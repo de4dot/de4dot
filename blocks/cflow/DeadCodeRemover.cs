@@ -35,8 +35,14 @@ namespace de4dot.blocks.cflow {
 		public bool remove() {
 			bool changed = false;
 
-			foreach (var block in allBlocks)
-				changed |= remove(block);
+			foreach (var block in allBlocks) {
+				try {
+					changed |= remove(block);
+				}
+				catch (System.NullReferenceException) {
+					// Here if eg. invalid metadata token in a call instruction (operand is null)
+				}
+			}
 
 			return changed;
 		}
