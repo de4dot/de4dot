@@ -105,7 +105,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			if (iv == null)
 				throw new ApplicationException("Could not find resource decrypter IV");
 			var publicKeyToken = module.Assembly.Name.PublicKeyToken;
-			if (publicKeyToken != null) {
+			if (publicKeyToken != null && publicKeyToken.Length > 0) {
 				for (int i = 0; i < 8; i++)
 					iv[i * 2 + 1] = publicKeyToken[i];
 			}
