@@ -26,11 +26,16 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 	class LocalTypes {
 		Dictionary<string, int> localTypes = new Dictionary<string, int>(StringComparer.Ordinal);
 
-		public LocalTypes(MethodDefinition method)
-			: this(method.Body.Variables) {
+		public LocalTypes(MethodDefinition method) {
+			if (method.Body != null)
+				init(method.Body.Variables);
 		}
 
-		public LocalTypes(IList<VariableDefinition> locals) {
+		public LocalTypes(IEnumerable<VariableDefinition> locals) {
+			init(locals);
+		}
+
+		void init(IEnumerable<VariableDefinition> locals) {
 			foreach (var local in locals) {
 				var key = local.VariableType.FullName;
 				int count;
