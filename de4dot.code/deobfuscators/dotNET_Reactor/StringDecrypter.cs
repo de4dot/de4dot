@@ -30,6 +30,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		ModuleDefinition module;
 		EncryptedResource encryptedResource;
 		List<DecrypterInfo> decrypterInfos = new List<DecrypterInfo>();
+		MethodDefinition otherStringDecrypter;
 		byte[] decryptedData;
 		PE.PeImage peImage;
 
@@ -57,6 +58,10 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			get { return decrypterInfos; }
 		}
 
+		public MethodDefinition OtherStringDecrypter {
+			get { return otherStringDecrypter; }
+		}
+
 		public StringDecrypter(ModuleDefinition module) {
 			this.module = module;
 			this.encryptedResource = new EncryptedResource(module);
@@ -71,6 +76,11 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 					throw new ApplicationException("Could not find string decrypter method");
 				decrypterInfos.Add(new DecrypterInfo(method, oldInfo.key, oldInfo.iv));
 			}
+			if (oldOne.otherStringDecrypter != null) {
+				otherStringDecrypter = module.LookupToken(oldOne.otherStringDecrypter.MetadataToken.ToInt32()) as MethodDefinition;
+				if (otherStringDecrypter == null)
+					throw new ApplicationException("Could not find string decrypter method");
+			}
 		}
 
 		public void find() {
@@ -79,6 +89,8 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			};
 			EmbeddedResource stringsResource = null;
 			foreach (var type in module.Types) {
+				if (decrypterInfos.Count > 0)
+					break;
 				if (type.BaseType == null || type.BaseType.FullName != "System.Object")
 					continue;
 				foreach (var method in type.Methods) {
@@ -99,6 +111,26 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 					encryptedResource.ResourceDecrypterMethod = method;
 					decrypterInfos.Add(new DecrypterInfo(method, null, null));
 				}
+			}
+
+			if (decrypterInfos.Count > 0)
+				findOtherStringDecrypter(decrypterInfos[0].method.DeclaringType);
+		}
+
+		void findOtherStringDecrypter(TypeDefinition type) {
+			foreach (var method in type.Methods) {
+				if (!method.IsStatic || !method.HasBody)
+					continue;
+				if (method.MethodReturnType.ReturnType.FullName != "System.String")
+					continue;
+				if (method.Parameters.Count != 1)
+					continue;
+				if (method.Parameters[0].ParameterType.FullName != "System.Object" &&
+					method.Parameters[0].ParameterType.FullName != "System.String")
+					continue;
+
+				otherStringDecrypter = method;
+				return;
 			}
 		}
 
@@ -189,6 +221,11 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				}
 				return Encoding.Unicode.GetString(decryptedStringData, 0, decryptedStringData.Length);
 			}
+		}
+
+		public string decrypt(string s) {
+			var data = Convert.FromBase64String(s);
+			return Encoding.Unicode.GetString(data, 0, data.Length);
 		}
 	}
 }

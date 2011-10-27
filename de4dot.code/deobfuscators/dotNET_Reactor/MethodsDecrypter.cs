@@ -112,38 +112,43 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			var methodsDataReader = new BinaryReader(new MemoryStream(methodsData));
 			int patchCount = methodsDataReader.ReadInt32();
 			int mode = methodsDataReader.ReadInt32();
-			if (!useXorKey || mode == 1) {
-				// Here if DNR 4.0, 4.1
-				for (int i = 0; i < patchCount; i++) {
-					uint rva = methodsDataReader.ReadUInt32();
-					uint data = methodsDataReader.ReadUInt32();
-					peImage.write(rva, BitConverter.GetBytes(data));
-				}
+
+			int tmp = methodsDataReader.ReadInt32();
+			methodsDataReader.BaseStream.Position -= 4;
+			if ((tmp & 0xFF000000) == 0x06000000) {
+				// It's method token + rva. DNR <= 3.9.0.1 ???
+				methodsDataReader.BaseStream.Position += 8 * patchCount;
+				patchCount = methodsDataReader.ReadInt32();
+				mode = methodsDataReader.ReadInt32();
+
+				patchDwords(peImage, methodsDataReader, patchCount);
 				while (methodsDataReader.BaseStream.Position < methodsData.Length - 1) {
-					uint rva = methodsDataReader.ReadUInt32();
 					uint token = methodsDataReader.ReadUInt32();
-					int size = methodsDataReader.ReadInt32();
-					if (size > 0)
-						peImage.write(rva, methodsDataReader.ReadBytes(size));
+					int numDwords = methodsDataReader.ReadInt32();
+					patchDwords(peImage, methodsDataReader, numDwords / 2);
 				}
 			}
 			else {
-				for (int i = 0; i < patchCount; i++) {
-					uint rva = methodsDataReader.ReadUInt32();
-					uint data = methodsDataReader.ReadUInt32();
-					peImage.write(rva, BitConverter.GetBytes(data));
-				}
-				int count = methodsDataReader.ReadInt32();
+				// DNR 3.9.8.0, 4.0, 4.1, 4.2
+				patchDwords(peImage, methodsDataReader, patchCount);
 				while (methodsDataReader.BaseStream.Position < methodsData.Length - 1) {
 					uint rva = methodsDataReader.ReadUInt32();
 					uint token = methodsDataReader.ReadUInt32();
 					int size = methodsDataReader.ReadInt32();
 					if (size > 0)
-						peImage.write(rva, methodsDataReader.ReadBytes(size));
+						peImage.dotNetSafeWrite(rva, methodsDataReader.ReadBytes(size));
 				}
 			}
 
 			return true;
+		}
+
+		static void patchDwords(PE.PeImage peImage, BinaryReader reader, int count) {
+			for (int i = 0; i < count; i++) {
+				uint rva = reader.ReadUInt32();
+				uint data = reader.ReadUInt32();
+				peImage.dotNetSafeWrite(rva, BitConverter.GetBytes(data));
+			}
 		}
 
 		void initXorKey() {

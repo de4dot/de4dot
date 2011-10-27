@@ -162,6 +162,11 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 					return stringDecrypter.decrypt(method2, (int)args[0]);
 				});
 			}
+			if (stringDecrypter.OtherStringDecrypter != null) {
+				staticStringDecrypter.add(stringDecrypter.OtherStringDecrypter, (method2, args) => {
+					return stringDecrypter.decrypt((string)args[0]);
+				});
+			}
 			DeobfuscatedFile.stringDecryptersAdded();
 
 			if (Operations.DecryptStrings != OpDecryptString.None)
