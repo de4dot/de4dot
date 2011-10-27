@@ -29,6 +29,7 @@ namespace de4dot.blocks {
 		Stack<BlockState> stateStack = new Stack<BlockState>();
 		List<ExceptionInfo> exceptions = new List<ExceptionInfo>();
 		Dictionary<BaseBlock, bool> visited = new Dictionary<BaseBlock, bool>();
+		List<BaseBlock> notProcessedYet = new List<BaseBlock>();
 
 		class BlockState {
 			public ScopeBlock scopeBlock;
@@ -264,6 +265,13 @@ namespace de4dot.blocks {
 			});
 
 			stateStack.Pop();
+
+			foreach (var bb in notProcessedYet) {
+				bool wasVisited;
+				visited.TryGetValue(bb, out wasVisited);
+				if (!wasVisited)
+					throw new ApplicationException("A block wasn't processed");
+			}
 		}
 
 		void processBaseBlocks(List<BaseBlock> lb, Func<Block, bool> placeLast) {
@@ -318,6 +326,12 @@ namespace de4dot.blocks {
 				doFilterHandlerBlock(bb as FilterHandlerBlock);
 			else if (bb is HandlerBlock)
 				doHandlerBlock(bb as HandlerBlock);
+			else if (bb is TryHandlerBlock) {
+				// The try handler block is usually after the try block, but sometimes it isn't...
+				// Handle that case here.
+				visited.Remove(bb);
+				notProcessedYet.Add(bb);
+			}
 			else
 				throw new ApplicationException("Invalid block found");
 		}
