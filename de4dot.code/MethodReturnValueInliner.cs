@@ -238,8 +238,13 @@ namespace de4dot {
 
 		bool getArg(MethodReference method, Block block, ref object arg, ref int instrIndex) {
 			while (true) {
-				if (instrIndex < 0)
-					throw new ApplicationException(string.Format("Could not find all arguments to method {0}", method));
+				if (instrIndex < 0) {
+					// We're here if there were no cflow deobfuscation, or if there are two or
+					// more blocks branching to the decrypter method, or the two blocks can't be
+					// merged because one is outside the exception handler (eg. buggy obfuscator).
+					Log.v("Could not find all arguments to method {0}", method);
+					return false;
+				}
 
 				var instr = block.Instructions[instrIndex--];
 				switch (instr.OpCode.Code) {
