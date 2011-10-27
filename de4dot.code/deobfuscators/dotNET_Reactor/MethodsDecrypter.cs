@@ -74,6 +74,8 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 					var key = new MethodReferenceAndDeclaringTypeKey(method);
 					if (!checkedMethods.ContainsKey(key)) {
 						checkedMethods[key] = true;
+						if (info.Item1.BaseType == null || info.Item1.BaseType.FullName != "System.Object")
+							continue;
 						if (!DotNetUtils.isMethod(method, "System.Void", "()"))
 							continue;
 						if (!encryptedResource.couldBeResourceDecrypter(method, additionalTypes))
@@ -111,6 +113,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			int patchCount = methodsDataReader.ReadInt32();
 			int mode = methodsDataReader.ReadInt32();
 			if (!useXorKey || mode == 1) {
+				// Here if DNR 4.0, 4.1
 				for (int i = 0; i < patchCount; i++) {
 					uint rva = methodsDataReader.ReadUInt32();
 					uint data = methodsDataReader.ReadUInt32();

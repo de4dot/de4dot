@@ -107,8 +107,10 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				return;
 			this.peImage = peImage;
 
-			foreach (var info in decrypterInfos)
+			foreach (var info in decrypterInfos) {
+				simpleDeobfuscator.deobfuscate(info.method);
 				findKeyIv(info.method, out info.key, out info.iv);
+			}
 
 			encryptedResource.init(simpleDeobfuscator);
 			decryptedData = encryptedResource.decrypt();
@@ -127,6 +129,8 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			foreach (var info in DotNetUtils.getCalledMethods(module, method)) {
 				var calledMethod = info.Item2;
 				if (calledMethod.DeclaringType != method.DeclaringType)
+					continue;
+				if (calledMethod.MethodReturnType.ReturnType.FullName != "System.Byte[]")
 					continue;
 				var localTypes = new LocalTypes(calledMethod);
 				if (!localTypes.all(requiredTypes))
