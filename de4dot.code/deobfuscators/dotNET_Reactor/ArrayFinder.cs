@@ -112,6 +112,8 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				else
 					emulator.emulate(instr);
 			}
+			if (i != newarrIndex + 1)
+				i--;
 			newarrIndex = i;
 
 			byte[] resultArray = new byte[resultValueArray.Length];
