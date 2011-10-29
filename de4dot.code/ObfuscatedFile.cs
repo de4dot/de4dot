@@ -24,6 +24,7 @@ using System.IO;
 using System.Text;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Mono.MyStuff;
 using de4dot.deobfuscators;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
@@ -301,18 +302,19 @@ namespace de4dot {
 			Log.n("Cleaning {0}", options.Filename);
 			initAssemblyClient();
 
-			var newModuleData = deob.getDecryptedModule();
-			if (newModuleData != null)
-				reloadModule(newModuleData);
+			byte[] fileData = null;
+			Dictionary<uint, DumpedMethod> dumpedMethods = null;
+			if (deob.getDecryptedModule(ref fileData, ref dumpedMethods))
+				reloadModule(fileData, dumpedMethods);
 
 			deob.deobfuscateBegin();
 			deobfuscateMethods();
 			deob.deobfuscateEnd();
 		}
 
-		void reloadModule(byte[] newModuleData) {
+		void reloadModule(byte[] newModuleData, Dictionary<uint, DumpedMethod> dumpedMethods) {
 			Log.v("Decrypted data. Reloading decrypted data (original filename: {0})", Filename);
-			module = assemblyModule.reload(newModuleData);
+			module = assemblyModule.reload(newModuleData, dumpedMethods);
 			allMethods = getAllMethods();
 			deob = deob.moduleReloaded(module);
 			initializeDeobfuscator();

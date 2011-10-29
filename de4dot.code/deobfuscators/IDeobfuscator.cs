@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using Mono.Cecil;
+using Mono.MyStuff;
 using de4dot.blocks;
 
 namespace de4dot.deobfuscators {
@@ -67,8 +68,8 @@ namespace de4dot.deobfuscators {
 		int detect();
 
 		// If the obfuscator has encrypted parts of the file, then this method should return the
-		// decrypted file. Return null if it's not been encrypted.
-		byte[] getDecryptedModule();
+		// decrypted file. true is returned if args have been initialized, false otherwise.
+		bool getDecryptedModule(ref byte[] newFileData, ref Dictionary<uint, DumpedMethod> dumpedMethods);
 
 		// This is only called if getDecryptedModule() != null, and after the module has been
 		// reloaded. Should return a new IDeobfuscator with the same options and the new module.

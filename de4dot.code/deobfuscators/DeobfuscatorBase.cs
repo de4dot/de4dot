@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Mono.MyStuff;
 using de4dot.blocks;
 
 namespace de4dot.deobfuscators {
@@ -100,8 +101,8 @@ namespace de4dot.deobfuscators {
 		protected abstract void scanForObfuscator();
 		protected abstract int detectInternal();
 
-		public virtual byte[] getDecryptedModule() {
-			return null;
+		public virtual bool getDecryptedModule(ref byte[] newFileData, ref Dictionary<uint, DumpedMethod> dumpedMethods) {
+			return false;
 		}
 
 		public virtual IDeobfuscator moduleReloaded(ModuleDefinition module) {
