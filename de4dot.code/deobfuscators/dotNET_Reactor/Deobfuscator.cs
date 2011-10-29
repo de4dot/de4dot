@@ -179,7 +179,8 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			}
 			if (options.DecryptBools)
 				addResourceToBeRemoved(booleanDecrypter.BooleansResource, "Encrypted booleans");
-			if (Operations.DecryptStrings != OpDecryptString.None && options.DecryptMethods && options.DecryptBools)
+			bool deleteTypes = Operations.DecryptStrings != OpDecryptString.None && options.DecryptMethods && options.DecryptBools;
+			if (deleteTypes && methodsDecrypter.MethodsDecrypterMethod != null)
 				addTypeToBeRemoved(methodsDecrypter.MethodsDecrypterMethod.DeclaringType, "Decrypter type");
 		}
 
