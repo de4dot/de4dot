@@ -244,13 +244,12 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 					throw new ApplicationException("Unknown string decrypter version");
 
 				byte[] decryptedStringData;
-				using (var aes = new RijndaelManaged()) {
-					aes.Mode = CipherMode.CBC;
+				using (var aes = new RijndaelManaged { Mode = CipherMode.CBC }) {
 					using (var transform = aes.CreateDecryptor(info.key, info.iv)) {
 						decryptedStringData = transform.TransformFinalBlock(encryptedStringData, 0, encryptedStringData.Length);
 					}
 				}
-				return Encoding.Unicode.GetString(decryptedStringData, 0, decryptedStringData.Length);
+				return Encoding.Unicode.GetString(decryptedStringData);
 			}
 		}
 

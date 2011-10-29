@@ -185,8 +185,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			if (encryptedDataResource == null || key == null || iv == null)
 				throw new ApplicationException("Can't decrypt resource");
 
-			using (var aes = new RijndaelManaged()) {
-				aes.Mode = CipherMode.CBC;
+			using (var aes = new RijndaelManaged { Mode = CipherMode.CBC }) {
 				using (var transform = aes.CreateDecryptor(key, iv)) {
 					var encryptedData = encryptedDataResource.GetResourceData();
 					return transform.TransformFinalBlock(encryptedData, 0, encryptedData.Length);

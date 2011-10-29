@@ -66,7 +66,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 						continue;
 
 					encryptedResource.ResourceDecrypterMethod = method;
-					break;
+					return;
 				}
 			}
 		}
