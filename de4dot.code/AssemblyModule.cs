@@ -48,14 +48,14 @@ namespace de4dot {
 			module.Write(newFilename);
 		}
 
-		public ModuleDefinition reload(byte[] newModuleData) {
+		public ModuleDefinition reload(byte[] newModuleData, Dictionary<uint, DumpedMethod> dumpedMethods) {
 			var assemblyResolver = AssemblyResolver.Instance;
 			assemblyResolver.removeModule(module);
-			dumpedMethods = new Dictionary<uint, DumpedMethod>();
+			this.dumpedMethods = dumpedMethods;
 
 			var readerParameters = new ReaderParameters(ReadingMode.Deferred);
 			readerParameters.AssemblyResolver = assemblyResolver;
-			module = ModuleDefinition.ReadModule(new MemoryStream(newModuleData), readerParameters);
+			module = ModuleDefinition.ReadModule(new MemoryStream(newModuleData), readerParameters, dumpedMethods);
 			assemblyResolver.addModule(module);
 			return module;
 		}
