@@ -58,7 +58,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			var additionalTypes = new string[] {
 //				"System.Diagnostics.StackFrame",	//TODO: Not in DNR <= 3.7.0.3
 				"System.IntPtr",
-				"System.Reflection.Assembly",
+//				"System.Reflection.Assembly",		//TODO: Not in unknown DNR version with jitter support
 			};
 			var checkedMethods = new Dictionary<MethodReferenceAndDeclaringTypeKey, bool>();
 			var callCounter = new CallCounter();
@@ -100,6 +100,9 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			initXorKey();
 			var methodsData = encryptedResource.decrypt();
 
+			ArrayFinder arrayFinder = new ArrayFinder(encryptedResource.ResourceDecrypterMethod);
+			bool hasJitter = arrayFinder.exists(new byte[] { (byte)'g', (byte)'e', (byte)'t', (byte)'J', (byte)'i', (byte)'t' });
+
 			if (useXorKey) {
 				var stream = new MemoryStream(methodsData);
 				var reader = new BinaryReader(stream);
@@ -132,7 +135,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 					patchDwords(peImage, methodsDataReader, numDwords / 2);
 				}
 			}
-			else if (!useXorKey || mode == 1) {
+			else if (!hasJitter || mode == 1) {
 				// DNR 3.9.8.0, 4.0, 4.1, 4.2, 4.3, 4.4
 				patchDwords(peImage, methodsDataReader, patchCount);
 				while (methodsDataReader.BaseStream.Position < methodsData.Length - 1) {
