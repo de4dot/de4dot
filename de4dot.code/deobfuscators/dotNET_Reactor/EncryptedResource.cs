@@ -22,9 +22,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using Mono.Cecil;
-using Mono.Cecil.Cil;
 using de4dot.blocks;
-using de4dot.blocks.cflow;
 
 namespace de4dot.deobfuscators.dotNET_Reactor {
 	class EncryptedResource {
@@ -98,10 +96,10 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			if (encryptedDataResource == null)
 				throw new ApplicationException("Could not find encrypted resource");
 
-			key = initArray(resourceDecrypterMethod, 32);
+			key = ArrayFinder.getInitializedArray(resourceDecrypterMethod, 32);
 			if (key == null)
 				throw new ApplicationException("Could not find resource decrypter key");
-			iv = initArray(resourceDecrypterMethod, 16);
+			iv = ArrayFinder.getInitializedArray(resourceDecrypterMethod, 16);
 			if (iv == null)
 				throw new ApplicationException("Could not find resource decrypter IV");
 			var publicKeyToken = module.Assembly.Name.PublicKeyToken;
@@ -118,67 +116,6 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 					return resource;
 			}
 			return null;
-		}
-
-		static byte[] initArray(MethodDefinition method, int arraySize) {
-			int newarrIndex = findNewarr(method, arraySize);
-			if (newarrIndex < 0)
-				return null;
-
-			var resultValueArray = new Value[arraySize];
-
-			var emulator = new InstructionEmulator(method.HasThis, false, method.Parameters, method.Body.Variables);
-			var theArray = new UnknownValue();
-			emulator.push(theArray);
-
-			var instructions = method.Body.Instructions;
-			for (int i = newarrIndex + 1; i < instructions.Count; i++) {
-				var instr = instructions[i];
-				if (instr.OpCode.FlowControl != FlowControl.Next)
-					break;
-				if (instr.OpCode.Code == Code.Newarr)
-					break;
-
-				if (instr.OpCode.Code == Code.Stelem_I1) {
-					var value = emulator.pop();
-					var index = emulator.pop() as Int32Value;
-					var array = emulator.pop();
-					if (ReferenceEquals(array, theArray) && index != null && index.allBitsValid()) {
-						if (0 <= index.value && index.value < resultValueArray.Length)
-							resultValueArray[index.value] = value;
-					}
-				}
-				else
-					emulator.emulate(instr);
-			}
-
-			byte[] resultArray = new byte[resultValueArray.Length];
-			for (int i = 0; i < resultArray.Length; i++) {
-				var intValue = resultValueArray[i] as Int32Value;
-				if (intValue == null || !intValue.allBitsValid())
-					return null;
-				resultArray[i] = (byte)intValue.value;
-			}
-
-			return resultArray;
-		}
-
-		static int findNewarr(MethodDefinition method, int arraySize) {
-			var instructions = method.Body.Instructions;
-			for (int i = 0; i < instructions.Count; i++) {
-				var instr = instructions[i];
-				if (instr.OpCode.Code != Code.Newarr || i < 1)
-					continue;
-				var ldci4 = instructions[i - 1];
-				if (!DotNetUtils.isLdcI4(ldci4))
-					continue;
-				if (DotNetUtils.getLdcI4Value(ldci4) != arraySize)
-					continue;
-
-				return i;
-			}
-
-			return -1;
 		}
 
 		public byte[] decrypt() {
