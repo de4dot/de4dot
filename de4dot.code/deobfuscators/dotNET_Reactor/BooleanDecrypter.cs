@@ -77,6 +77,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			this.fileData = fileData;
 
 			encryptedResource.init(simpleDeobfuscator);
+			Log.v("Adding boolean decrypter. Resource: {0}", Utils.toCsharpString(encryptedResource.EncryptedDataResource.Name));
 			decryptedData = encryptedResource.decrypt();
 		}
 
