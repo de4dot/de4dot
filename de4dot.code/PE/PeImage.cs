@@ -30,6 +30,14 @@ namespace de4dot.PE {
 		Cor20Header cor20Header;
 		SectionHeader dotNetSection;
 
+		public BinaryReader Reader {
+			get { return reader; }
+		}
+
+		public Cor20Header Cor20Header {
+			get { return cor20Header; }
+		}
+
 		public PeImage(byte[] data)
 			: this(new MemoryStream(data)) {
 		}
@@ -75,7 +83,7 @@ namespace de4dot.PE {
 				cor20Header = new Cor20Header(reader);
 				dotNetSection = getSectionHeader(netOffset);
 				seekRva(cor20Header.metaData.virtualAddress);
-				cor20Header.initMetadataTable(reader);
+				cor20Header.initMetadataTable();
 			}
 		}
 
@@ -125,6 +133,21 @@ namespace de4dot.PE {
 			writer.Write(data);
 		}
 
+		public byte readByte(uint rva) {
+			seekRva(rva);
+			return reader.ReadByte();
+		}
+
+		public ushort readUInt16(uint rva) {
+			seekRva(rva);
+			return reader.ReadUInt16();
+		}
+
+		public uint readUInt32(uint rva) {
+			seekRva(rva);
+			return reader.ReadUInt32();
+		}
+
 		public int readInt32(uint rva) {
 			seekRva(rva);
 			return reader.ReadInt32();
@@ -133,6 +156,22 @@ namespace de4dot.PE {
 		public byte[] readBytes(uint rva, int size) {
 			seekRva(rva);
 			return reader.ReadBytes(size);
+		}
+
+		public uint offsetRead(uint offset, int size) {
+			if (size == 2) return offsetReadUInt16(offset);
+			if (size == 4) return offsetReadUInt32(offset);
+			throw new NotImplementedException();
+		}
+
+		public ushort offsetReadUInt16(uint offset) {
+			seek(offset);
+			return reader.ReadUInt16();
+		}
+
+		public uint offsetReadUInt32(uint offset) {
+			seek(offset);
+			return reader.ReadUInt32();
 		}
 	}
 }

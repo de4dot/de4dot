@@ -33,13 +33,15 @@ namespace de4dot.PE {
 		public DataDirectory vtableFixups;
 		public DataDirectory exportAddressTableJumps;
 		public DataDirectory managedNativeHeader;
+		public Metadata metadata;
+		BinaryReader reader;
 
-		uint mdOffset, mdHeaderLength;
 		public uint MetadataOffset {
-			get { return mdOffset; }
+			get { return metadata.Offset; }
 		}
+
 		public uint MetadataHeaderLength {
-			get { return mdHeaderLength; }
+			get { return metadata.HeaderLength; }
 		}
 
 		uint offset;
@@ -52,6 +54,7 @@ namespace de4dot.PE {
 		}
 
 		public Cor20Header(BinaryReader reader) {
+			this.reader = reader;
 			offset = (uint)reader.BaseStream.Position;
 			cb = reader.ReadUInt32();
 			majorRuntimeVersion = reader.ReadUInt16();
@@ -67,30 +70,12 @@ namespace de4dot.PE {
 			managedNativeHeader.read(reader);
 		}
 
-		public void initMetadataTable(BinaryReader reader) {
-			if (reader.ReadUInt32() != 0x424A5342)
-				return;
-			mdOffset = (uint)reader.BaseStream.Position - 4;
-			reader.ReadUInt16();	// major version
-			reader.ReadUInt16();	// minor version
-			reader.ReadUInt32();	// reserved
-			int slen = reader.ReadInt32();
-			reader.BaseStream.Position += slen;
-			reader.ReadUInt16();	// flags
-			int streams = reader.ReadUInt16();
-			for (int i = 0; i < streams; i++) {
-				uint offset = reader.ReadUInt32();
-				uint size = reader.ReadUInt32();
-				skipString(reader);
-			}
-			mdHeaderLength = (uint)reader.BaseStream.Position - mdOffset;
+		public void initMetadataTable() {
+			metadata = new Metadata(reader);
 		}
 
-		void skipString(BinaryReader reader) {
-			while (reader.ReadByte() != 0) {
-				// nothing
-			}
-			reader.BaseStream.Position = (reader.BaseStream.Position + 3) & ~3;
+		public MetadataTables createMetadataTables() {
+			return new MetadataTables(reader, metadata);
 		}
 	}
 }

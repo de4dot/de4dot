@@ -113,9 +113,14 @@
     <Compile Include="PE\DataDirectory.cs" />
     <Compile Include="PE\FileHeader.cs" />
     <Compile Include="PE\IFileLocation.cs" />
+    <Compile Include="PE\Metadata.cs" />
+    <Compile Include="PE\MetadataTables.cs" />
+    <Compile Include="PE\MetadataType.cs" />
+    <Compile Include="PE\MetadataTypeBuilder.cs" />
     <Compile Include="PE\OptionalHeader.cs" />
     <Compile Include="PE\PeImage.cs" />
     <Compile Include="PE\SectionHeader.cs" />
+    <Compile Include="PE\DotNetStream.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="renamer\DefinitionsRenamer.cs" />
