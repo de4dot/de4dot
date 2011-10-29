@@ -92,7 +92,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			}
 		}
 
-		public void find() {
+		public void find(ISimpleDeobfuscator simpleDeobfuscator) {
 			var additionalTypes = new string[] {
 				"System.String",
 			};
@@ -118,7 +118,12 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 
 					stringsResource = resource;
 					encryptedResource.ResourceDecrypterMethod = method;
-					decrypterInfos.Add(new DecrypterInfo(method, null, null));
+
+					var info = new DecrypterInfo(method, null, null);
+					simpleDeobfuscator.deobfuscate(info.method);
+					findKeyIv(info.method, out info.key, out info.iv);
+
+					decrypterInfos.Add(info);
 				}
 			}
 
@@ -149,12 +154,9 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			this.peImage = peImage;
 			this.fileData = fileData;
 
-			foreach (var info in decrypterInfos) {
-				simpleDeobfuscator.deobfuscate(info.method);
-				findKeyIv(info.method, out info.key, out info.iv);
-			}
-
 			encryptedResource.init(simpleDeobfuscator);
+			if (encryptedResource.EncryptedDataResource != null)
+				Log.v("Adding string decrypter. Resource: {0}", Utils.toCsharpString(encryptedResource.EncryptedDataResource.Name));
 			decryptedData = encryptedResource.decrypt();
 		}
 

@@ -60,6 +60,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 
 	class Deobfuscator : DeobfuscatorBase {
 		Options options;
+		string obfuscatorName = ".NET Reactor";
 
 		PE.PeImage peImage;
 		byte[] fileData;
@@ -78,7 +79,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		}
 
 		public override string Name {
-			get { return ".NET Reactor"; }
+			get { return obfuscatorName; }
 		}
 
 		public Deobfuscator(Options options)
@@ -113,9 +114,79 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			methodsDecrypter = new MethodsDecrypter(module);
 			methodsDecrypter.find();
 			stringDecrypter = new StringDecrypter(module);
-			stringDecrypter.find();
+			stringDecrypter.find(DeobfuscatedFile);
 			booleanDecrypter = new BooleanDecrypter(module);
 			booleanDecrypter.find();
+			obfuscatorName = detectVersion();
+		}
+
+		string detectVersion() {
+			/*
+			Methods decrypter locals (not showing its own types):
+			3.7.0.3:
+					"System.Byte[]"
+					"System.Int32"
+					"System.Int32[]"
+					"System.IntPtr"
+					"System.IO.BinaryReader"
+					"System.IO.MemoryStream"
+					"System.Object"
+					"System.Reflection.Assembly"
+					"System.Security.Cryptography.CryptoStream"
+					"System.Security.Cryptography.ICryptoTransform"
+					"System.Security.Cryptography.RijndaelManaged"
+					"System.String"
+
+			3.9.8.0:
+			-		"System.Int32[]"
+			+		"System.Diagnostics.StackFrame"
+
+			4.3.1.0 (jitter):
+			-		"System.Diagnostics.StackFrame"
+			-		"System.Object"
+			+		"System.Boolean"
+			+		"System.Byte&"
+			+		"System.Collections.IEnumerator"
+			+		"System.Delegate"
+			+		"System.Diagnostics.Process"
+			+		"System.Diagnostics.ProcessModule"
+			+		"System.Diagnostics.ProcessModuleCollection"
+			+		"System.IDisposable"
+			+		"System.Int64"
+			+		"System.UInt32"
+			+		"System.UInt64"
+			*/
+
+			LocalTypes localTypes;
+			int minVer = -1;
+			foreach (var info in stringDecrypter.DecrypterInfos) {
+				if (info.key == null)
+					continue;
+				localTypes = new LocalTypes(info.method);
+				if (!localTypes.exists("System.IntPtr"))
+					return ".NET Reactor <= 3.7";
+				minVer = 3800;
+				break;
+			}
+
+			if (methodsDecrypter.MethodsDecrypterMethod == null) {
+				if (minVer >= 3800)
+					return ".NET Reactor >= 3.8";
+				return ".NET Reactor";
+			}
+			localTypes = new LocalTypes(methodsDecrypter.MethodsDecrypterMethod);
+
+			if (localTypes.exists("System.Int32[]")) {
+				if (minVer >= 3800)
+					return ".NET Reactor 3.8.4.1 - 3.9.0.1";
+				return ".NET Reactor <= 3.9.0.1";
+			}
+
+			if (localTypes.exists("System.Diagnostics.StackFrame"))
+				return ".NET Reactor 3.9.8.0 - 4.2";
+			if (!localTypes.exists("System.Byte&"))
+				return ".NET Reactor 4.0-4.2";
+			return ".NET Reactor 4.3-4.4";
 		}
 
 		public override bool getDecryptedModule(ref byte[] newFileData, ref Dictionary<uint, DumpedMethod> dumpedMethods) {

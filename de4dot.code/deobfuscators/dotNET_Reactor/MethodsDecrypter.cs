@@ -101,9 +101,10 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			var methodsData = encryptedResource.decrypt();
 
 			ArrayFinder arrayFinder = new ArrayFinder(encryptedResource.ResourceDecrypterMethod);
-			bool hasJitter = arrayFinder.exists(new byte[] { (byte)'g', (byte)'e', (byte)'t', (byte)'J', (byte)'i', (byte)'t' });
+			bool hooksJitter = arrayFinder.exists(new byte[] { (byte)'g', (byte)'e', (byte)'t', (byte)'J', (byte)'i', (byte)'t' });
 
 			if (useXorKey) {
+				// DNR 4.3, 4.4
 				var stream = new MemoryStream(methodsData);
 				var reader = new BinaryReader(stream);
 				var writer = new BinaryWriter(stream);
@@ -135,7 +136,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 					patchDwords(peImage, methodsDataReader, numDwords / 2);
 				}
 			}
-			else if (!hasJitter || mode == 1) {
+			else if (!hooksJitter || mode == 1) {
 				// DNR 3.9.8.0, 4.0, 4.1, 4.2, 4.3, 4.4
 				patchDwords(peImage, methodsDataReader, patchCount);
 				while (methodsDataReader.BaseStream.Position < methodsData.Length - 1) {
@@ -147,7 +148,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				}
 			}
 			else {
-				// DNR 4.4 (jitter is hooked)
+				// DNR (4.0-4.2?), 4.3, 4.4 (jitter is hooked)
 
 				var metadataTables = peImage.Cor20Header.createMetadataTables();
 				var methodDef = metadataTables.getMetadataType(PE.MetadataIndex.iMethodDef);
