@@ -20,6 +20,7 @@
 using System.IO;
 using System.Collections.Generic;
 using Mono.Cecil;
+using Mono.MyStuff;
 using de4dot.blocks;
 
 namespace de4dot.deobfuscators.dotNET_Reactor {
@@ -117,7 +118,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			booleanDecrypter.find();
 		}
 
-		public override byte[] getDecryptedModule() {
+		public override bool getDecryptedModule(ref byte[] newFileData, ref Dictionary<uint, DumpedMethod> dumpedMethods) {
 			using (var fileStream = new FileStream(module.FullyQualifiedName, FileMode.Open, FileAccess.Read, FileShare.Read)) {
 				fileData = new byte[(int)fileStream.Length];
 				fileStream.Read(fileData, 0, fileData.Length);
@@ -125,12 +126,13 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			peImage = new PE.PeImage(fileData);
 
 			if (!options.DecryptMethods)
-				return null;
+				return false;
 
-			if (!methodsDecrypter.decrypt(peImage, DeobfuscatedFile))
-				return null;
+			if (!methodsDecrypter.decrypt(peImage, DeobfuscatedFile, ref dumpedMethods))
+				return false;
 
-			return fileData;
+			newFileData = fileData;
+			return true;
 		}
 
 		public override IDeobfuscator moduleReloaded(ModuleDefinition module) {

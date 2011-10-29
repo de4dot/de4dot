@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.IO;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Mono.MyStuff;
 using de4dot.blocks;
 
 namespace de4dot.deobfuscators.dotNET_Reactor {
@@ -91,7 +92,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			encryptedResource.ResourceDecrypterMethod = (MethodDefinition)callCounter.most();
 		}
 
-		public bool decrypt(PE.PeImage peImage, ISimpleDeobfuscator simpleDeobfuscator) {
+		public bool decrypt(PE.PeImage peImage, ISimpleDeobfuscator simpleDeobfuscator, ref Dictionary<uint, DumpedMethod> dumpedMethods) {
 			if (encryptedResource.ResourceDecrypterMethod == null)
 				return false;
 
@@ -119,8 +120,8 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			int tmp = methodsDataReader.ReadInt32();
 			methodsDataReader.BaseStream.Position -= 4;
 			if ((tmp & 0xFF000000) == 0x06000000) {
-				// It's method token + rva. DNR 3.7.0.3 - 3.9.0.1
-				methodsDataReader.BaseStream.Position += 8 * patchCount;
+				// It's method token + rva. DNR 3.7.0.3 (and earlier?) - 3.9.0.1
+				methodsDataReader.BaseStream.Position += 8L * patchCount;
 				patchCount = methodsDataReader.ReadInt32();
 				mode = methodsDataReader.ReadInt32();
 
@@ -131,15 +132,85 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 					patchDwords(peImage, methodsDataReader, numDwords / 2);
 				}
 			}
-			else {
-				// DNR 3.9.8.0, 4.0, 4.1, 4.2
+			else if (!useXorKey || mode == 1) {
+				// DNR 3.9.8.0, 4.0, 4.1, 4.2, 4.3, 4.4
 				patchDwords(peImage, methodsDataReader, patchCount);
 				while (methodsDataReader.BaseStream.Position < methodsData.Length - 1) {
 					uint rva = methodsDataReader.ReadUInt32();
-					uint token = methodsDataReader.ReadUInt32();
+					uint token = methodsDataReader.ReadUInt32();	// token, unknown, or index
 					int size = methodsDataReader.ReadInt32();
 					if (size > 0)
 						peImage.dotNetSafeWrite(rva, methodsDataReader.ReadBytes(size));
+				}
+			}
+			else {
+				// DNR 4.4 (jitter is hooked)
+
+				var metadataTables = peImage.Cor20Header.createMetadataTables();
+				var methodDef = metadataTables.getMetadataType(PE.MetadataIndex.iMethodDef);
+				var rvaToIndex = new Dictionary<uint, int>((int)methodDef.rows);
+				uint offset = methodDef.fileOffset;
+				for (int i = 0; i < methodDef.rows; i++) {
+					uint rva = peImage.offsetReadUInt32(offset);
+					offset += methodDef.totalSize;
+					if (rva == 0)
+						continue;
+
+					if ((peImage.readByte(rva) & 3) == 2)
+						rva++;
+					else
+						rva += (uint)(4 * (peImage.readByte(rva + 1) >> 4));
+					rvaToIndex[rva] = i;
+				}
+
+				patchDwords(peImage, methodsDataReader, patchCount);
+				int count = methodsDataReader.ReadInt32();
+				dumpedMethods = new Dictionary<uint, DumpedMethod>();
+				while (methodsDataReader.BaseStream.Position < methodsData.Length - 1) {
+					uint rva = methodsDataReader.ReadUInt32();
+					uint index = methodsDataReader.ReadUInt32();
+					bool isNativeCode = index >= 0x70000000;
+					int size = methodsDataReader.ReadInt32();
+					var methodData = methodsDataReader.ReadBytes(size);
+
+					int methodIndex;
+					if (!rvaToIndex.TryGetValue(rva, out methodIndex)) {
+						Log.w("Could not find method having code RVA {0:X8}", rva);
+						continue;
+					}
+
+					if (isNativeCode) {
+						//TODO: Convert to CIL code
+						Log.w("Found native code. Ignoring it for now... Assembly won't run. token: {0:X8}", 0x06000001 + methodIndex);
+					}
+					else {
+						var dm = new DumpedMethod();
+						dm.token = (uint)(0x06000001 + methodIndex);
+						dm.code = methodData;
+
+						offset = methodDef.fileOffset + (uint)(methodIndex * methodDef.totalSize);
+						rva = peImage.offsetReadUInt32(offset);
+						dm.mdImplFlags = peImage.offsetReadUInt16(offset + (uint)methodDef.fields[1].offset);
+						dm.mdFlags = peImage.offsetReadUInt16(offset + (uint)methodDef.fields[2].offset);
+						dm.mdName = peImage.offsetRead(offset + (uint)methodDef.fields[3].offset, methodDef.fields[3].size);
+						dm.mdSignature = peImage.offsetRead(offset + (uint)methodDef.fields[4].offset, methodDef.fields[4].size);
+						dm.mdParamList = peImage.offsetRead(offset + (uint)methodDef.fields[5].offset, methodDef.fields[5].size);
+
+						if ((peImage.readByte(rva) & 3) == 2) {
+							dm.mhFlags = 2;
+							dm.mhMaxStack = 8;
+							dm.mhCodeSize = (uint)dm.code.Length;
+							dm.mhLocalVarSigTok = 0;
+						}
+						else {
+							dm.mhFlags = peImage.readUInt16(rva);
+							dm.mhMaxStack = peImage.readUInt16(rva + 2);
+							dm.mhCodeSize = (uint)dm.code.Length;
+							dm.mhLocalVarSigTok = peImage.readUInt32(rva + 8);
+						}
+
+						dumpedMethods[dm.token] = dm;
+					}
 				}
 			}
 
