@@ -327,7 +327,7 @@ namespace de4dot.blocks {
 
 		public static IList<string> getCodeStrings(MethodDefinition method) {
 			var strings = new List<string>();
-			if (method.HasBody) {
+			if (method != null && method.Body != null) {
 				foreach (var instr in method.Body.Instructions) {
 					if (instr.OpCode.Code == Code.Ldstr)
 						strings.Add((string)instr.Operand);
