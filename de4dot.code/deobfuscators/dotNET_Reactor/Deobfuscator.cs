@@ -339,6 +339,8 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			var list = new List<string>();
 			foreach (var info in stringDecrypter.DecrypterInfos)
 				list.Add(info.method.MetadataToken.ToInt32().ToString("X8"));
+			if (stringDecrypter.OtherStringDecrypter != null)
+				list.Add(stringDecrypter.OtherStringDecrypter.MetadataToken.ToInt32().ToString("X8"));
 			return list;
 		}
 	}
