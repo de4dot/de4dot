@@ -29,8 +29,6 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 	class MethodsDecrypter {
 		ModuleDefinition module;
 		EncryptedResource encryptedResource;
-		long xorKey;
-		bool useXorKey;
 
 		public bool Detected {
 			get { return encryptedResource.ResourceDecrypterMethod != null; }
@@ -97,13 +95,12 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				return false;
 
 			encryptedResource.init(simpleDeobfuscator);
-			initXorKey();
 			var methodsData = encryptedResource.decrypt();
 
-			ArrayFinder arrayFinder = new ArrayFinder(encryptedResource.ResourceDecrypterMethod);
-			bool hooksJitter = arrayFinder.exists(new byte[] { (byte)'g', (byte)'e', (byte)'t', (byte)'J', (byte)'i', (byte)'t' });
+			bool hooksJitter = findDnrCompileMethod(encryptedResource.ResourceDecrypterMethod.DeclaringType) != null;
 
-			if (useXorKey) {
+			long xorKey;
+			if (getXorKey(out xorKey)) {
 				// DNR 4.3, 4.4
 				var stream = new MemoryStream(methodsData);
 				var reader = new BinaryReader(stream);
@@ -229,9 +226,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			}
 		}
 
-		void initXorKey() {
-			useXorKey = false;
-
+		bool getXorKey(out long xorKey) {
 			var instructions = encryptedResource.ResourceDecrypterMethod.Body.Instructions;
 			for (int i = 0; i < instructions.Count - 1; i++) {
 				if (instructions[i].OpCode.Code != Code.Ldind_I8)
@@ -241,9 +236,23 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 					continue;
 
 				xorKey = DotNetUtils.getLdcI4Value(ldci4);
-				useXorKey = true;
-				return;
+				return true;
 			}
+			xorKey = 0;
+			return false;
+		}
+
+		public static MethodDefinition findDnrCompileMethod(TypeDefinition type) {
+			foreach (var method in type.Methods) {
+				if (!method.IsStatic || method.Body == null)
+					continue;
+				if (method.Parameters.Count != 6)
+					continue;
+				if (!DotNetUtils.isMethod(method, "System.UInt32", "(System.UInt64&,System.IntPtr,System.IntPtr,System.UInt32,System.IntPtr&,System.UInt32&)"))
+					continue;
+				return method;
+			}
+			return null;
 		}
 	}
 }

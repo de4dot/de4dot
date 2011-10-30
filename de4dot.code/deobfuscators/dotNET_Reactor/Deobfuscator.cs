@@ -192,7 +192,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 					return ".NET Reactor 3.9.8.0";
 			}
 
-			var compileMethod = findDnrCompileMethod(methodsDecrypter.MethodsDecrypterMethod.DeclaringType);
+			var compileMethod = MethodsDecrypter.findDnrCompileMethod(methodsDecrypter.MethodsDecrypterMethod.DeclaringType);
 			if (compileMethod == null)
 				return ".NET Reactor < 4.0";
 			DeobfuscatedFile.deobfuscate(compileMethod);
@@ -219,12 +219,8 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		}
 
 		static bool findString(MethodDefinition method, string s) {
-			if (method == null || method.Body == null)
-				return false;
-			foreach (var instr in method.Body.Instructions) {
-				if (instr.OpCode.Code != Code.Ldstr)
-					continue;
-				if (s == (string)instr.Operand)
+			foreach (var cs in DotNetUtils.getCodeStrings(method)) {
+				if (cs == s)
 					return true;
 			}
 			return false;
@@ -240,19 +236,6 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 					return true;
 			}
 			return false;
-		}
-
-		static MethodDefinition findDnrCompileMethod(TypeDefinition type) {
-			foreach (var method in type.Methods) {
-				if (!method.IsStatic || method.Body == null)
-					continue;
-				if (method.Parameters.Count != 6)
-					continue;
-				if (!DotNetUtils.isMethod(method, "System.UInt32", "(System.UInt64&,System.IntPtr,System.IntPtr,System.UInt32,System.IntPtr&,System.UInt32&)"))
-					continue;
-				return method;
-			}
-			return null;
 		}
 
 		public override bool getDecryptedModule(ref byte[] newFileData, ref Dictionary<uint, DumpedMethod> dumpedMethods) {
