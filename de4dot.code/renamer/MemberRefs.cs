@@ -877,6 +877,8 @@ namespace de4dot.renamer {
 			foreach (var method in methods.getAll())
 				methodNames[method.NewName] = true;
 
+			if (methodDef.MethodDefinition.PInvokeInfo == null)
+				throw new ApplicationException(string.Format("PInvokeInfo is null: A type was probably removed but still referenced by the code."));
 			var entryPoint = methodDef.MethodDefinition.PInvokeInfo.EntryPoint;
 			if (Regex.IsMatch(entryPoint, @"^#\d+$"))
 				entryPoint = DotNetUtils.getDllName(methodDef.MethodDefinition.PInvokeInfo.Module.Name) + "_" + entryPoint.Substring(1);
