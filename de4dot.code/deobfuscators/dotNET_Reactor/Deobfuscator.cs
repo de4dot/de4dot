@@ -20,6 +20,7 @@
 using System.IO;
 using System.Collections.Generic;
 using Mono.Cecil;
+using Mono.Cecil.Cil;
 using Mono.MyStuff;
 using de4dot.blocks;
 
@@ -141,11 +142,10 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			-		"System.Int32[]"
 			+		"System.Diagnostics.StackFrame"
 
-			4.3.1.0 (jitter):
+			4.0.0.0: (jitter)
 			-		"System.Diagnostics.StackFrame"
 			-		"System.Object"
 			+		"System.Boolean"
-			+		"System.Byte&"
 			+		"System.Collections.IEnumerator"
 			+		"System.Delegate"
 			+		"System.Diagnostics.Process"
@@ -155,6 +155,12 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			+		"System.Int64"
 			+		"System.UInt32"
 			+		"System.UInt64"
+
+			4.1.0.0: (jitter)
+			+		"System.Reflection.Assembly"
+
+			4.3.1.0: (jitter)
+			+		"System.Byte&"
 			*/
 
 			LocalTypes localTypes;
@@ -181,12 +187,72 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 					return ".NET Reactor 3.8.4.1 - 3.9.0.1";
 				return ".NET Reactor <= 3.9.0.1";
 			}
+			if (!localTypes.exists("System.Diagnostics.Process")) {	// If < 4.0
+				if (localTypes.exists("System.Diagnostics.StackFrame"))
+					return ".NET Reactor 3.9.8.0";
+			}
 
-			if (localTypes.exists("System.Diagnostics.StackFrame"))
-				return ".NET Reactor 3.9.8.0 - 4.2";
+			var compileMethod = findDnrCompileMethod(methodsDecrypter.MethodsDecrypterMethod.DeclaringType);
+			if (compileMethod == null)
+				return ".NET Reactor < 4.0";
+			DeobfuscatedFile.deobfuscate(compileMethod);
+			bool compileMethodHasConstant_0x70000000 = findConstant(compileMethod, 0x70000000);	// 4.0-4.1
+			DeobfuscatedFile.deobfuscate(methodsDecrypter.MethodsDecrypterMethod);
+			bool hasCorEnableProfilingString = findString(methodsDecrypter.MethodsDecrypterMethod, "Cor_Enable_Profiling");	// 4.1-4.4
+
+			if (compileMethodHasConstant_0x70000000) {
+				if (hasCorEnableProfilingString)
+					return ".NET Reactor 4.1";
+				return ".NET Reactor 4.0";
+			}
+			if (!hasCorEnableProfilingString)
+				return ".NET Reactor";
+			// 4.2-4.4
+
 			if (!localTypes.exists("System.Byte&"))
-				return ".NET Reactor 4.0-4.2";
-			return ".NET Reactor 4.3-4.4";
+				return ".NET Reactor 4.2";
+
+			localTypes = new LocalTypes(compileMethod);
+			if (localTypes.exists("System.Object"))
+				return ".NET Reactor 4.4";
+			return ".NET Reactor 4.3";
+		}
+
+		static bool findString(MethodDefinition method, string s) {
+			if (method == null || method.Body == null)
+				return false;
+			foreach (var instr in method.Body.Instructions) {
+				if (instr.OpCode.Code != Code.Ldstr)
+					continue;
+				if (s == (string)instr.Operand)
+					return true;
+			}
+			return false;
+		}
+
+		static bool findConstant(MethodDefinition method, int constant) {
+			if (method == null || method.Body == null)
+				return false;
+			foreach (var instr in method.Body.Instructions) {
+				if (instr.OpCode.Code != Code.Ldc_I4)
+					continue;
+				if (constant == (int)instr.Operand)
+					return true;
+			}
+			return false;
+		}
+
+		static MethodDefinition findDnrCompileMethod(TypeDefinition type) {
+			foreach (var method in type.Methods) {
+				if (!method.IsStatic || method.Body == null)
+					continue;
+				if (method.Parameters.Count != 6)
+					continue;
+				if (!DotNetUtils.isMethod(method, "System.UInt32", "(System.UInt64&,System.IntPtr,System.IntPtr,System.UInt32,System.IntPtr&,System.UInt32&)"))
+					continue;
+				return method;
+			}
+			return null;
 		}
 
 		public override bool getDecryptedModule(ref byte[] newFileData, ref Dictionary<uint, DumpedMethod> dumpedMethods) {
