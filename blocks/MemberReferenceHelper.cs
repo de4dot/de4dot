@@ -693,8 +693,8 @@ namespace de4dot.blocks {
 
 		// a and b must be either exactly a TypeReference or exactly a TypeDefinition
 		static bool compareTypeReferences(TypeReference a, TypeReference b) {
-			if (a.GetType() != typeof(TypeReference) && a.GetType() != typeof(TypeDefinition) &&
-				b.GetType() != typeof(TypeReference) && b.GetType() != typeof(TypeDefinition))
+			if ((a.GetType() != typeof(TypeReference) && a.GetType() != typeof(TypeDefinition)) ||
+				(b.GetType() != typeof(TypeReference) && b.GetType() != typeof(TypeDefinition)))
 				throw new ApplicationException("arg must be exactly of type TypeReference or TypeDefinition");
 
 			return a.Name == b.Name &&
