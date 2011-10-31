@@ -669,6 +669,29 @@ namespace de4dot.blocks {
 			return arg.Index;
 		}
 
+		public static List<ParameterDefinition> getParameters(MethodReference method) {
+			var args = new List<ParameterDefinition>(method.Parameters.Count + 1);
+			if (method.HasThis)
+				args.Add(new ParameterDefinition(method.DeclaringType));
+			foreach (var arg in method.Parameters)
+				args.Add(arg);
+			return args;
+		}
+
+		public static ParameterDefinition getParameter(MethodReference method, Instruction instr) {
+			return getParameter(getParameters(method), method, instr);
+		}
+
+		public static ParameterDefinition getParameter(IList<ParameterDefinition> parameters, MethodReference method, Instruction instr) {
+			return getParameter(parameters, getArgIndex(method, instr));
+		}
+
+		public static ParameterDefinition getParameter(IList<ParameterDefinition> parameters, int index) {
+			if (0 <= index && index < parameters.Count)
+				return parameters[index];
+			return null;
+		}
+
 		public static List<TypeReference> getArgs(MethodReference method) {
 			var args = new List<TypeReference>(method.Parameters.Count + 1);
 			if (method.HasThis)
@@ -679,10 +702,16 @@ namespace de4dot.blocks {
 		}
 
 		public static TypeReference getArgType(MethodReference method, Instruction instr) {
-			var args = getArgs(method);
-			int index = getArgIndex(method, instr);
-			if (0 <= index && index < args.Count)
-				return args[index];
+			return getArgType(getArgs(method), method, instr);
+		}
+
+		public static TypeReference getArgType(IList<TypeReference> methodArgs, MethodReference method, Instruction instr) {
+			return getArgType(methodArgs, getArgIndex(method, instr));
+		}
+
+		public static TypeReference getArgType(IList<TypeReference> methodArgs, int index) {
+			if (0 <= index && index < methodArgs.Count)
+				return methodArgs[index];
 			return null;
 		}
 
