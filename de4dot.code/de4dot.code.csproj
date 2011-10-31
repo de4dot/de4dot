@@ -101,6 +101,7 @@
     <Compile Include="deobfuscators\SmartAssembly\StringDecrypterInfo.cs" />
     <Compile Include="deobfuscators\SmartAssembly\StringEncoderClassFinder.cs" />
     <Compile Include="deobfuscators\SmartAssembly\TamperProtectionRemover.cs" />
+    <Compile Include="deobfuscators\TypesRestorer.cs" />
     <Compile Include="deobfuscators\Unknown\Deobfuscator.cs" />
     <Compile Include="FilesDeobfuscator.cs" />
     <Compile Include="IObfuscatedFile.cs" />
