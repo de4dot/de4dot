@@ -275,6 +275,10 @@ namespace de4dot.blocks {
 				typeReference.FullName == type + extra;
 		}
 
+		public static bool isSystemObject(TypeReference typeReference) {
+			return verifyType(typeReference, "mscorlib", "System.Object");
+		}
+
 		public static string getCanonicalizedTypeRefName(TypeReference typeRef) {
 			return getCanonicalizedTypeRefName(typeRef.Scope, typeRef.FullName);
 		}
