@@ -121,6 +121,33 @@ namespace de4dot.blocks {
 			}
 		}
 
+		// Returns the variable or null if it's not a ldloc/stloc instruction. It does not return
+		// a local variable if it's a ldloca/ldloca.s instruction.
+		public static VariableDefinition getLocalVar(IList<VariableDefinition> locals, Instruction instr) {
+			switch (instr.OpCode.Code) {
+			case Code.Ldloc:
+			case Code.Ldloc_S:
+			case Code.Stloc:
+			case Code.Stloc_S:
+				return (VariableDefinition)instr.Operand;
+
+			case Code.Ldloc_0:
+			case Code.Ldloc_1:
+			case Code.Ldloc_2:
+			case Code.Ldloc_3:
+				return locals[instr.OpCode.Code - Code.Ldloc_0];
+
+			case Code.Stloc_0:
+			case Code.Stloc_1:
+			case Code.Stloc_2:
+			case Code.Stloc_3:
+				return locals[instr.OpCode.Code - Code.Stloc_0];
+
+			default:
+				return null;
+			}
+		}
+
 		public static bool isConditionalBranch(Code code) {
 			switch (code) {
 			case Code.Bge:
@@ -649,6 +676,14 @@ namespace de4dot.blocks {
 			foreach (var arg in method.Parameters)
 				args.Add(arg.ParameterType);
 			return args;
+		}
+
+		public static TypeReference getArgType(MethodReference method, Instruction instr) {
+			var args = getArgs(method);
+			int index = getArgIndex(method, instr);
+			if (0 <= index && index < args.Count)
+				return args[index];
+			return null;
 		}
 
 		public static int getArgsCount(MethodReference method) {
