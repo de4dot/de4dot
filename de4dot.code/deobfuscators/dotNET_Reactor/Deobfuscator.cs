@@ -28,11 +28,13 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 	class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		BoolOption decryptMethods;
 		BoolOption decryptBools;
+		BoolOption restoreTypes;
 
 		public DeobfuscatorInfo()
 			: base("dr") {
 			decryptMethods = new BoolOption(null, makeArgName("methods"), "Decrypt methods", true);
 			decryptBools = new BoolOption(null, makeArgName("bools"), "Decrypt booleans", true);
+			restoreTypes = new BoolOption(null, makeArgName("types"), "Restore types (object -> real type)", true);
 		}
 
 		internal static string ObfuscatorType {
@@ -48,6 +50,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				ValidNameRegex = validNameRegex.get(),
 				DecryptMethods = decryptMethods.get(),
 				DecryptBools = decryptBools.get(),
+				RestoreTypes = restoreTypes.get(),
 			});
 		}
 
@@ -55,6 +58,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			return new List<Option>() {
 				decryptMethods,
 				decryptBools,
+				restoreTypes,
 			};
 		}
 	}
@@ -73,6 +77,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		internal class Options : OptionsBase {
 			public bool DecryptMethods { get; set; }
 			public bool DecryptBools { get; set; }
+			public bool RestoreTypes { get; set; }
 		}
 
 		public override string Type {
@@ -315,6 +320,8 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		}
 
 		public override void deobfuscateEnd() {
+			if (options.RestoreTypes)
+				new TypesRestorer(module).deobfuscate();
 			base.deobfuscateEnd();
 		}
 
