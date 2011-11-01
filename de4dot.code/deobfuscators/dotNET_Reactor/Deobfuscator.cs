@@ -29,12 +29,16 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		BoolOption decryptMethods;
 		BoolOption decryptBools;
 		BoolOption restoreTypes;
+		BoolOption inlineMethods;
+		BoolOption removeInlinedMethods;
 
 		public DeobfuscatorInfo()
 			: base("dr") {
 			decryptMethods = new BoolOption(null, makeArgName("methods"), "Decrypt methods", true);
 			decryptBools = new BoolOption(null, makeArgName("bools"), "Decrypt booleans", true);
 			restoreTypes = new BoolOption(null, makeArgName("types"), "Restore types (object -> real type)", true);
+			inlineMethods = new BoolOption(null, makeArgName("inline"), "Inline short methods", true);
+			removeInlinedMethods = new BoolOption(null, makeArgName("remove-inlined"), "Remove inlined methods", true);
 		}
 
 		internal static string ObfuscatorType {
@@ -51,6 +55,8 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				DecryptMethods = decryptMethods.get(),
 				DecryptBools = decryptBools.get(),
 				RestoreTypes = restoreTypes.get(),
+				InlineMethods = inlineMethods.get(),
+				RemoveInlinedMethods = removeInlinedMethods.get(),
 			});
 		}
 
@@ -59,6 +65,8 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				decryptMethods,
 				decryptBools,
 				restoreTypes,
+				inlineMethods,
+				removeInlinedMethods,
 			};
 		}
 	}
@@ -74,10 +82,15 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		BooleanDecrypter booleanDecrypter;
 		BoolValueInliner boolValueInliner;
 
+		bool canRemoveDecrypterType = true;
+		bool startedDeobfuscating = false;
+
 		internal class Options : OptionsBase {
 			public bool DecryptMethods { get; set; }
 			public bool DecryptBools { get; set; }
 			public bool RestoreTypes { get; set; }
+			public bool InlineMethods { get; set; }
+			public bool RemoveInlinedMethods { get; set; }
 		}
 
 		public override string Type {
@@ -86,6 +99,10 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 
 		public override string Name {
 			get { return obfuscatorName; }
+		}
+
+		public override bool CanInlineMethods {
+			get { return startedDeobfuscating ? options.InlineMethods : true; }
 		}
 
 		public Deobfuscator(Options options)
@@ -304,9 +321,17 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			}
 			if (options.DecryptBools)
 				addResourceToBeRemoved(booleanDecrypter.BooleansResource, "Encrypted booleans");
-			bool deleteTypes = Operations.DecryptStrings != OpDecryptString.None && options.DecryptMethods && options.DecryptBools;
-			if (deleteTypes && methodsDecrypter.MethodsDecrypterMethod != null)
-				addTypeToBeRemoved(methodsDecrypter.MethodsDecrypterMethod.DeclaringType, "Decrypter type");
+			bool deleteTypes = Operations.DecryptStrings != OpDecryptString.None &&
+								options.DecryptMethods &&
+								options.DecryptBools &&
+								options.InlineMethods;
+			if (!deleteTypes)
+				canRemoveDecrypterType = false;
+
+			// Set it to false until we've removed all references to it
+			canRemoveDecrypterType = false;
+
+			startedDeobfuscating = true;
 		}
 
 		public override bool deobfuscateOther(Blocks blocks) {
@@ -320,9 +345,171 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		}
 
 		public override void deobfuscateEnd() {
+			removeInlinedMethods();
 			if (options.RestoreTypes)
 				new TypesRestorer(module).deobfuscate();
+			if (canRemoveDecrypterType && methodsDecrypter.MethodsDecrypterMethod != null)
+				addTypeToBeRemoved(methodsDecrypter.MethodsDecrypterMethod.DeclaringType, "Decrypter type");
 			base.deobfuscateEnd();
+		}
+
+		class UnusedMethodsFinder {
+			ModuleDefinition module;
+			Dictionary<MethodDefinition, bool> possiblyUnusedMethods = new Dictionary<MethodDefinition, bool>();
+			Stack<MethodDefinition> notUnusedStack = new Stack<MethodDefinition>();
+
+			public UnusedMethodsFinder(ModuleDefinition module, IEnumerable<MethodDefinition> possiblyUnusedMethods) {
+				this.module = module;
+				foreach (var method in possiblyUnusedMethods)
+					this.possiblyUnusedMethods[method] = true;
+			}
+
+			public IEnumerable<MethodDefinition> find() {
+				if (possiblyUnusedMethods.Count == 0)
+					return possiblyUnusedMethods.Keys;
+
+				foreach (var type in module.GetTypes()) {
+					foreach (var method in type.Methods)
+						check(method);
+				}
+
+				while (notUnusedStack.Count > 0) {
+					var method = notUnusedStack.Pop();
+					if (!possiblyUnusedMethods.Remove(method))
+						continue;
+					check(method);
+				}
+
+				return possiblyUnusedMethods.Keys;
+			}
+
+			void check(MethodDefinition method) {
+				if (method.Body == null)
+					return;
+				if (possiblyUnusedMethods.ContainsKey(method))
+					return;
+
+				foreach (var instr in method.Body.Instructions) {
+					switch (instr.OpCode.Code) {
+					case Code.Call:
+					case Code.Calli:
+					case Code.Callvirt:
+					case Code.Newobj:
+					case Code.Ldtoken:
+						break;
+					default:
+						continue;
+					}
+
+					var calledMethod = DotNetUtils.getMethod(module, instr.Operand as MethodReference);
+					if (calledMethod == null)
+						continue;
+					if (possiblyUnusedMethods.ContainsKey(calledMethod))
+						notUnusedStack.Push(calledMethod);
+				}
+			}
+		}
+
+		void removeInlinedMethods() {
+			if (!options.InlineMethods || !options.RemoveInlinedMethods)
+				return;
+
+			Log.n("Finding all unused inlined methods");
+
+			// Not all garbage methods are inlined, possibly because we remove some code that calls
+			// the garbage method before the methods inliner has a chance to inline it. Try to find
+			// all garbage methods and other code will figure out if there are any calls left.
+
+			var inlinedMethods = new List<MethodDefinition>();
+			foreach (var type in module.GetTypes()) {
+				foreach (var method in type.Methods) {
+					if (!method.IsStatic || !method.IsAssembly)
+						continue;
+					if (method.Body == null)
+						continue;
+					var instrs = method.Body.Instructions;
+					if (instrs.Count < 2)
+						continue;
+
+					switch (instrs[0].OpCode.Code) {
+					case Code.Ldc_I4:
+					case Code.Ldc_I4_0:
+					case Code.Ldc_I4_1:
+					case Code.Ldc_I4_2:
+					case Code.Ldc_I4_3:
+					case Code.Ldc_I4_4:
+					case Code.Ldc_I4_5:
+					case Code.Ldc_I4_6:
+					case Code.Ldc_I4_7:
+					case Code.Ldc_I4_8:
+					case Code.Ldc_I4_M1:
+					case Code.Ldc_I4_S:
+					case Code.Ldc_I8:
+					case Code.Ldc_R4:
+					case Code.Ldc_R8:
+					case Code.Ldftn:
+					case Code.Ldnull:
+					case Code.Ldstr:
+					case Code.Ldtoken:
+					case Code.Ldsfld:
+					case Code.Ldsflda:
+						if (instrs[1].OpCode.Code != Code.Ret)
+							continue;
+						break;
+
+					case Code.Ldarg:
+					case Code.Ldarg_S:
+					case Code.Ldarg_0:
+					case Code.Ldarg_1:
+					case Code.Ldarg_2:
+					case Code.Ldarg_3:
+					case Code.Call:
+						if (!isCallMethod(method))
+							continue;
+						break;
+
+					default:
+						continue;
+					}
+
+					inlinedMethods.Add(method);
+				}
+			}
+			addMethodsToBeRemoved(new UnusedMethodsFinder(module, inlinedMethods).find(), "Inlined method");
+		}
+
+		bool isCallMethod(MethodDefinition method) {
+			int loadIndex = 0;
+			int methodArgsCount = DotNetUtils.getArgsCount(method);
+			var instrs = method.Body.Instructions;
+			int i = 0;
+			for (; i < instrs.Count; i++) {
+				var instr = instrs[i];
+				switch (instr.OpCode.Code) {
+				case Code.Ldarg:
+				case Code.Ldarg_S:
+				case Code.Ldarg_0:
+				case Code.Ldarg_1:
+				case Code.Ldarg_2:
+				case Code.Ldarg_3:
+					if (DotNetUtils.getArgIndex(method, instr) != loadIndex)
+						return false;
+					loadIndex++;
+					continue;
+				}
+				break;
+			}
+			if (loadIndex != methodArgsCount)
+				return false;
+			if (i + 1 >= instrs.Count)
+				return false;
+
+			if (instrs[i].OpCode.Code != Code.Call && instrs[i].OpCode.Code != Code.Callvirt)
+				return false;
+			if (instrs[i + 1].OpCode.Code != Code.Ret)
+				return false;
+
+			return true;
 		}
 
 		public override IEnumerable<string> getStringDecrypterMethods() {
