@@ -81,6 +81,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		StringDecrypter stringDecrypter;
 		BooleanDecrypter booleanDecrypter;
 		BoolValueInliner boolValueInliner;
+		MetadataTokenObfuscator metadataTokenObfuscator;
 
 		bool canRemoveDecrypterType = true;
 		bool startedDeobfuscating = false;
@@ -313,6 +314,8 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			}
 			DeobfuscatedFile.stringDecryptersAdded();
 
+			metadataTokenObfuscator = new MetadataTokenObfuscator(module);
+
 			if (Operations.DecryptStrings != OpDecryptString.None)
 				addResourceToBeRemoved(stringDecrypter.StringsResource, "Encrypted strings");
 			if (options.DecryptMethods) {
@@ -341,6 +344,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		}
 
 		public override void deobfuscateMethodEnd(Blocks blocks) {
+			metadataTokenObfuscator.deobfuscate(blocks);
 			base.deobfuscateMethodEnd(blocks);
 		}
 
@@ -348,8 +352,10 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			removeInlinedMethods();
 			if (options.RestoreTypes)
 				new TypesRestorer(module).deobfuscate();
-			if (canRemoveDecrypterType && methodsDecrypter.MethodsDecrypterMethod != null)
+			if (canRemoveDecrypterType && methodsDecrypter.MethodsDecrypterMethod != null) {
 				addTypeToBeRemoved(methodsDecrypter.MethodsDecrypterMethod.DeclaringType, "Decrypter type");
+				addTypeToBeRemoved(metadataTokenObfuscator.Type, "Metadata token obfuscator");
+			}
 			base.deobfuscateEnd();
 		}
 

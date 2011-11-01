@@ -75,6 +75,7 @@
     <Compile Include="deobfuscators\dotNET_Reactor\Deobfuscator.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\EncryptedResource.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\LocalTypes.cs" />
+    <Compile Include="deobfuscators\dotNET_Reactor\MetadataTokenObfuscator.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\MethodsDecrypter.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\StringDecrypter.cs" />
     <Compile Include="deobfuscators\Eazfuscator\Deobfuscator.cs" />
