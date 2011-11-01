@@ -160,15 +160,11 @@ namespace de4dot.deobfuscators {
 		}
 
 		static int sortTypeInfos(TypeInfo<ParameterDefinition> a, TypeInfo<ParameterDefinition> b) {
-			if (a.arg.Method.MetadataToken.ToInt32() < b.arg.Method.MetadataToken.ToInt32())
-				return -1;
-			if (a.arg.Method.MetadataToken.ToInt32() > b.arg.Method.MetadataToken.ToInt32())
-				return 1;
+			if (a.arg.Method.MetadataToken.ToInt32() < b.arg.Method.MetadataToken.ToInt32()) return -1;
+			if (a.arg.Method.MetadataToken.ToInt32() > b.arg.Method.MetadataToken.ToInt32()) return 1;
 
-			if (a.arg.Index < b.arg.Index)
-				return -1;
-			if (a.arg.Index < b.arg.Index)
-				return 1;
+			if (a.arg.Index < b.arg.Index) return -1;
+			if (a.arg.Index < b.arg.Index) return 1;
 
 			return 0;
 		}
