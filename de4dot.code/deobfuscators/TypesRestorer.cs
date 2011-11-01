@@ -270,6 +270,14 @@ namespace de4dot.deobfuscators {
 					}
 					break;
 
+				case Code.Ldfld:
+				case Code.Ldflda:
+					args = getPushedArgInstructions(instructions, i);
+					if (args.Count < 1)
+						break;
+					addMethodArgType(getParameter(methodParams, method, args[0]), instr.Operand as FieldReference);
+					break;
+
 				//TODO: For better results, these should be checked:
 				case Code.Starg:
 				case Code.Starg_S:
