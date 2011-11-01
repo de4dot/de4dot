@@ -22,7 +22,7 @@ using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
-namespace de4dot.deobfuscators.dotNET_Reactor {
+namespace de4dot.deobfuscators {
 	class LocalTypes {
 		Dictionary<string, int> localTypes = new Dictionary<string, int>(StringComparer.Ordinal);
 
