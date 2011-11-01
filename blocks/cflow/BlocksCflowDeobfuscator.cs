@@ -18,6 +18,7 @@
 */
 
 using System.Collections.Generic;
+using Mono.Cecil;
 using Mono.Cecil.Cil;
 
 namespace de4dot.blocks.cflow {
@@ -30,6 +31,8 @@ namespace de4dot.blocks.cflow {
 		DeadStoreRemover deadStoreRemover = new DeadStoreRemover();
 		StLdlocFixer stLdlocFixer = new StLdlocFixer();
 		MethodCallInliner methodCallInliner = new MethodCallInliner();
+
+		public bool InlineMethods { get; set; }
 
 		public void init(Blocks blocks) {
 			this.blocks = blocks;
@@ -49,9 +52,11 @@ namespace de4dot.blocks.cflow {
 				if (iterations == 0)
 					changed |= fixDotfuscatorLoop();
 
-				foreach (var block in allBlocks) {
-					methodCallInliner.init(blocks, block);
-					changed |= methodCallInliner.deobfuscate();
+				if (InlineMethods) {
+					foreach (var block in allBlocks) {
+						methodCallInliner.init(blocks, block);
+						changed |= methodCallInliner.deobfuscate();
+					}
 				}
 
 				foreach (var block in allBlocks) {
