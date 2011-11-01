@@ -55,6 +55,7 @@
     <Compile Include="AssemblyClient\SameAppDomainAssemblyServerLoader.cs" />
     <Compile Include="AssemblyResolver.cs" />
     <Compile Include="CommandLineParser.cs" />
+    <Compile Include="deobfuscators\ArrayFinder.cs" />
     <Compile Include="deobfuscators\CliSecure\Deobfuscator.cs" />
     <Compile Include="deobfuscators\CliSecure\ProxyDelegateFinder.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\AntiDebugger.cs" />
@@ -69,7 +70,6 @@
     <Compile Include="deobfuscators\DeobfuscatorInfoBase.cs" />
     <Compile Include="deobfuscators\DeobUtils.cs" />
     <Compile Include="deobfuscators\Dotfuscator\Deobfuscator.cs" />
-    <Compile Include="deobfuscators\dotNET_Reactor\ArrayFinder.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\BooleanDecrypter.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\BoolValueInliner.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\Deobfuscator.cs" />

@@ -23,7 +23,7 @@ using Mono.Cecil.Cil;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
 
-namespace de4dot.deobfuscators.dotNET_Reactor {
+namespace de4dot.deobfuscators {
 	class ArrayFinder {
 		List<byte[]> arrays = new List<byte[]>();
 
