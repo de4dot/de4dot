@@ -56,6 +56,9 @@ namespace de4dot.deobfuscators {
 		// This is non-null only in detect() and deobfuscateBegin().
 		IDeobfuscatedFile DeobfuscatedFile { get; set; }
 
+		// Return true if methods can be inlined
+		bool CanInlineMethods { get; }
+
 		void init(ModuleDefinition module);
 
 		// Same as detect() but may be used by deobfuscators to detect obfuscator that decrypt

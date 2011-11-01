@@ -71,6 +71,10 @@ namespace de4dot.deobfuscators {
 		public abstract string Type { get; }
 		public abstract string Name { get; }
 
+		public virtual bool CanInlineMethods {
+			get { return false; }
+		}
+
 		public Func<string, bool> IsValidName {
 			get { return (name) => optionsBase.ValidNameRegex.isMatch(name); }
 		}

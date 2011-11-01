@@ -210,8 +210,8 @@ namespace de4dot {
 				foreach (var deob in deobfuscators) {
 					if (string.Equals(options.ForcedObfuscatorType, deob.Type, StringComparison.OrdinalIgnoreCase)) {
 						deob.earlyDetect();
-						deob.detect();
 						this.deob = deob;
+						deob.detect();
 						return;
 					}
 				}
@@ -244,6 +244,7 @@ namespace de4dot {
 			IDeobfuscator detected = null;
 			int detectVal = 0;
 			foreach (var deob in deobfuscators) {
+				this.deob = deob;	// So we can call deob.CanInlineMethods in deobfuscate()
 				int val = deob.detect();
 				Log.v("{0,3}: {1}", val, deob.Type);
 				if (val > detectVal) {
@@ -251,6 +252,7 @@ namespace de4dot {
 					detected = deob;
 				}
 			}
+			this.deob = null;
 			return detected;
 		}
 
@@ -470,7 +472,7 @@ namespace de4dot {
 
 			Log.v("Deobfuscating methods");
 			var methodPrinter = new MethodPrinter();
-			var cflowDeobfuscator = new BlocksCflowDeobfuscator();
+			var cflowDeobfuscator = new BlocksCflowDeobfuscator { InlineMethods = deob.CanInlineMethods };
 			foreach (var method in allMethods) {
 				Log.v("Deobfuscating {0} ({1:X8})", method, method.MetadataToken.ToUInt32());
 				Log.indent();
@@ -486,10 +488,8 @@ namespace de4dot {
 						cflowDeobfuscator.deobfuscate();
 					}
 
-					if (deob.deobfuscateOther(blocks) && options.ControlFlowDeobfuscation) {
-						cflowDeobfuscator.init(blocks);
+					if (deob.deobfuscateOther(blocks) && options.ControlFlowDeobfuscation)
 						cflowDeobfuscator.deobfuscate();
-					}
 
 					if (options.ControlFlowDeobfuscation) {
 						numRemovedLocals = blocks.optimizeLocals();
@@ -777,6 +777,7 @@ namespace de4dot {
 
 			deobfuscate(method, "Deobfuscating control flow", (blocks) => {
 				var cflowDeobfuscator = new BlocksCflowDeobfuscator();
+				cflowDeobfuscator.InlineMethods = deob.CanInlineMethods;
 				cflowDeobfuscator.init(blocks);
 				cflowDeobfuscator.deobfuscate();
 			});
