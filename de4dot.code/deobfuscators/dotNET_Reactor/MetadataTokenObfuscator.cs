@@ -51,9 +51,13 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 
 				MethodDefinition fieldMethod = null, typeMethod = null;
 				foreach (var method in type.Methods) {
-					if (DotNetUtils.isMethod(method, "System.RuntimeTypeHandle", "(System.Int32)"))
+					if (method.Parameters.Count != 1)
+						continue;
+					if (method.Parameters[0].ParameterType.FullName != "System.Int32")
+						continue;
+					if (method.MethodReturnType.ReturnType.FullName == "System.RuntimeTypeHandle")
 						typeMethod = method;
-					else if (DotNetUtils.isMethod(method, "System.RuntimeFieldHandle", "(System.Int32)"))
+					else if (method.MethodReturnType.ReturnType.FullName == "System.RuntimeFieldHandle")
 						fieldMethod = method;
 				}
 
@@ -81,6 +85,8 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 					if (call.OpCode.Code != Code.Call)
 						continue;
 					var method = call.Operand as MethodReference;
+					if (method == null)
+						continue;
 					if (!MemberReferenceHelper.compareTypes(type, method.DeclaringType))
 						continue;
 					var methodDef = DotNetUtils.getMethod(module, method);
