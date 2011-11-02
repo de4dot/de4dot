@@ -27,7 +27,7 @@ namespace de4dot.renamer {
 	class Module : IResolver {
 		IObfuscatedFile obfuscatedFile;
 		MemberRefFinder memberRefFinder;
-		DefDict<TypeDef> allTypes = new DefDict<TypeDef>();
+		TypeDefDict allTypes = new TypeDefDict();
 		IList<RefToDef<TypeReference, TypeDefinition>> typeRefsToRename = new List<RefToDef<TypeReference, TypeDefinition>>();
 		IList<RefToDef<MethodReference, MethodDefinition>> methodRefsToRename = new List<RefToDef<MethodReference, MethodDefinition>>();
 		IList<RefToDef<FieldReference, FieldDefinition>> fieldRefsToRename = new List<RefToDef<FieldReference, FieldDefinition>>();
@@ -187,7 +187,7 @@ namespace de4dot.renamer {
 			}
 		}
 
-		public void findAllMemberReferences() {
+		public void findAllMemberReferences(ref int typeIndex) {
 			memberRefFinder = new MemberRefFinder();
 			memberRefFinder.findAll(ModuleDefinition, ModuleDefinition.Types);
 			allMethods = new List<MethodDefinition>(memberRefFinder.methodDefinitions.Keys);
@@ -195,7 +195,7 @@ namespace de4dot.renamer {
 			var allTypesList = new List<TypeDef>();
 			foreach (var type in new List<TypeDefinition>(memberRefFinder.typeDefinitions.Keys)) {
 				memberRefFinder.removeTypeDefinition(type);
-				var typeDef = new TypeDef(type, this);
+				var typeDef = new TypeDef(type, this, typeIndex++);
 				allTypes.add(typeDef);
 				allTypesList.Add(typeDef);
 
@@ -302,7 +302,7 @@ namespace de4dot.renamer {
 		}
 
 		void rebuildAllTypesDict() {
-			var newAllTypes = new DefDict<TypeDef>();
+			var newAllTypes = new TypeDefDict();
 			foreach (var typeDef in allTypes.getAll())
 				newAllTypes.add(typeDef);
 			allTypes = newAllTypes;

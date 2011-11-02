@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using Mono.Cecil;
+using de4dot.blocks;
 
 namespace de4dot.renamer {
 	interface IResolver {
@@ -34,39 +35,23 @@ namespace de4dot.renamer {
 		EventDef findEvent(MethodReference methodReference);
 	}
 
-	class MyDict<T> {
-		Dictionary<string, T> dict = new Dictionary<string, T>(StringComparer.Ordinal);
-		public T this[string key] {
-			get {
-				T t;
-				if (dict.TryGetValue(key, out t))
-					return t;
-				return default(T);
-			}
-			set {
-				dict[key] = value;
-			}
-		}
-
-		public IEnumerable<T> getAll() {
-			foreach (var elem in dict.Values)
-				yield return elem;
-		}
+	interface RefDict<TRef, TMRef> where TRef : Ref where TMRef : MemberReference {
+		IEnumerable<TRef> getAll();
+		IEnumerable<TRef> getSorted();
+		TRef find(TMRef tmref);
+		void add(TRef tref);
 	}
 
-	class DefDict<T> where T : Ref {
-		MyDict<IList<T>> dict = new MyDict<IList<T>>();
-		public Action<T, T> HandleDupe { get; set; }
+	class TypeDefDict : RefDict<TypeDef, TypeReference> {
+		Dictionary<ScopeAndTokenKey, TypeDef> tokenToTypeDef = new Dictionary<ScopeAndTokenKey, TypeDef>();
+		Dictionary<TypeReferenceKey, TypeDef> typeRefToDef = new Dictionary<TypeReferenceKey, TypeDef>();
 
-		public IEnumerable<T> getAll() {
-			foreach (var list in dict.getAll()) {
-				foreach (var t in list)
-					yield return t;
-			}
+		public IEnumerable<TypeDef> getAll() {
+			return tokenToTypeDef.Values;
 		}
 
-		public IEnumerable<T> getSorted() {
-			var list = new List<T>(getAll());
+		public IEnumerable<TypeDef> getSorted() {
+			var list = new List<TypeDef>(getAll());
 			list.Sort((a, b) => {
 				if (a.Index < b.Index) return -1;
 				if (a.Index > b.Index) return 1;
@@ -75,46 +60,140 @@ namespace de4dot.renamer {
 			return list;
 		}
 
-		public T find(MemberReference mr) {
-			var list = dict[mr.Name];
-			if (list == null)
-				return null;
+		public TypeDef find(TypeReference typeReference) {
+			TypeDef typeDef;
+			if (tokenToTypeDef.TryGetValue(new ScopeAndTokenKey(typeReference), out typeDef))
+				return typeDef;
 
-			foreach (T t in list) {
-				if (t.isSame(mr))
-					return t;
-			}
-			return null;
+			typeRefToDef.TryGetValue(new TypeReferenceKey(typeReference), out typeDef);
+			return typeDef;
 		}
 
-		public void add(T t) {
-			var other = find(t.MemberReference);
-			if (other != null) {
-				handleDupe(t, other);
-				return;
-			}
+		public void add(TypeDef typeDef) {
+			tokenToTypeDef[new ScopeAndTokenKey(typeDef.TypeDefinition)] = typeDef;
+			typeRefToDef[new TypeReferenceKey(typeDef.TypeDefinition)] = typeDef;
+		}
+	}
 
-			var list = dict[t.MemberReference.Name];
-			if (list == null)
-				dict[t.MemberReference.Name] = list = new List<T>();
-			list.Add(t);
-			return;
+	class FieldDefDict : RefDict<FieldDef, FieldReference> {
+		Dictionary<ScopeAndTokenKey, FieldDef> tokenToFieldDef = new Dictionary<ScopeAndTokenKey, FieldDef>();
+		Dictionary<FieldReferenceKey, FieldDef> fieldRefToDef = new Dictionary<FieldReferenceKey, FieldDef>();
+
+		public IEnumerable<FieldDef> getAll() {
+			return tokenToFieldDef.Values;
 		}
 
-		public void replaceOldWithNew(T oldOne, T newOne) {
-			if (find(newOne.MemberReference) != oldOne)
-				throw new ApplicationException("Not same member reference");
-
-			var list = dict[oldOne.MemberReference.Name];
-			if (!list.Remove(oldOne))
-				throw new ApplicationException("Could not remove old one");
-			list.Add(newOne);
+		public IEnumerable<FieldDef> getSorted() {
+			var list = new List<FieldDef>(getAll());
+			list.Sort((a, b) => {
+				if (a.Index < b.Index) return -1;
+				if (a.Index > b.Index) return 1;
+				return 0;
+			});
+			return list;
 		}
 
-		void handleDupe(T newOne, T oldOne) {
-			Log.v("Duplicate MemberReference found: {0} ({1:X8} vs {2:X8})", newOne.MemberReference, newOne.MemberReference.MetadataToken.ToUInt32(), oldOne.MemberReference.MetadataToken.ToUInt32());
-			if (HandleDupe != null)
-				HandleDupe(newOne, oldOne);
+		public FieldDef find(FieldReference fieldReference) {
+			FieldDef fieldDef;
+			if (tokenToFieldDef.TryGetValue(new ScopeAndTokenKey(fieldReference), out fieldDef))
+				return fieldDef;
+
+			fieldRefToDef.TryGetValue(new FieldReferenceKey(fieldReference), out fieldDef);
+			return fieldDef;
+		}
+
+		public void add(FieldDef fieldDef) {
+			tokenToFieldDef[new ScopeAndTokenKey(fieldDef.FieldDefinition)] = fieldDef;
+			fieldRefToDef[new FieldReferenceKey(fieldDef.FieldDefinition)] = fieldDef;
+		}
+	}
+
+	class MethodDefDict : RefDict<MethodDef, MethodReference> {
+		Dictionary<ScopeAndTokenKey, MethodDef> tokenToMethodDef = new Dictionary<ScopeAndTokenKey, MethodDef>();
+		Dictionary<MethodReferenceKey, MethodDef> methodRefToDef = new Dictionary<MethodReferenceKey, MethodDef>();
+
+		public IEnumerable<MethodDef> getAll() {
+			return tokenToMethodDef.Values;
+		}
+
+		public IEnumerable<MethodDef> getSorted() {
+			var list = new List<MethodDef>(getAll());
+			list.Sort((a, b) => {
+				if (a.Index < b.Index) return -1;
+				if (a.Index > b.Index) return 1;
+				return 0;
+			});
+			return list;
+		}
+
+		public MethodDef find(MethodReference methodReference) {
+			MethodDef methodDef;
+			if (tokenToMethodDef.TryGetValue(new ScopeAndTokenKey(methodReference), out methodDef))
+				return methodDef;
+
+			methodRefToDef.TryGetValue(new MethodReferenceKey(methodReference), out methodDef);
+			return methodDef;
+		}
+
+		public void add(MethodDef methodDef) {
+			tokenToMethodDef[new ScopeAndTokenKey(methodDef.MethodDefinition)] = methodDef;
+			methodRefToDef[new MethodReferenceKey(methodDef.MethodDefinition)] = methodDef;
+		}
+	}
+
+	class PropertyDefDict : RefDict<PropertyDef, PropertyReference> {
+		Dictionary<ScopeAndTokenKey, PropertyDef> tokenToPropDef = new Dictionary<ScopeAndTokenKey, PropertyDef>();
+
+		public IEnumerable<PropertyDef> getAll() {
+			return tokenToPropDef.Values;
+		}
+
+		public IEnumerable<PropertyDef> getSorted() {
+			var list = new List<PropertyDef>(getAll());
+			list.Sort((a, b) => {
+				if (a.Index < b.Index) return -1;
+				if (a.Index > b.Index) return 1;
+				return 0;
+			});
+			return list;
+		}
+
+		public PropertyDef find(PropertyReference propertyReference) {
+			PropertyDef propDef;
+			tokenToPropDef.TryGetValue(new ScopeAndTokenKey(propertyReference), out propDef);
+			return propDef;
+		}
+
+		public void add(PropertyDef propDef) {
+			tokenToPropDef[new ScopeAndTokenKey(propDef.PropertyDefinition)] = propDef;
+		}
+	}
+
+	class EventDefDict : RefDict<EventDef, EventReference> {
+		Dictionary<ScopeAndTokenKey, EventDef> tokenToEventDef = new Dictionary<ScopeAndTokenKey, EventDef>();
+
+		public IEnumerable<EventDef> getAll() {
+			return tokenToEventDef.Values;
+		}
+
+		public IEnumerable<EventDef> getSorted() {
+			var list = new List<EventDef>(getAll());
+			list.Sort((a, b) => {
+				if (a.Index < b.Index) return -1;
+				if (a.Index > b.Index) return 1;
+				return 0;
+			});
+			return list;
+		}
+
+		public EventDef find(EventReference eventReference) {
+			EventDef propDef;
+			tokenToEventDef.TryGetValue(new ScopeAndTokenKey(eventReference), out propDef);
+			return propDef;
+		}
+
+		public void add(EventDef eventDef) {
+			tokenToEventDef[new ScopeAndTokenKey(eventDef.EventDefinition)] = eventDef;
 		}
 	}
 

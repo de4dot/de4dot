@@ -44,8 +44,54 @@ namespace de4dot.blocks {
 		TypeReference,
 	}
 
+	public class ScopeAndTokenKey {
+		readonly IMetadataScope scope;
+		readonly int token;
+
+		public ScopeAndTokenKey(TypeReference type)
+			: this(type.Scope, type.MetadataToken.ToInt32()) {
+		}
+
+		public ScopeAndTokenKey(FieldReference field)
+			: this(field.DeclaringType == null ? null : field.DeclaringType.Scope, field.MetadataToken.ToInt32()) {
+		}
+
+		public ScopeAndTokenKey(MethodReference method)
+			: this(method.DeclaringType == null ? null : method.DeclaringType.Scope, method.MetadataToken.ToInt32()) {
+		}
+
+		public ScopeAndTokenKey(PropertyReference prop)
+			: this(prop.DeclaringType == null ? null : prop.DeclaringType.Scope, prop.MetadataToken.ToInt32()) {
+		}
+
+		public ScopeAndTokenKey(EventReference evt)
+			: this(evt.DeclaringType == null ? null : evt.DeclaringType.Scope, evt.MetadataToken.ToInt32()) {
+		}
+
+		public ScopeAndTokenKey(IMetadataScope scope, int token) {
+			this.scope = scope;
+			this.token = token;
+		}
+
+		public override int GetHashCode() {
+			return token + MemberReferenceHelper.scopeHashCode(scope);
+		}
+
+		public override bool Equals(object obj) {
+			var other = obj as ScopeAndTokenKey;
+			if (other == null)
+				return false;
+			return token == other.token &&
+				MemberReferenceHelper.compareScope(scope, other.scope);
+		}
+
+		public override string ToString() {
+			return string.Format("{0:X8} {1}", token, scope);
+		}
+	}
+
 	public class TypeReferenceKey {
-		TypeReference typeRef;
+		readonly TypeReference typeRef;
 
 		public TypeReference TypeReference {
 			get { return typeRef; }
@@ -72,7 +118,7 @@ namespace de4dot.blocks {
 	}
 
 	public class FieldReferenceKey {
-		FieldReference fieldRef;
+		readonly FieldReference fieldRef;
 
 		public FieldReference FieldReference {
 			get { return fieldRef; }
@@ -99,7 +145,7 @@ namespace de4dot.blocks {
 	}
 
 	public class PropertyReferenceKey {
-		PropertyReference propRef;
+		readonly PropertyReference propRef;
 
 		public PropertyReference PropertyReference {
 			get { return propRef; }
@@ -126,7 +172,7 @@ namespace de4dot.blocks {
 	}
 
 	public class EventReferenceKey {
-		EventReference eventRef;
+		readonly EventReference eventRef;
 
 		public EventReference EventReference {
 			get { return eventRef; }
@@ -153,7 +199,7 @@ namespace de4dot.blocks {
 	}
 
 	public class MethodReferenceKey {
-		MethodReference methodRef;
+		readonly MethodReference methodRef;
 
 		public MethodReference MethodReference {
 			get { return methodRef; }
@@ -180,7 +226,7 @@ namespace de4dot.blocks {
 	}
 
 	public class FieldReferenceAndDeclaringTypeKey {
-		FieldReference fieldRef;
+		readonly FieldReference fieldRef;
 
 		public FieldReference FieldReference {
 			get { return fieldRef; }
@@ -209,7 +255,7 @@ namespace de4dot.blocks {
 	}
 
 	public class MethodReferenceAndDeclaringTypeKey {
-		MethodReference methodRef;
+		readonly MethodReference methodRef;
 
 		public MethodReference MethodReference {
 			get { return methodRef; }
@@ -296,7 +342,7 @@ namespace de4dot.blocks {
 			return name;
 		}
 
-		static bool compareScope(IMetadataScope a, IMetadataScope b) {
+		public static bool compareScope(IMetadataScope a, IMetadataScope b) {
 			if (ReferenceEquals(a, b))
 				return true;
 			if (a == null || b == null)
@@ -304,7 +350,7 @@ namespace de4dot.blocks {
 			return getCanonicalizedScopeName(a) == getCanonicalizedScopeName(b);
 		}
 
-		static int scopeHashCode(IMetadataScope a) {
+		public static int scopeHashCode(IMetadataScope a) {
 			if (a == null)
 				return 0;
 			return getCanonicalizedScopeName(a).GetHashCode();

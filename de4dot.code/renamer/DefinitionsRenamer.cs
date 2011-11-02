@@ -190,11 +190,12 @@ namespace de4dot.renamer {
 
 		void findAllMemberReferences() {
 			Log.v("Finding all MemberReferences");
+			int index = 0;
 			foreach (var module in modules) {
 				if (modules.Count > 1)
 					Log.v("Finding all MemberReferences ({0})", module.Filename);
 				Log.indent();
-				module.findAllMemberReferences();
+				module.findAllMemberReferences(ref index);
 				Log.deIndent();
 			}
 		}

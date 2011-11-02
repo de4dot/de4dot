@@ -289,11 +289,11 @@ namespace de4dot.renamer {
 		public Module module;
 		string newNamespace = null;
 
-		DefDict<EventDef> events = new DefDict<EventDef>();
-		DefDict<FieldDef> fields = new DefDict<FieldDef>();
-		DefDict<MethodDef> methods = new DefDict<MethodDef>();
-		DefDict<PropertyDef> properties = new DefDict<PropertyDef>();
-		DefDict<TypeDef> types = new DefDict<TypeDef>();
+		EventDefDict events = new EventDefDict();
+		FieldDefDict fields = new FieldDefDict();
+		MethodDefDict methods = new MethodDefDict();
+		PropertyDefDict properties = new PropertyDefDict();
+		TypeDefDict types = new TypeDefDict();
 		IList<GenericParamDef> genericParams;
 		public TypeDefinition TypeDefinition {
 			get { return (TypeDefinition)MemberReference; }
@@ -316,11 +316,6 @@ namespace de4dot.renamer {
 			: base(typeDefinition, null, index) {
 			this.module = module;
 			genericParams = createGenericParamDefList(TypeDefinition.GenericParameters);
-
-			fields.HandleDupe = (newOne, oldOne) => {
-				if (oldOne.FieldDefinition.IsLiteral && !newOne.FieldDefinition.IsLiteral)
-					fields.replaceOldWithNew(oldOne, newOne);
-			};
 		}
 
 		public override bool isSame(MemberReference mr) {
