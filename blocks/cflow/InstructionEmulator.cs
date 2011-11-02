@@ -481,7 +481,7 @@ namespace de4dot.blocks.cflow {
 			case ValueType.Int32:	valueStack.push(Int32Value.Conv_U1((Int32Value)val1)); break;
 			case ValueType.Int64:	valueStack.push(Int32Value.Conv_U1((Int64Value)val1)); break;
 			case ValueType.Real8:	valueStack.push(Int32Value.Conv_U1((Real8Value)val1)); break;
-			default:				valueStack.pushUnknown(); break;
+			default:				valueStack.push(Int32Value.createUnknownUInt8()); break;
 			}
 		}
 
@@ -491,7 +491,7 @@ namespace de4dot.blocks.cflow {
 			case ValueType.Int32:	valueStack.push(Int32Value.Conv_I1((Int32Value)val1)); break;
 			case ValueType.Int64:	valueStack.push(Int32Value.Conv_I1((Int64Value)val1)); break;
 			case ValueType.Real8:	valueStack.push(Int32Value.Conv_I1((Real8Value)val1)); break;
-			default:				valueStack.pushUnknown(); break;
+			default:				valueStack.push(Int32Value.createUnknown()); break;
 			}
 		}
 
@@ -501,7 +501,7 @@ namespace de4dot.blocks.cflow {
 			case ValueType.Int32:	valueStack.push(Int32Value.Conv_U2((Int32Value)val1)); break;
 			case ValueType.Int64:	valueStack.push(Int32Value.Conv_U2((Int64Value)val1)); break;
 			case ValueType.Real8:	valueStack.push(Int32Value.Conv_U2((Real8Value)val1)); break;
-			default:				valueStack.pushUnknown(); break;
+			default:				valueStack.push(Int32Value.createUnknownUInt16()); break;
 			}
 		}
 
@@ -511,7 +511,7 @@ namespace de4dot.blocks.cflow {
 			case ValueType.Int32:	valueStack.push(Int32Value.Conv_I2((Int32Value)val1)); break;
 			case ValueType.Int64:	valueStack.push(Int32Value.Conv_I2((Int64Value)val1)); break;
 			case ValueType.Real8:	valueStack.push(Int32Value.Conv_I2((Real8Value)val1)); break;
-			default:				valueStack.pushUnknown(); break;
+			default:				valueStack.push(Int32Value.createUnknown()); break;
 			}
 		}
 
@@ -521,7 +521,7 @@ namespace de4dot.blocks.cflow {
 			case ValueType.Int32:	valueStack.push(Int32Value.Conv_U4((Int32Value)val1)); break;
 			case ValueType.Int64:	valueStack.push(Int32Value.Conv_U4((Int64Value)val1)); break;
 			case ValueType.Real8:	valueStack.push(Int32Value.Conv_U4((Real8Value)val1)); break;
-			default:				valueStack.pushUnknown(); break;
+			default:				valueStack.push(Int32Value.createUnknown()); break;
 			}
 		}
 
@@ -531,7 +531,7 @@ namespace de4dot.blocks.cflow {
 			case ValueType.Int32:	valueStack.push(Int32Value.Conv_I4((Int32Value)val1)); break;
 			case ValueType.Int64:	valueStack.push(Int32Value.Conv_I4((Int64Value)val1)); break;
 			case ValueType.Real8:	valueStack.push(Int32Value.Conv_I4((Real8Value)val1)); break;
-			default:				valueStack.pushUnknown(); break;
+			default:				valueStack.push(Int32Value.createUnknown()); break;
 			}
 		}
 
@@ -541,7 +541,7 @@ namespace de4dot.blocks.cflow {
 			case ValueType.Int32:	valueStack.push(Int64Value.Conv_U8((Int32Value)val1)); break;
 			case ValueType.Int64:	valueStack.push(Int64Value.Conv_U8((Int64Value)val1)); break;
 			case ValueType.Real8:	valueStack.push(Int64Value.Conv_U8((Real8Value)val1)); break;
-			default:				valueStack.pushUnknown(); break;
+			default:				valueStack.push(Int64Value.createUnknown()); break;
 			}
 		}
 
@@ -551,7 +551,7 @@ namespace de4dot.blocks.cflow {
 			case ValueType.Int32:	valueStack.push(Int64Value.Conv_I8((Int32Value)val1)); break;
 			case ValueType.Int64:	valueStack.push(Int64Value.Conv_I8((Int64Value)val1)); break;
 			case ValueType.Real8:	valueStack.push(Int64Value.Conv_I8((Real8Value)val1)); break;
-			default:				valueStack.pushUnknown(); break;
+			default:				valueStack.push(Int64Value.createUnknown()); break;
 			}
 		}
 
