@@ -245,10 +245,10 @@ namespace de4dot {
 
 			IEnumerable<string> doDirectoryInfo(SearchDir searchDir, DirectoryInfo di) {
 				if (!di.Exists)
-					return null;
+					return new List<string>();
 
 				if (visitedDirectory.ContainsKey(di.FullName))
-					return null;
+					return new List<string>();
 				visitedDirectory[di.FullName] = true;
 
 				FileSystemInfo[] fsinfos;
@@ -256,10 +256,10 @@ namespace de4dot {
 					fsinfos = di.GetFileSystemInfos();
 				}
 				catch (UnauthorizedAccessException) {
-					return null;
+					return new List<string>();
 				}
 				catch (IOException) {
-					return null;
+					return new List<string>();
 				}
 				return recursiveAdd(searchDir, fsinfos);
 			}
