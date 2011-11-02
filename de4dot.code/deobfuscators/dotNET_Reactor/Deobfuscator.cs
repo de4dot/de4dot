@@ -420,8 +420,6 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			if (!options.InlineMethods || !options.RemoveInlinedMethods)
 				return;
 
-			Log.n("Finding all unused inlined methods");
-
 			// Not all garbage methods are inlined, possibly because we remove some code that calls
 			// the garbage method before the methods inliner has a chance to inline it. Try to find
 			// all garbage methods and other code will figure out if there are any calls left.
