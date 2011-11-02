@@ -488,14 +488,6 @@ namespace de4dot.deobfuscators {
 				addTypesToBeRemoved(proxyDelegateFinder.DelegateCreatorTypes, "Proxy delegate creator type");
 		}
 
-		protected TypeDefinition getModuleType() {
-			return DotNetUtils.getModuleType(module);
-		}
-
-		protected TypeDefinition getType(TypeReference typeReference) {
-			return DotNetUtils.getType(module, typeReference);
-		}
-
 		protected Resource getResource(IEnumerable<string> strings) {
 			return DotNetUtils.getResource(module, strings);
 		}
