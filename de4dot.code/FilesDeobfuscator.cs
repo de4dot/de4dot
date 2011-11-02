@@ -78,7 +78,7 @@ namespace de4dot {
 		}
 
 		void detectObfuscators() {
-			foreach (var file in loadAllFiles()) {
+			foreach (var file in loadAllFiles(true)) {
 				removeModule(file.ModuleDefinition);
 			}
 		}
@@ -114,7 +114,7 @@ namespace de4dot {
 			saveAllFiles(allFiles);
 		}
 
-		IEnumerable<IObfuscatedFile> loadAllFiles() {
+		IEnumerable<IObfuscatedFile> loadAllFiles(bool onlyScan = false) {
 			var loader = new DotNetFileLoader(new DotNetFileLoader.Options {
 				PossibleFiles  = options.Files,
 				SearchDirs = options.SearchDirs,
@@ -125,6 +125,7 @@ namespace de4dot {
 				RenameSymbols = options.RenameSymbols,
 				ControlFlowDeobfuscation = options.ControlFlowDeobfuscation,
 				KeepObfuscatorTypes = options.KeepObfuscatorTypes,
+				CreateDestinationDir = !onlyScan,
 			});
 			return loader.load();
 		}
@@ -144,6 +145,7 @@ namespace de4dot {
 				public bool RenameSymbols { get; set; }
 				public bool ControlFlowDeobfuscation { get; set; }
 				public bool KeepObfuscatorTypes { get; set; }
+				public bool CreateDestinationDir { get; set; }
 			}
 
 			public DotNetFileLoader(Options options) {
@@ -203,7 +205,8 @@ namespace de4dot {
 				}
 				else {
 					Log.n("Detected {0} ({1})", deob.Name, file.Filename);
-					createDirectories(Path.GetDirectoryName(file.NewFilename));
+					if (options.CreateDestinationDir)
+						createDirectories(Path.GetDirectoryName(file.NewFilename));
 					return true;
 				}
 			}
