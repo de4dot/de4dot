@@ -40,6 +40,7 @@ namespace de4dot.renamer {
 		IEnumerable<TRef> getSorted();
 		TRef find(TMRef tmref);
 		void add(TRef tref);
+		void onTypesRenamed();
 	}
 
 	class TypeDefDict : RefDict<TypeDef, TypeReference> {
@@ -72,6 +73,13 @@ namespace de4dot.renamer {
 		public void add(TypeDef typeDef) {
 			tokenToTypeDef[new ScopeAndTokenKey(typeDef.TypeDefinition)] = typeDef;
 			typeRefToDef[new TypeReferenceKey(typeDef.TypeDefinition)] = typeDef;
+		}
+
+		public void onTypesRenamed() {
+			var all = new List<TypeDef>(typeRefToDef.Values);
+			typeRefToDef.Clear();
+			foreach (var typeDef in all)
+				typeRefToDef[new TypeReferenceKey(typeDef.TypeDefinition)] = typeDef;
 		}
 	}
 
@@ -106,6 +114,13 @@ namespace de4dot.renamer {
 			tokenToFieldDef[new ScopeAndTokenKey(fieldDef.FieldDefinition)] = fieldDef;
 			fieldRefToDef[new FieldReferenceKey(fieldDef.FieldDefinition)] = fieldDef;
 		}
+
+		public void onTypesRenamed() {
+			var all = new List<FieldDef>(fieldRefToDef.Values);
+			fieldRefToDef.Clear();
+			foreach (var fieldDef in all)
+				fieldRefToDef[new FieldReferenceKey(fieldDef.FieldDefinition)] = fieldDef;
+		}
 	}
 
 	class MethodDefDict : RefDict<MethodDef, MethodReference> {
@@ -139,6 +154,13 @@ namespace de4dot.renamer {
 			tokenToMethodDef[new ScopeAndTokenKey(methodDef.MethodDefinition)] = methodDef;
 			methodRefToDef[new MethodReferenceKey(methodDef.MethodDefinition)] = methodDef;
 		}
+
+		public void onTypesRenamed() {
+			var all = new List<MethodDef>(methodRefToDef.Values);
+			methodRefToDef.Clear();
+			foreach (var methodDef in all)
+				methodRefToDef[new MethodReferenceKey(methodDef.MethodDefinition)] = methodDef;
+		}
 	}
 
 	class PropertyDefDict : RefDict<PropertyDef, PropertyReference> {
@@ -167,6 +189,9 @@ namespace de4dot.renamer {
 		public void add(PropertyDef propDef) {
 			tokenToPropDef[new ScopeAndTokenKey(propDef.PropertyDefinition)] = propDef;
 		}
+
+		public void onTypesRenamed() {
+		}
 	}
 
 	class EventDefDict : RefDict<EventDef, EventReference> {
@@ -194,6 +219,9 @@ namespace de4dot.renamer {
 
 		public void add(EventDef eventDef) {
 			tokenToEventDef[new ScopeAndTokenKey(eventDef.EventDefinition)] = eventDef;
+		}
+
+		public void onTypesRenamed() {
 		}
 	}
 

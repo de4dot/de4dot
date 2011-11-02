@@ -303,8 +303,10 @@ namespace de4dot.renamer {
 
 		void rebuildAllTypesDict() {
 			var newAllTypes = new TypeDefDict();
-			foreach (var typeDef in allTypes.getAll())
+			foreach (var typeDef in allTypes.getAll()) {
+				typeDef.onTypesRenamed();
 				newAllTypes.add(typeDef);
+			}
 			allTypes = newAllTypes;
 		}
 
