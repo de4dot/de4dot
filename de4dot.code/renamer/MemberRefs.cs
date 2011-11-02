@@ -351,6 +351,14 @@ namespace de4dot.renamer {
 			}
 		}
 
+		// Called when all types have been renamed
+		public void onTypesRenamed() {
+			events.onTypesRenamed();
+			fields.onTypesRenamed();
+			methods.onTypesRenamed();
+			types.onTypesRenamed();
+		}
+
 		public IEnumerable<TypeDef> getAllInterfaces() {
 			if (isInterface())
 				yield return this;
