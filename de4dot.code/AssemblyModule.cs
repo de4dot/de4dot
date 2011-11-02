@@ -22,6 +22,7 @@ using System.IO;
 using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.MyStuff;
+using de4dot.blocks;
 
 namespace de4dot {
 	class AssemblyModule {
@@ -51,6 +52,7 @@ namespace de4dot {
 		public ModuleDefinition reload(byte[] newModuleData, Dictionary<uint, DumpedMethod> dumpedMethods) {
 			var assemblyResolver = AssemblyResolver.Instance;
 			assemblyResolver.removeModule(module);
+			DotNetUtils.typeCaches.invalidate(module);
 			this.dumpedMethods = dumpedMethods;
 
 			var readerParameters = new ReaderParameters(ReadingMode.Deferred);

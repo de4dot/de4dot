@@ -23,6 +23,57 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 
 namespace de4dot.blocks {
+	class TypeCache {
+		ModuleDefinition module;
+		Dictionary<TypeReferenceKey, TypeDefinition> typeRefToDef = new Dictionary<TypeReferenceKey, TypeDefinition>();
+
+		public TypeCache(ModuleDefinition module) {
+			this.module = module;
+			init();
+		}
+
+		void init() {
+			foreach (var type in module.GetTypes()) {
+				var key = new TypeReferenceKey(type);
+				typeRefToDef[key] = type;
+			}
+		}
+
+		public TypeDefinition lookup(TypeReference typeReference) {
+			if (typeReference is TypeDefinition)
+				return (TypeDefinition)typeReference;
+			TypeDefinition typeDefinition;
+			typeRefToDef.TryGetValue(new TypeReferenceKey(typeReference), out typeDefinition);
+			return typeDefinition;
+		}
+	}
+
+	public class TypeCaches {
+		Dictionary<ModuleDefinition, TypeCache> typeCaches = new Dictionary<ModuleDefinition, TypeCache>();
+
+		// Should be called when the whole module is reloaded or when a lot of types have been
+		// modified (eg. renamed)
+		public void invalidate(ModuleDefinition module) {
+			if (module == null)
+				return;
+			typeCaches.Remove(module);
+		}
+
+		// Call this to invalidate all modules
+		public void invalidateAll() {
+			typeCaches.Clear();
+		}
+
+		public TypeDefinition lookup(ModuleDefinition module, TypeReference typeReference) {
+			if (typeReference is TypeDefinition)
+				return (TypeDefinition)typeReference;
+			TypeCache typeCache;
+			if (!typeCaches.TryGetValue(module, out typeCache))
+				typeCaches[module] = typeCache = new TypeCache(module);
+			return typeCache.lookup(typeReference);
+		}
+	}
+
 	public class CallCounter {
 		Dictionary<MethodReferenceAndDeclaringTypeKey, int> calls = new Dictionary<MethodReferenceAndDeclaringTypeKey, int>();
 
@@ -78,6 +129,8 @@ namespace de4dot.blocks {
 	}
 
 	public static class DotNetUtils {
+		public static readonly TypeCaches typeCaches = new TypeCaches();
+
 		public static bool isLdcI4(Instruction instruction) {
 			return isLdcI4(instruction.OpCode.Code);
 		}
@@ -309,11 +362,7 @@ namespace de4dot.blocks {
 				return null;
 			if (typeReference is TypeDefinition)
 				return (TypeDefinition)typeReference;
-			foreach (var type in module.GetTypes()) {
-				if (MemberReferenceHelper.compareTypes(type, typeReference))
-					return type;
-			}
-			return null;
+			return typeCaches.lookup(module, typeReference);
 		}
 
 		public static FieldDefinition getField(ModuleDefinition module, FieldReference field) {

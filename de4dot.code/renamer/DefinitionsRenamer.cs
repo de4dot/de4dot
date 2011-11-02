@@ -124,6 +124,7 @@ namespace de4dot.renamer {
 			renameMemberDefinitions();
 			renameMemberReferences();
 			renameResources();
+			DotNetUtils.typeCaches.invalidateAll();
 		}
 
 		void initAllTypes() {

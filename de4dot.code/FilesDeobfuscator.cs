@@ -20,6 +20,8 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using Mono.Cecil;
+using de4dot.blocks;
 using de4dot.renamer;
 using de4dot.deobfuscators;
 using de4dot.AssemblyClient;
@@ -70,9 +72,14 @@ namespace de4dot {
 				deobfuscateAll();
 		}
 
+		void removeModule(ModuleDefinition module) {
+			AssemblyResolver.Instance.removeModule(module);
+			DotNetUtils.typeCaches.invalidate(module);
+		}
+
 		void detectObfuscators() {
 			foreach (var file in loadAllFiles()) {
-				AssemblyResolver.Instance.removeModule(file.ModuleDefinition);
+				removeModule(file.ModuleDefinition);
 			}
 		}
 
@@ -88,7 +95,7 @@ namespace de4dot {
 
 					file.save();
 
-					AssemblyResolver.Instance.removeModule(file.ModuleDefinition);
+					removeModule(file.ModuleDefinition);
 				}
 				catch (Exception ex) {
 					Log.w("Could not deobfuscate {0}. Use -v to see stack trace", file.Filename);
