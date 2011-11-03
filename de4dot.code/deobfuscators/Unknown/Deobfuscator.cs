@@ -21,16 +21,17 @@ using System.Text.RegularExpressions;
 
 namespace de4dot.deobfuscators.Unknown {
 	class DeobfuscatorInfo : DeobfuscatorInfoBase {
+		public const string THE_NAME = "Unknown";
 		public DeobfuscatorInfo()
-			: base("un") {
+			: base() {
 		}
 
-		internal static string ObfuscatorType {
-			get { return "Unknown"; }
+		public override string Name {
+			get { return THE_NAME; }
 		}
 
 		public override string Type {
-			get { return ObfuscatorType; }
+			get { return "un"; }
 		}
 
 		public override IDeobfuscator createDeobfuscator() {
@@ -48,7 +49,7 @@ namespace de4dot.deobfuscators.Unknown {
 		}
 
 		public override string Type {
-			get { return DeobfuscatorInfo.ObfuscatorType; }
+			get { return DeobfuscatorInfo.THE_NAME; }
 		}
 
 		public override string Name {

@@ -28,22 +28,23 @@ using de4dot.blocks;
 
 namespace de4dot.deobfuscators.CliSecure {
 	class DeobfuscatorInfo : DeobfuscatorInfoBase {
+		public const string THE_NAME = "CliSecure";
 		const string DEFAULT_REGEX = @"[a-zA-Z_0-9>}$]$";
 		BoolOption fixResources;
 		BoolOption removeStackFrameHelper;
 
 		public DeobfuscatorInfo()
-			: base("cs", DEFAULT_REGEX) {
+			: base(DEFAULT_REGEX) {
 			fixResources = new BoolOption(null, makeArgName("rsrc"), "Decrypt resources", true);
 			removeStackFrameHelper = new BoolOption(null, makeArgName("stack"), "Remove all StackFrameHelper code", true);
 		}
 
-		internal static string ObfuscatorType {
-			get { return "CliSecure"; }
+		public override string Name {
+			get { return THE_NAME; }
 		}
 
 		public override string Type {
-			get { return ObfuscatorType; }
+			get { return "cs"; }
 		}
 
 		public override IDeobfuscator createDeobfuscator() {
@@ -88,7 +89,7 @@ namespace de4dot.deobfuscators.CliSecure {
 		}
 
 		public override string Type {
-			get { return DeobfuscatorInfo.ObfuscatorType; }
+			get { return DeobfuscatorInfo.THE_NAME; }
 		}
 
 		public override string Name {

@@ -303,7 +303,7 @@ namespace de4dot {
 			Log.n("");
 			Log.n("Deobfuscator options:");
 			foreach (var info in deobfuscatorInfos) {
-				Log.n("Type {0}", info.Type);
+				Log.n("Type {0} ({1})", info.Type, info.Name);
 				foreach (var option in info.getOptions())
 					printOption(option);
 				Log.n("");

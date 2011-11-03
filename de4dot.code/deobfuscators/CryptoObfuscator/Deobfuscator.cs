@@ -24,20 +24,21 @@ using de4dot.blocks;
 
 namespace de4dot.deobfuscators.CryptoObfuscator {
 	class DeobfuscatorInfo : DeobfuscatorInfoBase {
+		public const string THE_NAME = "Crypto Obfuscator";
 		const string DEFAULT_REGEX = @"!^[A-Z]{1,3}(?:`\d+)?$&!^c[0-9a-f]{32}(?:`\d+)?$&" + DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
 		BoolOption removeTamperProtection;
 
 		public DeobfuscatorInfo()
-			: base("co", DEFAULT_REGEX) {
+			: base(DEFAULT_REGEX) {
 			removeTamperProtection = new BoolOption(null, makeArgName("tamper"), "Remove tamper protection code", true);
 		}
 
-		internal static string ObfuscatorType {
-			get { return "CryptoObfuscator"; }
+		public override string Name {
+			get { return THE_NAME; }
 		}
 
 		public override string Type {
-			get { return ObfuscatorType; }
+			get { return "co"; }
 		}
 
 		public override IDeobfuscator createDeobfuscator() {
@@ -73,7 +74,7 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 		}
 
 		public override string Type {
-			get { return DeobfuscatorInfo.ObfuscatorType; }
+			get { return DeobfuscatorInfo.THE_NAME; }
 		}
 
 		public override string Name {

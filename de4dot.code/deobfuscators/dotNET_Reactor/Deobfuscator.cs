@@ -26,6 +26,7 @@ using de4dot.blocks;
 
 namespace de4dot.deobfuscators.dotNET_Reactor {
 	class DeobfuscatorInfo : DeobfuscatorInfoBase {
+		public const string THE_NAME = ".NET Reactor";
 		BoolOption decryptMethods;
 		BoolOption decryptBools;
 		BoolOption restoreTypes;
@@ -33,7 +34,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		BoolOption removeInlinedMethods;
 
 		public DeobfuscatorInfo()
-			: base("dr") {
+			: base() {
 			decryptMethods = new BoolOption(null, makeArgName("methods"), "Decrypt methods", true);
 			decryptBools = new BoolOption(null, makeArgName("bools"), "Decrypt booleans", true);
 			restoreTypes = new BoolOption(null, makeArgName("types"), "Restore types (object -> real type)", true);
@@ -41,12 +42,12 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			removeInlinedMethods = new BoolOption(null, makeArgName("remove-inlined"), "Remove inlined methods", true);
 		}
 
-		internal static string ObfuscatorType {
-			get { return "dotNet_Reactor"; }
+		public override string Name {
+			get { return THE_NAME; }
 		}
 
 		public override string Type {
-			get { return ObfuscatorType; }
+			get { return "dr"; }
 		}
 
 		public override IDeobfuscator createDeobfuscator() {
@@ -95,7 +96,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		}
 
 		public override string Type {
-			get { return DeobfuscatorInfo.ObfuscatorType; }
+			get { return DeobfuscatorInfo.THE_NAME; }
 		}
 
 		public override string Name {

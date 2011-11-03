@@ -21,19 +21,18 @@ using System.Collections.Generic;
 
 namespace de4dot.deobfuscators {
 	abstract class DeobfuscatorInfoBase : IDeobfuscatorInfo {
-		string argPrefix;
 		protected NameRegexOption validNameRegex;
 
-		public DeobfuscatorInfoBase(string argPrefix, string nameRegex = null) {
-			this.argPrefix = argPrefix;
+		public DeobfuscatorInfoBase(string nameRegex = null) {
 			validNameRegex = new NameRegexOption(null, makeArgName("name"), "Valid name regex pattern", nameRegex ?? DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX);
 		}
 
 		protected string makeArgName(string name) {
-			return string.Format("{0}-{1}", argPrefix, name);
+			return string.Format("{0}-{1}", Type, name);
 		}
 
 		public abstract string Type { get; }
+		public abstract string Name { get; }
 		public abstract IDeobfuscator createDeobfuscator();
 
 		protected virtual IEnumerable<Option> getOptionsInternal() {

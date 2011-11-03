@@ -24,17 +24,18 @@ using de4dot.blocks;
 
 namespace de4dot.deobfuscators.Dotfuscator {
 	class DeobfuscatorInfo : DeobfuscatorInfoBase {
+		public const string THE_NAME = "Dotfuscator";
 		const string DEFAULT_REGEX = @"!^[a-z][a-z0-9]{0,2}$&!^A_[0-9]+$&" + DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
 		public DeobfuscatorInfo()
-			: base("df", DEFAULT_REGEX) {
+			: base(DEFAULT_REGEX) {
 		}
 
-		internal static string ObfuscatorType {
-			get { return "Dotfuscator"; }
+		public override string Name {
+			get { return THE_NAME; }
 		}
 
 		public override string Type {
-			get { return ObfuscatorType; }
+			get { return "df"; }
 		}
 
 		public override IDeobfuscator createDeobfuscator() {
@@ -64,7 +65,7 @@ namespace de4dot.deobfuscators.Dotfuscator {
 		}
 
 		public override string Type {
-			get { return DeobfuscatorInfo.ObfuscatorType; }
+			get { return DeobfuscatorInfo.THE_NAME; }
 		}
 
 		public override string Name {

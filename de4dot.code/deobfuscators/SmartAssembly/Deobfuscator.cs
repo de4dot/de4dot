@@ -30,23 +30,24 @@ using de4dot.blocks;
 
 namespace de4dot.deobfuscators.SmartAssembly {
 	class DeobfuscatorInfo : DeobfuscatorInfoBase {
+		public const string THE_NAME = "SmartAssembly";
 		BoolOption removeAutomatedErrorReporting;
 		BoolOption removeTamperProtection;
 		BoolOption removeMemoryManager;
 
 		public DeobfuscatorInfo()
-			: base("sa") {
+			: base() {
 			removeAutomatedErrorReporting = new BoolOption(null, makeArgName("error"), "Remove automated error reporting code", true);
 			removeTamperProtection = new BoolOption(null, makeArgName("tamper"), "Remove tamper protection code", true);
 			removeMemoryManager = new BoolOption(null, makeArgName("memory"), "Remove memory manager code", true);
 		}
 
-		internal static string ObfuscatorType {
-			get { return "SmartAssembly"; }
+		public override string Name {
+			get { return THE_NAME; }
 		}
 
 		public override string Type {
-			get { return ObfuscatorType; }
+			get { return "sa"; }
 		}
 
 		public override IDeobfuscator createDeobfuscator() {
@@ -95,7 +96,7 @@ namespace de4dot.deobfuscators.SmartAssembly {
 		}
 
 		public override string Type {
-			get { return DeobfuscatorInfo.ObfuscatorType; }
+			get { return DeobfuscatorInfo.THE_NAME; }
 		}
 
 		public override string Name {

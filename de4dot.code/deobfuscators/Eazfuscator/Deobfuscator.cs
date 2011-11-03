@@ -24,16 +24,17 @@ using de4dot.blocks;
 
 namespace de4dot.deobfuscators.Eazfuscator {
 	class DeobfuscatorInfo : DeobfuscatorInfoBase {
+		public const string THE_NAME = "Eazfuscator.NET";
 		public DeobfuscatorInfo()
-			: base("ez") {
+			: base() {
 		}
 
-		internal static string ObfuscatorType {
-			get { return "Eazfuscator"; }
+		public override string Name {
+			get { return THE_NAME; }
 		}
 
 		public override string Type {
-			get { return ObfuscatorType; }
+			get { return "ez"; }
 		}
 
 		public override IDeobfuscator createDeobfuscator() {
@@ -52,7 +53,7 @@ namespace de4dot.deobfuscators.Eazfuscator {
 		}
 
 		public override string Type {
-			get { return DeobfuscatorInfo.ObfuscatorType; }
+			get { return DeobfuscatorInfo.THE_NAME; }
 		}
 
 		public override string Name {

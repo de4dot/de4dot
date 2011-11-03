@@ -22,6 +22,7 @@ using System.Collections.Generic;
 namespace de4dot.deobfuscators {
 	interface IDeobfuscatorInfo {
 		string Type { get; }
+		string Name { get; }
 		IDeobfuscator createDeobfuscator();
 		IEnumerable<Option> getOptions();
 	}
