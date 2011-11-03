@@ -23,7 +23,7 @@ using Mono.Cecil;
 using de4dot.blocks;
 
 namespace de4dot.renamer {
-	// Renames all typedefs, methoddefs, eventdefs, fielddefs, and propdefs
+	// Renames typedefs, methoddefs, eventdefs, fielddefs, propdefs, and genparams
 	class DefinitionsRenamer : IResolver, IDefFinder {
 		// All types that don't derive from an existing type definition (most likely mscorlib
 		// isn't loaded, so this won't have just one element).
@@ -31,7 +31,6 @@ namespace de4dot.renamer {
 		IList<TypeDef> nonNestedTypes;
 		IList<Module> modules = new List<Module>();
 		List<TypeDef> allTypes = new List<TypeDef>();
-		IDictionary<MethodDefinition, MethodDef> methodToMethodDef = new Dictionary<MethodDefinition, MethodDef>();
 		TypeNameState typeNameState;
 		ModulesDict modulesDict = new ModulesDict();
 		AssemblyHash assemblyHash = new AssemblyHash();
@@ -114,7 +113,7 @@ namespace de4dot.renamer {
 		public void renameAll() {
 			if (modules.Count == 0)
 				return;
-			Log.n("Renaming all obfuscated names");
+			Log.n("Renaming all obfuscated symbols");
 			findAllMemberReferences();
 			resolveAllRefs();
 			initAllTypes();
@@ -132,7 +131,7 @@ namespace de4dot.renamer {
 			foreach (var module in modules)
 				allTypes.AddRange(module.getAllTypes());
 
-			var typeToTypeDef = new Dictionary<TypeDefinition, TypeDef>();
+			var typeToTypeDef = new Dictionary<TypeDefinition, TypeDef>(allTypes.Count);
 			foreach (var typeDef in allTypes)
 				typeToTypeDef[typeDef.TypeDefinition] = typeDef;
 
@@ -147,12 +146,11 @@ namespace de4dot.renamer {
 				var baseType = typeDef.TypeDefinition.BaseType;
 				if (baseType == null)
 					continue;
-				var baseTypeDefinition = resolve(baseType);
-				if (baseTypeDefinition == null)
-					continue;
-				var baseTypeDef = typeToTypeDef[baseTypeDefinition];
-				typeDef.baseType = new TypeInfo(baseType, baseTypeDef);
-				baseTypeDef.derivedTypes.Add(typeDef);
+				var baseTypeDef = resolve(baseType) ?? resolveOther(baseType);
+				if (baseTypeDef != null) {
+					typeDef.addBaseType(baseTypeDef, baseType);
+					baseTypeDef.derivedTypes.Add(typeDef);
+				}
 			}
 
 			// Initialize interfaces
@@ -160,9 +158,9 @@ namespace de4dot.renamer {
 				if (typeDef.TypeDefinition.Interfaces == null)
 					continue;
 				foreach (var iface in typeDef.TypeDefinition.Interfaces) {
-					var ifaceTypeDefinition = resolve(iface);
-					if (ifaceTypeDefinition != null)
-						typeDef.interfaces.Add(new TypeInfo(iface, typeToTypeDef[ifaceTypeDefinition]));
+					var ifaceTypeDef = resolve(iface) ?? resolveOther(iface);
+					if (ifaceTypeDef != null)
+						typeDef.addInterface(ifaceTypeDef, iface);
 				}
 			}
 
@@ -176,15 +174,11 @@ namespace de4dot.renamer {
 			}
 			nonNestedTypes = new List<TypeDef>(allTypesDict.Keys);
 
-			// So we can quickly look up MethodDefs
-			foreach (var typeDef in allTypes) {
-				foreach (var methodDef in typeDef.Methods)
-					methodToMethodDef[methodDef.MethodDefinition] = methodDef;
+			foreach (var typeDef in allTypes)
 				typeDef.defFinder = this;
-			}
 
 			foreach (var typeDef in allTypes) {
-				if (typeDef.baseType == null)
+				if (typeDef.baseType == null || !typeDef.baseType.typeDef.IsRenamable)
 					baseTypes.Add(typeDef);
 			}
 		}
@@ -328,12 +322,48 @@ namespace de4dot.renamer {
 			renameEntryPoints();
 		}
 
+		Dictionary<TypeReferenceKey, TypeDef> otherTypesDict = new Dictionary<TypeReferenceKey, TypeDef>();
+		ExternalAssemblies externalAssemblies = new ExternalAssemblies();
+		TypeDef resolveOther(TypeReference type) {
+			if (type == null)
+				return null;
+			type = type.GetElementType();
+
+			TypeDef typeDef;
+			var key = new TypeReferenceKey(type);
+			if (otherTypesDict.TryGetValue(key, out typeDef))
+				return typeDef;
+			otherTypesDict[key] = null;	// In case of a circular reference
+
+			TypeDefinition typeDefinition = externalAssemblies.resolve(type);
+			if (typeDefinition == null)
+				return null;
+
+			typeDef = new TypeDef(typeDefinition);
+			typeDef.MemberRenameState = new MemberRenameState();
+			typeDef.addMembers();
+			foreach (var iface in typeDef.TypeDefinition.Interfaces) {
+				var ifaceDef = resolveOther(iface);
+				if (ifaceDef == null)
+					continue;
+				typeDef.MemberRenameState.mergeRenamed(ifaceDef.MemberRenameState);
+				typeDef.addInterface(ifaceDef, iface);
+			}
+			var baseDef = resolveOther(typeDef.TypeDefinition.BaseType);
+			if (baseDef != null) {
+				typeDef.MemberRenameState.mergeRenamed(baseDef.MemberRenameState);
+				typeDef.addBaseType(baseDef, typeDef.TypeDefinition.BaseType);
+			}
+			typeDef.initializeVirtualMembers();
+			return otherTypesDict[key] = typeDef;
+		}
+
 		void renameEntryPoints() {
 			foreach (var module in modules) {
 				var entryPoint = module.ModuleDefinition.EntryPoint;
 				if (entryPoint == null)
 					continue;
-				var methodDef = findMethod(entryPoint);
+				var methodDef = resolve(entryPoint);
 				if (methodDef == null)
 					throw new ApplicationException(string.Format("Could not find entry point. Module: {0}, Method: {1}", module.ModuleDefinition.FullyQualifiedName, entryPoint));
 				if (!methodDef.MethodDefinition.IsStatic)
@@ -402,7 +432,7 @@ namespace de4dot.renamer {
 
 		IEnumerable<InterfaceScopeInfo> getInterfaceScopeInfo(IEnumerable<TypeDef> baseTypes) {
 			foreach (var typeDef in baseTypes) {
-				yield return new InterfaceScopeInfo(typeDef, new List<TypeDef>(typeDef.getAllInterfaces()));
+				yield return new InterfaceScopeInfo(typeDef, new List<TypeDef>(typeDef.getAllRenamableInterfaces()));
 			}
 		}
 
@@ -461,7 +491,7 @@ namespace de4dot.renamer {
 			return typeReference is ArrayType || typeReference is PointerType;
 		}
 
-		public TypeDefinition resolve(TypeReference typeReference) {
+		public TypeDef resolve(TypeReference typeReference) {
 			var modules = findModules(typeReference.Scope);
 			if (modules == null)
 				return null;
@@ -475,7 +505,7 @@ namespace de4dot.renamer {
 			throw new ApplicationException(string.Format("Could not resolve TypeReference {0} ({1:X8})", typeReference, typeReference.MetadataToken.ToInt32()));
 		}
 
-		public MethodDefinition resolve(MethodReference methodReference) {
+		public MethodDef resolve(MethodReference methodReference) {
 			if (methodReference.DeclaringType == null)
 				return null;
 			var modules = findModules(methodReference.DeclaringType.Scope);
@@ -491,7 +521,7 @@ namespace de4dot.renamer {
 			throw new ApplicationException(string.Format("Could not resolve MethodReference {0} ({1:X8})", methodReference, methodReference.MetadataToken.ToInt32()));
 		}
 
-		public FieldDefinition resolve(FieldReference fieldReference) {
+		public FieldDef resolve(FieldReference fieldReference) {
 			if (fieldReference.DeclaringType == null)
 				return null;
 			var modules = findModules(fieldReference.DeclaringType.Scope);
@@ -508,21 +538,18 @@ namespace de4dot.renamer {
 		}
 
 		public MethodDef findMethod(MethodReference methodReference) {
-			var method = resolve(methodReference);
-			if (method == null)
-				return null;
-			return methodToMethodDef[method];
+			return resolve(methodReference);
 		}
 
 		public PropertyDef findProp(MethodReference methodReference) {
-			var methodDef = findMethod(methodReference);
+			var methodDef = resolve(methodReference);
 			if (methodDef == null)
 				return null;
 			return methodDef.Property;
 		}
 
 		public EventDef findEvent(MethodReference methodReference) {
-			var methodDef = findMethod(methodReference);
+			var methodDef = resolve(methodReference);
 			if (methodDef == null)
 				return null;
 			return methodDef.Event;

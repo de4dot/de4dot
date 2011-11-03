@@ -27,6 +27,10 @@ namespace de4dot.renamer {
 		public Dictionary<EventReferenceKey, EventRef> events = new Dictionary<EventReferenceKey, EventRef>();
 		public Dictionary<MethodReferenceKey, MethodRef> methods = new Dictionary<MethodReferenceKey, MethodRef>();
 
+		public MemberRenameState()
+			: this(null) {
+		}
+
 		public MemberRenameState(VariableNameState variableNameState) {
 			this.variableNameState = variableNameState;
 		}
@@ -78,7 +82,7 @@ namespace de4dot.renamer {
 		}
 
 		public MemberRenameState clone() {
-			var rv = new MemberRenameState(variableNameState.clone());
+			var rv = new MemberRenameState(variableNameState == null ? null : variableNameState.clone());
 			rv.properties = new Dictionary<PropertyReferenceKey, PropertyRef>(properties);
 			rv.events = new Dictionary<EventReferenceKey, EventRef>(events);
 			rv.methods = new Dictionary<MethodReferenceKey, MethodRef>(methods);
@@ -86,7 +90,7 @@ namespace de4dot.renamer {
 		}
 
 		public MemberRenameState cloneVariables() {
-			var rv = new MemberRenameState(variableNameState.clone());
+			var rv = new MemberRenameState(variableNameState == null ? null : variableNameState.clone());
 			rv.properties = properties;
 			rv.events = events;
 			rv.methods = methods;

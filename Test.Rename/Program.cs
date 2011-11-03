@@ -21,13 +21,7 @@
 /*
 How to test it:
 - Compile this assembly and the other test assembly
-- Force rename of everything (set name regex to eg. asdfasdfasdf)
-  Make sure the code doesn't rename any types inheriting from
-  Delegate or MulticastDelegate. renameMembers() should
-  return before renaming the members
-	if (TypeDefinition.BaseType != null && TypeDefinition.BaseType.Name.Contains("Delegate"))
-		return;
-	...real code...
+- Force rename of everything (set name regex to eg. .*)
 - Run peverify /IL /MD on both files
 - Decompile them and create a solution for both projects. I recommend using ILSpy.
 - Compile with VS. If it fails to build, make sure the decompiler isn't buggy.

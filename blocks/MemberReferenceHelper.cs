@@ -330,12 +330,29 @@ namespace de4dot.blocks {
 		}
 
 		public static string getCanonicalizedScopeName(IMetadataScope scope) {
-			var name = scope.Name.ToLowerInvariant();
-			if (scope is ModuleDefinition) {
-				if (name.EndsWith(".exe", StringComparison.Ordinal) || name.EndsWith(".dll", StringComparison.Ordinal))
-					name = name.Remove(name.Length - 4);
+			AssemblyNameReference asmRef = null;
+
+			switch (scope.MetadataScopeType) {
+			case MetadataScopeType.AssemblyNameReference:
+				asmRef = (AssemblyNameReference)scope;
+				break;
+			case MetadataScopeType.ModuleDefinition:
+				var module = (ModuleDefinition)scope;
+				if (module.Assembly != null)
+					asmRef = module.Assembly.Name;
+				break;
+			case MetadataScopeType.ModuleReference:
+				break;
+			default:
+				throw new ApplicationException(string.Format("Invalid scope type: {0}", scope.GetType()));
 			}
-			return name;
+
+			if (asmRef != null) {
+				if (asmRef.FullName.StartsWith("mscorlib,", StringComparison.Ordinal))
+					return "mscorlib";
+				return string.Format("{0}", asmRef.FullName.ToLowerInvariant());
+			}
+			return string.Format("{0}", scope.ToString().ToLowerInvariant());
 		}
 
 		public static bool compareScope(IMetadataScope a, IMetadataScope b) {
