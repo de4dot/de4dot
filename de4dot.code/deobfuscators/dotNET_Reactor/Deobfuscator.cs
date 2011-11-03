@@ -27,6 +27,7 @@ using de4dot.blocks;
 namespace de4dot.deobfuscators.dotNET_Reactor {
 	class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = ".NET Reactor";
+		const string DEFAULT_REGEX = @"!^[a-zA-Z0-9]{6,}&" + DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
 		BoolOption decryptMethods;
 		BoolOption decryptBools;
 		BoolOption restoreTypes;
@@ -34,7 +35,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		BoolOption removeInlinedMethods;
 
 		public DeobfuscatorInfo()
-			: base() {
+			: base(DEFAULT_REGEX) {
 			decryptMethods = new BoolOption(null, makeArgName("methods"), "Decrypt methods", true);
 			decryptBools = new BoolOption(null, makeArgName("bools"), "Decrypt booleans", true);
 			restoreTypes = new BoolOption(null, makeArgName("types"), "Restore types (object -> real type)", true);
