@@ -926,26 +926,20 @@ namespace de4dot.renamer {
 				return;
 			methodDef.Renamed = true;
 
-			bool canRenameName = true;
+			bool canRenameMethodName = true;
 			if (IsDelegate && methodDef.isVirtual()) {
 				switch (methodDef.MethodDefinition.Name) {
-				case "GetMethodImpl":
-				case "CombineImpl":
-				case "DynamicInvokeImpl":
-				case "GetInvocationList":
-				case "RemoveImpl":
-				case "Invoke":
 				case "BeginInvoke":
 				case "EndInvoke":
-					canRenameName = false;
+				case "Invoke":
+					canRenameMethodName = false;
 					break;
 				}
 			}
 
 			var variableNameState = MemberRenameState.variableNameState;
-			bool isVirtual = methodDef.isVirtual();
 
-			if (canRenameName) {
+			if (canRenameMethodName) {
 				var nameCreator = getMethodNameCreator(methodDef, suggestedName);
 				if (!methodDef.MethodDefinition.IsRuntimeSpecialName && !variableNameState.IsValidName(methodDef.OldName))
 					methodDef.NewName = nameCreator.newName();
@@ -963,7 +957,7 @@ namespace de4dot.renamer {
 
 			prepareRenameGenericParams(methodDef.GenericParams, variableNameState.IsValidName, methodDef.Owner == null ? null : methodDef.Owner.genericParams);
 
-			if (isVirtual)
+			if (methodDef.isVirtual())
 				MemberRenameState.add(methodDef);
 		}
 
