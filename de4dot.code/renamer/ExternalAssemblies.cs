@@ -38,6 +38,11 @@ namespace de4dot.renamer {
 
 			return null;
 		}
+
+		public void unload() {
+			foreach (var module in asmDef.Modules)
+				DotNetUtils.typeCaches.invalidate(module);
+		}
 	}
 
 	// Loads assemblies that aren't renamed
@@ -66,7 +71,7 @@ namespace de4dot.renamer {
 			}
 			Log.v("Loaded assembly {0}", asmFullName);
 
-			return assemblies[asmFullName] = asm = new ExternalAssembly(asmDef);
+			return assemblies[asmFullName] = new ExternalAssembly(asmDef);
 		}
 
 		public TypeDefinition resolve(TypeReference type) {
@@ -74,6 +79,12 @@ namespace de4dot.renamer {
 			if (asm == null)
 				return null;
 			return asm.resolve(type);
+		}
+
+		public void unloadAll() {
+			foreach (var asm in assemblies.Values)
+				asm.unload();
+			assemblies.Clear();
 		}
 	}
 }
