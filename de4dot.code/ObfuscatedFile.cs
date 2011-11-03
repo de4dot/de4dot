@@ -514,7 +514,7 @@ namespace de4dot {
 					if (Log.isAtLeast(dumpLogLevel)) {
 						Log.log(dumpLogLevel, "Deobfuscated code:");
 						Log.indent();
-						methodPrinter.print(dumpLogLevel, allInstructions, allExceptionHandlers);
+						methodPrinter.print(dumpLogLevel, method, allInstructions, allExceptionHandlers);
 						Log.deIndent();
 					}
 				}
@@ -527,6 +527,7 @@ namespace de4dot {
 
 		class MethodPrinter {
 			Log.LogLevel logLevel;
+			MethodReference method;
 			IList<Instruction> allInstructions;
 			IList<ExceptionHandler> allExceptionHandlers;
 			Dictionary<Instruction, bool> targets = new Dictionary<Instruction, bool>();
@@ -542,15 +543,17 @@ namespace de4dot {
 			Dictionary<Instruction, ExInfo> exInfos = new Dictionary<Instruction, ExInfo>();
 			ExInfo lastExInfo;
 
-			public void print(Log.LogLevel logLevel, IList<Instruction> allInstructions, IList<ExceptionHandler> allExceptionHandlers) {
+			public void print(Log.LogLevel logLevel, MethodReference method, IList<Instruction> allInstructions, IList<ExceptionHandler> allExceptionHandlers) {
 				try {
 					this.logLevel = logLevel;
+					this.method = method;
 					this.allInstructions = allInstructions;
 					this.allExceptionHandlers = allExceptionHandlers;
 					lastExInfo = new ExInfo();
 					print();
 				}
 				finally {
+					this.method = null;
 					this.allInstructions = null;
 					this.allExceptionHandlers = null;
 					targets.Clear();
@@ -665,6 +668,13 @@ namespace de4dot {
 				}
 				else if (instr.Operand is string)
 					return Utils.toCsharpString((string)instr.Operand);
+				else if (instr.Operand is ParameterDefinition) {
+					var arg = (ParameterDefinition)instr.Operand;
+					var s = instr.GetOperandString();
+					if (s != "")
+						return s;
+					return string.Format("<arg_{0}>", DotNetUtils.getArgIndex(method, arg));
+				}
 				else
 					return instr.GetOperandString();
 			}
