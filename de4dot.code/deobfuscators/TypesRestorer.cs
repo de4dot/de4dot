@@ -64,7 +64,7 @@ namespace de4dot.deobfuscators {
 				this.arg = arg;
 			}
 
-			public bool updateNewType() {
+			public bool updateNewType(ModuleDefinition module) {
 				if (types.Count == 0)
 					return false;
 
@@ -74,7 +74,7 @@ namespace de4dot.deobfuscators {
 						theNewType = key.TypeReference;
 						continue;
 					}
-					theNewType = getCommonBaseClass(theNewType, key.TypeReference);
+					theNewType = getCommonBaseClass(module, theNewType, key.TypeReference);
 					if (theNewType == null)
 						break;
 				}
@@ -177,14 +177,14 @@ namespace de4dot.deobfuscators {
 				methodReturnInfo = new TypeInfo<ParameterDefinition>(method.MethodReturnType.Parameter2);
 				deobfuscateMethod(method);
 
-				if (methodReturnInfo.updateNewType()) {
+				if (methodReturnInfo.updateNewType(module)) {
 					getUpdatedMethod(method).newReturnType = methodReturnInfo.newType;
 					method.MethodReturnType.ReturnType = methodReturnInfo.newType;
 					changed = true;
 				}
 
 				foreach (var info in argInfos.Values) {
-					if (info.updateNewType()) {
+					if (info.updateNewType(module)) {
 						getUpdatedMethod(method).newArgTypes[DotNetUtils.getArgIndex(method, info.arg)] = info.newType;
 						info.arg.ParameterType = info.newType;
 						changed = true;
@@ -290,6 +290,7 @@ namespace de4dot.deobfuscators {
 				case Code.Call:
 				case Code.Calli:
 				case Code.Callvirt:
+				case Code.Newobj:
 					pushedArgs = getPushedArgInstructions(instructions, i);
 					var calledMethod = instr.Operand as MethodReference;
 					if (calledMethod == null)
@@ -588,7 +589,7 @@ namespace de4dot.deobfuscators {
 			bool changed = false;
 			var removeThese = new List<FieldDefinition>();
 			foreach (var info in fieldWrites.Values) {
-				if (info.updateNewType()) {
+				if (info.updateNewType(module)) {
 					removeThese.Add(info.arg);
 					getUpdatedField(info.arg).newFieldType = info.newType;
 					info.arg.FieldType = info.newType;
@@ -709,7 +710,11 @@ namespace de4dot.deobfuscators {
 			}
 		}
 
-		static TypeReference getCommonBaseClass(TypeReference a, TypeReference b) {
+		static TypeReference getCommonBaseClass(ModuleDefinition module, TypeReference a, TypeReference b) {
+			if (DotNetUtils.isDelegate(a) && DotNetUtils.isDelegateType(DotNetUtils.getType(module, b)))
+				return b;
+			if (DotNetUtils.isDelegate(b) && DotNetUtils.isDelegateType(DotNetUtils.getType(module, a)))
+				return a;
 			return null;	//TODO:
 		}
 
