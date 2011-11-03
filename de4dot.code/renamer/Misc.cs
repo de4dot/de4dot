@@ -17,16 +17,15 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using System;
 using System.Collections.Generic;
 using Mono.Cecil;
 using de4dot.blocks;
 
 namespace de4dot.renamer {
 	interface IResolver {
-		TypeDefinition resolve(TypeReference typeReference);
-		MethodDefinition resolve(MethodReference methodReference);
-		FieldDefinition resolve(FieldReference fieldReference);
+		TypeDef resolve(TypeReference typeReference);
+		MethodDef resolve(MethodReference methodReference);
+		FieldDef resolve(FieldReference fieldReference);
 	}
 
 	interface IDefFinder {
@@ -212,9 +211,9 @@ namespace de4dot.renamer {
 		}
 
 		public EventDef find(EventReference eventReference) {
-			EventDef propDef;
-			tokenToEventDef.TryGetValue(new ScopeAndTokenKey(eventReference), out propDef);
-			return propDef;
+			EventDef eventDef;
+			tokenToEventDef.TryGetValue(new ScopeAndTokenKey(eventReference), out eventDef);
+			return eventDef;
 		}
 
 		public void add(EventDef eventDef) {

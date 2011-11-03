@@ -199,36 +199,16 @@ namespace de4dot.renamer {
 				allTypes.add(typeDef);
 				allTypesList.Add(typeDef);
 
-				if (type.Events != null) {
-					for (int i = 0; i < type.Events.Count; i++) {
-						var ev = type.Events[i];
-						typeDef.add(new EventDef(ev, typeDef, i));
-						memberRefFinder.removeEventDefinition(ev);
-					}
-				}
-				if (type.Fields != null) {
-					for (int i = 0; i < type.Fields.Count; i++) {
-						var field = type.Fields[i];
-						typeDef.add(new FieldDef(field, typeDef, i));
-						memberRefFinder.removeFieldDefinition(field);
-					}
-				}
-				if (type.Methods != null) {
-					for (int i = 0; i < type.Methods.Count; i++) {
-						var method = type.Methods[i];
-						typeDef.add(new MethodDef(method, typeDef, i));
-						memberRefFinder.removeMethodDefinition(method);
-					}
-				}
-				if (type.Properties != null) {
-					for (int i = 0; i < type.Properties.Count; i++) {
-						var property = type.Properties[i];
-						typeDef.add(new PropertyDef(property, typeDef, i));
-						memberRefFinder.removePropertyDefinition(property);
-					}
-				}
+				typeDef.addMembers();
 
-				typeDef.membersAdded();
+				foreach (var ev in type.Events)
+					memberRefFinder.removeEventDefinition(ev);
+				foreach (var field in type.Fields)
+					memberRefFinder.removeFieldDefinition(field);
+				foreach (var method in type.Methods)
+					memberRefFinder.removeMethodDefinition(method);
+				foreach (var property in type.Properties)
+					memberRefFinder.removePropertyDefinition(property);
 			}
 
 			// Add all nested types to the correct TypeDef's types list
@@ -265,21 +245,21 @@ namespace de4dot.renamer {
 
 		public void resolveAllRefs(IResolver resolver) {
 			foreach (var typeRef in memberRefFinder.typeReferences.Keys) {
-				var typeDefinition = resolver.resolve(typeRef);
-				if (typeDefinition != null)
-					typeRefsToRename.Add(new RefToDef<TypeReference, TypeDefinition>(typeRef, typeDefinition));
+				var typeDef = resolver.resolve(typeRef);
+				if (typeDef != null)
+					typeRefsToRename.Add(new RefToDef<TypeReference, TypeDefinition>(typeRef, typeDef.TypeDefinition));
 			}
 
 			foreach (var methodRef in memberRefFinder.methodReferences.Keys) {
-				var methodDefinition = resolver.resolve(methodRef);
-				if (methodDefinition != null)
-					methodRefsToRename.Add(new RefToDef<MethodReference, MethodDefinition>(methodRef, methodDefinition));
+				var methodDef = resolver.resolve(methodRef);
+				if (methodDef != null)
+					methodRefsToRename.Add(new RefToDef<MethodReference, MethodDefinition>(methodRef, methodDef.MethodDefinition));
 			}
 
 			foreach (var fieldRef in memberRefFinder.fieldReferences.Keys) {
-				var fieldDefinition = resolver.resolve(fieldRef);
-				if (fieldDefinition != null)
-					fieldRefsToRename.Add(new RefToDef<FieldReference, FieldDefinition>(fieldRef, fieldDefinition));
+				var fieldDef = resolver.resolve(fieldRef);
+				if (fieldDef != null)
+					fieldRefsToRename.Add(new RefToDef<FieldReference, FieldDefinition>(fieldRef, fieldDef.FieldDefinition));
 			}
 		}
 
@@ -319,31 +299,22 @@ namespace de4dot.renamer {
 			return type.ElementType;
 		}
 
-		public TypeDefinition resolve(TypeReference typeReference) {
-			var typeDef = this.allTypes.find(getNonGenericTypeReference(typeReference));
-			if (typeDef == null)
-				return null;
-			return typeDef.TypeDefinition;
+		public TypeDef resolve(TypeReference typeReference) {
+			return this.allTypes.find(getNonGenericTypeReference(typeReference));
 		}
 
-		public MethodDefinition resolve(MethodReference methodReference) {
+		public MethodDef resolve(MethodReference methodReference) {
 			var typeDef = this.allTypes.find(getNonGenericTypeReference(methodReference.DeclaringType));
 			if (typeDef == null)
 				return null;
-			var methodDef = typeDef.find(methodReference);
-			if (methodDef == null)
-				return null;
-			return methodDef.MethodDefinition;
+			return typeDef.find(methodReference);
 		}
 
-		public FieldDefinition resolve(FieldReference fieldReference) {
+		public FieldDef resolve(FieldReference fieldReference) {
 			var typeDef = this.allTypes.find(getNonGenericTypeReference(fieldReference.DeclaringType));
 			if (typeDef == null)
 				return null;
-			var fieldDef = typeDef.find(fieldReference);
-			if (fieldDef == null)
-				return null;
-			return fieldDef.FieldDefinition;
+			return typeDef.find(fieldReference);
 		}
 	}
 }

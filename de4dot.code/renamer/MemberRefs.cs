@@ -69,6 +69,10 @@ namespace de4dot.renamer {
 				list.Add(new GenericParamDef(param, i++));
 			return list;
 		}
+
+		public override string ToString() {
+			return MemberReference != null ? MemberReference.ToString() : null;
+		}
 	}
 
 	class FieldDef : Ref {
@@ -312,6 +316,16 @@ namespace de4dot.renamer {
 			get { return genericParams; }
 		}
 
+		public bool IsRenamable {
+			get { return module != null; }
+		}
+
+		bool IsDelegate { get; set; }
+
+		public TypeDef(TypeDefinition typeDefinition)
+			: this(typeDefinition, null) {
+		}
+
 		public TypeDef(TypeDefinition typeDefinition, Module module, int index = 0)
 			: base(typeDefinition, null, index) {
 			this.module = module;
@@ -330,8 +344,18 @@ namespace de4dot.renamer {
 			get { return methods.getAll(); }
 		}
 
-		// Called when all members (events, fields, props, methods) have been added
-		public void membersAdded() {
+		public void addMembers() {
+			var type = TypeDefinition;
+
+			for (int i = 0; i < type.Events.Count; i++)
+				add(new EventDef(type.Events[i], this, i));
+			for (int i = 0; i < type.Fields.Count; i++)
+				add(new FieldDef(type.Fields[i], this, i));
+			for (int i = 0; i < type.Methods.Count; i++)
+				add(new MethodDef(type.Methods[i], this, i));
+			for (int i = 0; i < type.Properties.Count; i++)
+				add(new PropertyDef(type.Properties[i], this, i));
+
 			foreach (var propDef in properties.getAll()) {
 				foreach (var method in propDef.methodDefinitions()) {
 					var methodDef = find(method);
@@ -351,6 +375,19 @@ namespace de4dot.renamer {
 			}
 		}
 
+		public void addInterface(TypeDef ifaceDef, TypeReference iface) {
+			if (ifaceDef == null || iface == null)
+				return;
+			interfaces.Add(new TypeInfo(iface, ifaceDef));
+		}
+
+		public void addBaseType(TypeDef baseDef, TypeReference baseRef) {
+			if (baseDef == null || baseRef == null)
+				return;
+			baseType = new TypeInfo(baseRef, baseDef);
+			IsDelegate = baseRef.FullName == "System.Delegate" || baseRef.FullName == "System.MulticastDelegate";
+		}
+
 		// Called when all types have been renamed
 		public void onTypesRenamed() {
 			events.onTypesRenamed();
@@ -368,6 +405,13 @@ namespace de4dot.renamer {
 			}
 			foreach (var typeDef in derivedTypes) {
 				foreach (var iface in typeDef.getAllInterfaces())
+					yield return iface;
+			}
+		}
+
+		public IEnumerable<TypeDef> getAllRenamableInterfaces() {
+			foreach (var iface in getAllInterfaces()) {
+				if (iface.IsRenamable)
 					yield return iface;
 			}
 		}
@@ -562,6 +606,22 @@ namespace de4dot.renamer {
 			}
 		}
 
+		public void initializeVirtualMembers() {
+			expandGenerics();
+			foreach (var propDef in properties.getSorted()) {
+				if (propDef.isVirtual())
+					MemberRenameState.add(propDef);
+			}
+			foreach (var eventDef in events.getSorted()) {
+				if (eventDef.isVirtual())
+					MemberRenameState.add(eventDef);
+			}
+			foreach (var methodDef in methods.getSorted()) {
+				if (methodDef.isVirtual())
+					MemberRenameState.add(methodDef);
+			}
+		}
+
 		public void prepareRenameMembers() {
 			if (prepareRenameMembersCalled)
 				return;
@@ -572,19 +632,33 @@ namespace de4dot.renamer {
 			if (baseType != null)
 				baseType.typeDef.prepareRenameMembers();
 
-			if (baseType != null)
+			if (MemberRenameState == null)
 				MemberRenameState = baseType.typeDef.MemberRenameState.clone();
-			MemberRenameState.variableNameState.IsValidName = module.IsValidName;
+
+			// For each base type and interface it implements, add all its virtual methods, props,
+			// and events if the type is a non-renamable type (eg. it's from mscorlib or some other
+			// non-deobfuscated assembly).
+			if (IsRenamable) {
+				foreach (var ifaceInfo in interfaces) {
+					if (!ifaceInfo.typeDef.IsRenamable)
+						MemberRenameState.mergeRenamed(ifaceInfo.typeDef.MemberRenameState);
+				}
+				if (baseType != null && !baseType.typeDef.IsRenamable)
+					MemberRenameState.mergeRenamed(baseType.typeDef.MemberRenameState);
+			}
 
 			if (InterfaceScopeState != null)
 				MemberRenameState.mergeRenamed(InterfaceScopeState);
 
 			expandGenerics();
 
-			prepareRenameFields();		// must be first
-			prepareRenameProperties();
-			prepareRenameEvents();
-			prepareRenameMethods();		// must be last
+			if (IsRenamable) {
+				MemberRenameState.variableNameState.IsValidName = module.IsValidName;
+				prepareRenameFields();		// must be first
+				prepareRenameProperties();
+				prepareRenameEvents();
+				prepareRenameMethods();		// must be last
+			}
 		}
 
 		// Replaces the generic params with the generic args, if any
@@ -851,13 +925,31 @@ namespace de4dot.renamer {
 			if (methodDef.Renamed)
 				return;
 			methodDef.Renamed = true;
+
+			bool canRenameName = true;
+			if (IsDelegate && methodDef.isVirtual()) {
+				switch (methodDef.MethodDefinition.Name) {
+				case "GetMethodImpl":
+				case "CombineImpl":
+				case "DynamicInvokeImpl":
+				case "GetInvocationList":
+				case "RemoveImpl":
+				case "Invoke":
+				case "BeginInvoke":
+				case "EndInvoke":
+					canRenameName = false;
+					break;
+				}
+			}
+
 			var variableNameState = MemberRenameState.variableNameState;
 			bool isVirtual = methodDef.isVirtual();
 
-			var nameCreator = getMethodNameCreator(methodDef, suggestedName);
-
-			if (!methodDef.MethodDefinition.IsRuntimeSpecialName && !variableNameState.IsValidName(methodDef.OldName))
-				methodDef.NewName = nameCreator.newName();
+			if (canRenameName) {
+				var nameCreator = getMethodNameCreator(methodDef, suggestedName);
+				if (!methodDef.MethodDefinition.IsRuntimeSpecialName && !variableNameState.IsValidName(methodDef.OldName))
+					methodDef.NewName = nameCreator.newName();
+			}
 
 			if (methodDef.ParamDefs.Count > 0) {
 				var newVariableNameState = variableNameState.clone();
