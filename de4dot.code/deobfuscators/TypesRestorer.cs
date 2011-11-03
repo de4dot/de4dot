@@ -204,6 +204,57 @@ namespace de4dot.deobfuscators {
 			return 0;
 		}
 
+		class PushedArgs {
+			List<Instruction> args;
+			int nextIndex;
+
+			public bool CanAddMore {
+				get { return nextIndex >= 0; }
+			}
+
+			public int NumValidArgs {
+				get { return args.Count - (nextIndex + 1); }
+			}
+
+			public PushedArgs(int numArgs) {
+				nextIndex = numArgs - 1;
+				args = new List<Instruction>(numArgs);
+				for (int i = 0; i < numArgs; i++)
+					args.Add(null);
+			}
+
+			public void add(Instruction instr) {
+				args[nextIndex--] = instr;
+			}
+
+			public void set(int i, Instruction instr) {
+				args[i] = instr;
+			}
+
+			public Instruction get(int i) {
+				if (i >= args.Count)
+					return null;
+				return args[i];
+			}
+
+			public Instruction getEnd(int i) {
+				return args[args.Count - 1 - i];
+			}
+
+			public void fixDups() {
+				Instruction prev = null, instr;
+				for (int i = 0; i < NumValidArgs; i++, prev = instr) {
+					instr = args[i];
+					if (instr == null || prev == null)
+						continue;
+					if (instr.OpCode.Code != Code.Dup)
+						continue;
+					args[i] = prev;
+					instr = prev;
+				}
+			}
+		}
+
 		void deobfuscateMethod(MethodDefinition method) {
 			if (!method.IsStatic || method.Body == null)
 				return;
@@ -222,9 +273,7 @@ namespace de4dot.deobfuscators {
 				return;
 
 			var methodParams = DotNetUtils.getParameters(method);
-			var reversedMethodParams = new List<ParameterDefinition>(methodParams);
-			reversedMethodParams.Reverse();
-			List<Instruction> args;
+			PushedArgs pushedArgs;
 			var instructions = method.Body.Instructions;
 			for (int i = 0; i < instructions.Count; i++) {
 				var instr = instructions[i];
@@ -241,14 +290,14 @@ namespace de4dot.deobfuscators {
 				case Code.Call:
 				case Code.Calli:
 				case Code.Callvirt:
-					args = getPushedArgInstructions(instructions, i);
+					pushedArgs = getPushedArgInstructions(instructions, i);
 					var calledMethod = instr.Operand as MethodReference;
 					if (calledMethod == null)
 						break;
 					var calledMethodParams = DotNetUtils.getParameters(calledMethod);
-					for (int j = 0; j < args.Count; j++) {
+					for (int j = 0; j < pushedArgs.NumValidArgs; j++) {
 						int calledMethodParamIndex = calledMethodParams.Count - j - 1;
-						var ldInstr = args[j];
+						var ldInstr = pushedArgs.getEnd(j);
 						switch (ldInstr.OpCode.Code) {
 						case Code.Ldarg:
 						case Code.Ldarg_S:
@@ -266,10 +315,10 @@ namespace de4dot.deobfuscators {
 					break;
 
 				case Code.Castclass:
-					args = getPushedArgInstructions(instructions, i);
-					if (args.Count < 1)
+					pushedArgs = getPushedArgInstructions(instructions, i);
+					if (pushedArgs.NumValidArgs < 1)
 						break;
-					addMethodArgType(getParameter(methodParams, method, args[0]), instr.Operand as TypeReference);
+					addMethodArgType(getParameter(methodParams, method, pushedArgs.getEnd(0)), instr.Operand as TypeReference);
 					break;
 
 				case Code.Stloc:
@@ -278,35 +327,35 @@ namespace de4dot.deobfuscators {
 				case Code.Stloc_1:
 				case Code.Stloc_2:
 				case Code.Stloc_3:
-					args = getPushedArgInstructions(instructions, i);
-					if (args.Count < 1)
+					pushedArgs = getPushedArgInstructions(instructions, i);
+					if (pushedArgs.NumValidArgs < 1)
 						break;
-					addMethodArgType(getParameter(methodParams, method, args[0]), DotNetUtils.getLocalVar(method.Body.Variables, instr));
+					addMethodArgType(getParameter(methodParams, method, pushedArgs.getEnd(0)), DotNetUtils.getLocalVar(method.Body.Variables, instr));
 					break;
 
 				case Code.Stsfld:
-					args = getPushedArgInstructions(instructions, i);
-					if (args.Count < 1)
+					pushedArgs = getPushedArgInstructions(instructions, i);
+					if (pushedArgs.NumValidArgs < 1)
 						break;
-					addMethodArgType(getParameter(methodParams, method, args[0]), instr.Operand as FieldReference);
+					addMethodArgType(getParameter(methodParams, method, pushedArgs.getEnd(0)), instr.Operand as FieldReference);
 					break;
 
 				case Code.Stfld:
-					args = getPushedArgInstructions(instructions, i);
-					if (args.Count >= 1) {
+					pushedArgs = getPushedArgInstructions(instructions, i);
+					if (pushedArgs.NumValidArgs >= 1) {
 						var field = instr.Operand as FieldReference;
-						addMethodArgType(getParameter(methodParams, method, args[0]), field);
-						if (args.Count >= 2 && field != null)
-							addMethodArgType(getParameter(methodParams, method, args[1]), field.DeclaringType);
+						addMethodArgType(getParameter(methodParams, method, pushedArgs.getEnd(0)), field);
+						if (pushedArgs.NumValidArgs >= 2 && field != null)
+							addMethodArgType(getParameter(methodParams, method, pushedArgs.getEnd(1)), field.DeclaringType);
 					}
 					break;
 
 				case Code.Ldfld:
 				case Code.Ldflda:
-					args = getPushedArgInstructions(instructions, i);
-					if (args.Count < 1)
+					pushedArgs = getPushedArgInstructions(instructions, i);
+					if (pushedArgs.NumValidArgs < 1)
 						break;
-					addMethodArgType(getParameter(methodParams, method, args[0]), instr.Operand as FieldReference);
+					addMethodArgType(getParameter(methodParams, method, pushedArgs.getEnd(0)), instr.Operand as FieldReference);
 					break;
 
 				//TODO: For better results, these should be checked:
@@ -419,21 +468,22 @@ namespace de4dot.deobfuscators {
 		}
 
 		// May not return all args. The args are returned in reverse order.
-		List<Instruction> getPushedArgInstructions(IList<Instruction> instructions, int index) {
+		PushedArgs getPushedArgInstructions(IList<Instruction> instructions, int index) {
 			int pushes, pops;
 			DotNetUtils.calculateStackUsage(instructions[index], false, out pushes, out pops);
 			if (pops == -1)
-				return new List<Instruction>();
+				return new PushedArgs(0);
 			return getPushedArgInstructions(instructions, index, pops);
 		}
 
 		// May not return all args. The args are returned in reverse order.
-		List<Instruction> getPushedArgInstructions(IList<Instruction> instructions, int index, int numArgs) {
-			List<Instruction> args = new List<Instruction>(numArgs);
+		PushedArgs getPushedArgInstructions(IList<Instruction> instructions, int index, int numArgs) {
+			var pushedArgs = new PushedArgs(numArgs);
 
+			Instruction instr;
 			int skipPushes = 0;
-			while (index >= 0 && args.Count < numArgs) {
-				var instr = getPreviousInstruction(instructions, ref index);
+			while (index >= 0 && pushedArgs.CanAddMore) {
+				instr = getPreviousInstruction(instructions, ref index);
 				if (instr == null)
 					break;
 
@@ -441,8 +491,12 @@ namespace de4dot.deobfuscators {
 				DotNetUtils.calculateStackUsage(instr, false, out pushes, out pops);
 				if (pops == -1)
 					break;
+				if (instr.OpCode.Code == Code.Dup) {
+					pushes = 1;
+					pops = 0;
+				}
 				if (pushes > 1)
-					break;	// dup
+					break;
 
 				if (skipPushes > 0) {
 					skipPushes -= pushes;
@@ -452,12 +506,23 @@ namespace de4dot.deobfuscators {
 				}
 				else {
 					if (pushes == 1)
-						args.Add(instr);
+						pushedArgs.add(instr);
 					skipPushes += pops;
 				}
 			}
+			instr = pushedArgs.get(0);
+			if (instr != null && instr.OpCode.Code == Code.Dup) {
+				instr = getPreviousInstruction(instructions, ref index);
+				if (instr != null) {
+					int pushes, pops;
+					DotNetUtils.calculateStackUsage(instr, false, out pushes, out pops);
+					if (pushes == 1 && pops == 0)
+						pushedArgs.set(0, instr);
+				}
+			}
+			pushedArgs.fixDups();
 
-			return args;
+			return pushedArgs;
 		}
 
 		bool deobfuscateFields() {
@@ -470,19 +535,53 @@ namespace de4dot.deobfuscators {
 				var instructions = method.Body.Instructions;
 				for (int i = 0; i < instructions.Count; i++) {
 					var instr = instructions[i];
-					if (instr.OpCode.Code != Code.Stfld && instr.OpCode.Code != Code.Stsfld)
-						continue;
+					TypeReference fieldType = null;
+					TypeInfo<FieldDefinition> info = null;
+					FieldReference field;
+					switch (instr.OpCode.Code) {
+					case Code.Stfld:
+					case Code.Stsfld:
+						field = instr.Operand as FieldReference;
+						if (field == null)
+							continue;
+						if (!fieldWrites.TryGetValue(new FieldReferenceAndDeclaringTypeKey(field), out info))
+							continue;
+						fieldType = getLoadedType(method, instructions, i);
+						if (fieldType == null)
+							continue;
+						info.types[new TypeReferenceKey(fieldType)] = true;
+						break;
 
-					var field = instr.Operand as FieldReference;
-					TypeInfo<FieldDefinition> info;
-					if (!fieldWrites.TryGetValue(new FieldReferenceAndDeclaringTypeKey(field), out info))
-						continue;
+					case Code.Call:
+					case Code.Calli:
+					case Code.Callvirt:
+					case Code.Newobj:
+						var pushedArgs = getPushedArgInstructions(instructions, i);
+						var calledMethod = instr.Operand as MethodReference;
+						if (calledMethod == null)
+							continue;
+						IList<TypeReference> calledMethodArgs = DotNetUtils.getArgs(calledMethod);
+						calledMethodArgs = DotNetUtils.replaceGenericParameters(calledMethod.DeclaringType as GenericInstanceType, calledMethod as GenericInstanceMethod, calledMethodArgs);
+						for (int j = 0; j < pushedArgs.NumValidArgs; j++) {
+							var pushInstr = pushedArgs.getEnd(j);
+							if (pushInstr.OpCode.Code != Code.Ldfld && pushInstr.OpCode.Code != Code.Ldsfld)
+								continue;
 
-					var fieldType = getLoadedType(method, instructions, i);
-					if (fieldType == null)
-						continue;
+							field = pushInstr.Operand as FieldReference;
+							if (field == null)
+								continue;
+							if (!fieldWrites.TryGetValue(new FieldReferenceAndDeclaringTypeKey(field), out info))
+								continue;
+							fieldType = calledMethodArgs[calledMethodArgs.Count - 1 - j];
+							if (!isValidType(fieldType))
+								continue;
+							info.types[new TypeReferenceKey(fieldType)] = true;
+						}
+						break;
 
-					info.types[new TypeReferenceKey(fieldType)] = true;
+					default:
+						continue;
+					}
 				}
 			}
 
@@ -502,12 +601,13 @@ namespace de4dot.deobfuscators {
 		}
 
 		TypeReference getLoadedType(MethodDefinition method, IList<Instruction> instructions, int instrIndex) {
-			var prev = getPreviousInstruction(instructions, ref instrIndex);
-			if (prev == null)
+			var pushedArgs = getPushedArgInstructions(instructions, instrIndex);
+			var pushInstr = pushedArgs.get(0);
+			if (pushInstr == null)
 				return null;
 
 			TypeReference fieldType;
-			switch (prev.OpCode.Code) {
+			switch (pushInstr.OpCode.Code) {
 			case Code.Ldstr:
 				fieldType = module.TypeSystem.String;
 				break;
@@ -515,21 +615,21 @@ namespace de4dot.deobfuscators {
 			case Code.Call:
 			case Code.Calli:
 			case Code.Callvirt:
-				var calledMethod = prev.Operand as MethodReference;
+				var calledMethod = pushInstr.Operand as MethodReference;
 				if (calledMethod == null)
 					return null;
 				fieldType = calledMethod.MethodReturnType.ReturnType;
 				break;
 
 			case Code.Newarr:
-				fieldType = prev.Operand as TypeReference;
+				fieldType = pushInstr.Operand as TypeReference;
 				if (fieldType == null)
 					return null;
 				fieldType = new ArrayType(fieldType);
 				break;
 
 			case Code.Newobj:
-				var ctor = prev.Operand as MethodReference;
+				var ctor = pushInstr.Operand as MethodReference;
 				if (ctor == null)
 					return null;
 				fieldType = ctor.DeclaringType;
@@ -537,7 +637,7 @@ namespace de4dot.deobfuscators {
 
 			case Code.Castclass:
 			case Code.Isinst:
-				fieldType = prev.Operand as TypeReference;
+				fieldType = pushInstr.Operand as TypeReference;
 				break;
 
 			case Code.Ldarg:
@@ -546,7 +646,7 @@ namespace de4dot.deobfuscators {
 			case Code.Ldarg_1:
 			case Code.Ldarg_2:
 			case Code.Ldarg_3:
-				fieldType = DotNetUtils.getArgType(method, prev);
+				fieldType = DotNetUtils.getArgType(method, pushInstr);
 				break;
 
 			case Code.Ldloc:
@@ -555,7 +655,7 @@ namespace de4dot.deobfuscators {
 			case Code.Ldloc_1:
 			case Code.Ldloc_2:
 			case Code.Ldloc_3:
-				var local = DotNetUtils.getLocalVar(method.Body.Variables, prev);
+				var local = DotNetUtils.getLocalVar(method.Body.Variables, pushInstr);
 				if (local == null)
 					return null;
 				fieldType = local.VariableType;
@@ -563,7 +663,7 @@ namespace de4dot.deobfuscators {
 
 			case Code.Ldfld:
 			case Code.Ldsfld:
-				var field2 = prev.Operand as FieldReference;
+				var field2 = pushInstr.Operand as FieldReference;
 				if (field2 == null)
 					return null;
 				fieldType = field2.FieldType;
