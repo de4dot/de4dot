@@ -30,10 +30,30 @@ namespace de4dot.deobfuscators {
 		ModuleDefinition module;
 		List<MethodDefinition> allMethods;
 		Dictionary<ParameterDefinition, TypeInfo<ParameterDefinition>> argInfos = new Dictionary<ParameterDefinition, TypeInfo<ParameterDefinition>>();
-		List<TypeInfo<ParameterDefinition>> changedArgInfos = new List<TypeInfo<ParameterDefinition>>();
-		List<TypeInfo<ParameterDefinition>> changedReturnTypes = new List<TypeInfo<ParameterDefinition>>();
 		TypeInfo<ParameterDefinition> methodReturnInfo;
 		Dictionary<FieldReferenceAndDeclaringTypeKey, TypeInfo<FieldDefinition>> fieldWrites = new Dictionary<FieldReferenceAndDeclaringTypeKey, TypeInfo<FieldDefinition>>();
+		Dictionary<int, UpdatedMethod> updatedMethods = new Dictionary<int, UpdatedMethod>();
+		Dictionary<int, UpdatedField> updatedFields = new Dictionary<int, UpdatedField>();
+
+		class UpdatedMethod {
+			public int token;
+			public TypeReference[] newArgTypes;
+			public TypeReference newReturnType;
+
+			public UpdatedMethod(MethodDefinition method) {
+				token = method.MetadataToken.ToInt32();
+				newArgTypes = new TypeReference[DotNetUtils.getArgsCount(method)];
+			}
+		}
+
+		class UpdatedField {
+			public int token;
+			public TypeReference newFieldType;
+
+			public UpdatedField(FieldDefinition field) {
+				token = field.MetadataToken.ToInt32();
+			}
+		}
 
 		class TypeInfo<T> {
 			public Dictionary<TypeReferenceKey, bool> types = new Dictionary<TypeReferenceKey, bool>();
@@ -72,6 +92,22 @@ namespace de4dot.deobfuscators {
 			this.module = module;
 		}
 
+		UpdatedMethod getUpdatedMethod(MethodDefinition method) {
+			int token = method.MetadataToken.ToInt32();
+			UpdatedMethod updatedMethod;
+			if (updatedMethods.TryGetValue(token, out updatedMethod))
+				return updatedMethod;
+			return updatedMethods[token] = new UpdatedMethod(method);
+		}
+
+		UpdatedField getUpdatedField(FieldDefinition field) {
+			int token = field.MetadataToken.ToInt32();
+			UpdatedField updatedField;
+			if (updatedFields.TryGetValue(token, out updatedField))
+				return updatedField;
+			return updatedFields[token] = new UpdatedField(field);
+		}
+
 		public void deobfuscate() {
 			allMethods = new List<MethodDefinition>();
 			foreach (var type in module.GetTypes())
@@ -94,68 +130,67 @@ namespace de4dot.deobfuscators {
 				if (!changed)
 					break;
 			}
+
+			var fields = new List<UpdatedField>(updatedFields.Values);
+			if (fields.Count > 0) {
+				Log.v("Changing field types from object -> real type");
+				fields.Sort((a, b) => {
+					if (a.token < b.token) return -1;
+					if (a.token > b.token) return 1;
+					return 0;
+				});
+				Log.indent();
+				foreach (var updatedField in fields)
+					Log.v("Field {0:X8}: type {1} ({2:X8})", updatedField.token, updatedField.newFieldType.FullName, updatedField.newFieldType.MetadataToken.ToInt32());
+				Log.deIndent();
+			}
+
+			var methods = new List<UpdatedMethod>(updatedMethods.Values);
+			if (methods.Count > 0) {
+				Log.v("Changing method args and return types from object -> real type");
+				methods.Sort((a, b) => {
+					if (a.token < b.token) return -1;
+					if (a.token > b.token) return 1;
+					return 0;
+				});
+				Log.indent();
+				foreach (var updatedMethod in methods) {
+					Log.v("Method {0:X8}", updatedMethod.token);
+					Log.indent();
+					if (updatedMethod.newReturnType != null)
+						Log.v("ret: {0} ({1:X8})", updatedMethod.newReturnType.FullName, updatedMethod.newReturnType.MetadataToken.ToInt32());
+					for (int i = 0; i < updatedMethod.newArgTypes.Length; i++) {
+						var updatedArg = updatedMethod.newArgTypes[i];
+						if (updatedArg == null)
+							continue;
+						Log.v("arg {0}: {1} ({2:X8})", i, updatedArg.FullName, updatedArg.MetadataToken.ToInt32());
+					}
+					Log.deIndent();
+				}
+				Log.deIndent();
+			}
 		}
 
 		bool deobfuscateMethods() {
-			changedArgInfos.Clear();
-			changedReturnTypes.Clear();
+			bool changed = false;
 			foreach (var method in allMethods) {
 				methodReturnInfo = new TypeInfo<ParameterDefinition>(method.MethodReturnType.Parameter2);
 				deobfuscateMethod(method);
 
-				if (methodReturnInfo.updateNewType())
-					changedReturnTypes.Add(methodReturnInfo);
+				if (methodReturnInfo.updateNewType()) {
+					getUpdatedMethod(method).newReturnType = methodReturnInfo.newType;
+					method.MethodReturnType.ReturnType = methodReturnInfo.newType;
+					changed = true;
+				}
 
 				foreach (var info in argInfos.Values) {
-					if (info.updateNewType())
-						changedArgInfos.Add(info);
-				}
-			}
-			if (changedArgInfos.Count == 0 && changedReturnTypes.Count == 0)
-				return false;
-
-			changedArgInfos.Sort((a, b) => sortTypeInfos(a, b));
-			changedReturnTypes.Sort((a, b) => sortTypeInfos(a, b));
-
-			bool changed = false;
-
-			if (changedArgInfos.Count > 0) {
-				Log.v("Changing method arg types from object -> real type");
-				Log.indent();
-				IMethodSignature updatedMethod = null;
-				Log.indent();
-				foreach (var info in changedArgInfos) {
-					if (info.newType == null || MemberReferenceHelper.isSystemObject(info.newType))
-						continue;
-
-					if (updatedMethod == null || updatedMethod != info.arg.Method) {
-						updatedMethod = info.arg.Method;
-						Log.deIndent();
-						Log.v("Method {0:X8}", updatedMethod.MetadataToken.ToInt32());
-						Log.indent();
+					if (info.updateNewType()) {
+						getUpdatedMethod(method).newArgTypes[DotNetUtils.getArgIndex(method, info.arg)] = info.newType;
+						info.arg.ParameterType = info.newType;
+						changed = true;
 					}
-					Log.v("{0}: new type: {1} ({2:X8})", info.arg.Index, info.newType, info.newType.MetadataToken.ToInt32());
-					info.arg.ParameterType = info.newType;
-					changed = true;
 				}
-				Log.deIndent();
-				Log.deIndent();
 			}
-
-			if (changedReturnTypes.Count > 0) {
-				Log.v("Changing method return types from object -> real type");
-				Log.indent();
-				foreach (var info in changedReturnTypes) {
-					if (info.newType == null || MemberReferenceHelper.isSystemObject(info.newType))
-						continue;
-					Log.v("{0:X8}: new type {1} ({2:X8})", info.arg.Method.MetadataToken.ToInt32(), info.newType, info.newType.MetadataToken.ToInt32());
-					info.arg.Method.MethodReturnType.ReturnType = info.newType;
-					info.arg.ParameterType = info.newType;
-					changed = true;
-				}
-				Log.deIndent();
-			}
-
 			return changed;
 		}
 
@@ -426,39 +461,6 @@ namespace de4dot.deobfuscators {
 		}
 
 		bool deobfuscateFields() {
-			if (!updateFields())
-				return false;
-
-			var infos = new List<TypeInfo<FieldDefinition>>(fieldWrites.Values);
-			infos.Sort((a, b) => {
-				if (a.arg.DeclaringType.MetadataToken.ToInt32() < b.arg.DeclaringType.MetadataToken.ToInt32()) return -1;
-				if (a.arg.DeclaringType.MetadataToken.ToInt32() > b.arg.DeclaringType.MetadataToken.ToInt32()) return 1;
-
-				if (a.arg.MetadataToken.ToInt32() < b.arg.MetadataToken.ToInt32()) return -1;
-				if (a.arg.MetadataToken.ToInt32() > b.arg.MetadataToken.ToInt32()) return 1;
-
-				return 0;
-			});
-			if (infos.Count == 0)
-				return false;
-
-			Log.v("Changing field types from object -> real type");
-			Log.indent();
-			bool changed = false;
-			foreach (var info in infos) {
-				if (info.newType == null || MemberReferenceHelper.isSystemObject(info.newType))
-					continue;
-
-				fieldWrites.Remove(new FieldReferenceAndDeclaringTypeKey(info.arg));
-				Log.v("{0:X8}: new type: {1} ({2:X8})", info.arg.MetadataToken.ToInt32(), info.newType, info.newType.MetadataToken.ToInt32());
-				info.arg.FieldType = info.newType;
-				changed = true;
-			}
-			Log.deIndent();
-			return changed;
-		}
-
-		bool updateFields() {
 			foreach (var info in fieldWrites.Values)
 				info.types.Clear();
 
@@ -485,8 +487,17 @@ namespace de4dot.deobfuscators {
 			}
 
 			bool changed = false;
-			foreach (var info in fieldWrites.Values)
-				changed |= info.updateNewType();
+			var removeThese = new List<FieldDefinition>();
+			foreach (var info in fieldWrites.Values) {
+				if (info.updateNewType()) {
+					removeThese.Add(info.arg);
+					getUpdatedField(info.arg).newFieldType = info.newType;
+					info.arg.FieldType = info.newType;
+					changed = true;
+				}
+			}
+			foreach (var field in removeThese)
+				fieldWrites.Remove(new FieldReferenceAndDeclaringTypeKey(field));
 			return changed;
 		}
 
