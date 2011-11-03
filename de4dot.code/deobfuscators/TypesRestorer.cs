@@ -232,13 +232,13 @@ namespace de4dot.deobfuscators {
 			}
 
 			public Instruction get(int i) {
-				if (i >= args.Count)
-					return null;
-				return args[i];
+				if (0 <= i && i < args.Count)
+					return args[i];
+				return null;
 			}
 
 			public Instruction getEnd(int i) {
-				return args[args.Count - 1 - i];
+				return get(args.Count - 1 - i);
 			}
 
 			public void fixDups() {
@@ -602,7 +602,7 @@ namespace de4dot.deobfuscators {
 
 		TypeReference getLoadedType(MethodDefinition method, IList<Instruction> instructions, int instrIndex) {
 			var pushedArgs = getPushedArgInstructions(instructions, instrIndex);
-			var pushInstr = pushedArgs.get(0);
+			var pushInstr = pushedArgs.getEnd(0);
 			if (pushInstr == null)
 				return null;
 
@@ -688,9 +688,25 @@ namespace de4dot.deobfuscators {
 				return false;
 			if (MemberReferenceHelper.verifyType(type, "mscorlib", "System.Void"))
 				return false;
-			if (type is GenericParameter)
+
+			switch (MemberReferenceHelper.getMemberReferenceType(type)) {
+			case CecilType.ArrayType:
+			case CecilType.GenericInstanceType:
+			case CecilType.PointerType:
+			case CecilType.TypeDefinition:
+			case CecilType.TypeReference:
+				return true;
+
+			case CecilType.ByReferenceType:
+			case CecilType.FunctionPointerType:
+			case CecilType.GenericParameter:
+			case CecilType.OptionalModifierType:
+			case CecilType.PinnedType:
+			case CecilType.RequiredModifierType:
+			case CecilType.SentinelType:
+			default:
 				return false;
-			return true;
+			}
 		}
 
 		static TypeReference getCommonBaseClass(TypeReference a, TypeReference b) {
