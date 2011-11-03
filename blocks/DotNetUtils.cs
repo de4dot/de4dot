@@ -782,5 +782,26 @@ namespace de4dot.blocks {
 				return Instruction.Create(OpCodes.Ldc_I4_S, (sbyte)value);
 			return Instruction.Create(OpCodes.Ldc_I4, value);
 		}
+
+		// Doesn't fix everything (eg. T[] aren't replaced with eg. int[], but T -> int will be fixed)
+		public static IList<TypeReference> replaceGenericParameters(GenericInstanceType typeOwner, GenericInstanceMethod methodOwner, IList<TypeReference> types) {
+			for (int i = 0; i < types.Count; i++)
+				types[i] = getGenericArgument(typeOwner, methodOwner, types[i]);
+			return types;
+		}
+
+		public static TypeReference getGenericArgument(GenericInstanceType typeOwner, GenericInstanceMethod methodOwner, TypeReference type) {
+			var gp = type as GenericParameter;
+			if (gp == null)
+				return type;
+
+			if (typeOwner != null && MemberReferenceHelper.compareTypes(typeOwner.ElementType, gp.Owner as TypeReference))
+				return typeOwner.GenericArguments[gp.Position];
+
+			if (methodOwner != null && MemberReferenceHelper.compareMethodReferenceAndDeclaringType(methodOwner.ElementMethod, gp.Owner as MethodReference))
+				return methodOwner.GenericArguments[gp.Position];
+
+			return type;
+		}
 	}
 }
