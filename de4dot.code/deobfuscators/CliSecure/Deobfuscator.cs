@@ -214,7 +214,7 @@ namespace de4dot.deobfuscators.CliSecure {
 			base.deobfuscateBegin();
 
 			foreach (var type in module.Types) {
-				if (type.FullName == "InitializeDelegate" && DotNetUtils.isDelegateType(type))
+				if (type.FullName == "InitializeDelegate" && DotNetUtils.derivesFromDelegate(type))
 					this.addTypeToBeRemoved(type, "Obfuscator type");
 				else if (findResourceDecrypter(type)) {
 					// Nothing

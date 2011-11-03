@@ -282,7 +282,7 @@ namespace de4dot.blocks {
 			return type != null && (type.FullName == "System.Delegate" || type.FullName == "System.MulticastDelegate");
 		}
 
-		public static bool isDelegateType(TypeDefinition type) {
+		public static bool derivesFromDelegate(TypeDefinition type) {
 			return type != null && isDelegate(type.BaseType);
 		}
 

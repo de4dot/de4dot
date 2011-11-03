@@ -93,7 +93,7 @@ namespace de4dot.deobfuscators.SmartAssembly {
 		public void findDelegateCreator(ModuleDefinition module) {
 			var callCounter = new CallCounter();
 			foreach (var type in module.Types) {
-				if (type.Namespace != "" || !DotNetUtils.isDelegateType(type))
+				if (type.Namespace != "" || !DotNetUtils.derivesFromDelegate(type))
 					continue;
 				var cctor = DotNetUtils.getMethod(type, ".cctor");
 				if (cctor == null)

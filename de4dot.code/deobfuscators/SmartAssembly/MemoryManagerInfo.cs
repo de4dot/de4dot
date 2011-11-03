@@ -73,7 +73,7 @@ namespace de4dot.deobfuscators.SmartAssembly {
 					fields++;
 					continue;
 				}
-				if (DotNetUtils.isDelegateType(DotNetUtils.getType(module, field.FieldType)))
+				if (DotNetUtils.derivesFromDelegate(DotNetUtils.getType(module, field.FieldType)))
 					continue;
 
 				return false;

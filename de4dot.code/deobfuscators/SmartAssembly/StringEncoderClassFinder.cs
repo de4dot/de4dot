@@ -117,7 +117,7 @@ namespace de4dot.deobfuscators.SmartAssembly {
 				if (typeToken == null)
 					continue;
 				var delegateType = getType(typeToken);
-				if (!DotNetUtils.isDelegateType(delegateType))
+				if (!DotNetUtils.derivesFromDelegate(delegateType))
 					continue;
 				var invoke = DotNetUtils.getMethod(delegateType, "Invoke");
 				if (invoke == null || !DotNetUtils.isMethod(invoke, "System.String", "(System.Int32)"))
@@ -143,7 +143,7 @@ namespace de4dot.deobfuscators.SmartAssembly {
 				if (typeToken == null)
 					continue;
 				var type = getType(typeToken);
-				if (type == null || DotNetUtils.isDelegateType(type))
+				if (type == null || DotNetUtils.derivesFromDelegate(type))
 					continue;
 				if (!couldBeStringDecrypterClass(type))
 					continue;

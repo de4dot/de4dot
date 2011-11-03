@@ -711,9 +711,9 @@ namespace de4dot.deobfuscators {
 		}
 
 		static TypeReference getCommonBaseClass(ModuleDefinition module, TypeReference a, TypeReference b) {
-			if (DotNetUtils.isDelegate(a) && DotNetUtils.isDelegateType(DotNetUtils.getType(module, b)))
+			if (DotNetUtils.isDelegate(a) && DotNetUtils.derivesFromDelegate(DotNetUtils.getType(module, b)))
 				return b;
-			if (DotNetUtils.isDelegate(b) && DotNetUtils.isDelegateType(DotNetUtils.getType(module, a)))
+			if (DotNetUtils.isDelegate(b) && DotNetUtils.derivesFromDelegate(DotNetUtils.getType(module, a)))
 				return a;
 			return null;	//TODO:
 		}
