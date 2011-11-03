@@ -40,8 +40,6 @@ namespace de4dot.blocks {
 		}
 
 		public TypeDefinition lookup(TypeReference typeReference) {
-			if (typeReference is TypeDefinition)
-				return (TypeDefinition)typeReference;
 			TypeDefinition typeDefinition;
 			typeRefToDef.TryGetValue(new TypeReferenceKey(typeReference), out typeDefinition);
 			return typeDefinition;
@@ -65,8 +63,6 @@ namespace de4dot.blocks {
 		}
 
 		public TypeDefinition lookup(ModuleDefinition module, TypeReference typeReference) {
-			if (typeReference is TypeDefinition)
-				return (TypeDefinition)typeReference;
 			TypeCache typeCache;
 			if (!typeCaches.TryGetValue(module, out typeCache))
 				typeCaches[module] = typeCache = new TypeCache(module);
