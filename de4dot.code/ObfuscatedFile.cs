@@ -148,7 +148,7 @@ namespace de4dot {
 				noExt = options.Filename;
 				ext = "";
 			}
-			return noExt + "-fixed" + ext;
+			return noExt + "-cleaned" + ext;
 		}
 
 		public void load(IEnumerable<IDeobfuscator> deobfuscators) {
