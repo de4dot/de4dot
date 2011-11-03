@@ -278,8 +278,12 @@ namespace de4dot.blocks {
 			}
 		}
 
+		public static bool isDelegate(TypeReference type) {
+			return type != null && (type.FullName == "System.Delegate" || type.FullName == "System.MulticastDelegate");
+		}
+
 		public static bool isDelegateType(TypeDefinition type) {
-			return type != null && type.BaseType != null && type.BaseType.FullName == "System.MulticastDelegate";
+			return type != null && isDelegate(type.BaseType);
 		}
 
 		public static bool isSameAssembly(TypeReference type, string assembly) {
