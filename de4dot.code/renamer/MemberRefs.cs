@@ -382,6 +382,8 @@ namespace de4dot.renamer {
 			windowsFormsControlClasses["System.Windows.Forms.WebBrowser"] = true;
 		}
 
+		Dictionary<MethodDef, string> newMethodsNames = new Dictionary<MethodDef, string>();
+
 		public IDefFinder defFinder;
 		public TypeInfo baseType = null;
 		public IList<TypeInfo> interfaces = new List<TypeInfo>();	// directly implemented interfaces
@@ -631,10 +633,33 @@ namespace de4dot.renamer {
 					if (DotNetUtils.getArgIndex(methodDef.MethodDefinition, ldarg) != 0)
 						continue;
 
-					return ldstr.Operand as string;
+					var className = ldstr.Operand as string;
+					if (className == null)
+						continue;
+
+					findInitializeComponentMethod(methodDef);
+					return className;
 				}
 			}
 			return null;
+		}
+
+		void findInitializeComponentMethod(MethodDef possibleInitMethod) {
+			foreach (var methodDef in methods.getAll()) {
+				if (methodDef.OldName != ".ctor")
+					continue;
+				if (methodDef.MethodDefinition.Body == null)
+					continue;
+				foreach (var instr in methodDef.MethodDefinition.Body.Instructions) {
+					if (instr.OpCode.Code != Code.Call)
+						continue;
+					if (!MemberReferenceHelper.compareMethodReferenceAndDeclaringType(possibleInitMethod.MethodDefinition, instr.Operand as MethodReference))
+						continue;
+
+					newMethodsNames[possibleInitMethod] = "InitializeComponent";
+					return;
+				}
+			}
 		}
 
 		static bool isWindowsFormsSetNameMethod(MethodReference method) {
@@ -826,6 +851,9 @@ namespace de4dot.renamer {
 				prepareRenameFields();		// must be first
 				prepareRenameProperties();
 				prepareRenameEvents();
+
+				initializeEventHandlerNames();
+
 				prepareRenameMethods();		// must be last
 			}
 		}
@@ -968,6 +996,92 @@ namespace de4dot.renamer {
 					fieldDef.rename(variableNameState.getNewFieldName(fieldDef.OldName, new NameCreator2(fieldName)));
 				}
 			}
+		}
+
+		void initializeEventHandlerNames() {
+			var ourFields = new Dictionary<FieldReferenceAndDeclaringTypeKey, FieldDef>();
+			foreach (var fieldDef in fields.getAll())
+				ourFields[new FieldReferenceAndDeclaringTypeKey(fieldDef.FieldDefinition)] = fieldDef;
+			var ourMethods = new Dictionary<MethodReferenceAndDeclaringTypeKey, MethodDef>();
+			foreach (var methodDef in methods.getAll())
+				ourMethods[new MethodReferenceAndDeclaringTypeKey(methodDef.MethodDefinition)] = methodDef;
+
+			var variableNameState = MemberRenameState.variableNameState;
+			foreach (var methodDef in methods.getAll()) {
+				if (methodDef.MethodDefinition.Body == null)
+					continue;
+				if (methodDef.MethodDefinition.IsStatic)
+					continue;
+				var instructions = methodDef.MethodDefinition.Body.Instructions;
+				for (int i = 0; i < instructions.Count - 5; i++) {
+					// We're looking for this code pattern:
+					//	ldarg.0
+					//	ldfld field
+					//	ldarg.0
+					//	ldftn method
+					//	newobj event_handler_ctor
+					//	callvirt add_SomeEvent
+
+					if (DotNetUtils.getArgIndex(methodDef.MethodDefinition, instructions[i]) != 0)
+						continue;
+
+					var ldfld = instructions[i + 1];
+					if (ldfld.OpCode.Code != Code.Ldfld)
+						continue;
+					var fieldRef = ldfld.Operand as FieldReference;
+					if (fieldRef == null)
+						continue;
+					FieldDef fieldDef;
+					if (!ourFields.TryGetValue(new FieldReferenceAndDeclaringTypeKey(fieldRef), out fieldDef))
+						continue;
+
+					if (DotNetUtils.getArgIndex(methodDef.MethodDefinition, instructions[i + 2]) != 0)
+						continue;
+
+					var ldftn = instructions[i + 3];
+					if (ldftn.OpCode.Code != Code.Ldftn)
+						continue;
+					var methodRef = ldftn.Operand as MethodReference;
+					if (methodRef == null)
+						continue;
+					MethodDef handlerMethod;
+					if (!ourMethods.TryGetValue(new MethodReferenceAndDeclaringTypeKey(methodRef), out handlerMethod))
+						continue;
+
+					var newobj = instructions[i + 4];
+					if (newobj.OpCode.Code != Code.Newobj)
+						continue;
+					if (!isEventHandlerCtor(newobj.Operand as MethodReference))
+						continue;
+
+					var call = instructions[i + 5];
+					if (call.OpCode.Code != Code.Call && call.OpCode.Code != Code.Callvirt)
+						continue;
+					var addHandler = call.Operand as MethodReference;
+					if (addHandler == null)
+						continue;
+					if (!addHandler.Name.StartsWith("add_", StringComparison.Ordinal))
+						continue;
+
+					var eventName = addHandler.Name.Substring(4);
+					if (!MemberRenameState.variableNameState.IsValidName(eventName))
+						continue;
+
+					newMethodsNames[handlerMethod] = string.Format("{0}_{1}", fieldDef.NewName, eventName);
+				}
+			}
+		}
+
+		static bool isEventHandlerCtor(MethodReference method) {
+			if (method == null)
+				return false;
+			if (method.Name != ".ctor")
+				return false;
+			if (!DotNetUtils.isMethod(method, "System.Void", "(System.Object,System.IntPtr)"))
+				return false;
+			if (!method.DeclaringType.FullName.EndsWith("EventHandler", StringComparison.Ordinal))
+				return false;
+			return true;
 		}
 
 		static MethodReference getOverrideMethod(MethodDefinition meth) {
@@ -1142,6 +1256,9 @@ namespace de4dot.renamer {
 				return;
 			methodDef.Renamed = true;
 
+			if (suggestedName == null)
+				newMethodsNames.TryGetValue(methodDef, out suggestedName);
+
 			bool canRenameName = true;
 			if (IsDelegate && methodDef.isVirtual()) {
 				switch (methodDef.MethodDefinition.Name) {
@@ -1173,11 +1290,19 @@ namespace de4dot.renamer {
 			}
 
 			if (methodDef.ParamDefs.Count > 0) {
-				var newVariableNameState = variableNameState.clone();
-				foreach (var paramDef in methodDef.ParamDefs) {
-					if (!newVariableNameState.IsValidName(paramDef.OldName)) {
-						paramDef.NewName = newVariableNameState.getNewParamName(paramDef.OldName, paramDef.ParameterDefinition);
-						paramDef.Renamed = true;
+				if (isEventHandler(methodDef)) {
+					methodDef.ParamDefs[0].NewName = "sender";
+					methodDef.ParamDefs[0].Renamed = true;
+					methodDef.ParamDefs[1].NewName = "e";
+					methodDef.ParamDefs[1].Renamed = true;
+				}
+				else {
+					var newVariableNameState = variableNameState.clone();
+					foreach (var paramDef in methodDef.ParamDefs) {
+						if (!newVariableNameState.IsValidName(paramDef.OldName)) {
+							paramDef.NewName = newVariableNameState.getNewParamName(paramDef.OldName, paramDef.ParameterDefinition);
+							paramDef.Renamed = true;
+						}
 					}
 				}
 			}
@@ -1186,6 +1311,18 @@ namespace de4dot.renamer {
 
 			if (isVirtual)
 				MemberRenameState.add(methodDef);
+		}
+
+		static bool isEventHandler(MethodDef methodDef) {
+			if (methodDef.MethodDefinition.Parameters.Count != 2)
+				return false;
+			if (methodDef.MethodDefinition.MethodReturnType.ReturnType.FullName != "System.Void")
+				return false;
+			if (methodDef.MethodDefinition.Parameters[0].ParameterType.FullName != "System.Object")
+				return false;
+			if (!methodDef.MethodDefinition.Parameters[1].ParameterType.FullName.Contains("EventArgs"))
+				return false;
+			return true;
 		}
 
 		string getPinvokeName(MethodDef methodDef) {
