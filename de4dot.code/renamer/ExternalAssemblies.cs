@@ -82,8 +82,11 @@ namespace de4dot.renamer {
 		}
 
 		public void unloadAll() {
-			foreach (var asm in assemblies.Values)
+			foreach (var asm in assemblies.Values) {
+				if (asm == null)
+					continue;
 				asm.unload();
+			}
 			assemblies.Clear();
 		}
 	}
