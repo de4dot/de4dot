@@ -56,12 +56,32 @@ namespace de4dot.deobfuscators {
 		}
 
 		class TypeInfo<T> {
-			public Dictionary<TypeReferenceKey, bool> types = new Dictionary<TypeReferenceKey, bool>();
+			Dictionary<TypeReferenceKey, bool> types = new Dictionary<TypeReferenceKey, bool>();
 			public TypeReference newType = null;
 			public T arg;
+			bool newobjTypes;
+
+			public Dictionary<TypeReferenceKey, bool> Types {
+				get { return types; }
+			}
 
 			public TypeInfo(T arg) {
 				this.arg = arg;
+			}
+
+			public void add(TypeReference type, bool wasNewobj = false) {
+				if (wasNewobj) {
+					if (!newobjTypes)
+						clear();
+					newobjTypes = true;
+				}
+				else if (newobjTypes)
+					return;
+				types[new TypeReferenceKey(type)] = true;
+			}
+
+			public void clear() {
+				types.Clear();
 			}
 
 			public bool updateNewType(ModuleDefinition module) {
@@ -281,10 +301,11 @@ namespace de4dot.deobfuscators {
 				case Code.Ret:
 					if (!fixReturnType)
 						break;
-					var type = getLoadedType(method, instructions, i);
+					bool wasNewobj;
+					var type = getLoadedType(method, instructions, i, out wasNewobj);
 					if (type == null)
 						break;
-					methodReturnInfo.types[new TypeReferenceKey(type)] = true;
+					methodReturnInfo.add(type);
 					break;
 
 				case Code.Call:
@@ -460,11 +481,10 @@ namespace de4dot.deobfuscators {
 			TypeInfo<ParameterDefinition> info;
 			if (!argInfos.TryGetValue(methodParam, out info))
 				return false;
-			var key = new TypeReferenceKey(type);
-			if (info.types.ContainsKey(key))
+			if (info.Types.ContainsKey(new TypeReferenceKey(type)))
 				return false;
 
-			info.types[key] = true;
+			info.add(type);
 			return true;
 		}
 
@@ -533,7 +553,7 @@ namespace de4dot.deobfuscators {
 
 		bool deobfuscateFields() {
 			foreach (var info in fieldWrites.Values)
-				info.types.Clear();
+				info.clear();
 
 			foreach (var method in allMethods) {
 				if (method.Body == null)
@@ -552,10 +572,11 @@ namespace de4dot.deobfuscators {
 							continue;
 						if (!fieldWrites.TryGetValue(new FieldReferenceAndDeclaringTypeKey(field), out info))
 							continue;
-						fieldType = getLoadedType(method, instructions, i);
+						bool wasNewobj;
+						fieldType = getLoadedType(method, instructions, i, out wasNewobj);
 						if (fieldType == null)
 							continue;
-						info.types[new TypeReferenceKey(fieldType)] = true;
+						info.add(fieldType, wasNewobj);
 						break;
 
 					case Code.Call:
@@ -581,7 +602,7 @@ namespace de4dot.deobfuscators {
 							fieldType = calledMethodArgs[calledMethodArgs.Count - 1 - j];
 							if (!isValidType(fieldType))
 								continue;
-							info.types[new TypeReferenceKey(fieldType)] = true;
+							info.add(fieldType);
 						}
 						break;
 
@@ -606,7 +627,8 @@ namespace de4dot.deobfuscators {
 			return changed;
 		}
 
-		TypeReference getLoadedType(MethodDefinition method, IList<Instruction> instructions, int instrIndex) {
+		TypeReference getLoadedType(MethodDefinition method, IList<Instruction> instructions, int instrIndex, out bool wasNewobj) {
+			wasNewobj = false;
 			var pushedArgs = getPushedArgInstructions(instructions, instrIndex);
 			var pushInstr = pushedArgs.getEnd(0);
 			if (pushInstr == null)
@@ -632,6 +654,7 @@ namespace de4dot.deobfuscators {
 				if (fieldType == null)
 					return null;
 				fieldType = new ArrayType(fieldType);
+				wasNewobj = true;
 				break;
 
 			case Code.Newobj:
@@ -639,6 +662,7 @@ namespace de4dot.deobfuscators {
 				if (ctor == null)
 					return null;
 				fieldType = ctor.DeclaringType;
+				wasNewobj = true;
 				break;
 
 			case Code.Castclass:
