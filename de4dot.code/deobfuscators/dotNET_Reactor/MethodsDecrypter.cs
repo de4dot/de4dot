@@ -167,6 +167,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				patchDwords(peImage, methodsDataReader, patchCount);
 				int count = methodsDataReader.ReadInt32();
 				dumpedMethods = new Dictionary<uint, DumpedMethod>();
+				bool foundNativeCode = false;
 				while (methodsDataReader.BaseStream.Position < methodsData.Length - 1) {
 					uint rva = methodsDataReader.ReadUInt32();
 					uint index = methodsDataReader.ReadUInt32();
@@ -181,8 +182,12 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 					}
 
 					if (isNativeCode) {
+						if (!foundNativeCode) {
+							foundNativeCode = true;
+							Log.w("Found native code. Assembly won't run.");
+						}
 						//TODO: Convert to CIL code
-						Log.w("Found native code. Ignoring it for now... Assembly won't run. token: {0:X8}", 0x06000001 + methodIndex);
+						Log.v("Found native code. Ignoring it for now... Assembly won't run. token: {0:X8}", 0x06000001 + methodIndex);
 					}
 					else {
 						var dm = new DumpedMethod();
