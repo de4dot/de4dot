@@ -99,8 +99,8 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 
 			bool hooksJitter = findDnrCompileMethod(encryptedResource.ResourceDecrypterMethod.DeclaringType) != null;
 
-			long xorKey;
-			if (getXorKey(out xorKey)) {
+			long xorKey = getXorKey();
+			if (xorKey != 0) {
 				// DNR 4.3, 4.4
 				var stream = new MemoryStream(methodsData);
 				var reader = new BinaryReader(stream);
@@ -145,7 +145,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				}
 			}
 			else {
-				// DNR (4.0-4.2?), 4.3, 4.4 (jitter is hooked)
+				// DNR 4.0 - 4.4 (jitter is hooked)
 
 				var metadataTables = peImage.Cor20Header.createMetadataTables();
 				var methodDef = metadataTables.getMetadataType(PE.MetadataIndex.iMethodDef);
@@ -226,7 +226,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			}
 		}
 
-		bool getXorKey(out long xorKey) {
+		long getXorKey() {
 			var instructions = encryptedResource.ResourceDecrypterMethod.Body.Instructions;
 			for (int i = 0; i < instructions.Count - 1; i++) {
 				if (instructions[i].OpCode.Code != Code.Ldind_I8)
@@ -235,11 +235,9 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				if (!DotNetUtils.isLdcI4(ldci4))
 					continue;
 
-				xorKey = DotNetUtils.getLdcI4Value(ldci4);
-				return true;
+				return DotNetUtils.getLdcI4Value(ldci4);
 			}
-			xorKey = 0;
-			return false;
+			return 0;
 		}
 
 		public static MethodDefinition findDnrCompileMethod(TypeDefinition type) {

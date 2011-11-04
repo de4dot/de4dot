@@ -320,17 +320,23 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 
 			if (Operations.DecryptStrings != OpDecryptString.None)
 				addResourceToBeRemoved(stringDecrypter.StringsResource, "Encrypted strings");
+			else
+				canRemoveDecrypterType = false;
+
 			if (options.DecryptMethods) {
 				addResourceToBeRemoved(methodsDecrypter.MethodsResource, "Encrypted methods");
 				addCctorInitCallToBeRemoved(methodsDecrypter.MethodsDecrypterMethod);
 			}
+			else
+				canRemoveDecrypterType = false;
+
 			if (options.DecryptBools)
 				addResourceToBeRemoved(booleanDecrypter.BooleansResource, "Encrypted booleans");
-			bool deleteTypes = Operations.DecryptStrings != OpDecryptString.None &&
-								options.DecryptMethods &&
-								options.DecryptBools &&
-								options.InlineMethods;
-			if (!deleteTypes)
+			else
+				canRemoveDecrypterType = false;
+
+			// The inlined methods may contain calls to the decrypter class
+			if (!options.InlineMethods)
 				canRemoveDecrypterType = false;
 
 			// Set it to false until we've removed all references to it
@@ -489,7 +495,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			int methodArgsCount = DotNetUtils.getArgsCount(method);
 			var instrs = method.Body.Instructions;
 			int i = 0;
-			for (; i < instrs.Count; i++) {
+			for (; i < instrs.Count && i < methodArgsCount; i++) {
 				var instr = instrs[i];
 				switch (instr.OpCode.Code) {
 				case Code.Ldarg:
