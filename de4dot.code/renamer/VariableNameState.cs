@@ -80,6 +80,10 @@ namespace de4dot.renamer {
 			return currentVariableNames.newName(field.Name, () => variableNameCreator.newName(field.FieldType));
 		}
 
+		public string getNewFieldName(string oldName, INameCreator nameCreator) {
+			return currentVariableNames.newName(oldName, () => nameCreator.newName());
+		}
+
 		public string getNewParamName(string oldName, ParameterDefinition param) {
 			return currentVariableNames.newName(oldName, () => variableNameCreator.newName(param.ParameterType));
 		}
