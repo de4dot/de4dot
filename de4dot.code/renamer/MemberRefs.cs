@@ -635,6 +635,13 @@ namespace de4dot.renamer {
 			if (MemberRenameState == null)
 				MemberRenameState = baseType.typeDef.MemberRenameState.clone();
 
+			if (IsRenamable) {
+				foreach (var fieldDef in fields.getAll())
+					MemberRenameState.variableNameState.addFieldName(fieldDef.OldName);
+				foreach (var methodDef in methods.getAll())
+					MemberRenameState.variableNameState.addMethodName(methodDef.OldName);
+			}
+
 			// For each base type and interface it implements, add all its virtual methods, props,
 			// and events if the type is a non-renamable type (eg. it's from mscorlib or some other
 			// non-deobfuscated assembly).
@@ -947,15 +954,20 @@ namespace de4dot.renamer {
 
 			if (canRenameName) {
 				var nameCreator = getMethodNameCreator(methodDef, suggestedName);
-				if (!methodDef.MethodDefinition.IsRuntimeSpecialName && !variableNameState.IsValidName(methodDef.OldName))
-					methodDef.NewName = nameCreator.newName();
+				if (!methodDef.MethodDefinition.IsRuntimeSpecialName && !variableNameState.IsValidName(methodDef.OldName)) {
+					bool useNameCreator = methodDef.isVirtual() || methodDef.Property != null || methodDef.Event != null;
+					if (useNameCreator)
+						methodDef.NewName = nameCreator.newName();
+					else
+						methodDef.NewName = variableNameState.getNewMethodName(methodDef.OldName, nameCreator);
+				}
 			}
 
 			if (methodDef.ParamDefs.Count > 0) {
 				var newVariableNameState = variableNameState.clone();
 				foreach (var paramDef in methodDef.ParamDefs) {
 					if (!newVariableNameState.IsValidName(paramDef.OldName)) {
-						paramDef.NewName = newVariableNameState.getNewParamName(paramDef.ParameterDefinition);
+						paramDef.NewName = newVariableNameState.getNewParamName(paramDef.OldName, paramDef.ParameterDefinition);
 						paramDef.Renamed = true;
 					}
 				}
@@ -968,18 +980,10 @@ namespace de4dot.renamer {
 		}
 
 		string getPinvokeName(MethodDef methodDef) {
-			var methodNames = new Dictionary<string, bool>(StringComparer.Ordinal);
-			foreach (var method in methods.getAll())
-				methodNames[method.NewName] = true;
-
 			var entryPoint = methodDef.MethodDefinition.PInvokeInfo.EntryPoint;
 			if (Regex.IsMatch(entryPoint, @"^#\d+$"))
 				entryPoint = DotNetUtils.getDllName(methodDef.MethodDefinition.PInvokeInfo.Module.Name) + "_" + entryPoint.Substring(1);
-			while (true) {
-				var newName = MemberRenameState.variableNameState.pinvokeNameCreator.newName(entryPoint);
-				if (!methodNames.ContainsKey(newName))
-					return newName;
-			}
+			return entryPoint;
 		}
 
 		INameCreator getMethodNameCreator(MethodDef methodDef, string suggestedName) {
@@ -1011,8 +1015,12 @@ namespace de4dot.renamer {
 
 			if (newName == null)
 				newName = suggestedName;
-			if (newName != null)
-				nameCreator = new OneNameCreator(newName);
+			if (newName != null) {
+				if (methodDef.isVirtual())
+					nameCreator = new OneNameCreator(newName);	// It must have this name
+				else
+					nameCreator = new NameCreator2(newName);
+			}
 
 			return nameCreator;
 		}

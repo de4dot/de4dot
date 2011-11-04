@@ -23,15 +23,24 @@ using de4dot.deobfuscators;
 
 namespace de4dot.renamer {
 	class TypeNameState {
-		IDictionary<string, string> namespaceToNewName = new Dictionary<string, string>(StringComparer.Ordinal);
-		INameCreator createNamespaceName = new GlobalNameCreator(new NameCreator("ns"));
-		public ITypeNameCreator globalTypeNameCreator = new GlobalTypeNameCreator();
-		public ITypeNameCreator internalTypeNameCreator = new TypeNameCreator();
+		public CurrentNames currentNames;
+		IDictionary<string, string> namespaceToNewName;
+		INameCreator createNamespaceName;
+		public ITypeNameCreator globalTypeNameCreator;
+		public ITypeNameCreator internalTypeNameCreator;
 		Func<string, bool> isValidName;
 
 		public Func<string, bool> IsValidName {
 			get { return isValidName; }
 			set { isValidName = value; }
+		}
+
+		public TypeNameState() {
+			currentNames = new CurrentNames();
+			namespaceToNewName = new Dictionary<string, string>(StringComparer.Ordinal);
+			createNamespaceName = new GlobalNameCreator(new NameCreator("ns"));
+			globalTypeNameCreator = new GlobalTypeNameCreator(currentNames);
+			internalTypeNameCreator = new TypeNameCreator(currentNames);
 		}
 
 		public bool isValidNamespace(string ns) {
