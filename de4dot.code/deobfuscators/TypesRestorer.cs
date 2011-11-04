@@ -470,11 +470,16 @@ namespace de4dot.deobfuscators {
 
 		// May not return all args. The args are returned in reverse order.
 		PushedArgs getPushedArgInstructions(IList<Instruction> instructions, int index) {
-			int pushes, pops;
-			DotNetUtils.calculateStackUsage(instructions[index], false, out pushes, out pops);
-			if (pops == -1)
-				return new PushedArgs(0);
-			return getPushedArgInstructions(instructions, index, pops);
+			try {
+				int pushes, pops;
+				DotNetUtils.calculateStackUsage(instructions[index], false, out pushes, out pops);
+				if (pops != -1)
+					return getPushedArgInstructions(instructions, index, pops);
+			}
+			catch (System.NullReferenceException) {
+				// Here if eg. invalid metadata token in a call instruction (operand is null)
+			}
+			return new PushedArgs(0);
 		}
 
 		// May not return all args. The args are returned in reverse order.
