@@ -1336,7 +1336,7 @@ namespace de4dot.renamer {
 			INameCreator nameCreator = null;
 			string newName = null;
 
-			if (methodDef.MethodDefinition.HasPInvokeInfo)
+			if (methodDef.MethodDefinition.PInvokeInfo != null)
 				newName = getPinvokeName(methodDef);
 			else if (methodDef.MethodDefinition.IsStatic)
 				nameCreator = variableNameState.staticMethodNameCreator;

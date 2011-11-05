@@ -225,7 +225,7 @@ namespace de4dot.blocks {
 		public static bool isPinvokeMethod(MethodDefinition method, string dll, string funcName) {
 			if (method == null)
 				return false;
-			if (!method.HasPInvokeInfo || method.PInvokeInfo.EntryPoint != funcName)
+			if (method.PInvokeInfo == null || method.PInvokeInfo.EntryPoint != funcName)
 				return false;
 			return getDllName(dll).Equals(getDllName(method.PInvokeInfo.Module.Name), StringComparison.OrdinalIgnoreCase);
 		}
