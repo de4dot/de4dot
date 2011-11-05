@@ -69,9 +69,20 @@ namespace de4dot.renamer {
 				Log.w("Could not load assembly {0}", asmFullName);
 				return null;
 			}
-			Log.v("Loaded assembly {0}", asmFullName);
+			if (assemblies.ContainsKey(asmDef.Name.FullName)) {
+				assemblies[asmFullName] = assemblies[asmDef.Name.FullName];
+				return assemblies[asmDef.Name.FullName];
+			}
 
-			return assemblies[asmFullName] = new ExternalAssembly(asmDef);
+			if (asmFullName == asmDef.Name.FullName)
+				Log.v("Loaded assembly {0}", asmFullName);
+			else
+				Log.v("Loaded assembly {0} (but wanted {1})", asmDef.Name.FullName, asmFullName);
+
+			asm = new ExternalAssembly(asmDef);
+			assemblies[asmFullName] = asm;
+			assemblies[asmDef.Name.FullName] = asm;
+			return asm;
 		}
 
 		public TypeDefinition resolve(TypeReference type) {

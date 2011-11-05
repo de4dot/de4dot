@@ -126,6 +126,7 @@
     <Compile Include="PE\DotNetStream.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="renamer\CurrentNames.cs" />
     <Compile Include="renamer\DefinitionsRenamer.cs" />
     <Compile Include="renamer\ExternalAssemblies.cs" />
     <Compile Include="renamer\MemberRefFinder.cs" />

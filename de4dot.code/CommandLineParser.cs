@@ -95,7 +95,7 @@ namespace de4dot {
 			miscOptions.Add(new OneArgOption("r", null, "Scan for .NET files in all subdirs", "dir", (val) => {
 				addSearchDir();
 				searchDir = new FilesDeobfuscator.SearchDir();
-				if (!new DirectoryInfo(val).Exists)
+				if (!Utils.pathExists(val))
 					exitError(string.Format("Directory {0} does not exist", val));
 				searchDir.InputDirectory = val;
 			}));
@@ -112,7 +112,7 @@ namespace de4dot {
 			miscOptions.Add(new NoArgOption("d", null, "Detect obfuscators and exit", () => {
 				filesOptions.DetectObfuscators = true;
 			}));
-			miscOptions.Add(new OneArgOption(null, "asmpath", "Add an assembly search path", "path", (val) => {
+			miscOptions.Add(new OneArgOption(null, "asm-path", "Add an assembly search path", "path", (val) => {
 				AssemblyResolver.Instance.addSearchDirectory(val);
 			}));
 			miscOptions.Add(new NoArgOption(null, "dont-rename", "Don't rename classes, methods, etc.", () => {
@@ -152,7 +152,7 @@ namespace de4dot {
 
 			defaultOption = new OneArgOption("f", null, "Name of .NET file", "file", (val) => {
 				addFile();
-				if (!new FileInfo(val).Exists)
+				if (!Utils.fileExists(val))
 					exitError(string.Format("File \"{0}\" does not exist.", val));
 				newFileOptions = new ObfuscatedFile.Options {
 					Filename = val,
@@ -168,7 +168,7 @@ namespace de4dot {
 			fileOptions.Add(new OneArgOption("m", null, "Name of .methods file", "file", (val) => {
 				if (newFileOptions == null)
 					exitError("Missing input file");
-				if (!new FileInfo(val).Exists)
+				if (!Utils.fileExists(val))
 					exitError(string.Format("File \"{0}\" does not exist.", val));
 				newFileOptions.MethodsFilename = val;
 			}));

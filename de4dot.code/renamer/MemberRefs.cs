@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Mono.Cecil;
+using Mono.Cecil.Cil;
 using de4dot.blocks;
 using de4dot.deobfuscators;
 
@@ -286,6 +287,103 @@ namespace de4dot.renamer {
 	}
 
 	class TypeDef : Ref {
+		static Dictionary<string, bool> windowsFormsControlClasses = new Dictionary<string, bool>(StringComparer.Ordinal);
+		static TypeDef() {
+			windowsFormsControlClasses["System.Windows.Forms.Control"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.AxHost"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.ButtonBase"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.Button"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.CheckBox"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.RadioButton"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.DataGrid"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.DataGridView"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.DataVisualization.Charting.Chart"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.DateTimePicker"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.GroupBox"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.Integration.ElementHost"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.Label"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.LinkLabel"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.ListControl"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.ComboBox"] = true;
+			windowsFormsControlClasses["Microsoft.VisualBasic.Compatibility.VB6.DriveListBox"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.DataGridViewComboBoxEditingControl"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.ListBox"] = true;
+			windowsFormsControlClasses["Microsoft.VisualBasic.Compatibility.VB6.DirListBox"] = true;
+			windowsFormsControlClasses["Microsoft.VisualBasic.Compatibility.VB6.FileListBox"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.CheckedListBox"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.ListView"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.MdiClient"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.MonthCalendar"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.PictureBox"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.PrintPreviewControl"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.ProgressBar"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.ScrollableControl"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.ContainerControl"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.Form"] = true;
+			windowsFormsControlClasses["System.ComponentModel.Design.CollectionEditor.CollectionForm"] = true;
+			windowsFormsControlClasses["System.Messaging.Design.QueuePathDialog"] = true;
+			windowsFormsControlClasses["System.ServiceProcess.Design.ServiceInstallerDialog"] = true;
+			windowsFormsControlClasses["System.Web.UI.Design.WebControls.CalendarAutoFormatDialog"] = true;
+			windowsFormsControlClasses["System.Web.UI.Design.WebControls.RegexEditorDialog"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.Design.ComponentEditorForm"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.PrintPreviewDialog"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.ThreadExceptionDialog"] = true;
+			windowsFormsControlClasses["System.Workflow.Activities.Rules.Design.RuleConditionDialog"] = true;
+			windowsFormsControlClasses["System.Workflow.Activities.Rules.Design.RuleSetDialog"] = true;
+			windowsFormsControlClasses["System.Workflow.ComponentModel.Design.ThemeConfigurationDialog"] = true;
+			windowsFormsControlClasses["System.Workflow.ComponentModel.Design.TypeBrowserDialog"] = true;
+			windowsFormsControlClasses["System.Workflow.ComponentModel.Design.WorkflowPageSetupDialog"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.PropertyGrid"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.SplitContainer"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.ToolStripContainer"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.ToolStripPanel"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.UpDownBase"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.DomainUpDown"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.NumericUpDown"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.UserControl"] = true;
+			windowsFormsControlClasses["Microsoft.VisualBasic.Compatibility.VB6.ADODC"] = true;
+			windowsFormsControlClasses["System.Web.UI.Design.WebControls.ParameterEditorUserControl"] = true;
+			windowsFormsControlClasses["System.Workflow.ComponentModel.Design.WorkflowOutline"] = true;
+			windowsFormsControlClasses["System.Workflow.ComponentModel.Design.WorkflowView"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.Design.ComponentTray"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.Panel"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.Design.ComponentEditorPage"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.FlowLayoutPanel"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.SplitterPanel"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.TableLayoutPanel"] = true;
+			windowsFormsControlClasses["System.ComponentModel.Design.ByteViewer"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.TabPage"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.ToolStripContentPanel"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.ToolStrip"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.BindingNavigator"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.MenuStrip"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.StatusStrip"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.ToolStripDropDown"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.ToolStripDropDownMenu"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.ContextMenuStrip"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.ToolStripOverflow"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.ScrollBar"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.HScrollBar"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.VScrollBar"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.Splitter"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.StatusBar"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.TabControl"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.TextBoxBase"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.MaskedTextBox"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.RichTextBox"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.TextBox"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.DataGridTextBox"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.DataGridViewTextBoxEditingControl"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.ToolBar"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.TrackBar"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.TreeView"] = true;
+			windowsFormsControlClasses["System.ComponentModel.Design.ObjectSelectorEditor.Selector"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.WebBrowserBase"] = true;
+			windowsFormsControlClasses["System.Windows.Forms.WebBrowser"] = true;
+		}
+
+		Dictionary<MethodDef, string> newMethodsNames = new Dictionary<MethodDef, string>();
+
 		public IDefFinder defFinder;
 		public TypeInfo baseType = null;
 		public IList<TypeInfo> interfaces = new List<TypeInfo>();	// directly implemented interfaces
@@ -342,6 +440,23 @@ namespace de4dot.renamer {
 
 		public IEnumerable<MethodDef> Methods {
 			get { return methods.getAll(); }
+		}
+
+		bool? isWindowsFormsControlDerivedClass_cached;
+		bool isWindowsFormsControlDerivedClass() {
+			if (!isWindowsFormsControlDerivedClass_cached.HasValue)
+				isWindowsFormsControlDerivedClass_cached = isWindowsFormsControlDerivedClassInternal();
+			return isWindowsFormsControlDerivedClass_cached.Value;
+		}
+
+		bool isWindowsFormsControlDerivedClassInternal() {
+			if (windowsFormsControlClasses.ContainsKey(OldFullName))
+				return true;
+			if (baseType != null)
+				return baseType.typeDef.isWindowsFormsControlDerivedClass();
+			if (TypeDefinition.BaseType != null)
+				return windowsFormsControlClasses.ContainsKey(TypeDefinition.BaseType.FullName);
+			return false;
 		}
 
 		public void addMembers() {
@@ -482,13 +597,84 @@ namespace de4dot.renamer {
 
 			if (OldFullName != "<Module>" && !typeNameState.IsValidName(OldName)) {
 				var newBaseType = baseType != null && baseType.typeDef.Renamed ? baseType.typeDef.NewName : null;
-				rename(nameCreator.newName(typeDefinition, newBaseType));
+				string origClassName = null;
+				if (isWindowsFormsControlDerivedClass())
+					origClassName = findWindowsFormsClassName();
+				if (origClassName != null && typeNameState.IsValidName(origClassName))
+					rename(typeNameState.currentNames.newName(OldName, new NameCreator2(origClassName)));
+				else
+					rename(nameCreator.newName(typeDefinition, newBaseType));
 			}
 
 			if (typeDefinition.Namespace != "" && !typeNameState.isValidNamespace(typeDefinition.Namespace))
 				newNamespace = typeNameState.newNamespace(typeDefinition.Namespace);
 
 			prepareRenameGenericParams(genericParams, typeNameState.IsValidName);
+		}
+
+		string findWindowsFormsClassName() {
+			foreach (var methodDef in methods.getAll()) {
+				if (methodDef.MethodDefinition.Body == null)
+					continue;
+				if (methodDef.MethodDefinition.IsStatic || methodDef.MethodDefinition.IsVirtual)
+					continue;
+				var instructions = methodDef.MethodDefinition.Body.Instructions;
+				for (int i = 2; i < instructions.Count; i++) {
+					var call = instructions[i];
+					if (call.OpCode.Code != Code.Call && call.OpCode.Code != Code.Callvirt)
+						continue;
+					if (!isWindowsFormsSetNameMethod(call.Operand as MethodReference))
+						continue;
+
+					var ldstr = instructions[i - 1];
+					if (ldstr.OpCode.Code != Code.Ldstr)
+						continue;
+					var className = ldstr.Operand as string;
+					if (className == null)
+						continue;
+
+					if (DotNetUtils.getArgIndex(methodDef.MethodDefinition, instructions[i - 2]) != 0)
+						continue;
+
+					findInitializeComponentMethod(methodDef);
+					return className;
+				}
+			}
+			return null;
+		}
+
+		void findInitializeComponentMethod(MethodDef possibleInitMethod) {
+			foreach (var methodDef in methods.getAll()) {
+				if (methodDef.OldName != ".ctor")
+					continue;
+				if (methodDef.MethodDefinition.Body == null)
+					continue;
+				foreach (var instr in methodDef.MethodDefinition.Body.Instructions) {
+					if (instr.OpCode.Code != Code.Call)
+						continue;
+					if (!MemberReferenceHelper.compareMethodReferenceAndDeclaringType(possibleInitMethod.MethodDefinition, instr.Operand as MethodReference))
+						continue;
+
+					newMethodsNames[possibleInitMethod] = "InitializeComponent";
+					return;
+				}
+			}
+		}
+
+		static bool isWindowsFormsSetNameMethod(MethodReference method) {
+			if (method == null)
+				return false;
+			if (method.Name != "set_Name")
+				return false;
+			if (method.MethodReturnType.ReturnType.FullName != "System.Void")
+				return false;
+			if (method.Parameters.Count != 1)
+				return false;
+			if (method.Parameters[0].ParameterType.FullName != "System.String")
+				return false;
+			if (!method.DeclaringType.FullName.StartsWith("System.Windows.Forms.", StringComparison.Ordinal))
+				return false;
+			return true;
 		}
 
 		public void rename() {
@@ -635,6 +821,13 @@ namespace de4dot.renamer {
 			if (MemberRenameState == null)
 				MemberRenameState = baseType.typeDef.MemberRenameState.clone();
 
+			if (IsRenamable) {
+				foreach (var fieldDef in fields.getAll())
+					MemberRenameState.variableNameState.addFieldName(fieldDef.OldName);
+				foreach (var methodDef in methods.getAll())
+					MemberRenameState.variableNameState.addMethodName(methodDef.OldName);
+			}
+
 			// For each base type and interface it implements, add all its virtual methods, props,
 			// and events if the type is a non-renamable type (eg. it's from mscorlib or some other
 			// non-deobfuscated assembly).
@@ -657,6 +850,9 @@ namespace de4dot.renamer {
 				prepareRenameFields();		// must be first
 				prepareRenameProperties();
 				prepareRenameEvents();
+
+				initializeEventHandlerNames();
+
 				prepareRenameMethods();		// must be last
 			}
 		}
@@ -726,6 +922,9 @@ namespace de4dot.renamer {
 		void prepareRenameFields() {
 			var variableNameState = MemberRenameState.variableNameState;
 
+			if (isWindowsFormsControlDerivedClass())
+				initializeWindowsFormsFields();
+
 			if (TypeDefinition.IsEnum) {
 				var instanceFields = new List<FieldDef>(getInstanceFields());
 				if (instanceFields.Count == 1) {
@@ -739,6 +938,8 @@ namespace de4dot.renamer {
 				int i = 0;
 				string nameFormat = hasFlagsAttribute() ? "flag_{0}" : "const_{0}";
 				foreach (var fieldDef in fields.getSorted()) {
+					if (fieldDef.Renamed)
+						continue;
 					if (!fieldDef.FieldDefinition.IsStatic || !fieldDef.FieldDefinition.IsLiteral)
 						continue;
 					if (!variableNameState.IsValidName(fieldDef.OldName))
@@ -752,6 +953,134 @@ namespace de4dot.renamer {
 				if (!variableNameState.IsValidName(fieldDef.OldName))
 					fieldDef.rename(variableNameState.getNewFieldName(fieldDef.FieldDefinition));
 			}
+		}
+
+		void initializeWindowsFormsFields() {
+			var ourFields = new Dictionary<FieldReferenceAndDeclaringTypeKey, FieldDef>();
+			foreach (var fieldDef in fields.getAll())
+				ourFields[new FieldReferenceAndDeclaringTypeKey(fieldDef.FieldDefinition)] = fieldDef;
+
+			var variableNameState = MemberRenameState.variableNameState;
+			foreach (var methodDef in methods.getAll()) {
+				if (methodDef.MethodDefinition.Body == null)
+					continue;
+				if (methodDef.MethodDefinition.IsStatic || methodDef.MethodDefinition.IsVirtual)
+					continue;
+				var instructions = methodDef.MethodDefinition.Body.Instructions;
+				for (int i = 2; i < instructions.Count; i++) {
+					var call = instructions[i];
+					if (call.OpCode.Code != Code.Call && call.OpCode.Code != Code.Callvirt)
+						continue;
+					if (!isWindowsFormsSetNameMethod(call.Operand as MethodReference))
+						continue;
+
+					var ldstr = instructions[i - 1];
+					if (ldstr.OpCode.Code != Code.Ldstr)
+						continue;
+					var fieldName = ldstr.Operand as string;
+					if (fieldName == null || !variableNameState.IsValidName(fieldName))
+						continue;
+
+					var ldfld = instructions[i - 2];
+					var fieldRef = ldfld.Operand as FieldReference;
+					if (fieldRef == null)
+						continue;
+					FieldDef fieldDef;
+					if (!ourFields.TryGetValue(new FieldReferenceAndDeclaringTypeKey(fieldRef), out fieldDef))
+						continue;
+
+					if (fieldDef.Renamed)
+						continue;
+
+					fieldDef.rename(variableNameState.getNewFieldName(fieldDef.OldName, new NameCreator2(fieldName)));
+				}
+			}
+		}
+
+		void initializeEventHandlerNames() {
+			var ourFields = new Dictionary<FieldReferenceAndDeclaringTypeKey, FieldDef>();
+			foreach (var fieldDef in fields.getAll())
+				ourFields[new FieldReferenceAndDeclaringTypeKey(fieldDef.FieldDefinition)] = fieldDef;
+			var ourMethods = new Dictionary<MethodReferenceAndDeclaringTypeKey, MethodDef>();
+			foreach (var methodDef in methods.getAll())
+				ourMethods[new MethodReferenceAndDeclaringTypeKey(methodDef.MethodDefinition)] = methodDef;
+
+			var variableNameState = MemberRenameState.variableNameState;
+			foreach (var methodDef in methods.getAll()) {
+				if (methodDef.MethodDefinition.Body == null)
+					continue;
+				if (methodDef.MethodDefinition.IsStatic)
+					continue;
+				var instructions = methodDef.MethodDefinition.Body.Instructions;
+				for (int i = 0; i < instructions.Count - 5; i++) {
+					// We're looking for this code pattern:
+					//	ldarg.0
+					//	ldfld field
+					//	ldarg.0
+					//	ldftn method
+					//	newobj event_handler_ctor
+					//	callvirt add_SomeEvent
+
+					if (DotNetUtils.getArgIndex(methodDef.MethodDefinition, instructions[i]) != 0)
+						continue;
+
+					var ldfld = instructions[i + 1];
+					if (ldfld.OpCode.Code != Code.Ldfld)
+						continue;
+					var fieldRef = ldfld.Operand as FieldReference;
+					if (fieldRef == null)
+						continue;
+					FieldDef fieldDef;
+					if (!ourFields.TryGetValue(new FieldReferenceAndDeclaringTypeKey(fieldRef), out fieldDef))
+						continue;
+
+					if (DotNetUtils.getArgIndex(methodDef.MethodDefinition, instructions[i + 2]) != 0)
+						continue;
+
+					var ldftn = instructions[i + 3];
+					if (ldftn.OpCode.Code != Code.Ldftn)
+						continue;
+					var methodRef = ldftn.Operand as MethodReference;
+					if (methodRef == null)
+						continue;
+					MethodDef handlerMethod;
+					if (!ourMethods.TryGetValue(new MethodReferenceAndDeclaringTypeKey(methodRef), out handlerMethod))
+						continue;
+
+					var newobj = instructions[i + 4];
+					if (newobj.OpCode.Code != Code.Newobj)
+						continue;
+					if (!isEventHandlerCtor(newobj.Operand as MethodReference))
+						continue;
+
+					var call = instructions[i + 5];
+					if (call.OpCode.Code != Code.Call && call.OpCode.Code != Code.Callvirt)
+						continue;
+					var addHandler = call.Operand as MethodReference;
+					if (addHandler == null)
+						continue;
+					if (!addHandler.Name.StartsWith("add_", StringComparison.Ordinal))
+						continue;
+
+					var eventName = addHandler.Name.Substring(4);
+					if (!MemberRenameState.variableNameState.IsValidName(eventName))
+						continue;
+
+					newMethodsNames[handlerMethod] = string.Format("{0}_{1}", fieldDef.NewName, eventName);
+				}
+			}
+		}
+
+		static bool isEventHandlerCtor(MethodReference method) {
+			if (method == null)
+				return false;
+			if (method.Name != ".ctor")
+				return false;
+			if (!DotNetUtils.isMethod(method, "System.Void", "(System.Object,System.IntPtr)"))
+				return false;
+			if (!method.DeclaringType.FullName.EndsWith("EventHandler", StringComparison.Ordinal))
+				return false;
+			return true;
 		}
 
 		static MethodReference getOverrideMethod(MethodDefinition meth) {
@@ -927,6 +1256,9 @@ namespace de4dot.renamer {
 			methodDef.Renamed = true;
 
 			bool canRenameMethodName = true;
+			if (suggestedName == null)
+				newMethodsNames.TryGetValue(methodDef, out suggestedName);
+
 			if (IsDelegate && methodDef.isVirtual()) {
 				switch (methodDef.MethodDefinition.Name) {
 				case "BeginInvoke":
@@ -941,16 +1273,29 @@ namespace de4dot.renamer {
 
 			if (canRenameMethodName) {
 				var nameCreator = getMethodNameCreator(methodDef, suggestedName);
-				if (!methodDef.MethodDefinition.IsRuntimeSpecialName && !variableNameState.IsValidName(methodDef.OldName))
-					methodDef.NewName = nameCreator.newName();
+				if (!methodDef.MethodDefinition.IsRuntimeSpecialName && !variableNameState.IsValidName(methodDef.OldName)) {
+					bool useNameCreator = methodDef.isVirtual() || methodDef.Property != null || methodDef.Event != null;
+					if (useNameCreator)
+						methodDef.NewName = nameCreator.newName();
+					else
+						methodDef.NewName = variableNameState.getNewMethodName(methodDef.OldName, nameCreator);
+				}
 			}
 
 			if (methodDef.ParamDefs.Count > 0) {
-				var newVariableNameState = variableNameState.clone();
-				foreach (var paramDef in methodDef.ParamDefs) {
-					if (!newVariableNameState.IsValidName(paramDef.OldName)) {
-						paramDef.NewName = newVariableNameState.getNewParamName(paramDef.ParameterDefinition);
-						paramDef.Renamed = true;
+				if (isEventHandler(methodDef)) {
+					methodDef.ParamDefs[0].NewName = "sender";
+					methodDef.ParamDefs[0].Renamed = true;
+					methodDef.ParamDefs[1].NewName = "e";
+					methodDef.ParamDefs[1].Renamed = true;
+				}
+				else {
+					var newVariableNameState = variableNameState.clone();
+					foreach (var paramDef in methodDef.ParamDefs) {
+						if (!newVariableNameState.IsValidName(paramDef.OldName)) {
+							paramDef.NewName = newVariableNameState.getNewParamName(paramDef.OldName, paramDef.ParameterDefinition);
+							paramDef.Renamed = true;
+						}
 					}
 				}
 			}
@@ -961,21 +1306,23 @@ namespace de4dot.renamer {
 				MemberRenameState.add(methodDef);
 		}
 
-		string getPinvokeName(MethodDef methodDef) {
-			var methodNames = new Dictionary<string, bool>(StringComparer.Ordinal);
-			foreach (var method in methods.getAll())
-				methodNames[method.NewName] = true;
+		static bool isEventHandler(MethodDef methodDef) {
+			if (methodDef.MethodDefinition.Parameters.Count != 2)
+				return false;
+			if (methodDef.MethodDefinition.MethodReturnType.ReturnType.FullName != "System.Void")
+				return false;
+			if (methodDef.MethodDefinition.Parameters[0].ParameterType.FullName != "System.Object")
+				return false;
+			if (!methodDef.MethodDefinition.Parameters[1].ParameterType.FullName.Contains("EventArgs"))
+				return false;
+			return true;
+		}
 
-			if (methodDef.MethodDefinition.PInvokeInfo == null)
-				throw new ApplicationException(string.Format("PInvokeInfo is null: A type was probably removed but still referenced by the code."));
+		string getPinvokeName(MethodDef methodDef) {
 			var entryPoint = methodDef.MethodDefinition.PInvokeInfo.EntryPoint;
 			if (Regex.IsMatch(entryPoint, @"^#\d+$"))
 				entryPoint = DotNetUtils.getDllName(methodDef.MethodDefinition.PInvokeInfo.Module.Name) + "_" + entryPoint.Substring(1);
-			while (true) {
-				var newName = MemberRenameState.variableNameState.pinvokeNameCreator.newName(entryPoint);
-				if (!methodNames.ContainsKey(newName))
-					return newName;
-			}
+			return entryPoint;
 		}
 
 		INameCreator getMethodNameCreator(MethodDef methodDef, string suggestedName) {
@@ -983,7 +1330,7 @@ namespace de4dot.renamer {
 			INameCreator nameCreator = null;
 			string newName = null;
 
-			if (methodDef.MethodDefinition.HasPInvokeInfo)
+			if (methodDef.MethodDefinition.PInvokeInfo != null)
 				newName = getPinvokeName(methodDef);
 			else if (methodDef.MethodDefinition.IsStatic)
 				nameCreator = variableNameState.staticMethodNameCreator;
@@ -1007,8 +1354,12 @@ namespace de4dot.renamer {
 
 			if (newName == null)
 				newName = suggestedName;
-			if (newName != null)
-				nameCreator = new OneNameCreator(newName);
+			if (newName != null) {
+				if (methodDef.isVirtual())
+					nameCreator = new OneNameCreator(newName);	// It must have this name
+				else
+					nameCreator = new NameCreator2(newName);
+			}
 
 			return nameCreator;
 		}

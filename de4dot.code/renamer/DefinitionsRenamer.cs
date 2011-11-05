@@ -211,6 +211,8 @@ namespace de4dot.renamer {
 		void renameTypeDefinitions() {
 			Log.v("Renaming obfuscated type definitions");
 			typeNameState = new TypeNameState();
+			foreach (var typeDef in allTypes)
+				typeNameState.currentNames.add(typeDef.OldName);
 			prepareRenameTypeDefinitions(baseTypes);
 			typeNameState = null;
 
@@ -504,7 +506,8 @@ namespace de4dot.renamer {
 			}
 			if (isAutoCreatedType(typeReference))
 				return null;
-			throw new ApplicationException(string.Format("Could not resolve TypeReference {0} ({1:X8})", typeReference, typeReference.MetadataToken.ToInt32()));
+			Log.e("Could not resolve TypeReference {0} ({1:X8})", typeReference, typeReference.MetadataToken.ToInt32());
+			return null;
 		}
 
 		public MethodDef resolve(MethodReference methodReference) {
@@ -520,7 +523,8 @@ namespace de4dot.renamer {
 			}
 			if (isAutoCreatedType(methodReference.DeclaringType))
 				return null;
-			throw new ApplicationException(string.Format("Could not resolve MethodReference {0} ({1:X8})", methodReference, methodReference.MetadataToken.ToInt32()));
+			Log.e("Could not resolve MethodReference {0} ({1:X8})", methodReference, methodReference.MetadataToken.ToInt32());
+			return null;
 		}
 
 		public FieldDef resolve(FieldReference fieldReference) {
@@ -536,7 +540,8 @@ namespace de4dot.renamer {
 			}
 			if (isAutoCreatedType(fieldReference.DeclaringType))
 				return null;
-			throw new ApplicationException(string.Format("Could not resolve FieldReference {0} ({1:X8})", fieldReference, fieldReference.MetadataToken.ToInt32()));
+			Log.e("Could not resolve FieldReference {0} ({1:X8})", fieldReference, fieldReference.MetadataToken.ToInt32());
+			return null;
 		}
 
 		public MethodDef findMethod(MethodReference methodReference) {

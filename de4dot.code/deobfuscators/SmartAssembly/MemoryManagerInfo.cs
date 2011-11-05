@@ -44,11 +44,17 @@ namespace de4dot.deobfuscators.SmartAssembly {
 		}
 
 		bool find() {
-			var cctor = DotNetUtils.getMethod(DotNetUtils.getModuleType(module), ".cctor");
-			if (cctor == null)
-				return false;
+			if (checkCalledMethods(DotNetUtils.getMethod(DotNetUtils.getModuleType(module), ".cctor")))
+				return true;
+			if (checkCalledMethods(module.EntryPoint))
+				return true;
+			return false;
+		}
 
-			foreach (var tuple in DotNetUtils.getCalledMethods(module, cctor)) {
+		bool checkCalledMethods(MethodDefinition checkMethod) {
+			if (checkMethod == null)
+				return false;
+			foreach (var tuple in DotNetUtils.getCalledMethods(module, checkMethod)) {
 				var method = tuple.Item2;
 				if (method.Name == ".cctor" || method.Name == ".ctor")
 					continue;

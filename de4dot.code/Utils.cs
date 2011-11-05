@@ -198,5 +198,23 @@ namespace de4dot {
 				return name;
 			return name.Substring(0, i);
 		}
+
+		public static bool pathExists(string path) {
+			try {
+				return new DirectoryInfo(path).Exists;
+			}
+			catch (Exception) {
+				return false;
+			}
+		}
+
+		public static bool fileExists(string path) {
+			try {
+				return new FileInfo(path).Exists;
+			}
+			catch (Exception) {
+				return false;
+			}
+		}
 	}
 }

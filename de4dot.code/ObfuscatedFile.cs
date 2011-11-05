@@ -258,7 +258,7 @@ namespace de4dot {
 
 		public void save() {
 			Log.n("Saving {0}", options.NewFilename);
-			assemblyModule.save(options.NewFilename);
+			assemblyModule.save(options.NewFilename, options.ControlFlowDeobfuscation);
 		}
 
 		IList<MethodDefinition> getAllMethods() {

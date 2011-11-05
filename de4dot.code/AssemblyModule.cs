@@ -45,8 +45,11 @@ namespace de4dot {
 			return module;
 		}
 
-		public void save(string newFilename) {
-			module.Write(newFilename);
+		public void save(string newFilename, bool updateMaxStack) {
+			var writerParams = new WriterParameters() {
+				UpdateMaxStack = updateMaxStack,
+			};
+			module.Write(newFilename, writerParams);
 		}
 
 		public ModuleDefinition reload(byte[] newModuleData, Dictionary<uint, DumpedMethod> dumpedMethods) {
@@ -63,7 +66,7 @@ namespace de4dot {
 		}
 
 		void readMethodsFile() {
-			if (new FileInfo(methodsFilename).Exists) {
+			if (Utils.fileExists(methodsFilename)) {
 				using (var reader = new BinaryReader(File.Open(methodsFilename, FileMode.Open, FileAccess.Read, FileShare.Read))) {
 					dumpedMethods = new DumpedMethodsReader(reader).read();
 				}

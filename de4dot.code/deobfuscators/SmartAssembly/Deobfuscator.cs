@@ -290,8 +290,10 @@ namespace de4dot.deobfuscators.SmartAssembly {
 
 		public override void deobfuscateBegin() {
 			base.deobfuscateBegin();
-			if (options.RemoveMemoryManager)
+			if (options.RemoveMemoryManager) {
 				addModuleCctorInitCallToBeRemoved(memoryManagerInfo.CctorInitMethod);
+				addCallToBeRemoved(module.EntryPoint, memoryManagerInfo.CctorInitMethod);
+			}
 			initDecrypters();
 			proxyDelegateFinder.find();
 		}

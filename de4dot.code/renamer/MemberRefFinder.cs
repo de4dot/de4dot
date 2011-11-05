@@ -91,13 +91,20 @@ namespace de4dot {
 
 		Dictionary<string, bool> exceptionMessages = new Dictionary<string, bool>(StringComparer.Ordinal);
 		void access(Action action) {
+			string exMessage = null;
 			try {
 				action();
 			}
+			catch (ResolutionException ex) {
+				exMessage = ex.Message;
+			}
 			catch (AssemblyResolutionException ex) {
-				if (!exceptionMessages.ContainsKey(ex.Message)) {
-					exceptionMessages[ex.Message] = true;
-					Log.w("Could not resolve a reference. ERROR: {0}", ex.Message);
+				exMessage = ex.Message;
+			}
+			if (exMessage != null) {
+				if (!exceptionMessages.ContainsKey(exMessage)) {
+					exceptionMessages[exMessage] = true;
+					Log.w("Could not resolve a reference. ERROR: {0}", exMessage);
 				}
 			}
 		}
@@ -421,7 +428,7 @@ namespace de4dot {
 		void addSecurityDeclaration(SecurityDeclaration decl) {
 			if (decl == null)
 				return;
-			addSecurityAttributes(decl.SecurityAttributes);
+			access(() => addSecurityAttributes(decl.SecurityAttributes));
 		}
 		void addSecurityAttribute(SecurityAttribute attr) {
 			if (attr == null)

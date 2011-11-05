@@ -198,6 +198,12 @@ namespace de4dot {
 					return false;
 				}
 
+				if ((file.ModuleDefinition.Attributes & ModuleAttributes.ILOnly) == 0) {
+					Log.w("Ignoring assembly with native code {0}", file.Filename);
+					return false;
+				}
+
+
 				var deob = file.Deobfuscator;
 				if (skipUnknownObfuscator && deob is deobfuscators.Unknown.Deobfuscator) {
 					Log.v("Skipping unknown obfuscator: {0}", file.Filename);
@@ -303,9 +309,15 @@ namespace de4dot {
 			void createDirectories(string path) {
 				if (string.IsNullOrEmpty(path))
 					return;
-				var di = new DirectoryInfo(path);
-				if (!di.Exists)
-					di.Create();
+				try {
+					var di = new DirectoryInfo(path);
+					if (!di.Exists)
+						di.Create();
+				}
+				catch (System.Security.SecurityException) {
+				}
+				catch (ArgumentException) {
+				}
 			}
 		}
 

@@ -125,17 +125,6 @@ namespace de4dot.renamer {
 		string newName(TypeDefinition typeDefinition, string newBaseTypeName = null);
 	}
 
-	class PinvokeNameCreator {
-		Dictionary<string, NameCreator2> nameCreators = new Dictionary<string, NameCreator2>(StringComparer.Ordinal);
-
-		public string newName(string name) {
-			NameCreator2 nameCreator;
-			if (!nameCreators.TryGetValue(name, out nameCreator))
-				nameCreators[name] = nameCreator = new NameCreator2(name);
-			return nameCreator.newName();
-		}
-	}
-
 	class NameInfos {
 		IList<NameInfo> nameInfos = new List<NameInfo>();
 
@@ -163,6 +152,7 @@ namespace de4dot.renamer {
 	}
 
 	class TypeNameCreator : ITypeNameCreator {
+		CurrentNames currentNames;
 		INameCreator createUnknownTypeName;
 		INameCreator createEnumName;
 		INameCreator createStructName;
@@ -171,7 +161,8 @@ namespace de4dot.renamer {
 		INameCreator createInterfaceName;
 		NameInfos nameInfos = new NameInfos();
 
-		public TypeNameCreator() {
+		public TypeNameCreator(CurrentNames currentNames) {
+			this.currentNames = currentNames;
 			createUnknownTypeName = createNameCreator("Type");
 			createEnumName = createNameCreator("Enum");
 			createStructName = createNameCreator("Struct");
@@ -197,7 +188,7 @@ namespace de4dot.renamer {
 
 		public string newName(TypeDefinition typeDefinition, string newBaseTypeName = null) {
 			var nameCreator = getNameCreator(typeDefinition, newBaseTypeName);
-			return nameCreator.newName();
+			return currentNames.newName(typeDefinition.Name, nameCreator);
 		}
 
 		INameCreator getNameCreator(TypeDefinition typeDefinition, string newBaseTypeName) {
@@ -228,6 +219,10 @@ namespace de4dot.renamer {
 	}
 
 	class GlobalTypeNameCreator : TypeNameCreator {
+		public GlobalTypeNameCreator(CurrentNames currentNames)
+			: base(currentNames) {
+		}
+
 		protected override INameCreator createNameCreator(string prefix) {
 			return new GlobalNameCreator(base.createNameCreator("G" + prefix));
 		}
