@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.RegularExpressions;
 using Mono.Cecil;
 
 namespace de4dot {
@@ -31,6 +32,56 @@ namespace de4dot {
 		static AssemblyResolver() {
 			// Make sure there's only ONE assembly resolver
 			GlobalAssemblyResolver.Instance = Instance;
+			addSilverlightSearchPaths();
+		}
+
+		static void addSilverlightSearchPaths() {
+			addSilverlightSearchPaths(Environment.GetEnvironmentVariable("ProgramFiles"));
+			addSilverlightSearchPaths(Environment.GetEnvironmentVariable("ProgramFiles(x86)"));
+		}
+
+		static void addSilverlightSearchPaths(string path) {
+			if (string.IsNullOrEmpty(path))
+				return;
+			addSilverlightDirs(Path.Combine(path, @"Microsoft Silverlight"));
+			addIfExists(path, @"Microsoft SDKs\Silverlight\v3.0\Libraries\Client");
+			addIfExists(path, @"Microsoft SDKs\Silverlight\v3.0\Libraries\Server");
+			addIfExists(path, @"Microsoft SDKs\Silverlight\v4.0\Libraries\Client");
+			addIfExists(path, @"Microsoft SDKs\Silverlight\v4.0\Libraries\Server");
+			addIfExists(path, @"Reference Assemblies\Microsoft\Framework\Silverlight\v3.0");
+			addIfExists(path, @"Reference Assemblies\Microsoft\Framework\Silverlight\v4.0");
+		}
+
+		// basePath is eg. "C:\Program Files (x86)\Microsoft Silverlight"
+		static void addSilverlightDirs(string basePath) {
+			try {
+				var di = new DirectoryInfo(basePath);
+				foreach (var dir in di.GetDirectories()) {
+					if (Regex.IsMatch(dir.Name, @"^\d+(?:\.\d+){3}$"))
+						addIfExists(basePath, dir.Name);
+				}
+			}
+			catch (Exception) {
+			}
+		}
+
+		static void addIfExists(string basePath, string extraPath) {
+			try {
+				var path = Path.Combine(basePath, extraPath);
+				if (pathExists(path))
+					Instance.addSearchDirectory(path);
+			}
+			catch (Exception) {
+			}
+		}
+
+		static bool pathExists(string path) {
+			try {
+				return new DirectoryInfo(path).Exists;
+			}
+			catch (Exception) {
+				return false;
+			}
 		}
 
 		public void addSearchDirectory(string dir) {
