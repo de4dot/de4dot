@@ -32,15 +32,15 @@ namespace de4dot {
 		static AssemblyResolver() {
 			// Make sure there's only ONE assembly resolver
 			GlobalAssemblyResolver.Instance = Instance;
-			addSilverlightSearchPaths();
+			addOtherAssemblySearchPaths();
 		}
 
-		static void addSilverlightSearchPaths() {
-			addSilverlightSearchPaths(Environment.GetEnvironmentVariable("ProgramFiles"));
-			addSilverlightSearchPaths(Environment.GetEnvironmentVariable("ProgramFiles(x86)"));
+		static void addOtherAssemblySearchPaths() {
+			addOtherAssemblySearchPaths(Environment.GetEnvironmentVariable("ProgramFiles"));
+			addOtherAssemblySearchPaths(Environment.GetEnvironmentVariable("ProgramFiles(x86)"));
 		}
 
-		static void addSilverlightSearchPaths(string path) {
+		static void addOtherAssemblySearchPaths(string path) {
 			if (string.IsNullOrEmpty(path))
 				return;
 			addSilverlightDirs(Path.Combine(path, @"Microsoft Silverlight"));
@@ -50,6 +50,10 @@ namespace de4dot {
 			addIfExists(path, @"Microsoft SDKs\Silverlight\v4.0\Libraries\Server");
 			addIfExists(path, @"Reference Assemblies\Microsoft\Framework\Silverlight\v3.0");
 			addIfExists(path, @"Reference Assemblies\Microsoft\Framework\Silverlight\v4.0");
+			addIfExists(path, @"Microsoft Visual Studio .NET\Common7\IDE\PublicAssemblies");
+			addIfExists(path, @"Microsoft Visual Studio 8.0\Common7\IDE\PublicAssemblies");
+			addIfExists(path, @"Microsoft Visual Studio 9.0\Common7\IDE\PublicAssemblies");
+			addIfExists(path, @"Microsoft Visual Studio 10.0\Common7\IDE\PublicAssemblies");
 		}
 
 		// basePath is eg. "C:\Program Files (x86)\Microsoft Silverlight"
