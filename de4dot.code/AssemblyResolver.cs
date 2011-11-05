@@ -72,19 +72,10 @@ namespace de4dot {
 		static void addIfExists(string basePath, string extraPath) {
 			try {
 				var path = Path.Combine(basePath, extraPath);
-				if (pathExists(path))
+				if (Utils.pathExists(path))
 					Instance.addSearchDirectory(path);
 			}
 			catch (Exception) {
-			}
-		}
-
-		static bool pathExists(string path) {
-			try {
-				return new DirectoryInfo(path).Exists;
-			}
-			catch (Exception) {
-				return false;
 			}
 		}
 

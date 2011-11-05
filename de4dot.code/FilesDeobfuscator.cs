@@ -300,9 +300,15 @@ namespace de4dot {
 			void createDirectories(string path) {
 				if (string.IsNullOrEmpty(path))
 					return;
-				var di = new DirectoryInfo(path);
-				if (!di.Exists)
-					di.Create();
+				try {
+					var di = new DirectoryInfo(path);
+					if (!di.Exists)
+						di.Create();
+				}
+				catch (System.Security.SecurityException) {
+				}
+				catch (ArgumentException) {
+				}
 			}
 		}
 

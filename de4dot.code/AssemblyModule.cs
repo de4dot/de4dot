@@ -52,7 +52,7 @@ namespace de4dot {
 		}
 
 		void readMethodsFile() {
-			if (new FileInfo(methodsFilename).Exists) {
+			if (Utils.fileExists(methodsFilename)) {
 				using (var reader = new BinaryReader(File.Open(methodsFilename, FileMode.Open, FileAccess.Read, FileShare.Read))) {
 					dumpedMethods = new DumpedMethodsReader(reader).read();
 				}
