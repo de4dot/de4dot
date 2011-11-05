@@ -112,7 +112,7 @@ namespace de4dot {
 			miscOptions.Add(new NoArgOption("d", null, "Detect obfuscators and exit", () => {
 				filesOptions.DetectObfuscators = true;
 			}));
-			miscOptions.Add(new OneArgOption(null, "asmpath", "Add an assembly search path", "path", (val) => {
+			miscOptions.Add(new OneArgOption(null, "asm-path", "Add an assembly search path", "path", (val) => {
 				AssemblyResolver.Instance.addSearchDirectory(val);
 			}));
 			miscOptions.Add(new NoArgOption(null, "dont-rename", "Don't rename classes, methods, etc.", () => {
