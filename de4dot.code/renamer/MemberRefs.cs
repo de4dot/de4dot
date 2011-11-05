@@ -623,18 +623,17 @@ namespace de4dot.renamer {
 					var call = instructions[i];
 					if (call.OpCode.Code != Code.Call && call.OpCode.Code != Code.Callvirt)
 						continue;
-					var calledMethod = call.Operand as MethodReference;
-					if (!isWindowsFormsSetNameMethod(calledMethod))
+					if (!isWindowsFormsSetNameMethod(call.Operand as MethodReference))
 						continue;
+
 					var ldstr = instructions[i - 1];
 					if (ldstr.OpCode.Code != Code.Ldstr)
 						continue;
-					var ldarg = instructions[i - 2];
-					if (DotNetUtils.getArgIndex(methodDef.MethodDefinition, ldarg) != 0)
-						continue;
-
 					var className = ldstr.Operand as string;
 					if (className == null)
+						continue;
+
+					if (DotNetUtils.getArgIndex(methodDef.MethodDefinition, instructions[i - 2]) != 0)
 						continue;
 
 					findInitializeComponentMethod(methodDef);
@@ -972,22 +971,22 @@ namespace de4dot.renamer {
 					var call = instructions[i];
 					if (call.OpCode.Code != Code.Call && call.OpCode.Code != Code.Callvirt)
 						continue;
-					var calledMethod = call.Operand as MethodReference;
-					if (!isWindowsFormsSetNameMethod(calledMethod))
+					if (!isWindowsFormsSetNameMethod(call.Operand as MethodReference))
 						continue;
+
 					var ldstr = instructions[i - 1];
 					if (ldstr.OpCode.Code != Code.Ldstr)
 						continue;
+					var fieldName = ldstr.Operand as string;
+					if (fieldName == null || !variableNameState.IsValidName(fieldName))
+						continue;
+
 					var ldfld = instructions[i - 2];
 					var fieldRef = ldfld.Operand as FieldReference;
 					if (fieldRef == null)
 						continue;
 					FieldDef fieldDef;
 					if (!ourFields.TryGetValue(new FieldReferenceAndDeclaringTypeKey(fieldRef), out fieldDef))
-						continue;
-
-					var fieldName = ldstr.Operand as string;
-					if (fieldName == null || !variableNameState.IsValidName(fieldName))
 						continue;
 
 					if (fieldDef.Renamed)
