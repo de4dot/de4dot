@@ -20,6 +20,7 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using Mono.Cecil;
 using de4dot.renamer;
 using de4dot.deobfuscators;
 using de4dot.AssemblyClient;
@@ -188,6 +189,12 @@ namespace de4dot {
 					Log.w("Could not load file (io exception): {0}", file.Filename);
 					return false;
 				}
+
+				if ((file.ModuleDefinition.Attributes & ModuleAttributes.ILOnly) == 0) {
+					Log.w("Ignoring assembly with native code {0}", file.Filename);
+					return false;
+				}
+
 
 				var deob = file.Deobfuscator;
 				if (skipUnknownObfuscator && deob is deobfuscators.Unknown.Deobfuscator) {
