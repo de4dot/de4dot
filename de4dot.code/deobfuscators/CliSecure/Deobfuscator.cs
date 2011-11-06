@@ -17,11 +17,8 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using System;
-using System.IO;
 using System.Collections.Generic;
 using Mono.Cecil;
-using Mono.Cecil.Cil;
 using Mono.MyStuff;
 using de4dot.blocks;
 
@@ -136,11 +133,7 @@ namespace de4dot.deobfuscators.CliSecure {
 			if (!options.DecryptMethods)
 				return false;
 
-			byte[] fileData;
-			using (var fileStream = new FileStream(module.FullyQualifiedName, FileMode.Open, FileAccess.Read, FileShare.Read)) {
-				fileData = new byte[(int)fileStream.Length];
-				fileStream.Read(fileData, 0, fileData.Length);
-			}
+			byte[] fileData = DeobUtils.readModule(module);
 			var peImage = new PE.PeImage(fileData);
 
 			if (!new MethodsDecrypter().decrypt(peImage, ref dumpedMethods))

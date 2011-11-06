@@ -17,7 +17,6 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using System.IO;
 using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -264,10 +263,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		}
 
 		public override bool getDecryptedModule(ref byte[] newFileData, ref Dictionary<uint, DumpedMethod> dumpedMethods) {
-			using (var fileStream = new FileStream(module.FullyQualifiedName, FileMode.Open, FileAccess.Read, FileShare.Read)) {
-				fileData = new byte[(int)fileStream.Length];
-				fileStream.Read(fileData, 0, fileData.Length);
-			}
+			fileData = DeobUtils.readModule(module);
 			peImage = new PE.PeImage(fileData);
 
 			if (!options.DecryptMethods)
