@@ -314,7 +314,7 @@ namespace de4dot {
 		}
 
 		void reloadModule(byte[] newModuleData, Dictionary<uint, DumpedMethod> dumpedMethods) {
-			Log.v("Decrypted data. Reloading decrypted data (original filename: {0})", Filename);
+			Log.v("Reloading decrypted assembly (original filename: {0})", Filename);
 			simpleDeobfuscatorFlags.Clear();
 			module = assemblyModule.reload(newModuleData, dumpedMethods);
 			allMethods = getAllMethods();
