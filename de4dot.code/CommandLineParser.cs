@@ -165,13 +165,6 @@ namespace de4dot {
 				newFileOptions.StringDecrypterMethods.AddRange(defaultStringDecrypterMethods);
 			});
 			fileOptions.Add(defaultOption);
-			fileOptions.Add(new OneArgOption("m", null, "Name of .methods file", "file", (val) => {
-				if (newFileOptions == null)
-					exitError("Missing input file");
-				if (!Utils.fileExists(val))
-					exitError(string.Format("File \"{0}\" does not exist.", val));
-				newFileOptions.MethodsFilename = val;
-			}));
 			fileOptions.Add(new OneArgOption("o", null, "Name of output file", "file", (val) => {
 				if (newFileOptions == null)
 					exitError("Missing input file");

@@ -80,7 +80,6 @@ namespace de4dot {
 
 		public class Options {
 			public string Filename { get; set; }
-			public string MethodsFilename { get; set; }
 			public string NewFilename { get; set; }
 			public string ForcedObfuscatorType { get; set; }
 			public DecrypterType StringDecrypterType { get; set; }
@@ -128,7 +127,7 @@ namespace de4dot {
 			this.options = options;
 			userStringDecrypterMethods = options.StringDecrypterMethods.Count > 0;
 			options.Filename = Utils.getFullPath(options.Filename);
-			assemblyModule = new AssemblyModule(options.Filename, options.MethodsFilename);
+			assemblyModule = new AssemblyModule(options.Filename);
 
 			if (options.NewFilename == null)
 				options.NewFilename = getDefaultNewFilename();

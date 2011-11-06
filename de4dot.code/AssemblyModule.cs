@@ -27,20 +27,13 @@ using de4dot.blocks;
 namespace de4dot {
 	class AssemblyModule {
 		string filename;
-		string methodsFilename;
-		Dictionary<uint, DumpedMethod> dumpedMethods;
 		ModuleDefinition module;
 
-		public AssemblyModule(string filename, string methodsFilename = null) {
+		public AssemblyModule(string filename) {
 			this.filename = Utils.getFullPath(filename);
-			this.methodsFilename = methodsFilename;
-
-			if (this.methodsFilename == null)
-				this.methodsFilename = this.filename + ".methods";
 		}
 
 		public ModuleDefinition load() {
-			readMethodsFile();
 			readFile();
 			return module;
 		}
@@ -57,7 +50,6 @@ namespace de4dot {
 			var assemblyResolver = AssemblyResolver.Instance;
 			assemblyResolver.removeModule(module);
 			DotNetUtils.typeCaches.invalidate(module);
-			this.dumpedMethods = dumpedMethods;
 
 			var readerParameters = new ReaderParameters(ReadingMode.Deferred);
 			readerParameters.AssemblyResolver = assemblyResolver;
@@ -67,22 +59,11 @@ namespace de4dot {
 			return module;
 		}
 
-		void readMethodsFile() {
-			if (Utils.fileExists(methodsFilename)) {
-				using (var reader = new BinaryReader(File.Open(methodsFilename, FileMode.Open, FileAccess.Read, FileShare.Read))) {
-					dumpedMethods = new DumpedMethodsReader(reader).read();
-				}
-			}
-			else {
-				dumpedMethods = new Dictionary<uint, DumpedMethod>();
-			}
-		}
-
 		void readFile() {
 			var assemblyResolver = AssemblyResolver.Instance;
 			var readerParameters = new ReaderParameters(ReadingMode.Deferred);
 			readerParameters.AssemblyResolver = assemblyResolver;
-			module = ModuleDefinition.ReadModule(filename, readerParameters, dumpedMethods);
+			module = ModuleDefinition.ReadModule(filename, readerParameters);
 			assemblyResolver.addModule(module);
 		}
 
