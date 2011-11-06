@@ -1259,7 +1259,7 @@ namespace de4dot.renamer {
 			if (suggestedName == null)
 				newMethodsNames.TryGetValue(methodDef, out suggestedName);
 
-			if (IsDelegate && methodDef.isVirtual()) {
+			if (IsDelegate) {
 				switch (methodDef.MethodDefinition.Name) {
 				case "BeginInvoke":
 				case "EndInvoke":
