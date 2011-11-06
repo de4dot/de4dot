@@ -53,6 +53,7 @@ namespace de4dot {
 		}
 
 		public ModuleDefinition reload(byte[] newModuleData, Dictionary<uint, DumpedMethod> dumpedMethods) {
+			var oldModuleName = module.FullyQualifiedName;
 			var assemblyResolver = AssemblyResolver.Instance;
 			assemblyResolver.removeModule(module);
 			DotNetUtils.typeCaches.invalidate(module);
@@ -62,6 +63,7 @@ namespace de4dot {
 			readerParameters.AssemblyResolver = assemblyResolver;
 			module = ModuleDefinition.ReadModule(new MemoryStream(newModuleData), readerParameters, dumpedMethods);
 			assemblyResolver.addModule(module);
+			module.FullyQualifiedName = oldModuleName;
 			return module;
 		}
 
