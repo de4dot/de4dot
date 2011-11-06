@@ -18,5 +18,14 @@ namespace de4dot.deobfuscators {
 			}
 			Log.deIndent();
 		}
+
+		public static T lookup<T>(ModuleDefinition module, T def, string errorMessage) where T : MemberReference {
+			if (def == null)
+				return null;
+			var newDef = module.LookupToken(def.MetadataToken.ToInt32()) as T;
+			if (newDef == null)
+				throw new ApplicationException(errorMessage);
+			return newDef;
+		}
 	}
 }
