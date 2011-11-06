@@ -24,7 +24,7 @@ namespace de4dot.PE {
 		public uint cb;
 		public ushort majorRuntimeVersion;
 		public ushort minorRuntimeVersion;
-		public DataDirectory metaData;
+		public DataDirectory metadataDirectory;
 		public uint flags;
 		public uint entryPointToken;
 		public DataDirectory resources;
@@ -59,7 +59,7 @@ namespace de4dot.PE {
 			cb = reader.ReadUInt32();
 			majorRuntimeVersion = reader.ReadUInt16();
 			minorRuntimeVersion = reader.ReadUInt16();
-			metaData.read(reader);
+			metadataDirectory.read(reader);
 			flags = reader.ReadUInt32();
 			entryPointToken = reader.ReadUInt32();
 			resources.read(reader);

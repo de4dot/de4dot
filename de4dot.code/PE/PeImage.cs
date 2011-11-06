@@ -82,7 +82,7 @@ namespace de4dot.PE {
 				seekRva(netOffset);
 				cor20Header = new Cor20Header(reader);
 				dotNetSection = getSectionHeader(netOffset);
-				seekRva(cor20Header.metaData.virtualAddress);
+				seekRva(cor20Header.metadataDirectory.virtualAddress);
 				cor20Header.initMetadataTable();
 			}
 		}
@@ -96,7 +96,7 @@ namespace de4dot.PE {
 			return null;
 		}
 
-		uint rvaToOffset(uint rva) {
+		public uint rvaToOffset(uint rva) {
 			var section = getSectionHeader(rva);
 			if (section == null)
 				throw new ApplicationException(string.Format("Invalid RVA {0:X8}", rva));
@@ -133,6 +133,16 @@ namespace de4dot.PE {
 			writer.Write(data);
 		}
 
+		public void writeUint16(uint rva, ushort data) {
+			seekRva(rva);
+			writer.Write(data);
+		}
+
+		public void writeUint32(uint rva, uint data) {
+			seekRva(rva);
+			writer.Write(data);
+		}
+
 		public byte readByte(uint rva) {
 			seekRva(rva);
 			return reader.ReadByte();
@@ -158,6 +168,11 @@ namespace de4dot.PE {
 			return reader.ReadBytes(size);
 		}
 
+		public byte[] offsetReadBytes(uint offset, int size) {
+			seek(offset);
+			return reader.ReadBytes(size);
+		}
+
 		public uint offsetRead(uint offset, int size) {
 			if (size == 2) return offsetReadUInt16(offset);
 			if (size == 4) return offsetReadUInt32(offset);
@@ -172,6 +187,25 @@ namespace de4dot.PE {
 		public uint offsetReadUInt32(uint offset) {
 			seek(offset);
 			return reader.ReadUInt32();
+		}
+
+		public void offsetWrite(uint offset, uint data, int size) {
+			if (size == 2)
+				offsetWriteUInt16(offset, (ushort)data);
+			else if (size == 4)
+				offsetWriteUInt32(offset, data);
+			else
+				throw new NotImplementedException();
+		}
+
+		public void offsetWriteUInt16(uint offset, ushort data) {
+			seek(offset);
+			writer.Write(data);
+		}
+
+		public void offsetWriteUInt32(uint offset, uint data) {
+			seek(offset);
+			writer.Write(data);
 		}
 	}
 }
