@@ -36,7 +36,7 @@ namespace de4dot.deobfuscators.Xenocode {
 			get { return stringDecrypterType; }
 		}
 
-		public MethodDefinition StringDecrypterMethod {
+		public MethodDefinition Method {
 			get { return stringDecrypterMethod; }
 		}
 

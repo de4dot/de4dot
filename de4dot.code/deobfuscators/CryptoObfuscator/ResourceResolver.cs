@@ -30,11 +30,11 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 		MethodDefinition resolverMethod;
 		bool mergedIt = false;
 
-		public TypeDefinition ResolverType {
+		public TypeDefinition Type {
 			get { return resolverType; }
 		}
 
-		public MethodDefinition ResolverMethod {
+		public MethodDefinition Method {
 			get { return resolverMethod; }
 		}
 

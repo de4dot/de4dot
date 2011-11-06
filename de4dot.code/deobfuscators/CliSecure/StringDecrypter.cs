@@ -32,11 +32,11 @@ namespace de4dot.deobfuscators.CliSecure {
 			get { return stringDecrypterKey != null; }
 		}
 
-		public TypeDefinition StringDecrypterType {
+		public TypeDefinition Type {
 			get { return stringDecrypterType; }
 		}
 
-		public MethodDefinition StringDecrypterMethod {
+		public MethodDefinition Method {
 			get { return stringDecrypterMethod; }
 		}
 

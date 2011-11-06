@@ -31,15 +31,15 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		EncryptedResource encryptedResource;
 
 		public bool Detected {
-			get { return encryptedResource.ResourceDecrypterMethod != null; }
+			get { return encryptedResource.Method != null; }
 		}
 
-		public MethodDefinition MethodsDecrypterMethod {
-			get { return encryptedResource.ResourceDecrypterMethod; }
+		public MethodDefinition Method {
+			get { return encryptedResource.Method; }
 		}
 
-		public EmbeddedResource MethodsResource {
-			get { return encryptedResource.EncryptedDataResource; }
+		public EmbeddedResource Resource {
+			get { return encryptedResource.Resource; }
 		}
 
 		public MethodsDecrypter(ModuleDefinition module) {
@@ -87,17 +87,17 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				}
 			}
 
-			encryptedResource.ResourceDecrypterMethod = (MethodDefinition)callCounter.most();
+			encryptedResource.Method = (MethodDefinition)callCounter.most();
 		}
 
 		public bool decrypt(PE.PeImage peImage, ISimpleDeobfuscator simpleDeobfuscator, ref Dictionary<uint, DumpedMethod> dumpedMethods) {
-			if (encryptedResource.ResourceDecrypterMethod == null)
+			if (encryptedResource.Method == null)
 				return false;
 
 			encryptedResource.init(simpleDeobfuscator);
 			var methodsData = encryptedResource.decrypt();
 
-			bool hooksJitter = findDnrCompileMethod(encryptedResource.ResourceDecrypterMethod.DeclaringType) != null;
+			bool hooksJitter = findDnrCompileMethod(encryptedResource.Method.DeclaringType) != null;
 
 			long xorKey = getXorKey();
 			if (xorKey != 0) {
@@ -232,7 +232,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		}
 
 		long getXorKey() {
-			var instructions = encryptedResource.ResourceDecrypterMethod.Body.Instructions;
+			var instructions = encryptedResource.Method.Body.Instructions;
 			for (int i = 0; i < instructions.Count - 1; i++) {
 				if (instructions[i].OpCode.Code != Code.Ldind_I8)
 					continue;

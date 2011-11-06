@@ -55,11 +55,11 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		}
 
 		public bool Detected {
-			get { return encryptedResource.ResourceDecrypterMethod != null; }
+			get { return encryptedResource.Method != null; }
 		}
 
-		public EmbeddedResource StringsResource {
-			get { return encryptedResource.EncryptedDataResource; }
+		public EmbeddedResource Resource {
+			get { return encryptedResource.Resource; }
 		}
 
 		public IEnumerable<DecrypterInfo> DecrypterInfos {
@@ -115,7 +115,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 						throw new ApplicationException("Two different string resources found");
 
 					stringsResource = resource;
-					encryptedResource.ResourceDecrypterMethod = method;
+					encryptedResource.Method = method;
 
 					var info = new DecrypterInfo(method, null, null);
 					simpleDeobfuscator.deobfuscate(info.method);
@@ -147,14 +147,14 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		}
 
 		public void init(PE.PeImage peImage, byte[] fileData, ISimpleDeobfuscator simpleDeobfuscator) {
-			if (encryptedResource.ResourceDecrypterMethod == null)
+			if (encryptedResource.Method == null)
 				return;
 			this.peImage = peImage;
 			this.fileData = fileData;
 
 			encryptedResource.init(simpleDeobfuscator);
-			if (encryptedResource.EncryptedDataResource != null)
-				Log.v("Adding string decrypter. Resource: {0}", Utils.toCsharpString(encryptedResource.EncryptedDataResource.Name));
+			if (encryptedResource.Resource != null)
+				Log.v("Adding string decrypter. Resource: {0}", Utils.toCsharpString(encryptedResource.Resource.Name));
 			decryptedData = encryptedResource.decrypt();
 		}
 

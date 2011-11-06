@@ -157,7 +157,7 @@ namespace de4dot.deobfuscators.CliSecure {
 			base.deobfuscateBegin();
 
 			addAttributeToBeRemoved(cliSecureAttribute, "Obfuscator attribute");
-			addTypeToBeRemoved(stringDecrypter.StringDecrypterType, "Obfuscator string decrypter type");
+			addTypeToBeRemoved(stringDecrypter.Type, "Obfuscator string decrypter type");
 			findPossibleNamesToRemove(cliSecureRtType.LoadMethod);
 
 			resourceDecrypter = new ResourceDecrypter(module);
@@ -172,7 +172,7 @@ namespace de4dot.deobfuscators.CliSecure {
 
 			proxyDelegateFinder.find();
 
-			staticStringDecrypter.add(stringDecrypter.StringDecrypterMethod, (method, args) => stringDecrypter.decrypt((string)args[0]));
+			staticStringDecrypter.add(stringDecrypter.Method, (method, args) => stringDecrypter.decrypt((string)args[0]));
 
 			addCctorInitCallToBeRemoved(cliSecureRtType.InitializeMethod);
 			addCctorInitCallToBeRemoved(cliSecureRtType.PostInitializeMethod);
@@ -212,8 +212,8 @@ namespace de4dot.deobfuscators.CliSecure {
 
 		public override IEnumerable<string> getStringDecrypterMethods() {
 			var list = new List<string>();
-			if (stringDecrypter.StringDecrypterMethod != null)
-				list.Add(stringDecrypter.StringDecrypterMethod.MetadataToken.ToInt32().ToString("X8"));
+			if (stringDecrypter.Method != null)
+				list.Add(stringDecrypter.Method.MetadataToken.ToInt32().ToString("X8"));
 			return list;
 		}
 

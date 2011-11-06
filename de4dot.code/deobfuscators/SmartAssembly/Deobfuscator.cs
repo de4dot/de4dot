@@ -430,7 +430,7 @@ namespace de4dot.deobfuscators.SmartAssembly {
 
 		void removeResolverInfoTypes(ResolverInfoBase info, string typeName) {
 			addTypeToBeRemoved(info.CallResolverType, string.Format("{0} resolver type #1", typeName));
-			addTypeToBeRemoved(info.ResolverType, string.Format("{0} resolver type #2", typeName));
+			addTypeToBeRemoved(info.Type, string.Format("{0} resolver type #2", typeName));
 		}
 
 		void removeAutomatedErrorReportingCode(Blocks blocks) {
@@ -450,7 +450,7 @@ namespace de4dot.deobfuscators.SmartAssembly {
 		void removeMemoryManagerStuff() {
 			if (!options.RemoveMemoryManager)
 				return;
-			addTypeToBeRemoved(memoryManagerInfo.MemoryManagerType, "Memory manager type");
+			addTypeToBeRemoved(memoryManagerInfo.Type, "Memory manager type");
 		}
 
 		void removeTamperProtectionStuff() {

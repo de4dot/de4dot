@@ -25,7 +25,7 @@ namespace de4dot.deobfuscators.SmartAssembly {
 	class ResourceResolverInfo : ResolverInfoBase {
 		EmbeddedResource embeddedAssembliesResource;
 
-		public EmbeddedResource EmbeddedAssembliesResource {
+		public EmbeddedResource Resource {
 			get { return embeddedAssembliesResource; }
 		}
 

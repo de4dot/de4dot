@@ -31,7 +31,7 @@ namespace de4dot.deobfuscators.SmartAssembly {
 		TypeDefinition callResolverType;
 		MethodDefinition callResolverMethod;
 
-		public TypeDefinition ResolverType {
+		public TypeDefinition Type {
 			get { return resolverType; }
 		}
 

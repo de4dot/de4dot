@@ -28,11 +28,11 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 		TypeDefinition antiDebuggerType;
 		MethodDefinition antiDebuggerMethod;
 
-		public TypeDefinition AntiDebuggerType {
+		public TypeDefinition Type {
 			get { return antiDebuggerType; }
 		}
 
-		public MethodDefinition AntiDebuggerMethod {
+		public MethodDefinition Method {
 			get { return antiDebuggerMethod; }
 		}
 

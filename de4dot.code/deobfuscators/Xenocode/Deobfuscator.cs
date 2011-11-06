@@ -94,7 +94,7 @@ namespace de4dot.deobfuscators.Xenocode {
 		public override void deobfuscateBegin() {
 			base.deobfuscateBegin();
 
-			staticStringDecrypter.add(stringDecrypter.StringDecrypterMethod, (method, args) => stringDecrypter.decrypt((string)args[0], (int)args[1]));
+			staticStringDecrypter.add(stringDecrypter.Method, (method, args) => stringDecrypter.decrypt((string)args[0], (int)args[1]));
 		}
 
 		public override void deobfuscateEnd() {
@@ -105,8 +105,8 @@ namespace de4dot.deobfuscators.Xenocode {
 
 		public override IEnumerable<string> getStringDecrypterMethods() {
 			var list = new List<string>();
-			if (stringDecrypter.StringDecrypterMethod != null)
-				list.Add(stringDecrypter.StringDecrypterMethod.MetadataToken.ToInt32().ToString("X8"));
+			if (stringDecrypter.Method != null)
+				list.Add(stringDecrypter.Method.MetadataToken.ToInt32().ToString("X8"));
 			return list;
 		}
 	}

@@ -31,12 +31,12 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		EmbeddedResource encryptedDataResource;
 		byte[] key, iv;
 
-		public MethodDefinition ResourceDecrypterMethod {
+		public MethodDefinition Method {
 			get { return resourceDecrypterMethod; }
 			set { resourceDecrypterMethod = value; }
 		}
 
-		public EmbeddedResource EncryptedDataResource {
+		public EmbeddedResource Resource {
 			get { return encryptedDataResource; }
 		}
 

@@ -32,7 +32,7 @@ namespace de4dot.deobfuscators.SmartAssembly {
 			get { return exceptionLoggerRemover; }
 		}
 
-		public TypeDefinition AutomatedErrorReportingType {
+		public TypeDefinition Type {
 			get { return automatedErrorReportingType; }
 		}
 

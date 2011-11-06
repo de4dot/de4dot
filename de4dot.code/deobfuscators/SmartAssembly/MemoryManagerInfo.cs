@@ -30,7 +30,7 @@ namespace de4dot.deobfuscators.SmartAssembly {
 			get { return memoryManagerType != null; }
 		}
 
-		public TypeDefinition MemoryManagerType {
+		public TypeDefinition Type {
 			get { return memoryManagerType; }
 		}
 

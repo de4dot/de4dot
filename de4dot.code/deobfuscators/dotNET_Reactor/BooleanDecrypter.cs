@@ -29,15 +29,15 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		byte[] decryptedData;
 
 		public bool Detected {
-			get { return encryptedResource.ResourceDecrypterMethod != null; }
+			get { return encryptedResource.Method != null; }
 		}
 
-		public MethodDefinition BoolDecrypterMethod {
-			get { return encryptedResource.ResourceDecrypterMethod; }
+		public MethodDefinition Method {
+			get { return encryptedResource.Method; }
 		}
 
-		public EmbeddedResource BooleansResource {
-			get { return encryptedResource.EncryptedDataResource; }
+		public EmbeddedResource Resource {
+			get { return encryptedResource.Resource; }
 		}
 
 		public BooleanDecrypter(ModuleDefinition module) {
@@ -65,19 +65,19 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 					if (!encryptedResource.couldBeResourceDecrypter(method, additionalTypes))
 						continue;
 
-					encryptedResource.ResourceDecrypterMethod = method;
+					encryptedResource.Method = method;
 					return;
 				}
 			}
 		}
 
 		public void init(byte[] fileData, ISimpleDeobfuscator simpleDeobfuscator) {
-			if (encryptedResource.ResourceDecrypterMethod == null)
+			if (encryptedResource.Method == null)
 				return;
 			this.fileData = fileData;
 
 			encryptedResource.init(simpleDeobfuscator);
-			Log.v("Adding boolean decrypter. Resource: {0}", Utils.toCsharpString(encryptedResource.EncryptedDataResource.Name));
+			Log.v("Adding boolean decrypter. Resource: {0}", Utils.toCsharpString(encryptedResource.Resource.Name));
 			decryptedData = encryptedResource.decrypt();
 		}
 

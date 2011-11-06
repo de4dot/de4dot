@@ -50,11 +50,11 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 			get { return assemblyInfos; }
 		}
 
-		public TypeDefinition ResolverType {
+		public TypeDefinition Type {
 			get { return resolverType; }
 		}
 
-		public MethodDefinition ResolverMethod {
+		public MethodDefinition Method {
 			get { return resolverMethod; }
 		}
 

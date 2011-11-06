@@ -165,9 +165,9 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 
 			decryptResources();
 			stringDecrypter.init(resourceDecrypter);
-			if (stringDecrypter.StringDecrypterMethod != null) {
-				addResourceToBeRemoved(stringDecrypter.StringResource, "Encrypted strings");
-				staticStringDecrypter.add(stringDecrypter.StringDecrypterMethod, (method, args) => {
+			if (stringDecrypter.Method != null) {
+				addResourceToBeRemoved(stringDecrypter.Resource, "Encrypted strings");
+				staticStringDecrypter.add(stringDecrypter.Method, (method, args) => {
 					return stringDecrypter.decrypt((int)args[0]);
 				});
 				DeobfuscatedFile.stringDecryptersAdded();
@@ -176,15 +176,15 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 			antiDebugger = new AntiDebugger(module, DeobfuscatedFile, this);
 			antiDebugger.find();
 
-			addModuleCctorInitCallToBeRemoved(resourceResolver.ResolverMethod);
-			addModuleCctorInitCallToBeRemoved(assemblyResolver.ResolverMethod);
-			addCallToBeRemoved(module.EntryPoint, tamperDetection.TamperMethod);
-			addCallToBeRemoved(module.EntryPoint, antiDebugger.AntiDebuggerMethod);
-			addTypeToBeRemoved(resourceResolver.ResolverType, "Resource resolver type");
-			addTypeToBeRemoved(assemblyResolver.ResolverType, "Assembly resolver type");
-			addTypeToBeRemoved(tamperDetection.TamperType, "Tamper detection type");
-			addTypeToBeRemoved(antiDebugger.AntiDebuggerType, "Anti-debugger type");
-			addTypeToBeRemoved(stringDecrypter.StringDecrypterType, "String decrypter type");
+			addModuleCctorInitCallToBeRemoved(resourceResolver.Method);
+			addModuleCctorInitCallToBeRemoved(assemblyResolver.Method);
+			addCallToBeRemoved(module.EntryPoint, tamperDetection.Method);
+			addCallToBeRemoved(module.EntryPoint, antiDebugger.Method);
+			addTypeToBeRemoved(resourceResolver.Type, "Resource resolver type");
+			addTypeToBeRemoved(assemblyResolver.Type, "Assembly resolver type");
+			addTypeToBeRemoved(tamperDetection.Type, "Tamper detection type");
+			addTypeToBeRemoved(antiDebugger.Type, "Anti-debugger type");
+			addTypeToBeRemoved(stringDecrypter.Type, "String decrypter type");
 
 			proxyDelegateFinder.find();
 
@@ -224,8 +224,8 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 
 		public override IEnumerable<string> getStringDecrypterMethods() {
 			var list = new List<string>();
-			if (stringDecrypter.StringDecrypterMethod != null)
-				list.Add(stringDecrypter.StringDecrypterMethod.MetadataToken.ToInt32().ToString("X8"));
+			if (stringDecrypter.Method != null)
+				list.Add(stringDecrypter.Method.MetadataToken.ToInt32().ToString("X8"));
 			return list;
 		}
 	}

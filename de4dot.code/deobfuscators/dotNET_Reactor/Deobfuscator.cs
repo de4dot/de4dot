@@ -199,12 +199,12 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				break;
 			}
 
-			if (methodsDecrypter.MethodsDecrypterMethod == null) {
+			if (methodsDecrypter.Method == null) {
 				if (minVer >= 3800)
 					return ".NET Reactor >= 3.8";
 				return ".NET Reactor";
 			}
-			localTypes = new LocalTypes(methodsDecrypter.MethodsDecrypterMethod);
+			localTypes = new LocalTypes(methodsDecrypter.Method);
 
 			if (localTypes.exists("System.Int32[]")) {
 				if (minVer >= 3800)
@@ -216,13 +216,13 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 					return ".NET Reactor 3.9.8.0";
 			}
 
-			var compileMethod = MethodsDecrypter.findDnrCompileMethod(methodsDecrypter.MethodsDecrypterMethod.DeclaringType);
+			var compileMethod = MethodsDecrypter.findDnrCompileMethod(methodsDecrypter.Method.DeclaringType);
 			if (compileMethod == null)
 				return ".NET Reactor < 4.0";
 			DeobfuscatedFile.deobfuscate(compileMethod);
 			bool compileMethodHasConstant_0x70000000 = findConstant(compileMethod, 0x70000000);	// 4.0-4.1
-			DeobfuscatedFile.deobfuscate(methodsDecrypter.MethodsDecrypterMethod);
-			bool hasCorEnableProfilingString = findString(methodsDecrypter.MethodsDecrypterMethod, "Cor_Enable_Profiling");	// 4.1-4.4
+			DeobfuscatedFile.deobfuscate(methodsDecrypter.Method);
+			bool hasCorEnableProfilingString = findString(methodsDecrypter.Method, "Cor_Enable_Profiling");	// 4.1-4.4
 
 			if (compileMethodHasConstant_0x70000000) {
 				if (hasCorEnableProfilingString)
@@ -295,7 +295,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			boolValueInliner = new BoolValueInliner();
 
 			if (options.DecryptBools) {
-				boolValueInliner.add(booleanDecrypter.BoolDecrypterMethod, (method, args) => {
+				boolValueInliner.add(booleanDecrypter.Method, (method, args) => {
 					return booleanDecrypter.decrypt((int)args[0]);
 				});
 			}
@@ -315,19 +315,19 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			metadataTokenObfuscator = new MetadataTokenObfuscator(module);
 
 			if (Operations.DecryptStrings != OpDecryptString.None)
-				addResourceToBeRemoved(stringDecrypter.StringsResource, "Encrypted strings");
+				addResourceToBeRemoved(stringDecrypter.Resource, "Encrypted strings");
 			else
 				canRemoveDecrypterType = false;
 
 			if (options.DecryptMethods) {
-				addResourceToBeRemoved(methodsDecrypter.MethodsResource, "Encrypted methods");
-				addCctorInitCallToBeRemoved(methodsDecrypter.MethodsDecrypterMethod);
+				addResourceToBeRemoved(methodsDecrypter.Resource, "Encrypted methods");
+				addCctorInitCallToBeRemoved(methodsDecrypter.Method);
 			}
 			else
 				canRemoveDecrypterType = false;
 
 			if (options.DecryptBools)
-				addResourceToBeRemoved(booleanDecrypter.BooleansResource, "Encrypted booleans");
+				addResourceToBeRemoved(booleanDecrypter.Resource, "Encrypted booleans");
 			else
 				canRemoveDecrypterType = false;
 
@@ -356,8 +356,8 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			removeInlinedMethods();
 			if (options.RestoreTypes)
 				new TypesRestorer(module).deobfuscate();
-			if (canRemoveDecrypterType && methodsDecrypter.MethodsDecrypterMethod != null) {
-				addTypeToBeRemoved(methodsDecrypter.MethodsDecrypterMethod.DeclaringType, "Decrypter type");
+			if (canRemoveDecrypterType && methodsDecrypter.Method != null) {
+				addTypeToBeRemoved(methodsDecrypter.Method.DeclaringType, "Decrypter type");
 				addTypeToBeRemoved(metadataTokenObfuscator.Type, "Metadata token obfuscator");
 			}
 			base.deobfuscateEnd();

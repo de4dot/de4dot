@@ -36,14 +36,14 @@ namespace de4dot.deobfuscators.SmartAssembly {
 		}
 
 		public bool canDecryptResource() {
-			return assemblyResolver.canDecryptResource(resourceResolverInfo.EmbeddedAssembliesResource);
+			return assemblyResolver.canDecryptResource(resourceResolverInfo.Resource);
 		}
 
 		public EmbeddedResource mergeResources() {
 			if (mergedIt)
 				return null;
 
-			var resource = resourceResolverInfo.EmbeddedAssembliesResource;
+			var resource = resourceResolverInfo.Resource;
 			if (resource == null)
 				return null;
 
