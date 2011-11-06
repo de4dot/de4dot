@@ -18,23 +18,24 @@
 */
 
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Security.Cryptography;
-using System.Text;
+using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Mono.MyStuff;
 using de4dot.blocks;
 
 namespace de4dot.deobfuscators.CliSecure {
 	class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "CliSecure";
 		const string DEFAULT_REGEX = @"[a-zA-Z_0-9>}$]$";
+		BoolOption decryptMethods;
 		BoolOption fixResources;
 		BoolOption removeStackFrameHelper;
 
 		public DeobfuscatorInfo()
 			: base(DEFAULT_REGEX) {
+			decryptMethods = new BoolOption(null, makeArgName("methods"), "Decrypt methods", true);
 			fixResources = new BoolOption(null, makeArgName("rsrc"), "Decrypt resources", true);
 			removeStackFrameHelper = new BoolOption(null, makeArgName("stack"), "Remove all StackFrameHelper code", true);
 		}
@@ -50,6 +51,7 @@ namespace de4dot.deobfuscators.CliSecure {
 		public override IDeobfuscator createDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
 				ValidNameRegex = validNameRegex.get(),
+				DecryptMethods = decryptMethods.get(),
 				FixResources = fixResources.get(),
 				RemoveStackFrameHelper = removeStackFrameHelper.get(),
 			});
@@ -57,6 +59,7 @@ namespace de4dot.deobfuscators.CliSecure {
 
 		protected override IEnumerable<Option> getOptionsInternal() {
 			return new List<Option>() {
+				decryptMethods,
 				fixResources,
 				removeStackFrameHelper,
 			};
@@ -65,25 +68,17 @@ namespace de4dot.deobfuscators.CliSecure {
 
 	class Deobfuscator : DeobfuscatorBase {
 		Options options;
-		bool foundCliSecureAttribute = false;
-		bool foundProxyDelegateMethod = false;
 
-		MethodDefinition decryptStringMethod;
-		byte[] decryptStringBuffer;
-
+		TypeDefinition cliSecureAttribute;
 		ProxyDelegateFinder proxyDelegateFinder;
+		CliSecureRtType cliSecureRtType;
+		StringDecrypter stringDecrypter;
 
-		TypeDefinition cliSecureRtType;
-		MethodDefinition postInitializeMethod;
-		MethodDefinition initializeMethod;
-		TypeDefinition stackFrameHelperType;
-
-		ExceptionLoggerRemover exceptionLoggerRemover = new ExceptionLoggerRemover();
-
-		MethodDefinition rsrcRrrMethod;
-		MethodDefinition rsrcDecryptMethod;
+		ResourceDecrypter resourceDecrypter;
+		StackFrameHelper stackFrameHelper;
 
 		internal class Options : OptionsBase {
+			public bool DecryptMethods { get; set; }
 			public bool FixResources { get; set; }
 			public bool RemoveStackFrameHelper { get; set; }
 		}
@@ -108,215 +103,96 @@ namespace de4dot.deobfuscators.CliSecure {
 		protected override int detectInternal() {
 			int val = 0;
 
-			if (cliSecureRtType != null || foundCliSecureAttribute)
+			if (cliSecureRtType.Detected || cliSecureAttribute != null)
 				val += 100;
-			if (decryptStringBuffer != null)
+			if (stringDecrypter.Detected)
 				val += 10;
-			if (foundProxyDelegateMethod)
+			if (proxyDelegateFinder.Detected)
 				val += 10;
 
 			return val;
 		}
 
 		protected override void scanForObfuscator() {
-			proxyDelegateFinder = new ProxyDelegateFinder(module);
 			findCliSecureAttribute();
-			findCliSecureRtType();
-			findStringDecryptBuffer();
-			findDelegateCreatorType();
+			cliSecureRtType = new CliSecureRtType(module);
+			cliSecureRtType.find();
+			stringDecrypter = new StringDecrypter(module, cliSecureRtType.StringDecrypterMethod);
+			stringDecrypter.find();
+			proxyDelegateFinder = new ProxyDelegateFinder(module);
+			proxyDelegateFinder.findDelegateCreator();
 		}
 
 		void findCliSecureAttribute() {
 			foreach (var type in module.Types) {
 				if (type.FullName == "SecureTeam.Attributes.ObfuscatedByCliSecureAttribute") {
-					this.addAttributeToBeRemoved(type, "Obfuscator attribute");
-					foundCliSecureAttribute = true;
+					cliSecureAttribute = type;
 					break;
 				}
 			}
 		}
 
-		void findCliSecureRtType() {
-			if (cliSecureRtType != null)
-				return;
+		public override bool getDecryptedModule(ref byte[] newFileData, ref Dictionary<uint, DumpedMethod> dumpedMethods) {
+			if (!options.DecryptMethods)
+				return false;
 
-			foreach (var type in module.Types) {
-				if (type.Namespace != "")
-					continue;
-				var typeName = type.FullName;
-
-				MethodDefinition cs = null;
-				MethodDefinition initialize = null;
-				MethodDefinition postInitialize = null;
-				MethodDefinition load = null;
-
-				int methods = 0;
-				foreach (var method in type.Methods) {
-					if (method.FullName == "System.String " + typeName + "::cs(System.String)") {
-						cs = method;
-						methods++;
-					}
-					else if (method.FullName == "System.Void " + typeName + "::Initialize()") {
-						initialize = method;
-						methods++;
-					}
-					else if (method.FullName == "System.Void " + typeName + "::PostInitialize()") {
-						postInitialize = method;
-						methods++;
-					}
-					else if (method.FullName == "System.IntPtr " + typeName + "::Load()") {
-						load = method;
-						methods++;
-					}
-				}
-				if (methods < 2)
-					continue;
-
-				decryptStringMethod = cs;
-				initializeMethod = initialize;
-				postInitializeMethod = postInitialize;
-				cliSecureRtType = type;
-				if (load != null)
-					findPossibleNamesToRemove(load);
-				return;
+			byte[] fileData;
+			using (var fileStream = new FileStream(module.FullyQualifiedName, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+				fileData = new byte[(int)fileStream.Length];
+				fileStream.Read(fileData, 0, fileData.Length);
 			}
+			var peImage = new PE.PeImage(fileData);
+
+			if (!new MethodsDecrypter().decrypt(peImage, ref dumpedMethods))
+				return false;
+
+			newFileData = fileData;
+			return true;
 		}
 
-		void findStringDecryptBuffer() {
-			foreach (var type in module.Types) {
-				if (type.FullName == "<D234>" || type.FullName == "<ClassD234>") {
-					addTypeToBeRemoved(type, "Obfuscator string decrypter type");
-					foreach (var field in type.Fields) {
-						if (field.FullName == "<D234> <D234>::345" || field.FullName == "<ClassD234>/D234 <ClassD234>::345") {
-							decryptStringBuffer = field.InitialValue;
-							break;
-						}
-					}
-					break;
-				}
-			}
-		}
-
-		void findDelegateCreatorType() {
-			foreach (var type in module.Types) {
-				var methodName = "System.Void " + type.FullName + "::icgd(System.Int32)";
-				foreach (var method in type.Methods) {
-					if (method.FullName == methodName) {
-						proxyDelegateFinder.setDelegateCreatorMethod(method);
-						foundProxyDelegateMethod = true;
-						return;
-					}
-				}
-			}
+		public override IDeobfuscator moduleReloaded(ModuleDefinition module) {
+			var newOne = new Deobfuscator(options);
+			newOne.setModule(module);
+			newOne.cliSecureAttribute = DeobUtils.lookup(module, cliSecureAttribute, "Could not find CliSecure attribute");
+			newOne.cliSecureRtType = new CliSecureRtType(module, cliSecureRtType);
+			newOne.stringDecrypter = new StringDecrypter(module, stringDecrypter);
+			newOne.proxyDelegateFinder = new ProxyDelegateFinder(module, proxyDelegateFinder);
+			return newOne;
 		}
 
 		public override void deobfuscateBegin() {
 			base.deobfuscateBegin();
 
+			addAttributeToBeRemoved(cliSecureAttribute, "Obfuscator attribute");
+			addTypeToBeRemoved(stringDecrypter.StringDecrypterType, "Obfuscator string decrypter type");
+			findPossibleNamesToRemove(cliSecureRtType.LoadMethod);
+
+			resourceDecrypter = new ResourceDecrypter(module);
+			resourceDecrypter.find();
+			stackFrameHelper = new StackFrameHelper(module);
+			stackFrameHelper.find();
+
 			foreach (var type in module.Types) {
 				if (type.FullName == "InitializeDelegate" && DotNetUtils.derivesFromDelegate(type))
 					this.addTypeToBeRemoved(type, "Obfuscator type");
-				else if (findResourceDecrypter(type)) {
-					// Nothing
-				}
-				if (options.RemoveStackFrameHelper)
-					findStackFrameHelper(type);
 			}
 
 			proxyDelegateFinder.find();
 
-			if (decryptStringMethod != null)
-				staticStringDecrypter.add(decryptStringMethod, (method, args) => decryptString((string)args[0]));
+			staticStringDecrypter.add(stringDecrypter.StringDecrypterMethod, (method, args) => stringDecrypter.decrypt((string)args[0]));
 
-			addCctorInitCallToBeRemoved(initializeMethod);
-			addCctorInitCallToBeRemoved(postInitializeMethod);
+			addCctorInitCallToBeRemoved(cliSecureRtType.InitializeMethod);
+			addCctorInitCallToBeRemoved(cliSecureRtType.PostInitializeMethod);
 			if (options.FixResources)
-				addCctorInitCallToBeRemoved(rsrcRrrMethod);
-		}
-
-		bool findResourceDecrypter(TypeDefinition type) {
-			MethodDefinition rrrMethod = null;
-			MethodDefinition decryptMethod = null;
-
-			foreach (var method in type.Methods) {
-				if (method.Name == "rrr" && DotNetUtils.isMethod(method, "System.Void", "()"))
-					rrrMethod = method;
-				else if (DotNetUtils.isMethod(method, "System.Reflection.Assembly", "(System.Object,System.ResolveEventArgs)"))
-					decryptMethod = method;
-			}
-			if (rrrMethod == null || decryptMethod == null)
-				return false;
-
-			var methodCalls = DotNetUtils.getMethodCallCounts(rrrMethod);
-			if (methodCalls.count("System.Void System.ResolveEventHandler::.ctor(System.Object,System.IntPtr)") != 1)
-				return false;
-
-			rsrcRrrMethod = rrrMethod;
-			rsrcDecryptMethod = decryptMethod;
-			return true;
+				addCctorInitCallToBeRemoved(resourceDecrypter.RsrcRrrMethod);
 		}
 
 		void decryptResources() {
-			if (rsrcDecryptMethod == null)
+			var rsrc = resourceDecrypter.mergeResources();
+			if (rsrc == null)
 				return;
-			var resource = getResource(DotNetUtils.getCodeStrings(rsrcDecryptMethod)) as EmbeddedResource;
-			if (resource == null)
-				return;
-
-			DeobUtils.decryptAndAddResources(module, resource.Name, () => decryptResource(resource));
-
-			addResourceToBeRemoved(resource, "Encrypted resource");
-			if (rsrcDecryptMethod != null)
-				addTypeToBeRemoved(rsrcDecryptMethod.DeclaringType, "Obfuscator resource decrypter type");
-		}
-
-		byte[] decryptResource(EmbeddedResource resource) {
-			using (var rsrcStream = resource.GetResourceStream()) {
-				using (var reader = new BinaryReader(rsrcStream)) {
-					var key = reader.ReadString();
-					var data = reader.ReadBytes((int)(rsrcStream.Length - rsrcStream.Position));
-					var cryptoTransform = new DESCryptoServiceProvider {
-						Key = Encoding.ASCII.GetBytes(key),
-						IV  = Encoding.ASCII.GetBytes(key),
-					}.CreateDecryptor();
-					var memStream = new MemoryStream(data);
-					using (var reader2 = new BinaryReader(new CryptoStream(memStream, cryptoTransform, CryptoStreamMode.Read))) {
-						return reader2.ReadBytes((int)memStream.Length);
-					}
-				}
-			}
-		}
-
-		void findStackFrameHelper(TypeDefinition type) {
-			if (!type.HasMethods)
-				return;
-			if (type.Methods.Count > 3)
-				return;
-
-			MethodDefinition errorMethod = null;
-			foreach (var method in type.Methods) {
-				if (method.IsRuntimeSpecialName && method.Name == ".ctor" && method.HasParameters == false)
-					continue;	// .ctor is allowed
-				if (method.IsRuntimeSpecialName && method.Name == ".cctor" && method.HasParameters == false)
-					continue;	// .cctor is allowed
-				if (method.IsStatic && method.CallingConvention == MethodCallingConvention.Default &&
-					method.ExplicitThis == false && method.HasThis == false &&
-					method.HasBody && method.IsManaged && method.IsIL && method.HasParameters &&
-					method.Parameters.Count == 2 && method.HasGenericParameters == false &&
-					!DotNetUtils.hasReturnValue(method) &&
-					MemberReferenceHelper.verifyType(method.Parameters[0].ParameterType, "mscorlib", "System.Exception") &&
-					MemberReferenceHelper.verifyType(method.Parameters[1].ParameterType, "mscorlib", "System.Object", "[]")) {
-					errorMethod = method;
-				}
-				else
-					return;
-			}
-			if (errorMethod != null) {
-				if (stackFrameHelperType != null)
-					throw new ApplicationException("Found another StackFrameHelper");
-				stackFrameHelperType = type;
-				exceptionLoggerRemover.add(errorMethod);
-			}
+			addResourceToBeRemoved(rsrc, "Encrypted resource");
+			addTypeToBeRemoved(resourceDecrypter.Type, "Obfuscator resource decrypter type");
 		}
 
 		public override void deobfuscateMethodEnd(Blocks blocks) {
@@ -329,10 +205,12 @@ namespace de4dot.deobfuscators.CliSecure {
 			if (options.FixResources)
 				decryptResources();
 			removeProxyDelegates(proxyDelegateFinder);
-			if (exceptionLoggerRemover.NumRemovedExceptionLoggers > 0)
-				addTypeToBeRemoved(stackFrameHelperType, "StackFrameHelper type");
+			if (options.RemoveStackFrameHelper) {
+				if (stackFrameHelper.ExceptionLoggerRemover.NumRemovedExceptionLoggers > 0)
+					addTypeToBeRemoved(stackFrameHelper.Type, "StackFrameHelper type");
+			}
 			if (Operations.DecryptStrings != OpDecryptString.None)
-				addTypeToBeRemoved(cliSecureRtType, "Obfuscator type");
+				addTypeToBeRemoved(cliSecureRtType.Type, "Obfuscator type");
 			addResources("Obfuscator protection files");
 			addModuleReferences("Obfuscator protection files");
 
@@ -341,22 +219,13 @@ namespace de4dot.deobfuscators.CliSecure {
 
 		public override IEnumerable<string> getStringDecrypterMethods() {
 			var list = new List<string>();
-			if (decryptStringMethod != null)
-				list.Add(decryptStringMethod.MetadataToken.ToInt32().ToString("X8"));
+			if (stringDecrypter.StringDecrypterMethod != null)
+				list.Add(stringDecrypter.StringDecrypterMethod.MetadataToken.ToInt32().ToString("X8"));
 			return list;
 		}
 
-		string decryptString(string es) {
-			if (decryptStringBuffer == null)
-				throw new ApplicationException("Trying to decrypt strings when decryptStringBuffer is null (could not find it!)");
-			StringBuilder sb = new StringBuilder(es.Length);
-			for (int i = 0; i < es.Length; i++)
-				sb.Append(Convert.ToChar((int)(es[i] ^ decryptStringBuffer[i % decryptStringBuffer.Length])));
-			return sb.ToString();
-		}
-
 		void removeStackFrameHelperCode(Blocks blocks) {
-			if (exceptionLoggerRemover.remove(blocks))
+			if (stackFrameHelper.ExceptionLoggerRemover.remove(blocks))
 				Log.v("Removed StackFrameHelper code");
 		}
 	}

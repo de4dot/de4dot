@@ -56,8 +56,13 @@
     <Compile Include="AssemblyResolver.cs" />
     <Compile Include="CommandLineParser.cs" />
     <Compile Include="deobfuscators\ArrayFinder.cs" />
+    <Compile Include="deobfuscators\CliSecure\CliSecureRtType.cs" />
     <Compile Include="deobfuscators\CliSecure\Deobfuscator.cs" />
+    <Compile Include="deobfuscators\CliSecure\MethodsDecrypter.cs" />
     <Compile Include="deobfuscators\CliSecure\ProxyDelegateFinder.cs" />
+    <Compile Include="deobfuscators\CliSecure\ResourceDecrypter.cs" />
+    <Compile Include="deobfuscators\CliSecure\StackFrameHelper.cs" />
+    <Compile Include="deobfuscators\CliSecure\StringDecrypter.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\AntiDebugger.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\AssemblyResolver.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\Deobfuscator.cs" />

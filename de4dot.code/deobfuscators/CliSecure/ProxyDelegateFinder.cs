@@ -29,7 +29,28 @@ namespace de4dot.deobfuscators.CliSecure {
 
 		public ProxyDelegateFinder(ModuleDefinition module)
 			: base(module) {
-			this.memberReferences = new List<MemberReference>(module.GetMemberReferences());
+		}
+
+		public ProxyDelegateFinder(ModuleDefinition module, ProxyDelegateFinder oldOne)
+			: base(module) {
+			foreach (var method in oldOne.delegateCreatorMethods)
+				setDelegateCreatorMethod(lookup(method, "Could not find delegate creator method"));
+		}
+
+		T lookup<T>(T def, string errorMessage) where T : MemberReference {
+			return DeobUtils.lookup(module, def, errorMessage);
+		}
+
+		public void findDelegateCreator() {
+			foreach (var type in module.Types) {
+				var methodName = "System.Void " + type.FullName + "::icgd(System.Int32)";
+				foreach (var method in type.Methods) {
+					if (method.FullName == methodName) {
+						setDelegateCreatorMethod(method);
+						return;
+					}
+				}
+			}
 		}
 
 		protected override object checkCctor(TypeDefinition type, MethodDefinition cctor) {
@@ -53,6 +74,9 @@ namespace de4dot.deobfuscators.CliSecure {
 		}
 
 		protected override void getCallInfo(object context, FieldDefinition field, out MethodReference calledMethod, out OpCode callOpcode) {
+			if (memberReferences == null)
+				memberReferences = new List<MemberReference>(module.GetMemberReferences());
+
 			var name = field.Name;
 			callOpcode = OpCodes.Call;
 			if (name.EndsWith("%", StringComparison.Ordinal)) {
