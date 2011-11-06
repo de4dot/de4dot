@@ -96,8 +96,6 @@ namespace de4dot.deobfuscators.Unknown {
 					return "DeployLX CodeVeil";
 				if (type.FullName.Contains("ObfuscatedByGoliath"))
 					return "Goliath .NET Obfuscator";
-				if (type.FullName == "Xenocode.Client.Attributes.AssemblyAttributes.ProcessedByXenocode")
-					return "Xenocode";
 				if (type.FullName == "ZYXDNGuarder")
 					return "DNGuard HVM";
 				if (type.FullName == "InfaceMaxtoCode")

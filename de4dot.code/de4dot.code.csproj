@@ -109,6 +109,8 @@
     <Compile Include="deobfuscators\SmartAssembly\TamperProtectionRemover.cs" />
     <Compile Include="deobfuscators\TypesRestorer.cs" />
     <Compile Include="deobfuscators\Unknown\Deobfuscator.cs" />
+    <Compile Include="deobfuscators\Xenocode\Deobfuscator.cs" />
+    <Compile Include="deobfuscators\Xenocode\StringDecrypter.cs" />
     <Compile Include="FilesDeobfuscator.cs" />
     <Compile Include="IObfuscatedFile.cs" />
     <Compile Include="Log.cs" />
