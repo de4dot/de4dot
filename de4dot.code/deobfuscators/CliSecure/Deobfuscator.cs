@@ -27,13 +27,13 @@ namespace de4dot.deobfuscators.CliSecure {
 		public const string THE_NAME = "CliSecure";
 		const string DEFAULT_REGEX = @"[a-zA-Z_0-9>}$]$";
 		BoolOption decryptMethods;
-		BoolOption fixResources;
+		BoolOption decryptResources;
 		BoolOption removeStackFrameHelper;
 
 		public DeobfuscatorInfo()
 			: base(DEFAULT_REGEX) {
 			decryptMethods = new BoolOption(null, makeArgName("methods"), "Decrypt methods", true);
-			fixResources = new BoolOption(null, makeArgName("rsrc"), "Decrypt resources", true);
+			decryptResources = new BoolOption(null, makeArgName("rsrc"), "Decrypt resources", true);
 			removeStackFrameHelper = new BoolOption(null, makeArgName("stack"), "Remove all StackFrameHelper code", true);
 		}
 
@@ -49,7 +49,7 @@ namespace de4dot.deobfuscators.CliSecure {
 			return new Deobfuscator(new Deobfuscator.Options {
 				ValidNameRegex = validNameRegex.get(),
 				DecryptMethods = decryptMethods.get(),
-				FixResources = fixResources.get(),
+				DecryptResources = decryptResources.get(),
 				RemoveStackFrameHelper = removeStackFrameHelper.get(),
 			});
 		}
@@ -57,7 +57,7 @@ namespace de4dot.deobfuscators.CliSecure {
 		protected override IEnumerable<Option> getOptionsInternal() {
 			return new List<Option>() {
 				decryptMethods,
-				fixResources,
+				decryptResources,
 				removeStackFrameHelper,
 			};
 		}
@@ -76,7 +76,7 @@ namespace de4dot.deobfuscators.CliSecure {
 
 		internal class Options : OptionsBase {
 			public bool DecryptMethods { get; set; }
-			public bool FixResources { get; set; }
+			public bool DecryptResources { get; set; }
 			public bool RemoveStackFrameHelper { get; set; }
 		}
 
@@ -157,8 +157,6 @@ namespace de4dot.deobfuscators.CliSecure {
 			base.deobfuscateBegin();
 
 			addAttributeToBeRemoved(cliSecureAttribute, "Obfuscator attribute");
-			addTypeToBeRemoved(stringDecrypter.Type, "Obfuscator string decrypter type");
-			findPossibleNamesToRemove(cliSecureRtType.LoadMethod);
 
 			resourceDecrypter = new ResourceDecrypter(module);
 			resourceDecrypter.find();
@@ -174,9 +172,12 @@ namespace de4dot.deobfuscators.CliSecure {
 
 			staticStringDecrypter.add(stringDecrypter.Method, (method, args) => stringDecrypter.decrypt((string)args[0]));
 
-			addCctorInitCallToBeRemoved(cliSecureRtType.InitializeMethod);
-			addCctorInitCallToBeRemoved(cliSecureRtType.PostInitializeMethod);
-			if (options.FixResources)
+			if (options.DecryptMethods) {
+				addCctorInitCallToBeRemoved(cliSecureRtType.InitializeMethod);
+				addCctorInitCallToBeRemoved(cliSecureRtType.PostInitializeMethod);
+				findPossibleNamesToRemove(cliSecureRtType.LoadMethod);
+			}
+			if (options.DecryptResources)
 				addCctorInitCallToBeRemoved(resourceDecrypter.RsrcRrrMethod);
 		}
 
@@ -195,17 +196,22 @@ namespace de4dot.deobfuscators.CliSecure {
 		}
 
 		public override void deobfuscateEnd() {
-			if (options.FixResources)
+			if (options.DecryptResources)
 				decryptResources();
 			removeProxyDelegates(proxyDelegateFinder);
 			if (options.RemoveStackFrameHelper) {
 				if (stackFrameHelper.ExceptionLoggerRemover.NumRemovedExceptionLoggers > 0)
 					addTypeToBeRemoved(stackFrameHelper.Type, "StackFrameHelper type");
 			}
-			if (Operations.DecryptStrings != OpDecryptString.None)
-				addTypeToBeRemoved(cliSecureRtType.Type, "Obfuscator type");
-			addResources("Obfuscator protection files");
-			addModuleReferences("Obfuscator protection files");
+			if (Operations.DecryptStrings != OpDecryptString.None) {
+				addTypeToBeRemoved(stringDecrypter.Type, "Obfuscator string decrypter type");
+				if (options.DecryptMethods)
+					addTypeToBeRemoved(cliSecureRtType.Type, "Obfuscator type");
+			}
+			if (options.DecryptMethods) {
+				addResources("Obfuscator protection files");
+				addModuleReferences("Obfuscator protection files");
+			}
 
 			base.deobfuscateEnd();
 		}
