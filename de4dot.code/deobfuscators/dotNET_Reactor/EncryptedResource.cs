@@ -46,17 +46,18 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 
 		public EncryptedResource(ModuleDefinition module, EncryptedResource oldOne) {
 			this.module = module;
-			if (oldOne.resourceDecrypterMethod != null)
-				resourceDecrypterMethod = module.LookupToken(oldOne.resourceDecrypterMethod.MetadataToken.ToInt32()) as MethodDefinition;
+			resourceDecrypterMethod = lookup(oldOne.resourceDecrypterMethod, "Could not find resource decrypter method");
 			if (oldOne.encryptedDataResource != null)
 				encryptedDataResource = DotNetUtils.getResource(module, oldOne.encryptedDataResource.Name) as EmbeddedResource;
 			key = oldOne.key;
 			iv = oldOne.iv;
 
-			if (resourceDecrypterMethod == null && oldOne.resourceDecrypterMethod != null)
-				throw new ApplicationException("Could not initialize EncryptedResource");
 			if (encryptedDataResource == null && oldOne.encryptedDataResource != null)
 				throw new ApplicationException("Could not initialize EncryptedResource");
+		}
+
+		T lookup<T>(T def, string errorMessage) where T : MemberReference {
+			return DeobUtils.lookup(module, def, errorMessage);
 		}
 
 		public bool couldBeResourceDecrypter(MethodDefinition method, IList<string> additionalTypes) {

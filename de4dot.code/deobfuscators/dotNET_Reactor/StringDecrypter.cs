@@ -80,16 +80,14 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			this.stringDecrypterVersion = oldOne.stringDecrypterVersion;
 			this.encryptedResource = new EncryptedResource(module, oldOne.encryptedResource);
 			foreach (var oldInfo in oldOne.decrypterInfos) {
-				var method = module.LookupToken(oldInfo.method.MetadataToken.ToInt32()) as MethodDefinition;
-				if (method == null)
-					throw new ApplicationException("Could not find string decrypter method");
+				var method = lookup(oldInfo.method, "Could not find string decrypter method");
 				decrypterInfos.Add(new DecrypterInfo(method, oldInfo.key, oldInfo.iv));
 			}
-			if (oldOne.otherStringDecrypter != null) {
-				otherStringDecrypter = module.LookupToken(oldOne.otherStringDecrypter.MetadataToken.ToInt32()) as MethodDefinition;
-				if (otherStringDecrypter == null)
-					throw new ApplicationException("Could not find string decrypter method");
-			}
+			otherStringDecrypter = lookup(oldOne.otherStringDecrypter, "Could not find string decrypter method");
+		}
+
+		T lookup<T>(T def, string errorMessage) where T : MemberReference {
+			return DeobUtils.lookup(module, def, errorMessage);
 		}
 
 		public void find(ISimpleDeobfuscator simpleDeobfuscator) {
