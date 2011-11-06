@@ -59,9 +59,8 @@ symbol renaming, and dynamic string decryption could possibly work.
 Most obfuscators can rearrange the control flow so the code is harder to
 understand. A simple method that is 10 lines long and easy to read, could
 become 30-40 lines and be very hard to read. Control flow deobfuscation will
-remove all of the obfuscated code, leaving just the original code. All dead
-(non-executed) code blocks are also removed as part of control flow
-deobfuscation.
+remove all of the obfuscated code, leaving just the original code. Dead code
+is also removed.
 
 ### Cross-assembly symbol renaming
 
@@ -96,9 +95,8 @@ decypted and decompressed and then saved to disk.
 ### Dumps encrypted methods
 
 Some obfuscators encrypt all methods and only decrypt each method when
-requested by the .NET runtime. These methods can be dumped dynamically by
-using some special tricks. It's not a generic methods decrypter but will work
-with the supported obfuscators that encrypt methods.
+requested by the .NET runtime. The methods are statically decrypted and then
+deobfuscated.
 
 ### Deobfuscated files are runnable
 
@@ -152,13 +150,6 @@ Deobfuscate all files found:
 Detect obfuscator recursively:
 
     de4dot -d -r c:\path1
-
-Dump methods and deobfuscate:
-
-    dumpMethods file1
-    dumpMethods file2
-    dumpMethods file3
-    de4dot file1 file2 file3
 
 Deobfuscate and get a detailed log of what was changed:
 
