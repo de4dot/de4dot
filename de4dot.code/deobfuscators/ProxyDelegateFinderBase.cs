@@ -26,7 +26,7 @@ using de4dot.blocks;
 namespace de4dot.deobfuscators {
 	abstract class ProxyDelegateFinderBase {
 		protected ModuleDefinition module;
-		List<MethodDefinition> delegateCreatorMethods = new List<MethodDefinition>();
+		protected List<MethodDefinition> delegateCreatorMethods = new List<MethodDefinition>();
 		Dictionary<TypeDefinition, bool> delegateTypesDict = new Dictionary<TypeDefinition, bool>();
 		Dictionary<FieldReferenceAndDeclaringTypeKey, DelegateInfo> fieldToDelegateInfo = new Dictionary<FieldReferenceAndDeclaringTypeKey, DelegateInfo>();
 		Dictionary<MethodDefinition, FieldDefinition> proxyMethodToField = new Dictionary<MethodDefinition, FieldDefinition>();
