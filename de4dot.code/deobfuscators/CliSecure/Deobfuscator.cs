@@ -136,8 +136,10 @@ namespace de4dot.deobfuscators.CliSecure {
 			byte[] fileData = DeobUtils.readModule(module);
 			var peImage = new PE.PeImage(fileData);
 
-			if (!new MethodsDecrypter().decrypt(peImage, ref dumpedMethods))
+			if (!new MethodsDecrypter().decrypt(peImage, ref dumpedMethods)) {
+				Log.v("Methods aren't encrypted or invalid signature");
 				return false;
+			}
 
 			newFileData = fileData;
 			return true;
