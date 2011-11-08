@@ -99,6 +99,8 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				var method = tuple.Item2;
 				if (!DotNetUtils.isMethod(method, "System.Void", "()"))
 					continue;
+				if (!method.IsStatic)
+					continue;
 
 				if (type.Fields.Count != 2)
 					continue;
