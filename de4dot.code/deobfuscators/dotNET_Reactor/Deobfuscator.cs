@@ -42,7 +42,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			restoreTypes = new BoolOption(null, makeArgName("types"), "Restore types (object -> real type)", true);
 			inlineMethods = new BoolOption(null, makeArgName("inline"), "Inline short methods", true);
 			removeInlinedMethods = new BoolOption(null, makeArgName("remove-inlined"), "Remove inlined methods", true);
-			dumpEmbeddedAssemblies = new BoolOption(null, makeArgName("dump-embedded"), "Dump embedded assemblies", true);
+			dumpEmbeddedAssemblies = new BoolOption(null, makeArgName("embedded"), "Dump embedded assemblies", true);
 			decryptResources = new BoolOption(null, makeArgName("rsrc"), "Decrypt resources", true);
 		}
 
