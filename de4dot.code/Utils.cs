@@ -176,12 +176,16 @@ namespace de4dot {
 
 		public static void printStackTrace(Exception ex, Log.LogLevel logLevel = Log.LogLevel.error) {
 			var line = new string('-', 78);
-			Log.log(logLevel, "\n\nERROR: Caught an exception:\n\n");
+			Log.log(logLevel, "\n\n");
 			Log.log(logLevel, line);
-			Log.log(logLevel, "Message: {0}", ex.Message);
-			Log.log(logLevel, "Type: {0}", ex.GetType());
+			Log.log(logLevel, "Stack trace:\n{0}", ex.StackTrace);
+			Log.log(logLevel, "\n\nERROR: Caught an exception:\n");
 			Log.log(logLevel, line);
-			Log.log(logLevel, "\n\nStack trace:\n{0}", ex.StackTrace);
+			Log.log(logLevel, "Message:");
+			Log.log(logLevel, "  {0}", ex.Message);
+			Log.log(logLevel, "Type:");
+			Log.log(logLevel, "  {0}", ex.GetType());
+			Log.log(logLevel, line);
 		}
 
 		// This fixes a mono (tested 2.10.5) String.StartsWith() bug. NB: stringComparison must be
