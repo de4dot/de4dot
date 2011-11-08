@@ -353,6 +353,9 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				dumpEmbeddedAssemblies();
 			}
 
+			if (options.InlineMethods)
+				addTypeToBeRemoved(metadataTokenObfuscator.Type, "Metadata token obfuscator");
+
 			startedDeobfuscating = true;
 		}
 
@@ -381,10 +384,8 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			removeInlinedMethods();
 			if (options.RestoreTypes)
 				new TypesRestorer(module).deobfuscate();
-			if (canRemoveDecrypterType && methodsDecrypter.Method != null) {
+			if (canRemoveDecrypterType && methodsDecrypter.Method != null)
 				addTypeToBeRemoved(methodsDecrypter.Method.DeclaringType, "Decrypter type");
-				addTypeToBeRemoved(metadataTokenObfuscator.Type, "Metadata token obfuscator");
-			}
 			base.deobfuscateEnd();
 		}
 
