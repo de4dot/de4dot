@@ -31,6 +31,10 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		EmbeddedResource encryptedDataResource;
 		byte[] key, iv;
 
+		public TypeDefinition Type {
+			get { return resourceDecrypterMethod == null ? null : resourceDecrypterMethod.DeclaringType; }
+		}
+
 		public MethodDefinition Method {
 			get { return resourceDecrypterMethod; }
 			set { resourceDecrypterMethod = value; }
@@ -38,6 +42,10 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 
 		public EmbeddedResource Resource {
 			get { return encryptedDataResource; }
+		}
+
+		public bool FoundResource {
+			get { return encryptedDataResource != null; }
 		}
 
 		public EncryptedResource(ModuleDefinition module) {
@@ -64,8 +72,6 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			if (!method.IsStatic)
 				return false;
 			if (method.Body == null)
-				return false;
-			if (method.Body.Instructions.Count < 1000)
 				return false;
 
 			var localTypes = new LocalTypes(method);
@@ -95,7 +101,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 
 			encryptedDataResource = findMethodsDecrypterResource(resourceDecrypterMethod);
 			if (encryptedDataResource == null)
-				throw new ApplicationException("Could not find encrypted resource");
+				return;
 
 			key = ArrayFinder.getInitializedArray(resourceDecrypterMethod, 32);
 			if (key == null)

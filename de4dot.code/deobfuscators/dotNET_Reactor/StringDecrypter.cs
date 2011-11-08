@@ -58,6 +58,10 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			get { return encryptedResource.Method != null; }
 		}
 
+		public TypeDefinition DecrypterType {
+			get { return encryptedResource.Type; }
+		}
+
 		public EmbeddedResource Resource {
 			get { return encryptedResource.Resource; }
 		}
@@ -153,8 +157,9 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			this.fileData = fileData;
 
 			encryptedResource.init(simpleDeobfuscator);
-			if (encryptedResource.Resource != null)
-				Log.v("Adding string decrypter. Resource: {0}", Utils.toCsharpString(encryptedResource.Resource.Name));
+			if (!encryptedResource.FoundResource)
+				return;
+			Log.v("Adding string decrypter. Resource: {0}", Utils.toCsharpString(encryptedResource.Resource.Name));
 			decryptedData = encryptedResource.decrypt();
 		}
 

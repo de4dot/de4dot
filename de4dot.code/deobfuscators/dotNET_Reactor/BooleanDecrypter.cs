@@ -32,6 +32,10 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			get { return encryptedResource.Method != null; }
 		}
 
+		public TypeDefinition DecrypterType {
+			get { return encryptedResource.Type; }
+		}
+
 		public MethodDefinition Method {
 			get { return encryptedResource.Method; }
 		}
@@ -77,6 +81,9 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			this.fileData = fileData;
 
 			encryptedResource.init(simpleDeobfuscator);
+			if (!encryptedResource.FoundResource)
+				return;
+
 			Log.v("Adding boolean decrypter. Resource: {0}", Utils.toCsharpString(encryptedResource.Resource.Name));
 			decryptedData = encryptedResource.decrypt();
 		}

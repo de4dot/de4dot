@@ -329,16 +329,21 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			}
 			DeobfuscatedFile.stringDecryptersAdded();
 
-			resourceResolver.init(DeobfuscatedFile, this);
 			metadataTokenObfuscator = new MetadataTokenObfuscator(module);
 
+			bool removeResourceResolver = false;
 			if (options.DecryptResources) {
+				resourceResolver.init(DeobfuscatedFile, this);
 				decryptResources();
-				if (options.InlineMethods)
+				if (options.InlineMethods) {
 					addTypeToBeRemoved(resourceResolver.Type, "Resource decrypter type");
+					removeResourceResolver = true;
+				}
 				addCallToBeRemoved(module.EntryPoint, resourceResolver.InitMethod);
 				addCctorInitCallToBeRemoved(resourceResolver.InitMethod);
 			}
+			if (resourceResolver.Detected && !removeResourceResolver && !resourceResolver.FoundResource)
+				canRemoveDecrypterType = false;	// There may be calls to its .ctor
 
 			if (Operations.DecryptStrings != OpDecryptString.None)
 				addResourceToBeRemoved(stringDecrypter.Resource, "Encrypted strings");
@@ -360,9 +365,6 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			// The inlined methods may contain calls to the decrypter class
 			if (!options.InlineMethods)
 				canRemoveDecrypterType = false;
-
-			// Set it to false until we've removed all references to it
-			canRemoveDecrypterType = false;
 
 			if (options.DumpEmbeddedAssemblies) {
 				if (options.InlineMethods)
@@ -403,7 +405,26 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 
 		public override void deobfuscateMethodEnd(Blocks blocks) {
 			metadataTokenObfuscator.deobfuscate(blocks);
+			fixTypeofDecrypterInstructions(blocks);
 			base.deobfuscateMethodEnd(blocks);
+		}
+
+		void fixTypeofDecrypterInstructions(Blocks blocks) {
+			var type = methodsDecrypter.DecrypterType ?? stringDecrypter.DecrypterType ?? booleanDecrypter.DecrypterType;
+			if (type == null)
+				return;
+
+			foreach (var block in blocks.MethodBlocks.getAllBlocks()) {
+				var instructions = block.Instructions;
+				for (int i = 0; i < instructions.Count; i++) {
+					var instr = instructions[i];
+					if (instr.OpCode.Code != Code.Ldtoken)
+						continue;
+					if (!MemberReferenceHelper.compareTypes(type, instr.Operand as TypeReference))
+						continue;
+					instructions[i] = new Instr(Instruction.Create(OpCodes.Ldtoken, blocks.Method.DeclaringType));
+				}
+			}
 		}
 
 		public override void deobfuscateEnd() {

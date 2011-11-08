@@ -34,11 +34,15 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		}
 
 		public TypeDefinition Type {
-			get { return encryptedResource.Method == null ? null : encryptedResource.Method.DeclaringType; }
+			get { return encryptedResource.Type; }
 		}
 
 		public MethodDefinition InitMethod {
 			get { return initMethod; }
+		}
+
+		public bool FoundResource {
+			get { return encryptedResource.FoundResource; }
 		}
 
 		public ResourceResolver(ModuleDefinition module) {
@@ -63,7 +67,8 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				foreach (var method in type.Methods) {
 					if (!method.IsStatic || !method.HasBody)
 						continue;
-					if (!DotNetUtils.isMethod(method, "System.Reflection.Assembly", "(System.Object,System.ResolveEventArgs)"))
+					if (!DotNetUtils.isMethod(method, "System.Reflection.Assembly", "(System.Object,System.ResolveEventArgs)") &&
+						!DotNetUtils.isMethod(method, "System.Reflection.Assembly", "(System.Object,System.Object)"))
 						continue;
 					if (!encryptedResource.couldBeResourceDecrypter(method, additionalTypes, false))
 						continue;
@@ -107,7 +112,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 					continue;
 				if (!DotNetUtils.isMethod(method, "System.Void", "()"))
 					continue;
-				if (method.Body.Variables.Count != 0)
+				if (method.Body.Variables.Count > 1)
 					continue;
 
 				simpleDeobfuscator.deobfuscate(method);

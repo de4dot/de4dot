@@ -143,6 +143,10 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				if (DotNetUtils.isMethod(method, "System.Reflection.Assembly", "(System.Object,System.ResolveEventArgs)"))
 					return method;
 			}
+			foreach (var method in type.Methods) {
+				if (DotNetUtils.isMethod(method, "System.Reflection.Assembly", "(System.Object,System.Object)"))
+					return method;
+			}
 			return null;
 		}
 

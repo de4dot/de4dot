@@ -34,6 +34,10 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			get { return encryptedResource.Method != null; }
 		}
 
+		public TypeDefinition DecrypterType {
+			get { return encryptedResource.Type; }
+		}
+
 		public MethodDefinition Method {
 			get { return encryptedResource.Method; }
 		}
@@ -95,6 +99,8 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				return false;
 
 			encryptedResource.init(simpleDeobfuscator);
+			if (!encryptedResource.FoundResource)
+				return false;
 			var methodsData = encryptedResource.decrypt();
 
 			bool hooksJitter = findDnrCompileMethod(encryptedResource.Method.DeclaringType) != null;
