@@ -118,7 +118,6 @@ namespace de4dot.deobfuscators.CliSecure {
 			public override byte[] decrypt(MethodInfo methodInfo) {
 				byte[] data = peImage.offsetReadBytes(endOfMetadata + methodInfo.codeOffs, (int)methodInfo.codeSize);
 
-				uint[] qword = new uint[2];
 				int numQwords = (int)(methodInfo.codeSize / 8);
 				for (int i = 0; i < numQwords; i++) {
 					int offset = i * 8;
