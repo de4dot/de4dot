@@ -89,7 +89,7 @@
     <Compile Include="deobfuscators\IDeobfuscator.cs" />
     <Compile Include="deobfuscators\IDeobfuscatorInfo.cs" />
     <Compile Include="deobfuscators\ISimpleDeobfuscator.cs" />
-    <Compile Include="deobfuscators\LocalTypes.cs" />
+    <Compile Include="deobfuscators\StringCounts.cs" />
     <Compile Include="deobfuscators\Operations.cs" />
     <Compile Include="deobfuscators\ProxyDelegateFinderBase.cs" />
     <Compile Include="deobfuscators\SmartAssembly\AssemblyResolver.cs" />
