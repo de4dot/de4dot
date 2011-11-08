@@ -132,23 +132,10 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			if (fields.Count != 2)
 				return false;
 
-			int fieldAssembly = 0, fieldBool = 0;
-			foreach (var field in fields) {
-				switch (field.FieldType.FullName) {
-				case "System.Collections.Hashtable":
-				case "System.Object":
-					fieldAssembly++;
-					break;
-
-				case "System.Boolean":
-					fieldBool++;
-					break;
-
-				default:
-					return false;
-				}
-			}
-			return fieldAssembly == 1 && fieldBool == 1;
+			var fieldTypes = new FieldTypes(fields);
+			return fieldTypes.count("System.Boolean") == 1 &&
+				(fieldTypes.count("System.Collections.Hashtable") == 1 ||
+				 fieldTypes.count("System.Object") == 1);
 		}
 
 		static MethodDefinition findAssemblyResolveMethod(TypeDefinition type) {
