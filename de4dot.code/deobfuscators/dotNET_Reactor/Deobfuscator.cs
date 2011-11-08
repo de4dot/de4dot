@@ -33,6 +33,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		BoolOption inlineMethods;
 		BoolOption removeInlinedMethods;
 		BoolOption dumpEmbeddedAssemblies;
+		BoolOption decryptResources;
 
 		public DeobfuscatorInfo()
 			: base(DEFAULT_REGEX) {
@@ -42,6 +43,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			inlineMethods = new BoolOption(null, makeArgName("inline"), "Inline short methods", true);
 			removeInlinedMethods = new BoolOption(null, makeArgName("remove-inlined"), "Remove inlined methods", true);
 			dumpEmbeddedAssemblies = new BoolOption(null, makeArgName("dump-embedded"), "Dump embedded assemblies", true);
+			decryptResources = new BoolOption(null, makeArgName("rsrc"), "Decrypt resources", true);
 		}
 
 		public override string Name {
@@ -61,6 +63,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				InlineMethods = inlineMethods.get(),
 				RemoveInlinedMethods = removeInlinedMethods.get(),
 				DumpEmbeddedAssemblies = dumpEmbeddedAssemblies.get(),
+				DecryptResources = decryptResources.get(),
 			});
 		}
 
@@ -72,6 +75,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				inlineMethods,
 				removeInlinedMethods,
 				dumpEmbeddedAssemblies,
+				decryptResources,
 			};
 		}
 	}
@@ -88,6 +92,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		BoolValueInliner boolValueInliner;
 		MetadataTokenObfuscator metadataTokenObfuscator;
 		AssemblyResolver assemblyResolver;
+		ResourceResolver resourceResolver;
 
 		bool canRemoveDecrypterType = true;
 		bool startedDeobfuscating = false;
@@ -99,6 +104,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			public bool InlineMethods { get; set; }
 			public bool RemoveInlinedMethods { get; set; }
 			public bool DumpEmbeddedAssemblies { get; set; }
+			public bool DecryptResources { get; set; }
 		}
 
 		public override string Type {
@@ -128,7 +134,8 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			int sum = convert(methodsDecrypter.Detected) +
 					convert(stringDecrypter.Detected) +
 					convert(booleanDecrypter.Detected) +
-					convert(assemblyResolver.Detected);
+					convert(assemblyResolver.Detected) +
+					convert(resourceResolver.Detected);
 			if (sum > 0)
 				val += 100 + 10 * (sum - 1);
 
@@ -149,6 +156,8 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			assemblyResolver = new AssemblyResolver(module);
 			assemblyResolver.find(DeobfuscatedFile);
 			obfuscatorName = detectVersion();
+			resourceResolver = new ResourceResolver(module);
+			resourceResolver.find(DeobfuscatedFile);
 		}
 
 		string detectVersion() {
@@ -291,6 +300,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			newOne.stringDecrypter = new StringDecrypter(module, stringDecrypter);
 			newOne.booleanDecrypter = new BooleanDecrypter(module, booleanDecrypter);
 			newOne.assemblyResolver = new AssemblyResolver(module, assemblyResolver);
+			newOne.resourceResolver = new ResourceResolver(module, resourceResolver);
 			return newOne;
 		}
 
@@ -319,7 +329,16 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			}
 			DeobfuscatedFile.stringDecryptersAdded();
 
+			resourceResolver.init(DeobfuscatedFile, this);
 			metadataTokenObfuscator = new MetadataTokenObfuscator(module);
+
+			if (options.DecryptResources) {
+				decryptResources();
+				if (options.InlineMethods)
+					addTypeToBeRemoved(resourceResolver.Type, "Resource decrypter type");
+				addCallToBeRemoved(module.EntryPoint, resourceResolver.InitMethod);
+				addCctorInitCallToBeRemoved(resourceResolver.InitMethod);
+			}
 
 			if (Operations.DecryptStrings != OpDecryptString.None)
 				addResourceToBeRemoved(stringDecrypter.Resource, "Encrypted strings");
@@ -359,6 +378,13 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			startedDeobfuscating = true;
 		}
 
+		void decryptResources() {
+			var rsrc = resourceResolver.mergeResources();
+			if (rsrc == null)
+				return;
+			addResourceToBeRemoved(rsrc, "Encrypted resource");
+		}
+
 		void dumpEmbeddedAssemblies() {
 			if (!options.DumpEmbeddedAssemblies)
 				return;
@@ -396,8 +422,10 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 
 			public UnusedMethodsFinder(ModuleDefinition module, IEnumerable<MethodDefinition> possiblyUnusedMethods) {
 				this.module = module;
-				foreach (var method in possiblyUnusedMethods)
-					this.possiblyUnusedMethods[method] = true;
+				foreach (var method in possiblyUnusedMethods) {
+					if (method != module.EntryPoint)
+						this.possiblyUnusedMethods[method] = true;
+				}
 			}
 
 			public IEnumerable<MethodDefinition> find() {

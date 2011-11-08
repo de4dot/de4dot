@@ -60,7 +60,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			return DeobUtils.lookup(module, def, errorMessage);
 		}
 
-		public bool couldBeResourceDecrypter(MethodDefinition method, IList<string> additionalTypes) {
+		public bool couldBeResourceDecrypter(MethodDefinition method, IList<string> additionalTypes, bool checkResource = true) {
 			if (!method.IsStatic)
 				return false;
 			if (method.Body == null)
@@ -81,7 +81,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			if (!localTypes.all(requiredTypes))
 				return false;
 
-			if (findMethodsDecrypterResource(method) == null)
+			if (checkResource && findMethodsDecrypterResource(method) == null)
 				return false;
 
 			return true;
