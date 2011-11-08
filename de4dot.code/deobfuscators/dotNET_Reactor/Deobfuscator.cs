@@ -346,7 +346,8 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			canRemoveDecrypterType = false;
 
 			if (options.DumpEmbeddedAssemblies) {
-				addTypeToBeRemoved(assemblyResolver.Type, "Assembly resolver");
+				if (options.InlineMethods)
+					addTypeToBeRemoved(assemblyResolver.Type, "Assembly resolver");
 				addCallToBeRemoved(module.EntryPoint, assemblyResolver.InitMethod);
 				addCctorInitCallToBeRemoved(assemblyResolver.InitMethod);
 				dumpEmbeddedAssemblies();
