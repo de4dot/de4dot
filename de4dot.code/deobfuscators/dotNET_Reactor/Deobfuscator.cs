@@ -32,6 +32,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		BoolOption restoreTypes;
 		BoolOption inlineMethods;
 		BoolOption removeInlinedMethods;
+		BoolOption dumpEmbeddedAssemblies;
 
 		public DeobfuscatorInfo()
 			: base(DEFAULT_REGEX) {
@@ -40,6 +41,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			restoreTypes = new BoolOption(null, makeArgName("types"), "Restore types (object -> real type)", true);
 			inlineMethods = new BoolOption(null, makeArgName("inline"), "Inline short methods", true);
 			removeInlinedMethods = new BoolOption(null, makeArgName("remove-inlined"), "Remove inlined methods", true);
+			dumpEmbeddedAssemblies = new BoolOption(null, makeArgName("dump-embedded"), "Dump embedded assemblies", true);
 		}
 
 		public override string Name {
@@ -58,6 +60,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				RestoreTypes = restoreTypes.get(),
 				InlineMethods = inlineMethods.get(),
 				RemoveInlinedMethods = removeInlinedMethods.get(),
+				DumpEmbeddedAssemblies = dumpEmbeddedAssemblies.get(),
 			});
 		}
 
@@ -68,6 +71,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				restoreTypes,
 				inlineMethods,
 				removeInlinedMethods,
+				dumpEmbeddedAssemblies,
 			};
 		}
 	}
@@ -83,6 +87,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		BooleanDecrypter booleanDecrypter;
 		BoolValueInliner boolValueInliner;
 		MetadataTokenObfuscator metadataTokenObfuscator;
+		AssemblyResolver assemblyResolver;
 
 		bool canRemoveDecrypterType = true;
 		bool startedDeobfuscating = false;
@@ -93,6 +98,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			public bool RestoreTypes { get; set; }
 			public bool InlineMethods { get; set; }
 			public bool RemoveInlinedMethods { get; set; }
+			public bool DumpEmbeddedAssemblies { get; set; }
 		}
 
 		public override string Type {
@@ -119,14 +125,12 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		protected override int detectInternal() {
 			int val = 0;
 
-			if (methodsDecrypter.Detected || stringDecrypter.Detected || booleanDecrypter.Detected)
-				val += 100;
-
 			int sum = convert(methodsDecrypter.Detected) +
 					convert(stringDecrypter.Detected) +
-					convert(booleanDecrypter.Detected);
-			if (sum > 1)
-				val += 10 * (sum - 1);
+					convert(booleanDecrypter.Detected) +
+					convert(assemblyResolver.Detected);
+			if (sum > 0)
+				val += 100 + 10 * (sum - 1);
 
 			return val;
 		}
@@ -142,6 +146,8 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			stringDecrypter.find(DeobfuscatedFile);
 			booleanDecrypter = new BooleanDecrypter(module);
 			booleanDecrypter.find();
+			assemblyResolver = new AssemblyResolver(module);
+			assemblyResolver.find(DeobfuscatedFile);
 			obfuscatorName = detectVersion();
 		}
 
@@ -284,6 +290,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			newOne.methodsDecrypter = new MethodsDecrypter(module, methodsDecrypter);
 			newOne.stringDecrypter = new StringDecrypter(module, stringDecrypter);
 			newOne.booleanDecrypter = new BooleanDecrypter(module, booleanDecrypter);
+			newOne.assemblyResolver = new AssemblyResolver(module, assemblyResolver);
 			return newOne;
 		}
 
@@ -338,7 +345,24 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			// Set it to false until we've removed all references to it
 			canRemoveDecrypterType = false;
 
+			if (options.DumpEmbeddedAssemblies) {
+				addTypeToBeRemoved(assemblyResolver.Type, "Assembly resolver");
+				addCallToBeRemoved(module.EntryPoint, assemblyResolver.InitMethod);
+				addCctorInitCallToBeRemoved(assemblyResolver.InitMethod);
+				dumpEmbeddedAssemblies();
+			}
+
 			startedDeobfuscating = true;
+		}
+
+		void dumpEmbeddedAssemblies() {
+			if (!options.DumpEmbeddedAssemblies)
+				return;
+			foreach (var info in assemblyResolver.getEmbeddedAssemblies(DeobfuscatedFile, this)) {
+				var simpleName = Utils.getAssemblySimpleName(info.name);
+				DeobfuscatedFile.createAssemblyFile(info.resource.GetResourceData(), simpleName);
+				addResourceToBeRemoved(info.resource, string.Format("Embedded assembly: {0}", info.name));
+			}
 		}
 
 		public override bool deobfuscateOther(Blocks blocks) {
