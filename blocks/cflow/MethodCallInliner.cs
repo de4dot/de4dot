@@ -66,7 +66,7 @@ namespace de4dot.blocks.cflow {
 				return false;
 
 			int index = 0;
-			var instr = getInstruction(body.Instructions, ref index);
+			var instr = DotNetUtils.getInstruction(body.Instructions, ref index);
 			if (instr == null)
 				return false;
 
@@ -109,7 +109,7 @@ namespace de4dot.blocks.cflow {
 		}
 
 		bool inlineLoadMethod(int patchIndex, MethodDefinition method, Instruction loadInstr, int instrIndex) {
-			var instr = getInstruction(method.Body.Instructions, ref instrIndex);
+			var instr = DotNetUtils.getInstruction(method.Body.Instructions, ref instrIndex);
 			if (instr == null || instr.OpCode.Code != Code.Ret)
 				return false;
 
@@ -135,7 +135,7 @@ namespace de4dot.blocks.cflow {
 					if (DotNetUtils.getArgIndex(method, instr) != loadIndex)
 						return false;
 					loadIndex++;
-					instr = getInstruction(method.Body.Instructions, ref instrIndex);
+					instr = DotNetUtils.getInstruction(method.Body.Instructions, ref instrIndex);
 					continue;
 				}
 				break;
@@ -161,7 +161,7 @@ namespace de4dot.blocks.cflow {
 					return false;
 			}
 
-			instr = getInstruction(method.Body.Instructions, ref instrIndex);
+			instr = DotNetUtils.getInstruction(method.Body.Instructions, ref instrIndex);
 			if (instr == null || instr.OpCode.Code != Code.Ret)
 				return false;
 
@@ -175,23 +175,6 @@ namespace de4dot.blocks.cflow {
 			if (newType.IsValueType || origType.IsValueType)
 				return false;
 			return newType.FullName == "System.Object";
-		}
-
-		static Instruction getInstruction(IList<Instruction> instructions, ref int index) {
-			for (int i = 0; i < 10; i++) {
-				if (index < 0 || index >= instructions.Count)
-					return null;
-				var instr = instructions[index++];
-				if (instr.OpCode.Code == Code.Nop)
-					continue;
-				if (instr == null || (instr.OpCode.Code != Code.Br && instr.OpCode.Code != Code.Br_S))
-					return instr;
-				instr = instr.Operand as Instruction;
-				if (instr == null)
-					return null;
-				index = instructions.IndexOf(instr);
-			}
-			return null;
 		}
 	}
 }

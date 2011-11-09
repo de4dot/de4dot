@@ -807,5 +807,22 @@ namespace de4dot.blocks {
 
 			return type;
 		}
+
+		public static Instruction getInstruction(IList<Instruction> instructions, ref int index) {
+			for (int i = 0; i < 10; i++) {
+				if (index < 0 || index >= instructions.Count)
+					return null;
+				var instr = instructions[index++];
+				if (instr.OpCode.Code == Code.Nop)
+					continue;
+				if (instr == null || (instr.OpCode.Code != Code.Br && instr.OpCode.Code != Code.Br_S))
+					return instr;
+				instr = instr.Operand as Instruction;
+				if (instr == null)
+					return null;
+				index = instructions.IndexOf(instr);
+			}
+			return null;
+		}
 	}
 }
