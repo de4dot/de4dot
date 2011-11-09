@@ -382,7 +382,8 @@ namespace de4dot.renamer {
 			windowsFormsControlClasses["System.Windows.Forms.WebBrowser"] = true;
 		}
 
-		Dictionary<MethodDef, string> newMethodsNames = new Dictionary<MethodDef, string>();
+		Dictionary<MethodDef, string> newMethodNames = new Dictionary<MethodDef, string>();
+		Dictionary<PropertyDef, string> newPropertyNames = new Dictionary<PropertyDef, string>();
 
 		public IDefFinder defFinder;
 		public TypeInfo baseType = null;
@@ -650,12 +651,12 @@ namespace de4dot.renamer {
 				if (methodDef.MethodDefinition.Body == null)
 					continue;
 				foreach (var instr in methodDef.MethodDefinition.Body.Instructions) {
-					if (instr.OpCode.Code != Code.Call)
+					if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt)
 						continue;
 					if (!MemberReferenceHelper.compareMethodReferenceAndDeclaringType(possibleInitMethod.MethodDefinition, instr.Operand as MethodReference))
 						continue;
 
-					newMethodsNames[possibleInitMethod] = "InitializeComponent";
+					newMethodNames[possibleInitMethod] = "InitializeComponent";
 					return;
 				}
 			}
@@ -847,6 +848,10 @@ namespace de4dot.renamer {
 
 			if (IsRenamable) {
 				MemberRenameState.variableNameState.IsValidName = module.IsValidName;
+
+				if (isWindowsFormsControlDerivedClass())
+					initializeWindowsFormsFieldsAndProps();
+
 				prepareRenameFields();		// must be first
 				prepareRenameProperties();
 				prepareRenameEvents();
@@ -922,9 +927,6 @@ namespace de4dot.renamer {
 		void prepareRenameFields() {
 			var variableNameState = MemberRenameState.variableNameState;
 
-			if (isWindowsFormsControlDerivedClass())
-				initializeWindowsFormsFields();
-
 			if (TypeDefinition.IsEnum) {
 				var instanceFields = new List<FieldDef>(getInstanceFields());
 				if (instanceFields.Count == 1) {
@@ -955,10 +957,13 @@ namespace de4dot.renamer {
 			}
 		}
 
-		void initializeWindowsFormsFields() {
+		void initializeWindowsFormsFieldsAndProps() {
 			var ourFields = new Dictionary<FieldReferenceAndDeclaringTypeKey, FieldDef>();
 			foreach (var fieldDef in fields.getAll())
 				ourFields[new FieldReferenceAndDeclaringTypeKey(fieldDef.FieldDefinition)] = fieldDef;
+			var ourMethods = new Dictionary<MethodReferenceAndDeclaringTypeKey, MethodDef>();
+			foreach (var methodDef in methods.getAll())
+				ourMethods[new MethodReferenceAndDeclaringTypeKey(methodDef.MethodDefinition)] = methodDef;
 
 			var variableNameState = MemberRenameState.variableNameState;
 			foreach (var methodDef in methods.getAll()) {
@@ -980,9 +985,33 @@ namespace de4dot.renamer {
 					var fieldName = ldstr.Operand as string;
 					if (fieldName == null || !variableNameState.IsValidName(fieldName))
 						continue;
+					if (!variableNameState.IsValidName(fieldName))
+						continue;
 
-					var ldfld = instructions[i - 2];
-					var fieldRef = ldfld.Operand as FieldReference;
+					var instr = instructions[i - 2];
+					FieldReference fieldRef = null;
+					if (instr.OpCode.Code == Code.Call || instr.OpCode.Code == Code.Callvirt) {
+						var calledMethod = instr.Operand as MethodReference;
+						if (calledMethod == null)
+							continue;
+						MethodDef calledMethodDef;
+						if (!ourMethods.TryGetValue(new MethodReferenceAndDeclaringTypeKey(calledMethod), out calledMethodDef))
+							continue;
+						fieldRef = getFieldReference(calledMethodDef.MethodDefinition);
+						if (fieldRef == null)
+							continue;
+
+						var propDef = calledMethodDef.Property;
+						if (propDef == null)
+							continue;
+
+						newPropertyNames[propDef] = fieldName;
+						fieldName = "_" + fieldName;
+					}
+					else if (instr.OpCode.Code == Code.Ldfld) {
+						fieldRef = instr.Operand as FieldReference;
+					}
+
 					if (fieldRef == null)
 						continue;
 					FieldDef fieldDef;
@@ -997,6 +1026,23 @@ namespace de4dot.renamer {
 			}
 		}
 
+		static FieldReference getFieldReference(MethodDefinition method) {
+			if (method == null || method.Body == null)
+				return null;
+			var instructions = method.Body.Instructions;
+			int index = 0;
+			var ldarg0 = DotNetUtils.getInstruction(instructions, ref index);
+			if (ldarg0 == null || DotNetUtils.getArgIndex(method, ldarg0) != 0)
+				return null;
+			var ldfld = DotNetUtils.getInstruction(instructions, ref index);
+			if (ldfld == null || ldfld.OpCode.Code != Code.Ldfld)
+				return null;
+			var ret = DotNetUtils.getInstruction(instructions, ref index);
+			if (ret == null || ret.OpCode.Code != Code.Ret)
+				return null;
+			return ldfld.Operand as FieldReference;
+		}
+
 		void initializeEventHandlerNames() {
 			var ourFields = new Dictionary<FieldReferenceAndDeclaringTypeKey, FieldDef>();
 			foreach (var fieldDef in fields.getAll())
@@ -1005,6 +1051,130 @@ namespace de4dot.renamer {
 			foreach (var methodDef in methods.getAll())
 				ourMethods[new MethodReferenceAndDeclaringTypeKey(methodDef.MethodDefinition)] = methodDef;
 
+			initVbEventHandlers(ourFields, ourMethods);
+			initFieldEventHandlers(ourFields, ourMethods);
+			initTypeEventHandlers(ourFields, ourMethods);
+		}
+
+		// VB initializes the handlers in the property setter, where it first removes the handler
+		// from the previous control, and then adds the handler to the new control.
+		void initVbEventHandlers(Dictionary<FieldReferenceAndDeclaringTypeKey, FieldDef> ourFields, Dictionary<MethodReferenceAndDeclaringTypeKey, MethodDef> ourMethods) {
+			var variableNameState = MemberRenameState.variableNameState;
+			foreach (var propDef in properties.getAll()) {
+				var setter = propDef.PropertyDefinition.SetMethod;
+				if (setter == null)
+					continue;
+				var setterDef = find(setter);
+				if (setterDef == null)
+					continue;
+
+				string eventName;
+				var handler = getVbHandler(setterDef.MethodDefinition, out eventName);
+				if (handler == null)
+					continue;
+				MethodDef handlerDef;
+				if (!ourMethods.TryGetValue(new MethodReferenceAndDeclaringTypeKey(handler), out handlerDef))
+					continue;
+
+				if (!MemberRenameState.variableNameState.IsValidName(eventName))
+					continue;
+
+				newMethodNames[handlerDef] = string.Format("{0}_{1}", propDef.NewName, eventName);
+			}
+		}
+
+		MethodReference getVbHandler(MethodDefinition method, out string eventName) {
+			eventName = null;
+			if (method.Body == null)
+				return null;
+			if (method.MethodReturnType.ReturnType.FullName != "System.Void")
+				return null;
+			if (method.Parameters.Count != 1)
+				return null;
+			if (method.Body.Variables.Count != 1)
+				return null;
+			if (!isEventHandlerType(method.Body.Variables[0].VariableType))
+				return null;
+
+			var instructions = method.Body.Instructions;
+			int index = 0;
+
+			int newobjIndex = findInstruction(instructions, index, Code.Newobj);
+			if (newobjIndex == -1 || findInstruction(instructions, newobjIndex + 1, Code.Newobj) != -1)
+				return null;
+			if (!isEventHandlerCtor(instructions[newobjIndex].Operand as MethodReference))
+				return null;
+			if (newobjIndex < 1)
+				return null;
+			var ldvirtftn = instructions[newobjIndex - 1];
+			if (ldvirtftn.OpCode.Code != Code.Ldvirtftn && ldvirtftn.OpCode.Code != Code.Ldftn)
+				return null;
+			var handlerMethod = ldvirtftn.Operand as MethodReference;
+			if (handlerMethod == null)
+				return null;
+			if (!MemberReferenceHelper.compareTypes(method.DeclaringType, handlerMethod.DeclaringType))
+				return null;
+			index = newobjIndex;
+
+			FieldReference addField, removeField;
+			MethodReference addMethod, removeMethod;
+			if (!findEventCall(instructions, ref index, out removeField, out removeMethod))
+				return null;
+			if (!findEventCall(instructions, ref index, out addField, out addMethod))
+				return null;
+
+			if (findInstruction(instructions, index, Code.Callvirt) != -1)
+				return null;
+			if (!MemberReferenceHelper.compareFieldReference(addField, removeField))
+				return null;
+			if (!MemberReferenceHelper.compareTypes(method.DeclaringType, addField.DeclaringType))
+				return null;
+			if (!MemberReferenceHelper.compareTypes(addMethod.DeclaringType, removeMethod.DeclaringType))
+				return null;
+			if (!addMethod.Name.StartsWith("add_", StringComparison.Ordinal))
+				return null;
+			if (!removeMethod.Name.StartsWith("remove_", StringComparison.Ordinal))
+				return null;
+			eventName = addMethod.Name.Substring(4);
+			if (eventName != removeMethod.Name.Substring(7))
+				return null;
+			if (eventName == "")
+				return null;
+
+			return handlerMethod;
+		}
+
+		static bool findEventCall(IList<Instruction> instructions, ref int index, out FieldReference field, out MethodReference calledMethod) {
+			field = null;
+			calledMethod = null;
+
+			int callvirt = findInstruction(instructions, index, Code.Callvirt);
+			if (callvirt < 2)
+				return false;
+			index = callvirt + 1;
+
+			var ldloc = instructions[callvirt - 1];
+			if (ldloc.OpCode.Code != Code.Ldloc_0)
+				return false;
+
+			var ldfld = instructions[callvirt - 2];
+			if (ldfld.OpCode.Code != Code.Ldfld)
+				return false;
+
+			field = ldfld.Operand as FieldReference;
+			calledMethod = instructions[callvirt].Operand as MethodReference;
+			return field != null && calledMethod != null;
+		}
+
+		static int findInstruction(IList<Instruction> instructions, int index, Code code) {
+			for (int i = index; i < instructions.Count; i++) {
+				if (instructions[i].OpCode.Code == code)
+					return i;
+			}
+			return -1;
+		}
+
+		void initFieldEventHandlers(Dictionary<FieldReferenceAndDeclaringTypeKey, FieldDef> ourFields, Dictionary<MethodReferenceAndDeclaringTypeKey, MethodDef> ourMethods) {
 			var variableNameState = MemberRenameState.variableNameState;
 			foreach (var methodDef in methods.getAll()) {
 				if (methodDef.MethodDefinition.Body == null)
@@ -1012,19 +1182,20 @@ namespace de4dot.renamer {
 				if (methodDef.MethodDefinition.IsStatic)
 					continue;
 				var instructions = methodDef.MethodDefinition.Body.Instructions;
-				for (int i = 0; i < instructions.Count - 5; i++) {
+				for (int i = 0; i < instructions.Count - 6; i++) {
 					// We're looking for this code pattern:
 					//	ldarg.0
 					//	ldfld field
 					//	ldarg.0
-					//	ldftn method
+					//	ldftn method / ldarg.0 + ldvirtftn
 					//	newobj event_handler_ctor
 					//	callvirt add_SomeEvent
 
 					if (DotNetUtils.getArgIndex(methodDef.MethodDefinition, instructions[i]) != 0)
 						continue;
+					int index = i + 1;
 
-					var ldfld = instructions[i + 1];
+					var ldfld = instructions[index++];
 					if (ldfld.OpCode.Code != Code.Ldfld)
 						continue;
 					var fieldRef = ldfld.Operand as FieldReference;
@@ -1034,26 +1205,36 @@ namespace de4dot.renamer {
 					if (!ourFields.TryGetValue(new FieldReferenceAndDeclaringTypeKey(fieldRef), out fieldDef))
 						continue;
 
-					if (DotNetUtils.getArgIndex(methodDef.MethodDefinition, instructions[i + 2]) != 0)
+					if (DotNetUtils.getArgIndex(methodDef.MethodDefinition, instructions[index++]) != 0)
 						continue;
 
-					var ldftn = instructions[i + 3];
-					if (ldftn.OpCode.Code != Code.Ldftn)
-						continue;
-					var methodRef = ldftn.Operand as MethodReference;
+					MethodReference methodRef;
+					var instr = instructions[index + 1];
+					if (instr.OpCode.Code == Code.Ldvirtftn) {
+						if (!isThisOrDup(methodDef.MethodDefinition, instructions[index++]))
+							continue;
+						var ldvirtftn = instructions[index++];
+						methodRef = ldvirtftn.Operand as MethodReference;
+					}
+					else {
+						var ldftn = instructions[index++];
+						if (ldftn.OpCode.Code != Code.Ldftn)
+							continue;
+						methodRef = ldftn.Operand as MethodReference;
+					}
 					if (methodRef == null)
 						continue;
 					MethodDef handlerMethod;
 					if (!ourMethods.TryGetValue(new MethodReferenceAndDeclaringTypeKey(methodRef), out handlerMethod))
 						continue;
 
-					var newobj = instructions[i + 4];
+					var newobj = instructions[index++];
 					if (newobj.OpCode.Code != Code.Newobj)
 						continue;
 					if (!isEventHandlerCtor(newobj.Operand as MethodReference))
 						continue;
 
-					var call = instructions[i + 5];
+					var call = instructions[index++];
 					if (call.OpCode.Code != Code.Call && call.OpCode.Code != Code.Callvirt)
 						continue;
 					var addHandler = call.Operand as MethodReference;
@@ -1066,9 +1247,77 @@ namespace de4dot.renamer {
 					if (!MemberRenameState.variableNameState.IsValidName(eventName))
 						continue;
 
-					newMethodsNames[handlerMethod] = string.Format("{0}_{1}", fieldDef.NewName, eventName);
+					newMethodNames[handlerMethod] = string.Format("{0}_{1}", fieldDef.NewName, eventName);
 				}
 			}
+		}
+
+		void initTypeEventHandlers(Dictionary<FieldReferenceAndDeclaringTypeKey, FieldDef> ourFields, Dictionary<MethodReferenceAndDeclaringTypeKey, MethodDef> ourMethods) {
+			foreach (var methodDef in methods.getAll()) {
+				if (methodDef.MethodDefinition.Body == null)
+					continue;
+				if (methodDef.MethodDefinition.IsStatic)
+					continue;
+				var method = methodDef.MethodDefinition;
+				var instructions = method.Body.Instructions;
+				for (int i = 0; i < instructions.Count - 5; i++) {
+					// ldarg.0
+					// ldarg.0 / dup
+					// ldarg.0 / dup
+					// ldvirtftn handler
+					// newobj event handler ctor
+					// call add_Xyz
+
+					if (DotNetUtils.getArgIndex(method, instructions[i]) != 0)
+						continue;
+					int index = i + 1;
+
+					if (!isThisOrDup(method, instructions[index++]))
+						continue;
+					MethodReference handler;
+					if (instructions[index].OpCode.Code == Code.Ldftn) {
+						handler = instructions[index++].Operand as MethodReference;
+					}
+					else {
+						if (!isThisOrDup(method, instructions[index++]))
+							continue;
+						var instr = instructions[index++];
+						if (instr.OpCode.Code != Code.Ldvirtftn)
+							continue;
+						handler = instr.Operand as MethodReference;
+					}
+					if (handler == null)
+						continue;
+					MethodDef handlerDef;
+					if (!ourMethods.TryGetValue(new MethodReferenceAndDeclaringTypeKey(handler), out handlerDef))
+						continue;
+
+					var newobj = instructions[index++];
+					if (newobj.OpCode.Code != Code.Newobj)
+						continue;
+					if (!isEventHandlerCtor(newobj.Operand as MethodReference))
+						continue;
+
+					var call = instructions[index++];
+					if (call.OpCode.Code != Code.Call && call.OpCode.Code != Code.Callvirt)
+						continue;
+					var addMethod = call.Operand as MethodReference;
+					if (addMethod == null)
+						continue;
+					if (!addMethod.Name.StartsWith("add_", StringComparison.Ordinal))
+						continue;
+
+					var eventName = addMethod.Name.Substring(4);
+					if (!MemberRenameState.variableNameState.IsValidName(eventName))
+						continue;
+
+					newMethodNames[handlerDef] = string.Format("{0}_{1}", NewName, eventName);
+				}
+			}
+		}
+
+		static bool isThisOrDup(MethodReference method, Instruction instr) {
+			return DotNetUtils.getArgIndex(method, instr) == 0 || instr.OpCode.Code == Code.Dup;
 		}
 
 		static bool isEventHandlerCtor(MethodReference method) {
@@ -1078,9 +1327,13 @@ namespace de4dot.renamer {
 				return false;
 			if (!DotNetUtils.isMethod(method, "System.Void", "(System.Object,System.IntPtr)"))
 				return false;
-			if (!method.DeclaringType.FullName.EndsWith("EventHandler", StringComparison.Ordinal))
+			if (!isEventHandlerType(method.DeclaringType))
 				return false;
 			return true;
+		}
+
+		static bool isEventHandlerType(TypeReference type) {
+			return type.FullName.EndsWith("EventHandler", StringComparison.Ordinal);
 		}
 
 		static MethodReference getOverrideMethod(MethodDefinition meth) {
@@ -1122,6 +1375,8 @@ namespace de4dot.renamer {
 				string propName = null;
 				if (isVirtual)
 					getVirtualPropName(propDef, ref prefix, ref propName);
+				if (propName == null)
+					newPropertyNames.TryGetValue(propDef, out propName);
 				if (propName == null && !variableNameState.IsValidName(propDef.OldName))
 					propName = variableNameState.getNewPropertyName(propDef.PropertyDefinition);
 				if (propName != null) {
@@ -1257,7 +1512,7 @@ namespace de4dot.renamer {
 
 			bool canRenameMethodName = true;
 			if (suggestedName == null)
-				newMethodsNames.TryGetValue(methodDef, out suggestedName);
+				newMethodNames.TryGetValue(methodDef, out suggestedName);
 
 			if (IsDelegate) {
 				switch (methodDef.MethodDefinition.Name) {
