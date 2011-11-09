@@ -77,7 +77,7 @@ namespace de4dot.deobfuscators {
 		}
 
 		public Func<string, bool> IsValidName {
-			get { return (name) => optionsBase.ValidNameRegex.isMatch(name); }
+			get { return (name) => checkValidName(name); }
 		}
 
 		public DeobfuscatorBase(OptionsBase optionsBase) {
@@ -92,6 +92,10 @@ namespace de4dot.deobfuscators {
 
 		protected void setModule(ModuleDefinition module) {
 			this.module = module;
+		}
+
+		protected virtual bool checkValidName(string name) {
+			return optionsBase.ValidNameRegex.isMatch(name);
 		}
 
 		public virtual int earlyDetect() {

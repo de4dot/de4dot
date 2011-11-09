@@ -19,6 +19,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.MyStuff;
@@ -27,7 +28,7 @@ using de4dot.blocks;
 namespace de4dot.deobfuscators.dotNET_Reactor {
 	class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = ".NET Reactor";
-		const string DEFAULT_REGEX = @"!^[a-zA-Z0-9]{6,}(?:`\d+)?$&" + DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
+		const string DEFAULT_REGEX = DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
 		BoolOption decryptMethods;
 		BoolOption decryptBools;
 		BoolOption restoreTypes;
@@ -137,6 +138,18 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 
 		public override void init(ModuleDefinition module) {
 			base.init(module);
+		}
+
+		static Regex isRandomNameRegex1 = new Regex(@"^[a-zA-Z0-9]{9,11}$");	// methods, fields, props, events
+		static Regex isRandomNameRegex2 = new Regex(@"^[a-zA-Z0-9]{18,19}(?:`\d+)?$");	// types, namespaces
+		protected override bool checkValidName(string name) {
+			if (isRandomNameRegex1.IsMatch(name) || isRandomNameRegex2.IsMatch(name)) {
+				if (RandomNameChecker.isRandom(name))
+					return false;
+				if (!RandomNameChecker.isNonRandom(name))
+					return false;
+			}
+			return base.checkValidName(name);
 		}
 
 		protected override int detectInternal() {
