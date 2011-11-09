@@ -97,7 +97,11 @@ namespace de4dot.renamer {
 				list.Add(typeDef);
 			}
 
-			foreach (var list in nsToTypes.Values) {
+			var sortedNamespaces = new List<List<TypeDef>>(nsToTypes.Values);
+			sortedNamespaces.Sort((a, b) => {
+				return string.CompareOrdinal(a[0].TypeDefinition.Namespace, b[0].TypeDefinition.Namespace);
+			});
+			foreach (var list in sortedNamespaces) {
 				const int maxClasses = 1;
 				if (list.Count != maxClasses)
 					continue;
