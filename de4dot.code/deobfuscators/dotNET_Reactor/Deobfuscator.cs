@@ -17,6 +17,7 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -34,6 +35,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		BoolOption removeInlinedMethods;
 		BoolOption dumpEmbeddedAssemblies;
 		BoolOption decryptResources;
+		BoolOption removeNamespaces;
 
 		public DeobfuscatorInfo()
 			: base(DEFAULT_REGEX) {
@@ -44,6 +46,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			removeInlinedMethods = new BoolOption(null, makeArgName("remove-inlined"), "Remove inlined methods", true);
 			dumpEmbeddedAssemblies = new BoolOption(null, makeArgName("embedded"), "Dump embedded assemblies", true);
 			decryptResources = new BoolOption(null, makeArgName("rsrc"), "Decrypt resources", true);
+			removeNamespaces = new BoolOption(null, makeArgName("ns1"), "Clear namespace if there's only one class in it", true);
 		}
 
 		public override string Name {
@@ -64,6 +67,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				RemoveInlinedMethods = removeInlinedMethods.get(),
 				DumpEmbeddedAssemblies = dumpEmbeddedAssemblies.get(),
 				DecryptResources = decryptResources.get(),
+				RemoveNamespaces = removeNamespaces.get(),
 			});
 		}
 
@@ -76,6 +80,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				removeInlinedMethods,
 				dumpEmbeddedAssemblies,
 				decryptResources,
+				removeNamespaces,
 			};
 		}
 	}
@@ -105,6 +110,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			public bool RemoveInlinedMethods { get; set; }
 			public bool DumpEmbeddedAssemblies { get; set; }
 			public bool DecryptResources { get; set; }
+			public bool RemoveNamespaces { get; set; }
 		}
 
 		public override string Type {
@@ -122,6 +128,11 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		public Deobfuscator(Options options)
 			: base(options) {
 			this.options = options;
+
+			if (options.RemoveNamespaces)
+				this.RenamingOptions |= RenamingOptions.RemoveNamespaceIfOneType;
+			else
+				this.RenamingOptions &= ~RenamingOptions.RemoveNamespaceIfOneType;
 		}
 
 		public override void init(ModuleDefinition module) {

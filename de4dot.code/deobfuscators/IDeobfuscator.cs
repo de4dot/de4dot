@@ -44,6 +44,11 @@ namespace de4dot.deobfuscators {
 		AllowAll = AllowNoDecryption | AllowStaticDecryption | AllowDynamicDecryption,
 	}
 
+	[Flags]
+	enum RenamingOptions {
+		RemoveNamespaceIfOneType = 1,
+	}
+
 	interface IDeobfuscator {
 		string Type { get; }
 		string Name { get; }
@@ -51,6 +56,7 @@ namespace de4dot.deobfuscators {
 		IDeobfuscatorOptions TheOptions { get; }
 		IOperations Operations { get; set; }
 		StringFeatures StringFeatures { get; }
+		RenamingOptions RenamingOptions { get; }
 		DecrypterType DefaultDecrypterType { get; }
 
 		// This is non-null only in detect() and deobfuscateBegin().

@@ -421,6 +421,11 @@ namespace de4dot.renamer {
 
 		bool IsDelegate { get; set; }
 
+		public string NewNamespace {
+			get { return newNamespace; }
+			set { newNamespace = value; }
+		}
+
 		public TypeDef(TypeDefinition typeDefinition)
 			: this(typeDefinition, null) {
 		}
@@ -607,7 +612,7 @@ namespace de4dot.renamer {
 					rename(nameCreator.newName(typeDefinition, newBaseType));
 			}
 
-			if (typeDefinition.Namespace != "" && !typeNameState.isValidNamespace(typeDefinition.Namespace))
+			if (newNamespace == null && typeDefinition.Namespace != "" && !typeNameState.isValidNamespace(typeDefinition.Namespace))
 				newNamespace = typeNameState.newNamespace(typeDefinition.Namespace);
 
 			prepareRenameGenericParams(genericParams, typeNameState.IsValidName);

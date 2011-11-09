@@ -77,6 +77,37 @@ namespace de4dot.renamer {
 			}
 		}
 
+		public void onBeforeRenamingTypeDefinitions() {
+			if (obfuscatedFile.RemoveNamespaceWithOneType)
+				removeOneClassNamespaces();
+		}
+
+		void removeOneClassNamespaces() {
+			var nsToTypes = new Dictionary<string, List<TypeDef>>(StringComparer.Ordinal);
+
+			foreach (var typeDef in allTypes.getAll()) {
+				List<TypeDef> list;
+				var ns = typeDef.TypeDefinition.Namespace;
+				if (string.IsNullOrEmpty(ns))
+					continue;
+				if (IsValidName(ns))
+					continue;
+				if (!nsToTypes.TryGetValue(ns, out list))
+					nsToTypes[ns] = list = new List<TypeDef>();
+				list.Add(typeDef);
+			}
+
+			foreach (var list in nsToTypes.Values) {
+				const int maxClasses = 1;
+				if (list.Count != maxClasses)
+					continue;
+				var ns = list[0].TypeDefinition.Namespace;
+				Log.v("Removing namespace: {0}", ns);
+				foreach (var type in list)
+					type.NewNamespace = "";
+			}
+		}
+
 		static string renameResourceString(string s, string oldTypeName, string newTypeName) {
 			if (!Utils.StartsWith(s, oldTypeName, StringComparison.Ordinal))
 				return s;

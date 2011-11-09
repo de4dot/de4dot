@@ -30,6 +30,7 @@ namespace de4dot {
 		Func<string, bool> IsValidName { get; }
 		bool RenameResourcesInCode { get; }
 		bool RenameSymbols { get; }
+		bool RemoveNamespaceWithOneType { get; }
 
 		void deobfuscateBegin();
 		void deobfuscate();

@@ -118,6 +118,10 @@ namespace de4dot {
 			get { return options.RenameSymbols; }
 		}
 
+		public bool RemoveNamespaceWithOneType {
+			get { return (deob.RenamingOptions & RenamingOptions.RemoveNamespaceIfOneType) != 0; }
+		}
+
 		public IDeobfuscator Deobfuscator {
 			get { return deob; }
 		}

@@ -66,6 +66,7 @@ namespace de4dot.deobfuscators {
 		public IOperations Operations { get; set; }
 		public IDeobfuscatedFile DeobfuscatedFile { get; set; }
 		public virtual StringFeatures StringFeatures { get; set; }
+		public virtual RenamingOptions RenamingOptions { get; set; }
 		public DecrypterType DefaultDecrypterType { get; set; }
 
 		public abstract string Type { get; }

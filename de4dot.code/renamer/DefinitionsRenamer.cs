@@ -210,6 +210,10 @@ namespace de4dot.renamer {
 
 		void renameTypeDefinitions() {
 			Log.v("Renaming obfuscated type definitions");
+
+			foreach (var module in modules)
+				module.onBeforeRenamingTypeDefinitions();
+
 			typeNameState = new TypeNameState();
 			foreach (var typeDef in allTypes)
 				typeNameState.currentNames.add(typeDef.OldName);
