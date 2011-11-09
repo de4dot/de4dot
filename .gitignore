@@ -1,9 +1,6 @@
 *~
 */obj/
-/dumpMethodsN/Debug/
-/dumpMethodsN/Release/
 *.csproj.user
-*.vcxproj.user
 *.sdf
 *.opensdf
 *.suo
