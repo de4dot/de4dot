@@ -31,7 +31,21 @@ namespace de4dot {
 				var block = callResult.block;
 				int num = callResult.callEndIndex - callResult.callStartIndex + 1;
 
-				block.replace(callResult.callStartIndex, num, Instruction.Create(OpCodes.Ldstr, (string)callResult.returnValue));
+				int ldstrIndex = callResult.callStartIndex;
+				block.replace(ldstrIndex, num, Instruction.Create(OpCodes.Ldstr, (string)callResult.returnValue));
+
+				// If it's followed by String.Intern(), then nop out that call
+				if (ldstrIndex + 1 < block.Instructions.Count) {
+					var instr = block.Instructions[ldstrIndex + 1];
+					if (instr.OpCode.Code == Code.Call) {
+						var calledMethod = instr.Operand as MethodReference;
+						if (calledMethod != null &&
+							calledMethod.FullName == "System.String System.String::Intern(System.String)") {
+							block.remove(ldstrIndex + 1, 1);
+						}
+					}
+				}
+
 				Log.v("Decrypted string: {0}", Utils.toCsharpString((string)callResult.returnValue));
 			}
 		}
