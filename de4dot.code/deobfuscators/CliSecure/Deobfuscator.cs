@@ -187,8 +187,8 @@ namespace de4dot.deobfuscators.CliSecure {
 			var rsrc = resourceDecrypter.mergeResources();
 			if (rsrc == null)
 				return;
-			addResourceToBeRemoved(rsrc, "Encrypted resource");
-			addTypeToBeRemoved(resourceDecrypter.Type, "Obfuscator resource decrypter type");
+			addResourceToBeRemoved(rsrc, "Encrypted resources");
+			addTypeToBeRemoved(resourceDecrypter.Type, "Resource decrypter type");
 		}
 
 		public override void deobfuscateMethodEnd(Blocks blocks) {
@@ -206,7 +206,7 @@ namespace de4dot.deobfuscators.CliSecure {
 					addTypeToBeRemoved(stackFrameHelper.Type, "StackFrameHelper type");
 			}
 			if (Operations.DecryptStrings != OpDecryptString.None) {
-				addTypeToBeRemoved(stringDecrypter.Type, "Obfuscator string decrypter type");
+				addTypeToBeRemoved(stringDecrypter.Type, "String decrypter type");
 				if (options.DecryptMethods)
 					addTypeToBeRemoved(cliSecureRtType.Type, "Obfuscator type");
 			}

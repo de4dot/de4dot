@@ -408,7 +408,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			var rsrc = resourceResolver.mergeResources();
 			if (rsrc == null)
 				return;
-			addResourceToBeRemoved(rsrc, "Encrypted resource");
+			addResourceToBeRemoved(rsrc, "Encrypted resources");
 		}
 
 		void dumpEmbeddedAssemblies() {
