@@ -309,8 +309,8 @@ namespace de4dot {
 			Log.n("Examples:");
 			Log.n("{0} -r c:\\my\\files -ro c:\\my\\output", progName);
 			Log.n("{0} file1 file2 file3", progName);
-			Log.n("{0} file1 -f file2 -o file2.out -f file3 -m file3.methods -o file3.out", progName);
-			Log.n("{0} file1 --strtyp delegate --strtok \"<Module>::(System.String, System.Int32)\"", progName);
+			Log.n("{0} file1 -f file2 -o file2.out -f file3 -o file3.out", progName);
+			Log.n("{0} file1 --strtyp delegate --strtok 06000123", progName);
 		}
 
 		string getProgramBaseName() {
