@@ -94,6 +94,8 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			encryptedResource.Method = (MethodDefinition)callCounter.most();
 		}
 
+		static short[] nativeLdci4 = new short[] { 0x55, 0x8B, 0xEC, 0xB8, -1, -1, -1, -1, 0x5D, 0xC3 };
+		static short[] nativeLdci4_0 = new short[] { 0x55, 0x8B, 0xEC, 0x33, 0xC0, 0x5D, 0xC3 };
 		public bool decrypt(PE.PeImage peImage, ISimpleDeobfuscator simpleDeobfuscator, ref Dictionary<uint, DumpedMethod> dumpedMethods) {
 			if (encryptedResource.Method == null)
 				return false;
@@ -194,38 +196,65 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 						}
 						//TODO: Convert to CIL code
 						Log.v("Found native code. Ignoring it for now... Assembly won't run. token: {0:X8}", 0x06000001 + methodIndex);
+
+						// Convert return true / false methods. The others are converted to
+						// throw 0xDEADCODE.
+						if (isCode(nativeLdci4, methodData)) {
+							uint val = BitConverter.ToUInt32(methodData, 4);
+							methodData = new byte[] { 0x20, 0, 0, 0, 0, 0x2A };
+							methodData[1] = (byte)val;
+							methodData[2] = (byte)(val >> 8);
+							methodData[3] = (byte)(val >> 16);
+							methodData[4] = (byte)(val >> 24);
+						}
+						else if (isCode(nativeLdci4_0, methodData)) {
+							methodData = new byte[] { 0x16, 0x2A };
+						}
+						else
+							methodData = new byte[] { 0x20, 0xDE, 0xC0, 0xAD, 0xDE, 0x7A };
+					}
+
+					var dm = new DumpedMethod();
+					dm.token = (uint)(0x06000001 + methodIndex);
+					dm.code = methodData;
+
+					offset = methodDef.fileOffset + (uint)(methodIndex * methodDef.totalSize);
+					rva = peImage.offsetReadUInt32(offset);
+					dm.mdImplFlags = peImage.offsetReadUInt16(offset + (uint)methodDef.fields[1].offset);
+					dm.mdFlags = peImage.offsetReadUInt16(offset + (uint)methodDef.fields[2].offset);
+					dm.mdName = peImage.offsetRead(offset + (uint)methodDef.fields[3].offset, methodDef.fields[3].size);
+					dm.mdSignature = peImage.offsetRead(offset + (uint)methodDef.fields[4].offset, methodDef.fields[4].size);
+					dm.mdParamList = peImage.offsetRead(offset + (uint)methodDef.fields[5].offset, methodDef.fields[5].size);
+
+					if ((peImage.readByte(rva) & 3) == 2) {
+						dm.mhFlags = 2;
+						dm.mhMaxStack = 8;
+						dm.mhCodeSize = (uint)dm.code.Length;
+						dm.mhLocalVarSigTok = 0;
 					}
 					else {
-						var dm = new DumpedMethod();
-						dm.token = (uint)(0x06000001 + methodIndex);
-						dm.code = methodData;
-
-						offset = methodDef.fileOffset + (uint)(methodIndex * methodDef.totalSize);
-						rva = peImage.offsetReadUInt32(offset);
-						dm.mdImplFlags = peImage.offsetReadUInt16(offset + (uint)methodDef.fields[1].offset);
-						dm.mdFlags = peImage.offsetReadUInt16(offset + (uint)methodDef.fields[2].offset);
-						dm.mdName = peImage.offsetRead(offset + (uint)methodDef.fields[3].offset, methodDef.fields[3].size);
-						dm.mdSignature = peImage.offsetRead(offset + (uint)methodDef.fields[4].offset, methodDef.fields[4].size);
-						dm.mdParamList = peImage.offsetRead(offset + (uint)methodDef.fields[5].offset, methodDef.fields[5].size);
-
-						if ((peImage.readByte(rva) & 3) == 2) {
-							dm.mhFlags = 2;
-							dm.mhMaxStack = 8;
-							dm.mhCodeSize = (uint)dm.code.Length;
-							dm.mhLocalVarSigTok = 0;
-						}
-						else {
-							dm.mhFlags = peImage.readUInt16(rva);
-							dm.mhMaxStack = peImage.readUInt16(rva + 2);
-							dm.mhCodeSize = (uint)dm.code.Length;
-							dm.mhLocalVarSigTok = peImage.readUInt32(rva + 8);
-						}
-
-						dumpedMethods[dm.token] = dm;
+						dm.mhFlags = peImage.readUInt16(rva);
+						dm.mhMaxStack = peImage.readUInt16(rva + 2);
+						dm.mhCodeSize = (uint)dm.code.Length;
+						dm.mhLocalVarSigTok = peImage.readUInt32(rva + 8);
 					}
+
+					dumpedMethods[dm.token] = dm;
 				}
 			}
 
+			return true;
+		}
+
+		static bool isCode(short[] nativeCode, byte[] code) {
+			if (nativeCode.Length != code.Length)
+				return false;
+			for (int i = 0; i < nativeCode.Length; i++) {
+				if (nativeCode[i] == -1)
+					continue;
+				if ((byte)nativeCode[i] != code[i])
+					return false;
+			}
 			return true;
 		}
 
