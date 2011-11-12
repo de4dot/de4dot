@@ -28,6 +28,7 @@ using de4dot.blocks;
 namespace de4dot.deobfuscators.dotNET_Reactor {
 	class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = ".NET Reactor";
+		public const string THE_TYPE = "dr";
 		const string DEFAULT_REGEX = DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
 		BoolOption decryptMethods;
 		BoolOption decryptBools;
@@ -55,7 +56,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		}
 
 		public override string Type {
-			get { return "dr"; }
+			get { return THE_TYPE; }
 		}
 
 		public override IDeobfuscator createDeobfuscator() {
@@ -115,6 +116,10 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		}
 
 		public override string Type {
+			get { return DeobfuscatorInfo.THE_TYPE; }
+		}
+
+		public override string TypeLong {
 			get { return DeobfuscatorInfo.THE_NAME; }
 		}
 

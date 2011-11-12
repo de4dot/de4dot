@@ -22,6 +22,7 @@ using System.Text.RegularExpressions;
 namespace de4dot.deobfuscators.Unknown {
 	class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "Unknown";
+		public const string THE_TYPE = "un";
 		public DeobfuscatorInfo()
 			: base() {
 		}
@@ -31,7 +32,7 @@ namespace de4dot.deobfuscators.Unknown {
 		}
 
 		public override string Type {
-			get { return "un"; }
+			get { return THE_TYPE; }
 		}
 
 		public override IDeobfuscator createDeobfuscator() {
@@ -49,6 +50,10 @@ namespace de4dot.deobfuscators.Unknown {
 		}
 
 		public override string Type {
+			get { return DeobfuscatorInfo.THE_TYPE; }
+		}
+
+		public override string TypeLong {
 			get { return DeobfuscatorInfo.THE_NAME; }
 		}
 

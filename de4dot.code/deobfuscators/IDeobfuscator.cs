@@ -51,6 +51,7 @@ namespace de4dot.deobfuscators {
 
 	interface IDeobfuscator {
 		string Type { get; }
+		string TypeLong { get; }
 		string Name { get; }
 		Func<string, bool> IsValidName { get; }
 		IDeobfuscatorOptions TheOptions { get; }

@@ -70,6 +70,7 @@ namespace de4dot.deobfuscators {
 		public DecrypterType DefaultDecrypterType { get; set; }
 
 		public abstract string Type { get; }
+		public abstract string TypeLong { get; }
 		public abstract string Name { get; }
 
 		public virtual bool CanInlineMethods {

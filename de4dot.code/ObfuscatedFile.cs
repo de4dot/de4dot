@@ -234,7 +234,7 @@ namespace de4dot {
 			foreach (var deob in deobfuscators) {
 				int val = deob.earlyDetect();
 				if (val > 0)
-					Log.v("{0,3}: {1}", val, deob.Type);
+					Log.v("{0,3}: {1}", val, deob.TypeLong);
 				if (val > detectVal) {
 					detectVal = val;
 					detected = deob;
@@ -249,7 +249,7 @@ namespace de4dot {
 			foreach (var deob in deobfuscators) {
 				this.deob = deob;	// So we can call deob.CanInlineMethods in deobfuscate()
 				int val = deob.detect();
-				Log.v("{0,3}: {1}", val, deob.Type);
+				Log.v("{0,3}: {1}", val, deob.TypeLong);
 				if (val > detectVal) {
 					detectVal = val;
 					detected = deob;
@@ -300,7 +300,7 @@ namespace de4dot {
 		public void checkSupportedStringDecrypter(StringFeatures feature) {
 			if ((deob.StringFeatures & feature) == feature)
 				return;
-			throw new UserException(string.Format("Deobfuscator {0} does not support this string decryption type", deob.Type));
+			throw new UserException(string.Format("Deobfuscator {0} does not support this string decryption type", deob.TypeLong));
 		}
 
 		public void deobfuscate() {

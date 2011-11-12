@@ -25,6 +25,7 @@ using de4dot.blocks;
 namespace de4dot.deobfuscators.CryptoObfuscator {
 	class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "Crypto Obfuscator";
+		public const string THE_TYPE = "co";
 		const string DEFAULT_REGEX = @"!^[A-Z]{1,3}(?:`\d+)?$&!^c[0-9a-f]{32}(?:`\d+)?$&" + DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
 		BoolOption removeTamperProtection;
 
@@ -38,7 +39,7 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 		}
 
 		public override string Type {
-			get { return "co"; }
+			get { return THE_TYPE; }
 		}
 
 		public override IDeobfuscator createDeobfuscator() {
@@ -74,6 +75,10 @@ namespace de4dot.deobfuscators.CryptoObfuscator {
 		}
 
 		public override string Type {
+			get { return DeobfuscatorInfo.THE_TYPE; }
+		}
+
+		public override string TypeLong {
 			get { return DeobfuscatorInfo.THE_NAME; }
 		}
 

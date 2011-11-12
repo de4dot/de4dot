@@ -23,6 +23,7 @@ using Mono.Cecil;
 namespace de4dot.deobfuscators.Xenocode {
 	class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "Xenocode";
+		public const string THE_TYPE = "xc";
 		const string DEFAULT_REGEX = @"!^[oO01l]{4,}$&!^_?x[a-f0-9]{16,}$&" + DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
 		public DeobfuscatorInfo()
 			: base(DEFAULT_REGEX) {
@@ -33,7 +34,7 @@ namespace de4dot.deobfuscators.Xenocode {
 		}
 
 		public override string Type {
-			get { return "xc"; }
+			get { return THE_TYPE; }
 		}
 
 		public override IDeobfuscator createDeobfuscator() {
@@ -51,11 +52,15 @@ namespace de4dot.deobfuscators.Xenocode {
 		}
 
 		public override string Type {
+			get { return DeobfuscatorInfo.THE_TYPE; }
+		}
+
+		public override string TypeLong {
 			get { return DeobfuscatorInfo.THE_NAME; }
 		}
 
 		public override string Name {
-			get { return Type; }
+			get { return TypeLong; }
 		}
 
 		public Deobfuscator(Options options)

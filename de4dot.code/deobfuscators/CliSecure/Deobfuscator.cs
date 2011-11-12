@@ -25,6 +25,7 @@ using de4dot.blocks;
 namespace de4dot.deobfuscators.CliSecure {
 	class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "CliSecure";
+		public const string THE_TYPE = "cs";
 		const string DEFAULT_REGEX = @"[a-zA-Z_0-9>}$]$";
 		BoolOption decryptMethods;
 		BoolOption decryptResources;
@@ -42,7 +43,7 @@ namespace de4dot.deobfuscators.CliSecure {
 		}
 
 		public override string Type {
-			get { return "cs"; }
+			get { return THE_TYPE; }
 		}
 
 		public override IDeobfuscator createDeobfuscator() {
@@ -81,11 +82,15 @@ namespace de4dot.deobfuscators.CliSecure {
 		}
 
 		public override string Type {
+			get { return DeobfuscatorInfo.THE_TYPE; }
+		}
+
+		public override string TypeLong {
 			get { return DeobfuscatorInfo.THE_NAME; }
 		}
 
 		public override string Name {
-			get { return Type; }
+			get { return TypeLong; }
 		}
 
 		public Deobfuscator(Options options)

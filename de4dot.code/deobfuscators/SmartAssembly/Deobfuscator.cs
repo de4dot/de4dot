@@ -31,6 +31,7 @@ using de4dot.blocks;
 namespace de4dot.deobfuscators.SmartAssembly {
 	class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "SmartAssembly";
+		public const string THE_TYPE = "sa";
 		BoolOption removeAutomatedErrorReporting;
 		BoolOption removeTamperProtection;
 		BoolOption removeMemoryManager;
@@ -47,7 +48,7 @@ namespace de4dot.deobfuscators.SmartAssembly {
 		}
 
 		public override string Type {
-			get { return "sa"; }
+			get { return THE_TYPE; }
 		}
 
 		public override IDeobfuscator createDeobfuscator() {
@@ -72,7 +73,7 @@ namespace de4dot.deobfuscators.SmartAssembly {
 		Options options;
 		bool foundVersion = false;
 		string poweredByAttributeString = null;
-		string obfuscatorName = "SmartAssembly";
+		string obfuscatorName = DeobfuscatorInfo.THE_NAME;
 		bool foundSmartAssemblyAttribute = false;
 
 		IList<StringDecrypterInfo> stringDecrypterInfos = new List<StringDecrypterInfo>();
@@ -96,6 +97,10 @@ namespace de4dot.deobfuscators.SmartAssembly {
 		}
 
 		public override string Type {
+			get { return DeobfuscatorInfo.THE_TYPE; }
+		}
+
+		public override string TypeLong {
 			get { return DeobfuscatorInfo.THE_NAME; }
 		}
 
