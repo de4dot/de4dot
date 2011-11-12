@@ -98,11 +98,22 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 
 			antiSnBlock.replaceLastInstrsWithBranch(numInstructions, goodBlock);
 
-			if (badBlock.FallThrough != badBlock || badBlock.Sources.Count != 1 || badBlock.Targets != null)
-				throw new ApplicationException("Invalid state");
-			((ScopeBlock)badBlock.Parent).removeGuaranteedDeadBlock(badBlock);
+			if (badBlock.FallThrough == badBlock && badBlock.Sources.Count == 1 && badBlock.Targets == null) {
+				((ScopeBlock)badBlock.Parent).removeGuaranteedDeadBlock(badBlock);
+				return true;
+			}
+			if (badBlock.Instructions.Count <= 1 && badBlock.LastInstr.OpCode.Code == Code.Nop) {
+				if (badBlock.FallThrough != null && badBlock.Targets == null && badBlock.Sources.Count == 0) {
+					var badBlock2 = badBlock.FallThrough;
+					if (badBlock2.FallThrough == badBlock2 && badBlock2.Sources.Count == 2 && badBlock2.Targets == null) {
+						((ScopeBlock)badBlock.Parent).removeGuaranteedDeadBlock(badBlock);
+						((ScopeBlock)badBlock2.Parent).removeGuaranteedDeadBlock(badBlock2);
+						return true;
+					}
+				}
+			}
 
-			return true;
+			throw new ApplicationException("Invalid state");
 		}
 
 		bool findBlock(Blocks blocks, out Block foundBlock, out int numInstructions) {
