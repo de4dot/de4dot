@@ -18,6 +18,7 @@
 */
 
 using System;
+using System.Collections;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Ipc;
@@ -38,7 +39,12 @@ namespace AssemblyServer {
 		}
 
 		static void startServer(AssemblyService service, string name, string uri) {
-			ChannelServices.RegisterChannel(new IpcServerChannel(name), false);
+			var props = new Hashtable();
+			props["portName"] = name;
+			var provider = new BinaryServerFormatterSinkProvider();
+			provider.TypeFilterLevel = System.Runtime.Serialization.Formatters.TypeFilterLevel.Full;
+			var channel = new IpcServerChannel(props, provider);
+			ChannelServices.RegisterChannel(channel, false);
 			RemotingServices.Marshal(service, uri);
 		}
 	}
