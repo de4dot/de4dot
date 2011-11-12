@@ -25,7 +25,7 @@ using de4dot.blocks;
 namespace de4dot.deobfuscators.dotNET_Reactor {
 	class AntiStrongName {
 		TypeDefinition decrypterType;
-		MethodDefinition tamperMethod;
+		MethodDefinition antiStrongNameMethod;
 
 		public AntiStrongName(TypeDefinition decrypterType) {
 			this.decrypterType = decrypterType;
@@ -36,6 +36,16 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			if (decrypterType == null)
 				return;
 
+			if (checkType(decrypterType))
+				return;
+
+			foreach (var type in decrypterType.NestedTypes) {
+				if (checkType(type))
+					return;
+			}
+		}
+
+		bool checkType(TypeDefinition type) {
 			var requiredTypes = new string[] {
 				"System.Byte[]",
 				"System.IO.MemoryStream",
@@ -44,7 +54,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				"System.Security.Cryptography.Rijndael",
 			};
 
-			foreach (var method in decrypterType.Methods) {
+			foreach (var method in type.Methods) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
 				if (method.Parameters.Count != 2)
@@ -60,9 +70,11 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				if (!localTypes.all(requiredTypes))
 					continue;
 
-				tamperMethod = method;
-				break;
+				antiStrongNameMethod = method;
+				return true;
 			}
+
+			return false;
 		}
 
 		static bool checkType(string type, string expectedType) {
@@ -70,21 +82,21 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		}
 
 		public bool remove(Blocks blocks) {
-			if (tamperMethod == null)
+			if (antiStrongNameMethod == null)
 				return false;
 
-			Block tamperBlock;
+			Block antiSnBlock;
 			int numInstructions;
-			if (!findBlock(blocks, out tamperBlock, out numInstructions))
+			if (!findBlock(blocks, out antiSnBlock, out numInstructions))
 				return false;
 
-			if (tamperBlock.FallThrough == null || tamperBlock.Targets == null || tamperBlock.Targets.Count != 1)
+			if (antiSnBlock.FallThrough == null || antiSnBlock.Targets == null || antiSnBlock.Targets.Count != 1)
 				throw new ApplicationException("Invalid state");
 
-			var goodBlock = tamperBlock.Targets[0];
-			var badBlock = tamperBlock.FallThrough;
+			var goodBlock = antiSnBlock.Targets[0];
+			var badBlock = antiSnBlock.FallThrough;
 
-			tamperBlock.replaceLastInstrsWithBranch(numInstructions, goodBlock);
+			antiSnBlock.replaceLastInstrsWithBranch(numInstructions, goodBlock);
 
 			if (badBlock.FallThrough != badBlock || badBlock.Sources.Count != 1 || badBlock.Targets != null)
 				throw new ApplicationException("Invalid state");
@@ -120,7 +132,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 					continue;
 				if (instructions[i + 6].OpCode.Code != Code.Ldstr)
 					continue;
-				if (!checkCall(instructions[i + 7], tamperMethod))
+				if (!checkCall(instructions[i + 7], antiStrongNameMethod))
 					continue;
 				if (instructions[i + 8].OpCode.Code != Code.Ldstr)
 					continue;
