@@ -281,5 +281,11 @@ namespace de4dot.blocks {
 					throw new ApplicationException("Could not remove dead base block from baseBlocks");
 			}
 		}
+
+		public void removeGuaranteedDeadBlock(Block block) {
+			if (!baseBlocks.Remove(block))
+				throw new ApplicationException("Could not remove dead block");
+			block.removeGuaranteedDeadBlock();
+		}
 	}
 }
