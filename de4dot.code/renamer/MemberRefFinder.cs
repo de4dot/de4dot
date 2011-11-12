@@ -101,6 +101,9 @@ namespace de4dot {
 			catch (AssemblyResolutionException ex) {
 				exMessage = ex.Message;
 			}
+			catch (Exception ex) {
+				exMessage = ex.Message;
+			}
 			if (exMessage != null) {
 				if (!exceptionMessages.ContainsKey(exMessage)) {
 					exceptionMessages[exMessage] = true;
