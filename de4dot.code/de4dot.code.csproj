@@ -85,6 +85,7 @@
     <Compile Include="deobfuscators\dotNET_Reactor\QuickLZ.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\ResourceResolver.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\StringDecrypter.cs" />
+    <Compile Include="deobfuscators\dotNET_Reactor\TamperDetection.cs" />
     <Compile Include="deobfuscators\Eazfuscator\Deobfuscator.cs" />
     <Compile Include="deobfuscators\ExceptionLoggerRemover.cs" />
     <Compile Include="deobfuscators\IDeobfuscatedFile.cs" />

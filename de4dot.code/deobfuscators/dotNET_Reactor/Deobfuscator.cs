@@ -38,6 +38,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		BoolOption dumpEmbeddedAssemblies;
 		BoolOption decryptResources;
 		BoolOption removeNamespaces;
+		BoolOption removeTamperDetection;
 
 		public DeobfuscatorInfo()
 			: base(DEFAULT_REGEX) {
@@ -49,6 +50,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			dumpEmbeddedAssemblies = new BoolOption(null, makeArgName("embedded"), "Dump embedded assemblies", true);
 			decryptResources = new BoolOption(null, makeArgName("rsrc"), "Decrypt resources", true);
 			removeNamespaces = new BoolOption(null, makeArgName("ns1"), "Clear namespace if there's only one class in it", true);
+			removeTamperDetection = new BoolOption(null, makeArgName("tamper"), "Remove tamper detection code", true);
 		}
 
 		public override string Name {
@@ -70,6 +72,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				DumpEmbeddedAssemblies = dumpEmbeddedAssemblies.get(),
 				DecryptResources = decryptResources.get(),
 				RemoveNamespaces = removeNamespaces.get(),
+				RemoveTamperDetection = removeTamperDetection.get(),
 			});
 		}
 
@@ -83,6 +86,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				dumpEmbeddedAssemblies,
 				decryptResources,
 				removeNamespaces,
+				removeTamperDetection,
 			};
 		}
 	}
@@ -100,6 +104,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		MetadataTokenObfuscator metadataTokenObfuscator;
 		AssemblyResolver assemblyResolver;
 		ResourceResolver resourceResolver;
+		TamperDetection tamperDetection;
 
 		bool canRemoveDecrypterType = true;
 		bool startedDeobfuscating = false;
@@ -113,6 +118,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			public bool DumpEmbeddedAssemblies { get; set; }
 			public bool DecryptResources { get; set; }
 			public bool RemoveNamespaces { get; set; }
+			public bool RemoveTamperDetection { get; set; }
 		}
 
 		public override string Type {
@@ -359,6 +365,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			DeobfuscatedFile.stringDecryptersAdded();
 
 			metadataTokenObfuscator = new MetadataTokenObfuscator(module);
+			tamperDetection = new TamperDetection(getDecrypterType());
 
 			bool removeResourceResolver = false;
 			if (options.DecryptResources) {
@@ -389,6 +396,9 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			if (options.DecryptBools)
 				addResourceToBeRemoved(booleanDecrypter.Resource, "Encrypted booleans");
 			else
+				canRemoveDecrypterType = false;
+
+			if (!options.RemoveTamperDetection)
 				canRemoveDecrypterType = false;
 
 			// The inlined methods may contain calls to the decrypter class
@@ -435,11 +445,23 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		public override void deobfuscateMethodEnd(Blocks blocks) {
 			metadataTokenObfuscator.deobfuscate(blocks);
 			fixTypeofDecrypterInstructions(blocks);
+			removeTamperDetection(blocks);
 			base.deobfuscateMethodEnd(blocks);
 		}
 
+		void removeTamperDetection(Blocks blocks) {
+			if (!options.RemoveTamperDetection)
+				return;
+			if (tamperDetection.remove(blocks))
+				Log.v("Removed Tamper Detection code");
+		}
+
+		TypeDefinition getDecrypterType() {
+			return methodsDecrypter.DecrypterType ?? stringDecrypter.DecrypterType ?? booleanDecrypter.DecrypterType;
+		}
+
 		void fixTypeofDecrypterInstructions(Blocks blocks) {
-			var type = methodsDecrypter.DecrypterType ?? stringDecrypter.DecrypterType ?? booleanDecrypter.DecrypterType;
+			var type = getDecrypterType();
 			if (type == null)
 				return;
 
@@ -460,8 +482,12 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			removeInlinedMethods();
 			if (options.RestoreTypes)
 				new TypesRestorer(module).deobfuscate();
-			if (canRemoveDecrypterType && methodsDecrypter.Method != null)
-				addTypeToBeRemoved(methodsDecrypter.Method.DeclaringType, "Decrypter type");
+			if (canRemoveDecrypterType) {
+				if (methodsDecrypter.Method != null)
+					addTypeToBeRemoved(methodsDecrypter.Method.DeclaringType, "Decrypter type");
+			}
+			else
+				Log.v("Could not remove decrypter type");
 			base.deobfuscateEnd();
 		}
 
