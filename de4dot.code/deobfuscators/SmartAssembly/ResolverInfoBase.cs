@@ -47,7 +47,6 @@ namespace de4dot.deobfuscators.SmartAssembly {
 			this.module = module;
 			this.simpleDeobfuscator = simpleDeobfuscator;
 			this.deob = deob;
-			findTypes();
 		}
 
 		public bool findTypes() {
@@ -106,7 +105,7 @@ namespace de4dot.deobfuscators.SmartAssembly {
 			resolverType = null;
 			if (!initMethod.HasBody)
 				return false;
-			if (type.Properties.Count > 0 || type.Events.Count > 0)
+			if (type.Properties.Count > 1 || type.Events.Count > 0)
 				return false;
 			if (!checkResolverType(type))
 				return false;

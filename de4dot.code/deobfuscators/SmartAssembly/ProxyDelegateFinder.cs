@@ -38,19 +38,25 @@ namespace de4dot.deobfuscators.SmartAssembly {
 		};
 
 		IList<MemberReference> memberReferences;
+		ISimpleDeobfuscator simpleDeobfuscator;
 
 		static ProxyDelegateFinder() {
 			for (int i = 0; i < specialChars.Length; i++)
 				specialCharsDict[specialChars[i]] = i;
 		}
 
-		public ProxyDelegateFinder(ModuleDefinition module)
+		public ProxyDelegateFinder(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator)
 			: base(module) {
 			this.memberReferences = new List<MemberReference>(module.GetMemberReferences());
+			this.simpleDeobfuscator = simpleDeobfuscator;
 		}
 
 		protected override object checkCctor(TypeDefinition type, MethodDefinition cctor) {
 			var instrs = cctor.Body.Instructions;
+			if (instrs.Count > 10)
+				return null;
+			if (instrs.Count != 3)
+				simpleDeobfuscator.deobfuscate(cctor);
 			if (instrs.Count != 3)
 				return null;
 			if (!DotNetUtils.isLdcI4(instrs[0].OpCode.Code))

@@ -25,54 +25,54 @@ using Mono.Cecil.Cil;
 using de4dot.blocks;
 
 namespace de4dot.deobfuscators.SmartAssembly {
+	public class EmbeddedAssemblyInfo {
+		public string assemblyName;
+		public string simpleName;
+		public string resourceName;
+		public EmbeddedResource resource;
+		public bool isCompressed = false;
+		public bool isTempFile = false;
+		public string flags = "";
+
+		public override string ToString() {
+			return assemblyName ?? base.ToString();
+		}
+
+		public static EmbeddedAssemblyInfo create(ModuleDefinition module, string encName, string rsrcName) {
+			var info = new EmbeddedAssemblyInfo();
+
+			try {
+				if (encName == "" || Convert.ToBase64String(Convert.FromBase64String(encName)) != encName)
+					return null;
+			}
+			catch (FormatException) {
+				return null;
+			}
+
+			if (rsrcName.Length > 0 && rsrcName[0] == '[') {
+				int i = rsrcName.IndexOf(']');
+				if (i < 0)
+					return null;
+				info.flags = rsrcName.Substring(1, i - 1);
+				info.isTempFile = info.flags.IndexOf('t') >= 0;
+				info.isCompressed = info.flags.IndexOf('z') >= 0;
+				rsrcName = rsrcName.Substring(i + 1);
+			}
+			if (rsrcName == "")
+				return null;
+
+			info.assemblyName = Encoding.UTF8.GetString(Convert.FromBase64String(encName));
+			info.resourceName = rsrcName;
+			info.resource = DotNetUtils.getResource(module, rsrcName) as EmbeddedResource;
+			info.simpleName = Utils.getAssemblySimpleName(info.assemblyName);
+
+			return info;
+		}
+	}
+
 	class AssemblyResolverInfo : ResolverInfoBase {
 		TypeDefinition simpleZipType;
 		List<EmbeddedAssemblyInfo> embeddedAssemblyInfos = new List<EmbeddedAssemblyInfo>();
-
-		public class EmbeddedAssemblyInfo {
-			public string assemblyName;
-			public string simpleName;
-			public string resourceName;
-			public EmbeddedResource resource;
-			public bool isCompressed = false;
-			public bool isTempFile = false;
-			public string flags = "";
-
-			public override string ToString() {
-				return assemblyName ?? base.ToString();
-			}
-
-			public static EmbeddedAssemblyInfo create(ModuleDefinition module, string encName, string rsrcName) {
-				var info = new EmbeddedAssemblyInfo();
-
-				try {
-					if (encName == "" || Convert.ToBase64String(Convert.FromBase64String(encName)) != encName)
-						return null;
-				}
-				catch (FormatException) {
-					return null;
-				}
-
-				if (rsrcName.Length > 0 && rsrcName[0] == '[') {
-					int i = rsrcName.IndexOf(']');
-					if (i < 0)
-						return null;
-					info.flags = rsrcName.Substring(1, i - 1);
-					info.isTempFile = info.flags.IndexOf('t') >= 0;
-					info.isCompressed = info.flags.IndexOf('z') >= 0;
-					rsrcName = rsrcName.Substring(i + 1);
-				}
-				if (rsrcName == "")
-					return null;
-
-				info.assemblyName = Encoding.UTF8.GetString(Convert.FromBase64String(encName));
-				info.resourceName = rsrcName;
-				info.resource = DotNetUtils.getResource(module, rsrcName) as EmbeddedResource;
-				info.simpleName = Utils.getAssemblySimpleName(info.assemblyName);
-
-				return info;
-			}
-		}
 
 		public TypeDefinition SimpleZipType {
 			get { return simpleZipType; }
@@ -165,6 +165,15 @@ namespace de4dot.deobfuscators.SmartAssembly {
 
 				return;
 			}
+		}
+
+		public EmbeddedAssemblyInfo find(string simpleName) {
+			foreach (var info in embeddedAssemblyInfos) {
+				if (info.simpleName == simpleName)
+					return info;
+			}
+
+			return null;
 		}
 	}
 }

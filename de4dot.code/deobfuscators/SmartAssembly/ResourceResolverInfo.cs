@@ -23,14 +23,16 @@ using de4dot.blocks;
 
 namespace de4dot.deobfuscators.SmartAssembly {
 	class ResourceResolverInfo : ResolverInfoBase {
-		EmbeddedResource embeddedAssembliesResource;
+		EmbeddedAssemblyInfo resourceInfo;
+		AssemblyResolverInfo assemblyResolverInfo;
 
-		public EmbeddedResource Resource {
-			get { return embeddedAssembliesResource; }
+		public EmbeddedAssemblyInfo ResourceInfo {
+			get { return resourceInfo; }
 		}
 
-		public ResourceResolverInfo(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob)
+		public ResourceResolverInfo(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob, AssemblyResolverInfo assemblyResolverInfo)
 			: base(module, simpleDeobfuscator, deob) {
+			this.assemblyResolverInfo = assemblyResolverInfo;
 		}
 
 		protected override bool checkResolverType(TypeDefinition type) {
@@ -41,7 +43,7 @@ namespace de4dot.deobfuscators.SmartAssembly {
 			if (!method.IsStatic || !method.HasBody)
 				return false;
 
-			EmbeddedResource resource = null;
+			EmbeddedAssemblyInfo info = null;
 			var instructions = method.Body.Instructions;
 			for (int i = 0; i < instructions.Count; i++) {
 				var instrs = DotNetUtils.getInstructions(instructions, i, OpCodes.Ldstr, OpCodes.Call);
@@ -53,15 +55,15 @@ namespace de4dot.deobfuscators.SmartAssembly {
 				if (s == null || calledMethod == null)
 					continue;
 
-				resource = DotNetUtils.getResource(module, Utils.getAssemblySimpleName(s)) as EmbeddedResource;
-				if (resource != null)
+				info = assemblyResolverInfo.find(Utils.getAssemblySimpleName(s));
+				if (info != null)
 					break;
 			}
-			if (resource == null)
+			if (info == null)
 				return false;
 
-			embeddedAssembliesResource = resource;
-			Log.v("Found embedded assemblies resource {0}", Utils.toCsharpString(embeddedAssembliesResource.Name));
+			resourceInfo = info;
+			Log.v("Found embedded assemblies resource {0}", Utils.toCsharpString(info.resourceName));
 			return true;
 		}
 	}

@@ -146,7 +146,7 @@ namespace de4dot.deobfuscators.SmartAssembly {
 		}
 
 		protected override void scanForObfuscator() {
-			proxyDelegateFinder = new ProxyDelegateFinder(module);
+			proxyDelegateFinder = new ProxyDelegateFinder(module, DeobfuscatedFile);
 			findSmartAssemblyAttributes();
 			findAutomatedErrorReportingType();
 			memoryManagerInfo = new MemoryManagerInfo(module);
@@ -305,8 +305,10 @@ namespace de4dot.deobfuscators.SmartAssembly {
 
 		void initDecrypters() {
 			assemblyResolverInfo = new AssemblyResolverInfo(module, DeobfuscatedFile, this);
+			assemblyResolverInfo.findTypes();
 			resourceDecrypterInfo = new ResourceDecrypterInfo(module, assemblyResolverInfo.SimpleZipType, DeobfuscatedFile);
-			resourceResolverInfo = new ResourceResolverInfo(module, DeobfuscatedFile, this);
+			resourceResolverInfo = new ResourceResolverInfo(module, DeobfuscatedFile, this, assemblyResolverInfo);
+			resourceResolverInfo.findTypes();
 			resourceDecrypter = new ResourceDecrypter(resourceDecrypterInfo);
 			assemblyResolver = new AssemblyResolver(resourceDecrypter, assemblyResolverInfo);
 			resourceResolver = new ResourceResolver(module, assemblyResolver, resourceResolverInfo);
@@ -337,10 +339,10 @@ namespace de4dot.deobfuscators.SmartAssembly {
 		bool decryptResources() {
 			if (!resourceResolver.canDecryptResource())
 				return false;
-			var rsrc = resourceResolver.mergeResources();
-			if (rsrc == null)
+			var info = resourceResolver.mergeResources();
+			if (info == null)
 				return true;
-			addResourceToBeRemoved(rsrc, "Encrypted resources");
+			addResourceToBeRemoved(info.resource, "Encrypted resources");
 			assemblyResolver.resolveResources();
 			return true;
 		}

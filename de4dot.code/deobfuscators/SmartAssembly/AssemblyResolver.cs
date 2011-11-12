@@ -35,14 +35,13 @@ namespace de4dot.deobfuscators.SmartAssembly {
 			return assemblyResolverInfo.resolveResources();
 		}
 
-		public bool canDecryptResource(EmbeddedResource resource) {
-			var info = getEmbeddedAssemblyInfo(resource);
+		public bool canDecryptResource(EmbeddedAssemblyInfo info) {
 			if (info == null || !info.isCompressed)
 				return true;
 			return resourceDecrypter.CanDecrypt;
 		}
 
-		public IEnumerable<Tuple<AssemblyResolverInfo.EmbeddedAssemblyInfo, byte[]>> getDecryptedResources() {
+		public IEnumerable<Tuple<EmbeddedAssemblyInfo, byte[]>> getDecryptedResources() {
 			var returned = new Dictionary<Resource, bool>();
 			foreach (var info in assemblyResolverInfo.EmbeddedAssemblyInfos) {
 				if (info.resource == null) {
@@ -53,27 +52,14 @@ namespace de4dot.deobfuscators.SmartAssembly {
 					continue;
 				returned[info.resource] = true;
 
-				yield return new Tuple<AssemblyResolverInfo.EmbeddedAssemblyInfo, byte[]> {
+				yield return new Tuple<EmbeddedAssemblyInfo, byte[]> {
 					Item1 = info,
 					Item2 = decryptResource(info),
 				};
 			}
 		}
 
-		AssemblyResolverInfo.EmbeddedAssemblyInfo getEmbeddedAssemblyInfo(EmbeddedResource resource) {
-			foreach (var info in assemblyResolverInfo.EmbeddedAssemblyInfos) {
-				if (info.resource == resource)
-					return info;
-			}
-
-			return null;
-		}
-
-		public byte[] removeDecryptedResource(EmbeddedResource resource) {
-			if (resource == null)
-				return null;
-
-			var info = getEmbeddedAssemblyInfo(resource);
+		public byte[] removeDecryptedResource(EmbeddedAssemblyInfo info) {
 			if (info == null)
 				return null;
 
@@ -83,7 +69,7 @@ namespace de4dot.deobfuscators.SmartAssembly {
 			return data;
 		}
 
-		byte[] decryptResource(AssemblyResolverInfo.EmbeddedAssemblyInfo info) {
+		byte[] decryptResource(EmbeddedAssemblyInfo info) {
 			if (info.isCompressed)
 				return resourceDecrypter.decrypt(info.resource);
 			else
