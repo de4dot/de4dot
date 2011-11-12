@@ -22,6 +22,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using Mono.Cecil;
+using Mono.Cecil.Cil;
 using de4dot.blocks;
 
 namespace de4dot.deobfuscators.dotNET_Reactor {
@@ -109,11 +110,34 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			iv = ArrayFinder.getInitializedArray(resourceDecrypterMethod, 16);
 			if (iv == null)
 				throw new ApplicationException("Could not find resource decrypter IV");
-			var publicKeyToken = module.Assembly.Name.PublicKeyToken;
-			if (publicKeyToken != null && publicKeyToken.Length > 0) {
-				for (int i = 0; i < 8; i++)
-					iv[i * 2 + 1] = publicKeyToken[i];
+			if (usesPublicKeyToken()) {
+				var publicKeyToken = module.Assembly.Name.PublicKeyToken;
+				if (publicKeyToken != null && publicKeyToken.Length > 0) {
+					for (int i = 0; i < 8; i++)
+						iv[i * 2 + 1] = publicKeyToken[i];
+				}
 			}
+		}
+
+		static int[] pktIndexes = new int[16] { 1, 0, 3, 1, 5, 2, 7, 3, 9, 4, 11, 5, 13, 6, 15, 7 };
+		bool usesPublicKeyToken() {
+			int pktIndex = 0;
+			foreach (var instr in resourceDecrypterMethod.Body.Instructions) {
+				if (instr.OpCode.FlowControl != FlowControl.Next) {
+					pktIndex = 0;
+					continue;
+				}
+				if (!DotNetUtils.isLdcI4(instr))
+					continue;
+				int val = DotNetUtils.getLdcI4Value(instr);
+				if (val != pktIndexes[pktIndex++]) {
+					pktIndex = 0;
+					continue;
+				}
+				if (pktIndex >= pktIndexes.Length)
+					return true;
+			}
+			return false;
 		}
 
 		EmbeddedResource findMethodsDecrypterResource(MethodDefinition method) {
