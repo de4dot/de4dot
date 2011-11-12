@@ -23,11 +23,11 @@ using Mono.Cecil.Cil;
 using de4dot.blocks;
 
 namespace de4dot.deobfuscators.dotNET_Reactor {
-	class TamperDetection {
+	class AntiStrongName {
 		TypeDefinition decrypterType;
 		MethodDefinition tamperMethod;
 
-		public TamperDetection(TypeDefinition decrypterType) {
+		public AntiStrongName(TypeDefinition decrypterType) {
 			this.decrypterType = decrypterType;
 			find();
 		}
