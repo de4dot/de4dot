@@ -1243,6 +1243,29 @@ namespace Test.Rename.Dll {
 		}
 	}
 
+	namespace test.generic.methods.test2 {
+		class Class1 {
+		}
+		interface IFace1<T> {
+			T meth1();
+			void meth1(T t);
+			void meth1(int i);
+			void meth1(long i);
+			void meth2(int i);
+		}
+		interface IFace2 {
+			Class1 meth1();
+			void meth1(Class1 t);
+		}
+		class Class2 : IFace1<Class1>, IFace2 {
+			public Class1 meth1() { return null; }
+			public void meth1(Class1 t) { }
+			public void meth1(int i) { }
+			public void meth1(long i) { }
+			public void meth2(int i) { }
+		}
+	}
+
 	namespace test.Override {
 		class Class1 : IEqualityComparer<int>, IEqualityComparer<string> {
 			bool IEqualityComparer<int>.Equals(int x, int y) {
