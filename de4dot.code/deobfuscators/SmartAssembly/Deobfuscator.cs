@@ -394,10 +394,17 @@ namespace de4dot.deobfuscators.SmartAssembly {
 				}
 
 				if (initdInfo == null)
-					throw new ApplicationException("Could not initialize all stringDecrypterInfos");
+					break;
 
 				initd[initdInfo] = true;
 				initStringDecrypter(initdInfo);
+			}
+
+			// Sometimes there could be a string decrypter present that isn't called by anyone.
+			foreach (var info in stringDecrypterInfos) {
+				if (initd.ContainsKey(info))
+					continue;
+				Log.v("String decrypter not initialized. Token {0:X8}", info.StringsEncodingClass.MetadataToken.ToInt32());
 			}
 		}
 
