@@ -25,7 +25,7 @@ using Mono.Cecil.Cil;
 using de4dot.blocks;
 using de4dot.deobfuscators;
 
-namespace de4dot.renamer {
+namespace de4dot.old_renamer {
 	abstract class Ref {
 		public string NewName { get; set; }
 		public string OldName { get; private set; }

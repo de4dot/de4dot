@@ -20,7 +20,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace de4dot.renamer {
+namespace de4dot.old_renamer {
 	class CurrentNames {
 		Dictionary<string, bool> allNames = new Dictionary<string, bool>(StringComparer.Ordinal);
 

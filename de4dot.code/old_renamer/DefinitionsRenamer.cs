@@ -22,7 +22,7 @@ using System.Collections.Generic;
 using Mono.Cecil;
 using de4dot.blocks;
 
-namespace de4dot.renamer {
+namespace de4dot.old_renamer {
 	// Renames typedefs, methoddefs, eventdefs, fielddefs, propdefs, and genparams
 	class DefinitionsRenamer : IResolver, IDefFinder {
 		// All types that don't derive from an existing type definition (most likely mscorlib

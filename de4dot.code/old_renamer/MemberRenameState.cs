@@ -20,7 +20,7 @@
 using System.Collections.Generic;
 using de4dot.blocks;
 
-namespace de4dot.renamer {
+namespace de4dot.old_renamer {
 	class MemberRenameState {
 		public VariableNameState variableNameState;
 		public Dictionary<PropertyReferenceKey, PropertyRef> properties = new Dictionary<PropertyReferenceKey, PropertyRef>();

@@ -19,7 +19,7 @@
 
 using Mono.Cecil;
 
-namespace de4dot.renamer {
+namespace de4dot.old_renamer {
 	// State when renaming type members
 	class VariableNameState {
 		CurrentNames currentVariableNames = new CurrentNames();

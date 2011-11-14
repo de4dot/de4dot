@@ -21,7 +21,7 @@ using System.Collections.Generic;
 using Mono.Cecil;
 using de4dot.blocks;
 
-namespace de4dot.renamer {
+namespace de4dot.old_renamer {
 	class ExternalAssembly {
 		AssemblyDefinition asmDef;
 

@@ -23,7 +23,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using de4dot.deobfuscators;
 
-namespace de4dot.renamer {
+namespace de4dot.old_renamer {
 	class Module : IResolver {
 		IObfuscatedFile obfuscatedFile;
 		MemberRefFinder memberRefFinder;

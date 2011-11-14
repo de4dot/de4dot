@@ -20,7 +20,7 @@
 using Mono.Cecil;
 using de4dot.blocks;
 
-namespace de4dot.renamer {
+namespace de4dot.old_renamer {
 	abstract class RefExpander {
 		protected GenericInstanceType git;
 		bool modified = false;

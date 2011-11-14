@@ -21,7 +21,7 @@ using System;
 using System.Collections.Generic;
 using de4dot.deobfuscators;
 
-namespace de4dot.renamer {
+namespace de4dot.old_renamer {
 	class TypeNameState {
 		public CurrentNames currentNames;
 		IDictionary<string, string> namespaceToNewName;

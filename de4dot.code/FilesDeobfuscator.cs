@@ -22,7 +22,7 @@ using System.IO;
 using System.Collections.Generic;
 using Mono.Cecil;
 using de4dot.blocks;
-using de4dot.renamer;
+using de4dot.old_renamer;
 using de4dot.deobfuscators;
 using de4dot.AssemblyClient;
 
