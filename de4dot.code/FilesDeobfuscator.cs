@@ -22,7 +22,7 @@ using System.IO;
 using System.Collections.Generic;
 using Mono.Cecil;
 using de4dot.blocks;
-using de4dot.old_renamer;
+using de4dot.renamer;
 using de4dot.deobfuscators;
 using de4dot.AssemblyClient;
 
@@ -91,7 +91,7 @@ namespace de4dot {
 					file.deobfuscateEnd();
 
 					if (options.RenameSymbols)
-						new DefinitionsRenamer(new List<IObfuscatedFile> { file }).renameAll();
+						new Renamer(new List<IObfuscatedFile> { file }).rename();
 
 					file.save();
 
@@ -339,7 +339,7 @@ namespace de4dot {
 		void renameAllFiles(IEnumerable<IObfuscatedFile> allFiles) {
 			if (!options.RenameSymbols)
 				return;
-			new DefinitionsRenamer(allFiles).renameAll();
+			new Renamer(allFiles).rename();
 		}
 
 		void saveAllFiles(IEnumerable<IObfuscatedFile> allFiles) {

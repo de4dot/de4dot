@@ -23,11 +23,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using de4dot.blocks;
 
-namespace de4dot.old_renamer {
-	// If it's a non-generic memberref, you could use GetMemberReference() to get a cached
-	// instance. For non-generics though, there's no other way than to scan every single
-	// type and all its fields, recursively, to find all of those refererences... That's
-	// what this class does. Close your eyes.
+namespace de4dot.renamer.asmmodules {
 	class MemberRefFinder {
 		public Dictionary<EventDefinition, bool> eventDefinitions = new Dictionary<EventDefinition, bool>();
 		public Dictionary<FieldReference, bool> fieldReferences = new Dictionary<FieldReference, bool>();
