@@ -144,7 +144,7 @@ namespace AssemblyData.methodsrewriter {
 			if ((a.Namespace ?? "") != b.Namespace)
 				return false;
 
-			var asmRef = DotNetUtils.getAssemblyNameReference(b.Scope);
+			var asmRef = DotNetUtils.getAssemblyNameReference(b);
 			var asmName = a.Assembly.GetName();
 			if (asmRef.Name != asmName.Name)
 				return false;

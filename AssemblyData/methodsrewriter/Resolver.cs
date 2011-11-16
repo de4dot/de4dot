@@ -128,8 +128,8 @@ namespace AssemblyData.methodsrewriter {
 			return Resolver.resolve(methodReference);
 		}
 
-		static AssemblyResolver getAssemblyResolver(IMetadataScope scope) {
-			var asmName = DotNetUtils.getFullAssemblyName(scope);
+		static AssemblyResolver getAssemblyResolver(TypeReference type) {
+			var asmName = DotNetUtils.getFullAssemblyName(type);
 			AssemblyResolver resolver;
 			if (!assemblyResolvers.TryGetValue(asmName, out resolver))
 				assemblyResolvers[asmName] = resolver = new AssemblyResolver(asmName);
@@ -140,7 +140,7 @@ namespace AssemblyData.methodsrewriter {
 			if (typeReference == null)
 				return null;
 			var elemType = typeReference.GetElementType();
-			var resolver = getAssemblyResolver(elemType.Scope);
+			var resolver = getAssemblyResolver(elemType);
 			var resolvedType = resolver.resolve(elemType);
 			if (resolvedType != null)
 				return fixType(typeReference, resolvedType);
@@ -150,7 +150,7 @@ namespace AssemblyData.methodsrewriter {
 		static FieldInfo resolve(FieldReference fieldReference) {
 			if (fieldReference == null)
 				return null;
-			var resolver = getAssemblyResolver(fieldReference.DeclaringType.Scope);
+			var resolver = getAssemblyResolver(fieldReference.DeclaringType);
 			var fieldInfo = resolver.resolve(fieldReference);
 			if (fieldInfo != null)
 				return fieldInfo;
@@ -160,7 +160,7 @@ namespace AssemblyData.methodsrewriter {
 		static MethodBase resolve(MethodReference methodReference) {
 			if (methodReference == null)
 				return null;
-			var resolver = getAssemblyResolver(methodReference.DeclaringType.Scope);
+			var resolver = getAssemblyResolver(methodReference.DeclaringType);
 			var methodBase = resolver.resolve(methodReference);
 			if (methodBase != null)
 				return methodBase;

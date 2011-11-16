@@ -42,7 +42,7 @@ namespace AssemblyData.methodsrewriter {
 
 			var git = fieldReference.DeclaringType as GenericInstanceType;
 			if (git != null)
-				fieldReference = new FieldReferenceExpander(fieldReference, git).expand();
+				fieldReference = FieldReferenceInstance.make(fieldReference, git);
 
 			foreach (var field in list) {
 				if (ResolverUtils.compareFields(field, fieldReference))
@@ -75,7 +75,7 @@ namespace AssemblyData.methodsrewriter {
 
 			var git = methodReference.DeclaringType as GenericInstanceType;
 			if (git != null)
-				methodReference = new MethodReferenceExpander(methodReference, git).expand();
+				methodReference = MethodReferenceInstance.make(methodReference, git);
 
 			foreach (var method in list) {
 				if (ResolverUtils.compareMethods(method, methodReference))

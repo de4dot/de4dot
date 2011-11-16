@@ -58,8 +58,10 @@ namespace de4dot.blocks {
 		}
 
 		// Call this to invalidate all modules
-		public void invalidateAll() {
+		public List<ModuleDefinition> invalidateAll() {
+			var list = new List<ModuleDefinition>(typeCaches.Keys);
 			typeCaches.Clear();
+			return list;
 		}
 
 		public TypeDefinition lookup(ModuleDefinition module, TypeReference typeReference) {
@@ -671,20 +673,28 @@ namespace de4dot.blocks {
 			}
 		}
 
-		public static AssemblyNameReference getAssemblyNameReference(IMetadataScope scope) {
+		public static AssemblyNameReference getAssemblyNameReference(TypeReference type) {
+			var scope = type.Scope;
 			if (scope is ModuleDefinition) {
 				var moduleDefinition = (ModuleDefinition)scope;
 				return moduleDefinition.Assembly.Name;
 			}
-			else if (scope is AssemblyNameReference)
+
+			if (scope is AssemblyNameReference)
 				return (AssemblyNameReference)scope;
+
+			if (scope is ModuleReference && type.Module.Assembly != null) {
+				foreach (var module in type.Module.Assembly.Modules) {
+					if (scope.Name == module.Name)
+						return type.Module.Assembly.Name;
+				}
+			}
 
 			throw new ApplicationException(string.Format("Unknown IMetadataScope type: {0}", scope.GetType()));
 		}
 
-		public static string getFullAssemblyName(IMetadataScope scope) {
-			//TODO: Returning scope.Name is probably best since the method could fail.
-			var asmRef = getAssemblyNameReference(scope);
+		public static string getFullAssemblyName(TypeReference type) {
+			var asmRef = getAssemblyNameReference(type);
 			return asmRef.FullName;
 		}
 
@@ -789,6 +799,7 @@ namespace de4dot.blocks {
 
 		// Doesn't fix everything (eg. T[] aren't replaced with eg. int[], but T -> int will be fixed)
 		public static IList<TypeReference> replaceGenericParameters(GenericInstanceType typeOwner, GenericInstanceMethod methodOwner, IList<TypeReference> types) {
+			//TODO: You should use MemberRefInstance.cs
 			for (int i = 0; i < types.Count; i++)
 				types[i] = getGenericArgument(typeOwner, methodOwner, types[i]);
 			return types;

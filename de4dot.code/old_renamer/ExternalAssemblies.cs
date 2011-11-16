@@ -50,7 +50,7 @@ namespace de4dot.old_renamer {
 		Dictionary<string, ExternalAssembly> assemblies = new Dictionary<string, ExternalAssembly>();
 
 		ExternalAssembly load(TypeReference type) {
-			var asmFullName = DotNetUtils.getFullAssemblyName(type.Scope);
+			var asmFullName = DotNetUtils.getFullAssemblyName(type);
 			ExternalAssembly asm;
 			if (assemblies.TryGetValue(asmFullName, out asm))
 				return asm;

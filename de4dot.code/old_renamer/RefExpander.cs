@@ -35,19 +35,19 @@ namespace de4dot.old_renamer {
 		}
 
 		protected MethodReference expandMethodReference(MethodReference methodReference) {
-			var mr = new MethodReferenceExpander(methodReference, git).expand();
+			var mr = MethodReferenceInstance.make(methodReference, git);
 			checkModified(methodReference, mr);
 			return mr;
 		}
 
 		protected EventReference expandEventReference(EventReference eventReference) {
-			var er = new EventReferenceExpander(eventReference, git).expand();
+			var er = EventReferenceInstance.make(eventReference, git);
 			checkModified(eventReference, er);
 			return er;
 		}
 
 		protected PropertyReference expandPropertyReference(PropertyReference propertyReference) {
-			var pr = new PropertyReferenceExpander(propertyReference, git).expand();
+			var pr = PropertyReferenceInstance.make(propertyReference, git);
 			checkModified(propertyReference, pr);
 			return pr;
 		}
