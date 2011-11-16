@@ -17,12 +17,6 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
-// Making this test pass in the current renamer code probably won't be easy. Since the
-// chance of something like that to be present in an assembly is close to 0, I won't
-// fix it now. Uncomment it when (and if) the renamer code is rewritten.
-//#define IS_NEXT_VERSION
-
 using System;
 using System.Collections.Generic;
 
@@ -1509,7 +1503,6 @@ namespace Test.Rename.Dll {
 		}
 	}
 
-#if IS_NEXT_VERSION
 	namespace test.inheriting.Interface.methods4 {
 		class Class1<T> {
 			public virtual void meth1(T t) { }
@@ -1528,5 +1521,4 @@ namespace Test.Rename.Dll {
 
 		}
 	}
-#endif
 }
