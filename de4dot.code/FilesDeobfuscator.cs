@@ -72,19 +72,19 @@ namespace de4dot {
 				deobfuscateAll();
 		}
 
-		void removeModule(ModuleDefinition module) {
+		static void removeModule(ModuleDefinition module) {
 			AssemblyResolver.Instance.removeModule(module);
 			DotNetUtils.typeCaches.invalidate(module);
 		}
 
 		void detectObfuscators() {
-			foreach (var file in loadAllFiles(true)) {
+			foreach (var file in loadAllFiles(true))
 				removeModule(file.ModuleDefinition);
-			}
 		}
 
 		void deobfuscateOneAtATime() {
 			foreach (var file in loadAllFiles()) {
+				int oldIndentLevel = Log.indentLevel;
 				try {
 					file.deobfuscateBegin();
 					file.deobfuscate();
@@ -96,6 +96,7 @@ namespace de4dot {
 					file.save();
 
 					removeModule(file.ModuleDefinition);
+					AssemblyResolver.Instance.clearAll();
 				}
 				catch (Exception ex) {
 					Log.w("Could not deobfuscate {0}. Use -v to see stack trace", file.Filename);
@@ -103,6 +104,7 @@ namespace de4dot {
 				}
 				finally {
 					file.deobfuscateCleanUp();
+					Log.indentLevel = oldIndentLevel;
 				}
 			}
 		}
@@ -200,13 +202,14 @@ namespace de4dot {
 
 				if ((file.ModuleDefinition.Attributes & ModuleAttributes.ILOnly) == 0) {
 					Log.w("Ignoring assembly with native code {0}", file.Filename);
+					removeModule(file.ModuleDefinition);
 					return false;
 				}
-
 
 				var deob = file.Deobfuscator;
 				if (skipUnknownObfuscator && deob is deobfuscators.Unknown.Deobfuscator) {
 					Log.v("Skipping unknown obfuscator: {0}", file.Filename);
+					removeModule(file.ModuleDefinition);
 					return false;
 				}
 				else {

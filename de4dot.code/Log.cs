@@ -22,7 +22,7 @@ using System.Collections.Generic;
 
 namespace de4dot {
 	static class Log {
-		static int indentLevel = 0;
+		public static int indentLevel = 0;
 		const int indentSize = 2;
 
 		public enum LogLevel {
