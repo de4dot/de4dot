@@ -105,9 +105,19 @@ namespace de4dot {
 			if (assembly == null)
 				return;
 
-			var name = assembly.Name.FullName;
-			addedAssemblies.Remove(name);
-			cache.Remove(name);
+			removeModule(assembly.Name.FullName);
+		}
+
+		public void removeModule(string asmFullName) {
+			if (string.IsNullOrEmpty(asmFullName))
+				return;
+			addedAssemblies.Remove(asmFullName);
+			cache.Remove(asmFullName);
+		}
+
+		public void clearAll() {
+			addedAssemblies.Clear();
+			cache.Clear();
 		}
 	}
 }
