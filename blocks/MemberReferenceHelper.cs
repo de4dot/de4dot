@@ -352,9 +352,9 @@ namespace de4dot.blocks {
 			}
 
 			if (asmRef != null) {
-				if (asmRef.FullName.StartsWith("mscorlib,", StringComparison.Ordinal))
-					return "mscorlib";
-				return string.Format("{0}", asmRef.FullName.ToLowerInvariant());
+				// The version number should be ignored. Older code may reference an old version of
+				// the assembly, but if the newer one has been loaded, that one is used.
+				return asmRef.Name.ToLowerInvariant();
 			}
 			return string.Format("{0}", scope.ToString().ToLowerInvariant());
 		}
@@ -417,12 +417,12 @@ namespace de4dot.blocks {
 			return compareTypes(a.DeclaringType, b.DeclaringType);
 		}
 
-		public static bool compareMethodReference(MethodReference a, MethodReference b) {
+		public static bool compareMethodReferenceSignature(MethodReference a, MethodReference b) {
 			if (ReferenceEquals(a, b))
 				return true;
 			if (a == null || b == null)
 				return false;
-			if (a.Name != b.Name || a.HasThis != b.HasThis || a.ExplicitThis != b.ExplicitThis)
+			if (a.HasThis != b.HasThis || a.ExplicitThis != b.ExplicitThis)
 				return false;
 			if (a.CallingConvention != b.CallingConvention)
 				return false;
@@ -446,12 +446,11 @@ namespace de4dot.blocks {
 			return true;
 		}
 
-		public static int methodReferenceHashCode(MethodReference a) {
+		public static int methodReferenceSignatureHashCode(MethodReference a) {
 			if (a == null)
 				return 0;
 			int res = 0;
 
-			res += a.Name.GetHashCode();
 			res += a.HasThis.GetHashCode();
 			res += a.ExplicitThis.GetHashCode();
 			res += a.CallingConvention.GetHashCode();
@@ -465,6 +464,28 @@ namespace de4dot.blocks {
 			res += a.HasGenericParameters.GetHashCode();
 			if (a.HasGenericParameters)
 				res += a.GenericParameters.Count.GetHashCode();
+
+			return res;
+		}
+
+		public static bool compareMethodReference(MethodReference a, MethodReference b) {
+			if (ReferenceEquals(a, b))
+				return true;
+			if (a == null || b == null)
+				return false;
+
+			if (a.Name != b.Name)
+				return false;
+			return compareMethodReferenceSignature(a, b);
+		}
+
+		public static int methodReferenceHashCode(MethodReference a) {
+			if (a == null)
+				return 0;
+			int res = 0;
+
+			res += a.Name.GetHashCode();
+			res += methodReferenceSignatureHashCode(a);
 
 			return res;
 		}
@@ -737,8 +758,7 @@ namespace de4dot.blocks {
 		}
 
 		static bool compareTypeDefinitions(TypeDefinition a, TypeDefinition b) {
-			// They're all cached, so compare by reference
-			return ReferenceEquals(a, b);
+			return compareTypeReferences(a, b);
 		}
 
 		static int typeDefinitionHashCode(TypeDefinition a) {
@@ -763,6 +783,9 @@ namespace de4dot.blocks {
 			if ((a.GetType() != typeof(TypeReference) && a.GetType() != typeof(TypeDefinition)) ||
 				(b.GetType() != typeof(TypeReference) && b.GetType() != typeof(TypeDefinition)))
 				throw new ApplicationException("arg must be exactly of type TypeReference or TypeDefinition");
+
+			if (ReferenceEquals(a, b))
+				return true;
 
 			return a.Name == b.Name &&
 				a.Namespace == b.Namespace &&
