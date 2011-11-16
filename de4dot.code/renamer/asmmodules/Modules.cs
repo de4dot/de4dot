@@ -29,7 +29,7 @@ namespace de4dot.renamer.asmmodules {
 		Dictionary<ModuleDefinition, Module> modulesDict = new Dictionary<ModuleDefinition, Module>();
 		AssemblyHash assemblyHash = new AssemblyHash();
 
-		List<TypeDef> allTypes = new List<TypeDef>();	//TODO: Do we need this?
+		List<TypeDef> allTypes = new List<TypeDef>();
 		List<TypeDef> baseTypes = new List<TypeDef>();	//TODO: Do we need this?
 		List<TypeDef> nonNestedTypes;	//TODO: Do we need this?
 
@@ -238,6 +238,18 @@ namespace de4dot.renamer.asmmodules {
 			if (baseDef != null)
 				typeDef.addBaseType(baseDef, typeDef.TypeDefinition.BaseType);
 			return otherTypesDict[key] = typeDef;
+		}
+
+		public void initializeVirtualMembers() {
+			var scopes = new MethodNameScopes();
+			foreach (var typeDef in allTypes)
+				typeDef.initializeVirtualMembers(scopes, this);
+		}
+
+		public void cleanUp() {
+			externalAssemblies.unloadAll();
+			foreach (var module in DotNetUtils.typeCaches.invalidateAll())
+				AssemblyResolver.Instance.removeModule(module);
 		}
 
 		// Returns null if it's a non-loaded module/assembly

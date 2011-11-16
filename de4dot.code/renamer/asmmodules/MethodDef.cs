@@ -28,5 +28,17 @@ namespace de4dot.renamer.asmmodules {
 		public MethodDef(MethodDefinition methodDefinition, TypeDef owner, int index)
 			: base(methodDefinition, owner, index) {
 		}
+
+		public bool isPublic() {
+			return MethodDefinition.IsPublic;
+		}
+
+		public bool isVirtual() {
+			return MethodDefinition.IsVirtual;
+		}
+
+		public bool isNewSlot() {
+			return MethodDefinition.IsNewSlot;
+		}
 	}
 }

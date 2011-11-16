@@ -40,5 +40,13 @@ namespace de4dot.renamer.asmmodules {
 					yield return m;
 			}
 		}
+
+		public bool isVirtual() {
+			foreach (var method in methodDefinitions()) {
+				if (method.IsVirtual)
+					return true;
+			}
+			return false;
+		}
 	}
 }

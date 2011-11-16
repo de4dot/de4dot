@@ -39,9 +39,12 @@ namespace de4dot.renamer.asmmodules {
 			return null;
 		}
 
-		public void unload() {
-			foreach (var module in asmDef.Modules)
+		public void unload(string asmFullName) {
+			foreach (var module in asmDef.Modules) {
 				DotNetUtils.typeCaches.invalidate(module);
+				AssemblyResolver.Instance.removeModule(module);
+			}
+			AssemblyResolver.Instance.removeModule(asmFullName);
 		}
 	}
 
@@ -50,7 +53,7 @@ namespace de4dot.renamer.asmmodules {
 		Dictionary<string, ExternalAssembly> assemblies = new Dictionary<string, ExternalAssembly>();
 
 		ExternalAssembly load(TypeReference type) {
-			var asmFullName = DotNetUtils.getFullAssemblyName(type.Scope);
+			var asmFullName = DotNetUtils.getFullAssemblyName(type);
 			ExternalAssembly asm;
 			if (assemblies.TryGetValue(asmFullName, out asm))
 				return asm;
@@ -93,10 +96,10 @@ namespace de4dot.renamer.asmmodules {
 		}
 
 		public void unloadAll() {
-			foreach (var asm in assemblies.Values) {
-				if (asm == null)
+			foreach (var pair in assemblies) {
+				if (pair.Value == null)
 					continue;
-				asm.unload();
+				pair.Value.unload(pair.Key);
 			}
 			assemblies.Clear();
 		}

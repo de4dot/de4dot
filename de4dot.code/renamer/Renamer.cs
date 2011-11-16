@@ -40,6 +40,8 @@ namespace de4dot.renamer {
 			Log.n("Renaming all obfuscated symbols");
 
 			modules.initialize();
+			modules.initializeVirtualMembers();
+			modules.cleanUp();
 		}
 	}
 }
