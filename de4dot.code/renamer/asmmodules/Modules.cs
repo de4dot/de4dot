@@ -30,8 +30,20 @@ namespace de4dot.renamer.asmmodules {
 		AssemblyHash assemblyHash = new AssemblyHash();
 
 		List<TypeDef> allTypes = new List<TypeDef>();
-		List<TypeDef> baseTypes = new List<TypeDef>();	//TODO: Do we need this?
-		List<TypeDef> nonNestedTypes;	//TODO: Do we need this?
+		List<TypeDef> baseTypes = new List<TypeDef>();
+		List<TypeDef> nonNestedTypes;
+
+		public IEnumerable<TypeDef> AllTypes {
+			get { return allTypes; }
+		}
+
+		public IEnumerable<TypeDef> BaseTypes {
+			get { return baseTypes; }
+		}
+
+		public List<TypeDef> NonNestedTypes {
+			get { return nonNestedTypes; }
+		}
 
 		class AssemblyHash {
 			IDictionary<string, ModuleHash> assemblyHash = new Dictionary<string, ModuleHash>(StringComparer.Ordinal);

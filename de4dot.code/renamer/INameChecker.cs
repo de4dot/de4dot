@@ -17,32 +17,15 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using System.Collections.Generic;
-using Mono.Cecil;
-
-namespace de4dot.renamer.asmmodules {
-	class MethodDef : Ref {
-		IList<GenericParamDef> genericParams;
-
-		public MethodDefinition MethodDefinition {
-			get { return (MethodDefinition)memberReference; }
-		}
-
-		public MethodDef(MethodDefinition methodDefinition, TypeDef owner, int index)
-			: base(methodDefinition, owner, index) {
-			genericParams = GenericParamDef.createGenericParamDefList(MethodDefinition.GenericParameters);
-		}
-
-		public bool isPublic() {
-			return MethodDefinition.IsPublic;
-		}
-
-		public bool isVirtual() {
-			return MethodDefinition.IsVirtual;
-		}
-
-		public bool isNewSlot() {
-			return MethodDefinition.IsNewSlot;
-		}
+namespace de4dot.renamer {
+	interface INameChecker {
+		bool isValidNamespaceName(string ns);
+		bool isValidTypeName(string name);
+		bool isValidMethodName(string name);
+		bool isValidPropertyName(string name);
+		bool isValidEventName(string name);
+		bool isValidFieldName(string name);
+		bool isValidGenericParamName(string name);
+		bool isValidMethodArgName(string name);
 	}
 }

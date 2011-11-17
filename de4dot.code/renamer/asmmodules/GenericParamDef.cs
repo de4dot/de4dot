@@ -21,28 +21,23 @@ using System.Collections.Generic;
 using Mono.Cecil;
 
 namespace de4dot.renamer.asmmodules {
-	class MethodDef : Ref {
-		IList<GenericParamDef> genericParams;
-
-		public MethodDefinition MethodDefinition {
-			get { return (MethodDefinition)memberReference; }
+	class GenericParamDef : Ref {
+		public GenericParameter GenericParameter {
+			get { return (GenericParameter)memberReference; }
 		}
 
-		public MethodDef(MethodDefinition methodDefinition, TypeDef owner, int index)
-			: base(methodDefinition, owner, index) {
-			genericParams = GenericParamDef.createGenericParamDefList(MethodDefinition.GenericParameters);
+		public GenericParamDef(GenericParameter genericParameter, int index)
+			: base(genericParameter, null, index) {
 		}
 
-		public bool isPublic() {
-			return MethodDefinition.IsPublic;
-		}
-
-		public bool isVirtual() {
-			return MethodDefinition.IsVirtual;
-		}
-
-		public bool isNewSlot() {
-			return MethodDefinition.IsNewSlot;
+		public static List<GenericParamDef> createGenericParamDefList(IEnumerable<GenericParameter> parameters) {
+			var list = new List<GenericParamDef>();
+			if (parameters == null)
+				return list;
+			int i = 0;
+			foreach (var param in parameters)
+				list.Add(new GenericParamDef(param, i++));
+			return list;
 		}
 	}
 }

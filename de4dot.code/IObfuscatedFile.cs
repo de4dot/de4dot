@@ -20,6 +20,7 @@
 using System.Collections.Generic;
 using de4dot.deobfuscators;
 using Mono.Cecil;
+using de4dot.renamer;
 
 namespace de4dot {
 	interface IObfuscatedFile {
@@ -27,7 +28,7 @@ namespace de4dot {
 		IDeobfuscator Deobfuscator { get; }
 		string Filename { get; }
 		string NewFilename { get; }
-		Func<string, bool> IsValidName { get; }
+		INameChecker NameChecker { get; }
 		bool RenameResourcesInCode { get; }
 		bool RenameSymbols { get; }
 		bool RemoveNamespaceWithOneType { get; }

@@ -21,7 +21,7 @@ using Mono.Cecil;
 
 namespace de4dot.renamer.asmmodules {
 	abstract class Ref {
-		protected readonly MemberReference memberReference;
+		public readonly MemberReference memberReference;
 		public int Index { get; set; }
 		public TypeDef Owner { get; set; }
 

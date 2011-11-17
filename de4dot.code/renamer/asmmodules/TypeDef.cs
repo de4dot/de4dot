@@ -204,6 +204,7 @@ namespace de4dot.renamer.asmmodules {
 		MethodDefDict methods = new MethodDefDict();
 		PropertyDefDict properties = new PropertyDefDict();
 		TypeDefDict types = new TypeDefDict();
+		List<GenericParamDef> genericParams;
 		internal TypeInfo baseType = null;
 		internal IList<TypeInfo> interfaces = new List<TypeInfo>();	// directly implemented interfaces
 		internal IList<TypeDef> derivedTypes = new List<TypeDef>();
@@ -214,8 +215,16 @@ namespace de4dot.renamer.asmmodules {
 		Dictionary<TypeInfo, bool> allImplementedInterfaces = new Dictionary<TypeInfo, bool>();
 		InterfaceMethodInfos interfaceMethodInfos = new InterfaceMethodInfos();
 
+		public Module Module {
+			get { return module; }
+		}
+
 		public bool HasModule {
 			get { return module != null; }
+		}
+
+		public IList<GenericParamDef> GenericParams {
+			get { return genericParams; }
 		}
 
 		public IEnumerable<TypeDef> NestedTypes {
@@ -231,6 +240,7 @@ namespace de4dot.renamer.asmmodules {
 		public TypeDef(TypeDefinition typeDefinition, Module module, int index)
 			: base(typeDefinition, null, index) {
 			this.module = module;
+			genericParams = GenericParamDef.createGenericParamDefList(TypeDefinition.GenericParameters);
 		}
 
 		public void addInterface(TypeDef ifaceDef, TypeReference iface) {
@@ -288,6 +298,28 @@ namespace de4dot.renamer.asmmodules {
 				add(new MethodDef(type.Methods[i], this, i));
 			for (int i = 0; i < type.Properties.Count; i++)
 				add(new PropertyDef(type.Properties[i], this, i));
+		}
+
+		public bool isNested() {
+			return NestingType != null;
+		}
+
+		public bool isGlobalType() {
+			if (!isNested())
+				return TypeDefinition.IsPublic;
+			var mask = TypeDefinition.Attributes & TypeAttributes.VisibilityMask;
+			switch (mask) {
+			case TypeAttributes.NestedPrivate:
+			case TypeAttributes.NestedAssembly:
+			case TypeAttributes.NestedFamANDAssem:
+				return false;
+			case TypeAttributes.NestedPublic:
+			case TypeAttributes.NestedFamily:
+			case TypeAttributes.NestedFamORAssem:
+				return NestingType.isGlobalType();
+			default:
+				return false;
+			}
 		}
 
 		public void initializeVirtualMembers(MethodNameScopes scopes, IResolver resolver) {

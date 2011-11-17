@@ -40,6 +40,10 @@ namespace de4dot.renamer.asmmodules {
 			}
 		}
 
+		public IObfuscatedFile ObfuscatedFile {
+			get { return obfuscatedFile; }
+		}
+
 		public string Filename {
 			get { return obfuscatedFile.Filename; }
 		}

@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.MyStuff;
 using de4dot.blocks;
+using de4dot.renamer;
 
 namespace de4dot.deobfuscators {
 	interface IDeobfuscatorOptions {
@@ -49,11 +50,10 @@ namespace de4dot.deobfuscators {
 		RemoveNamespaceIfOneType = 1,
 	}
 
-	interface IDeobfuscator {
+	interface IDeobfuscator : INameChecker {
 		string Type { get; }
 		string TypeLong { get; }
 		string Name { get; }
-		Func<string, bool> IsValidName { get; }
 		IDeobfuscatorOptions TheOptions { get; }
 		IOperations Operations { get; set; }
 		StringFeatures StringFeatures { get; }

@@ -34,7 +34,7 @@ namespace de4dot.old_renamer {
 		List<MethodDefinition> allMethods;
 
 		public Func<string, bool> IsValidName {
-			get { return obfuscatedFile.IsValidName; }
+			get { return null; }
 		}
 
 		class RefToDef<R, D> where R : MemberReference where D : R {

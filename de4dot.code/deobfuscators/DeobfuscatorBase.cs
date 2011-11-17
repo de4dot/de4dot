@@ -77,10 +77,6 @@ namespace de4dot.deobfuscators {
 			get { return false; }
 		}
 
-		public Func<string, bool> IsValidName {
-			get { return (name) => checkValidName(name); }
-		}
-
 		public DeobfuscatorBase(OptionsBase optionsBase) {
 			this.optionsBase = optionsBase;
 			StringFeatures = StringFeatures.AllowAll;
@@ -501,6 +497,38 @@ namespace de4dot.deobfuscators {
 		protected CustomAttribute getAssemblyAttribute(TypeReference attr) {
 			var list = new List<CustomAttribute>(DotNetUtils.findAttributes(module.Assembly, attr));
 			return list.Count == 0 ? null : list[0];
+		}
+
+		public bool isValidNamespaceName(string ns) {
+			return checkValidName(ns);
+		}
+
+		public bool isValidTypeName(string name) {
+			return checkValidName(name);
+		}
+
+		public bool isValidMethodName(string name) {
+			return checkValidName(name);
+		}
+
+		public bool isValidPropertyName(string name) {
+			return checkValidName(name);
+		}
+
+		public bool isValidEventName(string name) {
+			return checkValidName(name);
+		}
+
+		public bool isValidFieldName(string name) {
+			return checkValidName(name);
+		}
+
+		public bool isValidGenericParamName(string name) {
+			return checkValidName(name);
+		}
+
+		public bool isValidMethodArgName(string name) {
+			return checkValidName(name);
 		}
 	}
 }

@@ -156,6 +156,7 @@
     <Compile Include="renamer\asmmodules\EventDef.cs" />
     <Compile Include="renamer\asmmodules\ExternalAssemblies.cs" />
     <Compile Include="renamer\asmmodules\FieldDef.cs" />
+    <Compile Include="renamer\asmmodules\GenericParamDef.cs" />
     <Compile Include="renamer\asmmodules\IResolver.cs" />
     <Compile Include="renamer\asmmodules\MemberRefFinder.cs" />
     <Compile Include="renamer\asmmodules\MethodDef.cs" />
@@ -166,7 +167,12 @@
     <Compile Include="renamer\asmmodules\Ref.cs" />
     <Compile Include="renamer\asmmodules\RefDict.cs" />
     <Compile Include="renamer\asmmodules\TypeDef.cs" />
+    <Compile Include="renamer\DerivedFrom.cs" />
+    <Compile Include="renamer\ExistingNames.cs" />
+    <Compile Include="renamer\INameChecker.cs" />
+    <Compile Include="renamer\NameCreators.cs" />
     <Compile Include="renamer\Renamer.cs" />
+    <Compile Include="renamer\TypeRenamerState.cs" />
     <Compile Include="StringDecrypter.cs" />
     <Compile Include="UserException.cs" />
     <Compile Include="Utils.cs" />
