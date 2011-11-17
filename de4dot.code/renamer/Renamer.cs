@@ -412,7 +412,7 @@ namespace de4dot.renamer {
 				return false;
 			if (method.Parameters[0].ParameterType.FullName != "System.String")
 				return false;
-			if (!method.DeclaringType.FullName.StartsWith("System.Windows.Forms.", StringComparison.Ordinal))
+			if (!Utils.StartsWith(method.DeclaringType.FullName, "System.Windows.Forms.", StringComparison.Ordinal))
 				return false;
 			return true;
 		}

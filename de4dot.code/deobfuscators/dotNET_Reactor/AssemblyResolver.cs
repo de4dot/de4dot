@@ -182,7 +182,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				var resource = rsrc as EmbeddedResource;
 				if (resource == null)
 					continue;
-				if (!resource.Name.StartsWith(prefix, StringComparison.Ordinal))
+				if (!Utils.StartsWith(resource.Name, prefix, StringComparison.Ordinal))
 					continue;
 
 				result.Add(resource);

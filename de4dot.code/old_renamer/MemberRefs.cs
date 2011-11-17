@@ -678,7 +678,7 @@ namespace de4dot.old_renamer {
 				return false;
 			if (method.Parameters[0].ParameterType.FullName != "System.String")
 				return false;
-			if (!method.DeclaringType.FullName.StartsWith("System.Windows.Forms.", StringComparison.Ordinal))
+			if (!Utils.StartsWith(method.DeclaringType.FullName, "System.Windows.Forms.", StringComparison.Ordinal))
 				return false;
 			return true;
 		}
@@ -1136,9 +1136,9 @@ namespace de4dot.old_renamer {
 				return null;
 			if (!MemberReferenceHelper.compareTypes(addMethod.DeclaringType, removeMethod.DeclaringType))
 				return null;
-			if (!addMethod.Name.StartsWith("add_", StringComparison.Ordinal))
+			if (!Utils.StartsWith(addMethod.Name, "add_", StringComparison.Ordinal))
 				return null;
-			if (!removeMethod.Name.StartsWith("remove_", StringComparison.Ordinal))
+			if (!Utils.StartsWith(removeMethod.Name, "remove_", StringComparison.Ordinal))
 				return null;
 			eventName = addMethod.Name.Substring(4);
 			if (eventName != removeMethod.Name.Substring(7))
@@ -1245,7 +1245,7 @@ namespace de4dot.old_renamer {
 					var addHandler = call.Operand as MethodReference;
 					if (addHandler == null)
 						continue;
-					if (!addHandler.Name.StartsWith("add_", StringComparison.Ordinal))
+					if (!Utils.StartsWith(addHandler.Name, "add_", StringComparison.Ordinal))
 						continue;
 
 					var eventName = addHandler.Name.Substring(4);
@@ -1309,7 +1309,7 @@ namespace de4dot.old_renamer {
 					var addMethod = call.Operand as MethodReference;
 					if (addMethod == null)
 						continue;
-					if (!addMethod.Name.StartsWith("add_", StringComparison.Ordinal))
+					if (!Utils.StartsWith(addMethod.Name, "add_", StringComparison.Ordinal))
 						continue;
 
 					var eventName = addMethod.Name.Substring(4);
