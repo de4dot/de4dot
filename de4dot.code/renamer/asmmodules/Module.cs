@@ -31,13 +31,25 @@ namespace de4dot.renamer.asmmodules {
 		IList<RefToDef<MethodReference, MethodDefinition>> methodRefsToRename = new List<RefToDef<MethodReference, MethodDefinition>>();
 		IList<RefToDef<FieldReference, FieldDefinition>> fieldRefsToRename = new List<RefToDef<FieldReference, FieldDefinition>>();
 
-		class RefToDef<R, D> where R : MemberReference where D : R {
+		public class RefToDef<R, D> where R : MemberReference where D : R {
 			public R reference;
 			public D definition;
 			public RefToDef(R reference, D definition) {
 				this.reference = reference;
 				this.definition = definition;
 			}
+		}
+
+		public IEnumerable<RefToDef<TypeReference, TypeDefinition>> TypeRefsToRename {
+			get { return typeRefsToRename; }
+		}
+
+		public IEnumerable<RefToDef<MethodReference, MethodDefinition>> MethodRefsToRename {
+			get { return methodRefsToRename; }
+		}
+
+		public IEnumerable<RefToDef<FieldReference, FieldDefinition>> FieldRefsToRename {
+			get { return fieldRefsToRename; }
 		}
 
 		public IObfuscatedFile ObfuscatedFile {
@@ -109,6 +121,15 @@ namespace de4dot.renamer.asmmodules {
 				if (fieldDef != null)
 					fieldRefsToRename.Add(new RefToDef<FieldReference, FieldDefinition>(fieldRef, fieldDef.FieldDefinition));
 			}
+		}
+
+		public void onTypesRenamed() {
+			var newTypes = new TypeDefDict();
+			foreach (var typeDef in types.getAll()) {
+				typeDef.onTypesRenamed();
+				newTypes.add(typeDef);
+			}
+			types = newTypes;
 		}
 
 		static TypeReference getNonGenericTypeReference(TypeReference typeReference) {

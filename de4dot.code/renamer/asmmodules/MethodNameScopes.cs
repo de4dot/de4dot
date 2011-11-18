@@ -41,6 +41,10 @@ namespace de4dot.renamer.asmmodules {
 				return;
 			methods.AddRange(other.methods);
 		}
+
+		public override string ToString() {
+			return string.Format("{0} -- {1}", methods.Count, methods.Count > 0 ? methods[0].ToString() : "");
+		}
 	}
 
 	class MethodNameScopes {
@@ -77,6 +81,10 @@ namespace de4dot.renamer.asmmodules {
 			a.merge(b);
 			foreach (var methodDef in b.Methods)
 				methodScopes[methodDef] = a;
+		}
+
+		public IEnumerable<MethodNameScope> getAllScopes() {
+			return Utils.unique(methodScopes.Values);
 		}
 	}
 }

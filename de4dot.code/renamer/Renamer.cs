@@ -17,163 +17,21 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using de4dot.blocks;
 using de4dot.renamer.asmmodules;
 
 namespace de4dot.renamer {
-	class MemberInfo {
-		Ref memberRef;
-		public string oldFullName;
-		public string oldName;
-		public string newName;
-		public bool renamed;
-
-		public MemberInfo(Ref memberRef) {
-			this.memberRef = memberRef;
-			oldFullName = memberRef.memberReference.FullName;
-			oldName = memberRef.memberReference.Name;
-			newName = memberRef.memberReference.Name;
-		}
-
-		public void rename(string newTypeName) {
-			renamed = true;
-			newName = newTypeName;
-		}
-
-		public bool gotNewName() {
-			return oldName != newName;
-		}
-	}
-
-	class TypeInfo : MemberInfo {
-		public string oldNamespace;
-		public string newNamespace;
-
-		public TypeInfo(TypeDef type)
-			: base(type) {
-			oldNamespace = type.TypeDefinition.Namespace;
-		}
-	}
-
-	class GenericParamInfo : MemberInfo {
-		public GenericParamInfo(GenericParamDef genericParamDef)
-			: base(genericParamDef) {
-		}
-	}
-
 	class Renamer {
 		public bool RenameNamespaces { get; set; }
 		public bool RenameTypes { get; set; }
+		public bool RenameGenericParams { get; set; }
 		public bool RenameProperties { get; set; }
 		public bool RenameEvents { get; set; }
 		public bool RenameFields { get; set; }
-		public bool RenameGenericParams { get; set; }
+		public bool RenameMethods { get; set; }
 		public bool RenameMethodArgs { get; set; }
 		Modules modules = new Modules();
-		DerivedFrom isWinFormsClass;
-		Dictionary<TypeDef, TypeInfo> allTypeInfos = new Dictionary<TypeDef, TypeInfo>();
-		Dictionary<GenericParamDef, GenericParamInfo> allGenericParamInfos = new Dictionary<GenericParamDef, GenericParamInfo>();
-		Dictionary<MethodDef, string> suggestedMethodNames = new Dictionary<MethodDef, string>();
-
-		static string[] WINFORMS_CLASSES = new string[] {
-#region Win Forms class names
-			"System.Windows.Forms.Control",
-			"System.Windows.Forms.AxHost",
-			"System.Windows.Forms.ButtonBase",
-			"System.Windows.Forms.Button",
-			"System.Windows.Forms.CheckBox",
-			"System.Windows.Forms.RadioButton",
-			"System.Windows.Forms.DataGrid",
-			"System.Windows.Forms.DataGridView",
-			"System.Windows.Forms.DataVisualization.Charting.Chart",
-			"System.Windows.Forms.DateTimePicker",
-			"System.Windows.Forms.GroupBox",
-			"System.Windows.Forms.Integration.ElementHost",
-			"System.Windows.Forms.Label",
-			"System.Windows.Forms.LinkLabel",
-			"System.Windows.Forms.ListControl",
-			"System.Windows.Forms.ComboBox",
-			"Microsoft.VisualBasic.Compatibility.VB6.DriveListBox",
-			"System.Windows.Forms.DataGridViewComboBoxEditingControl",
-			"System.Windows.Forms.ListBox",
-			"Microsoft.VisualBasic.Compatibility.VB6.DirListBox",
-			"Microsoft.VisualBasic.Compatibility.VB6.FileListBox",
-			"System.Windows.Forms.CheckedListBox",
-			"System.Windows.Forms.ListView",
-			"System.Windows.Forms.MdiClient",
-			"System.Windows.Forms.MonthCalendar",
-			"System.Windows.Forms.PictureBox",
-			"System.Windows.Forms.PrintPreviewControl",
-			"System.Windows.Forms.ProgressBar",
-			"System.Windows.Forms.ScrollableControl",
-			"System.Windows.Forms.ContainerControl",
-			"System.Windows.Forms.Form",
-			"System.ComponentModel.Design.CollectionEditor.CollectionForm",
-			"System.Messaging.Design.QueuePathDialog",
-			"System.ServiceProcess.Design.ServiceInstallerDialog",
-			"System.Web.UI.Design.WebControls.CalendarAutoFormatDialog",
-			"System.Web.UI.Design.WebControls.RegexEditorDialog",
-			"System.Windows.Forms.Design.ComponentEditorForm",
-			"System.Windows.Forms.PrintPreviewDialog",
-			"System.Windows.Forms.ThreadExceptionDialog",
-			"System.Workflow.Activities.Rules.Design.RuleConditionDialog",
-			"System.Workflow.Activities.Rules.Design.RuleSetDialog",
-			"System.Workflow.ComponentModel.Design.ThemeConfigurationDialog",
-			"System.Workflow.ComponentModel.Design.TypeBrowserDialog",
-			"System.Workflow.ComponentModel.Design.WorkflowPageSetupDialog",
-			"System.Windows.Forms.PropertyGrid",
-			"System.Windows.Forms.SplitContainer",
-			"System.Windows.Forms.ToolStripContainer",
-			"System.Windows.Forms.ToolStripPanel",
-			"System.Windows.Forms.UpDownBase",
-			"System.Windows.Forms.DomainUpDown",
-			"System.Windows.Forms.NumericUpDown",
-			"System.Windows.Forms.UserControl",
-			"Microsoft.VisualBasic.Compatibility.VB6.ADODC",
-			"System.Web.UI.Design.WebControls.ParameterEditorUserControl",
-			"System.Workflow.ComponentModel.Design.WorkflowOutline",
-			"System.Workflow.ComponentModel.Design.WorkflowView",
-			"System.Windows.Forms.Design.ComponentTray",
-			"System.Windows.Forms.Panel",
-			"System.Windows.Forms.Design.ComponentEditorPage",
-			"System.Windows.Forms.FlowLayoutPanel",
-			"System.Windows.Forms.SplitterPanel",
-			"System.Windows.Forms.TableLayoutPanel",
-			"System.ComponentModel.Design.ByteViewer",
-			"System.Windows.Forms.TabPage",
-			"System.Windows.Forms.ToolStripContentPanel",
-			"System.Windows.Forms.ToolStrip",
-			"System.Windows.Forms.BindingNavigator",
-			"System.Windows.Forms.MenuStrip",
-			"System.Windows.Forms.StatusStrip",
-			"System.Windows.Forms.ToolStripDropDown",
-			"System.Windows.Forms.ToolStripDropDownMenu",
-			"System.Windows.Forms.ContextMenuStrip",
-			"System.Windows.Forms.ToolStripOverflow",
-			"System.Windows.Forms.ScrollBar",
-			"System.Windows.Forms.HScrollBar",
-			"System.Windows.Forms.VScrollBar",
-			"System.Windows.Forms.Splitter",
-			"System.Windows.Forms.StatusBar",
-			"System.Windows.Forms.TabControl",
-			"System.Windows.Forms.TextBoxBase",
-			"System.Windows.Forms.MaskedTextBox",
-			"System.Windows.Forms.RichTextBox",
-			"System.Windows.Forms.TextBox",
-			"System.Windows.Forms.DataGridTextBox",
-			"System.Windows.Forms.DataGridViewTextBoxEditingControl",
-			"System.Windows.Forms.ToolBar",
-			"System.Windows.Forms.TrackBar",
-			"System.Windows.Forms.TreeView",
-			"System.ComponentModel.Design.ObjectSelectorEditor.Selector",
-			"System.Windows.Forms.WebBrowserBase",
-			"System.Windows.Forms.WebBrowser",
-#endregion
-		};
+		MemberInfos memberInfos = new MemberInfos();
 
 		public Renamer(IEnumerable<IObfuscatedFile> files) {
 			RenameNamespaces = true;
@@ -186,8 +44,6 @@ namespace de4dot.renamer {
 
 			foreach (var file in files)
 				modules.add(new Module(file));
-
-			isWinFormsClass = new DerivedFrom(WINFORMS_CLASSES);
 		}
 
 		public void rename() {
@@ -197,22 +53,18 @@ namespace de4dot.renamer {
 
 			modules.initialize();
 			modules.initializeVirtualMembers();
+			memberInfos.initialize(modules);
 			renameTypeDefinitions();
+			renameTypeReferences();
+			modules.onTypesRenamed();
+			prepareRenameMemberDefinitions();
 			modules.cleanUp();
 		}
 
 		void renameTypeDefinitions() {
 			Log.v("Renaming obfuscated type definitions");
 
-			prepareRenameTypes();
-		}
-
-		void prepareRenameTypes() {
-			foreach (var type in modules.AllTypes)
-				allTypeInfos[type] = new TypeInfo(type);
-
-			var state = new TypeRenamerState();
-			prepareRenameTypes(modules.BaseTypes, state);
+			prepareRenameTypes(modules.BaseTypes, new TypeRenamerState());
 			fixClsTypeNames();
 			renameTypeDefinitions(modules.NonNestedTypes);
 		}
@@ -228,7 +80,7 @@ namespace de4dot.renamer {
 
 		void rename(TypeDef type) {
 			var typeDefinition = type.TypeDefinition;
-			var info = allTypeInfos[type];
+			var info = memberInfos.type(type);
 
 			Log.v("Type: {0} ({1:X8})", typeDefinition.FullName, typeDefinition.MetadataToken.ToUInt32());
 			Log.indent();
@@ -254,7 +106,7 @@ namespace de4dot.renamer {
 			if (!RenameGenericParams)
 				return;
 			foreach (var param in genericParams) {
-				var info = allGenericParamInfos[param];
+				var info = memberInfos.gparam(param);
 				if (!info.gotNewName())
 					continue;
 				param.GenericParameter.Name = info.newName;
@@ -273,7 +125,7 @@ namespace de4dot.renamer {
 		void fixClsTypeNames(TypeDef nesting, TypeDef nested) {
 			int nestingCount = nesting == null ? 0 : nesting.GenericParams.Count;
 			int arity = nested.GenericParams.Count - nestingCount;
-			var nestedInfo = allTypeInfos[nested];
+			var nestedInfo = memberInfos.type(nested);
 			if (nestedInfo.renamed && arity > 0)
 				nestedInfo.newName += "`" + arity;
 			foreach (var nestedType in nested.NestedTypes)
@@ -282,139 +134,74 @@ namespace de4dot.renamer {
 
 		void prepareRenameTypes(IEnumerable<TypeDef> types, TypeRenamerState state) {
 			foreach (var typeDef in types) {
-				prepareRenameTypes(typeDef, state);
+				memberInfos.type(typeDef).prepareRenameTypes(state);
 				prepareRenameTypes(typeDef.derivedTypes, state);
 			}
 		}
 
-		void prepareRenameTypes(TypeDef type, TypeRenamerState state) {
-			var info = allTypeInfos[type];
-			var checker = type.Module.ObfuscatedFile.NameChecker;
-
-			if (RenameNamespaces) {
-				if (info.newNamespace == null && info.oldNamespace != "") {
-					if (!checker.isValidNamespaceName(info.oldNamespace)) {
-						info.newNamespace = state.createNamespace(info.oldNamespace);
-					}
+		void renameTypeReferences() {
+			Log.v("Renaming references to type definitions");
+			var theModules = modules.TheModules;
+			foreach (var module in theModules) {
+				if (theModules.Count > 1)
+					Log.v("Renaming references to type definitions ({0})", module.Filename);
+				Log.indent();
+				foreach (var refToDef in module.TypeRefsToRename) {
+					refToDef.reference.Name = refToDef.definition.Name;
+					refToDef.reference.Namespace = refToDef.definition.Namespace;
 				}
-			}
-
-			if (RenameTypes) {
-				if (info.oldFullName != "<Module>" && !checker.isValidTypeName(info.oldName)) {
-					string origClassName = null;
-					if (isWinFormsClass.check(type))
-						origClassName = findWindowsFormsClassName(type);
-					if (origClassName != null && checker.isValidTypeName(origClassName))
-						info.rename(state.getTypeName(info.oldName, origClassName));
-					else {
-						ITypeNameCreator nameCreator = type.isGlobalType() ?
-												state.globalTypeNameCreator :
-												state.internalTypeNameCreator;
-						string newBaseType = null;
-						TypeInfo baseInfo;
-						if (type.baseType != null && allTypeInfos.TryGetValue(type.baseType.typeDef, out baseInfo)) {
-							if (baseInfo.renamed)
-								newBaseType = baseInfo.newName;
-						}
-						info.rename(nameCreator.create(type.TypeDefinition, newBaseType));
-					}
-				}
-			}
-
-			if (RenameGenericParams)
-				prepareRenameGenericParams(type.GenericParams, checker);
-		}
-
-		void prepareRenameGenericParams(IEnumerable<GenericParamDef> genericParams, INameChecker checker, IEnumerable<GenericParamDef> otherGenericParams = null) {
-			var usedNames = new Dictionary<string, bool>(StringComparer.Ordinal);
-			var nameCreator = new GenericParamNameCreator();
-
-			foreach (var gp in genericParams)
-				allGenericParamInfos[gp] = new GenericParamInfo(gp);
-
-			if (otherGenericParams != null) {
-				foreach (var param in otherGenericParams) {
-					var gpInfo = allGenericParamInfos[param];
-					usedNames[gpInfo.newName] = true;
-				}
-			}
-
-			foreach (var param in genericParams) {
-				var gpInfo = allGenericParamInfos[param];
-				if (!checker.isValidGenericParamName(gpInfo.oldName) || usedNames.ContainsKey(gpInfo.oldName)) {
-					string newName;
-					do {
-						newName = nameCreator.create();
-					} while (usedNames.ContainsKey(newName));
-					usedNames[newName] = true;
-					gpInfo.rename(newName);
-				}
+				Log.deIndent();
 			}
 		}
 
-		string findWindowsFormsClassName(TypeDef type) {
-			foreach (var methodDef in type.getAllMethods()) {
-				if (methodDef.MethodDefinition.Body == null)
-					continue;
-				if (methodDef.MethodDefinition.IsStatic || methodDef.MethodDefinition.IsVirtual)
-					continue;
-				var instructions = methodDef.MethodDefinition.Body.Instructions;
-				for (int i = 2; i < instructions.Count; i++) {
-					var call = instructions[i];
-					if (call.OpCode.Code != Code.Call && call.OpCode.Code != Code.Callvirt)
-						continue;
-					if (!isWindowsFormsSetNameMethod(call.Operand as MethodReference))
-						continue;
+		void prepareRenameMemberDefinitions() {
+			Log.v("Renaming member definitions #1");
 
-					var ldstr = instructions[i - 1];
-					if (ldstr.OpCode.Code != Code.Ldstr)
-						continue;
-					var className = ldstr.Operand as string;
-					if (className == null)
-						continue;
+			prepareRenameEntryPoints();
 
-					if (DotNetUtils.getArgIndex(methodDef.MethodDefinition, instructions[i - 2]) != 0)
-						continue;
+			foreach (var typeDef in modules.BaseTypes)
+				memberInfos.type(typeDef).variableNameState = new VariableNameState();
 
-					findInitializeComponentMethod(type, methodDef);
-					return className;
-				}
-			}
-			return null;
+			foreach (var typeDef in modules.AllTypes)
+				prepareRenameMembers(typeDef);
 		}
 
-		void findInitializeComponentMethod(TypeDef type, MethodDef possibleInitMethod) {
-			foreach (var methodDef in type.getAllMethods()) {
-				if (methodDef.MethodDefinition.Name != ".ctor")
-					continue;
-				if (methodDef.MethodDefinition.Body == null)
-					continue;
-				foreach (var instr in methodDef.MethodDefinition.Body.Instructions) {
-					if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt)
-						continue;
-					if (!MemberReferenceHelper.compareMethodReferenceAndDeclaringType(possibleInitMethod.MethodDefinition, instr.Operand as MethodReference))
-						continue;
+		Dictionary<TypeDef, bool> prepareRenameMembersCalled = new Dictionary<TypeDef, bool>();
+		void prepareRenameMembers(TypeDef type) {
+			if (prepareRenameMembersCalled.ContainsKey(type))
+				return;
+			prepareRenameMembersCalled[type] = true;
 
-					suggestedMethodNames[possibleInitMethod] = "InitializeComponent";
-					return;
-				}
-			}
+			foreach (var ifaceInfo in type.interfaces)
+				prepareRenameMembers(ifaceInfo.typeDef);
+			if (type.baseType != null)
+				prepareRenameMembers(type.baseType.typeDef);
+
+			TypeInfo info;
+			if (memberInfos.tryGetType(type, out info))
+				info.prepareRenameMembers();
 		}
 
-		static bool isWindowsFormsSetNameMethod(MethodReference method) {
-			if (method == null)
-				return false;
-			if (method.Name != "set_Name")
-				return false;
-			if (method.MethodReturnType.ReturnType.FullName != "System.Void")
-				return false;
-			if (method.Parameters.Count != 1)
-				return false;
-			if (method.Parameters[0].ParameterType.FullName != "System.String")
-				return false;
-			if (!Utils.StartsWith(method.DeclaringType.FullName, "System.Windows.Forms.", StringComparison.Ordinal))
-				return false;
-			return true;
+		void prepareRenameEntryPoints() {
+			foreach (var module in modules.TheModules) {
+				var entryPoint = module.ModuleDefinition.EntryPoint;
+				if (entryPoint == null)
+					continue;
+				var methodDef = modules.resolve(entryPoint);
+				if (methodDef == null) {
+					Log.w(string.Format("Could not find entry point. Module: {0}, Method: {1}", module.ModuleDefinition.FullyQualifiedName, entryPoint));
+					continue;
+				}
+				if (!methodDef.isStatic())
+					continue;
+				memberInfos.method(methodDef).suggestedName = "Main";
+				if (methodDef.ParamDefs.Count == 1) {
+					var paramDef = methodDef.ParamDefs[0];
+					var type = paramDef.ParameterDefinition.ParameterType;
+					if (type.FullName == "System.String[]")
+						memberInfos.param(paramDef).newName = "args";
+				}
+			}
 		}
 	}
 }

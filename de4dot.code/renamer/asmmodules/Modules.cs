@@ -33,6 +33,10 @@ namespace de4dot.renamer.asmmodules {
 		List<TypeDef> baseTypes = new List<TypeDef>();
 		List<TypeDef> nonNestedTypes;
 
+		public IList<Module> TheModules {
+			get { return modules; }
+		}
+
 		public IEnumerable<TypeDef> AllTypes {
 			get { return allTypes; }
 		}
@@ -256,6 +260,11 @@ namespace de4dot.renamer.asmmodules {
 			var scopes = new MethodNameScopes();
 			foreach (var typeDef in allTypes)
 				typeDef.initializeVirtualMembers(scopes, this);
+		}
+
+		public void onTypesRenamed() {
+			foreach (var module in modules)
+				module.onTypesRenamed();
 		}
 
 		public void cleanUp() {

@@ -114,7 +114,7 @@ namespace de4dot.renamer.asmmodules {
 
 		public InterfaceMethodInfo(TypeInfo iface) {
 			this.iface = iface;
-			foreach (var methodDef in iface.typeDef.getAllMethods())
+			foreach (var methodDef in iface.typeDef.AllMethods)
 				ifaceMethodToClassMethod[methodDef] = null;
 		}
 
@@ -237,6 +237,38 @@ namespace de4dot.renamer.asmmodules {
 			get { return (TypeDefinition)memberReference; }
 		}
 
+		public IEnumerable<EventDef> AllEvents {
+			get { return events.getAll(); }
+		}
+
+		public IEnumerable<FieldDef> AllFields {
+			get { return fields.getAll(); }
+		}
+
+		public IEnumerable<MethodDef> AllMethods {
+			get { return methods.getAll(); }
+		}
+
+		public IEnumerable<PropertyDef> AllProperties {
+			get { return properties.getAll(); }
+		}
+
+		public IEnumerable<EventDef> AllEventsSorted {
+			get { return events.getSorted(); }
+		}
+
+		public IEnumerable<FieldDef> AllFieldsSorted {
+			get { return fields.getSorted(); }
+		}
+
+		public IEnumerable<MethodDef> AllMethodsSorted {
+			get { return methods.getSorted(); }
+		}
+
+		public IEnumerable<PropertyDef> AllPropertiesSorted {
+			get { return properties.getSorted(); }
+		}
+
 		public TypeDef(TypeDefinition typeDefinition, Module module, int index)
 			: base(typeDefinition, null, index) {
 			this.module = module;
@@ -283,10 +315,6 @@ namespace de4dot.renamer.asmmodules {
 			return fields.find(fr);
 		}
 
-		public IEnumerable<MethodDef> getAllMethods() {
-			return methods.getAll();
-		}
-
 		public void addMembers() {
 			var type = TypeDefinition;
 
@@ -298,6 +326,31 @@ namespace de4dot.renamer.asmmodules {
 				add(new MethodDef(type.Methods[i], this, i));
 			for (int i = 0; i < type.Properties.Count; i++)
 				add(new PropertyDef(type.Properties[i], this, i));
+
+			foreach (var propDef in properties.getAll()) {
+				foreach (var method in propDef.methodDefinitions()) {
+					var methodDef = find(method);
+					if (methodDef == null)
+						throw new ApplicationException("Could not find property method");
+					methodDef.Property = propDef;
+				}
+			}
+
+			foreach (var eventDef in events.getAll()) {
+				foreach (var method in eventDef.methodDefinitions()) {
+					var methodDef = find(method);
+					if (methodDef == null)
+						throw new ApplicationException("Could not find event method");
+					methodDef.Event = eventDef;
+				}
+			}
+		}
+
+		public void onTypesRenamed() {
+			events.onTypesRenamed();
+			fields.onTypesRenamed();
+			methods.onTypesRenamed();
+			types.onTypesRenamed();
 		}
 
 		public bool isNested() {
@@ -361,7 +414,13 @@ namespace de4dot.renamer.asmmodules {
 			}
 		}
 
+		Dictionary<MethodDef, bool> overrideMethods;
 		void initializeInterfaceMethods(MethodNameScopes scopes) {
+			if (baseType != null)
+				overrideMethods = new Dictionary<MethodDef, bool>(baseType.typeDef.overrideMethods);
+			else
+				overrideMethods = new Dictionary<MethodDef, bool>();
+
 			initializeAllInterfaces();
 
 			if (TypeDefinition.IsInterface)
@@ -448,7 +507,6 @@ namespace de4dot.renamer.asmmodules {
 			//---	inherited or chosen by name matching.
 			methodsDict.Clear();
 			var ifaceMethodsDict = new Dictionary<MethodReferenceAndDeclaringTypeKey, MethodDef>();
-			var overrideMethods = new Dictionary<MethodDef, bool>();
 			foreach (var ifaceInfo in allImplementedInterfaces.Keys) {
 				var git = ifaceInfo.typeReference as GenericInstanceType;
 				foreach (var ifaceMethod in ifaceInfo.typeDef.methods.getAll()) {

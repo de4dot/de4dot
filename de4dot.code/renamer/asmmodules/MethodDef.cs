@@ -23,6 +23,18 @@ using Mono.Cecil;
 namespace de4dot.renamer.asmmodules {
 	class MethodDef : Ref {
 		IList<GenericParamDef> genericParams;
+		IList<ParamDef> paramDefs = new List<ParamDef>();
+
+		public PropertyDef Property { get; set; }
+		public EventDef Event { get; set; }
+
+		public IList<ParamDef> ParamDefs {
+			get { return paramDefs; }
+		}
+
+		public IList<GenericParamDef> GenericParams {
+			get { return genericParams; }
+		}
 
 		public MethodDefinition MethodDefinition {
 			get { return (MethodDefinition)memberReference; }
@@ -31,6 +43,10 @@ namespace de4dot.renamer.asmmodules {
 		public MethodDef(MethodDefinition methodDefinition, TypeDef owner, int index)
 			: base(methodDefinition, owner, index) {
 			genericParams = GenericParamDef.createGenericParamDefList(MethodDefinition.GenericParameters);
+			for (int i = 0; i < methodDefinition.Parameters.Count; i++) {
+				var param = methodDefinition.Parameters[i];
+				paramDefs.Add(new ParamDef(param, i));
+			}
 		}
 
 		public bool isPublic() {
@@ -43,6 +59,10 @@ namespace de4dot.renamer.asmmodules {
 
 		public bool isNewSlot() {
 			return MethodDefinition.IsNewSlot;
+		}
+
+		public bool isStatic() {
+			return MethodDefinition.IsStatic;
 		}
 	}
 }
