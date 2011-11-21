@@ -500,35 +500,35 @@ namespace de4dot.deobfuscators {
 		}
 
 		public bool isValidNamespaceName(string ns) {
-			return checkValidName(ns);
+			return ns != null && checkValidName(ns);
 		}
 
 		public bool isValidTypeName(string name) {
-			return checkValidName(name);
+			return name != null && checkValidName(name);
 		}
 
 		public bool isValidMethodName(string name) {
-			return checkValidName(name);
+			return name != null && checkValidName(name);
 		}
 
 		public bool isValidPropertyName(string name) {
-			return checkValidName(name);
+			return name != null && checkValidName(name);
 		}
 
 		public bool isValidEventName(string name) {
-			return checkValidName(name);
+			return name != null && checkValidName(name);
 		}
 
 		public bool isValidFieldName(string name) {
-			return checkValidName(name);
+			return name != null && checkValidName(name);
 		}
 
 		public bool isValidGenericParamName(string name) {
-			return checkValidName(name);
+			return name != null && checkValidName(name);
 		}
 
 		public bool isValidMethodArgName(string name) {
-			return checkValidName(name);
+			return name != null && checkValidName(name);
 		}
 	}
 }
