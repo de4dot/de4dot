@@ -281,7 +281,8 @@ namespace de4dot.renamer {
 				}
 			}
 
-			if (methodDef.Property != null && methodDef == methodDef.Property.SetMethod) {
+			if ((methodDef.Property != null && methodDef == methodDef.Property.SetMethod) ||
+				(methodDef.Event != null && (methodDef == methodDef.Event.AddMethod || methodDef == methodDef.Event.RemoveMethod))) {
 				if (methodDef.ParamDefs.Count > 0) {
 					var paramDef = methodDef.ParamDefs[methodDef.ParamDefs.Count - 1];
 					param(paramDef).newName = "value";
