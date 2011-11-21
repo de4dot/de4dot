@@ -835,5 +835,12 @@ namespace de4dot.blocks {
 			}
 			return null;
 		}
+
+		static int nextTokenRid = 0x00FFFFFF;
+		public static PropertyDefinition createPropertyDefinition(string name, TypeReference propType) {
+			var propDef = new PropertyDefinition(name, PropertyAttributes.None, propType);
+			propDef.MetadataToken = new MetadataToken(TokenType.Property, nextTokenRid--);
+			return propDef;
+		}
 	}
 }
