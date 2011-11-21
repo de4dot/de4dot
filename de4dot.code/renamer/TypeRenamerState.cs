@@ -36,6 +36,10 @@ namespace de4dot.renamer {
 			internalTypeNameCreator = new TypeNameCreator(existingNames);
 		}
 
+		public void addTypeName(string name) {
+			existingNames.add(name);
+		}
+
 		public string getTypeName(string oldName, string newName) {
 			return existingNames.getName(oldName, new NameCreator2(newName));
 		}

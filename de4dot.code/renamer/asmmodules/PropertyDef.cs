@@ -22,6 +22,9 @@ using Mono.Cecil;
 
 namespace de4dot.renamer.asmmodules {
 	class PropertyDef : Ref {
+		public MethodDef GetMethod { get; set; }
+		public MethodDef SetMethod { get; set; }
+
 		public PropertyDefinition PropertyDefinition {
 			get { return (PropertyDefinition)memberReference; }
 		}

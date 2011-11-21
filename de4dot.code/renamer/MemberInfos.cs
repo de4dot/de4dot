@@ -22,7 +22,7 @@ using de4dot.renamer.asmmodules;
 
 namespace de4dot.renamer {
 	class MemberInfo {
-		Ref memberRef;
+		protected Ref memberRef;
 		public string oldFullName;
 		public string oldName;
 		public string newName;
@@ -71,6 +71,10 @@ namespace de4dot.renamer {
 	}
 
 	class MethodInfo : MemberInfo {
+		public MethodDef MethodDef {
+			get { return (MethodDef)memberRef; }
+		}
+
 		public MethodInfo(MethodDef methodDef)
 			: base(methodDef) {
 		}
@@ -238,6 +242,10 @@ namespace de4dot.renamer {
 			return allParamInfos[param];
 		}
 
+		public void add(PropertyDef prop) {
+			allPropertyInfos[prop] = new PropertyInfo(prop);
+		}
+
 		public void initialize(Modules modules) {
 			foreach (var type in modules.AllTypes) {
 				allTypeInfos[type] = new TypeInfo(type, this);
@@ -252,7 +260,7 @@ namespace de4dot.renamer {
 					allEventInfos[evt] = new EventInfo(evt);
 
 				foreach (var prop in type.AllProperties)
-					allPropertyInfos[prop] = new PropertyInfo(prop);
+					add(prop);
 
 				foreach (var method in type.AllMethods) {
 					allMethodInfos[method] = new MethodInfo(method);

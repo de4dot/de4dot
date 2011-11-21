@@ -30,6 +30,7 @@ namespace de4dot.renamer.asmmodules {
 		IList<RefToDef<TypeReference, TypeDefinition>> typeRefsToRename = new List<RefToDef<TypeReference, TypeDefinition>>();
 		IList<RefToDef<MethodReference, MethodDefinition>> methodRefsToRename = new List<RefToDef<MethodReference, MethodDefinition>>();
 		IList<RefToDef<FieldReference, FieldDefinition>> fieldRefsToRename = new List<RefToDef<FieldReference, FieldDefinition>>();
+		List<MethodDefinition> allMethods;
 
 		public class RefToDef<R, D> where R : MemberReference where D : R {
 			public R reference;
@@ -72,9 +73,14 @@ namespace de4dot.renamer.asmmodules {
 			return types.getAll();
 		}
 
+		public IEnumerable<MethodDefinition> getAllMethods() {
+			return allMethods;
+		}
+
 		public void findAllMemberReferences(ref int typeIndex) {
 			memberRefFinder = new MemberRefFinder();
 			memberRefFinder.findAll(ModuleDefinition, ModuleDefinition.Types);
+			allMethods = new List<MethodDefinition>(memberRefFinder.methodDefinitions.Keys);
 
 			var allTypesList = new List<TypeDef>();
 			foreach (var type in memberRefFinder.typeDefinitions.Keys) {

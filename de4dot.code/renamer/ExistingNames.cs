@@ -28,7 +28,7 @@ namespace de4dot.renamer {
 			allNames[name] = true;
 		}
 
-		bool exists(string name) {
+		public bool exists(string name) {
 			return allNames.ContainsKey(name);
 		}
 

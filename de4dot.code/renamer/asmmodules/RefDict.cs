@@ -23,6 +23,7 @@ using de4dot.blocks;
 
 namespace de4dot.renamer.asmmodules {
 	interface RefDict<TRef, TMRef> where TRef : Ref where TMRef : MemberReference {
+		int Count { get; }
 		IEnumerable<TRef> getAll();
 		IEnumerable<TRef> getSorted();
 		TRef find(TMRef tmref);
@@ -34,17 +35,17 @@ namespace de4dot.renamer.asmmodules {
 		Dictionary<ScopeAndTokenKey, TypeDef> tokenToTypeDef = new Dictionary<ScopeAndTokenKey, TypeDef>();
 		Dictionary<TypeReferenceKey, TypeDef> typeRefToDef = new Dictionary<TypeReferenceKey, TypeDef>();
 
+		public int Count {
+			get { return tokenToTypeDef.Count; }
+		}
+
 		public IEnumerable<TypeDef> getAll() {
 			return tokenToTypeDef.Values;
 		}
 
 		public IEnumerable<TypeDef> getSorted() {
 			var list = new List<TypeDef>(getAll());
-			list.Sort((a, b) => {
-				if (a.Index < b.Index) return -1;
-				if (a.Index > b.Index) return 1;
-				return 0;
-			});
+			list.Sort((a, b) => Utils.compareInt32(a.Index, b.Index));
 			return list;
 		}
 
@@ -74,17 +75,17 @@ namespace de4dot.renamer.asmmodules {
 		Dictionary<ScopeAndTokenKey, FieldDef> tokenToFieldDef = new Dictionary<ScopeAndTokenKey, FieldDef>();
 		Dictionary<FieldReferenceKey, FieldDef> fieldRefToDef = new Dictionary<FieldReferenceKey, FieldDef>();
 
+		public int Count {
+			get { return tokenToFieldDef.Count; }
+		}
+
 		public IEnumerable<FieldDef> getAll() {
 			return tokenToFieldDef.Values;
 		}
 
 		public IEnumerable<FieldDef> getSorted() {
 			var list = new List<FieldDef>(getAll());
-			list.Sort((a, b) => {
-				if (a.Index < b.Index) return -1;
-				if (a.Index > b.Index) return 1;
-				return 0;
-			});
+			list.Sort((a, b) => Utils.compareInt32(a.Index, b.Index));
 			return list;
 		}
 
@@ -114,17 +115,17 @@ namespace de4dot.renamer.asmmodules {
 		Dictionary<ScopeAndTokenKey, MethodDef> tokenToMethodDef = new Dictionary<ScopeAndTokenKey, MethodDef>();
 		Dictionary<MethodReferenceKey, MethodDef> methodRefToDef = new Dictionary<MethodReferenceKey, MethodDef>();
 
+		public int Count {
+			get { return tokenToMethodDef.Count; }
+		}
+
 		public IEnumerable<MethodDef> getAll() {
 			return tokenToMethodDef.Values;
 		}
 
 		public IEnumerable<MethodDef> getSorted() {
 			var list = new List<MethodDef>(getAll());
-			list.Sort((a, b) => {
-				if (a.Index < b.Index) return -1;
-				if (a.Index > b.Index) return 1;
-				return 0;
-			});
+			list.Sort((a, b) => Utils.compareInt32(a.Index, b.Index));
 			return list;
 		}
 
@@ -152,6 +153,11 @@ namespace de4dot.renamer.asmmodules {
 
 	class PropertyDefDict : RefDict<PropertyDef, PropertyReference> {
 		Dictionary<ScopeAndTokenKey, PropertyDef> tokenToPropDef = new Dictionary<ScopeAndTokenKey, PropertyDef>();
+		Dictionary<PropertyReferenceKey, PropertyDef> propRefToDef = new Dictionary<PropertyReferenceKey, PropertyDef>();
+
+		public int Count {
+			get { return tokenToPropDef.Count; }
+		}
 
 		public IEnumerable<PropertyDef> getAll() {
 			return tokenToPropDef.Values;
@@ -159,30 +165,39 @@ namespace de4dot.renamer.asmmodules {
 
 		public IEnumerable<PropertyDef> getSorted() {
 			var list = new List<PropertyDef>(getAll());
-			list.Sort((a, b) => {
-				if (a.Index < b.Index) return -1;
-				if (a.Index > b.Index) return 1;
-				return 0;
-			});
+			list.Sort((a, b) => Utils.compareInt32(a.Index, b.Index));
 			return list;
 		}
 
 		public PropertyDef find(PropertyReference propertyReference) {
 			PropertyDef propDef;
-			tokenToPropDef.TryGetValue(new ScopeAndTokenKey(propertyReference), out propDef);
+			if (tokenToPropDef.TryGetValue(new ScopeAndTokenKey(propertyReference), out propDef))
+				return propDef;
+
+			propRefToDef.TryGetValue(new PropertyReferenceKey(propertyReference), out propDef);
 			return propDef;
 		}
 
 		public void add(PropertyDef propDef) {
 			tokenToPropDef[new ScopeAndTokenKey(propDef.PropertyDefinition)] = propDef;
+			propRefToDef[new PropertyReferenceKey(propDef.PropertyDefinition)] = propDef;
 		}
 
 		public void onTypesRenamed() {
+			var all = new List<PropertyDef>(propRefToDef.Values);
+			propRefToDef.Clear();
+			foreach (var propDef in all)
+				propRefToDef[new PropertyReferenceKey(propDef.PropertyDefinition)] = propDef;
 		}
 	}
 
 	class EventDefDict : RefDict<EventDef, EventReference> {
 		Dictionary<ScopeAndTokenKey, EventDef> tokenToEventDef = new Dictionary<ScopeAndTokenKey, EventDef>();
+		Dictionary<EventReferenceKey, EventDef> eventRefToDef = new Dictionary<EventReferenceKey, EventDef>();
+
+		public int Count {
+			get { return tokenToEventDef.Count; }
+		}
 
 		public IEnumerable<EventDef> getAll() {
 			return tokenToEventDef.Values;
@@ -190,25 +205,29 @@ namespace de4dot.renamer.asmmodules {
 
 		public IEnumerable<EventDef> getSorted() {
 			var list = new List<EventDef>(getAll());
-			list.Sort((a, b) => {
-				if (a.Index < b.Index) return -1;
-				if (a.Index > b.Index) return 1;
-				return 0;
-			});
+			list.Sort((a, b) => Utils.compareInt32(a.Index, b.Index));
 			return list;
 		}
 
 		public EventDef find(EventReference eventReference) {
 			EventDef eventDef;
-			tokenToEventDef.TryGetValue(new ScopeAndTokenKey(eventReference), out eventDef);
+			if (tokenToEventDef.TryGetValue(new ScopeAndTokenKey(eventReference), out eventDef))
+				return eventDef;
+
+			eventRefToDef.TryGetValue(new EventReferenceKey(eventReference), out eventDef);
 			return eventDef;
 		}
 
 		public void add(EventDef eventDef) {
 			tokenToEventDef[new ScopeAndTokenKey(eventDef.EventDefinition)] = eventDef;
+			eventRefToDef[new EventReferenceKey(eventDef.EventDefinition)] = eventDef;
 		}
 
 		public void onTypesRenamed() {
+			var all = new List<EventDef>(eventRefToDef.Values);
+			eventRefToDef.Clear();
+			foreach (var eventDef in all)
+				eventRefToDef[new EventReferenceKey(eventDef.EventDefinition)] = eventDef;
 		}
 	}
 }

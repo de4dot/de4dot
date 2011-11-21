@@ -17,21 +17,35 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
 using de4dot.renamer.asmmodules;
+using de4dot.blocks;
 
 namespace de4dot.renamer {
 	class Renamer {
 		public bool RenameNamespaces { get; set; }
 		public bool RenameTypes { get; set; }
-		public bool RenameGenericParams { get; set; }
 		public bool RenameProperties { get; set; }
 		public bool RenameEvents { get; set; }
 		public bool RenameFields { get; set; }
 		public bool RenameMethods { get; set; }
 		public bool RenameMethodArgs { get; set; }
+		public bool RenameGenericParams { get; set; }
+		public bool RestoreProperties { get; set; }
+		public bool RestorePropertiesFromNames { get; set; }
+
 		Modules modules = new Modules();
 		MemberInfos memberInfos = new MemberInfos();
+		DerivedFrom isDelegateClass;
+
+		static string[] delegateClasses = new string[] {
+			"System.Delegate",
+			"System.MulticastDelegate",
+		};
 
 		public Renamer(IEnumerable<IObfuscatedFile> files) {
 			RenameNamespaces = true;
@@ -39,8 +53,12 @@ namespace de4dot.renamer {
 			RenameProperties = true;
 			RenameEvents = true;
 			RenameFields = true;
-			RenameGenericParams = true;
+			RenameMethods = true;
 			RenameMethodArgs = true;
+			RenameGenericParams = true;
+			RestoreProperties = true;
+			RestorePropertiesFromNames = true;
+			isDelegateClass = new DerivedFrom(delegateClasses);
 
 			foreach (var file in files)
 				modules.add(new Module(file));
@@ -52,21 +70,63 @@ namespace de4dot.renamer {
 			Log.n("Renaming all obfuscated symbols");
 
 			modules.initialize();
-			modules.initializeVirtualMembers();
+			var scopes = modules.initializeVirtualMembers();
 			memberInfos.initialize(modules);
 			renameTypeDefinitions();
 			renameTypeReferences();
 			modules.onTypesRenamed();
-			prepareRenameMemberDefinitions();
+			restoreProperties(scopes);
+			prepareRenameMemberDefinitions(scopes);
+			renameMemberDefinitions();
+			renameMemberReferences();
+			renameResources();
 			modules.cleanUp();
 		}
 
 		void renameTypeDefinitions() {
 			Log.v("Renaming obfuscated type definitions");
 
-			prepareRenameTypes(modules.BaseTypes, new TypeRenamerState());
+			foreach (var module in modules.TheModules) {
+				if (module.ObfuscatedFile.RemoveNamespaceWithOneType)
+					removeOneClassNamespaces(module);
+			}
+
+			var state = new TypeRenamerState();
+			foreach (var type in modules.AllTypes)
+				state.addTypeName(memberInfos.type(type).oldName);
+			prepareRenameTypes(modules.BaseTypes, state);
 			fixClsTypeNames();
 			renameTypeDefinitions(modules.NonNestedTypes);
+		}
+
+		void removeOneClassNamespaces(Module module) {
+			var nsToTypes = new Dictionary<string, List<TypeDef>>(StringComparer.Ordinal);
+
+			foreach (var typeDef in module.getAllTypes()) {
+				List<TypeDef> list;
+				var ns = typeDef.TypeDefinition.Namespace;
+				if (string.IsNullOrEmpty(ns))
+					continue;
+				if (module.ObfuscatedFile.NameChecker.isValidNamespaceName(ns))
+					continue;
+				if (!nsToTypes.TryGetValue(ns, out list))
+					nsToTypes[ns] = list = new List<TypeDef>();
+				list.Add(typeDef);
+			}
+
+			var sortedNamespaces = new List<List<TypeDef>>(nsToTypes.Values);
+			sortedNamespaces.Sort((a, b) => {
+				return string.CompareOrdinal(a[0].TypeDefinition.Namespace, b[0].TypeDefinition.Namespace);
+			});
+			foreach (var list in sortedNamespaces) {
+				const int maxClasses = 1;
+				if (list.Count != maxClasses)
+					continue;
+				var ns = list[0].TypeDefinition.Namespace;
+				Log.v("Removing namespace: {0}", ns);
+				foreach (var type in list)
+					memberInfos.type(type).newNamespace = "";
+			}
 		}
 
 		void renameTypeDefinitions(IEnumerable<TypeDef> typeDefs) {
@@ -114,6 +174,235 @@ namespace de4dot.renamer {
 			}
 		}
 
+		void renameMemberDefinitions() {
+			Log.v("Renaming member definitions #2");
+
+			var allTypes = new List<TypeDef>(modules.AllTypes);
+			allTypes.Sort((a, b) => Utils.compareInt32(a.Index, b.Index));
+
+			Log.indent();
+			foreach (var typeDef in allTypes)
+				renameMembers(typeDef);
+			Log.deIndent();
+		}
+
+		void renameMembers(TypeDef type) {
+			var info = memberInfos.type(type);
+
+			Log.v("Type: {0}", info.type.TypeDefinition.FullName);
+			Log.indent();
+
+			renameFields(info);
+			renameProperties(info);
+			renameEvents(info);
+			renameMethods(info);
+
+			Log.deIndent();
+		}
+
+		void renameFields(TypeInfo info) {
+			if (!RenameFields)
+				return;
+			foreach (var fieldDef in info.type.AllFieldsSorted) {
+				var fieldInfo = memberInfos.field(fieldDef);
+				if (!fieldInfo.gotNewName())
+					continue;
+				fieldDef.FieldDefinition.Name = fieldInfo.newName;
+				Log.v("Field: {0} ({1:X8}) => {2}", fieldInfo.oldFullName, fieldDef.FieldDefinition.MetadataToken.ToUInt32(), fieldDef.FieldDefinition.FullName);
+			}
+		}
+
+		void renameProperties(TypeInfo info) {
+			if (!RenameProperties)
+				return;
+			foreach (var propDef in info.type.AllPropertiesSorted) {
+				var propInfo = memberInfos.prop(propDef);
+				if (!propInfo.gotNewName())
+					continue;
+				propDef.PropertyDefinition.Name = propInfo.newName;
+				Log.v("Property: {0} ({1:X8}) => {2}", propInfo.oldFullName, propDef.PropertyDefinition.MetadataToken.ToUInt32(), propDef.PropertyDefinition.FullName);
+			}
+		}
+
+		void renameEvents(TypeInfo info) {
+			if (!RenameEvents)
+				return;
+			foreach (var eventDef in info.type.AllEventsSorted) {
+				var eventInfo = memberInfos.evt(eventDef);
+				if (!eventInfo.gotNewName())
+					continue;
+				eventDef.EventDefinition.Name = eventInfo.newName;
+				Log.v("Event: {0} ({1:X8}) => {2}", eventInfo.oldFullName, eventDef.EventDefinition.MetadataToken.ToUInt32(), eventDef.EventDefinition.FullName);
+			}
+		}
+
+		void renameMethods(TypeInfo info) {
+			if (!RenameMethods && !RenameMethodArgs && !RenameGenericParams)
+				return;
+			foreach (var methodDef in info.type.AllMethodsSorted) {
+				var methodInfo = memberInfos.method(methodDef);
+				Log.v("Method {0} ({1:X8})", methodInfo.oldFullName, methodDef.MethodDefinition.MetadataToken.ToUInt32());
+				Log.indent();
+
+				renameGenericParams(methodDef.GenericParams);
+
+				if (RenameMethods && methodInfo.gotNewName()) {
+					methodDef.MethodDefinition.Name = methodInfo.newName;
+					Log.v("Name: {0} => {1}", methodInfo.oldFullName, methodDef.MethodDefinition.FullName);
+				}
+
+				if (RenameMethodArgs) {
+					foreach (var param in methodDef.ParamDefs) {
+						var paramInfo = memberInfos.param(param);
+						if (!paramInfo.gotNewName())
+							continue;
+						param.ParameterDefinition.Name = paramInfo.newName;
+						Log.v("Param ({0}/{1}): {2} => {3}", param.Index + 1, methodDef.ParamDefs.Count, paramInfo.oldName, paramInfo.newName);
+					}
+				}
+
+				Log.deIndent();
+			}
+		}
+
+		void renameMemberReferences() {
+			Log.v("Renaming references to other definitions");
+			foreach (var module in modules.TheModules) {
+				if (modules.TheModules.Count > 1)
+					Log.v("Renaming references to other definitions ({0})", module.Filename);
+				Log.indent();
+				foreach (var refToDef in module.MethodRefsToRename)
+					refToDef.reference.Name = refToDef.definition.Name;
+				foreach (var refToDef in module.FieldRefsToRename)
+					refToDef.reference.Name = refToDef.definition.Name;
+				Log.deIndent();
+			}
+		}
+
+		void renameResources() {
+			Log.v("Renaming resources");
+			foreach (var module in modules.TheModules) {
+				if (modules.TheModules.Count > 1)
+					Log.v("Renaming resources ({0})", module.Filename);
+				Log.indent();
+				renameResources(module);
+				Log.deIndent();
+			}
+		}
+
+		void renameResources(Module module) {
+			var renamedTypes = new List<TypeInfo>();
+			foreach (var type in module.getAllTypes()) {
+				var info = memberInfos.type(type);
+				if (info.oldFullName != info.type.TypeDefinition.FullName)
+					renamedTypes.Add(info);
+			}
+			if (renamedTypes.Count == 0)
+				return;
+
+			// Rename the longest names first. Otherwise eg. b.g.resources could be renamed
+			// Class0.g.resources instead of Class1.resources when b.g was renamed Class1.
+			renamedTypes.Sort((a, b) => Utils.compareInt32(b.oldFullName.Length, a.oldFullName.Length));
+
+			renameResourceNamesInCode(module, renamedTypes);
+			renameResources(module, renamedTypes);
+		}
+
+		void renameResourceNamesInCode(Module module, IEnumerable<TypeInfo> renamedTypes) {
+			// This is needed to speed up this method
+			var oldToNewTypeName = new Dictionary<string, string>(StringComparer.Ordinal);
+			foreach (var info in renamedTypes)
+				oldToNewTypeName[info.oldFullName] = info.type.TypeDefinition.FullName;
+
+			List<string> validResourceNames = new List<string>();
+			if (module.ModuleDefinition.Resources != null) {
+				foreach (var resource in module.ModuleDefinition.Resources) {
+					var name = resource.Name;
+					if (name.EndsWith(".resources", StringComparison.Ordinal))
+						validResourceNames.Add(name);
+				}
+			}
+
+			foreach (var method in module.getAllMethods()) {
+				if (!method.HasBody)
+					continue;
+				foreach (var instr in method.Body.Instructions) {
+					if (instr.OpCode != OpCodes.Ldstr)
+						continue;
+					var s = (string)instr.Operand;
+					if (string.IsNullOrEmpty(s))
+						continue;	// Ignore emtpy strings since we'll get lots of false warnings
+
+					string newName = null;
+					string oldName = null;
+					if (oldToNewTypeName.ContainsKey(s)) {
+						oldName = s;
+						newName = oldToNewTypeName[s];
+					}
+					else if (s.EndsWith(".resources", StringComparison.Ordinal)) {
+						// This should rarely, if ever, execute...
+						foreach (var info in renamedTypes) {	// Slow loop
+							var newName2 = renameResourceString(s, info.oldFullName, info.type.TypeDefinition.FullName);
+							if (newName2 != s) {
+								newName = newName2;
+								oldName = info.oldFullName;
+								break;
+							}
+						}
+					}
+					if (newName == null || string.IsNullOrEmpty(oldName))
+						continue;
+
+					bool isValid = false;
+					foreach (var validName in validResourceNames) {
+						if (Utils.StartsWith(validName, oldName, StringComparison.Ordinal)) {
+							isValid = true;
+							break;
+						}
+					}
+					if (!isValid)
+						continue;
+
+					if (s == "" || !module.ObfuscatedFile.RenameResourcesInCode)
+						Log.v("Possible resource name in code: '{0}' => '{1}' in method {2}", s, newName, method);
+					else {
+						instr.Operand = newName;
+						Log.v("Renamed resource string in code: '{0}' => '{1}' ({2})", s, newName, method);
+						break;
+					}
+				}
+			}
+		}
+
+		void renameResources(Module module, IEnumerable<TypeInfo> renamedTypes) {
+			if (module.ModuleDefinition.Resources == null)
+				return;
+			foreach (var resource in module.ModuleDefinition.Resources) {
+				var s = resource.Name;
+				foreach (var info in renamedTypes) {
+					var newName = renameResourceString(s, info.oldFullName, info.type.TypeDefinition.FullName);
+					if (newName != s) {
+						resource.Name = newName;
+						Log.v("Renamed resource in resources: {0} => {1}", s, newName);
+						break;
+					}
+				}
+			}
+		}
+
+		static string renameResourceString(string s, string oldTypeName, string newTypeName) {
+			if (!Utils.StartsWith(s, oldTypeName, StringComparison.Ordinal))
+				return s;
+			if (s.Length == oldTypeName.Length)
+				return newTypeName;
+			// s.Length > oldTypeName.Length
+			if (s[oldTypeName.Length] != '.')
+				return s;
+			if (!s.EndsWith(".resources", StringComparison.Ordinal))
+				return s;
+			return newTypeName + s.Substring(oldTypeName.Length);
+		}
+
 		// Make sure the renamed types are using valid CLS names. That means renaming all
 		// generic types from eg. Class1 to Class1`2. If we don't do this, some decompilers
 		// (eg. ILSpy v1.0) won't produce correct output.
@@ -154,7 +443,163 @@ namespace de4dot.renamer {
 			}
 		}
 
-		void prepareRenameMemberDefinitions() {
+		void restoreProperties(MethodNameScopes scopes) {
+			var allScopes = scopes.getAllScopes();
+			restoreVirtualProperties(allScopes);
+			restorePropertiesFromNames(allScopes);
+		}
+
+		void restoreVirtualProperties(IEnumerable<MethodNameScope> allScopes) {
+			if (!RestoreProperties)
+				return;
+			foreach (var scope in allScopes)
+				restoreVirtualProperties(scope);
+		}
+
+		void restoreVirtualProperties(MethodNameScope scope) {
+			if (scope.Methods.Count <= 1 || !scope.hasProperty())
+				return;
+
+			PropertyDef prop = null;
+			List<MethodDef> missingProps = null;
+			foreach (var method in scope.Methods) {
+				if (method.Property == null) {
+					if (missingProps == null)
+						missingProps = new List<MethodDef>();
+					missingProps.Add(method);
+				}
+				else if (prop == null)
+					prop = method.Property;
+			}
+			if (prop == null)
+				return;	// Should never happen
+			if (missingProps == null)
+				return;
+
+			foreach (var method in missingProps) {
+				if (!method.Owner.HasModule)
+					continue;
+
+				if (method.MethodDefinition.MethodReturnType.ReturnType.FullName == "System.Void")
+					createPropertySetter(prop.PropertyDefinition.Name, method);
+				else
+					createPropertyGetter(prop.PropertyDefinition.Name, method);
+			}
+		}
+
+		void restorePropertiesFromNames(IEnumerable<MethodNameScope> allScopes) {
+			if (!RestorePropertiesFromNames)
+				return;
+
+			foreach (var scope in allScopes) {
+				var scopeMethod = scope.Methods[0];
+				var methodName = scopeMethod.MethodDefinition.Name;
+				bool onlyRenamableMethods = !scope.hasNonRenamableMethod();
+
+				if (Utils.StartsWith(methodName, "get_", StringComparison.Ordinal)) {
+					var propName = methodName.Substring(4);
+					foreach (var method in scope.Methods) {
+						if (onlyRenamableMethods && !memberInfos.type(method.Owner).NameChecker.isValidPropertyName(propName))
+							continue;
+						createPropertyGetter(propName, method);
+					}
+				}
+				else if (Utils.StartsWith(methodName, "set_", StringComparison.Ordinal)) {
+					var propName = methodName.Substring(4);
+					foreach (var method in scope.Methods) {
+						if (onlyRenamableMethods && !memberInfos.type(method.Owner).NameChecker.isValidPropertyName(propName))
+							continue;
+						createPropertySetter(propName, method);
+					}
+				}
+			}
+
+			foreach (var type in modules.AllTypes) {
+				foreach (var method in type.AllMethodsSorted) {
+					if (method.isVirtual())
+						continue;	// Virtual methods are in allScopes, so already fixed above
+					if (method.Property != null)
+						continue;
+					var methodName = method.MethodDefinition.Name;
+					if (Utils.StartsWith(methodName, "get_", StringComparison.Ordinal))
+						createPropertyGetter(methodName.Substring(4), method);
+					else if (Utils.StartsWith(methodName, "set_", StringComparison.Ordinal))
+						createPropertySetter(methodName.Substring(4), method);
+				}
+			}
+		}
+
+		PropertyDef createPropertyGetter(string name, MethodDef propMethod) {
+			if (string.IsNullOrEmpty(name))
+				return null;
+			var ownerType = propMethod.Owner;
+			if (!ownerType.HasModule)
+				return null;
+			if (propMethod.Property != null)
+				return null;
+
+			var method = propMethod.MethodDefinition;
+			var propType = method.MethodReturnType.ReturnType;
+			var propDef = createProperty(ownerType, name, propType);
+			if (propDef == null)
+				return null;
+			if (propDef.GetMethod != null)
+				return null;
+			Log.v("Restoring property getter {0} ({1:X8}), Property: {2} ({3:X8})",
+						propMethod,
+						propMethod.MethodDefinition.MetadataToken.ToInt32(),
+						propDef.PropertyDefinition,
+						propDef.PropertyDefinition.MetadataToken.ToInt32());
+			propDef.PropertyDefinition.GetMethod = propMethod.MethodDefinition;
+			propDef.GetMethod = propMethod;
+			propMethod.Property = propDef;
+			return propDef;
+		}
+
+		PropertyDef createPropertySetter(string name, MethodDef propMethod) {
+			if (string.IsNullOrEmpty(name))
+				return null;
+			var ownerType = propMethod.Owner;
+			if (!ownerType.HasModule)
+				return null;
+			if (propMethod.Property != null)
+				return null;
+
+			var method = propMethod.MethodDefinition;
+			if (method.Parameters.Count == 0)
+				return null;
+			var propType = method.Parameters[method.Parameters.Count - 1].ParameterType;
+			var propDef = createProperty(ownerType, name, propType);
+			if (propDef == null)
+				return null;
+			if (propDef.SetMethod != null)
+				return null;
+			Log.v("Restoring property setter {0} ({1:X8}), Property: {2} ({3:X8})",
+						propMethod,
+						propMethod.MethodDefinition.MetadataToken.ToInt32(),
+						propDef.PropertyDefinition,
+						propDef.PropertyDefinition.MetadataToken.ToInt32());
+			propDef.PropertyDefinition.SetMethod = propMethod.MethodDefinition;
+			propDef.SetMethod = propMethod;
+			propMethod.Property = propDef;
+			return propDef;
+		}
+
+		PropertyDef createProperty(TypeDef ownerType, string name, TypeReference propType) {
+			if (string.IsNullOrEmpty(name) || propType.FullName == "System.Void")
+				return null;
+			var newProp = DotNetUtils.createPropertyDefinition(name, propType);
+			var propDef = ownerType.find(newProp);
+			if (propDef != null)
+				return propDef;
+
+			propDef = ownerType.create(newProp);
+			memberInfos.add(propDef);
+			Log.v("Restoring property: {0}", newProp);
+			return propDef;
+		}
+
+		void prepareRenameMemberDefinitions(MethodNameScopes scopes) {
 			Log.v("Renaming member definitions #1");
 
 			prepareRenameEntryPoints();
@@ -164,6 +609,11 @@ namespace de4dot.renamer {
 
 			foreach (var typeDef in modules.AllTypes)
 				prepareRenameMembers(typeDef);
+
+			prepareRenameVirtualMethods(scopes);
+
+			foreach (var typeDef in modules.AllTypes)
+				memberInfos.type(typeDef).prepareRenameMethods2();
 		}
 
 		Dictionary<TypeDef, bool> prepareRenameMembersCalled = new Dictionary<TypeDef, bool>();
@@ -180,6 +630,449 @@ namespace de4dot.renamer {
 			TypeInfo info;
 			if (memberInfos.tryGetType(type, out info))
 				info.prepareRenameMembers();
+		}
+
+		static List<MethodNameScope> getSorted(MethodNameScopes scopes) {
+			var allScopes = new List<MethodNameScope>(scopes.getAllScopes());
+			allScopes.Sort((a, b) => Utils.compareInt32(b.Count, a.Count));
+			return allScopes;
+		}
+
+		void prepareRenameVirtualMethods(MethodNameScopes scopes) {
+			var allScopes = getSorted(scopes);
+
+			var virtualMethods = new List<MethodNameScope>();
+			var ifaceMethods = new List<MethodNameScope>();
+			var propMethods = new List<MethodNameScope>();
+			var eventMethods = new List<MethodNameScope>();
+			foreach (var scope in allScopes) {
+				if (scope.hasNonRenamableMethod())
+					continue;
+				else if (scope.hasPropertyMethod() && getPropertyMethodType(scope.Methods[0]) != PropertyMethodType.Other)
+					propMethods.Add(scope);
+				else if (scope.hasEventMethod())
+					eventMethods.Add(scope);
+				else if (scope.hasInterfaceMethod())
+					ifaceMethods.Add(scope);
+				else
+					virtualMethods.Add(scope);
+			}
+
+			prepareRenameVirtualProperties(propMethods);
+			prepareRenameVirtualEvents(eventMethods);
+			prepareRenameVirtualMethods(virtualMethods, "vmethod_", false);
+			prepareRenameVirtualMethods(ifaceMethods, "imethod_", false);
+			prepareRenameVirtualMethods(virtualMethods, "vmethod_", true);
+			prepareRenameVirtualMethods(ifaceMethods, "imethod_", true);
+		}
+
+		Dictionary<TypeDef, int> numBaseClassesDict = new Dictionary<TypeDef, int>();
+		int getNumberOfBaseClasses(TypeDef type) {
+			int numBaseClasses;
+			if (numBaseClassesDict.TryGetValue(type, out numBaseClasses))
+				return numBaseClasses;
+			return numBaseClassesDict[type] = getNumberOfBaseClassesInternal(type);
+		}
+
+		int getNumberOfBaseClassesInternal(TypeDef type) {
+			if (type.baseType == null)
+				return 0;
+			return getNumberOfBaseClasses(type.baseType.typeDef) + 1;
+		}
+
+		int compareTypes(TypeDef a, TypeDef b) {
+			int ac = getNumberOfBaseClasses(a);
+			int bc = getNumberOfBaseClasses(b);
+			if (ac < bc) return -1;
+			if (ac > bc) return 1;
+			return Utils.compareInt32(a.Index, b.Index);
+		}
+
+		void sortScopes(List<MethodNameScope> scopes) {
+			var scopeToType = new Dictionary<MethodNameScope, TypeDef>(scopes.Count);
+			foreach (var scope in scopes) {
+				TypeDef type = null;
+				foreach (var method in scope.Methods) {
+					var owner = method.Owner;
+					if (type == null || compareTypes(owner, type) < 0)
+						type = owner;
+				}
+				scopeToType[scope] = type;
+			}
+			scopes.Sort((a, b) => compareTypes(scopeToType[a], scopeToType[b]));
+		}
+
+		static readonly Regex removeGenericsArityRegex = new Regex(@"`[0-9]+");
+		static string getOverridePrefix(MethodDef method) {
+			if (method.MethodDefinition.Overrides.Count == 0)
+				return "";
+			var overrideMethod = method.MethodDefinition.Overrides[0];
+			var name = overrideMethod.DeclaringType.FullName.Replace('/', '.');
+			name = removeGenericsArityRegex.Replace(name, "");
+			return name + ".";
+		}
+
+		static string getRealName(string name) {
+			int index = name.LastIndexOf('.');
+			if (index < 0)
+				return name;
+			return name.Substring(index + 1);
+		}
+
+		void prepareRenameVirtualEvents(List<MethodNameScope> scopes) {
+			sortScopes(scopes);
+
+			foreach (var scope in scopes)
+				prepareRenameEvent(scope, false);
+			foreach (var scope in scopes)
+				prepareRenameEvent(scope, true);
+		}
+
+		void prepareRenameEvent(MethodNameScope scope, bool renameOverrides) {
+			string methodPrefix, overridePrefix;
+			var eventName = prepareRenameEvent(scope, renameOverrides, out overridePrefix, out methodPrefix);
+			if (eventName == null)
+				return;
+
+			var methodName = overridePrefix + methodPrefix + eventName;
+			foreach (var method in scope.Methods)
+				memberInfos.method(method).rename(methodName);
+		}
+
+		string prepareRenameEvent(MethodNameScope scope, bool renameOverrides, out string overridePrefix, out string methodPrefix) {
+			var eventMethod = getEventMethod(scope);
+			if (eventMethod == null)
+				throw new ApplicationException("No events found");
+
+			var eventDef = eventMethod.Event;
+			if (eventMethod == eventDef.AddMethod)
+				methodPrefix = "add_";
+			else if (eventMethod == eventDef.RemoveMethod)
+				methodPrefix = "remove_";
+			else if (eventMethod == eventDef.RaiseMethod)
+				methodPrefix = "raise_";
+			else
+				methodPrefix = null;
+
+			overridePrefix = getOverridePrefix(eventMethod);
+			if (renameOverrides && overridePrefix == "")
+				return null;
+			if (!renameOverrides && overridePrefix != "")
+				return null;
+
+			string newEventName, oldEventName;
+			var eventInfo = memberInfos.evt(eventDef);
+
+			if (overridePrefix == "")
+				oldEventName = eventInfo.oldName;
+			else {
+				var overriddenEventDef = getOverriddenEvent(eventMethod);
+				if (overriddenEventDef == null)
+					oldEventName = getRealName(eventInfo.oldName);
+				else
+					oldEventName = getRealName(memberInfos.evt(overriddenEventDef).newName);
+			}
+
+			if (eventInfo.renamed)
+				newEventName = getRealName(eventInfo.newName);
+			else if (eventDef.Owner.Module.ObfuscatedFile.NameChecker.isValidEventName(oldEventName))
+				newEventName = oldEventName;
+			else
+				newEventName = getAvailableName("Event_", scope, (scope2, newName) => isEventAvailable(scope2, newName));
+
+			var newEventNameWithPrefix = overridePrefix + newEventName;
+			foreach (var method in scope.Methods) {
+				if (method.Event != null) {
+					memberInfos.evt(method.Event).rename(newEventNameWithPrefix);
+					var ownerInfo = memberInfos.type(method.Owner);
+					ownerInfo.variableNameState.addEventName(newEventName);
+					ownerInfo.variableNameState.addEventName(newEventNameWithPrefix);
+				}
+			}
+
+			return newEventName;
+		}
+
+		EventDef getOverriddenEvent(MethodDef overrideMethod) {
+			var overriddenMethod = modules.resolve(overrideMethod.MethodDefinition.Overrides[0]);
+			if (overriddenMethod == null)
+				return null;
+			return overriddenMethod.Event;
+		}
+
+		MethodDef getEventMethod(MethodNameScope scope) {
+			foreach (var method in scope.Methods) {
+				if (method.Event != null)
+					return method;
+			}
+			return null;
+		}
+
+		void prepareRenameVirtualProperties(List<MethodNameScope> scopes) {
+			sortScopes(scopes);
+
+			foreach (var scope in scopes)
+				prepareRenameProperty(scope, false);
+			foreach (var scope in scopes)
+				prepareRenameProperty(scope, true);
+		}
+
+		void prepareRenameProperty(MethodNameScope scope, bool renameOverrides) {
+			string overridePrefix;
+			var propName = prepareRenameProperty(scope, renameOverrides, out overridePrefix);
+			if (propName == null)
+				return;
+
+			string methodPrefix;
+			switch (getPropertyMethodType(scope.Methods[0])) {
+			case PropertyMethodType.Getter:
+				methodPrefix = "get_";
+				break;
+			case PropertyMethodType.Setter:
+				methodPrefix = "set_";
+				break;
+			default:
+				throw new ApplicationException("Invalid property type");
+			}
+
+			var methodName = overridePrefix + methodPrefix + propName;
+			foreach (var method in scope.Methods)
+				memberInfos.method(method).rename(methodName);
+		}
+
+		string prepareRenameProperty(MethodNameScope scope, bool renameOverrides, out string overridePrefix) {
+			var propMethod = getPropertyMethod(scope);
+			if (propMethod == null)
+				throw new ApplicationException("No properties found");
+
+			overridePrefix = getOverridePrefix(propMethod);
+
+			if (renameOverrides && overridePrefix == "")
+				return null;
+			if (!renameOverrides && overridePrefix != "")
+				return null;
+
+			string newPropName, oldPropName;
+			var propDef = propMethod.Property;
+			var propInfo = memberInfos.prop(propDef);
+
+			if (overridePrefix == "")
+				oldPropName = propInfo.oldName;
+			else {
+				var overriddenPropDef = getOverriddenProperty(propMethod);
+				if (overriddenPropDef == null)
+					oldPropName = getRealName(propInfo.oldName);
+				else
+					oldPropName = getRealName(memberInfos.prop(overriddenPropDef).newName);
+			}
+
+			if (propInfo.renamed)
+				newPropName = getRealName(propInfo.newName);
+			else if (propDef.Owner.Module.ObfuscatedFile.NameChecker.isValidPropertyName(oldPropName))
+				newPropName = oldPropName;
+			else {
+				var propPrefix = getSuggestedPropertyName(scope) ?? getNewPropertyNamePrefix(scope);
+				newPropName = getAvailableName(propPrefix, scope, (scope2, newName) => isPropertyAvailable(scope2, newName));
+			}
+
+			var newPropNameWithPrefix = overridePrefix + newPropName;
+			foreach (var method in scope.Methods) {
+				if (method.Property != null) {
+					memberInfos.prop(method.Property).rename(newPropNameWithPrefix);
+					var ownerInfo = memberInfos.type(method.Owner);
+					ownerInfo.variableNameState.addPropertyName(newPropName);
+					ownerInfo.variableNameState.addPropertyName(newPropNameWithPrefix);
+				}
+			}
+
+			return newPropName;
+		}
+
+		PropertyDef getOverriddenProperty(MethodDef overrideMethod) {
+			var overriddenMethod = modules.resolve(overrideMethod.MethodDefinition.Overrides[0]);
+			if (overriddenMethod == null)
+				return null;
+			return overriddenMethod.Property;
+		}
+
+		MethodDef getPropertyMethod(MethodNameScope scope) {
+			foreach (var method in scope.Methods) {
+				if (method.Property != null)
+					return method;
+			}
+			return null;
+		}
+
+		string getSuggestedPropertyName(MethodNameScope scope) {
+			foreach (var method in scope.Methods) {
+				if (method.Property == null)
+					continue;
+				var info = memberInfos.prop(method.Property);
+				if (info.suggestedName != null)
+					return info.suggestedName;
+			}
+			return null;
+		}
+
+		string getNewPropertyNamePrefix(MethodNameScope scope) {
+			const string defaultVal = "Prop_";
+
+			var propType = getPropertyType(scope);
+			if (propType == null)
+				return defaultVal;
+
+			string name = propType.Name;
+			int i = name.IndexOf('`');
+			if (i >= 0)
+				name = name.Substring(0, i);
+			i = name.IndexOf('.');
+			if (i >= 0)
+				name = name.Substring(0, i);
+			if (name == "")
+				return defaultVal;
+			return name + "_";
+		}
+
+		enum PropertyMethodType {
+			Other,
+			Getter,
+			Setter,
+		}
+
+		static PropertyMethodType getPropertyMethodType(MethodDef method) {
+			if (method.MethodDefinition.MethodReturnType.ReturnType.FullName != "System.Void")
+				return PropertyMethodType.Getter;
+			if (method.ParamDefs.Count > 0)
+				return PropertyMethodType.Setter;
+			return PropertyMethodType.Other;
+		}
+
+		// Returns property type, or null if not all methods have the same type
+		TypeReference getPropertyType(MethodNameScope scope) {
+			var methodType = getPropertyMethodType(scope.Methods[0]);
+			if (methodType == PropertyMethodType.Other)
+				return null;
+
+			TypeReference type = null;
+			foreach (var propMethod in scope.Methods) {
+				TypeReference propType;
+				if (methodType == PropertyMethodType.Setter)
+					propType = propMethod.ParamDefs[propMethod.ParamDefs.Count - 1].ParameterDefinition.ParameterType;
+				else
+					propType = propMethod.MethodDefinition.MethodReturnType.ReturnType;
+				if (type == null)
+					type = propType;
+				else if (!MemberReferenceHelper.compareTypes(type, propType))
+					return null;
+			}
+			return type;
+		}
+
+		void prepareRenameVirtualMethods(List<MethodNameScope> scopes, string namePrefix, bool renameOverrides) {
+			sortScopes(scopes);
+
+			foreach (var scope in scopes)
+				prepareRenameVirtualMethods(scope, namePrefix, renameOverrides);
+		}
+
+		void prepareRenameVirtualMethods(MethodNameScope scope, string namePrefix, bool renameOverrides) {
+			if (!hasInvalidMethodName(scope))
+				return;
+
+			if (hasDelegateOwner(scope)) {
+				switch (scope.Methods[0].MethodDefinition.Name) {
+				case "Invoke":
+				case "BeginInvoke":
+				case "EndInvoke":
+					return;
+				}
+			}
+
+			var overrideMethod = scope.Methods[0];
+			var overridePrefix = getOverridePrefix(overrideMethod);
+			if (renameOverrides && overridePrefix == "")
+				return;
+			if (!renameOverrides && overridePrefix != "")
+				return;
+
+			string newMethodName;
+			if (overridePrefix != "") {
+				var overrideInfo = memberInfos.method(overrideMethod);
+				var overriddenMethod = getOverriddenMethod(overrideMethod);
+				if (overriddenMethod == null)
+					newMethodName = getRealName(overrideMethod.MethodDefinition.Overrides[0].Name);
+				else
+					newMethodName = getRealName(memberInfos.method(overriddenMethod).newName);
+			}
+			else
+				newMethodName = getSuggestedMethodName(scope) ?? getAvailableName(namePrefix, scope, (scope2, newName) => isMethodAvailable(scope2, newName));
+
+			var newMethodNameWithPrefix = overridePrefix + newMethodName;
+			foreach (var method in scope.Methods)
+				memberInfos.type(method.Owner).renameMethod(method, newMethodNameWithPrefix);
+		}
+
+		MethodDef getOverriddenMethod(MethodDef overrideMethod) {
+			return modules.resolve(overrideMethod.MethodDefinition.Overrides[0]);
+		}
+
+		string getSuggestedMethodName(MethodNameScope scope) {
+			foreach (var method in scope.Methods) {
+				var info = memberInfos.method(method);
+				if (info.suggestedName != null)
+					return info.suggestedName;
+			}
+			return null;
+		}
+
+		bool hasInvalidMethodName(MethodNameScope scope) {
+			foreach (var method in scope.Methods) {
+				var typeInfo = memberInfos.type(method.Owner);
+				var methodInfo = memberInfos.method(method);
+				if (!typeInfo.NameChecker.isValidMethodName(methodInfo.oldName))
+					return true;
+			}
+			return false;
+		}
+
+		static string getAvailableName(string prefix, MethodNameScope scope, Func<MethodNameScope, string, bool> checkAvailable) {
+			for (int i = 0; ; i++) {
+				string newName = prefix + i;
+				if (checkAvailable(scope, newName))
+					return newName;
+			}
+		}
+
+		bool isMethodAvailable(MethodNameScope scope, string methodName) {
+			foreach (var method in scope.Methods) {
+				if (memberInfos.type(method.Owner).variableNameState.isMethodNameUsed(methodName))
+					return false;
+			}
+			return true;
+		}
+
+		bool isPropertyAvailable(MethodNameScope scope, string methodName) {
+			foreach (var method in scope.Methods) {
+				if (memberInfos.type(method.Owner).variableNameState.isPropertyNameUsed(methodName))
+					return false;
+			}
+			return true;
+		}
+
+		bool isEventAvailable(MethodNameScope scope, string methodName) {
+			foreach (var method in scope.Methods) {
+				if (memberInfos.type(method.Owner).variableNameState.isEventNameUsed(methodName))
+					return false;
+			}
+			return true;
+		}
+
+		bool hasDelegateOwner(MethodNameScope scope) {
+			foreach (var method in scope.Methods) {
+				if (isDelegateClass.check(method.Owner))
+					return true;
+			}
+			return false;
 		}
 
 		void prepareRenameEntryPoints() {

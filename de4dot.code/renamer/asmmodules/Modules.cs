@@ -256,10 +256,11 @@ namespace de4dot.renamer.asmmodules {
 			return otherTypesDict[key] = typeDef;
 		}
 
-		public void initializeVirtualMembers() {
+		public MethodNameScopes initializeVirtualMembers() {
 			var scopes = new MethodNameScopes();
 			foreach (var typeDef in allTypes)
 				typeDef.initializeVirtualMembers(scopes, this);
+			return scopes;
 		}
 
 		public void onTypesRenamed() {

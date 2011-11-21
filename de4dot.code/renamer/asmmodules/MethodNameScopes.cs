@@ -42,6 +42,54 @@ namespace de4dot.renamer.asmmodules {
 			methods.AddRange(other.methods);
 		}
 
+		public bool hasNonRenamableMethod() {
+			foreach (var method in methods) {
+				if (!method.Owner.HasModule)
+					return true;
+			}
+			return false;
+		}
+
+		public bool hasInterfaceMethod() {
+			foreach (var method in methods) {
+				if (method.Owner.TypeDefinition.IsInterface)
+					return true;
+			}
+			return false;
+		}
+
+		public bool hasPropertyMethod() {
+			foreach (var method in methods) {
+				if (method.Property != null)
+					return true;
+			}
+			return false;
+		}
+
+		public bool hasEventMethod() {
+			foreach (var method in methods) {
+				if (method.Event != null)
+					return true;
+			}
+			return false;
+		}
+
+		public bool hasProperty() {
+			foreach (var method in methods) {
+				if (method.Property != null)
+					return true;
+			}
+			return false;
+		}
+
+		public bool hasEvent() {
+			foreach (var method in methods) {
+				if (method.Event != null)
+					return true;
+			}
+			return false;
+		}
+
 		public override string ToString() {
 			return string.Format("{0} -- {1}", methods.Count, methods.Count > 0 ? methods[0].ToString() : "");
 		}
@@ -58,7 +106,7 @@ namespace de4dot.renamer.asmmodules {
 			get(methodDef);
 		}
 
-		MethodNameScope get(MethodDef method) {
+		public MethodNameScope get(MethodDef method) {
 			if (!method.isVirtual())
 				throw new ApplicationException("Not a virtual method");
 			MethodNameScope scope;

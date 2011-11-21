@@ -22,6 +22,10 @@ using Mono.Cecil;
 
 namespace de4dot.renamer.asmmodules {
 	class EventDef : Ref {
+		public MethodDef AddMethod { get; set; }
+		public MethodDef RemoveMethod { get; set; }
+		public MethodDef RaiseMethod { get; set; }
+
 		public EventDefinition EventDefinition {
 			get { return (EventDefinition)memberReference; }
 		}

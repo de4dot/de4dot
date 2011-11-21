@@ -219,6 +219,7 @@ namespace de4dot.renamer.asmmodules {
 			get { return module; }
 		}
 
+		// Returns false if this is a type from a dependency (non-renamble) assembly (eg. mscorlib)
 		public bool HasModule {
 			get { return module != null; }
 		}
@@ -315,6 +316,20 @@ namespace de4dot.renamer.asmmodules {
 			return fields.find(fr);
 		}
 
+		public PropertyDef find(PropertyReference pr) {
+			return properties.find(pr);
+		}
+
+		public PropertyDef create(PropertyDefinition newProp) {
+			if (find(newProp) != null)
+				throw new ApplicationException("Can't add a property when it's already been added");
+
+			var propDef = new PropertyDef(newProp, this, properties.Count);
+			add(propDef);
+			TypeDefinition.Properties.Add(newProp);
+			return propDef;
+		}
+
 		public void addMembers() {
 			var type = TypeDefinition;
 
@@ -333,6 +348,10 @@ namespace de4dot.renamer.asmmodules {
 					if (methodDef == null)
 						throw new ApplicationException("Could not find property method");
 					methodDef.Property = propDef;
+					if (method == propDef.PropertyDefinition.GetMethod)
+						propDef.GetMethod = methodDef;
+					if (method == propDef.PropertyDefinition.SetMethod)
+						propDef.SetMethod = methodDef;
 				}
 			}
 
@@ -342,12 +361,19 @@ namespace de4dot.renamer.asmmodules {
 					if (methodDef == null)
 						throw new ApplicationException("Could not find event method");
 					methodDef.Event = eventDef;
+					if (method == eventDef.EventDefinition.AddMethod)
+						eventDef.AddMethod = methodDef;
+					if (method == eventDef.EventDefinition.RemoveMethod)
+						eventDef.RemoveMethod = methodDef;
+					if (method == eventDef.EventDefinition.InvokeMethod)
+						eventDef.RaiseMethod = methodDef;
 				}
 			}
 		}
 
 		public void onTypesRenamed() {
 			events.onTypesRenamed();
+			properties.onTypesRenamed();
 			fields.onTypesRenamed();
 			methods.onTypesRenamed();
 			types.onTypesRenamed();
