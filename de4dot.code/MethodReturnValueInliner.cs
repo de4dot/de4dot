@@ -304,10 +304,7 @@ namespace de4dot {
 				if (i1 < i2) return -1;
 				if (i1 > i2) return 1;
 
-				if (a.callStartIndex < b.callStartIndex) return -1;
-				if (a.callStartIndex > b.callStartIndex) return 1;
-
-				return 0;
+				return Utils.compareInt32(a.callStartIndex, b.callStartIndex);
 			});
 			callResults.Reverse();
 			inlineReturnValues(callResults);

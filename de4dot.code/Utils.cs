@@ -230,5 +230,11 @@ namespace de4dot {
 			}
 			return true;
 		}
+
+		public static int compareInt32(int a, int b) {
+			if (a < b) return -1;
+			if (a > b) return 1;
+			return 0;
+		}
 	}
 }

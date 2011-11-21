@@ -591,11 +591,7 @@ namespace de4dot {
 				}
 
 				var sortedTargets = new List<Instruction>(targets.Keys);
-				sortedTargets.Sort((a, b) => {
-					if (a.Offset < b.Offset) return -1;
-					if (a.Offset > b.Offset) return 1;
-					return 0;
-				});
+				sortedTargets.Sort((a, b) => Utils.compareInt32(a.Offset, b.Offset));
 				for (int i = 0; i < sortedTargets.Count; i++)
 					labels[sortedTargets[i]] = string.Format("label_{0}", i);
 			}

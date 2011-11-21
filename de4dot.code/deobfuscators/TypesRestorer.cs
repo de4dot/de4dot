@@ -154,11 +154,7 @@ namespace de4dot.deobfuscators {
 			var fields = new List<UpdatedField>(updatedFields.Values);
 			if (fields.Count > 0) {
 				Log.v("Changing field types from object -> real type");
-				fields.Sort((a, b) => {
-					if (a.token < b.token) return -1;
-					if (a.token > b.token) return 1;
-					return 0;
-				});
+				fields.Sort((a, b) => Utils.compareInt32(a.token, b.token));
 				Log.indent();
 				foreach (var updatedField in fields)
 					Log.v("Field {0:X8}: type {1} ({2:X8})", updatedField.token, updatedField.newFieldType.FullName, updatedField.newFieldType.MetadataToken.ToInt32());
@@ -168,11 +164,7 @@ namespace de4dot.deobfuscators {
 			var methods = new List<UpdatedMethod>(updatedMethods.Values);
 			if (methods.Count > 0) {
 				Log.v("Changing method args and return types from object -> real type");
-				methods.Sort((a, b) => {
-					if (a.token < b.token) return -1;
-					if (a.token > b.token) return 1;
-					return 0;
-				});
+				methods.Sort((a, b) => Utils.compareInt32(a.token, b.token));
 				Log.indent();
 				foreach (var updatedMethod in methods) {
 					Log.v("Method {0:X8}", updatedMethod.token);
@@ -218,10 +210,7 @@ namespace de4dot.deobfuscators {
 			if (a.arg.Method.MetadataToken.ToInt32() < b.arg.Method.MetadataToken.ToInt32()) return -1;
 			if (a.arg.Method.MetadataToken.ToInt32() > b.arg.Method.MetadataToken.ToInt32()) return 1;
 
-			if (a.arg.Index < b.arg.Index) return -1;
-			if (a.arg.Index < b.arg.Index) return 1;
-
-			return 0;
+			return Utils.compareInt32(a.arg.Index, b.arg.Index);
 		}
 
 		class PushedArgs {

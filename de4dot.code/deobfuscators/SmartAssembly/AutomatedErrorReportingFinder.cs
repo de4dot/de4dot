@@ -68,12 +68,7 @@ namespace de4dot.deobfuscators.SmartAssembly {
 			if (mainMethod == null || methods.Count < MIN_HELPER_METHODS)
 				return false;
 
-			methods.Sort((a, b) => {
-				if (a.Parameters.Count < b.Parameters.Count) return -1;
-				if (a.Parameters.Count > b.Parameters.Count) return 1;
-				return 0;
-			});
-
+			methods.Sort((a, b) => Utils.compareInt32(a.Parameters.Count, b.Parameters.Count));
 			for (int i = 0; i < methods.Count; i++) {
 				var method = methods[i];
 				if (method.Parameters.Count != i + 1)
