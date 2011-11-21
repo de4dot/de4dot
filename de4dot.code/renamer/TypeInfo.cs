@@ -513,7 +513,7 @@ namespace de4dot.renamer {
 				if (!checker.isValidEventName(eventName))
 					continue;
 
-				memberInfos.method(handlerDef).suggestedName = string.Format("{0}_{1}", newName, eventName);
+				memberInfos.method(handlerDef).suggestedName = string.Format("{0}_{1}", memberInfos.prop(propDef).newName, eventName);
 			}
 		}
 
@@ -682,7 +682,7 @@ namespace de4dot.renamer {
 					if (!checker.isValidEventName(eventName))
 						continue;
 
-					memberInfos.method(handlerMethod).suggestedName = string.Format("{0}_{1}", newName, eventName);
+					memberInfos.method(handlerMethod).suggestedName = string.Format("{0}_{1}", memberInfos.field(fieldDef).newName, eventName);
 				}
 			}
 		}
