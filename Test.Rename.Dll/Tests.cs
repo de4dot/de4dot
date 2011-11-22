@@ -1560,4 +1560,31 @@ namespace Test.Rename.Dll {
 			public override void meth1() { }
 		}
 	}
+
+	namespace test.Virtual.methods3 {
+		interface IFace1 {
+			int meth1();
+		}
+		class Class1 : IFace1 {
+			public int meth1() { return 0; }
+		}
+		class Class2 : Class1 { }
+		interface IFace2 {
+			bool meth2();
+		}
+		class Class3 : Class2, IFace2 {
+			public virtual bool meth2() { return true; }
+		}
+		interface IFace3 {
+			bool meth3();
+			void meth1(bool b);
+		}
+		class Class4 : Class3, IFace3 {
+			public bool meth3() { return true; }
+			public void meth1(bool b) { }
+		}
+		class Class5 : Class4 {
+			public override bool meth2() { return true; }
+		}
+	}
 }
