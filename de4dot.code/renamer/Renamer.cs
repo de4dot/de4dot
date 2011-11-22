@@ -724,7 +724,9 @@ namespace de4dot.renamer {
 		}
 
 		static readonly Regex removeGenericsArityRegex = new Regex(@"`[0-9]+");
-		static string getOverridePrefix(MethodDef method) {
+		static string getOverridePrefix(MethodNameScope scope, MethodDef method) {
+			if (scope.Methods.Count != 1)
+				return "";
 			if (method.MethodDefinition.Overrides.Count == 0)
 				return "";
 			var overrideMethod = method.MethodDefinition.Overrides[0];
@@ -766,7 +768,7 @@ namespace de4dot.renamer {
 			else
 				methodPrefix = null;
 
-			overridePrefix = getOverridePrefix(eventMethod);
+			overridePrefix = getOverridePrefix(scope, eventMethod);
 			if (renameOverrides && overridePrefix == "")
 				return null;
 			if (!renameOverrides && overridePrefix != "")
@@ -848,7 +850,7 @@ namespace de4dot.renamer {
 			if (propMethod == null)
 				throw new ApplicationException("No properties found");
 
-			overridePrefix = getOverridePrefix(propMethod);
+			overridePrefix = getOverridePrefix(scope, propMethod);
 
 			if (renameOverrides && overridePrefix == "")
 				return null;
@@ -984,7 +986,7 @@ namespace de4dot.renamer {
 			}
 
 			var overrideMethod = scope.Methods[0];
-			var overridePrefix = getOverridePrefix(overrideMethod);
+			var overridePrefix = getOverridePrefix(scope, overrideMethod);
 			if (renameOverrides && overridePrefix == "")
 				return;
 			if (!renameOverrides && overridePrefix != "")
