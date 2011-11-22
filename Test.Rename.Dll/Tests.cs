@@ -1521,4 +1521,43 @@ namespace Test.Rename.Dll {
 
 		}
 	}
+
+	namespace test.Virtual.methods1 {
+		class Class1 {
+			public virtual void meth1() { }
+		}
+		class Class2 : Class1 {
+			public virtual void meth2() { }
+		}
+		class Class3 : Class2 {
+			public override void meth1() { }
+		}
+		class Class4 : Class2 {
+			public override void meth2() { }
+		}
+	}
+
+	namespace test.Virtual.methods2 {
+		abstract class Class1 {
+			public abstract void meth1();
+		}
+		abstract class Class2 : Class1 {
+			public virtual void meth2() { }
+		}
+		class Class3 : Class2 {
+			public override void meth1() { }
+		}
+		class Class4 : Class2 {
+			public override void meth1() { }
+		}
+		abstract class Class5 : Class2 {
+			public override void meth2() { }
+		}
+		class Class6 : Class5 {
+			public override void meth1() { }
+		}
+		class Class7 : Class5 {
+			public override void meth1() { }
+		}
+	}
 }
