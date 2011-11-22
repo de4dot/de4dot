@@ -134,15 +134,20 @@ namespace de4dot.renamer.asmmodules {
 			}
 		}
 
-		public void addMethod(MethodDef ifaceMethod, MethodDef classMethod) {
+		// Returns the previous method, or null if none
+		public MethodDef addMethod(MethodDef ifaceMethod, MethodDef classMethod) {
 			if (!ifaceMethodToClassMethod.ContainsKey(ifaceMethod))
 				throw new ApplicationException("Could not find interface method");
+
+			MethodDef oldMethod;
+			ifaceMethodToClassMethod.TryGetValue(ifaceMethod, out oldMethod);
 			ifaceMethodToClassMethod[ifaceMethod] = classMethod;
+			return oldMethod;
 		}
 
 		public void addMethodIfEmpty(MethodDef ifaceMethod, MethodDef classMethod) {
 			if (ifaceMethodToClassMethod[ifaceMethod] == null)
-				ifaceMethodToClassMethod[ifaceMethod] = classMethod;
+				addMethod(ifaceMethod, classMethod);
 		}
 
 		public override string ToString() {
@@ -177,16 +182,18 @@ namespace de4dot.renamer.asmmodules {
 				interfaceMethods[key] = new InterfaceMethodInfo(iface);
 		}
 
-		public void addMethod(TypeInfo iface, MethodDef ifaceMethod, MethodDef classMethod) {
-			addMethod(iface.typeReference, ifaceMethod, classMethod);
+		// Returns the previous classMethod, or null if none
+		public MethodDef addMethod(TypeInfo iface, MethodDef ifaceMethod, MethodDef classMethod) {
+			return addMethod(iface.typeReference, ifaceMethod, classMethod);
 		}
 
-		public void addMethod(TypeReference iface, MethodDef ifaceMethod, MethodDef classMethod) {
+		// Returns the previous classMethod, or null if none
+		public MethodDef addMethod(TypeReference iface, MethodDef ifaceMethod, MethodDef classMethod) {
 			InterfaceMethodInfo info;
 			var key = new TypeReferenceKey(iface);
 			if (!interfaceMethods.TryGetValue(key, out info))
 				throw new ApplicationException("Could not find interface");
-			info.addMethod(ifaceMethod, classMethod);
+			return info.addMethod(ifaceMethod, classMethod);
 		}
 
 		public void addMethodIfEmpty(TypeInfo iface, MethodDef ifaceMethod, MethodDef classMethod) {
@@ -554,8 +561,9 @@ namespace de4dot.renamer.asmmodules {
 						continue;
 					}
 
-					interfaceMethodInfos.addMethod(overrideMethod.DeclaringType, ifaceMethod, classMethod);
-					overrideMethods[classMethod] = true;
+					var oldMethod = interfaceMethodInfos.addMethod(overrideMethod.DeclaringType, ifaceMethod, classMethod);
+					if (oldMethod != classMethod)
+						overrideMethods[classMethod] = true;
 				}
 			}
 
