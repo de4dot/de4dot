@@ -41,6 +41,7 @@ namespace de4dot.renamer {
 		Modules modules = new Modules();
 		MemberInfos memberInfos = new MemberInfos();
 		DerivedFrom isDelegateClass;
+		MergeStateHelper mergeStateHelper;
 
 		static string[] delegateClasses = new string[] {
 			"System.Delegate",
@@ -59,6 +60,7 @@ namespace de4dot.renamer {
 			RestoreProperties = true;
 			RestorePropertiesFromNames = true;
 			isDelegateClass = new DerivedFrom(delegateClasses);
+			mergeStateHelper = new MergeStateHelper(memberInfos);
 
 			foreach (var file in files)
 				modules.add(new Module(file));
@@ -671,15 +673,14 @@ namespace de4dot.renamer {
 					return;
 				visited[type] = true;
 
-				foreach (var ifaceInfo in type.interfaces)
-					visit(ifaceInfo.typeDef);
 				if (type.baseType != null)
 					visit(type.baseType.typeDef);
+				foreach (var ifaceInfo in type.interfaces)
+					visit(ifaceInfo.typeDef);
 
 				TypeInfo info;
 				if (!memberInfos.tryGetType(type, out info))
 					return;
-				info.mergeState();
 
 				foreach (var method in type.AllMethodsSorted) {
 					MethodNameScope scope;
@@ -791,8 +792,10 @@ namespace de4dot.renamer {
 				newEventName = getRealName(eventInfo.newName);
 			else if (eventDef.Owner.Module.ObfuscatedFile.NameChecker.isValidEventName(oldEventName))
 				newEventName = oldEventName;
-			else
+			else {
+				mergeStateHelper.merge(MergeStateFlags.Events, scope);
 				newEventName = getAvailableName("Event_", scope, (scope2, newName) => isEventAvailable(scope2, newName));
+			}
 
 			var newEventNameWithPrefix = overridePrefix + newEventName;
 			foreach (var method in scope.Methods) {
@@ -877,6 +880,7 @@ namespace de4dot.renamer {
 				newPropName = oldPropName;
 			else {
 				var propPrefix = getSuggestedPropertyName(scope) ?? getNewPropertyNamePrefix(scope);
+				mergeStateHelper.merge(MergeStateFlags.Properties, scope);
 				newPropName = getAvailableName(propPrefix, scope, (scope2, newName) => isPropertyAvailable(scope2, newName));
 			}
 
@@ -1001,12 +1005,75 @@ namespace de4dot.renamer {
 				else
 					newMethodName = getRealName(memberInfos.method(overriddenMethod).newName);
 			}
-			else
-				newMethodName = getSuggestedMethodName(scope) ?? getAvailableName(namePrefix, scope, (scope2, newName) => isMethodAvailable(scope2, newName));
+			else {
+				newMethodName = getSuggestedMethodName(scope);
+				if (newMethodName == null) {
+					mergeStateHelper.merge(MergeStateFlags.Methods, scope);
+					newMethodName = getAvailableName(namePrefix, scope, (scope2, newName) => isMethodAvailable(scope2, newName));
+				}
+			}
 
 			var newMethodNameWithPrefix = overridePrefix + newMethodName;
 			foreach (var method in scope.Methods)
 				memberInfos.type(method.Owner).renameMethod(method, newMethodNameWithPrefix);
+		}
+
+		[Flags]
+		enum MergeStateFlags {
+			None = 0,
+			Methods = 0x1,
+			Properties = 0x2,
+			Events = 0x4,
+		}
+
+		class MergeStateHelper {
+			MemberInfos memberInfos;
+			MergeStateFlags flags;
+			Dictionary<TypeDef, bool> visited = new Dictionary<TypeDef, bool>();
+
+			public MergeStateHelper(MemberInfos memberInfos) {
+				this.memberInfos = memberInfos;
+			}
+
+			public void merge(MergeStateFlags flags, MethodNameScope scope) {
+				this.flags = flags;
+				visited.Clear();
+				foreach (var method in scope.Methods)
+					merge(method.Owner);
+			}
+
+			void merge(TypeDef type) {
+				if (visited.ContainsKey(type))
+					return;
+				visited[type] = true;
+
+				TypeInfo info;
+				if (!memberInfos.tryGetType(type, out info))
+					return;
+
+				if (type.baseType != null)
+					merge(type.baseType.typeDef);
+				foreach (var ifaceInfo in type.interfaces)
+					merge(ifaceInfo.typeDef);
+
+				if (type.baseType != null)
+					merge(info, type.baseType.typeDef);
+				foreach (var ifaceInfo in type.interfaces)
+					merge(info, ifaceInfo.typeDef);
+			}
+
+			void merge(TypeInfo info, TypeDef other) {
+				TypeInfo otherInfo;
+				if (!memberInfos.tryGetType(other, out otherInfo))
+					return;
+
+				if ((flags & MergeStateFlags.Methods) != MergeStateFlags.None)
+					info.variableNameState.mergeMethods(otherInfo.variableNameState);
+				if ((flags & MergeStateFlags.Properties) != MergeStateFlags.None)
+					info.variableNameState.mergeProperties(otherInfo.variableNameState);
+				if ((flags & MergeStateFlags.Events) != MergeStateFlags.None)
+					info.variableNameState.mergeEvents(otherInfo.variableNameState);
+			}
 		}
 
 		MethodDef getOverriddenMethod(MethodDef overrideMethod) {

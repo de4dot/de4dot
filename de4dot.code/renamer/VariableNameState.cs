@@ -50,6 +50,18 @@ namespace de4dot.renamer {
 			return this;
 		}
 
+		public void mergeMethods(VariableNameState other) {
+			existingMethodNames.merge(other.existingMethodNames);
+		}
+
+		public void mergeProperties(VariableNameState other) {
+			existingPropertyNames.merge(other.existingPropertyNames);
+		}
+
+		public void mergeEvents(VariableNameState other) {
+			existingEventNames.merge(other.existingEventNames);
+		}
+
 		public string getNewPropertyName(PropertyDefinition propertyDefinition) {
 			var propType = propertyDefinition.PropertyType;
 			string newName;

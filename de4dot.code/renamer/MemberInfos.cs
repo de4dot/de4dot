@@ -44,6 +44,10 @@ namespace de4dot.renamer {
 		public bool gotNewName() {
 			return oldName != newName;
 		}
+
+		public override string ToString() {
+			return string.Format("O:{0} -- N:{1}", oldFullName, newName);
+		}
 	}
 
 	class GenericParamInfo : MemberInfo {
