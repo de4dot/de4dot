@@ -24,14 +24,14 @@ namespace de4dot.renamer {
 	class TypeRenamerState {
 		ExistingNames existingNames;
 		Dictionary<string, string> namespaceToNewName;
-		INameCreator createNamespaceName;
+		NameCreator createNamespaceName;
 		public ITypeNameCreator globalTypeNameCreator;
 		public ITypeNameCreator internalTypeNameCreator;
 
 		public TypeRenamerState() {
 			existingNames = new ExistingNames();
 			namespaceToNewName = new Dictionary<string, string>(StringComparer.Ordinal);
-			createNamespaceName = new GlobalNameCreator(new NameCreator("ns"));
+			createNamespaceName = new NameCreator("ns");
 			globalTypeNameCreator = new GlobalTypeNameCreator(existingNames);
 			internalTypeNameCreator = new TypeNameCreator(existingNames);
 		}

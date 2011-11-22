@@ -52,11 +52,9 @@ namespace de4dot.renamer {
 			}
 		}
 
-		public ExistingNames clone() {
-			var cn = new ExistingNames();
-			foreach (var key in allNames.Keys)
-				cn.allNames[key] = true;
-			return cn;
+		public void merge(ExistingNames other) {
+			foreach (var key in other.allNames.Keys)
+				allNames[key] = true;
 		}
 	}
 }

@@ -27,28 +27,27 @@ namespace de4dot.renamer {
 		ExistingNames existingEventNames = new ExistingNames();
 		TypeNames variableNameCreator = new VariableNameCreator();	// For fields and method args
 		TypeNames propertyNameCreator = new PropertyNameCreator();
-		INameCreator eventNameCreator = new NameCreator("Event_");
-		INameCreator genericPropertyNameCreator = new NameCreator("Prop_");
-		public INameCreator staticMethodNameCreator = new NameCreator("smethod_");
-		public INameCreator instanceMethodNameCreator = new NameCreator("method_");
+		NameCreator eventNameCreator = new NameCreator("Event_");
+		NameCreator genericPropertyNameCreator = new NameCreator("Prop_");
+		public NameCreator staticMethodNameCreator = new NameCreator("smethod_");
+		public NameCreator instanceMethodNameCreator = new NameCreator("method_");
 
-		public virtual VariableNameState clone() {
-			var rv = new VariableNameState();
-			cloneInit(rv);
-			return rv;
+		public VariableNameState clone() {
+			return new VariableNameState().merge(this);
 		}
 
-		void cloneInit(VariableNameState variableNameState) {
-			variableNameState.existingVariableNames = existingVariableNames.clone();
-			variableNameState.existingMethodNames = existingMethodNames.clone();
-			variableNameState.existingPropertyNames = existingPropertyNames.clone();
-			variableNameState.existingEventNames = existingEventNames.clone();
-			variableNameState.variableNameCreator = variableNameCreator.clone();
-			variableNameState.propertyNameCreator = propertyNameCreator.clone();
-			variableNameState.eventNameCreator = eventNameCreator.clone();
-			variableNameState.genericPropertyNameCreator = genericPropertyNameCreator.clone();
-			variableNameState.staticMethodNameCreator = staticMethodNameCreator.clone();
-			variableNameState.instanceMethodNameCreator = instanceMethodNameCreator.clone();
+		public VariableNameState merge(VariableNameState other) {
+			existingVariableNames.merge(other.existingVariableNames);
+			existingMethodNames.merge(other.existingMethodNames);
+			existingPropertyNames.merge(other.existingPropertyNames);
+			existingEventNames.merge(other.existingEventNames);
+			variableNameCreator.merge(other.variableNameCreator);
+			propertyNameCreator.merge(other.propertyNameCreator);
+			eventNameCreator.merge(other.eventNameCreator);
+			genericPropertyNameCreator.merge(other.genericPropertyNameCreator);
+			staticMethodNameCreator.merge(other.staticMethodNameCreator);
+			instanceMethodNameCreator.merge(other.instanceMethodNameCreator);
+			return this;
 		}
 
 		public string getNewPropertyName(PropertyDefinition propertyDefinition) {

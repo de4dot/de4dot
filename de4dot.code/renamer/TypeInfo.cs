@@ -29,7 +29,7 @@ namespace de4dot.renamer {
 	class TypeInfo : MemberInfo {
 		public string oldNamespace;
 		public string newNamespace;
-		public VariableNameState variableNameState;
+		public VariableNameState variableNameState = new VariableNameState();
 		public TypeDef type;
 		MemberInfos memberInfos;
 
@@ -111,9 +111,24 @@ namespace de4dot.renamer {
 			prepareRenameGenericParams(type.GenericParams, checker);
 		}
 
+		public void mergeState() {
+			foreach (var ifaceInfo in type.interfaces)
+				mergeState(ifaceInfo.typeDef);
+			if (type.baseType != null)
+				mergeState(type.baseType.typeDef);
+		}
+
+		void mergeState(TypeDef other) {
+			if (other == null)
+				return;
+			TypeInfo otherInfo;
+			if (!memberInfos.tryGetType(other, out otherInfo))
+				return;
+			variableNameState.merge(otherInfo.variableNameState);
+		}
+
 		public void prepareRenameMembers() {
-			if (variableNameState == null)
-				variableNameState = memberInfos.type(type.baseType.typeDef).variableNameState.clone();
+			mergeState();
 
 			foreach (var fieldDef in type.AllFields)
 				variableNameState.addFieldName(field(fieldDef).oldName);

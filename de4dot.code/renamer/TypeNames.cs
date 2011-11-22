@@ -23,10 +23,56 @@ using Mono.Cecil;
 
 namespace de4dot.renamer {
 	abstract class TypeNames {
-		protected IDictionary<string, INameCreator> typeNames = new Dictionary<string, INameCreator>(StringComparer.Ordinal);
-		protected INameCreator genericParamNameCreator = new NameCreator("gparam_");
+		protected Dictionary<string, NameCreator> typeNames = new Dictionary<string, NameCreator>(StringComparer.Ordinal);
+		protected NameCreator genericParamNameCreator = new NameCreator("gparam_");
 
-		public TypeNames() {
+		public string create(TypeReference typeRef) {
+			var elementType = typeRef.GetElementType();
+			if (elementType is GenericParameter)
+				return genericParamNameCreator.create();
+
+			var name = elementType.FullName;
+			NameCreator nc;
+			if (typeNames.TryGetValue(name, out nc))
+				return nc.create();
+
+			var parts = name.Replace('/', '.').Split(new char[] { '.' });
+			var newName = parts[parts.Length - 1];
+			int tickIndex = newName.LastIndexOf('`');
+			if (tickIndex > 0)
+				newName = newName.Substring(0, tickIndex);
+
+			return addTypeName(name, newName).create();
+		}
+
+		protected INameCreator addTypeName(string fullName, string newName) {
+			newName = fixName(newName);
+
+			var name2 = " " + newName;
+			NameCreator nc;
+			if (!typeNames.TryGetValue(name2, out nc))
+				typeNames[name2] = nc = new NameCreator(newName + "_");
+
+			typeNames[fullName] = nc;
+			return nc;
+		}
+
+		protected abstract string fixName(string name);
+
+		public virtual TypeNames merge(TypeNames other) {
+			foreach (var pair in other.typeNames) {
+				if (typeNames.ContainsKey(pair.Key))
+					typeNames[pair.Key].merge(pair.Value);
+				else
+					typeNames[pair.Key] = pair.Value.clone();
+			}
+			genericParamNameCreator.merge(other.genericParamNameCreator);
+			return this;
+		}
+	}
+
+	class VariableNameCreator : TypeNames {
+		public VariableNameCreator() {
 			addTypeName("System.Boolean", "bool");
 			addTypeName("System.Byte", "byte");
 			addTypeName("System.Char", "char");
@@ -45,49 +91,6 @@ namespace de4dot.renamer {
 			addTypeName("System.Decimal", "decimal");
 		}
 
-		public string create(TypeReference typeRef) {
-			var elementType = typeRef.GetElementType();
-			if (elementType is GenericParameter)
-				return genericParamNameCreator.create();
-
-			var name = elementType.FullName;
-			INameCreator nc;
-			if (typeNames.TryGetValue(name, out nc))
-				return nc.create();
-
-			var parts = name.Replace('/', '.').Split(new char[] { '.' });
-			var newName = parts[parts.Length - 1];
-			int tickIndex = newName.LastIndexOf('`');
-			if (tickIndex > 0)
-				newName = newName.Substring(0, tickIndex);
-
-			return addTypeName(name, newName).create();
-		}
-
-		INameCreator addTypeName(string fullName, string newName) {
-			newName = fixName(newName);
-
-			var name2 = " " + newName;
-			INameCreator nc;
-			if (!typeNames.TryGetValue(name2, out nc))
-				typeNames[name2] = nc = new NameCreator(newName + "_");
-
-			typeNames[fullName] = nc;
-			return nc;
-		}
-
-		protected abstract string fixName(string name);
-		public abstract TypeNames clone();
-
-		protected IDictionary<string, INameCreator> cloneDict() {
-			var rv = new Dictionary<string, INameCreator>(StringComparer.Ordinal);
-			foreach (var key in typeNames.Keys)
-				rv[key] = typeNames[key].clone();
-			return rv;
-		}
-	}
-
-	class VariableNameCreator : TypeNames {
 		protected override string fixName(string name) {
 			// Make all leading upper case chars lower case
 			var s = "";
@@ -99,25 +102,11 @@ namespace de4dot.renamer {
 			}
 			return s;
 		}
-
-		public override TypeNames clone() {
-			var rv = new VariableNameCreator();
-			rv.typeNames = cloneDict();
-			rv.genericParamNameCreator = genericParamNameCreator.clone();
-			return rv;
-		}
 	}
 
 	class PropertyNameCreator : TypeNames {
 		protected override string fixName(string name) {
 			return name.Substring(0, 1).ToUpperInvariant() + name.Substring(1);
-		}
-
-		public override TypeNames clone() {
-			var rv = new PropertyNameCreator();
-			rv.typeNames = cloneDict();
-			rv.genericParamNameCreator = genericParamNameCreator.clone();
-			return rv;
 		}
 	}
 }

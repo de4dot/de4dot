@@ -604,9 +604,6 @@ namespace de4dot.renamer {
 
 			prepareRenameEntryPoints();
 
-			foreach (var typeDef in modules.BaseTypes)
-				memberInfos.type(typeDef).variableNameState = new VariableNameState();
-
 			foreach (var typeDef in modules.AllTypes)
 				prepareRenameMembers(typeDef);
 
@@ -638,68 +635,92 @@ namespace de4dot.renamer {
 			return allScopes;
 		}
 
+		class ScopeHelper {
+			MemberInfos memberInfos;
+			Dictionary<TypeDef, bool> visited = new Dictionary<TypeDef, bool>();
+			Dictionary<MethodDef, MethodNameScope> methodToScope;
+			List<MethodNameScope> scopes = new List<MethodNameScope>();
+			IEnumerable<TypeDef> allTypes;
+			Action<MethodNameScope> func;
+
+			public ScopeHelper(MemberInfos memberInfos, IEnumerable<TypeDef> allTypes) {
+				this.memberInfos = memberInfos;
+				this.allTypes = allTypes;
+			}
+
+			public void add(MethodNameScope scope) {
+				scopes.Add(scope);
+			}
+
+			public void visitAll(Action<MethodNameScope> func) {
+				this.func = func;
+				visited.Clear();
+
+				methodToScope = new Dictionary<MethodDef, MethodNameScope>();
+				foreach (var scope in scopes) {
+					foreach (var method in scope.Methods)
+						methodToScope[method] = scope;
+				}
+
+				foreach (var type in allTypes)
+					visit(type);
+			}
+
+			void visit(TypeDef type) {
+				if (visited.ContainsKey(type))
+					return;
+				visited[type] = true;
+
+				foreach (var ifaceInfo in type.interfaces)
+					visit(ifaceInfo.typeDef);
+				if (type.baseType != null)
+					visit(type.baseType.typeDef);
+
+				TypeInfo info;
+				if (!memberInfos.tryGetType(type, out info))
+					return;
+				info.mergeState();
+
+				foreach (var method in type.AllMethodsSorted) {
+					MethodNameScope scope;
+					if (!methodToScope.TryGetValue(method, out scope))
+						continue;
+					foreach (var m in scope.Methods)
+						methodToScope.Remove(m);
+					func(scope);
+				}
+			}
+		}
+
 		void prepareRenameVirtualMethods(MethodNameScopes scopes) {
 			var allScopes = getSorted(scopes);
 
-			var virtualMethods = new List<MethodNameScope>();
-			var ifaceMethods = new List<MethodNameScope>();
-			var propMethods = new List<MethodNameScope>();
-			var eventMethods = new List<MethodNameScope>();
+			var virtualMethods = new ScopeHelper(memberInfos, modules.AllTypes);
+			var ifaceMethods = new ScopeHelper(memberInfos, modules.AllTypes);
+			var propMethods = new ScopeHelper(memberInfos, modules.AllTypes);
+			var eventMethods = new ScopeHelper(memberInfos, modules.AllTypes);
 			foreach (var scope in allScopes) {
 				if (scope.hasNonRenamableMethod())
 					continue;
 				else if (scope.hasPropertyMethod() && getPropertyMethodType(scope.Methods[0]) != PropertyMethodType.Other)
-					propMethods.Add(scope);
+					propMethods.add(scope);
 				else if (scope.hasEventMethod())
-					eventMethods.Add(scope);
+					eventMethods.add(scope);
 				else if (scope.hasInterfaceMethod())
-					ifaceMethods.Add(scope);
+					ifaceMethods.add(scope);
 				else
-					virtualMethods.Add(scope);
+					virtualMethods.add(scope);
 			}
 
-			prepareRenameVirtualProperties(propMethods);
-			prepareRenameVirtualEvents(eventMethods);
-			prepareRenameVirtualMethods(virtualMethods, "vmethod_", false);
-			prepareRenameVirtualMethods(ifaceMethods, "imethod_", false);
-			prepareRenameVirtualMethods(virtualMethods, "vmethod_", true);
-			prepareRenameVirtualMethods(ifaceMethods, "imethod_", true);
-		}
+			propMethods.visitAll((scope) => prepareRenameProperty(scope, false));
+			eventMethods.visitAll((scope) => prepareRenameEvent(scope, false));
+			virtualMethods.visitAll((scope) => prepareRenameVirtualMethods(scope, "vmethod_", false));
+			ifaceMethods.visitAll((scope) => prepareRenameVirtualMethods(scope, "imethod_", false));
 
-		Dictionary<TypeDef, int> numBaseClassesDict = new Dictionary<TypeDef, int>();
-		int getNumberOfBaseClasses(TypeDef type) {
-			int numBaseClasses;
-			if (numBaseClassesDict.TryGetValue(type, out numBaseClasses))
-				return numBaseClasses;
-			return numBaseClassesDict[type] = getNumberOfBaseClassesInternal(type);
-		}
-
-		int getNumberOfBaseClassesInternal(TypeDef type) {
-			if (type.baseType == null)
-				return 0;
-			return getNumberOfBaseClasses(type.baseType.typeDef) + 1;
-		}
-
-		int compareTypes(TypeDef a, TypeDef b) {
-			int ac = getNumberOfBaseClasses(a);
-			int bc = getNumberOfBaseClasses(b);
-			if (ac < bc) return -1;
-			if (ac > bc) return 1;
-			return Utils.compareInt32(a.Index, b.Index);
-		}
-
-		void sortScopes(List<MethodNameScope> scopes) {
-			var scopeToType = new Dictionary<MethodNameScope, TypeDef>(scopes.Count);
-			foreach (var scope in scopes) {
-				TypeDef type = null;
-				foreach (var method in scope.Methods) {
-					var owner = method.Owner;
-					if (type == null || compareTypes(owner, type) < 0)
-						type = owner;
-				}
-				scopeToType[scope] = type;
-			}
-			scopes.Sort((a, b) => compareTypes(scopeToType[a], scopeToType[b]));
+			propMethods.visitAll((scope) => prepareRenameProperty(scope, true));
+			eventMethods.visitAll((scope) => prepareRenameEvent(scope, true));
+			virtualMethods.visitAll((scope) => prepareRenameVirtualMethods(scope, "vmethod_", true));
+			ifaceMethods.visitAll((scope) => prepareRenameVirtualMethods(scope, "imethod_", true));
 		}
 
 		static readonly Regex removeGenericsArityRegex = new Regex(@"`[0-9]+");
@@ -717,15 +738,6 @@ namespace de4dot.renamer {
 			if (index < 0)
 				return name;
 			return name.Substring(index + 1);
-		}
-
-		void prepareRenameVirtualEvents(List<MethodNameScope> scopes) {
-			sortScopes(scopes);
-
-			foreach (var scope in scopes)
-				prepareRenameEvent(scope, false);
-			foreach (var scope in scopes)
-				prepareRenameEvent(scope, true);
 		}
 
 		void prepareRenameEvent(MethodNameScope scope, bool renameOverrides) {
@@ -806,15 +818,6 @@ namespace de4dot.renamer {
 					return method;
 			}
 			return null;
-		}
-
-		void prepareRenameVirtualProperties(List<MethodNameScope> scopes) {
-			sortScopes(scopes);
-
-			foreach (var scope in scopes)
-				prepareRenameProperty(scope, false);
-			foreach (var scope in scopes)
-				prepareRenameProperty(scope, true);
 		}
 
 		void prepareRenameProperty(MethodNameScope scope, bool renameOverrides) {
@@ -918,16 +921,15 @@ namespace de4dot.renamer {
 			const string defaultVal = "Prop_";
 
 			var propType = getPropertyType(scope);
-			if (propType == null)
+			if (propType == null || propType is GenericInstanceType)
 				return defaultVal;
 
 			string name = propType.Name;
-			int i = name.IndexOf('`');
-			if (i >= 0)
+			int i;
+			if ((i = name.IndexOf('`')) >= 0)
 				name = name.Substring(0, i);
-			i = name.IndexOf('.');
-			if (i >= 0)
-				name = name.Substring(0, i);
+			if ((i = name.LastIndexOf('.')) >= 0)
+				name = name.Substring(i + 1);
 			if (name == "")
 				return defaultVal;
 			return name + "_";
@@ -966,13 +968,6 @@ namespace de4dot.renamer {
 					return null;
 			}
 			return type;
-		}
-
-		void prepareRenameVirtualMethods(List<MethodNameScope> scopes, string namePrefix, bool renameOverrides) {
-			sortScopes(scopes);
-
-			foreach (var scope in scopes)
-				prepareRenameVirtualMethods(scope, namePrefix, renameOverrides);
 		}
 
 		void prepareRenameVirtualMethods(MethodNameScope scope, string namePrefix, bool renameOverrides) {

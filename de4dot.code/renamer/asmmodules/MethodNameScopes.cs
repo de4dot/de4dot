@@ -68,8 +68,11 @@ namespace de4dot.renamer.asmmodules {
 
 		public bool hasEventMethod() {
 			foreach (var method in methods) {
-				if (method.Event != null)
-					return true;
+				if (method.Event != null) {
+					var evt = method.Event;
+					if (method == evt.AddMethod || method == evt.RemoveMethod || method == evt.RaiseMethod)
+						return true;
+				}
 			}
 			return false;
 		}
@@ -77,14 +80,6 @@ namespace de4dot.renamer.asmmodules {
 		public bool hasProperty() {
 			foreach (var method in methods) {
 				if (method.Property != null)
-					return true;
-			}
-			return false;
-		}
-
-		public bool hasEvent() {
-			foreach (var method in methods) {
-				if (method.Event != null)
 					return true;
 			}
 			return false;
