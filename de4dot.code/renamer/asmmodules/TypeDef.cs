@@ -327,6 +327,10 @@ namespace de4dot.renamer.asmmodules {
 			return properties.find(pr);
 		}
 
+		public EventDef find(EventReference er) {
+			return events.find(er);
+		}
+
 		public PropertyDef create(PropertyDefinition newProp) {
 			if (find(newProp) != null)
 				throw new ApplicationException("Can't add a property when it's already been added");
@@ -335,6 +339,16 @@ namespace de4dot.renamer.asmmodules {
 			add(propDef);
 			TypeDefinition.Properties.Add(newProp);
 			return propDef;
+		}
+
+		public EventDef create(EventDefinition newEvent) {
+			if (find(newEvent) != null)
+				throw new ApplicationException("Can't add an event when it's already been added");
+
+			var eventDef = new EventDef(newEvent, this, events.Count);
+			add(eventDef);
+			TypeDefinition.Events.Add(newEvent);
+			return eventDef;
 		}
 
 		public void addMembers() {

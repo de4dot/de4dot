@@ -352,6 +352,7 @@ namespace de4dot {
 				return;
 			var renamer = new Renamer(theFiles) {
 				RestorePropertiesFromNames = options.RestorePropsEvents,
+				RestoreEventsFromNames = options.RestorePropsEvents,
 			};
 			renamer.rename();
 		}

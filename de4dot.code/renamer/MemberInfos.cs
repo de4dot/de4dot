@@ -250,6 +250,10 @@ namespace de4dot.renamer {
 			allPropertyInfos[prop] = new PropertyInfo(prop);
 		}
 
+		public void add(EventDef evt) {
+			allEventInfos[evt] = new EventInfo(evt);
+		}
+
 		public void initialize(Modules modules) {
 			foreach (var type in modules.AllTypes) {
 				allTypeInfos[type] = new TypeInfo(type, this);
@@ -261,7 +265,7 @@ namespace de4dot.renamer {
 					allFieldInfos[field] = new FieldInfo(field);
 
 				foreach (var evt in type.AllEvents)
-					allEventInfos[evt] = new EventInfo(evt);
+					add(evt);
 
 				foreach (var prop in type.AllProperties)
 					add(prop);

@@ -37,6 +37,8 @@ namespace de4dot.renamer {
 		public bool RenameGenericParams { get; set; }
 		public bool RestoreProperties { get; set; }
 		public bool RestorePropertiesFromNames { get; set; }
+		public bool RestoreEvents { get; set; }
+		public bool RestoreEventsFromNames { get; set; }
 
 		Modules modules = new Modules();
 		MemberInfos memberInfos = new MemberInfos();
@@ -59,6 +61,9 @@ namespace de4dot.renamer {
 			RenameGenericParams = true;
 			RestoreProperties = true;
 			RestorePropertiesFromNames = true;
+			RestoreEvents = true;
+			RestoreEventsFromNames = true;
+
 			isDelegateClass = new DerivedFrom(delegateClasses);
 			mergeStateHelper = new MergeStateHelper(memberInfos);
 
@@ -77,7 +82,7 @@ namespace de4dot.renamer {
 			renameTypeDefinitions();
 			renameTypeReferences();
 			modules.onTypesRenamed();
-			restoreProperties(scopes);
+			restorePropertiesAndEvents(scopes);
 			prepareRenameMemberDefinitions(scopes);
 			renameMemberDefinitions();
 			renameMemberReferences();
@@ -445,10 +450,12 @@ namespace de4dot.renamer {
 			}
 		}
 
-		void restoreProperties(MethodNameScopes scopes) {
+		void restorePropertiesAndEvents(MethodNameScopes scopes) {
 			var allScopes = scopes.getAllScopes();
 			restoreVirtualProperties(allScopes);
 			restorePropertiesFromNames(allScopes);
+			restoreVirtualEvents(allScopes);
+			restoreEventsFromNames(allScopes);
 		}
 
 		void restoreVirtualProperties(IEnumerable<MethodNameScope> allScopes) {
@@ -599,6 +606,182 @@ namespace de4dot.renamer {
 			memberInfos.add(propDef);
 			Log.v("Restoring property: {0}", newProp);
 			return propDef;
+		}
+
+		void restoreVirtualEvents(IEnumerable<MethodNameScope> allScopes) {
+			if (!RestoreEvents)
+				return;
+			foreach (var scope in allScopes)
+				restoreVirtualEvents(scope);
+		}
+
+		enum EventMethodType {
+			None,
+			Other,
+			Adder,
+			Remover,
+			Raiser,
+		}
+
+		void restoreVirtualEvents(MethodNameScope scope) {
+			if (scope.Methods.Count <= 1 || !scope.hasEvent())
+				return;
+
+			EventMethodType methodType = EventMethodType.None;
+			EventDef evt = null;
+			List<MethodDef> missingEvents = null;
+			foreach (var method in scope.Methods) {
+				if (method.Event == null) {
+					if (missingEvents == null)
+						missingEvents = new List<MethodDef>();
+					missingEvents.Add(method);
+				}
+				else if (evt == null) {
+					evt = method.Event;
+					if (evt.AddMethod == method)
+						methodType = EventMethodType.Adder;
+					else if (evt.RemoveMethod == method)
+						methodType = EventMethodType.Remover;
+					else if (evt.RaiseMethod == method)
+						methodType = EventMethodType.Raiser;
+					else
+						methodType = EventMethodType.Other;
+				}
+			}
+			if (evt == null)
+				return;	// Should never happen
+			if (missingEvents == null)
+				return;
+
+			foreach (var method in missingEvents) {
+				if (!method.Owner.HasModule)
+					continue;
+
+				switch (methodType) {
+				case EventMethodType.Adder:
+					createEventAdder(evt.EventDefinition.Name, method);
+					break;
+				case EventMethodType.Remover:
+					createEventRemover(evt.EventDefinition.Name, method);
+					break;
+				}
+			}
+		}
+
+		void restoreEventsFromNames(IEnumerable<MethodNameScope> allScopes) {
+			if (!RestoreEventsFromNames)
+				return;
+
+			foreach (var scope in allScopes) {
+				var scopeMethod = scope.Methods[0];
+				var methodName = scopeMethod.MethodDefinition.Name;
+				bool onlyRenamableMethods = !scope.hasNonRenamableMethod();
+
+				if (Utils.StartsWith(methodName, "add_", StringComparison.Ordinal)) {
+					var eventName = methodName.Substring(4);
+					foreach (var method in scope.Methods) {
+						if (onlyRenamableMethods && !memberInfos.type(method.Owner).NameChecker.isValidEventName(eventName))
+							continue;
+						createEventAdder(eventName, method);
+					}
+				}
+				else if (Utils.StartsWith(methodName, "remove_", StringComparison.Ordinal)) {
+					var eventName = methodName.Substring(7);
+					foreach (var method in scope.Methods) {
+						if (onlyRenamableMethods && !memberInfos.type(method.Owner).NameChecker.isValidEventName(eventName))
+							continue;
+						createEventRemover(eventName, method);
+					}
+				}
+			}
+
+			foreach (var type in modules.AllTypes) {
+				foreach (var method in type.AllMethodsSorted) {
+					if (method.isVirtual())
+						continue;	// Virtual methods are in allScopes, so already fixed above
+					if (method.Event != null)
+						continue;
+					var methodName = method.MethodDefinition.Name;
+					if (Utils.StartsWith(methodName, "add_", StringComparison.Ordinal))
+						createEventAdder(methodName.Substring(4), method);
+					else if (Utils.StartsWith(methodName, "remove_", StringComparison.Ordinal))
+						createEventRemover(methodName.Substring(7), method);
+				}
+			}
+		}
+
+		EventDef createEventAdder(string name, MethodDef eventMethod) {
+			if (string.IsNullOrEmpty(name))
+				return null;
+			var ownerType = eventMethod.Owner;
+			if (!ownerType.HasModule)
+				return null;
+			if (eventMethod.Event != null)
+				return null;
+
+			var method = eventMethod.MethodDefinition;
+			var eventDef = createEvent(ownerType, name, getEventType(method));
+			if (eventDef == null)
+				return null;
+			if (eventDef.AddMethod != null)
+				return null;
+			Log.v("Restoring event adder {0} ({1:X8}), Event: {2} ({3:X8})",
+						eventMethod,
+						eventMethod.MethodDefinition.MetadataToken.ToInt32(),
+						eventDef.EventDefinition,
+						eventDef.EventDefinition.MetadataToken.ToInt32());
+			eventDef.EventDefinition.AddMethod = eventMethod.MethodDefinition;
+			eventDef.AddMethod = eventMethod;
+			eventMethod.Event = eventDef;
+			return eventDef;
+		}
+
+		EventDef createEventRemover(string name, MethodDef eventMethod) {
+			if (string.IsNullOrEmpty(name))
+				return null;
+			var ownerType = eventMethod.Owner;
+			if (!ownerType.HasModule)
+				return null;
+			if (eventMethod.Event != null)
+				return null;
+
+			var method = eventMethod.MethodDefinition;
+			var eventDef = createEvent(ownerType, name, getEventType(method));
+			if (eventDef == null)
+				return null;
+			if (eventDef.RemoveMethod != null)
+				return null;
+			Log.v("Restoring event remover {0} ({1:X8}), Event: {2} ({3:X8})",
+						eventMethod,
+						eventMethod.MethodDefinition.MetadataToken.ToInt32(),
+						eventDef.EventDefinition,
+						eventDef.EventDefinition.MetadataToken.ToInt32());
+			eventDef.EventDefinition.RemoveMethod = eventMethod.MethodDefinition;
+			eventDef.RemoveMethod = eventMethod;
+			eventMethod.Event = eventDef;
+			return eventDef;
+		}
+
+		TypeReference getEventType(MethodReference method) {
+			if (method.MethodReturnType.ReturnType.FullName != "System.Void")
+				return null;
+			if (method.Parameters.Count != 1)
+				return null;
+			return method.Parameters[0].ParameterType;
+		}
+
+		EventDef createEvent(TypeDef ownerType, string name, TypeReference eventType) {
+			if (string.IsNullOrEmpty(name) || eventType == null || eventType.FullName == "System.Void")
+				return null;
+			var newEvent = DotNetUtils.createEventDefinition(name, eventType);
+			var eventDef = ownerType.find(newEvent);
+			if (eventDef != null)
+				return eventDef;
+
+			eventDef = ownerType.create(newEvent);
+			memberInfos.add(eventDef);
+			Log.v("Restoring event: {0}", newEvent);
+			return eventDef;
 		}
 
 		void prepareRenameMemberDefinitions(MethodNameScopes scopes) {

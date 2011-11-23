@@ -88,6 +88,14 @@ namespace de4dot.renamer.asmmodules {
 			return false;
 		}
 
+		public bool hasEvent() {
+			foreach (var method in methods) {
+				if (method.Event != null)
+					return true;
+			}
+			return false;
+		}
+
 		public override string ToString() {
 			return string.Format("{0} -- {1}", methods.Count, methods.Count > 0 ? methods[0].ToString() : "");
 		}
