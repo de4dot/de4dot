@@ -58,21 +58,24 @@ namespace de4dot.renamer.asmmodules {
 			return false;
 		}
 
-		public bool hasPropertyMethod() {
+		public bool hasGetterOrSetterPropertyMethod() {
 			foreach (var method in methods) {
-				if (method.Property != null)
+				if (method.Property == null)
+					continue;
+				var prop = method.Property;
+				if (method == prop.GetMethod || method == prop.SetMethod)
 					return true;
 			}
 			return false;
 		}
 
-		public bool hasEventMethod() {
+		public bool hasAddRemoveOrRaiseEventMethod() {
 			foreach (var method in methods) {
-				if (method.Event != null) {
-					var evt = method.Event;
-					if (method == evt.AddMethod || method == evt.RemoveMethod || method == evt.RaiseMethod)
-						return true;
-				}
+				if (method.Event == null)
+					continue;
+				var evt = method.Event;
+				if (method == evt.AddMethod || method == evt.RemoveMethod || method == evt.RaiseMethod)
+					return true;
 			}
 			return false;
 		}

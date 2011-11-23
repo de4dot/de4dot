@@ -703,9 +703,9 @@ namespace de4dot.renamer {
 			foreach (var scope in allScopes) {
 				if (scope.hasNonRenamableMethod())
 					continue;
-				else if (scope.hasPropertyMethod() && getPropertyMethodType(scope.Methods[0]) != PropertyMethodType.Other)
+				else if (scope.hasGetterOrSetterPropertyMethod() && getPropertyMethodType(scope.Methods[0]) != PropertyMethodType.Other)
 					propMethods.add(scope);
-				else if (scope.hasEventMethod())
+				else if (scope.hasAddRemoveOrRaiseEventMethod())
 					eventMethods.add(scope);
 				else if (scope.hasInterfaceMethod())
 					ifaceMethods.add(scope);
