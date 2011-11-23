@@ -789,29 +789,77 @@ namespace de4dot.renamer {
 
 			prepareRenameEntryPoints();
 
-			foreach (var typeDef in modules.AllTypes)
-				prepareRenameMembers(typeDef);
+			var virtualMethods = new ScopeHelper(memberInfos, modules.AllTypes);
+			var ifaceMethods = new ScopeHelper(memberInfos, modules.AllTypes);
+			var propMethods = new ScopeHelper(memberInfos, modules.AllTypes);
+			var eventMethods = new ScopeHelper(memberInfos, modules.AllTypes);
+			foreach (var scope in getSorted(scopes)) {
+				if (scope.hasNonRenamableMethod())
+					continue;
+				else if (scope.hasGetterOrSetterPropertyMethod() && getPropertyMethodType(scope.Methods[0]) != PropertyMethodType.Other)
+					propMethods.add(scope);
+				else if (scope.hasAddRemoveOrRaiseEventMethod())
+					eventMethods.add(scope);
+				else if (scope.hasInterfaceMethod())
+					ifaceMethods.add(scope);
+				else
+					virtualMethods.add(scope);
+			}
 
-			prepareRenameVirtualMethods(scopes);
+			var prepareHelper = new PrepareHelper(memberInfos, modules.AllTypes);
+			prepareHelper.prepare((info) => info.prepareRenameMembers());
+
+			prepareHelper.prepare((info) => info.prepareRenamePropsAndEvents());
+			propMethods.visitAll((scope) => prepareRenameProperty(scope, false));
+			eventMethods.visitAll((scope) => prepareRenameEvent(scope, false));
+			propMethods.visitAll((scope) => prepareRenameProperty(scope, true));
+			eventMethods.visitAll((scope) => prepareRenameEvent(scope, true));
+
+			foreach (var typeDef in modules.AllTypes)
+				memberInfos.type(typeDef).initializeEventHandlerNames();
+
+			prepareHelper.prepare((info) => info.prepareRenameMethods());
+			virtualMethods.visitAll((scope) => prepareRenameVirtualMethods(scope, "vmethod_", false));
+			ifaceMethods.visitAll((scope) => prepareRenameVirtualMethods(scope, "imethod_", false));
+			virtualMethods.visitAll((scope) => prepareRenameVirtualMethods(scope, "vmethod_", true));
+			ifaceMethods.visitAll((scope) => prepareRenameVirtualMethods(scope, "imethod_", true));
 
 			foreach (var typeDef in modules.AllTypes)
 				memberInfos.type(typeDef).prepareRenameMethods2();
 		}
 
-		Dictionary<TypeDef, bool> prepareRenameMembersCalled = new Dictionary<TypeDef, bool>();
-		void prepareRenameMembers(TypeDef type) {
-			if (prepareRenameMembersCalled.ContainsKey(type))
-				return;
-			prepareRenameMembersCalled[type] = true;
+		class PrepareHelper {
+			Dictionary<TypeDef, bool> prepareMethodCalled = new Dictionary<TypeDef, bool>();
+			MemberInfos memberInfos;
+			Action<TypeInfo> func;
+			IEnumerable<TypeDef> allTypes;
 
-			foreach (var ifaceInfo in type.interfaces)
-				prepareRenameMembers(ifaceInfo.typeDef);
-			if (type.baseType != null)
-				prepareRenameMembers(type.baseType.typeDef);
+			public PrepareHelper(MemberInfos memberInfos, IEnumerable<TypeDef> allTypes) {
+				this.memberInfos = memberInfos;
+				this.allTypes = allTypes;
+			}
 
-			TypeInfo info;
-			if (memberInfos.tryGetType(type, out info))
-				info.prepareRenameMembers();
+			public void prepare(Action<TypeInfo> func) {
+				this.func = func;
+				prepareMethodCalled.Clear();
+				foreach (var typeDef in allTypes)
+					prepare(typeDef);
+			}
+
+			void prepare(TypeDef type) {
+				if (prepareMethodCalled.ContainsKey(type))
+					return;
+				prepareMethodCalled[type] = true;
+
+				foreach (var ifaceInfo in type.interfaces)
+					prepare(ifaceInfo.typeDef);
+				if (type.baseType != null)
+					prepare(type.baseType.typeDef);
+
+				TypeInfo info;
+				if (memberInfos.tryGetType(type, out info))
+					func(info);
+			}
 		}
 
 		static List<MethodNameScope> getSorted(MethodNameScopes scopes) {
@@ -874,37 +922,6 @@ namespace de4dot.renamer {
 					func(scope);
 				}
 			}
-		}
-
-		void prepareRenameVirtualMethods(MethodNameScopes scopes) {
-			var allScopes = getSorted(scopes);
-
-			var virtualMethods = new ScopeHelper(memberInfos, modules.AllTypes);
-			var ifaceMethods = new ScopeHelper(memberInfos, modules.AllTypes);
-			var propMethods = new ScopeHelper(memberInfos, modules.AllTypes);
-			var eventMethods = new ScopeHelper(memberInfos, modules.AllTypes);
-			foreach (var scope in allScopes) {
-				if (scope.hasNonRenamableMethod())
-					continue;
-				else if (scope.hasGetterOrSetterPropertyMethod() && getPropertyMethodType(scope.Methods[0]) != PropertyMethodType.Other)
-					propMethods.add(scope);
-				else if (scope.hasAddRemoveOrRaiseEventMethod())
-					eventMethods.add(scope);
-				else if (scope.hasInterfaceMethod())
-					ifaceMethods.add(scope);
-				else
-					virtualMethods.add(scope);
-			}
-
-			propMethods.visitAll((scope) => prepareRenameProperty(scope, false));
-			eventMethods.visitAll((scope) => prepareRenameEvent(scope, false));
-			virtualMethods.visitAll((scope) => prepareRenameVirtualMethods(scope, "vmethod_", false));
-			ifaceMethods.visitAll((scope) => prepareRenameVirtualMethods(scope, "imethod_", false));
-
-			propMethods.visitAll((scope) => prepareRenameProperty(scope, true));
-			eventMethods.visitAll((scope) => prepareRenameEvent(scope, true));
-			virtualMethods.visitAll((scope) => prepareRenameVirtualMethods(scope, "vmethod_", true));
-			ifaceMethods.visitAll((scope) => prepareRenameVirtualMethods(scope, "imethod_", true));
 		}
 
 		static readonly Regex removeGenericsArityRegex = new Regex(@"`[0-9]+");

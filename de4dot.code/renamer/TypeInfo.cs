@@ -143,12 +143,12 @@ namespace de4dot.renamer {
 				initializeWindowsFormsFieldsAndProps();
 
 			prepareRenameFields();
+		}
+
+		public void prepareRenamePropsAndEvents() {
+			mergeState();
 			prepareRenameProperties();
 			prepareRenameEvents();
-
-			initializeEventHandlerNames();
-
-			prepareRenameMethods();
 		}
 
 		void prepareRenameFields() {
@@ -177,7 +177,7 @@ namespace de4dot.renamer {
 				if (fieldInfo.renamed)
 					continue;
 				if (!checker.isValidFieldName(fieldInfo.oldName))
-					fieldInfo.rename(variableNameState.getNewFieldName(fieldDef.FieldDefinition));
+					fieldInfo.rename(fieldInfo.suggestedName ?? variableNameState.getNewFieldName(fieldDef.FieldDefinition));
 			}
 		}
 
@@ -261,7 +261,8 @@ namespace de4dot.renamer {
 			renameMethod(methodDef, newName);
 		}
 
-		void prepareRenameMethods() {
+		public void prepareRenameMethods() {
+			mergeState();
 			foreach (var methodDef in type.AllMethodsSorted) {
 				if (methodDef.isVirtual())
 					continue;
@@ -470,7 +471,7 @@ namespace de4dot.renamer {
 					if (fieldInfo.renamed)
 						continue;
 
-					fieldInfo.rename(variableNameState.getNewFieldName(fieldInfo.oldName, new NameCreator2(fieldName)));
+					fieldInfo.suggestedName = variableNameState.getNewFieldName(fieldInfo.oldName, new NameCreator2(fieldName));
 				}
 			}
 		}
@@ -492,7 +493,7 @@ namespace de4dot.renamer {
 			return ldfld.Operand as FieldReference;
 		}
 
-		void initializeEventHandlerNames() {
+		public void initializeEventHandlerNames() {
 			var ourFields = new Dictionary<FieldReferenceAndDeclaringTypeKey, FieldDef>();
 			foreach (var fieldDef in type.AllFields)
 				ourFields[new FieldReferenceAndDeclaringTypeKey(fieldDef.FieldDefinition)] = fieldDef;
