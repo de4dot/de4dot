@@ -819,10 +819,10 @@ namespace de4dot.renamer {
 				memberInfos.type(typeDef).initializeEventHandlerNames();
 
 			prepareHelper.prepare((info) => info.prepareRenameMethods());
-			virtualMethods.visitAll((scope) => prepareRenameVirtualMethods(scope, "vmethod_", false));
 			ifaceMethods.visitAll((scope) => prepareRenameVirtualMethods(scope, "imethod_", false));
-			virtualMethods.visitAll((scope) => prepareRenameVirtualMethods(scope, "vmethod_", true));
+			virtualMethods.visitAll((scope) => prepareRenameVirtualMethods(scope, "vmethod_", false));
 			ifaceMethods.visitAll((scope) => prepareRenameVirtualMethods(scope, "imethod_", true));
+			virtualMethods.visitAll((scope) => prepareRenameVirtualMethods(scope, "vmethod_", true));
 
 			foreach (var typeDef in modules.AllTypes)
 				memberInfos.type(typeDef).prepareRenameMethods2();
@@ -925,9 +925,16 @@ namespace de4dot.renamer {
 		}
 
 		static readonly Regex removeGenericsArityRegex = new Regex(@"`[0-9]+");
-		static string getOverridePrefix(MethodDef method) {
+		static string getOverridePrefix(MethodNameScope scope, MethodDef method) {
 			if (method == null || method.MethodDefinition.Overrides.Count == 0)
 				return "";
+			if (scope.Methods.Count > 1) {
+				// Don't use an override prefix if the scope has an iface method.
+				foreach (var m in scope.Methods) {
+					if (m.Owner.TypeDefinition.IsInterface)
+						return "";
+				}
+			}
 			var overrideMethod = method.MethodDefinition.Overrides[0];
 			var name = overrideMethod.DeclaringType.FullName.Replace('/', '.');
 			name = removeGenericsArityRegex.Replace(name, "");
@@ -967,7 +974,7 @@ namespace de4dot.renamer {
 			else
 				methodPrefix = null;
 
-			overridePrefix = getOverridePrefix(eventMethod);
+			overridePrefix = getOverridePrefix(scope, eventMethod);
 			if (renameOverrides && overridePrefix == "")
 				return null;
 			if (!renameOverrides && overridePrefix != "")
@@ -1051,7 +1058,7 @@ namespace de4dot.renamer {
 			if (propMethod == null)
 				throw new ApplicationException("No properties found");
 
-			overridePrefix = getOverridePrefix(propMethod);
+			overridePrefix = getOverridePrefix(scope, propMethod);
 
 			if (renameOverrides && overridePrefix == "")
 				return null;
@@ -1196,7 +1203,7 @@ namespace de4dot.renamer {
 			}
 
 			var overrideMethod = getOverrideMethod(scope);
-			var overridePrefix = getOverridePrefix(overrideMethod);
+			var overridePrefix = getOverridePrefix(scope, overrideMethod);
 			if (renameOverrides && overridePrefix == "")
 				return;
 			if (!renameOverrides && overridePrefix != "")
