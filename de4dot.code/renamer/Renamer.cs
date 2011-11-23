@@ -925,10 +925,8 @@ namespace de4dot.renamer {
 		}
 
 		static readonly Regex removeGenericsArityRegex = new Regex(@"`[0-9]+");
-		static string getOverridePrefix(MethodNameScope scope, MethodDef method) {
-			if (scope.Methods.Count != 1)
-				return "";
-			if (method.MethodDefinition.Overrides.Count == 0)
+		static string getOverridePrefix(MethodDef method) {
+			if (method == null || method.MethodDefinition.Overrides.Count == 0)
 				return "";
 			var overrideMethod = method.MethodDefinition.Overrides[0];
 			var name = overrideMethod.DeclaringType.FullName.Replace('/', '.');
@@ -969,7 +967,7 @@ namespace de4dot.renamer {
 			else
 				methodPrefix = null;
 
-			overridePrefix = getOverridePrefix(scope, eventMethod);
+			overridePrefix = getOverridePrefix(eventMethod);
 			if (renameOverrides && overridePrefix == "")
 				return null;
 			if (!renameOverrides && overridePrefix != "")
@@ -1053,7 +1051,7 @@ namespace de4dot.renamer {
 			if (propMethod == null)
 				throw new ApplicationException("No properties found");
 
-			overridePrefix = getOverridePrefix(scope, propMethod);
+			overridePrefix = getOverridePrefix(propMethod);
 
 			if (renameOverrides && overridePrefix == "")
 				return null;
@@ -1176,6 +1174,14 @@ namespace de4dot.renamer {
 			return type;
 		}
 
+		MethodDef getOverrideMethod(MethodNameScope scope) {
+			foreach (var method in scope.Methods) {
+				if (method.MethodDefinition.Overrides.Count > 0)
+					return method;
+			}
+			return null;
+		}
+
 		void prepareRenameVirtualMethods(MethodNameScope scope, string namePrefix, bool renameOverrides) {
 			if (!hasInvalidMethodName(scope))
 				return;
@@ -1189,8 +1195,8 @@ namespace de4dot.renamer {
 				}
 			}
 
-			var overrideMethod = scope.Methods[0];
-			var overridePrefix = getOverridePrefix(scope, overrideMethod);
+			var overrideMethod = getOverrideMethod(scope);
+			var overridePrefix = getOverridePrefix(overrideMethod);
 			if (renameOverrides && overridePrefix == "")
 				return;
 			if (!renameOverrides && overridePrefix != "")
