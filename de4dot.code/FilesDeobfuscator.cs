@@ -36,6 +36,7 @@ namespace de4dot {
 			public IList<SearchDir> SearchDirs { get; set; }
 			public bool DetectObfuscators { get; set; }
 			public bool RenameSymbols { get; set; }
+			public bool RestorePropsEvents { get; set; }
 			public bool ControlFlowDeobfuscation { get; set; }
 			public bool KeepObfuscatorTypes { get; set; }
 			public bool OneFileAtATime { get; set; }
@@ -49,6 +50,7 @@ namespace de4dot {
 				SearchDirs = new List<SearchDir>();
 				DefaultStringDecrypterMethods = new List<string>();
 				RenameSymbols = true;
+				RestorePropsEvents = true;
 				ControlFlowDeobfuscation = true;
 			}
 		}
@@ -89,10 +91,7 @@ namespace de4dot {
 					file.deobfuscateBegin();
 					file.deobfuscate();
 					file.deobfuscateEnd();
-
-					if (options.RenameSymbols)
-						new Renamer(new List<IObfuscatedFile> { file }).rename();
-
+					rename(new List<IObfuscatedFile> { file });
 					file.save();
 
 					removeModule(file.ModuleDefinition);
@@ -112,7 +111,7 @@ namespace de4dot {
 		void deobfuscateAll() {
 			var allFiles = new List<IObfuscatedFile>(loadAllFiles());
 			deobfuscateAllFiles(allFiles);
-			renameAllFiles(allFiles);
+			rename(allFiles);
 			saveAllFiles(allFiles);
 		}
 
@@ -124,7 +123,6 @@ namespace de4dot {
 				DefaultStringDecrypterType = options.DefaultStringDecrypterType,
 				DefaultStringDecrypterMethods = options.DefaultStringDecrypterMethods,
 				AssemblyClientFactory = options.AssemblyClientFactory,
-				RenameSymbols = options.RenameSymbols,
 				ControlFlowDeobfuscation = options.ControlFlowDeobfuscation,
 				KeepObfuscatorTypes = options.KeepObfuscatorTypes,
 				CreateDestinationDir = !onlyScan,
@@ -144,7 +142,6 @@ namespace de4dot {
 				public DecrypterType? DefaultStringDecrypterType { get; set; }
 				public List<string> DefaultStringDecrypterMethods { get; set; }
 				public IAssemblyClientFactory AssemblyClientFactory { get; set; }
-				public bool RenameSymbols { get; set; }
 				public bool ControlFlowDeobfuscation { get; set; }
 				public bool KeepObfuscatorTypes { get; set; }
 				public bool CreateDestinationDir { get; set; }
@@ -279,7 +276,6 @@ namespace de4dot {
 			IObfuscatedFile createObfuscatedFile(SearchDir searchDir, string filename) {
 				var fileOptions = new ObfuscatedFile.Options {
 					Filename = Utils.getFullPath(filename),
-					RenameSymbols = options.RenameSymbols,
 					ControlFlowDeobfuscation = options.ControlFlowDeobfuscation,
 					KeepObfuscatorTypes = options.KeepObfuscatorTypes,
 				};
@@ -339,12 +335,6 @@ namespace de4dot {
 			}
 		}
 
-		void renameAllFiles(IEnumerable<IObfuscatedFile> allFiles) {
-			if (!options.RenameSymbols)
-				return;
-			new Renamer(allFiles).rename();
-		}
-
 		void saveAllFiles(IEnumerable<IObfuscatedFile> allFiles) {
 			foreach (var file in allFiles)
 				file.save();
@@ -355,6 +345,15 @@ namespace de4dot {
 			foreach (var info in options.DeobfuscatorInfos)
 				list.Add(info.createDeobfuscator());
 			return list;
+		}
+
+		void rename(IEnumerable<IObfuscatedFile> theFiles) {
+			if (!options.RenameSymbols)
+				return;
+			var renamer = new Renamer(theFiles) {
+				RestorePropertiesFromNames = options.RestorePropsEvents,
+			};
+			renamer.rename();
 		}
 	}
 }

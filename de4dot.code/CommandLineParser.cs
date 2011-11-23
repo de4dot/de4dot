@@ -118,6 +118,9 @@ namespace de4dot {
 			miscOptions.Add(new NoArgOption(null, "dont-rename", "Don't rename classes, methods, etc.", () => {
 				filesOptions.RenameSymbols = false;
 			}));
+			miscOptions.Add(new NoArgOption(null, "dont-restore-props", "Don't restore properties/events", () => {
+				filesOptions.RestorePropsEvents = false;
+			}));
 			miscOptions.Add(new OneArgOption(null, "default-strtyp", "Default string decrypter type", "type", (val) => {
 				object decrypterType;
 				if (!stringDecrypterTypes.getValue(val, out decrypterType))
@@ -156,7 +159,6 @@ namespace de4dot {
 					exitError(string.Format("File \"{0}\" does not exist.", val));
 				newFileOptions = new ObfuscatedFile.Options {
 					Filename = val,
-					RenameSymbols = filesOptions.RenameSymbols,
 					ControlFlowDeobfuscation = filesOptions.ControlFlowDeobfuscation,
 					KeepObfuscatorTypes = filesOptions.KeepObfuscatorTypes,
 				};

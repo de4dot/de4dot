@@ -85,7 +85,6 @@ namespace de4dot {
 			public string ForcedObfuscatorType { get; set; }
 			public DecrypterType StringDecrypterType { get; set; }
 			public List<string> StringDecrypterMethods { get; private set; }
-			public bool RenameSymbols { get; set; }
 			public bool ControlFlowDeobfuscation { get; set; }
 			public bool KeepObfuscatorTypes { get; set; }
 
@@ -113,10 +112,6 @@ namespace de4dot {
 
 		public bool RenameResourcesInCode {
 			get { return deob.TheOptions.RenameResourcesInCode; }
-		}
-
-		public bool RenameSymbols {
-			get { return options.RenameSymbols; }
 		}
 
 		public bool RemoveNamespaceWithOneType {
@@ -192,7 +187,6 @@ namespace de4dot {
 				break;
 			}
 
-			op.RenameSymbols = options.RenameSymbols;
 			op.KeepObfuscatorTypes = options.KeepObfuscatorTypes;
 
 			return op;

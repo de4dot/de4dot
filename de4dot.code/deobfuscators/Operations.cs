@@ -25,13 +25,11 @@ namespace de4dot.deobfuscators {
 	}
 
 	interface IOperations {
-		bool RenameSymbols { get; }
 		bool KeepObfuscatorTypes { get; }
 		OpDecryptString DecryptStrings { get; }
 	}
 
 	class Operations : IOperations {
-		public bool RenameSymbols { get; set; }
 		public bool KeepObfuscatorTypes { get; set; }
 		public OpDecryptString DecryptStrings { get; set; }
 	}

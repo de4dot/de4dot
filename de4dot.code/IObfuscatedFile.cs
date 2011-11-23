@@ -30,7 +30,6 @@ namespace de4dot {
 		string NewFilename { get; }
 		INameChecker NameChecker { get; }
 		bool RenameResourcesInCode { get; }
-		bool RenameSymbols { get; }
 		bool RemoveNamespaceWithOneType { get; }
 
 		void deobfuscateBegin();
