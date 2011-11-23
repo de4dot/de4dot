@@ -27,6 +27,14 @@ namespace de4dot.renamer {
 		protected NameCreator genericParamNameCreator = new NameCreator("gparam_");
 
 		public string create(TypeReference typeRef) {
+			if (typeRef.IsGenericInstance) {
+				var git = (GenericInstanceType)typeRef;
+				if (git.ElementType.FullName == "System.Nullable`1" &&
+					git.GenericArguments.Count == 1 && git.GenericArguments[0] != null) {
+					typeRef = git.GenericArguments[0];
+				}
+			}
+
 			var elementType = typeRef.GetElementType();
 			if (elementType is GenericParameter)
 				return genericParamNameCreator.create();
