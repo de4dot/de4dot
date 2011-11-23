@@ -842,5 +842,10 @@ namespace de4dot.blocks {
 			propDef.MetadataToken = new MetadataToken(TokenType.Property, nextTokenRid--);
 			return propDef;
 		}
+		public static EventDefinition createEventDefinition(string name, TypeReference eventType) {
+			var eventDef = new EventDefinition(name, EventAttributes.None, eventType);
+			eventDef.MetadataToken = new MetadataToken(TokenType.Event, nextTokenRid--);
+			return eventDef;
+		}
 	}
 }
