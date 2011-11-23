@@ -165,7 +165,11 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		}
 
 		public override bool isValidNamespaceName(string ns) {
-			return ns != null && checkValidName(ns, isRandomNameTypes);
+			if (ns == null)
+				return false;
+			if (ns.Contains("."))
+				return base.isValidNamespaceName(ns);
+			return checkValidName(ns, isRandomNameTypes);
 		}
 
 		public override bool isValidTypeName(string name) {

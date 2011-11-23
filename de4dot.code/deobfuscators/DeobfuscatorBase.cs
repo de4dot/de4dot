@@ -500,7 +500,13 @@ namespace de4dot.deobfuscators {
 		}
 
 		public virtual bool isValidNamespaceName(string ns) {
-			return ns != null && checkValidName(ns);
+			if (ns == null)
+				return false;
+			foreach (var part in ns.Split(new char[] { '.' })) {
+				if (!checkValidName(part))
+					return false;
+			}
+			return true;
 		}
 
 		public virtual bool isValidTypeName(string name) {
