@@ -151,16 +151,49 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			base.init(module);
 		}
 
-		static Regex isRandomNameRegex1 = new Regex(@"^[a-zA-Z0-9]{9,11}$");	// methods, fields, props, events
-		static Regex isRandomNameRegex2 = new Regex(@"^[a-zA-Z0-9]{18,19}(?:`\d+)?$");	// types, namespaces
-		protected override bool checkValidName(string name) {
-			if (isRandomNameRegex1.IsMatch(name) || isRandomNameRegex2.IsMatch(name)) {
+		static Regex isRandomNameMembers = new Regex(@"^[a-zA-Z0-9]{9,11}$");	// methods, fields, props, events
+		static Regex isRandomNameTypes = new Regex(@"^[a-zA-Z0-9]{18,19}(?:`\d+)?$");	// types, namespaces
+
+		bool checkValidName(string name, Regex regex) {
+			if (regex.IsMatch(name)) {
 				if (RandomNameChecker.isRandom(name))
 					return false;
 				if (!RandomNameChecker.isNonRandom(name))
 					return false;
 			}
-			return base.checkValidName(name);
+			return checkValidName(name);
+		}
+
+		public override bool isValidNamespaceName(string ns) {
+			return ns != null && checkValidName(ns, isRandomNameTypes);
+		}
+
+		public override bool isValidTypeName(string name) {
+			return name != null && checkValidName(name, isRandomNameTypes);
+		}
+
+		public override bool isValidMethodName(string name) {
+			return name != null && checkValidName(name, isRandomNameMembers);
+		}
+
+		public override bool isValidPropertyName(string name) {
+			return name != null && checkValidName(name, isRandomNameMembers);
+		}
+
+		public override bool isValidEventName(string name) {
+			return name != null && checkValidName(name, isRandomNameMembers);
+		}
+
+		public override bool isValidFieldName(string name) {
+			return name != null && checkValidName(name, isRandomNameMembers);
+		}
+
+		public override bool isValidGenericParamName(string name) {
+			return name != null && checkValidName(name, isRandomNameMembers);
+		}
+
+		public override bool isValidMethodArgName(string name) {
+			return name != null && checkValidName(name, isRandomNameMembers);
 		}
 
 		protected override int detectInternal() {

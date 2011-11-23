@@ -499,35 +499,35 @@ namespace de4dot.deobfuscators {
 			return list.Count == 0 ? null : list[0];
 		}
 
-		public bool isValidNamespaceName(string ns) {
+		public virtual bool isValidNamespaceName(string ns) {
 			return ns != null && checkValidName(ns);
 		}
 
-		public bool isValidTypeName(string name) {
+		public virtual bool isValidTypeName(string name) {
 			return name != null && checkValidName(name);
 		}
 
-		public bool isValidMethodName(string name) {
+		public virtual bool isValidMethodName(string name) {
 			return name != null && checkValidName(name);
 		}
 
-		public bool isValidPropertyName(string name) {
+		public virtual bool isValidPropertyName(string name) {
 			return name != null && checkValidName(name);
 		}
 
-		public bool isValidEventName(string name) {
+		public virtual bool isValidEventName(string name) {
 			return name != null && checkValidName(name);
 		}
 
-		public bool isValidFieldName(string name) {
+		public virtual bool isValidFieldName(string name) {
 			return name != null && checkValidName(name);
 		}
 
-		public bool isValidGenericParamName(string name) {
+		public virtual bool isValidGenericParamName(string name) {
 			return name != null && checkValidName(name);
 		}
 
-		public bool isValidMethodArgName(string name) {
+		public virtual bool isValidMethodArgName(string name) {
 			return name != null && checkValidName(name);
 		}
 	}
