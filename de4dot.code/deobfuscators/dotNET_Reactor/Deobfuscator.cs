@@ -466,7 +466,8 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			addCctorInitCallToBeRemoved(emptyClass.Method);
 			addCtorInitCallToBeRemoved(emptyClass.Method);
 			addCallToBeRemoved(module.EntryPoint, emptyClass.Method);
-			addTypeToBeRemoved(emptyClass.Type, "Empty class");
+			if (options.InlineMethods)
+				addTypeToBeRemoved(emptyClass.Type, "Empty class");
 
 			startedDeobfuscating = true;
 		}
@@ -616,6 +617,8 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 					if (!method.IsAssembly && !method.IsCompilerControlled)
 						continue;
 					if (method.GenericParameters.Count > 0)
+						continue;
+					if (method.Name == ".cctor")
 						continue;
 					if (method.Body == null)
 						continue;
