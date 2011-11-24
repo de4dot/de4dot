@@ -35,6 +35,8 @@ namespace de4dot.renamer {
 				}
 			}
 
+			string prefix = getPrefix(typeRef);
+
 			var elementType = typeRef.GetElementType();
 			if (elementType is GenericParameter)
 				return genericParamNameCreator.create();
@@ -50,11 +52,20 @@ namespace de4dot.renamer {
 			if (tickIndex > 0)
 				newName = newName.Substring(0, tickIndex);
 
-			return addTypeName(name, newName).create();
+			return addTypeName(name, newName, prefix).create();
 		}
 
-		protected INameCreator addTypeName(string fullName, string newName) {
-			newName = fixName(newName);
+		string getPrefix(TypeReference typeRef) {
+			string prefix = "";
+			while (typeRef is PointerType) {
+				typeRef = ((PointerType)typeRef).ElementType;
+				prefix += "p";
+			}
+			return prefix;
+		}
+
+		protected INameCreator addTypeName(string fullName, string newName, string prefix = "") {
+			newName = fixName(prefix, newName);
 
 			var name2 = " " + newName;
 			NameCreator nc;
@@ -65,7 +76,7 @@ namespace de4dot.renamer {
 			return nc;
 		}
 
-		protected abstract string fixName(string name);
+		protected abstract string fixName(string prefix, string name);
 
 		public virtual TypeNames merge(TypeNames other) {
 			foreach (var pair in other.typeNames) {
@@ -76,6 +87,10 @@ namespace de4dot.renamer {
 			}
 			genericParamNameCreator.merge(other.genericParamNameCreator);
 			return this;
+		}
+
+		protected static string upperFirst(string s) {
+			return s.Substring(0, 1).ToUpperInvariant() + s.Substring(1);
 		}
 	}
 
@@ -99,8 +114,7 @@ namespace de4dot.renamer {
 			addTypeName("System.Decimal", "decimal");
 		}
 
-		protected override string fixName(string name) {
-			// Make all leading upper case chars lower case
+		static string lowerLeadingChars(string name) {
 			var s = "";
 			for (int i = 0; i < name.Length; i++) {
 				char c = char.ToLowerInvariant(name[i]);
@@ -110,11 +124,18 @@ namespace de4dot.renamer {
 			}
 			return s;
 		}
+
+		protected override string fixName(string prefix, string name) {
+			name = lowerLeadingChars(name);
+			if (prefix == "")
+				return name;
+			return prefix + upperFirst(name);
+		}
 	}
 
 	class PropertyNameCreator : TypeNames {
-		protected override string fixName(string name) {
-			return name.Substring(0, 1).ToUpperInvariant() + name.Substring(1);
+		protected override string fixName(string prefix, string name) {
+			return prefix + upperFirst(name);
 		}
 	}
 }
