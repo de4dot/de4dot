@@ -598,7 +598,11 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			var inlinedMethods = new List<MethodDefinition>();
 			foreach (var type in module.GetTypes()) {
 				foreach (var method in type.Methods) {
-					if (!method.IsStatic || !method.IsAssembly)
+					if (!method.IsStatic)
+						continue;
+					if (!method.IsAssembly && !method.IsCompilerControlled)
+						continue;
+					if (method.GenericParameters.Count > 0)
 						continue;
 					if (method.Body == null)
 						continue;
