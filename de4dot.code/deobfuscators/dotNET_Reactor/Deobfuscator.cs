@@ -211,6 +211,11 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			if (sum > 0)
 				val += 100 + 10 * (sum - 1);
 
+			if (sum == 0) {
+				if (hasMetadataStream("#GUlD") && hasMetadataStream("#Blop"))
+					val += 10;
+			}
+
 			return val;
 		}
 

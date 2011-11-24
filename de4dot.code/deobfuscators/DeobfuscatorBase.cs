@@ -499,6 +499,14 @@ namespace de4dot.deobfuscators {
 			return list.Count == 0 ? null : list[0];
 		}
 
+		protected bool hasMetadataStream(string name) {
+			foreach (var stream in module.MetadataStreams) {
+				if (stream.name == name)
+					return true;
+			}
+			return false;
+		}
+
 		public virtual bool isValidNamespaceName(string ns) {
 			if (ns == null)
 				return false;
