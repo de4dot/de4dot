@@ -527,10 +527,8 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			removeInlinedMethods();
 			if (options.RestoreTypes)
 				new TypesRestorer(module).deobfuscate();
-			if (canRemoveDecrypterType) {
-				if (methodsDecrypter.Method != null)
-					addTypeToBeRemoved(methodsDecrypter.Method.DeclaringType, "Decrypter type");
-			}
+			if (canRemoveDecrypterType)
+				addTypeToBeRemoved(getDecrypterType(), "Decrypter type");
 			else
 				Log.v("Could not remove decrypter type");
 			base.deobfuscateEnd();
