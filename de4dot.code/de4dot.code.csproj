@@ -81,6 +81,7 @@
     <Compile Include="deobfuscators\dotNET_Reactor\BooleanDecrypter.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\BoolValueInliner.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\Deobfuscator.cs" />
+    <Compile Include="deobfuscators\dotNET_Reactor\EmptyClass.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\EncryptedResource.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\MetadataTokenObfuscator.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\MethodsDecrypter.cs" />

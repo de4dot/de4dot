@@ -105,6 +105,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		AssemblyResolver assemblyResolver;
 		ResourceResolver resourceResolver;
 		AntiStrongName antiStrongname;
+		EmptyClass emptyClass;
 
 		bool canRemoveDecrypterType = true;
 		bool startedDeobfuscating = false;
@@ -390,6 +391,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			stringDecrypter.init(peImage, fileData, DeobfuscatedFile);
 			booleanDecrypter.init(fileData, DeobfuscatedFile);
 			boolValueInliner = new BoolValueInliner();
+			emptyClass = new EmptyClass(module);
 
 			if (options.DecryptBools) {
 				boolValueInliner.add(booleanDecrypter.Method, (method, args) => {
@@ -460,6 +462,11 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 
 			if (options.InlineMethods)
 				addTypeToBeRemoved(metadataTokenObfuscator.Type, "Metadata token obfuscator");
+
+			addCctorInitCallToBeRemoved(emptyClass.Method);
+			addCtorInitCallToBeRemoved(emptyClass.Method);
+			addCallToBeRemoved(module.EntryPoint, emptyClass.Method);
+			addTypeToBeRemoved(emptyClass.Type, "Empty class");
 
 			startedDeobfuscating = true;
 		}

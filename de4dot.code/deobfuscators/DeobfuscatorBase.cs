@@ -244,6 +244,10 @@ namespace de4dot.deobfuscators {
 			methodCallRemover.add(DotNetUtils.getMethod(DotNetUtils.getModuleType(module), ".cctor"), methodToBeRemoved);
 		}
 
+		public void addCtorInitCallToBeRemoved(MethodReference methodToBeRemoved) {
+			methodCallRemover.add(".ctor", methodToBeRemoved);
+		}
+
 		public void addCallToBeRemoved(MethodDefinition method, MethodReference methodToBeRemoved) {
 			methodCallRemover.add(method, methodToBeRemoved);
 		}
