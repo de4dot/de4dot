@@ -82,10 +82,12 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				"System.IO.MemoryStream",
 				"System.Security.Cryptography.CryptoStream",
 				"System.Security.Cryptography.ICryptoTransform",
-				"System.Security.Cryptography.RijndaelManaged",
 			};
 			requiredTypes.AddRange(additionalTypes);
 			if (!localTypes.all(requiredTypes))
+				return false;
+			if (!localTypes.exists("System.Security.Cryptography.RijndaelManaged") &&
+				!localTypes.exists("System.Security.Cryptography.AesManaged"))
 				return false;
 
 			if (checkResource && findMethodsDecrypterResource(method) == null)
