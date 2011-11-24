@@ -241,13 +241,24 @@ namespace de4dot.blocks {
 		}
 
 		public static bool isEmpty(MethodDefinition method) {
-			if (!method.HasBody)
+			if (method.Body == null)
 				return false;
 			foreach (var instr in method.Body.Instructions) {
 				var code = instr.OpCode.Code;
 				if (code != Code.Nop && code != Code.Ret)
 					return false;
 			}
+			return true;
+		}
+
+		public static bool isEmptyObfuscated(MethodDefinition method) {
+			if (method.Body == null)
+				return false;
+			int index = 0;
+			var instr = getInstruction(method.Body.Instructions, ref index);
+			if (instr == null || instr.OpCode.Code != Code.Ret)
+				return false;
+
 			return true;
 		}
 
