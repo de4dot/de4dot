@@ -151,10 +151,13 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			base.init(module);
 		}
 
+		static Regex isRandomName = new Regex(@"^[A-Z]{30,40}$");
 		static Regex isRandomNameMembers = new Regex(@"^[a-zA-Z0-9]{9,11}$");	// methods, fields, props, events
 		static Regex isRandomNameTypes = new Regex(@"^[a-zA-Z0-9]{18,19}(?:`\d+)?$");	// types, namespaces
 
 		bool checkValidName(string name, Regex regex) {
+			if (isRandomName.IsMatch(name))
+				return false;
 			if (regex.IsMatch(name)) {
 				if (RandomNameChecker.isRandom(name))
 					return false;
