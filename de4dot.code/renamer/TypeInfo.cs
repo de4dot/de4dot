@@ -90,10 +90,10 @@ namespace de4dot.renamer {
 				}
 			}
 
+			string origClassName = null;
+			if (isWinFormsClass())
+				origClassName = findWindowsFormsClassName(type);
 			if (oldFullName != "<Module>" && !checker.isValidTypeName(oldName)) {
-				string origClassName = null;
-				if (isWinFormsClass())
-					origClassName = findWindowsFormsClassName(type);
 				if (origClassName != null && checker.isValidTypeName(origClassName))
 					rename(state.getTypeName(oldName, origClassName));
 				else {
