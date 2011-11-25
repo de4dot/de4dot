@@ -162,5 +162,27 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				}
 			}
 		}
+
+		public byte[] encrypt(byte[] data) {
+			if (key == null || iv == null)
+				throw new ApplicationException("Can't encrypt resource");
+
+			using (var aes = new RijndaelManaged { Mode = CipherMode.CBC }) {
+				using (var transform = aes.CreateEncryptor(key, iv)) {
+					return transform.TransformFinalBlock(data, 0, data.Length);
+				}
+			}
+		}
+
+		public void updateResource(byte[] encryptedData) {
+			for (int i = 0; i < module.Resources.Count; i++) {
+				if (module.Resources[i] == encryptedDataResource) {
+					encryptedDataResource = new EmbeddedResource(encryptedDataResource.Name, encryptedDataResource.Attributes, encryptedData);
+					module.Resources[i] = encryptedDataResource;
+					return;
+				}
+			}
+			throw new ApplicationException("Could not find encrypted resource");
+		}
 	}
 }
