@@ -309,6 +309,8 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			if (tokenToNativeMethod.Count == 0)
 				return;
 
+			Log.v("Encrypting native methods");
+
 			var stream = new MemoryStream();
 			var writer = new BinaryWriter(stream);
 			writer.Write((uint)0);	// patch count
@@ -330,11 +332,17 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 					codeRva++;
 				else
 					codeRva += 4 * (uint)(codeWriter.ReadByteAtRva(codeRva + 1) >> 4);
+
+				Log.v("Native method {0:X8}, code RVA {1:X8}", method.MetadataToken.ToInt32(), codeRva);
+
 				writer.Write(codeRva);
 				writer.Write(0x70000000 + index++);
 				writer.Write(code.Length);
 				writer.Write(code);
 			}
+
+			if (index != 0)
+				Log.n("Re-encrypted {0} native methods", index);
 
 			var encryptedData = stream.ToArray();
 			xorEncrypt(encryptedData);
