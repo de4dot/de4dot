@@ -404,6 +404,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			newOne.booleanDecrypter = new BooleanDecrypter(module, booleanDecrypter);
 			newOne.assemblyResolver = new AssemblyResolver(module, assemblyResolver);
 			newOne.resourceResolver = new ResourceResolver(module, resourceResolver);
+			newOne.methodsDecrypter.reloaded();
 			return newOne;
 		}
 
@@ -455,7 +456,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			else
 				canRemoveDecrypterType = false;
 
-			if (options.DecryptMethods) {
+			if (options.DecryptMethods && !methodsDecrypter.HasNativeMethods) {
 				addResourceToBeRemoved(methodsDecrypter.Resource, "Encrypted methods");
 				addCctorInitCallToBeRemoved(methodsDecrypter.Method);
 			}
@@ -736,6 +737,12 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			if (stringDecrypter.OtherStringDecrypter != null)
 				list.Add(stringDecrypter.OtherStringDecrypter.MetadataToken.ToInt32().ToString("X8"));
 			return list;
+		}
+
+		public override void OnBeforeAddingResources(MetadataBuilder builder) {
+			if (!options.DecryptMethods)
+				return;
+			methodsDecrypter.encryptNativeMethods(builder);
 		}
 	}
 }

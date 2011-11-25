@@ -29,9 +29,16 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 	class MethodsDecrypter {
 		ModuleDefinition module;
 		EncryptedResource encryptedResource;
+		Dictionary<uint, byte[]> tokenToNativeMethod = new Dictionary<uint, byte[]>();
+		Dictionary<MethodDefinition, byte[]> methodToNativeMethod = new Dictionary<MethodDefinition, byte[]>();
+		long xorKey;
 
 		public bool Detected {
 			get { return encryptedResource.Method != null; }
+		}
+
+		public bool HasNativeMethods {
+			get { return methodToNativeMethod.Count > 0; }
 		}
 
 		public TypeDefinition DecrypterType {
@@ -54,6 +61,8 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		public MethodsDecrypter(ModuleDefinition module, MethodsDecrypter oldOne) {
 			this.module = module;
 			this.encryptedResource = new EncryptedResource(module, oldOne.encryptedResource);
+			this.tokenToNativeMethod = oldOne.tokenToNativeMethod;
+			this.xorKey = oldOne.xorKey;
 		}
 
 		public void find() {
@@ -94,6 +103,22 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			encryptedResource.Method = (MethodDefinition)callCounter.most();
 		}
 
+		void xorEncrypt(byte[] data) {
+			if (xorKey == 0)
+				return;
+
+			var stream = new MemoryStream(data);
+			var reader = new BinaryReader(stream);
+			var writer = new BinaryWriter(stream);
+			int count = data.Length / 8;
+			for (int i = 0; i < count; i++) {
+				long val = reader.ReadInt64();
+				val ^= xorKey;
+				stream.Position -= 8;
+				writer.Write(val);
+			}
+		}
+
 		static short[] nativeLdci4 = new short[] { 0x55, 0x8B, 0xEC, 0xB8, -1, -1, -1, -1, 0x5D, 0xC3 };
 		static short[] nativeLdci4_0 = new short[] { 0x55, 0x8B, 0xEC, 0x33, 0xC0, 0x5D, 0xC3 };
 		public bool decrypt(PE.PeImage peImage, ISimpleDeobfuscator simpleDeobfuscator, ref Dictionary<uint, DumpedMethod> dumpedMethods, Dictionary<uint,byte[]> tokenToNativeCode) {
@@ -107,20 +132,8 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 
 			bool hooksJitter = findDnrCompileMethod(encryptedResource.Method.DeclaringType) != null;
 
-			long xorKey = getXorKey();
-			if (xorKey != 0) {
-				// DNR 4.3, 4.4
-				var stream = new MemoryStream(methodsData);
-				var reader = new BinaryReader(stream);
-				var writer = new BinaryWriter(stream);
-				int count = methodsData.Length / 8;
-				for (int i = 0; i < count; i++) {
-					long val = reader.ReadInt64();
-					val ^= xorKey;
-					stream.Position -= 8;
-					writer.Write(val);
-				}
-			}
+			xorKey = getXorKey();
+			xorEncrypt(methodsData);
 
 			var methodsDataReader = new BinaryReader(new MemoryStream(methodsData));
 			int patchCount = methodsDataReader.ReadInt32();
@@ -175,7 +188,6 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				patchDwords(peImage, methodsDataReader, patchCount);
 				int count = methodsDataReader.ReadInt32();
 				dumpedMethods = new Dictionary<uint, DumpedMethod>();
-				bool foundNativeCode = false;
 				while (methodsDataReader.BaseStream.Position < methodsData.Length - 1) {
 					uint rva = methodsDataReader.ReadUInt32();
 					uint index = methodsDataReader.ReadUInt32();
@@ -191,13 +203,6 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 					uint methodToken = 0x06000001 + (uint)methodIndex;
 
 					if (isNativeCode) {
-						if (!foundNativeCode) {
-							foundNativeCode = true;
-							Log.w("Found native code. Assembly won't run.");
-						}
-						//TODO: Convert to CIL code
-						Log.v("Found native code. Ignoring it for now... Assembly won't run. token: {0:X8}", methodToken);
-
 						if (tokenToNativeCode != null)
 							tokenToNativeCode[methodToken] = methodData;
 
@@ -205,6 +210,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 						// throw 0xDEADCODE.
 						if (isCode(nativeLdci4, methodData)) {
 							uint val = BitConverter.ToUInt32(methodData, 4);
+							// ldc.i4 XXXXXXXXh / ret
 							methodData = new byte[] { 0x20, 0, 0, 0, 0, 0x2A };
 							methodData[1] = (byte)val;
 							methodData[2] = (byte)(val >> 8);
@@ -212,10 +218,15 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 							methodData[4] = (byte)(val >> 24);
 						}
 						else if (isCode(nativeLdci4_0, methodData)) {
+							// ldc.i4.0 / ret
 							methodData = new byte[] { 0x16, 0x2A };
 						}
-						else
-							methodData = new byte[] { 0x20, 0xDE, 0xC0, 0xAD, 0xDE, 0x7A };
+						else {
+							tokenToNativeMethod[methodToken] = methodData;
+
+							// ldc.i4 0xDEADCODE / conv.u4 / throw
+							methodData = new byte[] { 0x20, 0xDE, 0xC0, 0xAD, 0xDE, 0x6D, 0x7A };
+						}
 					}
 
 					var dm = new DumpedMethod();
@@ -282,6 +293,52 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				return DotNetUtils.getLdcI4Value(ldci4);
 			}
 			return 0;
+		}
+
+		public void reloaded() {
+			foreach (var pair in tokenToNativeMethod) {
+				int token = (int)pair.Key;
+				var method = module.LookupToken(token) as MethodDefinition;
+				if (method == null)
+					throw new ApplicationException(string.Format("Could not find method {0:X8}", token));
+				methodToNativeMethod[method] = pair.Value;
+			}
+		}
+
+		public void encryptNativeMethods(MetadataBuilder builder) {
+			if (tokenToNativeMethod.Count == 0)
+				return;
+
+			var stream = new MemoryStream();
+			var writer = new BinaryWriter(stream);
+			writer.Write((uint)0);	// patch count
+			writer.Write((uint)0);	// mode
+			writer.Write(tokenToNativeMethod.Count);
+
+			int index = 0;
+			var codeWriter = builder.CodeWriter;
+			foreach (var pair in methodToNativeMethod) {
+				var method = pair.Key;
+				if (method.DeclaringType == null)
+					continue;	// Method was removed
+				if (method.DeclaringType.Module == null)
+					continue;	// method.DeclaringType was removed
+				var code = pair.Value;
+
+				uint codeRva = builder.GetMethodBodyRva((int)method.MetadataToken.RID - 1);
+				if ((codeWriter.ReadByteAtRva(codeRva) & 3) == 2)
+					codeRva++;
+				else
+					codeRva += 4 * (uint)(codeWriter.ReadByteAtRva(codeRva + 1) >> 4);
+				writer.Write(codeRva);
+				writer.Write(0x70000000 + index++);
+				writer.Write(code.Length);
+				writer.Write(code);
+			}
+
+			var encryptedData = stream.ToArray();
+			xorEncrypt(encryptedData);
+			encryptedResource.updateResource(encryptedResource.encrypt(encryptedData));
 		}
 
 		public static MethodDefinition findDnrCompileMethod(TypeDefinition type) {
