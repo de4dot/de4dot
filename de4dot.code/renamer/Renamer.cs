@@ -972,7 +972,7 @@ namespace de4dot.renamer {
 			else if (eventMethod == eventDef.RaiseMethod)
 				methodPrefix = "raise_";
 			else
-				methodPrefix = null;
+				methodPrefix = "";
 
 			overridePrefix = getOverridePrefix(scope, eventMethod);
 			if (renameOverrides && overridePrefix == "")
