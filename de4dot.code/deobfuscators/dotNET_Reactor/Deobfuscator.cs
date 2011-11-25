@@ -19,6 +19,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text.RegularExpressions;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -39,6 +40,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		BoolOption decryptResources;
 		BoolOption removeNamespaces;
 		BoolOption removeAntiStrongName;
+		NoArgOption dumpNativeMethods;
 
 		public DeobfuscatorInfo()
 			: base(DEFAULT_REGEX) {
@@ -51,6 +53,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			decryptResources = new BoolOption(null, makeArgName("rsrc"), "Decrypt resources", true);
 			removeNamespaces = new BoolOption(null, makeArgName("ns1"), "Clear namespace if there's only one class in it", true);
 			removeAntiStrongName = new BoolOption(null, makeArgName("sn"), "Remove anti strong name code", true);
+			dumpNativeMethods = new NoArgOption(null, makeArgName("dump-native"), "Dump native methods to filename.dll.native");
 		}
 
 		public override string Name {
@@ -73,6 +76,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				DecryptResources = decryptResources.get(),
 				RemoveNamespaces = removeNamespaces.get(),
 				RemoveAntiStrongName = removeAntiStrongName.get(),
+				DumpNativeMethods = dumpNativeMethods.get(),
 			});
 		}
 
@@ -87,6 +91,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				decryptResources,
 				removeNamespaces,
 				removeAntiStrongName,
+				dumpNativeMethods,
 			};
 		}
 	}
@@ -120,6 +125,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			public bool DecryptResources { get; set; }
 			public bool RemoveNamespaces { get; set; }
 			public bool RemoveAntiStrongName { get; set; }
+			public bool DumpNativeMethods { get; set; }
 		}
 
 		public override string Type {
@@ -365,8 +371,24 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			if (!options.DecryptMethods)
 				return false;
 
-			if (!methodsDecrypter.decrypt(peImage, DeobfuscatedFile, ref dumpedMethods))
+			var tokenToNativeCode = new Dictionary<uint,byte[]>();
+			if (!methodsDecrypter.decrypt(peImage, DeobfuscatedFile, ref dumpedMethods, tokenToNativeCode))
 				return false;
+
+			if (options.DumpNativeMethods) {
+				using (var fileStream = new FileStream(module.FullyQualifiedName + ".native", FileMode.Create, FileAccess.Write, FileShare.Read)) {
+					var sortedTokens = new List<uint>(tokenToNativeCode.Keys);
+					sortedTokens.Sort();
+					var writer = new BinaryWriter(fileStream);
+					var nops = new byte[] { 0x90, 0x90, 0x90, 0x90 };
+					foreach (var token in sortedTokens) {
+						writer.Write((byte)0xB8);
+						writer.Write(token);
+						writer.Write(tokenToNativeCode[token]);
+						writer.Write(nops);
+					}
+				}
+			}
 
 			newFileData = fileData;
 			return true;

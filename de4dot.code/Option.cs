@@ -208,20 +208,27 @@ namespace de4dot {
 
 	class NoArgOption : Option {
 		Action action;
+		bool triggered;
 
 		public override bool NeedArgument {
 			get { return false; }
 		}
 
-		public NoArgOption(string shortName, string longName, string description, Action action)
+		public NoArgOption(string shortName, string longName, string description, Action action = null)
 			: base(shortName, longName, description) {
 			this.action = action;
 		}
 
 		public override bool set(string val, out string error) {
-			action();
+			triggered = true;
+			if (action != null)
+				action();
 			error = "";
 			return true;
+		}
+
+		public bool get() {
+			return triggered;
 		}
 	}
 

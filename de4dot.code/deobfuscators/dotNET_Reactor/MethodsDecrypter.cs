@@ -96,7 +96,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 
 		static short[] nativeLdci4 = new short[] { 0x55, 0x8B, 0xEC, 0xB8, -1, -1, -1, -1, 0x5D, 0xC3 };
 		static short[] nativeLdci4_0 = new short[] { 0x55, 0x8B, 0xEC, 0x33, 0xC0, 0x5D, 0xC3 };
-		public bool decrypt(PE.PeImage peImage, ISimpleDeobfuscator simpleDeobfuscator, ref Dictionary<uint, DumpedMethod> dumpedMethods) {
+		public bool decrypt(PE.PeImage peImage, ISimpleDeobfuscator simpleDeobfuscator, ref Dictionary<uint, DumpedMethod> dumpedMethods, Dictionary<uint,byte[]> tokenToNativeCode) {
 			if (encryptedResource.Method == null)
 				return false;
 
@@ -188,6 +188,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 						Log.w("Could not find method having code RVA {0:X8}", rva);
 						continue;
 					}
+					uint methodToken = 0x06000001 + (uint)methodIndex;
 
 					if (isNativeCode) {
 						if (!foundNativeCode) {
@@ -195,7 +196,10 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 							Log.w("Found native code. Assembly won't run.");
 						}
 						//TODO: Convert to CIL code
-						Log.v("Found native code. Ignoring it for now... Assembly won't run. token: {0:X8}", 0x06000001 + methodIndex);
+						Log.v("Found native code. Ignoring it for now... Assembly won't run. token: {0:X8}", methodToken);
+
+						if (tokenToNativeCode != null)
+							tokenToNativeCode[methodToken] = methodData;
 
 						// Convert return true / false methods. The others are converted to
 						// throw 0xDEADCODE.
@@ -215,7 +219,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 					}
 
 					var dm = new DumpedMethod();
-					dm.token = (uint)(0x06000001 + methodIndex);
+					dm.token = methodToken;
 					dm.code = methodData;
 
 					offset = methodDef.fileOffset + (uint)(methodIndex * methodDef.totalSize);
