@@ -25,7 +25,7 @@ using Mono.MyStuff;
 using de4dot.blocks;
 
 namespace de4dot.deobfuscators {
-	abstract class DeobfuscatorBase : IDeobfuscator {
+	abstract class DeobfuscatorBase : IDeobfuscator, IWriterListener {
 		public const string DEFAULT_VALID_NAME_REGEX = @"^[a-zA-Z_<{$][a-zA-Z_0-9<>{}$.`-]*$";
 
 		class RemoveInfo<T> {
@@ -505,7 +505,7 @@ namespace de4dot.deobfuscators {
 
 		protected bool hasMetadataStream(string name) {
 			foreach (var stream in module.MetadataStreams) {
-				if (stream.name == name)
+				if (stream.Name == name)
 					return true;
 			}
 			return false;
@@ -547,6 +547,9 @@ namespace de4dot.deobfuscators {
 
 		public virtual bool isValidMethodArgName(string name) {
 			return name != null && checkValidName(name);
+		}
+
+		public virtual void OnBeforeAddingResources(MetadataBuilder builder) {
 		}
 	}
 }

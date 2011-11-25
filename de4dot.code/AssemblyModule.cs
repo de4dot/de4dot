@@ -38,9 +38,10 @@ namespace de4dot {
 			return module;
 		}
 
-		public void save(string newFilename, bool updateMaxStack) {
+		public void save(string newFilename, bool updateMaxStack, IWriterListener writerListener) {
 			var writerParams = new WriterParameters() {
 				UpdateMaxStack = updateMaxStack,
+				WriterListener = writerListener,
 			};
 			module.Write(newFilename, writerParams);
 		}
