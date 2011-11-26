@@ -511,6 +511,23 @@ namespace de4dot.deobfuscators {
 			return false;
 		}
 
+		List<T> getObjectsToRemove<T>(IList<RemoveInfo<T>> removeThese) where T : MemberReference {
+			var list = new List<T>(removeThese.Count);
+			foreach (var info in removeThese) {
+				if (info.obj != null)
+					list.Add(info.obj);
+			}
+			return list;
+		}
+
+		protected List<TypeDefinition> getTypesToRemove() {
+			return getObjectsToRemove(typesToRemove);
+		}
+
+		protected List<MethodDefinition> getMethodsToRemove() {
+			return getObjectsToRemove(methodsToRemove);
+		}
+
 		public virtual bool isValidNamespaceName(string ns) {
 			if (ns == null)
 				return false;
