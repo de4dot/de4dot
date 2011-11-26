@@ -46,7 +46,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				if (count >= 40)
 					break;
 				foreach (var method in type.Methods) {
-					if (method.Name != ".ctor")
+					if (method.Name != ".ctor" && method.Name != ".cctor" && module.EntryPoint != method)
 						continue;
 					foreach (var tuple in DotNetUtils.getCalledMethods(module, method)) {
 						var calledMethod = tuple.Item2;
@@ -62,7 +62,10 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				}
 			}
 
-			emptyMethod = (MethodDefinition)callCounter.most();
+			int numCalls;
+			var theMethod = (MethodDefinition)callCounter.most(out numCalls);
+			if (numCalls >= 10)
+				emptyMethod = theMethod;
 		}
 
 		bool isEmptyClass(MethodDefinition emptyMethod) {
@@ -76,14 +79,23 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				return false;
 			if (type.Fields[0].FieldType.FullName != "System.Boolean")
 				return false;
+			if (type.IsPublic)
+				return false;
 
+			int otherMethods = 0;
 			foreach (var method in type.Methods) {
 				if (method.Name == ".ctor" || method.Name == ".cctor")
 					continue;
 				if (method == emptyMethod)
 					continue;
-				return false;
+				otherMethods++;
+				if (method.Body == null)
+					return false;
+				if (method.Body.Instructions.Count > 20)
+					return false;
 			}
+			if (otherMethods > 8)
+				return false;
 
 			return true;
 		}

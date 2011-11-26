@@ -83,6 +83,11 @@ namespace de4dot.blocks {
 		}
 
 		public MethodReference most() {
+			int numCalls;
+			return most(out numCalls);
+		}
+
+		public MethodReference most(out int numCalls) {
 			MethodReference method = null;
 			int callCount = 0;
 			foreach (var key in calls.Keys) {
@@ -91,6 +96,7 @@ namespace de4dot.blocks {
 					method = key.MethodReference;
 				}
 			}
+			numCalls = callCount;
 			return method;
 		}
 	}
