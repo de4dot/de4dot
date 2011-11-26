@@ -31,6 +31,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		EncryptedResource encryptedResource;
 		Dictionary<uint, byte[]> tokenToNativeMethod = new Dictionary<uint, byte[]>();
 		Dictionary<MethodDefinition, byte[]> methodToNativeMethod = new Dictionary<MethodDefinition, byte[]>();
+		int totalEncryptedMethods = 0;
 		long xorKey;
 
 		public bool Detected {
@@ -62,6 +63,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			this.module = module;
 			this.encryptedResource = new EncryptedResource(module, oldOne.encryptedResource);
 			this.tokenToNativeMethod = oldOne.tokenToNativeMethod;
+			this.totalEncryptedMethods = oldOne.totalEncryptedMethods;
 			this.xorKey = oldOne.xorKey;
 		}
 
@@ -203,6 +205,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 					uint methodToken = 0x06000001 + (uint)methodIndex;
 
 					if (isNativeCode) {
+						totalEncryptedMethods++;
 						if (tokenToNativeCode != null)
 							tokenToNativeCode[methodToken] = methodData;
 
@@ -303,10 +306,11 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 					throw new ApplicationException(string.Format("Could not find method {0:X8}", token));
 				methodToNativeMethod[method] = pair.Value;
 			}
+			tokenToNativeMethod = null;
 		}
 
 		public void encryptNativeMethods(MetadataBuilder builder) {
-			if (tokenToNativeMethod.Count == 0)
+			if (methodToNativeMethod.Count == 0)
 				return;
 
 			Log.v("Encrypting native methods");
@@ -315,7 +319,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			var writer = new BinaryWriter(stream);
 			writer.Write((uint)0);	// patch count
 			writer.Write((uint)0);	// mode
-			writer.Write(tokenToNativeMethod.Count);
+			writer.Write(methodToNativeMethod.Count);
 
 			int index = 0;
 			var codeWriter = builder.CodeWriter;
@@ -342,7 +346,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			}
 
 			if (index != 0)
-				Log.n("Re-encrypted {0} native methods", index);
+				Log.n("Re-encrypted {0}/{1} native methods", index, totalEncryptedMethods);
 
 			var encryptedData = stream.ToArray();
 			xorEncrypt(encryptedData);
