@@ -52,6 +52,10 @@ namespace de4dot.deobfuscators {
 			return true;
 		}
 
+		public bool exactly(IList<string> list) {
+			return list.Count == strings.Count && all(list);
+		}
+
 		public int count(string s) {
 			int count;
 			strings.TryGetValue(s, out count);
