@@ -489,6 +489,10 @@ namespace de4dot.deobfuscators {
 		}
 
 		protected void removeProxyDelegates(ProxyDelegateFinderBase proxyDelegateFinder) {
+			if (proxyDelegateFinder.Errors != 0) {
+				Log.v("Not removing proxy delegates and creator type since errors were detected.");
+				return;
+			}
 			addTypesToBeRemoved(proxyDelegateFinder.DelegateTypes, "Proxy delegate type");
 			if (proxyDelegateFinder.RemovedDelegateCreatorCalls > 0)
 				addTypesToBeRemoved(proxyDelegateFinder.DelegateCreatorTypes, "Proxy delegate creator type");

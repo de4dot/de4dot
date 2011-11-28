@@ -30,6 +30,11 @@ namespace de4dot.deobfuscators {
 		Dictionary<TypeDefinition, bool> delegateTypesDict = new Dictionary<TypeDefinition, bool>();
 		Dictionary<FieldReferenceAndDeclaringTypeKey, DelegateInfo> fieldToDelegateInfo = new Dictionary<FieldReferenceAndDeclaringTypeKey, DelegateInfo>();
 		Dictionary<MethodDefinition, FieldDefinition> proxyMethodToField = new Dictionary<MethodDefinition, FieldDefinition>();
+		int errors = 0;
+
+		public int Errors {
+			get { return errors; }
+		}
 
 		class DelegateInfo {
 			public MethodReference methodRef;	// Method we should call
@@ -182,6 +187,7 @@ namespace de4dot.deobfuscators {
 							add(removeInfos, callInfo.Block, callInfo.Index, di);
 						}
 						else {
+							errors++;
 							Log.w("Could not fix proxy call. Method: {0} ({1:X8}), Proxy type: {2} ({3:X8})",
 								blocks.Method, blocks.Method.MetadataToken.ToInt32(),
 								di.field.DeclaringType, di.field.DeclaringType.MetadataToken.ToInt32());
