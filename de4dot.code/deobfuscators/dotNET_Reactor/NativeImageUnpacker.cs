@@ -58,6 +58,9 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			if (count != inflatedSize)
 				return null;
 
+			if (BitConverter.ToInt16(inflatedData, 0) != 0x5A4D)
+				return null;
+
 			return inflatedData;
 		}
 
