@@ -171,6 +171,7 @@ namespace de4dot {
 			catch (BadImageFormatException) {
 				if (!unpackNativeImage(deobfuscators))
 					throw new BadImageFormatException();
+				Log.v("Unpacked native file");
 			}
 		}
 
