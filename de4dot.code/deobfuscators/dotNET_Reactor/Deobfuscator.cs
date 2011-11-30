@@ -157,8 +157,13 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		}
 
 		public override byte[] unpackNativeFile(PeImage peImage) {
+			var data = new NativeImageUnpacker(peImage).unpack();
+			if (data == null)
+				return null;
+
 			unpackedNativeFile = true;
-			return new NativeImageUnpacker(peImage).unpack();
+			ModuleBytes = data;
+			return data;
 		}
 
 		public override void init(ModuleDefinition module) {
@@ -374,7 +379,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		}
 
 		public override bool getDecryptedModule(ref byte[] newFileData, ref Dictionary<uint, DumpedMethod> dumpedMethods) {
-			fileData = DeobUtils.readModule(module);
+			fileData = ModuleBytes ?? DeobUtils.readModule(module);
 			peImage = new PeImage(fileData);
 
 			if (!options.DecryptMethods)

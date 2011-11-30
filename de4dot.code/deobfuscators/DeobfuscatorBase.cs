@@ -49,6 +49,12 @@ namespace de4dot.deobfuscators {
 		IList<RemoveInfo<ModuleReference>> modrefsToRemove = new List<RemoveInfo<ModuleReference>>();
 		List<string> namesToPossiblyRemove = new List<string>();
 		MethodCallRemover methodCallRemover = new MethodCallRemover();
+		byte[] moduleBytes;
+
+		protected byte[] ModuleBytes {
+			get { return moduleBytes; }
+			set { moduleBytes = value; }
+		}
 
 		internal class OptionsBase : IDeobfuscatorOptions {
 			public bool RenameResourcesInCode { get; set; }
@@ -121,6 +127,7 @@ namespace de4dot.deobfuscators {
 		}
 
 		public virtual void deobfuscateBegin() {
+			ModuleBytes = null;
 		}
 
 		public virtual void deobfuscateMethodBegin(Blocks blocks) {
