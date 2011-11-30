@@ -50,5 +50,17 @@ namespace de4dot.deobfuscators {
 		public static byte[] readModule(ModuleDefinition module) {
 			return Utils.readFile(module.FullyQualifiedName);
 		}
+
+		public static bool isCode(short[] nativeCode, byte[] code) {
+			if (nativeCode.Length != code.Length)
+				return false;
+			for (int i = 0; i < nativeCode.Length; i++) {
+				if (nativeCode[i] == -1)
+					continue;
+				if ((byte)nativeCode[i] != code[i])
+					return false;
+			}
+			return true;
+		}
 	}
 }

@@ -211,7 +211,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 
 						// Convert return true / false methods. The others are converted to
 						// throw 0xDEADCODE.
-						if (isCode(nativeLdci4, methodData)) {
+						if (DeobUtils.isCode(nativeLdci4, methodData)) {
 							uint val = BitConverter.ToUInt32(methodData, 4);
 							// ldc.i4 XXXXXXXXh / ret
 							methodData = new byte[] { 0x20, 0, 0, 0, 0, 0x2A };
@@ -220,7 +220,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 							methodData[3] = (byte)(val >> 16);
 							methodData[4] = (byte)(val >> 24);
 						}
-						else if (isCode(nativeLdci4_0, methodData)) {
+						else if (DeobUtils.isCode(nativeLdci4_0, methodData)) {
 							// ldc.i4.0 / ret
 							methodData = new byte[] { 0x16, 0x2A };
 						}
@@ -261,18 +261,6 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				}
 			}
 
-			return true;
-		}
-
-		static bool isCode(short[] nativeCode, byte[] code) {
-			if (nativeCode.Length != code.Length)
-				return false;
-			for (int i = 0; i < nativeCode.Length; i++) {
-				if (nativeCode[i] == -1)
-					continue;
-				if ((byte)nativeCode[i] != code[i])
-					return false;
-			}
 			return true;
 		}
 
