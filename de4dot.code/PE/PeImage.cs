@@ -29,6 +29,7 @@ namespace de4dot.PE {
 		SectionHeader[] sectionHeaders;
 		Cor20Header cor20Header;
 		SectionHeader dotNetSection;
+		Resources resources;
 
 		public BinaryReader Reader {
 			get { return reader; }
@@ -38,13 +39,18 @@ namespace de4dot.PE {
 			get { return cor20Header; }
 		}
 
+		public Resources Resources {
+			get { return resources; }
+		}
+
 		public PeImage(byte[] data)
 			: this(new MemoryStream(data)) {
 		}
 
 		public PeImage(Stream stream) {
 			reader = new BinaryReader(stream);
-			writer = new BinaryWriter(stream);
+			if (stream.CanWrite)
+				writer = new BinaryWriter(stream);
 
 			init();
 		}
@@ -77,14 +83,20 @@ namespace de4dot.PE {
 			for (int i = 0; i < sectionHeaders.Length; i++)
 				sectionHeaders[i] = new SectionHeader(reader);
 
-			uint netOffset = optionalHeader.dataDirectories[14].virtualAddress;
-			if (netOffset != 0) {
-				seekRva(netOffset);
+			uint netRva = optionalHeader.dataDirectories[14].virtualAddress;
+			if (netRva != 0) {
+				seekRva(netRva);
 				cor20Header = new Cor20Header(reader);
-				dotNetSection = getSectionHeader(netOffset);
+				dotNetSection = getSectionHeader(netRva);
 				seekRva(cor20Header.metadataDirectory.virtualAddress);
 				cor20Header.initMetadataTable();
 			}
+
+			uint resourceRva = optionalHeader.dataDirectories[2].virtualAddress;
+			uint resourceOffset = 0;
+			if (resourceRva != 0)
+				resourceOffset = rvaToOffset(resourceRva);
+			resources = new Resources(reader, resourceOffset, optionalHeader.dataDirectories[2].size);
 		}
 
 		SectionHeader getSectionHeader(uint rva) {
@@ -177,6 +189,11 @@ namespace de4dot.PE {
 			if (size == 2) return offsetReadUInt16(offset);
 			if (size == 4) return offsetReadUInt32(offset);
 			throw new NotImplementedException();
+		}
+
+		public byte offsetReadByte(uint offset) {
+			seek(offset);
+			return reader.ReadByte();
 		}
 
 		public ushort offsetReadUInt16(uint offset) {
