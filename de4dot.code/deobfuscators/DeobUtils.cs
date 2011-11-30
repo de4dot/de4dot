@@ -47,22 +47,8 @@ namespace de4dot.deobfuscators {
 			return newDef;
 		}
 
-		// If the file is on the network, and we read more than 2MB, we'll read from the wrong
-		// offset in the file! Tested: VMware 8, Win7 x64.
-		const int MAX_BYTES_READ = 0x200000;
-
 		public static byte[] readModule(ModuleDefinition module) {
-			using (var fileStream = new FileStream(module.FullyQualifiedName, FileMode.Open, FileAccess.Read, FileShare.Read)) {
-				var fileData = new byte[(int)fileStream.Length];
-
-				int bytes, offset = 0, length = fileData.Length;
-				while ((bytes = fileStream.Read(fileData, offset, System.Math.Min(MAX_BYTES_READ, length - offset))) > 0)
-					offset += bytes;
-				if (offset != length)
-					throw new ApplicationException("Could not read all bytes");
-
-				return fileData;
-			}
+			return Utils.readFile(module.FullyQualifiedName);
 		}
 	}
 }
