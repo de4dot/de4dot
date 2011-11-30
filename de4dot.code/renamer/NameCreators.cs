@@ -154,6 +154,7 @@ namespace de4dot.renamer {
 				"Form",
 				"Dialog",
 				"Control",
+				"Stream",
 			};
 			foreach (var name in names)
 				nameInfos.add(name, createNameCreator(name));
