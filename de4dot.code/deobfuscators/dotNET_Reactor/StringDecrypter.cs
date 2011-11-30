@@ -24,6 +24,7 @@ using System.Security.Cryptography;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using de4dot.blocks;
+using de4dot.PE;
 
 namespace de4dot.deobfuscators.dotNET_Reactor {
 	class StringDecrypter {
@@ -32,7 +33,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		List<DecrypterInfo> decrypterInfos = new List<DecrypterInfo>();
 		MethodDefinition otherStringDecrypter;
 		byte[] decryptedData;
-		PE.PeImage peImage;
+		PeImage peImage;
 		byte[] fileData;
 		StringDecrypterVersion stringDecrypterVersion;
 
@@ -150,7 +151,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			}
 		}
 
-		public void init(PE.PeImage peImage, byte[] fileData, ISimpleDeobfuscator simpleDeobfuscator) {
+		public void init(PeImage peImage, byte[] fileData, ISimpleDeobfuscator simpleDeobfuscator) {
 			if (encryptedResource.Method == null)
 				return;
 			this.peImage = peImage;

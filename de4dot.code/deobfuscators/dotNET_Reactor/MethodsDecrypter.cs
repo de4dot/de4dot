@@ -24,6 +24,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.MyStuff;
 using de4dot.blocks;
+using de4dot.PE;
 
 namespace de4dot.deobfuscators.dotNET_Reactor {
 	class MethodsDecrypter {
@@ -31,7 +32,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		EncryptedResource encryptedResource;
 		Dictionary<uint, byte[]> tokenToNativeMethod = new Dictionary<uint, byte[]>();
 		Dictionary<MethodDefinition, byte[]> methodToNativeMethod = new Dictionary<MethodDefinition, byte[]>();
-		int totalEncryptedMethods = 0;
+		int totalEncryptedNativeMethods = 0;
 		long xorKey;
 
 		public bool Detected {
@@ -63,13 +64,12 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			this.module = module;
 			this.encryptedResource = new EncryptedResource(module, oldOne.encryptedResource);
 			this.tokenToNativeMethod = oldOne.tokenToNativeMethod;
-			this.totalEncryptedMethods = oldOne.totalEncryptedMethods;
+			this.totalEncryptedNativeMethods = oldOne.totalEncryptedNativeMethods;
 			this.xorKey = oldOne.xorKey;
 		}
 
 		public void find() {
 			var additionalTypes = new string[] {
-//				"System.Diagnostics.StackFrame",	//TODO: Not in DNR <= 3.7.0.3
 				"System.IntPtr",
 //				"System.Reflection.Assembly",		//TODO: Not in unknown DNR version with jitter support
 			};
@@ -123,7 +123,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 
 		static short[] nativeLdci4 = new short[] { 0x55, 0x8B, 0xEC, 0xB8, -1, -1, -1, -1, 0x5D, 0xC3 };
 		static short[] nativeLdci4_0 = new short[] { 0x55, 0x8B, 0xEC, 0x33, 0xC0, 0x5D, 0xC3 };
-		public bool decrypt(PE.PeImage peImage, ISimpleDeobfuscator simpleDeobfuscator, ref Dictionary<uint, DumpedMethod> dumpedMethods, Dictionary<uint,byte[]> tokenToNativeCode) {
+		public bool decrypt(PeImage peImage, ISimpleDeobfuscator simpleDeobfuscator, ref Dictionary<uint, DumpedMethod> dumpedMethods, Dictionary<uint,byte[]> tokenToNativeCode) {
 			if (encryptedResource.Method == null)
 				return false;
 
@@ -205,7 +205,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 					uint methodToken = 0x06000001 + (uint)methodIndex;
 
 					if (isNativeCode) {
-						totalEncryptedMethods++;
+						totalEncryptedNativeMethods++;
 						if (tokenToNativeCode != null)
 							tokenToNativeCode[methodToken] = methodData;
 
@@ -276,7 +276,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			return true;
 		}
 
-		static void patchDwords(PE.PeImage peImage, BinaryReader reader, int count) {
+		static void patchDwords(PeImage peImage, BinaryReader reader, int count) {
 			for (int i = 0; i < count; i++) {
 				uint rva = reader.ReadUInt32();
 				uint data = reader.ReadUInt32();
@@ -346,7 +346,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			}
 
 			if (index != 0)
-				Log.n("Re-encrypted {0}/{1} native methods", index, totalEncryptedMethods);
+				Log.n("Re-encrypted {0}/{1} native methods", index, totalEncryptedNativeMethods);
 
 			var encryptedData = stream.ToArray();
 			xorEncrypt(encryptedData);

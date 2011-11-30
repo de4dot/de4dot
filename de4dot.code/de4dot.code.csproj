@@ -85,6 +85,8 @@
     <Compile Include="deobfuscators\dotNET_Reactor\EncryptedResource.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\MetadataTokenObfuscator.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\MethodsDecrypter.cs" />
+    <Compile Include="deobfuscators\dotNET_Reactor\NativeFileDecrypter.cs" />
+    <Compile Include="deobfuscators\dotNET_Reactor\NativeImageUnpacker.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\QuickLZ.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\ResourceResolver.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\StringDecrypter.cs" />
@@ -137,6 +139,10 @@
     <Compile Include="PE\MetadataTypeBuilder.cs" />
     <Compile Include="PE\OptionalHeader.cs" />
     <Compile Include="PE\PeImage.cs" />
+    <Compile Include="PE\ResourceData.cs" />
+    <Compile Include="PE\ResourceDirectory.cs" />
+    <Compile Include="PE\ResourceDirectoryEntry.cs" />
+    <Compile Include="PE\Resources.cs" />
     <Compile Include="PE\SectionHeader.cs" />
     <Compile Include="PE\DotNetStream.cs" />
     <Compile Include="Program.cs" />

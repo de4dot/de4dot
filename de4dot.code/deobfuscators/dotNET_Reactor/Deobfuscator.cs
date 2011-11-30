@@ -25,6 +25,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.MyStuff;
 using de4dot.blocks;
+using de4dot.PE;
 
 namespace de4dot.deobfuscators.dotNET_Reactor {
 	class DeobfuscatorInfo : DeobfuscatorInfoBase {
@@ -100,7 +101,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		Options options;
 		string obfuscatorName = ".NET Reactor";
 
-		PE.PeImage peImage;
+		PeImage peImage;
 		byte[] fileData;
 		MethodsDecrypter methodsDecrypter;
 		StringDecrypter stringDecrypter;
@@ -112,6 +113,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		AntiStrongName antiStrongname;
 		EmptyClass emptyClass;
 
+		bool unpackedNativeFile = false;
 		bool canRemoveDecrypterType = true;
 		bool startedDeobfuscating = false;
 
@@ -152,6 +154,11 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				this.RenamingOptions |= RenamingOptions.RemoveNamespaceIfOneType;
 			else
 				this.RenamingOptions &= ~RenamingOptions.RemoveNamespaceIfOneType;
+		}
+
+		public override byte[] unpackNativeFile(PeImage peImage) {
+			unpackedNativeFile = true;
+			return new NativeImageUnpacker(peImage).unpack();
 		}
 
 		public override void init(ModuleDefinition module) {
@@ -243,6 +250,8 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			assemblyResolver = new AssemblyResolver(module);
 			assemblyResolver.find(DeobfuscatedFile);
 			obfuscatorName = detectVersion();
+			if (unpackedNativeFile)
+				obfuscatorName += " (native)";
 			resourceResolver = new ResourceResolver(module);
 			resourceResolver.find(DeobfuscatedFile);
 		}
@@ -366,7 +375,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 
 		public override bool getDecryptedModule(ref byte[] newFileData, ref Dictionary<uint, DumpedMethod> dumpedMethods) {
 			fileData = DeobUtils.readModule(module);
-			peImage = new PE.PeImage(fileData);
+			peImage = new PeImage(fileData);
 
 			if (!options.DecryptMethods)
 				return false;
@@ -398,7 +407,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			var newOne = new Deobfuscator(options);
 			newOne.setModule(module);
 			newOne.fileData = fileData;
-			newOne.peImage = new PE.PeImage(fileData);
+			newOne.peImage = new PeImage(fileData);
 			newOne.methodsDecrypter = new MethodsDecrypter(module, methodsDecrypter);
 			newOne.stringDecrypter = new StringDecrypter(module, stringDecrypter);
 			newOne.booleanDecrypter = new BooleanDecrypter(module, booleanDecrypter);
