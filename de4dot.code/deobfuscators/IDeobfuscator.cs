@@ -23,6 +23,7 @@ using Mono.Cecil;
 using Mono.MyStuff;
 using de4dot.blocks;
 using de4dot.renamer;
+using de4dot.PE;
 
 namespace de4dot.deobfuscators {
 	interface IDeobfuscatorOptions {
@@ -65,6 +66,9 @@ namespace de4dot.deobfuscators {
 
 		// Return true if methods can be inlined
 		bool CanInlineMethods { get; }
+
+		// Returns null or the unpacked .NET PE file
+		byte[] unpackNativeFile(PeImage peImage);
 
 		void init(ModuleDefinition module);
 

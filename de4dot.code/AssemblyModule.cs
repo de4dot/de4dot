@@ -33,8 +33,24 @@ namespace de4dot {
 			this.filename = Utils.getFullPath(filename);
 		}
 
+		ReaderParameters getReaderParameters() {
+			return new ReaderParameters(ReadingMode.Deferred) {
+				AssemblyResolver = AssemblyResolver.Instance
+			};
+		}
+
 		public ModuleDefinition load() {
-			readFile();
+			return setModule(ModuleDefinition.ReadModule(filename, getReaderParameters()));
+		}
+
+		public ModuleDefinition load(byte[] fileData) {
+			return setModule(ModuleDefinition.ReadModule(new MemoryStream(fileData), getReaderParameters()));
+		}
+
+		ModuleDefinition setModule(ModuleDefinition newModule) {
+			module = newModule;
+			AssemblyResolver.Instance.addModule(module);
+			module.FullyQualifiedName = filename;
 			return module;
 		}
 
@@ -47,25 +63,9 @@ namespace de4dot {
 		}
 
 		public ModuleDefinition reload(byte[] newModuleData, Dictionary<uint, DumpedMethod> dumpedMethods) {
-			var oldModuleName = module.FullyQualifiedName;
-			var assemblyResolver = AssemblyResolver.Instance;
-			assemblyResolver.removeModule(module);
+			AssemblyResolver.Instance.removeModule(module);
 			DotNetUtils.typeCaches.invalidate(module);
-
-			var readerParameters = new ReaderParameters(ReadingMode.Deferred);
-			readerParameters.AssemblyResolver = assemblyResolver;
-			module = ModuleDefinition.ReadModule(new MemoryStream(newModuleData), readerParameters, dumpedMethods);
-			assemblyResolver.addModule(module);
-			module.FullyQualifiedName = oldModuleName;
-			return module;
-		}
-
-		void readFile() {
-			var assemblyResolver = AssemblyResolver.Instance;
-			var readerParameters = new ReaderParameters(ReadingMode.Deferred);
-			readerParameters.AssemblyResolver = assemblyResolver;
-			module = ModuleDefinition.ReadModule(filename, readerParameters);
-			assemblyResolver.addModule(module);
+			return setModule(ModuleDefinition.ReadModule(new MemoryStream(newModuleData), getReaderParameters(), dumpedMethods));
 		}
 
 		public override string ToString() {

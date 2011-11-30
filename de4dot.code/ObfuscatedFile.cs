@@ -30,6 +30,7 @@ using de4dot.blocks;
 using de4dot.blocks.cflow;
 using de4dot.AssemblyClient;
 using de4dot.renamer;
+using de4dot.PE;
 
 namespace de4dot {
 	class ObfuscatedFile : IObfuscatedFile, IDeobfuscatedFile {
@@ -151,7 +152,7 @@ namespace de4dot {
 		}
 
 		public void load(IEnumerable<IDeobfuscator> deobfuscators) {
-			module = assemblyModule.load();
+			loadModule(deobfuscators);
 			AssemblyResolver.Instance.addSearchDirectory(Utils.getDirName(Filename));
 			AssemblyResolver.Instance.addSearchDirectory(Utils.getDirName(NewFilename));
 
@@ -161,6 +162,36 @@ namespace de4dot {
 			if (deob == null)
 				throw new ApplicationException("Could not detect obfuscator!");
 			initializeDeobfuscator();
+		}
+
+		void loadModule(IEnumerable<IDeobfuscator> deobfuscators) {
+			try {
+				module = assemblyModule.load();
+			}
+			catch (BadImageFormatException) {
+				if (!unpackNativeImage(deobfuscators))
+					throw new BadImageFormatException();
+			}
+		}
+
+		bool unpackNativeImage(IEnumerable<IDeobfuscator> deobfuscators) {
+			var peImage = new PeImage(Utils.readFile(Filename));
+
+			foreach (var deob in deobfuscators) {
+				try {
+					var unpackedData = deob.unpackNativeFile(peImage);
+					if (unpackedData == null)
+						continue;
+					module = assemblyModule.load(unpackedData);
+					this.deob = deob;
+					return true;
+				}
+				catch {
+					continue;
+				}
+			}
+
+			return false;
 		}
 
 		void initializeDeobfuscator() {
@@ -198,6 +229,15 @@ namespace de4dot {
 			// strings (statically) in order to detect the obfuscator.
 			if (!options.ControlFlowDeobfuscation || options.StringDecrypterType == DecrypterType.None)
 				savedMethodBodies = new SavedMethodBodies();
+
+			// It's not null if it unpacked a native file
+			if (this.deob != null) {
+				deob.init(module);
+				deob.DeobfuscatedFile = this;
+				deob.earlyDetect();
+				deob.detect();
+				return;
+			}
 
 			foreach (var deob in deobfuscators) {
 				deob.init(module);

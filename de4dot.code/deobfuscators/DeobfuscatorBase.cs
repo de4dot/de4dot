@@ -23,6 +23,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.MyStuff;
 using de4dot.blocks;
+using de4dot.PE;
 
 namespace de4dot.deobfuscators {
 	abstract class DeobfuscatorBase : IDeobfuscator, IWriterListener {
@@ -81,6 +82,10 @@ namespace de4dot.deobfuscators {
 			this.optionsBase = optionsBase;
 			StringFeatures = StringFeatures.AllowAll;
 			DefaultDecrypterType = DecrypterType.Static;
+		}
+
+		public virtual byte[] unpackNativeFile(PeImage peImage) {
+			return null;
 		}
 
 		public virtual void init(ModuleDefinition module) {
