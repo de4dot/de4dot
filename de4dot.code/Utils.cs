@@ -24,7 +24,6 @@ using System.Text;
 
 namespace de4dot {
 	public enum StartUpArch {
-		AnyCpu,
 		x86,
 		x64,
 	}
@@ -58,11 +57,10 @@ namespace de4dot {
 
 	static class Utils {
 		static Random random = new Random();
-		public static StartUpArch startUpArch = StartUpArch.AnyCpu;
+		public static StartUpArch startUpArch = StartUpArch.x86;
 
-		public static string getArchString(string anyCpu, string x86, string x64) {
+		public static string getArchString(string x86, string x64) {
 			switch (startUpArch) {
-			case StartUpArch.AnyCpu: return anyCpu;
 			case StartUpArch.x86: return x86;
 			case StartUpArch.x64: return x64;
 			default: throw new ApplicationException(string.Format("Invalid startUpArch {0}", startUpArch));

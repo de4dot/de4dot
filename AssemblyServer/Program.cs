@@ -17,7 +17,7 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-namespace AssemblyServer_AnyCpu {
+namespace AssemblyServer_x86 {
 	class Program {
 		static int Main(string[] args) {
 			return AssemblyServer.Start.main(args);

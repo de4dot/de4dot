@@ -17,10 +17,10 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-namespace de4dot_AnyCpu {
+namespace de4dot_x86 {
 	class Program {
 		static int Main(string[] args) {
-			return de4dot.Program.main(de4dot.StartUpArch.AnyCpu, args);
+			return de4dot.Program.main(de4dot.StartUpArch.x86, args);
 		}
 	}
 }
