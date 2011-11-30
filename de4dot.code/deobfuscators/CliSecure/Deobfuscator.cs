@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.MyStuff;
 using de4dot.blocks;
+using de4dot.PE;
 
 namespace de4dot.deobfuscators.CliSecure {
 	class DeobfuscatorInfo : DeobfuscatorInfoBase {
@@ -139,7 +140,7 @@ namespace de4dot.deobfuscators.CliSecure {
 				return false;
 
 			byte[] fileData = DeobUtils.readModule(module);
-			var peImage = new PE.PeImage(fileData);
+			var peImage = new PeImage(fileData);
 
 			if (!new MethodsDecrypter().decrypt(peImage, ref dumpedMethods)) {
 				Log.v("Methods aren't encrypted or invalid signature");

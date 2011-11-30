@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using Mono.MyStuff;
+using de4dot.PE;
 
 namespace de4dot.deobfuscators.CliSecure {
 	class CodeHeader {
@@ -50,7 +51,7 @@ namespace de4dot.deobfuscators.CliSecure {
 		static byte[] normalSignature = new byte[16] { 0x08, 0x44, 0x65, 0xE1, 0x8C, 0x82, 0x13, 0x4C, 0x9C, 0x85, 0xB4, 0x17, 0xDA, 0x51, 0xAD, 0x25 };
 		static byte[] proSignature    = new byte[16] { 0x68, 0xA0, 0xBB, 0x60, 0x13, 0x65, 0x5F, 0x41, 0xAE, 0x42, 0xAB, 0x42, 0x9B, 0x6B, 0x4E, 0xC1 };
 
-		PE.PeImage peImage;
+		PeImage peImage;
 		CodeHeader codeHeader = new CodeHeader();
 		IDecrypter decrypter;
 
@@ -59,11 +60,11 @@ namespace de4dot.deobfuscators.CliSecure {
 		}
 
 		abstract class DecrypterBase : IDecrypter {
-			protected PE.PeImage peImage;
+			protected PeImage peImage;
 			protected CodeHeader codeHeader;
 			protected uint endOfMetadata;
 
-			public DecrypterBase(PE.PeImage peImage, CodeHeader codeHeader) {
+			public DecrypterBase(PeImage peImage, CodeHeader codeHeader) {
 				this.peImage = peImage;
 				this.codeHeader = codeHeader;
 				endOfMetadata = peImage.rvaToOffset(peImage.Cor20Header.metadataDirectory.virtualAddress + peImage.Cor20Header.metadataDirectory.size);
@@ -89,7 +90,7 @@ namespace de4dot.deobfuscators.CliSecure {
 		}
 
 		class NormalDecrypter : DecrypterBase {
-			public NormalDecrypter(PE.PeImage peImage, CodeHeader codeHeader)
+			public NormalDecrypter(PeImage peImage, CodeHeader codeHeader)
 				: base(peImage, codeHeader) {
 			}
 
@@ -109,7 +110,7 @@ namespace de4dot.deobfuscators.CliSecure {
 		class ProDecrypter : DecrypterBase {
 			uint[] key = new uint[4];
 
-			public ProDecrypter(PE.PeImage peImage, CodeHeader codeHeader)
+			public ProDecrypter(PeImage peImage, CodeHeader codeHeader)
 				: base(peImage, codeHeader) {
 				for (int i = 0; i < 4; i++)
 					key[i] = be_readUint32(codeHeader.decryptionKey, i * 4);
@@ -154,7 +155,7 @@ namespace de4dot.deobfuscators.CliSecure {
 			}
 		}
 
-		public bool decrypt(PE.PeImage peImage, ref Dictionary<uint, DumpedMethod> dumpedMethods) {
+		public bool decrypt(PeImage peImage, ref Dictionary<uint, DumpedMethod> dumpedMethods) {
 			this.peImage = peImage;
 
 			uint offset = peImage.rvaToOffset(peImage.Cor20Header.metadataDirectory.virtualAddress + peImage.Cor20Header.metadataDirectory.size);
