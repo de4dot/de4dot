@@ -178,15 +178,22 @@ namespace de4dot {
 			var peImage = new PeImage(Utils.readFile(Filename));
 
 			foreach (var deob in deobfuscators) {
+				byte[] unpackedData;
 				try {
-					var unpackedData = deob.unpackNativeFile(peImage);
+					unpackedData = deob.unpackNativeFile(peImage);
 					if (unpackedData == null)
 						continue;
+				}
+				catch {
+					continue;
+				}
+				try {
 					module = assemblyModule.load(unpackedData);
 					this.deob = deob;
 					return true;
 				}
 				catch {
+					Log.w("Could not load unpacked data. Obfuscator: {0}", deob.TypeLong);
 					continue;
 				}
 			}
