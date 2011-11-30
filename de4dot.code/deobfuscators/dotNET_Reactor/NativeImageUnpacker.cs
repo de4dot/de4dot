@@ -44,15 +44,9 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			if (encryptedData.Length != dataEntry.Size)
 				return null;
 
-			//TODO: Hard coded offsets: DNR 4.0/4.1 + .NET 2.0+
-			var keyData = new byte[6] {
-				peImage.offsetReadByte(7173),
-				peImage.offsetReadByte(7183),
-				peImage.offsetReadByte(7256),
-				peImage.offsetReadByte(7277),
-				peImage.offsetReadByte(7320),
-				peImage.offsetReadByte(7334),
-			};
+			var keyData = getKeyData();
+			if (keyData == null)
+				return null;
 			var decrypter = new NativeFileDecrypter(keyData);
 			decrypter.decrypt(encryptedData, 0, encryptedData.Length);
 
@@ -65,6 +59,47 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 				return null;
 
 			return inflatedData;
+		}
+
+		static uint[] baseOffsets = new uint[] {
+			0x1C00,	// DNR 4.0 & 4.1
+			0x1900,	// DNR 4.2.7.5
+			0x1B60,	// DNR 4.3 & 4.4
+		};
+		static short[] decryptMethodPattern = new short[] {
+			/* 00 */	0x83, 0xEC, 0x38,		// sub     esp, 38h
+			/* 03 */	0x53,					// push    ebx
+			/* 04 */	0xB0, -1,				// mov     al, ??h
+			/* 06 */	0x88, 0x44, 0x24, 0x2B,	// mov     [esp+2Bh], al
+			/* 0A */	0x88, 0x44, 0x24, 0x2F,	// mov     [esp+2Fh], al
+			/* 0E */	0xB0, -1,				// mov     al, ??h
+			/* 10 */	0x88, 0x44, 0x24, 0x30,	// mov     [esp+30h], al
+			/* 14 */	0x88, 0x44, 0x24, 0x31,	// mov     [esp+31h], al
+			/* 18 */	0x88, 0x44, 0x24, 0x33,	// mov     [esp+33h], al
+			/* 1C */	0x55,					// push    ebp
+			/* 1D */	0x56,					// push    esi
+		};
+		byte[] getKeyData() {
+			for (int i = 0; i < baseOffsets.Length; i++) {
+				var code = peImage.offsetReadBytes(baseOffsets[i], decryptMethodPattern.Length);
+				if (DeobUtils.isCode(decryptMethodPattern, code))
+					return getKeyData(baseOffsets[i]);
+			}
+
+			//TODO: Check if .NET 1.1 since it uses a hard coded key
+
+			return null;
+		}
+
+		byte[] getKeyData(uint baseOffset) {
+			return new byte[6] {
+				peImage.offsetReadByte(baseOffset + 5),
+				peImage.offsetReadByte(baseOffset + 0xF),
+				peImage.offsetReadByte(baseOffset + 0x58),
+				peImage.offsetReadByte(baseOffset + 0x6D),
+				peImage.offsetReadByte(baseOffset + 0x98),
+				peImage.offsetReadByte(baseOffset + 0xA6),
+			};
 		}
 	}
 }
