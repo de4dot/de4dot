@@ -225,7 +225,107 @@ namespace de4dot.renamer.asmmodules {
 			}
 		}
 
-		Dictionary<TypeReferenceKey, TypeDef> otherTypesDict = new Dictionary<TypeReferenceKey, TypeDef>();
+		class AssemblyKeyDictionary<T> where T : class {
+			Dictionary<TypeReferenceSameVersionKey, T> dict = new Dictionary<TypeReferenceSameVersionKey, T>();
+			Dictionary<TypeReferenceKey, List<TypeReference>> refs = new Dictionary<TypeReferenceKey, List<TypeReference>>();
+
+			public T this[TypeReference type] {
+				get {
+					T value;
+					if (tryGetValue(type, out value))
+						return value;
+					throw new KeyNotFoundException();
+				}
+				set {
+					var key = new TypeReferenceSameVersionKey(type);
+					dict[key] = value;
+
+					if (value != null) {
+						var key2 = new TypeReferenceKey(type);
+						List<TypeReference> list;
+						if (!refs.TryGetValue(key2, out list))
+							refs[key2] = list = new List<TypeReference>();
+						list.Add(type);
+					}
+				}
+			}
+
+			public bool tryGetValue(TypeReference type, out T value) {
+				var key = new TypeReferenceSameVersionKey(type);
+				if (dict.TryGetValue(key, out value))
+					return true;
+				return false;
+			}
+
+			public bool tryGetSimilarValue(TypeReference type, out T value) {
+				var key2 = new TypeReferenceKey(type);
+				List<TypeReference> list;
+				if (!refs.TryGetValue(key2, out list)) {
+					value = default(T);
+					return false;
+				}
+
+				// Find a type whose version is >= type's version and closest to it.
+
+				TypeReference foundType = null;
+				var typeAsmName = MemberReferenceHelper.getAssemblyNameReference(type.Scope);
+				AssemblyNameReference foundAsmName = null;
+				foreach (var otherRef in list) {
+					var key = new TypeReferenceSameVersionKey(otherRef);
+					if (!dict.TryGetValue(key, out value))
+						continue;
+
+					if (typeAsmName == null) {
+						foundType = otherRef;
+						break;
+					}
+
+					var otherAsmName = MemberReferenceHelper.getAssemblyNameReference(otherRef.Scope);
+					if (otherAsmName == null)
+						continue;
+					// Check pkt or we could return a type in eg. a SL assembly when it's not a SL app.
+					if (!same(typeAsmName.PublicKeyToken, otherAsmName.PublicKeyToken))
+						continue;
+					if (typeAsmName.Version > otherAsmName.Version)
+						continue;	// old version
+
+					if (foundType == null) {
+						foundAsmName = otherAsmName;
+						foundType = otherRef;
+						continue;
+					}
+
+					if (foundAsmName.Version <= otherAsmName.Version)
+						continue;
+					foundAsmName = otherAsmName;
+					foundType = otherRef;
+				}
+
+				if (foundType != null) {
+					value = dict[new TypeReferenceSameVersionKey(foundType)];
+					return true;
+				}
+
+				value = default(T);
+				return false;
+			}
+
+			bool same(byte[] a, byte[] b) {
+				if (ReferenceEquals(a, b))
+					return true;
+				if (a == null || b == null)
+					return false;
+				if (a.Length != b.Length)
+					return false;
+				for (int i = 0; i < a.Length; i++) {
+					if (a[i] != b[i])
+						return false;
+				}
+				return true;
+			}
+		}
+
+		AssemblyKeyDictionary<TypeDef> typeToTypeDefDict = new AssemblyKeyDictionary<TypeDef>();
 		ExternalAssemblies externalAssemblies = new ExternalAssemblies();
 		TypeDef resolveOther(TypeReference type) {
 			if (type == null)
@@ -233,14 +333,23 @@ namespace de4dot.renamer.asmmodules {
 			type = type.GetElementType();
 
 			TypeDef typeDef;
-			var key = new TypeReferenceKey(type);
-			if (otherTypesDict.TryGetValue(key, out typeDef))
+			if (typeToTypeDefDict.tryGetValue(type, out typeDef))
 				return typeDef;
-			otherTypesDict[key] = null;	// In case of a circular reference
 
-			TypeDefinition typeDefinition = externalAssemblies.resolve(type);
-			if (typeDefinition == null)
-				return null;
+			var typeDefinition = externalAssemblies.resolve(type);
+			if (typeDefinition == null) {
+				typeToTypeDefDict.tryGetSimilarValue(type, out typeDef);
+				typeToTypeDefDict[type] = typeDef;
+				return typeDef;
+			}
+
+			if (typeToTypeDefDict.tryGetValue(typeDefinition, out typeDef)) {
+				typeToTypeDefDict[type] = typeDef;
+				return typeDef;
+			}
+
+			typeToTypeDefDict[type] = null;	// In case of a circular reference
+			typeToTypeDefDict[typeDefinition] = null;
 
 			typeDef = new TypeDef(typeDefinition, null, 0);
 			typeDef.addMembers();
@@ -253,7 +362,11 @@ namespace de4dot.renamer.asmmodules {
 			var baseDef = resolveOther(typeDef.TypeDefinition.BaseType);
 			if (baseDef != null)
 				typeDef.addBaseType(baseDef, typeDef.TypeDefinition.BaseType);
-			return otherTypesDict[key] = typeDef;
+
+			typeToTypeDefDict[type] = typeDef;
+			if (type != typeDefinition)
+				typeToTypeDefDict[typeDefinition] = typeDef;
+			return typeDef;
 		}
 
 		public MethodNameScopes initializeVirtualMembers() {

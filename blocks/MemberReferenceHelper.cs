@@ -117,6 +117,33 @@ namespace de4dot.blocks {
 		}
 	}
 
+	public class TypeReferenceSameVersionKey {
+		readonly TypeReference typeRef;
+
+		public TypeReference TypeReference {
+			get { return typeRef; }
+		}
+
+		public TypeReferenceSameVersionKey(TypeReference typeRef) {
+			this.typeRef = typeRef;
+		}
+
+		public override int GetHashCode() {
+			return MemberReferenceHelper.typeReferenceHashCodeSameVersion(typeRef);
+		}
+
+		public override bool Equals(object obj) {
+			var other = obj as TypeReferenceSameVersionKey;
+			if (other == null)
+				return false;
+			return MemberReferenceHelper.compareTypeReferenceSameVersion(typeRef, other.typeRef);
+		}
+
+		public override string ToString() {
+			return typeRef.ToString();
+		}
+	}
+
 	public class FieldReferenceKey {
 		readonly FieldReference fieldRef;
 
@@ -333,17 +360,14 @@ namespace de4dot.blocks {
 			return string.Format("[{0}]{1}", getCanonicalizedScopeName(scope), fullName);
 		}
 
-		public static string getCanonicalizedScopeName(IMetadataScope scope) {
-			AssemblyNameReference asmRef = null;
-
+		public static AssemblyNameReference getAssemblyNameReference(IMetadataScope scope) {
 			switch (scope.MetadataScopeType) {
 			case MetadataScopeType.AssemblyNameReference:
-				asmRef = (AssemblyNameReference)scope;
-				break;
+				return (AssemblyNameReference)scope;
 			case MetadataScopeType.ModuleDefinition:
 				var module = (ModuleDefinition)scope;
 				if (module.Assembly != null)
-					asmRef = module.Assembly.Name;
+					return module.Assembly.Name;
 				break;
 			case MetadataScopeType.ModuleReference:
 				break;
@@ -351,12 +375,24 @@ namespace de4dot.blocks {
 				throw new ApplicationException(string.Format("Invalid scope type: {0}", scope.GetType()));
 			}
 
+			return null;
+		}
+
+		public static string getCanonicalizedScopeName(IMetadataScope scope) {
+			var asmRef = getAssemblyNameReference(scope);
 			if (asmRef != null) {
 				// The version number should be ignored. Older code may reference an old version of
 				// the assembly, but if the newer one has been loaded, that one is used.
 				return asmRef.Name.ToLowerInvariant();
 			}
 			return string.Format("{0}", scope.ToString().ToLowerInvariant());
+		}
+
+		public static string getCanonicalizedScopeAndVersion(IMetadataScope scope) {
+			var asmRef = getAssemblyNameReference(scope);
+			if (asmRef != null)
+				return string.Format("{0}, Version={1}", asmRef.Name.ToLowerInvariant(), asmRef.Version);
+			return string.Format("{0}, Version=", scope.ToString().ToLowerInvariant());
 		}
 
 		public static bool compareScope(IMetadataScope a, IMetadataScope b) {
@@ -371,6 +407,20 @@ namespace de4dot.blocks {
 			if (a == null)
 				return 0;
 			return getCanonicalizedScopeName(a).GetHashCode();
+		}
+
+		public static bool compareScopeSameVersion(IMetadataScope a, IMetadataScope b) {
+			if (ReferenceEquals(a, b))
+				return true;
+			if (a == null || b == null)
+				return false;
+			return getCanonicalizedScopeAndVersion(a) == getCanonicalizedScopeAndVersion(b);
+		}
+
+		public static int scopeHashCodeSameVersion(IMetadataScope a) {
+			if (a == null)
+				return 0;
+			return getCanonicalizedScopeAndVersion(a).GetHashCode();
 		}
 
 		public static bool compareEventReference(EventReference a, EventReference b) {
@@ -807,6 +857,39 @@ namespace de4dot.blocks {
 			res += a.Namespace.GetHashCode();
 			res += typeHashCode(a.DeclaringType);
 			res += scopeHashCode(a.Scope);
+
+			return res;
+		}
+
+		public static bool compareTypeReferenceSameVersion(TypeReference a, TypeReference b) {
+			if (ReferenceEquals(a, b))
+				return true;
+			if (a == null || b == null)
+				return false;
+
+			if ((a.GetType() != typeof(TypeReference) && a.GetType() != typeof(TypeDefinition)) ||
+				(b.GetType() != typeof(TypeReference) && b.GetType() != typeof(TypeDefinition)))
+				throw new ApplicationException("arg must be exactly of type TypeReference or TypeDefinition");
+
+			return a.Name == b.Name &&
+				a.Namespace == b.Namespace &&
+				compareTypeReferenceSameVersion(a.DeclaringType, b.DeclaringType) &&
+				compareScopeSameVersion(a.Scope, b.Scope);
+		}
+
+		public static int typeReferenceHashCodeSameVersion(TypeReference a) {
+			if (a == null)
+				return 0;
+
+			if (a.GetType() != typeof(TypeReference) && a.GetType() != typeof(TypeDefinition))
+				throw new ApplicationException("arg must be exactly of type TypeReference or TypeDefinition");
+
+			int res = 0;
+
+			res += a.Name.GetHashCode();
+			res += a.Namespace.GetHashCode();
+			res += typeReferenceHashCodeSameVersion(a.DeclaringType);
+			res += scopeHashCodeSameVersion(a.Scope);
 
 			return res;
 		}
