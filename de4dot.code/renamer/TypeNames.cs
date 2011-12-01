@@ -41,18 +41,19 @@ namespace de4dot.renamer {
 			if (elementType is GenericParameter)
 				return genericParamNameCreator.create();
 
-			var name = elementType.FullName;
 			NameCreator nc;
-			if (typeNames.TryGetValue(name, out nc))
+			var typeFullName = typeRef.FullName;
+			if (typeNames.TryGetValue(typeFullName, out nc))
 				return nc.create();
 
+			var name = elementType.FullName;
 			var parts = name.Replace('/', '.').Split(new char[] { '.' });
 			var newName = parts[parts.Length - 1];
 			int tickIndex = newName.LastIndexOf('`');
 			if (tickIndex > 0)
 				newName = newName.Substring(0, tickIndex);
 
-			return addTypeName(name, newName, prefix).create();
+			return addTypeName(typeFullName, newName, prefix).create();
 		}
 
 		string getPrefix(TypeReference typeRef) {
@@ -64,7 +65,7 @@ namespace de4dot.renamer {
 			return prefix;
 		}
 
-		protected INameCreator addTypeName(string fullName, string newName, string prefix = "") {
+		protected INameCreator addTypeName(string fullName, string newName, string prefix) {
 			newName = fixName(prefix, newName);
 
 			var name2 = " " + newName;
@@ -96,22 +97,39 @@ namespace de4dot.renamer {
 
 	class VariableNameCreator : TypeNames {
 		public VariableNameCreator() {
-			addTypeName("System.Boolean", "bool");
-			addTypeName("System.Byte", "byte");
-			addTypeName("System.Char", "char");
-			addTypeName("System.Double", "double");
-			addTypeName("System.Int16", "short");
-			addTypeName("System.Int32", "int");
-			addTypeName("System.Int64", "long");
-			addTypeName("System.IntPtr", "intptr");
-			addTypeName("System.SByte", "sbyte");
-			addTypeName("System.Single", "float");
-			addTypeName("System.String", "string");
-			addTypeName("System.UInt16", "ushort");
-			addTypeName("System.UInt32", "uint");
-			addTypeName("System.UInt64", "ulong");
-			addTypeName("System.UIntPtr", "uintptr");
-			addTypeName("System.Decimal", "decimal");
+			initTypeName("System.Boolean", "bool");
+			initTypeName("System.Byte", "byte");
+			initTypeName("System.Char", "char");
+			initTypeName("System.Double", "double");
+			initTypeName("System.Int16", "short");
+			initTypeName("System.Int32", "int");
+			initTypeName("System.Int64", "long");
+			initTypeName("System.IntPtr", "intptr", "IntPtr");
+			initTypeName("System.SByte", "sbyte", "SByte");
+			initTypeName("System.Single", "float");
+			initTypeName("System.String", "string");
+			initTypeName("System.UInt16", "ushort", "UShort");
+			initTypeName("System.UInt32", "uint", "UInt");
+			initTypeName("System.UInt64", "ulong", "ULong");
+			initTypeName("System.UIntPtr", "uintptr", "UIntPtr");
+			initTypeName("System.Decimal", "decimal");
+		}
+
+		void initTypeName(string fullName, string newName, string ptrName = null) {
+			if (ptrName == null)
+				ptrName = upperFirst(newName);
+			initTypeName2(fullName, "", newName);
+			initTypeName2(fullName + "[]", "", newName);
+			initTypeName2(fullName + "[][]", "", newName);
+			initTypeName2(fullName + "[][][]", "", newName);
+			initTypeName2(fullName + "[0...,0...]", "", newName);
+			initTypeName2(fullName + "*", "p", ptrName);
+			initTypeName2(fullName + "**", "pp", ptrName);
+		}
+
+		void initTypeName2(string fullName, string prefix, string newName) {
+			addTypeName(fullName, newName, prefix);
+			addTypeName(fullName + "&", newName, prefix);
 		}
 
 		static string lowerLeadingChars(string name) {
