@@ -251,10 +251,7 @@ namespace de4dot.renamer.asmmodules {
 			}
 
 			public bool tryGetValue(TypeReference type, out T value) {
-				var key = new TypeReferenceSameVersionKey(type);
-				if (dict.TryGetValue(key, out value))
-					return true;
-				return false;
+				return dict.TryGetValue(new TypeReferenceSameVersionKey(type), out value);
 			}
 
 			public bool tryGetSimilarValue(TypeReference type, out T value) {
@@ -453,8 +450,7 @@ namespace de4dot.renamer.asmmodules {
 			if (isAutoCreatedType(typeReference))
 				return null;
 			Log.e("Could not resolve TypeReference {0} ({1:X8})", typeReference, typeReference.MetadataToken.ToInt32());
-			//TODO: Return null when you've tested all code
-			throw new ApplicationException(string.Format("Could not resolve TypeReference {0} ({1:X8})", typeReference, typeReference.MetadataToken.ToInt32()));
+			return null;
 		}
 
 		public MethodDef resolve(MethodReference methodReference) {
@@ -471,8 +467,7 @@ namespace de4dot.renamer.asmmodules {
 			if (isAutoCreatedType(methodReference.DeclaringType))
 				return null;
 			Log.e("Could not resolve MethodReference {0} ({1:X8})", methodReference, methodReference.MetadataToken.ToInt32());
-			//TODO: Return null when you've tested all code
-			throw new ApplicationException(string.Format("Could not resolve MethodReference {0} ({1:X8})", methodReference, methodReference.MetadataToken.ToInt32()));
+			return null;
 		}
 
 		public FieldDef resolve(FieldReference fieldReference) {
@@ -489,8 +484,7 @@ namespace de4dot.renamer.asmmodules {
 			if (isAutoCreatedType(fieldReference.DeclaringType))
 				return null;
 			Log.e("Could not resolve FieldReference {0} ({1:X8})", fieldReference, fieldReference.MetadataToken.ToInt32());
-			//TODO: Return null when you've tested all code
-			throw new ApplicationException(string.Format("Could not resolve FieldReference {0} ({1:X8})", fieldReference, fieldReference.MetadataToken.ToInt32()));
+			return null;
 		}
 	}
 }
