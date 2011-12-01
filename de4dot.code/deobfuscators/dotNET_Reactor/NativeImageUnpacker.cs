@@ -18,12 +18,14 @@
 */
 
 using System;
+using System.IO;
 using ICSharpCode.SharpZipLib.Zip.Compression;
 using de4dot.PE;
 
 namespace de4dot.deobfuscators.dotNET_Reactor {
 	class NativeImageUnpacker {
 		PeImage peImage;
+		bool isNet1x;
 
 		public NativeImageUnpacker(PeImage peImage) {
 			this.peImage = peImage;
@@ -50,13 +52,29 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			var decrypter = new NativeFileDecrypter(keyData);
 			decrypter.decrypt(encryptedData, 0, encryptedData.Length);
 
-			int inflatedSize = BitConverter.ToInt32(encryptedData, 0);
-			var inflater = new Inflater();
-			byte[] inflatedData = new byte[inflatedSize];
-			inflater.SetInput(encryptedData, 4, encryptedData.Length - 4);
-			int count = inflater.Inflate(inflatedData);
-			if (count != inflatedSize)
-				return null;
+			byte[] inflatedData;
+			if (isNet1x) {
+				var buffer = new byte[0x1000];
+				var memStream = new MemoryStream();
+				var inflater = new Inflater();
+				inflater.SetInput(encryptedData, 0, encryptedData.Length);
+				while (true) {
+					int count = inflater.Inflate(buffer, 0, buffer.Length);
+					if (count == 0)
+						break;
+					memStream.Write(buffer, 0, count);
+				}
+				inflatedData = memStream.ToArray();
+			}
+			else {
+				int inflatedSize = BitConverter.ToInt32(encryptedData, 0);
+				inflatedData = new byte[inflatedSize];
+				var inflater = new Inflater();
+				inflater.SetInput(encryptedData, 4, encryptedData.Length - 4);
+				int count = inflater.Inflate(inflatedData);
+				if (count != inflatedSize)
+					return null;
+			}
 
 			if (BitConverter.ToInt16(inflatedData, 0) != 0x5A4D)
 				return null;
@@ -67,7 +85,7 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 		static uint[] baseOffsets = new uint[] {
 			0x1C00,	// DNR 4.0 & 4.1
 			0x1900,	// DNR 4.2.7.5
-			0x1B60,	// DNR 4.3 & 4.4
+			0x1B60,	// DNR 4.2.8.4, 4.3 & 4.4
 		};
 		static short[] decryptMethodPattern = new short[] {
 			/* 00 */	0x83, 0xEC, 0x38,		// sub     esp, 38h
@@ -82,14 +100,33 @@ namespace de4dot.deobfuscators.dotNET_Reactor {
 			/* 1C */	0x55,					// push    ebp
 			/* 1D */	0x56,					// push    esi
 		};
+		static short[] startMethodNet1xPattern = new short[] {
+			/* 00 */ 0x55,						// push    ebp
+			/* 01 */ 0x8B, 0xEC,				// mov     ebp, esp
+			/* 03 */ 0xB9, 0x14, 0x00, 0x00, 0x00, // mov  ecx, 14h
+			/* 08 */ 0x6A, 0x00,				// push    0
+			/* 0A */ 0x6A, 0x00,				// push    0
+			/* 0C */ 0x49,						// dec     ecx
+			/* 0D */ 0x75, 0xF9,				// jnz     short $-5
+			/* 0F */ 0x53,						// push    ebx
+			/* 10 */ 0x56,						// push    esi
+			/* 11 */ 0x57,						// push    edi
+			/* 12 */ 0xB8, -1, -1, -1, -1,		// mov     eax, offset XXXXXXXX
+			/* 17 */ 0xE8, -1, -1, -1, -1,		// call    YYYYYYYY
+		};
 		byte[] getKeyData() {
+			isNet1x = false;
 			for (int i = 0; i < baseOffsets.Length; i++) {
 				var code = peImage.offsetReadBytes(baseOffsets[i], decryptMethodPattern.Length);
 				if (DeobUtils.isCode(decryptMethodPattern, code))
 					return getKeyData(baseOffsets[i]);
 			}
 
-			//TODO: Check if .NET 1.1 since it uses a hard coded key
+			var net1xCode = peImage.offsetReadBytes(0x207E0, startMethodNet1xPattern.Length);
+			if (DeobUtils.isCode(startMethodNet1xPattern, net1xCode)) {
+				isNet1x = true;
+				return new byte[6] { 0x34, 0x38, 0x63, 0x65, 0x7A, 0x35 };
+			}
 
 			return null;
 		}
