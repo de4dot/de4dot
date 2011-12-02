@@ -232,6 +232,8 @@ namespace de4dot.deobfuscators.CliSecure {
 		}
 
 		void removeStackFrameHelperCode(Blocks blocks) {
+			if (!options.RemoveStackFrameHelper)
+				return;
 			if (stackFrameHelper.ExceptionLoggerRemover.remove(blocks))
 				Log.v("Removed StackFrameHelper code");
 		}
