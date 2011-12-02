@@ -172,7 +172,7 @@ namespace de4dot.deobfuscators.CliSecure {
 			offset = methodDefTable.fileOffset - methodDefTable.totalSize;
 			foreach (var methodInfo in methodInfos) {
 				offset += methodDefTable.totalSize;
-				if (methodInfo.flags == 0 && methodInfo.localVarSigTok == 0)
+				if (methodInfo.flags == 0 || methodInfo.codeOffs == 0)
 					continue;
 				uint rva = peImage.offsetReadUInt32(offset);
 				peImage.writeUint16(rva, (ushort)methodInfo.flags);
