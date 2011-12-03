@@ -324,7 +324,7 @@ namespace de4dot.renamer.asmmodules {
 
 		AssemblyKeyDictionary<TypeDef> typeToTypeDefDict = new AssemblyKeyDictionary<TypeDef>();
 		ExternalAssemblies externalAssemblies = new ExternalAssemblies();
-		TypeDef resolveOther(TypeReference type) {
+		public TypeDef resolveOther(TypeReference type) {
 			if (type == null)
 				return null;
 			type = type.GetElementType();

@@ -216,8 +216,12 @@ namespace de4dot.renamer {
 			string propName = propInfo.oldName;
 			if (!NameChecker.isValidPropertyName(propName))
 				propName = propInfo.suggestedName;
-			if (!NameChecker.isValidPropertyName(propName))
-				propName = variableNameState.getNewPropertyName(propDef.PropertyDefinition);
+			if (!NameChecker.isValidPropertyName(propName)) {
+				if (propDef.isItemProperty())
+					propName = "Item";
+				else
+					propName = variableNameState.getNewPropertyName(propDef.PropertyDefinition);
+			}
 			variableNameState.addPropertyName(propName);
 			propInfo.rename(propName);
 

@@ -983,19 +983,26 @@ namespace de4dot.renamer {
 			string newEventName, oldEventName;
 			var eventInfo = memberInfos.evt(eventDef);
 
+			bool mustUseOldEventName = false;
 			if (overridePrefix == "")
 				oldEventName = eventInfo.oldName;
 			else {
 				var overriddenEventDef = getOverriddenEvent(eventMethod);
 				if (overriddenEventDef == null)
 					oldEventName = getRealName(eventInfo.oldName);
-				else
-					oldEventName = getRealName(memberInfos.evt(overriddenEventDef).newName);
+				else {
+					mustUseOldEventName = true;
+					EventInfo info;
+					if (memberInfos.tryGetEvent(overriddenEventDef, out info))
+						oldEventName = getRealName(info.newName);
+					else
+						oldEventName = getRealName(overriddenEventDef.EventDefinition.Name);
+				}
 			}
 
 			if (eventInfo.renamed)
 				newEventName = getRealName(eventInfo.newName);
-			else if (eventDef.Owner.Module.ObfuscatedFile.NameChecker.isValidEventName(oldEventName))
+			else if (mustUseOldEventName || eventDef.Owner.Module.ObfuscatedFile.NameChecker.isValidEventName(oldEventName))
 				newEventName = oldEventName;
 			else {
 				mergeStateHelper.merge(MergeStateFlags.Events, scope);
@@ -1016,10 +1023,20 @@ namespace de4dot.renamer {
 		}
 
 		EventDef getOverriddenEvent(MethodDef overrideMethod) {
-			var overriddenMethod = modules.resolve(overrideMethod.MethodDefinition.Overrides[0]);
-			if (overriddenMethod == null)
+			var theMethod = overrideMethod.MethodDefinition.Overrides[0];
+			var overriddenMethod = modules.resolve(theMethod);
+			if (overriddenMethod != null)
+				return overriddenMethod.Event;
+
+			var extType = theMethod.DeclaringType;
+			if (extType == null)
 				return null;
-			return overriddenMethod.Event;
+			var extTypeDef = modules.resolveOther(extType);
+			var theMethodDef = extTypeDef.find(theMethod);
+			if (theMethodDef != null)
+				return theMethodDef.Event;
+
+			return null;
 		}
 
 		MethodDef getEventMethod(MethodNameScope scope) {
@@ -1069,20 +1086,29 @@ namespace de4dot.renamer {
 			var propDef = propMethod.Property;
 			var propInfo = memberInfos.prop(propDef);
 
+			bool mustUseOldPropName = false;
 			if (overridePrefix == "")
 				oldPropName = propInfo.oldName;
 			else {
 				var overriddenPropDef = getOverriddenProperty(propMethod);
 				if (overriddenPropDef == null)
 					oldPropName = getRealName(propInfo.oldName);
-				else
-					oldPropName = getRealName(memberInfos.prop(overriddenPropDef).newName);
+				else {
+					mustUseOldPropName = true;
+					PropertyInfo info;
+					if (memberInfos.tryGetProperty(overriddenPropDef, out info))
+						oldPropName = getRealName(info.newName);
+					else
+						oldPropName = getRealName(overriddenPropDef.PropertyDefinition.Name);
+				}
 			}
 
 			if (propInfo.renamed)
 				newPropName = getRealName(propInfo.newName);
-			else if (propDef.Owner.Module.ObfuscatedFile.NameChecker.isValidPropertyName(oldPropName))
+			else if (mustUseOldPropName || propDef.Owner.Module.ObfuscatedFile.NameChecker.isValidPropertyName(oldPropName))
 				newPropName = oldPropName;
+			else if (isItemProperty(scope))
+				newPropName = "Item";
 			else {
 				var propPrefix = getSuggestedPropertyName(scope) ?? getNewPropertyNamePrefix(scope);
 				mergeStateHelper.merge(MergeStateFlags.Properties, scope);
@@ -1102,11 +1128,29 @@ namespace de4dot.renamer {
 			return newPropName;
 		}
 
+		bool isItemProperty(MethodNameScope scope) {
+			foreach (var method in scope.Methods) {
+				if (method.Property != null && method.Property.isItemProperty())
+					return true;
+			}
+			return false;
+		}
+
 		PropertyDef getOverriddenProperty(MethodDef overrideMethod) {
-			var overriddenMethod = modules.resolve(overrideMethod.MethodDefinition.Overrides[0]);
-			if (overriddenMethod == null)
+			var theMethod = overrideMethod.MethodDefinition.Overrides[0];
+			var overriddenMethod = modules.resolve(theMethod);
+			if (overriddenMethod != null)
+				return overriddenMethod.Property;
+
+			var extType = theMethod.DeclaringType;
+			if (extType == null)
 				return null;
-			return overriddenMethod.Property;
+			var extTypeDef = modules.resolveOther(extType);
+			var theMethodDef = extTypeDef.find(theMethod);
+			if (theMethodDef != null)
+				return theMethodDef.Property;
+
+			return null;
 		}
 
 		MethodDef getPropertyMethod(MethodNameScope scope) {
@@ -1132,10 +1176,12 @@ namespace de4dot.renamer {
 			const string defaultVal = "Prop_";
 
 			var propType = getPropertyType(scope);
-			if (propType == null || propType is GenericInstanceType)
+			if (propType == null || propType is GenericInstanceType || propType is GenericParameter)
 				return defaultVal;
 
-			string name = propType.Name;
+			var prefix = getPrefix(propType);
+
+			string name = propType.GetElementType().Name;
 			int i;
 			if ((i = name.IndexOf('`')) >= 0)
 				name = name.Substring(0, i);
@@ -1143,7 +1189,21 @@ namespace de4dot.renamer {
 				name = name.Substring(i + 1);
 			if (name == "")
 				return defaultVal;
-			return name + "_";
+
+			return prefix.ToUpperInvariant() + upperFirst(name) + "_";
+		}
+
+		static string upperFirst(string s) {
+			return s.Substring(0, 1).ToUpperInvariant() + s.Substring(1);
+		}
+
+		static string getPrefix(TypeReference typeRef) {
+			string prefix = "";
+			while (typeRef is PointerType) {
+				typeRef = ((PointerType)typeRef).ElementType;
+				prefix += "p";
+			}
+			return prefix;
 		}
 
 		enum PropertyMethodType {

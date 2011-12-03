@@ -56,7 +56,7 @@ namespace de4dot.renamer {
 			return addTypeName(typeFullName, newName, prefix).create();
 		}
 
-		string getPrefix(TypeReference typeRef) {
+		static string getPrefix(TypeReference typeRef) {
 			string prefix = "";
 			while (typeRef is PointerType) {
 				typeRef = ((PointerType)typeRef).ElementType;
@@ -153,7 +153,7 @@ namespace de4dot.renamer {
 
 	class PropertyNameCreator : TypeNames {
 		protected override string fixName(string prefix, string name) {
-			return prefix + upperFirst(name);
+			return prefix.ToUpperInvariant() + upperFirst(name);
 		}
 	}
 }

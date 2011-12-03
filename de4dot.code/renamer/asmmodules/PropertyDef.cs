@@ -51,5 +51,13 @@ namespace de4dot.renamer.asmmodules {
 			}
 			return false;
 		}
+
+		public bool isItemProperty() {
+			if (GetMethod != null && GetMethod.ParamDefs.Count >= 1)
+				return true;
+			if (SetMethod != null && SetMethod.ParamDefs.Count >= 2)
+				return true;
+			return false;
+		}
 	}
 }

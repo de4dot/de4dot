@@ -222,6 +222,14 @@ namespace de4dot.renamer {
 			return allTypeInfos.TryGetValue(t, out info);
 		}
 
+		public bool tryGetEvent(EventDef e, out EventInfo info) {
+			return allEventInfos.TryGetValue(e, out info);
+		}
+
+		public bool tryGetProperty(PropertyDef p, out PropertyInfo info) {
+			return allPropertyInfos.TryGetValue(p, out info);
+		}
+
 		public PropertyInfo prop(PropertyDef prop) {
 			return allPropertyInfos[prop];
 		}
