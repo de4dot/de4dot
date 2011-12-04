@@ -1032,6 +1032,8 @@ namespace de4dot.renamer {
 			if (extType == null)
 				return null;
 			var extTypeDef = modules.resolveOther(extType);
+			if (extTypeDef == null)
+				return null;
 			var theMethodDef = extTypeDef.find(theMethod);
 			if (theMethodDef != null)
 				return theMethodDef.Event;
@@ -1146,6 +1148,8 @@ namespace de4dot.renamer {
 			if (extType == null)
 				return null;
 			var extTypeDef = modules.resolveOther(extType);
+			if (extTypeDef == null)
+				return null;
 			var theMethodDef = extTypeDef.find(theMethod);
 			if (theMethodDef != null)
 				return theMethodDef.Property;
@@ -1176,12 +1180,16 @@ namespace de4dot.renamer {
 			const string defaultVal = "Prop_";
 
 			var propType = getPropertyType(scope);
-			if (propType == null || propType is GenericInstanceType || propType is GenericParameter)
+			if (propType == null)
+				return defaultVal;
+
+			var elementType = propType.GetElementType();
+			if (propType is GenericInstanceType || elementType is GenericParameter)
 				return defaultVal;
 
 			var prefix = getPrefix(propType);
 
-			string name = propType.GetElementType().Name;
+			string name = elementType.Name;
 			int i;
 			if ((i = name.IndexOf('`')) >= 0)
 				name = name.Substring(0, i);
