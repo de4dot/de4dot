@@ -708,24 +708,32 @@ namespace de4dot.deobfuscators {
 			if (MemberReferenceHelper.verifyType(type, "mscorlib", "System.Void"))
 				return false;
 
-			switch (MemberReferenceHelper.getMemberReferenceType(type)) {
-			case CecilType.ArrayType:
-			case CecilType.GenericInstanceType:
-			case CecilType.PointerType:
-			case CecilType.TypeDefinition:
-			case CecilType.TypeReference:
-				return true;
+			while (type != null) {
+				switch (MemberReferenceHelper.getMemberReferenceType(type)) {
+				case CecilType.ArrayType:
+				case CecilType.GenericInstanceType:
+				case CecilType.PointerType:
+				case CecilType.TypeDefinition:
+				case CecilType.TypeReference:
+					break;
 
-			case CecilType.ByReferenceType:
-			case CecilType.FunctionPointerType:
-			case CecilType.GenericParameter:
-			case CecilType.OptionalModifierType:
-			case CecilType.PinnedType:
-			case CecilType.RequiredModifierType:
-			case CecilType.SentinelType:
-			default:
-				return false;
+				case CecilType.ByReferenceType:
+				case CecilType.FunctionPointerType:
+				case CecilType.GenericParameter:
+				case CecilType.OptionalModifierType:
+				case CecilType.PinnedType:
+				case CecilType.RequiredModifierType:
+				case CecilType.SentinelType:
+				default:
+					return false;
+				}
+
+				if (!(type is TypeSpecification))
+					break;
+				type = ((TypeSpecification)type).ElementType;
 			}
+
+			return type != null;
 		}
 
 		static TypeReference getCommonBaseClass(ModuleDefinition module, TypeReference a, TypeReference b) {
