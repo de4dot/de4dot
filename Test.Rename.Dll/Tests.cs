@@ -18,6 +18,7 @@
 */
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 
 namespace Test.Rename.Dll {
@@ -1585,6 +1586,45 @@ namespace Test.Rename.Dll {
 		}
 		class Class5 : Class4 {
 			public override bool meth2() { return true; }
+		}
+	}
+
+	namespace test.Virtual.properties.overrides {
+		class Class1 : ICollection {
+			int ICollection.Count {
+				get { return 0; }
+			}
+			bool ICollection.IsSynchronized {
+				get { return false; }
+			}
+			object ICollection.SyncRoot {
+				get { return null; }
+			}
+			void ICollection.CopyTo(Array array, int index) {
+			}
+			IEnumerator IEnumerable.GetEnumerator() {
+				return null;
+			}
+		}
+	}
+
+	namespace test.Virtual.properties.names {
+		class Class1<T> {
+			public virtual byte[] Prop1 { get; set; }
+			public virtual unsafe byte* Prop2 {
+				get { throw new NotImplementedException(); }
+				set { }
+			}
+			public virtual T Prop3 { get; set; }
+			public virtual T[] Prop4 { get; set; }
+			public virtual int this[int i] {
+				get { return 0; }
+				set { }
+			}
+			public virtual int this[string s] {
+				get { return 0; }
+				set { }
+			}
 		}
 	}
 }
