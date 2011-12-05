@@ -570,7 +570,7 @@ namespace de4dot.renamer {
 
 			var method = propMethod.MethodDefinition;
 			var propType = method.MethodReturnType.ReturnType;
-			var propDef = createProperty(ownerType, name, propType);
+			var propDef = createProperty(ownerType, name, propType, propMethod.MethodDefinition, null);
 			if (propDef == null)
 				return null;
 			if (propDef.GetMethod != null)
@@ -599,7 +599,7 @@ namespace de4dot.renamer {
 			if (method.Parameters.Count == 0)
 				return null;
 			var propType = method.Parameters[method.Parameters.Count - 1].ParameterType;
-			var propDef = createProperty(ownerType, name, propType);
+			var propDef = createProperty(ownerType, name, propType, null, propMethod.MethodDefinition);
 			if (propDef == null)
 				return null;
 			if (propDef.SetMethod != null)
@@ -615,10 +615,10 @@ namespace de4dot.renamer {
 			return propDef;
 		}
 
-		PropertyDef createProperty(TypeDef ownerType, string name, TypeReference propType) {
+		PropertyDef createProperty(TypeDef ownerType, string name, TypeReference propType, MethodDefinition getter, MethodDefinition setter) {
 			if (string.IsNullOrEmpty(name) || propType.FullName == "System.Void")
 				return null;
-			var newProp = DotNetUtils.createPropertyDefinition(name, propType);
+			var newProp = DotNetUtils.createPropertyDefinition(name, propType, getter, setter);
 			var propDef = ownerType.find(newProp);
 			if (propDef != null)
 				return propDef;
