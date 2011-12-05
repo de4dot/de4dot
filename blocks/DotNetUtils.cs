@@ -854,15 +854,17 @@ namespace de4dot.blocks {
 		}
 
 		static int nextTokenRid = 0x00FFFFFF;
-		public static PropertyDefinition createPropertyDefinition(string name, TypeReference propType) {
-			var propDef = new PropertyDefinition(name, PropertyAttributes.None, propType);
-			propDef.MetadataToken = new MetadataToken(TokenType.Property, nextTokenRid--);
-			return propDef;
+		public static PropertyDefinition createPropertyDefinition(string name, TypeReference propType, MethodDefinition getter, MethodDefinition setter) {
+			return new PropertyDefinition(name, PropertyAttributes.None, propType) {
+				MetadataToken = new MetadataToken(TokenType.Property, nextTokenRid--),
+				GetMethod = getter,
+				SetMethod = setter,
+			};
 		}
 		public static EventDefinition createEventDefinition(string name, TypeReference eventType) {
-			var eventDef = new EventDefinition(name, EventAttributes.None, eventType);
-			eventDef.MetadataToken = new MetadataToken(TokenType.Event, nextTokenRid--);
-			return eventDef;
+			return new EventDefinition(name, EventAttributes.None, eventType) {
+				MetadataToken = new MetadataToken(TokenType.Event, nextTokenRid--),
+			};
 		}
 	}
 }
