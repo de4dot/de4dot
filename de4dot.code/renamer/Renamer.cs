@@ -461,8 +461,26 @@ namespace de4dot.renamer {
 		void restoreVirtualProperties(IEnumerable<MethodNameScope> allScopes) {
 			if (!RestoreProperties)
 				return;
-			foreach (var scope in allScopes)
+			foreach (var scope in allScopes) {
 				restoreVirtualProperties(scope);
+				restoreExplicitVirtualProperties(scope);
+			}
+		}
+
+		void restoreExplicitVirtualProperties(MethodNameScope scope) {
+			if (scope.Methods.Count != 1)
+				return;
+			var propMethod = scope.Methods[0];
+			if (propMethod.Property != null)
+				return;
+			if (propMethod.MethodDefinition.Overrides.Count == 0)
+				return;
+
+			var theProperty = getOverriddenProperty(propMethod);
+			if (theProperty == null)
+				return;
+
+			createProperty(theProperty, propMethod);
 		}
 
 		void restoreVirtualProperties(MethodNameScope scope) {
@@ -485,15 +503,18 @@ namespace de4dot.renamer {
 			if (missingProps == null)
 				return;
 
-			foreach (var method in missingProps) {
-				if (!method.Owner.HasModule)
-					continue;
+			foreach (var method in missingProps)
+				createProperty(prop, method);
+		}
 
-				if (method.MethodDefinition.MethodReturnType.ReturnType.FullName == "System.Void")
-					createPropertySetter(prop.PropertyDefinition.Name, method);
-				else
-					createPropertyGetter(prop.PropertyDefinition.Name, method);
-			}
+		void createProperty(PropertyDef propDef, MethodDef methodDef) {
+			if (!methodDef.Owner.HasModule)
+				return;
+
+			if (methodDef.MethodDefinition.MethodReturnType.ReturnType.FullName == "System.Void")
+				createPropertySetter(propDef.PropertyDefinition.Name, methodDef);
+			else
+				createPropertyGetter(propDef.PropertyDefinition.Name, methodDef);
 		}
 
 		void restorePropertiesFromNames(IEnumerable<MethodNameScope> allScopes) {
@@ -611,8 +632,10 @@ namespace de4dot.renamer {
 		void restoreVirtualEvents(IEnumerable<MethodNameScope> allScopes) {
 			if (!RestoreEvents)
 				return;
-			foreach (var scope in allScopes)
+			foreach (var scope in allScopes) {
 				restoreVirtualEvents(scope);
+				restoreExplicitVirtualEvents(scope);
+			}
 		}
 
 		enum EventMethodType {
@@ -621,6 +644,23 @@ namespace de4dot.renamer {
 			Adder,
 			Remover,
 			Raiser,
+		}
+
+		void restoreExplicitVirtualEvents(MethodNameScope scope) {
+			if (scope.Methods.Count != 1)
+				return;
+			var eventMethod = scope.Methods[0];
+			if (eventMethod.Event != null)
+				return;
+			if (eventMethod.MethodDefinition.Overrides.Count == 0)
+				return;
+
+			MethodDef overriddenMethod;
+			var theEvent = getOverriddenEvent(eventMethod, out overriddenMethod);
+			if (theEvent == null)
+				return;
+
+			createEvent(theEvent, eventMethod, getEventMethodType(overriddenMethod));
 		}
 
 		void restoreVirtualEvents(MethodNameScope scope) {
@@ -638,14 +678,7 @@ namespace de4dot.renamer {
 				}
 				else if (evt == null) {
 					evt = method.Event;
-					if (evt.AddMethod == method)
-						methodType = EventMethodType.Adder;
-					else if (evt.RemoveMethod == method)
-						methodType = EventMethodType.Remover;
-					else if (evt.RaiseMethod == method)
-						methodType = EventMethodType.Raiser;
-					else
-						methodType = EventMethodType.Other;
+					methodType = getEventMethodType(method);
 				}
 			}
 			if (evt == null)
@@ -653,19 +686,35 @@ namespace de4dot.renamer {
 			if (missingEvents == null)
 				return;
 
-			foreach (var method in missingEvents) {
-				if (!method.Owner.HasModule)
-					continue;
+			foreach (var method in missingEvents)
+				createEvent(evt, method, methodType);
+		}
 
-				switch (methodType) {
-				case EventMethodType.Adder:
-					createEventAdder(evt.EventDefinition.Name, method);
-					break;
-				case EventMethodType.Remover:
-					createEventRemover(evt.EventDefinition.Name, method);
-					break;
-				}
+		void createEvent(EventDef eventDef, MethodDef methodDef, EventMethodType methodType) {
+			if (!methodDef.Owner.HasModule)
+				return;
+
+			switch (methodType) {
+			case EventMethodType.Adder:
+				createEventAdder(eventDef.EventDefinition.Name, methodDef);
+				break;
+			case EventMethodType.Remover:
+				createEventRemover(eventDef.EventDefinition.Name, methodDef);
+				break;
 			}
+		}
+
+		static EventMethodType getEventMethodType(MethodDef method) {
+			var evt = method.Event;
+			if (evt == null)
+				return EventMethodType.None;
+			if (evt.AddMethod == method)
+				return EventMethodType.Adder;
+			if (evt.RemoveMethod == method)
+				return EventMethodType.Remover;
+			if (evt.RaiseMethod == method)
+				return EventMethodType.Raiser;
+			return EventMethodType.Other;
 		}
 
 		void restoreEventsFromNames(IEnumerable<MethodNameScope> allScopes) {
@@ -1023,8 +1072,13 @@ namespace de4dot.renamer {
 		}
 
 		EventDef getOverriddenEvent(MethodDef overrideMethod) {
+			MethodDef overriddenMethod;
+			return getOverriddenEvent(overrideMethod, out overriddenMethod);
+		}
+
+		EventDef getOverriddenEvent(MethodDef overrideMethod, out MethodDef overriddenMethod) {
 			var theMethod = overrideMethod.MethodDefinition.Overrides[0];
-			var overriddenMethod = modules.resolve(theMethod);
+			overriddenMethod = modules.resolve(theMethod);
 			if (overriddenMethod != null)
 				return overriddenMethod.Event;
 
@@ -1034,9 +1088,9 @@ namespace de4dot.renamer {
 			var extTypeDef = modules.resolveOther(extType);
 			if (extTypeDef == null)
 				return null;
-			var theMethodDef = extTypeDef.find(theMethod);
-			if (theMethodDef != null)
-				return theMethodDef.Event;
+			overriddenMethod = extTypeDef.find(theMethod);
+			if (overriddenMethod != null)
+				return overriddenMethod.Event;
 
 			return null;
 		}
