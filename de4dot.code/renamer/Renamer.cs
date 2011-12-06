@@ -480,7 +480,7 @@ namespace de4dot.renamer {
 			if (theProperty == null)
 				return;
 
-			createProperty(theProperty, propMethod);
+			createProperty(theProperty, propMethod, getOverridePrefix(scope, propMethod));
 		}
 
 		void restoreVirtualProperties(MethodNameScope scope) {
@@ -504,17 +504,18 @@ namespace de4dot.renamer {
 				return;
 
 			foreach (var method in missingProps)
-				createProperty(prop, method);
+				createProperty(prop, method, "");
 		}
 
-		void createProperty(PropertyDef propDef, MethodDef methodDef) {
+		void createProperty(PropertyDef propDef, MethodDef methodDef, string overridePrefix) {
 			if (!methodDef.Owner.HasModule)
 				return;
 
+			var newPropertyName = overridePrefix + propDef.PropertyDefinition.Name;
 			if (methodDef.MethodDefinition.MethodReturnType.ReturnType.FullName == "System.Void")
-				createPropertySetter(propDef.PropertyDefinition.Name, methodDef);
+				createPropertySetter(newPropertyName, methodDef);
 			else
-				createPropertyGetter(propDef.PropertyDefinition.Name, methodDef);
+				createPropertyGetter(newPropertyName, methodDef);
 		}
 
 		void restorePropertiesFromNames(IEnumerable<MethodNameScope> allScopes) {
@@ -660,7 +661,7 @@ namespace de4dot.renamer {
 			if (theEvent == null)
 				return;
 
-			createEvent(theEvent, eventMethod, getEventMethodType(overriddenMethod));
+			createEvent(theEvent, eventMethod, getEventMethodType(overriddenMethod), getOverridePrefix(scope, eventMethod));
 		}
 
 		void restoreVirtualEvents(MethodNameScope scope) {
@@ -687,19 +688,20 @@ namespace de4dot.renamer {
 				return;
 
 			foreach (var method in missingEvents)
-				createEvent(evt, method, methodType);
+				createEvent(evt, method, methodType, "");
 		}
 
-		void createEvent(EventDef eventDef, MethodDef methodDef, EventMethodType methodType) {
+		void createEvent(EventDef eventDef, MethodDef methodDef, EventMethodType methodType, string overridePrefix) {
 			if (!methodDef.Owner.HasModule)
 				return;
 
+			var newEventName = overridePrefix + eventDef.EventDefinition.Name;
 			switch (methodType) {
 			case EventMethodType.Adder:
-				createEventAdder(eventDef.EventDefinition.Name, methodDef);
+				createEventAdder(newEventName, methodDef);
 				break;
 			case EventMethodType.Remover:
-				createEventRemover(eventDef.EventDefinition.Name, methodDef);
+				createEventRemover(newEventName, methodDef);
 				break;
 			}
 		}
