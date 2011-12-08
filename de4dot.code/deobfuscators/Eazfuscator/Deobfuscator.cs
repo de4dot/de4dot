@@ -26,8 +26,9 @@ namespace de4dot.deobfuscators.Eazfuscator {
 	class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "Eazfuscator.NET";
 		public const string THE_TYPE = "ez";
+		const string DEFAULT_REGEX = @"!^#=&!^dje_.+_ejd$&" + DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
 		public DeobfuscatorInfo()
-			: base() {
+			: base(DEFAULT_REGEX) {
 		}
 
 		public override string Name {
