@@ -25,7 +25,7 @@ using de4dot.blocks;
 namespace de4dot.deobfuscators.Eazfuscator {
 	class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "Eazfuscator.NET";
-		public const string THE_TYPE = "ez";
+		public const string THE_TYPE = "ef";
 		const string DEFAULT_REGEX = @"!^#=&!^dje_.+_ejd$&" + DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
 		public DeobfuscatorInfo()
 			: base(DEFAULT_REGEX) {
