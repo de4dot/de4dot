@@ -37,6 +37,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		public byte[] decrypt(Stream resourceStream) {
 			byte flags = (byte)resourceStream.ReadByte();
 			Stream sourceStream = resourceStream;
+			int sourceStreamOffset = 1;
 			bool didSomething = false;
 
 			if ((flags & 1) != 0) {
@@ -60,12 +61,13 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 					}
 				}
 				sourceStream = memStream;
+				sourceStreamOffset = 0;
 				didSomething = true;
 			}
 
 			if ((flags & 2) != 0) {
 				var memStream = new MemoryStream((int)resourceStream.Length);
-				sourceStream.Position = 0;
+				sourceStream.Position = sourceStreamOffset;
 				using (var inflater = new DeflateStream(sourceStream, CompressionMode.Decompress)) {
 					while (true) {
 						int count = inflater.Read(buffer1, 0, buffer1.Length);
@@ -76,16 +78,18 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				}
 
 				sourceStream = memStream;
+				sourceStreamOffset = 0;
 				didSomething = true;
 			}
 
 			if ((flags & 4) != 0) {
 				var memStream = new MemoryStream((int)resourceStream.Length);
-				sourceStream.Position = 0;
-				for (int i = 0; i < sourceStream.Length; i++)
+				sourceStream.Position = sourceStreamOffset;
+				for (int i = sourceStreamOffset; i < sourceStream.Length; i++)
 					memStream.WriteByte((byte)~sourceStream.ReadByte());
 
 				sourceStream = memStream;
+				sourceStreamOffset = 0;
 				didSomething = true;
 			}
 
