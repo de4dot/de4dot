@@ -8,7 +8,7 @@
     <ProjectGuid>{4D10B9EB-3BF1-4D61-A389-CB019E8C9622}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>de4dot</RootNamespace>
+    <RootNamespace>de4dot.code</RootNamespace>
     <AssemblyName>de4dot.code</AssemblyName>
     <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -56,7 +56,6 @@
     <Compile Include="AssemblyClient\NewProcessAssemblyServerLoader.cs" />
     <Compile Include="AssemblyClient\SameAppDomainAssemblyServerLoader.cs" />
     <Compile Include="AssemblyResolver.cs" />
-    <Compile Include="CommandLineParser.cs" />
     <Compile Include="deobfuscators\ArrayFinder.cs" />
     <Compile Include="deobfuscators\CliSecure\CliSecureRtType.cs" />
     <Compile Include="deobfuscators\CliSecure\Deobfuscator.cs" />
@@ -121,7 +120,6 @@
     <Compile Include="deobfuscators\Unknown\Deobfuscator.cs" />
     <Compile Include="deobfuscators\Xenocode\Deobfuscator.cs" />
     <Compile Include="deobfuscators\Xenocode\StringDecrypter.cs" />
-    <Compile Include="FilesDeobfuscator.cs" />
     <Compile Include="IObfuscatedFile.cs" />
     <Compile Include="Log.cs" />
     <Compile Include="AssemblyModule.cs" />
@@ -145,7 +143,6 @@
     <Compile Include="PE\Resources.cs" />
     <Compile Include="PE\SectionHeader.cs" />
     <Compile Include="PE\DotNetStream.cs" />
-    <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="renamer\asmmodules\EventDef.cs" />
     <Compile Include="renamer\asmmodules\ExternalAssemblies.cs" />

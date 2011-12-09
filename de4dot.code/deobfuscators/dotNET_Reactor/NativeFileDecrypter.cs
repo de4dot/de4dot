@@ -19,7 +19,7 @@
 
 using System;
 
-namespace de4dot.deobfuscators.dotNET_Reactor {
+namespace de4dot.code.deobfuscators.dotNET_Reactor {
 	class NativeFileDecrypter {
 		byte[] key;
 		byte kb = 0;

@@ -21,8 +21,8 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
-namespace de4dot {
-	abstract class Option {
+namespace de4dot.code {
+	public abstract class Option {
 		const string SHORTNAME_PREFIX = "-";
 		const string LONGNAME_PREFIX = "--";
 
@@ -68,7 +68,7 @@ namespace de4dot {
 		}
 	}
 
-	class BoolOption : Option {
+	public class BoolOption : Option {
 		bool val;
 		public BoolOption(string shortName, string longName, string description, bool val)
 			: base(shortName, longName, description) {
@@ -96,7 +96,7 @@ namespace de4dot {
 		}
 	}
 
-	class IntOption : Option {
+	public class IntOption : Option {
 		int val;
 		public IntOption(string shortName, string longName, string description, int val)
 			: base(shortName, longName, description) {
@@ -123,7 +123,7 @@ namespace de4dot {
 		}
 	}
 
-	class StringOption : Option {
+	public class StringOption : Option {
 		string val;
 
 		public override string ArgumentValueName {
@@ -146,7 +146,7 @@ namespace de4dot {
 		}
 	}
 
-	class NameRegexOption : Option {
+	public class NameRegexOption : Option {
 		NameRegexes val;
 
 		public override string ArgumentValueName {
@@ -177,7 +177,7 @@ namespace de4dot {
 		}
 	}
 
-	class RegexOption : Option {
+	public class RegexOption : Option {
 		Regex val;
 
 		public override string ArgumentValueName {
@@ -206,7 +206,7 @@ namespace de4dot {
 		}
 	}
 
-	class NoArgOption : Option {
+	public class NoArgOption : Option {
 		Action action;
 		bool triggered;
 
@@ -232,7 +232,7 @@ namespace de4dot {
 		}
 	}
 
-	class OneArgOption : Option {
+	public class OneArgOption : Option {
 		Action<string> action;
 		string typeName;
 

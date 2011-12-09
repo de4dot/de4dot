@@ -20,8 +20,8 @@
 using System;
 using System.IO;
 
-namespace de4dot.PE {
-	class PeImage {
+namespace de4dot.code.PE {
+	public class PeImage {
 		BinaryReader reader;
 		BinaryWriter writer;
 		FileHeader fileHeader;
@@ -35,11 +35,11 @@ namespace de4dot.PE {
 			get { return reader; }
 		}
 
-		public Cor20Header Cor20Header {
+		internal Cor20Header Cor20Header {
 			get { return cor20Header; }
 		}
 
-		public Resources Resources {
+		internal Resources Resources {
 			get { return resources; }
 		}
 

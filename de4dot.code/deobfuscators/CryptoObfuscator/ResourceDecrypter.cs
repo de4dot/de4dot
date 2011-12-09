@@ -23,7 +23,7 @@ using System.IO.Compression;
 using System.Security.Cryptography;
 using Mono.Cecil;
 
-namespace de4dot.deobfuscators.CryptoObfuscator {
+namespace de4dot.code.deobfuscators.CryptoObfuscator {
 	class ResourceDecrypter {
 		const int BUFLEN = 0x8000;
 		ModuleDefinition module;

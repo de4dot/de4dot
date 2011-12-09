@@ -20,7 +20,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace de4dot.renamer.asmmodules {
+namespace de4dot.code.renamer.asmmodules {
 	class MethodNameScope {
 		List<MethodDef> methods = new List<MethodDef>();
 

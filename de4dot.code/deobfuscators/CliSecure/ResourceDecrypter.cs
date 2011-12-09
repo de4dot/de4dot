@@ -23,7 +23,7 @@ using System.Text;
 using Mono.Cecil;
 using de4dot.blocks;
 
-namespace de4dot.deobfuscators.CliSecure {
+namespace de4dot.code.deobfuscators.CliSecure {
 	class ResourceDecrypter {
 		ModuleDefinition module;
 		TypeDefinition rsrcType;

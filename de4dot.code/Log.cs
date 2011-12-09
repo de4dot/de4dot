@@ -20,8 +20,8 @@
 using System;
 using System.Collections.Generic;
 
-namespace de4dot {
-	static class Log {
+namespace de4dot.code {
+	public static class Log {
 		public static int indentLevel = 0;
 		const int indentSize = 2;
 

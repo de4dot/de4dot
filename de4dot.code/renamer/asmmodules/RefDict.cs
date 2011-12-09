@@ -21,7 +21,7 @@ using System.Collections.Generic;
 using Mono.Cecil;
 using de4dot.blocks;
 
-namespace de4dot.renamer.asmmodules {
+namespace de4dot.code.renamer.asmmodules {
 	interface RefDict<TRef, TMRef> where TRef : Ref where TMRef : MemberReference {
 		int Count { get; }
 		IEnumerable<TRef> getAll();

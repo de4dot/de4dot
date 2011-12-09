@@ -23,7 +23,7 @@ using System.IO;
 using Mono.Cecil;
 using de4dot.blocks;
 
-namespace de4dot.deobfuscators.dotNET_Reactor {
+namespace de4dot.code.deobfuscators.dotNET_Reactor {
 	class ResourceInfo {
 		public EmbeddedResource resource;
 		public string name;

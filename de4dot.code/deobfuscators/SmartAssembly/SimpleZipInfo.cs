@@ -20,7 +20,7 @@
 using Mono.Cecil;
 using de4dot.blocks;
 
-namespace de4dot.deobfuscators.SmartAssembly {
+namespace de4dot.code.deobfuscators.SmartAssembly {
 	class SimpleZipInfo {
 
 		public static bool isSimpleZipDecryptMethod_QuickCheck(ModuleDefinition module, MethodReference method, out TypeDefinition simpleZipType) {

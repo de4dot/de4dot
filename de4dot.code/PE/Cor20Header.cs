@@ -19,7 +19,7 @@
 
 using System.IO;
 
-namespace de4dot.PE {
+namespace de4dot.code.PE {
 	class Cor20Header : IFileLocation {
 		public uint cb;
 		public ushort majorRuntimeVersion;

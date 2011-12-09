@@ -22,7 +22,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using de4dot.blocks;
 
-namespace de4dot.deobfuscators {
+namespace de4dot.code.deobfuscators {
 	class ExceptionLoggerRemover {
 		Dictionary<MethodReference, bool> exceptionLoggerMethods = new Dictionary<MethodReference, bool>();
 

@@ -21,7 +21,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace de4dot.deobfuscators {
+namespace de4dot.code.deobfuscators {
 	static class RandomNameChecker {
 		static Regex noUpper = new Regex(@"^[^A-Z]+$");
 		static Regex allUpper = new Regex(@"^[A-Z]+$");

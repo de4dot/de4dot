@@ -20,7 +20,7 @@
 using System;
 using System.Threading;
 
-namespace de4dot.AssemblyClient {
+namespace de4dot.code.AssemblyClient {
 	// Starts the server in a new app domain.
 	sealed class NewAppDomainAssemblyServerLoader : IpcAssemblyServerLoader {
 		AppDomain appDomain;

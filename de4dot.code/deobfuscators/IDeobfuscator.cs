@@ -22,11 +22,11 @@ using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.MyStuff;
 using de4dot.blocks;
-using de4dot.renamer;
-using de4dot.PE;
+using de4dot.code.renamer;
+using de4dot.code.PE;
 
-namespace de4dot.deobfuscators {
-	interface IDeobfuscatorOptions {
+namespace de4dot.code.deobfuscators {
+	public interface IDeobfuscatorOptions {
 		bool RenameResourcesInCode { get; }
 	}
 
@@ -39,7 +39,7 @@ namespace de4dot.deobfuscators {
 	}
 
 	[Flags]
-	enum StringFeatures {
+	public enum StringFeatures {
 		AllowNoDecryption = 1,
 		AllowStaticDecryption = 2,
 		AllowDynamicDecryption = 4,
@@ -47,11 +47,11 @@ namespace de4dot.deobfuscators {
 	}
 
 	[Flags]
-	enum RenamingOptions {
+	public enum RenamingOptions {
 		RemoveNamespaceIfOneType = 1,
 	}
 
-	interface IDeobfuscator : INameChecker {
+	public interface IDeobfuscator : INameChecker {
 		string Type { get; }
 		string TypeLong { get; }
 		string Name { get; }

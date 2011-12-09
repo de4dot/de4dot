@@ -23,7 +23,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using de4dot.blocks;
 
-namespace de4dot.deobfuscators {
+namespace de4dot.code.deobfuscators {
 	abstract class ProxyDelegateFinderBase {
 		protected ModuleDefinition module;
 		protected List<MethodDefinition> delegateCreatorMethods = new List<MethodDefinition>();

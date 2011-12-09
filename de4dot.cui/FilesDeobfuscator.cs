@@ -22,11 +22,12 @@ using System.IO;
 using System.Collections.Generic;
 using Mono.Cecil;
 using de4dot.blocks;
-using de4dot.renamer;
-using de4dot.deobfuscators;
-using de4dot.AssemblyClient;
+using de4dot.code;
+using de4dot.code.renamer;
+using de4dot.code.deobfuscators;
+using de4dot.code.AssemblyClient;
 
-namespace de4dot {
+namespace de4dot.cui {
 	class FilesDeobfuscator {
 		Options options;
 
@@ -99,7 +100,7 @@ namespace de4dot {
 				}
 				catch (Exception ex) {
 					Log.w("Could not deobfuscate {0}. Use -v to see stack trace", file.Filename);
-					Utils.printStackTrace(ex, Log.LogLevel.verbose);
+					Program.printStackTrace(ex, Log.LogLevel.verbose);
 				}
 				finally {
 					file.deobfuscateCleanUp();
@@ -204,7 +205,7 @@ namespace de4dot {
 				}
 
 				var deob = file.Deobfuscator;
-				if (skipUnknownObfuscator && deob is deobfuscators.Unknown.Deobfuscator) {
+				if (skipUnknownObfuscator && deob.Type == "un") {
 					Log.v("Skipping unknown obfuscator: {0}", file.Filename);
 					removeModule(file.ModuleDefinition);
 					return false;

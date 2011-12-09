@@ -24,7 +24,7 @@ using Mono.Cecil;
 using Mono.MyStuff;
 using de4dot.blocks;
 
-namespace de4dot {
+namespace de4dot.code {
 	class AssemblyModule {
 		string filename;
 		ModuleDefinition module;

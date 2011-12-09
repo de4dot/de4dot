@@ -20,8 +20,8 @@
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
-namespace de4dot {
-	class NameRegex {
+namespace de4dot.code {
+	public class NameRegex {
 		Regex regex;
 		public const char invertChar = '!';
 
@@ -50,7 +50,7 @@ namespace de4dot {
 		}
 	}
 
-	class NameRegexes {
+	public class NameRegexes {
 		IList<NameRegex> regexes;
 		public bool DefaultValue { get; set; }
 		public const char regexSeparatorChar = '&';

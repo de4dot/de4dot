@@ -21,7 +21,7 @@ using System;
 using System.IO;
 using Mono.Cecil;
 
-namespace de4dot.deobfuscators {
+namespace de4dot.code.deobfuscators {
 	static class DeobUtils {
 		public static void decryptAndAddResources(ModuleDefinition module, string encryptedName, Func<byte[]> decryptResource) {
 			Log.v("Decrypting resources, name: {0}", Utils.toCsharpString(encryptedName));

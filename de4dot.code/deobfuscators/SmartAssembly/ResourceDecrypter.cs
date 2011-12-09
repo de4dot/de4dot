@@ -23,7 +23,7 @@ using System.Security.Cryptography;
 using Mono.Cecil;
 using ICSharpCode.SharpZipLib.Zip.Compression;
 
-namespace de4dot.deobfuscators.SmartAssembly {
+namespace de4dot.code.deobfuscators.SmartAssembly {
 	class ResourceDecrypter {
 		ResourceDecrypterInfo resourceDecrypterInfo;
 

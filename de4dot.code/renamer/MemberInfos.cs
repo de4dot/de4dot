@@ -18,9 +18,9 @@
 */
 
 using System.Collections.Generic;
-using de4dot.renamer.asmmodules;
+using de4dot.code.renamer.asmmodules;
 
-namespace de4dot.renamer {
+namespace de4dot.code.renamer {
 	class MemberInfo {
 		protected Ref memberRef;
 		public string oldFullName;

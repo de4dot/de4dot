@@ -21,7 +21,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using de4dot.blocks;
 
-namespace de4dot.deobfuscators.SmartAssembly {
+namespace de4dot.code.deobfuscators.SmartAssembly {
 	class ResourceResolverInfo : ResolverInfoBase {
 		EmbeddedAssemblyInfo resourceInfo;
 		AssemblyResolverInfo assemblyResolverInfo;

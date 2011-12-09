@@ -19,7 +19,7 @@
 
 using Mono.Cecil;
 
-namespace de4dot.renamer.asmmodules {
+namespace de4dot.code.renamer.asmmodules {
 	class ParamDef {
 		public ParameterDefinition ParameterDefinition { get; set; }
 		public int Index { get; private set; }

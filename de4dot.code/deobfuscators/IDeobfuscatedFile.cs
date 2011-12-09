@@ -17,8 +17,8 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-namespace de4dot.deobfuscators {
-	interface IDeobfuscatedFile : ISimpleDeobfuscator {
+namespace de4dot.code.deobfuscators {
+	public interface IDeobfuscatedFile : ISimpleDeobfuscator {
 		void createAssemblyFile(byte[] data, string assemblyName, string extension = null);
 		void stringDecryptersAdded();
 	}

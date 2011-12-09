@@ -46,9 +46,9 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\de4dot.code\de4dot.code.csproj">
-      <Project>{4D10B9EB-3BF1-4D61-A389-CB019E8C9622}</Project>
-      <Name>d4d.code</Name>
+    <ProjectReference Include="..\de4dot.cui\de4dot.cui.csproj">
+      <Project>{879E4A7E-C320-42D2-8275-4F1E44CE64AA}</Project>
+      <Name>de4dot.cui</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

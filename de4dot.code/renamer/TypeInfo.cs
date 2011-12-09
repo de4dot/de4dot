@@ -22,10 +22,10 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
-using de4dot.renamer.asmmodules;
+using de4dot.code.renamer.asmmodules;
 using de4dot.blocks;
 
-namespace de4dot.renamer {
+namespace de4dot.code.renamer {
 	class TypeInfo : MemberInfo {
 		public string oldNamespace;
 		public string newNamespace;

@@ -22,8 +22,8 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using de4dot.blocks;
 
-namespace de4dot.deobfuscators.Dotfuscator {
-	class DeobfuscatorInfo : DeobfuscatorInfoBase {
+namespace de4dot.code.deobfuscators.Dotfuscator {
+	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "Dotfuscator";
 		public const string THE_TYPE = "df";
 		const string DEFAULT_REGEX = @"!^[a-z][a-z0-9]{0,2}$&!^A_[0-9]+$&" + DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;

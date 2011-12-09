@@ -19,8 +19,8 @@
 
 using System.Text.RegularExpressions;
 
-namespace de4dot.deobfuscators.Unknown {
-	class DeobfuscatorInfo : DeobfuscatorInfoBase {
+namespace de4dot.code.deobfuscators.Unknown {
+	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "Unknown";
 		public const string THE_TYPE = "un";
 		public DeobfuscatorInfo()
@@ -61,7 +61,7 @@ namespace de4dot.deobfuscators.Unknown {
 			get { return obfuscatorName ?? "Unknown Obfuscator"; }
 		}
 
-		public Deobfuscator(Options options)
+		internal Deobfuscator(Options options)
 			: base(options) {
 		}
 

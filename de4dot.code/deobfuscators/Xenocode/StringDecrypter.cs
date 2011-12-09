@@ -21,7 +21,7 @@ using System.Text;
 using Mono.Cecil;
 using de4dot.blocks;
 
-namespace de4dot.deobfuscators.Xenocode {
+namespace de4dot.code.deobfuscators.Xenocode {
 	class StringDecrypter {
 		const int STRING_DECRYPTER_KEY_CONST = 1789;
 		ModuleDefinition module;

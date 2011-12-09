@@ -19,8 +19,8 @@
 
 using Mono.Cecil;
 
-namespace de4dot.deobfuscators {
-	interface ISimpleDeobfuscator {
+namespace de4dot.code.deobfuscators {
+	public interface ISimpleDeobfuscator {
 		void deobfuscate(MethodDefinition method);
 		void decryptStrings(MethodDefinition method, IDeobfuscator deob);
 	}

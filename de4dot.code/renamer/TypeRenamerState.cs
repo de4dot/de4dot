@@ -20,7 +20,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace de4dot.renamer {
+namespace de4dot.code.renamer {
 	class TypeRenamerState {
 		ExistingNames existingNames;
 		Dictionary<string, string> namespaceToNewName;

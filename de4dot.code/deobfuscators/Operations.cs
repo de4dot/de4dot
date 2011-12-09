@@ -17,14 +17,14 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-namespace de4dot.deobfuscators {
-	enum OpDecryptString {
+namespace de4dot.code.deobfuscators {
+	public enum OpDecryptString {
 		None,
 		Static,
 		Dynamic,
 	}
 
-	interface IOperations {
+	public interface IOperations {
 		bool KeepObfuscatorTypes { get; }
 		OpDecryptString DecryptStrings { get; }
 	}

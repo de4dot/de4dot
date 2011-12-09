@@ -23,8 +23,8 @@ using System.IO;
 using System.Text.RegularExpressions;
 using Mono.Cecil;
 
-namespace de4dot {
-	class AssemblyResolver : DefaultAssemblyResolver {
+namespace de4dot.code {
+	public class AssemblyResolver : DefaultAssemblyResolver {
 		public static readonly AssemblyResolver Instance = new AssemblyResolver();
 		Dictionary<string, bool> addedAssemblies = new Dictionary<string, bool>(StringComparer.Ordinal);
 		Dictionary<string, bool> addedDirectories = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);

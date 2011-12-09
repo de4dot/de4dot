@@ -23,7 +23,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using de4dot.blocks;
 
-namespace de4dot.deobfuscators.SmartAssembly {
+namespace de4dot.code.deobfuscators.SmartAssembly {
 	class ProxyDelegateFinder : ProxyDelegateFinderBase {
 		static readonly Dictionary<char, int> specialCharsDict = new Dictionary<char, int>();
 		static readonly char[] specialChars = new char[] {

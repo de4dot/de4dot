@@ -19,9 +19,9 @@
 
 using System;
 using System.Collections.Generic;
-using de4dot.renamer.asmmodules;
+using de4dot.code.renamer.asmmodules;
 
-namespace de4dot.renamer {
+namespace de4dot.code.renamer {
 	class DerivedFrom {
 		Dictionary<string, bool> classNames = new Dictionary<string, bool>(StringComparer.Ordinal);
 		Dictionary<TypeDef, bool> results = new Dictionary<TypeDef, bool>();
