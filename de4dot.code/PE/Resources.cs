@@ -20,7 +20,7 @@
 using System.IO;
 using System.Text;
 
-namespace de4dot.PE {
+namespace de4dot.code.PE {
 	class Resources {
 		BinaryReader reader;
 		uint startOffset;

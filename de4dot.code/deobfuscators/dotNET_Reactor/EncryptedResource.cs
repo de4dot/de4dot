@@ -25,7 +25,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using de4dot.blocks;
 
-namespace de4dot.deobfuscators.dotNET_Reactor {
+namespace de4dot.code.deobfuscators.dotNET_Reactor {
 	class EncryptedResource {
 		ModuleDefinition module;
 		MethodDefinition resourceDecrypterMethod;

@@ -19,8 +19,8 @@
 
 using System;
 
-namespace de4dot {
-	class UserException : Exception {
+namespace de4dot.code {
+	public class UserException : Exception {
 		public UserException(string message)
 			: base(message) {
 		}

@@ -20,8 +20,8 @@
 using System.Collections.Generic;
 using Mono.Cecil;
 
-namespace de4dot.deobfuscators.Xenocode {
-	class DeobfuscatorInfo : DeobfuscatorInfoBase {
+namespace de4dot.code.deobfuscators.Xenocode {
+	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "Xenocode";
 		public const string THE_TYPE = "xc";
 		const string DEFAULT_REGEX = @"!^[oO01l]{4,}$&!^(get_|set_|add_|remove_|_)?x[a-f0-9]{16,}$&" + DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;

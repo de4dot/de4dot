@@ -24,7 +24,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using de4dot.blocks;
 
-namespace de4dot.deobfuscators.CryptoObfuscator {
+namespace de4dot.code.deobfuscators.CryptoObfuscator {
 	class AssemblyResolver {
 		ModuleDefinition module;
 		TypeDefinition resolverType;

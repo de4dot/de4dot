@@ -20,7 +20,7 @@
 using System;
 using Mono.Cecil;
 
-namespace de4dot.deobfuscators.CliSecure {
+namespace de4dot.code.deobfuscators.CliSecure {
 	class CliSecureRtType {
 		ModuleDefinition module;
 		TypeDefinition cliSecureRtType;

@@ -22,7 +22,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using de4dot.blocks;
 
-namespace de4dot.deobfuscators {
+namespace de4dot.code.deobfuscators {
 	// Restore the type of all fields / parameters that have had their type turned into object.
 	// This thing requires a lot more code than I have time to do now (similar to symbol renaming)
 	// so it will be a basic implementation only.

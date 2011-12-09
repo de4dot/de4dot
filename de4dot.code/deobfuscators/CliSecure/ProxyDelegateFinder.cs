@@ -23,7 +23,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using de4dot.blocks;
 
-namespace de4dot.deobfuscators.CliSecure {
+namespace de4dot.code.deobfuscators.CliSecure {
 	class ProxyDelegateFinder : ProxyDelegateFinderBase {
 		IList<MemberReference> memberReferences;
 

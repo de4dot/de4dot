@@ -20,7 +20,7 @@
 using System;
 using System.Text;
 
-namespace de4dot.deobfuscators.SmartAssembly {
+namespace de4dot.code.deobfuscators.SmartAssembly {
 	class StringDecrypter {
 		int stringOffset;
 		byte[] decryptedData;

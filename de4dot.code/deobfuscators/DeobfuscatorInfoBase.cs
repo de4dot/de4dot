@@ -19,8 +19,8 @@
 
 using System.Collections.Generic;
 
-namespace de4dot.deobfuscators {
-	abstract class DeobfuscatorInfoBase : IDeobfuscatorInfo {
+namespace de4dot.code.deobfuscators {
+	public abstract class DeobfuscatorInfoBase : IDeobfuscatorInfo {
 		protected NameRegexOption validNameRegex;
 
 		public DeobfuscatorInfoBase(string nameRegex = null) {

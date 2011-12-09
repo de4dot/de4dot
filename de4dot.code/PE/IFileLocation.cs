@@ -17,7 +17,7 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-namespace de4dot.PE {
+namespace de4dot.code.PE {
 	interface IFileLocation {
 		uint Offset { get; }
 		uint Length { get; }

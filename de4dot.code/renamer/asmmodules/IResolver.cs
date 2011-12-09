@@ -19,7 +19,7 @@
 
 using Mono.Cecil;
 
-namespace de4dot.renamer.asmmodules {
+namespace de4dot.code.renamer.asmmodules {
 	interface IResolver {
 		TypeDef resolve(TypeReference typeReference);
 		MethodDef resolve(MethodReference methodReference);

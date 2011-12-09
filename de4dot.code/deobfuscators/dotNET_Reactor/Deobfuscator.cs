@@ -25,10 +25,10 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.MyStuff;
 using de4dot.blocks;
-using de4dot.PE;
+using de4dot.code.PE;
 
-namespace de4dot.deobfuscators.dotNET_Reactor {
-	class DeobfuscatorInfo : DeobfuscatorInfoBase {
+namespace de4dot.code.deobfuscators.dotNET_Reactor {
+	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = ".NET Reactor";
 		public const string THE_TYPE = "dr";
 		const string DEFAULT_REGEX = DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;

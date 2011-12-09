@@ -28,8 +28,8 @@ using de4dot.blocks;
 // SmartAssembly can add so much junk that it's very difficult to find and remove all of it.
 // I remove some safe types that are almost guaranteed not to have any references in the code.
 
-namespace de4dot.deobfuscators.SmartAssembly {
-	class DeobfuscatorInfo : DeobfuscatorInfoBase {
+namespace de4dot.code.deobfuscators.SmartAssembly {
+	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "SmartAssembly";
 		public const string THE_TYPE = "sa";
 		BoolOption removeAutomatedErrorReporting;

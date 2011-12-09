@@ -21,10 +21,10 @@ using System;
 using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
-using de4dot.AssemblyClient;
+using de4dot.code.AssemblyClient;
 using de4dot.blocks;
 
-namespace de4dot {
+namespace de4dot.code {
 	abstract class StringDecrypter : MethodReturnValueInliner {
 		protected override void inlineReturnValues(IList<CallResult> callResults) {
 			foreach (var callResult in callResults) {

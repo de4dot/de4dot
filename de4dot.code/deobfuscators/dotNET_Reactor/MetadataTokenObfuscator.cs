@@ -21,7 +21,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using de4dot.blocks;
 
-namespace de4dot.deobfuscators.dotNET_Reactor {
+namespace de4dot.code.deobfuscators.dotNET_Reactor {
 	// Find the class that returns a RuntimeTypeHandle/RuntimeFieldHandle. The value passed to
 	// its methods is the original metadata token, which will be different when we save the file.
 	class MetadataTokenObfuscator {

@@ -19,8 +19,8 @@
 
 using System.Collections.Generic;
 
-namespace de4dot.deobfuscators {
-	interface IDeobfuscatorInfo {
+namespace de4dot.code.deobfuscators {
+	public interface IDeobfuscatorInfo {
 		string Type { get; }
 		string Name { get; }
 		IDeobfuscator createDeobfuscator();

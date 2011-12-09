@@ -21,7 +21,7 @@ using System;
 using System.Collections.Generic;
 using Mono.Cecil;
 
-namespace de4dot.renamer {
+namespace de4dot.code.renamer {
 	abstract class TypeNames {
 		protected Dictionary<string, NameCreator> typeNames = new Dictionary<string, NameCreator>(StringComparer.Ordinal);
 		protected NameCreator genericParamNameCreator = new NameCreator("gparam_");

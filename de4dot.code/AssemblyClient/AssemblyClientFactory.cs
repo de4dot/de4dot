@@ -17,24 +17,24 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-namespace de4dot.AssemblyClient {
-	interface IAssemblyClientFactory {
+namespace de4dot.code.AssemblyClient {
+	public interface IAssemblyClientFactory {
 		IAssemblyClient create();
 	}
 
-	class SameAppDomainAssemblyClientFactory : IAssemblyClientFactory {
+	public class SameAppDomainAssemblyClientFactory : IAssemblyClientFactory {
 		public IAssemblyClient create() {
 			return new AssemblyClient(new SameAppDomainAssemblyServerLoader());
 		}
 	}
 
-	class NewAppDomainAssemblyClientFactory : IAssemblyClientFactory {
+	public class NewAppDomainAssemblyClientFactory : IAssemblyClientFactory {
 		public IAssemblyClient create() {
 			return new AssemblyClient(new NewAppDomainAssemblyServerLoader());
 		}
 	}
 
-	class NewProcessAssemblyClientFactory : IAssemblyClientFactory {
+	public class NewProcessAssemblyClientFactory : IAssemblyClientFactory {
 		public IAssemblyClient create() {
 			return new AssemblyClient(new NewProcessAssemblyServerLoader());
 		}

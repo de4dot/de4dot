@@ -22,7 +22,7 @@ using System.Collections.Generic;
 using Mono.Cecil;
 using de4dot.blocks;
 
-namespace de4dot.renamer.asmmodules {
+namespace de4dot.code.renamer.asmmodules {
 	class Modules : IResolver {
 		bool initializeCalled = false;
 		List<Module> modules = new List<Module>();

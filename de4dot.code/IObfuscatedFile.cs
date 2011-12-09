@@ -18,12 +18,12 @@
 */
 
 using System.Collections.Generic;
-using de4dot.deobfuscators;
+using de4dot.code.deobfuscators;
 using Mono.Cecil;
-using de4dot.renamer;
+using de4dot.code.renamer;
 
-namespace de4dot {
-	interface IObfuscatedFile {
+namespace de4dot.code {
+	public interface IObfuscatedFile {
 		ModuleDefinition ModuleDefinition { get; }
 		IDeobfuscator Deobfuscator { get; }
 		string Filename { get; }

@@ -23,7 +23,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using de4dot.blocks;
 
-namespace de4dot.deobfuscators.dotNET_Reactor {
+namespace de4dot.code.deobfuscators.dotNET_Reactor {
 	class ResourceResolver {
 		ModuleDefinition module;
 		EncryptedResource encryptedResource;

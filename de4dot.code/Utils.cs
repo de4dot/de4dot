@@ -22,21 +22,16 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace de4dot {
-	public enum StartUpArch {
-		x86,
-		x64,
-	}
-
+namespace de4dot.code {
 	// These are in .NET 3.5 and later...
-	internal delegate TResult Func<TResult>();
-	internal delegate TResult Func<T, TResult>(T arg);
-	internal delegate TResult Func<T1, T2, TResult>(T1 arg1, T2 arg2);
-	internal delegate TResult Func<T1, T2, T3, TResult>(T1 arg1, T2 arg2, T3 arg3);
-	internal delegate void Action();
-	internal delegate void Action<T>(T arg);
-	internal delegate void Action<T1, T2>(T1 arg1, T2 arg2);
-	internal delegate void Action<T1, T2, T3>(T1 arg1, T2 arg2, T3 arg3);
+	public delegate TResult Func<TResult>();
+	public delegate TResult Func<T, TResult>(T arg);
+	public delegate TResult Func<T1, T2, TResult>(T1 arg1, T2 arg2);
+	public delegate TResult Func<T1, T2, T3, TResult>(T1 arg1, T2 arg2, T3 arg3);
+	public delegate void Action();
+	public delegate void Action<T>(T arg);
+	public delegate void Action<T1, T2>(T1 arg1, T2 arg2);
+	public delegate void Action<T1, T2, T3>(T1 arg1, T2 arg2, T3 arg3);
 
 	class Tuple<T1, T2> {
 		public T1 Item1 { get; set; }
@@ -55,17 +50,8 @@ namespace de4dot {
 		}
 	}
 
-	static class Utils {
+	public static class Utils {
 		static Random random = new Random();
-		public static StartUpArch startUpArch = StartUpArch.x86;
-
-		public static string getArchString(string x86, string x64) {
-			switch (startUpArch) {
-			case StartUpArch.x86: return x86;
-			case StartUpArch.x64: return x64;
-			default: throw new ApplicationException(string.Format("Invalid startUpArch {0}", startUpArch));
-			}
-		}
 
 		public static IEnumerable<T> unique<T>(IEnumerable<T> values) {
 			// HashSet is only available in .NET 3.5 and later.
@@ -170,20 +156,6 @@ namespace de4dot {
 
 		public static string getPathOfOurFile(string filename) {
 			return Path.Combine(getOurBaseDir(), filename);
-		}
-
-		public static void printStackTrace(Exception ex, Log.LogLevel logLevel = Log.LogLevel.error) {
-			var line = new string('-', 78);
-			Log.log(logLevel, "\n\n");
-			Log.log(logLevel, line);
-			Log.log(logLevel, "Stack trace:\n{0}", ex.StackTrace);
-			Log.log(logLevel, "\n\nERROR: Caught an exception:\n");
-			Log.log(logLevel, line);
-			Log.log(logLevel, "Message:");
-			Log.log(logLevel, "  {0}", ex.Message);
-			Log.log(logLevel, "Type:");
-			Log.log(logLevel, "  {0}", ex.GetType());
-			Log.log(logLevel, line);
 		}
 
 		// This fixes a mono (tested 2.10.5) String.StartsWith() bug. NB: stringComparison must be

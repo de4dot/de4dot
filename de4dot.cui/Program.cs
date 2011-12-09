@@ -20,28 +20,27 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using de4dot.deobfuscators;
+using de4dot.code;
+using de4dot.code.deobfuscators;
 
-namespace de4dot {
+namespace de4dot.cui {
 	public class Program {
 		static IList<IDeobfuscatorInfo> deobfuscatorInfos = createDeobfuscatorInfos();
 
 		static IList<IDeobfuscatorInfo> createDeobfuscatorInfos() {
 			return new List<IDeobfuscatorInfo> {
-				new de4dot.deobfuscators.Unknown.DeobfuscatorInfo(),
-				new de4dot.deobfuscators.CliSecure.DeobfuscatorInfo(),
-				new de4dot.deobfuscators.CryptoObfuscator.DeobfuscatorInfo(),
-				new de4dot.deobfuscators.Dotfuscator.DeobfuscatorInfo(),
-				new de4dot.deobfuscators.dotNET_Reactor.DeobfuscatorInfo(),
-				new de4dot.deobfuscators.Eazfuscator.DeobfuscatorInfo(),
-				new de4dot.deobfuscators.SmartAssembly.DeobfuscatorInfo(),
-				new de4dot.deobfuscators.Xenocode.DeobfuscatorInfo(),
+				new de4dot.code.deobfuscators.Unknown.DeobfuscatorInfo(),
+				new de4dot.code.deobfuscators.CliSecure.DeobfuscatorInfo(),
+				new de4dot.code.deobfuscators.CryptoObfuscator.DeobfuscatorInfo(),
+				new de4dot.code.deobfuscators.Dotfuscator.DeobfuscatorInfo(),
+				new de4dot.code.deobfuscators.dotNET_Reactor.DeobfuscatorInfo(),
+				new de4dot.code.deobfuscators.Eazfuscator.DeobfuscatorInfo(),
+				new de4dot.code.deobfuscators.SmartAssembly.DeobfuscatorInfo(),
+				new de4dot.code.deobfuscators.Xenocode.DeobfuscatorInfo(),
 			};
 		}
 
-		public static int main(StartUpArch startUpArch, string[] args) {
-			Utils.startUpArch = startUpArch;
-
+		public static int main(string[] args) {
 			try {
 				if (Console.OutputEncoding.IsSingleByte)
 					Console.OutputEncoding = new UTF8Encoding(false);
@@ -59,12 +58,26 @@ namespace de4dot {
 				Log.e("ERROR: {0}", ex.Message);
 			}
 			catch (Exception ex) {
-				Utils.printStackTrace(ex);
+				printStackTrace(ex);
 				Log.e("\nTry the latest version before reporting this problem!");
 				return 1;
 			}
 
 			return 0;
+		}
+
+		public static void printStackTrace(Exception ex, Log.LogLevel logLevel = Log.LogLevel.error) {
+			var line = new string('-', 78);
+			Log.log(logLevel, "\n\n");
+			Log.log(logLevel, line);
+			Log.log(logLevel, "Stack trace:\n{0}", ex.StackTrace);
+			Log.log(logLevel, "\n\nERROR: Caught an exception:\n");
+			Log.log(logLevel, line);
+			Log.log(logLevel, "Message:");
+			Log.log(logLevel, "  {0}", ex.Message);
+			Log.log(logLevel, "Type:");
+			Log.log(logLevel, "  {0}", ex.GetType());
+			Log.log(logLevel, line);
 		}
 
 		static void parseCommandLine(string[] args, FilesDeobfuscator.Options options) {

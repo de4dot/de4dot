@@ -20,7 +20,7 @@
 using System;
 using AssemblyData;
 
-namespace de4dot.AssemblyClient {
+namespace de4dot.code.AssemblyClient {
 	abstract class IpcAssemblyServerLoader : IAssemblyServerLoader {
 		const string ASSEMBLY_SERVER_FILENAME_X86 = "AssemblyServer.exe";
 		const string ASSEMBLY_SERVER_FILENAME_X64 = "AssemblyServer-x64.exe";
@@ -30,10 +30,14 @@ namespace de4dot.AssemblyClient {
 		string url;
 
 		protected IpcAssemblyServerLoader() {
-			assemblyServerFilename = Utils.getArchString(ASSEMBLY_SERVER_FILENAME_X86, ASSEMBLY_SERVER_FILENAME_X64);
+			assemblyServerFilename = getServerName();
 			ipcName = Utils.randomName(15, 20);
 			ipcUri = Utils.randomName(15, 20);
 			url = string.Format("ipc://{0}/{1}", ipcName, ipcUri);
+		}
+
+		static string getServerName() {
+			return IntPtr.Size == 4 ? ASSEMBLY_SERVER_FILENAME_X86 : ASSEMBLY_SERVER_FILENAME_X64;
 		}
 
 		public void loadServer() {

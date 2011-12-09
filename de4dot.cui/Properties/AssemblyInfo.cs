@@ -17,22 +17,18 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.Cecil;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
-namespace de4dot.code.renamer.asmmodules {
-	abstract class Ref {
-		public readonly MemberReference memberReference;
-		public int Index { get; set; }
-		public TypeDef Owner { get; set; }
-
-		protected Ref(MemberReference memberReference, TypeDef owner, int index) {
-			this.memberReference = memberReference;
-			Owner = owner;
-			Index = index;
-		}
-
-		public override string ToString() {
-			return memberReference != null ? memberReference.ToString() : null;
-		}
-	}
-}
+[assembly: AssemblyTitle("de4dot.cui")]
+[assembly: AssemblyDescription("de4dot Console UI code")]
+[assembly: AssemblyConfiguration("")]
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyProduct("de4dot.cui")]
+[assembly: AssemblyCopyright("Copyright (C) 2011 de4dot@gmail.com")]
+[assembly: AssemblyTrademark("")]
+[assembly: AssemblyCulture("")]
+[assembly: ComVisible(false)]
+[assembly: AssemblyVersion("1.3.6.3405")]
+[assembly: AssemblyFileVersion("1.3.6.3405")]

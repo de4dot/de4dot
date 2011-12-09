@@ -19,7 +19,7 @@
 
 using Mono.Cecil;
 
-namespace de4dot.renamer.asmmodules {
+namespace de4dot.code.renamer.asmmodules {
 	class FieldDef : Ref {
 		public FieldDefinition FieldDefinition {
 			get { return (FieldDefinition)memberReference; }

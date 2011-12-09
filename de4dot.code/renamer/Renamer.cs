@@ -22,11 +22,11 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
-using de4dot.renamer.asmmodules;
+using de4dot.code.renamer.asmmodules;
 using de4dot.blocks;
 
-namespace de4dot.renamer {
-	class Renamer {
+namespace de4dot.code.renamer {
+	public class Renamer {
 		public bool RenameNamespaces { get; set; }
 		public bool RenameTypes { get; set; }
 		public bool RenameProperties { get; set; }

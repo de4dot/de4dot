@@ -21,7 +21,7 @@ using System;
 using System.Collections.Generic;
 using Mono.Cecil;
 
-namespace de4dot.deobfuscators.SmartAssembly {
+namespace de4dot.code.deobfuscators.SmartAssembly {
 	class AssemblyResolver {
 		ResourceDecrypter resourceDecrypter;
 		AssemblyResolverInfo assemblyResolverInfo;

@@ -23,7 +23,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using de4dot.blocks;
 
-namespace de4dot {
+namespace de4dot.code {
 	// A simple class that statically detects the values of some local variables
 	class VariableValues {
 		IList<Block> allBlocks;

@@ -21,10 +21,10 @@ using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.MyStuff;
 using de4dot.blocks;
-using de4dot.PE;
+using de4dot.code.PE;
 
-namespace de4dot.deobfuscators.CliSecure {
-	class DeobfuscatorInfo : DeobfuscatorInfoBase {
+namespace de4dot.code.deobfuscators.CliSecure {
+	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "CliSecure";
 		public const string THE_TYPE = "cs";
 		const string DEFAULT_REGEX = @"[a-zA-Z_0-9>}$]$";

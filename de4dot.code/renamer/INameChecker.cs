@@ -17,8 +17,8 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-namespace de4dot.renamer {
-	interface INameChecker {
+namespace de4dot.code.renamer {
+	public interface INameChecker {
 		bool isValidNamespaceName(string ns);
 		bool isValidTypeName(string name);
 		bool isValidMethodName(string name);

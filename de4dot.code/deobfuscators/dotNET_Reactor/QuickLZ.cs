@@ -11,7 +11,7 @@
 
 using System;
 
-namespace de4dot.deobfuscators.dotNET_Reactor {
+namespace de4dot.code.deobfuscators.dotNET_Reactor {
 	static class QuickLZ {
 		static uint read32(byte[] data, int index) {
 			return BitConverter.ToUInt32(data, index);

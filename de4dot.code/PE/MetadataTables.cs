@@ -20,7 +20,7 @@
 using System;
 using System.IO;
 
-namespace de4dot.PE {
+namespace de4dot.code.PE {
 	using MVT = MetadataVarType;
 
 	class MetadataTables {

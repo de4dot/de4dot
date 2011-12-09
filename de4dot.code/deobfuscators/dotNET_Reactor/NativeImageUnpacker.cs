@@ -20,9 +20,9 @@
 using System;
 using System.IO;
 using ICSharpCode.SharpZipLib.Zip.Compression;
-using de4dot.PE;
+using de4dot.code.PE;
 
-namespace de4dot.deobfuscators.dotNET_Reactor {
+namespace de4dot.code.deobfuscators.dotNET_Reactor {
 	class NativeImageUnpacker {
 		PeImage peImage;
 		bool isNet1x;

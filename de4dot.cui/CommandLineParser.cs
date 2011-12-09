@@ -20,10 +20,11 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
-using de4dot.deobfuscators;
-using de4dot.AssemblyClient;
+using de4dot.code;
+using de4dot.code.deobfuscators;
+using de4dot.code.AssemblyClient;
 
-namespace de4dot {
+namespace de4dot.cui {
 	class CommandLineParser {
 		static Infos stringDecrypterTypes = new Infos();
 

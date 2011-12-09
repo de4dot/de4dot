@@ -20,7 +20,7 @@
 using System.Collections.Generic;
 using Mono.Cecil;
 
-namespace de4dot.renamer.asmmodules {
+namespace de4dot.code.renamer.asmmodules {
 	class GenericParamDef : Ref {
 		public GenericParameter GenericParameter {
 			get { return (GenericParameter)memberReference; }

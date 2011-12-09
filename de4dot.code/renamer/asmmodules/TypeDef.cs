@@ -22,7 +22,7 @@ using System.Collections.Generic;
 using Mono.Cecil;
 using de4dot.blocks;
 
-namespace de4dot.renamer.asmmodules {
+namespace de4dot.code.renamer.asmmodules {
 	class TypeInfo {
 		public TypeReference typeReference;
 		public TypeDef typeDef;

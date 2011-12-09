@@ -23,9 +23,9 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.MyStuff;
 using de4dot.blocks;
-using de4dot.PE;
+using de4dot.code.PE;
 
-namespace de4dot.deobfuscators {
+namespace de4dot.code.deobfuscators {
 	abstract class DeobfuscatorBase : IDeobfuscator, IWriterListener {
 		public const string DEFAULT_VALID_NAME_REGEX = @"^[a-zA-Z_<{$][a-zA-Z_0-9<>{}$.`-]*$";
 

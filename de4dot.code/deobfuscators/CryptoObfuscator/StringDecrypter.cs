@@ -21,7 +21,7 @@ using System.Text;
 using Mono.Cecil;
 using de4dot.blocks;
 
-namespace de4dot.deobfuscators.CryptoObfuscator {
+namespace de4dot.code.deobfuscators.CryptoObfuscator {
 	class StringDecrypter {
 		ModuleDefinition module;
 		EmbeddedResource stringResource;

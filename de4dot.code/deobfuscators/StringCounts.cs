@@ -22,7 +22,7 @@ using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
-namespace de4dot.deobfuscators {
+namespace de4dot.code.deobfuscators {
 	class StringCounts {
 		Dictionary<string, int> strings = new Dictionary<string, int>(StringComparer.Ordinal);
 

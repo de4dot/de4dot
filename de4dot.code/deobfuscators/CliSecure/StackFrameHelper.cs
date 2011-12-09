@@ -21,7 +21,7 @@ using System;
 using Mono.Cecil;
 using de4dot.blocks;
 
-namespace de4dot.deobfuscators.CliSecure {
+namespace de4dot.code.deobfuscators.CliSecure {
 	class StackFrameHelper {
 		ModuleDefinition module;
 		TypeDefinition stackFrameHelperType;

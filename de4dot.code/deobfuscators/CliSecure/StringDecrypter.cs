@@ -21,7 +21,7 @@ using System;
 using System.Text;
 using Mono.Cecil;
 
-namespace de4dot.deobfuscators.CliSecure {
+namespace de4dot.code.deobfuscators.CliSecure {
 	class StringDecrypter {
 		ModuleDefinition module;
 		TypeDefinition stringDecrypterType;

@@ -23,7 +23,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using de4dot.blocks;
 
-namespace de4dot.renamer.asmmodules {
+namespace de4dot.code.renamer.asmmodules {
 	class MemberRefFinder {
 		public Dictionary<EventDefinition, bool> eventDefinitions = new Dictionary<EventDefinition, bool>();
 		public Dictionary<FieldReference, bool> fieldReferences = new Dictionary<FieldReference, bool>();
