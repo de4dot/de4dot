@@ -459,7 +459,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor {
 					addTypeToBeRemoved(resourceResolver.Type, "Resource decrypter type");
 					removeResourceResolver = true;
 				}
-				addCallToBeRemoved(module.EntryPoint, resourceResolver.InitMethod);
+				addEntryPointCallToBeRemoved(resourceResolver.InitMethod);
 				addCctorInitCallToBeRemoved(resourceResolver.InitMethod);
 			}
 			if (resourceResolver.Detected && !removeResourceResolver && !resourceResolver.FoundResource)
@@ -492,7 +492,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor {
 			if (options.DumpEmbeddedAssemblies) {
 				if (options.InlineMethods)
 					addTypeToBeRemoved(assemblyResolver.Type, "Assembly resolver");
-				addCallToBeRemoved(module.EntryPoint, assemblyResolver.InitMethod);
+				addEntryPointCallToBeRemoved(assemblyResolver.InitMethod);
 				addCctorInitCallToBeRemoved(assemblyResolver.InitMethod);
 				dumpEmbeddedAssemblies();
 			}
@@ -502,11 +502,18 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor {
 
 			addCctorInitCallToBeRemoved(emptyClass.Method);
 			addCtorInitCallToBeRemoved(emptyClass.Method);
-			addCallToBeRemoved(module.EntryPoint, emptyClass.Method);
+			addEntryPointCallToBeRemoved(emptyClass.Method);
 			if (options.InlineMethods)
 				addTypeToBeRemoved(emptyClass.Type, "Empty class");
 
 			startedDeobfuscating = true;
+		}
+
+		void addEntryPointCallToBeRemoved(MethodReference methodToBeRemoved) {
+			var entryPoint = module.EntryPoint;
+			addCallToBeRemoved(entryPoint, methodToBeRemoved);
+			foreach (var info in DotNetUtils.getCalledMethods(module, entryPoint))
+				addCallToBeRemoved(info.Item2, methodToBeRemoved);
 		}
 
 		void decryptResources() {
