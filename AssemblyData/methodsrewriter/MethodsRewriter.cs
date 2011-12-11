@@ -296,8 +296,13 @@ namespace AssemblyData.methodsrewriter {
 								var argType = mparams[j];
 								if (argType.IsValueType)
 									block.insert(n++, Instruction.Create(OpCodes.Unbox_Any, argType));
-								else
-									block.insert(n++, Instruction.Create(OpCodes.Castclass, argType));
+								else {
+									// Don't cast it to its correct type. This will sometimes cause
+									// an exception in some EF obfuscated assembly since we'll be
+									// trying to cast a System.Reflection.AssemblyName type to some
+									// other type.
+									// block.insert(n++, Instruction.Create(OpCodes.Castclass, argType));
+								}
 							}
 						}
 
