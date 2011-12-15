@@ -184,7 +184,9 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			addModuleCctorInitCallToBeRemoved(resourceResolver.Method);
 			addModuleCctorInitCallToBeRemoved(assemblyResolver.Method);
 			addCallToBeRemoved(module.EntryPoint, tamperDetection.Method);
+			addModuleCctorInitCallToBeRemoved(tamperDetection.Method);
 			addCallToBeRemoved(module.EntryPoint, antiDebugger.Method);
+			addModuleCctorInitCallToBeRemoved(antiDebugger.Method);
 			addTypeToBeRemoved(resourceResolver.Type, "Resource resolver type");
 			addTypeToBeRemoved(assemblyResolver.Type, "Assembly resolver type");
 			addTypeToBeRemoved(tamperDetection.Type, "Tamper detection type");

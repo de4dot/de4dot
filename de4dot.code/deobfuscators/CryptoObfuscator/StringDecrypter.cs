@@ -17,6 +17,7 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Text;
 using Mono.Cecil;
 using de4dot.blocks;
@@ -63,13 +64,31 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			if (decryptedData != null)
 				return;
 
-			var resourceName = module.Assembly.Name.Name + module.Assembly.Name.Name;
+			var resourceName = getResourceName();
 			stringResource = DotNetUtils.getResource(module, resourceName) as EmbeddedResource;
 			if (stringResource == null)
 				return;
 			Log.v("Adding string decrypter. Resource: {0}", Utils.toCsharpString(stringResource.Name));
 
 			decryptedData = resourceDecrypter.decrypt(stringResource.GetResourceStream());
+		}
+
+		string getResourceName() {
+			var defaultName = module.Assembly.Name.Name + module.Assembly.Name.Name;
+
+			var cctor = DotNetUtils.getMethod(stringDecrypterType, ".cctor");
+			if (cctor == null)
+				return defaultName;
+
+			foreach (var s in DotNetUtils.getCodeStrings(cctor)) {
+				try {
+					return Encoding.UTF8.GetString(Convert.FromBase64String(s));
+				}
+				catch {
+				}
+			}
+
+			return defaultName;
 		}
 
 		public string decrypt(int index) {

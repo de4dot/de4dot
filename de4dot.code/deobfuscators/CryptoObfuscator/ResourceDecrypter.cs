@@ -22,16 +22,118 @@ using System.IO;
 using System.IO.Compression;
 using System.Security.Cryptography;
 using Mono.Cecil;
+using Mono.Cecil.Cil;
+using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CryptoObfuscator {
 	class ResourceDecrypter {
 		const int BUFLEN = 0x8000;
 		ModuleDefinition module;
+		DecrypterVersion decrypterVersion = DecrypterVersion.V1;
+		TypeDefinition resourceDecrypterType;
 		byte[] buffer1 = new byte[BUFLEN];
 		byte[] buffer2 = new byte[BUFLEN];
+		byte desEncryptedFlag;
+		byte deflatedFlag;
+		byte bitwiseNotEncryptedFlag;
+
+		enum DecrypterVersion {
+			V1,
+			V2,
+		}
 
 		public ResourceDecrypter(ModuleDefinition module) {
 			this.module = module;
+			find();
+		}
+
+		void find() {
+			var requiredTypes = new string[] {
+				"System.IO.MemoryStream",
+				"System.Object",
+				"System.Int32",
+			};
+
+			resourceDecrypterType = null;
+			foreach (var type in module.Types) {
+				if (type.Fields.Count != 5)
+					continue;
+				if (!new FieldTypes(type).exactly(requiredTypes))
+					continue;
+
+				var cctor = DotNetUtils.getMethod(type, ".cctor");
+				if (cctor == null)
+					continue;
+
+				if (!checkCctor(cctor))
+					continue;
+
+				resourceDecrypterType = type;
+				break;
+			}
+
+			initializeVersion();
+		}
+
+		bool checkCctor(MethodDefinition cctor) {
+			if (cctor.Body == null)
+				return false;
+			int stsfldCount = 0;
+			foreach (var instr in cctor.Body.Instructions) {
+				if (instr.OpCode.Code == Code.Stsfld) {
+					var field = instr.Operand as FieldReference;
+					if (!MemberReferenceHelper.compareTypes(cctor.DeclaringType, field.DeclaringType))
+						return false;
+					stsfldCount++;
+				}
+			}
+			return stsfldCount == cctor.DeclaringType.Fields.Count;
+		}
+
+		void initializeVersion() {
+			decrypterVersion = DecrypterVersion.V1;
+			if (resourceDecrypterType != null) {
+				foreach (var method in resourceDecrypterType.Methods) {
+					if (isPublicKeyTokenMethod(method)) {
+						decrypterVersion = DecrypterVersion.V2;
+						break;
+					}
+				}
+			}
+
+			switch (decrypterVersion) {
+			case DecrypterVersion.V1:
+				desEncryptedFlag = 1;
+				deflatedFlag = 2;
+				bitwiseNotEncryptedFlag = 4;
+				break;
+
+			case DecrypterVersion.V2:
+				desEncryptedFlag = 2;
+				deflatedFlag = 8;
+				//TODO: bitwiseNotEncryptedFlag = ???;
+				break;
+
+			default:
+				throw new ApplicationException("Invalid version");
+			}
+		}
+
+		bool isPublicKeyTokenMethod(MethodDefinition method) {
+			if (!method.IsStatic)
+				return false;
+			if (method.Body == null)
+				return false;
+			if (method.Body.ExceptionHandlers.Count < 1)
+				return false;
+			if (!DotNetUtils.isMethod(method, "System.Byte[]", "(System.Reflection.Assembly)"))
+				return false;
+
+			foreach (var s in DotNetUtils.getCodeStrings(method)) {
+				if (s.ToLowerInvariant() == "publickeytoken=")
+					return true;
+			}
+			return false;
 		}
 
 		public byte[] decrypt(Stream resourceStream) {
@@ -40,7 +142,11 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			int sourceStreamOffset = 1;
 			bool didSomething = false;
 
-			if ((flags & 1) != 0) {
+			byte allFlags = (byte)(desEncryptedFlag | deflatedFlag | bitwiseNotEncryptedFlag);
+			if ((flags & ~allFlags) != 0)
+				Log.w("Found unknown resource encryption flags: 0x{0:X2}", flags);
+
+			if ((flags & desEncryptedFlag) != 0) {
 				var memStream = new MemoryStream((int)resourceStream.Length);
 				using (var provider = new DESCryptoServiceProvider()) {
 					var iv = new byte[8];
@@ -65,7 +171,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				didSomething = true;
 			}
 
-			if ((flags & 2) != 0) {
+			if ((flags & deflatedFlag) != 0) {
 				var memStream = new MemoryStream((int)resourceStream.Length);
 				sourceStream.Position = sourceStreamOffset;
 				using (var inflater = new DeflateStream(sourceStream, CompressionMode.Decompress)) {
@@ -82,7 +188,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				didSomething = true;
 			}
 
-			if ((flags & 4) != 0) {
+			if ((flags & bitwiseNotEncryptedFlag) != 0) {
 				var memStream = new MemoryStream((int)resourceStream.Length);
 				sourceStream.Position = sourceStreamOffset;
 				for (int i = sourceStreamOffset; i < sourceStream.Length; i++)

@@ -43,11 +43,16 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		}
 
 		public void find() {
-			var mainMethod = module.EntryPoint;
-			if (mainMethod == null)
+			if (find(module.EntryPoint))
 				return;
+			if (find(DotNetUtils.getMethod(DotNetUtils.getModuleType(module), ".cctor")))
+				return;
+		}
 
-			foreach (var info in DotNetUtils.getCalledMethods(module, mainMethod)) {
+		bool find(MethodDefinition methodToCheck) {
+			if (methodToCheck == null)
+				return false;
+			foreach (var info in DotNetUtils.getCalledMethods(module, methodToCheck)) {
 				var type = info.Item1;
 				var method = info.Item2;
 
@@ -58,13 +63,15 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				if (DotNetUtils.getPInvokeMethod(type, "kernel32", "GetProcAddress") == null)
 					continue;
 				deobfuscate(method);
-				if (!containsString(method, "debugger was detected"))
+				if (!containsString(method, "debugger is active"))
 					continue;
 
 				antiDebuggerType = type;
 				antiDebuggerMethod = method;
-				return;
+				return true;
 			}
+
+			return false;
 		}
 
 		void deobfuscate(MethodDefinition method) {

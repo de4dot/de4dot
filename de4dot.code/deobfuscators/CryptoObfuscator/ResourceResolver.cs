@@ -28,7 +28,13 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		ResourceDecrypter resourceDecrypter;
 		TypeDefinition resolverType;
 		MethodDefinition resolverMethod;
+		ResolverVersion resolverVersion = ResolverVersion.V1;
 		bool mergedIt = false;
+
+		enum ResolverVersion {
+			V1,
+			V2,
+		}
 
 		public TypeDefinition Type {
 			get { return resolverType; }
@@ -63,13 +69,21 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			if (mergedIt)
 				return null;
 
-			var resource = DotNetUtils.getResource(module, module.Assembly.Name.Name) as EmbeddedResource;
+			var resource = DotNetUtils.getResource(module, getResourceName()) as EmbeddedResource;
 			if (resource == null)
 				return null;
 
 			DeobUtils.decryptAndAddResources(module, resource.Name, () => resourceDecrypter.decrypt(resource.GetResourceStream()));
 			mergedIt = true;
 			return resource;
+		}
+
+		string getResourceName() {
+			switch (resolverVersion) {
+			case ResolverVersion.V1: return module.Assembly.Name.Name;
+			case ResolverVersion.V2: return string.Format("{0}{0}{0}", module.Assembly.Name.Name);
+			default: throw new ApplicationException("Unknown version");
+			}
 		}
 
 		bool checkType(TypeDefinition type, MethodDefinition initMethod) {
@@ -79,6 +93,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				return false;
 
 			var instructions = initMethod.Body.Instructions;
+			int foundCount = 0;
 			for (int i = 0; i < instructions.Count; i++) {
 				var instrs = DotNetUtils.getInstructions(instructions, i, OpCodes.Ldnull, OpCodes.Ldftn, OpCodes.Newobj);
 				if (instrs == null)
@@ -96,12 +111,25 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				if (methodRef == null || methodRef.FullName != "System.Void System.ResolveEventHandler::.ctor(System.Object,System.IntPtr)")
 					continue;
 
-				resolverType = type;
-				resolverMethod = initMethod;
-				return true;
+				foundCount++;
+			}
+			if (foundCount == 0)
+				return false;
+
+			switch (foundCount) {
+			case 1:
+				resolverVersion = ResolverVersion.V1;
+				break;
+			case 2:
+				resolverVersion = ResolverVersion.V2;
+				break;
+			default:
+				return false;
 			}
 
-			return false;
+			resolverType = type;
+			resolverMethod = initMethod;
+			return true;
 		}
 	}
 }

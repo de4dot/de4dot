@@ -43,25 +43,35 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		}
 
 		public void find() {
-			var mainMethod = module.EntryPoint;
-			if (mainMethod == null)
+			if (find(module.EntryPoint))
 				return;
+			if (find(DotNetUtils.getMethod(DotNetUtils.getModuleType(module), ".cctor")))
+				return;
+		}
 
-			foreach (var info in DotNetUtils.getCalledMethods(module, mainMethod)) {
+		bool find(MethodDefinition methodToCheck) {
+			if (methodToCheck == null)
+				return false;
+
+			foreach (var info in DotNetUtils.getCalledMethods(module, methodToCheck)) {
 				var type = info.Item1;
 				var method = info.Item2;
 
+				if (type.HasProperties || type.HasEvents)
+					continue;
 				if (!method.IsStatic || !DotNetUtils.isMethod(method, "System.Void", "()"))
 					continue;
-				if (type.Methods.Count != 3)
+				if (type.Methods.Count < 3 || type.Methods.Count > 6)
 					continue;
 				if (DotNetUtils.getPInvokeMethod(type, "mscoree", "StrongNameSignatureVerificationEx") == null)
 					continue;
 
 				tamperType = type;
 				tamperMethod = method;
-				return;
+				return true;
 			}
+
+			return false;
 		}
 	}
 }

@@ -138,7 +138,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 					createMethod = m;
 					continue;
 				}
-				return null;
+				continue;
 			}
 			if (createMethod == null || !createMethod.HasBody)
 				return null;
