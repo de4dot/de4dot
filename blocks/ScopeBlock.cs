@@ -174,10 +174,7 @@ namespace de4dot.blocks {
 			if (isOurBaseBlock(bb))
 				return bb;
 
-			for (bb = bb.Parent; bb != null; bb = bb.Parent) {
-				var sb = bb as ScopeBlock;
-				if (sb == null)
-					throw new ApplicationException("Parent is not a ScopeBlock");
+			for (var sb = bb.Parent; sb != null; sb = sb.Parent) {
 				if (isOurBaseBlock(sb))
 					return sb;
 			}

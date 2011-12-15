@@ -53,7 +53,7 @@ namespace de4dot.blocks {
 			var deadBlocksDict = new Dictionary<BaseBlock, bool>();
 			foreach (var baseBlock in findDeadBlocks()) {
 				deadBlocksDict[baseBlock] = true;
-				ScopeBlock parent = (ScopeBlock)baseBlock.Parent;
+				ScopeBlock parent = baseBlock.Parent;
 				ScopeBlockInfo info;
 				if (!infos.TryGetValue(parent, out info))
 					infos[parent] = info = new ScopeBlockInfo(parent);

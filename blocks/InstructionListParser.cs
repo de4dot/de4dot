@@ -282,7 +282,7 @@ namespace de4dot.blocks {
 			}
 
 			// Replace the BaseBlocks with a new BaseBlock, returning the old ones.
-			public List<BaseBlock> replace(int startInstr, int endInstr, BaseBlock bb) {
+			public List<BaseBlock> replace(int startInstr, int endInstr, ScopeBlock bb) {
 				int startIndex, endIndex;
 				var rv = getBlocks(startInstr, endInstr, out startIndex, out endIndex);
 				updateParent(rv, bb);
@@ -294,7 +294,7 @@ namespace de4dot.blocks {
 				return rv;
 			}
 
-			public List<BaseBlock> getBlocks(BaseBlock parent) {
+			public List<BaseBlock> getBlocks(ScopeBlock parent) {
 				if (blocksLeft.Count == 0)
 					return new List<BaseBlock>();
 				int startIndex, endIndex;
@@ -302,7 +302,7 @@ namespace de4dot.blocks {
 				return updateParent(lb, parent);
 			}
 
-			List<BaseBlock> updateParent(List<BaseBlock> lb, BaseBlock parent) {
+			List<BaseBlock> updateParent(List<BaseBlock> lb, ScopeBlock parent) {
 				foreach (var bb in lb)
 					bb.Parent = parent;
 				return lb;

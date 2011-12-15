@@ -19,9 +19,9 @@
 
 namespace de4dot.blocks {
 	public abstract class BaseBlock {
-		BaseBlock parent = null;
+		ScopeBlock parent = null;
 
-		public BaseBlock Parent {
+		public ScopeBlock Parent {
 			get { return parent; }
 			set { parent = value; }
 		}

@@ -99,15 +99,15 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor {
 			antiSnBlock.replaceLastInstrsWithBranch(numInstructions, goodBlock);
 
 			if (badBlock.FallThrough == badBlock && badBlock.Sources.Count == 1 && badBlock.Targets == null) {
-				((ScopeBlock)badBlock.Parent).removeGuaranteedDeadBlock(badBlock);
+				badBlock.Parent.removeGuaranteedDeadBlock(badBlock);
 				return true;
 			}
 			if (badBlock.Instructions.Count <= 1 && badBlock.LastInstr.OpCode.Code == Code.Nop) {
 				if (badBlock.FallThrough != null && badBlock.Targets == null && badBlock.Sources.Count == 0) {
 					var badBlock2 = badBlock.FallThrough;
 					if (badBlock2.FallThrough == badBlock2 && badBlock2.Sources.Count == 2 && badBlock2.Targets == null) {
-						((ScopeBlock)badBlock.Parent).removeGuaranteedDeadBlock(badBlock);
-						((ScopeBlock)badBlock2.Parent).removeGuaranteedDeadBlock(badBlock2);
+						badBlock.Parent.removeGuaranteedDeadBlock(badBlock);
+						badBlock2.Parent.removeGuaranteedDeadBlock(badBlock2);
 						return true;
 					}
 				}

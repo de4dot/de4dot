@@ -348,7 +348,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 		}
 
 		void removeDeadBlock(Block block) {
-			var parent = (ScopeBlock)block.Parent;
+			var parent = block.Parent;
 			if (parent != null)	// null if already dead
 				parent.removeDeadBlock(block);
 		}

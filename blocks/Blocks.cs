@@ -235,16 +235,14 @@ namespace de4dot.blocks {
 					break;
 			}
 
-			foreach (var nopBlock in nopBlocks.Keys) {
-				var scopeBlock = (ScopeBlock)nopBlock.Parent;
-				scopeBlock.removeDeadBlock(nopBlock);
-			}
+			foreach (var nopBlock in nopBlocks.Keys)
+				nopBlock.Parent.removeDeadBlock(nopBlock);
 		}
 
 		static Block getNopBlockTarget(Dictionary<Block, bool> nopBlocks, Block source, Block nopBlock) {
 			if (nopBlock == null || !nopBlocks.ContainsKey(nopBlock) || source == nopBlock.FallThrough)
 				return null;
-			if (((ScopeBlock)nopBlock.Parent).BaseBlocks[0] == nopBlock)
+			if (nopBlock.Parent.BaseBlocks[0] == nopBlock)
 				return null;
 			var target = nopBlock.FallThrough;
 			if (nopBlock.Parent != target.Parent)
