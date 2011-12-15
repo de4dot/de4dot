@@ -298,7 +298,7 @@ namespace de4dot.blocks {
 		ScopeBlock getScopeBlock(BaseBlock bb) {
 			BlockState current = stateStack.Peek();
 
-			if (current.scopeBlock.isOurBlockBase(bb))
+			if (current.scopeBlock.isOurBaseBlock(bb))
 				return current.scopeBlock;
 			return (ScopeBlock)current.scopeBlock.toChild(bb);
 		}

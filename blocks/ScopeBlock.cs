@@ -118,7 +118,7 @@ namespace de4dot.blocks {
 					continue;	// Not dead
 				if (block == baseBlocks[0])
 					continue;	// It's the start of this block fence so must be present
-				if (!isOurBlockBase(block))
+				if (!isOurBaseBlock(block))
 					continue;	// Some other ScopeBlock owns it, eg. first instr of an exception handler
 
 				// It's a dead block we can delete!
@@ -133,7 +133,7 @@ namespace de4dot.blocks {
 			}
 		}
 
-		public bool isOurBlockBase(BaseBlock bb) {
+		public bool isOurBaseBlock(BaseBlock bb) {
 			return bb != null && bb.Parent == this;
 		}
 
@@ -145,7 +145,7 @@ namespace de4dot.blocks {
 			for (int i = 0; i < blocks.Count; i++) {
 				var block = blocks[i];
 				var target = block.getOnlyTarget();
-				if (!isOurBlockBase(target))
+				if (!isOurBaseBlock(target))
 					continue;	// Only merge blocks we own!
 				if (!block.canMerge(target))
 					continue;	// Can't merge them!
@@ -171,14 +171,14 @@ namespace de4dot.blocks {
 		// If bb is in baseBlocks (a direct child), return bb. If bb is a BaseBlock in a
 		// ScopeBlock that is a direct child, then return that ScopeBlock. Else return null.
 		public BaseBlock toChild(BaseBlock bb) {
-			if (isOurBlockBase(bb))
+			if (isOurBaseBlock(bb))
 				return bb;
 
 			for (bb = bb.Parent; bb != null; bb = bb.Parent) {
 				var sb = bb as ScopeBlock;
 				if (sb == null)
 					throw new ApplicationException("Parent is not a ScopeBlock");
-				if (isOurBlockBase(sb))
+				if (isOurBaseBlock(sb))
 					return sb;
 			}
 

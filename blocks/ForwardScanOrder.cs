@@ -96,14 +96,14 @@ namespace de4dot.blocks {
 
 		bool isOneSourceInAnotherScopeBlock(Block block) {
 			foreach (var source in block.Sources) {
-				if (!scopeBlock.isOurBlockBase(source))
+				if (!scopeBlock.isOurBaseBlock(source))
 					return true;
 			}
 			return false;
 		}
 
 		void scanBaseBlock(BaseBlock bb, int stackStart) {
-			if (blockInfos.ContainsKey(bb) || !scopeBlock.isOurBlockBase(bb))
+			if (blockInfos.ContainsKey(bb) || !scopeBlock.isOurBaseBlock(bb))
 				return;
 
 			var blockInfo = new BlockInfo(bb, stackStart);
@@ -134,7 +134,7 @@ namespace de4dot.blocks {
 		}
 
 		void addToNewList(BaseBlock bb) {
-			if (inNewList.ContainsKey(bb) || !scopeBlock.isOurBlockBase(bb))
+			if (inNewList.ContainsKey(bb) || !scopeBlock.isOurBaseBlock(bb))
 				return;
 			inNewList[bb] = true;
 
@@ -145,7 +145,7 @@ namespace de4dot.blocks {
 			}
 			else {
 				foreach (var source in block.Sources) {
-					if (scopeBlock.isOurBlockBase(source)) {
+					if (scopeBlock.isOurBaseBlock(source)) {
 						addToNewList(source);	// Make sure it's before this block
 						break;
 					}
