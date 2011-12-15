@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
+using System.Xml;
 using Mono.Cecil;
 
 namespace de4dot.code {
@@ -87,8 +88,11 @@ namespace de4dot.code {
 		}
 
 		public void addModule(ModuleDefinition module) {
-			if (module.FullyQualifiedName != "")
+			if (module.FullyQualifiedName != "") {
 				addSearchDirectory(Path.GetDirectoryName(module.FullyQualifiedName));
+				if (module.FullyQualifiedName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+					addConfigFile(module.FullyQualifiedName + ".config");
+			}
 
 			var assembly = module.Assembly;
 			if (assembly != null) {
@@ -97,6 +101,32 @@ namespace de4dot.code {
 					throw new ApplicationException(string.Format("Assembly {0} was loaded by other code.", name));
 				addedAssemblies[name] = true;
 				RegisterAssembly(assembly);
+			}
+		}
+
+		void addConfigFile(string configFilename) {
+			var dirName = Utils.getDirName(Utils.getFullPath(configFilename));
+			addSearchDirectory(dirName);
+
+			try {
+				using (var xmlStream = new FileStream(configFilename, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+					var doc = new XmlDocument();
+					doc.Load(XmlReader.Create(xmlStream));
+					foreach (var tmp in doc.GetElementsByTagName("probing")) {
+						var probingElem = tmp as XmlElement;
+						if (probingElem == null)
+							continue;
+						var privatePath = probingElem.GetAttribute("privatePath");
+						if (string.IsNullOrEmpty(privatePath))
+							continue;
+						foreach (var path in privatePath.Split(';'))
+							addSearchDirectory(Path.Combine(dirName, path));
+					}
+				}
+			}
+			catch (IOException) {
+			}
+			catch (XmlException) {
 			}
 		}
 
