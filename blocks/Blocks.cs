@@ -183,6 +183,7 @@ namespace de4dot.blocks {
 		}
 
 		public void repartitionBlocks() {
+			mergeNopBlocks();
 			foreach (var scopeBlock in getAllScopeBlocks(methodBlocks)) {
 				try {
 					scopeBlock.repartitionBlocks();
@@ -193,6 +194,62 @@ namespace de4dot.blocks {
 					return;
 				}
 			}
+		}
+
+		void mergeNopBlocks() {
+			var allBlocks = methodBlocks.getAllBlocks();
+
+			var nopBlocks = new Dictionary<Block, bool>();
+			foreach (var nopBlock in allBlocks) {
+				if (nopBlock.isNopBlock())
+					nopBlocks[nopBlock] = true;
+			}
+
+			if (nopBlocks.Count == 0)
+				return;
+
+			for (int i = 0; i < 10; i++) {
+				bool changed = false;
+
+				foreach (var block in allBlocks) {
+					Block nopBlockTarget;
+
+					nopBlockTarget = getNopBlockTarget(nopBlocks, block, block.FallThrough);
+					if (nopBlockTarget != null) {
+						block.setNewFallThrough(nopBlockTarget);
+						changed = true;
+					}
+
+					if (block.Targets != null) {
+						for (int targetIndex = 0; targetIndex < block.Targets.Count; targetIndex++) {
+							nopBlockTarget = getNopBlockTarget(nopBlocks, block, block.Targets[targetIndex]);
+							if (nopBlockTarget == null)
+								continue;
+							block.setNewTarget(targetIndex, nopBlockTarget);
+							changed = true;
+						}
+					}
+				}
+
+				if (!changed)
+					break;
+			}
+
+			foreach (var nopBlock in nopBlocks.Keys) {
+				var scopeBlock = (ScopeBlock)nopBlock.Parent;
+				scopeBlock.removeDeadBlock(nopBlock);
+			}
+		}
+
+		static Block getNopBlockTarget(Dictionary<Block, bool> nopBlocks, Block source, Block nopBlock) {
+			if (nopBlock == null || !nopBlocks.ContainsKey(nopBlock) || source == nopBlock.FallThrough)
+				return null;
+			if (((ScopeBlock)nopBlock.Parent).BaseBlocks[0] == nopBlock)
+				return null;
+			var target = nopBlock.FallThrough;
+			if (nopBlock.Parent != target.Parent)
+				return null;
+			return target;
 		}
 	}
 }

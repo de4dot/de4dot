@@ -143,6 +143,18 @@ namespace de4dot.blocks {
 			replaceLastInstrsWithBranch(1, target);
 		}
 
+		public void setNewFallThrough(Block newFallThrough) {
+			disconnectFromFallThrough();
+			fallThrough = newFallThrough;
+			newFallThrough.sources.Add(this);
+		}
+
+		public void setNewTarget(int index, Block newTarget) {
+			disconnectFromBlock(targets[index]);
+			targets[index] = newTarget;
+			newTarget.sources.Add(this);
+		}
+
 		public void removeDeadBlock() {
 			if (sources.Count != 0)
 				throw new ApplicationException("Trying to remove a non-dead block");
@@ -283,6 +295,16 @@ namespace de4dot.blocks {
 		// Returns true if it's a conditional branch
 		public bool isConditionalBranch() {
 			return LastInstr.isConditionalBranch();
+		}
+
+		public bool isNopBlock() {
+			if (!isFallThrough())
+				return false;
+			foreach (var instr in instructions) {
+				if (instr.OpCode.Code != Code.Nop)
+					return false;
+			}
+			return true;
 		}
 	}
 }
