@@ -415,12 +415,12 @@ namespace de4dot.code.renamer {
 		void initializeWindowsFormsFieldsAndProps() {
 			var checker = NameChecker;
 
-			var ourFields = new Dictionary<FieldReferenceAndDeclaringTypeKey, FieldDef>();
+			var ourFields = new FieldDefinitionAndDeclaringTypeDict<FieldDef>();
 			foreach (var fieldDef in type.AllFields)
-				ourFields[new FieldReferenceAndDeclaringTypeKey(fieldDef.FieldDefinition)] = fieldDef;
-			var ourMethods = new Dictionary<MethodReferenceAndDeclaringTypeKey, MethodDef>();
+				ourFields.add(fieldDef.FieldDefinition, fieldDef);
+			var ourMethods = new MethodDefinitionAndDeclaringTypeDict<MethodDef>();
 			foreach (var methodDef in type.AllMethods)
-				ourMethods[new MethodReferenceAndDeclaringTypeKey(methodDef.MethodDefinition)] = methodDef;
+				ourMethods.add(methodDef.MethodDefinition, methodDef);
 
 			foreach (var methodDef in type.AllMethods) {
 				if (methodDef.MethodDefinition.Body == null)
@@ -448,8 +448,8 @@ namespace de4dot.code.renamer {
 						var calledMethod = instr.Operand as MethodReference;
 						if (calledMethod == null)
 							continue;
-						MethodDef calledMethodDef;
-						if (!ourMethods.TryGetValue(new MethodReferenceAndDeclaringTypeKey(calledMethod), out calledMethodDef))
+						var calledMethodDef = ourMethods.find(calledMethod);
+						if (calledMethodDef == null)
 							continue;
 						fieldRef = getFieldReference(calledMethodDef.MethodDefinition);
 						if (fieldRef == null)
@@ -468,8 +468,8 @@ namespace de4dot.code.renamer {
 
 					if (fieldRef == null)
 						continue;
-					FieldDef fieldDef;
-					if (!ourFields.TryGetValue(new FieldReferenceAndDeclaringTypeKey(fieldRef), out fieldDef))
+					var fieldDef = ourFields.find(fieldRef);
+					if (fieldDef == null)
 						continue;
 					var fieldInfo = memberInfos.field(fieldDef);
 
@@ -499,12 +499,12 @@ namespace de4dot.code.renamer {
 		}
 
 		public void initializeEventHandlerNames() {
-			var ourFields = new Dictionary<FieldReferenceAndDeclaringTypeKey, FieldDef>();
+			var ourFields = new FieldDefinitionAndDeclaringTypeDict<FieldDef>();
 			foreach (var fieldDef in type.AllFields)
-				ourFields[new FieldReferenceAndDeclaringTypeKey(fieldDef.FieldDefinition)] = fieldDef;
-			var ourMethods = new Dictionary<MethodReferenceAndDeclaringTypeKey, MethodDef>();
+				ourFields.add(fieldDef.FieldDefinition, fieldDef);
+			var ourMethods = new MethodDefinitionAndDeclaringTypeDict<MethodDef>();
 			foreach (var methodDef in type.AllMethods)
-				ourMethods[new MethodReferenceAndDeclaringTypeKey(methodDef.MethodDefinition)] = methodDef;
+				ourMethods.add(methodDef.MethodDefinition, methodDef);
 
 			initVbEventHandlers(ourFields, ourMethods);
 			initFieldEventHandlers(ourFields, ourMethods);
@@ -513,7 +513,7 @@ namespace de4dot.code.renamer {
 
 		// VB initializes the handlers in the property setter, where it first removes the handler
 		// from the previous control, and then adds the handler to the new control.
-		void initVbEventHandlers(Dictionary<FieldReferenceAndDeclaringTypeKey, FieldDef> ourFields, Dictionary<MethodReferenceAndDeclaringTypeKey, MethodDef> ourMethods) {
+		void initVbEventHandlers(FieldDefinitionAndDeclaringTypeDict<FieldDef> ourFields, MethodDefinitionAndDeclaringTypeDict<MethodDef> ourMethods) {
 			var checker = NameChecker;
 
 			foreach (var propDef in type.AllProperties) {
@@ -528,8 +528,8 @@ namespace de4dot.code.renamer {
 				var handler = getVbHandler(setterDef.MethodDefinition, out eventName);
 				if (handler == null)
 					continue;
-				MethodDef handlerDef;
-				if (!ourMethods.TryGetValue(new MethodReferenceAndDeclaringTypeKey(handler), out handlerDef))
+				var handlerDef = ourMethods.find(handler);
+				if (handlerDef == null)
 					continue;
 
 				if (!checker.isValidEventName(eventName))
@@ -630,7 +630,7 @@ namespace de4dot.code.renamer {
 			return -1;
 		}
 
-		void initFieldEventHandlers(Dictionary<FieldReferenceAndDeclaringTypeKey, FieldDef> ourFields, Dictionary<MethodReferenceAndDeclaringTypeKey, MethodDef> ourMethods) {
+		void initFieldEventHandlers(FieldDefinitionAndDeclaringTypeDict<FieldDef> ourFields, MethodDefinitionAndDeclaringTypeDict<MethodDef> ourMethods) {
 			var checker = NameChecker;
 
 			foreach (var methodDef in type.AllMethods) {
@@ -658,8 +658,8 @@ namespace de4dot.code.renamer {
 					var fieldRef = ldfld.Operand as FieldReference;
 					if (fieldRef == null)
 						continue;
-					FieldDef fieldDef;
-					if (!ourFields.TryGetValue(new FieldReferenceAndDeclaringTypeKey(fieldRef), out fieldDef))
+					var fieldDef = ourFields.find(fieldRef);
+					if (fieldDef == null)
 						continue;
 
 					if (DotNetUtils.getArgIndex(methodDef.MethodDefinition, instructions[index++]) != 0)
@@ -681,8 +681,8 @@ namespace de4dot.code.renamer {
 					}
 					if (methodRef == null)
 						continue;
-					MethodDef handlerMethod;
-					if (!ourMethods.TryGetValue(new MethodReferenceAndDeclaringTypeKey(methodRef), out handlerMethod))
+					var handlerMethod = ourMethods.find(methodRef);
+					if (handlerMethod == null)
 						continue;
 
 					var newobj = instructions[index++];
@@ -709,7 +709,7 @@ namespace de4dot.code.renamer {
 			}
 		}
 
-		void initTypeEventHandlers(Dictionary<FieldReferenceAndDeclaringTypeKey, FieldDef> ourFields, Dictionary<MethodReferenceAndDeclaringTypeKey, MethodDef> ourMethods) {
+		void initTypeEventHandlers(FieldDefinitionAndDeclaringTypeDict<FieldDef> ourFields, MethodDefinitionAndDeclaringTypeDict<MethodDef> ourMethods) {
 			var checker = NameChecker;
 
 			foreach (var methodDef in type.AllMethods) {
@@ -747,8 +747,8 @@ namespace de4dot.code.renamer {
 					}
 					if (handler == null)
 						continue;
-					MethodDef handlerDef;
-					if (!ourMethods.TryGetValue(new MethodReferenceAndDeclaringTypeKey(handler), out handlerDef))
+					var handlerDef = ourMethods.find(handler);
+					if (handlerDef == null)
 						continue;
 
 					var newobj = instructions[index++];
