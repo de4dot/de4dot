@@ -163,10 +163,10 @@ namespace AssemblyData.methodsrewriter {
 			return newMethodInfo.rewrittenMethod;
 		}
 
-		string getDelegateMethodName(string methodName) {
+		string getDelegateMethodName(MethodBase method) {
 			string name = null;
 			do {
-				name = string.Format(" {0} DMN {1:X8} ", methodName, Utils.getRandomUint());
+				name = string.Format(" {0} {1:X8} DMN {2:X8} ", method.Name, method.MetadataToken, Utils.getRandomUint());
 			} while (delegateNameToNewMethodInfo.ContainsKey(name));
 			return name;
 		}
@@ -174,7 +174,7 @@ namespace AssemblyData.methodsrewriter {
 		public void createMethod(MethodBase realMethod) {
 			if (realMethodToNewMethod.ContainsKey(realMethod))
 				return;
-			var newMethodInfo = new NewMethodInfo(realMethod, newMethodInfos.Count, getDelegateMethodName(realMethod.Name), getDelegateMethodName(realMethod.Name));
+			var newMethodInfo = new NewMethodInfo(realMethod, newMethodInfos.Count, getDelegateMethodName(realMethod), getDelegateMethodName(realMethod));
 			newMethodInfos.Add(newMethodInfo);
 			delegateNameToNewMethodInfo[newMethodInfo.delegateMethodName] = newMethodInfo;
 			delegateNameToNewMethodInfo[newMethodInfo.rewrittenMethodName] = newMethodInfo;
@@ -182,7 +182,7 @@ namespace AssemblyData.methodsrewriter {
 
 			var moduleInfo = Resolver.loadAssembly(realMethod.Module);
 			var methodInfo = moduleInfo.getMethod(realMethod);
-			if (!methodInfo.methodDefinition.HasBody || methodInfo.methodDefinition.Body.Instructions.Count == 0)
+			if (!methodInfo.hasInstructions())
 				throw new ApplicationException(string.Format("Method {0} ({1:X8}) has no body", methodInfo.methodDefinition, methodInfo.methodDefinition.MetadataToken.ToUInt32()));
 
 			var codeGenerator = new CodeGenerator(this, newMethodInfo.delegateMethodName);

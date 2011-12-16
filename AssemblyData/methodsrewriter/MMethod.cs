@@ -29,6 +29,10 @@ namespace AssemblyData.methodsrewriter {
 			this.methodDefinition = methodDefinition;
 		}
 
+		public bool hasInstructions() {
+			return methodDefinition.Body != null && methodDefinition.Body.Instructions.Count != 0;
+		}
+
 		public override string ToString() {
 			return methodDefinition.ToString();
 		}
