@@ -54,6 +54,13 @@ namespace AssemblyData.methodsrewriter {
 			if (!types.TryGetValue(key, out list))
 				return null;
 
+			if (typeReference is TypeDefinition) {
+				foreach (var resolver in list) {
+					if (resolver.type.MetadataToken == typeReference.MetadataToken.ToInt32())
+						return resolver;
+				}
+			}
+
 			foreach (var resolver in list) {
 				if (ResolverUtils.compareTypes(resolver.type, typeReference))
 					return resolver;
