@@ -44,6 +44,256 @@ namespace de4dot.blocks {
 		TypeReference,
 	}
 
+	public class TypeDefinitionDict<TValue> {
+		Dictionary<ScopeAndTokenKey, TValue> tokenToValue = new Dictionary<ScopeAndTokenKey, TValue>();
+		Dictionary<TypeReferenceKey, TValue> refToValue = new Dictionary<TypeReferenceKey, TValue>();
+
+		public int Count {
+			get { return tokenToValue.Count; }
+		}
+
+		public IEnumerable<TValue> getAll() {
+			return tokenToValue.Values;
+		}
+
+		ScopeAndTokenKey getTokenKey(TypeReference typeReference) {
+			return new ScopeAndTokenKey(typeReference);
+		}
+
+		TypeReferenceKey getReferenceKey(TypeReference typeReference) {
+			return new TypeReferenceKey(typeReference);
+		}
+
+		public TValue find(TypeReference typeReference) {
+			TValue value;
+			if (tokenToValue.TryGetValue(getTokenKey(typeReference), out value))
+				return value;
+
+			refToValue.TryGetValue(getReferenceKey(typeReference), out value);
+			return value;
+		}
+
+		public void add(TypeDefinition typeDefinition, TValue value) {
+			tokenToValue[getTokenKey(typeDefinition)] = value;
+			refToValue[getReferenceKey(typeDefinition)] = value;
+		}
+
+		public void onTypesRenamed() {
+			var newTypeRefToValue = new Dictionary<TypeReferenceKey, TValue>(refToValue.Count);
+			foreach (var kvp in refToValue)
+				newTypeRefToValue[getReferenceKey((TypeDefinition)kvp.Key.TypeReference)] = kvp.Value;
+			refToValue = newTypeRefToValue;
+		}
+	}
+
+	public abstract class FieldDefinitionDictBase<TValue> {
+		Dictionary<ScopeAndTokenKey, TValue> tokenToValue = new Dictionary<ScopeAndTokenKey, TValue>();
+		Dictionary<IFieldReferenceKey, TValue> refToValue = new Dictionary<IFieldReferenceKey, TValue>();
+
+		public int Count {
+			get { return tokenToValue.Count; }
+		}
+
+		public IEnumerable<TValue> getAll() {
+			return tokenToValue.Values;
+		}
+
+		ScopeAndTokenKey getTokenKey(FieldReference fieldReference) {
+			return new ScopeAndTokenKey(fieldReference);
+		}
+
+		protected abstract IFieldReferenceKey getReferenceKey(FieldReference fieldReference);
+
+		public TValue find(FieldReference fieldReference) {
+			TValue value;
+			if (tokenToValue.TryGetValue(getTokenKey(fieldReference), out value))
+				return value;
+
+			refToValue.TryGetValue(getReferenceKey(fieldReference), out value);
+			return value;
+		}
+
+		public void add(FieldDefinition fieldDefinition, TValue value) {
+			tokenToValue[getTokenKey(fieldDefinition)] = value;
+			refToValue[getReferenceKey(fieldDefinition)] = value;
+		}
+
+		public void onTypesRenamed() {
+			var newFieldRefToDef = new Dictionary<IFieldReferenceKey, TValue>(refToValue.Count);
+			foreach (var kvp in refToValue)
+				newFieldRefToDef[getReferenceKey((FieldDefinition)kvp.Key.FieldReference)] = kvp.Value;
+			refToValue = newFieldRefToDef;
+		}
+	}
+
+	public class FieldDefinitionDict<TValue> : FieldDefinitionDictBase<TValue> {
+		protected override IFieldReferenceKey getReferenceKey(FieldReference fieldReference) {
+			return new FieldReferenceKey(fieldReference);
+		}
+	}
+
+	public class FieldDefinitionAndDeclaringTypeDict<TValue> : FieldDefinitionDictBase<TValue> {
+		protected override IFieldReferenceKey getReferenceKey(FieldReference fieldReference) {
+			return new FieldReferenceAndDeclaringTypeKey(fieldReference);
+		}
+	}
+
+	public abstract class MethodDefinitionDictBase<TValue> {
+		Dictionary<ScopeAndTokenKey, TValue> tokenToValue = new Dictionary<ScopeAndTokenKey, TValue>();
+		Dictionary<IMethodReferenceKey, TValue> refToValue = new Dictionary<IMethodReferenceKey, TValue>();
+
+		public int Count {
+			get { return tokenToValue.Count; }
+		}
+
+		public IEnumerable<TValue> getAll() {
+			return tokenToValue.Values;
+		}
+
+		ScopeAndTokenKey getTokenKey(MethodReference methodReference) {
+			return new ScopeAndTokenKey(methodReference);
+		}
+
+		protected abstract IMethodReferenceKey getReferenceKey(MethodReference methodReference);
+
+		public TValue find(MethodReference methodReference) {
+			TValue value;
+			if (tokenToValue.TryGetValue(getTokenKey(methodReference), out value))
+				return value;
+
+			refToValue.TryGetValue(getReferenceKey(methodReference), out value);
+			return value;
+		}
+
+		public void add(MethodDefinition methodDefinition, TValue value) {
+			tokenToValue[getTokenKey(methodDefinition)] = value;
+			refToValue[getReferenceKey(methodDefinition)] = value;
+		}
+
+		public void onTypesRenamed() {
+			var newFieldRefToDef = new Dictionary<IMethodReferenceKey, TValue>(refToValue.Count);
+			foreach (var kvp in refToValue)
+				newFieldRefToDef[getReferenceKey((MethodDefinition)kvp.Key.MethodReference)] = kvp.Value;
+			refToValue = newFieldRefToDef;
+		}
+	}
+
+	public class MethodDefinitionDict<TValue> : MethodDefinitionDictBase<TValue> {
+		protected override IMethodReferenceKey getReferenceKey(MethodReference methodReference) {
+			return new MethodReferenceKey(methodReference);
+		}
+	}
+
+	public class MethodDefinitionAndDeclaringTypeDict<TValue> : MethodDefinitionDictBase<TValue> {
+		protected override IMethodReferenceKey getReferenceKey(MethodReference methodReference) {
+			return new MethodReferenceAndDeclaringTypeKey(methodReference);
+		}
+	}
+
+	public abstract class PropertyDefinitionDictBase<TValue> {
+		Dictionary<ScopeAndTokenKey, TValue> tokenToValue = new Dictionary<ScopeAndTokenKey, TValue>();
+		Dictionary<IPropertyReferenceKey, TValue> refToValue = new Dictionary<IPropertyReferenceKey, TValue>();
+
+		public int Count {
+			get { return tokenToValue.Count; }
+		}
+
+		public IEnumerable<TValue> getAll() {
+			return tokenToValue.Values;
+		}
+
+		ScopeAndTokenKey getTokenKey(PropertyReference propertyReference) {
+			return new ScopeAndTokenKey(propertyReference);
+		}
+
+		protected abstract IPropertyReferenceKey getReferenceKey(PropertyReference propertyReference);
+
+		public TValue find(PropertyReference propertyReference) {
+			TValue value;
+			if (tokenToValue.TryGetValue(getTokenKey(propertyReference), out value))
+				return value;
+
+			refToValue.TryGetValue(getReferenceKey(propertyReference), out value);
+			return value;
+		}
+
+		public void add(PropertyDefinition propertyDefinition, TValue value) {
+			tokenToValue[getTokenKey(propertyDefinition)] = value;
+			refToValue[getReferenceKey(propertyDefinition)] = value;
+		}
+
+		public void onTypesRenamed() {
+			var newFieldRefToDef = new Dictionary<IPropertyReferenceKey, TValue>(refToValue.Count);
+			foreach (var kvp in refToValue)
+				newFieldRefToDef[getReferenceKey((PropertyDefinition)kvp.Key.PropertyReference)] = kvp.Value;
+			refToValue = newFieldRefToDef;
+		}
+	}
+
+	public class PropertyDefinitionDict<TValue> : PropertyDefinitionDictBase<TValue> {
+		protected override IPropertyReferenceKey getReferenceKey(PropertyReference propertyReference) {
+			return new PropertyReferenceKey(propertyReference);
+		}
+	}
+
+	public class PropertyDefinitionAndDeclaringTypeDict<TValue> : PropertyDefinitionDictBase<TValue> {
+		protected override IPropertyReferenceKey getReferenceKey(PropertyReference propertyReference) {
+			return new PropertyReferenceAndDeclaringTypeKey(propertyReference);
+		}
+	}
+
+	public abstract class EventDefinitionDictBase<TValue> {
+		Dictionary<ScopeAndTokenKey, TValue> tokenToValue = new Dictionary<ScopeAndTokenKey, TValue>();
+		Dictionary<IEventReferenceKey, TValue> refToValue = new Dictionary<IEventReferenceKey, TValue>();
+
+		public int Count {
+			get { return tokenToValue.Count; }
+		}
+
+		public IEnumerable<TValue> getAll() {
+			return tokenToValue.Values;
+		}
+
+		ScopeAndTokenKey getTokenKey(EventReference eventReference) {
+			return new ScopeAndTokenKey(eventReference);
+		}
+
+		protected abstract IEventReferenceKey getReferenceKey(EventReference eventReference);
+
+		public TValue find(EventReference eventReference) {
+			TValue value;
+			if (tokenToValue.TryGetValue(getTokenKey(eventReference), out value))
+				return value;
+
+			refToValue.TryGetValue(getReferenceKey(eventReference), out value);
+			return value;
+		}
+
+		public void add(EventDefinition eventDefinition, TValue value) {
+			tokenToValue[getTokenKey(eventDefinition)] = value;
+			refToValue[getReferenceKey(eventDefinition)] = value;
+		}
+
+		public void onTypesRenamed() {
+			var newFieldRefToDef = new Dictionary<IEventReferenceKey, TValue>(refToValue.Count);
+			foreach (var kvp in refToValue)
+				newFieldRefToDef[getReferenceKey((EventDefinition)kvp.Key.EventReference)] = kvp.Value;
+			refToValue = newFieldRefToDef;
+		}
+	}
+
+	public class EventDefinitionDict<TValue> : EventDefinitionDictBase<TValue> {
+		protected override IEventReferenceKey getReferenceKey(EventReference eventReference) {
+			return new EventReferenceKey(eventReference);
+		}
+	}
+
+	public class EventDefinitionAndDeclaringTypeDict<TValue> : EventDefinitionDictBase<TValue> {
+		protected override IEventReferenceKey getReferenceKey(EventReference eventReference) {
+			return new EventReferenceAndDeclaringTypeKey(eventReference);
+		}
+	}
+
 	public class ScopeAndTokenKey {
 		readonly IMetadataScope scope;
 		readonly int token;
@@ -144,7 +394,23 @@ namespace de4dot.blocks {
 		}
 	}
 
-	public class FieldReferenceKey {
+	public interface IFieldReferenceKey {
+		FieldReference FieldReference { get; }
+	}
+
+	public interface IPropertyReferenceKey {
+		PropertyReference PropertyReference { get; }
+	}
+
+	public interface IEventReferenceKey {
+		EventReference EventReference { get; }
+	}
+
+	public interface IMethodReferenceKey {
+		MethodReference MethodReference { get; }
+	}
+
+	public class FieldReferenceKey : IFieldReferenceKey {
 		readonly FieldReference fieldRef;
 
 		public FieldReference FieldReference {
@@ -171,7 +437,7 @@ namespace de4dot.blocks {
 		}
 	}
 
-	public class PropertyReferenceKey {
+	public class PropertyReferenceKey : IPropertyReferenceKey {
 		readonly PropertyReference propRef;
 
 		public PropertyReference PropertyReference {
@@ -198,7 +464,7 @@ namespace de4dot.blocks {
 		}
 	}
 
-	public class EventReferenceKey {
+	public class EventReferenceKey : IEventReferenceKey {
 		readonly EventReference eventRef;
 
 		public EventReference EventReference {
@@ -225,7 +491,7 @@ namespace de4dot.blocks {
 		}
 	}
 
-	public class MethodReferenceKey {
+	public class MethodReferenceKey : IMethodReferenceKey {
 		readonly MethodReference methodRef;
 
 		public MethodReference MethodReference {
@@ -252,7 +518,7 @@ namespace de4dot.blocks {
 		}
 	}
 
-	public class FieldReferenceAndDeclaringTypeKey {
+	public class FieldReferenceAndDeclaringTypeKey : IFieldReferenceKey {
 		readonly FieldReference fieldRef;
 
 		public FieldReference FieldReference {
@@ -281,7 +547,65 @@ namespace de4dot.blocks {
 		}
 	}
 
-	public class MethodReferenceAndDeclaringTypeKey {
+	public class PropertyReferenceAndDeclaringTypeKey : IPropertyReferenceKey {
+		readonly PropertyReference propRef;
+
+		public PropertyReference PropertyReference {
+			get { return propRef; }
+		}
+
+		public PropertyReferenceAndDeclaringTypeKey(PropertyReference propRef) {
+			this.propRef = propRef;
+		}
+
+		public override int GetHashCode() {
+			return MemberReferenceHelper.propertyReferenceHashCode(propRef) +
+					MemberReferenceHelper.typeHashCode(propRef.DeclaringType);
+		}
+
+		public override bool Equals(object obj) {
+			var other = obj as PropertyReferenceAndDeclaringTypeKey;
+			if (other == null)
+				return false;
+			return MemberReferenceHelper.comparePropertyReference(propRef, other.propRef) &&
+					MemberReferenceHelper.compareTypes(propRef.DeclaringType, other.propRef.DeclaringType);
+		}
+
+		public override string ToString() {
+			return propRef.ToString();
+		}
+	}
+
+	public class EventReferenceAndDeclaringTypeKey : IEventReferenceKey {
+		readonly EventReference eventRef;
+
+		public EventReference EventReference {
+			get { return eventRef; }
+		}
+
+		public EventReferenceAndDeclaringTypeKey(EventReference eventRef) {
+			this.eventRef = eventRef;
+		}
+
+		public override int GetHashCode() {
+			return MemberReferenceHelper.eventReferenceHashCode(eventRef) +
+					MemberReferenceHelper.typeHashCode(eventRef.DeclaringType);
+		}
+
+		public override bool Equals(object obj) {
+			var other = obj as EventReferenceAndDeclaringTypeKey;
+			if (other == null)
+				return false;
+			return MemberReferenceHelper.compareEventReference(eventRef, other.eventRef) &&
+					MemberReferenceHelper.compareTypes(eventRef.DeclaringType, other.eventRef.DeclaringType);
+		}
+
+		public override string ToString() {
+			return eventRef.ToString();
+		}
+	}
+
+	public class MethodReferenceAndDeclaringTypeKey : IMethodReferenceKey {
 		readonly MethodReference methodRef;
 
 		public MethodReference MethodReference {

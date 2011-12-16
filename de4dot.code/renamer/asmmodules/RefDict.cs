@@ -32,15 +32,14 @@ namespace de4dot.code.renamer.asmmodules {
 	}
 
 	class TypeDefDict : RefDict<TypeDef, TypeReference> {
-		Dictionary<ScopeAndTokenKey, TypeDef> tokenToTypeDef = new Dictionary<ScopeAndTokenKey, TypeDef>();
-		Dictionary<TypeReferenceKey, TypeDef> typeRefToDef = new Dictionary<TypeReferenceKey, TypeDef>();
+		TypeDefinitionDict<TypeDef> typeToDef = new TypeDefinitionDict<TypeDef>();
 
 		public int Count {
-			get { return tokenToTypeDef.Count; }
+			get { return typeToDef.Count; }
 		}
 
 		public IEnumerable<TypeDef> getAll() {
-			return tokenToTypeDef.Values;
+			return typeToDef.getAll();
 		}
 
 		public IEnumerable<TypeDef> getSorted() {
@@ -50,37 +49,27 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 
 		public TypeDef find(TypeReference typeReference) {
-			TypeDef typeDef;
-			if (tokenToTypeDef.TryGetValue(new ScopeAndTokenKey(typeReference), out typeDef))
-				return typeDef;
-
-			typeRefToDef.TryGetValue(new TypeReferenceKey(typeReference), out typeDef);
-			return typeDef;
+			return typeToDef.find(typeReference);
 		}
 
 		public void add(TypeDef typeDef) {
-			tokenToTypeDef[new ScopeAndTokenKey(typeDef.TypeDefinition)] = typeDef;
-			typeRefToDef[new TypeReferenceKey(typeDef.TypeDefinition)] = typeDef;
+			typeToDef.add(typeDef.TypeDefinition, typeDef);
 		}
 
 		public void onTypesRenamed() {
-			var all = new List<TypeDef>(typeRefToDef.Values);
-			typeRefToDef.Clear();
-			foreach (var typeDef in all)
-				typeRefToDef[new TypeReferenceKey(typeDef.TypeDefinition)] = typeDef;
+			typeToDef.onTypesRenamed();
 		}
 	}
 
 	class FieldDefDict : RefDict<FieldDef, FieldReference> {
-		Dictionary<ScopeAndTokenKey, FieldDef> tokenToFieldDef = new Dictionary<ScopeAndTokenKey, FieldDef>();
-		Dictionary<FieldReferenceKey, FieldDef> fieldRefToDef = new Dictionary<FieldReferenceKey, FieldDef>();
+		FieldDefinitionDict<FieldDef> fieldToDef = new FieldDefinitionDict<FieldDef>();
 
 		public int Count {
-			get { return tokenToFieldDef.Count; }
+			get { return fieldToDef.Count; }
 		}
 
 		public IEnumerable<FieldDef> getAll() {
-			return tokenToFieldDef.Values;
+			return fieldToDef.getAll();
 		}
 
 		public IEnumerable<FieldDef> getSorted() {
@@ -90,37 +79,27 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 
 		public FieldDef find(FieldReference fieldReference) {
-			FieldDef fieldDef;
-			if (tokenToFieldDef.TryGetValue(new ScopeAndTokenKey(fieldReference), out fieldDef))
-				return fieldDef;
-
-			fieldRefToDef.TryGetValue(new FieldReferenceKey(fieldReference), out fieldDef);
-			return fieldDef;
+			return fieldToDef.find(fieldReference);
 		}
 
 		public void add(FieldDef fieldDef) {
-			tokenToFieldDef[new ScopeAndTokenKey(fieldDef.FieldDefinition)] = fieldDef;
-			fieldRefToDef[new FieldReferenceKey(fieldDef.FieldDefinition)] = fieldDef;
+			fieldToDef.add(fieldDef.FieldDefinition, fieldDef);
 		}
 
 		public void onTypesRenamed() {
-			var all = new List<FieldDef>(fieldRefToDef.Values);
-			fieldRefToDef.Clear();
-			foreach (var fieldDef in all)
-				fieldRefToDef[new FieldReferenceKey(fieldDef.FieldDefinition)] = fieldDef;
+			fieldToDef.onTypesRenamed();
 		}
 	}
 
 	class MethodDefDict : RefDict<MethodDef, MethodReference> {
-		Dictionary<ScopeAndTokenKey, MethodDef> tokenToMethodDef = new Dictionary<ScopeAndTokenKey, MethodDef>();
-		Dictionary<MethodReferenceKey, MethodDef> methodRefToDef = new Dictionary<MethodReferenceKey, MethodDef>();
+		MethodDefinitionDict<MethodDef> methodToDef = new MethodDefinitionDict<MethodDef>();
 
 		public int Count {
-			get { return tokenToMethodDef.Count; }
+			get { return methodToDef.Count; }
 		}
 
 		public IEnumerable<MethodDef> getAll() {
-			return tokenToMethodDef.Values;
+			return methodToDef.getAll();
 		}
 
 		public IEnumerable<MethodDef> getSorted() {
@@ -130,37 +109,27 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 
 		public MethodDef find(MethodReference methodReference) {
-			MethodDef methodDef;
-			if (tokenToMethodDef.TryGetValue(new ScopeAndTokenKey(methodReference), out methodDef))
-				return methodDef;
-
-			methodRefToDef.TryGetValue(new MethodReferenceKey(methodReference), out methodDef);
-			return methodDef;
+			return methodToDef.find(methodReference);
 		}
 
 		public void add(MethodDef methodDef) {
-			tokenToMethodDef[new ScopeAndTokenKey(methodDef.MethodDefinition)] = methodDef;
-			methodRefToDef[new MethodReferenceKey(methodDef.MethodDefinition)] = methodDef;
+			methodToDef.add(methodDef.MethodDefinition, methodDef);
 		}
 
 		public void onTypesRenamed() {
-			var all = new List<MethodDef>(methodRefToDef.Values);
-			methodRefToDef.Clear();
-			foreach (var methodDef in all)
-				methodRefToDef[new MethodReferenceKey(methodDef.MethodDefinition)] = methodDef;
+			methodToDef.onTypesRenamed();
 		}
 	}
 
 	class PropertyDefDict : RefDict<PropertyDef, PropertyReference> {
-		Dictionary<ScopeAndTokenKey, PropertyDef> tokenToPropDef = new Dictionary<ScopeAndTokenKey, PropertyDef>();
-		Dictionary<PropertyReferenceKey, PropertyDef> propRefToDef = new Dictionary<PropertyReferenceKey, PropertyDef>();
+		PropertyDefinitionDict<PropertyDef> propToDef = new PropertyDefinitionDict<PropertyDef>();
 
 		public int Count {
-			get { return tokenToPropDef.Count; }
+			get { return propToDef.Count; }
 		}
 
 		public IEnumerable<PropertyDef> getAll() {
-			return tokenToPropDef.Values;
+			return propToDef.getAll();
 		}
 
 		public IEnumerable<PropertyDef> getSorted() {
@@ -170,37 +139,27 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 
 		public PropertyDef find(PropertyReference propertyReference) {
-			PropertyDef propDef;
-			if (tokenToPropDef.TryGetValue(new ScopeAndTokenKey(propertyReference), out propDef))
-				return propDef;
-
-			propRefToDef.TryGetValue(new PropertyReferenceKey(propertyReference), out propDef);
-			return propDef;
+			return propToDef.find(propertyReference);
 		}
 
 		public void add(PropertyDef propDef) {
-			tokenToPropDef[new ScopeAndTokenKey(propDef.PropertyDefinition)] = propDef;
-			propRefToDef[new PropertyReferenceKey(propDef.PropertyDefinition)] = propDef;
+			propToDef.add(propDef.PropertyDefinition, propDef);
 		}
 
 		public void onTypesRenamed() {
-			var all = new List<PropertyDef>(propRefToDef.Values);
-			propRefToDef.Clear();
-			foreach (var propDef in all)
-				propRefToDef[new PropertyReferenceKey(propDef.PropertyDefinition)] = propDef;
+			propToDef.onTypesRenamed();
 		}
 	}
 
 	class EventDefDict : RefDict<EventDef, EventReference> {
-		Dictionary<ScopeAndTokenKey, EventDef> tokenToEventDef = new Dictionary<ScopeAndTokenKey, EventDef>();
-		Dictionary<EventReferenceKey, EventDef> eventRefToDef = new Dictionary<EventReferenceKey, EventDef>();
+		EventDefinitionDict<EventDef> eventToDef = new EventDefinitionDict<EventDef>();
 
 		public int Count {
-			get { return tokenToEventDef.Count; }
+			get { return eventToDef.Count; }
 		}
 
 		public IEnumerable<EventDef> getAll() {
-			return tokenToEventDef.Values;
+			return eventToDef.getAll();
 		}
 
 		public IEnumerable<EventDef> getSorted() {
@@ -210,24 +169,15 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 
 		public EventDef find(EventReference eventReference) {
-			EventDef eventDef;
-			if (tokenToEventDef.TryGetValue(new ScopeAndTokenKey(eventReference), out eventDef))
-				return eventDef;
-
-			eventRefToDef.TryGetValue(new EventReferenceKey(eventReference), out eventDef);
-			return eventDef;
+			return eventToDef.find(eventReference);
 		}
 
 		public void add(EventDef eventDef) {
-			tokenToEventDef[new ScopeAndTokenKey(eventDef.EventDefinition)] = eventDef;
-			eventRefToDef[new EventReferenceKey(eventDef.EventDefinition)] = eventDef;
+			eventToDef.add(eventDef.EventDefinition, eventDef);
 		}
 
 		public void onTypesRenamed() {
-			var all = new List<EventDef>(eventRefToDef.Values);
-			eventRefToDef.Clear();
-			foreach (var eventDef in all)
-				eventRefToDef[new EventReferenceKey(eventDef.EventDefinition)] = eventDef;
+			eventToDef.onTypesRenamed();
 		}
 	}
 }

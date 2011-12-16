@@ -27,7 +27,7 @@ namespace AssemblyData.methodsrewriter {
 	class MModule {
 		public Module module;
 		public ModuleDefinition moduleDefinition;
-		Dictionary<TypeReferenceKey, MType> typeReferenceToType = new Dictionary<TypeReferenceKey, MType>();
+		TypeDefinitionDict<MType> typeReferenceToType = new TypeDefinitionDict<MType>();
 		Dictionary<int, MType> tokenToType = new Dictionary<int, MType>();
 		Dictionary<int, MMethod> tokenToGlobalMethod;
 		Dictionary<int, MField> tokenToGlobalField;
@@ -52,14 +52,12 @@ namespace AssemblyData.methodsrewriter {
 			foreach (var token in tmpTokenToType.Keys) {
 				var mtype = new MType(tmpTokenToType[token], tmpTokenToTypeDefinition[token]);
 				tokenToType[token] = mtype;
-				typeReferenceToType[new TypeReferenceKey(mtype.typeDefinition)] = mtype;
+				typeReferenceToType.add(mtype.typeDefinition, mtype);
 			}
 		}
 
 		public MType getType(TypeReference typeReference) {
-			MType type;
-			typeReferenceToType.TryGetValue(new TypeReferenceKey(typeReference), out type);
-			return type;
+			return typeReferenceToType.find(typeReference);
 		}
 
 		public MMethod getMethod(MethodReference methodReference) {

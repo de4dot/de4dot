@@ -25,7 +25,7 @@ using Mono.Cecil.Cil;
 namespace de4dot.blocks {
 	class TypeCache {
 		ModuleDefinition module;
-		Dictionary<TypeReferenceKey, TypeDefinition> typeRefToDef = new Dictionary<TypeReferenceKey, TypeDefinition>();
+		TypeDefinitionDict<TypeDefinition> typeRefToDef = new TypeDefinitionDict<TypeDefinition>();
 
 		public TypeCache(ModuleDefinition module) {
 			this.module = module;
@@ -33,16 +33,12 @@ namespace de4dot.blocks {
 		}
 
 		void init() {
-			foreach (var type in module.GetTypes()) {
-				var key = new TypeReferenceKey(type);
-				typeRefToDef[key] = type;
-			}
+			foreach (var type in module.GetTypes())
+				typeRefToDef.add(type, type);
 		}
 
 		public TypeDefinition lookup(TypeReference typeReference) {
-			TypeDefinition typeDefinition;
-			typeRefToDef.TryGetValue(new TypeReferenceKey(typeReference), out typeDefinition);
-			return typeDefinition;
+			return typeRefToDef.find(typeReference);
 		}
 	}
 

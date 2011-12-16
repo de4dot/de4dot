@@ -28,9 +28,9 @@ namespace AssemblyData.methodsrewriter {
 		public Type type;
 		public TypeDefinition typeDefinition;
 		Dictionary<int, MMethod> tokenToMethod;
-		Dictionary<MethodReferenceKey, MMethod> methodReferenceToMethod;
+		MethodDefinitionDict<MMethod> methodReferenceToMethod;
 		Dictionary<int, MField> tokenToField;
-		Dictionary<FieldReferenceKey, MField> fieldReferenceToField;
+		FieldDefinitionDict<MField> fieldReferenceToField;
 
 		public MType(Type type, TypeDefinition typeDefinition) {
 			this.type = type;
@@ -39,16 +39,12 @@ namespace AssemblyData.methodsrewriter {
 
 		public MMethod getMethod(MethodReference methodReference) {
 			initMethods();
-			MMethod method;
-			methodReferenceToMethod.TryGetValue(new MethodReferenceKey(methodReference), out method);
-			return method;
+			return methodReferenceToMethod.find(methodReference);
 		}
 
 		public MField getField(FieldReference fieldReference) {
 			initFields();
-			MField field;
-			fieldReferenceToField.TryGetValue(new FieldReferenceKey(fieldReference), out field);
-			return field;
+			return fieldReferenceToField.find(fieldReference);
 		}
 
 		public MMethod getMethod(int token) {
@@ -65,7 +61,7 @@ namespace AssemblyData.methodsrewriter {
 			if (tokenToMethod != null)
 				return;
 			tokenToMethod = new Dictionary<int, MMethod>(typeDefinition.Methods.Count);
-			methodReferenceToMethod = new Dictionary<MethodReferenceKey, MMethod>();
+			methodReferenceToMethod = new MethodDefinitionDict<MMethod>();
 
 			var tmpTokenToMethod = new Dictionary<int, MethodBase>();
 			var flags = BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
@@ -75,7 +71,7 @@ namespace AssemblyData.methodsrewriter {
 				var token = m.MetadataToken.ToInt32();
 				var method = new MMethod(tmpTokenToMethod[token], m);
 				tokenToMethod[token] = method;
-				methodReferenceToMethod[new MethodReferenceKey(method.methodDefinition)] = method;
+				methodReferenceToMethod.add(method.methodDefinition, method);
 			}
 		}
 
@@ -83,7 +79,7 @@ namespace AssemblyData.methodsrewriter {
 			if (tokenToField != null)
 				return;
 			tokenToField = new Dictionary<int, MField>(typeDefinition.Fields.Count);
-			fieldReferenceToField = new Dictionary<FieldReferenceKey, MField>();
+			fieldReferenceToField = new FieldDefinitionDict<MField>();
 
 			var tmpTokenToField = new Dictionary<int, FieldInfo>();
 			var flags = BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
@@ -93,7 +89,7 @@ namespace AssemblyData.methodsrewriter {
 				var token = f.MetadataToken.ToInt32();
 				var field = new MField(tmpTokenToField[token], f);
 				tokenToField[token] = field;
-				fieldReferenceToField[new FieldReferenceKey(field.fieldDefinition)] = field;
+				fieldReferenceToField.add(field.fieldDefinition, field);
 			}
 		}
 
