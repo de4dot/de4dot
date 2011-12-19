@@ -517,10 +517,7 @@ namespace de4dot.code.renamer {
 			var checker = NameChecker;
 
 			foreach (var propDef in type.AllProperties) {
-				var setter = propDef.PropertyDefinition.SetMethod;
-				if (setter == null)
-					continue;
-				var setterDef = type.find(setter);
+				var setterDef = propDef.SetMethod;
 				if (setterDef == null)
 					continue;
 
