@@ -637,6 +637,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor {
 					case Code.Callvirt:
 					case Code.Newobj:
 					case Code.Ldtoken:
+					case Code.Ldftn:
 						break;
 					default:
 						continue;
