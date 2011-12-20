@@ -13,6 +13,14 @@ using System;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor {
 	static class QuickLZ {
+		static int sig = 0x5A4C4351;	// "QCLZ"
+
+		public static bool isCompressed(byte[] data) {
+			if (data.Length < 4)
+				return false;
+			return BitConverter.ToInt32(data, 0) == sig;
+		}
+
 		static uint read32(byte[] data, int index) {
 			return BitConverter.ToUInt32(data, index);
 		}
@@ -25,19 +33,17 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor {
 
 		static int[] indexInc = new int[] { 4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0 };
 		public static byte[] decompress(byte[] inData) {
-			const int sig = 0x5A4C4351;	// "QCLZ"
-
 			int mode = BitConverter.ToInt32(inData, 4);
 			int compressedLength = BitConverter.ToInt32(inData, 8);
 			int decompressedLength = BitConverter.ToInt32(inData, 12);
-			bool isCompressed = BitConverter.ToInt32(inData, 16) == 1;
+			bool isDataCompressed = BitConverter.ToInt32(inData, 16) == 1;
 			int headerLength = 32;
 			if (BitConverter.ToInt32(inData, 0) != sig || BitConverter.ToInt32(inData, compressedLength - 4) != sig)
 				throw new ApplicationException("No QCLZ sig");
 
 			byte[] outData = new byte[decompressedLength];
 
-			if (!isCompressed) {
+			if (!isDataCompressed) {
 				copy(inData, headerLength, outData, 0, decompressedLength);
 				return outData;
 			}
