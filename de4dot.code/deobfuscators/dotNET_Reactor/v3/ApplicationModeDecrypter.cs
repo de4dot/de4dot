@@ -1,0 +1,74 @@
+﻿/*
+    Copyright (C) 2011 de4dot@gmail.com
+
+    This file is part of de4dot.
+
+    de4dot is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    de4dot is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+using Mono.Cecil;
+using de4dot.blocks;
+using de4dot.blocks.cflow;
+
+namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
+	class ApplicationModeDecrypter {
+		ModuleDefinition module;
+		AssemblyResolver assemblyResolver;
+		MemoryPatcher memoryPatcher;
+
+		public byte[] AssemblyKey {
+			get { return assemblyResolver.Key; }
+		}
+
+		public byte[] AssemblyIv {
+			get { return assemblyResolver.Iv; }
+		}
+
+		public MemoryPatcher MemoryPatcher {
+			get { return memoryPatcher; }
+		}
+
+		public bool Detected {
+			get { return assemblyResolver != null; }
+		}
+
+		public ApplicationModeDecrypter(ModuleDefinition module) {
+			this.module = module;
+			find();
+		}
+
+		void find() {
+			var cflowDeobfuscator = new CflowDeobfuscator() {
+				InlineMethods = true,
+				InlineInstanceMethods = true,
+			};
+
+			foreach (var type in module.Types) {
+				if (DotNetUtils.getPInvokeMethod(type, "kernel32", "CloseHandle") == null)
+					continue;
+
+				var resolver = new AssemblyResolver(type, cflowDeobfuscator);
+				if (!resolver.Detected)
+					continue;
+				var patcher = new MemoryPatcher(type, cflowDeobfuscator);
+				if (!patcher.Detected)
+					continue;
+
+				assemblyResolver = resolver;
+				memoryPatcher = patcher;
+				return;
+			}
+		}
+	}
+}

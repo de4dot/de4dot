@@ -77,6 +77,8 @@
     <Compile Include="deobfuscators\DeobfuscatorInfoBase.cs" />
     <Compile Include="deobfuscators\DeobUtils.cs" />
     <Compile Include="deobfuscators\Dotfuscator\Deobfuscator.cs" />
+    <Compile Include="deobfuscators\dotNET_Reactor\v3\ApplicationModeDecrypter.cs" />
+    <Compile Include="deobfuscators\dotNET_Reactor\v3\ApplicationModeUnpacker.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\AssemblyResolver.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\BooleanDecrypter.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\BoolValueInliner.cs" />
@@ -91,6 +93,9 @@
     <Compile Include="deobfuscators\dotNET_Reactor\ResourceResolver.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\StringDecrypter.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\AntiStrongName.cs" />
+    <Compile Include="deobfuscators\dotNET_Reactor\v3\AssemblyResolver.cs" />
+    <Compile Include="deobfuscators\dotNET_Reactor\v3\DecryptMethod.cs" />
+    <Compile Include="deobfuscators\dotNET_Reactor\v3\MemoryPatcher.cs" />
     <Compile Include="deobfuscators\Eazfuscator\Deobfuscator.cs" />
     <Compile Include="deobfuscators\ExceptionLoggerRemover.cs" />
     <Compile Include="deobfuscators\IDeobfuscatedFile.cs" />
@@ -119,6 +124,7 @@
     <Compile Include="deobfuscators\SmartAssembly\TamperProtectionRemover.cs" />
     <Compile Include="deobfuscators\TypesRestorer.cs" />
     <Compile Include="deobfuscators\Unknown\Deobfuscator.cs" />
+    <Compile Include="deobfuscators\UnpackedFile.cs" />
     <Compile Include="deobfuscators\Xenocode\Deobfuscator.cs" />
     <Compile Include="deobfuscators\Xenocode\StringDecrypter.cs" />
     <Compile Include="IObfuscatedFile.cs" />
