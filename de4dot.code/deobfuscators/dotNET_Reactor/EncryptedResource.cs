@@ -69,7 +69,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor {
 			return DeobUtils.lookup(module, def, errorMessage);
 		}
 
-		public bool couldBeResourceDecrypter(MethodDefinition method, IList<string> additionalTypes, bool checkResource = true) {
+		public bool couldBeResourceDecrypter(MethodDefinition method, IEnumerable<string> additionalTypes, bool checkResource = true) {
 			if (!method.IsStatic)
 				return false;
 			if (method.Body == null)
@@ -106,10 +106,10 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor {
 			if (encryptedDataResource == null)
 				return;
 
-			key = ArrayFinder.getInitializedArray(resourceDecrypterMethod, 32);
+			key = ArrayFinder.getInitializedByteArray(resourceDecrypterMethod, 32);
 			if (key == null)
 				throw new ApplicationException("Could not find resource decrypter key");
-			iv = ArrayFinder.getInitializedArray(resourceDecrypterMethod, 16);
+			iv = ArrayFinder.getInitializedByteArray(resourceDecrypterMethod, 16);
 			if (iv == null)
 				throw new ApplicationException("Could not find resource decrypter IV");
 			if (usesPublicKeyToken()) {

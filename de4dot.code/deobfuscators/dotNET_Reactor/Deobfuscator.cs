@@ -112,6 +112,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor {
 		ResourceResolver resourceResolver;
 		AntiStrongName antiStrongname;
 		EmptyClass emptyClass;
+		List<UnpackedFile> unpackedFiles = new List<UnpackedFile>();
 
 		bool unpackedNativeFile = false;
 		bool canRemoveDecrypterType = true;
@@ -157,13 +158,28 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor {
 		}
 
 		public override byte[] unpackNativeFile(PeImage peImage) {
-			var data = new NativeImageUnpacker(peImage).unpack();
+			var data = unpack(peImage);
 			if (data == null)
 				return null;
 
 			unpackedNativeFile = true;
 			ModuleBytes = data;
 			return data;
+		}
+
+		byte[] unpack(PeImage peImage) {
+			var data = new NativeImageUnpacker(peImage).unpack();
+			if (data != null)
+				return data;
+
+			var unpackerv3 = new v3.ApplicationModeUnpacker(peImage);
+			data = unpackerv3.unpack();
+			if (data != null) {
+				unpackedFiles.AddRange(unpackerv3.EmbeddedAssemblies);
+				return data;
+			}
+
+			return null;
 		}
 
 		public override void init(ModuleDefinition module) {
@@ -506,7 +522,14 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor {
 			if (options.InlineMethods)
 				addTypeToBeRemoved(emptyClass.Type, "Empty class");
 
+			dumpUnpackedFiles();
+
 			startedDeobfuscating = true;
+		}
+
+		void dumpUnpackedFiles() {
+			foreach (var unpackedFile in unpackedFiles)
+				DeobfuscatedFile.createAssemblyFile(unpackedFile.data, Path.GetFileNameWithoutExtension(unpackedFile.filename), Path.GetExtension(unpackedFile.filename));
 		}
 
 		void addEntryPointCallToBeRemoved(MethodReference methodToBeRemoved) {
