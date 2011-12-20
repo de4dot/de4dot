@@ -33,6 +33,7 @@ namespace de4dot.blocks.cflow {
 		MethodCallInliner methodCallInliner = new MethodCallInliner();
 
 		public bool InlineMethods { get; set; }
+		public bool InlineInstanceMethods { get; set; }
 
 		public void init(Blocks blocks) {
 			this.blocks = blocks;
@@ -54,7 +55,7 @@ namespace de4dot.blocks.cflow {
 
 				if (InlineMethods) {
 					foreach (var block in allBlocks) {
-						methodCallInliner.init(blocks, block);
+						methodCallInliner.init(blocks, block, InlineInstanceMethods);
 						changed |= methodCallInliner.deobfuscate();
 					}
 				}

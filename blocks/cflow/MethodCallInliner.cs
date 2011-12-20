@@ -29,11 +29,13 @@ namespace de4dot.blocks.cflow {
 		Blocks blocks;
 		Block block;
 		int iteration;
+		bool inlineInstanceMethods;
 
-		public void init(Blocks blocks, Block block) {
+		public void init(Blocks blocks, Block block, bool inlineInstanceMethods) {
 			this.blocks = blocks;
 			this.block = block;
 			this.iteration = 0;
+			this.inlineInstanceMethods = inlineInstanceMethods;
 		}
 
 		public bool deobfuscate() {
@@ -50,6 +52,14 @@ namespace de4dot.blocks.cflow {
 			return changed;
 		}
 
+		bool canInline(MethodDefinition method) {
+			if (method.IsStatic)
+				return true;
+			if (method.IsVirtual)
+				return false;
+			return inlineInstanceMethods;
+		}
+
 		bool inlineMethod(Instruction callInstr, int instrIndex) {
 			var method = callInstr.Operand as MethodDefinition;
 			if (method == null)
@@ -57,7 +67,7 @@ namespace de4dot.blocks.cflow {
 			if (MemberReferenceHelper.compareMethodReferenceAndDeclaringType(method, blocks.Method))
 				return false;
 
-			if (!method.IsStatic)
+			if (!canInline(method))
 				return false;
 			var body = method.Body;
 			if (body == null)
