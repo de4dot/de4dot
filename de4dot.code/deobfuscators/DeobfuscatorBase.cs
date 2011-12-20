@@ -304,6 +304,11 @@ namespace de4dot.code.deobfuscators {
 			resourcesToRemove.Add(new RemoveInfo<Resource>(resource, reason));
 		}
 
+		protected void addModuleReferencesToBeRemoved(IEnumerable<ModuleReference> modrefs, string reason) {
+			foreach (var modref in modrefs)
+				addModuleReferenceToBeRemoved(modref, reason);
+		}
+
 		protected void addModuleReferenceToBeRemoved(ModuleReference modref, string reason) {
 			modrefsToRemove.Add(new RemoveInfo<ModuleReference>(modref, reason));
 		}

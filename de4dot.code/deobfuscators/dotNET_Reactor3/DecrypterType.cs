@@ -31,6 +31,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor3 {
 		MethodDefinition stringDecrypter1;
 		MethodDefinition stringDecrypter2;
 		List<MethodDefinition> initMethods = new List<MethodDefinition>();
+		List<ModuleReference> moduleReferences = new List<ModuleReference>();
 
 		public bool Detected {
 			get { return decrypterType != null; }
@@ -50,6 +51,10 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor3 {
 
 		public IEnumerable<MethodDefinition> InitMethods {
 			get { return initMethods; }
+		}
+
+		public List<ModuleReference> ModuleReferences {
+			get { return moduleReferences; }
 		}
 
 		public IEnumerable<MethodDefinition> StringDecrypters {
@@ -72,6 +77,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor3 {
 			this.stringDecrypter2 = lookup(oldOne.stringDecrypter2, "Could not find stringDecrypter2");
 			foreach (var method in oldOne.initMethods)
 				initMethods.Add(lookup(method, "Could not find initMethod"));
+			updateModuleReferences();
 		}
 
 		T lookup<T>(T def, string errorMessage) where T : MemberReference {
@@ -90,7 +96,21 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor3 {
 					if (DotNetUtils.isMethod(method, "System.Void", "()"))
 						initMethods.Add(method);
 				}
+				updateModuleReferences();
 				return;
+			}
+		}
+
+		void updateModuleReferences() {
+			foreach (var method in decrypterType.Methods) {
+				if (method.PInvokeInfo != null) {
+					switch (method.PInvokeInfo.EntryPoint) {
+					case "nr_nli":
+					case "nr_startup":
+						moduleReferences.Add(method.PInvokeInfo.Module);
+						break;
+					}
+				}
 			}
 		}
 

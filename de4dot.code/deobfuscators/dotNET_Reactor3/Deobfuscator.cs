@@ -280,8 +280,10 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor3 {
 			if (options.RestoreTypes)
 				new TypesRestorer(module).deobfuscate();
 
-			if (canRemoveDecrypterType && !isTypeCalled(decrypterType.Type))
+			if (canRemoveDecrypterType && !isTypeCalled(decrypterType.Type)) {
 				addTypeToBeRemoved(decrypterType.Type, "Decrypter type");
+				addModuleReferencesToBeRemoved(decrypterType.ModuleReferences, "Native lib module references");
+			}
 
 			base.deobfuscateEnd();
 		}
