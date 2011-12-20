@@ -35,6 +35,10 @@ namespace de4dot.code.PE {
 			get { return reader; }
 		}
 
+		public uint ImageLength {
+			get { return (uint)reader.BaseStream.Length; }
+		}
+
 		internal Cor20Header Cor20Header {
 			get { return cor20Header; }
 		}
@@ -123,9 +127,8 @@ namespace de4dot.code.PE {
 			return intersect(offset, length, location.Offset, location.Length);
 		}
 
-		public bool dotNetSafeWrite(uint rva, byte[] data) {
+		public bool dotNetSafeWriteOffset(uint offset, byte[] data) {
 			if (cor20Header != null) {
-				uint offset = rvaToOffset(rva);
 				uint length = (uint)data.Length;
 
 				if (!dotNetSection.isInside(offset, length))
@@ -136,8 +139,12 @@ namespace de4dot.code.PE {
 					return false;
 			}
 
-			write(rva, data);
+			offsetWrite(offset, data);
 			return true;
+		}
+
+		public bool dotNetSafeWrite(uint rva, byte[] data) {
+			return dotNetSafeWriteOffset(rvaToOffset(rva), data);
 		}
 
 		public void write(uint rva, byte[] data) {
@@ -178,6 +185,11 @@ namespace de4dot.code.PE {
 		public byte[] readBytes(uint rva, int size) {
 			seekRva(rva);
 			return reader.ReadBytes(size);
+		}
+
+		public void offsetWrite(uint offset, byte[] data) {
+			seek(offset);
+			writer.Write(data);
 		}
 
 		public byte[] offsetReadBytes(uint offset, int size) {
