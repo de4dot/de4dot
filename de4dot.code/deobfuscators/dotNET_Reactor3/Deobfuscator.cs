@@ -81,9 +81,12 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor3 {
 		Options options;
 		string obfuscatorName = DeobfuscatorInfo.THE_NAME;
 
+		DecrypterType decrypterType;
+		NativeLibSaver nativeLibSaver;
 		List<UnpackedFile> unpackedFiles = new List<UnpackedFile>();
 
 		bool unpackedNativeFile = false;
+		bool canRemoveDecrypterType = true;
 		bool startedDeobfuscating = false;
 
 		internal class Options : OptionsBase {
@@ -130,6 +133,27 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor3 {
 			unpackedNativeFile = true;
 			ModuleBytes = data;
 			return data;
+		}
+
+		public override bool getDecryptedModule(ref byte[] newFileData, ref Dictionary<uint, DumpedMethod> dumpedMethods) {
+			if (!nativeLibSaver.Detected)
+				return false;
+
+			var fileData = ModuleBytes ?? DeobUtils.readModule(module);
+			var peImage = new PeImage(fileData);
+			if (!nativeLibSaver.patch(peImage))
+				return false;
+
+			newFileData = fileData;
+			return true;
+		}
+
+		public override IDeobfuscator moduleReloaded(ModuleDefinition module) {
+			var newOne = new Deobfuscator(options);
+			newOne.setModule(module);
+			newOne.decrypterType = new DecrypterType(module, decrypterType);
+			newOne.nativeLibSaver = new NativeLibSaver(module, nativeLibSaver);
+			return newOne;
 		}
 
 		public override void init(ModuleDefinition module) {
@@ -194,6 +218,12 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor3 {
 			if (unpackedNativeFile)
 				val += 100;
 
+			int sum = convert(unpackedNativeFile) +
+					convert(decrypterType.Detected) +
+					convert(nativeLibSaver.Detected);
+			if (sum > 0)
+				val += 100 + 10 * (sum - 1);
+
 			return val;
 		}
 
@@ -202,6 +232,10 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor3 {
 		}
 
 		protected override void scanForObfuscator() {
+			decrypterType = new DecrypterType(module);
+			decrypterType.find();
+			nativeLibSaver = new NativeLibSaver(module);
+			nativeLibSaver.find();
 			obfuscatorName = detectVersion();
 			if (unpackedNativeFile)
 				obfuscatorName += " (native)";
@@ -213,6 +247,23 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor3 {
 
 		public override void deobfuscateBegin() {
 			base.deobfuscateBegin();
+
+			staticStringDecrypter.add(decrypterType.StringDecrypter1, (method2, args) => {
+				return decrypterType.decrypt1((string)args[0]);
+			});
+			staticStringDecrypter.add(decrypterType.StringDecrypter2, (method2, args) => {
+				return decrypterType.decrypt2((string)args[0]);
+			});
+
+			if (Operations.DecryptStrings == OpDecryptString.None)
+				canRemoveDecrypterType = false;
+
+			addCctorInitCallToBeRemoved(nativeLibSaver.InitMethod);
+			addResourceToBeRemoved(nativeLibSaver.Resource, "Native lib resource");
+			addTypeToBeRemoved(nativeLibSaver.Type, "Native lib saver type");
+
+			foreach (var initMethod in decrypterType.InitMethods)
+				addCctorInitCallToBeRemoved(initMethod);
 
 			dumpUnpackedFiles();
 
@@ -229,6 +280,9 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor3 {
 			if (options.RestoreTypes)
 				new TypesRestorer(module).deobfuscate();
 
+			if (canRemoveDecrypterType && !isTypeCalled(decrypterType.Type))
+				addTypeToBeRemoved(decrypterType.Type, "Decrypter type");
+
 			base.deobfuscateEnd();
 		}
 
@@ -240,6 +294,8 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor3 {
 
 		public override IEnumerable<string> getStringDecrypterMethods() {
 			var list = new List<string>();
+			foreach (var method in decrypterType.StringDecrypters)
+				list.Add(method.MetadataToken.ToInt32().ToString("X8"));
 			return list;
 		}
 	}

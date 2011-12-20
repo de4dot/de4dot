@@ -79,7 +79,9 @@
     <Compile Include="deobfuscators\Dotfuscator\Deobfuscator.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor3\ApplicationModeDecrypter.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor3\ApplicationModeUnpacker.cs" />
+    <Compile Include="deobfuscators\dotNET_Reactor3\DecrypterType.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor3\Deobfuscator.cs" />
+    <Compile Include="deobfuscators\dotNET_Reactor3\NativeLibSaver.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor4\AssemblyResolver.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor4\BooleanDecrypter.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor4\BoolValueInliner.cs" />
