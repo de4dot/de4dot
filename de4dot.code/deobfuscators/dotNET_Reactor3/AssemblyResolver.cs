@@ -22,7 +22,7 @@ using Mono.Cecil;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
 
-namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
+namespace de4dot.code.deobfuscators.dotNET_Reactor3 {
 	class AssemblyResolver {
 		DecryptMethod decryptMethod = new DecryptMethod();
 

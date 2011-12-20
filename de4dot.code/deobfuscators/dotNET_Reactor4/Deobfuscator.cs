@@ -27,10 +27,10 @@ using Mono.MyStuff;
 using de4dot.blocks;
 using de4dot.code.PE;
 
-namespace de4dot.code.deobfuscators.dotNET_Reactor {
+namespace de4dot.code.deobfuscators.dotNET_Reactor4 {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = ".NET Reactor";
-		public const string THE_TYPE = "dr";
+		public const string THE_TYPE = "dr4";
 		const string DEFAULT_REGEX = DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
 		BoolOption decryptMethods;
 		BoolOption decryptBools;
@@ -99,7 +99,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor {
 
 	class Deobfuscator : DeobfuscatorBase {
 		Options options;
-		string obfuscatorName = ".NET Reactor";
+		string obfuscatorName = DeobfuscatorInfo.THE_NAME;
 
 		PeImage peImage;
 		byte[] fileData;
@@ -112,7 +112,6 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor {
 		ResourceResolver resourceResolver;
 		AntiStrongName antiStrongname;
 		EmptyClass emptyClass;
-		List<UnpackedFile> unpackedFiles = new List<UnpackedFile>();
 
 		bool unpackedNativeFile = false;
 		bool canRemoveDecrypterType = true;
@@ -136,7 +135,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor {
 		}
 
 		public override string TypeLong {
-			get { return DeobfuscatorInfo.THE_NAME; }
+			get { return DeobfuscatorInfo.THE_NAME + " 4.x"; }
 		}
 
 		public override string Name {
@@ -158,28 +157,13 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor {
 		}
 
 		public override byte[] unpackNativeFile(PeImage peImage) {
-			var data = unpack(peImage);
+			var data = new NativeImageUnpacker(peImage).unpack();
 			if (data == null)
 				return null;
 
 			unpackedNativeFile = true;
 			ModuleBytes = data;
 			return data;
-		}
-
-		byte[] unpack(PeImage peImage) {
-			var data = new NativeImageUnpacker(peImage).unpack();
-			if (data != null)
-				return data;
-
-			var unpackerv3 = new v3.ApplicationModeUnpacker(peImage);
-			data = unpackerv3.unpack();
-			if (data != null) {
-				unpackedFiles.AddRange(unpackerv3.EmbeddedAssemblies);
-				return data;
-			}
-
-			return null;
 		}
 
 		public override void init(ModuleDefinition module) {
@@ -326,31 +310,31 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor {
 					continue;
 				localTypes = new LocalTypes(info.method);
 				if (!localTypes.exists("System.IntPtr"))
-					return ".NET Reactor <= 3.7";
+					return DeobfuscatorInfo.THE_NAME + " <= 3.7";
 				minVer = 3800;
 				break;
 			}
 
 			if (methodsDecrypter.Method == null) {
 				if (minVer >= 3800)
-					return ".NET Reactor >= 3.8";
-				return ".NET Reactor";
+					return DeobfuscatorInfo.THE_NAME + " >= 3.8";
+				return DeobfuscatorInfo.THE_NAME;
 			}
 			localTypes = new LocalTypes(methodsDecrypter.Method);
 
 			if (localTypes.exists("System.Int32[]")) {
 				if (minVer >= 3800)
-					return ".NET Reactor 3.8.4.1 - 3.9.0.1";
-				return ".NET Reactor <= 3.9.0.1";
+					return DeobfuscatorInfo.THE_NAME + " 3.8.4.1 - 3.9.0.1";
+				return DeobfuscatorInfo.THE_NAME + " <= 3.9.0.1";
 			}
 			if (!localTypes.exists("System.Diagnostics.Process")) {	// If < 4.0
 				if (localTypes.exists("System.Diagnostics.StackFrame"))
-					return ".NET Reactor 3.9.8.0";
+					return DeobfuscatorInfo.THE_NAME + " 3.9.8.0";
 			}
 
 			var compileMethod = MethodsDecrypter.findDnrCompileMethod(methodsDecrypter.Method.DeclaringType);
 			if (compileMethod == null)
-				return ".NET Reactor < 4.0";
+				return DeobfuscatorInfo.THE_NAME + " < 4.0";
 			DeobfuscatedFile.deobfuscate(compileMethod);
 			bool compileMethodHasConstant_0x70000000 = findConstant(compileMethod, 0x70000000);	// 4.0-4.1
 			DeobfuscatedFile.deobfuscate(methodsDecrypter.Method);
@@ -358,20 +342,20 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor {
 
 			if (compileMethodHasConstant_0x70000000) {
 				if (hasCorEnableProfilingString)
-					return ".NET Reactor 4.1";
-				return ".NET Reactor 4.0";
+					return DeobfuscatorInfo.THE_NAME + " 4.1";
+				return DeobfuscatorInfo.THE_NAME + " 4.0";
 			}
 			if (!hasCorEnableProfilingString)
-				return ".NET Reactor";
+				return DeobfuscatorInfo.THE_NAME;
 			// 4.2-4.4
 
 			if (!localTypes.exists("System.Byte&"))
-				return ".NET Reactor 4.2";
+				return DeobfuscatorInfo.THE_NAME + " 4.2";
 
 			localTypes = new LocalTypes(compileMethod);
 			if (localTypes.exists("System.Object"))
-				return ".NET Reactor 4.4";
-			return ".NET Reactor 4.3";
+				return DeobfuscatorInfo.THE_NAME + " 4.4";
+			return DeobfuscatorInfo.THE_NAME + " 4.3";
 		}
 
 		static bool findString(MethodDefinition method, string s) {
@@ -522,14 +506,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor {
 			if (options.InlineMethods)
 				addTypeToBeRemoved(emptyClass.Type, "Empty class");
 
-			dumpUnpackedFiles();
-
 			startedDeobfuscating = true;
-		}
-
-		void dumpUnpackedFiles() {
-			foreach (var unpackedFile in unpackedFiles)
-				DeobfuscatedFile.createAssemblyFile(unpackedFile.data, Path.GetFileNameWithoutExtension(unpackedFile.filename), Path.GetExtension(unpackedFile.filename));
 		}
 
 		void addEntryPointCallToBeRemoved(MethodReference methodToBeRemoved) {
@@ -615,170 +592,10 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor {
 			base.deobfuscateEnd();
 		}
 
-		class UnusedMethodsFinder {
-			ModuleDefinition module;
-			Dictionary<MethodDefinition, bool> possiblyUnusedMethods = new Dictionary<MethodDefinition, bool>();
-			Stack<MethodDefinition> notUnusedStack = new Stack<MethodDefinition>();
-
-			public UnusedMethodsFinder(ModuleDefinition module, IEnumerable<MethodDefinition> possiblyUnusedMethods) {
-				this.module = module;
-				foreach (var method in possiblyUnusedMethods) {
-					if (method != module.EntryPoint)
-						this.possiblyUnusedMethods[method] = true;
-				}
-			}
-
-			public IEnumerable<MethodDefinition> find() {
-				if (possiblyUnusedMethods.Count == 0)
-					return possiblyUnusedMethods.Keys;
-
-				foreach (var type in module.GetTypes()) {
-					foreach (var method in type.Methods)
-						check(method);
-				}
-
-				while (notUnusedStack.Count > 0) {
-					var method = notUnusedStack.Pop();
-					if (!possiblyUnusedMethods.Remove(method))
-						continue;
-					check(method);
-				}
-
-				return possiblyUnusedMethods.Keys;
-			}
-
-			void check(MethodDefinition method) {
-				if (method.Body == null)
-					return;
-				if (possiblyUnusedMethods.ContainsKey(method))
-					return;
-
-				foreach (var instr in method.Body.Instructions) {
-					switch (instr.OpCode.Code) {
-					case Code.Call:
-					case Code.Calli:
-					case Code.Callvirt:
-					case Code.Newobj:
-					case Code.Ldtoken:
-					case Code.Ldftn:
-						break;
-					default:
-						continue;
-					}
-
-					var calledMethod = DotNetUtils.getMethod(module, instr.Operand as MethodReference);
-					if (calledMethod == null)
-						continue;
-					if (possiblyUnusedMethods.ContainsKey(calledMethod))
-						notUnusedStack.Push(calledMethod);
-				}
-			}
-		}
-
 		void removeInlinedMethods() {
 			if (!options.InlineMethods || !options.RemoveInlinedMethods)
 				return;
-
-			// Not all garbage methods are inlined, possibly because we remove some code that calls
-			// the garbage method before the methods inliner has a chance to inline it. Try to find
-			// all garbage methods and other code will figure out if there are any calls left.
-
-			var inlinedMethods = new List<MethodDefinition>();
-			foreach (var type in module.GetTypes()) {
-				foreach (var method in type.Methods) {
-					if (!method.IsStatic)
-						continue;
-					if (!method.IsAssembly && !method.IsCompilerControlled)
-						continue;
-					if (method.GenericParameters.Count > 0)
-						continue;
-					if (method.Name == ".cctor")
-						continue;
-					if (method.Body == null)
-						continue;
-					var instrs = method.Body.Instructions;
-					if (instrs.Count < 2)
-						continue;
-
-					switch (instrs[0].OpCode.Code) {
-					case Code.Ldc_I4:
-					case Code.Ldc_I4_0:
-					case Code.Ldc_I4_1:
-					case Code.Ldc_I4_2:
-					case Code.Ldc_I4_3:
-					case Code.Ldc_I4_4:
-					case Code.Ldc_I4_5:
-					case Code.Ldc_I4_6:
-					case Code.Ldc_I4_7:
-					case Code.Ldc_I4_8:
-					case Code.Ldc_I4_M1:
-					case Code.Ldc_I4_S:
-					case Code.Ldc_I8:
-					case Code.Ldc_R4:
-					case Code.Ldc_R8:
-					case Code.Ldftn:
-					case Code.Ldnull:
-					case Code.Ldstr:
-					case Code.Ldtoken:
-					case Code.Ldsfld:
-					case Code.Ldsflda:
-						if (instrs[1].OpCode.Code != Code.Ret)
-							continue;
-						break;
-
-					case Code.Ldarg:
-					case Code.Ldarg_S:
-					case Code.Ldarg_0:
-					case Code.Ldarg_1:
-					case Code.Ldarg_2:
-					case Code.Ldarg_3:
-					case Code.Call:
-						if (!isCallMethod(method))
-							continue;
-						break;
-
-					default:
-						continue;
-					}
-
-					inlinedMethods.Add(method);
-				}
-			}
-			addMethodsToBeRemoved(new UnusedMethodsFinder(module, inlinedMethods).find(), "Inlined method");
-		}
-
-		bool isCallMethod(MethodDefinition method) {
-			int loadIndex = 0;
-			int methodArgsCount = DotNetUtils.getArgsCount(method);
-			var instrs = method.Body.Instructions;
-			int i = 0;
-			for (; i < instrs.Count && i < methodArgsCount; i++) {
-				var instr = instrs[i];
-				switch (instr.OpCode.Code) {
-				case Code.Ldarg:
-				case Code.Ldarg_S:
-				case Code.Ldarg_0:
-				case Code.Ldarg_1:
-				case Code.Ldarg_2:
-				case Code.Ldarg_3:
-					if (DotNetUtils.getArgIndex(method, instr) != loadIndex)
-						return false;
-					loadIndex++;
-					continue;
-				}
-				break;
-			}
-			if (loadIndex != methodArgsCount)
-				return false;
-			if (i + 1 >= instrs.Count)
-				return false;
-
-			if (instrs[i].OpCode.Code != Code.Call && instrs[i].OpCode.Code != Code.Callvirt)
-				return false;
-			if (instrs[i + 1].OpCode.Code != Code.Ret)
-				return false;
-
-			return true;
+			findAndRemoveInlinedMethods();
 		}
 
 		public override IEnumerable<string> getStringDecrypterMethods() {
