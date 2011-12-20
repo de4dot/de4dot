@@ -581,7 +581,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor4 {
 				new TypesRestorer(module).deobfuscate();
 
 			var decrypterType = getDecrypterType();
-			if (canRemoveDecrypterType && isDecrypterTypeCalled(decrypterType))
+			if (canRemoveDecrypterType && isTypeCalled(decrypterType))
 				canRemoveDecrypterType = false;
 
 			if (canRemoveDecrypterType)
@@ -611,58 +611,6 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor4 {
 			if (!options.DecryptMethods)
 				return;
 			methodsDecrypter.encryptNativeMethods(builder);
-		}
-
-		bool isDecrypterTypeCalled(TypeDefinition decrypterType) {
-			if (decrypterType == null)
-				return false;
-
-			var decrypterMethods = new Dictionary<MethodReferenceAndDeclaringTypeKey, bool>();
-			foreach (var type in TypeDefinition.GetTypes(new List<TypeDefinition> { decrypterType }))
-				addMethods(type, decrypterMethods);
-
-			var removedMethods = new Dictionary<MethodReferenceAndDeclaringTypeKey, bool>();
-			foreach (var method in getMethodsToRemove())
-				removedMethods[new MethodReferenceAndDeclaringTypeKey(method)] = true;
-			foreach (var type in TypeDefinition.GetTypes(getTypesToRemove()))
-				addMethods(type, removedMethods);
-
-			foreach (var type in module.GetTypes()) {
-				foreach (var method in type.Methods) {
-					if (method.Body == null)
-						continue;
-					var key = new MethodReferenceAndDeclaringTypeKey(method);
-					if (decrypterMethods.ContainsKey(key))
-						break;	// decrypter type / nested type method
-					if (removedMethods.ContainsKey(key))
-						continue;
-
-					foreach (var instr in method.Body.Instructions) {
-						switch (instr.OpCode.Code) {
-						case Code.Call:
-						case Code.Callvirt:
-						case Code.Newobj:
-							var calledMethod = instr.Operand as MethodReference;
-							if (calledMethod == null)
-								break;
-							key = new MethodReferenceAndDeclaringTypeKey(calledMethod);
-							if (decrypterMethods.ContainsKey(key))
-								return true;
-							break;
-
-						default:
-							break;
-						}
-					}
-				}
-			}
-
-			return false;
-		}
-
-		static void addMethods(TypeDefinition type, Dictionary<MethodReferenceAndDeclaringTypeKey, bool> methods) {
-			foreach (var method in type.Methods)
-				methods[new MethodReferenceAndDeclaringTypeKey(method)] = true;
 		}
 	}
 }
