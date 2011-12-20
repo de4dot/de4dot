@@ -53,7 +53,7 @@ namespace de4dot.code.deobfuscators {
 				if (!DotNetUtils.isLdcI4(ldci4))
 					continue;
 				int arraySize = DotNetUtils.getLdcI4Value(ldci4);
-				var ary = getInitializedArray(arraySize, method, ref i);
+				var ary = getInitializedByteArray(arraySize, method, ref i);
 				if (ary != null)
 					arrays.Add(ary);
 			}
@@ -77,14 +77,40 @@ namespace de4dot.code.deobfuscators {
 			return true;
 		}
 
-		public static byte[] getInitializedArray(MethodDefinition method, int arraySize) {
+		public static byte[] getInitializedByteArray(MethodDefinition method, int arraySize) {
 			int newarrIndex = findNewarr(method, arraySize);
 			if (newarrIndex < 0)
 				return null;
-			return getInitializedArray(arraySize, method, ref newarrIndex);
+			return getInitializedByteArray(arraySize, method, ref newarrIndex);
 		}
 
-		public static byte[] getInitializedArray(int arraySize, MethodDefinition method, ref int newarrIndex) {
+		public static byte[] getInitializedByteArray(int arraySize, MethodDefinition method, ref int newarrIndex) {
+			var resultValueArray = getInitializedArray(arraySize, method, ref newarrIndex, Code.Stelem_I1);
+
+			var resultArray = new byte[resultValueArray.Length];
+			for (int i = 0; i < resultArray.Length; i++) {
+				var intValue = resultValueArray[i] as Int32Value;
+				if (intValue == null || !intValue.allBitsValid())
+					return null;
+				resultArray[i] = (byte)intValue.value;
+			}
+			return resultArray;
+		}
+
+		public static int[] getInitializedInt32Array(int arraySize, MethodDefinition method, ref int newarrIndex) {
+			var resultValueArray = getInitializedArray(arraySize, method, ref newarrIndex, Code.Stelem_I4);
+
+			var resultArray = new int[resultValueArray.Length];
+			for (int i = 0; i < resultArray.Length; i++) {
+				var intValue = resultValueArray[i] as Int32Value;
+				if (intValue == null || !intValue.allBitsValid())
+					return null;
+				resultArray[i] = (int)intValue.value;
+			}
+			return resultArray;
+		}
+
+		public static Value[] getInitializedArray(int arraySize, MethodDefinition method, ref int newarrIndex, Code stelemOpCode) {
 			var resultValueArray = new Value[arraySize];
 
 			var emulator = new InstructionEmulator(method.HasThis, false, method.Parameters, method.Body.Variables);
@@ -100,7 +126,7 @@ namespace de4dot.code.deobfuscators {
 				if (instr.OpCode.Code == Code.Newarr)
 					break;
 
-				if (instr.OpCode.Code == Code.Stelem_I1) {
+				if (instr.OpCode.Code == stelemOpCode) {
 					var value = emulator.pop();
 					var index = emulator.pop() as Int32Value;
 					var array = emulator.pop();
@@ -116,33 +142,35 @@ namespace de4dot.code.deobfuscators {
 				i--;
 			newarrIndex = i;
 
-			byte[] resultArray = new byte[resultValueArray.Length];
-			for (i = 0; i < resultArray.Length; i++) {
-				var intValue = resultValueArray[i] as Int32Value;
-				if (intValue == null || !intValue.allBitsValid())
-					return null;
-				resultArray[i] = (byte)intValue.value;
-			}
-
-			return resultArray;
+			return resultValueArray;
 		}
 
 		static int findNewarr(MethodDefinition method, int arraySize) {
+			for (int i = 0; ; i++) {
+				int size;
+				if (!findNewarr(method, ref i, out size))
+					return -1;
+				if (size == arraySize)
+					return i;
+			}
+		}
+
+		public static bool findNewarr(MethodDefinition method, ref int i, out int size) {
 			var instructions = method.Body.Instructions;
-			for (int i = 0; i < instructions.Count; i++) {
+			for (; i < instructions.Count; i++) {
 				var instr = instructions[i];
 				if (instr.OpCode.Code != Code.Newarr || i < 1)
 					continue;
 				var ldci4 = instructions[i - 1];
 				if (!DotNetUtils.isLdcI4(ldci4))
 					continue;
-				if (DotNetUtils.getLdcI4Value(ldci4) != arraySize)
-					continue;
 
-				return i;
+				size = DotNetUtils.getLdcI4Value(ldci4);
+				return true;
 			}
 
-			return -1;
+			size = -1;
+			return false;
 		}
 	}
 }
