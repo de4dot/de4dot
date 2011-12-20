@@ -19,6 +19,7 @@
 
 using System;
 using System.IO;
+using System.Security.Cryptography;
 using Mono.Cecil;
 
 namespace de4dot.code.deobfuscators {
@@ -61,6 +62,14 @@ namespace de4dot.code.deobfuscators {
 					return false;
 			}
 			return true;
+		}
+
+		public static byte[] decrypt(byte[] data, byte[] key, byte[] iv) {
+			using (var aes = new RijndaelManaged { Mode = CipherMode.CBC }) {
+				using (var transform = aes.CreateDecryptor(key, iv)) {
+					return transform.TransformFinalBlock(data, 0, data.Length);
+				}
+			}
 		}
 	}
 }
