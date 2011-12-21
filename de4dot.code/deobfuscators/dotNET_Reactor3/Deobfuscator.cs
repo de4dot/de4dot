@@ -299,6 +299,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor3 {
 			if (canRemoveDecrypterType && !isTypeCalled(decrypterType.Type)) {
 				addTypeToBeRemoved(decrypterType.Type, "Decrypter type");
 				addModuleReferencesToBeRemoved(decrypterType.ModuleReferences, "Native lib module references");
+				addResourceToBeRemoved(decrypterType.LinkedResource, "Native lib resource");
 			}
 
 			base.deobfuscateEnd();

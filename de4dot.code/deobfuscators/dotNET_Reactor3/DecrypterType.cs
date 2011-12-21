@@ -33,6 +33,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor3 {
 		MethodDefinition stringDecrypter2;
 		List<MethodDefinition> initMethods = new List<MethodDefinition>();
 		List<ModuleReference> moduleReferences = new List<ModuleReference>();
+		Resource linkedResource;
 
 		public bool Detected {
 			get { return decrypterType != null; }
@@ -40,6 +41,10 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor3 {
 
 		public TypeDefinition Type {
 			get { return decrypterType; }
+		}
+
+		public Resource LinkedResource {
+			get { return linkedResource; }
 		}
 
 		public MethodDefinition StringDecrypter1 {
@@ -112,6 +117,18 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor3 {
 						break;
 					}
 				}
+			}
+			updateLinkedResource();
+		}
+
+		void updateLinkedResource() {
+			foreach (var modref in moduleReferences) {
+				var resource = DotNetUtils.getResource(module, modref.Name) as LinkedResource;
+				if (resource == null)
+					continue;
+
+				linkedResource = resource;
+				return;
 			}
 		}
 
