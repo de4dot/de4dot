@@ -136,12 +136,12 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor3 {
 		}
 
 		public override bool getDecryptedModule(ref byte[] newFileData, ref Dictionary<uint, DumpedMethod> dumpedMethods) {
-			if (!nativeLibSaver.Detected)
+			if (!decrypterType.Detected)
 				return false;
 
 			var fileData = ModuleBytes ?? DeobUtils.readModule(module);
 			var peImage = new PeImage(fileData);
-			if (!nativeLibSaver.patch(peImage))
+			if (!decrypterType.patch(peImage))
 				return false;
 
 			newFileData = fileData;

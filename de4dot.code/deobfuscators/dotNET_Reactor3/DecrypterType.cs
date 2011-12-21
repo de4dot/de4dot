@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.Text;
 using Mono.Cecil;
 using de4dot.blocks;
+using de4dot.code.PE;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor3 {
 	// Find the type that decrypts strings and calls the native lib
@@ -132,6 +133,47 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor3 {
 
 		public string decrypt2(string s) {
 			return Encoding.Unicode.GetString(Convert.FromBase64String(s));
+		}
+
+		public bool patch(PeImage peImage) {
+			try {
+				return patch2(peImage);
+			}
+			catch {
+				Log.w("Could not patch the file");
+				return false;
+			}
+		}
+
+		bool patch2(PeImage peImage) {
+			uint numPatches = peImage.offsetReadUInt32(peImage.ImageLength - 4);
+			uint offset = checked(peImage.ImageLength - 4 - numPatches * 8);
+
+			for (uint i = 0; i < numPatches; i++, offset += 8) {
+				uint rva = getValue(peImage.offsetReadUInt32(offset));
+				var value = peImage.offsetReadUInt32(offset + 4);
+
+				if (value == 4) {
+					i++;
+					offset += 8;
+					rva = getValue(peImage.offsetReadUInt32(offset));
+					value = peImage.offsetReadUInt32(offset + 4);
+				}
+				else
+					value = getValue(value);
+
+				peImage.dotNetSafeWrite(rva, BitConverter.GetBytes(value));
+			}
+
+			return true;
+		}
+
+		static uint getValue(uint value) {
+			const uint magic = 2749;
+			value = checked(value - magic);
+			if (value % 3 != 0)
+				throw new Exception();
+			return value / 3;
 		}
 	}
 }
