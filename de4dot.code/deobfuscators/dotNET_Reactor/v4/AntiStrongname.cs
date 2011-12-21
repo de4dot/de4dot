@@ -22,7 +22,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using de4dot.blocks;
 
-namespace de4dot.code.deobfuscators.dotNET_Reactor4 {
+namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 	class AntiStrongName {
 		TypeDefinition decrypterType;
 		MethodDefinition antiStrongNameMethod;

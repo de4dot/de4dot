@@ -24,7 +24,7 @@ using Mono.Cecil;
 using de4dot.blocks;
 using de4dot.code.PE;
 
-namespace de4dot.code.deobfuscators.dotNET_Reactor3 {
+namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 	// Find the type that decrypts strings and calls the native lib
 	class DecrypterType {
 		ModuleDefinition module;

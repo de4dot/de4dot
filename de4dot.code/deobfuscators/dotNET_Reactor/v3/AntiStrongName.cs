@@ -22,7 +22,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using de4dot.blocks;
 
-namespace de4dot.code.deobfuscators.dotNET_Reactor3 {
+namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 	class AntiStrongName {
 		public bool remove(Blocks blocks) {
 			var allBlocks = blocks.MethodBlocks.getAllBlocks();

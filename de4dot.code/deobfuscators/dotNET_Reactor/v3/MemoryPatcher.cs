@@ -26,7 +26,7 @@ using de4dot.blocks;
 using de4dot.blocks.cflow;
 using de4dot.code.PE;
 
-namespace de4dot.code.deobfuscators.dotNET_Reactor3 {
+namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 	class MemoryPatcher {
 		DecryptMethod decryptMethod = new DecryptMethod();
 		List<PatchInfo> patchInfos = new List<PatchInfo>();

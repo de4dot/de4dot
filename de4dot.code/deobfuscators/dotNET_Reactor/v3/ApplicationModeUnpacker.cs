@@ -25,7 +25,7 @@ using System.Text.RegularExpressions;
 using Mono.Cecil;
 using de4dot.code.PE;
 
-namespace de4dot.code.deobfuscators.dotNET_Reactor3 {
+namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 	class IniFile {
 		Dictionary<string, string> nameToValue = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 

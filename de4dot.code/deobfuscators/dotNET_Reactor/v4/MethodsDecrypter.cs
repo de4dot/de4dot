@@ -26,7 +26,7 @@ using Mono.MyStuff;
 using de4dot.blocks;
 using de4dot.code.PE;
 
-namespace de4dot.code.deobfuscators.dotNET_Reactor4 {
+namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 	class MethodsDecrypter {
 		ModuleDefinition module;
 		EncryptedResource encryptedResource;

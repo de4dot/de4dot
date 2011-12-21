@@ -21,7 +21,7 @@ using System;
 using System.Collections.Generic;
 using Mono.Cecil;
 
-namespace de4dot.code.deobfuscators.dotNET_Reactor3 {
+namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 	class DecryptMethod {
 		MethodDefinition decryptionMethod;
 		byte[] key;

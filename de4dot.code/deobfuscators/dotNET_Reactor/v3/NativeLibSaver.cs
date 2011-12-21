@@ -21,7 +21,7 @@ using System;
 using Mono.Cecil;
 using de4dot.blocks;
 
-namespace de4dot.code.deobfuscators.dotNET_Reactor3 {
+namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 	// Finds the type that saves the native lib (if in resources) to disk
 	class NativeLibSaver {
 		ModuleDefinition module;
