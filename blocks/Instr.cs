@@ -128,19 +128,19 @@ namespace de4dot.blocks {
 		}
 
 		public bool isLeave() {
-			return OpCode == OpCodes.Leave || OpCode == OpCodes.Leave_S;
+			return DotNetUtils.isLeave(instruction);
 		}
 
 		public bool isBr() {
-			return OpCode == OpCodes.Br || OpCode == OpCodes.Br_S;
+			return DotNetUtils.isBr(instruction);
 		}
 
 		public bool isBrfalse() {
-			return OpCode == OpCodes.Brfalse || OpCode == OpCodes.Brfalse_S;
+			return DotNetUtils.isBrfalse(instruction);
 		}
 
 		public bool isBrtrue() {
-			return OpCode == OpCodes.Brtrue || OpCode == OpCodes.Brtrue_S;
+			return DotNetUtils.isBrtrue(instruction);
 		}
 
 		public bool isConditionalBranch() {

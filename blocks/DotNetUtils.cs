@@ -131,6 +131,22 @@ namespace de4dot.blocks {
 	public static class DotNetUtils {
 		public static readonly TypeCaches typeCaches = new TypeCaches();
 
+		public static bool isLeave(Instruction instr) {
+			return instr.OpCode == OpCodes.Leave || instr.OpCode == OpCodes.Leave_S;
+		}
+
+		public static bool isBr(Instruction instr) {
+			return instr.OpCode == OpCodes.Br || instr.OpCode == OpCodes.Br_S;
+		}
+
+		public static bool isBrfalse(Instruction instr) {
+			return instr.OpCode == OpCodes.Brfalse || instr.OpCode == OpCodes.Brfalse_S;
+		}
+
+		public static bool isBrtrue(Instruction instr) {
+			return instr.OpCode == OpCodes.Brtrue || instr.OpCode == OpCodes.Brtrue_S;
+		}
+
 		public static bool isLdcI4(Instruction instruction) {
 			return isLdcI4(instruction.OpCode.Code);
 		}
