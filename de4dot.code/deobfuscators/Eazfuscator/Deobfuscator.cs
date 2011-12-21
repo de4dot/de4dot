@@ -51,6 +51,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator {
 		TypeDefinition decryptStringType;
 		MethodDefinition decryptStringMethod;
 		string obfuscatorName = DeobfuscatorInfo.THE_NAME;
+		bool detectedVersion = false;
 
 		internal class Options : OptionsBase {
 		}
@@ -74,9 +75,14 @@ namespace de4dot.code.deobfuscators.Eazfuscator {
 		}
 
 		protected override int detectInternal() {
+			int val = 0;
+
 			if (decryptStringMethod != null)
-				return 100;
-			return 0;
+				val += 100;
+			if (detectedVersion)
+				val += 10;
+
+			return val;
 		}
 
 		protected override void scanForObfuscator() {
@@ -113,6 +119,15 @@ namespace de4dot.code.deobfuscators.Eazfuscator {
 		}
 
 		void detectVersion() {
+			var name = detectVersion2();
+			if (name == null)
+				return;
+
+			detectedVersion = true;
+			obfuscatorName = DeobfuscatorInfo.THE_NAME + " " +  name;
+		}
+
+		string detectVersion2() {
 			var otherMethods = new List<MethodDefinition>();
 			MethodDefinition cctor = null;
 			foreach (var method in decryptStringType.Methods) {
@@ -124,7 +139,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator {
 					otherMethods.Add(method);
 			}
 			if (cctor == null)
-				return;
+				return null;
 
 			/////////////////////////////////////////////////////////////////
 			/////////////////////////////////////////////////////////////////
@@ -155,8 +170,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator {
 				decryptStringMethod.Body.ExceptionHandlers.Count == 0 &&
 				new LocalTypes(decryptStringMethod).exactly(locals11) &&
 				checkTypeFields(fields11)) {
-				obfuscatorName = DeobfuscatorInfo.THE_NAME + " 1.1 - 1.2";
-				return;
+				return "1.1 - 1.2";
 			}
 
 			/////////////////////////////////////////////////////////////////
@@ -190,8 +204,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator {
 				decryptStringMethod.Body.ExceptionHandlers.Count == 0 &&
 				new LocalTypes(decryptStringMethod).exactly(locals13) &&
 				checkTypeFields(fields13)) {
-				obfuscatorName = DeobfuscatorInfo.THE_NAME + " 1.3";
-				return;
+				return "1.3";
 			}
 
 			/////////////////////////////////////////////////////////////////
@@ -225,8 +238,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator {
 				decryptStringMethod.Body.ExceptionHandlers.Count == 0 &&
 				new LocalTypes(decryptStringMethod).exactly(locals14) &&
 				checkTypeFields(fields14)) {
-				obfuscatorName = DeobfuscatorInfo.THE_NAME + " 1.4 - 2.3";
-				return;
+				return "1.4 - 2.3";
 			}
 
 			/////////////////////////////////////////////////////////////////
@@ -261,8 +273,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator {
 				decryptStringMethod.Body.ExceptionHandlers.Count == 0 &&
 				new LocalTypes(decryptStringMethod).exactly(locals24) &&
 				checkTypeFields(fields24)) {
-				obfuscatorName = DeobfuscatorInfo.THE_NAME + " 2.4 - 2.5";
-				return;
+				return "2.4 - 2.5";
 			}
 
 			/////////////////////////////////////////////////////////////////
@@ -298,8 +309,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator {
 				decryptStringMethod.Body.ExceptionHandlers.Count == 1 &&
 				new LocalTypes(decryptStringMethod).exactly(locals26) &&
 				checkTypeFields(fields26)) {
-				obfuscatorName = DeobfuscatorInfo.THE_NAME + " 2.6";
-				return;
+				return "2.6";
 			}
 
 			/////////////////////////////////////////////////////////////////
@@ -335,8 +345,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator {
 				decryptStringMethod.Body.ExceptionHandlers.Count == 1 &&
 				new LocalTypes(decryptStringMethod).exactly(locals27) &&
 				checkTypeFields(fields27)) {
-				obfuscatorName = DeobfuscatorInfo.THE_NAME + " 2.7";
-				return;
+				return "2.7";
 			}
 
 			/////////////////////////////////////////////////////////////////
@@ -373,8 +382,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator {
 				decryptStringMethod.Body.ExceptionHandlers.Count == 1 &&
 				new LocalTypes(decryptStringMethod).exactly(locals28) &&
 				checkTypeFields(fields28)) {
-				obfuscatorName = DeobfuscatorInfo.THE_NAME + " 2.8";
-				return;
+				return "2.8";
 			}
 
 			/////////////////////////////////////////////////////////////////
@@ -415,8 +423,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator {
 				decryptStringMethod.Body.ExceptionHandlers.Count == 2 &&
 				new LocalTypes(decryptStringMethod).exactly(locals29) &&
 				checkTypeFields(fields29)) {
-				obfuscatorName = DeobfuscatorInfo.THE_NAME + " 2.9";
-				return;
+				return "2.9";
 			}
 
 			/////////////////////////////////////////////////////////////////
@@ -464,8 +471,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator {
 				decryptStringMethod.Body.ExceptionHandlers.Count == 2 &&
 				new LocalTypes(decryptStringMethod).exactly(locals30) &&
 				checkTypeFields(fields30)) {
-				obfuscatorName = DeobfuscatorInfo.THE_NAME + " 3.0 - 3.1";
-				return;
+				return "3.0 - 3.1";
 			}
 
 			/////////////////////////////////////////////////////////////////
@@ -515,9 +521,10 @@ namespace de4dot.code.deobfuscators.Eazfuscator {
 				decryptStringMethod.Body.ExceptionHandlers.Count == 2 &&
 				new LocalTypes(decryptStringMethod).exactly(locals32) &&
 				checkTypeFields(fields32)) {
-				obfuscatorName = DeobfuscatorInfo.THE_NAME + " 3.2";
-				return;
+				return "3.2";
 			}
+
+			return null;
 		}
 
 		bool checkTypeFields(string[] fieldTypes) {
