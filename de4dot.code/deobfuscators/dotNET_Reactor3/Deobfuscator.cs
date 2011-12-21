@@ -261,16 +261,21 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor3 {
 			if (Operations.DecryptStrings == OpDecryptString.None)
 				canRemoveDecrypterType = false;
 
-			addCctorInitCallToBeRemoved(nativeLibSaver.InitMethod);
+			removeInitCall(nativeLibSaver.InitMethod);
 			addResourceToBeRemoved(nativeLibSaver.Resource, "Native lib resource");
 			addTypeToBeRemoved(nativeLibSaver.Type, "Native lib saver type");
 
 			foreach (var initMethod in decrypterType.InitMethods)
-				addCctorInitCallToBeRemoved(initMethod);
+				removeInitCall(initMethod);
 
 			dumpUnpackedFiles();
 
 			startedDeobfuscating = true;
+		}
+
+		void removeInitCall(MethodDefinition initMethod) {
+			addCctorInitCallToBeRemoved(initMethod);
+			addCtorInitCallToBeRemoved(initMethod);
 		}
 
 		void dumpUnpackedFiles() {
