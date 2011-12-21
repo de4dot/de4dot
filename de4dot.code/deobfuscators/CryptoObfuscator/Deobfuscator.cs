@@ -162,7 +162,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		public override void deobfuscateBegin() {
 			base.deobfuscateBegin();
 
-			resourceDecrypter = new ResourceDecrypter(module);
+			resourceDecrypter = new ResourceDecrypter(module, DeobfuscatedFile);
 			resourceResolver = new ResourceResolver(module, resourceDecrypter);
 			assemblyResolver = new AssemblyResolver(module);
 			resourceResolver.find();

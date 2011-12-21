@@ -142,8 +142,6 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			}
 			if (createMethod == null || !createMethod.HasBody)
 				return null;
-			if (type.HasEvents || type.HasProperties)
-				return null;
 			if (!findLdci4(createMethod, 0xFFFFFF))
 				return null;
 

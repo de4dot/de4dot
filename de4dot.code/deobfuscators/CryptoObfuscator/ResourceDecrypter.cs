@@ -18,6 +18,7 @@
 */
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Security.Cryptography;
@@ -29,7 +30,6 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 	class ResourceDecrypter {
 		const int BUFLEN = 0x8000;
 		ModuleDefinition module;
-		DecrypterVersion decrypterVersion = DecrypterVersion.V1;
 		TypeDefinition resourceDecrypterType;
 		byte[] buffer1 = new byte[BUFLEN];
 		byte[] buffer2 = new byte[BUFLEN];
@@ -37,17 +37,12 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		byte deflatedFlag;
 		byte bitwiseNotEncryptedFlag;
 
-		enum DecrypterVersion {
-			V1,
-			V2,
-		}
-
-		public ResourceDecrypter(ModuleDefinition module) {
+		public ResourceDecrypter(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator) {
 			this.module = module;
-			find();
+			find(simpleDeobfuscator);
 		}
 
-		void find() {
+		void find(ISimpleDeobfuscator simpleDeobfuscator) {
 			var requiredTypes = new string[] {
 				"System.IO.MemoryStream",
 				"System.Object",
@@ -72,7 +67,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				break;
 			}
 
-			initializeVersion();
+			initializeDecrypterFlags(simpleDeobfuscator);
 		}
 
 		bool checkCctor(MethodDefinition cctor) {
@@ -90,33 +85,63 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return stsfldCount == cctor.DeclaringType.Fields.Count;
 		}
 
-		void initializeVersion() {
-			decrypterVersion = DecrypterVersion.V1;
-			if (resourceDecrypterType != null) {
-				foreach (var method in resourceDecrypterType.Methods) {
-					if (isPublicKeyTokenMethod(method)) {
-						decrypterVersion = DecrypterVersion.V2;
-						break;
-					}
-				}
+		void initializeDecrypterFlags(ISimpleDeobfuscator simpleDeobfuscator) {
+			if (resourceDecrypterType != null && getPublicKeyTokenMethod() != null) {
+				if (updateFlags(getDecrypterMethod(), simpleDeobfuscator))
+					return;
 			}
 
-			switch (decrypterVersion) {
-			case DecrypterVersion.V1:
-				desEncryptedFlag = 1;
-				deflatedFlag = 2;
-				bitwiseNotEncryptedFlag = 4;
-				break;
+			desEncryptedFlag = 1;
+			deflatedFlag = 2;
+			bitwiseNotEncryptedFlag = 4;
+		}
 
-			case DecrypterVersion.V2:
-				desEncryptedFlag = 2;
-				deflatedFlag = 8;
-				//TODO: bitwiseNotEncryptedFlag = ???;
-				break;
+		bool updateFlags(MethodDefinition method, ISimpleDeobfuscator simpleDeobfuscator) {
+			if (method == null || method.Body == null)
+				return false;
 
-			default:
-				throw new ApplicationException("Invalid version");
+			var constants = new List<int>();
+			simpleDeobfuscator.deobfuscate(method);
+			var instructions = method.Body.Instructions;
+			for (int i = 2; i < instructions.Count; i++) {
+				var and = instructions[i];
+				if (and.OpCode.Code != Code.And)
+					continue;
+				var ldci4 = instructions[i - 1];
+				if (!DotNetUtils.isLdcI4(ldci4))
+					continue;
+				var ldloc = instructions[i - 2];
+				if (!DotNetUtils.isLdloc(ldloc))
+					continue;
+				var local = DotNetUtils.getLocalVar(method.Body.Variables, ldloc);
+				if (local.VariableType.ToString() != "System.Byte")
+					continue;
+				constants.Add(DotNetUtils.getLdcI4Value(ldci4));
 			}
+
+			if (constants.Count == 2) {
+				desEncryptedFlag = (byte)constants[0];
+				deflatedFlag = (byte)constants[1];
+				return true;
+			}
+
+			return false;
+		}
+
+		MethodDefinition getPublicKeyTokenMethod() {
+			foreach (var method in resourceDecrypterType.Methods) {
+				if (isPublicKeyTokenMethod(method))
+					return method;
+			}
+			return null;
+		}
+
+		MethodDefinition getDecrypterMethod() {
+			foreach (var method in resourceDecrypterType.Methods) {
+				if (DotNetUtils.isMethod(method, "System.Byte[]", "(System.IO.Stream)"))
+					return method;
+			}
+			return null;
 		}
 
 		bool isPublicKeyTokenMethod(MethodDefinition method) {

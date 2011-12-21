@@ -121,8 +121,6 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 					continue;
 				if (type.Methods.Count != 3)
 					continue;
-				if (type.HasEvents || type.HasProperties)
-					continue;
 
 				MethodDefinition method = null;
 				foreach (var m in type.Methods) {

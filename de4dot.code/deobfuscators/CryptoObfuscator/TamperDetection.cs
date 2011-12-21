@@ -57,8 +57,6 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				var type = info.Item1;
 				var method = info.Item2;
 
-				if (type.HasProperties || type.HasEvents)
-					continue;
 				if (!method.IsStatic || !DotNetUtils.isMethod(method, "System.Void", "()"))
 					continue;
 				if (type.Methods.Count < 3 || type.Methods.Count > 6)
