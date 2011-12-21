@@ -184,6 +184,7 @@
     <Compile Include="StringDecrypter.cs" />
     <Compile Include="UserException.cs" />
     <Compile Include="Utils.cs" />
+    <Compile Include="Win32Path.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\AssemblyData\AssemblyData.csproj">
