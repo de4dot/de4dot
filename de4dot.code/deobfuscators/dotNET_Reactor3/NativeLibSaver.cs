@@ -106,7 +106,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor3 {
 					i++;
 					offset += 8;
 					rva = checked((peImage.offsetReadUInt32(offset) - magic) / 3);
-					value = peImage.offsetReadUInt32(offset);
+					value = peImage.offsetReadUInt32(offset + 4);
 				}
 				else
 					value = checked((value - magic) / 3);

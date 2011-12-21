@@ -272,7 +272,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor3 {
 
 		void dumpUnpackedFiles() {
 			foreach (var unpackedFile in unpackedFiles)
-				DeobfuscatedFile.createAssemblyFile(unpackedFile.data, Path.GetFileNameWithoutExtension(unpackedFile.filename), Path.GetExtension(unpackedFile.filename));
+				DeobfuscatedFile.createAssemblyFile(unpackedFile.data, Win32Path.GetFileNameWithoutExtension(unpackedFile.filename), Win32Path.GetExtension(unpackedFile.filename));
 		}
 
 		public override void deobfuscateEnd() {

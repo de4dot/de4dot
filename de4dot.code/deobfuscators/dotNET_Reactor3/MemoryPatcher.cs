@@ -106,7 +106,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor3 {
 			if (ary1 == null || ary2 == null)
 				return null;
 			ary2 = decrypt(ary2);
-			if (ary2 == null || ary2.Length != ary2.Length)
+			if (ary2 == null || ary1.Length != ary2.Length)
 				return null;
 
 			for (int i = 0; i < ary1.Length; i++)

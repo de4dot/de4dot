@@ -136,14 +136,24 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor3 {
 			for (int i = 1; i < filenames.Length; i++)
 				satelliteAssemblies.Add(unpackEmbeddedFile(i, decrypter));
 
+			clearDllBit(mainAssembly.data);
 			return mainAssembly.data;
+		}
+
+		static void clearDllBit(byte[] peImageData) {
+			var mainPeImage = new PeImage(peImageData);
+			uint characteristicsOffset = mainPeImage.FileHeaderOffset + 18;
+			ushort characteristics = mainPeImage.offsetReadUInt16(characteristicsOffset);
+			characteristics &= 0xDFFF;
+			characteristics |= 2;
+			mainPeImage.offsetWriteUInt16(characteristicsOffset, characteristics);
 		}
 
 		UnpackedFile unpackEmbeddedFile(int index, ApplicationModeDecrypter decrypter) {
 			uint offset = 0;
 			for (int i = 0; i < index + 1; i++)
 				offset += sizes[i];
-			string filename = Path.GetFileName(filenames[index]);
+			string filename = Win32Path.GetFileName(filenames[index]);
 			var data = peImage.offsetReadBytes(offset, (int)sizes[index + 1]);
 			data = DeobUtils.decrypt(data, decrypter.AssemblyKey, decrypter.AssemblyIv);
 			data = decompress(data);
