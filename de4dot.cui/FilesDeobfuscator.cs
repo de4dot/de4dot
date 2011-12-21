@@ -128,7 +128,18 @@ namespace de4dot.cui {
 				KeepObfuscatorTypes = options.KeepObfuscatorTypes,
 				CreateDestinationDir = !onlyScan,
 			});
-			return loader.load();
+
+			bool ignoreNativeCodeFiles = !onlyScan;
+			foreach (var file in loader.load()) {
+				if (ignoreNativeCodeFiles) {
+					if ((file.ModuleDefinition.Attributes & ModuleAttributes.ILOnly) == 0) {
+						Log.w("Ignoring assembly with native code {0}", file.Filename);
+						removeModule(file.ModuleDefinition);
+						continue;
+					}
+				}
+				yield return file;
+			}
 		}
 
 		class DotNetFileLoader {
@@ -195,12 +206,6 @@ namespace de4dot.cui {
 				}
 				catch (IOException) {
 					Log.w("Could not load file (io exception): {0}", file.Filename);
-					return false;
-				}
-
-				if ((file.ModuleDefinition.Attributes & ModuleAttributes.ILOnly) == 0) {
-					Log.w("Ignoring assembly with native code {0}", file.Filename);
-					removeModule(file.ModuleDefinition);
 					return false;
 				}
 
