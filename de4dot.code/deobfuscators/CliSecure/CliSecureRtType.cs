@@ -103,7 +103,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 						methods++;
 					}
 				}
-				if (methods == 0)
+				if (methods == 0 || (methods == 1 && initialize != null))
 					continue;
 
 				stringDecrypterMethod = cs;
