@@ -83,6 +83,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor3 {
 
 		DecrypterType decrypterType;
 		NativeLibSaver nativeLibSaver;
+		AntiStrongName antiStrongName;
 		List<UnpackedFile> unpackedFiles = new List<UnpackedFile>();
 
 		bool unpackedNativeFile = false;
@@ -248,6 +249,8 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor3 {
 		public override void deobfuscateBegin() {
 			base.deobfuscateBegin();
 
+			antiStrongName = new AntiStrongName();
+
 			staticStringDecrypter.add(decrypterType.StringDecrypter1, (method2, args) => {
 				return decrypterType.decrypt1((string)args[0]);
 			});
@@ -273,6 +276,14 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor3 {
 		void dumpUnpackedFiles() {
 			foreach (var unpackedFile in unpackedFiles)
 				DeobfuscatedFile.createAssemblyFile(unpackedFile.data, Win32Path.GetFileNameWithoutExtension(unpackedFile.filename), Win32Path.GetExtension(unpackedFile.filename));
+		}
+
+		public override void deobfuscateMethodEnd(Blocks blocks) {
+			if (options.RemoveAntiStrongName) {
+				if (antiStrongName.remove(blocks))
+					Log.v("Removed Anti Strong Name code");
+			}
+			base.deobfuscateMethodEnd(blocks);
 		}
 
 		public override void deobfuscateEnd() {
