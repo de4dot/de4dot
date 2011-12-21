@@ -97,24 +97,31 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor3 {
 			uint numPatches = peImage.offsetReadUInt32(peImage.ImageLength - 4);
 			uint offset = checked(peImage.ImageLength - 4 - numPatches * 8);
 
-			const uint magic = 2749;
 			for (uint i = 0; i < numPatches; i++, offset += 8) {
-				uint rva = checked((peImage.offsetReadUInt32(offset) - magic) / 3);
+				uint rva = getValue(peImage.offsetReadUInt32(offset));
 				var value = peImage.offsetReadUInt32(offset + 4);
 
 				if (value == 4) {
 					i++;
 					offset += 8;
-					rva = checked((peImage.offsetReadUInt32(offset) - magic) / 3);
+					rva = getValue(peImage.offsetReadUInt32(offset));
 					value = peImage.offsetReadUInt32(offset + 4);
 				}
 				else
-					value = checked((value - magic) / 3);
+					value = getValue(value);
 
 				peImage.dotNetSafeWrite(rva, BitConverter.GetBytes(value));
 			}
 
 			return true;
+		}
+
+		static uint getValue(uint value) {
+			const uint magic = 2749;
+			value = checked(value - magic);
+			if (value % 3 != 0)
+				throw new Exception();
+			return value / 3;
 		}
 	}
 }
