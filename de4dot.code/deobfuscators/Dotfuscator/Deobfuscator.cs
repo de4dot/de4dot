@@ -19,7 +19,6 @@
 
 using System.Collections.Generic;
 using Mono.Cecil;
-using Mono.Cecil.Cil;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Dotfuscator {
@@ -50,17 +49,9 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 	class Deobfuscator : DeobfuscatorBase {
 		Options options;
 		string obfuscatorName = "Dotfuscator";
-		Dictionary<MethodReference, StringDecrypterInfo> stringDecrypterMethods = new Dictionary<MethodReference, StringDecrypterInfo>();
-		bool foundDotfuscatorAttribute = false;
 
-		class StringDecrypterInfo {
-			public MethodDefinition method;
-			public int magic;
-			public StringDecrypterInfo(MethodDefinition method, int magic) {
-				this.method = method;
-				this.magic = magic;
-			}
-		}
+		StringDecrypter stringDecrypter;
+		bool foundDotfuscatorAttribute = false;
 
 		internal class Options : OptionsBase {
 		}
@@ -85,17 +76,18 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 		protected override int detectInternal() {
 			int val = 0;
 
-			if (foundDotfuscatorAttribute)
-				val += 100;
-			if (stringDecrypterMethods.Count > 0)
-				val += 10;
+			int sum = convert(foundDotfuscatorAttribute) +
+					convert(stringDecrypter.Detected);
+			if (sum > 0)
+				val += 100 + 10 * (sum - 1);
 
 			return val;
 		}
 
 		protected override void scanForObfuscator() {
+			stringDecrypter = new StringDecrypter(module);
+			stringDecrypter.find(DeobfuscatedFile);
 			findDotfuscatorAttribute();
-			findStringDecrypterMethods();
 		}
 
 		void findDotfuscatorAttribute() {
@@ -120,66 +112,22 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 			obfuscatorName = "Dotfuscator " + val.Groups[1].ToString();
 		}
 
-		void findStringDecrypterMethods() {
-			foreach (var type in module.GetTypes())
-				findStringDecrypterMethods(type);
-		}
-
-		void findStringDecrypterMethods(TypeDefinition type) {
-			foreach (var method in DotNetUtils.findMethods(type.Methods, "System.String", new string[] { "System.String", "System.Int32" })) {
-				if (method.Body.HasExceptionHandlers)
-					continue;
-
-				var methodCalls = DotNetUtils.getMethodCallCounts(method);
-				if (methodCalls.count("System.Char[] System.String::ToCharArray()") != 1)
-					continue;
-				if (methodCalls.count("System.String System.String::Intern(System.String)") != 1)
-					continue;
-
-				DeobfuscatedFile.deobfuscate(method);
-				var instructions = method.Body.Instructions;
-				for (int i = 0; i <= instructions.Count - 3; i++) {
-					var ldci4 = method.Body.Instructions[i];
-					if (!DotNetUtils.isLdcI4(ldci4))
-						continue;
-					if (instructions[i + 1].OpCode.Code != Code.Ldarg_1)
-						continue;
-					if (instructions[i + 2].OpCode.Code != Code.Add)
-						continue;
-
-					var info = new StringDecrypterInfo(method, DotNetUtils.getLdcI4Value(ldci4));
-					Log.v("Found string decrypter method: {0}, magic: 0x{1:X8}", info.method, info.magic);
-					stringDecrypterMethods[info.method] = info;
-					staticStringDecrypter.add(info.method, (method2, args) => decryptString(stringDecrypterMethods[method2], (string)args[0], (int)args[1]));
-					break;
-				}
-			}
+		public override void deobfuscateBegin() {
+			base.deobfuscateBegin();
+			foreach (var info in stringDecrypter.StringDecrypterInfos)
+				staticStringDecrypter.add(info.method, (method, args) => stringDecrypter.decrypt(method, (string)args[0], (int)args[1]));
 		}
 
 		public override void deobfuscateEnd() {
-			if (Operations.DecryptStrings != OpDecryptString.None) {
-				foreach (var method in stringDecrypterMethods.Keys)
-					addMethodToBeRemoved(stringDecrypterMethods[method].method, "String decrypter method");
-			}
+			if (Operations.DecryptStrings != OpDecryptString.None)
+				addMethodsToBeRemoved(stringDecrypter.StringDecrypters, "String decrypter method");
 
 			base.deobfuscateEnd();
 		}
 
-		static string decryptString(StringDecrypterInfo info, string encrypted, int value) {
-			char[] chars = encrypted.ToCharArray();
-			byte key = (byte)(info.magic + value);
-			for (int i = 0; i < chars.Length; i++) {
-				char c = chars[i];
-				byte b1 = (byte)((byte)c ^ key++);
-				byte b2 = (byte)((byte)(c >> 8) ^ key++);
-				chars[i] = (char)((b1 << 8) | b2);
-			}
-			return new string(chars);
-		}
-
 		public override IEnumerable<string> getStringDecrypterMethods() {
 			var list = new List<string>();
-			foreach (var method in stringDecrypterMethods.Keys)
+			foreach (var method in stringDecrypter.StringDecrypters)
 				list.Add(method.MetadataToken.ToInt32().ToString("X8"));
 			return list;
 		}
