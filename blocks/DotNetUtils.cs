@@ -174,6 +174,36 @@ namespace de4dot.blocks {
 			}
 		}
 
+		// Return true if it's one of the stloc instructions
+		public static bool isStloc(Instruction instr) {
+			switch (instr.OpCode.Code) {
+			case Code.Stloc:
+			case Code.Stloc_0:
+			case Code.Stloc_1:
+			case Code.Stloc_2:
+			case Code.Stloc_3:
+			case Code.Stloc_S:
+				return true;
+			default:
+				return false;
+			}
+		}
+
+		// Returns true if it's one of the ldloc instructions
+		public static bool isLdloc(Instruction instr) {
+			switch (instr.OpCode.Code) {
+			case Code.Ldloc:
+			case Code.Ldloc_0:
+			case Code.Ldloc_1:
+			case Code.Ldloc_2:
+			case Code.Ldloc_3:
+			case Code.Ldloc_S:
+				return true;
+			default:
+				return false;
+			}
+		}
+
 		// Returns the variable or null if it's not a ldloc/stloc instruction. It does not return
 		// a local variable if it's a ldloca/ldloca.s instruction.
 		public static VariableDefinition getLocalVar(IList<VariableDefinition> locals, Instruction instr) {

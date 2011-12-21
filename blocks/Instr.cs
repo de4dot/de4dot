@@ -103,7 +103,6 @@ namespace de4dot.blocks {
 			}
 		}
 
-		// Returns true if it's one of the ldc.i4 instructions
 		public bool isLdcI4() {
 			return DotNetUtils.isLdcI4(OpCode.Code);
 		}
@@ -112,34 +111,12 @@ namespace de4dot.blocks {
 			return DotNetUtils.getLdcI4Value(instruction);
 		}
 
-		// Return true if it's one of the stloc instructions
 		public bool isStloc() {
-			switch (OpCode.Code) {
-			case Code.Stloc:
-			case Code.Stloc_0:
-			case Code.Stloc_1:
-			case Code.Stloc_2:
-			case Code.Stloc_3:
-			case Code.Stloc_S:
-				return true;
-			default:
-				return false;
-			}
+			return DotNetUtils.isStloc(instruction);
 		}
 
-		// Returns true if it's one of the ldloc instructions
 		public bool isLdloc() {
-			switch (OpCode.Code) {
-			case Code.Ldloc:
-			case Code.Ldloc_0:
-			case Code.Ldloc_1:
-			case Code.Ldloc_2:
-			case Code.Ldloc_3:
-			case Code.Ldloc_S:
-				return true;
-			default:
-				return false;
-			}
+			return DotNetUtils.isLdloc(instruction);
 		}
 
 		public bool isNop() {
@@ -150,22 +127,18 @@ namespace de4dot.blocks {
 			return OpCode == OpCodes.Pop;
 		}
 
-		// Returns true if it's a leave/leave.s
 		public bool isLeave() {
 			return OpCode == OpCodes.Leave || OpCode == OpCodes.Leave_S;
 		}
 
-		// Returns true if it's a br or br.s instruction
 		public bool isBr() {
 			return OpCode == OpCodes.Br || OpCode == OpCodes.Br_S;
 		}
 
-		// Returns true if it's a brfalse/brfalse.s instr
 		public bool isBrfalse() {
 			return OpCode == OpCodes.Brfalse || OpCode == OpCodes.Brfalse_S;
 		}
 
-		// Returns true if it's a brtrue/brtrue.s instr
 		public bool isBrtrue() {
 			return OpCode == OpCodes.Brtrue || OpCode == OpCodes.Brtrue_S;
 		}
