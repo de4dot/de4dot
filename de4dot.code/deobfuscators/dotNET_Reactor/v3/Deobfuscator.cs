@@ -216,9 +216,6 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 		protected override int detectInternal() {
 			int val = 0;
 
-			if (unpackedNativeFile)
-				val += 100;
-
 			int sum = convert(unpackedNativeFile) +
 					convert(decrypterType.Detected) +
 					convert(nativeLibSaver.Detected);
@@ -226,10 +223,6 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 				val += 100 + 10 * (sum - 1);
 
 			return val;
-		}
-
-		static int convert(bool b) {
-			return b ? 1 : 0;
 		}
 
 		protected override void scanForObfuscator() {

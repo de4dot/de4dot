@@ -241,10 +241,6 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			return val;
 		}
 
-		static int convert(bool b) {
-			return b ? 1 : 0;
-		}
-
 		protected override void scanForObfuscator() {
 			methodsDecrypter = new MethodsDecrypter(module);
 			methodsDecrypter.find();
