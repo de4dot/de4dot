@@ -47,6 +47,10 @@ namespace de4dot.code.PE {
 			get { return resources; }
 		}
 
+		public uint FileHeaderOffset {
+			get { return fileHeader.Offset; }
+		}
+
 		public PeImage(byte[] data)
 			: this(new MemoryStream(data)) {
 		}
