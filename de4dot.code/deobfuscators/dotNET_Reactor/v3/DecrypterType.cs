@@ -166,6 +166,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			uint numPatches = peImage.offsetReadUInt32(peImage.ImageLength - 4);
 			uint offset = checked(peImage.ImageLength - 4 - numPatches * 8);
 
+			bool startedPatchingBadData = false;
 			for (uint i = 0; i < numPatches; i++, offset += 8) {
 				uint rva = getValue(peImage.offsetReadUInt32(offset));
 				var value = peImage.offsetReadUInt32(offset + 4);
@@ -179,7 +180,12 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 				else
 					value = getValue(value);
 
-				peImage.dotNetSafeWrite(rva, BitConverter.GetBytes(value));
+				// Seems there's a bug in their code where they sometimes overwrite valid data
+				// with invalid data.
+				if (startedPatchingBadData && value == 0x3115)
+					continue;
+
+				startedPatchingBadData |= peImage.dotNetSafeWrite(rva, BitConverter.GetBytes(value));
 			}
 
 			return true;
