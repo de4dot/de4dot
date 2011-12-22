@@ -78,9 +78,9 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			index = 0;
 			if (!instrs[index++].isLdcI4())
 				return false;
-			if (instrs[index].OpCode.Code != Code.Stloc_S)
+			if (!instrs[index].isStloc())
 				return false;
-			var local = instrs[index++].Operand as VariableDefinition;
+			var local = Instr.getLocalVar(blocks.Locals, instrs[index++]);
 			if (local == null)
 				return false;
 			if (!checkLdloc(blocks.Locals, instrs[index++], local))
