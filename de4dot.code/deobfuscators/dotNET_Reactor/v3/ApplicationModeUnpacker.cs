@@ -81,6 +81,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 		List<UnpackedFile> satelliteAssemblies = new List<UnpackedFile>();
 		uint[] sizes;
 		string[] filenames;
+		bool shouldUnpack;
 
 		public IEnumerable<UnpackedFile> EmbeddedAssemblies {
 			get { return satelliteAssemblies; }
@@ -95,11 +96,14 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 				return unpack2();
 			}
 			catch {
+				if (shouldUnpack)
+					Log.w("Could not unpack the file");
 				return null;
 			}
 		}
 
 		byte[] unpack2() {
+			shouldUnpack = false;
 			uint headerOffset = peImage.ImageLength - 12;
 			uint offsetEncryptedAssembly = checkOffset(peImage.offsetReadUInt32(headerOffset));
 			uint ezencryptionLibLength = peImage.offsetReadUInt32(headerOffset + 4);
@@ -119,6 +123,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			sizes = getSizes(settings["General_App_Satellite_Assemblies_Sizes"]);
 			if (sizes == null || sizes.Length <= 1)
 				return null;
+			shouldUnpack = true;
 			if (sizes[0] != offsetEncryptedAssembly)
 				return null;
 			filenames = settings["General_App_Satellite_Assemblies"].Split('|');
