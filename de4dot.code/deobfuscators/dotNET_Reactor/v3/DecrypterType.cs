@@ -96,8 +96,8 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 					continue;
 
 				decrypterType = type;
-				stringDecrypter1 = addStringDecrypter(type, "CS$0$0004");
-				stringDecrypter2 = addStringDecrypter(type, "CS$0$0005");
+				stringDecrypter1 = getStringDecrypter(type, "CS$0$0004");
+				stringDecrypter2 = getStringDecrypter(type, "CS$0$0005");
 				foreach (var method in type.Methods) {
 					if (DotNetUtils.isMethod(method, "System.Void", "()"))
 						initMethods.Add(method);
@@ -132,7 +132,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			}
 		}
 
-		MethodDefinition addStringDecrypter(TypeDefinition type, string name) {
+		MethodDefinition getStringDecrypter(TypeDefinition type, string name) {
 			var method = DotNetUtils.getMethod(type, name);
 			if (method == null)
 				return null;
@@ -185,7 +185,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 				if (startedPatchingBadData && value == 0x3115)
 					continue;
 
-				startedPatchingBadData |= peImage.dotNetSafeWrite(rva, BitConverter.GetBytes(value));
+				startedPatchingBadData |= !peImage.dotNetSafeWrite(rva, BitConverter.GetBytes(value));
 			}
 
 			return true;

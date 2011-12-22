@@ -92,14 +92,18 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 		}
 
 		public byte[] unpack() {
+			byte[] data = null;
 			try {
-				return unpack2();
+				data = unpack2();
 			}
 			catch {
-				if (shouldUnpack)
-					Log.w("Could not unpack the file");
-				return null;
 			}
+			if (data != null)
+				return data;
+
+			if (shouldUnpack)
+				Log.w("Could not unpack the file");
+			return null;
 		}
 
 		byte[] unpack2() {

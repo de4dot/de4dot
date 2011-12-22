@@ -125,12 +125,12 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 		}
 
 		public override byte[] unpackNativeFile(PeImage peImage) {
-			var unpackerv3 = new ApplicationModeUnpacker(peImage);
-			var data = unpackerv3.unpack();
+			var unpacker = new ApplicationModeUnpacker(peImage);
+			var data = unpacker.unpack();
 			if (data == null)
 				return null;
 
-			unpackedFiles.AddRange(unpackerv3.EmbeddedAssemblies);
+			unpackedFiles.AddRange(unpacker.EmbeddedAssemblies);
 			unpackedNativeFile = true;
 			ModuleBytes = data;
 			return data;
