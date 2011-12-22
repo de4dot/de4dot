@@ -64,7 +64,7 @@ namespace de4dot.code.deobfuscators {
 			return true;
 		}
 
-		public static byte[] decrypt(byte[] data, byte[] key, byte[] iv) {
+		public static byte[] aesDecrypt(byte[] data, byte[] key, byte[] iv) {
 			using (var aes = new RijndaelManaged { Mode = CipherMode.CBC }) {
 				using (var transform = aes.CreateDecryptor(key, iv)) {
 					return transform.TransformFinalBlock(data, 0, data.Length);

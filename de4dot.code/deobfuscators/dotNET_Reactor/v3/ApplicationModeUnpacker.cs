@@ -164,7 +164,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 				offset += sizes[i];
 			string filename = Win32Path.GetFileName(filenames[index]);
 			var data = peImage.offsetReadBytes(offset, (int)sizes[index + 1]);
-			data = DeobUtils.decrypt(data, decrypter.AssemblyKey, decrypter.AssemblyIv);
+			data = DeobUtils.aesDecrypt(data, decrypter.AssemblyKey, decrypter.AssemblyIv);
 			data = decompress(data);
 			return new UnpackedFile(filename, data);
 		}
@@ -199,11 +199,11 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 		}
 
 		static byte[] decrypt1(byte[] data) {
-			return DeobUtils.decrypt(data, key1, iv1);
+			return DeobUtils.aesDecrypt(data, key1, iv1);
 		}
 
 		static byte[] decrypt2(byte[] data) {
-			return DeobUtils.decrypt(data, key2, iv2);
+			return DeobUtils.aesDecrypt(data, key2, iv2);
 		}
 	}
 }

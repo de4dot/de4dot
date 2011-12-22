@@ -121,7 +121,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 				writer.Write(value);
 			byte[] decrypted;
 			try {
-				decrypted = DeobUtils.decrypt(memStream.ToArray(), decryptMethod.Key, decryptMethod.Iv);
+				decrypted = DeobUtils.aesDecrypt(memStream.ToArray(), decryptMethod.Key, decryptMethod.Iv);
 			}
 			catch {
 				return null;
