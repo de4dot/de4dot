@@ -24,6 +24,14 @@ using Mono.Cecil.Cil;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.SmartAssembly {
+	enum StringDecrypterVersion {
+		V1,
+		V2,
+		V3,
+		V4,
+		Unknown,
+	}
+
 	class StringDecrypterInfo {
 		ModuleDefinition module;
 		ResourceDecrypter resourceDecrypter;
@@ -32,6 +40,11 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 		int stringOffset;
 		TypeDefinition simpleZipType;
 		MethodDefinition stringDecrypterMethod;
+		StringDecrypterVersion decrypterVersion;
+
+		public StringDecrypterVersion DecrypterVersion {
+			get { return decrypterVersion; }
+		}
 
 		public TypeDefinition GetStringDelegate { get; set; }
 		public TypeDefinition StringsType { get; set; }
@@ -70,33 +83,98 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			this.stringsEncodingClass = stringsEncodingClass;
 		}
 
+		static string[] fields2x = new string[] {
+			"System.IO.Stream",
+			"System.Int32",
+		};
+		static string[] fields3x = new string[] {
+			"System.Byte[]",
+			"System.Int32",
+		};
+		StringDecrypterVersion guessVersion(MethodDefinition cctor) {
+			if (cctor == null)
+				return StringDecrypterVersion.V1;
+			var fieldTypes = new FieldTypes(stringsEncodingClass);
+			if (fieldTypes.exactly(fields2x))
+				return StringDecrypterVersion.V2;
+			if (fieldTypes.exactly(fields3x))
+				return StringDecrypterVersion.V3;
+			return StringDecrypterVersion.Unknown;
+		}
+
 		public bool init(IDeobfuscator deob, ISimpleDeobfuscator simpleDeobfuscator) {
 			var cctor = DotNetUtils.getMethod(stringsEncodingClass, ".cctor");
-			if (cctor == null)
-				throw new ApplicationException("Could not find .cctor");
-			simpleDeobfuscator.deobfuscate(cctor);
+			if (cctor != null)
+				simpleDeobfuscator.deobfuscate(cctor);
 
-			stringsResource = findStringResource(cctor);
-			if (stringsResource == null) {
-				simpleDeobfuscator.decryptStrings(cctor, deob);
-				stringsResource = findStringResource(cctor);
-				if (stringsResource == null)
-					return false;
-			}
-
-			var offsetVal = findOffsetValue(cctor);
-			if (offsetVal == null)
-				throw new ApplicationException("Could not find string offset");
-			stringOffset = offsetVal.Value;
+			decrypterVersion = guessVersion(cctor);
 
 			if (!findDecrypterMethod())
 				throw new ApplicationException("Could not find string decrypter method");
 
-			simpleZipType = findSimpleZipType(cctor);
+			if (!findStringsResource(deob, simpleDeobfuscator, cctor ?? stringDecrypterMethod))
+				return false;
+
+			if (decrypterVersion <= StringDecrypterVersion.V3) {
+				MethodDefinition initMethod;
+				if (decrypterVersion == StringDecrypterVersion.V3)
+					initMethod = cctor;
+				else if (decrypterVersion == StringDecrypterVersion.V2)
+					initMethod = stringDecrypterMethod;
+				else
+					initMethod = stringDecrypterMethod;
+
+				stringOffset = 0;
+				if (decrypterVersion != StringDecrypterVersion.V1) {
+					var pkt = module.Assembly.Name.PublicKeyToken;
+					if (pkt != null) {
+						for (int i = 0; i < pkt.Length - 1; i += 2)
+							stringOffset ^= ((int)pkt[i] << 8) + pkt[i + 1];
+					}
+
+					if (DotNetUtils.findLdcI4Constant(initMethod, 0xFFFFFF) &&
+						DotNetUtils.findLdcI4Constant(initMethod, 0xFFFF)) {
+						stringOffset ^= ((stringDecrypterMethod.MetadataToken.ToInt32() & 0xFFFFFF) - 1) % 0xFFFF;
+					}
+				}
+			}
+			else {
+				var offsetVal = findOffsetValue(cctor);
+				if (offsetVal == null)
+					throw new ApplicationException("Could not find string offset");
+				stringOffset = offsetVal.Value;
+				decrypterVersion = StringDecrypterVersion.V4;
+			}
+
+			simpleZipType = cctor == null ? null : findSimpleZipType(cctor);
 			if (simpleZipType != null)
 				resourceDecrypter = new ResourceDecrypter(new ResourceDecrypterInfo(module, simpleZipType, simpleDeobfuscator));
 
 			return true;
+		}
+
+		bool findStringsResource(IDeobfuscator deob, ISimpleDeobfuscator simpleDeobfuscator, MethodDefinition initMethod) {
+			if (stringsResource != null)
+				return true;
+
+			if (decrypterVersion <= StringDecrypterVersion.V3) {
+				stringsResource = DotNetUtils.getResource(module, module.Mvid.ToString("B")) as EmbeddedResource;
+				if (stringsResource != null)
+					return true;
+			}
+
+			if (initMethod != null) {
+				stringsResource = findStringResource(initMethod);
+				if (stringsResource != null)
+					return true;
+
+				simpleDeobfuscator.decryptStrings(initMethod, deob);
+				stringsResource = findStringResource(initMethod);
+				if (stringsResource != null)
+					return true;
+			}
+
+			return false;
 		}
 
 		public byte[] decrypt() {
@@ -107,10 +185,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 
 		// Find the embedded resource where all the strings are encrypted
 		EmbeddedResource findStringResource(MethodDefinition method) {
-			foreach (var ldstr in method.Body.Instructions) {
-				if (ldstr.OpCode.Code != Code.Ldstr)
-					continue;
-				var s = ldstr.Operand as string;
+			foreach (var s in DotNetUtils.getCodeStrings(method)) {
 				if (s == null)
 					continue;
 				var resource = DotNetUtils.getResource(module, s) as EmbeddedResource;
@@ -181,6 +256,9 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 		}
 
 		bool findDecrypterMethod() {
+			if (stringDecrypterMethod != null)
+				return true;
+
 			var methods = new List<MethodDefinition>(DotNetUtils.findMethods(stringsEncodingClass.Methods, "System.String", new string[] { "System.Int32" }));
 			if (methods.Count != 1)
 				return false;

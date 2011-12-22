@@ -24,6 +24,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 	class StringDecrypter {
 		int stringOffset;
 		byte[] decryptedData;
+		StringDecrypterVersion stringDecrypterVersion;
 
 		public bool CanDecrypt {
 			get { return decryptedData != null; }
@@ -43,6 +44,8 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 					stringOffset = stringDecrypterInfo.StringOffset;
 					decryptedData = stringDecrypterInfo.decrypt();
 				}
+
+				stringDecrypterVersion = StringDecrypterInfo.DecrypterVersion;
 			}
 		}
 
@@ -65,8 +68,20 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 						decryptedData[index++];
 			}
 
-			var decodedData = Convert.FromBase64String(Encoding.UTF8.GetString(decryptedData, index, len));
-			return Encoding.UTF8.GetString(decodedData, 0, decodedData.Length);
+			switch (StringDecrypterInfo.DecrypterVersion) {
+			case StringDecrypterVersion.V1:
+				// Some weird problem with 1.x decrypted strings. They all have a \x01 char at the end.
+				var buf = Convert.FromBase64String(Encoding.ASCII.GetString(decryptedData, index, len));
+				if (buf.Length % 2 != 0)
+					Array.Resize(ref buf, buf.Length - 1);
+				return Encoding.Unicode.GetString(buf);
+
+			case StringDecrypterVersion.V2:
+				return Encoding.UTF8.GetString(Convert.FromBase64String(Encoding.ASCII.GetString(decryptedData, index, len)));
+
+			default:
+				return Encoding.UTF8.GetString(Convert.FromBase64String(Encoding.UTF8.GetString(decryptedData, index, len)));
+			}
 		}
 	}
 }

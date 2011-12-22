@@ -53,11 +53,18 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			if (resolverType != null)
 				return true;
 
-			var cctor = DotNetUtils.getMethod(DotNetUtils.getModuleType(module), ".cctor");
-			if (cctor == null)
-				return false;
+			if (findTypes(DotNetUtils.getMethod(DotNetUtils.getModuleType(module), ".cctor")))
+				return true;
+			if (findTypes(module.EntryPoint))
+				return true;
 
-			foreach (var tuple in DotNetUtils.getCalledMethods(module, cctor)) {
+			return false;
+		}
+
+		bool findTypes(MethodDefinition initMethod) {
+			if (initMethod == null)
+				return false;
+			foreach (var tuple in DotNetUtils.getCalledMethods(module, initMethod)) {
 				var method = tuple.Item2;
 				if (method.Name == ".cctor" || method.Name == ".ctor")
 					continue;
@@ -98,16 +105,50 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				return true;
 			}
 
+			if (hasLdftn(attachAppMethod)) {
+				simpleDeobfuscator.deobfuscate(attachAppMethod);
+				foreach (var resolverHandler in getResolverHandlers(type, attachAppMethod)) {
+					if (!resolverHandler.HasBody)
+						continue;
+					if (!checkResolverType2(resolverHandler.DeclaringType))
+						continue;
+					deobfuscate(resolverHandler);
+					if (checkHandlerMethod(resolverHandler)) {
+						callResolverMethod = attachAppMethod;
+						callResolverType = type;
+						resolverType = resolverHandler.DeclaringType;
+						return true;
+					}
+				}
+			}
+
 			return false;
+		}
+
+		static bool hasLdftn(MethodDefinition method) {
+			if (method == null || method.Body == null)
+				return false;
+			foreach (var instr in method.Body.Instructions) {
+				if (instr.OpCode.Code == Code.Ldftn)
+					return true;
+			}
+			return false;
+		}
+
+		bool checkResolverType2(TypeDefinition type) {
+			if (type.Properties.Count > 1 || type.Events.Count > 0)
+				return false;
+			if (!checkResolverType(type))
+				return false;
+
+			return true;
 		}
 
 		bool checkResolverType(TypeDefinition type, MethodDefinition initMethod) {
 			resolverType = null;
 			if (!initMethod.HasBody)
 				return false;
-			if (type.Properties.Count > 1 || type.Events.Count > 0)
-				return false;
-			if (!checkResolverType(type))
+			if (!checkResolverType2(type))
 				return false;
 
 			deobfuscate(initMethod);

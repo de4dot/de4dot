@@ -17,6 +17,7 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -27,6 +28,15 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 		ModuleDefinition module;
 		ExceptionLoggerRemover exceptionLoggerRemover = new ExceptionLoggerRemover();
 		TypeDefinition automatedErrorReportingType;
+		int constantArgs;
+		AerVersion aerVersion;
+
+		enum AerVersion {
+			V0,
+			V1,
+			V2,
+			V3,
+		}
 
 		public ExceptionLoggerRemover ExceptionLoggerRemover {
 			get { return exceptionLoggerRemover; }
@@ -57,6 +67,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 
 			const int MIN_HELPER_METHODS = 6;
 
+			constantArgs = 0;
 			var methods = new List<MethodDefinition>();
 			MethodDefinition mainMethod = null;
 			foreach (var method in type.Methods) {
@@ -64,18 +75,39 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 					methods.Add(method);
 				else if (isAutomatedErrorReportingMethod(method))
 					mainMethod = method;
+				else
+					continue;
+				initializeConstantArgs(method);
 			}
-			if (mainMethod == null || methods.Count < MIN_HELPER_METHODS)
+			if (mainMethod == null)
 				return false;
 
-			methods.Sort((a, b) => Utils.compareInt32(a.Parameters.Count, b.Parameters.Count));
-			for (int i = 0; i < methods.Count; i++) {
-				var method = methods[i];
-				if (method.Parameters.Count != i + 1)
+			if (isV0(type)) {
+				foreach (var method in type.Methods) {
+					if (method.IsStatic)
+						exceptionLoggerRemover.add(method);
+				}
+			}
+			else {
+				if (methods.Count < MIN_HELPER_METHODS)
 					return false;
-				var methodCalls = DotNetUtils.getMethodCallCounts(method);
-				if (methodCalls.count(mainMethod.FullName) != 1)
-					return false;
+
+				if (isV1(mainMethod))
+					aerVersion = AerVersion.V1;
+				else if (isV2(mainMethod))
+					aerVersion = AerVersion.V2;
+				else
+					aerVersion = AerVersion.V3;
+
+				methods.Sort((a, b) => Utils.compareInt32(a.Parameters.Count, b.Parameters.Count));
+				for (int i = 0; i < methods.Count; i++) {
+					var method = methods[i];
+					if (method.Parameters.Count != i + constantArgs)
+						return false;
+					var methodCalls = DotNetUtils.getMethodCallCounts(method);
+					if (methodCalls.count(mainMethod.FullName) != 1)
+						return false;
+				}
 			}
 
 			exceptionLoggerRemover.add(mainMethod);
@@ -83,9 +115,76 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				exceptionLoggerRemover.add(method);
 			automatedErrorReportingType = type;
 
+			if (aerVersion == AerVersion.V1) {
+				foreach (var method in type.Methods) {
+					if (DotNetUtils.isMethod(method, "System.Exception", "(System.Int32,System.Object[])"))
+						exceptionLoggerRemover.add(method);
+				}
+			}
+
 			initUnhandledExceptionFilterMethods();
 
 			return true;
+		}
+
+		void initializeConstantArgs(MethodDefinition method) {
+			if (constantArgs > 0)
+				return;
+			constantArgs = getConstantArgs(method);
+		}
+
+		static int getConstantArgs(MethodDefinition method) {
+			if (method.Parameters.Count >= 2) {
+				if (isV1(method) || isV2(method))
+					return 2;
+			}
+			return 1;
+		}
+
+		static string[] v0Fields = new string[] {
+			"System.Int32",
+			"System.Object[]",
+		};
+		static bool isV0(TypeDefinition type) {
+			if (!new FieldTypes(type).exactly(v0Fields))
+				return false;
+			if (type.Methods.Count != 3)
+				return false;
+			if (type.HasEvents || type.HasProperties)
+				return false;
+			MethodDefinition ctor = null, meth1 = null, meth2 = null;
+			foreach (var method in type.Methods) {
+				if (method.Name == ".ctor") {
+					ctor = method;
+					continue;
+				}
+				if (!method.IsStatic)
+					return false;
+				if (DotNetUtils.isMethod(method, "System.Exception", "(System.Int32,System.Object[])"))
+					meth1 = method;
+				else if (DotNetUtils.isMethod(method, "System.Exception", "(System.Int32,System.Exception,System.Object[])"))
+					meth2 = method;
+				else
+					return false;
+			}
+
+			return ctor != null && meth1 != null && meth2 != null;
+		}
+
+		static bool isV1(MethodDefinition method) {
+			if (method.Parameters.Count < 2)
+				return false;
+			var p0 = method.Parameters[0].ParameterType.FullName;
+			var p1 = method.Parameters[1].ParameterType.FullName;
+			return p0 == "System.Int32" && p1 == "System.Exception";
+		}
+
+		static bool isV2(MethodDefinition method) {
+			if (method.Parameters.Count < 2)
+				return false;
+			var p0 = method.Parameters[0].ParameterType.FullName;
+			var p1 = method.Parameters[1].ParameterType.FullName;
+			return p0 == "System.Exception" && p1 == "System.Int32";
 		}
 
 		bool isAutomatedErrorReportingMethodHelper(MethodDefinition method) {
@@ -95,9 +194,9 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				return false;
 			if (method.Parameters.Count == 0)
 				return false;
-			if (method.Parameters[0].ParameterType.FullName != "System.Exception")
+			if (!isV1(method) && !isV2(method) && method.Parameters[0].ParameterType.FullName != "System.Exception")
 				return false;
-			for (int i = 1; i < method.Parameters.Count; i++) {
+			for (int i = getConstantArgs(method); i < method.Parameters.Count; i++) {
 				if (method.Parameters[i].ParameterType.FullName != "System.Object")
 					return false;
 			}
@@ -108,7 +207,11 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			if (!method.HasBody || !method.IsStatic || method.Name == ".ctor")
 				return false;
 			return DotNetUtils.isMethod(method, "System.Void", "(System.Exception,System.Object[])") ||
-				DotNetUtils.isMethod(method, "System.Exception", "(System.Exception,System.Object[])");
+				DotNetUtils.isMethod(method, "System.Exception", "(System.Exception,System.Object[])") ||
+				// 2.x
+				DotNetUtils.isMethod(method, "System.Exception", "(System.Exception,System.Int32,System.Object[])") ||
+				// 1.x
+				DotNetUtils.isMethod(method, "System.Exception", "(System.Int32,System.Exception,System.Object[])");
 		}
 
 		void initUnhandledExceptionFilterMethods() {
@@ -141,14 +244,39 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			if (method == null || !method.IsStatic)
 				return null;
 
-			if (method.Parameters.Count < 2)
-				return null;
 			if (DotNetUtils.hasReturnValue(method))
 				return null;
-			if (method.Parameters[0].ParameterType.ToString() != "System.Exception")
-				return null;
-			if (method.Parameters[method.Parameters.Count - 1].ParameterType.ToString() != "System.Object[]")
-				return null;
+
+			switch (aerVersion) {
+			case AerVersion.V0:
+			case AerVersion.V1:
+				if (!DotNetUtils.isMethod(method, "System.Void", "(System.Int32,System.Object[])"))
+					return null;
+				break;
+
+			case AerVersion.V2:
+				if (method.Parameters.Count < 2)
+					return null;
+				if (method.Parameters[0].ParameterType.ToString() != "System.Exception")
+					return null;
+				if (method.Parameters[1].ParameterType.ToString() != "System.Int32")
+					return null;
+				if (method.Parameters[method.Parameters.Count - 1].ParameterType.ToString() != "System.Object[]")
+					return null;
+				break;
+
+			case AerVersion.V3:
+				if (method.Parameters.Count < 1)
+					return null;
+				if (method.Parameters[0].ParameterType.ToString() != "System.Exception")
+					return null;
+				if (method.Parameters[method.Parameters.Count - 1].ParameterType.ToString() != "System.Object[]")
+					return null;
+				break;
+
+			default:
+				throw new ApplicationException("Invalid AER version");
+			}
 
 			return method;
 		}

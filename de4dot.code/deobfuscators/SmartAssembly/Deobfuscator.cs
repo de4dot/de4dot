@@ -318,7 +318,9 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			resourceResolverInfo.findTypes();
 
 			addModuleCctorInitCallToBeRemoved(assemblyResolverInfo.CallResolverMethod);
+			addCallToBeRemoved(module.EntryPoint, assemblyResolverInfo.CallResolverMethod);
 			addModuleCctorInitCallToBeRemoved(resourceResolverInfo.CallResolverMethod);
+			addCallToBeRemoved(module.EntryPoint, resourceResolverInfo.CallResolverMethod);
 
 			resourceDecrypterInfo.setSimpleZipType(getGlobalSimpleZipType(), DeobfuscatedFile);
 

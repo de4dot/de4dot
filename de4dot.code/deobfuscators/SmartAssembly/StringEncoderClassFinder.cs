@@ -170,12 +170,29 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			}
 		}
 
+		static string[] fields1x = new string[] {
+			"System.IO.Stream",
+		};
+		static string[] fields2x = new string[] {
+			"System.IO.Stream",
+			"System.Int32",
+		};
+		static string[] fields3x = new string[] {
+			"System.Byte[]",
+			"System.Int32",
+		};
 		bool couldBeStringDecrypterClass(TypeDefinition type) {
-			if (DotNetUtils.findFieldType(type, "System.Collections.Hashtable", true) == null &&
-				DotNetUtils.findFieldType(type, "System.Collections.Generic.Dictionary`2<System.Int32,System.String>", true) == null) {
-				return false;
+			var fields = new FieldTypes(type);
+			if (fields.exists("System.Collections.Hashtable") ||
+				fields.exists("System.Collections.Generic.Dictionary`2<System.Int32,System.String>") ||
+				fields.exactly(fields2x) ||
+				fields.exactly(fields3x)) {
+				if (DotNetUtils.getMethod(type, ".cctor") == null)
+					return false;
 			}
-			if (DotNetUtils.getMethod(type, ".cctor") == null)
+			else if (fields.exactly(fields1x)) {
+			}
+			else
 				return false;
 
 			var methods = new List<MethodDefinition>(DotNetUtils.getNormalMethods(type));
