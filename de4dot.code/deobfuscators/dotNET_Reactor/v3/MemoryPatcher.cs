@@ -21,7 +21,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Mono.Cecil;
-using Mono.Cecil.Cil;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
 using de4dot.code.PE;
