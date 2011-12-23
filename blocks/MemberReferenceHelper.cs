@@ -47,6 +47,7 @@ namespace de4dot.blocks {
 	public class TypeDefinitionDict<TValue> {
 		Dictionary<ScopeAndTokenKey, TValue> tokenToValue = new Dictionary<ScopeAndTokenKey, TValue>();
 		Dictionary<TypeReferenceKey, TValue> refToValue = new Dictionary<TypeReferenceKey, TValue>();
+		Dictionary<TypeReferenceKey, TypeDefinition> refToKey = new Dictionary<TypeReferenceKey, TypeDefinition>();
 
 		public int Count {
 			get { return tokenToValue.Count; }
@@ -75,7 +76,28 @@ namespace de4dot.blocks {
 
 		public void add(TypeDefinition typeDefinition, TValue value) {
 			tokenToValue[getTokenKey(typeDefinition)] = value;
-			refToValue[getReferenceKey(typeDefinition)] = value;
+
+			var refKey = getReferenceKey(typeDefinition);
+			if (!refToValue.ContainsKey(refKey) ||
+				getAccessibilityOrder(typeDefinition) < getAccessibilityOrder(refToKey[refKey])) {
+				refToKey[refKey] = typeDefinition;
+				refToValue[refKey] = value;
+			}
+		}
+
+		// Order: public, family, assembly, private
+		static int[] accessibilityOrder = new int[8] {
+			40,		// NotPublic
+			0,		// Public
+			10,		// NestedPublic
+			70,		// NestedPrivate
+			20,		// NestedFamily
+			50,		// NestedAssembly
+			60,		// NestedFamANDAssem
+			30,		// NestedFamORAssem
+		};
+		static int getAccessibilityOrder(TypeDefinition typeDefinition) {
+			return accessibilityOrder[(int)typeDefinition.Attributes & 7];
 		}
 
 		public void onTypesRenamed() {
@@ -89,6 +111,7 @@ namespace de4dot.blocks {
 	public abstract class FieldDefinitionDictBase<TValue> {
 		Dictionary<ScopeAndTokenKey, TValue> tokenToValue = new Dictionary<ScopeAndTokenKey, TValue>();
 		Dictionary<IFieldReferenceKey, TValue> refToValue = new Dictionary<IFieldReferenceKey, TValue>();
+		Dictionary<IFieldReferenceKey, FieldDefinition> refToKey = new Dictionary<IFieldReferenceKey, FieldDefinition>();
 
 		public int Count {
 			get { return tokenToValue.Count; }
@@ -115,7 +138,28 @@ namespace de4dot.blocks {
 
 		public void add(FieldDefinition fieldDefinition, TValue value) {
 			tokenToValue[getTokenKey(fieldDefinition)] = value;
-			refToValue[getReferenceKey(fieldDefinition)] = value;
+
+			var refKey = getReferenceKey(fieldDefinition);
+			if (!refToValue.ContainsKey(refKey) ||
+				getAccessibilityOrder(fieldDefinition) < getAccessibilityOrder(refToKey[refKey])) {
+				refToKey[refKey] = fieldDefinition;
+				refToValue[refKey] = value;
+			}
+		}
+
+		// Order: public, family, assembly, private
+		static int[] accessibilityOrder = new int[8] {
+			60,		// CompilerControlled
+			50,		// Private
+			40,		// FamANDAssem
+			30,		// Assembly
+			10,		// Family
+			20,		// FamORAssem
+			0,		// Public
+			70,		// <reserved>
+		};
+		static int getAccessibilityOrder(FieldDefinition fieldDefinition) {
+			return accessibilityOrder[(int)fieldDefinition.Attributes & 7];
 		}
 
 		public void onTypesRenamed() {
@@ -141,6 +185,7 @@ namespace de4dot.blocks {
 	public abstract class MethodDefinitionDictBase<TValue> {
 		Dictionary<ScopeAndTokenKey, TValue> tokenToValue = new Dictionary<ScopeAndTokenKey, TValue>();
 		Dictionary<IMethodReferenceKey, TValue> refToValue = new Dictionary<IMethodReferenceKey, TValue>();
+		Dictionary<IMethodReferenceKey, MethodDefinition> refToKey = new Dictionary<IMethodReferenceKey, MethodDefinition>();
 
 		public int Count {
 			get { return tokenToValue.Count; }
@@ -167,7 +212,28 @@ namespace de4dot.blocks {
 
 		public void add(MethodDefinition methodDefinition, TValue value) {
 			tokenToValue[getTokenKey(methodDefinition)] = value;
-			refToValue[getReferenceKey(methodDefinition)] = value;
+
+			var refKey = getReferenceKey(methodDefinition);
+			if (!refToValue.ContainsKey(refKey) ||
+				getAccessibilityOrder(methodDefinition) < getAccessibilityOrder(refToKey[refKey])) {
+				refToKey[refKey] = methodDefinition;
+				refToValue[refKey] = value;
+			}
+		}
+
+		// Order: public, family, assembly, private
+		static int[] accessibilityOrder = new int[8] {
+			60,		// CompilerControlled
+			50,		// Private
+			40,		// FamANDAssem
+			30,		// Assembly
+			10,		// Family
+			20,		// FamORAssem
+			0,		// Public
+			70,		// <reserved>
+		};
+		static int getAccessibilityOrder(MethodDefinition methodDefinition) {
+			return accessibilityOrder[(int)methodDefinition.Attributes & 7];
 		}
 
 		public void onTypesRenamed() {
