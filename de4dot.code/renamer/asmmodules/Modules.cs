@@ -449,7 +449,11 @@ namespace de4dot.code.renamer.asmmodules {
 			}
 			if (isAutoCreatedType(typeReference))
 				return null;
-			Log.e("Could not resolve TypeReference {0} ({1:X8})", typeReference, typeReference.MetadataToken.ToInt32());
+			Log.e("Could not resolve TypeReference {0} ({1:X8}) (from {2} -> {3})",
+						typeReference,
+						typeReference.MetadataToken.ToInt32(),
+						typeReference.Module,
+						typeReference.Scope);
 			return null;
 		}
 
@@ -466,7 +470,11 @@ namespace de4dot.code.renamer.asmmodules {
 			}
 			if (isAutoCreatedType(methodReference.DeclaringType))
 				return null;
-			Log.e("Could not resolve MethodReference {0} ({1:X8})", methodReference, methodReference.MetadataToken.ToInt32());
+			Log.e("Could not resolve MethodReference {0} ({1:X8}) (from {2} -> {3})",
+						methodReference,
+						methodReference.MetadataToken.ToInt32(),
+						methodReference.DeclaringType.Module,
+						methodReference.DeclaringType.Scope);
 			return null;
 		}
 
@@ -483,7 +491,11 @@ namespace de4dot.code.renamer.asmmodules {
 			}
 			if (isAutoCreatedType(fieldReference.DeclaringType))
 				return null;
-			Log.e("Could not resolve FieldReference {0} ({1:X8})", fieldReference, fieldReference.MetadataToken.ToInt32());
+			Log.e("Could not resolve FieldReference {0} ({1:X8}) (from {2} -> {3})",
+						fieldReference,
+						fieldReference.MetadataToken.ToInt32(),
+						fieldReference.DeclaringType.Module,
+						fieldReference.DeclaringType.Scope);
 			return null;
 		}
 	}
