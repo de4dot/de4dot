@@ -523,50 +523,59 @@ namespace de4dot.code {
 				Log.v("Deobfuscating {0} ({1:X8})", method, method.MetadataToken.ToUInt32());
 				Log.indent();
 
-				if (hasNonEmptyBody(method)) {
-					var blocks = new Blocks(method);
-					int numRemovedLocals = 0;
-					int oldNumInstructions = method.Body.Instructions.Count;
-
-					deob.deobfuscateMethodBegin(blocks);
-					if (options.ControlFlowDeobfuscation) {
-						cflowDeobfuscator.init(blocks);
-						cflowDeobfuscator.deobfuscate();
-					}
-
-					if (deob.deobfuscateOther(blocks) && options.ControlFlowDeobfuscation)
-						cflowDeobfuscator.deobfuscate();
-
-					if (options.ControlFlowDeobfuscation) {
-						numRemovedLocals = blocks.optimizeLocals();
-						blocks.repartitionBlocks();
-					}
-
-					deobfuscateStrings(blocks);
-					deob.deobfuscateMethodEnd(blocks);
-
-					IList<Instruction> allInstructions;
-					IList<ExceptionHandler> allExceptionHandlers;
-					blocks.getCode(out allInstructions, out allExceptionHandlers);
-					DotNetUtils.restoreBody(method, allInstructions, allExceptionHandlers);
-
-					if (numRemovedLocals > 0)
-						Log.v("Removed {0} unused local(s)", numRemovedLocals);
-					int numRemovedInstructions = oldNumInstructions - method.Body.Instructions.Count;
-					if (numRemovedInstructions > 0)
-						Log.v("Removed {0} dead instruction(s)", numRemovedInstructions);
-
-					const Log.LogLevel dumpLogLevel = Log.LogLevel.veryverbose;
-					if (Log.isAtLeast(dumpLogLevel)) {
-						Log.log(dumpLogLevel, "Deobfuscated code:");
-						Log.indent();
-						methodPrinter.print(dumpLogLevel, method, allInstructions, allExceptionHandlers);
-						Log.deIndent();
-					}
+				try {
+					deobfuscate(method, cflowDeobfuscator, methodPrinter);
 				}
-
+				catch {
+					Log.w("Could not deobfuscate method {0:X8}", method.MetadataToken.ToInt32());
+				}
 				removeNoInliningAttribute(method);
 
+				Log.deIndent();
+			}
+		}
+
+		void deobfuscate(MethodDefinition method, BlocksCflowDeobfuscator cflowDeobfuscator, MethodPrinter methodPrinter) {
+			if (!hasNonEmptyBody(method))
+				return;
+
+			var blocks = new Blocks(method);
+			int numRemovedLocals = 0;
+			int oldNumInstructions = method.Body.Instructions.Count;
+
+			deob.deobfuscateMethodBegin(blocks);
+			if (options.ControlFlowDeobfuscation) {
+				cflowDeobfuscator.init(blocks);
+				cflowDeobfuscator.deobfuscate();
+			}
+
+			if (deob.deobfuscateOther(blocks) && options.ControlFlowDeobfuscation)
+				cflowDeobfuscator.deobfuscate();
+
+			if (options.ControlFlowDeobfuscation) {
+				numRemovedLocals = blocks.optimizeLocals();
+				blocks.repartitionBlocks();
+			}
+
+			deobfuscateStrings(blocks);
+			deob.deobfuscateMethodEnd(blocks);
+
+			IList<Instruction> allInstructions;
+			IList<ExceptionHandler> allExceptionHandlers;
+			blocks.getCode(out allInstructions, out allExceptionHandlers);
+			DotNetUtils.restoreBody(method, allInstructions, allExceptionHandlers);
+
+			if (numRemovedLocals > 0)
+				Log.v("Removed {0} unused local(s)", numRemovedLocals);
+			int numRemovedInstructions = oldNumInstructions - method.Body.Instructions.Count;
+			if (numRemovedInstructions > 0)
+				Log.v("Removed {0} dead instruction(s)", numRemovedInstructions);
+
+			const Log.LogLevel dumpLogLevel = Log.LogLevel.veryverbose;
+			if (Log.isAtLeast(dumpLogLevel)) {
+				Log.log(dumpLogLevel, "Deobfuscated code:");
+				Log.indent();
+				methodPrinter.print(dumpLogLevel, method, allInstructions, allExceptionHandlers);
 				Log.deIndent();
 			}
 		}
