@@ -55,7 +55,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 					continue;
 				if (!DecryptMethod.couldBeDecryptMethod(method, additionalTypes))
 					continue;
-				cflowDeobfuscator.deobfuscateCflow(method);
+				cflowDeobfuscator.deobfuscate(method);
 				if (!decryptMethod.getKey(method))
 					continue;
 

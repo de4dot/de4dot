@@ -33,7 +33,7 @@ namespace de4dot.blocks.cflow {
 			InlineInstanceMethods = false;
 		}
 
-		public void deobfuscateCflow(MethodDefinition method) {
+		public void deobfuscate(MethodDefinition method) {
 			deobfuscate(method, (blocks) => {
 				cflowDeobfuscator.InlineMethods = InlineMethods;
 				cflowDeobfuscator.InlineInstanceMethods = InlineInstanceMethods;

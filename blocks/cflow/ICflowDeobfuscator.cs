@@ -21,6 +21,6 @@ using Mono.Cecil;
 
 namespace de4dot.blocks.cflow {
 	public interface ICflowDeobfuscator {
-		void deobfuscateCflow(MethodDefinition method);
+		void deobfuscate(MethodDefinition method);
 	}
 }

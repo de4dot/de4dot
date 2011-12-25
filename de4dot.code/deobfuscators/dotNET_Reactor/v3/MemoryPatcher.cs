@@ -56,7 +56,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 					continue;
 				if (!DecryptMethod.couldBeDecryptMethod(method, additionalTypes))
 					continue;
-				cflowDeobfuscator.deobfuscateCflow(method);
+				cflowDeobfuscator.deobfuscate(method);
 				if (!decryptMethod.getKey(method))
 					continue;
 
@@ -77,7 +77,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 					continue;
 				if (!new LocalTypes(method).exactly(locals))
 					continue;
-				cflowDeobfuscator.deobfuscateCflow(method);
+				cflowDeobfuscator.deobfuscate(method);
 				var patchInfo = getPatchInfo(method);
 				if (patchInfo == null)
 					continue;
