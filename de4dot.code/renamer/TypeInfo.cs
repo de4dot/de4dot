@@ -85,9 +85,10 @@ namespace de4dot.code.renamer {
 			var checker = NameChecker;
 
 			if (newNamespace == null && oldNamespace != "") {
-				if (!checker.isValidNamespaceName(oldNamespace)) {
+				if (type.TypeDefinition.IsNested)
+					newNamespace = "";
+				else if (!checker.isValidNamespaceName(oldNamespace))
 					newNamespace = state.createNamespace(oldNamespace);
-				}
 			}
 
 			string origClassName = null;
