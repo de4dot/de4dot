@@ -189,6 +189,8 @@ namespace de4dot.blocks {
 			if (insane) {
 				if (newBaseBlocks.Count != baseBlocks.Count)
 					throw new ApplicationException("BlocksSorter included too many/few BaseBlocks");
+				if (baseBlocks.Count > 0 && baseBlocks[0] != newBaseBlocks[0])
+					throw new ApplicationException("BlocksSorter removed the start block");
 				foreach (var bb in baseBlocks) {
 					if (!newBaseBlocks.Contains(bb))
 						throw new ApplicationException("BlocksSorter forgot a child");
