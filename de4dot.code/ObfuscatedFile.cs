@@ -526,8 +526,13 @@ namespace de4dot.code {
 				try {
 					deobfuscate(method, cflowDeobfuscator, methodPrinter);
 				}
-				catch {
-					Log.w("Could not deobfuscate method {0:X8}", method.MetadataToken.ToInt32());
+				catch (ApplicationException) {
+					throw;
+				}
+				catch (Exception ex) {
+					Log.w("Could not deobfuscate method {0:X8}. Hello, E.T.: {1}",	// E.T. = exception type
+								method.MetadataToken.ToInt32(),
+								ex.GetType());
 				}
 				removeNoInliningAttribute(method);
 
@@ -791,6 +796,38 @@ namespace de4dot.code {
 
 		void removeNoInliningAttribute(MethodDefinition method) {
 			method.ImplAttributes = method.ImplAttributes & ~MethodImplAttributes.NoInlining;
+			for (int i = 0; i < method.CustomAttributes.Count; i++) {
+				var cattr = method.CustomAttributes[i];
+				if (cattr.AttributeType.FullName != "System.Runtime.CompilerServices.MethodImplAttribute")
+					continue;
+				int options = 0;
+				if (!getMethodImplOptions(cattr, ref options))
+					continue;
+				if (options != 0 && options != (int)MethodImplAttributes.NoInlining)
+					continue;
+				method.CustomAttributes.RemoveAt(i);
+				i--;
+			}
+		}
+
+		static bool getMethodImplOptions(CustomAttribute cattr, ref int value) {
+			if (cattr.ConstructorArguments.Count != 1)
+				return false;
+			if (cattr.ConstructorArguments[0].Type.FullName != "System.Int16" &&
+				cattr.ConstructorArguments[0].Type.FullName != "System.Runtime.CompilerServices.MethodImplOptions")
+				return false;
+
+			var arg = cattr.ConstructorArguments[0].Value;
+			if (arg is short) {
+				value = (short)arg;
+				return true;
+			}
+			if (arg is int) {
+				value = (int)arg;
+				return true;
+			}
+
+			return false;
 		}
 
 		public override string ToString() {
