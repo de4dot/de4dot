@@ -71,5 +71,18 @@ namespace de4dot.code.deobfuscators {
 				}
 			}
 		}
+
+		public static string getExtension(ModuleKind kind) {
+			switch (kind) {
+			case ModuleKind.Dll:
+				return ".dll";
+			case ModuleKind.NetModule:
+				return ".netmodule";
+			case ModuleKind.Console:
+			case ModuleKind.Windows:
+			default:
+				return ".exe";
+			}
+		}
 	}
 }
