@@ -136,7 +136,7 @@ namespace de4dot.blocks {
 		void addToNewList(BaseBlock bb) {
 			if (inNewList.ContainsKey(bb) || !scopeBlock.isOurBaseBlock(bb))
 				return;
-			inNewList[bb] = true;
+			inNewList[bb] = false;
 
 			var blockInfo = blockInfos[bb];
 			var block = bb as Block;
@@ -145,19 +145,22 @@ namespace de4dot.blocks {
 			}
 			else {
 				foreach (var source in block.Sources) {
-					if (scopeBlock.isOurBaseBlock(source)) {
-						addToNewList(source);	// Make sure it's before this block
+					if (!scopeBlock.isOurBaseBlock(source))
+						continue;
+					int oldCount = newList.Count;
+					addToNewList(source);	// Make sure it's before this block
+					if (oldCount != newList.Count)
 						break;
-					}
 				}
 			}
 
+			inNewList[bb] = true;
 			newList.Add(bb);
 		}
 
 		bool isInNewList(IEnumerable<Block> blocks) {
 			foreach (var block in blocks) {
-				if (inNewList.ContainsKey(block))
+				if (inNewList.ContainsKey(block) && inNewList[block])
 					return true;
 			}
 			return false;
