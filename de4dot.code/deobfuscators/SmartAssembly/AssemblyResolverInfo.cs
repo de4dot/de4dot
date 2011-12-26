@@ -105,8 +105,11 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				return true;
 
 			foreach (var field in type.Fields) {
-				if (!DotNetUtils.derivesFromDelegate(DotNetUtils.getType(module, field.FieldType)))
-					return false;
+				if (DotNetUtils.derivesFromDelegate(DotNetUtils.getType(module, field.FieldType)))
+					continue;
+				if (field.IsLiteral && field.FieldType.ToString() == "System.String")
+					continue;
+				return false;
 			}
 			return true;
 		}

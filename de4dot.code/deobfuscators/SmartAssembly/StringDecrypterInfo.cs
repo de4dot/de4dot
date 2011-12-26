@@ -112,7 +112,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			if (!findDecrypterMethod())
 				throw new ApplicationException("Could not find string decrypter method");
 
-			if (!findStringsResource(deob, simpleDeobfuscator, cctor ?? stringDecrypterMethod))
+			if (!findStringsResource(deob, simpleDeobfuscator, cctor))
 				return false;
 
 			if (decrypterVersion <= StringDecrypterVersion.V3) {
@@ -126,10 +126,12 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 
 				stringOffset = 0;
 				if (decrypterVersion != StringDecrypterVersion.V1) {
-					var pkt = module.Assembly.Name.PublicKeyToken;
-					if (pkt != null) {
-						for (int i = 0; i < pkt.Length - 1; i += 2)
-							stringOffset ^= ((int)pkt[i] << 8) + pkt[i + 1];
+					if (callsGetPublicKeyToken(initMethod)) {
+						var pkt = module.Assembly.Name.PublicKeyToken;
+						if (pkt != null) {
+							for (int i = 0; i < pkt.Length - 1; i += 2)
+								stringOffset ^= ((int)pkt[i] << 8) + pkt[i + 1];
+						}
 					}
 
 					if (DotNetUtils.findLdcI4Constant(initMethod, 0xFFFFFF) &&
@@ -146,14 +148,22 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				decrypterVersion = StringDecrypterVersion.V4;
 			}
 
-			simpleZipType = cctor == null ? null : findSimpleZipType(cctor);
+			simpleZipType = findSimpleZipType(cctor) ?? findSimpleZipType(stringDecrypterMethod);
 			if (simpleZipType != null)
 				resourceDecrypter = new ResourceDecrypter(new ResourceDecrypterInfo(module, simpleZipType, simpleDeobfuscator));
 
 			return true;
 		}
 
-		bool findStringsResource(IDeobfuscator deob, ISimpleDeobfuscator simpleDeobfuscator, MethodDefinition initMethod) {
+		bool callsGetPublicKeyToken(MethodDefinition method) {
+			foreach (var calledMethod in DotNetUtils.getMethodCalls(method)) {
+				if (calledMethod.ToString() == "System.Byte[] System.Reflection.AssemblyName::GetPublicKeyToken()")
+					return true;
+			}
+			return false;
+		}
+
+		bool findStringsResource(IDeobfuscator deob, ISimpleDeobfuscator simpleDeobfuscator, MethodDefinition cctor) {
 			if (stringsResource != null)
 				return true;
 
@@ -163,16 +173,26 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 					return true;
 			}
 
-			if (initMethod != null) {
-				stringsResource = findStringResource(initMethod);
-				if (stringsResource != null)
-					return true;
+			if (findStringsResource2(deob, simpleDeobfuscator, cctor))
+				return true;
+			if (findStringsResource2(deob, simpleDeobfuscator, stringDecrypterMethod))
+				return true;
 
-				simpleDeobfuscator.decryptStrings(initMethod, deob);
-				stringsResource = findStringResource(initMethod);
-				if (stringsResource != null)
-					return true;
-			}
+			return false;
+		}
+
+		bool findStringsResource2(IDeobfuscator deob, ISimpleDeobfuscator simpleDeobfuscator, MethodDefinition initMethod) {
+			if (initMethod == null)
+				return false;
+
+			stringsResource = findStringResource(initMethod);
+			if (stringsResource != null)
+				return true;
+
+			simpleDeobfuscator.decryptStrings(initMethod, deob);
+			stringsResource = findStringResource(initMethod);
+			if (stringsResource != null)
+				return true;
 
 			return false;
 		}
@@ -270,6 +290,8 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 		// Find SmartAssembly.Zip.SimpleZip, which is the class that decrypts and inflates
 		// data in the resources.
 		TypeDefinition findSimpleZipType(MethodDefinition method) {
+			if (method == null || method.Body == null)
+				return null;
 			var instructions = method.Body.Instructions;
 			for (int i = 0; i <= instructions.Count - 2; i++) {
 				var call = instructions[i];

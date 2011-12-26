@@ -83,6 +83,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				return false;
 
 			if (isV0(type)) {
+				aerVersion = AerVersion.V0;
 				foreach (var method in type.Methods) {
 					if (method.IsStatic)
 						exceptionLoggerRemover.add(method);
@@ -206,9 +207,14 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 		bool isAutomatedErrorReportingMethod(MethodDefinition method) {
 			if (!method.HasBody || !method.IsStatic || method.Name == ".ctor")
 				return false;
-			return DotNetUtils.isMethod(method, "System.Void", "(System.Exception,System.Object[])") ||
+			return
+				// 5.x-6.x
+				DotNetUtils.isMethod(method, "System.Void", "(System.Exception,System.Object[])") ||
+				// 5.x-6.x
+				DotNetUtils.isMethod(method, "System.Void", "(System.Exception,System.Int32,System.Object[])") ||
+				// 3.x-4.x
 				DotNetUtils.isMethod(method, "System.Exception", "(System.Exception,System.Object[])") ||
-				// 2.x
+				// 2.x-4.x
 				DotNetUtils.isMethod(method, "System.Exception", "(System.Exception,System.Int32,System.Object[])") ||
 				// 1.x
 				DotNetUtils.isMethod(method, "System.Exception", "(System.Int32,System.Exception,System.Object[])");
