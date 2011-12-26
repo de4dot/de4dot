@@ -94,7 +94,7 @@
     <Compile Include="deobfuscators\dotNET_Reactor\v4\MethodsDecrypter.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v4\NativeFileDecrypter.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v4\NativeImageUnpacker.cs" />
-    <Compile Include="deobfuscators\QuickLZ.cs" />
+    <Compile Include="deobfuscators\dotNET_Reactor\QuickLZ.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v4\ResourceResolver.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v4\StringDecrypter.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v4\AntiStrongName.cs" />

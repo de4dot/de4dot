@@ -11,7 +11,7 @@
 
 using System;
 
-namespace de4dot.code.deobfuscators {
+namespace de4dot.code.deobfuscators.dotNET_Reactor {
 	static class QuickLZ {
 		static int sig = 0x5A4C4351;	// "QCLZ"
 
