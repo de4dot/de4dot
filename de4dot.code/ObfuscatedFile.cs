@@ -516,6 +516,13 @@ namespace de4dot.code {
 			}
 			deob.DeobfuscatedFile = null;
 
+			if (!options.ControlFlowDeobfuscation) {
+				// If it's the unknown type, we don't remove any types that could cause Mono.Cecil
+				// to throw an exception.
+				if (deob.Type == "un" || options.KeepObfuscatorTypes)
+					return;
+			}
+
 			Log.v("Deobfuscating methods");
 			var methodPrinter = new MethodPrinter();
 			var cflowDeobfuscator = new BlocksCflowDeobfuscator { InlineMethods = deob.CanInlineMethods };
