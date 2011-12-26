@@ -84,6 +84,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 		DecrypterType decrypterType;
 		NativeLibSaver nativeLibSaver;
 		AntiStrongName antiStrongName;
+		LibAssemblyResolver libAssemblyResolver;
 		List<UnpackedFile> unpackedFiles = new List<UnpackedFile>();
 
 		bool unpackedNativeFile = false;
@@ -255,6 +256,9 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 				return decrypterType.decrypt2((string)args[0]);
 			});
 
+			libAssemblyResolver = new LibAssemblyResolver(module);
+			libAssemblyResolver.find(DeobfuscatedFile, this);
+
 			if (Operations.DecryptStrings == OpDecryptString.None)
 				canRemoveDecrypterType = false;
 
@@ -266,6 +270,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 				removeInitCall(initMethod);
 
 			dumpUnpackedFiles();
+			dumpResourceFiles();
 
 			startedDeobfuscating = true;
 		}
@@ -277,7 +282,22 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 
 		void dumpUnpackedFiles() {
 			foreach (var unpackedFile in unpackedFiles)
-				DeobfuscatedFile.createAssemblyFile(unpackedFile.data, Win32Path.GetFileNameWithoutExtension(unpackedFile.filename), Win32Path.GetExtension(unpackedFile.filename));
+				DeobfuscatedFile.createAssemblyFile(unpackedFile.data,
+							Win32Path.GetFileNameWithoutExtension(unpackedFile.filename),
+							Win32Path.GetExtension(unpackedFile.filename));
+		}
+
+		void dumpResourceFiles() {
+			foreach (var resource in libAssemblyResolver.Resources) {
+				var mod = ModuleDefinition.ReadModule(resource.GetResourceStream());
+				addResourceToBeRemoved(resource, string.Format("Embedded assembly: {0}", mod.Assembly.FullName));
+				DeobfuscatedFile.createAssemblyFile(resource.GetResourceData(),
+							Utils.getAssemblySimpleName(mod.Assembly.FullName),
+							DeobUtils.getExtension(mod.Kind));
+			}
+			removeInitCall(libAssemblyResolver.InitMethod);
+			addCallToBeRemoved(module.EntryPoint, libAssemblyResolver.InitMethod);
+			addTypeToBeRemoved(libAssemblyResolver.Type, "Assembly resolver type (library mode)");
 		}
 
 		public override void deobfuscateMethodEnd(Blocks blocks) {

@@ -83,6 +83,7 @@
     <Compile Include="deobfuscators\dotNET_Reactor\v3\ApplicationModeUnpacker.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v3\DecrypterType.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v3\Deobfuscator.cs" />
+    <Compile Include="deobfuscators\dotNET_Reactor\v3\LibAssemblyResolver.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v3\NativeLibSaver.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v4\AssemblyResolver.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v4\BooleanDecrypter.cs" />
