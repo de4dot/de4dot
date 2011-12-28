@@ -67,6 +67,15 @@ namespace de4dot.blocks {
 
 		public TValue find(TypeReference typeReference) {
 			TValue value;
+			if (typeReference is TypeDefinition)
+				tokenToValue.TryGetValue(getTokenKey(typeReference), out value);
+			else
+				refToValue.TryGetValue(getReferenceKey(typeReference), out value);
+			return value;
+		}
+
+		public TValue findAny(TypeReference typeReference) {
+			TValue value;
 			if (tokenToValue.TryGetValue(getTokenKey(typeReference), out value))
 				return value;
 
@@ -128,6 +137,15 @@ namespace de4dot.blocks {
 		protected abstract IFieldReferenceKey getReferenceKey(FieldReference fieldReference);
 
 		public TValue find(FieldReference fieldReference) {
+			TValue value;
+			if (fieldReference is FieldDefinition)
+				tokenToValue.TryGetValue(getTokenKey(fieldReference), out value);
+			else
+				refToValue.TryGetValue(getReferenceKey(fieldReference), out value);
+			return value;
+		}
+
+		public TValue findAny(FieldReference fieldReference) {
 			TValue value;
 			if (tokenToValue.TryGetValue(getTokenKey(fieldReference), out value))
 				return value;
@@ -203,6 +221,15 @@ namespace de4dot.blocks {
 
 		public TValue find(MethodReference methodReference) {
 			TValue value;
+			if (methodReference is MethodDefinition)
+				tokenToValue.TryGetValue(getTokenKey(methodReference), out value);
+			else
+				refToValue.TryGetValue(getReferenceKey(methodReference), out value);
+			return value;
+		}
+
+		public TValue findAny(MethodReference methodReference) {
+			TValue value;
 			if (tokenToValue.TryGetValue(getTokenKey(methodReference), out value))
 				return value;
 
@@ -276,6 +303,15 @@ namespace de4dot.blocks {
 
 		public TValue find(PropertyReference propertyReference) {
 			TValue value;
+			if (propertyReference is PropertyDefinition)
+				tokenToValue.TryGetValue(getTokenKey(propertyReference), out value);
+			else
+				refToValue.TryGetValue(getReferenceKey(propertyReference), out value);
+			return value;
+		}
+
+		public TValue findAny(PropertyReference propertyReference) {
+			TValue value;
 			if (tokenToValue.TryGetValue(getTokenKey(propertyReference), out value))
 				return value;
 
@@ -327,6 +363,15 @@ namespace de4dot.blocks {
 		protected abstract IEventReferenceKey getReferenceKey(EventReference eventReference);
 
 		public TValue find(EventReference eventReference) {
+			TValue value;
+			if (eventReference is EventDefinition)
+				tokenToValue.TryGetValue(getTokenKey(eventReference), out value);
+			else
+				refToValue.TryGetValue(getReferenceKey(eventReference), out value);
+			return value;
+		}
+
+		public TValue findAny(EventReference eventReference) {
 			TValue value;
 			if (tokenToValue.TryGetValue(getTokenKey(eventReference), out value))
 				return value;
