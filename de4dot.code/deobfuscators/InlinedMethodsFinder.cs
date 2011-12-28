@@ -34,7 +34,7 @@ namespace de4dot.code.deobfuscators {
 				foreach (var method in type.Methods) {
 					if (!method.IsStatic)
 						continue;
-					if (!method.IsAssembly && !method.IsCompilerControlled)
+					if (!method.IsAssembly && !method.IsCompilerControlled && !method.IsPrivate)
 						continue;
 					if (method.GenericParameters.Count > 0)
 						continue;
@@ -78,7 +78,10 @@ namespace de4dot.code.deobfuscators {
 					case Code.Ldarg_1:
 					case Code.Ldarg_2:
 					case Code.Ldarg_3:
+					case Code.Ldarga:
+					case Code.Ldarga_S:
 					case Code.Call:
+					case Code.Newobj:
 						if (!isCallMethod(method))
 							continue;
 						break;
@@ -108,6 +111,8 @@ namespace de4dot.code.deobfuscators {
 				case Code.Ldarg_1:
 				case Code.Ldarg_2:
 				case Code.Ldarg_3:
+				case Code.Ldarga:
+				case Code.Ldarga_S:
 					if (DotNetUtils.getArgIndex(method, instr) != loadIndex)
 						return false;
 					loadIndex++;
@@ -120,8 +125,18 @@ namespace de4dot.code.deobfuscators {
 			if (i + 1 >= instrs.Count)
 				return false;
 
-			if (instrs[i].OpCode.Code != Code.Call && instrs[i].OpCode.Code != Code.Callvirt)
+			switch (instrs[i].OpCode.Code) {
+			case Code.Call:
+			case Code.Callvirt:
+			case Code.Newobj:
+			case Code.Ldfld:
+			case Code.Ldflda:
+			case Code.Ldftn:
+			case Code.Ldvirtftn:
+				break;
+			default:
 				return false;
+			}
 			if (instrs[i + 1].OpCode.Code != Code.Ret)
 				return false;
 

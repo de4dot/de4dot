@@ -87,7 +87,10 @@ namespace de4dot.blocks.cflow {
 			case Code.Ldarg_1:
 			case Code.Ldarg_2:
 			case Code.Ldarg_3:
+			case Code.Ldarga:
+			case Code.Ldarga_S:
 			case Code.Call:
+			case Code.Newobj:
 				return inlineOtherMethod(instrIndex, method, instr, index);
 
 			case Code.Ldc_I4:
@@ -142,6 +145,8 @@ namespace de4dot.blocks.cflow {
 				case Code.Ldarg_1:
 				case Code.Ldarg_2:
 				case Code.Ldarg_3:
+				case Code.Ldarga:
+				case Code.Ldarga_S:
 					if (DotNetUtils.getArgIndex(method, instr) != loadIndex)
 						return false;
 					loadIndex++;
@@ -153,30 +158,70 @@ namespace de4dot.blocks.cflow {
 			if (instr == null || loadIndex != methodArgsCount)
 				return false;
 
-			if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt)
-				return false;
-			var callInstr = instr;
-			var calledMethod = callInstr.Operand as MethodReference;
-			if (calledMethod == null)
-				return false;
-
-			if (!isCompatibleType(calledMethod.MethodReturnType.ReturnType, method.MethodReturnType.ReturnType))
-				return false;
-			var methodArgs = DotNetUtils.getArgs(method);
-			var calledMethodArgs = DotNetUtils.getArgs(calledMethod);
-			if (methodArgs.Count != calledMethodArgs.Count)
-				return false;
-			for (int i = 0; i < methodArgs.Count; i++) {
-				if (!isCompatibleType(calledMethodArgs[i], methodArgs[i]))
+			if (instr.OpCode.Code == Code.Call || instr.OpCode.Code == Code.Callvirt) {
+				var callInstr = instr;
+				var calledMethod = callInstr.Operand as MethodReference;
+				if (calledMethod == null)
 					return false;
+
+				if (!isCompatibleType(calledMethod.MethodReturnType.ReturnType, method.MethodReturnType.ReturnType))
+					return false;
+
+				var methodArgs = DotNetUtils.getArgs(method);
+				var calledMethodArgs = DotNetUtils.getArgs(calledMethod);
+				if (methodArgs.Count != calledMethodArgs.Count)
+					return false;
+				for (int i = 0; i < methodArgs.Count; i++) {
+					if (!isCompatibleType(calledMethodArgs[i], methodArgs[i]))
+						return false;
+				}
+
+				instr = DotNetUtils.getInstruction(method.Body.Instructions, ref instrIndex);
+				if (instr == null || instr.OpCode.Code != Code.Ret)
+					return false;
+
+				block.Instructions[patchIndex] = new Instr(DotNetUtils.clone(callInstr));
+				return true;
+			}
+			else if (instr.OpCode.Code == Code.Newobj) {
+				var newobjInstr = instr;
+				var ctor = newobjInstr.Operand as MethodReference;
+				if (ctor == null)
+					return false;
+
+				if (!isCompatibleType(ctor.DeclaringType, method.MethodReturnType.ReturnType))
+					return false;
+
+				var methodArgs = DotNetUtils.getArgs(method);
+				var calledMethodArgs = DotNetUtils.getArgs(ctor);
+				if (methodArgs.Count + 1 != calledMethodArgs.Count)
+					return false;
+				for (int i = 0; i < methodArgs.Count; i++) {
+					if (!isCompatibleType(calledMethodArgs[i + 1], methodArgs[i]))
+						return false;
+				}
+
+				instr = DotNetUtils.getInstruction(method.Body.Instructions, ref instrIndex);
+				if (instr == null || instr.OpCode.Code != Code.Ret)
+					return false;
+
+				block.Instructions[patchIndex] = new Instr(DotNetUtils.clone(newobjInstr));
+				return true;
+			}
+			else if (instr.OpCode.Code == Code.Ldfld || instr.OpCode.Code == Code.Ldflda ||
+					instr.OpCode.Code == Code.Ldftn || instr.OpCode.Code == Code.Ldvirtftn) {
+				var ldInstr = instr;
+				instr = DotNetUtils.getInstruction(method.Body.Instructions, ref instrIndex);
+				if (instr == null || instr.OpCode.Code != Code.Ret)
+					return false;
+
+				if (methodArgsCount != 1)
+					return false;
+				block.Instructions[patchIndex] = new Instr(DotNetUtils.clone(ldInstr));
+				return true;
 			}
 
-			instr = DotNetUtils.getInstruction(method.Body.Instructions, ref instrIndex);
-			if (instr == null || instr.OpCode.Code != Code.Ret)
-				return false;
-
-			block.Instructions[patchIndex] = new Instr(DotNetUtils.clone(callInstr));
-			return true;
+			return false;
 		}
 
 		static bool isCompatibleType(TypeReference origType, TypeReference newType) {
