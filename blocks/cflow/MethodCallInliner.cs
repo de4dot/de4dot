@@ -137,7 +137,9 @@ namespace de4dot.blocks.cflow {
 		bool inlineOtherMethod(int patchIndex, MethodDefinition method, Instruction instr, int instrIndex) {
 			int loadIndex = 0;
 			int methodArgsCount = DotNetUtils.getArgsCount(method);
+			bool foundLdarga = false;
 			while (instr != null && loadIndex < methodArgsCount) {
+				bool isLdarg = true;
 				switch (instr.OpCode.Code) {
 				case Code.Ldarg:
 				case Code.Ldarg_S:
@@ -145,20 +147,29 @@ namespace de4dot.blocks.cflow {
 				case Code.Ldarg_1:
 				case Code.Ldarg_2:
 				case Code.Ldarg_3:
+					break;
 				case Code.Ldarga:
 				case Code.Ldarga_S:
-					if (DotNetUtils.getArgIndex(method, instr) != loadIndex)
-						return false;
-					loadIndex++;
-					instr = DotNetUtils.getInstruction(method.Body.Instructions, ref instrIndex);
-					continue;
+					foundLdarga = true;
+					break;
+				default:
+					isLdarg = false;
+					break;
 				}
-				break;
+				if (!isLdarg)
+					break;
+
+				if (DotNetUtils.getArgIndex(method, instr) != loadIndex)
+					return false;
+				loadIndex++;
+				instr = DotNetUtils.getInstruction(method.Body.Instructions, ref instrIndex);
 			}
 			if (instr == null || loadIndex != methodArgsCount)
 				return false;
 
 			if (instr.OpCode.Code == Code.Call || instr.OpCode.Code == Code.Callvirt) {
+				if (foundLdarga)
+					return false;
 				var callInstr = instr;
 				var calledMethod = callInstr.Operand as MethodReference;
 				if (calledMethod == null)
@@ -184,6 +195,8 @@ namespace de4dot.blocks.cflow {
 				return true;
 			}
 			else if (instr.OpCode.Code == Code.Newobj) {
+				if (foundLdarga)
+					return false;
 				var newobjInstr = instr;
 				var ctor = newobjInstr.Operand as MethodReference;
 				if (ctor == null)
