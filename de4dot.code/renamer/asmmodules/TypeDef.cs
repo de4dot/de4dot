@@ -319,20 +319,36 @@ namespace de4dot.code.renamer.asmmodules {
 			return methods.find(mr);
 		}
 
+		public MethodDef findAny(MethodReference mr) {
+			return methods.findAny(mr);
+		}
+
 		public FieldDef find(FieldReference fr) {
 			return fields.find(fr);
+		}
+
+		public FieldDef findAny(FieldReference fr) {
+			return fields.findAny(fr);
 		}
 
 		public PropertyDef find(PropertyReference pr) {
 			return properties.find(pr);
 		}
 
+		public PropertyDef findAny(PropertyReference pr) {
+			return properties.findAny(pr);
+		}
+
 		public EventDef find(EventReference er) {
 			return events.find(er);
 		}
 
+		public EventDef findAny(EventReference er) {
+			return events.findAny(er);
+		}
+
 		public PropertyDef create(PropertyDefinition newProp) {
-			if (find(newProp) != null)
+			if (findAny(newProp) != null)
 				throw new ApplicationException("Can't add a property when it's already been added");
 
 			var propDef = new PropertyDef(newProp, this, properties.Count);
@@ -342,7 +358,7 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 
 		public EventDef create(EventDefinition newEvent) {
-			if (find(newEvent) != null)
+			if (findAny(newEvent) != null)
 				throw new ApplicationException("Can't add an event when it's already been added");
 
 			var eventDef = new EventDef(newEvent, this, events.Count);

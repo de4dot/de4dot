@@ -620,7 +620,7 @@ namespace de4dot.code.renamer {
 			if (string.IsNullOrEmpty(name) || propType.FullName == "System.Void")
 				return null;
 			var newProp = DotNetUtils.createPropertyDefinition(name, propType, getter, setter);
-			var propDef = ownerType.find(newProp);
+			var propDef = ownerType.findAny(newProp);
 			if (propDef != null)
 				return propDef;
 
@@ -825,7 +825,7 @@ namespace de4dot.code.renamer {
 			if (string.IsNullOrEmpty(name) || eventType == null || eventType.FullName == "System.Void")
 				return null;
 			var newEvent = DotNetUtils.createEventDefinition(name, eventType);
-			var eventDef = ownerType.find(newEvent);
+			var eventDef = ownerType.findAny(newEvent);
 			if (eventDef != null)
 				return eventDef;
 

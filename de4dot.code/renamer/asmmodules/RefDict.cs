@@ -27,6 +27,7 @@ namespace de4dot.code.renamer.asmmodules {
 		IEnumerable<TRef> getAll();
 		IEnumerable<TRef> getSorted();
 		TRef find(TMRef tmref);
+		TRef findAny(TMRef tmref);
 		void add(TRef tref);
 		void onTypesRenamed();
 	}
@@ -50,6 +51,10 @@ namespace de4dot.code.renamer.asmmodules {
 
 		public TypeDef find(TypeReference typeReference) {
 			return typeToDef.find(typeReference);
+		}
+
+		public TypeDef findAny(TypeReference typeReference) {
+			return typeToDef.findAny(typeReference);
 		}
 
 		public void add(TypeDef typeDef) {
@@ -82,6 +87,10 @@ namespace de4dot.code.renamer.asmmodules {
 			return fieldToDef.find(fieldReference);
 		}
 
+		public FieldDef findAny(FieldReference fieldReference) {
+			return fieldToDef.findAny(fieldReference);
+		}
+
 		public void add(FieldDef fieldDef) {
 			fieldToDef.add(fieldDef.FieldDefinition, fieldDef);
 		}
@@ -110,6 +119,10 @@ namespace de4dot.code.renamer.asmmodules {
 
 		public MethodDef find(MethodReference methodReference) {
 			return methodToDef.find(methodReference);
+		}
+
+		public MethodDef findAny(MethodReference methodReference) {
+			return methodToDef.findAny(methodReference);
 		}
 
 		public void add(MethodDef methodDef) {
@@ -142,6 +155,10 @@ namespace de4dot.code.renamer.asmmodules {
 			return propToDef.find(propertyReference);
 		}
 
+		public PropertyDef findAny(PropertyReference propertyReference) {
+			return propToDef.findAny(propertyReference);
+		}
+
 		public void add(PropertyDef propDef) {
 			propToDef.add(propDef.PropertyDefinition, propDef);
 		}
@@ -170,6 +187,10 @@ namespace de4dot.code.renamer.asmmodules {
 
 		public EventDef find(EventReference eventReference) {
 			return eventToDef.find(eventReference);
+		}
+
+		public EventDef findAny(EventReference eventReference) {
+			return eventToDef.findAny(eventReference);
 		}
 
 		public void add(EventDef eventDef) {
