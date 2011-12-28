@@ -25,13 +25,15 @@ using de4dot.blocks;
 namespace de4dot.code.deobfuscators {
 	class UnusedMethodsFinder {
 		ModuleDefinition module;
+		MethodCollection removedMethods;
 		Dictionary<MethodDefinition, bool> possiblyUnusedMethods = new Dictionary<MethodDefinition, bool>();
 		Stack<MethodDefinition> notUnusedStack = new Stack<MethodDefinition>();
 
-		public UnusedMethodsFinder(ModuleDefinition module, IEnumerable<MethodDefinition> possiblyUnusedMethods) {
+		public UnusedMethodsFinder(ModuleDefinition module, IEnumerable<MethodDefinition> possiblyUnusedMethods, MethodCollection removedMethods) {
 			this.module = module;
+			this.removedMethods = removedMethods;
 			foreach (var method in possiblyUnusedMethods) {
-				if (method != module.EntryPoint)
+				if (method != module.EntryPoint && !removedMethods.exists(method))
 					this.possiblyUnusedMethods[method] = true;
 			}
 		}
@@ -60,6 +62,8 @@ namespace de4dot.code.deobfuscators {
 				return;
 			if (possiblyUnusedMethods.ContainsKey(method))
 				return;
+			if (removedMethods.exists(method))
+				return;
 
 			foreach (var instr in method.Body.Instructions) {
 				switch (instr.OpCode.Code) {
@@ -69,6 +73,7 @@ namespace de4dot.code.deobfuscators {
 				case Code.Newobj:
 				case Code.Ldtoken:
 				case Code.Ldftn:
+				case Code.Ldvirtftn:
 					break;
 				default:
 					continue;

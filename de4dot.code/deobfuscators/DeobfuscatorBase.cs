@@ -379,7 +379,12 @@ namespace de4dot.code.deobfuscators {
 				var typeDef = info.obj;
 				if (typeDef == null)
 					continue;
-				if (types.Remove(typeDef))
+				bool removed;
+				if (typeDef.IsNested)
+					removed = typeDef.DeclaringType.NestedTypes.Remove(typeDef);
+				else
+					removed = types.Remove(typeDef);
+				if (removed)
 					Log.v("Removed type {0} ({1:X8}) (reason: {2})", typeDef, typeDef.MetadataToken.ToUInt32(), info.reason);
 			}
 			Log.deIndent();
@@ -592,31 +597,32 @@ namespace de4dot.code.deobfuscators {
 
 		public void findAndRemoveInlinedMethods() {
 			var inlinedMethods = InlinedMethodsFinder.find(module);
-			addMethodsToBeRemoved(new UnusedMethodsFinder(module, inlinedMethods).find(), "Inlined method");
+			addMethodsToBeRemoved(new UnusedMethodsFinder(module, inlinedMethods, getRemovedMethods()).find(), "Inlined method");
+		}
+
+		MethodCollection getRemovedMethods() {
+			var removedMethods = new MethodCollection();
+			removedMethods.add(getMethodsToRemove());
+			removedMethods.addAndNested(getTypesToRemove());
+			return removedMethods;
 		}
 
 		protected bool isTypeCalled(TypeDefinition decrypterType) {
 			if (decrypterType == null)
 				return false;
 
-			var decrypterMethods = new Dictionary<MethodReferenceAndDeclaringTypeKey, bool>();
-			foreach (var type in TypeDefinition.GetTypes(new List<TypeDefinition> { decrypterType }))
-				addMethods(type, decrypterMethods);
+			var decrypterMethods = new MethodCollection();
+			decrypterMethods.addAndNested(decrypterType);
 
-			var removedMethods = new Dictionary<MethodReferenceAndDeclaringTypeKey, bool>();
-			foreach (var method in getMethodsToRemove())
-				removedMethods[new MethodReferenceAndDeclaringTypeKey(method)] = true;
-			foreach (var type in TypeDefinition.GetTypes(getTypesToRemove()))
-				addMethods(type, removedMethods);
+			var removedMethods = getRemovedMethods();
 
 			foreach (var type in module.GetTypes()) {
 				foreach (var method in type.Methods) {
 					if (method.Body == null)
 						continue;
-					var key = new MethodReferenceAndDeclaringTypeKey(method);
-					if (decrypterMethods.ContainsKey(key))
+					if (decrypterMethods.exists(method))
 						break;	// decrypter type / nested type method
-					if (removedMethods.ContainsKey(key))
+					if (removedMethods.exists(method))
 						continue;
 
 					foreach (var instr in method.Body.Instructions) {
@@ -627,8 +633,7 @@ namespace de4dot.code.deobfuscators {
 							var calledMethod = instr.Operand as MethodReference;
 							if (calledMethod == null)
 								break;
-							key = new MethodReferenceAndDeclaringTypeKey(calledMethod);
-							if (decrypterMethods.ContainsKey(key))
+							if (decrypterMethods.exists(calledMethod))
 								return true;
 							break;
 
