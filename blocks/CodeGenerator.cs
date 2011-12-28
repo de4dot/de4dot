@@ -137,7 +137,7 @@ namespace de4dot.blocks {
 				if (getShortBranch(instruction, out opcode)) {
 					const int instrSize = 5;	// It's a long branch instruction
 					var target = (Instruction)instruction.Operand;
-					int distance = target.Offset - (instruction.Offset + instrSize);
+					int distance = target == null ? int.MaxValue : target.Offset - (instruction.Offset + instrSize);
 					if (-0x80 <= distance && distance <= 0x7F) {
 						instruction.OpCode = opcode;
 						changed = true;

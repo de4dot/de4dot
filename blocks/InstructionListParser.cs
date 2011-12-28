@@ -86,8 +86,12 @@ namespace de4dot.blocks {
 				case OperandType.InlineSwitch:
 					var switchTargets = (Instruction[])instr.Operand;
 					targets = new List<int>(switchTargets.Length);
-					for (int j = 0; j < switchTargets.Length; j++)
-						targets.Add(instrToIndex[switchTargets[j]]);
+					for (int j = 0; j < switchTargets.Length; j++) {
+						var target = switchTargets[j];
+						if (target == null)
+							continue;
+						targets.Add(instrToIndex[target]);
+					}
 					break;
 
 				default:
@@ -149,8 +153,10 @@ namespace de4dot.blocks {
 					var switchTargets = (Instruction[])lastInstr.Operand;
 					var newSwitchTargets = new List<Block>();
 					block.Targets = newSwitchTargets;
-					foreach (var target in switchTargets)
-						newSwitchTargets.Add(instrToBlock[instrToIndex[target]]);
+					foreach (var target in switchTargets) {
+						if (target != null)
+							newSwitchTargets.Add(instrToBlock[instrToIndex[target]]);
+					}
 					break;
 				}
 
