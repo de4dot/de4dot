@@ -27,8 +27,8 @@ namespace de4dot.code.deobfuscators {
 	abstract class ProxyDelegateFinderBase {
 		protected ModuleDefinition module;
 		protected List<MethodDefinition> delegateCreatorMethods = new List<MethodDefinition>();
-		Dictionary<TypeDefinition, bool> delegateTypesDict = new Dictionary<TypeDefinition, bool>();
-		Dictionary<FieldReferenceAndDeclaringTypeKey, DelegateInfo> fieldToDelegateInfo = new Dictionary<FieldReferenceAndDeclaringTypeKey, DelegateInfo>();
+		protected Dictionary<TypeDefinition, bool> delegateTypesDict = new Dictionary<TypeDefinition, bool>();
+		FieldDefinitionAndDeclaringTypeDict<DelegateInfo> fieldToDelegateInfo = new FieldDefinitionAndDeclaringTypeDict<DelegateInfo>();
 		Dictionary<MethodDefinition, FieldDefinition> proxyMethodToField = new Dictionary<MethodDefinition, FieldDefinition>();
 		int errors = 0;
 
@@ -36,7 +36,7 @@ namespace de4dot.code.deobfuscators {
 			get { return errors; }
 		}
 
-		class DelegateInfo {
+		protected class DelegateInfo {
 			public MethodReference methodRef;	// Method we should call
 			public FieldDefinition field;		// Field holding the Delegate instance
 			public OpCode callOpcode;
@@ -115,12 +115,16 @@ namespace de4dot.code.deobfuscators {
 
 					if (calledMethod == null)
 						throw new ApplicationException("calledMethod is null");
-					fieldToDelegateInfo[new FieldReferenceAndDeclaringTypeKey(field)] = new DelegateInfo(field, calledMethod, callOpcode);
+					addDelegateInfo(new DelegateInfo(field, calledMethod, callOpcode));
 					Log.v("Field: {0}, Opcode: {1}, Method: {2} ({3:X8})", field.Name, callOpcode, calledMethod, calledMethod.MetadataToken.ToUInt32());
 				}
 				Log.deIndent();
 				delegateTypesDict[type] = true;
 			}
+		}
+
+		protected void addDelegateInfo(DelegateInfo di) {
+			fieldToDelegateInfo.add(di.field, di);
 		}
 
 		protected virtual void onFoundProxyDelegate(TypeDefinition type) {
@@ -148,10 +152,7 @@ namespace de4dot.code.deobfuscators {
 		DelegateInfo getDelegateInfo(FieldReference field) {
 			if (field == null)
 				return null;
-			DelegateInfo di;
-			if (fieldToDelegateInfo.TryGetValue(new FieldReferenceAndDeclaringTypeKey(field), out di))
-				return di;
-			return null;
+			return fieldToDelegateInfo.find(field);
 		}
 
 		class BlockInstr {
@@ -168,6 +169,8 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		public void deobfuscate(Blocks blocks) {
+			if (blocks.Method.DeclaringType != null && delegateTypesDict.ContainsKey(blocks.Method.DeclaringType))
+				return;
 			var removeInfos = new Dictionary<Block, List<RemoveInfo>>();
 
 			var allBlocks = blocks.MethodBlocks.getAllBlocks();
