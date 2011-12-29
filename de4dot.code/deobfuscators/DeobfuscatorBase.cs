@@ -50,6 +50,7 @@ namespace de4dot.code.deobfuscators {
 		List<string> namesToPossiblyRemove = new List<string>();
 		MethodCallRemover methodCallRemover = new MethodCallRemover();
 		byte[] moduleBytes;
+		protected InitializedDataCreator initializedDataCreator;
 
 		protected byte[] ModuleBytes {
 			get { return moduleBytes; }
@@ -100,6 +101,7 @@ namespace de4dot.code.deobfuscators {
 
 		protected void setModule(ModuleDefinition module) {
 			this.module = module;
+			initializedDataCreator = new InitializedDataCreator(module);
 		}
 
 		protected virtual bool checkValidName(string name) {
