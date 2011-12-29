@@ -19,6 +19,7 @@
 
 using System;
 using System.Collections.Generic;
+using Mono.Cecil;
 
 namespace de4dot.code.renamer {
 	class TypeRenamerState {
@@ -44,11 +45,25 @@ namespace de4dot.code.renamer {
 			return existingNames.getName(oldName, new NameCreator2(newName));
 		}
 
-		public string createNamespace(string ns) {
+		public string createNamespace(TypeDefinition type, string ns) {
 			string newName;
-			if (namespaceToNewName.TryGetValue(ns, out newName))
+
+			string asmFullName;
+			if (type.Module.Assembly != null)
+				asmFullName = type.Module.Assembly.FullName;
+			else
+				asmFullName = "<no assembly>";
+
+			// Make sure that two namespaces with the same names in different modules aren't renamed
+			// to the same name.
+			var key = string.Format(" [{0}] [{1}] [{2}] [{3}] ",
+						type.Module.FullyQualifiedName,
+						asmFullName,
+						type.Module.Name,
+						ns);
+			if (namespaceToNewName.TryGetValue(key, out newName))
 				return newName;
-			return namespaceToNewName[ns] = createNamespaceName.create();
+			return namespaceToNewName[key] = createNamespaceName.create();
 		}
 	}
 }
