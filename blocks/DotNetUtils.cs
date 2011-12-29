@@ -407,6 +407,14 @@ namespace de4dot.blocks {
 			return getMethod(getType(module, method.DeclaringType), method);
 		}
 
+		public static MethodDefinition getMethod(TypeDefinition type, string returnType, string parameters) {
+			foreach (var method in type.Methods) {
+				if (isMethod(method, returnType, parameters))
+					return method;
+			}
+			return null;
+		}
+
 		public static IEnumerable<MethodDefinition> getNormalMethods(TypeDefinition type) {
 			foreach (var method in type.Methods) {
 				if (method.HasPInvokeInfo)
@@ -895,18 +903,43 @@ namespace de4dot.blocks {
 			return null;
 		}
 
-		static int nextTokenRid = 0x00FFFFFF;
 		public static PropertyDefinition createPropertyDefinition(string name, TypeReference propType, MethodDefinition getter, MethodDefinition setter) {
 			return new PropertyDefinition(name, PropertyAttributes.None, propType) {
-				MetadataToken = new MetadataToken(TokenType.Property, nextTokenRid--),
+				MetadataToken = nextPropertyToken(),
 				GetMethod = getter,
 				SetMethod = setter,
 			};
 		}
+
 		public static EventDefinition createEventDefinition(string name, TypeReference eventType) {
 			return new EventDefinition(name, EventAttributes.None, eventType) {
-				MetadataToken = new MetadataToken(TokenType.Event, nextTokenRid--),
+				MetadataToken = nextEventToken(),
 			};
+		}
+
+		static int nextTokenRid = 0x00FFFFFF;
+		public static MetadataToken nextTypeRefToken() {
+			return new MetadataToken(TokenType.TypeRef, nextTokenRid--);
+		}
+
+		public static MetadataToken nextTypeDefToken() {
+			return new MetadataToken(TokenType.TypeDef, nextTokenRid--);
+		}
+
+		public static MetadataToken nextFieldToken() {
+			return new MetadataToken(TokenType.Field, nextTokenRid--);
+		}
+
+		public static MetadataToken nextMethodToken() {
+			return new MetadataToken(TokenType.Method, nextTokenRid--);
+		}
+
+		public static MetadataToken nextPropertyToken() {
+			return new MetadataToken(TokenType.Property, nextTokenRid--);
+		}
+
+		public static MetadataToken nextEventToken() {
+			return new MetadataToken(TokenType.Event, nextTokenRid--);
 		}
 
 		public static bool findLdcI4Constant(MethodDefinition method, int constant) {
@@ -919,6 +952,30 @@ namespace de4dot.blocks {
 					return true;
 			}
 			return false;
+		}
+
+		public static TypeReference findTypeReference(ModuleDefinition module, string asmSimpleName, string fullName) {
+			foreach (var type in module.GetTypeReferences()) {
+				if (type.FullName != fullName)
+					continue;
+				var asmRef = type.Scope as AssemblyNameReference;
+				if (asmRef == null || asmRef.Name != asmSimpleName)
+					continue;
+
+				return type;
+			}
+			return null;
+		}
+
+		public static TypeReference findOrCreateTypeReference(ModuleDefinition module, AssemblyNameReference asmRef, string ns, string name, bool isValueType) {
+			var typeRef = findTypeReference(module, asmRef.Name, ns + "." + name);
+			if (typeRef != null)
+				return typeRef;
+
+			typeRef = new TypeReference(ns, name, module, asmRef);
+			typeRef.MetadataToken = nextTypeRefToken();
+			typeRef.IsValueType = isValueType;
+			return typeRef;
 		}
 	}
 }
