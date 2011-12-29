@@ -86,8 +86,32 @@ namespace de4dot.code.renamer {
 			prepareRenameMemberDefinitions(scopes);
 			renameMemberDefinitions();
 			renameMemberReferences();
+			removeUselessOverrides(scopes);
 			renameResources();
 			modules.cleanUp();
+		}
+
+		void removeUselessOverrides(MethodNameScopes scopes) {
+			foreach (var scope in scopes.getAllScopes()) {
+				foreach (var method in scope.Methods) {
+					if (!method.Owner.HasModule)
+						continue;
+					if (!method.isPublic())
+						continue;
+					var overrides = method.MethodDefinition.Overrides;
+					for (int i = 0; i < overrides.Count; i++) {
+						var overrideMethod = overrides[i];
+						if (method.MethodDefinition.Name != overrideMethod.Name)
+							continue;
+						Log.v("Removed useless override from method {0} ({1:X8}), override: {2:X8}",
+									method.MethodDefinition,
+									method.MethodDefinition.MetadataToken.ToInt32(),
+									overrideMethod.MetadataToken.ToInt32());
+						overrides.RemoveAt(i);
+						i--;
+					}
+				}
+			}
 		}
 
 		void renameTypeDefinitions() {

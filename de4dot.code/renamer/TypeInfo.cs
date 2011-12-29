@@ -88,7 +88,7 @@ namespace de4dot.code.renamer {
 				if (type.TypeDefinition.IsNested)
 					newNamespace = "";
 				else if (!checker.isValidNamespaceName(oldNamespace))
-					newNamespace = state.createNamespace(oldNamespace);
+					newNamespace = state.createNamespace(this.type.TypeDefinition, oldNamespace);
 			}
 
 			string origClassName = null;
