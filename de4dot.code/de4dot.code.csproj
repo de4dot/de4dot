@@ -107,6 +107,7 @@
     <Compile Include="deobfuscators\IDeobfuscatedFile.cs" />
     <Compile Include="deobfuscators\IDeobfuscator.cs" />
     <Compile Include="deobfuscators\IDeobfuscatorInfo.cs" />
+    <Compile Include="deobfuscators\InitializedDataCreator.cs" />
     <Compile Include="deobfuscators\InlinedMethodsFinder.cs" />
     <Compile Include="deobfuscators\ISimpleDeobfuscator.cs" />
     <Compile Include="deobfuscators\MethodCollection.cs" />
