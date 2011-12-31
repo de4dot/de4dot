@@ -36,6 +36,7 @@ namespace de4dot.cui {
 				new de4dot.code.deobfuscators.dotNET_Reactor.v3.DeobfuscatorInfo(),
 				new de4dot.code.deobfuscators.dotNET_Reactor.v4.DeobfuscatorInfo(),
 				new de4dot.code.deobfuscators.Eazfuscator.DeobfuscatorInfo(),
+				new de4dot.code.deobfuscators.Skater_NET.DeobfuscatorInfo(),
 				new de4dot.code.deobfuscators.SmartAssembly.DeobfuscatorInfo(),
 				new de4dot.code.deobfuscators.Xenocode.DeobfuscatorInfo(),
 			};

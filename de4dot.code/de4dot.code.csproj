@@ -112,6 +112,9 @@
     <Compile Include="deobfuscators\ISimpleDeobfuscator.cs" />
     <Compile Include="deobfuscators\MethodCollection.cs" />
     <Compile Include="deobfuscators\RandomNameChecker.cs" />
+    <Compile Include="deobfuscators\Skater_NET\Deobfuscator.cs" />
+    <Compile Include="deobfuscators\Skater_NET\EnumClassFinder.cs" />
+    <Compile Include="deobfuscators\Skater_NET\StringDecrypter.cs" />
     <Compile Include="deobfuscators\StringCounts.cs" />
     <Compile Include="deobfuscators\Operations.cs" />
     <Compile Include="deobfuscators\ProxyDelegateFinderBase.cs" />
