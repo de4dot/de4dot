@@ -72,6 +72,14 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
+		public static byte[] des3Decrypt(byte[] data, byte[] key, byte[] iv) {
+			using (var des3 = TripleDES.Create()) {
+				using (var transform = des3.CreateDecryptor(key, iv)) {
+					return transform.TransformFinalBlock(data, 0, data.Length);
+				}
+			}
+		}
+
 		public static string getExtension(ModuleKind kind) {
 			switch (kind) {
 			case ModuleKind.Dll:
