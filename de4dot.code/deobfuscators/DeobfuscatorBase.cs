@@ -649,11 +649,6 @@ namespace de4dot.code.deobfuscators {
 			return false;
 		}
 
-		static void addMethods(TypeDefinition type, Dictionary<MethodReferenceAndDeclaringTypeKey, bool> methods) {
-			foreach (var method in type.Methods)
-				methods[new MethodReferenceAndDeclaringTypeKey(method)] = true;
-		}
-
 		public static int convert(bool b) {
 			return b ? 1 : 0;
 		}
