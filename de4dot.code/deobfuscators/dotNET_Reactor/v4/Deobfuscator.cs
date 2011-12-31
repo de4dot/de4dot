@@ -493,7 +493,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			startedDeobfuscating = true;
 		}
 
-		void addEntryPointCallToBeRemoved(MethodReference methodToBeRemoved) {
+		void addEntryPointCallToBeRemoved(MethodDefinition methodToBeRemoved) {
 			var entryPoint = module.EntryPoint;
 			addCallToBeRemoved(entryPoint, methodToBeRemoved);
 			foreach (var info in DotNetUtils.getCalledMethods(module, entryPoint))

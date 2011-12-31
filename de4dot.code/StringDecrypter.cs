@@ -115,7 +115,7 @@ namespace de4dot.code {
 	}
 
 	class StaticStringDecrypter : StringDecrypter {
-		Dictionary<MethodReferenceAndDeclaringTypeKey, Func<MethodDefinition, object[], string>> stringDecrypters = new Dictionary<MethodReferenceAndDeclaringTypeKey, Func<MethodDefinition, object[], string>>();
+		MethodDefinitionAndDeclaringTypeDict<Func<MethodDefinition, object[], string>> stringDecrypters = new MethodDefinitionAndDeclaringTypeDict<Func<MethodDefinition, object[], string>>();
 
 		public bool HasHandlers {
 			get { return stringDecrypters.Count != 0; }
@@ -124,35 +124,35 @@ namespace de4dot.code {
 		public IEnumerable<MethodDefinition> Methods {
 			get {
 				var list = new List<MethodDefinition>(stringDecrypters.Count);
-				foreach (var key in stringDecrypters.Keys)
-					list.Add((MethodDefinition)key.MethodReference);
+				foreach (var method in stringDecrypters.getKeys())
+					list.Add(method);
 				return list;
 			}
 		}
 
 		class MyCallResult : CallResult {
-			public MethodReferenceAndDeclaringTypeKey methodKey;
+			public MethodReference methodReference;
 			public MyCallResult(Block block, int callEndIndex, MethodReference method)
 				: base(block, callEndIndex) {
-				this.methodKey = new MethodReferenceAndDeclaringTypeKey(method);
+				this.methodReference = method;
 			}
 		}
 
 		public void add(MethodDefinition method, Func<MethodDefinition, object[], string> handler) {
 			if (method != null)
-				stringDecrypters[new MethodReferenceAndDeclaringTypeKey(method)] = handler;
+				stringDecrypters.add(method, handler);
 		}
 
 		protected override void inlineAllCalls() {
 			foreach (var tmp in callResults) {
 				var callResult = (MyCallResult)tmp;
-				var handler = stringDecrypters[callResult.methodKey];
-				callResult.returnValue = handler((MethodDefinition)callResult.methodKey.MethodReference, callResult.args);
+				var handler = stringDecrypters.find(callResult.methodReference);
+				callResult.returnValue = handler((MethodDefinition)callResult.methodReference, callResult.args);
 			}
 		}
 
 		protected override CallResult createCallResult(MethodReference method, Block block, int callInstrIndex) {
-			if (!stringDecrypters.ContainsKey(new MethodReferenceAndDeclaringTypeKey(method)))
+			if (stringDecrypters.find(method) == null)
 				return null;
 			return new MyCallResult(block, callInstrIndex, method);
 		}
