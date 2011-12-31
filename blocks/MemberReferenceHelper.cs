@@ -876,6 +876,14 @@ namespace de4dot.blocks {
 			return res;
 		}
 
+		public static bool compareFieldReferenceAndDeclaringType(FieldReference a, FieldReference b) {
+			if (!compareFieldReference(a, b))
+				return false;
+			if (a == null)
+				return true;
+			return compareTypes(a.DeclaringType, b.DeclaringType);
+		}
+
 		public static bool compareFieldReference(FieldReference a, FieldReference b) {
 			if (ReferenceEquals(a, b))
 				return true;
