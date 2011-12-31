@@ -20,7 +20,6 @@
 using System;
 using System.Text;
 using System.Collections.Generic;
-using System.Security.Cryptography;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using de4dot.blocks;
@@ -249,13 +248,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				else
 					throw new ApplicationException("Unknown string decrypter version");
 
-				byte[] decryptedStringData;
-				using (var aes = new RijndaelManaged { Mode = CipherMode.CBC }) {
-					using (var transform = aes.CreateDecryptor(info.key, info.iv)) {
-						decryptedStringData = transform.TransformFinalBlock(encryptedStringData, 0, encryptedStringData.Length);
-					}
-				}
-				return Encoding.Unicode.GetString(decryptedStringData);
+				return Encoding.Unicode.GetString(DeobUtils.aesDecrypt(encryptedStringData, info.key, info.iv));
 			}
 		}
 
