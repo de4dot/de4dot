@@ -24,13 +24,13 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 	class BoolValueInliner : MethodReturnValueInliner {
-		Dictionary<MethodReferenceAndDeclaringTypeKey, Func<MethodDefinition, object[], bool>> boolDecrypters = new Dictionary<MethodReferenceAndDeclaringTypeKey, Func<MethodDefinition, object[], bool>>();
+		MethodDefinitionAndDeclaringTypeDict<Func<MethodDefinition, object[], bool>> boolDecrypters = new MethodDefinitionAndDeclaringTypeDict<Func<MethodDefinition, object[], bool>>();
 
 		class MyCallResult : CallResult {
-			public MethodReferenceAndDeclaringTypeKey methodKey;
+			public MethodReference methodReference;
 			public MyCallResult(Block block, int callEndIndex, MethodReference method)
 				: base(block, callEndIndex) {
-				this.methodKey = new MethodReferenceAndDeclaringTypeKey(method);
+				this.methodReference = method;
 			}
 		}
 
@@ -40,7 +40,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 
 		public void add(MethodDefinition method, Func<MethodDefinition, object[], bool> handler) {
 			if (method != null)
-				boolDecrypters[new MethodReferenceAndDeclaringTypeKey(method)] = handler;
+				boolDecrypters.add(method, handler);
 		}
 
 		protected override void inlineReturnValues(IList<CallResult> callResults) {
@@ -56,13 +56,13 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		protected override void inlineAllCalls() {
 			foreach (var tmp in callResults) {
 				var callResult = (MyCallResult)tmp;
-				var handler = boolDecrypters[callResult.methodKey];
-				callResult.returnValue = handler((MethodDefinition)callResult.methodKey.MethodReference, callResult.args);
+				var handler = boolDecrypters.find(callResult.methodReference);
+				callResult.returnValue = handler((MethodDefinition)callResult.methodReference, callResult.args);
 			}
 		}
 
 		protected override CallResult createCallResult(MethodReference method, Block block, int callInstrIndex) {
-			if (!boolDecrypters.ContainsKey(new MethodReferenceAndDeclaringTypeKey(method)))
+			if (boolDecrypters.find(method) == null)
 				return null;
 			return new MyCallResult(block, callInstrIndex, method);
 		}
