@@ -171,8 +171,8 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		class MethodCallRemover {
-			Dictionary<string, Dictionary<MethodReferenceAndDeclaringTypeKey, bool>> methodNameInfos = new Dictionary<string, Dictionary<MethodReferenceAndDeclaringTypeKey, bool>>(StringComparer.Ordinal);
-			Dictionary<MethodReferenceAndDeclaringTypeKey, Dictionary<MethodReferenceAndDeclaringTypeKey, bool>> methodRefInfos = new Dictionary<MethodReferenceAndDeclaringTypeKey, Dictionary<MethodReferenceAndDeclaringTypeKey, bool>>();
+			Dictionary<string, MethodDefinitionAndDeclaringTypeDict<bool>> methodNameInfos = new Dictionary<string, MethodDefinitionAndDeclaringTypeDict<bool>>();
+			MethodDefinitionAndDeclaringTypeDict<MethodDefinitionAndDeclaringTypeDict<bool>> methodRefInfos = new MethodDefinitionAndDeclaringTypeDict<MethodDefinitionAndDeclaringTypeDict<bool>>();
 
 			void checkMethod(MethodReference methodToBeRemoved) {
 				if (methodToBeRemoved.Parameters.Count != 0)
@@ -181,27 +181,26 @@ namespace de4dot.code.deobfuscators {
 					throw new ApplicationException(string.Format("Method has a return value: {0}", methodToBeRemoved));
 			}
 
-			public void add(string method, MethodReference methodToBeRemoved) {
+			public void add(string method, MethodDefinition methodToBeRemoved) {
 				if (methodToBeRemoved == null)
 					return;
 				checkMethod(methodToBeRemoved);
 
-				Dictionary<MethodReferenceAndDeclaringTypeKey, bool> dict;
+				MethodDefinitionAndDeclaringTypeDict<bool> dict;
 				if (!methodNameInfos.TryGetValue(method, out dict))
-					methodNameInfos[method] = dict = new Dictionary<MethodReferenceAndDeclaringTypeKey, bool>();
-				dict[new MethodReferenceAndDeclaringTypeKey(methodToBeRemoved)] = true;
+					methodNameInfos[method] = dict = new MethodDefinitionAndDeclaringTypeDict<bool>();
+				dict.add(methodToBeRemoved, true);
 			}
 
-			public void add(MethodDefinition method, MethodReference methodToBeRemoved) {
+			public void add(MethodDefinition method, MethodDefinition methodToBeRemoved) {
 				if (method == null || methodToBeRemoved == null)
 					return;
 				checkMethod(methodToBeRemoved);
 
-				Dictionary<MethodReferenceAndDeclaringTypeKey, bool> dict;
-				var methodKey = new MethodReferenceAndDeclaringTypeKey(method);
-				if (!methodRefInfos.TryGetValue(methodKey, out dict))
-					methodRefInfos[methodKey] = dict = new Dictionary<MethodReferenceAndDeclaringTypeKey, bool>();
-				dict[new MethodReferenceAndDeclaringTypeKey(methodToBeRemoved)] = true;
+				var dict = methodRefInfos.find(method);
+				if (dict == null)
+					methodRefInfos.add(method, dict = new MethodDefinitionAndDeclaringTypeDict<bool>());
+				dict.add(methodToBeRemoved, true);
 			}
 
 			public void removeAll(Blocks blocks) {
@@ -212,7 +211,7 @@ namespace de4dot.code.deobfuscators {
 			}
 
 			void removeAll(IList<Block> allBlocks, Blocks blocks, string method) {
-				Dictionary<MethodReferenceAndDeclaringTypeKey, bool> info;
+				MethodDefinitionAndDeclaringTypeDict<bool> info;
 				if (!methodNameInfos.TryGetValue(method, out info))
 					return;
 
@@ -220,14 +219,14 @@ namespace de4dot.code.deobfuscators {
 			}
 
 			void removeAll(IList<Block> allBlocks, Blocks blocks, MethodDefinition method) {
-				Dictionary<MethodReferenceAndDeclaringTypeKey, bool> info;
-				if (!methodRefInfos.TryGetValue(new MethodReferenceAndDeclaringTypeKey(method), out info))
+				var info = methodRefInfos.find(method);
+				if (info == null)
 					return;
 
 				removeCalls(allBlocks, blocks, info);
 			}
 
-			void removeCalls(IList<Block> allBlocks, Blocks blocks, Dictionary<MethodReferenceAndDeclaringTypeKey, bool> info) {
+			void removeCalls(IList<Block> allBlocks, Blocks blocks, MethodDefinitionAndDeclaringTypeDict<bool> info) {
 				var instrsToDelete = new List<int>();
 				foreach (var block in allBlocks) {
 					instrsToDelete.Clear();
@@ -239,8 +238,7 @@ namespace de4dot.code.deobfuscators {
 						if (destMethod == null)
 							continue;
 
-						var key = new MethodReferenceAndDeclaringTypeKey(destMethod);
-						if (info.ContainsKey(key)) {
+						if (info.find(destMethod)) {
 							Log.v("Removed call to {0}", destMethod);
 							instrsToDelete.Add(i);
 						}
@@ -250,19 +248,19 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
-		public void addCctorInitCallToBeRemoved(MethodReference methodToBeRemoved) {
+		public void addCctorInitCallToBeRemoved(MethodDefinition methodToBeRemoved) {
 			methodCallRemover.add(".cctor", methodToBeRemoved);
 		}
 
-		public void addModuleCctorInitCallToBeRemoved(MethodReference methodToBeRemoved) {
+		public void addModuleCctorInitCallToBeRemoved(MethodDefinition methodToBeRemoved) {
 			methodCallRemover.add(DotNetUtils.getMethod(DotNetUtils.getModuleType(module), ".cctor"), methodToBeRemoved);
 		}
 
-		public void addCtorInitCallToBeRemoved(MethodReference methodToBeRemoved) {
+		public void addCtorInitCallToBeRemoved(MethodDefinition methodToBeRemoved) {
 			methodCallRemover.add(".ctor", methodToBeRemoved);
 		}
 
-		public void addCallToBeRemoved(MethodDefinition method, MethodReference methodToBeRemoved) {
+		public void addCallToBeRemoved(MethodDefinition method, MethodDefinition methodToBeRemoved) {
 			methodCallRemover.add(method, methodToBeRemoved);
 		}
 
@@ -647,11 +645,6 @@ namespace de4dot.code.deobfuscators {
 			}
 
 			return false;
-		}
-
-		static void addMethods(TypeDefinition type, Dictionary<MethodReferenceAndDeclaringTypeKey, bool> methods) {
-			foreach (var method in type.Methods)
-				methods[new MethodReferenceAndDeclaringTypeKey(method)] = true;
 		}
 
 		public static int convert(bool b) {

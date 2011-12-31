@@ -53,6 +53,10 @@ namespace de4dot.blocks {
 			get { return tokenToValue.Count; }
 		}
 
+		public IEnumerable<TypeDefinition> getKeys() {
+			return refToKey.Values;
+		}
+
 		public IEnumerable<TValue> getAll() {
 			return tokenToValue.Values;
 		}
@@ -124,6 +128,10 @@ namespace de4dot.blocks {
 
 		public int Count {
 			get { return tokenToValue.Count; }
+		}
+
+		public IEnumerable<FieldDefinition> getKeys() {
+			return refToKey.Values;
 		}
 
 		public IEnumerable<TValue> getAll() {
@@ -207,6 +215,10 @@ namespace de4dot.blocks {
 
 		public int Count {
 			get { return tokenToValue.Count; }
+		}
+
+		public IEnumerable<MethodDefinition> getKeys() {
+			return refToKey.Values;
 		}
 
 		public IEnumerable<TValue> getAll() {
