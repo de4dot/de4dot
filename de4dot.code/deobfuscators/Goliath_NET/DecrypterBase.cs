@@ -67,11 +67,11 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 		public IEnumerable<TypeDefinition> DecrypterTypes {
 			get {
 				var types = new TypeDefinitionDict<TypeDefinition>();
-				foreach (var info in decrypterMethods.getAll()) {
+				foreach (var info in decrypterMethods.getValues()) {
 					if (info.referenced)
 						types.add(info.method.DeclaringType, info.method.DeclaringType);
 				}
-				return types.getAll();
+				return types.getValues();
 			}
 		}
 
@@ -275,7 +275,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 
 		public IEnumerable<MethodDefinition> getMethods() {
 			var list = new List<MethodDefinition>(decrypterMethods.Count);
-			foreach (var info in decrypterMethods.getAll())
+			foreach (var info in decrypterMethods.getValues())
 				list.Add(info.method);
 			return list;
 		}

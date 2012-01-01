@@ -40,7 +40,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 		public List<TypeDefinition> Types {
 			get {
 				var list = new List<TypeDefinition>(typeToInfo.Count);
-				foreach (var info in typeToInfo.getAll()) {
+				foreach (var info in typeToInfo.getValues()) {
 					if (info.referenced)
 						list.Add(info.type);
 				}
