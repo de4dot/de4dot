@@ -58,7 +58,7 @@ namespace de4dot.blocks {
 			return tokenToKey.Values;
 		}
 
-		public IEnumerable<TValue> getAll() {
+		public IEnumerable<TValue> getValues() {
 			return tokenToValue.Values;
 		}
 
@@ -138,7 +138,7 @@ namespace de4dot.blocks {
 			return tokenToKey.Values;
 		}
 
-		public IEnumerable<TValue> getAll() {
+		public IEnumerable<TValue> getValues() {
 			return tokenToValue.Values;
 		}
 
@@ -228,7 +228,7 @@ namespace de4dot.blocks {
 			return tokenToKey.Values;
 		}
 
-		public IEnumerable<TValue> getAll() {
+		public IEnumerable<TValue> getValues() {
 			return tokenToValue.Values;
 		}
 
@@ -317,7 +317,7 @@ namespace de4dot.blocks {
 			return tokenToKey.Values;
 		}
 
-		public IEnumerable<TValue> getAll() {
+		public IEnumerable<TValue> getValues() {
 			return tokenToValue.Values;
 		}
 
@@ -386,7 +386,7 @@ namespace de4dot.blocks {
 			return tokenToKey.Values;
 		}
 
-		public IEnumerable<TValue> getAll() {
+		public IEnumerable<TValue> getValues() {
 			return tokenToValue.Values;
 		}
 
