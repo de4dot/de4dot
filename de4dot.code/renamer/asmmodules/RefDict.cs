@@ -22,183 +22,61 @@ using Mono.Cecil;
 using de4dot.blocks;
 
 namespace de4dot.code.renamer.asmmodules {
-	interface RefDict<TRef, TMRef> where TRef : Ref where TMRef : MemberReference {
-		int Count { get; }
-		IEnumerable<TRef> getValues();
-		IEnumerable<TRef> getSorted();
-		TRef find(TMRef tmref);
-		TRef findAny(TMRef tmref);
-		void add(TRef tref);
-		void onTypesRenamed();
-	}
-
-	class TypeDefDict : RefDict<TypeDef, TypeReference> {
-		TypeDefinitionDict<TypeDef> typeToDef = new TypeDefinitionDict<TypeDef>();
-
-		public int Count {
-			get { return typeToDef.Count; }
-		}
-
-		public IEnumerable<TypeDef> getValues() {
-			return typeToDef.getValues();
-		}
-
-		public IEnumerable<TypeDef> getSorted() {
-			var list = new List<TypeDef>(getValues());
+	static class DictHelper {
+		public static IEnumerable<T> getSorted<T>(IEnumerable<T> values) where T : Ref {
+			var list = new List<T>(values);
 			list.Sort((a, b) => Utils.compareInt32(a.Index, b.Index));
 			return list;
 		}
+	}
 
-		public TypeDef find(TypeReference typeReference) {
-			return typeToDef.find(typeReference);
-		}
-
-		public TypeDef findAny(TypeReference typeReference) {
-			return typeToDef.findAny(typeReference);
+	class TypeDefDict : TypeDefinitionDict<TypeDef> {
+		public IEnumerable<TypeDef> getSorted() {
+			return DictHelper.getSorted(getValues());
 		}
 
 		public void add(TypeDef typeDef) {
-			typeToDef.add(typeDef.TypeDefinition, typeDef);
-		}
-
-		public void onTypesRenamed() {
-			typeToDef.onTypesRenamed();
+			add(typeDef.TypeDefinition, typeDef);
 		}
 	}
 
-	class FieldDefDict : RefDict<FieldDef, FieldReference> {
-		FieldDefinitionDict<FieldDef> fieldToDef = new FieldDefinitionDict<FieldDef>();
-
-		public int Count {
-			get { return fieldToDef.Count; }
-		}
-
-		public IEnumerable<FieldDef> getValues() {
-			return fieldToDef.getValues();
-		}
-
+	class FieldDefDict : FieldDefinitionDict<FieldDef> {
 		public IEnumerable<FieldDef> getSorted() {
-			var list = new List<FieldDef>(getValues());
-			list.Sort((a, b) => Utils.compareInt32(a.Index, b.Index));
-			return list;
-		}
-
-		public FieldDef find(FieldReference fieldReference) {
-			return fieldToDef.find(fieldReference);
-		}
-
-		public FieldDef findAny(FieldReference fieldReference) {
-			return fieldToDef.findAny(fieldReference);
+			return DictHelper.getSorted(getValues());
 		}
 
 		public void add(FieldDef fieldDef) {
-			fieldToDef.add(fieldDef.FieldDefinition, fieldDef);
-		}
-
-		public void onTypesRenamed() {
-			fieldToDef.onTypesRenamed();
+			add(fieldDef.FieldDefinition, fieldDef);
 		}
 	}
 
-	class MethodDefDict : RefDict<MethodDef, MethodReference> {
-		MethodDefinitionDict<MethodDef> methodToDef = new MethodDefinitionDict<MethodDef>();
-
-		public int Count {
-			get { return methodToDef.Count; }
-		}
-
-		public IEnumerable<MethodDef> getValues() {
-			return methodToDef.getValues();
-		}
-
+	class MethodDefDict : MethodDefinitionDict<MethodDef> {
 		public IEnumerable<MethodDef> getSorted() {
-			var list = new List<MethodDef>(getValues());
-			list.Sort((a, b) => Utils.compareInt32(a.Index, b.Index));
-			return list;
-		}
-
-		public MethodDef find(MethodReference methodReference) {
-			return methodToDef.find(methodReference);
-		}
-
-		public MethodDef findAny(MethodReference methodReference) {
-			return methodToDef.findAny(methodReference);
+			return DictHelper.getSorted(getValues());
 		}
 
 		public void add(MethodDef methodDef) {
-			methodToDef.add(methodDef.MethodDefinition, methodDef);
-		}
-
-		public void onTypesRenamed() {
-			methodToDef.onTypesRenamed();
+			add(methodDef.MethodDefinition, methodDef);
 		}
 	}
 
-	class PropertyDefDict : RefDict<PropertyDef, PropertyReference> {
-		PropertyDefinitionDict<PropertyDef> propToDef = new PropertyDefinitionDict<PropertyDef>();
-
-		public int Count {
-			get { return propToDef.Count; }
-		}
-
-		public IEnumerable<PropertyDef> getValues() {
-			return propToDef.getValues();
-		}
-
+	class PropertyDefDict : PropertyDefinitionDict<PropertyDef> {
 		public IEnumerable<PropertyDef> getSorted() {
-			var list = new List<PropertyDef>(getValues());
-			list.Sort((a, b) => Utils.compareInt32(a.Index, b.Index));
-			return list;
-		}
-
-		public PropertyDef find(PropertyReference propertyReference) {
-			return propToDef.find(propertyReference);
-		}
-
-		public PropertyDef findAny(PropertyReference propertyReference) {
-			return propToDef.findAny(propertyReference);
+			return DictHelper.getSorted(getValues());
 		}
 
 		public void add(PropertyDef propDef) {
-			propToDef.add(propDef.PropertyDefinition, propDef);
-		}
-
-		public void onTypesRenamed() {
-			propToDef.onTypesRenamed();
+			add(propDef.PropertyDefinition, propDef);
 		}
 	}
 
-	class EventDefDict : RefDict<EventDef, EventReference> {
-		EventDefinitionDict<EventDef> eventToDef = new EventDefinitionDict<EventDef>();
-
-		public int Count {
-			get { return eventToDef.Count; }
-		}
-
-		public IEnumerable<EventDef> getValues() {
-			return eventToDef.getValues();
-		}
-
+	class EventDefDict : EventDefinitionDict<EventDef> {
 		public IEnumerable<EventDef> getSorted() {
-			var list = new List<EventDef>(getValues());
-			list.Sort((a, b) => Utils.compareInt32(a.Index, b.Index));
-			return list;
-		}
-
-		public EventDef find(EventReference eventReference) {
-			return eventToDef.find(eventReference);
-		}
-
-		public EventDef findAny(EventReference eventReference) {
-			return eventToDef.findAny(eventReference);
+			return DictHelper.getSorted(getValues());
 		}
 
 		public void add(EventDef eventDef) {
-			eventToDef.add(eventDef.EventDefinition, eventDef);
-		}
-
-		public void onTypesRenamed() {
-			eventToDef.onTypesRenamed();
+			add(eventDef.EventDefinition, eventDef);
 		}
 	}
 }
