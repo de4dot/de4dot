@@ -286,8 +286,15 @@ namespace de4dot.code.renamer {
 		void prepareRenameMethodArgs(MethodDef methodDef) {
 			if (methodDef.ParamDefs.Count > 0) {
 				if (isEventHandler(methodDef)) {
-					param(methodDef.ParamDefs[0]).newName = "sender";
-					param(methodDef.ParamDefs[1]).newName = "e";
+					ParamInfo info;
+
+					info = param(methodDef.ParamDefs[0]);
+					if (!info.gotNewName())
+						info.newName = "sender";
+
+					info = param(methodDef.ParamDefs[1]);
+					if (!info.gotNewName())
+						info.newName = "e";
 				}
 				else {
 					var newVariableNameState = variableNameState.clone();
@@ -791,12 +798,6 @@ namespace de4dot.code.renamer {
 
 		static bool isEventHandlerType(TypeReference type) {
 			return type.FullName.EndsWith("EventHandler", StringComparison.Ordinal);
-		}
-
-		static MethodReference getOverrideMethod(MethodDefinition meth) {
-			if (meth == null || !meth.HasOverrides)
-				return null;
-			return meth.Overrides[0];
 		}
 
 		string findWindowsFormsClassName(TypeDef type) {

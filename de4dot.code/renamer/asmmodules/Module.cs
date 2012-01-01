@@ -70,7 +70,7 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 
 		public IEnumerable<TypeDef> getAllTypes() {
-			return types.getAll();
+			return types.getValues();
 		}
 
 		public IEnumerable<MethodDefinition> getAllMethods() {
@@ -131,7 +131,7 @@ namespace de4dot.code.renamer.asmmodules {
 
 		public void onTypesRenamed() {
 			var newTypes = new TypeDefDict();
-			foreach (var typeDef in types.getAll()) {
+			foreach (var typeDef in types.getValues()) {
 				typeDef.onTypesRenamed();
 				newTypes.add(typeDef);
 			}

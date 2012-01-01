@@ -46,6 +46,7 @@ namespace de4dot.blocks {
 
 	public class TypeDefinitionDict<TValue> {
 		Dictionary<ScopeAndTokenKey, TValue> tokenToValue = new Dictionary<ScopeAndTokenKey, TValue>();
+		Dictionary<ScopeAndTokenKey, TypeDefinition> tokenToKey = new Dictionary<ScopeAndTokenKey, TypeDefinition>();
 		Dictionary<TypeReferenceKey, TValue> refToValue = new Dictionary<TypeReferenceKey, TValue>();
 		Dictionary<TypeReferenceKey, TypeDefinition> refToKey = new Dictionary<TypeReferenceKey, TypeDefinition>();
 
@@ -54,10 +55,10 @@ namespace de4dot.blocks {
 		}
 
 		public IEnumerable<TypeDefinition> getKeys() {
-			return refToKey.Values;
+			return tokenToKey.Values;
 		}
 
-		public IEnumerable<TValue> getAll() {
+		public IEnumerable<TValue> getValues() {
 			return tokenToValue.Values;
 		}
 
@@ -88,7 +89,9 @@ namespace de4dot.blocks {
 		}
 
 		public void add(TypeDefinition typeDefinition, TValue value) {
-			tokenToValue[getTokenKey(typeDefinition)] = value;
+			var tokenKey = getTokenKey(typeDefinition);
+			tokenToValue[tokenKey] = value;
+			tokenToKey[tokenKey] = typeDefinition;
 
 			var refKey = getReferenceKey(typeDefinition);
 			if (!refToValue.ContainsKey(refKey) ||
@@ -123,6 +126,7 @@ namespace de4dot.blocks {
 
 	public abstract class FieldDefinitionDictBase<TValue> {
 		Dictionary<ScopeAndTokenKey, TValue> tokenToValue = new Dictionary<ScopeAndTokenKey, TValue>();
+		Dictionary<ScopeAndTokenKey, FieldDefinition> tokenToKey = new Dictionary<ScopeAndTokenKey, FieldDefinition>();
 		Dictionary<IFieldReferenceKey, TValue> refToValue = new Dictionary<IFieldReferenceKey, TValue>();
 		Dictionary<IFieldReferenceKey, FieldDefinition> refToKey = new Dictionary<IFieldReferenceKey, FieldDefinition>();
 
@@ -131,10 +135,10 @@ namespace de4dot.blocks {
 		}
 
 		public IEnumerable<FieldDefinition> getKeys() {
-			return refToKey.Values;
+			return tokenToKey.Values;
 		}
 
-		public IEnumerable<TValue> getAll() {
+		public IEnumerable<TValue> getValues() {
 			return tokenToValue.Values;
 		}
 
@@ -163,7 +167,9 @@ namespace de4dot.blocks {
 		}
 
 		public void add(FieldDefinition fieldDefinition, TValue value) {
-			tokenToValue[getTokenKey(fieldDefinition)] = value;
+			var tokenKey = getTokenKey(fieldDefinition);
+			tokenToValue[tokenKey] = value;
+			tokenToKey[tokenKey] = fieldDefinition;
 
 			var refKey = getReferenceKey(fieldDefinition);
 			if (!refToValue.ContainsKey(refKey) ||
@@ -210,6 +216,7 @@ namespace de4dot.blocks {
 
 	public abstract class MethodDefinitionDictBase<TValue> {
 		Dictionary<ScopeAndTokenKey, TValue> tokenToValue = new Dictionary<ScopeAndTokenKey, TValue>();
+		Dictionary<ScopeAndTokenKey, MethodDefinition> tokenToKey = new Dictionary<ScopeAndTokenKey, MethodDefinition>();
 		Dictionary<IMethodReferenceKey, TValue> refToValue = new Dictionary<IMethodReferenceKey, TValue>();
 		Dictionary<IMethodReferenceKey, MethodDefinition> refToKey = new Dictionary<IMethodReferenceKey, MethodDefinition>();
 
@@ -218,10 +225,10 @@ namespace de4dot.blocks {
 		}
 
 		public IEnumerable<MethodDefinition> getKeys() {
-			return refToKey.Values;
+			return tokenToKey.Values;
 		}
 
-		public IEnumerable<TValue> getAll() {
+		public IEnumerable<TValue> getValues() {
 			return tokenToValue.Values;
 		}
 
@@ -250,7 +257,9 @@ namespace de4dot.blocks {
 		}
 
 		public void add(MethodDefinition methodDefinition, TValue value) {
-			tokenToValue[getTokenKey(methodDefinition)] = value;
+			var tokenKey = getTokenKey(methodDefinition);
+			tokenToValue[tokenKey] = value;
+			tokenToKey[tokenKey] = methodDefinition;
 
 			var refKey = getReferenceKey(methodDefinition);
 			if (!refToValue.ContainsKey(refKey) ||
@@ -297,13 +306,18 @@ namespace de4dot.blocks {
 
 	public abstract class PropertyDefinitionDictBase<TValue> {
 		Dictionary<ScopeAndTokenKey, TValue> tokenToValue = new Dictionary<ScopeAndTokenKey, TValue>();
+		Dictionary<ScopeAndTokenKey, PropertyDefinition> tokenToKey = new Dictionary<ScopeAndTokenKey, PropertyDefinition>();
 		Dictionary<IPropertyReferenceKey, TValue> refToValue = new Dictionary<IPropertyReferenceKey, TValue>();
 
 		public int Count {
 			get { return tokenToValue.Count; }
 		}
 
-		public IEnumerable<TValue> getAll() {
+		public IEnumerable<PropertyDefinition> getKeys() {
+			return tokenToKey.Values;
+		}
+
+		public IEnumerable<TValue> getValues() {
 			return tokenToValue.Values;
 		}
 
@@ -332,7 +346,10 @@ namespace de4dot.blocks {
 		}
 
 		public void add(PropertyDefinition propertyDefinition, TValue value) {
-			tokenToValue[getTokenKey(propertyDefinition)] = value;
+			var tokenKey = getTokenKey(propertyDefinition);
+			tokenToValue[tokenKey] = value;
+			tokenToKey[tokenKey] = propertyDefinition;
+
 			refToValue[getReferenceKey(propertyDefinition)] = value;
 		}
 
@@ -358,13 +375,18 @@ namespace de4dot.blocks {
 
 	public abstract class EventDefinitionDictBase<TValue> {
 		Dictionary<ScopeAndTokenKey, TValue> tokenToValue = new Dictionary<ScopeAndTokenKey, TValue>();
+		Dictionary<ScopeAndTokenKey, EventDefinition> tokenToKey = new Dictionary<ScopeAndTokenKey, EventDefinition>();
 		Dictionary<IEventReferenceKey, TValue> refToValue = new Dictionary<IEventReferenceKey, TValue>();
 
 		public int Count {
 			get { return tokenToValue.Count; }
 		}
 
-		public IEnumerable<TValue> getAll() {
+		public IEnumerable<EventDefinition> getKeys() {
+			return tokenToKey.Values;
+		}
+
+		public IEnumerable<TValue> getValues() {
 			return tokenToValue.Values;
 		}
 
@@ -393,7 +415,10 @@ namespace de4dot.blocks {
 		}
 
 		public void add(EventDefinition eventDefinition, TValue value) {
-			tokenToValue[getTokenKey(eventDefinition)] = value;
+			var tokenKey = getTokenKey(eventDefinition);
+			tokenToValue[tokenKey] = value;
+			tokenToKey[tokenKey] = eventDefinition;
+
 			refToValue[getReferenceKey(eventDefinition)] = value;
 		}
 

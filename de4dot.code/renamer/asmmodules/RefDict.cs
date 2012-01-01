@@ -24,7 +24,7 @@ using de4dot.blocks;
 namespace de4dot.code.renamer.asmmodules {
 	interface RefDict<TRef, TMRef> where TRef : Ref where TMRef : MemberReference {
 		int Count { get; }
-		IEnumerable<TRef> getAll();
+		IEnumerable<TRef> getValues();
 		IEnumerable<TRef> getSorted();
 		TRef find(TMRef tmref);
 		TRef findAny(TMRef tmref);
@@ -39,12 +39,12 @@ namespace de4dot.code.renamer.asmmodules {
 			get { return typeToDef.Count; }
 		}
 
-		public IEnumerable<TypeDef> getAll() {
-			return typeToDef.getAll();
+		public IEnumerable<TypeDef> getValues() {
+			return typeToDef.getValues();
 		}
 
 		public IEnumerable<TypeDef> getSorted() {
-			var list = new List<TypeDef>(getAll());
+			var list = new List<TypeDef>(getValues());
 			list.Sort((a, b) => Utils.compareInt32(a.Index, b.Index));
 			return list;
 		}
@@ -73,12 +73,12 @@ namespace de4dot.code.renamer.asmmodules {
 			get { return fieldToDef.Count; }
 		}
 
-		public IEnumerable<FieldDef> getAll() {
-			return fieldToDef.getAll();
+		public IEnumerable<FieldDef> getValues() {
+			return fieldToDef.getValues();
 		}
 
 		public IEnumerable<FieldDef> getSorted() {
-			var list = new List<FieldDef>(getAll());
+			var list = new List<FieldDef>(getValues());
 			list.Sort((a, b) => Utils.compareInt32(a.Index, b.Index));
 			return list;
 		}
@@ -107,12 +107,12 @@ namespace de4dot.code.renamer.asmmodules {
 			get { return methodToDef.Count; }
 		}
 
-		public IEnumerable<MethodDef> getAll() {
-			return methodToDef.getAll();
+		public IEnumerable<MethodDef> getValues() {
+			return methodToDef.getValues();
 		}
 
 		public IEnumerable<MethodDef> getSorted() {
-			var list = new List<MethodDef>(getAll());
+			var list = new List<MethodDef>(getValues());
 			list.Sort((a, b) => Utils.compareInt32(a.Index, b.Index));
 			return list;
 		}
@@ -141,12 +141,12 @@ namespace de4dot.code.renamer.asmmodules {
 			get { return propToDef.Count; }
 		}
 
-		public IEnumerable<PropertyDef> getAll() {
-			return propToDef.getAll();
+		public IEnumerable<PropertyDef> getValues() {
+			return propToDef.getValues();
 		}
 
 		public IEnumerable<PropertyDef> getSorted() {
-			var list = new List<PropertyDef>(getAll());
+			var list = new List<PropertyDef>(getValues());
 			list.Sort((a, b) => Utils.compareInt32(a.Index, b.Index));
 			return list;
 		}
@@ -175,12 +175,12 @@ namespace de4dot.code.renamer.asmmodules {
 			get { return eventToDef.Count; }
 		}
 
-		public IEnumerable<EventDef> getAll() {
-			return eventToDef.getAll();
+		public IEnumerable<EventDef> getValues() {
+			return eventToDef.getValues();
 		}
 
 		public IEnumerable<EventDef> getSorted() {
-			var list = new List<EventDef>(getAll());
+			var list = new List<EventDef>(getValues());
 			list.Sort((a, b) => Utils.compareInt32(a.Index, b.Index));
 			return list;
 		}
