@@ -92,10 +92,18 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 
 		public void find() {
 			var requiredFields = getRequiredFieldTypes();
-			foreach (var type in module.Types) {
-				var resourceName = type.FullName + ".resources";
-				var resource = DotNetUtils.getResource(module, resourceName) as EmbeddedResource;
+
+			foreach (var tmp in module.Resources) {
+				var resource = tmp as EmbeddedResource;
 				if (resource == null)
+					continue;
+				if (!resource.Name.EndsWith(".resources", StringComparison.Ordinal))
+					continue;
+				string ns, name;
+				splitTypeName(resource.Name.Substring(0, resource.Name.Length - 10), out ns, out name);
+				var typeRef = new TypeReference(ns, name, module, module);
+				var type = DotNetUtils.getType(module, typeRef);
+				if (type == null)
 					continue;
 				if (!new FieldTypes(type).exactly(requiredFields))
 					continue;
@@ -103,6 +111,18 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 				encryptedResource = resource;
 				decrypterType = type;
 				break;
+			}
+		}
+
+		void splitTypeName(string fullName, out string ns, out string name) {
+			int index = fullName.LastIndexOf('.');
+			if (index < 0) {
+				ns = "";
+				name = fullName;
+			}
+			else {
+				ns = fullName.Substring(0, index);
+				name = fullName.Substring(index + 1);
 			}
 		}
 
