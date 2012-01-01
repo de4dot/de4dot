@@ -246,19 +246,19 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 
 		public IEnumerable<EventDef> AllEvents {
-			get { return events.getAll(); }
+			get { return events.getValues(); }
 		}
 
 		public IEnumerable<FieldDef> AllFields {
-			get { return fields.getAll(); }
+			get { return fields.getValues(); }
 		}
 
 		public IEnumerable<MethodDef> AllMethods {
-			get { return methods.getAll(); }
+			get { return methods.getValues(); }
 		}
 
 		public IEnumerable<PropertyDef> AllProperties {
-			get { return properties.getAll(); }
+			get { return properties.getValues(); }
 		}
 
 		public IEnumerable<EventDef> AllEventsSorted {
@@ -379,7 +379,7 @@ namespace de4dot.code.renamer.asmmodules {
 			for (int i = 0; i < type.Properties.Count; i++)
 				add(new PropertyDef(type.Properties[i], this, i));
 
-			foreach (var propDef in properties.getAll()) {
+			foreach (var propDef in properties.getValues()) {
 				foreach (var method in propDef.methodDefinitions()) {
 					var methodDef = find(method);
 					if (methodDef == null)
@@ -392,7 +392,7 @@ namespace de4dot.code.renamer.asmmodules {
 				}
 			}
 
-			foreach (var eventDef in events.getAll()) {
+			foreach (var eventDef in events.getValues()) {
 				foreach (var method in eventDef.methodDefinitions()) {
 					var methodDef = find(method);
 					if (methodDef == null)
@@ -448,7 +448,7 @@ namespace de4dot.code.renamer.asmmodules {
 			if (baseType != null)
 				baseType.typeDef.initializeVirtualMembers(scopes, resolver);
 
-			foreach (var methodDef in methods.getAll()) {
+			foreach (var methodDef in methods.getValues()) {
 				if (methodDef.isVirtual())
 					scopes.add(methodDef);
 			}
@@ -507,7 +507,7 @@ namespace de4dot.code.renamer.asmmodules {
 			//---	  methods to implement the corresponding interface method.
 			if (interfaces.Count > 0) {
 				methodsDict.Clear();
-				foreach (var method in methods.getAll()) {
+				foreach (var method in methods.getValues()) {
 					if (!method.isPublic() || !method.isVirtual() || !method.isNewSlot())
 						continue;
 					methodsDict[new MethodReferenceKey(method.MethodDefinition)] = method;
@@ -572,14 +572,14 @@ namespace de4dot.code.renamer.asmmodules {
 			var ifaceMethodsDict = new Dictionary<MethodReferenceAndDeclaringTypeKey, MethodDef>();
 			foreach (var ifaceInfo in allImplementedInterfaces.Keys) {
 				var git = ifaceInfo.typeReference as GenericInstanceType;
-				foreach (var ifaceMethod in ifaceInfo.typeDef.methods.getAll()) {
+				foreach (var ifaceMethod in ifaceInfo.typeDef.methods.getValues()) {
 					MethodReference ifaceMethodReference = ifaceMethod.MethodDefinition;
 					if (git != null)
 						ifaceMethodReference = simpleClone(ifaceMethod.MethodDefinition, git);
 					ifaceMethodsDict[new MethodReferenceAndDeclaringTypeKey(ifaceMethodReference)] = ifaceMethod;
 				}
 			}
-			foreach (var classMethod in methods.getAll()) {
+			foreach (var classMethod in methods.getValues()) {
 				if (!classMethod.isVirtual())
 					continue;
 				foreach (var overrideMethod in classMethod.MethodDefinition.Overrides) {
@@ -694,7 +694,7 @@ namespace de4dot.code.renamer.asmmodules {
 					virtualMethodInstances.initializeFrom(baseType.typeDef.virtualMethodInstances, baseType.typeReference as GenericInstanceType);
 
 				// Figure out which methods we override in the base class
-				foreach (var methodDef in methods.getAll()) {
+				foreach (var methodDef in methods.getValues()) {
 					if (!methodDef.isVirtual() || methodDef.isNewSlot())
 						continue;
 					var methodInstList = virtualMethodInstances.lookup(methodDef.MethodDefinition);
@@ -705,7 +705,7 @@ namespace de4dot.code.renamer.asmmodules {
 				}
 			}
 
-			foreach (var methodDef in methods.getAll()) {
+			foreach (var methodDef in methods.getValues()) {
 				if (!methodDef.isVirtual())
 					continue;
 				virtualMethodInstances.add(new MethodInst(methodDef, methodDef.MethodDefinition));

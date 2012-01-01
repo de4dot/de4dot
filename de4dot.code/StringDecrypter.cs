@@ -122,12 +122,7 @@ namespace de4dot.code {
 		}
 
 		public IEnumerable<MethodDefinition> Methods {
-			get {
-				var list = new List<MethodDefinition>(stringDecrypters.Count);
-				foreach (var method in stringDecrypters.getKeys())
-					list.Add(method);
-				return list;
-			}
+			get { return stringDecrypters.getKeys(); }
 		}
 
 		class MyCallResult : CallResult {

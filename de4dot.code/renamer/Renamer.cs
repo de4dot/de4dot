@@ -899,8 +899,66 @@ namespace de4dot.code.renamer {
 			ifaceMethods.visitAll((scope) => prepareRenameVirtualMethods(scope, "imethod_", true));
 			virtualMethods.visitAll((scope) => prepareRenameVirtualMethods(scope, "vmethod_", true));
 
+			restoreMethodArgs(scopes);
+
 			foreach (var typeDef in modules.AllTypes)
 				memberInfos.type(typeDef).prepareRenameMethods2();
+		}
+
+		void restoreMethodArgs(MethodNameScopes scopes) {
+			foreach (var scope in scopes.getAllScopes()) {
+				if (scope.Methods[0].ParamDefs.Count == 0)
+					continue;
+
+				var argNames = getValidArgNames(scope);
+
+				foreach (var method in scope.Methods) {
+					if (!method.Owner.HasModule)
+						continue;
+					var nameChecker = method.Owner.Module.ObfuscatedFile.NameChecker;
+
+					for (int i = 0; i < argNames.Length; i++) {
+						var argName = argNames[i];
+						if (argName == null || !nameChecker.isValidMethodArgName(argName))
+							continue;
+						var info = memberInfos.param(method.ParamDefs[i]);
+						if (nameChecker.isValidMethodArgName(info.oldName))
+							continue;
+						info.newName = argName;
+					}
+				}
+			}
+		}
+
+		string[] getValidArgNames(MethodNameScope scope) {
+			var methods = new List<MethodDef>(scope.Methods);
+			foreach (var method in scope.Methods) {
+				foreach (var overrideRef in method.MethodDefinition.Overrides) {
+					var overrideDef = modules.resolve(overrideRef);
+					if (overrideDef == null) {
+						var typeDef = modules.resolve(overrideRef.DeclaringType) ?? modules.resolveOther(overrideRef.DeclaringType);
+						if (typeDef == null)
+							continue;
+						overrideDef = typeDef.find(overrideRef);
+						if (overrideDef == null)
+							continue;
+					}
+					if (overrideDef.ParamDefs.Count != method.ParamDefs.Count)
+						continue;
+					methods.Add(overrideDef);
+				}
+			}
+
+			var argNames = new string[scope.Methods[0].ParamDefs.Count];
+			foreach (var method in methods) {
+				var nameChecker = !method.Owner.HasModule ? null : method.Owner.Module.ObfuscatedFile.NameChecker;
+				for (int i = 0; i < argNames.Length; i++) {
+					var argName = method.ParamDefs[i].ParameterDefinition.Name;
+					if (nameChecker == null || nameChecker.isValidMethodArgName(argName))
+						argNames[i] = argName;
+				}
+			}
+			return argNames;
 		}
 
 		class PrepareHelper {
