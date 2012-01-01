@@ -99,8 +99,6 @@ namespace de4dot.code.deobfuscators.Unknown {
 					return "CodeFort";
 				if (type.FullName == "____KILL")
 					return "DeployLX CodeVeil";
-				if (type.FullName.Contains("ObfuscatedByGoliath"))
-					return "Goliath .NET Obfuscator";
 				if (type.FullName == "ZYXDNGuarder")
 					return "DNGuard HVM";
 				if (type.FullName == "InfaceMaxtoCode")
