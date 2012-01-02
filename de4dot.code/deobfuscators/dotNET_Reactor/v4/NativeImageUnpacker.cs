@@ -53,23 +53,12 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			decrypter.decrypt(encryptedData, 0, encryptedData.Length);
 
 			byte[] inflatedData;
-			if (isNet1x) {
-				var buffer = new byte[0x1000];
-				var memStream = new MemoryStream();
-				var inflater = new Inflater();
-				inflater.SetInput(encryptedData, 0, encryptedData.Length);
-				while (true) {
-					int count = inflater.Inflate(buffer, 0, buffer.Length);
-					if (count == 0)
-						break;
-					memStream.Write(buffer, 0, count);
-				}
-				inflatedData = memStream.ToArray();
-			}
+			if (isNet1x)
+				inflatedData = DeobUtils.inflate(encryptedData, false);
 			else {
 				int inflatedSize = BitConverter.ToInt32(encryptedData, 0);
 				inflatedData = new byte[inflatedSize];
-				var inflater = new Inflater();
+				var inflater = new Inflater(false);
 				inflater.SetInput(encryptedData, 4, encryptedData.Length - 4);
 				int count = inflater.Inflate(inflatedData);
 				if (count != inflatedSize)

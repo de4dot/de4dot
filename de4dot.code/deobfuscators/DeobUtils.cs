@@ -21,6 +21,7 @@ using System;
 using System.IO;
 using System.Security.Cryptography;
 using Mono.Cecil;
+using ICSharpCode.SharpZipLib.Zip.Compression;
 
 namespace de4dot.code.deobfuscators {
 	static class DeobUtils {
@@ -80,6 +81,14 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
+		public static byte[] desDecrypt(byte[] data, int start, int len, byte[] key, byte[] iv) {
+			using (var des = new DESCryptoServiceProvider()) {
+				using (var transform = des.CreateDecryptor(key, iv)) {
+					return transform.TransformFinalBlock(data, start, len);
+				}
+			}
+		}
+
 		public static string getExtension(ModuleKind kind) {
 			switch (kind) {
 			case ModuleKind.Dll:
@@ -91,6 +100,20 @@ namespace de4dot.code.deobfuscators {
 			default:
 				return ".exe";
 			}
+		}
+
+		public static byte[] inflate(byte[] data, bool hasHeader) {
+			var buffer = new byte[0x1000];
+			var memStream = new MemoryStream();
+			var inflater = new Inflater(hasHeader);
+			inflater.SetInput(data, 0, data.Length);
+			while (true) {
+				int count = inflater.Inflate(buffer, 0, buffer.Length);
+				if (count == 0)
+					break;
+				memStream.Write(buffer, 0, count);
+			}
+			return memStream.ToArray();
 		}
 	}
 }
