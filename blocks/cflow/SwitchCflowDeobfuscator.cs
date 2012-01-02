@@ -42,6 +42,8 @@ namespace de4dot.blocks.cflow {
 					changed |= deobfuscateLdloc(switchBlock);
 				else if (isStLdlocBranch(switchBlock, true))
 					changed |= deobfuscateStLdloc(switchBlock);
+				else if (isSwitchType1(switchBlock))
+					changed |= deobfuscateType1(switchBlock);
 			}
 			return changed;
 		}
@@ -53,6 +55,10 @@ namespace de4dot.blocks.cflow {
 		static bool isLdlocBranch(Block switchBlock, bool isSwitch) {
 			int numInstrs = 1 + (isSwitch ? 1 : 0);
 			return switchBlock.Instructions.Count == numInstrs && switchBlock.Instructions[0].isLdloc();
+		}
+
+		static bool isSwitchType1(Block switchBlock) {
+			return switchBlock.FirstInstr.isLdloc();
 		}
 
 		bool isStLdlocBranch(Block switchBlock, bool isSwitch) {
@@ -216,6 +222,60 @@ namespace de4dot.blocks.cflow {
 			default:
 				return true;
 			}
+		}
+
+		bool deobfuscateType1(Block switchBlock) {
+			Block target;
+			if (!emulateGetTarget(switchBlock, out target) || target != null)
+				return false;
+
+			bool changed = false;
+
+			foreach (var source in new List<Block>(switchBlock.Sources)) {
+				if (!source.canAppend(switchBlock))
+					continue;
+				if (!willHaveKnownTarget(switchBlock, source))
+					continue;
+
+				source.append(switchBlock);
+				changed = true;
+			}
+
+			return changed;
+		}
+
+		bool emulateGetTarget(Block switchBlock, out Block target) {
+			instructionEmulator.init(blocks.Method.HasThis, false, blocks.Method.Parameters, blocks.Locals);
+			try {
+				instructionEmulator.emulate(switchBlock.Instructions, 0, switchBlock.Instructions.Count - 1);
+			}
+			catch (System.NullReferenceException) {
+				// Here if eg. invalid metadata token in a call instruction (operand is null)
+				target = null;
+				return false;
+			}
+			target = getTarget(switchBlock);
+			return true;
+		}
+
+		bool willHaveKnownTarget(Block switchBlock, Block source) {
+			instructionEmulator.init(blocks.Method.HasThis, false, blocks.Method.Parameters, blocks.Locals);
+			try {
+				instructionEmulator.emulate(source.Instructions);
+				instructionEmulator.emulate(switchBlock.Instructions, 0, switchBlock.Instructions.Count - 1);
+			}
+			catch (System.NullReferenceException) {
+				// Here if eg. invalid metadata token in a call instruction (operand is null)
+				return false;
+			}
+			return getTarget(switchBlock) != null;
+		}
+
+		Block getTarget(Block switchBlock) {
+			var val1 = instructionEmulator.pop();
+			if (!val1.isInt32())
+				return null;
+			return CflowUtils.getSwitchTarget(switchBlock.Targets, switchBlock.FallThrough, (Int32Value)val1);
 		}
 
 		Block getSwitchTarget(IList<Block> targets, Block fallThrough, Block source, Value value) {
