@@ -226,20 +226,32 @@ namespace de4dot.blocks {
 
 		// Returns true if we can merge other with this
 		public bool canMerge(Block other) {
-			if (other == null || other == this && getOnlyTarget() != other || !other.isOnlySource(this))
-				return false;
-			// If it's eg. a leave, then don't merge them since it clears the stack.
-			return LastInstr.isBr() || Instr.isFallThrough(LastInstr.OpCode);
+			return canAppend(other) && other.isOnlySource(this);
 		}
 
 		// Merge two blocks into one
 		public void merge(Block other) {
 			if (!canMerge(other))
 				throw new ApplicationException("Can't merge the two blocks!");
+			append(other);
+			other.disconnectFromFallThroughAndTargets();
+			other.Parent = null;
+		}
+
+		public bool canAppend(Block other) {
+			if (other == null || other == this || getOnlyTarget() != other)
+				return false;
+			// If it's eg. a leave, then don't merge them since it clears the stack.
+			return LastInstr.isBr() || Instr.isFallThrough(LastInstr.OpCode);
+		}
+
+		public void append(Block other) {
+			if (!canAppend(other))
+				throw new ApplicationException("Can't append the block!");
 
 			removeLastBr();		// Get rid of last br/br.s if present
 
-			var newInstructions = new List<Instr>();
+			var newInstructions = new List<Instr>(instructions.Count + other.instructions.Count);
 			addInstructions(newInstructions, instructions);
 			addInstructions(newInstructions, other.instructions);
 			instructions = newInstructions;
@@ -250,9 +262,6 @@ namespace de4dot.blocks {
 			else
 				targets = null;
 			fallThrough = other.fallThrough;
-
-			other.disconnectFromFallThroughAndTargets();
-			other.Parent = null;
 			updateSources();
 		}
 
