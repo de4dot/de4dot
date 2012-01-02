@@ -221,6 +221,11 @@ namespace de4dot.blocks.cflow {
 				emulate(instr.Instruction);
 		}
 
+		public void emulate(IList<Instr> instructions, int start, int end) {
+			for (int i = start; i < end; i++)
+				emulate(instructions[i].Instruction);
+		}
+
 		public void emulate(Instruction instr) {
 			switch (instr.OpCode.Code) {
 			case Code.Starg:
