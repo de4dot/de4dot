@@ -223,6 +223,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 		}
 
 		public override void deobfuscateMethodEnd(Blocks blocks) {
+			stringDecrypter.deobfuscate(blocks);
 			if (integerValueInliner.HasHandlers)
 				integerValueInliner.decrypt(blocks);
 			if (arrayValueInliner.HasHandlers)
@@ -242,8 +243,10 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			removeInlinedMethods();
 			addTypesToBeRemoved(localsRestorer.Types, "Method locals obfuscation type");
 
-			if (Operations.DecryptStrings != OpDecryptString.None)
+			if (Operations.DecryptStrings != OpDecryptString.None) {
 				removeDecrypterStuff(stringDecrypter, "String", "strings");
+				addTypeToBeRemoved(stringDecrypter.StringStruct, "String struct");
+			}
 			if (options.DecryptIntegers)
 				removeDecrypterStuff(integerDecrypter, "Integer", "integers");
 			if (options.DecryptArrays)

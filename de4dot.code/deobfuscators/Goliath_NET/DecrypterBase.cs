@@ -26,7 +26,7 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Goliath_NET {
 	abstract class DecrypterBase {
-		ModuleDefinition module;
+		protected ModuleDefinition module;
 		EmbeddedResource encryptedResource;
 		TypeDefinition decrypterType;
 		TypeDefinition delegateType;
@@ -88,11 +88,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			return info;
 		}
 
-		protected abstract string[] getRequiredFieldTypes();
-
 		public void find() {
-			var requiredFields = getRequiredFieldTypes();
-
 			foreach (var tmp in module.Resources) {
 				var resource = tmp as EmbeddedResource;
 				if (resource == null)
@@ -105,7 +101,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 				var type = DotNetUtils.getType(module, typeRef);
 				if (type == null)
 					continue;
-				if (!new FieldTypes(type).exactly(requiredFields))
+				if (!checkDecrypterType(type))
 					continue;
 
 				encryptedResource = resource;
@@ -113,6 +109,8 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 				break;
 			}
 		}
+
+		protected abstract bool checkDecrypterType(TypeDefinition type);
 
 		void splitTypeName(string fullName, out string ns, out string name) {
 			int index = fullName.LastIndexOf('.');

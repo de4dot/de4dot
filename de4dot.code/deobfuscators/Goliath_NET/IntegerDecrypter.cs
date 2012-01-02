@@ -27,11 +27,12 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			: base(module) {
 		}
 
-		protected override string[] getRequiredFieldTypes() {
-			return new string[] {
-				"System.Byte[]",
-				"System.Collections.Generic.Dictionary`2<System.Int32,System.Object>",
-			};
+		static string[] requiredFields = new string[] {
+			"System.Byte[]",
+			"System.Collections.Generic.Dictionary`2<System.Int32,System.Object>",
+		};
+		protected override bool checkDecrypterType(TypeDefinition type) {
+			return new FieldTypes(type).exactly(requiredFields);
 		}
 
 		protected override bool checkDelegateInvokeMethod(MethodDefinition invokeMethod) {
