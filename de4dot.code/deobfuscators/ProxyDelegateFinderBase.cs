@@ -90,7 +90,7 @@ namespace de4dot.code.deobfuscators {
 			foreach (var type in module.Types) {
 				if (type.BaseType == null || type.BaseType.FullName != "System.MulticastDelegate")
 					continue;
-				var cctor = findMethod(type, ".cctor");
+				var cctor = DotNetUtils.getMethod(type, ".cctor");
 				if (cctor == null || !cctor.HasBody)
 					continue;
 				if (!type.HasFields)
@@ -106,7 +106,7 @@ namespace de4dot.code.deobfuscators {
 
 				Log.indent();
 				foreach (var field in type.Fields) {
-					if (!field.IsStatic || field.IsPublic)
+					if (!field.IsStatic)
 						continue;
 
 					MethodReference calledMethod;
@@ -114,7 +114,7 @@ namespace de4dot.code.deobfuscators {
 					getCallInfo(context, field, out calledMethod, out callOpcode);
 
 					if (calledMethod == null)
-						throw new ApplicationException("calledMethod is null");
+						continue;
 					addDelegateInfo(new DelegateInfo(field, calledMethod, callOpcode));
 					Log.v("Field: {0}, Opcode: {1}, Method: {2} ({3:X8})", field.Name, callOpcode, calledMethod, calledMethod.MetadataToken.ToUInt32());
 				}
@@ -137,16 +137,6 @@ namespace de4dot.code.deobfuscators {
 			if (proxyMethod == null || proxyField == null)
 				return;
 			proxyMethodToField[proxyMethod] = proxyField;
-		}
-
-		MethodDefinition findMethod(TypeDefinition type, string name) {
-			if (!type.HasMethods)
-				return null;
-			foreach (var method in type.Methods) {
-				if (method.Name == name)
-					return method;
-			}
-			return null;
 		}
 
 		DelegateInfo getDelegateInfo(FieldReference field) {
