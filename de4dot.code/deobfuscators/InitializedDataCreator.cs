@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using Mono.Cecil;
+using Mono.Cecil.Cil;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators {
@@ -29,9 +30,35 @@ namespace de4dot.code.deobfuscators {
 		TypeDefinition ourType;
 		TypeReference valueType;
 		int unique = 0;
+		MethodReference initializeArrayMethod;
+
+		public MethodReference InitializeArrayMethod {
+			get { return createInitializeArrayMethod(); }
+		}
 
 		public InitializedDataCreator(ModuleDefinition module) {
 			this.module = module;
+		}
+
+		MethodReference createInitializeArrayMethod() {
+			if (initializeArrayMethod == null) {
+				var runtimeHelpersType = DotNetUtils.findOrCreateTypeReference(module, module.TypeSystem.Corlib as AssemblyNameReference, "System.Runtime.CompilerServices", "RuntimeHelpers", false);
+				initializeArrayMethod = new MethodReference("InitializeArray", module.TypeSystem.Void, runtimeHelpersType);
+				var systemArrayType = DotNetUtils.findOrCreateTypeReference(module, module.TypeSystem.Corlib as AssemblyNameReference, "System", "Array", false);
+				var runtimeFieldHandleType = DotNetUtils.findOrCreateTypeReference(module, module.TypeSystem.Corlib as AssemblyNameReference, "System", "RuntimeFieldHandle", true);
+				initializeArrayMethod.Parameters.Add(new ParameterDefinition(systemArrayType));
+				initializeArrayMethod.Parameters.Add(new ParameterDefinition(runtimeFieldHandleType));
+			}
+			return initializeArrayMethod;
+		}
+
+		public void addInitializeArrayCode(Block block, int start, int numToRemove, TypeReference elementType, byte[] data) {
+			int index = start;
+			block.replace(index++, numToRemove, DotNetUtils.createLdci4(data.Length / elementType.PrimitiveSize));
+			block.insert(index++, Instruction.Create(OpCodes.Newarr, elementType));
+			block.insert(index++, Instruction.Create(OpCodes.Dup));
+			block.insert(index++, Instruction.Create(OpCodes.Ldtoken, create(data)));
+			block.insert(index++, Instruction.Create(OpCodes.Call, InitializeArrayMethod));
 		}
 
 		void createOurType() {
