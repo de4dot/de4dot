@@ -106,7 +106,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		MethodsDecrypter methodsDecrypter;
 		StringDecrypter stringDecrypter;
 		BooleanDecrypter booleanDecrypter;
-		BoolValueInliner boolValueInliner;
+		BooleanValueInliner booleanValueInliner;
 		MetadataTokenObfuscator metadataTokenObfuscator;
 		AssemblyResolver assemblyResolver;
 		ResourceResolver resourceResolver;
@@ -411,11 +411,11 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 
 			stringDecrypter.init(peImage, fileData, DeobfuscatedFile);
 			booleanDecrypter.init(fileData, DeobfuscatedFile);
-			boolValueInliner = new BoolValueInliner();
+			booleanValueInliner = new BooleanValueInliner();
 			emptyClass = new EmptyClass(module);
 
 			if (options.DecryptBools) {
-				boolValueInliner.add(booleanDecrypter.Method, (method, args) => {
+				booleanValueInliner.add(booleanDecrypter.Method, (method, args) => {
 					return booleanDecrypter.decrypt((int)args[0]);
 				});
 			}
@@ -518,8 +518,8 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		}
 
 		public override bool deobfuscateOther(Blocks blocks) {
-			if (boolValueInliner.HasHandlers)
-				return boolValueInliner.decrypt(blocks) > 0;
+			if (booleanValueInliner.HasHandlers)
+				return booleanValueInliner.decrypt(blocks) > 0;
 			return false;
 		}
 
