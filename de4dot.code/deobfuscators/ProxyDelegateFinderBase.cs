@@ -100,7 +100,7 @@ namespace de4dot.code.deobfuscators {
 				if (context == null)
 					continue;
 
-				Log.v("Found proxy delegate: {0} ({1:X8})", type, type.MetadataToken.ToUInt32());
+				Log.v("Found proxy delegate: {0} ({1:X8})", Utils.removeNewlines(type), type.MetadataToken.ToUInt32());
 				RemovedDelegateCreatorCalls++;
 				onFoundProxyDelegate(type);
 
@@ -116,7 +116,11 @@ namespace de4dot.code.deobfuscators {
 					if (calledMethod == null)
 						continue;
 					addDelegateInfo(new DelegateInfo(field, calledMethod, callOpcode));
-					Log.v("Field: {0}, Opcode: {1}, Method: {2} ({3:X8})", field.Name, callOpcode, calledMethod, calledMethod.MetadataToken.ToUInt32());
+					Log.v("Field: {0}, Opcode: {1}, Method: {2} ({3:X8})",
+								Utils.removeNewlines(field.Name),
+								callOpcode,
+								Utils.removeNewlines(calledMethod),
+								calledMethod.MetadataToken.ToUInt32());
 				}
 				Log.deIndent();
 				delegateTypesDict[type] = true;
@@ -182,8 +186,10 @@ namespace de4dot.code.deobfuscators {
 						else {
 							errors++;
 							Log.w("Could not fix proxy call. Method: {0} ({1:X8}), Proxy type: {2} ({3:X8})",
-								blocks.Method, blocks.Method.MetadataToken.ToInt32(),
-								di.field.DeclaringType, di.field.DeclaringType.MetadataToken.ToInt32());
+								Utils.removeNewlines(blocks.Method),
+								blocks.Method.MetadataToken.ToInt32(),
+								Utils.removeNewlines(di.field.DeclaringType),
+								di.field.DeclaringType.MetadataToken.ToInt32());
 						}
 					}
 					else if (instr.OpCode == OpCodes.Call) {

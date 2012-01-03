@@ -445,7 +445,7 @@ namespace de4dot.code {
 						}
 					}
 
-					Log.v("Adding string decrypter; token: {0:X8}, method: {1}", method.MetadataToken.ToInt32(), method.FullName);
+					Log.v("Adding string decrypter; token: {0:X8}, method: {1}", method.MetadataToken.ToInt32(), Utils.removeNewlines(method.FullName));
 					tokens.Add(method.MetadataToken.ToInt32());
 				}
 			}
@@ -527,7 +527,7 @@ namespace de4dot.code {
 			var methodPrinter = new MethodPrinter();
 			var cflowDeobfuscator = new BlocksCflowDeobfuscator { InlineMethods = deob.CanInlineMethods };
 			foreach (var method in allMethods) {
-				Log.v("Deobfuscating {0} ({1:X8})", method, method.MetadataToken.ToUInt32());
+				Log.v("Deobfuscating {0} ({1:X8})", Utils.removeNewlines(method), method.MetadataToken.ToUInt32());
 				Log.indent();
 
 				try {
@@ -708,9 +708,9 @@ namespace de4dot.code {
 					if (operandString == "")
 						Log.log(logLevel, "{0}", instrString);
 					else if (memberReference != null)
-						Log.log(logLevel, "{0,-9} {1} // {2:X8}", instrString, operandString, memberReference.MetadataToken.ToUInt32());
+						Log.log(logLevel, "{0,-9} {1} // {2:X8}", instrString, Utils.removeNewlines(operandString), memberReference.MetadataToken.ToUInt32());
 					else
-						Log.log(logLevel, "{0,-9} {1}", instrString, operandString);
+						Log.log(logLevel, "{0,-9} {1}", instrString, Utils.removeNewlines(operandString));
 				}
 				printExInfo(lastExInfo);
 				Log.deIndent();
@@ -859,7 +859,7 @@ namespace de4dot.code {
 			if (savedMethodBodies != null)
 				savedMethodBodies.save(method);
 
-			Log.v("{0}: {1} ({2:X8})", msg, method, method.MetadataToken.ToUInt32());
+			Log.v("{0}: {1} ({2:X8})", msg, Utils.removeNewlines(method), method.MetadataToken.ToUInt32());
 			Log.indent();
 
 			if (hasNonEmptyBody(method)) {

@@ -239,7 +239,7 @@ namespace de4dot.code.deobfuscators {
 							continue;
 
 						if (info.find(destMethod)) {
-							Log.v("Removed call to {0}", destMethod);
+							Log.v("Removed call to {0}", Utils.removeNewlines(destMethod));
 							instrsToDelete.Add(i);
 						}
 					}
@@ -329,7 +329,10 @@ namespace de4dot.code.deobfuscators {
 			foreach (var cctor in emptyCctorsToRemove) {
 				var type = cctor.DeclaringType;
 				if (type.Methods.Remove(cctor))
-					Log.v("{0:X8}, type: {1} ({2:X8})", cctor.MetadataToken.ToUInt32(), type, type.MetadataToken.ToUInt32());
+					Log.v("{0:X8}, type: {1} ({2:X8})",
+								cctor.MetadataToken.ToUInt32(),
+								Utils.removeNewlines(type),
+								type.MetadataToken.ToUInt32());
 			}
 			Log.deIndent();
 		}
@@ -346,7 +349,11 @@ namespace de4dot.code.deobfuscators {
 					continue;
 				var type = method.DeclaringType;
 				if (type.Methods.Remove(method))
-					Log.v("Removed method {0} ({1:X8}) (Type: {2}) (reason: {3})", method, method.MetadataToken.ToUInt32(), type, info.reason);
+					Log.v("Removed method {0} ({1:X8}) (Type: {2}) (reason: {3})",
+								Utils.removeNewlines(method),
+								method.MetadataToken.ToUInt32(),
+								Utils.removeNewlines(type),
+								info.reason);
 			}
 			Log.deIndent();
 		}
@@ -363,7 +370,11 @@ namespace de4dot.code.deobfuscators {
 					continue;
 				var type = field.DeclaringType;
 				if (type.Fields.Remove(field))
-					Log.v("Removed field {0} ({1:X8}) (Type: {2}) (reason: {3})", field, field.MetadataToken.ToUInt32(), type, info.reason);
+					Log.v("Removed field {0} ({1:X8}) (Type: {2}) (reason: {3})",
+								Utils.removeNewlines(field),
+								field.MetadataToken.ToUInt32(),
+								Utils.removeNewlines(type),
+								info.reason);
 			}
 			Log.deIndent();
 		}
@@ -385,7 +396,10 @@ namespace de4dot.code.deobfuscators {
 				else
 					removed = types.Remove(typeDef);
 				if (removed)
-					Log.v("Removed type {0} ({1:X8}) (reason: {2})", typeDef, typeDef.MetadataToken.ToUInt32(), info.reason);
+					Log.v("Removed type {0} ({1:X8}) (reason: {2})",
+								Utils.removeNewlines(typeDef),
+								typeDef.MetadataToken.ToUInt32(),
+								info.reason);
 			}
 			Log.deIndent();
 		}
@@ -412,7 +426,10 @@ namespace de4dot.code.deobfuscators {
 				for (int i = 0; i < customAttrs.Count; i++) {
 					if (MemberReferenceHelper.compareTypes(customAttrs[i].AttributeType, typeDef)) {
 						customAttrs.RemoveAt(i);
-						Log.v("Removed custom attribute {0} ({1:X8}) (reason: {2})", typeDef, typeDef.MetadataToken.ToUInt32(), info.reason);
+						Log.v("Removed custom attribute {0} ({1:X8}) (reason: {2})",
+									Utils.removeNewlines(typeDef),
+									typeDef.MetadataToken.ToUInt32(),
+									info.reason);
 						break;
 					}
 				}
@@ -432,7 +449,7 @@ namespace de4dot.code.deobfuscators {
 			for (int i = customAttributes.Count - 1; i >= 0; i--) {
 				var attr = customAttributes[i].AttributeType;
 				if (attr.FullName == "System.Runtime.CompilerServices.SuppressIldasmAttribute") {
-					Log.v("Removed attribute {0}", attr.FullName);
+					Log.v("Removed attribute {0}", Utils.removeNewlines(attr.FullName));
 					customAttributes.RemoveAt(i);
 				}
 			}

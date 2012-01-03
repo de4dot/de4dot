@@ -104,7 +104,7 @@ namespace de4dot.code.renamer {
 						if (method.MethodDefinition.Name != overrideMethod.Name)
 							continue;
 						Log.v("Removed useless override from method {0} ({1:X8}), override: {2:X8}",
-									method.MethodDefinition,
+									Utils.removeNewlines(method.MethodDefinition),
 									method.MethodDefinition.MetadataToken.ToInt32(),
 									overrideMethod.MetadataToken.ToInt32());
 						overrides.RemoveAt(i);
@@ -154,7 +154,7 @@ namespace de4dot.code.renamer {
 				if (list.Count != maxClasses)
 					continue;
 				var ns = list[0].TypeDefinition.Namespace;
-				Log.v("Removing namespace: {0}", ns);
+				Log.v("Removing namespace: {0}", Utils.removeNewlines(ns));
 				foreach (var type in list)
 					memberInfos.type(type).newNamespace = "";
 			}
@@ -173,7 +173,7 @@ namespace de4dot.code.renamer {
 			var typeDefinition = type.TypeDefinition;
 			var info = memberInfos.type(type);
 
-			Log.v("Type: {0} ({1:X8})", typeDefinition.FullName, typeDefinition.MetadataToken.ToUInt32());
+			Log.v("Type: {0} ({1:X8})", Utils.removeNewlines(typeDefinition.FullName), typeDefinition.MetadataToken.ToUInt32());
 			Log.indent();
 
 			renameGenericParams(type.GenericParams);
@@ -181,13 +181,13 @@ namespace de4dot.code.renamer {
 			if (RenameTypes && info.gotNewName()) {
 				var old = typeDefinition.Name;
 				typeDefinition.Name = info.newName;
-				Log.v("Name: {0} => {1}", old, typeDefinition.Name);
+				Log.v("Name: {0} => {1}", Utils.removeNewlines(old), typeDefinition.Name);
 			}
 
 			if (RenameNamespaces && info.newNamespace != null) {
 				var old = typeDefinition.Namespace;
 				typeDefinition.Namespace = info.newNamespace;
-				Log.v("Namespace: {0} => {1}", old, typeDefinition.Namespace);
+				Log.v("Namespace: {0} => {1}", Utils.removeNewlines(old), typeDefinition.Namespace);
 			}
 
 			Log.deIndent();
@@ -201,7 +201,7 @@ namespace de4dot.code.renamer {
 				if (!info.gotNewName())
 					continue;
 				param.GenericParameter.Name = info.newName;
-				Log.v("GenParam: {0} => {1}", info.oldFullName, param.GenericParameter.FullName);
+				Log.v("GenParam: {0} => {1}", Utils.removeNewlines(info.oldFullName), param.GenericParameter.FullName);
 			}
 		}
 
@@ -220,7 +220,7 @@ namespace de4dot.code.renamer {
 		void renameMembers(TypeDef type) {
 			var info = memberInfos.type(type);
 
-			Log.v("Type: {0}", info.type.TypeDefinition.FullName);
+			Log.v("Type: {0}", Utils.removeNewlines(info.type.TypeDefinition.FullName));
 			Log.indent();
 
 			renameFields(info);
@@ -239,7 +239,7 @@ namespace de4dot.code.renamer {
 				if (!fieldInfo.gotNewName())
 					continue;
 				fieldDef.FieldDefinition.Name = fieldInfo.newName;
-				Log.v("Field: {0} ({1:X8}) => {2}", fieldInfo.oldFullName, fieldDef.FieldDefinition.MetadataToken.ToUInt32(), fieldDef.FieldDefinition.FullName);
+				Log.v("Field: {0} ({1:X8}) => {2}", Utils.removeNewlines(fieldInfo.oldFullName), fieldDef.FieldDefinition.MetadataToken.ToUInt32(), fieldDef.FieldDefinition.FullName);
 			}
 		}
 
@@ -251,7 +251,7 @@ namespace de4dot.code.renamer {
 				if (!propInfo.gotNewName())
 					continue;
 				propDef.PropertyDefinition.Name = propInfo.newName;
-				Log.v("Property: {0} ({1:X8}) => {2}", propInfo.oldFullName, propDef.PropertyDefinition.MetadataToken.ToUInt32(), propDef.PropertyDefinition.FullName);
+				Log.v("Property: {0} ({1:X8}) => {2}", Utils.removeNewlines(propInfo.oldFullName), propDef.PropertyDefinition.MetadataToken.ToUInt32(), propDef.PropertyDefinition.FullName);
 			}
 		}
 
@@ -263,7 +263,7 @@ namespace de4dot.code.renamer {
 				if (!eventInfo.gotNewName())
 					continue;
 				eventDef.EventDefinition.Name = eventInfo.newName;
-				Log.v("Event: {0} ({1:X8}) => {2}", eventInfo.oldFullName, eventDef.EventDefinition.MetadataToken.ToUInt32(), eventDef.EventDefinition.FullName);
+				Log.v("Event: {0} ({1:X8}) => {2}", Utils.removeNewlines(eventInfo.oldFullName), eventDef.EventDefinition.MetadataToken.ToUInt32(), eventDef.EventDefinition.FullName);
 			}
 		}
 
@@ -272,14 +272,14 @@ namespace de4dot.code.renamer {
 				return;
 			foreach (var methodDef in info.type.AllMethodsSorted) {
 				var methodInfo = memberInfos.method(methodDef);
-				Log.v("Method {0} ({1:X8})", methodInfo.oldFullName, methodDef.MethodDefinition.MetadataToken.ToUInt32());
+				Log.v("Method {0} ({1:X8})", Utils.removeNewlines(methodInfo.oldFullName), methodDef.MethodDefinition.MetadataToken.ToUInt32());
 				Log.indent();
 
 				renameGenericParams(methodDef.GenericParams);
 
 				if (RenameMethods && methodInfo.gotNewName()) {
 					methodDef.MethodDefinition.Name = methodInfo.newName;
-					Log.v("Name: {0} => {1}", methodInfo.oldFullName, methodDef.MethodDefinition.FullName);
+					Log.v("Name: {0} => {1}", Utils.removeNewlines(methodInfo.oldFullName), methodDef.MethodDefinition.FullName);
 				}
 
 				if (RenameMethodArgs) {
@@ -288,7 +288,7 @@ namespace de4dot.code.renamer {
 						if (!paramInfo.gotNewName())
 							continue;
 						param.ParameterDefinition.Name = paramInfo.newName;
-						Log.v("Param ({0}/{1}): {2} => {3}", param.Index + 1, methodDef.ParamDefs.Count, paramInfo.oldName, paramInfo.newName);
+						Log.v("Param ({0}/{1}): {2} => {3}", param.Index + 1, methodDef.ParamDefs.Count, Utils.removeNewlines(paramInfo.oldName), paramInfo.newName);
 					}
 				}
 
@@ -395,10 +395,10 @@ namespace de4dot.code.renamer {
 						continue;
 
 					if (s == "" || !module.ObfuscatedFile.RenameResourcesInCode)
-						Log.v("Possible resource name in code: '{0}' => '{1}' in method {2}", s, newName, method);
+						Log.v("Possible resource name in code: '{0}' => '{1}' in method {2}", Utils.removeNewlines(s), newName, Utils.removeNewlines(method));
 					else {
 						instr.Operand = newName;
-						Log.v("Renamed resource string in code: '{0}' => '{1}' ({2})", s, newName, method);
+						Log.v("Renamed resource string in code: '{0}' => '{1}' ({2})", Utils.removeNewlines(s), newName, Utils.removeNewlines(method));
 						break;
 					}
 				}
@@ -414,7 +414,7 @@ namespace de4dot.code.renamer {
 					var newName = renameResourceString(s, info.oldFullName, info.type.TypeDefinition.FullName);
 					if (newName != s) {
 						resource.Name = newName;
-						Log.v("Renamed resource in resources: {0} => {1}", s, newName);
+						Log.v("Renamed resource in resources: {0} => {1}", Utils.removeNewlines(s), newName);
 						break;
 					}
 				}
@@ -601,9 +601,9 @@ namespace de4dot.code.renamer {
 			if (propDef.GetMethod != null)
 				return null;
 			Log.v("Restoring property getter {0} ({1:X8}), Property: {2} ({3:X8})",
-						propMethod,
+						Utils.removeNewlines(propMethod),
 						propMethod.MethodDefinition.MetadataToken.ToInt32(),
-						propDef.PropertyDefinition,
+						Utils.removeNewlines(propDef.PropertyDefinition),
 						propDef.PropertyDefinition.MetadataToken.ToInt32());
 			propDef.PropertyDefinition.GetMethod = propMethod.MethodDefinition;
 			propDef.GetMethod = propMethod;
@@ -630,9 +630,9 @@ namespace de4dot.code.renamer {
 			if (propDef.SetMethod != null)
 				return null;
 			Log.v("Restoring property setter {0} ({1:X8}), Property: {2} ({3:X8})",
-						propMethod,
+						Utils.removeNewlines(propMethod),
 						propMethod.MethodDefinition.MetadataToken.ToInt32(),
-						propDef.PropertyDefinition,
+						Utils.removeNewlines(propDef.PropertyDefinition),
 						propDef.PropertyDefinition.MetadataToken.ToInt32());
 			propDef.PropertyDefinition.SetMethod = propMethod.MethodDefinition;
 			propDef.SetMethod = propMethod;
@@ -650,7 +650,7 @@ namespace de4dot.code.renamer {
 
 			propDef = ownerType.create(newProp);
 			memberInfos.add(propDef);
-			Log.v("Restoring property: {0}", newProp);
+			Log.v("Restoring property: {0}", Utils.removeNewlines(newProp));
 			return propDef;
 		}
 
@@ -801,9 +801,9 @@ namespace de4dot.code.renamer {
 			if (eventDef.AddMethod != null)
 				return null;
 			Log.v("Restoring event adder {0} ({1:X8}), Event: {2} ({3:X8})",
-						eventMethod,
+						Utils.removeNewlines(eventMethod),
 						eventMethod.MethodDefinition.MetadataToken.ToInt32(),
-						eventDef.EventDefinition,
+						Utils.removeNewlines(eventDef.EventDefinition),
 						eventDef.EventDefinition.MetadataToken.ToInt32());
 			eventDef.EventDefinition.AddMethod = eventMethod.MethodDefinition;
 			eventDef.AddMethod = eventMethod;
@@ -827,9 +827,9 @@ namespace de4dot.code.renamer {
 			if (eventDef.RemoveMethod != null)
 				return null;
 			Log.v("Restoring event remover {0} ({1:X8}), Event: {2} ({3:X8})",
-						eventMethod,
+						Utils.removeNewlines(eventMethod),
 						eventMethod.MethodDefinition.MetadataToken.ToInt32(),
-						eventDef.EventDefinition,
+						Utils.removeNewlines(eventDef.EventDefinition),
 						eventDef.EventDefinition.MetadataToken.ToInt32());
 			eventDef.EventDefinition.RemoveMethod = eventMethod.MethodDefinition;
 			eventDef.RemoveMethod = eventMethod;
@@ -855,7 +855,7 @@ namespace de4dot.code.renamer {
 
 			eventDef = ownerType.create(newEvent);
 			memberInfos.add(eventDef);
-			Log.v("Restoring event: {0}", newEvent);
+			Log.v("Restoring event: {0}", Utils.removeNewlines(newEvent));
 			return eventDef;
 		}
 
@@ -1565,7 +1565,7 @@ namespace de4dot.code.renamer {
 					continue;
 				var methodDef = modules.resolve(entryPoint);
 				if (methodDef == null) {
-					Log.w(string.Format("Could not find entry point. Module: {0}, Method: {1}", module.ModuleDefinition.FullyQualifiedName, entryPoint));
+					Log.w(string.Format("Could not find entry point. Module: {0}, Method: {1}", module.ModuleDefinition.FullyQualifiedName, Utils.removeNewlines(entryPoint)));
 					continue;
 				}
 				if (!methodDef.isStatic())

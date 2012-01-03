@@ -86,7 +86,7 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 
 					var info = new StringDecrypterInfo(method, DotNetUtils.getLdcI4Value(ldci4));
 					stringDecrypterMethods[info.method] = info;
-					Log.v("Found string decrypter method: {0}, magic: 0x{1:X8}", info.method, info.magic);
+					Log.v("Found string decrypter method: {0}, magic: 0x{1:X8}", Utils.removeNewlines(info.method), info.magic);
 					break;
 				}
 			}

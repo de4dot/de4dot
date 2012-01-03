@@ -157,7 +157,7 @@ namespace de4dot.code.deobfuscators {
 				fields.Sort((a, b) => Utils.compareInt32(a.token, b.token));
 				Log.indent();
 				foreach (var updatedField in fields)
-					Log.v("Field {0:X8}: type {1} ({2:X8})", updatedField.token, updatedField.newFieldType.FullName, updatedField.newFieldType.MetadataToken.ToInt32());
+					Log.v("Field {0:X8}: type {1} ({2:X8})", updatedField.token, Utils.removeNewlines(updatedField.newFieldType.FullName), updatedField.newFieldType.MetadataToken.ToInt32());
 				Log.deIndent();
 			}
 
@@ -170,12 +170,12 @@ namespace de4dot.code.deobfuscators {
 					Log.v("Method {0:X8}", updatedMethod.token);
 					Log.indent();
 					if (updatedMethod.newReturnType != null)
-						Log.v("ret: {0} ({1:X8})", updatedMethod.newReturnType.FullName, updatedMethod.newReturnType.MetadataToken.ToInt32());
+						Log.v("ret: {0} ({1:X8})", Utils.removeNewlines(updatedMethod.newReturnType.FullName), updatedMethod.newReturnType.MetadataToken.ToInt32());
 					for (int i = 0; i < updatedMethod.newArgTypes.Length; i++) {
 						var updatedArg = updatedMethod.newArgTypes[i];
 						if (updatedArg == null)
 							continue;
-						Log.v("arg {0}: {1} ({2:X8})", i, updatedArg.FullName, updatedArg.MetadataToken.ToInt32());
+						Log.v("arg {0}: {1} ({2:X8})", i, Utils.removeNewlines(updatedArg.FullName), updatedArg.MetadataToken.ToInt32());
 					}
 					Log.deIndent();
 				}

@@ -609,9 +609,9 @@ namespace de4dot.code.renamer.asmmodules {
 						continue;
 					string errMsg = string.Format(
 							"Could not find interface method {0} ({1:X8}). Type: {2} ({3:X8})",
-							pair.Key.MethodDefinition,
+							Utils.removeNewlines(pair.Key.MethodDefinition),
 							pair.Key.MethodDefinition.MetadataToken.ToInt32(),
-							TypeDefinition,
+							Utils.removeNewlines(TypeDefinition),
 							TypeDefinition.MetadataToken.ToInt32());
 					// Ignore if COM class
 					if (!hasAttribute("System.Runtime.InteropServices.TypeLibTypeAttribute"))

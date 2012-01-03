@@ -450,7 +450,7 @@ namespace de4dot.code.renamer.asmmodules {
 			if (isAutoCreatedType(typeReference))
 				return null;
 			Log.e("Could not resolve TypeReference {0} ({1:X8}) (from {2} -> {3})",
-						typeReference,
+						Utils.removeNewlines(typeReference),
 						typeReference.MetadataToken.ToInt32(),
 						typeReference.Module,
 						typeReference.Scope);
@@ -471,7 +471,7 @@ namespace de4dot.code.renamer.asmmodules {
 			if (isAutoCreatedType(methodReference.DeclaringType))
 				return null;
 			Log.e("Could not resolve MethodReference {0} ({1:X8}) (from {2} -> {3})",
-						methodReference,
+						Utils.removeNewlines(methodReference),
 						methodReference.MetadataToken.ToInt32(),
 						methodReference.DeclaringType.Module,
 						methodReference.DeclaringType.Scope);
@@ -492,7 +492,7 @@ namespace de4dot.code.renamer.asmmodules {
 			if (isAutoCreatedType(fieldReference.DeclaringType))
 				return null;
 			Log.e("Could not resolve FieldReference {0} ({1:X8}) (from {2} -> {3})",
-						fieldReference,
+						Utils.removeNewlines(fieldReference),
 						fieldReference.MetadataToken.ToInt32(),
 						fieldReference.DeclaringType.Module,
 						fieldReference.DeclaringType.Scope);
