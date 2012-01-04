@@ -66,9 +66,9 @@ namespace de4dot.code.renamer {
 			var propType = propertyDefinition.PropertyType;
 			string newName;
 			if (propType is GenericParameter)
-				newName = genericPropertyNameCreator.create();
+				newName = existingPropertyNames.getName(propertyDefinition.Name, genericPropertyNameCreator);
 			else
-				newName = propertyNameCreator.create(propType);
+				newName = existingPropertyNames.getName(propertyDefinition.Name, () => propertyNameCreator.create(propType));
 			addPropertyName(newName);
 			return newName;
 		}
