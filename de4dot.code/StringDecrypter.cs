@@ -100,7 +100,7 @@ namespace de4dot.code {
 					AssemblyData.SimpleData.pack(list[i].args);
 					args[i] = list[i].args;
 				}
-				var decryptedStrings = assemblyClient.Service.decryptStrings(methodId, args);
+				var decryptedStrings = assemblyClient.Service.decryptStrings(methodId, args, Method.MetadataToken.ToInt32());
 				if (decryptedStrings.Length != args.Length)
 					throw new ApplicationException("Invalid decrypted strings array length");
 				AssemblyData.SimpleData.unpack(decryptedStrings);
