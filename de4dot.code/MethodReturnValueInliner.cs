@@ -163,6 +163,10 @@ namespace de4dot.code {
 			}
 		}
 
+		protected MethodDefinition Method {
+			get { return blocks.Method; }
+		}
+
 		protected abstract void inlineAllCalls();
 
 		// Returns null if method is not a method we should inline
@@ -222,18 +226,39 @@ namespace de4dot.code {
 		bool findArgs(CallResult callResult) {
 			var block = callResult.block;
 			var method = callResult.getMethodReference();
-			int numArgs = method.Parameters.Count + (method.HasThis ? 1 : 0);
+			var methodArgs = DotNetUtils.getParameters(method);
+			int numArgs = methodArgs.Count;
 			var args = new object[numArgs];
 
 			int instrIndex = callResult.callEndIndex - 1;
 			for (int i = numArgs - 1; i >= 0; i--) {
-				if (!getArg(method, block, ref args[i], ref instrIndex))
+				object arg = null;
+				if (!getArg(method, block, ref arg, ref instrIndex))
 					return false;
+				if (arg is int)
+					arg = fixIntArg(methodArgs[i].ParameterType, (int)arg);
+				args[i] = arg;
 			}
 
 			callResult.args = args;
 			callResult.callStartIndex = instrIndex + 1;
 			return true;
+		}
+
+		object fixIntArg(TypeReference type, int value) {
+			if (type.IsPrimitive) {
+				switch (type.FullName) {
+				case "System.Boolean":	return value != 0;
+				case "System.Char":		return (char)value;
+				case "System.Byte":		return (byte)value;
+				case "System.SByte":	return (sbyte)value;
+				case "System.Int16":	return (short)value;
+				case "System.UInt16":	return (ushort)value;
+				case "System.Int32":	return (int)value;
+				case "System.UInt32":	return (uint)value;
+				}
+			}
+			throw new ApplicationException(string.Format("Wrong type {0}", type));
 		}
 
 		bool getArg(MethodReference method, Block block, ref object arg, ref int instrIndex) {
