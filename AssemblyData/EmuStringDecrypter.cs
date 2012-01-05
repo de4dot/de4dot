@@ -41,11 +41,12 @@ namespace AssemblyData {
 			return decryptInfos.Count - 1;
 		}
 
-		public object[] decryptStrings(int stringDecrypterMethod, object[] args) {
+		public object[] decryptStrings(int stringDecrypterMethod, object[] args, MethodBase caller) {
 			var decryptInfo = decryptInfos[stringDecrypterMethod];
 			if (decryptInfo.decryptString == null)
 				decryptInfo.decryptString = createDecryptString(decryptInfo.method);
 
+			methodsRewriter.setCaller(decryptInfo.decryptString, caller);
 			var result = new object[args.Length];
 			for (int i = 0; i < args.Length; i++)
 				result[i] = decryptInfo.decryptString((object[])args[i]);

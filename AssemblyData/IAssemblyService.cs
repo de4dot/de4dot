@@ -28,7 +28,7 @@ namespace AssemblyData {
 		void loadAssembly(string filename);
 		void setStringDecrypterType(StringDecrypterType type);
 		int defineStringDecrypter(int methodToken);
-		object[] decryptStrings(int stringDecrypterMethod, object[] args);
+		object[] decryptStrings(int stringDecrypterMethod, object[] args, int callerToken);
 		void exit();
 	}
 }

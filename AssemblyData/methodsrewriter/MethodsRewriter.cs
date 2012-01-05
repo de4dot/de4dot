@@ -78,6 +78,7 @@ namespace AssemblyData.methodsrewriter {
 	class MethodsRewriter : IMethodsRewriter {
 		MethodsFinder methodsFinder = new MethodsFinder();
 		Dictionary<MethodBase, NewMethodInfo> realMethodToNewMethod = new Dictionary<MethodBase, NewMethodInfo>();
+		Dictionary<NewMethodInfo, MethodBase> newStackMethodDict = new Dictionary<NewMethodInfo, MethodBase>();
 		List<NewMethodInfo> newMethodInfos = new List<NewMethodInfo>();
 
 		// There's no documented way to get a dynamic method's MethodInfo. If we name the
@@ -163,6 +164,11 @@ namespace AssemblyData.methodsrewriter {
 			return newMethodInfo.rewrittenMethod;
 		}
 
+		public void setCaller(RewrittenMethod rewrittenMethod, MethodBase caller) {
+			var newMethodInfo = getNewMethodInfo(rewrittenMethod.Method.Name);
+			newStackMethodDict[newMethodInfo] = caller;
+		}
+
 		string getDelegateMethodName(MethodBase method) {
 			string name = null;
 			do {
@@ -226,6 +232,12 @@ namespace AssemblyData.methodsrewriter {
 					if (MemberReferenceHelper.verifyType(ctor.DeclaringType, "mscorlib", "System.Diagnostics.StackTrace")) {
 						insertLoadThis(block, i + 1);
 						insertCallOurMethod(block, i + 2, "static_rtFixStackTrace");
+						i += 2;
+						continue;
+					}
+					else if (MemberReferenceHelper.verifyType(ctor.DeclaringType, "mscorlib", "System.Diagnostics.StackFrame")) {
+						insertLoadThis(block, i + 1);
+						insertCallOurMethod(block, i + 2, "static_rtFixStackFrame");
 						i += 2;
 						continue;
 					}
@@ -359,28 +371,43 @@ namespace AssemblyData.methodsrewriter {
 
 			var newFrames = new List<StackFrame>(frames.Length);
 			foreach (var frame in frames) {
-				var method = frame.GetMethod();
-				var info = getNewMethodInfo(method.Name);
-				if (info == null) {
-					newFrames.Add(frame);
-				}
-				else if (info.isRewrittenMethod(method.Name)) {
-					// Write random method from the same module
-					writeMethodBase(frame, methodsFinder.getMethod(info.oldMethod.Module));
-					newFrames.Add(frame);
-				}
-				else if (info.isDelegateMethod(method.Name)) {
-					// Write original method
-					writeMethodBase(frame, info.oldMethod);
-					newFrames.Add(frame);
-				}
-				else {
-					throw new ApplicationException("BUG: Shouldn't be here");
-				}
+				fixStackFrame(frame);
+				newFrames.Add(frame);
 			}
 
 			framesField.SetValue(stackTrace, newFrames.ToArray());
 			return stackTrace;
+		}
+
+		static StackFrame static_rtFixStackFrame(StackFrame stackFrame, MethodsRewriter self) {
+			return self.rtFixStackFrame(stackFrame);
+		}
+
+		StackFrame rtFixStackFrame(StackFrame frame) {
+			fixStackFrame(frame);
+			return frame;
+		}
+
+		void fixStackFrame(StackFrame frame) {
+			var method = frame.GetMethod();
+			var info = getNewMethodInfo(method.Name);
+			if (info == null)
+				return;
+
+			MethodBase stackMethod;
+			if (newStackMethodDict.TryGetValue(info, out stackMethod)) {
+				writeMethodBase(frame, stackMethod);
+			}
+			else if (info.isRewrittenMethod(method.Name)) {
+				// Write random method from the same module
+				writeMethodBase(frame, methodsFinder.getMethod(info.oldMethod.Module));
+			}
+			else if (info.isDelegateMethod(method.Name)) {
+				// Write original method
+				writeMethodBase(frame, info.oldMethod);
+			}
+			else
+				throw new ApplicationException("BUG: Shouldn't be here");
 		}
 
 		// Called when the code calls GetCallingAssembly(), GetEntryAssembly(), or GetExecutingAssembly()

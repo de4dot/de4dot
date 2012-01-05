@@ -32,7 +32,7 @@ namespace AssemblyData {
 			return stringDecryptMethods.Count - 1;
 		}
 
-		public object[] decryptStrings(int stringDecrypterMethod, object[] args) {
+		public object[] decryptStrings(int stringDecrypterMethod, object[] args, MethodBase caller) {
 			if (stringDecrypterMethod > stringDecryptMethods.Count)
 				throw new ApplicationException("Invalid string decrypter method");
 

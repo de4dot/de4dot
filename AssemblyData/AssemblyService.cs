@@ -76,16 +76,17 @@ namespace AssemblyData {
 			var methodInfo = findMethod(methodToken);
 			if (methodInfo == null)
 				throw new ApplicationException(string.Format("Could not find method {0:X8}", methodToken));
-			if (methodInfo.ReturnType != typeof(string))
-				throw new ApplicationException(string.Format("Method return type must be string: {0}", methodInfo));
+			if (methodInfo.ReturnType != typeof(string) && methodInfo.ReturnType != typeof(object))
+				throw new ApplicationException(string.Format("Method return type must be string or object: {0}", methodInfo));
 			return stringDecrypter.defineStringDecrypter(methodInfo);
 		}
 
-		public object[] decryptStrings(int stringDecrypterMethod, object[] args) {
+		public object[] decryptStrings(int stringDecrypterMethod, object[] args, int callerToken) {
 			checkStringDecrypter();
+			var caller = assembly.GetModules()[0].ResolveMethod(callerToken);
 			foreach (var arg in args)
 				SimpleData.unpack((object[])arg);
-			return SimpleData.pack(stringDecrypter.decryptStrings(stringDecrypterMethod, args));
+			return SimpleData.pack(stringDecrypter.decryptStrings(stringDecrypterMethod, args, caller));
 		}
 
 		public void exit() {
