@@ -34,6 +34,13 @@ namespace de4dot.code {
 				int ldstrIndex = callResult.callStartIndex;
 				block.replace(ldstrIndex, num, Instruction.Create(OpCodes.Ldstr, (string)callResult.returnValue));
 
+				// If it's followed by castclass string, remove it
+				if (ldstrIndex + 1 < block.Instructions.Count) {
+					var instr = block.Instructions[ldstrIndex + 1];
+					if (instr.OpCode.Code == Code.Castclass && instr.Operand.ToString() == "System.String")
+						block.remove(ldstrIndex + 1, 1);
+				}
+
 				// If it's followed by String.Intern(), then nop out that call
 				if (ldstrIndex + 1 < block.Instructions.Count) {
 					var instr = block.Instructions[ldstrIndex + 1];
