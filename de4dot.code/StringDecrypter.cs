@@ -31,8 +31,12 @@ namespace de4dot.code {
 				var block = callResult.block;
 				int num = callResult.callEndIndex - callResult.callStartIndex + 1;
 
+				var decryptedString = callResult.returnValue as string;
+				if (decryptedString == null)
+					continue;
+
 				int ldstrIndex = callResult.callStartIndex;
-				block.replace(ldstrIndex, num, Instruction.Create(OpCodes.Ldstr, (string)callResult.returnValue));
+				block.replace(ldstrIndex, num, Instruction.Create(OpCodes.Ldstr, decryptedString));
 
 				// If it's followed by castclass string, remove it
 				if (ldstrIndex + 1 < block.Instructions.Count) {
@@ -53,7 +57,7 @@ namespace de4dot.code {
 					}
 				}
 
-				Log.v("Decrypted string: {0}", Utils.toCsharpString((string)callResult.returnValue));
+				Log.v("Decrypted string: {0}", Utils.toCsharpString(decryptedString));
 			}
 		}
 	}
