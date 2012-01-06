@@ -74,8 +74,8 @@ namespace AssemblyData.methodsrewriter {
 				return null;
 
 			var git = methodReference.DeclaringType as GenericInstanceType;
-			if (git != null)
-				methodReference = MethodReferenceInstance.make(methodReference, git);
+			var gim = methodReference as GenericInstanceMethod;
+			methodReference = MethodReferenceInstance.make(methodReference, git, gim);
 
 			foreach (var method in list) {
 				if (ResolverUtils.compareMethods(method, methodReference))

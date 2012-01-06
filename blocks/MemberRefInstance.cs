@@ -37,16 +37,18 @@ namespace de4dot.blocks {
 	public class TypeReferenceInstance : RefInstance {
 		TypeReference typeReference;
 		GenericInstanceType git;
+		IGenericInstance gim;
 
-		public static TypeReference make(TypeReference typeReference, GenericInstanceType git) {
-			if (git == null)
+		public static TypeReference make(TypeReference typeReference, GenericInstanceType git, IGenericInstance gim = null) {
+			if (git == null && gim == null)
 				return typeReference;
-			return new TypeReferenceInstance(typeReference, git).makeInstance();
+			return new TypeReferenceInstance(typeReference, git, gim).makeInstance();
 		}
 
-		TypeReferenceInstance(TypeReference typeReference, GenericInstanceType git) {
+		TypeReferenceInstance(TypeReference typeReference, GenericInstanceType git, IGenericInstance gim) {
 			this.typeReference = typeReference;
 			this.git = git;
+			this.gim = gim;
 		}
 
 		// Returns same one if nothing was modified
@@ -105,7 +107,7 @@ namespace de4dot.blocks {
 
 		FunctionPointerType makeInstanceFunctionPointerType(FunctionPointerType a) {
 			var rv = new FunctionPointerType();
-			rv.function = MethodReferenceInstance.make(a.function, git);
+			rv.function = MethodReferenceInstance.make(a.function, git, gim);
 			checkModified(a.function, rv.function);
 			return rv;
 		}
@@ -118,10 +120,24 @@ namespace de4dot.blocks {
 		}
 
 		TypeReference makeInstanceGenericParameter(GenericParameter a) {
-			if (!MemberReferenceHelper.compareTypes(a.Owner as TypeReference, git.ElementType))
+			switch (a.Type) {
+			case GenericParameterType.Type:
+				if (git == null || a.Position >= git.GenericArguments.Count ||
+					!MemberReferenceHelper.compareTypes(git.ElementType, a.Owner as TypeReference)) {
+					return a;
+				}
+				modified = true;
+				return makeInstance(git.GenericArguments[a.Position]);
+
+			case GenericParameterType.Method:
+				if (gim == null || a.Position >= gim.GenericArguments.Count)
+					return a;
+				modified = true;
+				return makeInstance(gim.GenericArguments[a.Position]);
+
+			default:
 				return a;
-			modified = true;
-			return makeInstance(git.GenericArguments[a.Position]);
+			}
 		}
 
 		OptionalModifierType makeInstanceOptionalModifierType(OptionalModifierType a) {
@@ -155,13 +171,15 @@ namespace de4dot.blocks {
 
 	public abstract class MultiTypeRefInstance : RefInstance {
 		GenericInstanceType git;
+		IGenericInstance gim;
 
-		public MultiTypeRefInstance(GenericInstanceType git) {
+		public MultiTypeRefInstance(GenericInstanceType git, IGenericInstance gim = null) {
 			this.git = git;
+			this.gim = gim;
 		}
 
 		protected TypeReference makeInstance(TypeReference tr) {
-			var type = TypeReferenceInstance.make(tr, git);
+			var type = TypeReferenceInstance.make(tr, git, gim);
 			checkModified(type, tr);
 			return type;
 		}
@@ -174,14 +192,14 @@ namespace de4dot.blocks {
 	public class MethodReferenceInstance : MultiTypeRefInstance {
 		MethodReference methodReference;
 
-		public static MethodReference make(MethodReference methodReference, GenericInstanceType git) {
-			if (git == null)
+		public static MethodReference make(MethodReference methodReference, GenericInstanceType git, IGenericInstance gim = null) {
+			if (git == null && gim == null)
 				return methodReference;
-			return new MethodReferenceInstance(methodReference, git).makeInstance();
+			return new MethodReferenceInstance(methodReference, git, gim).makeInstance();
 		}
 
-		MethodReferenceInstance(MethodReference methodReference, GenericInstanceType git)
-			: base(git) {
+		MethodReferenceInstance(MethodReference methodReference, GenericInstanceType git, IGenericInstance gim)
+			: base(git, gim) {
 			this.methodReference = methodReference;
 		}
 
