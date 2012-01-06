@@ -162,7 +162,7 @@
     <Compile Include="PE\DotNetStream.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="renamer\asmmodules\EventDef.cs" />
-    <Compile Include="renamer\asmmodules\ExternalAssemblies.cs" />
+    <Compile Include="ExternalAssemblies.cs" />
     <Compile Include="renamer\asmmodules\FieldDef.cs" />
     <Compile Include="renamer\asmmodules\GenericParamDef.cs" />
     <Compile Include="renamer\asmmodules\IResolver.cs" />
