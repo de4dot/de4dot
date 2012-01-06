@@ -93,8 +93,6 @@ namespace de4dot.code.deobfuscators.Eazfuscator {
 
 		void findStringDecrypterMethod() {
 			foreach (var type in module.Types) {
-				if (!string.IsNullOrEmpty(type.Namespace))
-					continue;
 				if (DotNetUtils.findFieldType(type, "System.IO.BinaryReader", true) == null)
 					continue;
 				if (DotNetUtils.findFieldType(type, "System.Collections.Generic.Dictionary`2<System.Int32,System.String>", true) == null)
