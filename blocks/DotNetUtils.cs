@@ -770,6 +770,24 @@ namespace de4dot.blocks {
 				scope.Name.StartsWith(assemblySimpleName + ",", StringComparison.Ordinal);
 		}
 
+		public static bool isReferenceToModule(ModuleReference moduleReference, IMetadataScope scope) {
+			switch (scope.MetadataScopeType) {
+			case MetadataScopeType.AssemblyNameReference:
+				var asmRef = (AssemblyNameReference)scope;
+				var module = moduleReference as ModuleDefinition;
+				return module != null && module.Assembly != null && module.Assembly.Name.FullName == asmRef.FullName;
+
+			case MetadataScopeType.ModuleDefinition:
+				return moduleReference == scope;
+
+			case MetadataScopeType.ModuleReference:
+				return moduleReference.Name == ((ModuleReference)scope).Name;
+
+			default:
+				throw new ApplicationException("Unknown MetadataScopeType");
+			}
+		}
+
 		public static int getArgIndex(MethodReference method, Instruction instr) {
 			switch (instr.OpCode.Code) {
 			case Code.Ldarg_0: return 0;
@@ -788,9 +806,13 @@ namespace de4dot.blocks {
 		}
 
 		public static int getArgIndex(MethodReference method, ParameterDefinition arg) {
+			return getArgIndex(method.HasThis, arg);
+		}
+
+		public static int getArgIndex(bool hasThis, ParameterDefinition arg) {
 			if (arg == null)
 				return -1;
-			if (method.HasThis)
+			if (hasThis)
 				return arg.Index + 1;
 			return arg.Index;
 		}
