@@ -115,6 +115,17 @@
     <Compile Include="deobfuscators\dotNET_Reactor\v3\MemoryPatcher.cs" />
     <Compile Include="deobfuscators\Eazfuscator\Deobfuscator.cs" />
     <Compile Include="deobfuscators\ExceptionLoggerRemover.cs" />
+    <Compile Include="deobfuscators\Goliath_NET\ArrayDecrypter.cs" />
+    <Compile Include="deobfuscators\Goliath_NET\ArrayValueInliner.cs" />
+    <Compile Include="deobfuscators\Goliath_NET\DecrypterBase.cs" />
+    <Compile Include="deobfuscators\Goliath_NET\Deobfuscator.cs" />
+    <Compile Include="deobfuscators\Goliath_NET\IntegerDecrypter.cs" />
+    <Compile Include="deobfuscators\Goliath_NET\IntegerValueInliner.cs" />
+    <Compile Include="deobfuscators\Goliath_NET\LocalsRestorer.cs" />
+    <Compile Include="deobfuscators\Goliath_NET\LogicalExpressionFixer.cs" />
+    <Compile Include="deobfuscators\Goliath_NET\ProxyDelegateFinder.cs" />
+    <Compile Include="deobfuscators\Goliath_NET\StringDecrypter.cs" />
+    <Compile Include="deobfuscators\Goliath_NET\StrongNameChecker.cs" />
     <Compile Include="deobfuscators\IDeobfuscatedFile.cs" />
     <Compile Include="deobfuscators\IDeobfuscator.cs" />
     <Compile Include="deobfuscators\IDeobfuscatorInfo.cs" />
