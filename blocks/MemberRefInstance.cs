@@ -25,19 +25,11 @@ using Mono.Cecil;
 using de4dot.blocks;
 
 namespace de4dot.blocks {
-	public abstract class RefInstance {
-		protected bool modified = false;
-
-		protected void checkModified(object a, object b) {
-			if (!ReferenceEquals(a, b))
-				modified = true;
-		}
-	}
-
-	public class TypeReferenceInstance : RefInstance {
+	public class TypeReferenceInstance : TypeReferenceUpdaterBase {
 		TypeReference typeReference;
 		GenericInstanceType git;
 		IGenericInstance gim;
+		bool modified;
 
 		public static TypeReference make(TypeReference typeReference, GenericInstanceType git, IGenericInstance gim = null) {
 			if (git == null && gim == null)
@@ -51,75 +43,25 @@ namespace de4dot.blocks {
 			this.gim = gim;
 		}
 
+		void checkModified(object a, object b) {
+			if (!ReferenceEquals(a, b))
+				modified = true;
+		}
+
 		// Returns same one if nothing was modified
 		TypeReference makeInstance() {
-			var rv = makeInstance(typeReference);
+			var rv = update(typeReference);
 			return modified ? rv : typeReference;
 		}
 
-		TypeReference makeInstance(TypeReference a) {
-			if (a == null)
-				return null;
-
-			var type = MemberReferenceHelper.getMemberReferenceType(a);
-			switch (type) {
-			case CecilType.ArrayType:
-				return makeInstanceArrayType((ArrayType)a);
-			case CecilType.ByReferenceType:
-				return makeInstanceByReferenceType((ByReferenceType)a);
-			case CecilType.FunctionPointerType:
-				return makeInstanceFunctionPointerType((FunctionPointerType)a);
-			case CecilType.GenericInstanceType:
-				return makeInstanceGenericInstanceType((GenericInstanceType)a);
-			case CecilType.GenericParameter:
-				return makeInstanceGenericParameter((GenericParameter)a);
-			case CecilType.OptionalModifierType:
-				return makeInstanceOptionalModifierType((OptionalModifierType)a);
-			case CecilType.PinnedType:
-				return makeInstancePinnedType((PinnedType)a);
-			case CecilType.PointerType:
-				return makeInstancePointerType((PointerType)a);
-			case CecilType.RequiredModifierType:
-				return makeInstanceRequiredModifierType((RequiredModifierType)a);
-			case CecilType.SentinelType:
-				return makeInstanceSentinelType((SentinelType)a);
-			case CecilType.TypeDefinition:
-				return makeInstanceTypeDefinition((TypeDefinition)a);
-			case CecilType.TypeReference:
-				return makeInstanceTypeReference((TypeReference)a);
-			default:
-				throw new ApplicationException(string.Format("Unknown cecil type {0}", type));
-			}
-		}
-
-		ArrayType makeInstanceArrayType(ArrayType a) {
-			var rv = new ArrayType(makeInstance(a.ElementType));
-			if (!a.IsVector) {
-				foreach (var dim in a.Dimensions)
-					rv.Dimensions.Add(dim);
-			}
-			return rv;
-		}
-
-		ByReferenceType makeInstanceByReferenceType(ByReferenceType a) {
-			return new ByReferenceType(makeInstance(a.ElementType));
-		}
-
-		FunctionPointerType makeInstanceFunctionPointerType(FunctionPointerType a) {
+		protected override FunctionPointerType updateFunctionPointerType(FunctionPointerType a) {
 			var rv = new FunctionPointerType();
 			rv.function = MethodReferenceInstance.make(a.function, git, gim);
 			checkModified(a.function, rv.function);
 			return rv;
 		}
 
-		GenericInstanceType makeInstanceGenericInstanceType(GenericInstanceType a) {
-			var rv = new GenericInstanceType(makeInstance(a.ElementType));
-			foreach (var arg in a.GenericArguments)
-				rv.GenericArguments.Add(makeInstance(arg));
-			return rv;
-		}
-
-		TypeReference makeInstanceGenericParameter(GenericParameter a) {
+		protected override TypeReference updateGenericParameter(GenericParameter a) {
 			switch (a.Type) {
 			case GenericParameterType.Type:
 				if (git == null || a.Position >= git.GenericArguments.Count ||
@@ -127,55 +69,33 @@ namespace de4dot.blocks {
 					return a;
 				}
 				modified = true;
-				return makeInstance(git.GenericArguments[a.Position]);
+				return update(git.GenericArguments[a.Position]);
 
 			case GenericParameterType.Method:
 				if (gim == null || a.Position >= gim.GenericArguments.Count)
 					return a;
 				modified = true;
-				return makeInstance(gim.GenericArguments[a.Position]);
+				return update(gim.GenericArguments[a.Position]);
 
 			default:
 				return a;
 			}
 		}
-
-		OptionalModifierType makeInstanceOptionalModifierType(OptionalModifierType a) {
-			return new OptionalModifierType(makeInstance(a.ModifierType), makeInstance(a.ElementType));
-		}
-
-		PinnedType makeInstancePinnedType(PinnedType a) {
-			return new PinnedType(makeInstance(a.ElementType));
-		}
-
-		PointerType makeInstancePointerType(PointerType a) {
-			return new PointerType(makeInstance(a.ElementType));
-		}
-
-		RequiredModifierType makeInstanceRequiredModifierType(RequiredModifierType a) {
-			return new RequiredModifierType(makeInstance(a.ModifierType), makeInstance(a.ElementType));
-		}
-
-		SentinelType makeInstanceSentinelType(SentinelType a) {
-			return new SentinelType(makeInstance(a.ElementType));
-		}
-
-		TypeReference makeInstanceTypeDefinition(TypeDefinition a) {
-			return makeInstanceTypeReference(a);
-		}
-
-		TypeReference makeInstanceTypeReference(TypeReference a) {
-			return a;
-		}
 	}
 
-	public abstract class MultiTypeRefInstance : RefInstance {
+	public abstract class MultiTypeRefInstance {
 		GenericInstanceType git;
 		IGenericInstance gim;
+		bool modified;
 
 		public MultiTypeRefInstance(GenericInstanceType git, IGenericInstance gim = null) {
 			this.git = git;
 			this.gim = gim;
+		}
+
+		void checkModified(object a, object b) {
+			if (!ReferenceEquals(a, b))
+				modified = true;
 		}
 
 		protected TypeReference makeInstance(TypeReference tr) {

@@ -68,6 +68,7 @@
     <Compile Include="ScopeBlock.cs" />
     <Compile Include="TryBlock.cs" />
     <Compile Include="TryHandlerBlock.cs" />
+    <Compile Include="TypeReferenceUpdaterBase.cs" />
     <Compile Include="Utils.cs" />
   </ItemGroup>
   <ItemGroup>
