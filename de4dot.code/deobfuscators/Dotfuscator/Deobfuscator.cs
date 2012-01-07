@@ -76,8 +76,8 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 		protected override int detectInternal() {
 			int val = 0;
 
-			int sum = convert(foundDotfuscatorAttribute) +
-					convert(stringDecrypter.Detected);
+			int sum = toInt32(foundDotfuscatorAttribute) +
+					toInt32(stringDecrypter.Detected);
 			if (sum > 0)
 				val += 100 + 10 * (sum - 1);
 

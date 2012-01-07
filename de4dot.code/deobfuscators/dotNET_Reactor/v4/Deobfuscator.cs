@@ -225,11 +225,11 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		protected override int detectInternal() {
 			int val = 0;
 
-			int sum = convert(methodsDecrypter.Detected) +
-					convert(stringDecrypter.Detected) +
-					convert(booleanDecrypter.Detected) +
-					convert(assemblyResolver.Detected) +
-					convert(resourceResolver.Detected);
+			int sum = toInt32(methodsDecrypter.Detected) +
+					toInt32(stringDecrypter.Detected) +
+					toInt32(booleanDecrypter.Detected) +
+					toInt32(assemblyResolver.Detected) +
+					toInt32(resourceResolver.Detected);
 			if (sum > 0)
 				val += 100 + 10 * (sum - 1);
 

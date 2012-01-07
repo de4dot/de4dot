@@ -677,7 +677,7 @@ namespace de4dot.code.deobfuscators {
 			return false;
 		}
 
-		public static int convert(bool b) {
+		public static int toInt32(bool b) {
 			return b ? 1 : 0;
 		}
 	}
