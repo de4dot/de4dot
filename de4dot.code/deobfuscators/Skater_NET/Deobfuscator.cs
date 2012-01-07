@@ -1,0 +1,125 @@
+﻿/*
+    Copyright (C) 2011 de4dot@gmail.com
+
+    This file is part of de4dot.
+
+    de4dot is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    de4dot is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+using System.Collections.Generic;
+using Mono.Cecil;
+using de4dot.blocks;
+
+namespace de4dot.code.deobfuscators.Skater_NET {
+	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
+		public const string THE_NAME = "Skater .NET";
+		public const string THE_TYPE = "sk";
+		public DeobfuscatorInfo()
+			: base() {
+		}
+
+		public override string Name {
+			get { return THE_NAME; }
+		}
+
+		public override string Type {
+			get { return THE_TYPE; }
+		}
+
+		public override IDeobfuscator createDeobfuscator() {
+			return new Deobfuscator(new Deobfuscator.Options {
+				ValidNameRegex = validNameRegex.get(),
+			});
+		}
+	}
+
+	class Deobfuscator : DeobfuscatorBase {
+		Options options;
+
+		StringDecrypter stringDecrypter;
+		EnumClassFinder enumClassFinder;
+
+		internal class Options : OptionsBase {
+		}
+
+		public override string Type {
+			get { return DeobfuscatorInfo.THE_TYPE; }
+		}
+
+		public override string TypeLong {
+			get { return DeobfuscatorInfo.THE_NAME; }
+		}
+
+		public override string Name {
+			get { return DeobfuscatorInfo.THE_NAME; }
+		}
+
+		public Deobfuscator(Options options)
+			: base(options) {
+			this.options = options;
+			StringFeatures = StringFeatures.AllowNoDecryption | StringFeatures.AllowStaticDecryption;
+		}
+
+		protected override int detectInternal() {
+			int val = 0;
+
+			if (stringDecrypter.Detected)
+				val += 100;
+
+			return val;
+		}
+
+		protected override void scanForObfuscator() {
+			stringDecrypter = new StringDecrypter(module);
+
+			if (hasAssemblyReference("Microsoft.VisualBasic"))
+				stringDecrypter.find();
+		}
+
+		bool hasAssemblyReference(string name) {
+			foreach (var asmRef in module.AssemblyReferences) {
+				if (asmRef.Name == name)
+					return true;
+			}
+			return false;
+		}
+
+		public override void deobfuscateBegin() {
+			base.deobfuscateBegin();
+
+			enumClassFinder = new EnumClassFinder(module);
+
+			stringDecrypter.initialize();
+		}
+
+		public override void deobfuscateMethodEnd(Blocks blocks) {
+			if (Operations.DecryptStrings != OpDecryptString.None)
+				stringDecrypter.deobfuscate(blocks);
+			enumClassFinder.deobfuscate(blocks);
+			base.deobfuscateMethodEnd(blocks);
+		}
+
+		public override void deobfuscateEnd() {
+			if (Operations.DecryptStrings != OpDecryptString.None)
+				addTypeToBeRemoved(stringDecrypter.Type, "String decrypter type");
+
+			base.deobfuscateEnd();
+		}
+
+		public override IEnumerable<string> getStringDecrypterMethods() {
+			var list = new List<string>();
+			return list;
+		}
+	}
+}
