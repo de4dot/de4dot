@@ -44,11 +44,9 @@ namespace AssemblyData.methodsrewriter {
 			var tmpTokenToTypeDefinition = new Dictionary<int, TypeDefinition>();
 			foreach (var t in module.GetTypes())
 				tmpTokenToType[t.MetadataToken] = t;
-			foreach (var t in moduleDefinition.GetTypes()) {
+			foreach (var t in moduleDefinition.GetTypes())
 				tmpTokenToTypeDefinition[t.MetadataToken.ToInt32()] = t;
-				if (moduleType == null && t.FullName == "<Module>")
-					moduleType = t;
-			}
+			moduleType = DotNetUtils.getModuleType(moduleDefinition);
 			foreach (var token in tmpTokenToType.Keys) {
 				var mtype = new MType(tmpTokenToType[token], tmpTokenToTypeDefinition[token]);
 				tokenToType[token] = mtype;

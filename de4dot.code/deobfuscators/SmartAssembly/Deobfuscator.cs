@@ -271,8 +271,9 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 
 		bool hasEmptyClassesInEveryNamespace() {
 			var namespaces = new Dictionary<string, int>(StringComparer.Ordinal);
+			var moduleType = DotNetUtils.getModuleType(module);
 			foreach (var type in module.Types) {
-				if (type.FullName == "<Module>")
+				if (type == moduleType)
 					continue;
 				var ns = type.Namespace;
 				if (!namespaces.ContainsKey(ns))

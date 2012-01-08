@@ -169,8 +169,9 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		void restoreBaseType() {
+			var moduleType = DotNetUtils.getModuleType(module);
 			foreach (var type in module.GetTypes()) {
-				if (type.BaseType != null || type.IsInterface || type.FullName == "<Module>")
+				if (type.BaseType != null || type.IsInterface || type == moduleType)
 					continue;
 				Log.v("Adding System.Object as base type: {0} ({1:X8})",
 							Utils.removeNewlines(type),
