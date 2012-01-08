@@ -836,6 +836,10 @@ namespace de4dot.blocks {
 			return getParameter(getParameters(method), method, instr);
 		}
 
+		public static ParameterDefinition getParameter(MethodReference method, IList<ParameterDefinition> parameters, Instruction instr) {
+			return getParameter(parameters, getArgIndex(method, instr));
+		}
+
 		public static ParameterDefinition getParameter(IList<ParameterDefinition> parameters, MethodReference method, Instruction instr) {
 			return getParameter(parameters, getArgIndex(method, instr));
 		}
