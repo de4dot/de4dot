@@ -138,6 +138,9 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		}
 
 		public void initialize(ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
+			if (decrypterType == null)
+				return;
+
 			encryptedResource = findEncryptedResource(simpleDeobfuscator, deob);
 			if (encryptedResource == null) {
 				Log.w("Could not find encrypted constants resource");

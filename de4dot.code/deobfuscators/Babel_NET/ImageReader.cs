@@ -251,7 +251,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			if (type.IsGenericInstance)
 				type = ((GenericInstanceType)type).ElementType;
 
-			if (type.Scope == module)
+			if (type.Module == module && isModuleAssembly(type.Scope))
 				return DotNetUtils.getType(module, type);
 
 			return externalAssemblies.resolve(type);
