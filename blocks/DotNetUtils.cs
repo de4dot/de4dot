@@ -281,11 +281,17 @@ namespace de4dot.blocks {
 		}
 
 		public static TypeDefinition getModuleType(ModuleDefinition module) {
-			foreach (var type in module.Types) {
-				if (type.FullName == "<Module>")
-					return type;
+			if (module.Types.Count == 0)
+				return null;
+
+			if (module.Runtime == TargetRuntime.Net_1_0 || module.Runtime == TargetRuntime.Net_1_1) {
+				if (module.Types[0].FullName == "<Module>")
+					return module.Types[0];
+				return null;
 			}
-			return null;
+
+			// It's always the first one, no matter what it is named.
+			return module.Types[0];
 		}
 
 		public static bool isEmpty(MethodDefinition method) {

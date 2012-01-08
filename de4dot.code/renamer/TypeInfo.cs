@@ -81,6 +81,10 @@ namespace de4dot.code.renamer {
 			return baseInfo;
 		}
 
+		bool isModuleType() {
+			return type.TypeDefinition == DotNetUtils.getModuleType(type.TypeDefinition.Module);
+		}
+
 		public void prepareRenameTypes(TypeRenamerState state) {
 			var checker = NameChecker;
 
@@ -94,7 +98,12 @@ namespace de4dot.code.renamer {
 			string origClassName = null;
 			if (isWinFormsClass())
 				origClassName = findWindowsFormsClassName(type);
-			if (oldFullName != "<Module>" && !checker.isValidTypeName(oldName)) {
+			if (isModuleType()) {
+				if (oldNamespace != "")
+					newNamespace = "";
+				rename("<Module>");
+			}
+			else if (!checker.isValidTypeName(oldName)) {
 				if (origClassName != null && checker.isValidTypeName(origClassName))
 					rename(state.getTypeName(oldName, origClassName));
 				else {
