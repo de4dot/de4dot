@@ -46,6 +46,7 @@ namespace de4dot.code.renamer.asmmodules {
 		public Dictionary<SentinelType, bool> sentinelTypes = new Dictionary<SentinelType, bool>();
 
 		Stack<MemberReference> memberRefStack;
+		ModuleDefinition validModule;
 
 		public void removeTypeDefinition(TypeDefinition td) {
 			if (!typeDefinitions.Remove(td))
@@ -73,6 +74,8 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 
 		public void findAll(ModuleDefinition module, IEnumerable<TypeDefinition> types) {
+			validModule = module;
+
 			// This needs to be big. About 2048 entries should be enough for most though...
 			memberRefStack = new Stack<MemberReference>(0x1000);
 
@@ -107,6 +110,8 @@ namespace de4dot.code.renamer.asmmodules {
 
 		void pushMember(MemberReference memberReference) {
 			if (memberReference == null)
+				return;
+			if (memberReference.Module != validModule)
 				return;
 			memberRefStack.Push(memberReference);
 		}
