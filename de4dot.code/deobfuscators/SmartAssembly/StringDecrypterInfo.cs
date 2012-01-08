@@ -217,10 +217,15 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 
 		// Find the string decrypter string offset value or null if none found
 		int? findOffsetValue(MethodDefinition method) {
+			var fieldDict = new FieldDefinitionAndDeclaringTypeDict<FieldReference>();
+			foreach (var field in method.DeclaringType.Fields)
+				fieldDict.add(field, field);
+
 			var offsetField = findOffsetField(method);
 			if (offsetField == null)
 				return null;
-			return findOffsetValue(method, offsetField);
+
+			return findOffsetValue(method, (FieldDefinition)fieldDict.find(offsetField), fieldDict);
 		}
 
 		FieldReference findOffsetField(MethodDefinition method) {
@@ -248,7 +253,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return null;
 		}
 
-		int? findOffsetValue(MethodDefinition method, FieldReference offsetField) {
+		int? findOffsetValue(MethodDefinition method, FieldDefinition offsetField, FieldDefinitionAndDeclaringTypeDict<FieldReference> fields) {
 			var instructions = method.Body.Instructions;
 			for (int i = 0; i <= instructions.Count - 2; i++) {
 				var ldstr = instructions[i];
@@ -262,7 +267,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				if (stsfld.OpCode.Code != Code.Stsfld)
 					continue;
 				var field = stsfld.Operand as FieldReference;
-				if (field == null || !MemberReferenceHelper.compareFieldReference(offsetField, field))
+				if (field == null || fields.find(field) != offsetField)
 					continue;
 
 				int value;
