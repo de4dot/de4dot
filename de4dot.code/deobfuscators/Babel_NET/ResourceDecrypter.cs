@@ -59,7 +59,12 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		bool getKeyIv(byte[] headerData, out byte[] key, out byte[] iv) {
 			var reader = new BinaryReader(new MemoryStream(headerData));
 			var license = reader.ReadString();
-			bool isCompressed = reader.ReadBoolean();
+
+			// 4.2 (and earlier?) always compress the data
+			bool isCompressed = true;
+			if (headerData[(int)reader.BaseStream.Position] != 8)
+				isCompressed = reader.ReadBoolean();
+
 			iv = reader.ReadBytes(reader.ReadByte());
 			bool hasEmbeddedKey = reader.ReadBoolean();
 			if (hasEmbeddedKey)
