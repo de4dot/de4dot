@@ -66,46 +66,53 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 				return false;
 
 			var badBlock = block.FallThrough;
+			var goodblock = block.Targets[0];
 			if (badBlock == null)
 				return false;
-			if (badBlock.Sources.Count != 1)
-				return false;
-			var goodblock = block.Targets[0];
 
-			instrs = badBlock.Instructions;
-			if (instrs.Count != 12)
-				return false;
-			index = 0;
-			if (!instrs[index++].isLdcI4())
-				return false;
-			if (!instrs[index].isStloc())
-				return false;
-			var local = Instr.getLocalVar(blocks.Locals, instrs[index++]);
-			if (local == null)
-				return false;
-			if (!checkLdloc(blocks.Locals, instrs[index++], local))
-				return false;
-			if (!checkLdloc(blocks.Locals, instrs[index++], local))
-				return false;
-			if (instrs[index++].OpCode.Code != Code.Sub)
-				return false;
-			if (instrs[index++].OpCode.Code != Code.Conv_U1)
-				return false;
-			if (!checkStloc(blocks.Locals, instrs[index++], local))
-				return false;
-			if (!checkLdloc(blocks.Locals, instrs[index++], local))
-				return false;
-			if (!checkLdloc(blocks.Locals, instrs[index++], local))
-				return false;
-			if (instrs[index++].OpCode.Code != Code.Div)
-				return false;
-			if (instrs[index++].OpCode.Code != Code.Conv_U1)
-				return false;
-			if (!checkStloc(blocks.Locals, instrs[index++], local))
-				return false;
+			if (badBlock == goodblock) {
+				// All of the bad block was removed by the cflow deobfuscator. It was just a useless
+				// calculation (div by zero).
+				block.replaceLastInstrsWithBranch(numInstrsToRemove, goodblock);
+			}
+			else if (badBlock.Sources.Count == 1) {
+				instrs = badBlock.Instructions;
+				if (instrs.Count != 12)
+					return false;
+				index = 0;
+				if (!instrs[index++].isLdcI4())
+					return false;
+				if (!instrs[index].isStloc())
+					return false;
+				var local = Instr.getLocalVar(blocks.Locals, instrs[index++]);
+				if (local == null)
+					return false;
+				if (!checkLdloc(blocks.Locals, instrs[index++], local))
+					return false;
+				if (!checkLdloc(blocks.Locals, instrs[index++], local))
+					return false;
+				if (instrs[index++].OpCode.Code != Code.Sub)
+					return false;
+				if (instrs[index++].OpCode.Code != Code.Conv_U1)
+					return false;
+				if (!checkStloc(blocks.Locals, instrs[index++], local))
+					return false;
+				if (!checkLdloc(blocks.Locals, instrs[index++], local))
+					return false;
+				if (!checkLdloc(blocks.Locals, instrs[index++], local))
+					return false;
+				if (instrs[index++].OpCode.Code != Code.Div)
+					return false;
+				if (instrs[index++].OpCode.Code != Code.Conv_U1)
+					return false;
+				if (!checkStloc(blocks.Locals, instrs[index++], local))
+					return false;
 
-			block.replaceLastInstrsWithBranch(numInstrsToRemove, goodblock);
-			badBlock.Parent.removeDeadBlock(badBlock);
+				block.replaceLastInstrsWithBranch(numInstrsToRemove, goodblock);
+				badBlock.Parent.removeDeadBlock(badBlock);
+			}
+			else
+				return false;
 
 			return true;
 		}
