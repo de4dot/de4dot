@@ -180,6 +180,14 @@ namespace de4dot.blocks.cflow {
 			return null;
 		}
 
+		public void setArg(ParameterDefinition arg, Value value) {
+			setArg(index(arg), value);
+		}
+
+		public void makeArgUnknown(ParameterDefinition arg) {
+			setArg(arg, getUnknownArg(index(arg)));
+		}
+
 		void setArg(int index, Value value) {
 			if (0 <= index && index < args.Count)
 				args[index] = truncateValue(value, getArgType(index));
@@ -195,6 +203,14 @@ namespace de4dot.blocks.cflow {
 
 		public Value getLocal(VariableDefinition local) {
 			return getLocal(local.Index);
+		}
+
+		public void setLocal(VariableDefinition local, Value value) {
+			setLocal(local.Index, value);
+		}
+
+		public void makeLocalUnknown(VariableDefinition local) {
+			setLocal(local.Index, getUnknownLocal(local.Index));
 		}
 
 		void setLocal(int index, Value value) {
@@ -830,7 +846,7 @@ namespace de4dot.blocks.cflow {
 
 		void emulate_Ldarga(ParameterDefinition arg) {
 			valueStack.pushUnknown();
-			setArg(index(arg), getUnknownArg(index(arg)));
+			makeArgUnknown(arg);
 		}
 
 		void emulate_Ldloca(int index) {
