@@ -159,7 +159,7 @@ namespace de4dot.code {
 		public static string getOurBaseDir() {
 			if (ourBaseDir != null)
 				return ourBaseDir;
-			return ourBaseDir = getDirName(getFullPath(Environment.GetCommandLineArgs()[0]));
+			return ourBaseDir = getDirName(typeof(Utils).Assembly.Location);
 		}
 
 		public static string getPathOfOurFile(string filename) {
