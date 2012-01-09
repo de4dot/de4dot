@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011 de4dot@gmail.com
+    Copyright (C) 2011-2012 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -287,18 +287,30 @@ namespace de4dot.code {
 		}
 
 		IDeobfuscator detectObfuscator2(IEnumerable<IDeobfuscator> deobfuscators) {
+			var allDetected = new List<IDeobfuscator>();
 			IDeobfuscator detected = null;
 			int detectVal = 0;
 			foreach (var deob in deobfuscators) {
 				this.deob = deob;	// So we can call deob.CanInlineMethods in deobfuscate()
 				int val = deob.detect();
 				Log.v("{0,3}: {1}", val, deob.TypeLong);
+				if (val > 0 && deob.Type != "un")
+					allDetected.Add(deob);
 				if (val > detectVal) {
 					detectVal = val;
 					detected = deob;
 				}
 			}
 			this.deob = null;
+
+			if (allDetected.Count > 1) {
+				Log.n("More than one obfuscator detected:");
+				Log.indent();
+				foreach (var deob in allDetected)
+					Log.n("{0} (use: -p {1})", deob.Name, deob.Type);
+				Log.deIndent();
+			}
+
 			return detected;
 		}
 
