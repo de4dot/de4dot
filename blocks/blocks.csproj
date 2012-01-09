@@ -40,6 +40,7 @@
     <Compile Include="cflow\BlockCflowDeobfuscator.cs" />
     <Compile Include="cflow\CflowDeobfuscator.cs" />
     <Compile Include="cflow\CflowUtils.cs" />
+    <Compile Include="cflow\ConstantsFolder.cs" />
     <Compile Include="cflow\DeadCodeRemover.cs" />
     <Compile Include="cflow\DeadStoreRemover.cs" />
     <Compile Include="cflow\ICflowDeobfuscator.cs" />

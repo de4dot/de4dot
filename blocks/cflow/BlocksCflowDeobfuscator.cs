@@ -31,6 +31,7 @@ namespace de4dot.blocks.cflow {
 		DeadStoreRemover deadStoreRemover = new DeadStoreRemover();
 		StLdlocFixer stLdlocFixer = new StLdlocFixer();
 		MethodCallInliner methodCallInliner = new MethodCallInliner();
+		ConstantsFolder constantsFolder = new ConstantsFolder();
 
 		public bool InlineMethods { get; set; }
 		public bool InlineInstanceMethods { get; set; }
@@ -76,6 +77,11 @@ namespace de4dot.blocks.cflow {
 
 				deadCodeRemover.init(allBlocks);
 				changed |= deadCodeRemover.remove();
+
+				if (!changed) {
+					constantsFolder.init(blocks, allBlocks);
+					changed |= constantsFolder.deobfuscate();
+				}
 
 				if (!changed) {
 					stLdlocFixer.init(allBlocks, blocks.Locals);
