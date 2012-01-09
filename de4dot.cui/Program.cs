@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011 de4dot@gmail.com
+    Copyright (C) 2011-2012 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -47,7 +47,7 @@ namespace de4dot.cui {
 					Console.OutputEncoding = new UTF8Encoding(false);
 
 				Log.n("");
-				Log.n("de4dot v{0} Copyright (C) 2011 de4dot@gmail.com", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
+				Log.n("de4dot v{0} Copyright (C) 2011-2012 de4dot@gmail.com", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
 				Log.n("Latest version and source code: https://github.com/0xd4d/de4dot");
 				Log.n("");
 
