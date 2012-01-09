@@ -97,6 +97,7 @@ namespace de4dot.code.deobfuscators {
 			var arrayType = getArrayType(data.LongLength);
 			var attrs = FieldAttributes.Assembly | FieldAttributes.Static;
 			var field = new FieldDefinition(string.Format("field_{0}", unique++), attrs, arrayType);
+			field.Attributes |= FieldAttributes.HasFieldRVA;
 			field.MetadataToken = DotNetUtils.nextFieldToken();
 			ourType.Fields.Add(field);
 			var iv = new byte[data.Length];
