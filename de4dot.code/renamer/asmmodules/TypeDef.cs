@@ -614,9 +614,11 @@ namespace de4dot.code.renamer.asmmodules {
 							Utils.removeNewlines(TypeDefinition),
 							TypeDefinition.MetadataToken.ToInt32());
 					// Ignore if COM class
-					if (!hasAttribute("System.Runtime.InteropServices.TypeLibTypeAttribute"))
+					if (!TypeDefinition.IsImport &&
+						!hasAttribute("System.Runtime.InteropServices.ComImportAttribute") &&
+						!hasAttribute("System.Runtime.InteropServices.TypeLibTypeAttribute"))
 						throw new ApplicationException(errMsg);
-					Log.e("{0}", errMsg);
+					Log.w("{0}", errMsg);
 				}
 			}
 
