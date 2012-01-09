@@ -76,12 +76,30 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			var nested = type.NestedTypes[0];
 			if (nested.HasProperties || nested.HasEvents)
 				return false;
-			if (nested.Fields.Count != 1)
-				return false;
-			if (!MemberReferenceHelper.compareTypes(nested.Fields[0].FieldType, nested))
+
+			if (nested.Fields.Count == 1) {
+				// 4.2+ (maybe 4.0+)
+
+				if (!MemberReferenceHelper.compareTypes(nested.Fields[0].FieldType, nested))
+					return false;
+
+				if (DotNetUtils.getMethod(nested, "System.Reflection.Emit.MethodBuilder", "(System.Reflection.Emit.TypeBuilder)") == null)
+					return false;
+			}
+			else if (nested.Fields.Count == 2) {
+				// 3.5 and maybe earlier
+
+				var field1 = nested.Fields[0];
+				var field2 = nested.Fields[1];
+				if (field1.FieldType.FullName != "System.Collections.Hashtable" && field2.FieldType.FullName != "System.Collections.Hashtable")
+					return false;
+				if (!MemberReferenceHelper.compareTypes(field1.FieldType, nested) && !MemberReferenceHelper.compareTypes(field2.FieldType, nested))
+					return false;
+			}
+			else
 				return false;
 
-			if (DotNetUtils.getMethod(nested, "System.Reflection.Emit.MethodBuilder", "(System.Reflection.Emit.TypeBuilder)") == null)
+			if (DotNetUtils.getMethod(nested, ".ctor") == null)
 				return false;
 			if (DotNetUtils.getMethod(nested, "System.String", "(System.Int32)") == null)
 				return false;
