@@ -178,5 +178,17 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 
 			return null;
 		}
+
+		public bool removeEmbeddedAssemblyInfo(EmbeddedAssemblyInfo info) {
+			bool removed = false;
+			for (int i = 0; i < EmbeddedAssemblyInfos.Count; i++) {
+				var other = EmbeddedAssemblyInfos[i];
+				if (info.simpleName == other.simpleName) {
+					EmbeddedAssemblyInfos.RemoveAt(i--);
+					removed = true;
+				}
+			}
+			return removed;
+		}
 	}
 }
