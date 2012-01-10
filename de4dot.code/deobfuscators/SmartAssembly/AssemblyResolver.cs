@@ -64,7 +64,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				return null;
 
 			var data = decryptResource(info);
-			if (!assemblyResolverInfo.EmbeddedAssemblyInfos.Remove(info))
+			if (!assemblyResolverInfo.removeEmbeddedAssemblyInfo(info))
 				throw new ApplicationException(string.Format("Could not remove resource {0}", Utils.toCsharpString(info.resourceName)));
 			return data;
 		}
