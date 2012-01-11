@@ -44,10 +44,13 @@
     <Compile Include="cflow\DeadCodeRemover.cs" />
     <Compile Include="cflow\DeadStoreRemover.cs" />
     <Compile Include="cflow\ICflowDeobfuscator.cs" />
+    <Compile Include="cflow\IMethodCallInliner.cs" />
     <Compile Include="cflow\InstructionEmulator.cs" />
     <Compile Include="cflow\Int32Value.cs" />
     <Compile Include="cflow\Int64Value.cs" />
     <Compile Include="cflow\MethodCallInliner.cs" />
+    <Compile Include="cflow\MethodCallInlinerBase.cs" />
+    <Compile Include="cflow\NoMethodInliner.cs" />
     <Compile Include="cflow\Real8Value.cs" />
     <Compile Include="cflow\StLdlocFixer.cs" />
     <Compile Include="cflow\SwitchCflowDeobfuscator.cs" />

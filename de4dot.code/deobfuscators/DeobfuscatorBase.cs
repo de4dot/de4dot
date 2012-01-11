@@ -23,6 +23,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.MyStuff;
 using de4dot.blocks;
+using de4dot.blocks.cflow;
 using de4dot.code.PE;
 
 namespace de4dot.code.deobfuscators {
@@ -81,8 +82,16 @@ namespace de4dot.code.deobfuscators {
 		public abstract string TypeLong { get; }
 		public abstract string Name { get; }
 
-		public virtual bool CanInlineMethods {
+		protected virtual bool CanInlineMethods {
 			get { return false; }
+		}
+
+		public virtual IMethodCallInliner MethodCallInliner {
+			get {
+				if (CanInlineMethods)
+					return new MethodCallInliner(false);
+				return new NoMethodInliner();
+			}
 		}
 
 		public DeobfuscatorBase(OptionsBase optionsBase) {

@@ -49,10 +49,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 		}
 
 		void find() {
-			var cflowDeobfuscator = new CflowDeobfuscator() {
-				InlineMethods = true,
-				InlineInstanceMethods = true,
-			};
+			var cflowDeobfuscator = new CflowDeobfuscator(new MethodCallInliner(true));
 
 			foreach (var type in module.Types) {
 				if (DotNetUtils.getPInvokeMethod(type, "kernel32", "CloseHandle") == null)
