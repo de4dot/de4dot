@@ -18,6 +18,7 @@
 */
 
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using Mono.Cecil;
 using de4dot.blocks;
 
@@ -65,6 +66,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 	class Deobfuscator : DeobfuscatorBase {
 		Options options;
 		bool foundBabelAttribute = false;
+		string obfuscatorName = DeobfuscatorInfo.THE_NAME;
 
 		ResourceResolver resourceResolver;
 		StringDecrypter stringDecrypter;
@@ -91,7 +93,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		}
 
 		public override string Name {
-			get { return DeobfuscatorInfo.THE_NAME; }
+			get { return obfuscatorName; }
 		}
 
 		public Deobfuscator(Options options)
@@ -137,9 +139,21 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			foreach (var type in module.Types) {
 				if (type.FullName == "BabelAttribute" || type.FullName == "BabelObfuscatorAttribute") {
 					foundBabelAttribute = true;
+					checkVersion(type);
 					addAttributeToBeRemoved(type, "Obfuscator attribute");
 					return;
 				}
+			}
+		}
+
+		void checkVersion(TypeDefinition attr) {
+			var versionField = DotNetUtils.getField(attr, "Version");
+			if (versionField != null && versionField.IsLiteral && versionField.Constant != null && versionField.Constant is string) {
+				var val = Regex.Match((string)versionField.Constant, @"^(\d+\.\d+\.\d+\.\d+)$");
+				if (val.Groups.Count < 2)
+					return;
+				obfuscatorName = string.Format("{0} {1}", DeobfuscatorInfo.THE_NAME, val.Groups[1].ToString());
+				return;
 			}
 		}
 
