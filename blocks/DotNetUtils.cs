@@ -458,6 +458,16 @@ namespace de4dot.blocks {
 			return null;
 		}
 
+		public static FieldDefinition getField(TypeDefinition type, string name) {
+			if (type == null)
+				return null;
+			foreach (var field in type.Fields) {
+				if (field.Name == name)
+					return field;
+			}
+			return null;
+		}
+
 		public static IEnumerable<MethodReference> getMethodCalls(MethodDefinition method) {
 			var list = new List<MethodReference>();
 			if (method.HasBody) {
