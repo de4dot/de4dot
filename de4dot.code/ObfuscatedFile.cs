@@ -537,14 +537,13 @@ namespace de4dot.code {
 
 			Log.v("Deobfuscating methods");
 			var methodPrinter = new MethodPrinter();
-			var cflowDeobfuscator = new BlocksCflowDeobfuscator();
-			var methodCallInliner = deob.MethodCallInliner;
+			var cflowDeobfuscator = new BlocksCflowDeobfuscator { MethodCallInliner = deob.MethodCallInliner };
 			foreach (var method in allMethods) {
 				Log.v("Deobfuscating {0} ({1:X8})", Utils.removeNewlines(method), method.MetadataToken.ToUInt32());
 				Log.indent();
 
 				try {
-					deobfuscate(method, cflowDeobfuscator, methodCallInliner, methodPrinter);
+					deobfuscate(method, cflowDeobfuscator, methodPrinter);
 				}
 				catch (ApplicationException) {
 					throw;
@@ -560,7 +559,7 @@ namespace de4dot.code {
 			}
 		}
 
-		void deobfuscate(MethodDefinition method, BlocksCflowDeobfuscator cflowDeobfuscator, IMethodCallInliner methodCallInliner, MethodPrinter methodPrinter) {
+		void deobfuscate(MethodDefinition method, BlocksCflowDeobfuscator cflowDeobfuscator, MethodPrinter methodPrinter) {
 			if (!hasNonEmptyBody(method))
 				return;
 
@@ -570,7 +569,7 @@ namespace de4dot.code {
 
 			deob.deobfuscateMethodBegin(blocks);
 			if (options.ControlFlowDeobfuscation) {
-				cflowDeobfuscator.init(blocks, methodCallInliner);
+				cflowDeobfuscator.init(blocks);
 				cflowDeobfuscator.deobfuscate();
 			}
 
@@ -894,8 +893,8 @@ namespace de4dot.code {
 				return;
 
 			deobfuscate(method, "Deobfuscating control flow", (blocks) => {
-				var cflowDeobfuscator = new BlocksCflowDeobfuscator();
-				cflowDeobfuscator.init(blocks, deob.MethodCallInliner);
+				var cflowDeobfuscator = new BlocksCflowDeobfuscator { MethodCallInliner = deob.MethodCallInliner };
+				cflowDeobfuscator.init(blocks);
 				cflowDeobfuscator.deobfuscate();
 			});
 		}

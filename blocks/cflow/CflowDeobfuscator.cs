@@ -24,15 +24,14 @@ using Mono.Cecil.Cil;
 namespace de4dot.blocks.cflow {
 	public class CflowDeobfuscator : ICflowDeobfuscator {
 		BlocksCflowDeobfuscator cflowDeobfuscator = new BlocksCflowDeobfuscator();
-		IMethodCallInliner methodCallInliner;
 
 		public CflowDeobfuscator(IMethodCallInliner methodCallInliner) {
-			this.methodCallInliner = methodCallInliner;
+			cflowDeobfuscator.MethodCallInliner = methodCallInliner;
 		}
 
 		public void deobfuscate(MethodDefinition method) {
 			deobfuscate(method, (blocks) => {
-				cflowDeobfuscator.init(blocks, methodCallInliner);
+				cflowDeobfuscator.init(blocks);
 				cflowDeobfuscator.deobfuscate();
 			});
 		}
