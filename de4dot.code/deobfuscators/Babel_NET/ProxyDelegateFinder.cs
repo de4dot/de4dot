@@ -50,6 +50,10 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			}
 		}
 
+		protected override bool ProxyCallIsObfuscated {
+			get { return true; }
+		}
+
 		protected override object checkCctor(TypeDefinition type, MethodDefinition cctor) {
 			var instructions = cctor.Body.Instructions;
 			for (int i = 0; i < instructions.Count; i++) {
