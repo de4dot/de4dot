@@ -162,12 +162,25 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
+		protected virtual bool ProxyCallIsObfuscated {
+			get { return false; }
+		}
+
 		public void deobfuscate(Blocks blocks) {
 			if (blocks.Method.DeclaringType != null && delegateTypesDict.ContainsKey(blocks.Method.DeclaringType))
 				return;
+			var allBlocks = blocks.MethodBlocks.getAllBlocks();
+			int loops = ProxyCallIsObfuscated ? 50 : 1;
+			for (int i = 0; i < loops; i++) {
+				if (!deobfuscate(blocks, allBlocks))
+					break;
+			}
+			fixBrokenCalls(blocks.Method, allBlocks);
+		}
+
+		bool deobfuscate(Blocks blocks, IList<Block> allBlocks) {
 			var removeInfos = new Dictionary<Block, List<RemoveInfo>>();
 
-			var allBlocks = blocks.MethodBlocks.getAllBlocks();
 			foreach (var block in allBlocks) {
 				var instrs = block.Instructions;
 				for (int i = 0; i < instrs.Count; i++) {
@@ -222,7 +235,7 @@ namespace de4dot.code.deobfuscators {
 				block.remove(removeIndexes);
 			}
 
-			fixBrokenCalls(blocks.Method, allBlocks);
+			return removeInfos.Count > 0;
 		}
 
 		void add(Dictionary<Block, List<RemoveInfo>> removeInfos, Block block, int index, DelegateInfo di) {
