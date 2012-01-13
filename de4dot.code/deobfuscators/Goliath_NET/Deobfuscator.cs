@@ -114,7 +114,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			get { return obfuscatorName; }
 		}
 
-		public override bool CanInlineMethods {
+		protected override bool CanInlineMethods {
 			get { return startedDeobfuscating ? options.InlineMethods : true; }
 		}
 
