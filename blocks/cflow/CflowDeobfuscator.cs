@@ -25,18 +25,12 @@ namespace de4dot.blocks.cflow {
 	public class CflowDeobfuscator : ICflowDeobfuscator {
 		BlocksCflowDeobfuscator cflowDeobfuscator = new BlocksCflowDeobfuscator();
 
-		public bool InlineMethods { get; set; }
-		public bool InlineInstanceMethods { get; set; }
-
-		public CflowDeobfuscator() {
-			InlineMethods = true;
-			InlineInstanceMethods = false;
+		public CflowDeobfuscator(IMethodCallInliner methodCallInliner) {
+			cflowDeobfuscator.MethodCallInliner = methodCallInliner;
 		}
 
 		public void deobfuscate(MethodDefinition method) {
 			deobfuscate(method, (blocks) => {
-				cflowDeobfuscator.InlineMethods = InlineMethods;
-				cflowDeobfuscator.InlineInstanceMethods = InlineInstanceMethods;
 				cflowDeobfuscator.init(blocks);
 				cflowDeobfuscator.deobfuscate();
 			});

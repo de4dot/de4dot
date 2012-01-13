@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.MyStuff;
 using de4dot.blocks;
+using de4dot.blocks.cflow;
 using de4dot.code.renamer;
 using de4dot.code.PE;
 
@@ -60,12 +61,10 @@ namespace de4dot.code.deobfuscators {
 		StringFeatures StringFeatures { get; }
 		RenamingOptions RenamingOptions { get; }
 		DecrypterType DefaultDecrypterType { get; }
+		IMethodCallInliner MethodCallInliner { get; }
 
 		// This is non-null only in detect() and deobfuscateBegin().
 		IDeobfuscatedFile DeobfuscatedFile { get; set; }
-
-		// Return true if methods can be inlined
-		bool CanInlineMethods { get; }
 
 		// Returns null or the unpacked .NET PE file
 		byte[] unpackNativeFile(PeImage peImage);

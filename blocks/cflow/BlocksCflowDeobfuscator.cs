@@ -30,11 +30,9 @@ namespace de4dot.blocks.cflow {
 		DeadCodeRemover deadCodeRemover = new DeadCodeRemover();
 		DeadStoreRemover deadStoreRemover = new DeadStoreRemover();
 		StLdlocFixer stLdlocFixer = new StLdlocFixer();
-		MethodCallInliner methodCallInliner = new MethodCallInliner();
 		ConstantsFolder constantsFolder = new ConstantsFolder();
 
-		public bool InlineMethods { get; set; }
-		public bool InlineInstanceMethods { get; set; }
+		public IMethodCallInliner MethodCallInliner { get; set; }
 
 		public void init(Blocks blocks) {
 			this.blocks = blocks;
@@ -54,11 +52,9 @@ namespace de4dot.blocks.cflow {
 				if (iterations == 0)
 					changed |= fixDotfuscatorLoop();
 
-				if (InlineMethods) {
-					foreach (var block in allBlocks) {
-						methodCallInliner.init(blocks, block, InlineInstanceMethods);
-						changed |= methodCallInliner.deobfuscate();
-					}
+				foreach (var block in allBlocks) {
+					MethodCallInliner.init(blocks, block);
+					changed |= MethodCallInliner.deobfuscate();
 				}
 
 				foreach (var block in allBlocks) {
