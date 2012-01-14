@@ -160,12 +160,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			var declaringType = DotNetUtils.getType(module, fieldRef.DeclaringType);
 			if (declaringType == null)
 				return fieldRef;
-			foreach (var field in declaringType.Fields) {
-				if (MemberReferenceHelper.compareFieldReference(field, fieldRef))
-					return field;
-			}
-
-			return fieldRef;
+			return DotNetUtils.getField(declaringType, fieldRef);
 		}
 
 		public MethodReference tryGetMethodDefinition(MethodReference methodRef) {
@@ -176,12 +171,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			var declaringType = DotNetUtils.getType(module, methodRef.DeclaringType);
 			if (declaringType == null)
 				return methodRef;
-			foreach (var method in declaringType.Methods) {
-				if (MemberReferenceHelper.compareMethodReference(method, methodRef))
-					return method;
-			}
-
-			return methodRef;
+			return DotNetUtils.getMethod(declaringType, methodRef);
 		}
 	}
 }
