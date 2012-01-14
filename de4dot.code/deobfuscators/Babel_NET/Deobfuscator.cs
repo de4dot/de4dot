@@ -216,14 +216,10 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		public override void deobfuscateMethodEnd(Blocks blocks) {
 			proxyDelegateFinder.deobfuscate(blocks);
 			if (options.DecryptConstants) {
-				if (int32ValueInliner.HasHandlers)
-					int32ValueInliner.decrypt(blocks);
-				if (int64ValueInliner.HasHandlers)
-					int64ValueInliner.decrypt(blocks);
-				if (singleValueInliner.HasHandlers)
-					singleValueInliner.decrypt(blocks);
-				if (doubleValueInliner.HasHandlers)
-					doubleValueInliner.decrypt(blocks);
+				int32ValueInliner.decrypt(blocks);
+				int64ValueInliner.decrypt(blocks);
+				singleValueInliner.decrypt(blocks);
+				doubleValueInliner.decrypt(blocks);
 				constantsDecrypter.deobfuscate(blocks);
 			}
 			base.deobfuscateMethodEnd(blocks);

@@ -224,10 +224,8 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 
 		public override void deobfuscateMethodEnd(Blocks blocks) {
 			stringDecrypter.deobfuscate(blocks);
-			if (int32ValueInliner.HasHandlers)
-				int32ValueInliner.decrypt(blocks);
-			if (arrayValueInliner.HasHandlers)
-				arrayValueInliner.decrypt(blocks);
+			int32ValueInliner.decrypt(blocks);
+			arrayValueInliner.decrypt(blocks);
 			if (options.RestoreLocals)
 				localsRestorer.deobfuscate(blocks);
 			if (options.RemoveAntiStrongName) {

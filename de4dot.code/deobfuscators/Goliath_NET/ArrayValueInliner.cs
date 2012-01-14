@@ -37,7 +37,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			}
 		}
 
-		public bool HasHandlers {
+		public override bool HasHandlers {
 			get { return intDecrypters.Count != 0; }
 		}
 
