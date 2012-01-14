@@ -56,14 +56,18 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 				if (infos.Count == 0)
 					continue;
 
-				Log.v("Found proxy delegate: {0} ({1:X8})", type, type.MetadataToken.ToUInt32());
+				Log.v("Found proxy delegate: {0} ({1:X8})", Utils.removeNewlines(type), type.MetadataToken.ToUInt32());
 				RemovedDelegateCreatorCalls++;
 				Log.indent();
 				foreach (var info in infos) {
 					var di = info.delegateInfo;
 					add(info.method, di.field);
 					addDelegateInfo(di);
-					Log.v("Field: {0}, Opcode: {1}, Method: {2} ({3:X8})", di.field.Name, di.callOpcode, di.methodRef, di.methodRef.MetadataToken.ToUInt32());
+					Log.v("Field: {0}, Opcode: {1}, Method: {2} ({3:X8})",
+								Utils.removeNewlines(di.field.Name),
+								di.callOpcode,
+								Utils.removeNewlines(di.methodRef),
+								di.methodRef.MetadataToken.ToUInt32());
 				}
 				Log.deIndent();
 				delegateTypesDict[type] = true;
