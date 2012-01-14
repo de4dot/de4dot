@@ -164,6 +164,9 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			}
 			if (numNonDecryptedMethods > 0)
 				Log.w("{0}/{1} methods not decrypted", numNonDecryptedMethods, totalEncryptedMethods);
+
+			foreach (var imageReader in imageReaders.Values)
+				imageReader.Dispose();
 		}
 
 		List<EncryptInfo> getEncryptedMethods() {
