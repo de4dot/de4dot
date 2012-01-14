@@ -85,7 +85,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 		LogicalExpressionFixer logicalExpressionFixer;
 		StringDecrypter stringDecrypter;
 		IntegerDecrypter integerDecrypter;
-		IntegerValueInliner integerValueInliner;
+		Int32ValueInliner int32ValueInliner;
 		ArrayDecrypter arrayDecrypter;
 		ArrayValueInliner arrayValueInliner;
 		StrongNameChecker strongNameChecker;
@@ -188,9 +188,9 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			arrayDecrypter.initialize();
 
 			if (options.DecryptIntegers) {
-				integerValueInliner = new IntegerValueInliner();
+				int32ValueInliner = new Int32ValueInliner();
 				foreach (var method in integerDecrypter.getMethods()) {
-					integerValueInliner.add(method, (method2, args) => {
+					int32ValueInliner.add(method, (method2, args) => {
 						return integerDecrypter.decrypt(method2);
 					});
 				}
@@ -224,8 +224,8 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 
 		public override void deobfuscateMethodEnd(Blocks blocks) {
 			stringDecrypter.deobfuscate(blocks);
-			if (integerValueInliner.HasHandlers)
-				integerValueInliner.decrypt(blocks);
+			if (int32ValueInliner.HasHandlers)
+				int32ValueInliner.decrypt(blocks);
 			if (arrayValueInliner.HasHandlers)
 				arrayValueInliner.decrypt(blocks);
 			if (options.RestoreLocals)

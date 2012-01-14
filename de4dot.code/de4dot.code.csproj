@@ -120,7 +120,6 @@
     <Compile Include="deobfuscators\Goliath_NET\DecrypterBase.cs" />
     <Compile Include="deobfuscators\Goliath_NET\Deobfuscator.cs" />
     <Compile Include="deobfuscators\Goliath_NET\IntegerDecrypter.cs" />
-    <Compile Include="deobfuscators\Goliath_NET\IntegerValueInliner.cs" />
     <Compile Include="deobfuscators\Goliath_NET\LocalsRestorer.cs" />
     <Compile Include="deobfuscators\Goliath_NET\LogicalExpressionFixer.cs" />
     <Compile Include="deobfuscators\Goliath_NET\ProxyDelegateFinder.cs" />
