@@ -163,6 +163,8 @@ namespace de4dot.code {
 			}
 		}
 
+		public abstract bool HasHandlers { get; }
+
 		protected MethodDefinition Method {
 			get { return blocks.Method; }
 		}
@@ -173,6 +175,8 @@ namespace de4dot.code {
 		protected abstract CallResult createCallResult(MethodReference method, Block block, int callInstrIndex);
 
 		public int decrypt(Blocks theBlocks) {
+			if (!HasHandlers)
+				return 0;
 			try {
 				blocks = theBlocks;
 				callResults = new List<CallResult>();

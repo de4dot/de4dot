@@ -86,6 +86,10 @@ namespace de4dot.code.deobfuscators {
 			get { return false; }
 		}
 
+		protected virtual bool KeepTypes {
+			get { return false; }
+		}
+
 		public virtual IMethodCallInliner MethodCallInliner {
 			get {
 				if (CanInlineMethods)
@@ -149,8 +153,7 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		public virtual void deobfuscateStrings(Blocks blocks) {
-			if (staticStringDecrypter.HasHandlers)
-				staticStringDecrypter.decrypt(blocks);
+			staticStringDecrypter.decrypt(blocks);
 		}
 
 		public virtual bool deobfuscateOther(Blocks blocks) {
@@ -158,7 +161,7 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		public virtual void deobfuscateEnd() {
-			if (!Operations.KeepObfuscatorTypes) {
+			if (!Operations.KeepObfuscatorTypes && !KeepTypes) {
 				deleteEmptyCctors();
 				deleteMethods();
 				deleteFields();
