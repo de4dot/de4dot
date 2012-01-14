@@ -74,6 +74,10 @@ namespace de4dot.code {
 			}
 		}
 
+		public override bool HasHandlers {
+			get { return methodTokenToId.Count != 0; }
+		}
+
 		public DynamicStringDecrypter(IAssemblyClient assemblyClient) {
 			this.assemblyClient = assemblyClient;
 		}
@@ -128,7 +132,7 @@ namespace de4dot.code {
 	class StaticStringDecrypter : StringDecrypter {
 		MethodDefinitionAndDeclaringTypeDict<Func<MethodDefinition, object[], string>> stringDecrypters = new MethodDefinitionAndDeclaringTypeDict<Func<MethodDefinition, object[], string>>();
 
-		public bool HasHandlers {
+		public override bool HasHandlers {
 			get { return stringDecrypters.Count != 0; }
 		}
 

@@ -35,7 +35,7 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
-		public bool HasHandlers {
+		public override bool HasHandlers {
 			get { return decrypterMethods.Count != 0; }
 		}
 

@@ -153,8 +153,7 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		public virtual void deobfuscateStrings(Blocks blocks) {
-			if (staticStringDecrypter.HasHandlers)
-				staticStringDecrypter.decrypt(blocks);
+			staticStringDecrypter.decrypt(blocks);
 		}
 
 		public virtual bool deobfuscateOther(Blocks blocks) {

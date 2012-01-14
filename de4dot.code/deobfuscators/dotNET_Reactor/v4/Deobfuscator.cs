@@ -518,9 +518,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		}
 
 		public override bool deobfuscateOther(Blocks blocks) {
-			if (booleanValueInliner.HasHandlers)
-				return booleanValueInliner.decrypt(blocks) > 0;
-			return false;
+			return booleanValueInliner.decrypt(blocks) > 0;
 		}
 
 		public override void deobfuscateMethodEnd(Blocks blocks) {
