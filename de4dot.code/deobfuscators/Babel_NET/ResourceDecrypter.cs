@@ -30,13 +30,51 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		}
 
 		public byte[] decrypt(byte[] encryptedData) {
+			if (isV30(encryptedData))
+				return decryptV30(encryptedData);
+			return decryptV35(encryptedData);
+		}
+
+		static bool isV30(byte[] data) {
+			return data.Length > 10 && data[0] == 8 && data[9] <= 1 && data[10] == 8;
+		}
+
+		// v3.0
+		byte[] decryptV30(byte[] encryptedData) {
+			byte[] key, iv;
+			var reader = new BinaryReader(new MemoryStream(encryptedData));
+			bool isCompressed = getHeaderData30(reader, out key, out iv);
+			var data = DeobUtils.desDecrypt(encryptedData,
+									(int)reader.BaseStream.Position,
+									(int)(reader.BaseStream.Length - reader.BaseStream.Position),
+									key, iv);
+			if (isCompressed)
+				data = DeobUtils.inflate(data, true);
+			return data;
+		}
+
+		bool getHeaderData30(BinaryReader reader, out byte[] key, out byte[] iv) {
+			iv = reader.ReadBytes(reader.ReadByte());
+			bool hasEmbeddedKey = reader.ReadBoolean();
+			if (hasEmbeddedKey)
+				key = reader.ReadBytes(reader.ReadByte());
+			else {
+				key = new byte[reader.ReadByte()];
+				Array.Copy(module.Assembly.Name.PublicKey, 0, key, 0, key.Length);
+			}
+
+			reader.ReadBytes(reader.ReadInt32());	// hash
+			return true;
+		}
+
+		// v3.5+
+		byte[] decryptV35(byte[] encryptedData) {
 			int index = 0;
 			byte[] key, iv;
 			bool isCompressed = getKeyIv(getHeaderData(encryptedData, ref index), out key, out iv);
 			var data = DeobUtils.desDecrypt(encryptedData, index, encryptedData.Length - index, key, iv);
 			if (isCompressed)
 				data = DeobUtils.inflate(data, true);
-
 			return data;
 		}
 
@@ -59,7 +97,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		bool getKeyIv(byte[] headerData, out byte[] key, out byte[] iv) {
 			var reader = new BinaryReader(new MemoryStream(headerData));
 
-			// 3.5 doesn't have this field
+			// 3.0 - 3.5 don't have this field
 			if (headerData[(int)reader.BaseStream.Position] != 8) {
 				var license = reader.ReadString();
 			}
