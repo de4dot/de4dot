@@ -17,6 +17,7 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -43,6 +44,10 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		public void add(MethodDefinition method, Func<MethodDefinition, object[], TValue> handler) {
+			if (method == null)
+				return;
+			if (decrypterMethods.find(method) != null)
+				throw new ApplicationException(string.Format("Handler for method {0:X8} has already been added", method.MetadataToken.ToInt32()));
 			if (method != null)
 				decrypterMethods.add(method, handler);
 		}
