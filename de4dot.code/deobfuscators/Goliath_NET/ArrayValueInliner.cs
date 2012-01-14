@@ -28,7 +28,6 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 		MethodDefinitionAndDeclaringTypeDict<Func<MethodDefinition, object[], byte[]>> intDecrypters = new MethodDefinitionAndDeclaringTypeDict<Func<MethodDefinition, object[], byte[]>>();
 		InitializedDataCreator initializedDataCreator;
 		ModuleDefinition module;
-		MethodReference initializeArrayMethod;
 
 		class MyCallResult : CallResult {
 			public MethodReference methodReference;
@@ -45,13 +44,6 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 		public ArrayValueInliner(ModuleDefinition module, InitializedDataCreator initializedDataCreator) {
 			this.module = module;
 			this.initializedDataCreator = initializedDataCreator;
-
-			var runtimeHelpersType = DotNetUtils.findOrCreateTypeReference(module, module.TypeSystem.Corlib as AssemblyNameReference, "System.Runtime.CompilerServices", "RuntimeHelpers", false);
-			initializeArrayMethod = new MethodReference("InitializeArray", module.TypeSystem.Void, runtimeHelpersType);
-			var systemArrayType = DotNetUtils.findOrCreateTypeReference(module, module.TypeSystem.Corlib as AssemblyNameReference, "System", "Array", false);
-			var runtimeFieldHandleType = DotNetUtils.findOrCreateTypeReference(module, module.TypeSystem.Corlib as AssemblyNameReference, "System", "RuntimeFieldHandle", true);
-			initializeArrayMethod.Parameters.Add(new ParameterDefinition(systemArrayType));
-			initializeArrayMethod.Parameters.Add(new ParameterDefinition(runtimeFieldHandleType));
 		}
 
 		public void add(MethodDefinition method, Func<MethodDefinition, object[], byte[]> handler) {
@@ -67,15 +59,9 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 				var block = callResult.block;
 				int num = callResult.callEndIndex - callResult.callStartIndex + 1;
 
-				var ary = (byte[])callResult.returnValue;
-				int index = callResult.callStartIndex;
-				block.replace(index++, num, DotNetUtils.createLdci4(ary.Length));
-				block.insert(index++, Instruction.Create(OpCodes.Newarr, module.TypeSystem.Byte));
-				block.insert(index++, Instruction.Create(OpCodes.Dup));
-				block.insert(index++, Instruction.Create(OpCodes.Ldtoken, initializedDataCreator.create(ary)));
-				block.insert(index++, Instruction.Create(OpCodes.Call, initializeArrayMethod));
-
-				Log.v("Decrypted array: {0} bytes", ary.Length);
+				var arrayData = (byte[])callResult.returnValue;
+				initializedDataCreator.addInitializeArrayCode(block, callResult.callStartIndex, num, module.TypeSystem.Byte, arrayData);
+				Log.v("Decrypted array: {0} bytes", arrayData.Length);
 			}
 		}
 
