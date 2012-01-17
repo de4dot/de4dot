@@ -607,18 +607,16 @@ namespace de4dot.code.renamer.asmmodules {
 						continue;
 					if (!resolvedAllInterfaces() || !resolvedBaseClasses())
 						continue;
-					string errMsg = string.Format(
-							"Could not find interface method {0} ({1:X8}). Type: {2} ({3:X8})",
-							Utils.removeNewlines(pair.Key.MethodDefinition),
-							pair.Key.MethodDefinition.MetadataToken.ToInt32(),
-							Utils.removeNewlines(TypeDefinition),
-							TypeDefinition.MetadataToken.ToInt32());
 					// Ignore if COM class
 					if (!TypeDefinition.IsImport &&
 						!hasAttribute("System.Runtime.InteropServices.ComImportAttribute") &&
-						!hasAttribute("System.Runtime.InteropServices.TypeLibTypeAttribute"))
-						throw new ApplicationException(errMsg);
-					Log.w("{0}", errMsg);
+						!hasAttribute("System.Runtime.InteropServices.TypeLibTypeAttribute")) {
+						Log.w("Could not find interface method {0} ({1:X8}). Type: {2} ({3:X8})",
+								Utils.removeNewlines(pair.Key.MethodDefinition),
+								pair.Key.MethodDefinition.MetadataToken.ToInt32(),
+								Utils.removeNewlines(TypeDefinition),
+								TypeDefinition.MetadataToken.ToInt32());
+					}
 				}
 			}
 
