@@ -441,6 +441,8 @@ namespace de4dot.blocks {
 		}
 
 		public static FieldDefinition getField(ModuleDefinition module, FieldReference field) {
+			if (field == null)
+				return null;
 			if (field is FieldDefinition)
 				return (FieldDefinition)field;
 			return getField(getType(module, field.DeclaringType), field);
