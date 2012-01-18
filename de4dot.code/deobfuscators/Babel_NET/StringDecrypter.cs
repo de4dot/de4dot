@@ -213,23 +213,12 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				return;
 
 			if (decrypterInfo.NeedsResource) {
-				encryptedResource = findResource();
+				encryptedResource = BabelUtils.findEmbeddedResource(module, decrypterType);
 				if (encryptedResource == null)
 					return;
 			}
 
 			decrypterInfo.initialize(module, encryptedResource);
-		}
-
-		EmbeddedResource findResource() {
-			foreach (var method in decrypterType.Methods) {
-				foreach (var s in DotNetUtils.getCodeStrings(method)) {
-					var resource = DotNetUtils.getResource(module, s) as EmbeddedResource;
-					if (resource != null)
-						return resource;
-				}
-			}
-			return null;
 		}
 
 		public string decrypt(object[] args) {

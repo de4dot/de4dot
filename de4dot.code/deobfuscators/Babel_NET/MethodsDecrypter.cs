@@ -94,7 +94,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			if (methodsDecrypter == null)
 				return;
 
-			encryptedResource = findEncryptedResource(simpleDeobfuscator, deob);
+			encryptedResource = BabelUtils.findEmbeddedResource(module, methodsDecrypter, simpleDeobfuscator, deob);
 			if (encryptedResource == null) {
 				Log.w("Could not find encrypted methods resource");
 				return;
@@ -112,23 +112,6 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			if (imageReaders.ContainsKey(name))
 				throw new ApplicationException(string.Format("ImageReader for name '{0}' already exists", name));
 			imageReaders[name] = imageReader;
-		}
-
-		EmbeddedResource findEncryptedResource(ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
-			foreach (var method in methodsDecrypter.Methods) {
-				if (!DotNetUtils.isMethod(method, "System.String", "()"))
-					continue;
-				if (!method.IsStatic)
-					continue;
-				simpleDeobfuscator.deobfuscate(method);
-				simpleDeobfuscator.decryptStrings(method, deob);
-				foreach (var s in DotNetUtils.getCodeStrings(method)) {
-					var resource = DotNetUtils.getResource(module, s) as EmbeddedResource;
-					if (resource != null)
-						return resource;
-				}
-			}
-			return null;
 		}
 
 		class EncryptInfo {

@@ -141,7 +141,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			if (decrypterType == null)
 				return;
 
-			encryptedResource = findEncryptedResource(simpleDeobfuscator, deob);
+			encryptedResource = BabelUtils.findEmbeddedResource(module, decrypterType, simpleDeobfuscator, deob);
 			if (encryptedResource == null) {
 				Log.w("Could not find encrypted constants resource");
 				return;
@@ -170,23 +170,6 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			decryptedDoubles = new double[count];
 			while (count-- > 0)
 				decryptedDoubles[count] = reader.ReadDouble();
-		}
-
-		EmbeddedResource findEncryptedResource(ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
-			foreach (var method in decrypterType.Methods) {
-				if (!DotNetUtils.isMethod(method, "System.String", "()"))
-					continue;
-				if (!method.IsStatic)
-					continue;
-				simpleDeobfuscator.deobfuscate(method);
-				simpleDeobfuscator.decryptStrings(method, deob);
-				foreach (var s in DotNetUtils.getCodeStrings(method)) {
-					var resource = DotNetUtils.getResource(module, s) as EmbeddedResource;
-					if (resource != null)
-						return resource;
-				}
-			}
-			return null;
 		}
 
 		public int decryptInt32(int index) {

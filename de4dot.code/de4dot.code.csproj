@@ -58,6 +58,7 @@
     <Compile Include="AssemblyClient\SameAppDomainAssemblyServerLoader.cs" />
     <Compile Include="AssemblyResolver.cs" />
     <Compile Include="deobfuscators\ArrayFinder.cs" />
+    <Compile Include="deobfuscators\Babel_NET\BabelUtils.cs" />
     <Compile Include="deobfuscators\Babel_NET\ConstantsDecrypter.cs" />
     <Compile Include="deobfuscators\Babel_NET\Deobfuscator.cs" />
     <Compile Include="deobfuscators\Babel_NET\ImageReader.cs" />

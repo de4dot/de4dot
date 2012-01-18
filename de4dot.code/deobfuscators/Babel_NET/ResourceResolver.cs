@@ -19,7 +19,6 @@
 
 using System.IO;
 using Mono.Cecil;
-using Mono.Cecil.Cil;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Babel_NET {
@@ -59,10 +58,10 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 					continue;
 
 				MethodDefinition regMethod, handler;
-				if (!findRegisterMethod(type, out regMethod, out handler))
+				if (!BabelUtils.findRegisterMethod(type, out regMethod, out handler))
 					continue;
 
-				var resource = findEmbeddedResource(type);
+				var resource = BabelUtils.findEmbeddedResource(module, type);
 				if (resource == null)
 					continue;
 
@@ -71,52 +70,6 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				encryptedResource = resource;
 				return;
 			}
-		}
-
-		bool findRegisterMethod(TypeDefinition type, out MethodDefinition regMethod, out MethodDefinition handler) {
-			foreach (var method in type.Methods) {
-				if (!method.IsStatic || method.Body == null)
-					continue;
-				if (method.Body.ExceptionHandlers.Count != 1)
-					continue;
-
-				foreach (var instr in method.Body.Instructions) {
-					if (instr.OpCode.Code != Code.Ldftn)
-						continue;
-					var handlerRef = instr.Operand as MethodReference;
-					if (handlerRef == null)
-						continue;
-					if (!DotNetUtils.isMethod(handlerRef, "System.Reflection.Assembly", "(System.Object,System.ResolveEventArgs)"))
-						continue;
-					if (!MemberReferenceHelper.compareTypes(type, handlerRef.DeclaringType))
-						continue;
-					handler = DotNetUtils.getMethod(type, handlerRef);
-					if (handler == null)
-						continue;
-					if (handler.Body == null || handler.Body.ExceptionHandlers.Count != 1)
-						continue;
-
-					regMethod = method;
-					return true;
-				}
-			}
-
-			regMethod = null;
-			handler = null;
-			return false;
-		}
-
-		EmbeddedResource findEmbeddedResource(TypeDefinition type) {
-			foreach (var method in type.Methods) {
-				if (!DotNetUtils.isMethod(method, "System.String", "()"))
-					continue;
-				foreach (var s in DotNetUtils.getCodeStrings(method)) {
-					var resource = DotNetUtils.getResource(module, s) as EmbeddedResource;
-					if (resource != null)
-						return resource;
-				}
-			}
-			return null;
 		}
 
 		public EmbeddedResource mergeResources() {
