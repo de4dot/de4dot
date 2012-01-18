@@ -190,8 +190,13 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				}
 			}
 
-			if (options.DumpEmbeddedAssemblies)
+			if (options.DumpEmbeddedAssemblies) {
 				assemblyResolver.initialize(DeobfuscatedFile, this);
+
+				// Need to dump the assemblies before decrypting methods in case there's a reference
+				// in the encrypted code to one of these assemblies.
+				dumpEmbeddedAssemblies();
+			}
 
 			if (options.DecryptMethods) {
 				methodsDecrypter.initialize(DeobfuscatedFile, this);
@@ -213,7 +218,6 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				doubleValueInliner.add(constantsDecrypter.DoubleDecrypter, (method, args) => constantsDecrypter.decryptDouble((int)args[0]));
 			}
 
-			dumpEmbeddedAssemblies();
 			proxyDelegateFinder.find();
 		}
 
