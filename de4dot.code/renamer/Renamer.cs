@@ -1139,7 +1139,7 @@ namespace de4dot.code.renamer {
 				newEventName = oldEventName;
 			else {
 				mergeStateHelper.merge(MergeStateFlags.Events, scope);
-				newEventName = getAvailableName("Event_", scope, (scope2, newName) => isEventAvailable(scope2, newName));
+				newEventName = getAvailableName("Event_", false, scope, (scope2, newName) => isEventAvailable(scope2, newName));
 			}
 
 			var newEventNameWithPrefix = overridePrefix + newEventName;
@@ -1250,9 +1250,14 @@ namespace de4dot.code.renamer {
 			else if (isItemProperty(scope))
 				newPropName = "Item";
 			else {
-				var propPrefix = getSuggestedPropertyName(scope) ?? getNewPropertyNamePrefix(scope);
+				bool trySameName = true;
+				var propPrefix = getSuggestedPropertyName(scope);
+				if (propPrefix == null) {
+					trySameName = false;
+					propPrefix = getNewPropertyNamePrefix(scope);
+				}
 				mergeStateHelper.merge(MergeStateFlags.Properties, scope);
-				newPropName = getAvailableName(propPrefix, scope, (scope2, newName) => isPropertyAvailable(scope2, newName));
+				newPropName = getAvailableName(propPrefix, trySameName, scope, (scope2, newName) => isPropertyAvailable(scope2, newName));
 			}
 
 			var newPropNameWithPrefix = overridePrefix + newPropName;
@@ -1428,7 +1433,7 @@ namespace de4dot.code.renamer {
 				newMethodName = getSuggestedMethodName(scope);
 				if (newMethodName == null) {
 					mergeStateHelper.merge(MergeStateFlags.Methods, scope);
-					newMethodName = getAvailableName(namePrefix, scope, (scope2, newName) => isMethodAvailable(scope2, newName));
+					newMethodName = getAvailableName(namePrefix, false, scope, (scope2, newName) => isMethodAvailable(scope2, newName));
 				}
 			}
 
@@ -1518,9 +1523,9 @@ namespace de4dot.code.renamer {
 			return false;
 		}
 
-		static string getAvailableName(string prefix, MethodNameScope scope, Func<MethodNameScope, string, bool> checkAvailable) {
+		static string getAvailableName(string prefix, bool tryWithoutZero, MethodNameScope scope, Func<MethodNameScope, string, bool> checkAvailable) {
 			for (int i = 0; ; i++) {
-				string newName = prefix + i;
+				string newName = i == 0 && tryWithoutZero ? prefix : prefix + i;
 				if (checkAvailable(scope, newName))
 					return newName;
 			}
