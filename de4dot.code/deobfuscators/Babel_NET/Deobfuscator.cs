@@ -29,12 +29,14 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		BoolOption decryptMethods;
 		BoolOption decryptResources;
 		BoolOption decryptConstants;
+		BoolOption dumpEmbeddedAssemblies;
 
 		public DeobfuscatorInfo()
 			: base() {
 			decryptMethods = new BoolOption(null, makeArgName("methods"), "Decrypt methods", true);
 			decryptResources = new BoolOption(null, makeArgName("rsrc"), "Decrypt resources", true);
 			decryptConstants = new BoolOption(null, makeArgName("consts"), "Decrypt constants and arrays", true);
+			dumpEmbeddedAssemblies = new BoolOption(null, makeArgName("embedded"), "Dump embedded assemblies", true);
 		}
 
 		public override string Name {
@@ -51,6 +53,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				DecryptMethods = decryptMethods.get(),
 				DecryptResources = decryptResources.get(),
 				DecryptConstants = decryptConstants.get(),
+				DumpEmbeddedAssemblies = dumpEmbeddedAssemblies.get(),
 			});
 		}
 
@@ -59,6 +62,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				decryptMethods,
 				decryptResources,
 				decryptConstants,
+				dumpEmbeddedAssemblies,
 			};
 		}
 	}
@@ -69,6 +73,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		string obfuscatorName = DeobfuscatorInfo.THE_NAME;
 
 		ResourceResolver resourceResolver;
+		AssemblyResolver assemblyResolver;
 		StringDecrypter stringDecrypter;
 		ConstantsDecrypter constantsDecrypter;
 		Int32ValueInliner int32ValueInliner;
@@ -82,6 +87,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			public bool DecryptMethods { get; set; }
 			public bool DecryptResources { get; set; }
 			public bool DecryptConstants { get; set; }
+			public bool DumpEmbeddedAssemblies { get; set; }
 		}
 
 		public override string Type {
@@ -110,6 +116,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 			int sum = toInt32(foundBabelAttribute) +
 					toInt32(resourceResolver.Detected) +
+					toInt32(assemblyResolver.Detected) +
 					toInt32(stringDecrypter.Detected) +
 					toInt32(constantsDecrypter.Detected) +
 					toInt32(proxyDelegateFinder.Detected) +
@@ -125,6 +132,8 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			findBabelAttribute();
 			resourceResolver = new ResourceResolver(module);
 			resourceResolver.find();
+			assemblyResolver = new AssemblyResolver(module);
+			assemblyResolver.find();
 			stringDecrypter = new StringDecrypter(module);
 			stringDecrypter.find();
 			constantsDecrypter = new ConstantsDecrypter(module, initializedDataCreator);
@@ -181,6 +190,9 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				}
 			}
 
+			if (options.DumpEmbeddedAssemblies)
+				assemblyResolver.initialize(DeobfuscatedFile, this);
+
 			if (options.DecryptMethods) {
 				methodsDecrypter.initialize(DeobfuscatedFile, this);
 				methodsDecrypter.decrypt();
@@ -201,7 +213,18 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				doubleValueInliner.add(constantsDecrypter.DoubleDecrypter, (method, args) => constantsDecrypter.decryptDouble((int)args[0]));
 			}
 
+			dumpEmbeddedAssemblies();
 			proxyDelegateFinder.find();
+		}
+
+		void dumpEmbeddedAssemblies() {
+			if (!options.DumpEmbeddedAssemblies)
+				return;
+			foreach (var info in assemblyResolver.EmbeddedAssemblyInfos)
+				DeobfuscatedFile.createAssemblyFile(info.data, Utils.getAssemblySimpleName(info.fullname), info.extension);
+			addTypeToBeRemoved(assemblyResolver.Type, "Assembly resolver type");
+			addCctorInitCallToBeRemoved(assemblyResolver.InitMethod);
+			addResourceToBeRemoved(assemblyResolver.EncryptedResource, "Embedded encrypted assemblies");
 		}
 
 		void decryptResources() {
