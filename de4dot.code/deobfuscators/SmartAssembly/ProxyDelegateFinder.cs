@@ -112,7 +112,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			if (mostCalls == null)
 				return;
 
-			setDelegateCreatorMethod(DotNetUtils.getMethod(DotNetUtils.getType(module, mostCalls.DeclaringType), mostCalls));
+			setDelegateCreatorMethod(DotNetUtils.getMethod(module, mostCalls));
 		}
 	}
 }

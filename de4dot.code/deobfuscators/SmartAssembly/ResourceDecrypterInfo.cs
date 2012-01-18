@@ -25,7 +25,7 @@ using de4dot.blocks;
 namespace de4dot.code.deobfuscators.SmartAssembly {
 	class ResourceDecrypterInfo {
 		ModuleDefinition module;
-		TypeDefinition simpleZipType;
+		MethodDefinition simpleZipTypeDecryptMethod;
 
 		public byte[] DES_Key { get; private set; }
 		public byte[] DES_IV  { get; private set; }
@@ -33,56 +33,52 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 		public byte[] AES_IV  { get; private set; }
 
 		public bool CanDecrypt {
-			get { return simpleZipType != null; }
+			get { return simpleZipTypeDecryptMethod != null; }
 		}
 
 		public ResourceDecrypterInfo(ModuleDefinition module) {
 			this.module = module;
 		}
 
-		public ResourceDecrypterInfo(ModuleDefinition module, TypeDefinition simpleZipType, ISimpleDeobfuscator simpleDeobfuscator)
+		public ResourceDecrypterInfo(ModuleDefinition module, MethodDefinition simpleZipTypeDecryptMethod, ISimpleDeobfuscator simpleDeobfuscator)
 			: this(module) {
-			setSimpleZipType(simpleZipType, simpleDeobfuscator);
+			setSimpleZipType(simpleZipTypeDecryptMethod, simpleDeobfuscator);
 		}
 
-		public void setSimpleZipType(TypeDefinition type, ISimpleDeobfuscator simpleDeobfuscator) {
-			if (simpleZipType != null || type == null)
+		public void setSimpleZipType(MethodDefinition method, ISimpleDeobfuscator simpleDeobfuscator) {
+			if (simpleZipTypeDecryptMethod != null || method == null)
 				return;
-			simpleZipType = type;
-			init(simpleDeobfuscator);
+			simpleZipTypeDecryptMethod = method;
+			init(simpleDeobfuscator, method);
 		}
 
-		void init(ISimpleDeobfuscator simpleDeobfuscator) {
+		void init(ISimpleDeobfuscator simpleDeobfuscator, MethodDefinition method) {
 			var desList = new List<byte[]>(2);
 			var aesList = new List<byte[]>(2);
 
-			if (simpleZipType != null) {
-				foreach (var method in DotNetUtils.findMethods(simpleZipType.Methods, "System.Byte[]", new string[] { "System.Byte[]" }, true)) {
-					var instructions = method.Body.Instructions;
-					simpleDeobfuscator.deobfuscate(method);
-					for (int i = 0; i <= instructions.Count - 2; i++) {
-						var ldtoken = instructions[i];
-						if (ldtoken.OpCode.Code != Code.Ldtoken)
-							continue;
-						var field = DotNetUtils.getField(module, ldtoken.Operand as FieldReference);
-						if (field == null)
-							continue;
-						if (field.InitialValue == null)
-							continue;
+			var instructions = method.Body.Instructions;
+			simpleDeobfuscator.deobfuscate(method);
+			for (int i = 0; i <= instructions.Count - 2; i++) {
+				var ldtoken = instructions[i];
+				if (ldtoken.OpCode.Code != Code.Ldtoken)
+					continue;
+				var field = DotNetUtils.getField(module, ldtoken.Operand as FieldReference);
+				if (field == null)
+					continue;
+				if (field.InitialValue == null)
+					continue;
 
-						var call = instructions[i + 1];
-						if (call.OpCode.Code != Code.Call)
-							continue;
-						var calledMethod = call.Operand as MethodReference;
-						if (!DotNetUtils.isMethod(calledMethod, "System.Void", "(System.Array,System.RuntimeFieldHandle)"))
-							continue;
+				var call = instructions[i + 1];
+				if (call.OpCode.Code != Code.Call)
+					continue;
+				var calledMethod = call.Operand as MethodReference;
+				if (!DotNetUtils.isMethod(calledMethod, "System.Void", "(System.Array,System.RuntimeFieldHandle)"))
+					continue;
 
-						if (field.InitialValue.Length == 8)
-							desList.Add(field.InitialValue);
-						else if (field.InitialValue.Length == 16)
-							aesList.Add(field.InitialValue);
-					}
-				}
+				if (field.InitialValue.Length == 8)
+					desList.Add(field.InitialValue);
+				else if (field.InitialValue.Length == 16)
+					aesList.Add(field.InitialValue);
 			}
 
 			if (desList.Count >= 2) {

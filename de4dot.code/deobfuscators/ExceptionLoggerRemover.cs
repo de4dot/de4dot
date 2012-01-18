@@ -43,7 +43,7 @@ namespace de4dot.code.deobfuscators {
 					continue;
 				var catchBlock = tryBlock.TryHandlerBlocks[0];
 				if (catchBlock.HandlerType != ExceptionHandlerType.Catch ||
-					!MemberReferenceHelper.verifyType(catchBlock.CatchType, "mscorlib", "System.Exception")) {
+					catchBlock.CatchType.FullName != "System.Exception") {
 					continue;
 				}
 				if (catchBlock.BaseBlocks.Count != 1)
@@ -77,7 +77,7 @@ namespace de4dot.code.deobfuscators {
 				var calledMethod = callInstr.Operand as MethodReference;
 				if (calledMethod == null)
 					continue;
-				if (!exceptionLoggerMethods.ContainsKey(calledMethod))
+				if (!isExceptionLogger(calledMethod))
 					continue;
 
 				return true;
@@ -86,8 +86,16 @@ namespace de4dot.code.deobfuscators {
 			return false;
 		}
 
+		protected virtual bool isExceptionLogger(MethodReference method) {
+			return exceptionLoggerMethods.ContainsKey(method);
+		}
+
+		protected virtual bool HasExceptionLoggers {
+			get { return exceptionLoggerMethods.Count != 0; }
+		}
+
 		public bool remove(Blocks blocks) {
-			if (exceptionLoggerMethods.Count == 0)
+			if (!HasExceptionLoggers)
 				return false;
 
 			TryBlock tryBlock;

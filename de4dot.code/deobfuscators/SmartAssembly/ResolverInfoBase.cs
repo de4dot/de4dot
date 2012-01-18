@@ -28,7 +28,6 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 		ISimpleDeobfuscator simpleDeobfuscator;
 		IDeobfuscator deob;
 		TypeDefinition resolverType;
-		TypeDefinition callResolverType;
 		MethodDefinition callResolverMethod;
 
 		public TypeDefinition Type {
@@ -36,7 +35,13 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 		}
 
 		public TypeDefinition CallResolverType {
-			get { return callResolverType; }
+			get {
+				if (callResolverMethod == null)
+					return null;
+				if (!hasOnlyThisMethod(callResolverMethod.DeclaringType, callResolverMethod))
+					return null;
+				return callResolverMethod.DeclaringType;
+			}
 		}
 
 		public MethodDefinition CallResolverMethod {
@@ -70,26 +75,17 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 					continue;
 				if (!method.IsStatic || !DotNetUtils.isMethod(method, "System.Void", "()"))
 					continue;
-				if (checkAttachAppType(tuple.Item1, method))
+				if (checkAttachAppMethod(method))
 					return true;
 			}
 
 			return false;
 		}
 
-		bool checkAttachAppType(TypeDefinition type, MethodDefinition attachAppMethod) {
-			callResolverType = null;
+		bool checkAttachAppMethod(MethodDefinition attachAppMethod) {
+			callResolverMethod = null;
 			if (!attachAppMethod.HasBody)
 				return false;
-			if (type.Fields.Count > 0 || type.Properties.Count > 0 || type.Events.Count > 0)
-				return false;
-			foreach (var m in type.Methods) {
-				if (m.Name == ".cctor" || m.Name == ".ctor")
-					continue;
-				if (m == attachAppMethod)
-					continue;
-				return false;
-			}
 
 			foreach (var tuple in DotNetUtils.getCalledMethods(module, attachAppMethod)) {
 				var method = tuple.Item2;
@@ -97,26 +93,25 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 					continue;
 				if (!method.IsStatic || !DotNetUtils.isMethod(method, "System.Void", "()"))
 					continue;
-				if (!checkResolverType(tuple.Item1, method))
+				if (!checkResolverInitMethod(method))
 					continue;
 
 				callResolverMethod = attachAppMethod;
-				callResolverType = type;
 				return true;
 			}
 
 			if (hasLdftn(attachAppMethod)) {
 				simpleDeobfuscator.deobfuscate(attachAppMethod);
-				foreach (var resolverHandler in getResolverHandlers(type, attachAppMethod)) {
+				foreach (var resolverHandler in getResolverHandlers(attachAppMethod)) {
 					if (!resolverHandler.HasBody)
 						continue;
-					if (!checkResolverType2(resolverHandler.DeclaringType))
+					var resolverTypeTmp = getResolverType(resolverHandler);
+					if (resolverTypeTmp == null)
 						continue;
 					deobfuscate(resolverHandler);
 					if (checkHandlerMethod(resolverHandler)) {
 						callResolverMethod = attachAppMethod;
-						callResolverType = type;
-						resolverType = resolverHandler.DeclaringType;
+						resolverType = resolverTypeTmp;
 						return true;
 					}
 				}
@@ -135,27 +130,21 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return false;
 		}
 
-		bool checkResolverType2(TypeDefinition type) {
-			if (type.Properties.Count > 1 || type.Events.Count > 0)
-				return false;
-			if (!checkResolverType(type))
-				return false;
-
-			return true;
-		}
-
-		bool checkResolverType(TypeDefinition type, MethodDefinition initMethod) {
+		bool checkResolverInitMethod(MethodDefinition initMethod) {
 			resolverType = null;
 			if (!initMethod.HasBody)
 				return false;
-			if (!checkResolverType2(type))
-				return false;
 
 			deobfuscate(initMethod);
-			foreach (var handlerDef in getResolverHandlers(type, initMethod)) {
+			foreach (var handlerDef in getResolverHandlers(initMethod)) {
 				deobfuscate(handlerDef);
+
+				var resolverTypeTmp = getResolverType(handlerDef);
+				if (resolverTypeTmp == null)
+					continue;
+
 				if (checkHandlerMethod(handlerDef)) {
-					resolverType = type;
+					resolverType = resolverTypeTmp;
 					return true;
 				}
 			}
@@ -168,10 +157,31 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			simpleDeobfuscator.decryptStrings(method, deob);
 		}
 
+		TypeDefinition getResolverType(MethodDefinition resolveHandler) {
+			if (resolveHandler.Body == null)
+				return null;
+			foreach (var instr in resolveHandler.Body.Instructions) {
+				if (instr.OpCode.Code != Code.Ldsfld && instr.OpCode.Code != Code.Stsfld)
+					continue;
+				var field = DotNetUtils.getField(module, instr.Operand as FieldReference);
+				if (field == null)
+					continue;
+				if (!checkResolverType(field.DeclaringType))
+					continue;
+
+				return field.DeclaringType;
+			}
+
+			if (checkResolverType(resolveHandler.DeclaringType))
+				return resolveHandler.DeclaringType;
+
+			return null;
+		}
+
 		protected abstract bool checkResolverType(TypeDefinition type);
 		protected abstract bool checkHandlerMethod(MethodDefinition handler);
 
-		static IEnumerable<MethodDefinition> getResolverHandlers(TypeDefinition type, MethodDefinition method) {
+		IEnumerable<MethodDefinition> getResolverHandlers(MethodDefinition method) {
 			int numHandlers = 0;
 			var instructions = method.Body.Instructions;
 			for (int i = 0; i < instructions.Count; i++) {
@@ -184,7 +194,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 					continue;
 
 				var ldftn = instrs[2];
-				var handlerDef = DotNetUtils.getMethod(type, ldftn.Operand as MethodReference);
+				var handlerDef = DotNetUtils.getMethod(module, ldftn.Operand as MethodReference);
 				if (handlerDef == null)
 					continue;
 
@@ -203,6 +213,19 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			// If no handlers found, it's possible that the method itself is the handler.
 			if (numHandlers == 0)
 				yield return method;
+		}
+
+		static bool hasOnlyThisMethod(TypeDefinition type, MethodDefinition method) {
+			if (type == null || method == null)
+				return false;
+			foreach (var m in type.Methods) {
+				if (m.Name == ".cctor" || m.Name == ".ctor")
+					continue;
+				if (m == method)
+					continue;
+				return false;
+			}
+			return true;
 		}
 	}
 }

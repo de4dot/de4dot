@@ -38,7 +38,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 		TypeDefinition stringsEncodingClass;
 		EmbeddedResource stringsResource;
 		int stringOffset;
-		TypeDefinition simpleZipType;
+		MethodDefinition simpleZipTypeMethod;
 		MethodDefinition stringDecrypterMethod;
 		StringDecrypterVersion decrypterVersion;
 
@@ -58,8 +58,8 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			get { return resourceDecrypter == null || resourceDecrypter.CanDecrypt; }
 		}
 
-		public TypeDefinition SimpleZipType {
-			get { return simpleZipType; }
+		public MethodDefinition SimpleZipTypeMethod {
+			get { return simpleZipTypeMethod; }
 		}
 
 		public EmbeddedResource StringsResource {
@@ -71,7 +71,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 		}
 
 		public bool StringsEncrypted {
-			get { return simpleZipType != null; }
+			get { return simpleZipTypeMethod != null; }
 		}
 
 		public MethodDefinition StringDecrypterMethod {
@@ -148,9 +148,9 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				decrypterVersion = StringDecrypterVersion.V4;
 			}
 
-			simpleZipType = findSimpleZipType(cctor) ?? findSimpleZipType(stringDecrypterMethod);
-			if (simpleZipType != null)
-				resourceDecrypter = new ResourceDecrypter(new ResourceDecrypterInfo(module, simpleZipType, simpleDeobfuscator));
+			simpleZipTypeMethod = findSimpleZipTypeMethod(cctor) ?? findSimpleZipTypeMethod(stringDecrypterMethod);
+			if (simpleZipTypeMethod != null)
+				resourceDecrypter = new ResourceDecrypter(new ResourceDecrypterInfo(module, simpleZipTypeMethod, simpleDeobfuscator));
 
 			return true;
 		}
@@ -292,9 +292,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return true;
 		}
 
-		// Find SmartAssembly.Zip.SimpleZip, which is the class that decrypts and inflates
-		// data in the resources.
-		TypeDefinition findSimpleZipType(MethodDefinition method) {
+		MethodDefinition findSimpleZipTypeMethod(MethodDefinition method) {
 			if (method == null || method.Body == null)
 				return null;
 			var instructions = method.Body.Instructions;
@@ -302,7 +300,9 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				var call = instructions[i];
 				if (call.OpCode.Code != Code.Call)
 					continue;
-				var calledMethod = call.Operand as MethodReference;
+				var calledMethod = call.Operand as MethodDefinition;
+				if (calledMethod == null)
+					continue;
 				if (!DotNetUtils.isMethod(calledMethod, "System.Byte[]", "(System.Byte[])"))
 					continue;
 
@@ -315,11 +315,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				if (!MemberReferenceHelper.compareTypes(stringsEncodingClass, field.DeclaringType))
 					continue;
 
-				var type = DotNetUtils.getType(module, calledMethod.DeclaringType);
-				if (type == null)
-					continue;
-
-				return type;
+				return calledMethod;
 			}
 
 			return null;

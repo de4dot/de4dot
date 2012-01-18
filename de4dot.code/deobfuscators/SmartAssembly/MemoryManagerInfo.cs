@@ -40,10 +40,9 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 
 		public MemoryManagerInfo(ModuleDefinition module) {
 			this.module = module;
-			find();
 		}
 
-		bool find() {
+		public bool find() {
 			if (checkCalledMethods(DotNetUtils.getMethod(DotNetUtils.getModuleType(module), ".cctor")))
 				return true;
 			if (checkCalledMethods(module.EntryPoint))

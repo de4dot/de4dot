@@ -71,11 +71,11 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 	}
 
 	class AssemblyResolverInfo : ResolverInfoBase {
-		TypeDefinition simpleZipType;
+		MethodDefinition simpleZipTypeMethod;
 		List<EmbeddedAssemblyInfo> embeddedAssemblyInfos = new List<EmbeddedAssemblyInfo>();
 
-		public TypeDefinition SimpleZipType {
-			get { return simpleZipType; }
+		public MethodDefinition SimpleZipTypeMethod {
+			get { return simpleZipTypeMethod; }
 		}
 
 		public IList<EmbeddedAssemblyInfo> EmbeddedAssemblyInfos {
@@ -163,7 +163,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				var calledMethod = call.Operand as MethodReference;
 				if (calledMethod == null)
 					continue;
-				if (!SimpleZipInfo.isSimpleZipDecryptMethod_QuickCheck(module, calledMethod, out simpleZipType))
+				if (!SimpleZipInfo.isSimpleZipDecryptMethod_QuickCheck(module, calledMethod, out simpleZipTypeMethod))
 					continue;
 
 				return;
