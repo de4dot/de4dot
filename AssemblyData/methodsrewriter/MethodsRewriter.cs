@@ -165,6 +165,8 @@ namespace AssemblyData.methodsrewriter {
 		}
 
 		public void setCaller(RewrittenMethod rewrittenMethod, MethodBase caller) {
+			if (caller == null)
+				return;
 			var newMethodInfo = getNewMethodInfo(rewrittenMethod.Method.Name);
 			newStackMethodDict[newMethodInfo] = caller;
 		}

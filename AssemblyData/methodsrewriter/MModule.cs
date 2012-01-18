@@ -40,17 +40,21 @@ namespace AssemblyData.methodsrewriter {
 		}
 
 		void initTokenToType() {
-			var tmpTokenToType = new Dictionary<int, Type>();
-			var tmpTokenToTypeDefinition = new Dictionary<int, TypeDefinition>();
-			foreach (var t in module.GetTypes())
-				tmpTokenToType[t.MetadataToken] = t;
-			foreach (var t in moduleDefinition.GetTypes())
-				tmpTokenToTypeDefinition[t.MetadataToken.ToInt32()] = t;
 			moduleType = DotNetUtils.getModuleType(moduleDefinition);
-			foreach (var token in tmpTokenToType.Keys) {
-				var mtype = new MType(tmpTokenToType[token], tmpTokenToTypeDefinition[token]);
+			foreach (var typeDefinition in moduleDefinition.GetTypes()) {
+				int token = typeDefinition.MetadataToken.ToInt32();
+				Type type;
+				try {
+					type = module.ResolveType(token);
+				}
+				catch {
+					tokenToType[token] = null;
+					typeReferenceToType.add(typeDefinition, null);
+					continue;
+				}
+				var mtype = new MType(type, typeDefinition);
 				tokenToType[token] = mtype;
-				typeReferenceToType.add(mtype.typeDefinition, mtype);
+				typeReferenceToType.add(typeDefinition, mtype);
 			}
 		}
 
