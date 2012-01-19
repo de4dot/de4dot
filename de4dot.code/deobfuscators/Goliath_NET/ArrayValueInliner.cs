@@ -24,34 +24,13 @@ using Mono.Cecil.Cil;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Goliath_NET {
-	class ArrayValueInliner : MethodReturnValueInliner {
-		MethodDefinitionAndDeclaringTypeDict<Func<MethodDefinition, object[], byte[]>> intDecrypters = new MethodDefinitionAndDeclaringTypeDict<Func<MethodDefinition, object[], byte[]>>();
+	class ArrayValueInliner : ValueInlinerBase<byte[]> {
 		InitializedDataCreator initializedDataCreator;
 		ModuleDefinition module;
-
-		class MyCallResult : CallResult {
-			public MethodReference methodReference;
-			public MyCallResult(Block block, int callEndIndex, MethodReference method)
-				: base(block, callEndIndex) {
-				this.methodReference = method;
-			}
-		}
-
-		public override bool HasHandlers {
-			get { return intDecrypters.Count != 0; }
-		}
 
 		public ArrayValueInliner(ModuleDefinition module, InitializedDataCreator initializedDataCreator) {
 			this.module = module;
 			this.initializedDataCreator = initializedDataCreator;
-		}
-
-		public void add(MethodDefinition method, Func<MethodDefinition, object[], byte[]> handler) {
-			if (method == null)
-				return;
-			if (intDecrypters.find(method) != null)
-				throw new ApplicationException(string.Format("Handler for method {0:X8} has already been added", method.MetadataToken.ToInt32()));
-			intDecrypters.add(method, handler);
 		}
 
 		protected override void inlineReturnValues(IList<CallResult> callResults) {
@@ -63,20 +42,6 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 				initializedDataCreator.addInitializeArrayCode(block, callResult.callStartIndex, num, module.TypeSystem.Byte, arrayData);
 				Log.v("Decrypted array: {0} bytes", arrayData.Length);
 			}
-		}
-
-		protected override void inlineAllCalls() {
-			foreach (var tmp in callResults) {
-				var callResult = (MyCallResult)tmp;
-				var handler = intDecrypters.find(callResult.methodReference);
-				callResult.returnValue = handler((MethodDefinition)callResult.methodReference, callResult.args);
-			}
-		}
-
-		protected override CallResult createCallResult(MethodReference method, Block block, int callInstrIndex) {
-			if (intDecrypters.find(method) == null)
-				return null;
-			return new MyCallResult(block, callInstrIndex, method);
 		}
 	}
 }
