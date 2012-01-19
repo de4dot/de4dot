@@ -181,13 +181,12 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				addResourceToBeRemoved(stringDecrypter.Resource, "Encrypted strings");
 				addTypeToBeRemoved(stringDecrypter.Type, "String decrypter type");
 
-				if (stringDecrypter.Resource != null) {
+				if (stringDecrypter.Resource != null)
 					Log.v("Adding string decrypter. Resource: {0}", Utils.toCsharpString(stringDecrypter.Resource.Name));
-					staticStringDecrypter.add(stringDecrypter.DecryptMethod, (method, args) => {
-						return stringDecrypter.decrypt(args);
-					});
-					DeobfuscatedFile.stringDecryptersAdded();
-				}
+				staticStringDecrypter.add(stringDecrypter.DecryptMethod, (method, args) => {
+					return stringDecrypter.decrypt(args);
+				});
+				DeobfuscatedFile.stringDecryptersAdded();
 			}
 
 			if (options.DumpEmbeddedAssemblies) {

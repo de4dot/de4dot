@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Mono.Cecil;
+using Mono.Cecil.Cil;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Babel_NET {
@@ -38,7 +39,29 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			string decrypt(object[] args);
 		}
 
+		// Babel .NET 2.x
 		class DecrypterInfoV1 : IDecrypterInfo {
+			public MethodDefinition Decrypter { get; set; }
+			public bool NeedsResource {
+				get { return false; }
+			}
+
+			public void initialize(ModuleDefinition module, EmbeddedResource resource) {
+			}
+
+			public string decrypt(object[] args) {
+				return decrypt((string)args[0], (int)args[1]);
+			}
+
+			string decrypt(string s, int k) {
+				var sb = new StringBuilder(s.Length);
+				foreach (var c in s)
+					sb.Append((char)(c ^ k));
+				return sb.ToString();
+			}
+		}
+
+		class DecrypterInfoV2 : IDecrypterInfo {
 			byte[] key;
 
 			public MethodDefinition Decrypter { get; set; }
@@ -65,7 +88,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			}
 		}
 
-		class DecrypterInfoV2 : IDecrypterInfo {
+		class DecrypterInfoV3 : IDecrypterInfo {
 			Dictionary<int, string> offsetToString = new Dictionary<int, string>();
 
 			public MethodDefinition Decrypter { get; set; }
@@ -134,7 +157,62 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				if (info != null)
 					return info;
 			}
-			return null;
+
+			return checkDecrypterTypeBabel2x(type);
+		}
+
+		IDecrypterInfo checkDecrypterTypeBabel2x(TypeDefinition type) {
+			if (type.HasEvents || type.HasProperties || type.HasNestedTypes)
+				return null;
+			if (type.HasFields || type.Methods.Count != 1)
+				return null;
+			var decrypter = type.Methods[0];
+			if (!checkDecryptMethodBabel2x(decrypter))
+				return null;
+
+			return new DecrypterInfoV1 { Decrypter = decrypter };
+		}
+
+		bool checkDecryptMethodBabel2x(MethodDefinition method) {
+			if (!method.IsStatic || !method.IsPublic)
+				return false;
+			if (method.Body == null)
+				return false;
+			if (method.Name == ".cctor")
+				return false;
+			if (!DotNetUtils.isMethod(method, "System.String", "(System.String,System.Int32)"))
+				return false;
+
+			int stringLength = 0, stringToCharArray = 0, stringCtor = 0;
+			foreach (var instr in method.Body.Instructions) {
+				var calledMethod = instr.Operand as MethodReference;
+				if (calledMethod == null)
+					continue;
+
+				switch (instr.OpCode.Code) {
+				case Code.Call:
+				case Code.Callvirt:
+					if (calledMethod.FullName == "System.Int32 System.String::get_Length()")
+						stringLength++;
+					else if (calledMethod.FullName == "System.Char[] System.String::ToCharArray()")
+						stringToCharArray++;
+					else
+						return false;
+					break;
+
+				case Code.Newobj:
+					if (calledMethod.FullName == "System.Void System.String::.ctor(System.Char[])")
+						stringCtor++;
+					else
+						return false;
+					break;
+
+				default:
+					continue;
+				}
+			}
+
+			return stringLength == 1 && stringToCharArray == 1 && stringCtor == 1;
 		}
 
 		IDecrypterInfo checkNested(TypeDefinition type, TypeDefinition nested) {
@@ -160,7 +238,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				if (decrypter == null || !decrypter.IsStatic)
 					return null;
 
-				return new DecrypterInfoV2 { Decrypter = decrypter };
+				return new DecrypterInfoV3 { Decrypter = decrypter };
 			}
 			else if (nested.Fields.Count == 2) {
 				// 3.0 - 3.5
@@ -174,7 +252,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 					if (decrypter == null || !decrypter.IsStatic)
 						return null;
 
-					return new DecrypterInfoV2 { Decrypter = decrypter };
+					return new DecrypterInfoV3 { Decrypter = decrypter };
 				}
 				else if (checkFields(nested, "System.Byte[]", nested)) {
 					// 3.0
@@ -185,7 +263,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 					if (decrypter == null || !decrypter.IsStatic)
 						return null;
 
-					return new DecrypterInfoV1 { Decrypter = decrypter };
+					return new DecrypterInfoV2 { Decrypter = decrypter };
 				}
 				else
 					return null;
