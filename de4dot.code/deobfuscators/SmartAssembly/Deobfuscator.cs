@@ -421,11 +421,11 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			Log.v("Adding string decrypter. Resource: {0}", Utils.toCsharpString(info.StringsResource.Name));
 			var decrypter = new StringDecrypter(info);
 			if (decrypter.CanDecrypt) {
-				staticStringDecrypter.add(DotNetUtils.getMethod(info.GetStringDelegate, "Invoke"), (method, args) => {
+				staticStringInliner.add(DotNetUtils.getMethod(info.GetStringDelegate, "Invoke"), (method, args) => {
 					var fieldDefinition = DotNetUtils.getField(module, (FieldReference)args[0]);
 					return decrypter.decrypt(fieldDefinition.MetadataToken.ToInt32(), (int)args[1]);
 				});
-				staticStringDecrypter.add(info.StringDecrypterMethod, (method, args) => {
+				staticStringInliner.add(info.StringDecrypterMethod, (method, args) => {
 					return decrypter.decrypt(0, (int)args[0]);
 				});
 			}
@@ -546,7 +546,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 
 		public override IEnumerable<string> getStringDecrypterMethods() {
 			var list = new List<string>();
-			foreach (var method in staticStringDecrypter.Methods)
+			foreach (var method in staticStringInliner.Methods)
 				list.Add(method.MetadataToken.ToInt32().ToString("X8"));
 			return list;
 		}

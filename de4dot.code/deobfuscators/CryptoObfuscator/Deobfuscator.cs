@@ -172,7 +172,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			stringDecrypter.init(resourceDecrypter);
 			if (stringDecrypter.Method != null) {
 				addResourceToBeRemoved(stringDecrypter.Resource, "Encrypted strings");
-				staticStringDecrypter.add(stringDecrypter.Method, (method, args) => {
+				staticStringInliner.add(stringDecrypter.Method, (method, args) => {
 					return stringDecrypter.decrypt((int)args[0]);
 				});
 				DeobfuscatedFile.stringDecryptersAdded();

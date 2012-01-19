@@ -421,12 +421,12 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			}
 
 			foreach (var info in stringDecrypter.DecrypterInfos) {
-				staticStringDecrypter.add(info.method, (method2, args) => {
+				staticStringInliner.add(info.method, (method2, args) => {
 					return stringDecrypter.decrypt(method2, (int)args[0]);
 				});
 			}
 			if (stringDecrypter.OtherStringDecrypter != null) {
-				staticStringDecrypter.add(stringDecrypter.OtherStringDecrypter, (method2, args) => {
+				staticStringInliner.add(stringDecrypter.OtherStringDecrypter, (method2, args) => {
 					return stringDecrypter.decrypt((string)args[0]);
 				});
 			}

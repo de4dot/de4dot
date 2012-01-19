@@ -178,7 +178,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 
 			proxyDelegateFinder.find();
 
-			staticStringDecrypter.add(stringDecrypter.Method, (method, args) => stringDecrypter.decrypt((string)args[0]));
+			staticStringInliner.add(stringDecrypter.Method, (method, args) => stringDecrypter.decrypt((string)args[0]));
 
 			if (options.DecryptMethods) {
 				addCctorInitCallToBeRemoved(cliSecureRtType.InitializeMethod);

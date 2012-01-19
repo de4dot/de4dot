@@ -41,7 +41,7 @@ namespace de4dot.code.deobfuscators {
 
 		OptionsBase optionsBase;
 		protected ModuleDefinition module;
-		protected StaticStringDecrypter staticStringDecrypter = new StaticStringDecrypter();
+		protected StaticStringInliner staticStringInliner = new StaticStringInliner();
 		IList<RemoveInfo<TypeDefinition>> typesToRemove = new List<RemoveInfo<TypeDefinition>>();
 		IList<RemoveInfo<MethodDefinition>> methodsToRemove = new List<RemoveInfo<MethodDefinition>>();
 		IList<RemoveInfo<FieldDefinition>> fieldsToRemove = new List<RemoveInfo<FieldDefinition>>();
@@ -153,7 +153,7 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		public virtual void deobfuscateStrings(Blocks blocks) {
-			staticStringDecrypter.decrypt(blocks);
+			staticStringInliner.decrypt(blocks);
 		}
 
 		public virtual bool deobfuscateOther(Blocks blocks) {
