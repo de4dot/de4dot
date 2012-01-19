@@ -206,7 +206,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			}
 
 			foreach (var method in stringDecrypter.getMethods()) {
-				staticStringDecrypter.add(method, (method2, args) => {
+				staticStringInliner.add(method, (method2, args) => {
 					return stringDecrypter.decrypt(method2);
 				});
 			}

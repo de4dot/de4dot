@@ -183,7 +183,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 				if (stringDecrypter.Resource != null)
 					Log.v("Adding string decrypter. Resource: {0}", Utils.toCsharpString(stringDecrypter.Resource.Name));
-				staticStringDecrypter.add(stringDecrypter.DecryptMethod, (method, args) => {
+				staticStringInliner.add(stringDecrypter.DecryptMethod, (method, args) => {
 					return stringDecrypter.decrypt(args);
 				});
 				DeobfuscatedFile.stringDecryptersAdded();
