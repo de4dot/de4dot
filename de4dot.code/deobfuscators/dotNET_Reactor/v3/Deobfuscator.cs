@@ -249,10 +249,10 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 
 			antiStrongName = new AntiStrongName();
 
-			staticStringDecrypter.add(decrypterType.StringDecrypter1, (method2, args) => {
+			staticStringInliner.add(decrypterType.StringDecrypter1, (method2, args) => {
 				return decrypterType.decrypt1((string)args[0]);
 			});
-			staticStringDecrypter.add(decrypterType.StringDecrypter2, (method2, args) => {
+			staticStringInliner.add(decrypterType.StringDecrypter2, (method2, args) => {
 				return decrypterType.decrypt2((string)args[0]);
 			});
 

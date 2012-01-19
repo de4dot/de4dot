@@ -186,7 +186,7 @@
     <Compile Include="renamer\TypeNames.cs" />
     <Compile Include="renamer\TypeRenamerState.cs" />
     <Compile Include="renamer\VariableNameState.cs" />
-    <Compile Include="StringDecrypter.cs" />
+    <Compile Include="StringInliner.cs" />
     <Compile Include="UserException.cs" />
     <Compile Include="Utils.cs" />
     <Compile Include="Win32Path.cs" />

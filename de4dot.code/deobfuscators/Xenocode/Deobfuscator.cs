@@ -99,7 +99,7 @@ namespace de4dot.code.deobfuscators.Xenocode {
 		public override void deobfuscateBegin() {
 			base.deobfuscateBegin();
 
-			staticStringDecrypter.add(stringDecrypter.Method, (method, args) => stringDecrypter.decrypt((string)args[0], (int)args[1]));
+			staticStringInliner.add(stringDecrypter.Method, (method, args) => stringDecrypter.decrypt((string)args[0], (int)args[1]));
 		}
 
 		public override void deobfuscateEnd() {

@@ -40,7 +40,7 @@ namespace de4dot.code {
 		IDeobfuscator deob;
 		AssemblyModule assemblyModule;
 		IAssemblyClient assemblyClient;
-		DynamicStringDecrypter dynamicStringDecrypter;
+		DynamicStringInliner dynamicStringInliner;
 		IAssemblyClientFactory assemblyClientFactory;
 		SavedMethodBodies savedMethodBodies;
 		bool userStringDecrypterMethods = false;
@@ -380,7 +380,7 @@ namespace de4dot.code {
 			deob = deob.moduleReloaded(module);
 			initializeDeobfuscator();
 			deob.DeobfuscatedFile = this;
-			updateDynamicStringDecrypter();
+			updateDynamicStringInliner();
 		}
 
 		void initAssemblyClient() {
@@ -397,13 +397,13 @@ namespace de4dot.code {
 			else
 				throw new ApplicationException(string.Format("Invalid string decrypter type '{0}'", options.StringDecrypterType));
 
-			dynamicStringDecrypter = new DynamicStringDecrypter(assemblyClient);
-			updateDynamicStringDecrypter();
+			dynamicStringInliner = new DynamicStringInliner(assemblyClient);
+			updateDynamicStringInliner();
 		}
 
-		void updateDynamicStringDecrypter() {
-			if (dynamicStringDecrypter != null)
-				dynamicStringDecrypter.init(getMethodTokens());
+		void updateDynamicStringInliner() {
+			if (dynamicStringInliner != null)
+				dynamicStringInliner.init(getMethodTokens());
 		}
 
 		IEnumerable<int> getMethodTokens() {
@@ -805,7 +805,7 @@ namespace de4dot.code {
 
 			case DecrypterType.Delegate:
 			case DecrypterType.Emulate:
-				dynamicStringDecrypter.decrypt(blocks);
+				dynamicStringInliner.decrypt(blocks);
 				break;
 
 			default:
@@ -915,7 +915,7 @@ namespace de4dot.code {
 		}
 
 		void IDeobfuscatedFile.stringDecryptersAdded() {
-			updateDynamicStringDecrypter();
+			updateDynamicStringInliner();
 		}
 	}
 }
