@@ -83,10 +83,19 @@ namespace AssemblyData {
 
 		public object[] decryptStrings(int stringDecrypterMethod, object[] args, int callerToken) {
 			checkStringDecrypter();
-			var caller = assembly.GetModules()[0].ResolveMethod(callerToken);
+			var caller = getCaller(callerToken);
 			foreach (var arg in args)
 				SimpleData.unpack((object[])arg);
 			return SimpleData.pack(stringDecrypter.decryptStrings(stringDecrypterMethod, args, caller));
+		}
+
+		MethodBase getCaller(int callerToken) {
+			try {
+				return assembly.GetModules()[0].ResolveMethod(callerToken);
+			}
+			catch {
+				return null;
+			}
 		}
 
 		public void exit() {
