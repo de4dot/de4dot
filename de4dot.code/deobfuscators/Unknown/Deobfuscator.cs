@@ -97,8 +97,6 @@ namespace de4dot.code.deobfuscators.Unknown {
 
 		string scanTypes() {
 			foreach (var type in module.Types) {
-				if (type.FullName == "BabelAttribute" || type.FullName == "BabelObfuscatorAttribute")
-					return "Babel Obfuscator";
 				if (type.Namespace == "___codefort")
 					return "CodeFort";
 				if (type.FullName == "____KILL")
