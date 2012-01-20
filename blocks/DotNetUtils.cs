@@ -674,12 +674,13 @@ namespace de4dot.blocks {
 			pops = 0;
 
 			var method = (IMethodSignature)instr.Operand;
+			bool implicitThis = method.HasThis && !method.ExplicitThis;
 			if (hasReturnValue(method) || (instr.OpCode.Code == Code.Newobj && method.HasThis))
 				pushes++;
 
 			if (method.HasParameters)
 				pops += method.Parameters.Count;
-			if (method.HasThis && instr.OpCode.Code != Code.Newobj)
+			if (implicitThis && instr.OpCode.Code != Code.Newobj)
 				pops++;
 		}
 
@@ -824,20 +825,20 @@ namespace de4dot.blocks {
 		}
 
 		public static int getArgIndex(MethodReference method, ParameterDefinition arg) {
-			return getArgIndex(method.HasThis, arg);
+			return getArgIndex(method.HasImplicitThis, arg);
 		}
 
-		public static int getArgIndex(bool hasThis, ParameterDefinition arg) {
+		public static int getArgIndex(bool implicitThis, ParameterDefinition arg) {
 			if (arg == null)
 				return -1;
-			if (hasThis)
+			if (implicitThis)
 				return arg.Index + 1;
 			return arg.Index;
 		}
 
 		public static List<ParameterDefinition> getParameters(MethodReference method) {
 			var args = new List<ParameterDefinition>(method.Parameters.Count + 1);
-			if (method.HasThis)
+			if (method.HasImplicitThis)
 				args.Add(new ParameterDefinition(method.DeclaringType));
 			foreach (var arg in method.Parameters)
 				args.Add(arg);
@@ -864,7 +865,7 @@ namespace de4dot.blocks {
 
 		public static List<TypeReference> getArgs(MethodReference method) {
 			var args = new List<TypeReference>(method.Parameters.Count + 1);
-			if (method.HasThis)
+			if (method.HasImplicitThis)
 				args.Add(method.DeclaringType);
 			foreach (var arg in method.Parameters)
 				args.Add(arg.ParameterType);
@@ -887,7 +888,7 @@ namespace de4dot.blocks {
 
 		public static int getArgsCount(MethodReference method) {
 			int count = method.Parameters.Count;
-			if (method.HasThis)
+			if (method.HasImplicitThis)
 				count++;
 			return count;
 		}
