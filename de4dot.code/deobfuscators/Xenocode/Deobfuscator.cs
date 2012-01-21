@@ -100,6 +100,7 @@ namespace de4dot.code.deobfuscators.Xenocode {
 			base.deobfuscateBegin();
 
 			staticStringInliner.add(stringDecrypter.Method, (method, args) => stringDecrypter.decrypt((string)args[0], (int)args[1]));
+			DeobfuscatedFile.stringDecryptersAdded();
 		}
 
 		public override void deobfuscateEnd() {
