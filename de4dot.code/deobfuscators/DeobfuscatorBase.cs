@@ -638,8 +638,11 @@ namespace de4dot.code.deobfuscators {
 		public virtual void OnBeforeAddingResources(MetadataBuilder builder) {
 		}
 
-		public void findAndRemoveInlinedMethods() {
-			var inlinedMethods = InlinedMethodsFinder.find(module);
+		protected void findAndRemoveInlinedMethods() {
+			removeInlinedMethods(InlinedMethodsFinder.find(module));
+		}
+
+		protected void removeInlinedMethods(List<MethodDefinition> inlinedMethods) {
 			addMethodsToBeRemoved(new UnusedMethodsFinder(module, inlinedMethods, getRemovedMethods()).find(), "Inlined method");
 		}
 
