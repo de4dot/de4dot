@@ -125,7 +125,7 @@ namespace de4dot.blocks.cflow {
 			foreach (var source in new List<Block>(block.Sources)) {
 				if (!isBranchBlock(source))
 					continue;
-				instructionEmulator.init(blocks.Method.HasThis, false, blocks.Method.Parameters, blocks.Locals);
+				instructionEmulator.init(blocks.Method.HasImplicitThis, false, blocks.Method.Parameters, blocks.Locals);
 				instructionEmulator.emulate(source.Instructions);
 
 				var target = getSwitchTarget(switchTargets, switchFallThrough, source, instructionEmulator.pop());
@@ -151,7 +151,7 @@ namespace de4dot.blocks.cflow {
 			foreach (var source in new List<Block>(block.Sources)) {
 				if (!isBranchBlock(source))
 					continue;
-				instructionEmulator.init(blocks.Method.HasThis, false, blocks.Method.Parameters, blocks.Locals);
+				instructionEmulator.init(blocks.Method.HasImplicitThis, false, blocks.Method.Parameters, blocks.Locals);
 				instructionEmulator.emulate(source.Instructions);
 
 				var target = getSwitchTarget(switchTargets, switchFallThrough, source, instructionEmulator.getLocal(switchVariable));
@@ -174,7 +174,7 @@ namespace de4dot.blocks.cflow {
 			foreach (var source in new List<Block>(block.Sources)) {
 				if (!isBranchBlock(source))
 					continue;
-				instructionEmulator.init(blocks.Method.HasThis, false, blocks.Method.Parameters, blocks.Locals);
+				instructionEmulator.init(blocks.Method.HasImplicitThis, false, blocks.Method.Parameters, blocks.Locals);
 				instructionEmulator.emulate(source.Instructions);
 
 				var target = getSwitchTarget(switchTargets, switchFallThrough, source, instructionEmulator.pop());
@@ -245,7 +245,7 @@ namespace de4dot.blocks.cflow {
 		}
 
 		bool emulateGetTarget(Block switchBlock, out Block target) {
-			instructionEmulator.init(blocks.Method.HasThis, false, blocks.Method.Parameters, blocks.Locals);
+			instructionEmulator.init(blocks.Method.HasImplicitThis, false, blocks.Method.Parameters, blocks.Locals);
 			try {
 				instructionEmulator.emulate(switchBlock.Instructions, 0, switchBlock.Instructions.Count - 1);
 			}
@@ -259,7 +259,7 @@ namespace de4dot.blocks.cflow {
 		}
 
 		bool willHaveKnownTarget(Block switchBlock, Block source) {
-			instructionEmulator.init(blocks.Method.HasThis, false, blocks.Method.Parameters, blocks.Locals);
+			instructionEmulator.init(blocks.Method.HasImplicitThis, false, blocks.Method.Parameters, blocks.Locals);
 			try {
 				instructionEmulator.emulate(source.Instructions);
 				instructionEmulator.emulate(switchBlock.Instructions, 0, switchBlock.Instructions.Count - 1);

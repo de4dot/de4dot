@@ -34,18 +34,18 @@ namespace de4dot.blocks.cflow {
 		public InstructionEmulator() {
 		}
 
-		public InstructionEmulator(bool hasThis, bool initLocals, IList<ParameterDefinition> parameterDefinitions, IList<VariableDefinition> variableDefinitions) {
-			init(hasThis, initLocals, parameterDefinitions, variableDefinitions);
+		public InstructionEmulator(bool implicitThis, bool initLocals, IList<ParameterDefinition> parameterDefinitions, IList<VariableDefinition> variableDefinitions) {
+			init(implicitThis, initLocals, parameterDefinitions, variableDefinitions);
 		}
 
-		public void init(bool hasThis, bool initLocals, IList<ParameterDefinition> parameterDefinitions, IList<VariableDefinition> variableDefinitions) {
+		public void init(bool implicitThis, bool initLocals, IList<ParameterDefinition> parameterDefinitions, IList<VariableDefinition> variableDefinitions) {
 			this.parameterDefinitions = parameterDefinitions;
 			this.variableDefinitions = variableDefinitions;
 			valueStack.init();
 
 			args.Clear();
 			argBase = 0;
-			if (hasThis) {
+			if (implicitThis) {
 				argBase = 1;
 				args.Add(new UnknownValue());
 			}

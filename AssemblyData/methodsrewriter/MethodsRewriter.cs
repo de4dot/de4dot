@@ -330,9 +330,9 @@ namespace AssemblyData.methodsrewriter {
 		}
 
 		static List<TypeReference> getParameters(MethodDefinition method) {
-			int count = method.Parameters.Count + (method.HasThis ? 1 : 0);
+			int count = method.Parameters.Count + (method.HasImplicitThis ? 1 : 0);
 			var list = new List<TypeReference>(count);
-			if (method.HasThis)
+			if (method.HasImplicitThis)
 				list.Add(method.DeclaringType);
 			foreach (var argType in method.Parameters)
 				list.Add(argType.ParameterType);

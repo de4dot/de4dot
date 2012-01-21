@@ -113,7 +113,7 @@ namespace de4dot.code.deobfuscators {
 		public static Value[] getInitializedArray(int arraySize, MethodDefinition method, ref int newarrIndex, Code stelemOpCode) {
 			var resultValueArray = new Value[arraySize];
 
-			var emulator = new InstructionEmulator(method.HasThis, false, method.Parameters, method.Body.Variables);
+			var emulator = new InstructionEmulator(method.HasImplicitThis, false, method.Parameters, method.Body.Variables);
 			var theArray = new UnknownValue();
 			emulator.push(theArray);
 
