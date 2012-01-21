@@ -197,7 +197,7 @@ namespace de4dot.code.deobfuscators {
 
 				foreach (var info in argInfos.Values) {
 					if (info.updateNewType(module)) {
-						getUpdatedMethod(method).newArgTypes[DotNetUtils.getArgIndex(method, info.arg)] = info.newType;
+						getUpdatedMethod(method).newArgTypes[DotNetUtils.getArgIndex(info.arg)] = info.newType;
 						info.arg.ParameterType = info.newType;
 						changed = true;
 					}
@@ -210,7 +210,7 @@ namespace de4dot.code.deobfuscators {
 			if (a.arg.Method.MetadataToken.ToInt32() < b.arg.Method.MetadataToken.ToInt32()) return -1;
 			if (a.arg.Method.MetadataToken.ToInt32() > b.arg.Method.MetadataToken.ToInt32()) return 1;
 
-			return Utils.compareInt32(a.arg.Index, b.arg.Index);
+			return Utils.compareInt32(a.arg.Sequence, b.arg.Sequence);
 		}
 
 		class PushedArgs {
@@ -316,7 +316,7 @@ namespace de4dot.code.deobfuscators {
 						case Code.Ldarg_1:
 						case Code.Ldarg_2:
 						case Code.Ldarg_3:
-							addMethodArgType(getParameter(methodParams, method, ldInstr), DotNetUtils.getParameter(calledMethodParams, calledMethodParamIndex));
+							addMethodArgType(getParameter(methodParams, ldInstr), DotNetUtils.getParameter(calledMethodParams, calledMethodParamIndex));
 							break;
 
 						default:
@@ -329,7 +329,7 @@ namespace de4dot.code.deobfuscators {
 					pushedArgs = getPushedArgInstructions(instructions, i);
 					if (pushedArgs.NumValidArgs < 1)
 						break;
-					addMethodArgType(getParameter(methodParams, method, pushedArgs.getEnd(0)), instr.Operand as TypeReference);
+					addMethodArgType(getParameter(methodParams, pushedArgs.getEnd(0)), instr.Operand as TypeReference);
 					break;
 
 				case Code.Stloc:
@@ -341,23 +341,23 @@ namespace de4dot.code.deobfuscators {
 					pushedArgs = getPushedArgInstructions(instructions, i);
 					if (pushedArgs.NumValidArgs < 1)
 						break;
-					addMethodArgType(getParameter(methodParams, method, pushedArgs.getEnd(0)), DotNetUtils.getLocalVar(method.Body.Variables, instr));
+					addMethodArgType(getParameter(methodParams, pushedArgs.getEnd(0)), DotNetUtils.getLocalVar(method.Body.Variables, instr));
 					break;
 
 				case Code.Stsfld:
 					pushedArgs = getPushedArgInstructions(instructions, i);
 					if (pushedArgs.NumValidArgs < 1)
 						break;
-					addMethodArgType(getParameter(methodParams, method, pushedArgs.getEnd(0)), instr.Operand as FieldReference);
+					addMethodArgType(getParameter(methodParams, pushedArgs.getEnd(0)), instr.Operand as FieldReference);
 					break;
 
 				case Code.Stfld:
 					pushedArgs = getPushedArgInstructions(instructions, i);
 					if (pushedArgs.NumValidArgs >= 1) {
 						var field = instr.Operand as FieldReference;
-						addMethodArgType(getParameter(methodParams, method, pushedArgs.getEnd(0)), field);
+						addMethodArgType(getParameter(methodParams, pushedArgs.getEnd(0)), field);
 						if (pushedArgs.NumValidArgs >= 2 && field != null)
-							addMethodArgType(getParameter(methodParams, method, pushedArgs.getEnd(1)), field.DeclaringType);
+							addMethodArgType(getParameter(methodParams, pushedArgs.getEnd(1)), field.DeclaringType);
 					}
 					break;
 
@@ -366,7 +366,7 @@ namespace de4dot.code.deobfuscators {
 					pushedArgs = getPushedArgInstructions(instructions, i);
 					if (pushedArgs.NumValidArgs < 1)
 						break;
-					addMethodArgType(getParameter(methodParams, method, pushedArgs.getEnd(0)), instr.Operand as FieldReference);
+					addMethodArgType(getParameter(methodParams, pushedArgs.getEnd(0)), instr.Operand as FieldReference);
 					break;
 
 				//TODO: For better results, these should be checked:
@@ -427,7 +427,7 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
-		static ParameterDefinition getParameter(IList<ParameterDefinition> parameters, MethodReference method, Instruction instr) {
+		static ParameterDefinition getParameter(IList<ParameterDefinition> parameters, Instruction instr) {
 			switch (instr.OpCode.Code) {
 			case Code.Ldarg:
 			case Code.Ldarg_S:
@@ -435,7 +435,7 @@ namespace de4dot.code.deobfuscators {
 			case Code.Ldarg_1:
 			case Code.Ldarg_2:
 			case Code.Ldarg_3:
-				return DotNetUtils.getParameter(parameters, method, instr);
+				return DotNetUtils.getParameter(parameters, instr);
 
 			default:
 				return null;

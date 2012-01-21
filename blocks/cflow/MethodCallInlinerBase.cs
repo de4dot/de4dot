@@ -82,7 +82,7 @@ namespace de4dot.blocks.cflow {
 				if (!isLdarg)
 					break;
 
-				if (DotNetUtils.getArgIndex(methodToInline, instr) != loadIndex)
+				if (DotNetUtils.getArgIndex(instr) != loadIndex)
 					return false;
 				loadIndex++;
 				instr = DotNetUtils.getInstruction(methodToInline.Body.Instructions, ref instrIndex);

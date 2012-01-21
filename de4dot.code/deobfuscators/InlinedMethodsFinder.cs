@@ -113,7 +113,7 @@ namespace de4dot.code.deobfuscators {
 				case Code.Ldarg_3:
 				case Code.Ldarga:
 				case Code.Ldarga_S:
-					if (DotNetUtils.getArgIndex(method, instr) != loadIndex)
+					if (DotNetUtils.getArgIndex(instr) != loadIndex)
 						return false;
 					loadIndex++;
 					continue;

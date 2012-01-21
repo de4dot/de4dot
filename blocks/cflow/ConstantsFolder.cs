@@ -51,7 +51,7 @@ namespace de4dot.blocks.cflow {
 					case Code.Ldarg_2:
 					case Code.Ldarg_3:
 					case Code.Ldarg_S:
-						changed |= fixLoadInstruction(block, i, instructionEmulator.getArg(DotNetUtils.getParameter(args, blocks.Method, instr.Instruction)));
+						changed |= fixLoadInstruction(block, i, instructionEmulator.getArg(DotNetUtils.getParameter(args, instr.Instruction)));
 						break;
 
 					case Code.Ldloc:

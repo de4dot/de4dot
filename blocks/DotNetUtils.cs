@@ -807,7 +807,7 @@ namespace de4dot.blocks {
 			}
 		}
 
-		public static int getArgIndex(MethodReference method, Instruction instr) {
+		public static int getArgIndex(Instruction instr) {
 			switch (instr.OpCode.Code) {
 			case Code.Ldarg_0: return 0;
 			case Code.Ldarg_1: return 1;
@@ -818,22 +818,16 @@ namespace de4dot.blocks {
 			case Code.Ldarga_S:
 			case Code.Ldarg:
 			case Code.Ldarg_S:
-				return getArgIndex(method, instr.Operand as ParameterDefinition);
+				return getArgIndex(instr.Operand as ParameterDefinition);
 			}
 
 			return -1;
 		}
 
-		public static int getArgIndex(MethodReference method, ParameterDefinition arg) {
-			return getArgIndex(method.HasImplicitThis, arg);
-		}
-
-		public static int getArgIndex(bool implicitThis, ParameterDefinition arg) {
+		public static int getArgIndex(ParameterDefinition arg) {
 			if (arg == null)
 				return -1;
-			if (implicitThis)
-				return arg.Index + 1;
-			return arg.Index;
+			return arg.Sequence;
 		}
 
 		public static List<ParameterDefinition> getParameters(MethodReference method) {
@@ -851,15 +845,11 @@ namespace de4dot.blocks {
 		}
 
 		public static ParameterDefinition getParameter(MethodReference method, Instruction instr) {
-			return getParameter(getParameters(method), method, instr);
+			return getParameter(getParameters(method), instr);
 		}
 
-		public static ParameterDefinition getParameter(MethodReference method, IList<ParameterDefinition> parameters, Instruction instr) {
-			return getParameter(parameters, getArgIndex(method, instr));
-		}
-
-		public static ParameterDefinition getParameter(IList<ParameterDefinition> parameters, MethodReference method, Instruction instr) {
-			return getParameter(parameters, getArgIndex(method, instr));
+		public static ParameterDefinition getParameter(IList<ParameterDefinition> parameters, Instruction instr) {
+			return getParameter(parameters, getArgIndex(instr));
 		}
 
 		public static ParameterDefinition getParameter(IList<ParameterDefinition> parameters, int index) {
@@ -878,11 +868,11 @@ namespace de4dot.blocks {
 		}
 
 		public static TypeReference getArgType(MethodReference method, Instruction instr) {
-			return getArgType(getArgs(method), method, instr);
+			return getArgType(getArgs(method), instr);
 		}
 
-		public static TypeReference getArgType(IList<TypeReference> methodArgs, MethodReference method, Instruction instr) {
-			return getArgType(methodArgs, getArgIndex(method, instr));
+		public static TypeReference getArgType(IList<TypeReference> methodArgs, Instruction instr) {
+			return getArgType(methodArgs, getArgIndex(instr));
 		}
 
 		public static TypeReference getArgType(IList<TypeReference> methodArgs, int index) {
