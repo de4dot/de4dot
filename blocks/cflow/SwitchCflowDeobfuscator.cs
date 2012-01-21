@@ -33,18 +33,37 @@ namespace de4dot.blocks.cflow {
 
 		public bool deobfuscate() {
 			bool changed = false;
+
 			foreach (var switchBlock in allBlocks) {
 				if (switchBlock.LastInstr.OpCode.Code != Code.Switch)
 					continue;
-				if (isSwitchTopOfStack(switchBlock))
-					changed |= deobfuscateTos(switchBlock);
-				else if (isLdlocBranch(switchBlock, true))
-					changed |= deobfuscateLdloc(switchBlock);
-				else if (isStLdlocBranch(switchBlock, true))
-					changed |= deobfuscateStLdloc(switchBlock);
-				else if (isSwitchType1(switchBlock))
-					changed |= deobfuscateType1(switchBlock);
+
+				if (isSwitchTopOfStack(switchBlock) && deobfuscateTos(switchBlock)) {
+					changed = true;
+					continue;
+				}
+
+				if (isLdlocBranch(switchBlock, true) && deobfuscateLdloc(switchBlock)) {
+					changed = true;
+					continue;
+				}
+
+				if (isStLdlocBranch(switchBlock, true) && deobfuscateStLdloc(switchBlock)) {
+					changed = true;
+					continue;
+				}
+
+				if (isSwitchType1(switchBlock) && deobfuscateType1(switchBlock)) {
+					changed = true;
+					continue;
+				}
+
+				if (switchBlock.FirstInstr.isLdloc() && fixSwitchBranch(switchBlock)) {
+					changed = true;
+					continue;
+				}
 			}
+
 			return changed;
 		}
 
@@ -282,6 +301,40 @@ namespace de4dot.blocks.cflow {
 			if (!value.isInt32())
 				return null;
 			return CflowUtils.getSwitchTarget(targets, fallThrough, (Int32Value)value);
+		}
+
+		bool fixSwitchBranch(Block switchBlock) {
+			// Code:
+			//	blk1:
+			//		ldc.i4 XXX
+			//		br common
+			//	blk2:
+			//		ldc.i4 YYY
+			//		br common
+			//	common:
+			//		stloc X
+			//		br swblk
+			//	swblk:
+			//		ldloc X
+			//		switch
+			// Inline common into blk1 and blk2.
+
+			bool changed = false;
+
+			foreach (var commonSource in new List<Block>(switchBlock.Sources)) {
+				if (commonSource.Instructions.Count != 1)
+					continue;
+				if (!commonSource.FirstInstr.isStloc())
+					continue;
+				foreach (var blk in new List<Block>(commonSource.Sources)) {
+					if (blk.canAppend(commonSource)) {
+						blk.append(commonSource);
+						changed = true;
+					}
+				}
+			}
+
+			return changed;
 		}
 	}
 }
