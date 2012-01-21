@@ -838,8 +838,13 @@ namespace de4dot.blocks {
 
 		public static List<ParameterDefinition> getParameters(MethodReference method) {
 			var args = new List<ParameterDefinition>(method.Parameters.Count + 1);
-			if (method.HasImplicitThis)
-				args.Add(new ParameterDefinition(method.DeclaringType));
+			if (method.HasImplicitThis) {
+				var methodDef = method as MethodDefinition;
+				if (methodDef != null && methodDef.Body != null)
+					args.Add(methodDef.Body.ThisParameter);
+				else
+					args.Add(new ParameterDefinition(method.DeclaringType, method));
+			}
 			foreach (var arg in method.Parameters)
 				args.Add(arg);
 			return args;
