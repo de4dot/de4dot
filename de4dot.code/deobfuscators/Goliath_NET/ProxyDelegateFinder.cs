@@ -116,7 +116,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			for (int i = 0; i < method.Parameters.Count; i++) {
 				if (index >= instrs.Count)
 					return false;
-				if (DotNetUtils.getArgIndex(method, instrs[index++]) != i)
+				if (DotNetUtils.getArgIndex(instrs[index++]) != i)
 					return false;
 			}
 
