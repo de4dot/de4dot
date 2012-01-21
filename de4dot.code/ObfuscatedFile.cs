@@ -748,7 +748,7 @@ namespace de4dot.code {
 					var s = instr.GetOperandString();
 					if (s != "")
 						return s;
-					return string.Format("<arg_{0}>", DotNetUtils.getArgIndex(method, arg));
+					return string.Format("<arg_{0}>", DotNetUtils.getArgIndex(arg));
 				}
 				else
 					return instr.GetOperandString();

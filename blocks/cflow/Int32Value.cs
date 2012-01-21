@@ -86,7 +86,11 @@ namespace de4dot.blocks.cflow {
 		}
 
 		public Int32Value toBoolean() {
-			return new Int32Value(value & 1, validMask | (NO_UNKNOWN_BITS << 1));
+			if (isNonZero())
+				return new Int32Value(1, NO_UNKNOWN_BITS);
+			if (isZero())
+				return this;
+			return createUnknownBool();
 		}
 
 		public Int32Value toInt8() {

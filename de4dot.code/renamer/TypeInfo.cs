@@ -504,7 +504,7 @@ namespace de4dot.code.renamer {
 			var instructions = method.Body.Instructions;
 			int index = 0;
 			var ldarg0 = DotNetUtils.getInstruction(instructions, ref index);
-			if (ldarg0 == null || DotNetUtils.getArgIndex(method, ldarg0) != 0)
+			if (ldarg0 == null || DotNetUtils.getArgIndex(ldarg0) != 0)
 				return null;
 			var ldfld = DotNetUtils.getInstruction(instructions, ref index);
 			if (ldfld == null || ldfld.OpCode.Code != Code.Ldfld)
@@ -662,7 +662,7 @@ namespace de4dot.code.renamer {
 					//	newobj event_handler_ctor
 					//	callvirt add_SomeEvent
 
-					if (DotNetUtils.getArgIndex(methodDef.MethodDefinition, instructions[i]) != 0)
+					if (DotNetUtils.getArgIndex(instructions[i]) != 0)
 						continue;
 					int index = i + 1;
 
@@ -676,13 +676,13 @@ namespace de4dot.code.renamer {
 					if (fieldDef == null)
 						continue;
 
-					if (DotNetUtils.getArgIndex(methodDef.MethodDefinition, instructions[index++]) != 0)
+					if (DotNetUtils.getArgIndex(instructions[index++]) != 0)
 						continue;
 
 					MethodReference methodRef;
 					var instr = instructions[index + 1];
 					if (instr.OpCode.Code == Code.Ldvirtftn) {
-						if (!isThisOrDup(methodDef.MethodDefinition, instructions[index++]))
+						if (!isThisOrDup(instructions[index++]))
 							continue;
 						var ldvirtftn = instructions[index++];
 						methodRef = ldvirtftn.Operand as MethodReference;
@@ -741,18 +741,18 @@ namespace de4dot.code.renamer {
 					// newobj event handler ctor
 					// call add_Xyz
 
-					if (DotNetUtils.getArgIndex(method, instructions[i]) != 0)
+					if (DotNetUtils.getArgIndex(instructions[i]) != 0)
 						continue;
 					int index = i + 1;
 
-					if (!isThisOrDup(method, instructions[index++]))
+					if (!isThisOrDup(instructions[index++]))
 						continue;
 					MethodReference handler;
 					if (instructions[index].OpCode.Code == Code.Ldftn) {
 						handler = instructions[index++].Operand as MethodReference;
 					}
 					else {
-						if (!isThisOrDup(method, instructions[index++]))
+						if (!isThisOrDup(instructions[index++]))
 							continue;
 						var instr = instructions[index++];
 						if (instr.OpCode.Code != Code.Ldvirtftn)
@@ -789,8 +789,8 @@ namespace de4dot.code.renamer {
 			}
 		}
 
-		static bool isThisOrDup(MethodReference method, Instruction instr) {
-			return DotNetUtils.getArgIndex(method, instr) == 0 || instr.OpCode.Code == Code.Dup;
+		static bool isThisOrDup(Instruction instr) {
+			return DotNetUtils.getArgIndex(instr) == 0 || instr.OpCode.Code == Code.Dup;
 		}
 
 		static bool isEventHandlerCtor(MethodReference method) {
@@ -830,7 +830,7 @@ namespace de4dot.code.renamer {
 					if (className == null)
 						continue;
 
-					if (DotNetUtils.getArgIndex(methodDef.MethodDefinition, instructions[i - 2]) != 0)
+					if (DotNetUtils.getArgIndex(instructions[i - 2]) != 0)
 						continue;
 
 					findInitializeComponentMethod(type, methodDef);

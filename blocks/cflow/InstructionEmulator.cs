@@ -166,7 +166,7 @@ namespace de4dot.blocks.cflow {
 		}
 
 		int index(ParameterDefinition arg) {
-			return arg.Index + argBase;
+			return arg.Sequence;
 		}
 
 		public Value getArg(ParameterDefinition arg) {
