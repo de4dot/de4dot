@@ -103,10 +103,14 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		public static byte[] inflate(byte[] data, bool hasHeader) {
+			return inflate(data, 0, data.Length, hasHeader);
+		}
+
+		public static byte[] inflate(byte[] data, int start, int len, bool hasHeader) {
 			var buffer = new byte[0x1000];
 			var memStream = new MemoryStream();
 			var inflater = new Inflater(hasHeader);
-			inflater.SetInput(data, 0, data.Length);
+			inflater.SetInput(data, start, len);
 			while (true) {
 				int count = inflater.Inflate(buffer, 0, buffer.Length);
 				if (count == 0)
