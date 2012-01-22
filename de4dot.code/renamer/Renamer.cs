@@ -519,7 +519,7 @@ namespace de4dot.code.renamer {
 						missingProps = new List<MethodDef>();
 					missingProps.Add(method);
 				}
-				else if (prop == null)
+				else if (prop == null || !method.Owner.HasModule)
 					prop = method.Property;
 			}
 			if (prop == null)
@@ -701,7 +701,7 @@ namespace de4dot.code.renamer {
 						missingEvents = new List<MethodDef>();
 					missingEvents.Add(method);
 				}
-				else if (evt == null) {
+				else if (evt == null || !method.Owner.HasModule) {
 					evt = method.Event;
 					methodType = getEventMethodType(method);
 				}
