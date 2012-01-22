@@ -141,10 +141,8 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			}
 			DeobfuscatedFile.stringDecryptersAdded();
 
-			if (options.DecryptResources) {
-				resourceResolver.initialize(DeobfuscatedFile, this);
-				decryptResources();
-			}
+			resourceResolver.initialize(DeobfuscatedFile, this);
+			decryptResources();
 
 			dumpEmbeddedAssemblies();
 
@@ -168,6 +166,8 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			if (!options.DumpEmbeddedAssemblies)
 				return;
 			foreach (var info in assemblyResolver.getAssemblyInfos()) {
+				if (info.resource == resourceResolver.Resource)
+					continue;
 				DeobfuscatedFile.createAssemblyFile(info.data, info.simpleName, info.extension);
 				addResourceToBeRemoved(info.resource, string.Format("Embedded assembly: {0}", info.fullName));
 			}

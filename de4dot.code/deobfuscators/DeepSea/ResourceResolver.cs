@@ -23,6 +23,10 @@ namespace de4dot.code.deobfuscators.DeepSea {
 	class ResourceResolver : ResolverBase {
 		EmbeddedResource resource;
 
+		public EmbeddedResource Resource {
+			get { return resource; }
+		}
+
 		public ResourceResolver(ModuleDefinition module)
 			: base(module) {
 		}
