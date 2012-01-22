@@ -255,6 +255,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			staticStringInliner.add(decrypterType.StringDecrypter2, (method2, args) => {
 				return decrypterType.decrypt2((string)args[0]);
 			});
+			DeobfuscatedFile.stringDecryptersAdded();
 
 			libAssemblyResolver = new LibAssemblyResolver(module);
 			libAssemblyResolver.find(DeobfuscatedFile, this);

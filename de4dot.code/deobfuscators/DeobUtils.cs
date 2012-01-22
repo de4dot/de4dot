@@ -22,6 +22,7 @@ using System.IO;
 using System.Security.Cryptography;
 using Mono.Cecil;
 using ICSharpCode.SharpZipLib.Zip.Compression;
+using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators {
 	static class DeobUtils {
@@ -103,10 +104,14 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		public static byte[] inflate(byte[] data, bool hasHeader) {
+			return inflate(data, 0, data.Length, hasHeader);
+		}
+
+		public static byte[] inflate(byte[] data, int start, int len, bool hasHeader) {
 			var buffer = new byte[0x1000];
 			var memStream = new MemoryStream();
 			var inflater = new Inflater(hasHeader);
-			inflater.SetInput(data, 0, data.Length);
+			inflater.SetInput(data, start, len);
 			while (true) {
 				int count = inflater.Inflate(buffer, 0, buffer.Length);
 				if (count == 0)
@@ -114,6 +119,15 @@ namespace de4dot.code.deobfuscators {
 				memStream.Write(buffer, 0, count);
 			}
 			return memStream.ToArray();
+		}
+
+		public static EmbeddedResource getEmbeddedResourceFromCodeStrings(ModuleDefinition module, MethodDefinition method) {
+			foreach (var s in DotNetUtils.getCodeStrings(method)) {
+				var resource = DotNetUtils.getResource(module, s) as EmbeddedResource;
+				if (resource != null)
+					return resource;
+			}
+			return null;
 		}
 	}
 }

@@ -116,6 +116,7 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 			base.deobfuscateBegin();
 			foreach (var info in stringDecrypter.StringDecrypterInfos)
 				staticStringInliner.add(info.method, (method, args) => stringDecrypter.decrypt(method, (string)args[0], (int)args[1]));
+			DeobfuscatedFile.stringDecryptersAdded();
 		}
 
 		public override void deobfuscateEnd() {

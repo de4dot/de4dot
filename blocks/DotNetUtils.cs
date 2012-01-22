@@ -294,6 +294,10 @@ namespace de4dot.blocks {
 			return module.Types[0];
 		}
 
+		public static MethodDefinition getModuleTypeCctor(ModuleDefinition module) {
+			return getMethod(getModuleType(module), ".cctor");
+		}
+
 		public static bool isEmpty(MethodDefinition method) {
 			if (method.Body == null)
 				return false;

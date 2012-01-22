@@ -65,7 +65,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 		}
 
 		public void find() {
-			foreach (var info in DotNetUtils.getCalledMethods(module, DotNetUtils.getMethod(DotNetUtils.getModuleType(module), ".cctor"))) {
+			foreach (var info in DotNetUtils.getCalledMethods(module, DotNetUtils.getModuleTypeCctor(module))) {
 				if (!DotNetUtils.isMethod(info.Item2, "System.Void", "()"))
 					continue;
 				if (info.Item1.FullName != "<PrivateImplementationDetails>{F1C5056B-0AFC-4423-9B83-D13A26B48869}")
