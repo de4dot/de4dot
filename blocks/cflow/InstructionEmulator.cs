@@ -232,6 +232,10 @@ namespace de4dot.blocks.cflow {
 			return valueStack.pop();
 		}
 
+		public Value peek() {
+			return valueStack.peek();
+		}
+
 		public void emulate(IEnumerable<Instr> instructions) {
 			foreach (var instr in instructions)
 				emulate(instr.Instruction);
