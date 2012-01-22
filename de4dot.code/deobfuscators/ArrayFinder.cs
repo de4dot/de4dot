@@ -97,6 +97,19 @@ namespace de4dot.code.deobfuscators {
 			return resultArray;
 		}
 
+		public static short[] getInitializedInt16Array(int arraySize, MethodDefinition method, ref int newarrIndex) {
+			var resultValueArray = getInitializedArray(arraySize, method, ref newarrIndex, Code.Stelem_I2);
+
+			var resultArray = new short[resultValueArray.Length];
+			for (int i = 0; i < resultArray.Length; i++) {
+				var intValue = resultValueArray[i] as Int32Value;
+				if (intValue == null || !intValue.allBitsValid())
+					return null;
+				resultArray[i] = (short)intValue.value;
+			}
+			return resultArray;
+		}
+
 		public static int[] getInitializedInt32Array(int arraySize, MethodDefinition method, ref int newarrIndex) {
 			var resultValueArray = getInitializedArray(arraySize, method, ref newarrIndex, Code.Stelem_I4);
 
@@ -125,6 +138,25 @@ namespace de4dot.code.deobfuscators {
 					break;
 				if (instr.OpCode.Code == Code.Newarr)
 					break;
+				switch (instr.OpCode.Code) {
+				case Code.Newarr:
+				case Code.Newobj:
+					goto done;
+
+				case Code.Stloc:
+				case Code.Stloc_S:
+				case Code.Stloc_0:
+				case Code.Stloc_1:
+				case Code.Stloc_2:
+				case Code.Stloc_3:
+				case Code.Starg:
+				case Code.Starg_S:
+				case Code.Stsfld:
+				case Code.Stfld:
+					if (emulator.peek() == theArray && i != newarrIndex + 1)
+						goto done;
+					break;
+				}
 
 				if (instr.OpCode.Code == stelemOpCode) {
 					var value = emulator.pop();
@@ -138,6 +170,7 @@ namespace de4dot.code.deobfuscators {
 				else
 					emulator.emulate(instr);
 			}
+done:
 			if (i != newarrIndex + 1)
 				i--;
 			newarrIndex = i;
