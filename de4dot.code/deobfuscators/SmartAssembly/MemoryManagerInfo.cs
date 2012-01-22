@@ -43,7 +43,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 		}
 
 		public bool find() {
-			if (checkCalledMethods(DotNetUtils.getMethod(DotNetUtils.getModuleType(module), ".cctor")))
+			if (checkCalledMethods(DotNetUtils.getModuleTypeCctor(module)))
 				return true;
 			if (checkCalledMethods(module.EntryPoint))
 				return true;

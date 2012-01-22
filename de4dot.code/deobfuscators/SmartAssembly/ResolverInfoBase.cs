@@ -58,7 +58,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			if (resolverType != null)
 				return true;
 
-			if (findTypes(DotNetUtils.getMethod(DotNetUtils.getModuleType(module), ".cctor")))
+			if (findTypes(DotNetUtils.getModuleTypeCctor(module)))
 				return true;
 			if (findTypes(module.EntryPoint))
 				return true;
