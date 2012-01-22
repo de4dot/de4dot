@@ -209,6 +209,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 				staticStringInliner.add(method, (method2, args) => {
 					return stringDecrypter.decrypt(method2);
 				});
+				DeobfuscatedFile.stringDecryptersAdded();
 			}
 
 			if (options.RemoveAntiStrongName)
