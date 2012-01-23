@@ -54,6 +54,25 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 	}
 
+	class MethodDefKey {
+		public readonly MethodDef methodDef;
+
+		public MethodDefKey(MethodDef methodDef) {
+			this.methodDef = methodDef;
+		}
+
+		public override int GetHashCode() {
+			return MemberReferenceHelper.methodReferenceAndDeclaringTypeHashCode(methodDef.MethodDefinition);
+		}
+
+		public override bool Equals(object obj) {
+			var other = obj as MethodDefKey;
+			if (other == null)
+				return false;
+			return MemberReferenceHelper.compareMethodReferenceAndDeclaringType(methodDef.MethodDefinition, other.methodDef.MethodDefinition);
+		}
+	}
+
 	class MethodInst {
 		public MethodDef origMethodDef;
 		public MethodReference methodReference;
@@ -99,23 +118,23 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 	}
 
-	// Keeps track which methods of an interface have been implemented
+	// Keeps track of which methods of an interface that have been implemented
 	class InterfaceMethodInfo {
 		TypeInfo iface;
-		Dictionary<MethodDef, MethodDef> ifaceMethodToClassMethod = new Dictionary<MethodDef, MethodDef>();
+		Dictionary<MethodDefKey, MethodDef> ifaceMethodToClassMethod = new Dictionary<MethodDefKey, MethodDef>();
 
 		public TypeInfo IFace {
 			get { return iface; }
 		}
 
-		public Dictionary<MethodDef, MethodDef> IfaceMethodToClassMethod {
+		public Dictionary<MethodDefKey, MethodDef> IfaceMethodToClassMethod {
 			get { return ifaceMethodToClassMethod; }
 		}
 
 		public InterfaceMethodInfo(TypeInfo iface) {
 			this.iface = iface;
 			foreach (var methodDef in iface.typeDef.AllMethods)
-				ifaceMethodToClassMethod[methodDef] = null;
+				ifaceMethodToClassMethod[new MethodDefKey(methodDef)] = null;
 		}
 
 		public InterfaceMethodInfo(TypeInfo iface, InterfaceMethodInfo other) {
@@ -136,17 +155,18 @@ namespace de4dot.code.renamer.asmmodules {
 
 		// Returns the previous method, or null if none
 		public MethodDef addMethod(MethodDef ifaceMethod, MethodDef classMethod) {
-			if (!ifaceMethodToClassMethod.ContainsKey(ifaceMethod))
+			var ifaceKey = new MethodDefKey(ifaceMethod);
+			if (!ifaceMethodToClassMethod.ContainsKey(ifaceKey))
 				throw new ApplicationException("Could not find interface method");
 
 			MethodDef oldMethod;
-			ifaceMethodToClassMethod.TryGetValue(ifaceMethod, out oldMethod);
-			ifaceMethodToClassMethod[ifaceMethod] = classMethod;
+			ifaceMethodToClassMethod.TryGetValue(ifaceKey, out oldMethod);
+			ifaceMethodToClassMethod[ifaceKey] = classMethod;
 			return oldMethod;
 		}
 
 		public void addMethodIfEmpty(MethodDef ifaceMethod, MethodDef classMethod) {
-			if (ifaceMethodToClassMethod[ifaceMethod] == null)
+			if (ifaceMethodToClassMethod[new MethodDefKey(ifaceMethod)] == null)
 				addMethod(ifaceMethod, classMethod);
 		}
 
@@ -477,12 +497,12 @@ namespace de4dot.code.renamer.asmmodules {
 			}
 		}
 
-		Dictionary<MethodDef, bool> overrideMethods;
+		Dictionary<MethodDefKey, bool> overrideMethods;
 		void initializeInterfaceMethods(MethodNameScopes scopes) {
 			if (baseType != null)
-				overrideMethods = new Dictionary<MethodDef, bool>(baseType.typeDef.overrideMethods);
+				overrideMethods = new Dictionary<MethodDefKey, bool>(baseType.typeDef.overrideMethods);
 			else
-				overrideMethods = new Dictionary<MethodDef, bool>();
+				overrideMethods = new Dictionary<MethodDefKey, bool>();
 
 			initializeAllInterfaces();
 
@@ -593,7 +613,7 @@ namespace de4dot.code.renamer.asmmodules {
 
 					var oldMethod = interfaceMethodInfos.addMethod(overrideMethod.DeclaringType, ifaceMethod, classMethod);
 					if (oldMethod != classMethod)
-						overrideMethods[classMethod] = true;
+						overrideMethods[new MethodDefKey(classMethod)] = true;
 				}
 			}
 
@@ -612,8 +632,8 @@ namespace de4dot.code.renamer.asmmodules {
 						!hasAttribute("System.Runtime.InteropServices.ComImportAttribute") &&
 						!hasAttribute("System.Runtime.InteropServices.TypeLibTypeAttribute")) {
 						Log.w("Could not find interface method {0} ({1:X8}). Type: {2} ({3:X8})",
-								Utils.removeNewlines(pair.Key.MethodDefinition),
-								pair.Key.MethodDefinition.MetadataToken.ToInt32(),
+								Utils.removeNewlines(pair.Key.methodDef.MethodDefinition),
+								pair.Key.methodDef.MethodDefinition.MetadataToken.ToInt32(),
 								Utils.removeNewlines(TypeDefinition),
 								TypeDefinition.MetadataToken.ToInt32());
 					}
@@ -624,9 +644,9 @@ namespace de4dot.code.renamer.asmmodules {
 				foreach (var pair in info.IfaceMethodToClassMethod) {
 					if (pair.Value == null)
 						continue;
-					if (overrideMethods.ContainsKey(pair.Value))
+					if (overrideMethods.ContainsKey(new MethodDefKey(pair.Value)))
 						continue;
-					scopes.same(pair.Key, pair.Value);
+					scopes.same(pair.Key.methodDef, pair.Value);
 				}
 			}
 		}
