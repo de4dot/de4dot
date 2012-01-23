@@ -374,6 +374,8 @@ namespace de4dot.code.deobfuscators {
 				if (method == null)
 					continue;
 				var type = method.DeclaringType;
+				if (type == null)
+					continue;
 				if (type.Methods.Remove(method))
 					Log.v("Removed method {0} ({1:X8}) (Type: {2}) (reason: {3})",
 								Utils.removeNewlines(method),
