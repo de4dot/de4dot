@@ -45,16 +45,25 @@ namespace de4dot.code {
 			if (string.IsNullOrEmpty(path))
 				return;
 			addSilverlightDirs(Path.Combine(path, @"Microsoft Silverlight"));
+			addIfExists(path, @"Microsoft SDKs\Silverlight\v2.0\Libraries\Client");
+			addIfExists(path, @"Microsoft SDKs\Silverlight\v2.0\Libraries\Server");
 			addIfExists(path, @"Microsoft SDKs\Silverlight\v3.0\Libraries\Client");
 			addIfExists(path, @"Microsoft SDKs\Silverlight\v3.0\Libraries\Server");
 			addIfExists(path, @"Microsoft SDKs\Silverlight\v4.0\Libraries\Client");
 			addIfExists(path, @"Microsoft SDKs\Silverlight\v4.0\Libraries\Server");
+			addIfExists(path, @"Microsoft SDKs\Silverlight\v5.0\Libraries\Client");
+			addIfExists(path, @"Microsoft SDKs\Silverlight\v5.0\Libraries\Server");
 			addIfExists(path, @"Reference Assemblies\Microsoft\Framework\Silverlight\v3.0");
 			addIfExists(path, @"Reference Assemblies\Microsoft\Framework\Silverlight\v4.0");
+			addIfExists(path, @"Reference Assemblies\Microsoft\Framework\Silverlight\v5.0");
 			addIfExists(path, @"Microsoft Visual Studio .NET\Common7\IDE\PublicAssemblies");
+			addIfExists(path, @"Microsoft Visual Studio .NET\Common7\IDE\PrivateAssemblies");
 			addIfExists(path, @"Microsoft Visual Studio 8.0\Common7\IDE\PublicAssemblies");
+			addIfExists(path, @"Microsoft Visual Studio 8.0\Common7\IDE\PrivateAssemblies");
 			addIfExists(path, @"Microsoft Visual Studio 9.0\Common7\IDE\PublicAssemblies");
+			addIfExists(path, @"Microsoft Visual Studio 9.0\Common7\IDE\PrivateAssemblies");
 			addIfExists(path, @"Microsoft Visual Studio 10.0\Common7\IDE\PublicAssemblies");
+			addIfExists(path, @"Microsoft Visual Studio 10.0\Common7\IDE\PrivateAssemblies");
 		}
 
 		// basePath is eg. "C:\Program Files (x86)\Microsoft Silverlight"
