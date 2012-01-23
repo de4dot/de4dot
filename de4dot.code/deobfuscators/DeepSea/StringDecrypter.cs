@@ -28,8 +28,16 @@ namespace de4dot.code.deobfuscators.DeepSea {
 	class StringDecrypter {
 		ModuleDefinition module;
 		MethodDefinitionAndDeclaringTypeDict<IDecrypterInfo> methodToInfo = new MethodDefinitionAndDeclaringTypeDict<IDecrypterInfo>();
+		DecrypterVersion version = DecrypterVersion.Unknown;
+
+		public enum DecrypterVersion {
+			Unknown,
+			V1_3,
+			V4,
+		}
 
 		interface IDecrypterInfo {
+			DecrypterVersion Version { get; }
 			MethodDefinition Method { get; }
 			string decrypt(object[] args);
 			void cleanup();
@@ -96,6 +104,10 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			FieldDefinition encryptedDataField;
 			short[] key;
 			ushort[] encryptedData;
+
+			public DecrypterVersion Version {
+				get { return DecrypterVersion.V4; }
+			}
 
 			public DecrypterInfo4(MethodDefinition cctor, MethodDefinition method) {
 				this.cctor = cctor;
@@ -256,6 +268,11 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			int magic;
 			string[] encryptedStrings;
 			short[] key;
+
+			public DecrypterVersion Version {
+				get { return DecrypterVersion.V1_3; }
+			}
+
 			public DecrypterInfo3(MethodDefinition cctor, MethodDefinition method) {
 				this.cctor = cctor;
 				this.Method = method;
@@ -397,6 +414,10 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			get { return methodToInfo.Count != 0; }
 		}
 
+		public DecrypterVersion Version {
+			get { return version; }
+		}
+
 		public List<MethodDefinition> DecrypterMethods {
 			get {
 				var methods = new List<MethodDefinition>(methodToInfo.Count);
@@ -439,6 +460,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 					if (info == null)
 						continue;
 					methodToInfo.add(method, info);
+					version = info.Version;
 				}
 
 				foreach (var method in DotNetUtils.findMethods(type.Methods, "System.String", new string[] { "System.Int32" }, true)) {

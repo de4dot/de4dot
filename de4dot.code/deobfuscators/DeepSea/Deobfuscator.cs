@@ -68,6 +68,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 
 	class Deobfuscator : DeobfuscatorBase {
 		Options options;
+		string obfuscatorName = DeobfuscatorInfo.THE_NAME;
 		bool startedDeobfuscating = false;
 
 		StringDecrypter stringDecrypter;
@@ -90,7 +91,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		}
 
 		public override string Name {
-			get { return TypeLong; }
+			get { return obfuscatorName; }
 		}
 
 		protected override bool CanInlineMethods {
@@ -129,6 +130,18 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			resourceResolver.find();
 			assemblyResolver = new AssemblyResolver(module);
 			assemblyResolver.find();
+			obfuscatorName = detectVersion();
+		}
+
+		string detectVersion() {
+			switch (stringDecrypter.Version) {
+			case StringDecrypter.DecrypterVersion.V1_3:
+				return DeobfuscatorInfo.THE_NAME + " 1.x-3.x";
+			case StringDecrypter.DecrypterVersion.V4:
+				return DeobfuscatorInfo.THE_NAME + " 4.x";
+			}
+
+			return DeobfuscatorInfo.THE_NAME;
 		}
 
 		public override void deobfuscateBegin() {
