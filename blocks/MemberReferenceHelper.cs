@@ -1009,6 +1009,12 @@ namespace de4dot.blocks {
 			return compareMethodReferenceSignature(a, b);
 		}
 
+		public static int methodReferenceAndDeclaringTypeHashCode(MethodReference a) {
+			if (a == null)
+				return 0;
+			return methodReferenceHashCode(a) + typeReferenceHashCode(a.DeclaringType);
+		}
+
 		public static int methodReferenceHashCode(MethodReference a) {
 			if (a == null)
 				return 0;
