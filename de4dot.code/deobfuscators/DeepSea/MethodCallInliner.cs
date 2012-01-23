@@ -177,9 +177,27 @@ checkInline:
 			if (method.Attributes != (MethodAttributes.Assembly | MethodAttributes.Static))
 				return false;
 
-			//TODO: Also check that it has a switch statement and an xor instruction
+			if (!checkInstrs(method))
+				return false;
 
 			return true;
+		}
+
+		static bool checkInstrs(MethodDefinition method) {
+			bool foundSwitch = false, foundXor = false;
+			foreach (var instr in method.Body.Instructions) {
+				if (foundSwitch && foundXor)
+					break;
+				switch (instr.OpCode.Code) {
+				case Code.Switch:
+					foundSwitch = true;
+					break;
+				case Code.Xor:
+					foundXor = true;
+					break;
+				}
+			}
+			return foundSwitch && foundXor;
 		}
 	}
 }
