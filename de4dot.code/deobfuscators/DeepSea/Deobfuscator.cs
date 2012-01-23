@@ -136,7 +136,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 
 			foreach (var method in stringDecrypter.DecrypterMethods) {
 				staticStringInliner.add(method, (method2, args) => {
-					return stringDecrypter.decrypt(method2, (int)args[0]);
+					return stringDecrypter.decrypt(method2, args);
 				});
 			}
 			DeobfuscatedFile.stringDecryptersAdded();
@@ -180,8 +180,10 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		public override void deobfuscateEnd() {
 			removeInlinedMethods();
 
-			if (Operations.DecryptStrings != OpDecryptString.None)
+			if (Operations.DecryptStrings != OpDecryptString.None) {
 				addMethodsToBeRemoved(stringDecrypter.DecrypterMethods, "String decrypter method");
+				stringDecrypter.cleanup();
+			}
 
 			base.deobfuscateEnd();
 		}
