@@ -41,8 +41,8 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			}
 		}
 
-		public AssemblyResolver(ModuleDefinition module)
-			: base(module) {
+		public AssemblyResolver(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob)
+			: base(module, simpleDeobfuscator, deob) {
 		}
 
 		static string[] handlerLocalTypes = new string[] {
@@ -78,7 +78,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 
 		AssemblyInfo getAssemblyInfos(EmbeddedResource resource) {
 			try {
-				var decrypted = decryptResource(resource);
+				var decrypted = decryptResourceV3(resource);
 				var asm = AssemblyDefinition.ReadAssembly(new MemoryStream(decrypted));
 				var fullName = asm.Name.FullName;
 				var simpleName = asm.Name.Name;

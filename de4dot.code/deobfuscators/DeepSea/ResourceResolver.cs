@@ -18,20 +18,42 @@
 */
 
 using Mono.Cecil;
+using Mono.Cecil.Cil;
+using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.DeepSea {
 	class ResourceResolver : ResolverBase {
 		EmbeddedResource resource;
+		FieldDefinition resourceField;
+		int magicV4;
+		bool isV3;
 
 		public EmbeddedResource Resource {
 			get { return resource; }
 		}
 
-		public ResourceResolver(ModuleDefinition module)
-			: base(module) {
+		public ResourceResolver(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob)
+			: base(module, simpleDeobfuscator, deob) {
 		}
 
-		static string[] handlerLocalTypes = new string[] {
+		protected override bool checkHandlerMethodInternal(MethodDefinition handler) {
+			if (checkHandlerV3(handler)) {
+				isV3 = true;
+				return true;
+			}
+
+			FieldDefinition resourceFieldTmp;
+			simpleDeobfuscator.deobfuscate(handler);
+			if (checkHandlerV4(handler, out resourceFieldTmp, out magicV4)) {
+				isV3 = false;
+				resourceField = resourceFieldTmp;
+				return true;
+			}
+
+			return false;
+		}
+
+		static string[] handlerLocalTypes_V3 = new string[] {
 			"System.AppDomain",
 			"System.Byte[]",
 			"System.Collections.Generic.Dictionary`2<System.String,System.String>",
@@ -42,29 +64,77 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			"System.String",
 			"System.String[]",
 		};
-		protected override bool checkHandlerMethodInternal(MethodDefinition handler) {
-			return new LocalTypes(handler).all(handlerLocalTypes);
+		static bool checkHandlerV3(MethodDefinition handler) {
+			return new LocalTypes(handler).all(handlerLocalTypes_V3);
 		}
 
-		public void initialize(ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
+		static bool checkHandlerV4(MethodDefinition handler, out FieldDefinition resourceField, out int magic) {
+			magic = 0;
+			resourceField = getResourceField(handler);
+			if (resourceField == null)
+				return false;
+
+			bool foundFieldLen = false;
+			foreach (var instr in handler.Body.Instructions) {
+				if (!DotNetUtils.isLdcI4(instr))
+					continue;
+				int constant = DotNetUtils.getLdcI4Value(instr);
+				if (constant == resourceField.InitialValue.Length && !foundFieldLen) {
+					foundFieldLen = true;
+					continue;
+				}
+				magic = constant;
+				return true;
+			}
+
+			return false;
+		}
+
+		static FieldDefinition getResourceField(MethodDefinition method) {
+			foreach (var instr in method.Body.Instructions) {
+				if (instr.OpCode.Code != Code.Ldtoken)
+					continue;
+				var field = instr.Operand as FieldDefinition;
+				if (field == null || field.InitialValue == null || field.InitialValue.Length == 0)
+					continue;
+				return field;
+			}
+			return null;
+		}
+
+		public void initialize() {
 			if (resolveHandler == null)
 				return;
 
-			simpleDeobfuscator.deobfuscate(resolveHandler);
-			simpleDeobfuscator.decryptStrings(resolveHandler, deob);
-			resource = DeobUtils.getEmbeddedResourceFromCodeStrings(module, resolveHandler);
-			if (resource == null) {
-				Log.w("Could not find resource of encrypted resources");
-				return;
+			if (isV3) {
+				simpleDeobfuscator.deobfuscate(resolveHandler);
+				simpleDeobfuscator.decryptStrings(resolveHandler, deob);
+				resource = DeobUtils.getEmbeddedResourceFromCodeStrings(module, resolveHandler);
+				if (resource == null) {
+					Log.w("Could not find resource of encrypted resources");
+					return;
+				}
 			}
 		}
 
-		public EmbeddedResource mergeResources() {
-			if (resource == null)
-				return null;
+		public bool mergeResources(out EmbeddedResource rsrc) {
+			rsrc = null;
 
-			DeobUtils.decryptAndAddResources(module, resource.Name, () => decryptResource(resource));
-			return resource;
+			if (isV3) {
+				if (resource == null)
+					return false;
+
+				DeobUtils.decryptAndAddResources(module, resource.Name, () => decryptResourceV3(resource));
+			}
+			else {
+				if (resourceField == null)
+					return false;
+
+				string name = string.Format("Embedded data field {0:X8} RVA {0:X8}", resourceField.MetadataToken.ToInt32(), resourceField.RVA);
+				DeobUtils.decryptAndAddResources(module, name, () => decryptResourceV4(resourceField.InitialValue, magicV4));
+				resourceField.InitialValue = new byte[0];
+			}
+			return true;
 		}
 	}
 }

@@ -126,9 +126,9 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		protected override void scanForObfuscator() {
 			stringDecrypter = new StringDecrypter(module);
 			stringDecrypter.find(DeobfuscatedFile);
-			resourceResolver = new ResourceResolver(module);
+			resourceResolver = new ResourceResolver(module, DeobfuscatedFile, this);
 			resourceResolver.find();
-			assemblyResolver = new AssemblyResolver(module);
+			assemblyResolver = new AssemblyResolver(module, DeobfuscatedFile, this);
 			assemblyResolver.find();
 			obfuscatorName = detectVersion();
 		}
@@ -177,7 +177,7 @@ done:
 			}
 			DeobfuscatedFile.stringDecryptersAdded();
 
-			resourceResolver.initialize(DeobfuscatedFile, this);
+			resourceResolver.initialize();
 			decryptResources();
 
 			dumpEmbeddedAssemblies();
@@ -188,8 +188,8 @@ done:
 		void decryptResources() {
 			if (!options.DecryptResources)
 				return;
-			var rsrc = resourceResolver.mergeResources();
-			if (rsrc == null)
+			EmbeddedResource rsrc;
+			if (!resourceResolver.mergeResources(out rsrc))
 				return;
 			addResourceToBeRemoved(rsrc, "Encrypted resources");
 			addCctorInitCallToBeRemoved(resourceResolver.InitMethod);

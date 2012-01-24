@@ -25,6 +25,8 @@ using de4dot.blocks;
 namespace de4dot.code.deobfuscators.DeepSea {
 	abstract class ResolverBase {
 		protected ModuleDefinition module;
+		protected ISimpleDeobfuscator simpleDeobfuscator;
+		protected IDeobfuscator deob;
 		protected MethodDefinition initMethod;
 		protected MethodDefinition resolveHandler;
 
@@ -40,8 +42,10 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			get { return initMethod != null; }
 		}
 
-		public ResolverBase(ModuleDefinition module) {
+		public ResolverBase(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
 			this.module = module;
+			this.simpleDeobfuscator = simpleDeobfuscator;
+			this.deob = deob;
 		}
 
 		public void find() {
@@ -106,17 +110,27 @@ namespace de4dot.code.deobfuscators.DeepSea {
 
 		protected abstract bool checkHandlerMethodInternal(MethodDefinition handler);
 
-		protected static byte[] decryptResource(EmbeddedResource resource) {
-			var data = resource.GetResourceData();
-			const int baseIndex = 1;
-			for (int i = baseIndex; i < data.Length; i++)
-				data[i] ^= (byte)((i - baseIndex) + data[0]);
+		protected static byte[] decryptResourceV3(EmbeddedResource resource) {
+			return decryptResourceV3(resource.GetResourceData());
+		}
 
-			if (BitConverter.ToInt16(data, baseIndex) != 0x5A4D)
-				return DeobUtils.inflate(data, 1, data.Length - 1, true);
+		protected static byte[] decryptResourceV3(byte[] data) {
+			return decryptResource(data, 1, data.Length - 1, data[0]);
+		}
 
-			var data2 = new byte[data.Length - baseIndex];
-			Array.Copy(data, baseIndex, data2, 0, data2.Length);
+		protected static byte[] decryptResourceV4(byte[] data, int magic) {
+			return decryptResource(data, 0, data.Length, magic);
+		}
+
+		protected static byte[] decryptResource(byte[] data, int start, int len, int magic) {
+			for (int i = start; i < start + len; i++)
+				data[i] ^= (byte)(i - start + magic);
+
+			if (BitConverter.ToInt16(data, start) != 0x5A4D)
+				return DeobUtils.inflate(data, start, len, true);
+
+			var data2 = new byte[len];
+			Array.Copy(data, start, data2, 0, data2.Length);
 			return data2;
 		}
 	}
