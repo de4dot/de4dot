@@ -177,7 +177,8 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			foreach (var fieldInfo in fieldInfos) {
 				var decrypted = decryptResourceV4(fieldInfo.field.InitialValue, fieldInfo.magic);
 				infos.Add(getAssemblyInfo(decrypted, null));
-				fieldInfo.field.InitialValue = new byte[0];
+				fieldInfo.field.InitialValue = new byte[1];
+				fieldInfo.field.FieldType = module.TypeSystem.Byte;
 			}
 
 			return infos;

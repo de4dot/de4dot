@@ -137,7 +137,8 @@ namespace de4dot.code.deobfuscators.DeepSea {
 
 				string name = string.Format("Embedded data field {0:X8} RVA {0:X8}", resourceField.MetadataToken.ToInt32(), resourceField.RVA);
 				DeobUtils.decryptAndAddResources(module, name, () => decryptResourceV4(resourceField.InitialValue, magicV4));
-				resourceField.InitialValue = new byte[0];
+				resourceField.InitialValue = new byte[1];
+				resourceField.FieldType = module.TypeSystem.Byte;
 			}
 			return true;
 		}

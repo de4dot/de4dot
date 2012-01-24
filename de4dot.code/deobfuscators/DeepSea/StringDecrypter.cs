@@ -256,7 +256,8 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			}
 
 			public void cleanup() {
-				encryptedDataField.InitialValue = new byte[0];
+				encryptedDataField.InitialValue = new byte[1];
+				encryptedDataField.FieldType = encryptedDataField.Module.TypeSystem.Byte;
 			}
 		}
 
