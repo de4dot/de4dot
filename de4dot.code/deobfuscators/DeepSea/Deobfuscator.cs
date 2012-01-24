@@ -147,7 +147,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		}
 
 		bool detectMethodProxyObfuscation() {
-			const int MIN_FOUND_PROXIES = 20;
+			const int MIN_FOUND_PROXIES = 10;
 
 			int foundProxies = 0, checkedMethods = 0;
 			foreach (var type in module.GetTypes()) {
