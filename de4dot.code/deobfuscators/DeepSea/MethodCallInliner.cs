@@ -148,7 +148,10 @@ namespace de4dot.code.deobfuscators.DeepSea {
 					break;
 
 				default:
-					return false;
+					if (instr.OpCode.OpCodeType != OpCodeType.Prefix)
+						return false;
+					index++;
+					break;
 				}
 			}
 checkInline:
