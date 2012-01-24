@@ -91,7 +91,13 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 				if (!MemberReferenceHelper.compareTypes(field.DeclaringType, decrypterType))
 					continue;
 
-				var decryptedString = Encoding.Unicode.GetString(DeobUtils.des3Decrypt(Convert.FromBase64String(encryptedString), key, iv));
+				string decryptedString;
+				try {
+					decryptedString = Encoding.Unicode.GetString(DeobUtils.des3Decrypt(Convert.FromBase64String(encryptedString), key, iv));
+				}
+				catch (FormatException) {
+					decryptedString = "";
+				}
 				fieldToDecryptedString.add(field, decryptedString);
 			}
 		}
