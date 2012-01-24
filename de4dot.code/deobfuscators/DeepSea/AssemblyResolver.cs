@@ -45,6 +45,10 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			: base(module, simpleDeobfuscator, deob) {
 		}
 
+		protected override bool checkResolverInitMethodInternal(MethodDefinition resolverInitMethod) {
+			return checkIfCalled(resolverInitMethod, "System.Void System.AppDomain::add_AssemblyResolve(System.ResolveEventHandler)");
+		}
+
 		static string[] handlerLocalTypes = new string[] {
 			"System.Byte[]",
 			"System.Security.Cryptography.SHA1CryptoServiceProvider",

@@ -36,6 +36,10 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			: base(module, simpleDeobfuscator, deob) {
 		}
 
+		protected override bool checkResolverInitMethodInternal(MethodDefinition resolverInitMethod) {
+			return checkIfCalled(resolverInitMethod, "System.Void System.AppDomain::add_ResourceResolve(System.ResolveEventHandler)");
+		}
+
 		protected override bool checkHandlerMethodInternal(MethodDefinition handler) {
 			if (checkHandlerV3(handler)) {
 				isV3 = true;

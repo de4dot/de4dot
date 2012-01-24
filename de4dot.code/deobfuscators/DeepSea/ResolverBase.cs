@@ -77,6 +77,9 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			if (resolverInitMethod == null || resolverInitMethod.Body == null)
 				return false;
 
+			if (!checkResolverInitMethodInternal(resolverInitMethod))
+				return false;
+
 			var resolveHandlerMethod = getLdftnMethod(resolverInitMethod);
 			if (resolveHandlerMethod == null)
 				return false;
@@ -87,6 +90,21 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			initMethod = resolverInitMethod;
 			resolveHandler = resolveHandlerMethod;
 			return true;
+		}
+
+		protected abstract bool checkResolverInitMethodInternal(MethodDefinition resolverInitMethod);
+
+		protected static bool checkIfCalled(MethodDefinition method, string fullName) {
+			foreach (var instr in method.Body.Instructions) {
+				if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt)
+					continue;
+				if (instr.Operand.ToString() != fullName)
+					continue;
+
+				return true;
+			}
+
+			return false;
 		}
 
 		MethodDefinition getLdftnMethod(MethodDefinition method) {
