@@ -937,6 +937,8 @@ namespace de4dot.blocks {
 				var instr = instructions[index++];
 				if (instr.OpCode.Code == Code.Nop)
 					continue;
+				if (instr.OpCode.OpCodeType == OpCodeType.Prefix)
+					continue;
 				if (instr == null || (instr.OpCode.Code != Code.Br && instr.OpCode.Code != Code.Br_S))
 					return instr;
 				instr = instr.Operand as Instruction;
