@@ -101,7 +101,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		}
 
 		bool checkHandlerMethod(MethodDefinition handler) {
-			if (handler == null || handler.Body == null)
+			if (handler == null || handler.Body == null || !handler.IsStatic)
 				return false;
 			if (!DotNetUtils.isMethod(handler, "System.Reflection.Assembly", "(System.Object,System.ResolveEventArgs)"))
 				return false;
