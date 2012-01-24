@@ -66,7 +66,9 @@ namespace de4dot.code.deobfuscators.DeepSea {
 					ownerType.Fields.Add(field);
 
 				// Add a field so peverify won't complain if this type isn't removed
-				structType.Fields.Add(new FieldDefinition("a", FieldAttributes.Public, module.TypeSystem.Byte));
+				var newField = new FieldDefinition("a", FieldAttributes.Public, module.TypeSystem.Byte);
+				newField.MetadataToken = DotNetUtils.nextFieldToken();
+				structType.Fields.Add(newField);
 			}
 		}
 
