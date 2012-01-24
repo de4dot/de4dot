@@ -129,6 +129,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 					return false;
 
 				DeobUtils.decryptAndAddResources(module, resource.Name, () => decryptResourceV3(resource));
+				rsrc = resource;
 			}
 			else {
 				if (resourceField == null)
