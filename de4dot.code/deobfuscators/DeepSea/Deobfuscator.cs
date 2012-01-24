@@ -136,12 +136,35 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		string detectVersion() {
 			switch (stringDecrypter.Version) {
 			case StringDecrypter.DecrypterVersion.V1_3:
+				if (detectMethodProxyObfuscation())
+					return DeobfuscatorInfo.THE_NAME + " 3.5";
 				return DeobfuscatorInfo.THE_NAME + " 1.x-3.x";
 			case StringDecrypter.DecrypterVersion.V4:
 				return DeobfuscatorInfo.THE_NAME + " 4.x";
 			}
 
 			return DeobfuscatorInfo.THE_NAME;
+		}
+
+		bool detectMethodProxyObfuscation() {
+			const int MIN_FOUND_PROXIES = 20;
+
+			int foundProxies = 0, checkedMethods = 0;
+			foreach (var type in module.GetTypes()) {
+				foreach (var method in type.Methods) {
+					if (foundProxies >= MIN_FOUND_PROXIES)
+						goto done;
+					if (!method.IsStatic || method.Body == null)
+						continue;
+					if (checkedMethods++ >= 1000)
+						goto done;
+					if (!DeepSea.MethodCallInliner.canInline(method))
+						continue;
+					foundProxies++;
+				}
+			}
+done:
+			return foundProxies >= MIN_FOUND_PROXIES;
 		}
 
 		public override void deobfuscateBegin() {
