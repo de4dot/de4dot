@@ -22,9 +22,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 using Mono.Cecil;
+using Mono.Cecil.Cil;
+using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.DeepSea {
 	class AssemblyResolver : ResolverBase {
+		bool isV3;
+		List<FieldInfo> fieldInfos;
+
 		public class AssemblyInfo {
 			public byte[] data;
 			public string fullName;
@@ -39,6 +44,20 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				this.extension = extension;
 				this.resource = resource;
 			}
+
+			public override string ToString() {
+				return fullName;
+			}
+		}
+
+		class FieldInfo {
+			public FieldDefinition field;
+			public int magic;
+
+			public FieldInfo(FieldDefinition field, int magic) {
+				this.field = field;
+				this.magic = magic;
+			}
 		}
 
 		public AssemblyResolver(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob)
@@ -47,6 +66,23 @@ namespace de4dot.code.deobfuscators.DeepSea {
 
 		protected override bool checkResolverInitMethodInternal(MethodDefinition resolverInitMethod) {
 			return checkIfCalled(resolverInitMethod, "System.Void System.AppDomain::add_AssemblyResolve(System.ResolveEventHandler)");
+		}
+
+		protected override bool checkHandlerMethodInternal(MethodDefinition handler) {
+			if (checkHandlerV3(handler)) {
+				isV3 = true;
+				return true;
+			}
+
+			simpleDeobfuscator.deobfuscate(handler);
+			List<FieldInfo> fieldInfosTmp;
+			if (checkHandlerV4(handler, out fieldInfosTmp)) {
+				isV3 = false;
+				fieldInfos = fieldInfosTmp;
+				return true;
+			}
+
+			return false;
 		}
 
 		static string[] handlerLocalTypes = new string[] {
@@ -58,11 +94,46 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			"System.Reflection.Assembly",
 			"System.String",
 		};
-		protected override bool checkHandlerMethodInternal(MethodDefinition handler) {
+		static bool checkHandlerV3(MethodDefinition handler) {
 			return new LocalTypes(handler).all(handlerLocalTypes);
 		}
 
+		bool checkHandlerV4(MethodDefinition handler, out List<FieldInfo> fieldInfos) {
+			fieldInfos = new List<FieldInfo>();
+
+			var instrs = handler.Body.Instructions;
+			for (int i = 0; i < instrs.Count - 2; i++) {
+				var ldtoken = instrs[i];
+				if (ldtoken.OpCode.Code != Code.Ldtoken)
+					continue;
+				var field = ldtoken.Operand as FieldDefinition;
+				if (field == null || field.InitialValue == null || field.InitialValue.Length == 0)
+					return false;
+
+				var ldci4_len = instrs[i + 1];
+				if (!DotNetUtils.isLdcI4(ldci4_len))
+					return false;
+				if (DotNetUtils.getLdcI4Value(ldci4_len) != field.InitialValue.Length)
+					return false;
+
+				var ldci4_magic = instrs[i + 2];
+				if (!DotNetUtils.isLdcI4(ldci4_magic))
+					return false;
+				int magic = DotNetUtils.getLdcI4Value(ldci4_magic);
+
+				fieldInfos.Add(new FieldInfo(field, magic));
+			}
+
+			return fieldInfos.Count != 0;
+		}
+
 		public IEnumerable<AssemblyInfo> getAssemblyInfos() {
+			if (isV3)
+				return getAssemblyInfosV3();
+			return getAssemblyInfosV4();
+		}
+
+		public IEnumerable<AssemblyInfo> getAssemblyInfosV3() {
 			var infos = new List<AssemblyInfo>();
 
 			foreach (var tmp in module.Resources) {
@@ -71,7 +142,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 					continue;
 				if (!Regex.IsMatch(resource.Name, @"^[0-9A-F]{40}$"))
 					continue;
-				var info = getAssemblyInfos(resource);
+				var info = getAssemblyInfoV3(resource);
 				if (info == null)
 					continue;
 				infos.Add(info);
@@ -80,18 +151,36 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return infos;
 		}
 
-		AssemblyInfo getAssemblyInfos(EmbeddedResource resource) {
+		AssemblyInfo getAssemblyInfoV3(EmbeddedResource resource) {
 			try {
-				var decrypted = decryptResourceV3(resource);
-				var asm = AssemblyDefinition.ReadAssembly(new MemoryStream(decrypted));
-				var fullName = asm.Name.FullName;
-				var simpleName = asm.Name.Name;
-				var extension = DeobUtils.getExtension(asm.Modules[0].Kind);
-				return new AssemblyInfo(decrypted, fullName, simpleName, extension, resource);
+				return getAssemblyInfo(decryptResourceV3(resource), resource);
 			}
 			catch (Exception) {
 				return null;
 			}
+		}
+
+		AssemblyInfo getAssemblyInfo(byte[] decryptedData, EmbeddedResource resource) {
+			var asm = AssemblyDefinition.ReadAssembly(new MemoryStream(decryptedData));
+			var fullName = asm.Name.FullName;
+			var simpleName = asm.Name.Name;
+			var extension = DeobUtils.getExtension(asm.Modules[0].Kind);
+			return new AssemblyInfo(decryptedData, fullName, simpleName, extension, resource);
+		}
+
+		public IEnumerable<AssemblyInfo> getAssemblyInfosV4() {
+			var infos = new List<AssemblyInfo>();
+
+			if (fieldInfos == null)
+				return infos;
+
+			foreach (var fieldInfo in fieldInfos) {
+				var decrypted = decryptResourceV4(fieldInfo.field.InitialValue, fieldInfo.magic);
+				infos.Add(getAssemblyInfo(decrypted, null));
+				fieldInfo.field.InitialValue = new byte[0];
+			}
+
+			return infos;
 		}
 	}
 }

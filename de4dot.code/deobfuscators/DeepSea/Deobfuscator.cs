@@ -202,7 +202,7 @@ done:
 			if (!options.DumpEmbeddedAssemblies)
 				return;
 			foreach (var info in assemblyResolver.getAssemblyInfos()) {
-				if (info.resource == resourceResolver.Resource)
+				if (info.resource != null && info.resource == resourceResolver.Resource)
 					continue;
 				DeobfuscatedFile.createAssemblyFile(info.data, info.simpleName, info.extension);
 				addResourceToBeRemoved(info.resource, string.Format("Embedded assembly: {0}", info.fullName));
