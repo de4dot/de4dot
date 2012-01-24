@@ -29,6 +29,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		BoolOption removeInlinedMethods;
 		BoolOption decryptResources;
 		BoolOption dumpEmbeddedAssemblies;
+		BoolOption restoreFields;
 
 		public DeobfuscatorInfo()
 			: base() {
@@ -36,6 +37,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			removeInlinedMethods = new BoolOption(null, makeArgName("remove-inlined"), "Remove inlined methods", true);
 			decryptResources = new BoolOption(null, makeArgName("rsrc"), "Decrypt resources", true);
 			dumpEmbeddedAssemblies = new BoolOption(null, makeArgName("embedded"), "Dump embedded assemblies", true);
+			restoreFields = new BoolOption(null, makeArgName("fields"), "Restore fields", true);
 		}
 
 		public override string Name {
@@ -53,6 +55,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				RemoveInlinedMethods = removeInlinedMethods.get(),
 				DecryptResources = decryptResources.get(),
 				DumpEmbeddedAssemblies = dumpEmbeddedAssemblies.get(),
+				RestoreFields = restoreFields.get(),
 			});
 		}
 
@@ -62,6 +65,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				removeInlinedMethods,
 				decryptResources,
 				dumpEmbeddedAssemblies,
+				restoreFields,
 			};
 		}
 	}
@@ -74,12 +78,14 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		StringDecrypter stringDecrypter;
 		ResourceResolver resourceResolver;
 		AssemblyResolver assemblyResolver;
+		FieldsRestorer fieldsRestorer;
 
 		internal class Options : OptionsBase {
 			public bool InlineMethods { get; set; }
 			public bool RemoveInlinedMethods { get; set; }
 			public bool DecryptResources { get; set; }
 			public bool DumpEmbeddedAssemblies { get; set; }
+			public bool RestoreFields { get; set; }
 		}
 
 		public override string Type {
@@ -170,6 +176,11 @@ done:
 		public override void deobfuscateBegin() {
 			base.deobfuscateBegin();
 
+			if (options.RestoreFields) {
+				fieldsRestorer = new FieldsRestorer(module);
+				fieldsRestorer.initialize();
+			}
+
 			foreach (var method in stringDecrypter.DecrypterMethods) {
 				staticStringInliner.add(method, (method2, args) => {
 					return stringDecrypter.decrypt(method2, args);
@@ -213,8 +224,17 @@ done:
 			addMethodToBeRemoved(assemblyResolver.HandlerMethod, "Assembly resolver handler method");
 		}
 
+		public override void deobfuscateMethodEnd(blocks.Blocks blocks) {
+			if (options.RestoreFields)
+				fieldsRestorer.deobfuscate(blocks);
+			base.deobfuscateMethodEnd(blocks);
+		}
+
 		public override void deobfuscateEnd() {
 			removeInlinedMethods();
+
+			if (options.RestoreFields)
+				addTypesToBeRemoved(fieldsRestorer.FieldStructs, "Type with moved fields");
 
 			if (Operations.DecryptStrings != OpDecryptString.None) {
 				addMethodsToBeRemoved(stringDecrypter.DecrypterMethods, "String decrypter method");

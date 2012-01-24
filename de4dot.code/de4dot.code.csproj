@@ -87,6 +87,7 @@
     <Compile Include="deobfuscators\CryptoObfuscator\ResourceResolver.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\StringDecrypter.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\TamperDetection.cs" />
+    <Compile Include="deobfuscators\DeepSea\FieldsRestorer.cs" />
     <Compile Include="deobfuscators\DeobfuscatorBase.cs" />
     <Compile Include="deobfuscators\DeobfuscatorInfoBase.cs" />
     <Compile Include="deobfuscators\DeobUtils.cs" />
