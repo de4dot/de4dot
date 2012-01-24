@@ -19,6 +19,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Security.Cryptography;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using de4dot.blocks;
@@ -67,9 +69,24 @@ namespace de4dot.code.deobfuscators {
 
 			var attrs = TypeAttributes.NotPublic | TypeAttributes.AutoLayout |
 						TypeAttributes.Class | TypeAttributes.AnsiClass;
-			ourType = new TypeDefinition("", string.Format("<PrivateImplementationDetails>{0}", Guid.NewGuid().ToString("B")), attrs, module.TypeSystem.Object);
+			ourType = new TypeDefinition("", string.Format("<PrivateImplementationDetails>{0}", getModuleId()), attrs, module.TypeSystem.Object);
 			ourType.MetadataToken = DotNetUtils.nextTypeDefToken();
 			module.Types.Add(ourType);
+		}
+
+		object getModuleId() {
+			var memoryStream = new MemoryStream();
+			var writer = new BinaryWriter(memoryStream);
+			if (module.Assembly != null)
+				writer.Write(module.Assembly.Name.FullName);
+			writer.Write(module.Mvid.ToByteArray());
+			var hash = new SHA1Managed().ComputeHash(memoryStream.GetBuffer());
+			var guid = new Guid(BitConverter.ToInt32(hash, 0),
+								BitConverter.ToInt16(hash, 4),
+								BitConverter.ToInt16(hash, 6),
+								hash[8], hash[9], hash[10], hash[11],
+								hash[12], hash[13], hash[14], hash[15]);
+			return guid.ToString("B");
 		}
 
 		TypeDefinition getArrayType(long size) {
