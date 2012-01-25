@@ -247,8 +247,8 @@ namespace de4dot.code.deobfuscators.DeepSea {
 
 			string decrypt(int magic2, int magic3) {
 				int index = magic ^ magic2 ^ magic3;
-				int cachedIndex = (ushort)encryptedData[index++];
-				int stringLen = (int)(ushort)encryptedData[index++] + ((int)(ushort)encryptedData[index++] << 16);
+				int cachedIndex = encryptedData[index++];
+				int stringLen = encryptedData[index++] + ((int)encryptedData[index++] << 16);
 				var sb = new StringBuilder(stringLen);
 				for (int i = 0; i < stringLen; i++)
 					sb.Append((char)(encryptedData[index++] ^ key[cachedIndex++ % key.Length]));
