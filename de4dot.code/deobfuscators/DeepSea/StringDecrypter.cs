@@ -69,7 +69,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				var field = getStoreField(initMethod, startInitIndex, local);
 				if (field == null)
 					continue;
-				if (MemberReferenceHelper.compareFieldReferenceAndDeclaringType(keyField, field))
+				if (keyField == field)
 					return array;
 			}
 
