@@ -137,7 +137,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				if (!method.IsStatic)
 					return true;
 				if (method.GenericParameters.Count > 0)
-					continue;
+					return true;
 				if (method.Body == null)
 					return true;
 				if (method.HasPInvokeInfo || method.PInvokeInfo != null)
