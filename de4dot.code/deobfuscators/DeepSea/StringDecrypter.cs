@@ -463,14 +463,6 @@ namespace de4dot.code.deobfuscators.DeepSea {
 					methodToInfo.add(method, info);
 					version = info.Version;
 				}
-
-				foreach (var method in DotNetUtils.findMethods(type.Methods, "System.String", new string[] { "System.Int32" }, true)) {
-					simpleDeobfuscator.deobfuscate(method);
-					var info = getInfoV3(cctor, method);
-					if (info == null)
-						continue;
-					methodToInfo.add(method, info);
-				}
 			}
 		}
 
