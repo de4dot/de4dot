@@ -106,8 +106,14 @@ namespace de4dot.blocks.cflow {
 				if (methodArgs.Count - popLastArgs != calledMethodArgs.Count)
 					return false;
 				for (int i = 0; i < calledMethodArgs.Count; i++) {
-					if (!isCompatibleType(calledMethodArgs[i], methodArgs[i]))
-						return false;
+					var calledMethodArg = calledMethodArgs[i];
+					var methodArg = methodArgs[i];
+					if (!isCompatibleType(calledMethodArg, methodArg)) {
+						if (i != 0 || !calledMethod.HasImplicitThis)
+							return false;
+						if (!isCompatibleValueThisPtr(calledMethodArg, methodArg))
+							return false;
+					}
 				}
 
 				instr = DotNetUtils.getInstruction(methodToInline.Body.Instructions, ref instrIndex);
@@ -162,6 +168,15 @@ namespace de4dot.blocks.cflow {
 
 		protected virtual bool isCompatibleType(TypeReference origType, TypeReference newType) {
 			return MemberReferenceHelper.compareTypes(origType, newType);
+		}
+
+		static bool isCompatibleValueThisPtr(TypeReference origType, TypeReference newType) {
+			var newByRef = newType as ByReferenceType;
+			if (newByRef == null)
+				return false;
+			if (!newByRef.ElementType.IsValueType || !origType.IsValueType)
+				return false;
+			return MemberReferenceHelper.compareTypes(origType, newByRef.ElementType);
 		}
 	}
 }
