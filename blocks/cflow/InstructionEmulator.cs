@@ -50,18 +50,18 @@ namespace de4dot.blocks.cflow {
 				argBase = 1;
 				args.Add(new UnknownValue());
 			}
-			foreach (var arg in parameterDefinitions)
-				args.Add(getUnknownValue(arg.ParameterType));
+			for (int i = 0; i < parameterDefinitions.Count; i++)
+				args.Add(getUnknownValue(parameterDefinitions[i].ParameterType));
 
 			if (initLocals) {
 				locals.Clear();
-				foreach (var local in variableDefinitions)
-					locals.Add(getDefaultValue(local.VariableType));
+				for (int i = 0; i < variableDefinitions.Count; i++)
+					locals.Add(getDefaultValue(variableDefinitions[i].VariableType));
 			}
 			else {
 				locals.Clear();
-				foreach (var local in variableDefinitions)
-					locals.Add(getUnknownValue(local.VariableType));
+				for (int i = 0; i < variableDefinitions.Count; i++)
+					locals.Add(getUnknownValue(variableDefinitions[i].VariableType));
 			}
 		}
 
