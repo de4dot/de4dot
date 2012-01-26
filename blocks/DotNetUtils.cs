@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Mono.Cecil.Metadata;
 
 namespace de4dot.blocks {
 	class TypeCache {
@@ -653,7 +654,7 @@ namespace de4dot.blocks {
 		}
 
 		public static bool hasReturnValue(IMethodSignature method) {
-			return !MemberReferenceHelper.verifyType(method.MethodReturnType.ReturnType, "mscorlib", "System.Void");
+			return method.MethodReturnType.ReturnType.EType != ElementType.Void;
 		}
 
 		public static void updateStack(Instruction instr, ref int stack, bool methodHasReturnValue) {

@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using Mono.Cecil;
+using Mono.Cecil.Metadata;
 
 namespace de4dot.blocks {
 	public enum CecilType {
@@ -821,7 +822,7 @@ namespace de4dot.blocks {
 		}
 
 		public static bool isSystemObject(TypeReference typeReference) {
-			return verifyType(typeReference, "mscorlib", "System.Object");
+			return typeReference != null && typeReference.EType == ElementType.Object;
 		}
 
 		public static string getCanonicalizedTypeRefName(TypeReference typeRef) {
