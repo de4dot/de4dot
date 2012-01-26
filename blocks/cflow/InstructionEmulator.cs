@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Mono.Cecil.Metadata;
 
 namespace de4dot.blocks.cflow {
 	public class InstructionEmulator {
@@ -69,23 +70,21 @@ namespace de4dot.blocks.cflow {
 				return new UnknownValue();
 			if (!typeReference.IsValueType)
 				return NullValue.Instance;
-			else if (DotNetUtils.isAssembly(typeReference.Scope, "mscorlib")) {
-				switch (typeReference.FullName) {
-				case "System.Boolean":
-				case "System.SByte":
-				case "System.Byte":
-				case "System.Int16":
-				case "System.UInt16":
-				case "System.Int32":
-				case "System.UInt32":
-					return new Int32Value(0);
-				case "System.Int64":
-				case "System.UInt64":
-					return new Int64Value(0);
-				case "System.Single":
-				case "System.Double":
-					return new Real8Value(0);
-				}
+			switch (typeReference.EType) {
+			case ElementType.Boolean:
+			case ElementType.I1:
+			case ElementType.U1:
+			case ElementType.I2:
+			case ElementType.U2:
+			case ElementType.I4:
+			case ElementType.U4:
+				return new Int32Value(0);
+			case ElementType.I8:
+			case ElementType.U8:
+				return new Int64Value(0);
+			case ElementType.R4:
+			case ElementType.R8:
+				return new Real8Value(0);
 			}
 			return new UnknownValue();
 		}
@@ -93,18 +92,16 @@ namespace de4dot.blocks.cflow {
 		static Value getUnknownValue(TypeReference typeReference) {
 			if (typeReference == null)
 				return new UnknownValue();
-			if (DotNetUtils.isAssembly(typeReference.Scope, "mscorlib")) {
-				switch (typeReference.FullName) {
-				case "System.Boolean":	return Int32Value.createUnknownBool();
-				case "System.SByte":	return Int32Value.createUnknown();
-				case "System.Byte":		return Int32Value.createUnknownUInt8();
-				case "System.Int16":	return Int32Value.createUnknown();
-				case "System.UInt16":	return Int32Value.createUnknownUInt16();
-				case "System.Int32":	return Int32Value.createUnknown();
-				case "System.UInt32":	return Int32Value.createUnknown();
-				case "System.Int64":	return Int64Value.createUnknown();
-				case "System.UInt64":	return Int64Value.createUnknown();
-				}
+			switch (typeReference.EType) {
+			case ElementType.Boolean: return Int32Value.createUnknownBool();
+			case ElementType.I1: return Int32Value.createUnknown();
+			case ElementType.U1: return Int32Value.createUnknownUInt8();
+			case ElementType.I2: return Int32Value.createUnknown();
+			case ElementType.U2: return Int32Value.createUnknownUInt16();
+			case ElementType.I4: return Int32Value.createUnknown();
+			case ElementType.U4: return Int32Value.createUnknown();
+			case ElementType.I8: return Int64Value.createUnknown();
+			case ElementType.U8: return Int64Value.createUnknown();
 			}
 			return new UnknownValue();
 		}
@@ -112,45 +109,44 @@ namespace de4dot.blocks.cflow {
 		static Value truncateValue(Value value, TypeReference typeReference) {
 			if (typeReference == null)
 				return value;
-			if (DotNetUtils.isAssembly(typeReference.Scope, "mscorlib")) {
-				switch (typeReference.FullName) {
-				case "System.Boolean":
-					if (value.isInt32())
-						return ((Int32Value)value).toBoolean();
-					return Int32Value.createUnknownBool();
 
-				case "System.SByte":
-					if (value.isInt32())
-						return ((Int32Value)value).toInt8();
-					return Int32Value.createUnknown();
+			switch (typeReference.EType) {
+			case ElementType.Boolean:
+				if (value.isInt32())
+					return ((Int32Value)value).toBoolean();
+				return Int32Value.createUnknownBool();
 
-				case "System.Byte":
-					if (value.isInt32())
-						return ((Int32Value)value).toUInt8();
-					return Int32Value.createUnknownUInt8();
+			case ElementType.I1:
+				if (value.isInt32())
+					return ((Int32Value)value).toInt8();
+				return Int32Value.createUnknown();
 
-				case "System.Int16":
-					if (value.isInt32())
-						return ((Int32Value)value).toInt16();
-					return Int32Value.createUnknown();
+			case ElementType.U1:
+				if (value.isInt32())
+					return ((Int32Value)value).toUInt8();
+				return Int32Value.createUnknownUInt8();
 
-				case "System.UInt16":
-					if (value.isInt32())
-						return ((Int32Value)value).toUInt16();
-					return Int32Value.createUnknownUInt16();
+			case ElementType.I2:
+				if (value.isInt32())
+					return ((Int32Value)value).toInt16();
+				return Int32Value.createUnknown();
 
-				case "System.Int32":
-				case "System.UInt32":
-					if (value.isInt32())
-						return value;
-					return Int32Value.createUnknown();
+			case ElementType.U2:
+				if (value.isInt32())
+					return ((Int32Value)value).toUInt16();
+				return Int32Value.createUnknownUInt16();
 
-				case "System.Int64":
-				case "System.UInt64":
-					if (value.isInt64())
-						return value;
-					return Int64Value.createUnknown();
-				}
+			case ElementType.I4:
+			case ElementType.U4:
+				if (value.isInt32())
+					return value;
+				return Int32Value.createUnknown();
+
+			case ElementType.I8:
+			case ElementType.U8:
+				if (value.isInt64())
+					return value;
+				return Int64Value.createUnknown();
 			}
 			return value;
 		}
