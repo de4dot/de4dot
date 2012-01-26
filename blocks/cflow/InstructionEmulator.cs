@@ -78,10 +78,10 @@ namespace de4dot.blocks.cflow {
 			case ElementType.U2:
 			case ElementType.I4:
 			case ElementType.U4:
-				return new Int32Value(0);
+				return Int32Value.zero;
 			case ElementType.I8:
 			case ElementType.U8:
-				return new Int64Value(0);
+				return Int64Value.zero;
 			case ElementType.R4:
 			case ElementType.R8:
 				return new Real8Value(0);
@@ -278,8 +278,8 @@ namespace de4dot.blocks.cflow {
 			case Code.Ldc_I8:	valueStack.push(new Int64Value((long)instr.Operand)); break;
 			case Code.Ldc_R4:	valueStack.push(new Real8Value((float)instr.Operand)); break;
 			case Code.Ldc_R8:	valueStack.push(new Real8Value((double)instr.Operand)); break;
-			case Code.Ldc_I4_0:	valueStack.push(new Int32Value(0)); break;
-			case Code.Ldc_I4_1:	valueStack.push(new Int32Value(1)); break;
+			case Code.Ldc_I4_0:	valueStack.push(Int32Value.zero); break;
+			case Code.Ldc_I4_1:	valueStack.push(Int32Value.one); break;
 			case Code.Ldc_I4_2:	valueStack.push(new Int32Value(2)); break;
 			case Code.Ldc_I4_3:	valueStack.push(new Int32Value(3)); break;
 			case Code.Ldc_I4_4:	valueStack.push(new Int32Value(4)); break;
@@ -775,7 +775,7 @@ namespace de4dot.blocks.cflow {
 			else if (val1.isInt64() && val2.isInt64())
 				valueStack.push(Int64Value.Ceq((Int64Value)val1, (Int64Value)val2));
 			else if (val1.isNull() && val2.isNull())
-				valueStack.push(new Int32Value(1));
+				valueStack.push(Int32Value.one);
 			else
 				valueStack.push(Int32Value.createUnknownBool());
 		}
