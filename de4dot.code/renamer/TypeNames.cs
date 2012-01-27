@@ -96,7 +96,9 @@ namespace de4dot.code.renamer {
 	}
 
 	class VariableNameCreator : TypeNames {
-		public VariableNameCreator() {
+		public VariableNameCreator(bool init = true) {
+			if (!init)
+				return;
 			initTypeName("System.Boolean", "bool");
 			initTypeName("System.Byte", "byte");
 			initTypeName("System.Char", "char");

@@ -21,19 +21,43 @@ using Mono.Cecil;
 
 namespace de4dot.code.renamer {
 	class VariableNameState {
-		ExistingNames existingVariableNames = new ExistingNames();
-		ExistingNames existingMethodNames = new ExistingNames();
-		ExistingNames existingPropertyNames = new ExistingNames();
-		ExistingNames existingEventNames = new ExistingNames();
-		TypeNames variableNameCreator = new VariableNameCreator();	// For fields and method args
-		TypeNames propertyNameCreator = new PropertyNameCreator();
-		NameCreator eventNameCreator = new NameCreator("Event_");
-		NameCreator genericPropertyNameCreator = new NameCreator("Prop_");
-		public NameCreator staticMethodNameCreator = new NameCreator("smethod_");
-		public NameCreator instanceMethodNameCreator = new NameCreator("method_");
+		ExistingNames existingVariableNames;
+		ExistingNames existingMethodNames;
+		ExistingNames existingPropertyNames;
+		ExistingNames existingEventNames;
+		TypeNames variableNameCreator;				// For fields and method args
+		TypeNames propertyNameCreator;
+		NameCreator eventNameCreator;
+		NameCreator genericPropertyNameCreator;
+		public NameCreator staticMethodNameCreator;
+		public NameCreator instanceMethodNameCreator;
 
-		public VariableNameState clone() {
-			return new VariableNameState().merge(this);
+		public static VariableNameState create() {
+			var vns = new VariableNameState();
+			vns.existingVariableNames = new ExistingNames();
+			vns.existingMethodNames = new ExistingNames();
+			vns.existingPropertyNames = new ExistingNames();
+			vns.existingEventNames = new ExistingNames();
+			vns.variableNameCreator = new VariableNameCreator();
+			vns.propertyNameCreator = new PropertyNameCreator();
+			vns.eventNameCreator = new NameCreator("Event_");
+			vns.genericPropertyNameCreator = new NameCreator("Prop_");
+			vns.staticMethodNameCreator = new NameCreator("smethod_");
+			vns.instanceMethodNameCreator = new NameCreator("method_");
+			return vns;
+		}
+
+		VariableNameState() {
+		}
+
+		// Cloning only params will speed up the method param renaming code
+		public VariableNameState cloneParamsOnly() {
+			var vns = new VariableNameState();
+			vns.existingVariableNames = new ExistingNames();
+			vns.variableNameCreator = new VariableNameCreator(false);
+			vns.existingVariableNames.merge(existingVariableNames);
+			vns.variableNameCreator.merge(variableNameCreator);
+			return vns;
 		}
 
 		public VariableNameState merge(VariableNameState other) {
