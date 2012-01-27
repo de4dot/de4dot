@@ -39,7 +39,7 @@ namespace de4dot.blocks.cflow {
 		public bool deobfuscate() {
 			bool changed = false;
 			foreach (var block in allBlocks) {
-				instructionEmulator.init(blocks.Method.HasImplicitThis, false, blocks.Method.Parameters, blocks.Locals);
+				instructionEmulator.init(blocks);
 				var instrs = block.Instructions;
 				for (int i = 0; i < instrs.Count; i++) {
 					var instr = instrs[i];

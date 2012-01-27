@@ -30,7 +30,7 @@ namespace de4dot.blocks.cflow {
 		public void init(Blocks blocks, Block block) {
 			this.blocks = blocks;
 			this.block = block;
-			instructionEmulator.init(blocks.Method.HasImplicitThis, false, blocks.Method.Parameters, blocks.Locals);
+			instructionEmulator.init(blocks);
 		}
 
 		// Returns true if code was updated, false otherwise
