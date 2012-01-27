@@ -32,6 +32,11 @@ namespace de4dot.blocks.cflow {
 		List<Value> locals = new List<Value>();
 		int argBase;
 
+		MethodDefinition prev_method;
+		List<Value> cached_args = new List<Value>();
+		List<Value> cached_locals = new List<Value>();
+		int cached_argBase;
+
 		public InstructionEmulator() {
 		}
 
@@ -48,18 +53,28 @@ namespace de4dot.blocks.cflow {
 			this.variableDefinitions = method.Body.Variables;
 			valueStack.init();
 
-			args.Clear();
-			argBase = 0;
-			if (method.HasImplicitThis) {
-				argBase = 1;
-				args.Add(new UnknownValue());
-			}
-			for (int i = 0; i < parameterDefinitions.Count; i++)
-				args.Add(getUnknownValue(parameterDefinitions[i].ParameterType));
+			if (method != prev_method) {
+				prev_method = method;
 
+				cached_args.Clear();
+				cached_argBase = 0;
+				if (method.HasImplicitThis) {
+					cached_argBase = 1;
+					cached_args.Add(new UnknownValue());
+				}
+				for (int i = 0; i < parameterDefinitions.Count; i++)
+					cached_args.Add(getUnknownValue(parameterDefinitions[i].ParameterType));
+
+				cached_locals.Clear();
+				for (int i = 0; i < variableDefinitions.Count; i++)
+					cached_locals.Add(getUnknownValue(variableDefinitions[i].VariableType));
+			}
+
+			argBase = cached_argBase;
+			args.Clear();
+			args.AddRange(cached_args);
 			locals.Clear();
-			for (int i = 0; i < variableDefinitions.Count; i++)
-				locals.Add(getUnknownValue(variableDefinitions[i].VariableType));
+			locals.AddRange(cached_locals);
 		}
 
 		static Value getUnknownValue(TypeReference typeReference) {
