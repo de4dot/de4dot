@@ -44,8 +44,6 @@ namespace de4dot.blocks.cflow {
 		}
 
 		public void init(MethodDefinition method) {
-			bool initLocals = false;
-
 			this.parameterDefinitions = method.Parameters;
 			this.variableDefinitions = method.Body.Variables;
 			valueStack.init();
@@ -59,40 +57,9 @@ namespace de4dot.blocks.cflow {
 			for (int i = 0; i < parameterDefinitions.Count; i++)
 				args.Add(getUnknownValue(parameterDefinitions[i].ParameterType));
 
-			if (initLocals) {
-				locals.Clear();
-				for (int i = 0; i < variableDefinitions.Count; i++)
-					locals.Add(getDefaultValue(variableDefinitions[i].VariableType));
-			}
-			else {
-				locals.Clear();
-				for (int i = 0; i < variableDefinitions.Count; i++)
-					locals.Add(getUnknownValue(variableDefinitions[i].VariableType));
-			}
-		}
-
-		static Value getDefaultValue(TypeReference typeReference) {
-			if (typeReference == null)
-				return new UnknownValue();
-			if (!typeReference.IsValueType)
-				return NullValue.Instance;
-			switch (typeReference.EType) {
-			case ElementType.Boolean:
-			case ElementType.I1:
-			case ElementType.U1:
-			case ElementType.I2:
-			case ElementType.U2:
-			case ElementType.I4:
-			case ElementType.U4:
-				return Int32Value.zero;
-			case ElementType.I8:
-			case ElementType.U8:
-				return Int64Value.zero;
-			case ElementType.R4:
-			case ElementType.R8:
-				return new Real8Value(0);
-			}
-			return new UnknownValue();
+			locals.Clear();
+			for (int i = 0; i < variableDefinitions.Count; i++)
+				locals.Add(getUnknownValue(variableDefinitions[i].VariableType));
 		}
 
 		static Value getUnknownValue(TypeReference typeReference) {
