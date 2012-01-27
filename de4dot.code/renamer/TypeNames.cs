@@ -81,8 +81,9 @@ namespace de4dot.code.renamer {
 
 		public virtual TypeNames merge(TypeNames other) {
 			foreach (var pair in other.typeNames) {
-				if (typeNames.ContainsKey(pair.Key))
-					typeNames[pair.Key].merge(pair.Value);
+				NameCreator nc;
+				if (typeNames.TryGetValue(pair.Key, out nc))
+					nc.merge(pair.Value);
 				else
 					typeNames[pair.Key] = pair.Value.clone();
 			}
