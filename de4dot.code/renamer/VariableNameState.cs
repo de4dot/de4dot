@@ -54,7 +54,7 @@ namespace de4dot.code.renamer {
 		public VariableNameState cloneParamsOnly() {
 			var vns = new VariableNameState();
 			vns.existingVariableNames = new ExistingNames();
-			vns.variableNameCreator = new VariableNameCreator(false);
+			vns.variableNameCreator = new VariableNameCreator();
 			vns.existingVariableNames.merge(existingVariableNames);
 			vns.variableNameCreator.merge(variableNameCreator);
 			return vns;
