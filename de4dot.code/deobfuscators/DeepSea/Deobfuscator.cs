@@ -231,6 +231,8 @@ done:
 		}
 
 		public override void deobfuscateEnd() {
+			if (options.RestoreFields)
+				fieldsRestorer.cleanUp();
 			removeInlinedMethods();
 
 			if (options.RestoreFields)
