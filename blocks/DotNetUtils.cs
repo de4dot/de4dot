@@ -964,6 +964,12 @@ namespace de4dot.blocks {
 			};
 		}
 
+		public static FieldDefinition createFieldDefinition(string name, FieldAttributes attributes, TypeReference fieldType) {
+			return new FieldDefinition(name, attributes, fieldType) {
+				MetadataToken = nextFieldToken(),
+			};
+		}
+
 		static int nextTokenRid = 0x00FFFFFF;
 		public static MetadataToken nextTypeRefToken() {
 			return new MetadataToken(TokenType.TypeRef, nextTokenRid--);
