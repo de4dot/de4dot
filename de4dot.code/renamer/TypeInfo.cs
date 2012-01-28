@@ -29,7 +29,7 @@ namespace de4dot.code.renamer {
 	class TypeInfo : MemberInfo {
 		public string oldNamespace;
 		public string newNamespace;
-		public VariableNameState variableNameState = new VariableNameState();
+		public VariableNameState variableNameState = VariableNameState.create();
 		public TypeDef type;
 		MemberInfos memberInfos;
 
@@ -306,7 +306,7 @@ namespace de4dot.code.renamer {
 						info.newName = "e";
 				}
 				else {
-					var newVariableNameState = variableNameState.clone();
+					var newVariableNameState = variableNameState.cloneParamsOnly();
 					var checker = NameChecker;
 					foreach (var paramDef in methodDef.ParamDefs) {
 						var info = param(paramDef);

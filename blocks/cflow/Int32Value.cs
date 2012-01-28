@@ -21,6 +21,9 @@ using System;
 
 namespace de4dot.blocks.cflow {
 	public class Int32Value : Value {
+		public static readonly Int32Value zero = new Int32Value(0);
+		public static readonly Int32Value one = new Int32Value(1);
+
 		const uint NO_UNKNOWN_BITS = uint.MaxValue;
 		public readonly int value;
 		public readonly uint validMask;
@@ -223,7 +226,7 @@ namespace de4dot.blocks.cflow {
 			if (a.allBitsValid() && b.allBitsValid())
 				return new Int32Value(a.value - b.value);
 			if (ReferenceEquals(a, b))
-				return new Int32Value(0);
+				return zero;
 			return createUnknown();
 		}
 
@@ -231,7 +234,7 @@ namespace de4dot.blocks.cflow {
 			if (a.allBitsValid() && b.allBitsValid())
 				return new Int32Value(a.value * b.value);
 			if (a.isZero() || b.isZero())
-				return new Int32Value(0);
+				return zero;
 			if (a.hasValue(1))
 				return b;
 			if (b.hasValue(1))
@@ -249,7 +252,7 @@ namespace de4dot.blocks.cflow {
 				}
 			}
 			if (ReferenceEquals(a, b) && a.isNonZero())
-				return new Int32Value(1);
+				return one;
 			if (b.hasValue(1))
 				return a;
 			return createUnknown();
@@ -265,7 +268,7 @@ namespace de4dot.blocks.cflow {
 				}
 			}
 			if (ReferenceEquals(a, b) && a.isNonZero())
-				return new Int32Value(1);
+				return one;
 			if (b.hasValue(1))
 				return a;
 			return createUnknown();
@@ -281,7 +284,7 @@ namespace de4dot.blocks.cflow {
 				}
 			}
 			if ((ReferenceEquals(a, b) && a.isNonZero()) || b.hasValue(1))
-				return new Int32Value(0);
+				return zero;
 			return createUnknown();
 		}
 
@@ -295,7 +298,7 @@ namespace de4dot.blocks.cflow {
 				}
 			}
 			if ((ReferenceEquals(a, b) && a.isNonZero()) || b.hasValue(1))
-				return new Int32Value(0);
+				return zero;
 			return createUnknown();
 		}
 
@@ -319,7 +322,7 @@ namespace de4dot.blocks.cflow {
 
 		public static Int32Value Xor(Int32Value a, Int32Value b) {
 			if (ReferenceEquals(a, b))
-				return new Int32Value(0);
+				return zero;
 			int av = a.value, bv = b.value;
 			uint am = a.validMask, bm = b.validMask;
 			return new Int32Value(av ^ bv, (uint)(am & bm));
@@ -369,8 +372,8 @@ namespace de4dot.blocks.cflow {
 
 		static Int32Value create(Bool3 b) {
 			switch (b) {
-			case Bool3.False:	return new Int32Value(0);
-			case Bool3.True:	return new Int32Value(1);
+			case Bool3.False:	return zero;
+			case Bool3.True:	return one;
 			default:			return createUnknownBool();
 			}
 		}

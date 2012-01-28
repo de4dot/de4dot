@@ -20,6 +20,7 @@
 using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Mono.Cecil.Metadata;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators {
@@ -705,7 +706,7 @@ namespace de4dot.code.deobfuscators {
 				return false;
 			if (MemberReferenceHelper.isSystemObject(type))
 				return false;
-			if (MemberReferenceHelper.verifyType(type, "mscorlib", "System.Void"))
+			if (type.EType == ElementType.Void)
 				return false;
 
 			while (type != null) {

@@ -64,6 +64,12 @@ namespace de4dot.code {
 			addIfExists(path, @"Microsoft Visual Studio 9.0\Common7\IDE\PrivateAssemblies");
 			addIfExists(path, @"Microsoft Visual Studio 10.0\Common7\IDE\PublicAssemblies");
 			addIfExists(path, @"Microsoft Visual Studio 10.0\Common7\IDE\PrivateAssemblies");
+			addIfExists(path, @"Microsoft XNA\XNA Game Studio\v2.0\References\Windows\x86");
+			addIfExists(path, @"Microsoft XNA\XNA Game Studio\v2.0\References\Xbox360");
+			addIfExists(path, @"Microsoft XNA\XNA Game Studio\v3.0\References\Windows\x86");
+			addIfExists(path, @"Microsoft XNA\XNA Game Studio\v3.0\References\Xbox360");
+			addIfExists(path, @"Microsoft XNA\XNA Game Studio\v4.0\References\Windows\x86");
+			addIfExists(path, @"Microsoft XNA\XNA Game Studio\v4.0\References\Xbox360");
 		}
 
 		// basePath is eg. "C:\Program Files (x86)\Microsoft Silverlight"

@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Mono.Cecil.Metadata;
 
 namespace de4dot.blocks.cflow {
 	public class InstructionEmulator {
@@ -31,80 +32,64 @@ namespace de4dot.blocks.cflow {
 		List<Value> locals = new List<Value>();
 		int argBase;
 
+		MethodDefinition prev_method;
+		List<Value> cached_args = new List<Value>();
+		List<Value> cached_locals = new List<Value>();
+		int cached_argBase;
+
 		public InstructionEmulator() {
 		}
 
-		public InstructionEmulator(bool implicitThis, bool initLocals, IList<ParameterDefinition> parameterDefinitions, IList<VariableDefinition> variableDefinitions) {
-			init(implicitThis, initLocals, parameterDefinitions, variableDefinitions);
+		public InstructionEmulator(MethodDefinition method) {
+			init(method);
 		}
 
-		public void init(bool implicitThis, bool initLocals, IList<ParameterDefinition> parameterDefinitions, IList<VariableDefinition> variableDefinitions) {
-			this.parameterDefinitions = parameterDefinitions;
-			this.variableDefinitions = variableDefinitions;
+		public void init(Blocks blocks) {
+			init(blocks.Method);
+		}
+
+		public void init(MethodDefinition method) {
+			this.parameterDefinitions = method.Parameters;
+			this.variableDefinitions = method.Body.Variables;
 			valueStack.init();
 
-			args.Clear();
-			argBase = 0;
-			if (implicitThis) {
-				argBase = 1;
-				args.Add(new UnknownValue());
-			}
-			foreach (var arg in parameterDefinitions)
-				args.Add(getUnknownValue(arg.ParameterType));
+			if (method != prev_method) {
+				prev_method = method;
 
-			if (initLocals) {
-				locals.Clear();
-				foreach (var local in variableDefinitions)
-					locals.Add(getDefaultValue(local.VariableType));
-			}
-			else {
-				locals.Clear();
-				foreach (var local in variableDefinitions)
-					locals.Add(getUnknownValue(local.VariableType));
-			}
-		}
-
-		static Value getDefaultValue(TypeReference typeReference) {
-			if (typeReference == null)
-				return new UnknownValue();
-			if (!typeReference.IsValueType)
-				return NullValue.Instance;
-			else if (DotNetUtils.isAssembly(typeReference.Scope, "mscorlib")) {
-				switch (typeReference.FullName) {
-				case "System.Boolean":
-				case "System.SByte":
-				case "System.Byte":
-				case "System.Int16":
-				case "System.UInt16":
-				case "System.Int32":
-				case "System.UInt32":
-					return new Int32Value(0);
-				case "System.Int64":
-				case "System.UInt64":
-					return new Int64Value(0);
-				case "System.Single":
-				case "System.Double":
-					return new Real8Value(0);
+				cached_args.Clear();
+				cached_argBase = 0;
+				if (method.HasImplicitThis) {
+					cached_argBase = 1;
+					cached_args.Add(new UnknownValue());
 				}
+				for (int i = 0; i < parameterDefinitions.Count; i++)
+					cached_args.Add(getUnknownValue(parameterDefinitions[i].ParameterType));
+
+				cached_locals.Clear();
+				for (int i = 0; i < variableDefinitions.Count; i++)
+					cached_locals.Add(getUnknownValue(variableDefinitions[i].VariableType));
 			}
-			return new UnknownValue();
+
+			argBase = cached_argBase;
+			args.Clear();
+			args.AddRange(cached_args);
+			locals.Clear();
+			locals.AddRange(cached_locals);
 		}
 
 		static Value getUnknownValue(TypeReference typeReference) {
 			if (typeReference == null)
 				return new UnknownValue();
-			if (DotNetUtils.isAssembly(typeReference.Scope, "mscorlib")) {
-				switch (typeReference.FullName) {
-				case "System.Boolean":	return Int32Value.createUnknownBool();
-				case "System.SByte":	return Int32Value.createUnknown();
-				case "System.Byte":		return Int32Value.createUnknownUInt8();
-				case "System.Int16":	return Int32Value.createUnknown();
-				case "System.UInt16":	return Int32Value.createUnknownUInt16();
-				case "System.Int32":	return Int32Value.createUnknown();
-				case "System.UInt32":	return Int32Value.createUnknown();
-				case "System.Int64":	return Int64Value.createUnknown();
-				case "System.UInt64":	return Int64Value.createUnknown();
-				}
+			switch (typeReference.EType) {
+			case ElementType.Boolean: return Int32Value.createUnknownBool();
+			case ElementType.I1: return Int32Value.createUnknown();
+			case ElementType.U1: return Int32Value.createUnknownUInt8();
+			case ElementType.I2: return Int32Value.createUnknown();
+			case ElementType.U2: return Int32Value.createUnknownUInt16();
+			case ElementType.I4: return Int32Value.createUnknown();
+			case ElementType.U4: return Int32Value.createUnknown();
+			case ElementType.I8: return Int64Value.createUnknown();
+			case ElementType.U8: return Int64Value.createUnknown();
 			}
 			return new UnknownValue();
 		}
@@ -112,45 +97,44 @@ namespace de4dot.blocks.cflow {
 		static Value truncateValue(Value value, TypeReference typeReference) {
 			if (typeReference == null)
 				return value;
-			if (DotNetUtils.isAssembly(typeReference.Scope, "mscorlib")) {
-				switch (typeReference.FullName) {
-				case "System.Boolean":
-					if (value.isInt32())
-						return ((Int32Value)value).toBoolean();
-					return Int32Value.createUnknownBool();
 
-				case "System.SByte":
-					if (value.isInt32())
-						return ((Int32Value)value).toInt8();
-					return Int32Value.createUnknown();
+			switch (typeReference.EType) {
+			case ElementType.Boolean:
+				if (value.isInt32())
+					return ((Int32Value)value).toBoolean();
+				return Int32Value.createUnknownBool();
 
-				case "System.Byte":
-					if (value.isInt32())
-						return ((Int32Value)value).toUInt8();
-					return Int32Value.createUnknownUInt8();
+			case ElementType.I1:
+				if (value.isInt32())
+					return ((Int32Value)value).toInt8();
+				return Int32Value.createUnknown();
 
-				case "System.Int16":
-					if (value.isInt32())
-						return ((Int32Value)value).toInt16();
-					return Int32Value.createUnknown();
+			case ElementType.U1:
+				if (value.isInt32())
+					return ((Int32Value)value).toUInt8();
+				return Int32Value.createUnknownUInt8();
 
-				case "System.UInt16":
-					if (value.isInt32())
-						return ((Int32Value)value).toUInt16();
-					return Int32Value.createUnknownUInt16();
+			case ElementType.I2:
+				if (value.isInt32())
+					return ((Int32Value)value).toInt16();
+				return Int32Value.createUnknown();
 
-				case "System.Int32":
-				case "System.UInt32":
-					if (value.isInt32())
-						return value;
-					return Int32Value.createUnknown();
+			case ElementType.U2:
+				if (value.isInt32())
+					return ((Int32Value)value).toUInt16();
+				return Int32Value.createUnknownUInt16();
 
-				case "System.Int64":
-				case "System.UInt64":
-					if (value.isInt64())
-						return value;
-					return Int64Value.createUnknown();
-				}
+			case ElementType.I4:
+			case ElementType.U4:
+				if (value.isInt32())
+					return value;
+				return Int32Value.createUnknown();
+
+			case ElementType.I8:
+			case ElementType.U8:
+				if (value.isInt64())
+					return value;
+				return Int64Value.createUnknown();
 			}
 			return value;
 		}
@@ -282,8 +266,8 @@ namespace de4dot.blocks.cflow {
 			case Code.Ldc_I8:	valueStack.push(new Int64Value((long)instr.Operand)); break;
 			case Code.Ldc_R4:	valueStack.push(new Real8Value((float)instr.Operand)); break;
 			case Code.Ldc_R8:	valueStack.push(new Real8Value((double)instr.Operand)); break;
-			case Code.Ldc_I4_0:	valueStack.push(new Int32Value(0)); break;
-			case Code.Ldc_I4_1:	valueStack.push(new Int32Value(1)); break;
+			case Code.Ldc_I4_0:	valueStack.push(Int32Value.zero); break;
+			case Code.Ldc_I4_1:	valueStack.push(Int32Value.one); break;
 			case Code.Ldc_I4_2:	valueStack.push(new Int32Value(2)); break;
 			case Code.Ldc_I4_3:	valueStack.push(new Int32Value(3)); break;
 			case Code.Ldc_I4_4:	valueStack.push(new Int32Value(4)); break;
@@ -779,7 +763,7 @@ namespace de4dot.blocks.cflow {
 			else if (val1.isInt64() && val2.isInt64())
 				valueStack.push(Int64Value.Ceq((Int64Value)val1, (Int64Value)val2));
 			else if (val1.isNull() && val2.isNull())
-				valueStack.push(new Int32Value(1));
+				valueStack.push(Int32Value.one);
 			else
 				valueStack.push(Int32Value.createUnknownBool());
 		}

@@ -25,6 +25,8 @@ namespace de4dot.code.renamer {
 	abstract class TypeNames {
 		protected Dictionary<string, NameCreator> typeNames = new Dictionary<string, NameCreator>(StringComparer.Ordinal);
 		protected NameCreator genericParamNameCreator = new NameCreator("gparam_");
+		protected Dictionary<string, string> fullNameToShortName;
+		protected Dictionary<string, string> fullNameToShortNamePrefix;
 
 		public string create(TypeReference typeRef) {
 			if (typeRef.IsGenericInstance) {
@@ -46,21 +48,28 @@ namespace de4dot.code.renamer {
 			if (typeNames.TryGetValue(typeFullName, out nc))
 				return nc.create();
 
-			var name = elementType.FullName;
-			var parts = name.Replace('/', '.').Split(new char[] { '.' });
-			var newName = parts[parts.Length - 1];
-			int tickIndex = newName.LastIndexOf('`');
-			if (tickIndex > 0)
-				newName = newName.Substring(0, tickIndex);
+			var fullName = elementType.FullName;
+			string shortName;
+			var dict = prefix == "" ? fullNameToShortName : fullNameToShortNamePrefix;
+			if (!dict.TryGetValue(fullName, out shortName)) {
+				fullName = fullName.Replace('/', '.');
+				int index = fullName.LastIndexOf('.');
+				shortName = index > 0 ? fullName.Substring(index + 1) : fullName;
 
-			return addTypeName(typeFullName, newName, prefix).create();
+				index = shortName.LastIndexOf('`');
+				if (index > 0)
+					shortName = shortName.Substring(0, index);
+			}
+
+			return addTypeName(typeFullName, shortName, prefix).create();
 		}
 
 		static string getPrefix(TypeReference typeRef) {
 			string prefix = "";
-			while (typeRef is PointerType) {
-				typeRef = ((PointerType)typeRef).ElementType;
-				prefix += "p";
+			while (typeRef is TypeSpecification) {
+				if (typeRef.IsPointer)
+					prefix += "p";
+				typeRef = ((TypeSpecification)typeRef).ElementType;
 			}
 			return prefix;
 		}
@@ -81,8 +90,9 @@ namespace de4dot.code.renamer {
 
 		public virtual TypeNames merge(TypeNames other) {
 			foreach (var pair in other.typeNames) {
-				if (typeNames.ContainsKey(pair.Key))
-					typeNames[pair.Key].merge(pair.Value);
+				NameCreator nc;
+				if (typeNames.TryGetValue(pair.Key, out nc))
+					nc.merge(pair.Value);
 				else
 					typeNames[pair.Key] = pair.Value.clone();
 			}
@@ -96,40 +106,50 @@ namespace de4dot.code.renamer {
 	}
 
 	class VariableNameCreator : TypeNames {
+		static Dictionary<string, string> ourFullNameToShortName;
+		static Dictionary<string, string> ourFullNameToShortNamePrefix;
+		static VariableNameCreator() {
+			ourFullNameToShortName = new Dictionary<string, string>(StringComparer.Ordinal) {
+				{ "System.Boolean", "bool" },
+				{ "System.Byte", "byte" },
+				{ "System.Char", "char" },
+				{ "System.Double", "double" },
+				{ "System.Int16", "short" },
+				{ "System.Int32", "int" },
+				{ "System.Int64", "long" },
+				{ "System.IntPtr", "intptr" },
+				{ "System.SByte", "sbyte" },
+				{ "System.Single", "float" },
+				{ "System.String", "string" },
+				{ "System.UInt16", "ushort" },
+				{ "System.UInt32", "uint" },
+				{ "System.UInt64", "ulong" },
+				{ "System.UIntPtr", "uintptr" },
+				{ "System.Decimal", "decimal" },
+			};
+			ourFullNameToShortNamePrefix = new Dictionary<string, string>(StringComparer.Ordinal) {
+				{ "System.Boolean", "Bool" },
+				{ "System.Byte", "Byte" },
+				{ "System.Char", "Char" },
+				{ "System.Double", "Double" },
+				{ "System.Int16", "Short" },
+				{ "System.Int32", "Int" },
+				{ "System.Int64", "Long" },
+				{ "System.IntPtr", "IntPtr" },
+				{ "System.SByte", "SByte" },
+				{ "System.Single", "Float" },
+				{ "System.String", "String" },
+				{ "System.UInt16", "UShort" },
+				{ "System.UInt32", "UInt" },
+				{ "System.UInt64", "ULong" },
+				{ "System.UIntPtr", "UIntPtr" },
+				{ "System.Decimal", "Decimal" },
+			};
+		}
+
 		public VariableNameCreator() {
-			initTypeName("System.Boolean", "bool");
-			initTypeName("System.Byte", "byte");
-			initTypeName("System.Char", "char");
-			initTypeName("System.Double", "double");
-			initTypeName("System.Int16", "short");
-			initTypeName("System.Int32", "int");
-			initTypeName("System.Int64", "long");
-			initTypeName("System.IntPtr", "intptr", "IntPtr");
-			initTypeName("System.SByte", "sbyte", "SByte");
-			initTypeName("System.Single", "float");
-			initTypeName("System.String", "string");
-			initTypeName("System.UInt16", "ushort", "UShort");
-			initTypeName("System.UInt32", "uint", "UInt");
-			initTypeName("System.UInt64", "ulong", "ULong");
-			initTypeName("System.UIntPtr", "uintptr", "UIntPtr");
-			initTypeName("System.Decimal", "decimal");
-		}
-
-		void initTypeName(string fullName, string newName, string ptrName = null) {
-			if (ptrName == null)
-				ptrName = upperFirst(newName);
-			initTypeName2(fullName, "", newName);
-			initTypeName2(fullName + "[]", "", newName);
-			initTypeName2(fullName + "[][]", "", newName);
-			initTypeName2(fullName + "[][][]", "", newName);
-			initTypeName2(fullName + "[0...,0...]", "", newName);
-			initTypeName2(fullName + "*", "p", ptrName);
-			initTypeName2(fullName + "**", "pp", ptrName);
-		}
-
-		void initTypeName2(string fullName, string prefix, string newName) {
-			addTypeName(fullName, newName, prefix);
-			addTypeName(fullName + "&", newName, prefix);
+			fullNameToShortName = ourFullNameToShortName;
+			fullNameToShortNamePrefix = ourFullNameToShortNamePrefix;
 		}
 
 		static string lowerLeadingChars(string name) {
@@ -152,6 +172,14 @@ namespace de4dot.code.renamer {
 	}
 
 	class PropertyNameCreator : TypeNames {
+		static Dictionary<string, string> ourFullNameToShortName = new Dictionary<string, string>(StringComparer.Ordinal);
+		static Dictionary<string, string> ourFullNameToShortNamePrefix = new Dictionary<string, string>(StringComparer.Ordinal);
+
+		public PropertyNameCreator() {
+			fullNameToShortName = ourFullNameToShortName;
+			fullNameToShortNamePrefix = ourFullNameToShortNamePrefix;
+		}
+
 		protected override string fixName(string prefix, string name) {
 			return prefix.ToUpperInvariant() + upperFirst(name);
 		}

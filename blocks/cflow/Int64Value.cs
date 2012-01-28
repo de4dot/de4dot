@@ -21,6 +21,9 @@ using System;
 
 namespace de4dot.blocks.cflow {
 	public class Int64Value : Value {
+		public static readonly Int64Value zero = new Int64Value(0);
+		public static readonly Int64Value one = new Int64Value(1);
+
 		const ulong NO_UNKNOWN_BITS = ulong.MaxValue;
 		public readonly long value;
 		public readonly ulong validMask;
@@ -117,7 +120,7 @@ namespace de4dot.blocks.cflow {
 			if (a.allBitsValid() && b.allBitsValid())
 				return new Int64Value(a.value - b.value);
 			if (ReferenceEquals(a, b))
-				return new Int64Value(0);
+				return zero;
 			return createUnknown();
 		}
 
@@ -125,7 +128,7 @@ namespace de4dot.blocks.cflow {
 			if (a.allBitsValid() && b.allBitsValid())
 				return new Int64Value(a.value * b.value);
 			if (a.isZero() || b.isZero())
-				return new Int64Value(0);
+				return zero;
 			if (a.hasValue(1))
 				return b;
 			if (b.hasValue(1))
@@ -143,7 +146,7 @@ namespace de4dot.blocks.cflow {
 				}
 			}
 			if (ReferenceEquals(a, b) && a.isNonZero())
-				return new Int64Value(1);
+				return one;
 			if (b.hasValue(1))
 				return a;
 			return createUnknown();
@@ -159,7 +162,7 @@ namespace de4dot.blocks.cflow {
 				}
 			}
 			if (ReferenceEquals(a, b) && a.isNonZero())
-				return new Int64Value(1);
+				return one;
 			if (b.hasValue(1))
 				return a;
 			return createUnknown();
@@ -175,7 +178,7 @@ namespace de4dot.blocks.cflow {
 				}
 			}
 			if ((ReferenceEquals(a, b) && a.isNonZero()) || b.hasValue(1))
-				return new Int64Value(0);
+				return zero;
 			return createUnknown();
 		}
 
@@ -189,7 +192,7 @@ namespace de4dot.blocks.cflow {
 				}
 			}
 			if ((ReferenceEquals(a, b) && a.isNonZero()) || b.hasValue(1))
-				return new Int64Value(0);
+				return zero;
 			return createUnknown();
 		}
 
@@ -213,7 +216,7 @@ namespace de4dot.blocks.cflow {
 
 		public static Int64Value Xor(Int64Value a, Int64Value b) {
 			if (ReferenceEquals(a, b))
-				return new Int64Value(0);
+				return zero;
 			long av = a.value, bv = b.value;
 			ulong am = a.validMask, bm = b.validMask;
 			return new Int64Value(av ^ bv, am & bm);
@@ -263,8 +266,8 @@ namespace de4dot.blocks.cflow {
 
 		static Int32Value create(Bool3 b) {
 			switch (b) {
-			case Bool3.False:	return new Int32Value(0);
-			case Bool3.True:	return new Int32Value(1);
+			case Bool3.False:	return Int32Value.zero;
+			case Bool3.True:	return Int32Value.one;
 			default:			return Int32Value.createUnknownBool();
 			}
 		}

@@ -265,9 +265,10 @@ namespace de4dot.blocks {
 			updateSources();
 		}
 
-		void addInstructions(IList<Instr> dest, IEnumerable<Instr> instrs) {
-			foreach (var instr in instrs) {
-				if (!instr.isNop())
+		void addInstructions(IList<Instr> dest, IList<Instr> instrs) {
+			for (int i = 0; i < instrs.Count; i++) {
+				var instr = instrs[i];
+				if (instr.OpCode != OpCodes.Nop)
 					dest.Add(instr);
 			}
 		}

@@ -24,12 +24,12 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators {
 	class ExceptionLoggerRemover {
-		Dictionary<MethodReference, bool> exceptionLoggerMethods = new Dictionary<MethodReference, bool>();
+		MethodDefinitionAndDeclaringTypeDict<bool> exceptionLoggerMethods = new MethodDefinitionAndDeclaringTypeDict<bool>();
 
 		public int NumRemovedExceptionLoggers { get; set; }
 
 		public void add(MethodDefinition exceptionLogger) {
-			exceptionLoggerMethods[exceptionLogger] = true;
+			exceptionLoggerMethods.add(exceptionLogger, true);
 		}
 
 		bool find(Blocks blocks, out TryBlock tryBlock) {
@@ -87,7 +87,7 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		protected virtual bool isExceptionLogger(MethodReference method) {
-			return exceptionLoggerMethods.ContainsKey(method);
+			return exceptionLoggerMethods.find(method);
 		}
 
 		protected virtual bool HasExceptionLoggers {
