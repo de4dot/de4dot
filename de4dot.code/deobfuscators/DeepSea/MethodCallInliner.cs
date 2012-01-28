@@ -65,7 +65,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			var arg1 = parameters[parameters.Count - 2];
 			var arg2 = parameters[parameters.Count - 1];
 
-			instructionEmulator.init(methodToInline.HasImplicitThis, false, methodToInline.Parameters, methodToInline.Body.Variables);
+			instructionEmulator.init(methodToInline);
 			instructionEmulator.setArg(arg1, new Int32Value(const1));
 			instructionEmulator.setArg(arg2, new Int32Value(const2));
 
