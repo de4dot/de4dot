@@ -182,6 +182,7 @@
     <Compile Include="renamer\MemberInfos.cs" />
     <Compile Include="renamer\NameCreators.cs" />
     <Compile Include="renamer\Renamer.cs" />
+    <Compile Include="renamer\ResourceRenamer.cs" />
     <Compile Include="renamer\TypeInfo.cs" />
     <Compile Include="renamer\TypeNames.cs" />
     <Compile Include="renamer\TypeRenamerState.cs" />
