@@ -69,7 +69,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		}
 
 		protected override bool checkHandlerMethodInternal(MethodDefinition handler) {
-			if (checkHandlerV3(handler)) {
+			if (checkHandlerV3(handler) || checkHandlerSL(handler)) {
 				isV3 = true;
 				return true;
 			}
@@ -85,17 +85,29 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return false;
 		}
 
-		static string[] handlerLocalTypes = new string[] {
+		static string[] handlerLocalTypes_NET = new string[] {
 			"System.Byte[]",
-			"System.Security.Cryptography.SHA1CryptoServiceProvider",
 			"System.IO.Compression.DeflateStream",
 			"System.IO.MemoryStream",
 			"System.IO.Stream",
 			"System.Reflection.Assembly",
+			"System.Security.Cryptography.SHA1CryptoServiceProvider",
 			"System.String",
 		};
 		static bool checkHandlerV3(MethodDefinition handler) {
-			return new LocalTypes(handler).all(handlerLocalTypes);
+			return new LocalTypes(handler).all(handlerLocalTypes_NET);
+		}
+
+		static string[] handlerLocalTypes_SL = new string[] {
+			"System.Byte[]",
+			"System.IO.Stream",
+			"System.Reflection.Assembly",
+			"System.Security.Cryptography.SHA1Managed",
+			"System.String",
+			"System.Windows.AssemblyPart",
+		};
+		static bool checkHandlerSL(MethodDefinition handler) {
+			return new LocalTypes(handler).all(handlerLocalTypes_SL);
 		}
 
 		bool checkHandlerV4(MethodDefinition handler, out List<FieldInfo> fieldInfos) {
