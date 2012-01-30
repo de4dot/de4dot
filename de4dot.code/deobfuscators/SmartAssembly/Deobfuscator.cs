@@ -483,6 +483,8 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 		void removeResolverInfoTypes(ResolverInfoBase info, string typeName) {
 			if (!canRemoveTypes)
 				return;
+			if (info.CallResolverType == null || info.Type == null)
+				return;
 			addTypeToBeRemoved(info.CallResolverType, string.Format("{0} resolver type #1", typeName));
 			addTypeToBeRemoved(info.Type, string.Format("{0} resolver type #2", typeName));
 		}
