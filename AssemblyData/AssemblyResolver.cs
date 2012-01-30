@@ -88,7 +88,17 @@ namespace AssemblyData {
 
 		public Assembly load(string filename) {
 			addConfigFile(filename + ".config");
-			return addAssembly(Assembly.LoadFrom(filename));
+			return addAssembly(loadFile(filename));
+		}
+
+		Assembly loadFile(string filename) {
+			try {
+				return Assembly.LoadFrom(filename);
+			}
+			catch (FileLoadException) {
+				// Here if eg. strong name signature validation failed and possibly other errors
+				return Assembly.Load(File.ReadAllBytes(filename));
+			}
 		}
 
 		Assembly addAssembly(Assembly assembly) {
