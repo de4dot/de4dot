@@ -25,9 +25,13 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "Spices.Net";
 		public const string THE_TYPE = "sn";
+		BoolOption inlineMethods;
+		BoolOption removeInlinedMethods;
 
 		public DeobfuscatorInfo()
 			: base() {
+			inlineMethods = new BoolOption(null, makeArgName("inline"), "Inline short methods", true);
+			removeInlinedMethods = new BoolOption(null, makeArgName("remove-inlined"), "Remove inlined methods", true);
 		}
 
 		public override string Name {
@@ -41,11 +45,15 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 		public override IDeobfuscator createDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
 				ValidNameRegex = validNameRegex.get(),
+				InlineMethods = inlineMethods.get(),
+				RemoveInlinedMethods = removeInlinedMethods.get(),
 			});
 		}
 
 		protected override IEnumerable<Option> getOptionsInternal() {
 			return new List<Option>() {
+				inlineMethods,
+				removeInlinedMethods,
 			};
 		}
 	}
@@ -58,6 +66,8 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 		StringDecrypter stringDecrypter;
 
 		internal class Options : OptionsBase {
+			public bool InlineMethods { get; set; }
+			public bool RemoveInlinedMethods { get; set; }
 		}
 
 		public override string Type {
@@ -70,6 +80,18 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 
 		public override string Name {
 			get { return DeobfuscatorInfo.THE_NAME; }
+		}
+
+		protected override bool CanInlineMethods {
+			get { return startedDeobfuscating ? options.InlineMethods : true; }
+		}
+
+		public override IMethodCallInliner MethodCallInliner {
+			get {
+				if (CanInlineMethods)
+					return new SpicesMethodCallInliner();
+				return new NoMethodInliner();
+			}
 		}
 
 		public Deobfuscator(Options options)
@@ -119,12 +141,20 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 		}
 
 		public override void deobfuscateEnd() {
+			removeInlinedMethods();
+
 			if (Operations.DecryptStrings != OpDecryptString.None) {
 				addTypeToBeRemoved(stringDecrypter.Type, "String decrypter type");
 				stringDecrypter.cleanUp();
 			}
 
 			base.deobfuscateEnd();
+		}
+
+		void removeInlinedMethods() {
+			if (!options.InlineMethods || !options.RemoveInlinedMethods)
+				return;
+			removeInlinedMethods(SpicesInlinedMethodsFinder.find(module));
 		}
 
 		public override IEnumerable<string> getStringDecrypterMethods() {
