@@ -40,7 +40,12 @@ namespace de4dot.blocks.cflow {
 			return changed;
 		}
 
-		bool canInline(MethodDefinition method) {
+		protected virtual bool canInline(MethodDefinition method) {
+			if (MemberReferenceHelper.compareMethodReferenceAndDeclaringType(method, blocks.Method))
+				return false;
+			if (!MemberReferenceHelper.compareTypes(method.DeclaringType, blocks.Method.DeclaringType))
+				return false;
+
 			if (method.IsStatic)
 				return true;
 			if (method.IsVirtual)
@@ -52,15 +57,11 @@ namespace de4dot.blocks.cflow {
 			var methodToInline = callInstr.Operand as MethodDefinition;
 			if (methodToInline == null)
 				return false;
-			if (MemberReferenceHelper.compareMethodReferenceAndDeclaringType(methodToInline, blocks.Method))
-				return false;
 
 			if (!canInline(methodToInline))
 				return false;
 			var body = methodToInline.Body;
 			if (body == null)
-				return false;
-			if (!MemberReferenceHelper.compareTypes(methodToInline.DeclaringType, blocks.Method.DeclaringType))
 				return false;
 
 			int index = 0;
