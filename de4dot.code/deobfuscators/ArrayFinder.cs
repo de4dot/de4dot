@@ -24,57 +24,47 @@ using de4dot.blocks;
 using de4dot.blocks.cflow;
 
 namespace de4dot.code.deobfuscators {
-	class ArrayFinder {
-		List<byte[]> arrays = new List<byte[]>();
+	static class ArrayFinder {
+		public static List<byte[]> getArrays(MethodDefinition method, TypeReference arrayElemntType = null) {
+			var arrays = new List<byte[]>();
+			var instrs = method.Body.Instructions;
+			for (int i = 0; i < instrs.Count; i++) {
+				TypeReference type;
+				var ary = getArray(instrs, ref i, out type);
+				if (ary == null)
+					break;
+				if (arrayElemntType != null && !MemberReferenceHelper.compareTypes(type, arrayElemntType))
+					continue;
 
-		public ArrayFinder(MethodDefinition method) {
-			init(method);
+				arrays.Add(ary);
+			}
+			return arrays;
 		}
 
-		void init(MethodDefinition method) {
-			if (method.Body == null)
-				return;
+		public static byte[] getArray(IList<Instruction> instrs, ref int index, out TypeReference type) {
+			for (int i = index; i < instrs.Count - 2; i++) {
+				var newarr = instrs[i++];
+				if (newarr.OpCode.Code != Code.Newarr)
+					continue;
 
-			foreach (var instr in method.Body.Instructions) {
-				if (instr.OpCode.Code != Code.Ldtoken)
+				if (instrs[i++].OpCode.Code != Code.Dup)
 					continue;
-				var field = instr.Operand as FieldDefinition;
-				if (field == null)
+
+				var ldtoken = instrs[i++];
+				if (ldtoken.OpCode.Code != Code.Ldtoken)
 					continue;
-				arrays.Add(field.InitialValue);
+				var field = ldtoken.Operand as FieldDefinition;
+				if (field == null || field.InitialValue == null)
+					continue;
+
+				index = i - 3;
+				type = newarr.Operand as TypeReference;
+				return field.InitialValue;
 			}
 
-			var instructions = method.Body.Instructions;
-			for (int i = 1; i < instructions.Count; i++) {
-				var instr = instructions[i];
-				if (instr.OpCode.Code != Code.Newarr)
-					continue;
-				var ldci4 = instructions[i - 1];
-				if (!DotNetUtils.isLdcI4(ldci4))
-					continue;
-				int arraySize = DotNetUtils.getLdcI4Value(ldci4);
-				var ary = getInitializedByteArray(arraySize, method, ref i);
-				if (ary != null)
-					arrays.Add(ary);
-			}
-		}
-
-		public bool exists(byte[] array) {
-			foreach (var ary in arrays) {
-				if (isEqual(ary, array))
-					return true;
-			}
-			return false;
-		}
-
-		static bool isEqual(byte[] ary1, byte[] ary2) {
-			if (ary1.Length != ary2.Length)
-				return false;
-			for (int i = 0; i < ary1.Length; i++) {
-				if (ary1[i] != ary2[i])
-					return false;
-			}
-			return true;
+			index = instrs.Count;
+			type = null;
+			return null;
 		}
 
 		public static byte[] getInitializedByteArray(MethodDefinition method, int arraySize) {
