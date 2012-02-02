@@ -109,8 +109,6 @@ namespace de4dot.code.deobfuscators.Unknown {
 					return "Manco .NET Obfuscator";
 				if (Regex.IsMatch(type.FullName, @"^EMyPID_\d+_$"))
 					return "BitHelmet Obfuscator";
-				if (type.FullName == "NineRays.Decompiler.NotDecompile")
-					return "Spices.Net Obfuscator";
 				if (type.FullName == "YanoAttribute")
 					return "Yano Obfuscator";
 			}

@@ -116,7 +116,6 @@
     <Compile Include="deobfuscators\dotNET_Reactor\v4\MethodsDecrypter.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v4\NativeFileDecrypter.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v4\NativeImageUnpacker.cs" />
-    <Compile Include="deobfuscators\dotNET_Reactor\QuickLZ.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v4\ResourceResolver.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v4\StringDecrypter.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v4\AntiStrongName.cs" />
@@ -142,10 +141,14 @@
     <Compile Include="deobfuscators\InlinedMethodsFinder.cs" />
     <Compile Include="deobfuscators\ISimpleDeobfuscator.cs" />
     <Compile Include="deobfuscators\MethodCollection.cs" />
+    <Compile Include="deobfuscators\QuickLZ.cs" />
     <Compile Include="deobfuscators\RandomNameChecker.cs" />
     <Compile Include="deobfuscators\Skater_NET\Deobfuscator.cs" />
     <Compile Include="deobfuscators\Skater_NET\EnumClassFinder.cs" />
     <Compile Include="deobfuscators\Skater_NET\StringDecrypter.cs" />
+    <Compile Include="deobfuscators\Spices_Net\Deobfuscator.cs" />
+    <Compile Include="deobfuscators\Spices_Net\QclzDecompressor.cs" />
+    <Compile Include="deobfuscators\Spices_Net\StringDecrypter.cs" />
     <Compile Include="deobfuscators\StringCounts.cs" />
     <Compile Include="deobfuscators\Operations.cs" />
     <Compile Include="deobfuscators\ProxyDelegateFinderBase.cs" />
