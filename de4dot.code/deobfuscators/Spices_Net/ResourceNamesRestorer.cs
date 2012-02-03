@@ -129,6 +129,9 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			if (resourceNamespace != ns)
 				return;
 
+			Log.v("Restoring resource name: '{0}' => '{1}'",
+								Utils.removeNewlines(resource.Name),
+								Utils.removeNewlines(newName));
 			resource.Name = newName;
 			numToResource.Remove(hash);
 		}
