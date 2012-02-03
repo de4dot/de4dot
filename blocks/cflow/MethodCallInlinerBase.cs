@@ -101,20 +101,8 @@ namespace de4dot.blocks.cflow {
 				if (!isCompatibleType(-1, calledMethod.MethodReturnType.ReturnType, methodToInline.MethodReturnType.ReturnType))
 					return false;
 
-				var methodArgs = DotNetUtils.getArgs(methodToInline);
-				var calledMethodArgs = DotNetUtils.getArgs(calledMethod);
-				if (methodArgs.Count - popLastArgs != calledMethodArgs.Count)
+				if (!checkSameMethods(calledMethod, methodToInline, popLastArgs))
 					return false;
-				for (int i = 0; i < calledMethodArgs.Count; i++) {
-					var calledMethodArg = calledMethodArgs[i];
-					var methodArg = methodArgs[i];
-					if (!isCompatibleType(i, calledMethodArg, methodArg)) {
-						if (i != 0 || !calledMethod.HasImplicitThis)
-							return false;
-						if (!isCompatibleValueThisPtr(calledMethodArg, methodArg))
-							return false;
-					}
-				}
 
 				instr = DotNetUtils.getInstruction(methodToInline.Body.Instructions, ref instrIndex);
 				if (instr == null || instr.OpCode.Code != Code.Ret)
@@ -164,6 +152,25 @@ namespace de4dot.blocks.cflow {
 			}
 
 			return false;
+		}
+
+		protected bool checkSameMethods(MethodReference method, MethodDefinition methodToInline, int ignoreLastMethodToInlineArgs = 0) {
+			var methodToInlineArgs = DotNetUtils.getArgs(methodToInline);
+			var methodArgs = DotNetUtils.getArgs(method);
+			if (methodToInlineArgs.Count - ignoreLastMethodToInlineArgs != methodArgs.Count)
+				return false;
+			for (int i = 0; i < methodArgs.Count; i++) {
+				var methodArg = methodArgs[i];
+				var methodToInlineArg = methodToInlineArgs[i];
+				if (!isCompatibleType(i, methodArg, methodToInlineArg)) {
+					if (i != 0 || !method.HasImplicitThis)
+						return false;
+					if (!isCompatibleValueThisPtr(methodArg, methodToInlineArg))
+						return false;
+				}
+			}
+
+			return true;
 		}
 
 		protected virtual bool isCompatibleType(int paramIndex, TypeReference origType, TypeReference newType) {
