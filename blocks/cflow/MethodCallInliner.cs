@@ -111,7 +111,7 @@ namespace de4dot.blocks.cflow {
 			}
 		}
 
-		protected override bool isCompatibleType(TypeReference origType, TypeReference newType) {
+		protected override bool isCompatibleType(int paramIndex, TypeReference origType, TypeReference newType) {
 			if (MemberReferenceHelper.compareTypes(origType, newType))
 				return true;
 			if (newType.IsValueType || origType.IsValueType)

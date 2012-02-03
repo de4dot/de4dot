@@ -98,7 +98,7 @@ namespace de4dot.blocks.cflow {
 				if (calledMethod == null)
 					return false;
 
-				if (!isCompatibleType(calledMethod.MethodReturnType.ReturnType, methodToInline.MethodReturnType.ReturnType))
+				if (!isCompatibleType(-1, calledMethod.MethodReturnType.ReturnType, methodToInline.MethodReturnType.ReturnType))
 					return false;
 
 				var methodArgs = DotNetUtils.getArgs(methodToInline);
@@ -108,7 +108,7 @@ namespace de4dot.blocks.cflow {
 				for (int i = 0; i < calledMethodArgs.Count; i++) {
 					var calledMethodArg = calledMethodArgs[i];
 					var methodArg = methodArgs[i];
-					if (!isCompatibleType(calledMethodArg, methodArg)) {
+					if (!isCompatibleType(i, calledMethodArg, methodArg)) {
 						if (i != 0 || !calledMethod.HasImplicitThis)
 							return false;
 						if (!isCompatibleValueThisPtr(calledMethodArg, methodArg))
@@ -131,7 +131,7 @@ namespace de4dot.blocks.cflow {
 				if (ctor == null)
 					return false;
 
-				if (!isCompatibleType(ctor.DeclaringType, methodToInline.MethodReturnType.ReturnType))
+				if (!isCompatibleType(-1, ctor.DeclaringType, methodToInline.MethodReturnType.ReturnType))
 					return false;
 
 				var methodArgs = DotNetUtils.getArgs(methodToInline);
@@ -139,7 +139,7 @@ namespace de4dot.blocks.cflow {
 				if (methodArgs.Count + 1 - popLastArgs != calledMethodArgs.Count)
 					return false;
 				for (int i = 1; i < calledMethodArgs.Count; i++) {
-					if (!isCompatibleType(calledMethodArgs[i], methodArgs[i - 1]))
+					if (!isCompatibleType(i, calledMethodArgs[i], methodArgs[i - 1]))
 						return false;
 				}
 
@@ -166,7 +166,7 @@ namespace de4dot.blocks.cflow {
 			return false;
 		}
 
-		protected virtual bool isCompatibleType(TypeReference origType, TypeReference newType) {
+		protected virtual bool isCompatibleType(int paramIndex, TypeReference origType, TypeReference newType) {
 			return MemberReferenceHelper.compareTypes(origType, newType);
 		}
 
