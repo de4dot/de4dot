@@ -19,6 +19,7 @@
 
 using System.Collections.Generic;
 using Mono.Cecil;
+using de4dot.blocks;
 using de4dot.blocks.cflow;
 
 namespace de4dot.code.deobfuscators.Spices_Net {
@@ -142,6 +143,14 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			DeobfuscatedFile.stringDecryptersAdded();
 
 			startedDeobfuscating = true;
+		}
+
+		public override void deobfuscateMethodBegin(Blocks blocks) {
+			base.deobfuscateMethodBegin(blocks);
+			if (options.InlineMethods) {
+				if (methodCallInliner.restoreBody(blocks))
+					Log.v("Restored method body");
+			}
 		}
 
 		public override void deobfuscateEnd() {

@@ -18,6 +18,7 @@
 */
 
 using Mono.Cecil;
+using Mono.Cecil.Cil;
 using Mono.Cecil.Metadata;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
@@ -90,6 +91,54 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			}
 
 			return numMethods > 0 && foundCtor;
+		}
+
+		public bool restoreBody(Blocks blocks) {
+			if (validTypes.find(blocks.Method.DeclaringType))
+				return false;
+			if (blocks.Locals.Count > 0)
+				return false;
+			if (blocks.MethodBlocks.BaseBlocks.Count != 1)
+				return false;
+			var block = blocks.MethodBlocks.BaseBlocks[0] as Block;
+			if (block == null)
+				return false;
+
+			MethodDefinition calledMethod;
+			if (!checkRestoreBody(block, out calledMethod))
+				return false;
+			if (calledMethod == blocks.Method)
+				return false;
+
+			DotNetUtils.copyBodyFromTo(calledMethod, blocks.Method);
+			blocks.updateBlocks();
+			return true;
+		}
+
+		bool checkRestoreBody(Block block, out MethodDefinition calledMethod) {
+			calledMethod = null;
+
+			var instrs = block.Instructions;
+			int index;
+			for (index = 0; index < instrs.Count; index++) {
+				if (DotNetUtils.getArgIndex(instrs[index].Instruction) != index)
+					break;
+			}
+
+			var call = instrs[index++];
+			if (call.OpCode.Code != Code.Call)
+				return false;
+
+			calledMethod = call.Operand as MethodDefinition;
+			if (calledMethod == null)
+				return false;
+			if (!checkCanInline(calledMethod))
+				return false;
+
+			if (instrs[index++].OpCode.Code != Code.Ret)
+				return false;
+
+			return true;
 		}
 	}
 }
