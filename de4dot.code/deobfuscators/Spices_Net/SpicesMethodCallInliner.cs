@@ -55,10 +55,10 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 
 		public void initialize() {
 			initializeMethodsTypes();
-			restoreInstanceMethods();
+			restoreMethodBodies();
 		}
 
-		void restoreInstanceMethods() {
+		void restoreMethodBodies() {
 			var methodToOrigMethods = new MethodDefinitionAndDeclaringTypeDict<List<MethodDefinition>>();
 			foreach (var t in module.Types) {
 				var types = new List<TypeDefinition>(TypeDefinition.GetTypes(new List<TypeDefinition> { t }));
@@ -113,6 +113,8 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			if (calledMethod == method)
 				return false;
 			if (!calledMethod.IsStatic)
+				return false;
+			if (calledMethod.GenericParameters.Count > 0)
 				return false;
 			if (calledMethod.Body == null || calledMethod.Body.Instructions.Count == 0)
 				return false;
