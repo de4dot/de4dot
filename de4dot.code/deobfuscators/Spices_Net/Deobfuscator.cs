@@ -165,6 +165,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 
 			if (Operations.DecryptStrings != OpDecryptString.None) {
 				addTypeToBeRemoved(stringDecrypter.Type, "String decrypter type");
+				addTypeToBeRemoved(stringDecrypter.EncryptedStringsType, "Encrypted strings field type");
 				stringDecrypter.cleanUp();
 			}
 

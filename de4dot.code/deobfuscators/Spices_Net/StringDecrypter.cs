@@ -56,6 +56,22 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			}
 		}
 
+		public TypeDefinition EncryptedStringsType {
+			get {
+				if (encryptedDataField == null)
+					return null;
+				var type = encryptedDataField.FieldType as TypeDefinition;
+				if (type == null || type.Fields.Count != 1 || type.Fields[0] != encryptedDataField)
+					return null;
+				if (type.HasMethods || type.HasEvents || type.HasProperties || type.HasNestedTypes)
+					return null;
+				if (type.Interfaces.Count > 0)
+					return null;
+
+				return type;
+			}
+		}
+
 		public TypeDefinition Type {
 			get { return decrypterType; }
 		}
