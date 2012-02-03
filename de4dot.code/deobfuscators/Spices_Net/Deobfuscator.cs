@@ -132,7 +132,9 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 
 		void findSpicesAttributes() {
 			foreach (var type in module.Types) {
-				if (type.FullName == "NineRays.Decompiler.NotDecompile") {
+				switch (type.FullName) {
+				case "NineRays.Decompiler.NotDecompile":
+				case "NineRays.Obfuscator.Evaluation":
 					addAttributeToBeRemoved(type, "Obfuscator attribute");
 					foundSpicesAttribute = true;
 					break;
