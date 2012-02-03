@@ -28,11 +28,13 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 		public const string THE_TYPE = "sn";
 		BoolOption inlineMethods;
 		BoolOption removeInlinedMethods;
+		BoolOption removeNamespaces;
 
 		public DeobfuscatorInfo()
 			: base() {
 			inlineMethods = new BoolOption(null, makeArgName("inline"), "Inline short methods", true);
 			removeInlinedMethods = new BoolOption(null, makeArgName("remove-inlined"), "Remove inlined methods", true);
+			removeNamespaces = new BoolOption(null, makeArgName("ns1"), "Clear namespace if there's only one class in it", true);
 		}
 
 		public override string Name {
@@ -48,6 +50,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 				ValidNameRegex = validNameRegex.get(),
 				InlineMethods = inlineMethods.get(),
 				RemoveInlinedMethods = removeInlinedMethods.get(),
+				RemoveNamespaces = removeNamespaces.get(),
 			});
 		}
 
@@ -55,6 +58,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			return new List<Option>() {
 				inlineMethods,
 				removeInlinedMethods,
+				removeNamespaces,
 			};
 		}
 	}
@@ -70,6 +74,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 		internal class Options : OptionsBase {
 			public bool InlineMethods { get; set; }
 			public bool RemoveInlinedMethods { get; set; }
+			public bool RemoveNamespaces { get; set; }
 		}
 
 		public override string Type {
@@ -99,6 +104,11 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 		public Deobfuscator(Options options)
 			: base(options) {
 			this.options = options;
+
+			if (options.RemoveNamespaces)
+				this.RenamingOptions |= RenamingOptions.RemoveNamespaceIfOneType;
+			else
+				this.RenamingOptions &= ~RenamingOptions.RemoveNamespaceIfOneType;
 		}
 
 		protected override int detectInternal() {
