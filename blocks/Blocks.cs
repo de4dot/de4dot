@@ -41,9 +41,13 @@ namespace de4dot.blocks {
 		}
 
 		public Blocks(MethodDefinition method) {
-			var body = method.Body;
 			this.method = method;
-			this.locals = body.Variables;
+			updateBlocks();
+		}
+
+		public void updateBlocks() {
+			var body = method.Body;
+			locals = body.Variables;
 			methodBlocks = new InstructionListParser(body.Instructions, body.ExceptionHandlers).parse();
 		}
 
