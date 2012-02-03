@@ -72,6 +72,10 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 						MethodDefinition calledMethod;
 						if (!checkRestoreBody(method, out calledMethod))
 							continue;
+						if (!checkSameMethods(method, calledMethod))
+							continue;
+						if (!methodsTypes.find(calledMethod.DeclaringType))
+							continue;
 						if (types.IndexOf(calledMethod.DeclaringType) < 0)
 							continue;
 
@@ -107,6 +111,8 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			if (!checkRestoreBody2(method, out calledMethod))
 				return false;
 			if (calledMethod == method)
+				return false;
+			if (!calledMethod.IsStatic)
 				return false;
 			if (calledMethod.Body == null || calledMethod.Body.Instructions.Count == 0)
 				return false;
