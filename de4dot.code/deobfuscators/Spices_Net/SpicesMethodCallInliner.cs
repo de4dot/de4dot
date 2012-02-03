@@ -108,6 +108,8 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 				return false;
 			if (calledMethod == method)
 				return false;
+			if (calledMethod.Body == null || calledMethod.Body.Instructions.Count == 0)
+				return false;
 
 			return true;
 		}
