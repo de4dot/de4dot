@@ -597,6 +597,53 @@ namespace de4dot.blocks {
 				bodyExceptionHandlers.Add(eh);
 		}
 
+		public static void copyBodyFromTo(MethodDefinition fromMethod, MethodDefinition toMethod) {
+			if (fromMethod == toMethod)
+				return;
+
+			IList<Instruction> instructions;
+			IList<ExceptionHandler> exceptionHandlers;
+			copyBody(fromMethod, out instructions, out exceptionHandlers);
+			restoreBody(toMethod, instructions, exceptionHandlers);
+			copyLocalsFromTo(fromMethod, toMethod);
+			updateInstructionOperands(fromMethod, toMethod);
+		}
+
+		static void copyLocalsFromTo(MethodDefinition fromMethod, MethodDefinition toMethod) {
+			var fromBody = fromMethod.Body;
+			var toBody = toMethod.Body;
+
+			toBody.Variables.Clear();
+			foreach (var local in fromBody.Variables)
+				toBody.Variables.Add(new VariableDefinition(local.Name, local.VariableType));
+		}
+
+		static void updateInstructionOperands(MethodDefinition fromMethod, MethodDefinition toMethod) {
+			var fromBody = fromMethod.Body;
+			var toBody = toMethod.Body;
+
+			toBody.InitLocals = fromBody.InitLocals;
+			toBody.MaxStackSize = fromBody.MaxStackSize;
+
+			var newOperands = new Dictionary<object, object>();
+			var fromParams = getParameters(fromMethod);
+			var toParams = getParameters(toMethod);
+			if (fromBody.ThisParameter != null)
+				newOperands[fromBody.ThisParameter] = toBody.ThisParameter;
+			for (int i = 0; i < fromParams.Count; i++)
+				newOperands[fromParams[i]] = toParams[i];
+			for (int i = 0; i < fromBody.Variables.Count; i++)
+				newOperands[fromBody.Variables[i]] = toBody.Variables[i];
+
+			foreach (var instr in toBody.Instructions) {
+				if (instr.Operand == null)
+					continue;
+				object newOperand;
+				if (newOperands.TryGetValue(instr.Operand, out newOperand))
+					instr.Operand = newOperand;
+			}
+		}
+
 		public static IEnumerable<CustomAttribute> findAttributes(AssemblyDefinition asm, TypeReference attr) {
 			var list = new List<CustomAttribute>();
 			if (asm == null)
