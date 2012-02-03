@@ -26,12 +26,13 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "Spices.Net";
 		public const string THE_TYPE = "sn";
+		const string DEFAULT_REGEX = @"!^[a-zA-Z0-9]{1,2}$&" + DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
 		BoolOption inlineMethods;
 		BoolOption removeInlinedMethods;
 		BoolOption removeNamespaces;
 
 		public DeobfuscatorInfo()
-			: base() {
+			: base(DEFAULT_REGEX) {
 			inlineMethods = new BoolOption(null, makeArgName("inline"), "Inline short methods", true);
 			removeInlinedMethods = new BoolOption(null, makeArgName("remove-inlined"), "Remove inlined methods", true);
 			removeNamespaces = new BoolOption(null, makeArgName("ns1"), "Clear namespace if there's only one class in it", true);
