@@ -35,6 +35,16 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			this.module = module;
 		}
 
+		protected override bool isCompatibleType(int paramIndex, TypeReference origType, TypeReference newType) {
+			if (MemberReferenceHelper.compareTypes(origType, newType))
+				return true;
+			if (paramIndex == -1) {
+				if (newType.IsValueType || origType.IsValueType)
+					return false;
+			}
+			return newType.EType == ElementType.Object;
+		}
+
 		public bool checkCanInline(MethodDefinition method) {
 			return methodsTypes.find(method.DeclaringType);
 		}
