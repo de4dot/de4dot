@@ -61,7 +61,8 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 		void restoreInstanceMethods() {
 			var methodToOrigMethods = new MethodDefinitionAndDeclaringTypeDict<List<MethodDefinition>>();
 			foreach (var t in module.Types) {
-				foreach (var type in TypeDefinition.GetTypes(new List<TypeDefinition> { t })) {
+				var types = new List<TypeDefinition>(TypeDefinition.GetTypes(new List<TypeDefinition> { t }));
+				foreach (var type in types) {
 					if (methodsTypes.find(type))
 						continue;
 					foreach (var method in type.Methods) {
@@ -70,6 +71,8 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 
 						MethodDefinition calledMethod;
 						if (!checkRestoreBody(method, out calledMethod))
+							continue;
+						if (types.IndexOf(calledMethod.DeclaringType) < 0)
 							continue;
 
 						var list = methodToOrigMethods.find(calledMethod);
