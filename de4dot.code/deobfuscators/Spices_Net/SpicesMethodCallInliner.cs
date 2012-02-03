@@ -27,7 +27,8 @@ using de4dot.blocks.cflow;
 namespace de4dot.code.deobfuscators.Spices_Net {
 	class SpicesMethodCallInliner : MethodCallInliner {
 		ModuleDefinition module;
-		TypeDefinitionDict<bool> validTypes = new TypeDefinitionDict<bool>();
+		TypeDefinitionDict<bool> methodsTypes = new TypeDefinitionDict<bool>();
+		MethodDefinitionAndDeclaringTypeDict<MethodDefinition> classMethods = new MethodDefinitionAndDeclaringTypeDict<MethodDefinition>();
 
 		public SpicesMethodCallInliner(ModuleDefinition module)
 			: base(false) {
@@ -35,7 +36,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 		}
 
 		public bool checkCanInline(MethodDefinition method) {
-			return validTypes.find(method.DeclaringType);
+			return methodsTypes.find(method.DeclaringType);
 		}
 
 		protected override bool canInline(MethodDefinition method) {
@@ -43,13 +44,94 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 		}
 
 		public void initialize() {
-			foreach (var type in module.GetTypes()) {
-				if (checkValidType(type))
-					validTypes.add(type, true);
+			initializeMethodsTypes();
+			restoreInstanceMethods();
+		}
+
+		void restoreInstanceMethods() {
+			var methodToOrigMethods = new MethodDefinitionAndDeclaringTypeDict<List<MethodDefinition>>();
+			foreach (var t in module.Types) {
+				foreach (var type in TypeDefinition.GetTypes(new List<TypeDefinition> { t })) {
+					if (methodsTypes.find(type))
+						continue;
+					foreach (var method in type.Methods) {
+						if (method.Name == ".ctor" || method.Name == ".cctor")
+							continue;
+
+						MethodDefinition calledMethod;
+						if (!checkRestoreBody(method, out calledMethod))
+							continue;
+
+						var list = methodToOrigMethods.find(calledMethod);
+						if (list == null)
+							methodToOrigMethods.add(calledMethod, list = new List<MethodDefinition>());
+						list.Add(method);
+					}
+				}
+			}
+
+			foreach (var calledMethod in methodToOrigMethods.getKeys()) {
+				var list = methodToOrigMethods.find(calledMethod);
+				var method = list[0];
+
+				Log.v("Restored method body {0:X8} from method {1:X8}",
+							method.MetadataToken.ToInt32(),
+							calledMethod.MetadataToken.ToInt32());
+				DotNetUtils.copyBodyFromTo(calledMethod, method);
+				classMethods.add(calledMethod, method);
 			}
 		}
 
-		static bool checkValidType(TypeDefinition type) {
+		bool checkRestoreBody(MethodDefinition method, out MethodDefinition calledMethod) {
+			calledMethod = null;
+			if (method.Body == null)
+				return false;
+			if (method.Body.Variables.Count > 0)
+				return false;
+			if (method.Body.ExceptionHandlers.Count > 0)
+				return false;
+
+			if (!checkRestoreBody2(method, out calledMethod))
+				return false;
+			if (calledMethod == method)
+				return false;
+
+			return true;
+		}
+
+		bool checkRestoreBody2(MethodDefinition instanceMethod, out MethodDefinition calledMethod) {
+			calledMethod = null;
+
+			var instrs = instanceMethod.Body.Instructions;
+			int index;
+			for (index = 0; index < instrs.Count; index++) {
+				if (DotNetUtils.getArgIndex(instrs[index]) != index)
+					break;
+			}
+			var call = instrs[index++];
+			if (call.OpCode.Code != Code.Call)
+				return false;
+
+			calledMethod = call.Operand as MethodDefinition;
+			if (calledMethod == null)
+				return false;
+
+			if (instrs[index++].OpCode.Code != Code.Ret)
+				return false;
+
+			return true;
+		}
+
+		void initializeMethodsTypes() {
+			foreach (var type in module.GetTypes()) {
+				if (checkMethodsType(type))
+					methodsTypes.add(type, true);
+			}
+		}
+
+		static bool checkMethodsType(TypeDefinition type) {
+			if (!type.IsNested)
+				return false;
 			if ((type.Attributes & ~TypeAttributes.BeforeFieldInit) != TypeAttributes.NestedAssembly)
 				return false;
 			if (type.HasProperties || type.HasEvents || type.HasFields || type.HasNestedTypes)
@@ -62,13 +144,13 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 				return false;
 			if (type.Interfaces.Count > 0)
 				return false;
-			if (!checkValidTypeMethods(type))
+			if (!checkMethods(type))
 				return false;
 
 			return true;
 		}
 
-		static bool checkValidTypeMethods(TypeDefinition type) {
+		static bool checkMethods(TypeDefinition type) {
 			bool foundCtor = false;
 			int numMethods = 0;
 
@@ -94,58 +176,10 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			return numMethods > 0 && foundCtor;
 		}
 
-		public bool restoreBody(Blocks blocks) {
-			if (validTypes.find(blocks.Method.DeclaringType))
-				return false;
-			if (blocks.Locals.Count > 0)
-				return false;
-			if (blocks.MethodBlocks.BaseBlocks.Count != 1)
-				return false;
-			var block = blocks.MethodBlocks.BaseBlocks[0] as Block;
-			if (block == null)
-				return false;
-
-			MethodDefinition calledMethod;
-			if (!checkRestoreBody(block, out calledMethod))
-				return false;
-			if (calledMethod == blocks.Method)
-				return false;
-
-			DotNetUtils.copyBodyFromTo(calledMethod, blocks.Method);
-			blocks.updateBlocks();
-			return true;
-		}
-
-		bool checkRestoreBody(Block block, out MethodDefinition calledMethod) {
-			calledMethod = null;
-
-			var instrs = block.Instructions;
-			int index;
-			for (index = 0; index < instrs.Count; index++) {
-				if (DotNetUtils.getArgIndex(instrs[index].Instruction) != index)
-					break;
-			}
-
-			var call = instrs[index++];
-			if (call.OpCode.Code != Code.Call)
-				return false;
-
-			calledMethod = call.Operand as MethodDefinition;
-			if (calledMethod == null)
-				return false;
-			if (!checkCanInline(calledMethod))
-				return false;
-
-			if (instrs[index++].OpCode.Code != Code.Ret)
-				return false;
-
-			return true;
-		}
-
 		public List<MethodDefinition> getInlinedMethods() {
 			var list = new List<MethodDefinition>();
 
-			foreach (var type in validTypes.getKeys())
+			foreach (var type in methodsTypes.getKeys())
 				list.AddRange(type.Methods);
 
 			return list;
@@ -157,7 +191,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 				unused.add(method, true);
 
 			var types = new TypeDefinitionDict<bool>();
-			foreach (var type in validTypes.getKeys()) {
+			foreach (var type in methodsTypes.getKeys()) {
 				if (checkAllMethodsUnused(unused, type))
 					types.add(type, true);
 			}
@@ -170,6 +204,21 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 					return false;
 			}
 			return true;
+		}
+
+		public void deobfuscate(Blocks blocks) {
+			foreach (var block in blocks.MethodBlocks.getAllBlocks()) {
+				var instrs = block.Instructions;
+				for (int i = 0; i < instrs.Count; i++) {
+					var call = instrs[i];
+					if (call.OpCode.Code != Code.Call)
+						continue;
+					var realInstanceMethod = classMethods.find(call.Operand as MethodReference);
+					if (realInstanceMethod == null)
+						continue;
+					call.Operand = realInstanceMethod;
+				}
+			}
 		}
 	}
 }

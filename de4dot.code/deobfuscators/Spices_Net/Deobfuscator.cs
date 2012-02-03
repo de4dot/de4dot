@@ -145,12 +145,9 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			startedDeobfuscating = true;
 		}
 
-		public override void deobfuscateMethodBegin(Blocks blocks) {
-			base.deobfuscateMethodBegin(blocks);
-			if (options.InlineMethods) {
-				if (methodCallInliner.restoreBody(blocks))
-					Log.v("Restored method body");
-			}
+		public override void deobfuscateMethodEnd(Blocks blocks) {
+			methodCallInliner.deobfuscate(blocks);
+			base.deobfuscateMethodEnd(blocks);
 		}
 
 		public override void deobfuscateEnd() {
