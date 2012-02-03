@@ -648,7 +648,7 @@ namespace de4dot.code.deobfuscators {
 			addMethodsToBeRemoved(new UnusedMethodsFinder(module, inlinedMethods, getRemovedMethods()).find(), "Inlined method");
 		}
 
-		MethodCollection getRemovedMethods() {
+		protected MethodCollection getRemovedMethods() {
 			var removedMethods = new MethodCollection();
 			removedMethods.add(getMethodsToRemove());
 			removedMethods.addAndNested(getTypesToRemove());

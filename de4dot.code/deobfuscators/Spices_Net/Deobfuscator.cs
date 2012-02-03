@@ -167,7 +167,15 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 		void removeInlinedMethods() {
 			if (!options.InlineMethods || !options.RemoveInlinedMethods)
 				return;
-			removeInlinedMethods(new SpicesInlinedMethodsFinder(module, methodCallInliner).find());
+
+			var unusedMethods = new UnusedMethodsFinder(module, methodCallInliner.getInlinedMethods(), getRemovedMethods()).find();
+			var removedTypes = methodCallInliner.getInlinedTypes(unusedMethods);
+
+			addTypesToBeRemoved(removedTypes.getKeys(), "Obfuscator methods type");
+			foreach (var method in unusedMethods) {
+				if (!removedTypes.find(method.DeclaringType))
+					addMethodToBeRemoved(method, "Inlined method");
+			}
 		}
 
 		public override IEnumerable<string> getStringDecrypterMethods() {

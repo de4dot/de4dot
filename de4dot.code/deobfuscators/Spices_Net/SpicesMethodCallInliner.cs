@@ -17,6 +17,7 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Metadata;
@@ -138,6 +139,36 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			if (instrs[index++].OpCode.Code != Code.Ret)
 				return false;
 
+			return true;
+		}
+
+		public List<MethodDefinition> getInlinedMethods() {
+			var list = new List<MethodDefinition>();
+
+			foreach (var type in validTypes.getKeys())
+				list.AddRange(type.Methods);
+
+			return list;
+		}
+
+		public TypeDefinitionDict<bool> getInlinedTypes(IEnumerable<MethodDefinition> unusedMethods) {
+			var unused = new MethodDefinitionAndDeclaringTypeDict<bool>();
+			foreach (var method in unusedMethods)
+				unused.add(method, true);
+
+			var types = new TypeDefinitionDict<bool>();
+			foreach (var type in validTypes.getKeys()) {
+				if (checkAllMethodsUnused(unused, type))
+					types.add(type, true);
+			}
+			return types;
+		}
+
+		static bool checkAllMethodsUnused(MethodDefinitionAndDeclaringTypeDict<bool> unused, TypeDefinition type) {
+			foreach (var method in type.Methods) {
+				if (!unused.find(method))
+					return false;
+			}
 			return true;
 		}
 	}
