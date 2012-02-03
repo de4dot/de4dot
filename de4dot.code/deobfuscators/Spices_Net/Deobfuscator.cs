@@ -64,6 +64,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 		bool startedDeobfuscating = false;
 
 		StringDecrypter stringDecrypter;
+		SpicesMethodCallInliner methodCallInliner;
 
 		internal class Options : OptionsBase {
 			public bool InlineMethods { get; set; }
@@ -89,7 +90,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 		public override IMethodCallInliner MethodCallInliner {
 			get {
 				if (CanInlineMethods)
-					return new SpicesMethodCallInliner();
+					return methodCallInliner;
 				return new NoMethodInliner();
 			}
 		}
@@ -111,6 +112,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 		}
 
 		protected override void scanForObfuscator() {
+			methodCallInliner = new SpicesMethodCallInliner(module);
 			stringDecrypter = new StringDecrypter(module);
 			stringDecrypter.find();
 			findSpicesAttributes();
@@ -128,6 +130,8 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 
 		public override void deobfuscateBegin() {
 			base.deobfuscateBegin();
+
+			methodCallInliner.initialize();
 
 			stringDecrypter.initialize();
 			foreach (var info in stringDecrypter.DecrypterInfos) {
@@ -154,7 +158,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 		void removeInlinedMethods() {
 			if (!options.InlineMethods || !options.RemoveInlinedMethods)
 				return;
-			removeInlinedMethods(SpicesInlinedMethodsFinder.find(module));
+			removeInlinedMethods(new SpicesInlinedMethodsFinder(module, methodCallInliner).find());
 		}
 
 		public override IEnumerable<string> getStringDecrypterMethods() {

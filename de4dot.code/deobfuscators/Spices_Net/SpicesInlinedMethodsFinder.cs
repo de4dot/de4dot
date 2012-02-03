@@ -22,14 +22,22 @@ using Mono.Cecil;
 
 namespace de4dot.code.deobfuscators.Spices_Net {
 	class SpicesInlinedMethodsFinder {
-		public static List<MethodDefinition> find(ModuleDefinition module) {
+		ModuleDefinition module;
+		SpicesMethodCallInliner methodCallInliner;
+
+		public SpicesInlinedMethodsFinder(ModuleDefinition module, SpicesMethodCallInliner methodCallInliner) {
+			this.module = module;
+			this.methodCallInliner = methodCallInliner;
+		}
+
+		public List<MethodDefinition> find() {
 			var inlinedMethods = new List<MethodDefinition>();
 
 			foreach (var type in module.GetTypes()) {
 				if (!type.IsNested)
 					continue;
 				foreach (var method in type.Methods) {
-					if (SpicesMethodCallInliner.checkCanInline(method))
+					if (methodCallInliner.checkCanInline(method))
 						inlinedMethods.Add(method);
 				}
 			}
