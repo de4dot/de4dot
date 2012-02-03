@@ -30,12 +30,14 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 		BoolOption inlineMethods;
 		BoolOption removeInlinedMethods;
 		BoolOption removeNamespaces;
+		BoolOption restoreResourceNames;
 
 		public DeobfuscatorInfo()
 			: base(DEFAULT_REGEX) {
 			inlineMethods = new BoolOption(null, makeArgName("inline"), "Inline short methods", true);
 			removeInlinedMethods = new BoolOption(null, makeArgName("remove-inlined"), "Remove inlined methods", true);
 			removeNamespaces = new BoolOption(null, makeArgName("ns1"), "Clear namespace if there's only one class in it", true);
+			restoreResourceNames = new BoolOption(null, makeArgName("rsrc"), "Restore resource names", true);
 		}
 
 		public override string Name {
@@ -52,6 +54,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 				InlineMethods = inlineMethods.get(),
 				RemoveInlinedMethods = removeInlinedMethods.get(),
 				RemoveNamespaces = removeNamespaces.get(),
+				RestoreResourceNames = restoreResourceNames.get(),
 			});
 		}
 
@@ -60,6 +63,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 				inlineMethods,
 				removeInlinedMethods,
 				removeNamespaces,
+				restoreResourceNames,
 			};
 		}
 	}
@@ -71,11 +75,13 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 
 		StringDecrypter stringDecrypter;
 		SpicesMethodCallInliner methodCallInliner;
+		ResourceNamesRestorer resourceNamesRestorer;
 
 		internal class Options : OptionsBase {
 			public bool InlineMethods { get; set; }
 			public bool RemoveInlinedMethods { get; set; }
 			public bool RemoveNamespaces { get; set; }
+			public bool RestoreResourceNames { get; set; }
 		}
 
 		public override string Type {
@@ -147,6 +153,12 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 
 			methodCallInliner.initialize();
 
+			if (options.RestoreResourceNames) {
+				resourceNamesRestorer = new ResourceNamesRestorer(module);
+				resourceNamesRestorer.find();
+				resourceNamesRestorer.renameResources();
+			}
+
 			stringDecrypter.initialize();
 			foreach (var info in stringDecrypter.DecrypterInfos) {
 				staticStringInliner.add(info.method, (method2, args) => {
@@ -160,11 +172,18 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 
 		public override void deobfuscateMethodEnd(Blocks blocks) {
 			methodCallInliner.deobfuscate(blocks);
+			if (options.RestoreResourceNames)
+				resourceNamesRestorer.deobfuscate(blocks);
 			base.deobfuscateMethodEnd(blocks);
 		}
 
 		public override void deobfuscateEnd() {
 			removeInlinedMethods();
+
+			if (options.RestoreResourceNames) {
+				addTypeToBeRemoved(resourceNamesRestorer.ResourceManagerType, "Obfuscator ResourceManager type");
+				addTypeToBeRemoved(resourceNamesRestorer.ComponentResourceManagerType, "Obfuscator ComponentResourceManager type");
+			}
 
 			if (Operations.DecryptStrings != OpDecryptString.None) {
 				addTypeToBeRemoved(stringDecrypter.Type, "String decrypter type");

@@ -148,6 +148,7 @@
     <Compile Include="deobfuscators\Skater_NET\StringDecrypter.cs" />
     <Compile Include="deobfuscators\Spices_Net\Deobfuscator.cs" />
     <Compile Include="deobfuscators\Spices_Net\QclzDecompressor.cs" />
+    <Compile Include="deobfuscators\Spices_Net\ResourceNamesRestorer.cs" />
     <Compile Include="deobfuscators\Spices_Net\SpicesMethodCallInliner.cs" />
     <Compile Include="deobfuscators\Spices_Net\StringDecrypter.cs" />
     <Compile Include="deobfuscators\StringCounts.cs" />
