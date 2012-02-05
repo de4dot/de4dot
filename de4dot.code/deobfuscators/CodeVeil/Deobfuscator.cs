@@ -152,7 +152,8 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 
 		public override IEnumerable<string> getStringDecrypterMethods() {
 			var list = new List<string>();
-			//TODO:
+			if (stringDecrypter.DecryptMethod != null)
+				list.Add(stringDecrypter.DecryptMethod.MetadataToken.ToInt32().ToString("X8"));
 			return list;
 		}
 	}
