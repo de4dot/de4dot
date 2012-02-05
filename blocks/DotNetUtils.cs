@@ -623,6 +623,8 @@ namespace de4dot.blocks {
 					if (call.OpCode.Code != Code.Call && call.OpCode.Code != Code.Callvirt)
 						continue;
 					var methodRef = call.Operand as MethodReference;
+					if (methodRef == null)
+						continue;
 					var type = DotNetUtils.getType(module, methodRef.DeclaringType);
 					var methodDef = DotNetUtils.getMethod(type, methodRef);
 					if (methodDef != null) {
