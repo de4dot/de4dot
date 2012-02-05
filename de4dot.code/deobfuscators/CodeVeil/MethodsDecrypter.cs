@@ -158,13 +158,13 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			var methodDef = metadataTables.getMetadataType(MetadataIndex.iMethodDef);
 			uint methodDefOffset = methodDef.fileOffset;
 			for (int i = 0; i < methodDef.rows; i++, methodDefOffset += methodDef.totalSize) {
-				uint token = (uint)(0x06000001 + i);
 				uint bodyRva = peImage.offsetReadUInt32(methodDefOffset);
 				if (bodyRva == 0)
 					continue;
 				uint bodyOffset = peImage.rvaToOffset(bodyRva);
 
 				var dm = new DumpedMethod();
+				dm.token = (uint)(0x06000001 + i);
 				dm.mdImplFlags = peImage.offsetReadUInt16(methodDefOffset + (uint)methodDef.fields[1].offset);
 				dm.mdFlags = peImage.offsetReadUInt16(methodDefOffset + (uint)methodDef.fields[2].offset);
 				dm.mdName = peImage.offsetRead(methodDefOffset + (uint)methodDef.fields[3].offset, methodDef.fields[3].size);
@@ -202,7 +202,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				if ((dm.mhFlags & 8) != 0)
 					dm.extraSections = readExtraSections(methodsDataReader);
 
-				dumpedMethods[token] = dm;
+				dumpedMethods[dm.token] = dm;
 			}
 
 			return dumpedMethods;
