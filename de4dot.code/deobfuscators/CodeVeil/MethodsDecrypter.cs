@@ -118,8 +118,12 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		static List<FieldDefinition> getRvaFields(TypeDefinition type) {
 			var fields = new List<FieldDefinition>();
 			foreach (var field in type.Fields) {
-				if (field.FieldType.EType == ElementType.U1 && field.RVA != 0)
-					fields.Add(field);
+				if (field.FieldType.EType != ElementType.U1 && field.FieldType.EType != ElementType.U4)
+					continue;
+				if (field.RVA == 0)
+					continue;
+
+				fields.Add(field);
 			}
 			return fields;
 		}
