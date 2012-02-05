@@ -99,8 +99,6 @@ namespace de4dot.code.deobfuscators.Unknown {
 			foreach (var type in module.Types) {
 				if (type.Namespace == "___codefort")
 					return "CodeFort";
-				if (type.FullName == "____KILL")
-					return "DeployLX CodeVeil";
 				if (type.FullName == "ZYXDNGuarder")
 					return "DNGuard HVM";
 				if (type.FullName == "InfaceMaxtoCode")
