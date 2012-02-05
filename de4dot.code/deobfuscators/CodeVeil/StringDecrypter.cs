@@ -169,13 +169,10 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 					continue;
 
 				i++;
-				var ary = ArrayFinder.getInitializedInt32Array(4, method, ref i);
-				if (ary == null)
+				var key = ArrayFinder.getInitializedUInt32Array(4, method, ref i);
+				if (key == null)
 					continue;
 
-				var key = new uint[4];
-				for (int j = 0; j < key.Length; j++)
-					key[j] = (uint)ary[j];
 				return key;
 			}
 			return null;
