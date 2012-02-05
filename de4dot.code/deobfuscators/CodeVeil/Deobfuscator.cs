@@ -82,11 +82,12 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		protected override int detectInternal() {
 			int val = 0;
 
-			int sum = toInt32(foundKillType) +
-					toInt32(methodsDecrypter.Detected) +
+			int sum = toInt32(methodsDecrypter.Detected) +
 					toInt32(stringDecrypter.Detected);
 			if (sum > 0)
 				val += 100 + 10 * (sum - 1);
+			if (foundKillType)
+				val += 10;
 
 			return val;
 		}
@@ -131,7 +132,6 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 
 		public override void deobfuscateBegin() {
 			base.deobfuscateBegin();
-
 
 			if (Operations.DecryptStrings != OpDecryptString.None) {
 				stringDecrypter.initialize();
