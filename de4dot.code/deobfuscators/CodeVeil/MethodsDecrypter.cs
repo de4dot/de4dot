@@ -90,7 +90,8 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				return false;
 			if (!DotNetUtils.isMethod(initMethod, "System.Void", "(System.Boolean,System.Boolean)"))
 				return false;
-			if (!hasCodeString(initMethod, "E_FullTrust"))
+			if (!hasCodeString(initMethod, "E_FullTrust") &&		// 4.0 / 4.1
+				!hasCodeString(initMethod, "Full Trust Required"))	// 3.2
 				return false;
 
 			return true;
