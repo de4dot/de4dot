@@ -47,6 +47,10 @@ namespace de4dot.code.PE {
 			get { return resources; }
 		}
 
+		internal SectionHeader[] Sections {
+			get { return sectionHeaders; }
+		}
+
 		public uint FileHeaderOffset {
 			get { return fileHeader.Offset; }
 		}
