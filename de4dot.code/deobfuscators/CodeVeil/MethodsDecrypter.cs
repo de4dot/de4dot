@@ -189,10 +189,10 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				fileDataReader.BaseStream.Position = codeOffset;
 				if (fileDataReader.ReadByte() != 0x2A)
 					continue;	// Not a RET
-				int methodsDataOffset = readVariableLengthInteger(fileDataReader);
+				int methodsDataOffset = DeobUtils.readVariableLengthInteger(fileDataReader);
 				methodsDataReader.BaseStream.Position = methodsDataOffset;
 
-				dm.mhCodeSize = (uint)readVariableLengthInteger(methodsDataReader);
+				dm.mhCodeSize = (uint)DeobUtils.readVariableLengthInteger(methodsDataReader);
 				dm.code = methodsDataReader.ReadBytes((int)dm.mhCodeSize);
 				if ((dm.mhFlags & 8) != 0)
 					dm.extraSections = readExtraSections(methodsDataReader);
@@ -265,7 +265,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 					continue;
 				reader.BaseStream.Position = section.pointerToRawData + relOffs;
 
-				int size = readVariableLengthInteger(reader);
+				int size = DeobUtils.readVariableLengthInteger(reader);
 				int endOffset = relOffs + size;
 				if (endOffset < relOffs || endOffset > section.sizeOfRawData)
 					continue;
@@ -274,18 +274,6 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			}
 
 			return null;
-		}
-
-		static int readVariableLengthInteger(BinaryReader reader) {
-			byte b = reader.ReadByte();
-			if ((b & 0x80) == 0)
-				return b;
-			if ((b & 0x40) == 0)
-				return (((int)b & 0x3F) << 8) + reader.ReadByte();
-			return (((int)b & 0x3F) << 24) +
-					((int)reader.ReadByte() << 16) +
-					((int)reader.ReadByte() << 8) +
-					reader.ReadByte();
 		}
 
 		static int findSig(byte[] fileData, int offset, byte[] sig) {
