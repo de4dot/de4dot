@@ -57,6 +57,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		bool foundKillType = false;
 
 		MethodsDecrypter methodsDecrypter;
+		StringDecrypter stringDecrypter;
 
 		internal class Options : OptionsBase {
 		}
@@ -82,7 +83,8 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			int val = 0;
 
 			int sum = toInt32(foundKillType) +
-					toInt32(methodsDecrypter.Detected);
+					toInt32(methodsDecrypter.Detected) +
+					toInt32(stringDecrypter.Detected);
 			if (sum > 0)
 				val += 100 + 10 * (sum - 1);
 
@@ -93,12 +95,15 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			findKillType();
 			methodsDecrypter = new MethodsDecrypter(module);
 			methodsDecrypter.find();
+			stringDecrypter = new StringDecrypter(module);
+			stringDecrypter.find();
 		}
 
 		void findKillType() {
 			foreach (var type in module.Types) {
 				if (type.FullName == "____KILL") {
 					addTypeToBeRemoved(type, "KILL type");
+					foundKillType = true;
 					break;
 				}
 			}
@@ -120,11 +125,21 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			var newOne = new Deobfuscator(options);
 			newOne.setModule(module);
 			newOne.methodsDecrypter = new MethodsDecrypter(module, methodsDecrypter);
+			newOne.stringDecrypter = new StringDecrypter(module, stringDecrypter);
 			return newOne;
 		}
 
 		public override void deobfuscateBegin() {
 			base.deobfuscateBegin();
+
+
+			if (Operations.DecryptStrings != OpDecryptString.None) {
+				stringDecrypter.initialize();
+				staticStringInliner.add(stringDecrypter.DecryptMethod, (method, args) => {
+					return stringDecrypter.decrypt((int)args[0]);
+				});
+				DeobfuscatedFile.stringDecryptersAdded();
+			}
 
 			//TODO:
 		}
