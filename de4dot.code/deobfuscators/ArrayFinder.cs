@@ -153,7 +153,7 @@ namespace de4dot.code.deobfuscators {
 				case Code.Starg_S:
 				case Code.Stsfld:
 				case Code.Stfld:
-					if (emulator.peek() == theArray && i != newarrIndex + 1)
+					if (emulator.peek() == theArray && i != newarrIndex + 1 && i != newarrIndex + 2)
 						goto done;
 					break;
 				}
