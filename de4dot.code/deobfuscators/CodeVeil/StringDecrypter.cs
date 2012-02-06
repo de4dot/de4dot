@@ -183,7 +183,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 
 			var encryptedData = new uint[data.Length / 4];
 			Buffer.BlockCopy(data, 0, encryptedData, 0, data.Length);
-			decryptXxtea(encryptedData, encryptedData.Length, key);
+			DeobUtils.xxteaDecrypt(encryptedData, encryptedData.Length, key);
 			var decryptedData = new byte[data.Length];
 			Buffer.BlockCopy(encryptedData, 0, decryptedData, 0, data.Length);
 
@@ -200,26 +200,6 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				reader.BaseStream.Position = startOffset + offsets[i];
 				decryptedStrings[i] = reader.ReadString();
 			}
-		}
-
-		// Code converted from C implementation @ http://en.wikipedia.org/wiki/XXTEA (btea() func)
-		static void decryptXxtea(uint[] v, int n, uint[] key) {
-			const uint DELTA = 0x9E3779B9;
-			uint rounds = (uint)(6 + 52 / n);
-			uint sum = rounds * DELTA;
-			uint y = v[0];
-			uint z;
-			//#define MX (((z >> 5 ^ y << 2) + (y >> 3 ^ z << 4)) ^ ((sum ^ y) + (key[(p & 3) ^ e] ^ z)))
-			do {
-				int e = (int)((sum >> 2) & 3);
-				int p;
-				for (p = n - 1; p > 0; p--) {
-					z = v[p - 1];
-					y = v[p] -= (((z >> 5 ^ y << 2) + (y >> 3 ^ z << 4)) ^ ((sum ^ y) + (key[(p & 3) ^ e] ^ z)));
-				}
-				z = v[n - 1];
-				y = v[0] -= (((z >> 5 ^ y << 2) + (y >> 3 ^ z << 4)) ^ ((sum ^ y) + (key[(p & 3) ^ e] ^ z)));
-			} while ((sum -= DELTA) != 0);
 		}
 
 		public string decrypt(int index) {
