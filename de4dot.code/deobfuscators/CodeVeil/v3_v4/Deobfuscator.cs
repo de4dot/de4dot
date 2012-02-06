@@ -53,7 +53,7 @@ namespace de4dot.code.deobfuscators.CodeVeil.v3_v4 {
 
 	class Deobfuscator : DeobfuscatorBase {
 		Options options;
-		string obfuscatorName = DeobfuscatorInfo.THE_NAME;
+		string obfuscatorName = DeobfuscatorInfo.THE_NAME + " 3.x - 4.x";
 		bool foundKillType = false;
 
 		MethodsDecrypter methodsDecrypter;
