@@ -20,7 +20,6 @@
 using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.MyStuff;
-using de4dot.blocks.cflow;
 
 namespace de4dot.code.deobfuscators.CodeVeil.v3_v4 {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
