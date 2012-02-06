@@ -26,9 +26,10 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "CodeVeil";
 		public const string THE_TYPE = "cv";
+		const string DEFAULT_REGEX = @"!^[A-Za-z]{1,2}$&" + DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
 
 		public DeobfuscatorInfo()
-			: base() {
+			: base(DEFAULT_REGEX) {
 		}
 
 		public override string Name {
