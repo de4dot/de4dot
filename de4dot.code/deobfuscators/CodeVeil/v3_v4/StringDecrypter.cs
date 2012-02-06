@@ -189,12 +189,12 @@ namespace de4dot.code.deobfuscators.CodeVeil.v3_v4 {
 
 			var inflated = DeobUtils.inflate(decryptedData, 0, decryptedData.Length, true);
 			var reader = new BinaryReader(new MemoryStream(inflated));
-			int deflatedLength = DeobUtils.readVariableLengthInteger(reader);
-			int numStrings = DeobUtils.readVariableLengthInteger(reader);
+			int deflatedLength = DeobUtils.readVariableLengthInt32(reader);
+			int numStrings = DeobUtils.readVariableLengthInt32(reader);
 			decryptedStrings = new string[numStrings];
 			var offsets = new int[numStrings];
 			for (int i = 0; i < numStrings; i++)
-				offsets[i] = DeobUtils.readVariableLengthInteger(reader);
+				offsets[i] = DeobUtils.readVariableLengthInt32(reader);
 			int startOffset = (int)reader.BaseStream.Position;
 			for (int i = 0; i < numStrings; i++) {
 				reader.BaseStream.Position = startOffset + offsets[i];

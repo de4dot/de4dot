@@ -194,10 +194,10 @@ namespace de4dot.code.deobfuscators.CodeVeil.v3_v4 {
 				fileDataReader.BaseStream.Position = codeOffset;
 				if (fileDataReader.ReadByte() != 0x2A)
 					continue;	// Not a RET
-				int methodsDataOffset = DeobUtils.readVariableLengthInteger(fileDataReader);
+				int methodsDataOffset = DeobUtils.readVariableLengthInt32(fileDataReader);
 				methodsDataReader.BaseStream.Position = methodsDataOffset;
 
-				dm.mhCodeSize = (uint)DeobUtils.readVariableLengthInteger(methodsDataReader);
+				dm.mhCodeSize = (uint)DeobUtils.readVariableLengthInt32(methodsDataReader);
 				dm.code = methodsDataReader.ReadBytes((int)dm.mhCodeSize);
 				if ((dm.mhFlags & 8) != 0)
 					dm.extraSections = readExtraSections(methodsDataReader);
@@ -270,7 +270,7 @@ namespace de4dot.code.deobfuscators.CodeVeil.v3_v4 {
 					continue;
 				reader.BaseStream.Position = section.pointerToRawData + relOffs;
 
-				int size = DeobUtils.readVariableLengthInteger(reader);
+				int size = DeobUtils.readVariableLengthInt32(reader);
 				int endOffset = relOffs + size;
 				if (endOffset < relOffs || endOffset > section.sizeOfRawData)
 					continue;

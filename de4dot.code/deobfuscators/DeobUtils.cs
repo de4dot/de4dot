@@ -150,7 +150,7 @@ namespace de4dot.code.deobfuscators {
 			return null;
 		}
 
-		public static int readVariableLengthInteger(BinaryReader reader) {
+		public static int readVariableLengthInt32(BinaryReader reader) {
 			byte b = reader.ReadByte();
 			if ((b & 0x80) == 0)
 				return b;
