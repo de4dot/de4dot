@@ -22,10 +22,10 @@ using Mono.Cecil;
 using Mono.MyStuff;
 using de4dot.blocks.cflow;
 
-namespace de4dot.code.deobfuscators.CodeVeil {
+namespace de4dot.code.deobfuscators.CodeVeil.v3_v4 {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "CodeVeil";
-		public const string THE_TYPE = "cv";
+		public const string THE_TYPE = "cv4";
 		const string DEFAULT_REGEX = @"!^[A-Za-z]{1,2}$&" + DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
 
 		public DeobfuscatorInfo()

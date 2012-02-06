@@ -23,7 +23,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using de4dot.blocks;
 
-namespace de4dot.code.deobfuscators.CodeVeil {
+namespace de4dot.code.deobfuscators.CodeVeil.v3_v4 {
 	class StringDecrypter {
 		ModuleDefinition module;
 		TypeDefinition decrypterType;

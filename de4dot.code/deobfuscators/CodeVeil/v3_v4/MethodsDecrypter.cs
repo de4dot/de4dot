@@ -27,7 +27,7 @@ using Mono.MyStuff;
 using de4dot.blocks;
 using de4dot.code.PE;
 
-namespace de4dot.code.deobfuscators.CodeVeil {
+namespace de4dot.code.deobfuscators.CodeVeil.v3_v4 {
 	// The code isn't currently encrypted at all! But let's keep this class name.
 	class MethodsDecrypter {
 		ModuleDefinition module;
