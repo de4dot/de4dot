@@ -34,11 +34,16 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		List<int> rvas;	// _stub and _executive
 		IDecrypter decrypter;
 
-		enum TypeVersion {
+		public enum TypeVersion {
 			Unknown,
 			V3,
-			V4,
+			V4_0,
+			V4_1,
 			V5,
+		}
+
+		public TypeVersion Version {
+			get { return decrypter == null ? TypeVersion.Unknown : decrypter.TypeVersion; }
 		}
 
 		interface IDecrypter {
@@ -210,8 +215,12 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			if (!DotNetUtils.isMethod(initMethod, "System.Void", "(System.Boolean,System.Boolean)"))
 				return false;
 
-			if (hasCodeString(initMethod, "E_FullTrust"))
-				decrypter = new Decrypter(TypeVersion.V4);
+			if (hasCodeString(initMethod, "E_FullTrust")) {
+				if (DotNetUtils.getPInvokeMethod(initMethod.DeclaringType, "user32", "CallWindowProcW") != null)
+					decrypter = new Decrypter(TypeVersion.V4_1);
+				else
+					decrypter = new Decrypter(TypeVersion.V4_0);
+			}
 			else if (hasCodeString(initMethod, "Full Trust Required"))
 				decrypter = new Decrypter(TypeVersion.V3);
 			else if (initMethod.DeclaringType.HasNestedTypes && new FieldTypes(initMethod.DeclaringType).all(fieldTypesV5))

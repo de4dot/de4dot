@@ -17,6 +17,7 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.MyStuff;
@@ -102,6 +103,31 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			methodsDecrypter.find();
 			stringDecrypter = new StringDecrypter(module);
 			stringDecrypter.find();
+			var version = detectVersion();
+			if (!string.IsNullOrEmpty(version))
+				obfuscatorName = obfuscatorName + " " + version;
+		}
+
+		string detectVersion() {
+			switch (methodsDecrypter.Version) {
+			case MethodsDecrypter.TypeVersion.Unknown:
+				return null;
+
+			case MethodsDecrypter.TypeVersion.V3:
+				return "3.x";
+
+			case MethodsDecrypter.TypeVersion.V4_0:
+				return "4.0";
+
+			case MethodsDecrypter.TypeVersion.V4_1:
+				return "4.1";
+
+			case MethodsDecrypter.TypeVersion.V5:
+				return "5.x";
+
+			default:
+				throw new ApplicationException("Unknown version");
+			}
 		}
 
 		void findKillType() {
