@@ -33,6 +33,14 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		ModuleDefinition module;
 		TypeDefinition methodsType;
 		List<int> rvas;	// _stub and _executive
+		TypeVersion typeVersion = TypeVersion.Unknown;
+
+		enum TypeVersion {
+			Unknown,
+			V3,
+			V4,
+			V5,
+		}
 
 		public bool Detected {
 			get { return methodsType != null; }
@@ -80,6 +88,11 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			}
 		}
 
+		static string[] fieldTypesV5 = new string[] {
+			"System.Byte[]",
+			"System.Collections.Generic.List`1<System.Delegate>",
+			"System.Runtime.InteropServices.GCHandle",
+		};
 		bool checkInitMethod(MethodDefinition initMethod) {
 			if (initMethod == null)
 				return false;
@@ -90,8 +103,14 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				return false;
 			if (!DotNetUtils.isMethod(initMethod, "System.Void", "(System.Boolean,System.Boolean)"))
 				return false;
-			if (!hasCodeString(initMethod, "E_FullTrust") &&		// 4.0 / 4.1
-				!hasCodeString(initMethod, "Full Trust Required"))	// 3.2
+
+			if (hasCodeString(initMethod, "E_FullTrust"))
+				typeVersion = TypeVersion.V4;
+			else if (hasCodeString(initMethod, "Full Trust Required"))
+				typeVersion = TypeVersion.V3;
+			else if (initMethod.DeclaringType.HasNestedTypes && new FieldTypes(initMethod.DeclaringType).all(fieldTypesV5))
+				typeVersion = TypeVersion.V5;
+			else
 				return false;
 
 			return true;
@@ -140,6 +159,11 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			var methodsData = findMethodsData(peImage, fileData);
 			if (methodsData == null)
 				return false;
+
+			if (typeVersion == TypeVersion.V5) {
+				methodsData = DeobUtils.inflate(methodsData, true);
+				throw new NotImplementedException();	//TODO:
+			}
 
 			dumpedMethods = createDumpedMethods(peImage, fileData, methodsData);
 			if (dumpedMethods == null)
@@ -244,9 +268,9 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			} while ((flags & 0x80) != 0);
 		}
 
-		// xor eax, eax / inc eax / pop esi edi edx ecx ebx / leave / ret 0Ch
+		// xor eax, eax / inc eax / pop esi edi edx ecx ebx / leave / ret 0Ch or 10h
 		static byte[] initializeMethodEnd = new byte[] {
-			0x33, 0xC0, 0x40, 0x5E, 0x5F, 0x5A, 0x59, 0x5B, 0xC9, 0xC2, 0x0C, 0x00,
+			0x33, 0xC0, 0x40, 0x5E, 0x5F, 0x5A, 0x59, 0x5B, 0xC9, 0xC2,
 		};
 		byte[] findMethodsData(PeImage peImage, byte[] fileData) {
 			var section = peImage.Sections[0];
@@ -260,6 +284,11 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				if (offset < 0)
 					return null;
 				offset += initializeMethodEnd.Length;
+
+				short retImm16 = BitConverter.ToInt16(fileData, offset);
+				if (retImm16 != 0x0C && retImm16 != 0x10)
+					continue;
+				offset += 2;
 
 				int rva = BitConverter.ToInt32(fileData, offset + RVA_EXECUTIVE_OFFSET);
 				if (rvas.IndexOf(rva) < 0)
