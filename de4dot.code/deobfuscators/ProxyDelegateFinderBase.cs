@@ -89,7 +89,7 @@ namespace de4dot.code.deobfuscators {
 			return new DelegateInfo(field, method, di.callOpcode);
 		}
 
-		T lookup<T>(T def, string errorMessage) where T : MemberReference {
+		protected T lookup<T>(T def, string errorMessage) where T : MemberReference {
 			return DeobUtils.lookup(module, def, errorMessage);
 		}
 
