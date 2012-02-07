@@ -23,7 +23,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using de4dot.blocks;
 
-namespace de4dot.code.deobfuscators.CodeVeil.v3_v4 {
+namespace de4dot.code.deobfuscators.CodeVeil {
 	class StringDecrypter {
 		ModuleDefinition module;
 		TypeDefinition decrypterType;
@@ -78,6 +78,34 @@ namespace de4dot.code.deobfuscators.CodeVeil.v3_v4 {
 				initMethod = initMethodTmp;
 				break;
 			}
+		}
+
+		public void find2() {
+			foreach (var type in module.Types) {
+				if (!checkType(type))
+					continue;
+				var initMethodTmp = findInitMethod(type);
+				if (initMethodTmp == null)
+					continue;
+
+				decrypterType = type;
+				initMethod = initMethodTmp;
+				return;
+			}
+		}
+
+		MethodDefinition findInitMethod(TypeDefinition type) {
+			foreach (var method in type.Methods) {
+				if (!method.IsStatic || method.Body == null)
+					continue;
+				var key = getKey(method);
+				if (key == null)
+					continue;
+
+				return method;
+			}
+
+			return null;
 		}
 
 		bool checkType(TypeDefinition type) {

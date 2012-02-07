@@ -55,6 +55,7 @@ namespace de4dot.code.deobfuscators.CodeVeil.v5 {
 		string obfuscatorName = DeobfuscatorInfo.THE_NAME + " 5.x";
 
 		ProxyDelegateFinder proxyDelegateFinder;
+		StringDecrypter stringDecrypter;
 
 		internal class Options : OptionsBase {
 		}
@@ -79,7 +80,8 @@ namespace de4dot.code.deobfuscators.CodeVeil.v5 {
 		protected override int detectInternal() {
 			int val = 0;
 
-			int sum = toInt32(proxyDelegateFinder.Detected);
+			int sum = toInt32(proxyDelegateFinder.Detected) +
+					toInt32(stringDecrypter.Detected);
 			if (sum > 0)
 				val += 100 + 10 * (sum - 1);
 
@@ -89,18 +91,28 @@ namespace de4dot.code.deobfuscators.CodeVeil.v5 {
 		protected override void scanForObfuscator() {
 			proxyDelegateFinder = new ProxyDelegateFinder(module);
 			proxyDelegateFinder.findDelegateCreator();
+			stringDecrypter = new StringDecrypter(module);
+			stringDecrypter.find2();
 		}
 
 		public override void deobfuscateBegin() {
 			base.deobfuscateBegin();
 
+			if (Operations.DecryptStrings != OpDecryptString.None) {
+				stringDecrypter.initialize();
+				staticStringInliner.add(stringDecrypter.DecryptMethod, (method, args) => {
+					return stringDecrypter.decrypt((int)args[0]);
+				});
+				DeobfuscatedFile.stringDecryptersAdded();
+			}
+
 			proxyDelegateFinder.initialize();
 			proxyDelegateFinder.find();
 		}
 
-		public override void deobfuscateMethodEnd(blocks.Blocks blocks) {
+		public override void deobfuscateMethodBegin(blocks.Blocks blocks) {
 			proxyDelegateFinder.deobfuscate(blocks);
-			base.deobfuscateMethodEnd(blocks);
+			base.deobfuscateMethodBegin(blocks);
 		}
 
 		public override void deobfuscateEnd() {
