@@ -28,18 +28,124 @@ using de4dot.blocks;
 using de4dot.code.PE;
 
 namespace de4dot.code.deobfuscators.CodeVeil {
-	// The code isn't currently encrypted at all! But let's keep this class name.
 	class MethodsDecrypter {
 		ModuleDefinition module;
 		TypeDefinition methodsType;
 		List<int> rvas;	// _stub and _executive
-		TypeVersion typeVersion = TypeVersion.Unknown;
+		IDecrypter decrypter;
 
 		enum TypeVersion {
 			Unknown,
 			V3,
 			V4,
 			V5,
+		}
+
+		interface IDecrypter {
+			TypeVersion TypeVersion { get; }
+			void initialize(byte[] methodsData);
+			bool decrypt(BinaryReader fileDataReader, DumpedMethod dm);
+		}
+
+		class Decrypter : IDecrypter {
+			TypeVersion typeVersion;
+			BinaryReader methodsDataReader;
+
+			public TypeVersion TypeVersion {
+				get { return typeVersion; }
+			}
+
+			public Decrypter(TypeVersion typeVersion) {
+				this.typeVersion = typeVersion;
+			}
+
+			public virtual void initialize(byte[] methodsData) {
+				methodsDataReader = new BinaryReader(new MemoryStream(methodsData));
+			}
+
+			public virtual bool decrypt(BinaryReader fileDataReader, DumpedMethod dm) {
+				if (fileDataReader.ReadByte() != 0x2A)
+					return false;	// Not a RET
+				int methodsDataOffset = DeobUtils.readVariableLengthInt32(fileDataReader);
+				methodsDataReader.BaseStream.Position = methodsDataOffset;
+
+				dm.mhCodeSize = (uint)DeobUtils.readVariableLengthInt32(methodsDataReader);
+				dm.code = methodsDataReader.ReadBytes((int)dm.mhCodeSize);
+				if ((dm.mhFlags & 8) != 0)
+					dm.extraSections = readExtraSections(methodsDataReader);
+
+				if (!decryptCode(dm))
+					return false;
+
+				return true;
+			}
+
+			protected virtual bool decryptCode(DumpedMethod dm) {
+				return true;
+			}
+
+			static void align(BinaryReader reader, int alignment) {
+				reader.BaseStream.Position = (reader.BaseStream.Position + alignment - 1) & ~(alignment - 1);
+			}
+
+			static byte[] readExtraSections(BinaryReader reader) {
+				align(reader, 4);
+				int startPos = (int)reader.BaseStream.Position;
+				parseSection(reader);
+				int size = (int)reader.BaseStream.Position - startPos;
+				reader.BaseStream.Position = startPos;
+				return reader.ReadBytes(size);
+			}
+
+			static void parseSection(BinaryReader reader) {
+				byte flags;
+				do {
+					align(reader, 4);
+
+					flags = reader.ReadByte();
+					if ((flags & 1) == 0)
+						throw new ApplicationException("Not an exception section");
+					if ((flags & 0x3E) != 0)
+						throw new ApplicationException("Invalid bits set");
+
+					if ((flags & 0x40) != 0) {
+						reader.BaseStream.Position--;
+						int num = (int)(reader.ReadUInt32() >> 8) / 24;
+						reader.BaseStream.Position += num * 24;
+					}
+					else {
+						int num = reader.ReadByte() / 12;
+						reader.BaseStream.Position += 2 + num * 12;
+					}
+				} while ((flags & 0x80) != 0);
+			}
+		}
+
+		class DecrypterV5 : Decrypter {
+			byte[] decryptKey;
+
+			public DecrypterV5()
+				: base(TypeVersion.V5) {
+			}
+
+			public override void initialize(byte[] methodsData) {
+				var data = DeobUtils.inflate(methodsData, true);
+				decryptKey = BitConverter.GetBytes(BitConverter.ToUInt32(data, 0));
+
+				var newMethodsData = new byte[data.Length - 4];
+				Array.Copy(data, 4, newMethodsData, 0, newMethodsData.Length);
+				base.initialize(newMethodsData);
+			}
+
+			protected override bool decryptCode(DumpedMethod dm) {
+				var code = dm.code;
+				for (int i = 0; i < code.Length; i++) {
+					for (int j = 0; j < 4 && i + j < code.Length; j++)
+						code[i + j] ^= decryptKey[j];
+				}
+
+				return true;
+			}
 		}
 
 		public bool Detected {
@@ -105,11 +211,11 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				return false;
 
 			if (hasCodeString(initMethod, "E_FullTrust"))
-				typeVersion = TypeVersion.V4;
+				decrypter = new Decrypter(TypeVersion.V4);
 			else if (hasCodeString(initMethod, "Full Trust Required"))
-				typeVersion = TypeVersion.V3;
+				decrypter = new Decrypter(TypeVersion.V3);
 			else if (initMethod.DeclaringType.HasNestedTypes && new FieldTypes(initMethod.DeclaringType).all(fieldTypesV5))
-				typeVersion = TypeVersion.V5;
+				decrypter = new DecrypterV5();
 			else
 				return false;
 
@@ -160,10 +266,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			if (methodsData == null)
 				return false;
 
-			if (typeVersion == TypeVersion.V5) {
-				methodsData = DeobUtils.inflate(methodsData, true);
-				throw new NotImplementedException();	//TODO:
-			}
+			decrypter.initialize(methodsData);
 
 			dumpedMethods = createDumpedMethods(peImage, fileData, methodsData);
 			if (dumpedMethods == null)
@@ -216,56 +319,14 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 					codeOffset = bodyOffset + (uint)(dm.mhFlags >> 12) * 4;
 				}
 				fileDataReader.BaseStream.Position = codeOffset;
-				if (fileDataReader.ReadByte() != 0x2A)
-					continue;	// Not a RET
-				int methodsDataOffset = DeobUtils.readVariableLengthInt32(fileDataReader);
-				methodsDataReader.BaseStream.Position = methodsDataOffset;
 
-				dm.mhCodeSize = (uint)DeobUtils.readVariableLengthInt32(methodsDataReader);
-				dm.code = methodsDataReader.ReadBytes((int)dm.mhCodeSize);
-				if ((dm.mhFlags & 8) != 0)
-					dm.extraSections = readExtraSections(methodsDataReader);
+				if (!decrypter.decrypt(fileDataReader, dm))
+					continue;
 
 				dumpedMethods[dm.token] = dm;
 			}
 
 			return dumpedMethods;
-		}
-
-		static void align(BinaryReader reader, int alignment) {
-			reader.BaseStream.Position = (reader.BaseStream.Position + alignment - 1) & ~(alignment - 1);
-		}
-
-		static byte[] readExtraSections(BinaryReader reader) {
-			align(reader, 4);
-			int startPos = (int)reader.BaseStream.Position;
-			parseSection(reader);
-			int size = (int)reader.BaseStream.Position - startPos;
-			reader.BaseStream.Position = startPos;
-			return reader.ReadBytes(size);
-		}
-
-		static void parseSection(BinaryReader reader) {
-			byte flags;
-			do {
-				align(reader, 4);
-
-				flags = reader.ReadByte();
-				if ((flags & 1) == 0)
-					throw new ApplicationException("Not an exception section");
-				if ((flags & 0x3E) != 0)
-					throw new ApplicationException("Invalid bits set");
-
-				if ((flags & 0x40) != 0) {
-					reader.BaseStream.Position--;
-					int num = (int)(reader.ReadUInt32() >> 8) / 24;
-					reader.BaseStream.Position += num * 24;
-				}
-				else {
-					int num = reader.ReadByte() / 12;
-					reader.BaseStream.Position += 2 + num * 12;
-				}
-			} while ((flags & 0x80) != 0);
 		}
 
 		// xor eax, eax / inc eax / pop esi edi edx ecx ebx / leave / ret 0Ch or 10h
