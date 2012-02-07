@@ -54,6 +54,8 @@ namespace de4dot.code.deobfuscators.CodeVeil.v5 {
 		Options options;
 		string obfuscatorName = DeobfuscatorInfo.THE_NAME + " 5.x";
 
+		ProxyDelegateFinder proxyDelegateFinder;
+
 		internal class Options : OptionsBase {
 		}
 
@@ -77,7 +79,7 @@ namespace de4dot.code.deobfuscators.CodeVeil.v5 {
 		protected override int detectInternal() {
 			int val = 0;
 
-			int sum = 0;
+			int sum = toInt32(proxyDelegateFinder.Detected);
 			if (sum > 0)
 				val += 100 + 10 * (sum - 1);
 
@@ -85,18 +87,24 @@ namespace de4dot.code.deobfuscators.CodeVeil.v5 {
 		}
 
 		protected override void scanForObfuscator() {
-			//TODO:
+			proxyDelegateFinder = new ProxyDelegateFinder(module);
+			proxyDelegateFinder.findDelegateCreator();
 		}
 
 		public override void deobfuscateBegin() {
 			base.deobfuscateBegin();
 
-			//TODO:
+			proxyDelegateFinder.initialize();
+			proxyDelegateFinder.find();
+		}
+
+		public override void deobfuscateMethodEnd(blocks.Blocks blocks) {
+			proxyDelegateFinder.deobfuscate(blocks);
+			base.deobfuscateMethodEnd(blocks);
 		}
 
 		public override void deobfuscateEnd() {
-			//TODO:
-
+			removeProxyDelegates(proxyDelegateFinder, false);	//TODO: Should be 'true'
 			base.deobfuscateEnd();
 		}
 
