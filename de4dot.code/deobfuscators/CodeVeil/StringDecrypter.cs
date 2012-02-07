@@ -61,7 +61,18 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			if (cctor == null)
 				return;
 
-			var instrs = cctor.Body.Instructions;
+			// V3-V4 calls string decrypter init method in <Module>::.cctor().
+			if (find(cctor))
+				return;
+
+			find_V5(cctor);
+		}
+
+		bool find(MethodDefinition method) {
+			if (method == null || method.Body == null || !method.IsStatic)
+				return false;
+
+			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count; i++) {
 				var call = instrs[i];
 				if (call.OpCode.Code != Code.Call)
@@ -76,38 +87,30 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 
 				decrypterType = initMethodTmp.DeclaringType;
 				initMethod = initMethodTmp;
-				break;
+				return true;
 			}
 
-			find2();
+			return false;
 		}
 
-		void find2() {
-			foreach (var type in module.Types) {
-				if (!checkType(type))
+		// The main decrypter type calls the string decrypter init method inside its init method
+		void find_V5(MethodDefinition method) {
+			var instrs = method.Body.Instructions;
+			for (int i = 0; i < instrs.Count; i++) {
+				var call = instrs[i];
+				if (call.OpCode.Code != Code.Call)
 					continue;
-				var initMethodTmp = findInitMethod(type);
-				if (initMethodTmp == null)
+				var mainTypeInitMethod = call.Operand as MethodDefinition;
+				if (mainTypeInitMethod == null || mainTypeInitMethod.Body == null || !mainTypeInitMethod.IsStatic)
+					continue;
+				if (!DotNetUtils.isMethod(mainTypeInitMethod, "System.Void", "(System.Boolean,System.Boolean)"))
 					continue;
 
-				decrypterType = type;
-				initMethod = initMethodTmp;
-				return;
+				foreach (var info in DotNetUtils.getCalledMethods(module, mainTypeInitMethod)) {
+					if (find(info.Item2))
+						return;
+				}
 			}
-		}
-
-		MethodDefinition findInitMethod(TypeDefinition type) {
-			foreach (var method in type.Methods) {
-				if (!method.IsStatic || method.Body == null)
-					continue;
-				var key = getKey(method);
-				if (key == null)
-					continue;
-
-				return method;
-			}
-
-			return null;
 		}
 
 		bool checkType(TypeDefinition type) {
