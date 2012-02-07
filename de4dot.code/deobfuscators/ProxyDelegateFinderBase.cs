@@ -68,6 +68,31 @@ namespace de4dot.code.deobfuscators {
 			this.module = module;
 		}
 
+		public ProxyDelegateFinderBase(ModuleDefinition module, ProxyDelegateFinderBase oldOne) {
+			this.module = module;
+			foreach (var method in oldOne.delegateCreatorMethods)
+				delegateCreatorMethods.Add(lookup(method, "Could not find delegate creator method"));
+			foreach (var kv in oldOne.delegateTypesDict)
+				delegateTypesDict[lookup(kv.Key, "Could not find delegate type")] = kv.Value;
+			foreach (var key in oldOne.fieldToDelegateInfo.getKeys())
+				fieldToDelegateInfo.add(lookup(key, "Could not find field"), copy(oldOne.fieldToDelegateInfo.find(key)));
+			foreach (var kv in oldOne.proxyMethodToField) {
+				var key = lookup(kv.Key, "Could not find proxy method");
+				var value = lookup(kv.Value, "Could not find proxy field");
+				proxyMethodToField[key] = value;
+			}
+		}
+
+		DelegateInfo copy(DelegateInfo di) {
+			var method = lookup(di.methodRef, "Could not find method ref");
+			var field = lookup(di.field, "Could not find delegate field");
+			return new DelegateInfo(field, method, di.callOpcode);
+		}
+
+		T lookup<T>(T def, string errorMessage) where T : MemberReference {
+			return DeobUtils.lookup(module, def, errorMessage);
+		}
+
 		public void setDelegateCreatorMethod(MethodDefinition delegateCreatorMethod) {
 			if (delegateCreatorMethod == null)
 				return;
