@@ -82,14 +82,21 @@ namespace de4dot.code.deobfuscators {
 			return false;
 		}
 
+		protected virtual IEnumerable<TypeDefinition> getDelegateTypes() {
+			foreach (var type in module.Types) {
+				if (type.BaseType == null || type.BaseType.FullName != "System.MulticastDelegate")
+					continue;
+
+				yield return type;
+			}
+		}
+
 		public void find() {
 			if (delegateCreatorMethods.Count == 0)
 				return;
 
 			Log.v("Finding all proxy delegates");
-			foreach (var type in module.Types) {
-				if (type.BaseType == null || type.BaseType.FullName != "System.MulticastDelegate")
-					continue;
+			foreach (var type in getDelegateTypes()) {
 				var cctor = DotNetUtils.getMethod(type, ".cctor");
 				if (cctor == null || !cctor.HasBody)
 					continue;
@@ -263,15 +270,18 @@ namespace de4dot.code.deobfuscators {
 				if (stack < 0)
 					return null;
 
-				if (instr.OpCode != OpCodes.Call && instr.OpCode != OpCodes.Callvirt)
+				if (instr.OpCode != OpCodes.Call && instr.OpCode != OpCodes.Callvirt) {
+					if (stack <= 0)
+						return null;
 					continue;
-				var method = DotNetUtils.getMethod(module, instr.Operand as MethodReference);
-				if (method == null)
+				}
+				var calledMethod = instr.Operand as MethodReference;
+				if (calledMethod == null)
+					return null;
+				if (stack != (DotNetUtils.hasReturnValue(calledMethod) ? 1 : 0))
 					continue;
-				if (stack != (DotNetUtils.hasReturnValue(method) ? 1 : 0))
-					continue;
-				if (method.DeclaringType != di.field.DeclaringType)
-					continue;
+				if (calledMethod.Name != "Invoke")
+					return null;
 
 				return new BlockInstr {
 					Block = block,
