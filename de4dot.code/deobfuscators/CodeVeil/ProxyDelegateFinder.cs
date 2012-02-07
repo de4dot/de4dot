@@ -24,7 +24,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using de4dot.blocks;
 
-namespace de4dot.code.deobfuscators.CodeVeil.v5 {
+namespace de4dot.code.deobfuscators.CodeVeil {
 	class ProxyDelegateFinder : ProxyDelegateFinderBase {
 		Info info = new Info();
 		BinaryReader reader;
@@ -46,6 +46,10 @@ namespace de4dot.code.deobfuscators.CodeVeil.v5 {
 
 		public ProxyDelegateFinder(ModuleDefinition module)
 			: base(module) {
+		}
+
+		public ProxyDelegateFinder(ModuleDefinition module, ProxyDelegateFinder oldOne)
+			: base(module, oldOne) {
 		}
 
 		protected override object checkCctor(TypeDefinition type, MethodDefinition cctor) {

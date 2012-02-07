@@ -78,9 +78,11 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				initMethod = initMethodTmp;
 				break;
 			}
+
+			find2();
 		}
 
-		public void find2() {
+		void find2() {
 			foreach (var type in module.Types) {
 				if (!checkType(type))
 					continue;
@@ -174,7 +176,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		}
 
 		public void initialize() {
-			if (stringDataField == null)
+			if (initMethod == null || stringDataField == null)
 				return;
 
 			var key = getKey(initMethod);

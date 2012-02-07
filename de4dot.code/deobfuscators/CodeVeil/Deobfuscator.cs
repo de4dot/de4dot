@@ -21,10 +21,10 @@ using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.MyStuff;
 
-namespace de4dot.code.deobfuscators.CodeVeil.v3_v4 {
+namespace de4dot.code.deobfuscators.CodeVeil {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "CodeVeil";
-		public const string THE_TYPE = "cv4";
+		public const string THE_TYPE = "cv";
 		const string DEFAULT_REGEX = @"!^[A-Za-z]{1,2}$&" + DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
 
 		public DeobfuscatorInfo()
@@ -53,10 +53,11 @@ namespace de4dot.code.deobfuscators.CodeVeil.v3_v4 {
 
 	class Deobfuscator : DeobfuscatorBase {
 		Options options;
-		string obfuscatorName = DeobfuscatorInfo.THE_NAME + " 3.x - 4.x";
+		string obfuscatorName = DeobfuscatorInfo.THE_NAME;
 		bool foundKillType = false;
 
 		MethodsDecrypter methodsDecrypter;
+		ProxyDelegateFinder proxyDelegateFinder;
 		StringDecrypter stringDecrypter;
 
 		internal class Options : OptionsBase {
@@ -83,7 +84,8 @@ namespace de4dot.code.deobfuscators.CodeVeil.v3_v4 {
 			int val = 0;
 
 			int sum = toInt32(methodsDecrypter.Detected) +
-					toInt32(stringDecrypter.Detected);
+					toInt32(stringDecrypter.Detected) +
+					toInt32(proxyDelegateFinder.Detected);
 			if (sum > 0)
 				val += 100 + 10 * (sum - 1);
 			if (foundKillType)
@@ -94,6 +96,8 @@ namespace de4dot.code.deobfuscators.CodeVeil.v3_v4 {
 
 		protected override void scanForObfuscator() {
 			findKillType();
+			proxyDelegateFinder = new ProxyDelegateFinder(module);
+			proxyDelegateFinder.findDelegateCreator();
 			methodsDecrypter = new MethodsDecrypter(module);
 			methodsDecrypter.find();
 			stringDecrypter = new StringDecrypter(module);
@@ -127,6 +131,7 @@ namespace de4dot.code.deobfuscators.CodeVeil.v3_v4 {
 			newOne.setModule(module);
 			newOne.methodsDecrypter = new MethodsDecrypter(module, methodsDecrypter);
 			newOne.stringDecrypter = new StringDecrypter(module, stringDecrypter);
+			newOne.proxyDelegateFinder = new ProxyDelegateFinder(module, proxyDelegateFinder);
 			return newOne;
 		}
 
@@ -141,12 +146,17 @@ namespace de4dot.code.deobfuscators.CodeVeil.v3_v4 {
 				DeobfuscatedFile.stringDecryptersAdded();
 			}
 
-			//TODO:
+			proxyDelegateFinder.initialize();
+			proxyDelegateFinder.find();
+		}
+
+		public override void deobfuscateMethodBegin(blocks.Blocks blocks) {
+			proxyDelegateFinder.deobfuscate(blocks);
+			base.deobfuscateMethodBegin(blocks);
 		}
 
 		public override void deobfuscateEnd() {
-			//TODO:
-
+			removeProxyDelegates(proxyDelegateFinder, false);	//TODO: Should be 'true'
 			base.deobfuscateEnd();
 		}
 

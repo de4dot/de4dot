@@ -79,11 +79,10 @@
     <Compile Include="deobfuscators\CliSecure\ResourceDecrypter.cs" />
     <Compile Include="deobfuscators\CliSecure\StackFrameHelper.cs" />
     <Compile Include="deobfuscators\CliSecure\StringDecrypter.cs" />
-    <Compile Include="deobfuscators\CodeVeil\v3_v4\Deobfuscator.cs" />
-    <Compile Include="deobfuscators\CodeVeil\v3_v4\MethodsDecrypter.cs" />
+    <Compile Include="deobfuscators\CodeVeil\MethodsDecrypter.cs" />
     <Compile Include="deobfuscators\CodeVeil\StringDecrypter.cs" />
-    <Compile Include="deobfuscators\CodeVeil\v5\Deobfuscator.cs" />
-    <Compile Include="deobfuscators\CodeVeil\v5\ProxyDelegateFinder.cs" />
+    <Compile Include="deobfuscators\CodeVeil\Deobfuscator.cs" />
+    <Compile Include="deobfuscators\CodeVeil\ProxyDelegateFinder.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\AntiDebugger.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\AssemblyResolver.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\Deobfuscator.cs" />
