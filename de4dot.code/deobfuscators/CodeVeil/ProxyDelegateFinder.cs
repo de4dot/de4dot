@@ -50,6 +50,10 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 
 		public ProxyDelegateFinder(ModuleDefinition module, ProxyDelegateFinder oldOne)
 			: base(module, oldOne) {
+			info.mainType = lookup(oldOne.info.mainType, "Could not find mainType");
+			info.proxyType = lookup(oldOne.info.proxyType, "Could not find proxyType");
+			info.initMethod = lookup(oldOne.info.initMethod, "Could not find initMethod");
+			info.dataField = lookup(oldOne.info.dataField, "Could not find dataField");
 		}
 
 		protected override object checkCctor(TypeDefinition type, MethodDefinition cctor) {
