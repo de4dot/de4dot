@@ -37,10 +37,6 @@ namespace de4dot.code.deobfuscators.CliSecure {
 				setDelegateCreatorMethod(lookup(method, "Could not find delegate creator method"));
 		}
 
-		T lookup<T>(T def, string errorMessage) where T : MemberReference {
-			return DeobUtils.lookup(module, def, errorMessage);
-		}
-
 		public void findDelegateCreator() {
 			foreach (var type in module.Types) {
 				var methodName = "System.Void " + type.FullName + "::icgd(System.Int32)";
