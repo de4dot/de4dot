@@ -29,32 +29,16 @@ using de4dot.code.PE;
 
 namespace de4dot.code.deobfuscators.CodeVeil {
 	class MethodsDecrypter {
-		ModuleDefinition module;
-		TypeDefinition methodsType;
-		List<int> rvas;	// _stub and _executive
+		MainType mainType;
 		IDecrypter decrypter;
 
-		public ObfuscatorVersion Version {
-			get { return decrypter == null ? ObfuscatorVersion.Unknown : decrypter.Version; }
-		}
-
 		interface IDecrypter {
-			ObfuscatorVersion Version { get; }
 			void initialize(byte[] methodsData);
 			bool decrypt(BinaryReader fileDataReader, DumpedMethod dm);
 		}
 
 		class Decrypter : IDecrypter {
-			ObfuscatorVersion obfuscatorVersion;
 			BinaryReader methodsDataReader;
-
-			public ObfuscatorVersion Version {
-				get { return obfuscatorVersion; }
-			}
-
-			public Decrypter(ObfuscatorVersion obfuscatorVersion) {
-				this.obfuscatorVersion = obfuscatorVersion;
-			}
 
 			public virtual void initialize(byte[] methodsData) {
 				methodsDataReader = new BinaryReader(new MemoryStream(methodsData));
@@ -121,10 +105,6 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		class DecrypterV5 : Decrypter {
 			byte[] decryptKey;
 
-			public DecrypterV5()
-				: base(ObfuscatorVersion.V5_0) {
-			}
-
 			public override void initialize(byte[] methodsData) {
 				var data = DeobUtils.inflate(methodsData, true);
 				decryptKey = BitConverter.GetBytes(BitConverter.ToUInt32(data, 0));
@@ -146,117 +126,42 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		}
 
 		public bool Detected {
-			get { return methodsType != null; }
+			get { return decrypter != null; }
 		}
 
-		public MethodsDecrypter(ModuleDefinition module) {
-			this.module = module;
+		public MethodsDecrypter(MainType mainType) {
+			this.mainType = mainType;
 		}
 
-		public MethodsDecrypter(ModuleDefinition module, MethodsDecrypter oldOne) {
-			this.module = module;
-			this.methodsType = lookup(oldOne.methodsType, "Could not find methods type");
-		}
-
-		T lookup<T>(T def, string errorMessage) where T : MemberReference {
-			return DeobUtils.lookup(module, def, errorMessage);
+		public MethodsDecrypter(MainType mainType, MethodsDecrypter oldOne) {
+			this.mainType = mainType;
 		}
 
 		public void find() {
-			var cctor = DotNetUtils.getModuleTypeCctor(module);
-			if (cctor == null)
+			if (!mainType.Detected)
 				return;
 
-			var instrs = cctor.Body.Instructions;
-			for (int i = 0; i < instrs.Count - 2; i++) {
-				var ldci4_1 = instrs[i];
-				if (!DotNetUtils.isLdcI4(ldci4_1))
-					continue;
-
-				var ldci4_2 = instrs[i + 1];
-				if (!DotNetUtils.isLdcI4(ldci4_2))
-					continue;
-
-				var call = instrs[i + 2];
-				if (call.OpCode.Code != Code.Call)
-					continue;
-				var initMethod = call.Operand as MethodDefinition;
-				if (!checkInitMethod(initMethod))
-					continue;
-				if (!checkMethodsType(initMethod.DeclaringType))
-					continue;
-
-				methodsType = initMethod.DeclaringType;
+			switch (mainType.Version) {
+			case ObfuscatorVersion.Unknown:
 				break;
-			}
-		}
 
-		static string[] fieldTypesV5 = new string[] {
-			"System.Byte[]",
-			"System.Collections.Generic.List`1<System.Delegate>",
-			"System.Runtime.InteropServices.GCHandle",
-		};
-		bool checkInitMethod(MethodDefinition initMethod) {
-			if (initMethod == null)
-				return false;
+			case ObfuscatorVersion.V3:
+			case ObfuscatorVersion.V4_0:
+			case ObfuscatorVersion.V4_1:
+				decrypter = new Decrypter();
+				break;
 
-			if (initMethod.Body == null)
-				return false;
-			if (!initMethod.IsStatic)
-				return false;
-			if (!DotNetUtils.isMethod(initMethod, "System.Void", "(System.Boolean,System.Boolean)"))
-				return false;
-
-			if (hasCodeString(initMethod, "E_FullTrust")) {
-				if (DotNetUtils.getPInvokeMethod(initMethod.DeclaringType, "user32", "CallWindowProcW") != null)
-					decrypter = new Decrypter(ObfuscatorVersion.V4_1);
-				else
-					decrypter = new Decrypter(ObfuscatorVersion.V4_0);
-			}
-			else if (hasCodeString(initMethod, "Full Trust Required"))
-				decrypter = new Decrypter(ObfuscatorVersion.V3);
-			else if (initMethod.DeclaringType.HasNestedTypes && new FieldTypes(initMethod.DeclaringType).all(fieldTypesV5))
+			case ObfuscatorVersion.V5_0:
 				decrypter = new DecrypterV5();
-			else
-				return false;
+				break;
 
-			return true;
-		}
-
-		static bool hasCodeString(MethodDefinition method, string str) {
-			foreach (var s in DotNetUtils.getCodeStrings(method)) {
-				if (s == str)
-					return true;
+			default:
+				throw new ApplicationException("Unknown version");
 			}
-			return false;
-		}
-
-		bool checkMethodsType(TypeDefinition type) {
-			var fields = getRvaFields(type);
-			if (fields.Count < 2)
-				return false;
-
-			rvas = new List<int>(fields.Count);
-			foreach (var field in fields)
-				rvas.Add(field.RVA);
-			return true;
-		}
-
-		static List<FieldDefinition> getRvaFields(TypeDefinition type) {
-			var fields = new List<FieldDefinition>();
-			foreach (var field in type.Fields) {
-				if (field.FieldType.EType != ElementType.U1 && field.FieldType.EType != ElementType.U4)
-					continue;
-				if (field.RVA == 0)
-					continue;
-
-				fields.Add(field);
-			}
-			return fields;
 		}
 
 		public bool decrypt(byte[] fileData, ref Dictionary<uint, DumpedMethod> dumpedMethods) {
-			if (methodsType == null)
+			if (decrypter == null)
 				return false;
 
 			var peImage = new PeImage(fileData);
@@ -356,7 +261,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 					return null;
 
 				int rva = BitConverter.ToInt32(fileData, offset + RVA_EXECUTIVE_OFFSET);
-				if (rvas.IndexOf(rva) < 0)
+				if (mainType.Rvas.IndexOf(rva) < 0)
 					continue;
 
 				int relOffs = BitConverter.ToInt32(fileData, offset + ENC_CODE_OFFSET);
@@ -377,7 +282,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 
 		int getStartOffset(PeImage peImage) {
 			int minOffset = int.MaxValue;
-			foreach (var rva in rvas) {
+			foreach (var rva in mainType.Rvas) {
 				int rvaOffs = (int)peImage.rvaToOffset((uint)rva);
 				if (rvaOffs < minOffset)
 					minOffset = rvaOffs;

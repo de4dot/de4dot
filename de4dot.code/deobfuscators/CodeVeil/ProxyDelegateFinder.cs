@@ -26,11 +26,11 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CodeVeil {
 	class ProxyDelegateFinder : ProxyDelegateFinderBase {
+		MainType mainType;
 		Info info = new Info();
 		BinaryReader reader;
 
 		class Info {
-			public TypeDefinition mainType;
 			public TypeDefinition proxyType;
 			public MethodDefinition initMethod;
 			public FieldDefinition dataField;
@@ -44,13 +44,14 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			}
 		}
 
-		public ProxyDelegateFinder(ModuleDefinition module)
+		public ProxyDelegateFinder(ModuleDefinition module, MainType mainType)
 			: base(module) {
+			this.mainType = mainType;
 		}
 
-		public ProxyDelegateFinder(ModuleDefinition module, ProxyDelegateFinder oldOne)
+		public ProxyDelegateFinder(ModuleDefinition module, MainType mainType, ProxyDelegateFinder oldOne)
 			: base(module, oldOne) {
-			info.mainType = lookup(oldOne.info.mainType, "Could not find mainType");
+			this.mainType = mainType;
 			info.proxyType = lookup(oldOne.info.proxyType, "Could not find proxyType");
 			info.initMethod = lookup(oldOne.info.initMethod, "Could not find initMethod");
 			info.dataField = lookup(oldOne.info.dataField, "Could not find dataField");
@@ -97,22 +98,15 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		}
 
 		public void findDelegateCreator() {
-			var moduleCctor = DotNetUtils.getModuleTypeCctor(module);
-			if (moduleCctor == null)
+			if (!mainType.Detected)
 				return;
-			foreach (var call in DotNetUtils.getCalledMethods(module, moduleCctor)) {
-				if (!call.Item2.IsStatic)
-					continue;
-				if (!DotNetUtils.isMethod(call.Item2, "System.Void", "(System.Boolean,System.Boolean)"))
-					continue;
-				var infoTmp = new Info();
-				if (!initializeInfo(infoTmp, call.Item1))
-					continue;
 
-				info = infoTmp;
-				setDelegateCreatorMethod(info.initMethod);
+			var infoTmp = new Info();
+			if (!initializeInfo(infoTmp, mainType.Type))
 				return;
-			}
+
+			info = infoTmp;
+			setDelegateCreatorMethod(info.initMethod);
 		}
 
 		bool initializeInfo(Info infoTmp, TypeDefinition type) {
@@ -123,7 +117,6 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				if (!initProxyType(infoTmp, cctor))
 					continue;
 
-				infoTmp.mainType = type;
 				return true;
 			}
 
@@ -184,7 +177,9 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		}
 
 		protected override IEnumerable<TypeDefinition> getDelegateTypes() {
-			return info.mainType.NestedTypes;
+			if (!mainType.Detected)
+				return new List<TypeDefinition>();
+			return mainType.Type.NestedTypes;
 		}
 
 		public void initialize() {

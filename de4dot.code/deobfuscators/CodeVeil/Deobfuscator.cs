@@ -57,6 +57,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		string obfuscatorName = DeobfuscatorInfo.THE_NAME;
 		bool foundKillType = false;
 
+		MainType mainType;
 		MethodsDecrypter methodsDecrypter;
 		ProxyDelegateFinder proxyDelegateFinder;
 		StringDecrypter stringDecrypter;
@@ -85,7 +86,8 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		protected override int detectInternal() {
 			int val = 0;
 
-			int sum = toInt32(methodsDecrypter.Detected) +
+			int sum = toInt32(mainType.Detected) +
+					toInt32(methodsDecrypter.Detected) +
 					toInt32(stringDecrypter.Detected) +
 					toInt32(proxyDelegateFinder.Detected);
 			if (sum > 0)
@@ -98,11 +100,13 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 
 		protected override void scanForObfuscator() {
 			findKillType();
-			proxyDelegateFinder = new ProxyDelegateFinder(module);
+			mainType = new MainType(module);
+			mainType.find();
+			proxyDelegateFinder = new ProxyDelegateFinder(module, mainType);
 			proxyDelegateFinder.findDelegateCreator();
-			methodsDecrypter = new MethodsDecrypter(module);
+			methodsDecrypter = new MethodsDecrypter(mainType);
 			methodsDecrypter.find();
-			stringDecrypter = new StringDecrypter(module);
+			stringDecrypter = new StringDecrypter(module, mainType);
 			stringDecrypter.find();
 			var version = detectVersion();
 			if (!string.IsNullOrEmpty(version))
@@ -110,8 +114,8 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		}
 
 		string detectVersion() {
-			if (methodsDecrypter.Detected) {
-				switch (methodsDecrypter.Version) {
+			if (mainType.Detected) {
+				switch (mainType.Version) {
 				case ObfuscatorVersion.Unknown:
 					return null;
 
@@ -160,9 +164,10 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		public override IDeobfuscator moduleReloaded(ModuleDefinition module) {
 			var newOne = new Deobfuscator(options);
 			newOne.setModule(module);
-			newOne.methodsDecrypter = new MethodsDecrypter(module, methodsDecrypter);
-			newOne.stringDecrypter = new StringDecrypter(module, stringDecrypter);
-			newOne.proxyDelegateFinder = new ProxyDelegateFinder(module, proxyDelegateFinder);
+			newOne.mainType = new MainType(module, mainType);
+			newOne.methodsDecrypter = new MethodsDecrypter(mainType, methodsDecrypter);
+			newOne.stringDecrypter = new StringDecrypter(module, newOne.mainType, stringDecrypter);
+			newOne.proxyDelegateFinder = new ProxyDelegateFinder(module, newOne.mainType, proxyDelegateFinder);
 			return newOne;
 		}
 

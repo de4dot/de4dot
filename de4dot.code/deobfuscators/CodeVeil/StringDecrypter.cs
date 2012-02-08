@@ -26,6 +26,7 @@ using de4dot.blocks;
 namespace de4dot.code.deobfuscators.CodeVeil {
 	class StringDecrypter {
 		ModuleDefinition module;
+		MainType mainType;
 		TypeDefinition decrypterType;
 		FieldDefinition stringDataField;
 		MethodDefinition initMethod;
@@ -40,12 +41,14 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			get { return decrypterMethod; }
 		}
 
-		public StringDecrypter(ModuleDefinition module) {
+		public StringDecrypter(ModuleDefinition module, MainType mainType) {
 			this.module = module;
+			this.mainType = mainType;
 		}
 
-		public StringDecrypter(ModuleDefinition module, StringDecrypter oldOne) {
+		public StringDecrypter(ModuleDefinition module, MainType mainType, StringDecrypter oldOne) {
 			this.module = module;
+			this.mainType = mainType;
 			this.decrypterType = lookup(oldOne.decrypterType, "Could not find string decrypter type");
 			this.stringDataField = lookup(oldOne.stringDataField, "Could not find string data field");
 			this.initMethod = lookup(oldOne.initMethod, "Could not find string decrypter init method");
@@ -95,21 +98,11 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 
 		// The main decrypter type calls the string decrypter init method inside its init method
 		void find_V5(MethodDefinition method) {
-			var instrs = method.Body.Instructions;
-			for (int i = 0; i < instrs.Count; i++) {
-				var call = instrs[i];
-				if (call.OpCode.Code != Code.Call)
-					continue;
-				var mainTypeInitMethod = call.Operand as MethodDefinition;
-				if (mainTypeInitMethod == null || mainTypeInitMethod.Body == null || !mainTypeInitMethod.IsStatic)
-					continue;
-				if (!DotNetUtils.isMethod(mainTypeInitMethod, "System.Void", "(System.Boolean,System.Boolean)"))
-					continue;
-
-				foreach (var info in DotNetUtils.getCalledMethods(module, mainTypeInitMethod)) {
-					if (find(info.Item2))
-						return;
-				}
+			if (!mainType.Detected)
+				return;
+			foreach (var info in DotNetUtils.getCalledMethods(module, mainType.InitMethod)) {
+				if (find(info.Item2))
+					return;
 			}
 		}
 
