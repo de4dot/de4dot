@@ -19,6 +19,7 @@
 
 using System.Collections.Generic;
 using Mono.Cecil;
+using Mono.Cecil.Cil;
 using Mono.Cecil.Metadata;
 using de4dot.blocks;
 
@@ -118,7 +119,33 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				if (info.Item2 == mainType.TamperCheckMethod)
 					return true;
 			}
+
+			var instructions = method.Body.Instructions;
+			for (int i = 0; i < instructions.Count; i++) {
+				var instrs = DotNetUtils.getInstructions(instructions, i, OpCodes.Ldtoken, OpCodes.Call, OpCodes.Call, OpCodes.Ldc_I8, OpCodes.Call);
+				if (instrs == null)
+					continue;
+
+				if (!checkInvokeCall(instrs[1], "System.Type", "(System.RuntimeTypeHandle)"))
+					continue;
+				if (!checkInvokeCall(instrs[2], "System.Reflection.Assembly", "(System.Object)"))
+					continue;
+				if (!checkInvokeCall(instrs[4], "System.Void", "(System.Reflection.Assembly,System.UInt64)"))
+					continue;
+
+				return true;
+			}
+
 			return false;
+		}
+
+		static bool checkInvokeCall(Instruction instr, string returnType, string parameters) {
+			var method = instr.Operand as MethodDefinition;
+			if (method == null)
+				return false;
+			if (method.Name != "Invoke")
+				return false;
+			return DotNetUtils.isMethod(method, returnType, parameters);
 		}
 	}
 }
