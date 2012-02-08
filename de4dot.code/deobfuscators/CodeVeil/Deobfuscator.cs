@@ -55,13 +55,13 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 	class Deobfuscator : DeobfuscatorBase {
 		Options options;
 		string obfuscatorName = DeobfuscatorInfo.THE_NAME;
-		bool foundKillType = false;
 
 		MainType mainType;
 		MethodsDecrypter methodsDecrypter;
 		ProxyDelegateFinder proxyDelegateFinder;
 		StringDecrypter stringDecrypter;
 		AssemblyResolver assemblyResolver;
+		TypeDefinition killType;
 
 		internal class Options : OptionsBase {
 		}
@@ -93,7 +93,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 					toInt32(proxyDelegateFinder.Detected);
 			if (sum > 0)
 				val += 100 + 10 * (sum - 1);
-			if (foundKillType)
+			if (killType != null)
 				val += 10;
 
 			return val;
@@ -143,8 +143,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		void findKillType() {
 			foreach (var type in module.Types) {
 				if (type.FullName == "____KILL") {
-					addTypeToBeRemoved(type, "KILL type");
-					foundKillType = true;
+					killType = type;
 					break;
 				}
 			}
@@ -169,11 +168,14 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			newOne.methodsDecrypter = new MethodsDecrypter(mainType, methodsDecrypter);
 			newOne.stringDecrypter = new StringDecrypter(module, newOne.mainType, stringDecrypter);
 			newOne.proxyDelegateFinder = new ProxyDelegateFinder(module, newOne.mainType, proxyDelegateFinder);
+			newOne.killType = DeobUtils.lookup(module, killType, "Could not find KILL type");
 			return newOne;
 		}
 
 		public override void deobfuscateBegin() {
 			base.deobfuscateBegin();
+
+			addTypeToBeRemoved(killType, "KILL type");
 
 			mainType.initialize();
 			if (mainType.Version >= ObfuscatorVersion.V5_0) {
