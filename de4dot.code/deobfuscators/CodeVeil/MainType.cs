@@ -30,7 +30,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		TypeDefinition theType;
 		MethodDefinition initMethod;
 		ObfuscatorVersion obfuscatorVersion = ObfuscatorVersion.Unknown;
-		List<int> rvas;	// _stub and _executive
+		List<int> rvas = new List<int>();	// _stub and _executive
 
 		public bool Detected {
 			get { return theType != null; }
@@ -143,11 +143,12 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		}
 
 		bool checkMethodsType(TypeDefinition type) {
+			rvas = new List<int>();
+
 			var fields = getRvaFields(type);
 			if (fields.Count < 2)	// RVAs for executive and stub are always present if encrypted methods
 				return true;
 
-			rvas = new List<int>(fields.Count);
 			foreach (var field in fields)
 				rvas.Add(field.RVA);
 			return true;
