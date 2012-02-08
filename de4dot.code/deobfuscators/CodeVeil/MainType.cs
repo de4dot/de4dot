@@ -189,5 +189,28 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 
 			return null;
 		}
+
+		public MethodDefinition getInitStringDecrypterMethod(MethodDefinition stringDecrypterInitMethod) {
+			if (stringDecrypterInitMethod == null)
+				return null;
+			if (theType == null)
+				return null;
+
+			foreach (var method in theType.Methods) {
+				if (!method.IsStatic || method.Body == null)
+					continue;
+				if (callsMethod(method, stringDecrypterInitMethod))
+					return method;
+			}
+			return null;
+		}
+
+		bool callsMethod(MethodDefinition methodToCheck, MethodDefinition calledMethod) {
+			foreach (var info in DotNetUtils.getCalledMethods(module, methodToCheck)) {
+				if (info.Item2 == calledMethod)
+					return true;
+			}
+			return false;
+		}
 	}
 }

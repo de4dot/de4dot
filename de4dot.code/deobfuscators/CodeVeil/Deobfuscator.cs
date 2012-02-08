@@ -183,6 +183,9 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 					return stringDecrypter.decrypt((int)args[0]);
 				});
 				DeobfuscatedFile.stringDecryptersAdded();
+				addModuleCctorInitCallToBeRemoved(stringDecrypter.InitMethod);
+				addCallToBeRemoved(mainType.getInitStringDecrypterMethod(stringDecrypter.InitMethod), stringDecrypter.InitMethod);
+				addTypeToBeRemoved(stringDecrypter.Type, "String decrypter type");
 			}
 
 			assemblyResolver = new AssemblyResolver(module);

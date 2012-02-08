@@ -37,6 +37,14 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			get { return decrypterType != null; }
 		}
 
+		public TypeDefinition Type {
+			get { return decrypterType; }
+		}
+
+		public MethodDefinition InitMethod {
+			get { return initMethod; }
+		}
+
 		public MethodDefinition DecryptMethod {
 			get { return decrypterMethod; }
 		}
@@ -180,6 +188,9 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				throw new ApplicationException("Could not find string decrypter key");
 
 			decryptStrings(key);
+
+			stringDataField.FieldType = module.TypeSystem.Byte;
+			stringDataField.InitialValue = new byte[1];
 		}
 
 		static uint[] getKey(MethodDefinition method) {
