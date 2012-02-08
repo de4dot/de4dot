@@ -109,25 +109,29 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		}
 
 		string detectVersion() {
-			switch (methodsDecrypter.Version) {
-			case MethodsDecrypter.TypeVersion.Unknown:
-				return null;
+			if (methodsDecrypter.Detected) {
+				switch (methodsDecrypter.Version) {
+				case MethodsDecrypter.TypeVersion.Unknown:
+					return null;
 
-			case MethodsDecrypter.TypeVersion.V3:
-				return "3.x";
+				case MethodsDecrypter.TypeVersion.V3:
+					return "3.x";
 
-			case MethodsDecrypter.TypeVersion.V4_0:
-				return "4.0";
+				case MethodsDecrypter.TypeVersion.V4_0:
+					return "4.0";
 
-			case MethodsDecrypter.TypeVersion.V4_1:
-				return "4.1";
+				case MethodsDecrypter.TypeVersion.V4_1:
+					return "4.1";
 
-			case MethodsDecrypter.TypeVersion.V5:
-				return "5.x";
+				case MethodsDecrypter.TypeVersion.V5:
+					return "5.0";
 
-			default:
-				throw new ApplicationException("Unknown version");
+				default:
+					throw new ApplicationException("Unknown version");
+				}
 			}
+
+			return null;
 		}
 
 		void findKillType() {
