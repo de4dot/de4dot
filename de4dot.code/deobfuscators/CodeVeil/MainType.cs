@@ -29,6 +29,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		ModuleDefinition module;
 		TypeDefinition theType;
 		MethodDefinition initMethod;
+		MethodDefinition tamperCheckMethod;
 		ObfuscatorVersion obfuscatorVersion = ObfuscatorVersion.Unknown;
 		List<int> rvas = new List<int>();	// _stub and _executive
 
@@ -48,6 +49,10 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			get { return initMethod; }
 		}
 
+		public MethodDefinition TamperCheckMethod {
+			get { return tamperCheckMethod; }
+		}
+
 		public List<int> Rvas {
 			get { return rvas; }
 		}
@@ -60,6 +65,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			this.module = module;
 			this.theType = lookup(oldOne.theType, "Could not find main type");
 			this.initMethod = lookup(oldOne.initMethod, "Could not find main type init method");
+			this.tamperCheckMethod = lookup(oldOne.tamperCheckMethod, "Could not find tamper detection method");
 			this.obfuscatorVersion = oldOne.obfuscatorVersion;
 			this.rvas = oldOne.rvas;
 		}
@@ -165,6 +171,23 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				fields.Add(field);
 			}
 			return fields;
+		}
+
+		public void initialize() {
+			tamperCheckMethod = findTamperCheckMethod();
+		}
+
+		MethodDefinition findTamperCheckMethod() {
+			foreach (var method in theType.Methods) {
+				if (!method.IsStatic || method.Body == null)
+					continue;
+				if (!DotNetUtils.isMethod(method, "System.Void", "(System.Reflection.Assembly,System.UInt64)"))
+					continue;
+
+				return method;
+			}
+
+			return null;
 		}
 	}
 }

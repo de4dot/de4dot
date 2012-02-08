@@ -81,6 +81,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		public Deobfuscator(Options options)
 			: base(options) {
 			this.options = options;
+			StringFeatures = StringFeatures.AllowStaticDecryption | StringFeatures.AllowDynamicDecryption;
 		}
 
 		protected override int detectInternal() {
@@ -174,6 +175,8 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		public override void deobfuscateBegin() {
 			base.deobfuscateBegin();
 
+			mainType.initialize();
+
 			if (Operations.DecryptStrings != OpDecryptString.None) {
 				stringDecrypter.initialize();
 				staticStringInliner.add(stringDecrypter.DecryptMethod, (method, args) => {
@@ -186,8 +189,18 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			assemblyResolver.initialize();
 			dumpEmbeddedAssemblies();
 
+			removeTamperDetection();
+
 			proxyDelegateFinder.initialize();
 			proxyDelegateFinder.find();
+		}
+
+		void removeTamperDetection() {
+			var tamperDetection = new TamperDetection(module, mainType);
+			tamperDetection.initialize();
+			foreach (var tamperDetectionMethod in tamperDetection.Methods)
+				addCctorInitCallToBeRemoved(tamperDetectionMethod);
+			addTypeToBeRemoved(tamperDetection.Type, "Tamper detection type");
 		}
 
 		void dumpEmbeddedAssemblies() {
