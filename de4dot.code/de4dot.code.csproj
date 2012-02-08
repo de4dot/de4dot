@@ -79,6 +79,7 @@
     <Compile Include="deobfuscators\CliSecure\ResourceDecrypter.cs" />
     <Compile Include="deobfuscators\CliSecure\StackFrameHelper.cs" />
     <Compile Include="deobfuscators\CliSecure\StringDecrypter.cs" />
+    <Compile Include="deobfuscators\CodeVeil\AssemblyResolver.cs" />
     <Compile Include="deobfuscators\CodeVeil\MethodsDecrypter.cs" />
     <Compile Include="deobfuscators\CodeVeil\ObfuscatorVersion.cs" />
     <Compile Include="deobfuscators\CodeVeil\StringDecrypter.cs" />

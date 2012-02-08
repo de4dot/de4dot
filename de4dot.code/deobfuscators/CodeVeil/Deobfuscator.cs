@@ -60,6 +60,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		MethodsDecrypter methodsDecrypter;
 		ProxyDelegateFinder proxyDelegateFinder;
 		StringDecrypter stringDecrypter;
+		AssemblyResolver assemblyResolver;
 
 		internal class Options : OptionsBase {
 		}
@@ -176,8 +177,19 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				DeobfuscatedFile.stringDecryptersAdded();
 			}
 
+			assemblyResolver = new AssemblyResolver(module);
+			assemblyResolver.initialize();
+			dumpEmbeddedAssemblies();
+
 			proxyDelegateFinder.initialize();
 			proxyDelegateFinder.find();
+		}
+
+		void dumpEmbeddedAssemblies() {
+			foreach (var info in assemblyResolver.AssemblyInfos)
+				DeobfuscatedFile.createAssemblyFile(info.data, info.simpleName, info.extension);
+			addResourceToBeRemoved(assemblyResolver.BundleDataResource, "Embedded assemblies resource");
+			addResourceToBeRemoved(assemblyResolver.BundleXmlFileResource, "Embedded assemblies XML file resource");
 		}
 
 		public override void deobfuscateMethodBegin(blocks.Blocks blocks) {
