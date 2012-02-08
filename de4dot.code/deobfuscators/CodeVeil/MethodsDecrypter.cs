@@ -34,34 +34,26 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		List<int> rvas;	// _stub and _executive
 		IDecrypter decrypter;
 
-		public enum TypeVersion {
-			Unknown,
-			V3,
-			V4_0,
-			V4_1,
-			V5,
-		}
-
-		public TypeVersion Version {
-			get { return decrypter == null ? TypeVersion.Unknown : decrypter.TypeVersion; }
+		public ObfuscatorVersion Version {
+			get { return decrypter == null ? ObfuscatorVersion.Unknown : decrypter.Version; }
 		}
 
 		interface IDecrypter {
-			TypeVersion TypeVersion { get; }
+			ObfuscatorVersion Version { get; }
 			void initialize(byte[] methodsData);
 			bool decrypt(BinaryReader fileDataReader, DumpedMethod dm);
 		}
 
 		class Decrypter : IDecrypter {
-			TypeVersion typeVersion;
+			ObfuscatorVersion obfuscatorVersion;
 			BinaryReader methodsDataReader;
 
-			public TypeVersion TypeVersion {
-				get { return typeVersion; }
+			public ObfuscatorVersion Version {
+				get { return obfuscatorVersion; }
 			}
 
-			public Decrypter(TypeVersion typeVersion) {
-				this.typeVersion = typeVersion;
+			public Decrypter(ObfuscatorVersion obfuscatorVersion) {
+				this.obfuscatorVersion = obfuscatorVersion;
 			}
 
 			public virtual void initialize(byte[] methodsData) {
@@ -130,7 +122,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			byte[] decryptKey;
 
 			public DecrypterV5()
-				: base(TypeVersion.V5) {
+				: base(ObfuscatorVersion.V5_0) {
 			}
 
 			public override void initialize(byte[] methodsData) {
@@ -217,12 +209,12 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 
 			if (hasCodeString(initMethod, "E_FullTrust")) {
 				if (DotNetUtils.getPInvokeMethod(initMethod.DeclaringType, "user32", "CallWindowProcW") != null)
-					decrypter = new Decrypter(TypeVersion.V4_1);
+					decrypter = new Decrypter(ObfuscatorVersion.V4_1);
 				else
-					decrypter = new Decrypter(TypeVersion.V4_0);
+					decrypter = new Decrypter(ObfuscatorVersion.V4_0);
 			}
 			else if (hasCodeString(initMethod, "Full Trust Required"))
-				decrypter = new Decrypter(TypeVersion.V3);
+				decrypter = new Decrypter(ObfuscatorVersion.V3);
 			else if (initMethod.DeclaringType.HasNestedTypes && new FieldTypes(initMethod.DeclaringType).all(fieldTypesV5))
 				decrypter = new DecrypterV5();
 			else

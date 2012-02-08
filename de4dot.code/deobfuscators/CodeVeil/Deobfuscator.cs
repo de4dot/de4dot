@@ -111,19 +111,19 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		string detectVersion() {
 			if (methodsDecrypter.Detected) {
 				switch (methodsDecrypter.Version) {
-				case MethodsDecrypter.TypeVersion.Unknown:
+				case ObfuscatorVersion.Unknown:
 					return null;
 
-				case MethodsDecrypter.TypeVersion.V3:
+				case ObfuscatorVersion.V3:
 					return "3.x";
 
-				case MethodsDecrypter.TypeVersion.V4_0:
+				case ObfuscatorVersion.V4_0:
 					return "4.0";
 
-				case MethodsDecrypter.TypeVersion.V4_1:
+				case ObfuscatorVersion.V4_1:
 					return "4.1";
 
-				case MethodsDecrypter.TypeVersion.V5:
+				case ObfuscatorVersion.V5_0:
 					return "5.0";
 
 				default:

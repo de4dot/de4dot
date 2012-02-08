@@ -80,6 +80,7 @@
     <Compile Include="deobfuscators\CliSecure\StackFrameHelper.cs" />
     <Compile Include="deobfuscators\CliSecure\StringDecrypter.cs" />
     <Compile Include="deobfuscators\CodeVeil\MethodsDecrypter.cs" />
+    <Compile Include="deobfuscators\CodeVeil\ObfuscatorVersion.cs" />
     <Compile Include="deobfuscators\CodeVeil\StringDecrypter.cs" />
     <Compile Include="deobfuscators\CodeVeil\Deobfuscator.cs" />
     <Compile Include="deobfuscators\CodeVeil\ProxyDelegateFinder.cs" />
