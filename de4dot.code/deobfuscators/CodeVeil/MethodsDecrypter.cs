@@ -246,6 +246,8 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 
 			const int RVA_EXECUTIVE_OFFSET = 1 * 4;
 			const int ENC_CODE_OFFSET = 6 * 4;
+			const int MAGIC1_OFFSET = 7 * 4;
+			const int MAGIC2_OFFSET = 8 * 4;
 			int lastOffset = (int)(section.pointerToRawData + section.sizeOfRawData);
 			for (int offset = getStartOffset(peImage); offset < lastOffset; ) {
 				offset = findSig(fileData, offset, lastOffset, initializeMethodEnd);
@@ -257,15 +259,20 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				if (retImm16 != 0x0C && retImm16 != 0x10)
 					continue;
 				offset += 2;
-				if (offset + ENC_CODE_OFFSET + 4 > lastOffset)
+				if (offset + MAGIC2_OFFSET + 4 > lastOffset)
 					return null;
 
+				// rva is 0 when the assembly has been embedded
 				int rva = BitConverter.ToInt32(fileData, offset + RVA_EXECUTIVE_OFFSET);
-				if (mainType.Rvas.IndexOf(rva) < 0)
+				if (rva != 0 && mainType.Rvas.IndexOf(rva) < 0)
+					continue;
+				if (BitConverter.ToInt32(fileData, offset + MAGIC1_OFFSET) != -1)
+					continue;
+				if (BitConverter.ToInt32(fileData, offset + MAGIC2_OFFSET) != -1)
 					continue;
 
 				int relOffs = BitConverter.ToInt32(fileData, offset + ENC_CODE_OFFSET);
-				if (relOffs < 0 || relOffs >= section.sizeOfRawData)
+				if (relOffs <= 0 || relOffs >= section.sizeOfRawData)
 					continue;
 				reader.BaseStream.Position = section.pointerToRawData + relOffs;
 
