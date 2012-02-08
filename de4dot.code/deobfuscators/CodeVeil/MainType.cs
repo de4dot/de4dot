@@ -32,6 +32,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		MethodDefinition tamperCheckMethod;
 		ObfuscatorVersion obfuscatorVersion = ObfuscatorVersion.Unknown;
 		List<int> rvas = new List<int>();	// _stub and _executive
+		List<MethodDefinition> otherInitMethods = new List<MethodDefinition>();
 
 		public bool Detected {
 			get { return theType != null; }
@@ -47,6 +48,10 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 
 		public MethodDefinition InitMethod {
 			get { return initMethod; }
+		}
+
+		public List<MethodDefinition> OtherInitMethods {
+			get { return otherInitMethods; }
 		}
 
 		public MethodDefinition TamperCheckMethod {
@@ -174,7 +179,11 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		}
 
 		public void initialize() {
+			if (theType == null)
+				return;
+
 			tamperCheckMethod = findTamperCheckMethod();
+			otherInitMethods = findOtherInitMethods();
 		}
 
 		MethodDefinition findTamperCheckMethod() {
@@ -188,6 +197,21 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			}
 
 			return null;
+		}
+
+		List<MethodDefinition> findOtherInitMethods() {
+			var list = new List<MethodDefinition>();
+			foreach (var method in theType.Methods) {
+				if (!method.IsStatic)
+					continue;
+				if (method.Name == ".cctor")
+					continue;
+				if (!DotNetUtils.isMethod(method, "System.Void", "()"))
+					continue;
+
+				list.Add(method);
+			}
+			return list;
 		}
 
 		public MethodDefinition getInitStringDecrypterMethod(MethodDefinition stringDecrypterInitMethod) {
@@ -211,6 +235,33 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 					return true;
 			}
 			return false;
+		}
+
+		public void removeInitCall(Blocks blocks) {
+			if (initMethod == null || theType == null)
+				return;
+			if (blocks.Method.Name != ".cctor")
+				return;
+			if (blocks.Method.DeclaringType != DotNetUtils.getModuleType(module))
+				return;
+
+			foreach (var block in blocks.MethodBlocks.getAllBlocks()) {
+				var instrs = block.Instructions;
+				for (int i = 0; i < instrs.Count - 2; i++) {
+					if (!instrs[i].isLdcI4())
+						continue;
+					if (!instrs[i + 1].isLdcI4())
+						continue;
+					var call = instrs[i + 2];
+					if (call.OpCode.Code != Code.Call)
+						continue;
+					if (call.Operand != initMethod)
+						continue;
+
+					block.remove(i, 3);
+					return;
+				}
+			}
 		}
 	}
 }

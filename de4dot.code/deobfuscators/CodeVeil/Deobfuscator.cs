@@ -176,6 +176,11 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			base.deobfuscateBegin();
 
 			mainType.initialize();
+			if (mainType.Version >= ObfuscatorVersion.V5_0) {
+				//TODO: addTypeToBeRemoved(mainType.Type, "Main CV type");
+			}
+			foreach (var initMethod in mainType.OtherInitMethods)
+				addCctorInitCallToBeRemoved(initMethod);
 
 			if (Operations.DecryptStrings != OpDecryptString.None) {
 				stringDecrypter.initialize();
@@ -216,6 +221,11 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		public override void deobfuscateMethodBegin(blocks.Blocks blocks) {
 			proxyDelegateFinder.deobfuscate(blocks);
 			base.deobfuscateMethodBegin(blocks);
+		}
+
+		public override void deobfuscateMethodEnd(blocks.Blocks blocks) {
+			mainType.removeInitCall(blocks);
+			base.deobfuscateMethodEnd(blocks);
 		}
 
 		public override void deobfuscateEnd() {
