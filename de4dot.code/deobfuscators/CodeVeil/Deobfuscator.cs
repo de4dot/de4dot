@@ -179,8 +179,10 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			if (mainType.Version >= ObfuscatorVersion.V5_0) {
 				//TODO: addTypeToBeRemoved(mainType.Type, "Main CV type");
 			}
-			foreach (var initMethod in mainType.OtherInitMethods)
+			foreach (var initMethod in mainType.OtherInitMethods) {
 				addCctorInitCallToBeRemoved(initMethod);
+				addCtorInitCallToBeRemoved(initMethod);
+			}
 
 			if (Operations.DecryptStrings != OpDecryptString.None) {
 				stringDecrypter.initialize();
