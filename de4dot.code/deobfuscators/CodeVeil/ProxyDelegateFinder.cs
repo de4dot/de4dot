@@ -188,6 +188,8 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 
 			var decompressed = DeobUtils.inflate(info.dataField.InitialValue, true);
 			reader = new BinaryReader(new MemoryStream(decompressed));
+			info.dataField.FieldType = module.TypeSystem.Byte;
+			info.dataField.InitialValue = new byte[1];
 		}
 	}
 }
