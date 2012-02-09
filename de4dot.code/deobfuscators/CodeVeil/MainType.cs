@@ -73,6 +73,8 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			this.tamperCheckMethod = lookup(oldOne.tamperCheckMethod, "Could not find tamper detection method");
 			this.obfuscatorVersion = oldOne.obfuscatorVersion;
 			this.rvas = oldOne.rvas;
+			foreach (var otherInitMethod in otherInitMethods)
+				otherInitMethods.Add(lookup(otherInitMethod, "Could not find otherInitMethod"));
 		}
 
 		T lookup<T>(T def, string errorMessage) where T : MemberReference {
@@ -121,7 +123,6 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 
 			if (initMethod == null)
 				return false;
-
 			if (initMethod.Body == null)
 				return false;
 			if (!initMethod.IsStatic)
