@@ -108,7 +108,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 					continue;
 				}
 
-				int offset = getAttributeValueUInt32(assemblyElem, "offset");
+				int offset = getAttributeValueInt32(assemblyElem, "offset");
 				if (offset < 0) {
 					Log.w("Could not find offset attribute");
 					continue;
@@ -120,7 +120,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			}
 		}
 
-		static int getAttributeValueUInt32(XmlElement elem, string attrName) {
+		static int getAttributeValueInt32(XmlElement elem, string attrName) {
 			var str = elem.GetAttribute(attrName);
 			if (string.IsNullOrEmpty(str))
 				return -1;
