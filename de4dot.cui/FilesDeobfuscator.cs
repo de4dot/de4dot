@@ -192,20 +192,8 @@ namespace de4dot.cui {
 				catch (BadImageFormatException) {
 					return false;	// Not a .NET file
 				}
-				catch (ArgumentOutOfRangeException) {
-					Log.w("Could not load file (argument out of range): {0}", file.Filename);
-					return false;
-				}
-				catch (UnauthorizedAccessException) {
-					Log.w("Could not load file (not authorized): {0}", file.Filename);
-					return false;
-				}
-				catch (NullReferenceException) {
-					Log.w("Could not load file (null ref): {0}", file.Filename);
-					return false;
-				}
-				catch (IOException) {
-					Log.w("Could not load file (io exception): {0}", file.Filename);
+				catch (Exception ex) {
+					Log.w("Could not load file ({0}): {1}", ex.GetType(), file.Filename);
 					return false;
 				}
 
