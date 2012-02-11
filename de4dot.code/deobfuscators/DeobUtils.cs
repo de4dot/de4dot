@@ -162,5 +162,19 @@ namespace de4dot.code.deobfuscators {
 					((int)reader.ReadByte() << 8) +
 					reader.ReadByte();
 		}
+
+		public static bool hasInteger(MethodDefinition method, uint value) {
+			return hasInteger(method, (int)value);
+		}
+
+		public static bool hasInteger(MethodDefinition method, int value) {
+			foreach (var instr in method.Body.Instructions) {
+				if (!DotNetUtils.isLdcI4(instr))
+					continue;
+				if (DotNetUtils.getLdcI4Value(instr) == value)
+					return true;
+			}
+			return false;
+		}
 	}
 }
