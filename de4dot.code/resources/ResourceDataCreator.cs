@@ -131,29 +131,28 @@ namespace de4dot.code.resources {
 		}
 
 		class MyBinder : SerializationBinder {
-			public string assemblyName;
-			public string typeName;
-
 			public class OkException : Exception {
+				public string AssemblyName { get; set; }
+				public string TypeName { get; set; }
 			}
 
 			public override Type BindToType(string assemblyName, string typeName) {
-				this.assemblyName = assemblyName;
-				this.typeName = typeName;
-				throw new OkException();
+				throw new OkException {
+					AssemblyName = assemblyName,
+					TypeName = typeName,
+				};
 			}
 		}
 
 		bool getSerializedTypeAndAssemblyName(byte[] value, out string assemblyName, out string typeName) {
-			var binder = new MyBinder();
 			try {
 				var formatter = new BinaryFormatter();
-				formatter.Binder = binder;
+				formatter.Binder = new MyBinder();
 				formatter.Deserialize(new MemoryStream(value));
 			}
-			catch (MyBinder.OkException) {
-				assemblyName = binder.assemblyName;
-				typeName = binder.typeName;
+			catch (MyBinder.OkException ex) {
+				assemblyName = ex.AssemblyName;
+				typeName = ex.TypeName;
 				return true;
 			}
 			catch {
