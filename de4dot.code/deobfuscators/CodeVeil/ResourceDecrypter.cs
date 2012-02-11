@@ -291,9 +291,14 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			foreach (var method in type.Methods) {
 				if (!method.IsPrivate || method.IsStatic || method.Body == null)
 					continue;
-				if (!DotNetUtils.isMethod(method, "System.Void", "(System.UInt32[],System.UInt32[])"))
-					continue;
-				if (!DeobUtils.hasInteger(method, 0x9E3779B9))
+				if (DotNetUtils.isMethod(method, "System.Void", "(System.UInt32[],System.UInt32[])")) {
+					if (!DeobUtils.hasInteger(method, 0x9E3779B9))
+						continue;
+				}
+				else if (DotNetUtils.isMethod(method, "System.Void", "(System.UInt32[],System.UInt32[],System.UInt32,System.UInt32,System.UInt32,System.UInt32,System.UInt32,System.UInt32,System.UInt32,System.UInt32,System.UInt32)")) {
+					// Here if 5.0. 0x9E3779B9 is passed to it as the last arg.
+				}
+				else
 					continue;
 				if (!DeobUtils.hasInteger(method, 52))
 					continue;
