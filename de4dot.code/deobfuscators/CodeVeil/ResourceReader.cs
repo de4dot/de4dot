@@ -53,6 +53,8 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				throw new InvalidDataException("Invalid number");
 			reader.ReadUInt32();
 			resourceReader = reader.ReadString();
+			if (Utils.StartsWith(resourceReader, "System.Resources.ResourceReader", StringComparison.Ordinal))
+				throw new InvalidDataException("Resource isn't encrypted");
 			resourceSet = reader.ReadString();
 			if (reader.ReadByte() != 1)
 				throw new ApplicationException("Invalid version");
