@@ -84,6 +84,10 @@
     <Compile Include="deobfuscators\CodeVeil\MainType.cs" />
     <Compile Include="deobfuscators\CodeVeil\MethodsDecrypter.cs" />
     <Compile Include="deobfuscators\CodeVeil\ObfuscatorVersion.cs" />
+    <Compile Include="deobfuscators\CodeVeil\ResourceConverter.cs" />
+    <Compile Include="deobfuscators\CodeVeil\ResourceDecrypter.cs" />
+    <Compile Include="deobfuscators\CodeVeil\ResourceInfo.cs" />
+    <Compile Include="deobfuscators\CodeVeil\ResourceReader.cs" />
     <Compile Include="deobfuscators\CodeVeil\StringDecrypter.cs" />
     <Compile Include="deobfuscators\CodeVeil\Deobfuscator.cs" />
     <Compile Include="deobfuscators\CodeVeil\ProxyDelegateFinder.cs" />

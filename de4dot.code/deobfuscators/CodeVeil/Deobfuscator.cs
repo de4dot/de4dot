@@ -205,6 +205,8 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 
 			proxyDelegateFinder.initialize();
 			proxyDelegateFinder.find();
+
+			new ResourceDecrypter(module).decrypt();
 		}
 
 		void removeTamperDetection() {
