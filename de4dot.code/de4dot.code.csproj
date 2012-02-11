@@ -44,6 +44,7 @@
       <HintPath>..\ICSharpCode.SharpZipLib.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Runtime.Remoting" />
     <Reference Include="System.XML" />
   </ItemGroup>
@@ -230,6 +231,15 @@
     <Compile Include="renamer\TypeNames.cs" />
     <Compile Include="renamer\TypeRenamerState.cs" />
     <Compile Include="renamer\VariableNameState.cs" />
+    <Compile Include="resources\BuiltInResourceData.cs" />
+    <Compile Include="resources\IResourceData.cs" />
+    <Compile Include="resources\ResourceElement.cs" />
+    <Compile Include="resources\ResourceElementSet.cs" />
+    <Compile Include="resources\ResourceTypeCode.cs" />
+    <Compile Include="resources\ResourceDataCreator.cs" />
+    <Compile Include="resources\ResourceWriter.cs" />
+    <Compile Include="resources\UserResourceData.cs" />
+    <Compile Include="resources\UserResourceType.cs" />
     <Compile Include="StringInliner.cs" />
     <Compile Include="UserException.cs" />
     <Compile Include="Utils.cs" />
