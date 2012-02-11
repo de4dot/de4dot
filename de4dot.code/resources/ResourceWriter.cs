@@ -142,7 +142,7 @@ namespace de4dot.code.resources {
 			foreach (var asmRef in module.AssemblyReferences) {
 				if (asmRef.Name != "mscorlib")
 					continue;
-				if (mscorlibRef == null || mscorlibRef.Version == null || asmRef.Version >= mscorlibRef.Version)
+				if (mscorlibRef == null || mscorlibRef.Version == null || (asmRef.Version != null && asmRef.Version >= mscorlibRef.Version))
 					mscorlibRef = asmRef;
 			}
 			if (mscorlibRef != null)
