@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.MyStuff;
+using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CodeVeil {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
@@ -62,6 +63,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		StringDecrypter stringDecrypter;
 		AssemblyResolver assemblyResolver;
 		TypeDefinition killType;
+		ResourceDecrypter resourceDecrypter;
 
 		internal class Options : OptionsBase {
 		}
@@ -206,7 +208,17 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			proxyDelegateFinder.initialize();
 			proxyDelegateFinder.find();
 
-			new ResourceDecrypter(module).decrypt();
+			resourceDecrypter = new ResourceDecrypter(module);
+			resourceDecrypter.initialize();
+			resourceDecrypter.decrypt();
+			if (resourceDecrypter.CanRemoveTypes) {
+				addTypeToBeRemoved(resourceDecrypter.ResourceFlagsType, "Obfuscator ResourceFlags type");
+				addTypeToBeRemoved(resourceDecrypter.ResType, "Obfuscator Res type");
+				addTypeToBeRemoved(resourceDecrypter.ResourceEnumeratorType, "Obfuscator ResourceEnumerator type");
+				addTypeToBeRemoved(resourceDecrypter.EncryptedResourceReaderType, "Obfuscator EncryptedResourceReader type");
+				addTypeToBeRemoved(resourceDecrypter.EncryptedResourceSetType, "Obfuscator EncryptedResourceSet type");
+				addTypeToBeRemoved(resourceDecrypter.EncryptedResourceStreamType, "Obfuscator EncryptedResourceStream type");
+			}
 		}
 
 		void removeTamperDetection() {
@@ -224,13 +236,14 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			addResourceToBeRemoved(assemblyResolver.BundleXmlFileResource, "Embedded assemblies XML file resource");
 		}
 
-		public override void deobfuscateMethodBegin(blocks.Blocks blocks) {
+		public override void deobfuscateMethodBegin(Blocks blocks) {
 			proxyDelegateFinder.deobfuscate(blocks);
 			base.deobfuscateMethodBegin(blocks);
 		}
 
-		public override void deobfuscateMethodEnd(blocks.Blocks blocks) {
+		public override void deobfuscateMethodEnd(Blocks blocks) {
 			mainType.removeInitCall(blocks);
+			resourceDecrypter.deobfuscate(blocks);
 			base.deobfuscateMethodEnd(blocks);
 		}
 
