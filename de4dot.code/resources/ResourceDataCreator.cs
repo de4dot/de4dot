@@ -169,18 +169,7 @@ namespace de4dot.code.resources {
 			if (dict.TryGetValue(fullName, out type))
 				return type;
 
-			var newFullName = fullName;
-			string typeName, assemblyName;
-			splitTypeFullName(fullName, out typeName, out assemblyName);
-			if (!string.IsNullOrEmpty(assemblyName)) {
-				string newAsmName;
-				if (!asmNameToAsmFullName.TryGetValue(assemblyName, out newAsmName))
-					asmNameToAsmFullName[assemblyName] = newAsmName = getRealAssemblyName(assemblyName);
-				assemblyName = newAsmName;
-			}
-			if (!string.IsNullOrEmpty(assemblyName))
-				newFullName = string.Format("{0}, {1}", typeName, assemblyName);
-
+			var newFullName = getRealTypeFullName(fullName);
 			type = new UserResourceType(newFullName, ResourceTypeCode.UserTypes + dict.Count);
 			dict[fullName] = type;
 			dict[newFullName] = type;
@@ -199,7 +188,27 @@ namespace de4dot.code.resources {
 			}
 		}
 
+		string getRealTypeFullName(string fullName) {
+			var newFullName = fullName;
+
+			string typeName, assemblyName;
+			splitTypeFullName(fullName, out typeName, out assemblyName);
+			if (!string.IsNullOrEmpty(assemblyName))
+				assemblyName = getRealAssemblyName(assemblyName);
+			if (!string.IsNullOrEmpty(assemblyName))
+				newFullName = string.Format("{0}, {1}", typeName, assemblyName);
+
+			return newFullName;
+		}
+
 		string getRealAssemblyName(string assemblyName) {
+			string newAsmName;
+			if (!asmNameToAsmFullName.TryGetValue(assemblyName, out newAsmName))
+				asmNameToAsmFullName[assemblyName] = newAsmName = tryGetRealAssemblyName(assemblyName);
+			return newAsmName;
+		}
+
+		string tryGetRealAssemblyName(string assemblyName) {
 			var simpleName = Utils.getAssemblySimpleName(assemblyName);
 
 			foreach (var asmRef in module.AssemblyReferences) {
