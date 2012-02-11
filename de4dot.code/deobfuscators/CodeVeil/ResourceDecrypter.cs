@@ -53,7 +53,10 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				//TODO: Decrypt the other type
 				return null;
 			}
-			catch (ApplicationException) {
+			catch (InvalidDataException) {
+				return null;
+			}
+			catch (IOException) {
 				return null;
 			}
 			catch (Exception ex) {

@@ -48,9 +48,9 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 
 		public ResourceInfo[] read() {
 			if (reader.ReadUInt32() != 0xBEEFCACE)
-				throw new ApplicationException("Invalid magic");
+				throw new InvalidDataException("Invalid magic");
 			if (reader.ReadUInt32() <= 0)
-				throw new ApplicationException("Invalid number");
+				throw new InvalidDataException("Invalid number");
 			reader.ReadUInt32();
 			resourceReader = reader.ReadString();
 			resourceSet = reader.ReadString();
