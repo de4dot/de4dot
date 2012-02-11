@@ -220,7 +220,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 
 			var encryptedData = new uint[data.Length / 4];
 			Buffer.BlockCopy(data, 0, encryptedData, 0, data.Length);
-			DeobUtils.xxteaDecrypt(encryptedData, encryptedData.Length, key);
+			DeobUtils.xxteaDecrypt(encryptedData, key);
 			var decryptedData = new byte[data.Length];
 			Buffer.BlockCopy(encryptedData, 0, decryptedData, 0, data.Length);
 

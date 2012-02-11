@@ -91,8 +91,9 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		// Code converted from C implementation @ http://en.wikipedia.org/wiki/XXTEA (btea() func)
-		public static void xxteaDecrypt(uint[] v, int n, uint[] key) {
+		public static void xxteaDecrypt(uint[] v, uint[] key) {
 			const uint DELTA = 0x9E3779B9;
+			int n = v.Length;
 			uint rounds = (uint)(6 + 52 / n);
 			uint sum = rounds * DELTA;
 			uint y = v[0];
