@@ -19,6 +19,7 @@
 
 using System.Collections.Generic;
 using Mono.Cecil;
+using de4dot.blocks;
 using de4dot.blocks.cflow;
 
 namespace de4dot.code.deobfuscators.DeepSea {
@@ -224,7 +225,7 @@ done:
 			addMethodToBeRemoved(assemblyResolver.HandlerMethod, "Assembly resolver handler method");
 		}
 
-		public override void deobfuscateMethodEnd(blocks.Blocks blocks) {
+		public override void deobfuscateMethodEnd(Blocks blocks) {
 			if (options.RestoreFields)
 				fieldsRestorer.deobfuscate(blocks);
 			base.deobfuscateMethodEnd(blocks);
