@@ -39,6 +39,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				if (decrypted == null)
 					continue;
 
+				Log.v("Decrypted resource {0}", Utils.toCsharpString(resource.Name));
 				module.Resources[i] = new EmbeddedResource(resource.Name, resource.Attributes, decrypted);
 			}
 		}
