@@ -17,10 +17,22 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System.Collections.Generic;
 using Mono.Cecil;
 
 namespace de4dot.code.deobfuscators.CodeVeil {
 	class InvalidMethodsFinder {
+		public static List<MethodDefinition> findInvalidMethods(ModuleDefinition module) {
+			var list = new List<MethodDefinition>();
+			foreach (var type in module.GetTypes()) {
+				foreach (var method in type.Methods) {
+					if (isInvalidMethod(method))
+						list.Add(method);
+				}
+			}
+			return list;
+		}
+
 		public static bool isInvalidMethod(MethodDefinition method) {
 			if (method == null)
 				return false;
