@@ -156,7 +156,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		}
 
 		void checkVersion(TypeDefinition attr) {
-			var versionField = DotNetUtils.getField(attr, "Version");
+			var versionField = DotNetUtils.getFieldByName(attr, "Version");
 			if (versionField != null && versionField.IsLiteral && versionField.Constant != null && versionField.Constant is string) {
 				var val = Regex.Match((string)versionField.Constant, @"^(\d+\.\d+\.\d+\.\d+)$");
 				if (val.Groups.Count < 2)

@@ -472,7 +472,17 @@ namespace de4dot.blocks {
 			return null;
 		}
 
-		public static FieldDefinition getField(TypeDefinition type, string name) {
+		public static FieldDefinition getField(TypeDefinition type, string typeFullName) {
+			if (type == null)
+				return null;
+			foreach (var field in type.Fields) {
+				if (field.FieldType.FullName == typeFullName)
+					return field;
+			}
+			return null;
+		}
+
+		public static FieldDefinition getFieldByName(TypeDefinition type, string name) {
 			if (type == null)
 				return null;
 			foreach (var field in type.Fields) {
