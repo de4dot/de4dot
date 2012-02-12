@@ -81,6 +81,7 @@
     <Compile Include="deobfuscators\CliSecure\StackFrameHelper.cs" />
     <Compile Include="deobfuscators\CliSecure\StringDecrypter.cs" />
     <Compile Include="deobfuscators\CodeVeil\AssemblyResolver.cs" />
+    <Compile Include="deobfuscators\CodeVeil\ErexResourceReader.cs" />
     <Compile Include="deobfuscators\CodeVeil\InvalidDataException.cs" />
     <Compile Include="deobfuscators\CodeVeil\MainType.cs" />
     <Compile Include="deobfuscators\CodeVeil\MethodsDecrypter.cs" />

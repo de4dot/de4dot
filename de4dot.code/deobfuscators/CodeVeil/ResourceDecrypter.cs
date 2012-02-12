@@ -340,9 +340,11 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				stream.Position = 0;
 				var reader = new BinaryReader(stream);
 				uint sig = reader.ReadUInt32();
+				stream.Position = 0;
 				if (sig == 0xBEEFCACE)
 					return decryptBeefcace(reader);
-				//TODO: Decrypt the other type
+				if (sig == 0x58455245)
+					return decryptErex(reader);
 				return null;
 			}
 			catch (InvalidDataException) {
@@ -360,6 +362,10 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		byte[] decryptBeefcace(BinaryReader reader) {
 			var resourceReader = new ResourceReader(reader);
 			return new ResourceConverter(module, resourceReader.read()).convert();
+		}
+
+		byte[] decryptErex(BinaryReader reader) {
+			return new ErexResourceReader(reader.BaseStream).decrypt();
 		}
 
 		public void deobfuscate(Blocks blocks) {
