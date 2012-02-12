@@ -98,6 +98,8 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 
 			MethodDefinition cctor = null, initMethod = null;
 			foreach (var method in type.Methods) {
+				if (InvalidMethodsFinder.isInvalidMethod(method))
+					continue;
 				if (!method.IsStatic || method.Body == null)
 					return false;
 				if (method.Name == ".cctor")
