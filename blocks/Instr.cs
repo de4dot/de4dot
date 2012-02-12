@@ -209,8 +209,6 @@ namespace de4dot.blocks {
 				break;
 
 			case OperandType.InlineSwitch:
-				if (targets.Count == 0)
-					throw new ApplicationException("No targets!");
 				var switchTargets = new Instruction[targets.Count];
 				for (var i = 0; i < targets.Count; i++)
 					switchTargets[i] = targets[i].Instruction;
