@@ -231,6 +231,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				DeobfuscatedFile.createAssemblyFile(info.data, info.simpleName, info.extension);
 			addResourceToBeRemoved(assemblyResolver.BundleDataResource, "Embedded assemblies resource");
 			addResourceToBeRemoved(assemblyResolver.BundleXmlFileResource, "Embedded assemblies XML file resource");
+			addTypesToBeRemoved(assemblyResolver.BundleTypes, "Obfuscator assembly bundle types");
 		}
 
 		public override void deobfuscateMethodBegin(Blocks blocks) {

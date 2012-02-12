@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Xml;
 using Mono.Cecil;
+using Mono.Cecil.Cil;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CodeVeil {
@@ -29,6 +30,11 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		EmbeddedResource bundleData;
 		EmbeddedResource bundleXmlFile;
 		TypeDefinition bundleType;
+		TypeDefinition assemblyManagerType;
+		TypeDefinition bundleStreamProviderIFace;
+		TypeDefinition xmlParserType;
+		TypeDefinition bundledAssemblyType;
+		TypeDefinition streamProviderType;
 		List<AssemblyInfo> infos = new List<AssemblyInfo>();
 
 		public class AssemblyInfo {
@@ -46,6 +52,34 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 
 			public override string ToString() {
 				return fullName;
+			}
+		}
+
+		public bool CanRemoveTypes {
+			get {
+				return bundleType != null &&
+					assemblyManagerType != null &&
+					bundleStreamProviderIFace != null &&
+					xmlParserType != null &&
+					bundledAssemblyType != null &&
+					streamProviderType != null;
+			}
+		}
+
+		public IEnumerable<TypeDefinition> BundleTypes {
+			get {
+				var list = new List<TypeDefinition>();
+				if (!CanRemoveTypes)
+					return list;
+
+				list.Add(bundleType);
+				list.Add(assemblyManagerType);
+				list.Add(bundleStreamProviderIFace);
+				list.Add(xmlParserType);
+				list.Add(bundledAssemblyType);
+				list.Add(streamProviderType);
+
+				return list;
 			}
 		}
 
@@ -85,6 +119,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			bundleData = bundleDataTmp;
 			bundleXmlFile = bundleXmlFileTmp;
 			bundleType = bundleTypeTmp;
+			findOtherTypes();
 			return true;
 		}
 
@@ -186,6 +221,94 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			}
 
 			return null;
+		}
+
+		void findOtherTypes() {
+			findAssemblyManagerType();
+			findXmlParserType();
+			findStreamProviderType();
+		}
+
+		void findAssemblyManagerType() {
+			if (bundleType == null)
+				return;
+
+			foreach (var field in bundleType.Fields) {
+				var type = field.FieldType as TypeDefinition;
+				if (type == null)
+					continue;
+				if (type == bundleType)
+					continue;
+				if (type.Fields.Count != 2)
+					continue;
+
+				var ctor = DotNetUtils.getMethod(type, ".ctor");
+				if (ctor == null || ctor.Parameters.Count != 2)
+					continue;
+				var iface = ctor.Parameters[1].ParameterType as TypeDefinition;
+				if (iface == null || !iface.IsInterface)
+					continue;
+
+				assemblyManagerType = type;
+				bundleStreamProviderIFace = iface;
+				return;
+			}
+		}
+
+		void findXmlParserType() {
+			if (assemblyManagerType == null)
+				return;
+			foreach (var field in assemblyManagerType.Fields) {
+				var type = field.FieldType as TypeDefinition;
+				if (type == null || type.IsInterface)
+					continue;
+				var ctor = DotNetUtils.getMethod(type, ".ctor");
+				if (!DotNetUtils.isMethod(ctor, "System.Void", "()"))
+					continue;
+				if (type.Fields.Count != 1)
+					continue;
+				var git = type.Fields[0].FieldType as GenericInstanceType;
+				if (git == null)
+					continue;
+				if (git.ElementType.FullName != "System.Collections.Generic.List`1")
+					continue;
+				if (git.GenericArguments.Count != 1)
+					continue;
+				var type2 = git.GenericArguments[0] as TypeDefinition;
+				if (type2 == null)
+					continue;
+
+				xmlParserType = type;
+				bundledAssemblyType = type2;
+				return;
+			}
+		}
+
+		void findStreamProviderType() {
+			if (bundleType == null)
+				return;
+			var ctor = DotNetUtils.getMethod(bundleType, ".ctor");
+			if (!DotNetUtils.isMethod(ctor, "System.Void", "(System.Reflection.Assembly)"))
+				return;
+			foreach (var instr in ctor.Body.Instructions) {
+				if (instr.OpCode.Code != Code.Newobj)
+					continue;
+				var newobjCtor = instr.Operand as MethodDefinition;
+				if (newobjCtor == null)
+					continue;
+				if (newobjCtor.DeclaringType == assemblyManagerType)
+					continue;
+				if (!DotNetUtils.isMethod(newobjCtor, "System.Void", "(System.Reflection.Assembly,System.String)"))
+					continue;
+				var type = newobjCtor.DeclaringType;
+				if (type.Interfaces.Count != 1)
+					continue;
+				if (type.Interfaces[0] != bundleStreamProviderIFace)
+					continue;
+
+				streamProviderType = type;
+				return;
+			}
 		}
 	}
 }
