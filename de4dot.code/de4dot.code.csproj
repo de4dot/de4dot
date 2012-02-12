@@ -83,6 +83,7 @@
     <Compile Include="deobfuscators\CodeVeil\AssemblyResolver.cs" />
     <Compile Include="deobfuscators\CodeVeil\ErexResourceReader.cs" />
     <Compile Include="deobfuscators\CodeVeil\InvalidDataException.cs" />
+    <Compile Include="deobfuscators\CodeVeil\InvalidMethodsFinder.cs" />
     <Compile Include="deobfuscators\CodeVeil\MainType.cs" />
     <Compile Include="deobfuscators\CodeVeil\MethodsDecrypter.cs" />
     <Compile Include="deobfuscators\CodeVeil\ObfuscatorVersion.cs" />
