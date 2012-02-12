@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.IO;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Mono.Cecil.Metadata;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CodeVeil {
@@ -34,6 +35,9 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			public TypeDefinition proxyType;
 			public MethodDefinition initMethod;
 			public FieldDefinition dataField;
+			public TypeDefinition ilgeneratorType;
+			public TypeDefinition fieldInfoType;
+			public TypeDefinition methodInfoType;
 		}
 
 		class Context {
@@ -42,6 +46,31 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			public Context(int offset) {
 				this.offset = offset;
 			}
+		}
+
+		public bool FoundProxyType {
+			get { return info.proxyType != null; }
+		}
+
+		public bool CanRemoveTypes {
+			get {
+				return info.proxyType != null &&
+					info.ilgeneratorType != null &&
+					info.fieldInfoType != null &&
+					info.methodInfoType != null;
+			}
+		}
+
+		public TypeDefinition IlGeneratorType {
+			get { return info.ilgeneratorType; }
+		}
+
+		public TypeDefinition FieldInfoType {
+			get { return info.fieldInfoType; }
+		}
+
+		public TypeDefinition MethodInfoType {
+			get { return info.methodInfoType; }
 		}
 
 		public ProxyDelegateFinder(ModuleDefinition module, MainType mainType)
@@ -55,6 +84,9 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			info.proxyType = lookup(oldOne.info.proxyType, "Could not find proxyType");
 			info.initMethod = lookup(oldOne.info.initMethod, "Could not find initMethod");
 			info.dataField = lookup(oldOne.info.dataField, "Could not find dataField");
+			info.ilgeneratorType = lookup(oldOne.info.ilgeneratorType, "Could not find ilgeneratorType");
+			info.fieldInfoType = lookup(oldOne.info.fieldInfoType, "Could not find fieldInfoType");
+			info.methodInfoType = lookup(oldOne.info.methodInfoType, "Could not find methodInfoType");
 		}
 
 		protected override object checkCctor(TypeDefinition type, MethodDefinition cctor) {
@@ -186,10 +218,69 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			if (info.dataField == null)
 				return;
 
+			findOtherTypes();
+
 			var decompressed = DeobUtils.inflate(info.dataField.InitialValue, true);
 			reader = new BinaryReader(new MemoryStream(decompressed));
 			info.dataField.FieldType = module.TypeSystem.Byte;
 			info.dataField.InitialValue = new byte[1];
+		}
+
+		void findOtherTypes() {
+			if (info.proxyType == null)
+				return;
+
+			foreach (var method in info.proxyType.Methods) {
+				if (method.Parameters.Count != 4)
+					continue;
+
+				if (method.Parameters[2].ParameterType.FullName != "System.Type[]")
+					continue;
+				var methodType = method.Parameters[0].ParameterType as TypeDefinition;
+				var fieldType = method.Parameters[1].ParameterType as TypeDefinition;
+				var ilgType = method.Parameters[3].ParameterType as TypeDefinition;
+				if (!checkMethodType(methodType))
+					continue;
+				if (!checkFieldType(fieldType))
+					continue;
+				if (!checkIlGeneratorType(ilgType))
+					continue;
+
+				info.ilgeneratorType = ilgType;
+				info.methodInfoType = methodType;
+				info.fieldInfoType = fieldType;
+			}
+		}
+
+		bool checkMethodType(TypeDefinition type) {
+			if (type == null || type.BaseType == null || type.BaseType.EType != ElementType.Object)
+				return false;
+			if (type.Fields.Count != 1)
+				return false;
+			if (DotNetUtils.getField(type, "System.Reflection.MethodInfo") == null)
+				return false;
+
+			return true;
+		}
+
+		bool checkFieldType(TypeDefinition type) {
+			if (type == null || type.BaseType == null || type.BaseType.EType != ElementType.Object)
+				return false;
+			if (DotNetUtils.getField(type, "System.Reflection.FieldInfo") == null)
+				return false;
+
+			return true;
+		}
+
+		bool checkIlGeneratorType(TypeDefinition type) {
+			if (type == null || type.BaseType == null || type.BaseType.EType != ElementType.Object)
+				return false;
+			if (type.Fields.Count != 1)
+				return false;
+			if (DotNetUtils.getField(type, "System.Reflection.Emit.ILGenerator") == null)
+				return false;
+
+			return true;
 		}
 	}
 }

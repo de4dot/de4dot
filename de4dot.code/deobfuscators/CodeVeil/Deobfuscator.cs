@@ -180,15 +180,6 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			addTypeToBeRemoved(killType, "KILL type");
 
 			mainType.initialize();
-			if (!mainType.Detected) {
-			}
-			else if (mainType.Version >= ObfuscatorVersion.V5_0) {
-				//TODO: addTypeToBeRemoved(mainType.Type, "Main CV type");
-			}
-			else {
-				foreach (var method in mainType.Type.Methods)
-					addMethodToBeRemoved(method, "CV main type method");
-			}
 			foreach (var initMethod in mainType.OtherInitMethods) {
 				addCctorInitCallToBeRemoved(initMethod);
 				addCtorInitCallToBeRemoved(initMethod);
@@ -254,8 +245,28 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		}
 
 		public override void deobfuscateEnd() {
+			bool canRemoveProxyTypes = proxyDelegateFinder.CanRemoveTypes;
+
+			if (!mainType.Detected) {
+			}
+			else if (mainType.Version >= ObfuscatorVersion.V5_0) {
+				if (!proxyDelegateFinder.FoundProxyType || canRemoveProxyTypes)
+					addTypeToBeRemoved(mainType.Type, "Main CV type");
+			}
+			else {
+				foreach (var method in mainType.Type.Methods)
+					addMethodToBeRemoved(method, "CV main type method");
+			}
+
 			removeTypesWithInvalidBaseTypes();
-			removeProxyDelegates(proxyDelegateFinder, false);	//TODO: Should be 'true'
+
+			removeProxyDelegates(proxyDelegateFinder, canRemoveProxyTypes);
+			if (canRemoveProxyTypes) {
+				addTypeToBeRemoved(proxyDelegateFinder.IlGeneratorType, "Obfuscator proxy method ILGenerator type");
+				addTypeToBeRemoved(proxyDelegateFinder.FieldInfoType, "Obfuscator proxy method FieldInfo type");
+				addTypeToBeRemoved(proxyDelegateFinder.MethodInfoType, "Obfuscator proxy method MethodInfo type");
+			}
+
 			base.deobfuscateEnd();
 		}
 
