@@ -90,6 +90,27 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
+		// Code converted from C implementation @ http://en.wikipedia.org/wiki/XXTEA (btea() func)
+		public static void xxteaDecrypt(uint[] v, uint[] key) {
+			const uint DELTA = 0x9E3779B9;
+			int n = v.Length;
+			uint rounds = (uint)(6 + 52 / n);
+			uint sum = rounds * DELTA;
+			uint y = v[0];
+			uint z;
+			//#define MX (((z >> 5 ^ y << 2) + (y >> 3 ^ z << 4)) ^ ((sum ^ y) + (key[(p & 3) ^ e] ^ z)))
+			do {
+				int e = (int)((sum >> 2) & 3);
+				int p;
+				for (p = n - 1; p > 0; p--) {
+					z = v[p - 1];
+					y = v[p] -= (((z >> 5 ^ y << 2) + (y >> 3 ^ z << 4)) ^ ((sum ^ y) + (key[(p & 3) ^ e] ^ z)));
+				}
+				z = v[n - 1];
+				y = v[0] -= (((z >> 5 ^ y << 2) + (y >> 3 ^ z << 4)) ^ ((sum ^ y) + (key[(p & 3) ^ e] ^ z)));
+			} while ((sum -= DELTA) != 0);
+		}
+
 		public static string getExtension(ModuleKind kind) {
 			switch (kind) {
 			case ModuleKind.Dll:
@@ -128,6 +149,32 @@ namespace de4dot.code.deobfuscators {
 					return resource;
 			}
 			return null;
+		}
+
+		public static int readVariableLengthInt32(BinaryReader reader) {
+			byte b = reader.ReadByte();
+			if ((b & 0x80) == 0)
+				return b;
+			if ((b & 0x40) == 0)
+				return (((int)b & 0x3F) << 8) + reader.ReadByte();
+			return (((int)b & 0x3F) << 24) +
+					((int)reader.ReadByte() << 16) +
+					((int)reader.ReadByte() << 8) +
+					reader.ReadByte();
+		}
+
+		public static bool hasInteger(MethodDefinition method, uint value) {
+			return hasInteger(method, (int)value);
+		}
+
+		public static bool hasInteger(MethodDefinition method, int value) {
+			foreach (var instr in method.Body.Instructions) {
+				if (!DotNetUtils.isLdcI4(instr))
+					continue;
+				if (DotNetUtils.getLdcI4Value(instr) == value)
+					return true;
+			}
+			return false;
 		}
 	}
 }

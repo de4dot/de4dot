@@ -224,6 +224,7 @@ namespace de4dot.blocks {
 		// Returns the variable or null if it's not a ldloc/stloc instruction. It does not return
 		// a local variable if it's a ldloca/ldloca.s instruction.
 		public static VariableDefinition getLocalVar(IList<VariableDefinition> locals, Instruction instr) {
+			int index;
 			switch (instr.OpCode.Code) {
 			case Code.Ldloc:
 			case Code.Ldloc_S:
@@ -235,17 +236,23 @@ namespace de4dot.blocks {
 			case Code.Ldloc_1:
 			case Code.Ldloc_2:
 			case Code.Ldloc_3:
-				return locals[instr.OpCode.Code - Code.Ldloc_0];
+				index = instr.OpCode.Code - Code.Ldloc_0;
+				break;
 
 			case Code.Stloc_0:
 			case Code.Stloc_1:
 			case Code.Stloc_2:
 			case Code.Stloc_3:
-				return locals[instr.OpCode.Code - Code.Stloc_0];
+				index = instr.OpCode.Code - Code.Stloc_0;
+				break;
 
 			default:
 				return null;
 			}
+
+			if (index < locals.Count)
+				return locals[index];
+			return null;
 		}
 
 		public static bool isConditionalBranch(Code code) {
@@ -465,7 +472,17 @@ namespace de4dot.blocks {
 			return null;
 		}
 
-		public static FieldDefinition getField(TypeDefinition type, string name) {
+		public static FieldDefinition getField(TypeDefinition type, string typeFullName) {
+			if (type == null)
+				return null;
+			foreach (var field in type.Fields) {
+				if (field.FieldType.FullName == typeFullName)
+					return field;
+			}
+			return null;
+		}
+
+		public static FieldDefinition getFieldByName(TypeDefinition type, string name) {
 			if (type == null)
 				return null;
 			foreach (var field in type.Fields) {
@@ -670,6 +687,8 @@ namespace de4dot.blocks {
 					if (call.OpCode.Code != Code.Call && call.OpCode.Code != Code.Callvirt)
 						continue;
 					var methodRef = call.Operand as MethodReference;
+					if (methodRef == null)
+						continue;
 					var type = getType(module, methodRef.DeclaringType);
 					var methodDef = getMethod(type, methodRef);
 					if (methodDef != null) {

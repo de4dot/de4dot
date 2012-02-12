@@ -180,15 +180,28 @@ namespace de4dot.code.deobfuscators {
 			restoreBaseType();
 		}
 
+		static bool isTypeWithInvalidBaseType(TypeDefinition moduleType, TypeDefinition type) {
+			return type.BaseType == null && !type.IsInterface && type != moduleType;
+		}
+
 		void restoreBaseType() {
 			var moduleType = DotNetUtils.getModuleType(module);
 			foreach (var type in module.GetTypes()) {
-				if (type.BaseType != null || type.IsInterface || type == moduleType)
+				if (!isTypeWithInvalidBaseType(moduleType, type))
 					continue;
 				Log.v("Adding System.Object as base type: {0} ({1:X8})",
 							Utils.removeNewlines(type),
 							type.MetadataToken.ToInt32());
 				type.BaseType = module.TypeSystem.Object;
+			}
+		}
+
+		protected void removeTypesWithInvalidBaseTypes() {
+			var moduleType = DotNetUtils.getModuleType(module);
+			foreach (var type in module.GetTypes()) {
+				if (!isTypeWithInvalidBaseType(moduleType, type))
+					continue;
+				addTypeToBeRemoved(type, "Invalid type with no base type (anti-reflection)");
 			}
 		}
 

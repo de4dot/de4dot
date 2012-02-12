@@ -113,6 +113,17 @@ namespace de4dot.code.deobfuscators {
 			return resultArray;
 		}
 
+		public static uint[] getInitializedUInt32Array(int arraySize, MethodDefinition method, ref int newarrIndex) {
+			var resultArray = getInitializedInt32Array(arraySize, method, ref newarrIndex);
+			if (resultArray == null)
+				return null;
+
+			var ary = new uint[resultArray.Length];
+			for (int i = 0; i < ary.Length; i++)
+				ary[i] = (uint)resultArray[i];
+			return ary;
+		}
+
 		public static Value[] getInitializedArray(int arraySize, MethodDefinition method, ref int newarrIndex, Code stelemOpCode) {
 			var resultValueArray = new Value[arraySize];
 
@@ -143,7 +154,7 @@ namespace de4dot.code.deobfuscators {
 				case Code.Starg_S:
 				case Code.Stsfld:
 				case Code.Stfld:
-					if (emulator.peek() == theArray && i != newarrIndex + 1)
+					if (emulator.peek() == theArray && i != newarrIndex + 1 && i != newarrIndex + 2)
 						goto done;
 					break;
 				}

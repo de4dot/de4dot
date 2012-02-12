@@ -222,6 +222,8 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			}
 
 			short[] findKey() {
+				if (cctor.Module.Assembly == null)
+					return null;
 				var pkt = cctor.Module.Assembly.Name.PublicKeyToken;
 				if (pkt != null && pkt.Length > 0)
 					return getPublicKeyTokenKey(pkt);
@@ -302,7 +304,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 					return false;
 
 				key = findKey();
-				if (key.Length == 0)
+				if (key == null || key.Length == 0)
 					return false;
 
 				return true;
@@ -339,6 +341,8 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			}
 
 			short[] findKey() {
+				if (cctor.Module.Assembly == null)
+					return null;
 				var pkt = cctor.Module.Assembly.Name.PublicKeyToken;
 				if (pkt != null && pkt.Length > 0)
 					return getPublicKeyTokenKey(pkt);
@@ -433,6 +437,9 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		}
 
 		public void find(ISimpleDeobfuscator simpleDeobfuscator) {
+			if (module.Assembly == null)
+				return;
+
 			bool hasPublicKeyToken = module.Assembly.Name.PublicKeyToken != null && module.Assembly.Name.PublicKeyToken.Length != 0;
 			foreach (var type in module.GetTypes()) {
 				if (!checkFields(type.Fields))

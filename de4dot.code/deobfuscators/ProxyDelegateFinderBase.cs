@@ -68,6 +68,31 @@ namespace de4dot.code.deobfuscators {
 			this.module = module;
 		}
 
+		public ProxyDelegateFinderBase(ModuleDefinition module, ProxyDelegateFinderBase oldOne) {
+			this.module = module;
+			foreach (var method in oldOne.delegateCreatorMethods)
+				delegateCreatorMethods.Add(lookup(method, "Could not find delegate creator method"));
+			foreach (var kv in oldOne.delegateTypesDict)
+				delegateTypesDict[lookup(kv.Key, "Could not find delegate type")] = kv.Value;
+			foreach (var key in oldOne.fieldToDelegateInfo.getKeys())
+				fieldToDelegateInfo.add(lookup(key, "Could not find field"), copy(oldOne.fieldToDelegateInfo.find(key)));
+			foreach (var kv in oldOne.proxyMethodToField) {
+				var key = lookup(kv.Key, "Could not find proxy method");
+				var value = lookup(kv.Value, "Could not find proxy field");
+				proxyMethodToField[key] = value;
+			}
+		}
+
+		DelegateInfo copy(DelegateInfo di) {
+			var method = lookup(di.methodRef, "Could not find method ref");
+			var field = lookup(di.field, "Could not find delegate field");
+			return new DelegateInfo(field, method, di.callOpcode);
+		}
+
+		protected T lookup<T>(T def, string errorMessage) where T : MemberReference {
+			return DeobUtils.lookup(module, def, errorMessage);
+		}
+
 		public void setDelegateCreatorMethod(MethodDefinition delegateCreatorMethod) {
 			if (delegateCreatorMethod == null)
 				return;
@@ -82,14 +107,21 @@ namespace de4dot.code.deobfuscators {
 			return false;
 		}
 
+		protected virtual IEnumerable<TypeDefinition> getDelegateTypes() {
+			foreach (var type in module.Types) {
+				if (type.BaseType == null || type.BaseType.FullName != "System.MulticastDelegate")
+					continue;
+
+				yield return type;
+			}
+		}
+
 		public void find() {
 			if (delegateCreatorMethods.Count == 0)
 				return;
 
 			Log.v("Finding all proxy delegates");
-			foreach (var type in module.Types) {
-				if (type.BaseType == null || type.BaseType.FullName != "System.MulticastDelegate")
-					continue;
+			foreach (var type in getDelegateTypes()) {
 				var cctor = DotNetUtils.getMethod(type, ".cctor");
 				if (cctor == null || !cctor.HasBody)
 					continue;
@@ -263,15 +295,18 @@ namespace de4dot.code.deobfuscators {
 				if (stack < 0)
 					return null;
 
-				if (instr.OpCode != OpCodes.Call && instr.OpCode != OpCodes.Callvirt)
+				if (instr.OpCode != OpCodes.Call && instr.OpCode != OpCodes.Callvirt) {
+					if (stack <= 0)
+						return null;
 					continue;
-				var method = DotNetUtils.getMethod(module, instr.Operand as MethodReference);
-				if (method == null)
+				}
+				var calledMethod = instr.Operand as MethodReference;
+				if (calledMethod == null)
+					return null;
+				if (stack != (DotNetUtils.hasReturnValue(calledMethod) ? 1 : 0))
 					continue;
-				if (stack != (DotNetUtils.hasReturnValue(method) ? 1 : 0))
-					continue;
-				if (method.DeclaringType != di.field.DeclaringType)
-					continue;
+				if (calledMethod.Name != "Invoke")
+					return null;
 
 				return new BlockInstr {
 					Block = block,

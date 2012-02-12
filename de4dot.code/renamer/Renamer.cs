@@ -239,7 +239,10 @@ namespace de4dot.code.renamer {
 				if (!fieldInfo.gotNewName())
 					continue;
 				fieldDef.FieldDefinition.Name = fieldInfo.newName;
-				Log.v("Field: {0} ({1:X8}) => {2}", Utils.removeNewlines(fieldInfo.oldFullName), fieldDef.FieldDefinition.MetadataToken.ToUInt32(), fieldDef.FieldDefinition.FullName);
+				Log.v("Field: {0} ({1:X8}) => {2}",
+							Utils.removeNewlines(fieldInfo.oldFullName),
+							fieldDef.FieldDefinition.MetadataToken.ToUInt32(),
+							Utils.removeNewlines(fieldDef.FieldDefinition.FullName));
 			}
 		}
 
@@ -251,7 +254,10 @@ namespace de4dot.code.renamer {
 				if (!propInfo.gotNewName())
 					continue;
 				propDef.PropertyDefinition.Name = propInfo.newName;
-				Log.v("Property: {0} ({1:X8}) => {2}", Utils.removeNewlines(propInfo.oldFullName), propDef.PropertyDefinition.MetadataToken.ToUInt32(), propDef.PropertyDefinition.FullName);
+				Log.v("Property: {0} ({1:X8}) => {2}",
+							Utils.removeNewlines(propInfo.oldFullName),
+							propDef.PropertyDefinition.MetadataToken.ToUInt32(),
+							Utils.removeNewlines(propDef.PropertyDefinition.FullName));
 			}
 		}
 
@@ -263,7 +269,10 @@ namespace de4dot.code.renamer {
 				if (!eventInfo.gotNewName())
 					continue;
 				eventDef.EventDefinition.Name = eventInfo.newName;
-				Log.v("Event: {0} ({1:X8}) => {2}", Utils.removeNewlines(eventInfo.oldFullName), eventDef.EventDefinition.MetadataToken.ToUInt32(), eventDef.EventDefinition.FullName);
+				Log.v("Event: {0} ({1:X8}) => {2}",
+							Utils.removeNewlines(eventInfo.oldFullName),
+							eventDef.EventDefinition.MetadataToken.ToUInt32(),
+							Utils.removeNewlines(eventDef.EventDefinition.FullName));
 			}
 		}
 
