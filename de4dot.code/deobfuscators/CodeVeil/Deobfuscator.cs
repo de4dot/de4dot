@@ -255,8 +255,13 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 					addTypeToBeRemoved(mainType.Type, "Main CV type");
 			}
 			else {
-				foreach (var method in mainType.Type.Methods)
-					addMethodToBeRemoved(method, "CV main type method");
+				var type = mainType.Type;
+				if (!type.HasNestedTypes && !type.HasProperties && !type.HasEvents && !type.HasFields)
+					addTypeToBeRemoved(type, "Main CV type");
+				else {
+					foreach (var method in type.Methods)
+						addMethodToBeRemoved(method, "CV main type method");
+				}
 			}
 
 			removeTypesWithInvalidBaseTypes();
