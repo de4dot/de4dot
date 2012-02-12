@@ -92,19 +92,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		}
 
 		public string decrypt(int index) {
-			int len;
-			byte b = decryptedData[index++];
-			if ((b & 0x80) == 0)
-				len = b;
-			else if ((b & 0x40) == 0)
-				len = ((b & 0x3F) << 8) + decryptedData[index++];
-			else {
-				len = ((b & 0x3F) << 24) +
-						((int)decryptedData[index++] << 16) +
-						((int)decryptedData[index++] << 8) +
-						decryptedData[index++];
-			}
-
+			int len = DeobUtils.readVariableLengthInt32(decryptedData, ref index);
 			return Encoding.Unicode.GetString(decryptedData, index, len);
 		}
 

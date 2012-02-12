@@ -163,6 +163,18 @@ namespace de4dot.code.deobfuscators {
 					reader.ReadByte();
 		}
 
+		public static int readVariableLengthInt32(byte[] data, ref int index) {
+			byte b = data[index++];
+			if ((b & 0x80) == 0)
+				return b;
+			if ((b & 0x40) == 0)
+				return (((int)b & 0x3F) << 8) + data[index++];
+			return (((int)b & 0x3F) << 24) +
+					((int)data[index++] << 16) +
+					((int)data[index++] << 8) +
+					data[index++];
+		}
+
 		public static bool hasInteger(MethodDefinition method, uint value) {
 			return hasInteger(method, (int)value);
 		}
