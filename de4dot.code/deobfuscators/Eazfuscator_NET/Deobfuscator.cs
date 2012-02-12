@@ -22,7 +22,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using de4dot.blocks;
 
-namespace de4dot.code.deobfuscators.Eazfuscator {
+namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "Eazfuscator.NET";
 		public const string THE_TYPE = "ef";
