@@ -248,6 +248,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		}
 
 		public override void deobfuscateEnd() {
+			removeTypesWithInvalidBaseTypes();
 			removeProxyDelegates(proxyDelegateFinder, false);	//TODO: Should be 'true'
 			base.deobfuscateEnd();
 		}
