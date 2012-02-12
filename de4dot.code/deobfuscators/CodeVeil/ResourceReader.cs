@@ -42,7 +42,6 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		}
 
 		public ResourceReader(BinaryReader reader) {
-			reader.BaseStream.Position = 0;
 			this.reader = reader;
 		}
 
