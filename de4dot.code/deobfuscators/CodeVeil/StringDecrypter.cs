@@ -76,7 +76,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			if (find(cctor))
 				return;
 
-			find_V5(cctor);
+			findV5(cctor);
 		}
 
 		bool find(MethodDefinition method) {
@@ -105,7 +105,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		}
 
 		// The main decrypter type calls the string decrypter init method inside its init method
-		void find_V5(MethodDefinition method) {
+		void findV5(MethodDefinition method) {
 			if (!mainType.Detected)
 				return;
 			foreach (var info in DotNetUtils.getCalledMethods(module, mainType.InitMethod)) {
