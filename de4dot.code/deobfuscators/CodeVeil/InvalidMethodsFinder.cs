@@ -22,7 +22,7 @@ using Mono.Cecil;
 
 namespace de4dot.code.deobfuscators.CodeVeil {
 	class InvalidMethodsFinder {
-		public static List<MethodDefinition> findInvalidMethods(ModuleDefinition module) {
+		public static List<MethodDefinition> findAll(ModuleDefinition module) {
 			var list = new List<MethodDefinition>();
 			foreach (var type in module.GetTypes()) {
 				foreach (var method in type.Methods) {

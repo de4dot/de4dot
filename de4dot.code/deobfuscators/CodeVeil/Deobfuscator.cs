@@ -273,7 +273,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				addTypeToBeRemoved(proxyDelegateFinder.MethodInfoType, "Obfuscator proxy method MethodInfo type");
 			}
 
-			addMethodsToBeRemoved(InvalidMethodsFinder.findInvalidMethods(module), "Anti-reflection method");
+			addMethodsToBeRemoved(InvalidMethodsFinder.findAll(module), "Anti-reflection method");
 
 			base.deobfuscateEnd();
 		}
