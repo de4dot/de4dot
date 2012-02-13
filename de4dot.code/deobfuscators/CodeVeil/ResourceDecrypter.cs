@@ -352,9 +352,6 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			catch (InvalidDataException) {
 				return null;
 			}
-			catch (IOException) {
-				return null;
-			}
 			catch (Exception ex) {
 				Log.w("Got an exception when decrypting resources: {0} - {1}", ex.GetType(), ex.Message);
 				return null;
