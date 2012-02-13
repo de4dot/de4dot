@@ -312,6 +312,8 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			getManifestResourceStreamMethodTmp1 = null;
 			getManifestResourceStreamMethodTmp2 = null;
 			foreach (var method in type.Methods) {
+				if (!method.IsStatic || method.Body == null)
+					continue;
 				if (DotNetUtils.isMethod(method, "System.IO.Stream", "(System.Reflection.Assembly,System.String)"))
 					getManifestResourceStreamMethodTmp1 = method;
 				else if (DotNetUtils.isMethod(method, "System.IO.Stream", "(System.Reflection.Assembly,System.Type,System.String)"))
