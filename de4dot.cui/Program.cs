@@ -24,6 +24,13 @@ using de4dot.code;
 using de4dot.code.deobfuscators;
 
 namespace de4dot.cui {
+	class ExitException : Exception {
+		public readonly int code;
+		public ExitException(int code) {
+			this.code = code;
+		}
+	}
+
 	public class Program {
 		static IList<IDeobfuscatorInfo> deobfuscatorInfos = createDeobfuscatorInfos();
 
@@ -48,6 +55,8 @@ namespace de4dot.cui {
 		}
 
 		public static int main(string[] args) {
+			int exitCode = 0;
+
 			try {
 				if (Console.OutputEncoding.IsSingleByte)
 					Console.OutputEncoding = new UTF8Encoding(false);
@@ -61,16 +70,36 @@ namespace de4dot.cui {
 				parseCommandLine(args, options);
 				new FilesDeobfuscator(options).doIt();
 			}
+			catch (ExitException ex) {
+				exitCode = ex.code;
+			}
 			catch (UserException ex) {
 				Log.e("ERROR: {0}", ex.Message);
+				exitCode = 1;
 			}
 			catch (Exception ex) {
 				printStackTrace(ex);
 				Log.e("\nTry the latest version before reporting this problem!");
-				return 1;
+				exitCode = 1;
 			}
 
-			return 0;
+			if (isN00bUser()) {
+				Console.Error.WriteLine("\n\nPress any key to exit...\n");
+				try {
+					Console.ReadKey(true);
+				}
+				catch (InvalidOperationException) {
+				}
+			}
+
+			return exitCode;
+		}
+
+		static bool isN00bUser() {
+			var env = Environment.GetEnvironmentVariables();
+			if (env["VisualStudioDir"] != null)
+				return false;
+			return env["windir"] != null && env["PROMPT"] == null;
 		}
 
 		public static void printStackTrace(Exception ex, Log.LogLevel logLevel = Log.LogLevel.error) {

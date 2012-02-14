@@ -280,7 +280,7 @@ namespace de4dot.cui {
 		}
 
 		void exit(int exitCode) {
-			Environment.Exit(exitCode);
+			throw new ExitException(exitCode);
 		}
 
 		void usage() {
