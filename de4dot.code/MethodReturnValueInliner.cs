@@ -271,7 +271,7 @@ namespace de4dot.code {
 					// We're here if there were no cflow deobfuscation, or if there are two or
 					// more blocks branching to the decrypter method, or the two blocks can't be
 					// merged because one is outside the exception handler (eg. buggy obfuscator).
-					Log.v("Could not find all arguments to method {0} ({1:X8})",
+					Log.w("Could not find all arguments to method {0} ({1:X8})",
 								Utils.removeNewlines(method),
 								method.MetadataToken.ToInt32());
 					return false;
@@ -319,7 +319,7 @@ namespace de4dot.code {
 					break;
 
 				default:
-					Log.v("Could not find all arguments to method {0} ({1:X8}), instr: {2}",
+					Log.w("Could not find all arguments to method {0} ({1:X8}), instr: {2}",
 								Utils.removeNewlines(method),
 								method.MetadataToken.ToInt32(),
 								instr);
