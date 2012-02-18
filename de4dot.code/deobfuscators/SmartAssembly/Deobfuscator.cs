@@ -516,6 +516,8 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 		}
 
 		bool canRemoveStringDecrypterStuff() {
+			if (!staticStringInliner.InlinedAllCalls)
+				return false;
 			return Operations.DecryptStrings != OpDecryptString.None;
 		}
 
