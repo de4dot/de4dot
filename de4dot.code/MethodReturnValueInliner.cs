@@ -145,6 +145,7 @@ namespace de4dot.code {
 		List<Block> allBlocks;
 		Blocks blocks;
 		VariableValues variableValues;
+		int errors = 0;
 
 		protected class CallResult {
 			public Block block;
@@ -161,6 +162,10 @@ namespace de4dot.code {
 			public MethodReference getMethodReference() {
 				return (MethodReference)block.Instructions[callEndIndex].Operand;
 			}
+		}
+
+		public bool InlinedAllCalls {
+			get { return errors == 0; }
 		}
 
 		public abstract bool HasHandlers { get; }
@@ -274,6 +279,7 @@ namespace de4dot.code {
 					Log.w("Could not find all arguments to method {0} ({1:X8})",
 								Utils.removeNewlines(method),
 								method.MetadataToken.ToInt32());
+					errors++;
 					return false;
 				}
 
@@ -323,6 +329,7 @@ namespace de4dot.code {
 								Utils.removeNewlines(method),
 								method.MetadataToken.ToInt32(),
 								instr);
+					errors++;
 					return false;
 				}
 				break;
