@@ -35,9 +35,14 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 		byte[] key;
 		byte[] iv;
 		FieldDefinitionAndDeclaringTypeDict<string> fieldToDecryptedString = new FieldDefinitionAndDeclaringTypeDict<string>();
+		bool canRemoveType;
 
 		public bool Detected {
 			get { return decrypterType != null; }
+		}
+
+		public bool CanRemoveType {
+			get { return canRemoveType; }
 		}
 
 		public TypeDefinition Type {
@@ -58,6 +63,7 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 					continue;
 
 				if (checkType(type)) {
+					canRemoveType = true;
 					decrypterType = type;
 					decrypterCctor = cctor;
 					return;
@@ -221,17 +227,27 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 				var instrs = block.Instructions;
 				for (int i = 0; i < instrs.Count; i++) {
 					var instr = instrs[i];
-					if (instr.OpCode.Code != Code.Ldsfld)
-						continue;
-					var field = instr.Operand as FieldReference;
-					if (field == null)
-						continue;
-					var decrypted = fieldToDecryptedString.find(field);
-					if (decrypted == null)
-						continue;
 
-					instrs[i] = new Instr(Instruction.Create(OpCodes.Ldstr, decrypted));
-					Log.v("Decrypted string: {0}", Utils.toCsharpString(decrypted));
+					if (instr.OpCode.Code == Code.Call || instr.OpCode.Code == Code.Callvirt) {
+						if (blocks.Method.DeclaringType == decrypterType)
+							continue;
+						var calledMethod = instr.Operand as MethodReference;
+						if (calledMethod != null && calledMethod.DeclaringType == decrypterType)
+							canRemoveType = false;
+					}
+					else if (instr.OpCode.Code == Code.Ldsfld) {
+						if (instr.OpCode.Code != Code.Ldsfld)
+							continue;
+						var field = instr.Operand as FieldReference;
+						if (field == null)
+							continue;
+						var decrypted = fieldToDecryptedString.find(field);
+						if (decrypted == null)
+							continue;
+
+						instrs[i] = new Instr(Instruction.Create(OpCodes.Ldstr, decrypted));
+						Log.v("Decrypted string: {0}", Utils.toCsharpString(decrypted));
+					}
 				}
 			}
 		}
