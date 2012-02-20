@@ -17,12 +17,10 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using System.Text.RegularExpressions;
-
-namespace de4dot.code.deobfuscators.Unknown {
+namespace de4dot.code.deobfuscators.MaxtoCode {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
-		public const string THE_NAME = "Unknown";
-		public const string THE_TYPE = "un";
+		public const string THE_NAME = "MaxtoCode";
+		public const string THE_TYPE = "mc";
 		public DeobfuscatorInfo()
 			: base() {
 		}
@@ -44,8 +42,6 @@ namespace de4dot.code.deobfuscators.Unknown {
 	}
 
 	class Deobfuscator : DeobfuscatorBase {
-		string obfuscatorName;
-
 		internal class Options : OptionsBase {
 		}
 
@@ -58,57 +54,18 @@ namespace de4dot.code.deobfuscators.Unknown {
 		}
 
 		public override string Name {
-			get { return obfuscatorName ?? "Unknown Obfuscator"; }
-		}
-
-		protected override bool KeepTypes {
-			get { return true; }
+			get { return DeobfuscatorInfo.THE_NAME; }
 		}
 
 		internal Deobfuscator(Options options)
 			: base(options) {
 		}
 
-		void setName(string name) {
-			if (obfuscatorName == null && name != null)
-				obfuscatorName = name;
-		}
-
-		public override int earlyDetect() {
-			setName(earlyScanTypes());
-			return obfuscatorName != null ? 1 : 0;
-		}
-
-		string earlyScanTypes() {
-			foreach (var type in module.Types) {
-				if (type.FullName == "ConfusedByAttribute")
-					return "Confuser";
-			}
-			return null;
-		}
-
 		protected override int detectInternal() {
-			setName(scanTypes());
-			return 1;
+			return 0;
 		}
 
 		protected override void scanForObfuscator() {
-		}
-
-		string scanTypes() {
-			foreach (var type in module.Types) {
-				if (type.Namespace == "___codefort")
-					return "CodeFort";
-				if (type.FullName == "ZYXDNGuarder")
-					return "DNGuard HVM";
-				if (type.Name.Contains("();\t"))
-					return "Manco .NET Obfuscator";
-				if (Regex.IsMatch(type.FullName, @"^EMyPID_\d+_$"))
-					return "BitHelmet Obfuscator";
-				if (type.FullName == "YanoAttribute")
-					return "Yano Obfuscator";
-			}
-			return null;
 		}
 	}
 }
