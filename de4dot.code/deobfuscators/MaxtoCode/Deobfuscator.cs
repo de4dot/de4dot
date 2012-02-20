@@ -42,6 +42,8 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 	}
 
 	class Deobfuscator : DeobfuscatorBase {
+		MainType mainType;
+
 		internal class Options : OptionsBase {
 		}
 
@@ -62,10 +64,17 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		}
 
 		protected override int detectInternal() {
-			return 0;
+			int val = 0;
+
+			if (mainType.Detected)
+				val = 150;
+
+			return val;
 		}
 
 		protected override void scanForObfuscator() {
+			mainType = new MainType(module);
+			mainType.find();
 		}
 	}
 }
