@@ -50,6 +50,16 @@ namespace de4dot.code.deobfuscators {
 			return newDef;
 		}
 
+		public static ModuleReference lookup(ModuleDefinition module, ModuleReference other, string errorMessage) {
+			if (other == null)
+				return null;
+			foreach (var modRef in module.ModuleReferences) {
+				if (modRef.MetadataToken.ToInt32() == other.MetadataToken.ToInt32())
+					return modRef;
+			}
+			throw new ApplicationException(errorMessage);
+		}
+
 		public static byte[] readModule(ModuleDefinition module) {
 			return Utils.readFile(module.FullyQualifiedName);
 		}
