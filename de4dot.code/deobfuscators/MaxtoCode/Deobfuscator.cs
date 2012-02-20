@@ -17,6 +17,10 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System.Collections.Generic;
+using Mono.Cecil;
+using Mono.MyStuff;
+
 namespace de4dot.code.deobfuscators.MaxtoCode {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "MaxtoCode";
@@ -42,6 +46,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 	}
 
 	class Deobfuscator : DeobfuscatorBase {
+		Options options;
 		MainType mainType;
 
 		internal class Options : OptionsBase {
@@ -61,6 +66,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 
 		internal Deobfuscator(Options options)
 			: base(options) {
+			this.options = options;
 		}
 
 		protected override int detectInternal() {
@@ -75,6 +81,27 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		protected override void scanForObfuscator() {
 			mainType = new MainType(module);
 			mainType.find();
+		}
+
+		public override bool getDecryptedModule(ref byte[] newFileData, ref Dictionary<uint, DumpedMethod> dumpedMethods) {
+			if (!mainType.Detected)
+				return false;
+
+			var fileDecrypter = new FileDecrypter(mainType);
+
+			var fileData = DeobUtils.readModule(module);
+			if (!fileDecrypter.decrypt(fileData, ref dumpedMethods))
+				return false;
+
+			newFileData = fileData;
+			return true;
+		}
+
+		public override IDeobfuscator moduleReloaded(ModuleDefinition module) {
+			var newOne = new Deobfuscator(options);
+			newOne.setModule(module);
+			newOne.mainType = new MainType(module, mainType);
+			return newOne;
 		}
 	}
 }

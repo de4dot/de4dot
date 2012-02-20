@@ -36,6 +36,17 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			this.module = module;
 		}
 
+		public MainType(ModuleDefinition module, MainType oldOne) {
+			this.module = module;
+			this.mcType = lookup(oldOne.mcType, "Could not find main type");
+			this.mcModule1 = DeobUtils.lookup(module, mcModule1, "Could not find MC runtime module ref #1");
+			this.mcModule2 = DeobUtils.lookup(module, mcModule2, "Could not find MC runtime module ref #2");
+		}
+
+		T lookup<T>(T def, string errorMessage) where T : MemberReference {
+			return DeobUtils.lookup(module, def, errorMessage);
+		}
+
 		public void find() {
 			var cctor = getCctor();
 			if (cctor == null)
@@ -62,12 +73,10 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		MethodDefinition getCctor() {
 			int checksLeft = 3;
 			foreach (var type in module.GetTypes()) {
-				if (type.IsEnum)
-					continue;
 				var cctor = DotNetUtils.getMethod(type, ".cctor");
 				if (cctor != null)
 					return cctor;
-				if (--checksLeft <= 0)
+				if (!type.IsEnum && --checksLeft <= 0)
 					return null;
 			}
 			return null;
