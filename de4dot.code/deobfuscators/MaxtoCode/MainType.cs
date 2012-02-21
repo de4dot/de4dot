@@ -28,6 +28,34 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		TypeDefinition mcType;
 		ModuleReference mcModule1, mcModule2;
 
+		public TypeDefinition Type {
+			get { return mcType; }
+		}
+
+		public IEnumerable<ModuleReference> ModuleReferences {
+			get {
+				var list = new List<ModuleReference>();
+				if (mcModule1 != null)
+					list.Add(mcModule1);
+				if (mcModule2 != null)
+					list.Add(mcModule2);
+				return list;
+			}
+		}
+
+		public IEnumerable<MethodDefinition> InitMethods {
+			get {
+				var list = new List<MethodDefinition>();
+				if (mcType == null)
+					return list;
+				foreach (var method in mcType.Methods) {
+					if (method.IsStatic && DotNetUtils.isMethod(method, "System.Void", "()"))
+						list.Add(method);
+				}
+				return list;
+			}
+		}
+
 		public bool Detected {
 			get { return mcType != null; }
 		}
@@ -39,8 +67,8 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		public MainType(ModuleDefinition module, MainType oldOne) {
 			this.module = module;
 			this.mcType = lookup(oldOne.mcType, "Could not find main type");
-			this.mcModule1 = DeobUtils.lookup(module, mcModule1, "Could not find MC runtime module ref #1");
-			this.mcModule2 = DeobUtils.lookup(module, mcModule2, "Could not find MC runtime module ref #2");
+			this.mcModule1 = DeobUtils.lookup(module, oldOne.mcModule1, "Could not find MC runtime module ref #1");
+			this.mcModule2 = DeobUtils.lookup(module, oldOne.mcModule2, "Could not find MC runtime module ref #2");
 		}
 
 		T lookup<T>(T def, string errorMessage) where T : MemberReference {

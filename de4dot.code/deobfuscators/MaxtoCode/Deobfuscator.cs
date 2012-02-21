@@ -103,5 +103,14 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			newOne.mainType = new MainType(module, mainType);
 			return newOne;
 		}
+
+		public override void deobfuscateBegin() {
+			base.deobfuscateBegin();
+
+			foreach (var method in mainType.InitMethods)
+				addCctorInitCallToBeRemoved(method);
+			addTypeToBeRemoved(mainType.Type, "Obfuscator type");
+			addModuleReferencesToBeRemoved(mainType.ModuleReferences, "MC runtime module reference");
+		}
 	}
 }
