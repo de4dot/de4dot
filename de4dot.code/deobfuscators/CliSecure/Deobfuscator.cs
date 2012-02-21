@@ -212,7 +212,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 				if (stackFrameHelper.ExceptionLoggerRemover.NumRemovedExceptionLoggers > 0)
 					addTypeToBeRemoved(stackFrameHelper.Type, "StackFrameHelper type");
 			}
-			if (Operations.DecryptStrings != OpDecryptString.None) {
+			if (CanRemoveStringDecrypterType) {
 				addTypeToBeRemoved(stringDecrypter.Type, "String decrypter type");
 				if (options.DecryptMethods)
 					addTypeToBeRemoved(cliSecureRtType.Type, "Obfuscator type");

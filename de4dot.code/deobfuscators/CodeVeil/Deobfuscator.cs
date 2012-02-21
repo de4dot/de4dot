@@ -193,7 +193,6 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				DeobfuscatedFile.stringDecryptersAdded();
 				addModuleCctorInitCallToBeRemoved(stringDecrypter.InitMethod);
 				addCallToBeRemoved(mainType.getInitStringDecrypterMethod(stringDecrypter.InitMethod), stringDecrypter.InitMethod);
-				addTypeToBeRemoved(stringDecrypter.Type, "String decrypter type");
 			}
 
 			assemblyResolver = new AssemblyResolver(module);
@@ -247,6 +246,9 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 
 		public override void deobfuscateEnd() {
 			bool canRemoveProxyTypes = proxyDelegateFinder.CanRemoveTypes;
+
+			if (CanRemoveStringDecrypterType)
+				addTypeToBeRemoved(stringDecrypter.Type, "String decrypter type");
 
 			if (!mainType.Detected) {
 			}

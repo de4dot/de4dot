@@ -178,9 +178,6 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			stringDecrypter.initialize();
 
 			if (Operations.DecryptStrings != OpDecryptString.None) {
-				addResourceToBeRemoved(stringDecrypter.Resource, "Encrypted strings");
-				addTypeToBeRemoved(stringDecrypter.Type, "String decrypter type");
-
 				if (stringDecrypter.Resource != null)
 					Log.v("Adding string decrypter. Resource: {0}", Utils.toCsharpString(stringDecrypter.Resource.Name));
 				staticStringInliner.add(stringDecrypter.DecryptMethod, (method, args) => {
@@ -252,6 +249,11 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		}
 
 		public override void deobfuscateEnd() {
+			if (CanRemoveStringDecrypterType) {
+				addResourceToBeRemoved(stringDecrypter.Resource, "Encrypted strings");
+				addTypeToBeRemoved(stringDecrypter.Type, "String decrypter type");
+			}
+
 			removeProxyDelegates(proxyDelegateFinder);
 			methodsDecrypter.Dispose();
 			base.deobfuscateEnd();

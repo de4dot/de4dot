@@ -536,7 +536,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		}
 
 		public override void deobfuscateEnd() {
-			if (Operations.DecryptStrings == OpDecryptString.Dynamic) {
+			if (Operations.DecryptStrings == OpDecryptString.Dynamic && CanRemoveStringDecrypterType) {
 				addTypeToBeRemoved(decryptStringType, "String decrypter type");
 				findPossibleNamesToRemove(decryptStringMethod);
 				addResources("Encrypted strings");

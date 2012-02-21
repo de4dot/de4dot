@@ -104,7 +104,7 @@ namespace de4dot.code.deobfuscators.Xenocode {
 		}
 
 		public override void deobfuscateEnd() {
-			if (Operations.DecryptStrings != OpDecryptString.None)
+			if (CanRemoveStringDecrypterType)
 				addTypeToBeRemoved(stringDecrypter.Type, "String decrypter type");
 			base.deobfuscateEnd();
 		}
