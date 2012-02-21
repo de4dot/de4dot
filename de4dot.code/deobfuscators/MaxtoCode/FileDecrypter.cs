@@ -24,34 +24,36 @@ using Mono.MyStuff;
 using de4dot.code.PE;
 
 namespace de4dot.code.deobfuscators.MaxtoCode {
+	// Decrypts methods and resources
 	class FileDecrypter {
 		MainType mainType;
 
 		class PeHeader {
 			const int XOR_KEY = 0x7ABF931;
-			const int RVA_DISPL_OFFSET = 0x0FB4;
-			const int MC_HEADER_RVA_OFFSET = 0x0FFC;
 
 			byte[] headerData;
-			uint rvaDispl;
+			uint rvaDispl1;
+			uint rvaDispl2;
 
 			public PeHeader(PeImage peImage) {
 				headerData = getPeHeaderData(peImage);
 
-				if (peImage.readUInt32(0x2008) != 0x48)
-					rvaDispl = readUInt32(RVA_DISPL_OFFSET) ^ XOR_KEY;
-			}
-
-			public bool hasMagic(int offset, uint magic1, uint magic2) {
-				return readUInt32(offset) == magic1 && readUInt32(offset + 4) == magic2;
+				if (peImage.readUInt32(0x2008) != 0x48) {
+					rvaDispl1 = readUInt32(0x0FB0) ^ XOR_KEY;
+					rvaDispl2 = readUInt32(0x0FB4) ^ XOR_KEY;
+				}
 			}
 
 			public uint getMcHeaderRva() {
-				return getRva(MC_HEADER_RVA_OFFSET, XOR_KEY);
+				return getRva2(0x0FFC, XOR_KEY);
 			}
 
-			public uint getRva(int offset, uint xorKey) {
-				return (readUInt32(offset) ^ xorKey) - rvaDispl;
+			public uint getRva1(int offset, uint xorKey) {
+				return (readUInt32(offset) ^ xorKey) - rvaDispl1;
+			}
+
+			public uint getRva2(int offset, uint xorKey) {
+				return (readUInt32(offset) ^ xorKey) - rvaDispl2;
 			}
 
 			public uint readUInt32(int offset) {
@@ -86,6 +88,10 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		class McHeader {
 			PeHeader peHeader;
 			byte[] data;
+
+			public byte this[int index] {
+				get { return data[index]; }
+			}
 
 			public McHeader(PeImage peImage, PeHeader peHeader) {
 				this.peHeader = peHeader;
@@ -207,8 +213,8 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 
 				structSize = getStructSize(mcHeader);
 
-				uint methodInfosRva = peHeader.getRva(0x0FF8, mcHeader.readUInt32(0x005A));
-				uint encryptedDataRva = peHeader.getRva(0x0FF0, mcHeader.readUInt32(0x0046));
+				uint methodInfosRva = peHeader.getRva2(0x0FF8, mcHeader.readUInt32(0x005A));
+				uint encryptedDataRva = peHeader.getRva2(0x0FF0, mcHeader.readUInt32(0x0046));
 
 				methodInfosOffset = peImage.rvaToOffset(methodInfosRva);
 				encryptedDataOffset = peImage.rvaToOffset(encryptedDataRva);
@@ -448,7 +454,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			static byte[] decrypt3Shifts = new byte[16] { 5, 11, 14, 21, 6, 20, 17, 29, 4, 10, 3, 2, 7, 1, 26, 18 };
 			byte[] decrypt3(byte[] encrypted) {
 				if ((encrypted.Length & 7) != 0)
-					throw new ApplicationException("Invalid encryption #2 length");
+					throw new ApplicationException("Invalid encryption #3 length");
 				const int offset = 0x015E;
 				uint key0 = mcHeader.readUInt32(offset + 0 * 4);
 				uint key3 = mcHeader.readUInt32(offset + 3 * 4);
@@ -517,10 +523,21 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			var peImage = new PeImage(fileData);
 			var peHeader = new PeHeader(peImage);
 			var mcHeader = new McHeader(peImage, peHeader);
+
+			dumpedMethods = decryptMethods(peImage, peHeader, mcHeader);
+			if (dumpedMethods == null)
+				return false;
+
+			decryptResources(fileData, peImage, peHeader, mcHeader);
+
+			return true;
+		}
+
+		Dictionary<uint, DumpedMethod> decryptMethods(PeImage peImage, PeHeader peHeader, McHeader mcHeader) {
+			var dumpedMethods = new Dictionary<uint, DumpedMethod>();
+
 			var methodInfos = new MethodInfos(peImage, peHeader, mcHeader);
 			methodInfos.initializeInfos();
-
-			dumpedMethods = new Dictionary<uint, DumpedMethod>();
 
 			var metadataTables = peImage.Cor20Header.createMetadataTables();
 			var methodDef = metadataTables.getMetadataType(MetadataIndex.iMethodDef);
@@ -574,7 +591,24 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				dumpedMethods[dm.token] = dm;
 			}
 
-			return true;
+			return dumpedMethods;
+		}
+
+		void decryptResources(byte[] fileData, PeImage peImage, PeHeader peHeader, McHeader mcHeader) {
+			uint resourceRva = peHeader.getRva1(0x0E10, mcHeader.readUInt32(0x00A0));
+			uint resourceSize = peHeader.readUInt32(0x0E14) ^ mcHeader.readUInt32(0x00AA);
+			if (resourceRva == 0 || resourceSize == 0)
+				return;
+			if (resourceRva != peImage.Cor20Header.resources.virtualAddress ||
+				resourceSize != peImage.Cor20Header.resources.size) {
+				Log.w("Invalid resource RVA and size found");
+			}
+
+			Log.v("Decrypting resources @ RVA {0:X8}, {1} bytes", resourceRva, resourceSize);
+
+			int resourceOffset = (int)peImage.rvaToOffset(resourceRva);
+			for (int i = 0; i < resourceSize; i++)
+				fileData[resourceOffset + i] ^= mcHeader[i % 0x2000];
 		}
 	}
 }
