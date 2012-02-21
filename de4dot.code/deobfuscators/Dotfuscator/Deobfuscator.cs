@@ -120,7 +120,7 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 		}
 
 		public override void deobfuscateEnd() {
-			if (Operations.DecryptStrings != OpDecryptString.None)
+			if (CanRemoveStringDecrypterType)
 				addMethodsToBeRemoved(stringDecrypter.StringDecrypters, "String decrypter method");
 
 			base.deobfuscateEnd();

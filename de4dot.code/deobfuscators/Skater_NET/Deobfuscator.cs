@@ -104,7 +104,7 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 		}
 
 		public override void deobfuscateMethodEnd(Blocks blocks) {
-			if (Operations.DecryptStrings != OpDecryptString.None)
+			if (CanRemoveStringDecrypterType)
 				stringDecrypter.deobfuscate(blocks);
 			enumClassFinder.deobfuscate(blocks);
 			base.deobfuscateMethodEnd(blocks);

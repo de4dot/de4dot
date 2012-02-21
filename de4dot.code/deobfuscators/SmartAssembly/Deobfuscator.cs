@@ -515,14 +515,8 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			addMethodsToBeRemoved(tamperProtectionRemover.PinvokeMethods, "Tamper protection PInvoke method");
 		}
 
-		bool canRemoveStringDecrypterStuff() {
-			if (!staticStringInliner.InlinedAllCalls)
-				return false;
-			return Operations.DecryptStrings != OpDecryptString.None;
-		}
-
 		void removeStringDecryptionStuff() {
-			if (!canRemoveStringDecrypterStuff())
+			if (!CanRemoveStringDecrypterType)
 				return;
 
 			foreach (var decrypter in stringDecrypters) {
@@ -539,7 +533,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 		}
 
 		void removeStringsInitCode(Blocks blocks) {
-			if (!canRemoveStringDecrypterStuff())
+			if (!CanRemoveStringDecrypterType)
 				return;
 
 			if (blocks.Method.Name == ".cctor") {

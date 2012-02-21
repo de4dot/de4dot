@@ -239,7 +239,7 @@ done:
 			if (options.RestoreFields)
 				addTypesToBeRemoved(fieldsRestorer.FieldStructs, "Type with moved fields");
 
-			if (Operations.DecryptStrings != OpDecryptString.None) {
+			if (CanRemoveStringDecrypterType) {
 				addMethodsToBeRemoved(stringDecrypter.DecrypterMethods, "String decrypter method");
 				stringDecrypter.cleanup();
 			}

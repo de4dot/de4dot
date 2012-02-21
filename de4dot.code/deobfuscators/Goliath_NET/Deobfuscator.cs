@@ -242,7 +242,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			removeInlinedMethods();
 			addTypesToBeRemoved(localsRestorer.Types, "Method locals obfuscation type");
 
-			if (Operations.DecryptStrings != OpDecryptString.None) {
+			if (CanRemoveStringDecrypterType) {
 				removeDecrypterStuff(stringDecrypter, "String", "strings");
 				addTypeToBeRemoved(stringDecrypter.StringStruct, "String struct");
 			}

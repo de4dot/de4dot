@@ -171,7 +171,6 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			decryptResources();
 			stringDecrypter.init(resourceDecrypter);
 			if (stringDecrypter.Method != null) {
-				addResourceToBeRemoved(stringDecrypter.Resource, "Encrypted strings");
 				staticStringInliner.add(stringDecrypter.Method, (method, args) => {
 					return stringDecrypter.decrypt((int)args[0]);
 				});
@@ -191,7 +190,6 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			addTypeToBeRemoved(assemblyResolver.Type, "Assembly resolver type");
 			addTypeToBeRemoved(tamperDetection.Type, "Tamper detection type");
 			addTypeToBeRemoved(antiDebugger.Type, "Anti-debugger type");
-			addTypeToBeRemoved(stringDecrypter.Type, "String decrypter type");
 
 			proxyDelegateFinder.find();
 
@@ -205,6 +203,10 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 
 		public override void deobfuscateEnd() {
 			removeProxyDelegates(proxyDelegateFinder);
+			if (CanRemoveStringDecrypterType) {
+				addResourceToBeRemoved(stringDecrypter.Resource, "Encrypted strings");
+				addTypeToBeRemoved(stringDecrypter.Type, "String decrypter type");
+			}
 			base.deobfuscateEnd();
 		}
 

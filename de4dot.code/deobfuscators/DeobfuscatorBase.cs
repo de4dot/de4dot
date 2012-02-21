@@ -90,6 +90,10 @@ namespace de4dot.code.deobfuscators {
 			get { return false; }
 		}
 
+		protected bool CanRemoveStringDecrypterType {
+			get { return Operations.DecryptStrings != OpDecryptString.None && staticStringInliner.InlinedAllCalls; }
+		}
+
 		public virtual IMethodCallInliner MethodCallInliner {
 			get {
 				if (CanInlineMethods)
