@@ -115,6 +115,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			Unknown,
 			V1,
 			V2,
+			V3,
 		}
 
 		class EncryptionInfo {
@@ -125,11 +126,17 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 
 		static EncryptionInfo[] encryptionInfos_Rva900h = new EncryptionInfo[] {
 			// PE header timestamp
+			// 462FA2D2 = Wed, 25 Apr 2007 18:49:54 (3.20)
+			new EncryptionInfo {
+				MagicLo = 0xA098B387,
+				MagicHi = 0x1E8EBCA3,
+				Version = EncryptionVersion.V1,
+			},
 			// 482384FB = Thu, 08 May 2008 22:55:55 (3.36)
 			new EncryptionInfo {
 				MagicLo = 0xAA98B387,
 				MagicHi = 0x1E8EECA3,
-				Version = EncryptionVersion.V1,
+				Version = EncryptionVersion.V2,
 			},
 			// 4C622357 = Wed, 11 Aug 2010 04:13:11
 			// 4C6220EC = Wed, 11 Aug 2010 04:02:52
@@ -137,7 +144,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			new EncryptionInfo {
 				MagicLo = 0xAA98B387,
 				MagicHi = 0x128EECA3,
-				Version = EncryptionVersion.V1,
+				Version = EncryptionVersion.V2,
 			},
 			// 4DFA3D5D = Thu, 16 Jun 2011 17:29:01
 			// 4DC2FC75 = Thu, 05 May 2011 19:37:25
@@ -146,29 +153,35 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			new EncryptionInfo {
 				MagicLo = 0xAA98B387,
 				MagicHi = 0xF28EECA3,
-				Version = EncryptionVersion.V1,
+				Version = EncryptionVersion.V2,
 			},
 			// 4DC2FE0C = Thu, 05 May 2011 19:44:12
 			new EncryptionInfo {
 				MagicLo = 0xAA98B387,
 				MagicHi = 0xF28EEAA3,
-				Version = EncryptionVersion.V1,
+				Version = EncryptionVersion.V2,
 			},
 			// 4EE1FAD1 = Fri, 09 Dec 2011 12:10:57
 			// 4ED76740 = Thu, 01 Dec 2011 11:38:40
 			new EncryptionInfo {
 				MagicLo = 0xAA983B87,
 				MagicHi = 0xF28EECA3,
-				Version = EncryptionVersion.V2,
+				Version = EncryptionVersion.V3,
 			},
 		};
 
 		static EncryptionInfo[] encryptionInfos_McHeader8C0h = new EncryptionInfo[] {
+			// 462FA2D2 = Wed, 25 Apr 2007 18:49:54 (3.20)
+			new EncryptionInfo {
+				MagicLo = 0x6AA13B13,
+				MagicHi = 0xD72B991F,
+				Version = EncryptionVersion.V1,
+			},
 			// 482384FB = Thu, 08 May 2008 22:55:55 (3.36)
 			new EncryptionInfo {
 				MagicLo = 0x6A713B13,
 				MagicHi = 0xD72B891F,
-				Version = EncryptionVersion.V1,
+				Version = EncryptionVersion.V2,
 			},
 			// 4DFA3D5D = Thu, 16 Jun 2011 17:29:01
 			// 4DC2FE0C = Thu, 05 May 2011 19:44:12
@@ -181,14 +194,14 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			new EncryptionInfo {
 				MagicLo = 0x6A713B13,
 				MagicHi = 0xD72B891F,
-				Version = EncryptionVersion.V1,
+				Version = EncryptionVersion.V2,
 			},
 			// 4EE1FAD1 = Fri, 09 Dec 2011 12:10:57
 			// 4ED76740 = Thu, 01 Dec 2011 11:38:40
 			new EncryptionInfo {
 				MagicLo = 0x6A731B13,
 				MagicHi = 0xD72B891F,
-				Version = EncryptionVersion.V2,
+				Version = EncryptionVersion.V3,
 			},
 		};
 
@@ -307,10 +320,10 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 
 				public byte[] decrypt(int type, byte[] encrypted) {
 					switch (type) {
-					case 1: return methodInfos.decrypt3(encrypted);
-					case 2: return methodInfos.decrypt2(encrypted);
-					case 3: return methodInfos.decrypt1(encrypted);
-					case 4: return methodInfos.decrypt4(encrypted);
+					case 1: return methodInfos.decrypt1(encrypted);
+					case 2: return methodInfos.decrypt4(encrypted);
+					case 3: return methodInfos.decrypt2(encrypted);
+					case 4: return methodInfos.decrypt3(encrypted);
 					case 5: return methodInfos.decrypt5(encrypted);
 					case 6: return methodInfos.decrypt6(encrypted);
 					case 7: return methodInfos.decrypt7(encrypted);
@@ -323,6 +336,27 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				MethodInfos methodInfos;
 
 				public DecrypterV2(MethodInfos methodInfos) {
+					this.methodInfos = methodInfos;
+				}
+
+				public byte[] decrypt(int type, byte[] encrypted) {
+					switch (type) {
+					case 1: return methodInfos.decrypt3(encrypted);
+					case 2: return methodInfos.decrypt2(encrypted);
+					case 3: return methodInfos.decrypt1(encrypted);
+					case 4: return methodInfos.decrypt4(encrypted);
+					case 5: return methodInfos.decrypt5(encrypted);
+					case 6: return methodInfos.decrypt6(encrypted);
+					case 7: return methodInfos.decrypt7(encrypted);
+					default: throw new ApplicationException(string.Format("Invalid encryption type: {0:X2}", type));
+					}
+				}
+			}
+
+			class DecrypterV3 : IDecrypter {
+				MethodInfos methodInfos;
+
+				public DecrypterV3(MethodInfos methodInfos) {
 					this.methodInfos = methodInfos;
 				}
 
@@ -348,6 +382,10 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 
 				case EncryptionVersion.V2:
 					decrypter = new DecrypterV2(this);
+					break;
+
+				case EncryptionVersion.V3:
+					decrypter = new DecrypterV3(this);
 					break;
 
 				case EncryptionVersion.Unknown:
