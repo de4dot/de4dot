@@ -35,10 +35,10 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			uint rvaDispl1;
 			uint rvaDispl2;
 
-			public PeHeader(PeImage peImage) {
+			public PeHeader(MainType mainType, PeImage peImage) {
 				headerData = getPeHeaderData(peImage);
 
-				if (peImage.readUInt32(0x2008) != 0x48) {
+				if (!mainType.IsOld && peImage.readUInt32(0x2008) != 0x48) {
 					rvaDispl1 = readUInt32(0x0FB0) ^ XOR_KEY;
 					rvaDispl2 = readUInt32(0x0FB4) ^ XOR_KEY;
 				}
@@ -98,10 +98,6 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				this.data = peImage.readBytes(peHeader.getMcHeaderRva(), 0x2000);
 			}
 
-			public bool hasMagic(int offset, uint magic1, uint magic2) {
-				return readUInt32(offset) == magic1 && readUInt32(offset + 4) == magic2;
-			}
-
 			public byte readByte(int offset) {
 				return data[offset];
 			}
@@ -129,6 +125,12 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 
 		static EncryptionInfo[] encryptionInfos_Rva900h = new EncryptionInfo[] {
 			// PE header timestamp
+			// 482384FB = Thu, 08 May 2008 22:55:55 (3.36)
+			new EncryptionInfo {
+				MagicLo = 0xAA98B387,
+				MagicHi = 0x1E8EECA3,
+				Version = EncryptionVersion.V1,
+			},
 			// 4C622357 = Wed, 11 Aug 2010 04:13:11
 			// 4C6220EC = Wed, 11 Aug 2010 04:02:52
 			// 4A5EEC64 = Thu, 16 Jul 2009 09:01:24
@@ -162,6 +164,12 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		};
 
 		static EncryptionInfo[] encryptionInfos_McHeader8C0h = new EncryptionInfo[] {
+			// 482384FB = Thu, 08 May 2008 22:55:55 (3.36)
+			new EncryptionInfo {
+				MagicLo = 0x6A713B13,
+				MagicHi = 0xD72B891F,
+				Version = EncryptionVersion.V1,
+			},
 			// 4DFA3D5D = Thu, 16 Jun 2011 17:29:01
 			// 4DC2FE0C = Thu, 05 May 2011 19:44:12
 			// 4DC2FC75 = Thu, 05 May 2011 19:37:25
@@ -185,6 +193,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		};
 
 		class MethodInfos {
+			MainType mainType;
 			PeImage peImage;
 			PeHeader peHeader;
 			McHeader mcHeader;
@@ -206,7 +215,8 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				}
 			}
 
-			public MethodInfos(PeImage peImage, PeHeader peHeader, McHeader mcHeader) {
+			public MethodInfos(MainType mainType, PeImage peImage, PeHeader peHeader, McHeader mcHeader) {
+				this.mainType = mainType;
 				this.peImage = peImage;
 				this.peHeader = peHeader;
 				this.mcHeader = mcHeader;
@@ -221,8 +231,10 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			}
 
 			static uint getStructSize(McHeader mcHeader) {
+				uint magicLo = mcHeader.readUInt32(0x8C0);
+				uint magicHi = mcHeader.readUInt32(0x8C4);
 				foreach (var info in encryptionInfos_McHeader8C0h) {
-					if (mcHeader.hasMagic(0x08C0, info.MagicLo, info.MagicHi))
+					if (magicLo == info.MagicLo && magicHi == info.MagicHi)
 						return 0xC + 6 * ENCRYPTED_DATA_INFO_SIZE;
 				}
 				return 0xC + 3 * ENCRYPTED_DATA_INFO_SIZE;
@@ -352,7 +364,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 					throw new ApplicationException("Invalid number of encrypted methods");
 
 				xorKey = (uint)numMethods;
-				uint rvaDispl = peImage.readUInt32(0x2008) != 0x48 ? 0x1000U : 0;
+				uint rvaDispl = !mainType.IsOld && peImage.readUInt32(0x2008) != 0x48 ? 0x1000U : 0;
 				int numEncryptedDataInfos = ((int)structSize - 0xC) / ENCRYPTED_DATA_INFO_SIZE;
 				var encryptedDataInfos = new byte[numEncryptedDataInfos][];
 
@@ -521,7 +533,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 
 		public bool decrypt(byte[] fileData, ref Dictionary<uint, DumpedMethod> dumpedMethods) {
 			var peImage = new PeImage(fileData);
-			var peHeader = new PeHeader(peImage);
+			var peHeader = new PeHeader(mainType, peImage);
 			var mcHeader = new McHeader(peImage, peHeader);
 
 			dumpedMethods = decryptMethods(peImage, peHeader, mcHeader);
@@ -536,7 +548,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		Dictionary<uint, DumpedMethod> decryptMethods(PeImage peImage, PeHeader peHeader, McHeader mcHeader) {
 			var dumpedMethods = new Dictionary<uint, DumpedMethod>();
 
-			var methodInfos = new MethodInfos(peImage, peHeader, mcHeader);
+			var methodInfos = new MethodInfos(mainType, peImage, peHeader, mcHeader);
 			methodInfos.initializeInfos();
 
 			var metadataTables = peImage.Cor20Header.createMetadataTables();

@@ -27,6 +27,11 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		ModuleDefinition module;
 		TypeDefinition mcType;
 		ModuleReference mcModule1, mcModule2;
+		bool isOld;
+
+		public bool IsOld {
+			get { return isOld; }
+		}
 
 		public TypeDefinition Type {
 			get { return mcType; }
@@ -88,12 +93,14 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 					continue;
 
 				ModuleReference module1, module2;
-				if (!checkType(method.DeclaringType, out module1, out module2))
+				bool isOldTmp;
+				if (!checkType(method.DeclaringType, out module1, out module2, out isOldTmp))
 					return;
 
 				mcType = method.DeclaringType;
 				mcModule1 = module1;
 				mcModule2 = module2;
+				isOld = isOldTmp;
 				break;
 			}
 		}
@@ -110,8 +117,9 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			return null;
 		}
 
-		static bool checkType(TypeDefinition type, out ModuleReference module1, out ModuleReference module2) {
+		static bool checkType(TypeDefinition type, out ModuleReference module1, out ModuleReference module2, out bool isOld) {
 			module1 = module2 = null;
+			isOld = false;
 
 			if (DotNetUtils.getMethod(type, "Startup") == null)
 				return false;
@@ -122,8 +130,9 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				return false;
 			if (getPinvokeList(pinvokes, "MainDLL") == null)
 				return false;
-			if (getPinvokeList(pinvokes, "GetModuleBase") == null)
-				return false;
+
+			// Newer versions (3.4+ ???) also have GetModuleBase()
+			isOld = getPinvokeList(pinvokes, "GetModuleBase") == null;
 
 			module1 = pinvokeList[0].PInvokeInfo.Module;
 			module2 = pinvokeList[1].PInvokeInfo.Module;
