@@ -192,6 +192,9 @@ namespace de4dot.cui {
 				catch (BadImageFormatException) {
 					return false;	// Not a .NET file
 				}
+				catch (EndOfStreamException) {
+					return false;
+				}
 				catch (Exception ex) {
 					Log.w("Could not load file ({0}): {1}", ex.GetType(), file.Filename);
 					return false;
