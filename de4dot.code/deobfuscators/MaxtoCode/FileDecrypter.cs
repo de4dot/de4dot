@@ -138,18 +138,18 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				MagicHi = 0x1E8EECA3,
 				Version = EncryptionVersion.V2,
 			},
-			// 4C622357 = Wed, 11 Aug 2010 04:13:11
-			// 4C6220EC = Wed, 11 Aug 2010 04:02:52
 			// 4A5EEC64 = Thu, 16 Jul 2009 09:01:24
+			// 4C6220EC = Wed, 11 Aug 2010 04:02:52
+			// 4C622357 = Wed, 11 Aug 2010 04:13:11
 			new EncryptionInfo {
 				MagicLo = 0xAA98B387,
 				MagicHi = 0x128EECA3,
 				Version = EncryptionVersion.V2,
 			},
-			// 4DFA3D5D = Thu, 16 Jun 2011 17:29:01
-			// 4DC2FC75 = Thu, 05 May 2011 19:37:25
-			// 4D0E220D = Sun, 19 Dec 2010 15:17:33
 			// 4C6E4605 = Fri, 20 Aug 2010 09:08:21
+			// 4D0E220D = Sun, 19 Dec 2010 15:17:33
+			// 4DC2FC75 = Thu, 05 May 2011 19:37:25
+			// 4DFA3D5D = Thu, 16 Jun 2011 17:29:01
 			new EncryptionInfo {
 				MagicLo = 0xAA98B387,
 				MagicHi = 0xF28EECA3,
@@ -161,8 +161,8 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				MagicHi = 0xF28EEAA3,
 				Version = EncryptionVersion.V2,
 			},
-			// 4EE1FAD1 = Fri, 09 Dec 2011 12:10:57
 			// 4ED76740 = Thu, 01 Dec 2011 11:38:40
+			// 4EE1FAD1 = Fri, 09 Dec 2011 12:10:57
 			new EncryptionInfo {
 				MagicLo = 0xAA983B87,
 				MagicHi = 0xF28EECA3,
@@ -183,21 +183,21 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				MagicHi = 0xD72B891F,
 				Version = EncryptionVersion.V2,
 			},
-			// 4DFA3D5D = Thu, 16 Jun 2011 17:29:01
-			// 4DC2FE0C = Thu, 05 May 2011 19:44:12
-			// 4DC2FC75 = Thu, 05 May 2011 19:37:25
-			// 4D0E220D = Sun, 19 Dec 2010 15:17:33
-			// 4C6E4605 = Fri, 20 Aug 2010 09:08:21
-			// 4C622357 = Wed, 11 Aug 2010 04:13:11
-			// 4C6220EC = Wed, 11 Aug 2010 04:02:52
 			// 4A5EEC64 = Thu, 16 Jul 2009 09:01:24
+			// 4C6220EC = Wed, 11 Aug 2010 04:02:52
+			// 4C622357 = Wed, 11 Aug 2010 04:13:11
+			// 4C6E4605 = Fri, 20 Aug 2010 09:08:21
+			// 4D0E220D = Sun, 19 Dec 2010 15:17:33
+			// 4DC2FC75 = Thu, 05 May 2011 19:37:25
+			// 4DC2FE0C = Thu, 05 May 2011 19:44:12
+			// 4DFA3D5D = Thu, 16 Jun 2011 17:29:01
 			new EncryptionInfo {
 				MagicLo = 0x6A713B13,
 				MagicHi = 0xD72B891F,
 				Version = EncryptionVersion.V2,
 			},
-			// 4EE1FAD1 = Fri, 09 Dec 2011 12:10:57
 			// 4ED76740 = Thu, 01 Dec 2011 11:38:40
+			// 4EE1FAD1 = Fri, 09 Dec 2011 12:10:57
 			new EncryptionInfo {
 				MagicLo = 0x6A731B13,
 				MagicHi = 0xD72B891F,
