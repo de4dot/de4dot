@@ -41,6 +41,8 @@ namespace de4dot.blocks.cflow {
 		}
 
 		protected virtual bool canInline(MethodDefinition method) {
+			if (method.GenericParameters.Count > 0)
+				return false;
 			if (MemberReferenceHelper.compareMethodReferenceAndDeclaringType(method, blocks.Method))
 				return false;
 			if (!MemberReferenceHelper.compareTypes(method.DeclaringType, blocks.Method.DeclaringType))

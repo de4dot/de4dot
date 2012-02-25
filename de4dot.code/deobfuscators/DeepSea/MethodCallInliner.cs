@@ -166,6 +166,8 @@ checkInline:
 		public static bool canInline(MethodDefinition method) {
 			if (method == null || method.Body == null)
 				return false;
+			if (method.GenericParameters.Count > 0)
+				return false;
 			if (method.Body.ExceptionHandlers.Count > 0)
 				return false;
 			var parameters = method.Parameters;
