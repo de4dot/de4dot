@@ -82,7 +82,7 @@ namespace de4dot.code.deobfuscators {
 
 		// If the obfuscator has encrypted parts of the file, then this method should return the
 		// decrypted file. true is returned if args have been initialized, false otherwise.
-		bool getDecryptedModule(ref byte[] newFileData, ref Dictionary<uint, DumpedMethod> dumpedMethods);
+		bool getDecryptedModule(ref byte[] newFileData, ref DumpedMethods dumpedMethods);
 
 		// This is only called if getDecryptedModule() != null, and after the module has been
 		// reloaded. Should return a new IDeobfuscator with the same options and the new module.

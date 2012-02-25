@@ -363,7 +363,7 @@ namespace de4dot.code {
 			initAssemblyClient();
 
 			byte[] fileData = null;
-			Dictionary<uint, DumpedMethod> dumpedMethods = null;
+			DumpedMethods dumpedMethods = null;
 			if (deob.getDecryptedModule(ref fileData, ref dumpedMethods))
 				reloadModule(fileData, dumpedMethods);
 
@@ -372,7 +372,7 @@ namespace de4dot.code {
 			deob.deobfuscateEnd();
 		}
 
-		void reloadModule(byte[] newModuleData, Dictionary<uint, DumpedMethod> dumpedMethods) {
+		void reloadModule(byte[] newModuleData, DumpedMethods dumpedMethods) {
 			Log.v("Reloading decrypted assembly (original filename: {0})", Filename);
 			simpleDeobfuscatorFlags.Clear();
 			module = assemblyModule.reload(newModuleData, dumpedMethods);

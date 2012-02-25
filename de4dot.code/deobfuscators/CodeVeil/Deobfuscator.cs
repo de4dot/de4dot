@@ -151,7 +151,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			}
 		}
 
-		public override bool getDecryptedModule(ref byte[] newFileData, ref Dictionary<uint, DumpedMethod> dumpedMethods) {
+		public override bool getDecryptedModule(ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
 			if (!methodsDecrypter.Detected)
 				return false;
 

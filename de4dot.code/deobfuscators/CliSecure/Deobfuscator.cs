@@ -135,7 +135,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			}
 		}
 
-		public override bool getDecryptedModule(ref byte[] newFileData, ref Dictionary<uint, DumpedMethod> dumpedMethods) {
+		public override bool getDecryptedModule(ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
 			if (!options.DecryptMethods)
 				return false;
 

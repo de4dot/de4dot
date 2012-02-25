@@ -123,7 +123,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 
 		static short[] nativeLdci4 = new short[] { 0x55, 0x8B, 0xEC, 0xB8, -1, -1, -1, -1, 0x5D, 0xC3 };
 		static short[] nativeLdci4_0 = new short[] { 0x55, 0x8B, 0xEC, 0x33, 0xC0, 0x5D, 0xC3 };
-		public bool decrypt(PeImage peImage, ISimpleDeobfuscator simpleDeobfuscator, ref Dictionary<uint, DumpedMethod> dumpedMethods, Dictionary<uint,byte[]> tokenToNativeCode) {
+		public bool decrypt(PeImage peImage, ISimpleDeobfuscator simpleDeobfuscator, ref DumpedMethods dumpedMethods, Dictionary<uint, byte[]> tokenToNativeCode) {
 			if (encryptedResource.Method == null)
 				return false;
 
@@ -189,7 +189,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 
 				patchDwords(peImage, methodsDataReader, patchCount);
 				int count = methodsDataReader.ReadInt32();
-				dumpedMethods = new Dictionary<uint, DumpedMethod>();
+				dumpedMethods = new DumpedMethods();
 				while (methodsDataReader.BaseStream.Position < methodsData.Length - 1) {
 					uint rva = methodsDataReader.ReadUInt32();
 					uint index = methodsDataReader.ReadUInt32();
@@ -257,7 +257,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 						dm.mhLocalVarSigTok = peImage.readUInt32(rva + 8);
 					}
 
-					dumpedMethods[dm.token] = dm;
+					dumpedMethods.add(dm);
 				}
 			}
 

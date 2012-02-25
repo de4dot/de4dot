@@ -141,7 +141,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			return decrypterType.LinkedResource != null || nativeLibSaver.Resource != null;
 		}
 
-		public override bool getDecryptedModule(ref byte[] newFileData, ref Dictionary<uint, DumpedMethod> dumpedMethods) {
+		public override bool getDecryptedModule(ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
 			if (!needsPatching())
 				return false;
 

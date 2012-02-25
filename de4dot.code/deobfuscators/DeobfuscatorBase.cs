@@ -137,7 +137,7 @@ namespace de4dot.code.deobfuscators {
 		protected abstract void scanForObfuscator();
 		protected abstract int detectInternal();
 
-		public virtual bool getDecryptedModule(ref byte[] newFileData, ref Dictionary<uint, DumpedMethod> dumpedMethods) {
+		public virtual bool getDecryptedModule(ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
 			return false;
 		}
 
