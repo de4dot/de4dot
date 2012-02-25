@@ -166,6 +166,8 @@ namespace de4dot.code.deobfuscators {
 
 		public virtual void deobfuscateEnd() {
 			if (!Operations.KeepObfuscatorTypes && !KeepTypes) {
+				removeTypesWithInvalidBaseTypes();
+
 				deleteEmptyCctors();
 				deleteMethods();
 				deleteFields();
@@ -200,7 +202,7 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
-		protected void removeTypesWithInvalidBaseTypes() {
+		void removeTypesWithInvalidBaseTypes() {
 			var moduleType = DotNetUtils.getModuleType(module);
 			foreach (var type in module.GetTypes()) {
 				if (!isTypeWithInvalidBaseType(moduleType, type))

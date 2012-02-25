@@ -266,8 +266,6 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				}
 			}
 
-			removeTypesWithInvalidBaseTypes();
-
 			removeProxyDelegates(proxyDelegateFinder, canRemoveProxyTypes);
 			if (canRemoveProxyTypes) {
 				addTypeToBeRemoved(proxyDelegateFinder.IlGeneratorType, "Obfuscator proxy method ILGenerator type");
