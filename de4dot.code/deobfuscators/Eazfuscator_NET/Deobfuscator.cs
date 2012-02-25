@@ -545,10 +545,10 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			base.deobfuscateEnd();
 		}
 
-		public override IEnumerable<string> getStringDecrypterMethods() {
-			var list = new List<string>();
+		public override IEnumerable<int> getStringDecrypterMethods() {
+			var list = new List<int>();
 			if (decryptStringMethod != null)
-				list.Add(decryptStringMethod.MetadataToken.ToInt32().ToString("X8"));
+				list.Add(decryptStringMethod.MetadataToken.ToInt32());
 			return list;
 		}
 	}

@@ -17,6 +17,7 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 namespace de4dot.code.deobfuscators.Unknown {
@@ -111,6 +112,10 @@ namespace de4dot.code.deobfuscators.Unknown {
 					return "Yano Obfuscator";
 			}
 			return null;
+		}
+
+		public override IEnumerable<int> getStringDecrypterMethods() {
+			return new List<int>();
 		}
 	}
 }

@@ -118,8 +118,8 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 			base.deobfuscateEnd();
 		}
 
-		public override IEnumerable<string> getStringDecrypterMethods() {
-			var list = new List<string>();
+		public override IEnumerable<int> getStringDecrypterMethods() {
+			var list = new List<int>();
 			return list;
 		}
 	}

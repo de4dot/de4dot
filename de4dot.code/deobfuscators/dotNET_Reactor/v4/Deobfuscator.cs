@@ -580,12 +580,12 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			findAndRemoveInlinedMethods();
 		}
 
-		public override IEnumerable<string> getStringDecrypterMethods() {
-			var list = new List<string>();
+		public override IEnumerable<int> getStringDecrypterMethods() {
+			var list = new List<int>();
 			foreach (var info in stringDecrypter.DecrypterInfos)
-				list.Add(info.method.MetadataToken.ToInt32().ToString("X8"));
+				list.Add(info.method.MetadataToken.ToInt32());
 			if (stringDecrypter.OtherStringDecrypter != null)
-				list.Add(stringDecrypter.OtherStringDecrypter.MetadataToken.ToInt32().ToString("X8"));
+				list.Add(stringDecrypter.OtherStringDecrypter.MetadataToken.ToInt32());
 			return list;
 		}
 

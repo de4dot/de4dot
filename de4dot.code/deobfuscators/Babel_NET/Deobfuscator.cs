@@ -259,10 +259,10 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			base.deobfuscateEnd();
 		}
 
-		public override IEnumerable<string> getStringDecrypterMethods() {
-			var list = new List<string>();
+		public override IEnumerable<int> getStringDecrypterMethods() {
+			var list = new List<int>();
 			if (stringDecrypter.DecryptMethod != null)
-				list.Add(stringDecrypter.DecryptMethod.MetadataToken.ToInt32().ToString("X8"));
+				list.Add(stringDecrypter.DecryptMethod.MetadataToken.ToInt32());
 			return list;
 		}
 	}

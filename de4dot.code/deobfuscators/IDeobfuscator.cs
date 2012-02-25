@@ -107,6 +107,6 @@ namespace de4dot.code.deobfuscators {
 		void deobfuscateEnd();
 
 		// Called to get method token / pattern of string decrypters
-		IEnumerable<string> getStringDecrypterMethods();
+		IEnumerable<int> getStringDecrypterMethods();
 	}
 }

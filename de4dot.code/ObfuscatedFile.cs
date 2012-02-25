@@ -407,12 +407,10 @@ namespace de4dot.code {
 		}
 
 		IEnumerable<int> getMethodTokens() {
-			var tokens = new List<int>();
+			if (!userStringDecrypterMethods)
+				return deob.getStringDecrypterMethods();
 
-			if (!userStringDecrypterMethods) {
-				options.StringDecrypterMethods.Clear();
-				options.StringDecrypterMethods.AddRange(deob.getStringDecrypterMethods());
-			}
+			var tokens = new List<int>();
 
 			foreach (var val in options.StringDecrypterMethods) {
 				var tokenStr = val.Trim();

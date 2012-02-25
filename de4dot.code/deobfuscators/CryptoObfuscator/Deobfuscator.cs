@@ -231,10 +231,10 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			addResourceToBeRemoved(resource, reason);
 		}
 
-		public override IEnumerable<string> getStringDecrypterMethods() {
-			var list = new List<string>();
+		public override IEnumerable<int> getStringDecrypterMethods() {
+			var list = new List<int>();
 			if (stringDecrypter.Method != null)
-				list.Add(stringDecrypter.Method.MetadataToken.ToInt32().ToString("X8"));
+				list.Add(stringDecrypter.Method.MetadataToken.ToInt32());
 			return list;
 		}
 	}
