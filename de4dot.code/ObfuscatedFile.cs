@@ -542,6 +542,7 @@ namespace de4dot.code {
 				Log.v("Deobfuscating {0} ({1:X8})", Utils.removeNewlines(method), method.MetadataToken.ToUInt32());
 				Log.indent();
 
+				int oldIndentLevel = Log.indentLevel;
 				try {
 					deobfuscate(method, cflowDeobfuscator, methodPrinter);
 				}
@@ -552,6 +553,9 @@ namespace de4dot.code {
 					Log.w("Could not deobfuscate method {0:X8}. Hello, E.T.: {1}",	// E.T. = exception type
 								method.MetadataToken.ToInt32(),
 								ex.GetType());
+				}
+				finally {
+					Log.indentLevel = oldIndentLevel;
 				}
 				removeNoInliningAttribute(method);
 
