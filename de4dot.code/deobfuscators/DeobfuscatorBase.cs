@@ -209,6 +209,19 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
+		protected void fixEnumTypes() {
+			foreach (var type in module.GetTypes()) {
+				if (!type.IsEnum)
+					continue;
+				foreach (var field in type.Fields) {
+					if (field.IsStatic)
+						continue;
+					field.IsRuntimeSpecialName = true;
+					field.IsSpecialName = true;
+				}
+			}
+		}
+
 		public virtual IEnumerable<string> getStringDecrypterMethods() {
 			return new List<string>();
 		}
