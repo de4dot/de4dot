@@ -569,7 +569,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			this.mainType = mainType;
 		}
 
-		public bool decrypt(byte[] fileData, ref Dictionary<uint, DumpedMethod> dumpedMethods) {
+		public bool decrypt(byte[] fileData, ref DumpedMethods dumpedMethods) {
 			var peImage = new PeImage(fileData);
 			var peHeader = new PeHeader(mainType, peImage);
 			var mcHeader = new McHeader(peImage, peHeader);
@@ -583,8 +583,8 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			return true;
 		}
 
-		Dictionary<uint, DumpedMethod> decryptMethods(PeImage peImage, PeHeader peHeader, McHeader mcHeader) {
-			var dumpedMethods = new Dictionary<uint, DumpedMethod>();
+		DumpedMethods decryptMethods(PeImage peImage, PeHeader peHeader, McHeader mcHeader) {
+			var dumpedMethods = new DumpedMethods();
 
 			var methodInfos = new MethodInfos(mainType, peImage, peHeader, mcHeader);
 			methodInfos.initializeInfos();
@@ -638,7 +638,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 					dm.extraSections = reader.ReadBytes((int)(reader.BaseStream.Length - reader.BaseStream.Position));
 				}
 
-				dumpedMethods[dm.token] = dm;
+				dumpedMethods.add(dm);
 			}
 
 			return dumpedMethods;

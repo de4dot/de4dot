@@ -84,7 +84,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			mainType.find();
 		}
 
-		public override bool getDecryptedModule(ref byte[] newFileData, ref Dictionary<uint, DumpedMethod> dumpedMethods) {
+		public override bool getDecryptedModule(ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
 			if (!mainType.Detected)
 				return false;
 
@@ -112,6 +112,10 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				addCctorInitCallToBeRemoved(method);
 			addTypeToBeRemoved(mainType.Type, "Obfuscator type");
 			addModuleReferencesToBeRemoved(mainType.ModuleReferences, "MC runtime module reference");
+		}
+
+		public override IEnumerable<int> getStringDecrypterMethods() {
+			return new List<int>();
 		}
 	}
 }
