@@ -48,10 +48,10 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 
 	class Deobfuscator : DeobfuscatorBase {
 		Options options;
-		TypeDefinition decryptStringType;
-		MethodDefinition decryptStringMethod;
 		string obfuscatorName = DeobfuscatorInfo.THE_NAME;
 		bool detectedVersion = false;
+
+		StringDecrypter stringDecrypter;
 
 		internal class Options : OptionsBase {
 		}
@@ -71,13 +71,12 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		public Deobfuscator(Options options)
 			: base(options) {
 			this.options = options;
-			DefaultDecrypterType = DecrypterType.Emulate;
 		}
 
 		protected override int detectInternal() {
 			int val = 0;
 
-			if (decryptStringMethod != null)
+			if (stringDecrypter.Detected)
 				val += 100;
 			if (detectedVersion)
 				val += 10;
@@ -86,34 +85,10 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		}
 
 		protected override void scanForObfuscator() {
-			findStringDecrypterMethod();
-			if (decryptStringType != null)
+			stringDecrypter = new StringDecrypter(module);
+			stringDecrypter.find(DeobfuscatedFile);
+			if (stringDecrypter.Detected)
 				detectVersion();
-		}
-
-		void findStringDecrypterMethod() {
-			foreach (var type in module.Types) {
-				if (DotNetUtils.findFieldType(type, "System.IO.BinaryReader", true) == null)
-					continue;
-				if (DotNetUtils.findFieldType(type, "System.Collections.Generic.Dictionary`2<System.Int32,System.String>", true) == null)
-					continue;
-
-				foreach (var method in type.Methods) {
-					if (method.IsStatic && method.HasBody && method.MethodReturnType.ReturnType.FullName == "System.String" &&
-						method.Parameters.Count == 1 && method.Parameters[0].ParameterType.FullName == "System.Int32") {
-						foreach (var instr in method.Body.Instructions) {
-							if (instr.OpCode != OpCodes.Callvirt)
-								continue;
-							var calledMethod = instr.Operand as MethodReference;
-							if (calledMethod != null && calledMethod.FullName == "System.IO.Stream System.Reflection.Assembly::GetManifestResourceStream(System.String)") {
-								decryptStringType = type;
-								decryptStringMethod = method;
-								return;
-							}
-						}
-					}
-				}
-			}
 		}
 
 		void detectVersion() {
@@ -126,6 +101,11 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		}
 
 		string detectVersion2() {
+			var decryptStringType = stringDecrypter.Type;
+			var decryptStringMethod = stringDecrypter.Method;
+			if (decryptStringType == null || decryptStringMethod == null)
+				return null;
+
 			var otherMethods = new List<MethodDefinition>();
 			MethodDefinition cctor = null;
 			foreach (var method in decryptStringType.Methods) {
@@ -526,20 +506,28 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		}
 
 		bool checkTypeFields(string[] fieldTypes) {
-			if (fieldTypes.Length != decryptStringType.Fields.Count)
+			if (fieldTypes.Length != stringDecrypter.Type.Fields.Count)
 				return false;
 			for (int i = 0; i < fieldTypes.Length; i++) {
-				if (fieldTypes[i] != decryptStringType.Fields[i].FieldType.FullName)
+				if (fieldTypes[i] != stringDecrypter.Type.Fields[i].FieldType.FullName)
 					return false;
 			}
 			return true;
 		}
 
+		public override void deobfuscateBegin() {
+			base.deobfuscateBegin();
+
+			staticStringInliner.add(stringDecrypter.Method, (method2, args) => {
+				return stringDecrypter.decrypt((int)args[0]);
+			});
+			DeobfuscatedFile.stringDecryptersAdded();
+		}
+
 		public override void deobfuscateEnd() {
-			if (Operations.DecryptStrings == OpDecryptString.Dynamic && CanRemoveStringDecrypterType) {
-				addTypeToBeRemoved(decryptStringType, "String decrypter type");
-				findPossibleNamesToRemove(decryptStringMethod);
-				addResources("Encrypted strings");
+			if (CanRemoveStringDecrypterType) {
+				addTypesToBeRemoved(stringDecrypter.Types, "String decrypter type");
+				addResourceToBeRemoved(stringDecrypter.Resource, "Encrypted strings");
 			}
 
 			base.deobfuscateEnd();
@@ -547,8 +535,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 
 		public override IEnumerable<int> getStringDecrypterMethods() {
 			var list = new List<int>();
-			if (decryptStringMethod != null)
-				list.Add(decryptStringMethod.MetadataToken.ToInt32());
+			if (stringDecrypter.Method != null)
+				list.Add(stringDecrypter.Method.MetadataToken.ToInt32());
 			return list;
 		}
 	}
