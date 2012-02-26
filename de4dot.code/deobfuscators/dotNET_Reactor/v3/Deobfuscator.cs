@@ -141,7 +141,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			return decrypterType.LinkedResource != null || nativeLibSaver.Resource != null;
 		}
 
-		public override bool getDecryptedModule(ref byte[] newFileData, ref Dictionary<uint, DumpedMethod> dumpedMethods) {
+		public override bool getDecryptedModule(ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
 			if (!needsPatching())
 				return false;
 
@@ -329,10 +329,10 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			findAndRemoveInlinedMethods();
 		}
 
-		public override IEnumerable<string> getStringDecrypterMethods() {
-			var list = new List<string>();
+		public override IEnumerable<int> getStringDecrypterMethods() {
+			var list = new List<int>();
 			foreach (var method in decrypterType.StringDecrypters)
-				list.Add(method.MetadataToken.ToInt32().ToString("X8"));
+				list.Add(method.MetadataToken.ToInt32());
 			return list;
 		}
 	}

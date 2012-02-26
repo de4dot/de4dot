@@ -113,12 +113,13 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 		public override void deobfuscateEnd() {
 			if (Operations.DecryptStrings != OpDecryptString.None && stringDecrypter.CanRemoveType)
 				addTypeToBeRemoved(stringDecrypter.Type, "String decrypter type");
+			fixEnumTypes();
 
 			base.deobfuscateEnd();
 		}
 
-		public override IEnumerable<string> getStringDecrypterMethods() {
-			var list = new List<string>();
+		public override IEnumerable<int> getStringDecrypterMethods() {
+			var list = new List<int>();
 			return list;
 		}
 	}

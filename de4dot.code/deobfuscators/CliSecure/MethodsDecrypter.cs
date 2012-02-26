@@ -155,7 +155,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			}
 		}
 
-		public bool decrypt(PeImage peImage, ref Dictionary<uint, DumpedMethod> dumpedMethods) {
+		public bool decrypt(PeImage peImage, ref DumpedMethods dumpedMethods) {
 			this.peImage = peImage;
 
 			uint offset = peImage.rvaToOffset(peImage.Cor20Header.metadataDirectory.virtualAddress + peImage.Cor20Header.metadataDirectory.size);
@@ -179,7 +179,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 				peImage.writeUint32(rva + 8, methodInfo.localVarSigTok);
 			}
 
-			dumpedMethods = new Dictionary<uint, DumpedMethod>();
+			dumpedMethods = new DumpedMethods();
 			offset = methodDefTable.fileOffset;
 			for (int i = 0; i < methodInfos.Count; i++, offset += methodDefTable.totalSize) {
 				var methodInfo = methodInfos[i];
@@ -211,7 +211,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 					dm.mhLocalVarSigTok = peImage.readUInt32(rva + 8);
 				}
 
-				dumpedMethods[dm.token] = dm;
+				dumpedMethods.add(dm);
 			}
 
 			return true;

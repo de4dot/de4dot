@@ -253,10 +253,10 @@ done:
 			removeInlinedMethods(DsInlinedMethodsFinder.find(module));
 		}
 
-		public override IEnumerable<string> getStringDecrypterMethods() {
-			var list = new List<string>();
+		public override IEnumerable<int> getStringDecrypterMethods() {
+			var list = new List<int>();
 			foreach (var method in stringDecrypter.DecrypterMethods)
-				list.Add(method.MetadataToken.ToInt32().ToString("X8"));
+				list.Add(method.MetadataToken.ToInt32());
 			return list;
 		}
 	}

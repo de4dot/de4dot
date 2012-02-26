@@ -137,7 +137,7 @@ namespace de4dot.code.deobfuscators {
 		protected abstract void scanForObfuscator();
 		protected abstract int detectInternal();
 
-		public virtual bool getDecryptedModule(ref byte[] newFileData, ref Dictionary<uint, DumpedMethod> dumpedMethods) {
+		public virtual bool getDecryptedModule(ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
 			return false;
 		}
 
@@ -166,6 +166,8 @@ namespace de4dot.code.deobfuscators {
 
 		public virtual void deobfuscateEnd() {
 			if (!Operations.KeepObfuscatorTypes && !KeepTypes) {
+				removeTypesWithInvalidBaseTypes();
+
 				deleteEmptyCctors();
 				deleteMethods();
 				deleteFields();
@@ -200,7 +202,7 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
-		protected void removeTypesWithInvalidBaseTypes() {
+		void removeTypesWithInvalidBaseTypes() {
 			var moduleType = DotNetUtils.getModuleType(module);
 			foreach (var type in module.GetTypes()) {
 				if (!isTypeWithInvalidBaseType(moduleType, type))
@@ -209,9 +211,20 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
-		public virtual IEnumerable<string> getStringDecrypterMethods() {
-			return new List<string>();
+		protected void fixEnumTypes() {
+			foreach (var type in module.GetTypes()) {
+				if (!type.IsEnum)
+					continue;
+				foreach (var field in type.Fields) {
+					if (field.IsStatic)
+						continue;
+					field.IsRuntimeSpecialName = true;
+					field.IsSpecialName = true;
+				}
+			}
 		}
+
+		public abstract IEnumerable<int> getStringDecrypterMethods();
 
 		class MethodCallRemover {
 			Dictionary<string, MethodDefinitionAndDeclaringTypeDict<bool>> methodNameInfos = new Dictionary<string, MethodDefinitionAndDeclaringTypeDict<bool>>();

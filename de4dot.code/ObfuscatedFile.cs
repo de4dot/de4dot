@@ -363,7 +363,7 @@ namespace de4dot.code {
 			initAssemblyClient();
 
 			byte[] fileData = null;
-			Dictionary<uint, DumpedMethod> dumpedMethods = null;
+			DumpedMethods dumpedMethods = null;
 			if (deob.getDecryptedModule(ref fileData, ref dumpedMethods))
 				reloadModule(fileData, dumpedMethods);
 
@@ -372,7 +372,7 @@ namespace de4dot.code {
 			deob.deobfuscateEnd();
 		}
 
-		void reloadModule(byte[] newModuleData, Dictionary<uint, DumpedMethod> dumpedMethods) {
+		void reloadModule(byte[] newModuleData, DumpedMethods dumpedMethods) {
 			Log.v("Reloading decrypted assembly (original filename: {0})", Filename);
 			simpleDeobfuscatorFlags.Clear();
 			module = assemblyModule.reload(newModuleData, dumpedMethods);
@@ -407,12 +407,10 @@ namespace de4dot.code {
 		}
 
 		IEnumerable<int> getMethodTokens() {
-			var tokens = new List<int>();
+			if (!userStringDecrypterMethods)
+				return deob.getStringDecrypterMethods();
 
-			if (!userStringDecrypterMethods) {
-				options.StringDecrypterMethods.Clear();
-				options.StringDecrypterMethods.AddRange(deob.getStringDecrypterMethods());
-			}
+			var tokens = new List<int>();
 
 			foreach (var val in options.StringDecrypterMethods) {
 				var tokenStr = val.Trim();
@@ -542,6 +540,7 @@ namespace de4dot.code {
 				Log.v("Deobfuscating {0} ({1:X8})", Utils.removeNewlines(method), method.MetadataToken.ToUInt32());
 				Log.indent();
 
+				int oldIndentLevel = Log.indentLevel;
 				try {
 					deobfuscate(method, cflowDeobfuscator, methodPrinter);
 				}
@@ -552,6 +551,9 @@ namespace de4dot.code {
 					Log.w("Could not deobfuscate method {0:X8}. Hello, E.T.: {1}",	// E.T. = exception type
 								method.MetadataToken.ToInt32(),
 								ex.GetType());
+				}
+				finally {
+					Log.indentLevel = oldIndentLevel;
 				}
 				removeNoInliningAttribute(method);
 

@@ -151,7 +151,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			}
 		}
 
-		public override bool getDecryptedModule(ref byte[] newFileData, ref Dictionary<uint, DumpedMethod> dumpedMethods) {
+		public override bool getDecryptedModule(ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
 			if (!methodsDecrypter.Detected)
 				return false;
 
@@ -266,8 +266,6 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				}
 			}
 
-			removeTypesWithInvalidBaseTypes();
-
 			removeProxyDelegates(proxyDelegateFinder, canRemoveProxyTypes);
 			if (canRemoveProxyTypes) {
 				addTypeToBeRemoved(proxyDelegateFinder.IlGeneratorType, "Obfuscator proxy method ILGenerator type");
@@ -280,10 +278,10 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			base.deobfuscateEnd();
 		}
 
-		public override IEnumerable<string> getStringDecrypterMethods() {
-			var list = new List<string>();
+		public override IEnumerable<int> getStringDecrypterMethods() {
+			var list = new List<int>();
 			if (stringDecrypter.DecryptMethod != null)
-				list.Add(stringDecrypter.DecryptMethod.MetadataToken.ToInt32().ToString("X8"));
+				list.Add(stringDecrypter.DecryptMethod.MetadataToken.ToInt32());
 			return list;
 		}
 	}

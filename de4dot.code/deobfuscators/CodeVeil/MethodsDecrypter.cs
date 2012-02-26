@@ -160,7 +160,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			}
 		}
 
-		public bool decrypt(byte[] fileData, ref Dictionary<uint, DumpedMethod> dumpedMethods) {
+		public bool decrypt(byte[] fileData, ref DumpedMethods dumpedMethods) {
 			if (decrypter == null)
 				return false;
 
@@ -181,8 +181,8 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return true;
 		}
 
-		Dictionary<uint, DumpedMethod> createDumpedMethods(PeImage peImage, byte[] fileData, byte[] methodsData) {
-			var dumpedMethods = new Dictionary<uint, DumpedMethod>();
+		DumpedMethods createDumpedMethods(PeImage peImage, byte[] fileData, byte[] methodsData) {
+			var dumpedMethods = new DumpedMethods();
 
 			var methodsDataReader = new BinaryReader(new MemoryStream(methodsData));
 			var fileDataReader = new BinaryReader(new MemoryStream(fileData));
@@ -229,7 +229,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				if (!decrypter.decrypt(fileDataReader, dm))
 					continue;
 
-				dumpedMethods[dm.token] = dm;
+				dumpedMethods.add(dm);
 			}
 
 			return dumpedMethods;

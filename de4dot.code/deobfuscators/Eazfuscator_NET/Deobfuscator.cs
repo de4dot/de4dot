@@ -48,10 +48,10 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 
 	class Deobfuscator : DeobfuscatorBase {
 		Options options;
-		TypeDefinition decryptStringType;
-		MethodDefinition decryptStringMethod;
 		string obfuscatorName = DeobfuscatorInfo.THE_NAME;
 		bool detectedVersion = false;
+
+		StringDecrypter stringDecrypter;
 
 		internal class Options : OptionsBase {
 		}
@@ -71,13 +71,12 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		public Deobfuscator(Options options)
 			: base(options) {
 			this.options = options;
-			DefaultDecrypterType = DecrypterType.Emulate;
 		}
 
 		protected override int detectInternal() {
 			int val = 0;
 
-			if (decryptStringMethod != null)
+			if (stringDecrypter.Detected)
 				val += 100;
 			if (detectedVersion)
 				val += 10;
@@ -86,34 +85,10 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		}
 
 		protected override void scanForObfuscator() {
-			findStringDecrypterMethod();
-			if (decryptStringType != null)
+			stringDecrypter = new StringDecrypter(module);
+			stringDecrypter.find(DeobfuscatedFile);
+			if (stringDecrypter.Detected)
 				detectVersion();
-		}
-
-		void findStringDecrypterMethod() {
-			foreach (var type in module.Types) {
-				if (DotNetUtils.findFieldType(type, "System.IO.BinaryReader", true) == null)
-					continue;
-				if (DotNetUtils.findFieldType(type, "System.Collections.Generic.Dictionary`2<System.Int32,System.String>", true) == null)
-					continue;
-
-				foreach (var method in type.Methods) {
-					if (method.IsStatic && method.HasBody && method.MethodReturnType.ReturnType.FullName == "System.String" &&
-						method.Parameters.Count == 1 && method.Parameters[0].ParameterType.FullName == "System.Int32") {
-						foreach (var instr in method.Body.Instructions) {
-							if (instr.OpCode != OpCodes.Callvirt)
-								continue;
-							var calledMethod = instr.Operand as MethodReference;
-							if (calledMethod != null && calledMethod.FullName == "System.IO.Stream System.Reflection.Assembly::GetManifestResourceStream(System.String)") {
-								decryptStringType = type;
-								decryptStringMethod = method;
-								return;
-							}
-						}
-					}
-				}
-			}
 		}
 
 		void detectVersion() {
@@ -126,6 +101,11 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		}
 
 		string detectVersion2() {
+			var decryptStringType = stringDecrypter.Type;
+			var decryptStringMethod = stringDecrypter.Method;
+			if (decryptStringType == null || decryptStringMethod == null)
+				return null;
+
 			var otherMethods = new List<MethodDefinition>();
 			MethodDefinition cctor = null;
 			foreach (var method in decryptStringType.Methods) {
@@ -138,6 +118,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			}
 			if (cctor == null)
 				return null;
+
+			bool hasConstantM2 = DeobUtils.hasInteger(decryptStringMethod, -2);
 
 			/////////////////////////////////////////////////////////////////
 			/////////////////////////////////////////////////////////////////
@@ -160,6 +142,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				"System.String",
 			};
 			if (otherMethods.Count == 0 &&
+				!hasConstantM2 &&
 				!decryptStringMethod.NoInlining &&
 				decryptStringMethod.IsPublic &&
 				decryptStringMethod.IsSynchronized &&
@@ -194,6 +177,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				"System.String",
 			};
 			if (otherMethods.Count == 0 &&
+				!hasConstantM2 &&
 				!decryptStringMethod.NoInlining &&
 				decryptStringMethod.IsPublic &&
 				decryptStringMethod.IsSynchronized &&
@@ -228,6 +212,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				"System.String",
 			};
 			if (otherMethods.Count == 0 &&
+				!hasConstantM2 &&
 				!decryptStringMethod.NoInlining &&
 				decryptStringMethod.IsPublic &&
 				decryptStringMethod.IsSynchronized &&
@@ -263,6 +248,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				"System.String",
 			};
 			if (otherMethods.Count == 0 &&
+				!hasConstantM2 &&
 				!decryptStringMethod.NoInlining &&
 				decryptStringMethod.IsPublic &&
 				decryptStringMethod.IsSynchronized &&
@@ -299,6 +285,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				"System.String",
 			};
 			if (otherMethods.Count == 0 &&
+				!hasConstantM2 &&
 				!decryptStringMethod.NoInlining &&
 				decryptStringMethod.IsPublic &&
 				!decryptStringMethod.IsSynchronized &&
@@ -335,6 +322,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				"System.String",
 			};
 			if (otherMethods.Count == 0 &&
+				!hasConstantM2 &&
 				decryptStringMethod.NoInlining &&
 				decryptStringMethod.IsPublic &&
 				!decryptStringMethod.IsSynchronized &&
@@ -372,6 +360,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				"System.String",
 			};
 			if (otherMethods.Count == 0 &&
+				!hasConstantM2 &&
 				decryptStringMethod.NoInlining &&
 				decryptStringMethod.IsAssembly &&
 				!decryptStringMethod.IsSynchronized &&
@@ -413,6 +402,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				"System.Type",
 			};
 			if (otherMethods.Count == 0 &&
+				!hasConstantM2 &&
 				decryptStringMethod.NoInlining &&
 				decryptStringMethod.IsAssembly &&
 				!decryptStringMethod.IsSynchronized &&
@@ -461,6 +451,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				otherMethods[0].IsPrivate &&
 				otherMethods[0].IsStatic &&
 				new LocalTypes(otherMethods[0]).exactly(olocals30) &&
+				!hasConstantM2 &&
 				decryptStringMethod.NoInlining &&
 				decryptStringMethod.IsAssembly &&
 				!decryptStringMethod.IsSynchronized &&
@@ -469,7 +460,56 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				decryptStringMethod.Body.ExceptionHandlers.Count == 2 &&
 				new LocalTypes(decryptStringMethod).exactly(locals30) &&
 				checkTypeFields(fields30)) {
-				return "3.0 - 3.1";
+				return "3.0";
+			}
+
+			/////////////////////////////////////////////////////////////////
+			/////////////////////////////////////////////////////////////////
+			/////////////////////////////////////////////////////////////////
+
+			var fields31 = new string[] {
+				"System.Collections.Generic.Dictionary`2<System.Int32,System.String>",
+				"System.IO.BinaryReader",
+				"System.Byte[]",
+				"System.Int16",
+				"System.Int32",
+				"System.Byte[]",
+			};
+			var locals31 = new string[] {
+				"System.Boolean",
+				"System.Byte",
+				"System.Byte[]",
+				"System.Char[]",
+				"System.Collections.Generic.Dictionary`2<System.Int32,System.String>",
+				"System.Diagnostics.StackFrame",
+				"System.Diagnostics.StackTrace",
+				"System.Int16",
+				"System.Int32",
+				"System.IO.Stream",
+				"System.Reflection.Assembly",
+				"System.Reflection.AssemblyName",
+				"System.Reflection.MethodBase",
+				"System.String",
+				"System.Type",
+			};
+			var olocals31 = new string[] {
+				"System.Int32",
+			};
+			if (otherMethods.Count == 1 &&
+				DotNetUtils.isMethod(otherMethods[0], "System.Int32", "(System.Byte[],System.Int32,System.Byte[])") &&
+				otherMethods[0].IsPrivate &&
+				otherMethods[0].IsStatic &&
+				new LocalTypes(otherMethods[0]).exactly(olocals31) &&
+				hasConstantM2 &&
+				decryptStringMethod.NoInlining &&
+				decryptStringMethod.IsAssembly &&
+				!decryptStringMethod.IsSynchronized &&
+				decryptStringMethod.Body.MaxStackSize >= 1 &&
+				decryptStringMethod.Body.MaxStackSize <= 8 &&
+				decryptStringMethod.Body.ExceptionHandlers.Count == 2 &&
+				new LocalTypes(decryptStringMethod).exactly(locals31) &&
+				checkTypeFields(fields31)) {
+				return "3.1";
 			}
 
 			/////////////////////////////////////////////////////////////////
@@ -511,6 +551,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				otherMethods[0].IsPrivate &&
 				otherMethods[0].IsStatic &&
 				new LocalTypes(otherMethods[0]).exactly(olocals32) &&
+				hasConstantM2 &&
 				decryptStringMethod.NoInlining &&
 				decryptStringMethod.IsAssembly &&
 				!decryptStringMethod.IsSynchronized &&
@@ -526,29 +567,37 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		}
 
 		bool checkTypeFields(string[] fieldTypes) {
-			if (fieldTypes.Length != decryptStringType.Fields.Count)
+			if (fieldTypes.Length != stringDecrypter.Type.Fields.Count)
 				return false;
 			for (int i = 0; i < fieldTypes.Length; i++) {
-				if (fieldTypes[i] != decryptStringType.Fields[i].FieldType.FullName)
+				if (fieldTypes[i] != stringDecrypter.Type.Fields[i].FieldType.FullName)
 					return false;
 			}
 			return true;
 		}
 
+		public override void deobfuscateBegin() {
+			base.deobfuscateBegin();
+
+			staticStringInliner.add(stringDecrypter.Method, (method2, args) => {
+				return stringDecrypter.decrypt((int)args[0]);
+			});
+			DeobfuscatedFile.stringDecryptersAdded();
+		}
+
 		public override void deobfuscateEnd() {
-			if (Operations.DecryptStrings == OpDecryptString.Dynamic && CanRemoveStringDecrypterType) {
-				addTypeToBeRemoved(decryptStringType, "String decrypter type");
-				findPossibleNamesToRemove(decryptStringMethod);
-				addResources("Encrypted strings");
+			if (CanRemoveStringDecrypterType) {
+				addTypesToBeRemoved(stringDecrypter.Types, "String decrypter type");
+				addResourceToBeRemoved(stringDecrypter.Resource, "Encrypted strings");
 			}
 
 			base.deobfuscateEnd();
 		}
 
-		public override IEnumerable<string> getStringDecrypterMethods() {
-			var list = new List<string>();
-			if (decryptStringMethod != null)
-				list.Add(decryptStringMethod.MetadataToken.ToInt32().ToString("X8"));
+		public override IEnumerable<int> getStringDecrypterMethods() {
+			var list = new List<int>();
+			if (stringDecrypter.Method != null)
+				list.Add(stringDecrypter.Method.MetadataToken.ToInt32());
 			return list;
 		}
 	}

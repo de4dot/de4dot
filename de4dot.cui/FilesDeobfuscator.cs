@@ -183,6 +183,7 @@ namespace de4dot.cui {
 				}
 				allFiles[key] = true;
 
+				int oldIndentLevel = Log.indentLevel;
 				try {
 					file.load(options.CreateDeobfuscators());
 				}
@@ -198,6 +199,9 @@ namespace de4dot.cui {
 				catch (Exception ex) {
 					Log.w("Could not load file ({0}): {1}", ex.GetType(), file.Filename);
 					return false;
+				}
+				finally {
+					Log.indentLevel = oldIndentLevel;
 				}
 
 				var deob = file.Deobfuscator;

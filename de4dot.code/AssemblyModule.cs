@@ -62,7 +62,7 @@ namespace de4dot.code {
 			module.Write(newFilename, writerParams);
 		}
 
-		public ModuleDefinition reload(byte[] newModuleData, Dictionary<uint, DumpedMethod> dumpedMethods) {
+		public ModuleDefinition reload(byte[] newModuleData, DumpedMethods dumpedMethods) {
 			AssemblyResolver.Instance.removeModule(module);
 			DotNetUtils.typeCaches.invalidate(module);
 			return setModule(ModuleDefinition.ReadModule(new MemoryStream(newModuleData), getReaderParameters(), dumpedMethods));
