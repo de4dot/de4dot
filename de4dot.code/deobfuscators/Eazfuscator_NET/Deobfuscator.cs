@@ -51,6 +51,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		string obfuscatorName = DeobfuscatorInfo.THE_NAME;
 		bool detectedVersion = false;
 
+		DecrypterType decrypterType;
 		StringDecrypter stringDecrypter;
 
 		internal class Options : OptionsBase {
@@ -85,8 +86,9 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		}
 
 		protected override void scanForObfuscator() {
-			stringDecrypter = new StringDecrypter(module);
-			stringDecrypter.find(DeobfuscatedFile);
+			decrypterType = new DecrypterType();
+			stringDecrypter = new StringDecrypter(module, decrypterType);
+			stringDecrypter.find();
 			if (stringDecrypter.Detected)
 				detectVersion();
 		}
@@ -579,6 +581,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		public override void deobfuscateBegin() {
 			base.deobfuscateBegin();
 
+			stringDecrypter.initialize(DeobfuscatedFile);
 			staticStringInliner.add(stringDecrypter.Method, (method2, args) => {
 				return stringDecrypter.decrypt((int)args[0]);
 			});
@@ -588,6 +591,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		public override void deobfuscateEnd() {
 			if (CanRemoveStringDecrypterType) {
 				addTypesToBeRemoved(stringDecrypter.Types, "String decrypter type");
+				addTypeToBeRemoved(decrypterType.Type, "Decrypter type");
 				addResourceToBeRemoved(stringDecrypter.Resource, "Encrypted strings");
 			}
 
