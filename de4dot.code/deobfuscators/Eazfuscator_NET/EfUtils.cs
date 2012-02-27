@@ -102,5 +102,23 @@ done:
 			val = stack.Pop();
 			return true;
 		}
+
+		public static MethodDefinition getResolveMethod(MethodDefinition method) {
+			if (method == null || method.Body == null)
+				return null;
+			foreach (var instr in method.Body.Instructions) {
+				if (instr.OpCode.Code != Code.Ldftn && instr.OpCode.Code != Code.Ldvirtftn)
+					continue;
+				var handler = instr.Operand as MethodDefinition;
+				if (handler == null)
+					continue;
+				if (!DotNetUtils.isMethod(handler, "System.Reflection.Assembly", "(System.Object,System.ResolveEventArgs)"))
+					continue;
+
+				return handler;
+			}
+
+			return null;
+		}
 	}
 }

@@ -53,6 +53,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 
 		DecrypterType decrypterType;
 		StringDecrypter stringDecrypter;
+		AssemblyResolver assemblyResolver;
+		ResourceResolver resourceResolver;
 
 		internal class Options : OptionsBase {
 		}
@@ -77,8 +79,11 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		protected override int detectInternal() {
 			int val = 0;
 
-			if (stringDecrypter.Detected)
-				val += 100;
+			int sum = toInt32(stringDecrypter.Detected) +
+					toInt32(assemblyResolver.Detected) +
+					toInt32(resourceResolver.Detected);
+			if (sum > 0)
+				val += 100 + 10 * (sum - 1);
 			if (detectedVersion)
 				val += 10;
 
@@ -89,6 +94,10 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			decrypterType = new DecrypterType();
 			stringDecrypter = new StringDecrypter(module, decrypterType);
 			stringDecrypter.find();
+			assemblyResolver = new AssemblyResolver(module, decrypterType);
+			assemblyResolver.find();
+			resourceResolver = new ResourceResolver(module, assemblyResolver);
+			resourceResolver.find();
 			if (stringDecrypter.Detected)
 				detectVersion();
 		}
@@ -586,6 +595,24 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				return stringDecrypter.decrypt((int)args[0]);
 			});
 			DeobfuscatedFile.stringDecryptersAdded();
+
+			assemblyResolver.initialize(DeobfuscatedFile, this);
+			assemblyResolver.initializeEmbeddedFiles();
+			addModuleCctorInitCallToBeRemoved(assemblyResolver.InitMethod);
+
+			resourceResolver.initialize(DeobfuscatedFile, this);
+			foreach (var info in resourceResolver.mergeResources())
+				addResourceToBeRemoved(info.Resource, "Encrypted resources");
+			addModuleCctorInitCallToBeRemoved(resourceResolver.InitMethod);
+
+			dumpEmbeddedAssemblies();
+		}
+
+		void dumpEmbeddedAssemblies() {
+			foreach (var info in assemblyResolver.AssemblyInfos) {
+				DeobfuscatedFile.createAssemblyFile(info.Data, info.SimpleName, info.Extension);
+				addResourceToBeRemoved(info.Resource, string.Format("Embedded assembly: {0}", info.AssemblyFullName));
+			}
 		}
 
 		public override void deobfuscateEnd() {
@@ -594,6 +621,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				addTypeToBeRemoved(decrypterType.Type, "Decrypter type");
 				addResourceToBeRemoved(stringDecrypter.Resource, "Encrypted strings");
 			}
+			addTypeToBeRemoved(assemblyResolver.Type, "Assembly resolver type");
+			addTypeToBeRemoved(resourceResolver.Type, "Resource resolver type");
 
 			base.deobfuscateEnd();
 		}

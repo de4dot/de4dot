@@ -138,9 +138,11 @@
     <Compile Include="deobfuscators\dotNET_Reactor\v3\AssemblyResolver.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v3\DecryptMethod.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v3\MemoryPatcher.cs" />
+    <Compile Include="deobfuscators\Eazfuscator_NET\AssemblyResolver.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\DecrypterType.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\Deobfuscator.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\EfUtils.cs" />
+    <Compile Include="deobfuscators\Eazfuscator_NET\ResourceResolver.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\StringDecrypter.cs" />
     <Compile Include="deobfuscators\ExceptionLoggerRemover.cs" />
     <Compile Include="deobfuscators\Goliath_NET\ArrayDecrypter.cs" />
