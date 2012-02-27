@@ -88,8 +88,12 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 
 					decryptType = type;
 					decryptMethod = method;
-					if (!findConstants(simpleDeobfuscator))
-						Log.w("Can't decrypt strings. Possibly a new Eazfuscator.NET version.");
+					if (!findConstants(simpleDeobfuscator)) {
+						if (encryptedResource == null)
+							Log.w("Could not find encrypted resource. Strings cannot be decrypted.");
+						else
+							Log.w("Can't decrypt strings. Possibly a new Eazfuscator.NET version.");
+					}
 					return;
 				}
 			}
