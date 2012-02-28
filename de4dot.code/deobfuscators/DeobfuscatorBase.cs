@@ -224,6 +224,14 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
+		protected void fixInterfaces() {
+			foreach (var type in module.GetTypes()) {
+				if (!type.IsInterface)
+					continue;
+				type.IsSealed = false;
+			}
+		}
+
 		public abstract IEnumerable<int> getStringDecrypterMethods();
 
 		class MethodCallRemover {

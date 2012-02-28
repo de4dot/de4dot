@@ -159,6 +159,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			addTypeToBeRemoved(getManifestResourceStreamRestorer.Type, "GetManifestResourceStream type");
 			addResourceToBeRemoved(getManifestResourceStreamRestorer.Resource, "GetManifestResourceStream type resource");
 
+			fixInterfaces();
 			base.deobfuscateEnd();
 		}
 
