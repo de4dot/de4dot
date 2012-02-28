@@ -130,10 +130,9 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 		protected override int detectInternal() {
 			int val = 0;
 
-			if (foundSmartAssemblyAttribute)
-				val += 100;
-
 			if (memoryManagerInfo.Detected)
+				val += 100;
+			if (foundSmartAssemblyAttribute)
 				val += 10;
 
 			return val;

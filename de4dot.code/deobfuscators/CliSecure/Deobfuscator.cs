@@ -106,11 +106,12 @@ namespace de4dot.code.deobfuscators.CliSecure {
 		protected override int detectInternal() {
 			int val = 0;
 
-			if (cliSecureRtType.Detected || cliSecureAttribute != null)
-				val += 100;
-			if (stringDecrypter.Detected)
-				val += 10;
-			if (proxyDelegateFinder.Detected)
+			int sum = toInt32(cliSecureRtType.Detected) +
+					toInt32(stringDecrypter.Detected) +
+					toInt32(proxyDelegateFinder.Detected);
+			if (sum > 0)
+				val += 100 + 10 * (sum - 1);
+			if (cliSecureAttribute != null)
 				val += 10;
 
 			return val;

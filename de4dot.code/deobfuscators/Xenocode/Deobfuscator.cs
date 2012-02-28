@@ -70,9 +70,9 @@ namespace de4dot.code.deobfuscators.Xenocode {
 		protected override int detectInternal() {
 			int val = 0;
 
-			if (foundXenocodeAttribute || stringDecrypter.Detected)
+			if (stringDecrypter.Detected)
 				val += 100;
-			if (foundXenocodeAttribute && stringDecrypter.Detected)
+			if (foundXenocodeAttribute)
 				val += 10;
 
 			return val;

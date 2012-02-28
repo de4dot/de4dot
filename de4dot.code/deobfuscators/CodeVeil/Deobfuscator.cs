@@ -95,8 +95,6 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 					toInt32(proxyDelegateFinder.Detected);
 			if (sum > 0)
 				val += 100 + 10 * (sum - 1);
-			if (killType != null)
-				val += 10;
 
 			return val;
 		}

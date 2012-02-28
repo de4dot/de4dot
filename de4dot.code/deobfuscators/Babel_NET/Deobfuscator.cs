@@ -114,8 +114,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		protected override int detectInternal() {
 			int val = 0;
 
-			int sum = toInt32(foundBabelAttribute) +
-					toInt32(resourceResolver.Detected) +
+			int sum = toInt32(resourceResolver.Detected) +
 					toInt32(assemblyResolver.Detected) +
 					toInt32(stringDecrypter.Detected) +
 					toInt32(constantsDecrypter.Detected) +
@@ -124,6 +123,8 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 					toInt32(hasMetadataStream("Babel"));
 			if (sum > 0)
 				val += 100 + 10 * (sum - 1);
+			if (foundBabelAttribute)
+				val += 10;
 
 			return val;
 		}

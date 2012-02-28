@@ -99,15 +99,12 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		protected override int detectInternal() {
 			int val = 0;
 
-			if (foundCryptoObfuscatorAttribute)
-				val += 100;
-			else if (foundObfuscatedSymbols)
-				val += 10;
-			if (stringDecrypter.Detected)
-				val += 10;
-			if (tamperDetection.Detected)
-				val += 10;
-			if (proxyDelegateFinder.Detected)
+			int sum = toInt32(stringDecrypter.Detected) +
+					toInt32(tamperDetection.Detected) +
+					toInt32(proxyDelegateFinder.Detected);
+			if (sum > 0)
+				val += 100 + 10 * (sum - 1);
+			if (foundCryptoObfuscatorAttribute || foundObfuscatedSymbols)
 				val += 10;
 
 			return val;
