@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using de4dot.blocks;
@@ -33,6 +34,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		MethodDefinition initMethod;
 		MethodDefinition handlerMethod;
 		MethodDefinition decryptMethod;
+		TypeDefinition otherType;
 		List<AssemblyInfo> assemblyInfos = new List<AssemblyInfo>();
 		byte[] decryptKey;
 
@@ -54,6 +56,10 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 
 		public TypeDefinition Type {
 			get { return resolverType; }
+		}
+
+		public TypeDefinition OtherType {
+			get { return otherType; }
 		}
 
 		public MethodDefinition InitMethod {
@@ -107,10 +113,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			var resolveHandler = EfUtils.getResolveMethod(method);
 			if (resolveHandler == null)
 				return false;
-			if (!DeobUtils.hasInteger(resolveHandler, (int)',') ||
-				!DeobUtils.hasInteger(resolveHandler, (int)'|') ||
-				!DeobUtils.hasInteger(resolveHandler, (int)'a') ||
-				!DeobUtils.hasInteger(resolveHandler, (int)'b'))
+			if (!DeobUtils.hasInteger(resolveHandler, ',') ||
+				!DeobUtils.hasInteger(resolveHandler, '|'))
 				return false;
 
 			initMethod = method;
@@ -169,6 +173,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			if (handlerMethod == null)
 				return;
 
+			findOtherType();
+
 			simpleDeobfuscator.deobfuscate(handlerMethod);
 			simpleDeobfuscator.decryptStrings(handlerMethod, deob);
 			if (!createAssemblyInfos())
@@ -178,6 +184,18 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			simpleDeobfuscator.decryptStrings(decryptMethod, deob);
 			if (!createDecryptKey())
 				throw new ApplicationException("Could not initialize decryption key");
+		}
+
+		void findOtherType() {
+			foreach (var type in module.Types) {
+				// This type is added in EF 3.1+. The last number seems to be an int32 hash of
+				// the assembly name, but - replaced with _.
+				if (!Regex.IsMatch(type.FullName, @"^pc1eOx2WJVV[_0-9]+$"))
+					continue;
+
+				otherType = type;
+				break;
+			}
 		}
 
 		bool createDecryptKey() {

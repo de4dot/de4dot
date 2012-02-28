@@ -631,6 +631,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				addResourceToBeRemoved(stringDecrypter.Resource, "Encrypted strings");
 			}
 			addTypeToBeRemoved(assemblyResolver.Type, "Assembly resolver type");
+			addTypeToBeRemoved(assemblyResolver.OtherType, "Assembly resolver other type");
 			addTypeToBeRemoved(resourceResolver.Type, "Resource resolver type");
 			addTypeToBeRemoved(getManifestResourceStreamRestorer.Type, "GetManifestResourceStream type");
 			addResourceToBeRemoved(getManifestResourceStreamRestorer.Resource, "GetManifestResourceStream type resource");
