@@ -28,8 +28,6 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 	class ResourceDecrypter {
 		ModuleDefinition module;
 		TypeDefinition encryptedResourceStreamType;
-		MethodDefinition getManifestResourceStreamMethod1;
-		MethodDefinition getManifestResourceStreamMethod2;
 		TypeDefinition encryptedResourceSetType;
 		MethodDefinition encryptedResourceSet_GetDefaultReader;
 		TypeDefinition encryptedResourceReaderType;
@@ -38,8 +36,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		MethodDefinition resTypeCtor;
 		TypeDefinition resourceFlagsType;
 		TypeDefinition resourceEnumeratorType;
-		MethodReference Assembly_GetManifestResourceStream1;
-		MethodReference Assembly_GetManifestResourceStream2;
+		GetManifestResourceStreamRestorerBase getManifestResourceStreamRestorer;
 
 		public bool CanRemoveTypes {
 			get {
@@ -81,26 +78,13 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		}
 
 		public void initialize() {
-			initGetManifestMethods();
+			getManifestResourceStreamRestorer = new GetManifestResourceStreamRestorerBase(module);
 			findEncryptedResourceStreamType();
 			findEncryptedResourceSet();
 			findEncryptedResourceReader();
 			findResType();
 			findResourceFlags();
 			findResourceEnumerator();
-		}
-
-		void initGetManifestMethods() {
-			var assemblyType = new TypeReference("System.Reflection", "Assembly", module, module.TypeSystem.Corlib);
-			var typeType = new TypeReference("System", "Type", module, module.TypeSystem.Corlib);
-			var streamType = new TypeReference("System.IO", "Stream", module, module.TypeSystem.Corlib);
-			Assembly_GetManifestResourceStream1 = new MethodReference("GetManifestResourceStream", streamType, assemblyType);
-			Assembly_GetManifestResourceStream1.HasThis = true;
-			Assembly_GetManifestResourceStream1.Parameters.Add(new ParameterDefinition(module.TypeSystem.String));
-			Assembly_GetManifestResourceStream2 = new MethodReference("GetManifestResourceStream", streamType, assemblyType);
-			Assembly_GetManifestResourceStream2.HasThis = true;
-			Assembly_GetManifestResourceStream2.Parameters.Add(new ParameterDefinition(typeType));
-			Assembly_GetManifestResourceStream2.Parameters.Add(new ParameterDefinition(module.TypeSystem.String));
 		}
 
 		void findResourceEnumerator() {
@@ -280,8 +264,8 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				if (!findManifestResourceStreamMethods(type, out getManifestResourceStreamMethodTmp1, out getManifestResourceStreamMethodTmp2))
 					continue;
 
-				getManifestResourceStreamMethod1 = getManifestResourceStreamMethodTmp1;
-				getManifestResourceStreamMethod2 = getManifestResourceStreamMethodTmp2;
+				getManifestResourceStreamRestorer.GetStream1Method = getManifestResourceStreamMethodTmp1;
+				getManifestResourceStreamRestorer.GetStream2Method = getManifestResourceStreamMethodTmp2;
 				encryptedResourceStreamType = type;
 				return;
 			}
@@ -368,27 +352,10 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		}
 
 		public void deobfuscate(Blocks blocks) {
-			foreach (var block in blocks.MethodBlocks.getAllBlocks()) {
-				var instrs = block.Instructions;
-				for (int i = 0; i < instrs.Count; i++) {
-					var call = instrs[i];
-					if (call.OpCode.Code != Code.Call)
-						continue;
-					var calledMethod = call.Operand as MethodDefinition;
-					if (calledMethod == null)
-						continue;
+			if (encryptedResourceStreamType == null)
+				return;
 
-					MethodReference newMethod = null;
-					if (calledMethod == getManifestResourceStreamMethod1)
-						newMethod = Assembly_GetManifestResourceStream1;
-					else if (calledMethod == getManifestResourceStreamMethod2)
-						newMethod = Assembly_GetManifestResourceStream2;
-					if (newMethod == null)
-						continue;
-
-					instrs[i] = new Instr(Instruction.Create(OpCodes.Callvirt, newMethod));
-				}
-			}
+			getManifestResourceStreamRestorer.deobfuscate(blocks);
 		}
 	}
 }
