@@ -233,7 +233,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return false;
 		}
 
-		static List<AssemblyInfo> createAssemblyInfos(string s) {
+		List<AssemblyInfo> createAssemblyInfos(string s) {
 			try {
 				return tryCreateAssemblyInfos(s);
 			}
@@ -242,18 +242,22 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			}
 		}
 
-		static List<AssemblyInfo> tryCreateAssemblyInfos(string s) {
+		List<AssemblyInfo> tryCreateAssemblyInfos(string s) {
+			int numElements = decrypterType.Detected ? 3 : 2;
 			var ary = s.Split(',');
-			if (ary.Length == 0 || ary.Length % 3 != 0)
+			if (ary.Length == 0 || ary.Length % numElements != 0)
 				return null;
 
 			var infos = new List<AssemblyInfo>();
-			for (int i = 0; i < ary.Length; i += 3) {
+			for (int i = 0; i < ary.Length; i += numElements) {
 				var info = new AssemblyInfo();
 
 				info.AssemblyFullName = Encoding.UTF8.GetString(Convert.FromBase64String(ary[i]));
 				info.ResourceName = ary[i + 1];
-				info.Filename = Encoding.UTF8.GetString(Convert.FromBase64String(ary[i + 2]));
+				if (numElements >= 3)
+					info.Filename = Encoding.UTF8.GetString(Convert.FromBase64String(ary[i + 2]));
+				else
+					info.Filename = Utils.getAssemblySimpleName(info.AssemblyFullName) + ".dll";
 				int index = info.ResourceName.IndexOf('|');
 				if (index >= 0) {
 					var flags = info.ResourceName.Substring(0, index);

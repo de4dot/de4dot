@@ -50,7 +50,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 
 				var getStream2 = getTheOnlyMethod(type, "System.IO.Stream", "(System.Reflection.Assembly,System.Type,System.String)");
 				var getNames = getTheOnlyMethod(type, "System.String[]", "(System.Reflection.Assembly)");
-				if (getStream2 == null || getNames == null)
+				if (getStream2 == null)
 					continue;
 
 				var resource = findGetManifestResourceStreamTypeResource(type, simpleDeobfuscator, deob);
