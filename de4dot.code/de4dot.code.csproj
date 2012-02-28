@@ -142,6 +142,7 @@
     <Compile Include="deobfuscators\Eazfuscator_NET\DecrypterType.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\Deobfuscator.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\EfUtils.cs" />
+    <Compile Include="deobfuscators\Eazfuscator_NET\GetManifestResourceStreamRestorer.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\ResourceResolver.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\StringDecrypter.cs" />
     <Compile Include="deobfuscators\ExceptionLoggerRemover.cs" />
