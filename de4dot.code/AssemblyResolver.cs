@@ -47,12 +47,15 @@ namespace de4dot.code {
 			addSilverlightDirs(Path.Combine(path, @"Microsoft Silverlight"));
 			addIfExists(path, @"Microsoft SDKs\Silverlight\v2.0\Libraries\Client");
 			addIfExists(path, @"Microsoft SDKs\Silverlight\v2.0\Libraries\Server");
+			addIfExists(path, @"Microsoft SDKs\Silverlight\v2.0\Reference Assemblies");
 			addIfExists(path, @"Microsoft SDKs\Silverlight\v3.0\Libraries\Client");
 			addIfExists(path, @"Microsoft SDKs\Silverlight\v3.0\Libraries\Server");
 			addIfExists(path, @"Microsoft SDKs\Silverlight\v4.0\Libraries\Client");
 			addIfExists(path, @"Microsoft SDKs\Silverlight\v4.0\Libraries\Server");
 			addIfExists(path, @"Microsoft SDKs\Silverlight\v5.0\Libraries\Client");
 			addIfExists(path, @"Microsoft SDKs\Silverlight\v5.0\Libraries\Server");
+			addIfExists(path, @"Microsoft.NET\SDK\CompactFramework\v2.0\WindowsCE");
+			addIfExists(path, @"Microsoft.NET\SDK\CompactFramework\v3.5\WindowsCE");
 			addIfExists(path, @"Reference Assemblies\Microsoft\Framework\Silverlight\v3.0");
 			addIfExists(path, @"Reference Assemblies\Microsoft\Framework\Silverlight\v4.0");
 			addIfExists(path, @"Reference Assemblies\Microsoft\Framework\Silverlight\v5.0");
