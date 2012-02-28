@@ -94,13 +94,14 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		}
 
 		public void initialize(ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
-			if (handlerMethod == null)
-				return;
-
-			initializeInfos(simpleDeobfuscator, deob);
+			if (!initializeInfos(simpleDeobfuscator, deob))
+				throw new ApplicationException("Could not initialize resource decrypter");
 		}
 
 		bool initializeInfos(ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
+			if (handlerMethod == null)
+				return true;
+
 			foreach (var method in resolverType.Methods) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
