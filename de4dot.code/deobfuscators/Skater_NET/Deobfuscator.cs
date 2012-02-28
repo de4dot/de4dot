@@ -25,8 +25,10 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "Skater .NET";
 		public const string THE_TYPE = "sk";
+		const string DEFAULT_REGEX = @"!`[^0-9]+&" + DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
+
 		public DeobfuscatorInfo()
-			: base() {
+			: base(DEFAULT_REGEX) {
 		}
 
 		public override string Name {
