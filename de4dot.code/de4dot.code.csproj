@@ -145,6 +145,7 @@
     <Compile Include="deobfuscators\Eazfuscator_NET\GetManifestResourceStreamRestorer.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\ResourceResolver.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\StringDecrypter.cs" />
+    <Compile Include="deobfuscators\Eazfuscator_NET\VersionDetector.cs" />
     <Compile Include="deobfuscators\ExceptionLoggerRemover.cs" />
     <Compile Include="deobfuscators\GetManifestResourceStreamRestorerBase.cs" />
     <Compile Include="deobfuscators\Goliath_NET\ArrayDecrypter.cs" />
