@@ -118,7 +118,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			}
 		}
 
-		public bool findConstants(ISimpleDeobfuscator simpleDeobfuscator) {
+		bool findConstants(ISimpleDeobfuscator simpleDeobfuscator) {
 			if (!findResource(stringMethod))
 				return false;
 
