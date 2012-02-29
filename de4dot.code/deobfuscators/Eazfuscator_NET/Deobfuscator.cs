@@ -103,12 +103,12 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		}
 
 		void detectVersion() {
-			var name = new VersionDetector(stringDecrypter).detect();
-			if (name == null)
+			var version = new VersionDetector(stringDecrypter).detect();
+			if (version == null)
 				return;
 
 			detectedVersion = true;
-			obfuscatorName = DeobfuscatorInfo.THE_NAME + " " +  name;
+			obfuscatorName = DeobfuscatorInfo.THE_NAME + " " +  version;
 		}
 
 		public override void deobfuscateBegin() {
