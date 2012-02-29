@@ -188,7 +188,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 
 		void findOtherType() {
 			foreach (var type in module.Types) {
-				// This type is added in EF 3.1+. The last number seems to be an int32 hash of
+				// This type is added by EF 3.1+. The last number seems to be an int32 hash of
 				// the assembly name, but - replaced with _.
 				if (!Regex.IsMatch(type.FullName, @"^pc1eOx2WJVV[_0-9]+$"))
 					continue;
