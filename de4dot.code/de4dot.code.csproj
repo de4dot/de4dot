@@ -142,12 +142,12 @@
     <Compile Include="deobfuscators\Eazfuscator_NET\DecrypterType.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\Deobfuscator.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\EfUtils.cs" />
-    <Compile Include="deobfuscators\Eazfuscator_NET\GetManifestResourceStreamRestorer.cs" />
+    <Compile Include="deobfuscators\Eazfuscator_NET\GetManifestResourceRestorer.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\ResourceResolver.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\StringDecrypter.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\VersionDetector.cs" />
     <Compile Include="deobfuscators\ExceptionLoggerRemover.cs" />
-    <Compile Include="deobfuscators\GetManifestResourceStreamRestorerBase.cs" />
+    <Compile Include="deobfuscators\GetManifestResourceRestorerBase.cs" />
     <Compile Include="deobfuscators\Goliath_NET\ArrayDecrypter.cs" />
     <Compile Include="deobfuscators\Goliath_NET\ArrayValueInliner.cs" />
     <Compile Include="deobfuscators\Goliath_NET\DecrypterBase.cs" />

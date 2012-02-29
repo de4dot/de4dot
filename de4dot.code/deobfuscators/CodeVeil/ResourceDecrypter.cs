@@ -36,7 +36,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		MethodDefinition resTypeCtor;
 		TypeDefinition resourceFlagsType;
 		TypeDefinition resourceEnumeratorType;
-		GetManifestResourceStreamRestorerBase getManifestResourceStreamRestorer;
+		GetManifestResourceRestorerBase getManifestResourceRestorer;
 
 		public bool CanRemoveTypes {
 			get {
@@ -78,7 +78,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		}
 
 		public void initialize() {
-			getManifestResourceStreamRestorer = new GetManifestResourceStreamRestorerBase(module);
+			getManifestResourceRestorer = new GetManifestResourceRestorerBase(module);
 			findEncryptedResourceStreamType();
 			findEncryptedResourceSet();
 			findEncryptedResourceReader();
@@ -264,8 +264,8 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				if (!findManifestResourceStreamMethods(type, out getManifestResourceStreamMethodTmp1, out getManifestResourceStreamMethodTmp2))
 					continue;
 
-				getManifestResourceStreamRestorer.GetStream1Method = getManifestResourceStreamMethodTmp1;
-				getManifestResourceStreamRestorer.GetStream2Method = getManifestResourceStreamMethodTmp2;
+				getManifestResourceRestorer.GetStream1Method = getManifestResourceStreamMethodTmp1;
+				getManifestResourceRestorer.GetStream2Method = getManifestResourceStreamMethodTmp2;
 				encryptedResourceStreamType = type;
 				return;
 			}
@@ -355,7 +355,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			if (encryptedResourceStreamType == null)
 				return;
 
-			getManifestResourceStreamRestorer.deobfuscate(blocks);
+			getManifestResourceRestorer.deobfuscate(blocks);
 		}
 	}
 }

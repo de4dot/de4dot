@@ -22,7 +22,7 @@ using Mono.Cecil.Cil;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators {
-	class GetManifestResourceStreamRestorerBase {
+	class GetManifestResourceRestorerBase {
 		protected ModuleDefinition module;
 		protected MethodDefinition getManifestResourceStream1Method;
 		protected MethodDefinition getManifestResourceStream2Method;
@@ -43,7 +43,7 @@ namespace de4dot.code.deobfuscators {
 			set { getManifestResourceNamesMethod = value; }
 		}
 
-		public GetManifestResourceStreamRestorerBase(ModuleDefinition module) {
+		public GetManifestResourceRestorerBase(ModuleDefinition module) {
 			this.module = module;
 			createGetManifestResourceStreamMethods();
 		}
