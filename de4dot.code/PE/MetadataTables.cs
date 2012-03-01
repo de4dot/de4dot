@@ -43,13 +43,14 @@ namespace de4dot.code.PE {
 			reader.BaseStream.Position = fileOffset;
 		}
 
+		// TODO: This table needs to be updated to support the other metadata tables.
 		static MetadataVarType[] metadataVarType = new MetadataVarType[] {
 			MVT.byte2, MVT.stringIndex, MVT.guidIndex, MVT.guidIndex, MVT.guidIndex, MVT.end,	// 0
 			MVT.resolutionScope, MVT.stringIndex, MVT.stringIndex, MVT.end,			// 1
 			MVT.byte4, MVT.stringIndex, MVT.stringIndex, MVT.typeDefOrRef, MVT.fieldIndex, MVT.methodDefIndex, MVT.end,	// 2
 			MVT.end,																// 3
 			MVT.byte2, MVT.stringIndex, MVT.blobIndex, MVT.end,						// 4
-			MVT.end,																// 5
+			MVT.methodDefIndex, MVT.end,											// 5
 			MVT.byte4, MVT.byte2, MVT.byte2, MVT.stringIndex, MVT.blobIndex, MVT.paramIndex, MVT.end,	// 6
 			MVT.end,																// 7
 			MVT.byte2, MVT.byte2, MVT.stringIndex, MVT.end,							// 8
@@ -113,7 +114,7 @@ namespace de4dot.code.PE {
 		};
 
 		void init() {
-			var streamTable = metadata.getStream("#~");
+			var streamTable = metadata.getStream("#~") ?? metadata.getStream("#-");
 			if (streamTable == null)
 				throw new ApplicationException("Could not find #~ stream");
 

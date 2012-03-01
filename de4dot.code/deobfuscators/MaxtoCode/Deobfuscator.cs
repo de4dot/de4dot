@@ -18,14 +18,16 @@
 */
 
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
+using Mono.Cecil;
+using Mono.MyStuff;
 
-namespace de4dot.code.deobfuscators.Unknown {
+namespace de4dot.code.deobfuscators.MaxtoCode {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
-		public const string THE_NAME = "Unknown";
-		public const string THE_TYPE = "un";
+		public const string THE_NAME = "MaxtoCode";
+		public const string THE_TYPE = "mc";
+		const string DEFAULT_REGEX = @"!^[oO01l]{4,}$&" + DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
 		public DeobfuscatorInfo()
-			: base() {
+			: base(DEFAULT_REGEX) {
 		}
 
 		public override string Name {
@@ -45,7 +47,8 @@ namespace de4dot.code.deobfuscators.Unknown {
 	}
 
 	class Deobfuscator : DeobfuscatorBase {
-		string obfuscatorName;
+		Options options;
+		MainType mainType;
 
 		internal class Options : OptionsBase {
 		}
@@ -59,57 +62,56 @@ namespace de4dot.code.deobfuscators.Unknown {
 		}
 
 		public override string Name {
-			get { return obfuscatorName ?? "Unknown Obfuscator"; }
-		}
-
-		protected override bool KeepTypes {
-			get { return true; }
+			get { return DeobfuscatorInfo.THE_NAME; }
 		}
 
 		internal Deobfuscator(Options options)
 			: base(options) {
-		}
-
-		void setName(string name) {
-			if (obfuscatorName == null && name != null)
-				obfuscatorName = name;
-		}
-
-		public override int earlyDetect() {
-			setName(earlyScanTypes());
-			return obfuscatorName != null ? 1 : 0;
-		}
-
-		string earlyScanTypes() {
-			foreach (var type in module.Types) {
-				if (type.FullName == "ConfusedByAttribute")
-					return "Confuser";
-			}
-			return null;
+			this.options = options;
 		}
 
 		protected override int detectInternal() {
-			setName(scanTypes());
-			return 1;
+			int val = 0;
+
+			if (mainType.Detected)
+				val = 150;
+
+			return val;
 		}
 
 		protected override void scanForObfuscator() {
+			mainType = new MainType(module);
+			mainType.find();
 		}
 
-		string scanTypes() {
-			foreach (var type in module.Types) {
-				if (type.Namespace == "___codefort")
-					return "CodeFort";
-				if (type.FullName == "ZYXDNGuarder")
-					return "DNGuard HVM";
-				if (type.Name.Contains("();\t"))
-					return "Manco .NET Obfuscator";
-				if (Regex.IsMatch(type.FullName, @"^EMyPID_\d+_$"))
-					return "BitHelmet Obfuscator";
-				if (type.FullName == "YanoAttribute")
-					return "Yano Obfuscator";
-			}
-			return null;
+		public override bool getDecryptedModule(ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
+			if (!mainType.Detected)
+				return false;
+
+			var fileDecrypter = new FileDecrypter(mainType);
+
+			var fileData = DeobUtils.readModule(module);
+			if (!fileDecrypter.decrypt(fileData, ref dumpedMethods))
+				return false;
+
+			newFileData = fileData;
+			return true;
+		}
+
+		public override IDeobfuscator moduleReloaded(ModuleDefinition module) {
+			var newOne = new Deobfuscator(options);
+			newOne.setModule(module);
+			newOne.mainType = new MainType(module, mainType);
+			return newOne;
+		}
+
+		public override void deobfuscateBegin() {
+			base.deobfuscateBegin();
+
+			foreach (var method in mainType.InitMethods)
+				addCctorInitCallToBeRemoved(method);
+			addTypeToBeRemoved(mainType.Type, "Obfuscator type");
+			addModuleReferencesToBeRemoved(mainType.ModuleReferences, "MC runtime module reference");
 		}
 
 		public override IEnumerable<int> getStringDecrypterMethods() {
