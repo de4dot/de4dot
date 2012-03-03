@@ -44,6 +44,7 @@ namespace de4dot.code.renamer.asmmodules {
 		public Dictionary<PointerType, bool> pointerTypes = new Dictionary<PointerType, bool>();
 		public Dictionary<ByReferenceType, bool> byReferenceTypes = new Dictionary<ByReferenceType, bool>();
 		public Dictionary<SentinelType, bool> sentinelTypes = new Dictionary<SentinelType, bool>();
+		public Dictionary<CustomAttribute, bool> customAttributes = new Dictionary<CustomAttribute, bool>();
 
 		Stack<MemberReference> memberRefStack;
 		ModuleDefinition validModule;
@@ -350,6 +351,7 @@ namespace de4dot.code.renamer.asmmodules {
 		void addCustomAttribute(CustomAttribute attr) {
 			if (attr == null)
 				return;
+			customAttributes[attr] = true;
 			pushMember(attr.Constructor);
 
 			// Some obfuscators don't rename custom ctor arguments to the new name, causing
@@ -572,134 +574,115 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 
 		void doEventDefinition(EventDefinition eventDefinition) {
-			bool present;
-			if (eventDefinitions.TryGetValue(eventDefinition, out present))
+			if (eventDefinitions.ContainsKey(eventDefinition))
 				return;
 			eventDefinitions[eventDefinition] = true;
 			addEventDefinition(eventDefinition);
 		}
 		void doFieldReference(FieldReference fieldReference) {
-			bool present;
-			if (fieldReferences.TryGetValue(fieldReference, out present))
+			if (fieldReferences.ContainsKey(fieldReference))
 				return;
 			fieldReferences[fieldReference] = true;
 			addFieldReference(fieldReference);
 		}
 		void doFieldDefinition(FieldDefinition fieldDefinition) {
-			bool present;
-			if (fieldDefinitions.TryGetValue(fieldDefinition, out present))
+			if (fieldDefinitions.ContainsKey(fieldDefinition))
 				return;
 			fieldDefinitions[fieldDefinition] = true;
 			addFieldDefinition(fieldDefinition);
 		}
 		void doMethodReference(MethodReference methodReference) {
-			bool present;
-			if (methodReferences.TryGetValue(methodReference, out present))
+			if (methodReferences.ContainsKey(methodReference))
 				return;
 			methodReferences[methodReference] = true;
 			addMethodReference(methodReference);
 		}
 		void doMethodDefinition(MethodDefinition methodDefinition) {
-			bool present;
-			if (methodDefinitions.TryGetValue(methodDefinition, out present))
+			if (methodDefinitions.ContainsKey(methodDefinition))
 				return;
 			methodDefinitions[methodDefinition] = true;
 			addMethodDefinition(methodDefinition);
 		}
 		void doGenericInstanceMethod(GenericInstanceMethod genericInstanceMethod) {
-			bool present;
-			if (genericInstanceMethods.TryGetValue(genericInstanceMethod, out present))
+			if (genericInstanceMethods.ContainsKey(genericInstanceMethod))
 				return;
 			genericInstanceMethods[genericInstanceMethod] = true;
 			addGenericInstanceMethod(genericInstanceMethod);
 		}
 		void doPropertyDefinition(PropertyDefinition propertyDefinition) {
-			bool present;
-			if (propertyDefinitions.TryGetValue(propertyDefinition, out present))
+			if (propertyDefinitions.ContainsKey(propertyDefinition))
 				return;
 			propertyDefinitions[propertyDefinition] = true;
 			addPropertyDefinition(propertyDefinition);
 		}
 		void doTypeReference(TypeReference typeReference) {
-			bool present;
-			if (typeReferences.TryGetValue(typeReference, out present))
+			if (typeReferences.ContainsKey(typeReference))
 				return;
 			typeReferences[typeReference] = true;
 			addTypeReference(typeReference);
 		}
 		void doTypeDefinition(TypeDefinition typeDefinition) {
-			bool present;
-			if (typeDefinitions.TryGetValue(typeDefinition, out present))
+			if (typeDefinitions.ContainsKey(typeDefinition))
 				return;
 			typeDefinitions[typeDefinition] = true;
 			addTypeDefinition(typeDefinition);
 		}
 		void doGenericParameter(GenericParameter genericParameter) {
-			bool present;
-			if (genericParameters.TryGetValue(genericParameter, out present))
+			if (genericParameters.ContainsKey(genericParameter))
 				return;
 			genericParameters[genericParameter] = true;
 			addGenericParameter(genericParameter);
 		}
 		void doArrayType(ArrayType arrayType) {
-			bool present;
-			if (arrayTypes.TryGetValue(arrayType, out present))
+			if (arrayTypes.ContainsKey(arrayType))
 				return;
 			arrayTypes[arrayType] = true;
 			addArrayType(arrayType);
 		}
 		void doFunctionPointerType(FunctionPointerType functionPointerType) {
-			bool present;
-			if (functionPointerTypes.TryGetValue(functionPointerType, out present))
+			if (functionPointerTypes.ContainsKey(functionPointerType))
 				return;
 			functionPointerTypes[functionPointerType] = true;
 			addFunctionPointerType(functionPointerType);
 		}
 		void doGenericInstanceType(GenericInstanceType genericInstanceType) {
-			bool present;
-			if (genericInstanceTypes.TryGetValue(genericInstanceType, out present))
+			if (genericInstanceTypes.ContainsKey(genericInstanceType))
 				return;
 			genericInstanceTypes[genericInstanceType] = true;
 			addGenericInstanceType(genericInstanceType);
 		}
 		void doOptionalModifierType(OptionalModifierType optionalModifierType) {
-			bool present;
-			if (optionalModifierTypes.TryGetValue(optionalModifierType, out present))
+			if (optionalModifierTypes.ContainsKey(optionalModifierType))
 				return;
 			optionalModifierTypes[optionalModifierType] = true;
 			addOptionalModifierType(optionalModifierType);
 		}
 		void doRequiredModifierType(RequiredModifierType requiredModifierType) {
-			bool present;
-			if (requiredModifierTypes.TryGetValue(requiredModifierType, out present))
+			if (requiredModifierTypes.ContainsKey(requiredModifierType))
 				return;
 			requiredModifierTypes[requiredModifierType] = true;
 			addRequiredModifierType(requiredModifierType);
 		}
 		void doPinnedType(PinnedType pinnedType) {
-			bool present;
-			if (pinnedTypes.TryGetValue(pinnedType, out present))
+			if (pinnedTypes.ContainsKey(pinnedType))
 				return;
 			pinnedTypes[pinnedType] = true;
 			addPinnedType(pinnedType);
 		}
 		void doPointerType(PointerType pointerType) {
-			bool present;
-			if (pointerTypes.TryGetValue(pointerType, out present))
+			if (pointerTypes.ContainsKey(pointerType))
 				return;
 			pointerTypes[pointerType] = true;
 			addPointerType(pointerType);
 		}
 		void doByReferenceType(ByReferenceType byReferenceType) {
-			bool present;
-			if (byReferenceTypes.TryGetValue(byReferenceType, out present))
+			if (byReferenceTypes.ContainsKey(byReferenceType))
 				return;
 			byReferenceTypes[byReferenceType] = true;
 			addByReferenceType(byReferenceType);
 		}
 		void doSentinelType(SentinelType sentinelType) {
-			bool present;
-			if (sentinelTypes.TryGetValue(sentinelType, out present))
+			if (sentinelTypes.ContainsKey(sentinelType))
 				return;
 			sentinelTypes[sentinelType] = true;
 			addSentinelType(sentinelType);

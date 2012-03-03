@@ -30,7 +30,20 @@ namespace de4dot.code.renamer.asmmodules {
 		IList<RefToDef<TypeReference, TypeDefinition>> typeRefsToRename = new List<RefToDef<TypeReference, TypeDefinition>>();
 		IList<RefToDef<MethodReference, MethodDefinition>> methodRefsToRename = new List<RefToDef<MethodReference, MethodDefinition>>();
 		IList<RefToDef<FieldReference, FieldDefinition>> fieldRefsToRename = new List<RefToDef<FieldReference, FieldDefinition>>();
+		List<CustomAttributeReference> customAttributeFieldReferences = new List<CustomAttributeReference>();
+		List<CustomAttributeReference> customAttributePropertyReferences = new List<CustomAttributeReference>();
 		List<MethodDefinition> allMethods;
+
+		public class CustomAttributeReference {
+			public CustomAttribute cattr;
+			public int index;
+			public MemberReference reference;
+			public CustomAttributeReference(CustomAttribute cattr, int index, MemberReference reference) {
+				this.cattr = cattr;
+				this.index = index;
+				this.reference = reference;
+			}
+		}
 
 		public class RefToDef<R, D> where R : MemberReference where D : R {
 			public R reference;
@@ -51,6 +64,14 @@ namespace de4dot.code.renamer.asmmodules {
 
 		public IEnumerable<RefToDef<FieldReference, FieldDefinition>> FieldRefsToRename {
 			get { return fieldRefsToRename; }
+		}
+
+		public IEnumerable<CustomAttributeReference> CustomAttributeFieldReferences {
+			get { return customAttributeFieldReferences; }
+		}
+
+		public IEnumerable<CustomAttributeReference> CustomAttributePropertyReferences {
+			get { return customAttributePropertyReferences; }
 		}
 
 		public IObfuscatedFile ObfuscatedFile {
@@ -127,6 +148,60 @@ namespace de4dot.code.renamer.asmmodules {
 				if (fieldDef != null)
 					fieldRefsToRename.Add(new RefToDef<FieldReference, FieldDefinition>(fieldRef, fieldDef.FieldDefinition));
 			}
+
+			foreach (var cattr in memberRefFinder.customAttributes.Keys) {
+				try {
+					var typeDef = resolver.resolve(cattr.AttributeType);
+					if (typeDef == null)
+						continue;
+
+					for (int i = 0; i < cattr.Fields.Count; i++) {
+						var field = cattr.Fields[i];
+						var fieldDef = findFieldByName(typeDef, field.Name);
+						if (fieldDef == null) {
+							Log.w("Could not find field {0} in attribute {1} ({2:X8})",
+									Utils.toCsharpString(field.Name),
+									Utils.toCsharpString(typeDef.TypeDefinition.Name),
+									typeDef.TypeDefinition.MetadataToken.ToInt32());
+							continue;
+						}
+
+						customAttributeFieldReferences.Add(new CustomAttributeReference(cattr, i, fieldDef.FieldDefinition));
+					}
+
+					for (int i = 0; i < cattr.Properties.Count; i++) {
+						var prop = cattr.Properties[i];
+						var propDef = findPropertyByName(typeDef, prop.Name);
+						if (propDef == null) {
+							Log.w("Could not find property {0} in attribute {1} ({2:X8})",
+									Utils.toCsharpString(prop.Name),
+									Utils.toCsharpString(typeDef.TypeDefinition.Name),
+									typeDef.TypeDefinition.MetadataToken.ToInt32());
+							continue;
+						}
+
+						customAttributePropertyReferences.Add(new CustomAttributeReference(cattr, i, propDef.PropertyDefinition));
+					}
+				}
+				catch {
+				}
+			}
+		}
+
+		static FieldDef findFieldByName(TypeDef typeDef, string name) {
+			foreach (var fieldDef in typeDef.AllFields) {
+				if (fieldDef.FieldDefinition.Name == name)
+					return fieldDef;
+			}
+			return null;
+		}
+
+		static PropertyDef findPropertyByName(TypeDef typeDef, string name) {
+			foreach (var propDef in typeDef.AllProperties) {
+				if (propDef.PropertyDefinition.Name == name)
+					return propDef;
+			}
+			return null;
 		}
 
 		public void onTypesRenamed() {

@@ -315,6 +315,14 @@ namespace de4dot.code.renamer {
 					refToDef.reference.Name = refToDef.definition.Name;
 				foreach (var refToDef in module.FieldRefsToRename)
 					refToDef.reference.Name = refToDef.definition.Name;
+				foreach (var info in module.CustomAttributeFieldReferences) {
+					var field = info.cattr.Fields[info.index];
+					info.cattr.Fields[info.index] = new CustomAttributeNamedArgument(info.reference.Name, field.Argument);
+				}
+				foreach (var info in module.CustomAttributePropertyReferences) {
+					var prop = info.cattr.Properties[info.index];
+					info.cattr.Properties[info.index] = new CustomAttributeNamedArgument(info.reference.Name, prop.Argument);
+				}
 				Log.deIndent();
 			}
 		}
