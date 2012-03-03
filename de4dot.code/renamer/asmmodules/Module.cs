@@ -189,17 +189,29 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 
 		static FieldDef findFieldByName(TypeDef typeDef, string name) {
-			foreach (var fieldDef in typeDef.AllFields) {
-				if (fieldDef.FieldDefinition.Name == name)
-					return fieldDef;
+			while (typeDef != null) {
+				foreach (var fieldDef in typeDef.AllFields) {
+					if (fieldDef.FieldDefinition.Name == name)
+						return fieldDef;
+				}
+
+				if (typeDef.baseType == null)
+					break;
+				typeDef = typeDef.baseType.typeDef;
 			}
 			return null;
 		}
 
 		static PropertyDef findPropertyByName(TypeDef typeDef, string name) {
-			foreach (var propDef in typeDef.AllProperties) {
-				if (propDef.PropertyDefinition.Name == name)
-					return propDef;
+			while (typeDef != null) {
+				foreach (var propDef in typeDef.AllProperties) {
+					if (propDef.PropertyDefinition.Name == name)
+						return propDef;
+				}
+
+				if (typeDef.baseType == null)
+					break;
+				typeDef = typeDef.baseType.typeDef;
 			}
 			return null;
 		}
