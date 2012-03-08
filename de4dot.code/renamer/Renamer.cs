@@ -453,7 +453,7 @@ namespace de4dot.code.renamer {
 				return;
 
 			var newPropertyName = overridePrefix + propDef.PropertyDefinition.Name;
-			if (methodDef.MethodDefinition.MethodReturnType.ReturnType.FullName == "System.Void")
+			if (!DotNetUtils.hasReturnValue(methodDef.MethodDefinition))
 				createPropertySetter(newPropertyName, methodDef);
 			else
 				createPropertyGetter(newPropertyName, methodDef);
@@ -755,7 +755,7 @@ namespace de4dot.code.renamer {
 		}
 
 		TypeReference getEventType(MethodReference method) {
-			if (method.MethodReturnType.ReturnType.FullName != "System.Void")
+			if (DotNetUtils.hasReturnValue(method))
 				return null;
 			if (method.Parameters.Count != 1)
 				return null;
@@ -1281,7 +1281,7 @@ namespace de4dot.code.renamer {
 		}
 
 		static PropertyMethodType getPropertyMethodType(MethodDef method) {
-			if (method.MethodDefinition.MethodReturnType.ReturnType.FullName != "System.Void")
+			if (DotNetUtils.hasReturnValue(method.MethodDefinition))
 				return PropertyMethodType.Getter;
 			if (method.ParamDefs.Count > 0)
 				return PropertyMethodType.Setter;
