@@ -235,7 +235,7 @@
     <Compile Include="renamer\asmmodules\IResolver.cs" />
     <Compile Include="renamer\asmmodules\MemberRefFinder.cs" />
     <Compile Include="renamer\asmmodules\MethodDef.cs" />
-    <Compile Include="renamer\asmmodules\MethodNameScopes.cs" />
+    <Compile Include="renamer\asmmodules\MethodNameGroups.cs" />
     <Compile Include="renamer\asmmodules\Module.cs" />
     <Compile Include="renamer\asmmodules\Modules.cs" />
     <Compile Include="renamer\asmmodules\ParamDef.cs" />

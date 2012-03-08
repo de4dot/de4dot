@@ -366,11 +366,11 @@ namespace de4dot.code.renamer.asmmodules {
 			return typeDef;
 		}
 
-		public MethodNameScopes initializeVirtualMembers() {
-			var scopes = new MethodNameScopes();
+		public MethodNameGroups initializeVirtualMembers() {
+			var groups = new MethodNameGroups();
 			foreach (var typeDef in allTypes)
-				typeDef.initializeVirtualMembers(scopes, this);
-			return scopes;
+				typeDef.initializeVirtualMembers(groups, this);
+			return groups;
 		}
 
 		public void onTypesRenamed() {

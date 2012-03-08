@@ -21,7 +21,7 @@ using System;
 using System.Collections.Generic;
 
 namespace de4dot.code.renamer.asmmodules {
-	class MethodNameScope {
+	class MethodNameGroup {
 		List<MethodDef> methods = new List<MethodDef>();
 
 		public List<MethodDef> Methods {
@@ -36,7 +36,7 @@ namespace de4dot.code.renamer.asmmodules {
 			methods.Add(method);
 		}
 
-		public void merge(MethodNameScope other) {
+		public void merge(MethodNameGroup other) {
 			if (this == other)
 				return;
 			methods.AddRange(other.methods);
@@ -101,8 +101,8 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 	}
 
-	class MethodNameScopes {
-		Dictionary<MethodDef, MethodNameScope> methodScopes = new Dictionary<MethodDef, MethodNameScope>();
+	class MethodNameGroups {
+		Dictionary<MethodDef, MethodNameGroup> methodGroups = new Dictionary<MethodDef, MethodNameGroup>();
 
 		public void same(MethodDef a, MethodDef b) {
 			merge(get(a), get(b));
@@ -112,33 +112,33 @@ namespace de4dot.code.renamer.asmmodules {
 			get(methodDef);
 		}
 
-		public MethodNameScope get(MethodDef method) {
+		public MethodNameGroup get(MethodDef method) {
 			if (!method.isVirtual())
 				throw new ApplicationException("Not a virtual method");
-			MethodNameScope scope;
-			if (!methodScopes.TryGetValue(method, out scope)) {
-				methodScopes[method] = scope = new MethodNameScope();
-				scope.add(method);
+			MethodNameGroup group;
+			if (!methodGroups.TryGetValue(method, out group)) {
+				methodGroups[method] = group = new MethodNameGroup();
+				group.add(method);
 			}
-			return scope;
+			return group;
 		}
 
-		void merge(MethodNameScope a, MethodNameScope b) {
+		void merge(MethodNameGroup a, MethodNameGroup b) {
 			if (a == b)
 				return;
 
 			if (a.Count < b.Count) {
-				MethodNameScope tmp = a;
+				MethodNameGroup tmp = a;
 				a = b;
 				b = tmp;
 			}
 			a.merge(b);
 			foreach (var methodDef in b.Methods)
-				methodScopes[methodDef] = a;
+				methodGroups[methodDef] = a;
 		}
 
-		public IEnumerable<MethodNameScope> getAllScopes() {
-			return Utils.unique(methodScopes.Values);
+		public IEnumerable<MethodNameGroup> getAllGroups() {
+			return Utils.unique(methodGroups.Values);
 		}
 	}
 }

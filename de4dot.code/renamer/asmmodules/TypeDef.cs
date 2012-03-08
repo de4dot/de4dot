@@ -458,23 +458,23 @@ namespace de4dot.code.renamer.asmmodules {
 			}
 		}
 
-		public void initializeVirtualMembers(MethodNameScopes scopes, IResolver resolver) {
+		public void initializeVirtualMembers(MethodNameGroups groups, IResolver resolver) {
 			if (initializeVirtualMembersCalled)
 				return;
 			initializeVirtualMembersCalled = true;
 
 			foreach (var iface in interfaces)
-				iface.typeDef.initializeVirtualMembers(scopes, resolver);
+				iface.typeDef.initializeVirtualMembers(groups, resolver);
 			if (baseType != null)
-				baseType.typeDef.initializeVirtualMembers(scopes, resolver);
+				baseType.typeDef.initializeVirtualMembers(groups, resolver);
 
 			foreach (var methodDef in methods.getValues()) {
 				if (methodDef.isVirtual())
-					scopes.add(methodDef);
+					groups.add(methodDef);
 			}
 
-			instantiateVirtualMembers(scopes);
-			initializeInterfaceMethods(scopes);
+			instantiateVirtualMembers(groups);
+			initializeInterfaceMethods(groups);
 		}
 
 		void initializeAllInterfaces() {
@@ -498,7 +498,7 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 
 		Dictionary<MethodDefKey, bool> overrideMethods;
-		void initializeInterfaceMethods(MethodNameScopes scopes) {
+		void initializeInterfaceMethods(MethodNameGroups groups) {
 			if (baseType != null)
 				overrideMethods = new Dictionary<MethodDefKey, bool>(baseType.typeDef.overrideMethods);
 			else
@@ -646,7 +646,7 @@ namespace de4dot.code.renamer.asmmodules {
 						continue;
 					if (overrideMethods.ContainsKey(new MethodDefKey(pair.Value)))
 						continue;
-					scopes.same(pair.Key.methodDef, pair.Value);
+					groups.same(pair.Key.methodDef, pair.Value);
 				}
 			}
 		}
@@ -708,7 +708,7 @@ namespace de4dot.code.renamer.asmmodules {
 			return m;
 		}
 
-		void instantiateVirtualMembers(MethodNameScopes scopes) {
+		void instantiateVirtualMembers(MethodNameGroups groups) {
 			if (!TypeDefinition.IsInterface) {
 				if (baseType != null)
 					virtualMethodInstances.initializeFrom(baseType.typeDef.virtualMethodInstances, baseType.typeReference as GenericInstanceType);
@@ -721,7 +721,7 @@ namespace de4dot.code.renamer.asmmodules {
 					if (methodInstList == null)
 						continue;
 					foreach (var methodInst in methodInstList)
-						scopes.same(methodDef, methodInst.origMethodDef);
+						groups.same(methodDef, methodInst.origMethodDef);
 				}
 			}
 

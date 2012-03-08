@@ -77,23 +77,23 @@ namespace de4dot.code.renamer {
 			Log.n("Renaming all obfuscated symbols");
 
 			modules.initialize();
-			var scopes = modules.initializeVirtualMembers();
+			var groups = modules.initializeVirtualMembers();
 			memberInfos.initialize(modules);
 			renameTypeDefinitions();
 			renameTypeReferences();
 			modules.onTypesRenamed();
-			restorePropertiesAndEvents(scopes);
-			prepareRenameMemberDefinitions(scopes);
+			restorePropertiesAndEvents(groups);
+			prepareRenameMemberDefinitions(groups);
 			renameMemberDefinitions();
 			renameMemberReferences();
-			removeUselessOverrides(scopes);
+			removeUselessOverrides(groups);
 			renameResources();
 			modules.cleanUp();
 		}
 
-		void removeUselessOverrides(MethodNameScopes scopes) {
-			foreach (var scope in scopes.getAllScopes()) {
-				foreach (var method in scope.Methods) {
+		void removeUselessOverrides(MethodNameGroups groups) {
+			foreach (var group in groups.getAllGroups()) {
+				foreach (var method in group.Methods) {
 					if (!method.Owner.HasModule)
 						continue;
 					if (!method.isPublic())
@@ -391,27 +391,27 @@ namespace de4dot.code.renamer {
 			}
 		}
 
-		void restorePropertiesAndEvents(MethodNameScopes scopes) {
-			var allScopes = scopes.getAllScopes();
-			restoreVirtualProperties(allScopes);
-			restorePropertiesFromNames(allScopes);
-			restoreVirtualEvents(allScopes);
-			restoreEventsFromNames(allScopes);
+		void restorePropertiesAndEvents(MethodNameGroups groups) {
+			var allGroups = groups.getAllGroups();
+			restoreVirtualProperties(allGroups);
+			restorePropertiesFromNames(allGroups);
+			restoreVirtualEvents(allGroups);
+			restoreEventsFromNames(allGroups);
 		}
 
-		void restoreVirtualProperties(IEnumerable<MethodNameScope> allScopes) {
+		void restoreVirtualProperties(IEnumerable<MethodNameGroup> allGroups) {
 			if (!RestoreProperties)
 				return;
-			foreach (var scope in allScopes) {
-				restoreVirtualProperties(scope);
-				restoreExplicitVirtualProperties(scope);
+			foreach (var group in allGroups) {
+				restoreVirtualProperties(group);
+				restoreExplicitVirtualProperties(group);
 			}
 		}
 
-		void restoreExplicitVirtualProperties(MethodNameScope scope) {
-			if (scope.Methods.Count != 1)
+		void restoreExplicitVirtualProperties(MethodNameGroup group) {
+			if (group.Methods.Count != 1)
 				return;
-			var propMethod = scope.Methods[0];
+			var propMethod = group.Methods[0];
 			if (propMethod.Property != null)
 				return;
 			if (propMethod.MethodDefinition.Overrides.Count == 0)
@@ -421,16 +421,16 @@ namespace de4dot.code.renamer {
 			if (theProperty == null)
 				return;
 
-			createProperty(theProperty, propMethod, getOverridePrefix(scope, propMethod));
+			createProperty(theProperty, propMethod, getOverridePrefix(group, propMethod));
 		}
 
-		void restoreVirtualProperties(MethodNameScope scope) {
-			if (scope.Methods.Count <= 1 || !scope.hasProperty())
+		void restoreVirtualProperties(MethodNameGroup group) {
+			if (group.Methods.Count <= 1 || !group.hasProperty())
 				return;
 
 			PropertyDef prop = null;
 			List<MethodDef> missingProps = null;
-			foreach (var method in scope.Methods) {
+			foreach (var method in group.Methods) {
 				if (method.Property == null) {
 					if (missingProps == null)
 						missingProps = new List<MethodDef>();
@@ -459,18 +459,18 @@ namespace de4dot.code.renamer {
 				createPropertyGetter(newPropertyName, methodDef);
 		}
 
-		void restorePropertiesFromNames(IEnumerable<MethodNameScope> allScopes) {
+		void restorePropertiesFromNames(IEnumerable<MethodNameGroup> allGroups) {
 			if (!RestorePropertiesFromNames)
 				return;
 
-			foreach (var scope in allScopes) {
-				var scopeMethod = scope.Methods[0];
-				var methodName = scopeMethod.MethodDefinition.Name;
-				bool onlyRenamableMethods = !scope.hasNonRenamableMethod();
+			foreach (var group in allGroups) {
+				var groupMethod = group.Methods[0];
+				var methodName = groupMethod.MethodDefinition.Name;
+				bool onlyRenamableMethods = !group.hasNonRenamableMethod();
 
 				if (Utils.StartsWith(methodName, "get_", StringComparison.Ordinal)) {
 					var propName = methodName.Substring(4);
-					foreach (var method in scope.Methods) {
+					foreach (var method in group.Methods) {
 						if (onlyRenamableMethods && !memberInfos.type(method.Owner).NameChecker.isValidPropertyName(propName))
 							continue;
 						createPropertyGetter(propName, method);
@@ -478,7 +478,7 @@ namespace de4dot.code.renamer {
 				}
 				else if (Utils.StartsWith(methodName, "set_", StringComparison.Ordinal)) {
 					var propName = methodName.Substring(4);
-					foreach (var method in scope.Methods) {
+					foreach (var method in group.Methods) {
 						if (onlyRenamableMethods && !memberInfos.type(method.Owner).NameChecker.isValidPropertyName(propName))
 							continue;
 						createPropertySetter(propName, method);
@@ -489,7 +489,7 @@ namespace de4dot.code.renamer {
 			foreach (var type in modules.AllTypes) {
 				foreach (var method in type.AllMethodsSorted) {
 					if (method.isVirtual())
-						continue;	// Virtual methods are in allScopes, so already fixed above
+						continue;	// Virtual methods are in allGroups, so already fixed above
 					if (method.Property != null)
 						continue;
 					var methodName = method.MethodDefinition.Name;
@@ -571,12 +571,12 @@ namespace de4dot.code.renamer {
 			return propDef;
 		}
 
-		void restoreVirtualEvents(IEnumerable<MethodNameScope> allScopes) {
+		void restoreVirtualEvents(IEnumerable<MethodNameGroup> allGroups) {
 			if (!RestoreEvents)
 				return;
-			foreach (var scope in allScopes) {
-				restoreVirtualEvents(scope);
-				restoreExplicitVirtualEvents(scope);
+			foreach (var group in allGroups) {
+				restoreVirtualEvents(group);
+				restoreExplicitVirtualEvents(group);
 			}
 		}
 
@@ -588,10 +588,10 @@ namespace de4dot.code.renamer {
 			Raiser,
 		}
 
-		void restoreExplicitVirtualEvents(MethodNameScope scope) {
-			if (scope.Methods.Count != 1)
+		void restoreExplicitVirtualEvents(MethodNameGroup group) {
+			if (group.Methods.Count != 1)
 				return;
-			var eventMethod = scope.Methods[0];
+			var eventMethod = group.Methods[0];
 			if (eventMethod.Event != null)
 				return;
 			if (eventMethod.MethodDefinition.Overrides.Count == 0)
@@ -602,17 +602,17 @@ namespace de4dot.code.renamer {
 			if (theEvent == null)
 				return;
 
-			createEvent(theEvent, eventMethod, getEventMethodType(overriddenMethod), getOverridePrefix(scope, eventMethod));
+			createEvent(theEvent, eventMethod, getEventMethodType(overriddenMethod), getOverridePrefix(group, eventMethod));
 		}
 
-		void restoreVirtualEvents(MethodNameScope scope) {
-			if (scope.Methods.Count <= 1 || !scope.hasEvent())
+		void restoreVirtualEvents(MethodNameGroup group) {
+			if (group.Methods.Count <= 1 || !group.hasEvent())
 				return;
 
 			EventMethodType methodType = EventMethodType.None;
 			EventDef evt = null;
 			List<MethodDef> missingEvents = null;
-			foreach (var method in scope.Methods) {
+			foreach (var method in group.Methods) {
 				if (method.Event == null) {
 					if (missingEvents == null)
 						missingEvents = new List<MethodDef>();
@@ -660,18 +660,18 @@ namespace de4dot.code.renamer {
 			return EventMethodType.Other;
 		}
 
-		void restoreEventsFromNames(IEnumerable<MethodNameScope> allScopes) {
+		void restoreEventsFromNames(IEnumerable<MethodNameGroup> allGroups) {
 			if (!RestoreEventsFromNames)
 				return;
 
-			foreach (var scope in allScopes) {
-				var scopeMethod = scope.Methods[0];
-				var methodName = scopeMethod.MethodDefinition.Name;
-				bool onlyRenamableMethods = !scope.hasNonRenamableMethod();
+			foreach (var group in allGroups) {
+				var groupMethod = group.Methods[0];
+				var methodName = groupMethod.MethodDefinition.Name;
+				bool onlyRenamableMethods = !group.hasNonRenamableMethod();
 
 				if (Utils.StartsWith(methodName, "add_", StringComparison.Ordinal)) {
 					var eventName = methodName.Substring(4);
-					foreach (var method in scope.Methods) {
+					foreach (var method in group.Methods) {
 						if (onlyRenamableMethods && !memberInfos.type(method.Owner).NameChecker.isValidEventName(eventName))
 							continue;
 						createEventAdder(eventName, method);
@@ -679,7 +679,7 @@ namespace de4dot.code.renamer {
 				}
 				else if (Utils.StartsWith(methodName, "remove_", StringComparison.Ordinal)) {
 					var eventName = methodName.Substring(7);
-					foreach (var method in scope.Methods) {
+					foreach (var method in group.Methods) {
 						if (onlyRenamableMethods && !memberInfos.type(method.Owner).NameChecker.isValidEventName(eventName))
 							continue;
 						createEventRemover(eventName, method);
@@ -690,7 +690,7 @@ namespace de4dot.code.renamer {
 			foreach (var type in modules.AllTypes) {
 				foreach (var method in type.AllMethodsSorted) {
 					if (method.isVirtual())
-						continue;	// Virtual methods are in allScopes, so already fixed above
+						continue;	// Virtual methods are in allGroups, so already fixed above
 					if (method.Event != null)
 						continue;
 					var methodName = method.MethodDefinition.Name;
@@ -776,60 +776,60 @@ namespace de4dot.code.renamer {
 			return eventDef;
 		}
 
-		void prepareRenameMemberDefinitions(MethodNameScopes scopes) {
+		void prepareRenameMemberDefinitions(MethodNameGroups groups) {
 			Log.v("Renaming member definitions #1");
 
 			prepareRenameEntryPoints();
 
-			var virtualMethods = new ScopeHelper(memberInfos, modules.AllTypes);
-			var ifaceMethods = new ScopeHelper(memberInfos, modules.AllTypes);
-			var propMethods = new ScopeHelper(memberInfos, modules.AllTypes);
-			var eventMethods = new ScopeHelper(memberInfos, modules.AllTypes);
-			foreach (var scope in getSorted(scopes)) {
-				if (scope.hasNonRenamableMethod())
+			var virtualMethods = new GroupHelper(memberInfos, modules.AllTypes);
+			var ifaceMethods = new GroupHelper(memberInfos, modules.AllTypes);
+			var propMethods = new GroupHelper(memberInfos, modules.AllTypes);
+			var eventMethods = new GroupHelper(memberInfos, modules.AllTypes);
+			foreach (var group in getSorted(groups)) {
+				if (group.hasNonRenamableMethod())
 					continue;
-				else if (scope.hasGetterOrSetterPropertyMethod() && getPropertyMethodType(scope.Methods[0]) != PropertyMethodType.Other)
-					propMethods.add(scope);
-				else if (scope.hasAddRemoveOrRaiseEventMethod())
-					eventMethods.add(scope);
-				else if (scope.hasInterfaceMethod())
-					ifaceMethods.add(scope);
+				else if (group.hasGetterOrSetterPropertyMethod() && getPropertyMethodType(group.Methods[0]) != PropertyMethodType.Other)
+					propMethods.add(group);
+				else if (group.hasAddRemoveOrRaiseEventMethod())
+					eventMethods.add(group);
+				else if (group.hasInterfaceMethod())
+					ifaceMethods.add(group);
 				else
-					virtualMethods.add(scope);
+					virtualMethods.add(group);
 			}
 
 			var prepareHelper = new PrepareHelper(memberInfos, modules.AllTypes);
 			prepareHelper.prepare((info) => info.prepareRenameMembers());
 
 			prepareHelper.prepare((info) => info.prepareRenamePropsAndEvents());
-			propMethods.visitAll((scope) => prepareRenameProperty(scope, false));
-			eventMethods.visitAll((scope) => prepareRenameEvent(scope, false));
-			propMethods.visitAll((scope) => prepareRenameProperty(scope, true));
-			eventMethods.visitAll((scope) => prepareRenameEvent(scope, true));
+			propMethods.visitAll((group) => prepareRenameProperty(group, false));
+			eventMethods.visitAll((group) => prepareRenameEvent(group, false));
+			propMethods.visitAll((group) => prepareRenameProperty(group, true));
+			eventMethods.visitAll((group) => prepareRenameEvent(group, true));
 
 			foreach (var typeDef in modules.AllTypes)
 				memberInfos.type(typeDef).initializeEventHandlerNames();
 
 			prepareHelper.prepare((info) => info.prepareRenameMethods());
-			ifaceMethods.visitAll((scope) => prepareRenameVirtualMethods(scope, "imethod_", false));
-			virtualMethods.visitAll((scope) => prepareRenameVirtualMethods(scope, "vmethod_", false));
-			ifaceMethods.visitAll((scope) => prepareRenameVirtualMethods(scope, "imethod_", true));
-			virtualMethods.visitAll((scope) => prepareRenameVirtualMethods(scope, "vmethod_", true));
+			ifaceMethods.visitAll((group) => prepareRenameVirtualMethods(group, "imethod_", false));
+			virtualMethods.visitAll((group) => prepareRenameVirtualMethods(group, "vmethod_", false));
+			ifaceMethods.visitAll((group) => prepareRenameVirtualMethods(group, "imethod_", true));
+			virtualMethods.visitAll((group) => prepareRenameVirtualMethods(group, "vmethod_", true));
 
-			restoreMethodArgs(scopes);
+			restoreMethodArgs(groups);
 
 			foreach (var typeDef in modules.AllTypes)
 				memberInfos.type(typeDef).prepareRenameMethods2();
 		}
 
-		void restoreMethodArgs(MethodNameScopes scopes) {
-			foreach (var scope in scopes.getAllScopes()) {
-				if (scope.Methods[0].ParamDefs.Count == 0)
+		void restoreMethodArgs(MethodNameGroups groups) {
+			foreach (var group in groups.getAllGroups()) {
+				if (group.Methods[0].ParamDefs.Count == 0)
 					continue;
 
-				var argNames = getValidArgNames(scope);
+				var argNames = getValidArgNames(group);
 
-				foreach (var method in scope.Methods) {
+				foreach (var method in group.Methods) {
 					if (!method.Owner.HasModule)
 						continue;
 					var nameChecker = method.Owner.Module.ObfuscatedFile.NameChecker;
@@ -847,9 +847,9 @@ namespace de4dot.code.renamer {
 			}
 		}
 
-		string[] getValidArgNames(MethodNameScope scope) {
-			var methods = new List<MethodDef>(scope.Methods);
-			foreach (var method in scope.Methods) {
+		string[] getValidArgNames(MethodNameGroup group) {
+			var methods = new List<MethodDef>(group.Methods);
+			foreach (var method in group.Methods) {
 				foreach (var overrideRef in method.MethodDefinition.Overrides) {
 					var overrideDef = modules.resolve(overrideRef);
 					if (overrideDef == null) {
@@ -866,7 +866,7 @@ namespace de4dot.code.renamer {
 				}
 			}
 
-			var argNames = new string[scope.Methods[0].ParamDefs.Count];
+			var argNames = new string[group.Methods[0].ParamDefs.Count];
 			foreach (var method in methods) {
 				var nameChecker = !method.Owner.HasModule ? null : method.Owner.Module.ObfuscatedFile.NameChecker;
 				for (int i = 0; i < argNames.Length; i++) {
@@ -912,37 +912,37 @@ namespace de4dot.code.renamer {
 			}
 		}
 
-		static List<MethodNameScope> getSorted(MethodNameScopes scopes) {
-			var allScopes = new List<MethodNameScope>(scopes.getAllScopes());
-			allScopes.Sort((a, b) => Utils.compareInt32(b.Count, a.Count));
-			return allScopes;
+		static List<MethodNameGroup> getSorted(MethodNameGroups groups) {
+			var allGroups = new List<MethodNameGroup>(groups.getAllGroups());
+			allGroups.Sort((a, b) => Utils.compareInt32(b.Count, a.Count));
+			return allGroups;
 		}
 
-		class ScopeHelper {
+		class GroupHelper {
 			MemberInfos memberInfos;
 			Dictionary<TypeDef, bool> visited = new Dictionary<TypeDef, bool>();
-			Dictionary<MethodDef, MethodNameScope> methodToScope;
-			List<MethodNameScope> scopes = new List<MethodNameScope>();
+			Dictionary<MethodDef, MethodNameGroup> methodToGroup;
+			List<MethodNameGroup> groups = new List<MethodNameGroup>();
 			IEnumerable<TypeDef> allTypes;
-			Action<MethodNameScope> func;
+			Action<MethodNameGroup> func;
 
-			public ScopeHelper(MemberInfos memberInfos, IEnumerable<TypeDef> allTypes) {
+			public GroupHelper(MemberInfos memberInfos, IEnumerable<TypeDef> allTypes) {
 				this.memberInfos = memberInfos;
 				this.allTypes = allTypes;
 			}
 
-			public void add(MethodNameScope scope) {
-				scopes.Add(scope);
+			public void add(MethodNameGroup group) {
+				groups.Add(group);
 			}
 
-			public void visitAll(Action<MethodNameScope> func) {
+			public void visitAll(Action<MethodNameGroup> func) {
 				this.func = func;
 				visited.Clear();
 
-				methodToScope = new Dictionary<MethodDef, MethodNameScope>();
-				foreach (var scope in scopes) {
-					foreach (var method in scope.Methods)
-						methodToScope[method] = scope;
+				methodToGroup = new Dictionary<MethodDef, MethodNameGroup>();
+				foreach (var group in groups) {
+					foreach (var method in group.Methods)
+						methodToGroup[method] = group;
 				}
 
 				foreach (var type in allTypes)
@@ -964,23 +964,23 @@ namespace de4dot.code.renamer {
 					return;
 
 				foreach (var method in type.AllMethodsSorted) {
-					MethodNameScope scope;
-					if (!methodToScope.TryGetValue(method, out scope))
+					MethodNameGroup group;
+					if (!methodToGroup.TryGetValue(method, out group))
 						continue;
-					foreach (var m in scope.Methods)
-						methodToScope.Remove(m);
-					func(scope);
+					foreach (var m in group.Methods)
+						methodToGroup.Remove(m);
+					func(group);
 				}
 			}
 		}
 
 		static readonly Regex removeGenericsArityRegex = new Regex(@"`[0-9]+");
-		static string getOverridePrefix(MethodNameScope scope, MethodDef method) {
+		static string getOverridePrefix(MethodNameGroup group, MethodDef method) {
 			if (method == null || method.MethodDefinition.Overrides.Count == 0)
 				return "";
-			if (scope.Methods.Count > 1) {
-				// Don't use an override prefix if the scope has an iface method.
-				foreach (var m in scope.Methods) {
+			if (group.Methods.Count > 1) {
+				// Don't use an override prefix if the group has an iface method.
+				foreach (var m in group.Methods) {
 					if (m.Owner.TypeDefinition.IsInterface)
 						return "";
 				}
@@ -998,19 +998,19 @@ namespace de4dot.code.renamer {
 			return name.Substring(index + 1);
 		}
 
-		void prepareRenameEvent(MethodNameScope scope, bool renameOverrides) {
+		void prepareRenameEvent(MethodNameGroup group, bool renameOverrides) {
 			string methodPrefix, overridePrefix;
-			var eventName = prepareRenameEvent(scope, renameOverrides, out overridePrefix, out methodPrefix);
+			var eventName = prepareRenameEvent(group, renameOverrides, out overridePrefix, out methodPrefix);
 			if (eventName == null)
 				return;
 
 			var methodName = overridePrefix + methodPrefix + eventName;
-			foreach (var method in scope.Methods)
+			foreach (var method in group.Methods)
 				memberInfos.method(method).rename(methodName);
 		}
 
-		string prepareRenameEvent(MethodNameScope scope, bool renameOverrides, out string overridePrefix, out string methodPrefix) {
-			var eventMethod = getEventMethod(scope);
+		string prepareRenameEvent(MethodNameGroup group, bool renameOverrides, out string overridePrefix, out string methodPrefix) {
+			var eventMethod = getEventMethod(group);
 			if (eventMethod == null)
 				throw new ApplicationException("No events found");
 
@@ -1024,7 +1024,7 @@ namespace de4dot.code.renamer {
 			else
 				methodPrefix = "";
 
-			overridePrefix = getOverridePrefix(scope, eventMethod);
+			overridePrefix = getOverridePrefix(group, eventMethod);
 			if (renameOverrides && overridePrefix == "")
 				return null;
 			if (!renameOverrides && overridePrefix != "")
@@ -1055,12 +1055,12 @@ namespace de4dot.code.renamer {
 			else if (mustUseOldEventName || eventDef.Owner.Module.ObfuscatedFile.NameChecker.isValidEventName(oldEventName))
 				newEventName = oldEventName;
 			else {
-				mergeStateHelper.merge(MergeStateFlags.Events, scope);
-				newEventName = getAvailableName("Event_", false, scope, (scope2, newName) => isEventAvailable(scope2, newName));
+				mergeStateHelper.merge(MergeStateFlags.Events, group);
+				newEventName = getAvailableName("Event_", false, group, (group2, newName) => isEventAvailable(group2, newName));
 			}
 
 			var newEventNameWithPrefix = overridePrefix + newEventName;
-			foreach (var method in scope.Methods) {
+			foreach (var method in group.Methods) {
 				if (method.Event != null) {
 					memberInfos.evt(method.Event).rename(newEventNameWithPrefix);
 					var ownerInfo = memberInfos.type(method.Owner);
@@ -1096,22 +1096,22 @@ namespace de4dot.code.renamer {
 			return null;
 		}
 
-		MethodDef getEventMethod(MethodNameScope scope) {
-			foreach (var method in scope.Methods) {
+		MethodDef getEventMethod(MethodNameGroup group) {
+			foreach (var method in group.Methods) {
 				if (method.Event != null)
 					return method;
 			}
 			return null;
 		}
 
-		void prepareRenameProperty(MethodNameScope scope, bool renameOverrides) {
+		void prepareRenameProperty(MethodNameGroup group, bool renameOverrides) {
 			string overridePrefix;
-			var propName = prepareRenameProperty(scope, renameOverrides, out overridePrefix);
+			var propName = prepareRenameProperty(group, renameOverrides, out overridePrefix);
 			if (propName == null)
 				return;
 
 			string methodPrefix;
-			switch (getPropertyMethodType(scope.Methods[0])) {
+			switch (getPropertyMethodType(group.Methods[0])) {
 			case PropertyMethodType.Getter:
 				methodPrefix = "get_";
 				break;
@@ -1123,16 +1123,16 @@ namespace de4dot.code.renamer {
 			}
 
 			var methodName = overridePrefix + methodPrefix + propName;
-			foreach (var method in scope.Methods)
+			foreach (var method in group.Methods)
 				memberInfos.method(method).rename(methodName);
 		}
 
-		string prepareRenameProperty(MethodNameScope scope, bool renameOverrides, out string overridePrefix) {
-			var propMethod = getPropertyMethod(scope);
+		string prepareRenameProperty(MethodNameGroup group, bool renameOverrides, out string overridePrefix) {
+			var propMethod = getPropertyMethod(group);
 			if (propMethod == null)
 				throw new ApplicationException("No properties found");
 
-			overridePrefix = getOverridePrefix(scope, propMethod);
+			overridePrefix = getOverridePrefix(group, propMethod);
 
 			if (renameOverrides && overridePrefix == "")
 				return null;
@@ -1164,21 +1164,21 @@ namespace de4dot.code.renamer {
 				newPropName = getRealName(propInfo.newName);
 			else if (mustUseOldPropName || propDef.Owner.Module.ObfuscatedFile.NameChecker.isValidPropertyName(oldPropName))
 				newPropName = oldPropName;
-			else if (isItemProperty(scope))
+			else if (isItemProperty(group))
 				newPropName = "Item";
 			else {
 				bool trySameName = true;
-				var propPrefix = getSuggestedPropertyName(scope);
+				var propPrefix = getSuggestedPropertyName(group);
 				if (propPrefix == null) {
 					trySameName = false;
-					propPrefix = getNewPropertyNamePrefix(scope);
+					propPrefix = getNewPropertyNamePrefix(group);
 				}
-				mergeStateHelper.merge(MergeStateFlags.Properties, scope);
-				newPropName = getAvailableName(propPrefix, trySameName, scope, (scope2, newName) => isPropertyAvailable(scope2, newName));
+				mergeStateHelper.merge(MergeStateFlags.Properties, group);
+				newPropName = getAvailableName(propPrefix, trySameName, group, (group2, newName) => isPropertyAvailable(group2, newName));
 			}
 
 			var newPropNameWithPrefix = overridePrefix + newPropName;
-			foreach (var method in scope.Methods) {
+			foreach (var method in group.Methods) {
 				if (method.Property != null) {
 					memberInfos.prop(method.Property).rename(newPropNameWithPrefix);
 					var ownerInfo = memberInfos.type(method.Owner);
@@ -1190,8 +1190,8 @@ namespace de4dot.code.renamer {
 			return newPropName;
 		}
 
-		bool isItemProperty(MethodNameScope scope) {
-			foreach (var method in scope.Methods) {
+		bool isItemProperty(MethodNameGroup group) {
+			foreach (var method in group.Methods) {
 				if (method.Property != null && method.Property.isItemProperty())
 					return true;
 			}
@@ -1217,16 +1217,16 @@ namespace de4dot.code.renamer {
 			return null;
 		}
 
-		MethodDef getPropertyMethod(MethodNameScope scope) {
-			foreach (var method in scope.Methods) {
+		MethodDef getPropertyMethod(MethodNameGroup group) {
+			foreach (var method in group.Methods) {
 				if (method.Property != null)
 					return method;
 			}
 			return null;
 		}
 
-		string getSuggestedPropertyName(MethodNameScope scope) {
-			foreach (var method in scope.Methods) {
+		string getSuggestedPropertyName(MethodNameGroup group) {
+			foreach (var method in group.Methods) {
 				if (method.Property == null)
 					continue;
 				var info = memberInfos.prop(method.Property);
@@ -1236,10 +1236,10 @@ namespace de4dot.code.renamer {
 			return null;
 		}
 
-		string getNewPropertyNamePrefix(MethodNameScope scope) {
+		string getNewPropertyNamePrefix(MethodNameGroup group) {
 			const string defaultVal = "Prop_";
 
-			var propType = getPropertyType(scope);
+			var propType = getPropertyType(group);
 			if (propType == null)
 				return defaultVal;
 
@@ -1289,13 +1289,13 @@ namespace de4dot.code.renamer {
 		}
 
 		// Returns property type, or null if not all methods have the same type
-		TypeReference getPropertyType(MethodNameScope scope) {
-			var methodType = getPropertyMethodType(scope.Methods[0]);
+		TypeReference getPropertyType(MethodNameGroup group) {
+			var methodType = getPropertyMethodType(group.Methods[0]);
 			if (methodType == PropertyMethodType.Other)
 				return null;
 
 			TypeReference type = null;
-			foreach (var propMethod in scope.Methods) {
+			foreach (var propMethod in group.Methods) {
 				TypeReference propType;
 				if (methodType == PropertyMethodType.Setter)
 					propType = propMethod.ParamDefs[propMethod.ParamDefs.Count - 1].ParameterDefinition.ParameterType;
@@ -1309,20 +1309,20 @@ namespace de4dot.code.renamer {
 			return type;
 		}
 
-		MethodDef getOverrideMethod(MethodNameScope scope) {
-			foreach (var method in scope.Methods) {
+		MethodDef getOverrideMethod(MethodNameGroup group) {
+			foreach (var method in group.Methods) {
 				if (method.MethodDefinition.Overrides.Count > 0)
 					return method;
 			}
 			return null;
 		}
 
-		void prepareRenameVirtualMethods(MethodNameScope scope, string namePrefix, bool renameOverrides) {
-			if (!hasInvalidMethodName(scope))
+		void prepareRenameVirtualMethods(MethodNameGroup group, string namePrefix, bool renameOverrides) {
+			if (!hasInvalidMethodName(group))
 				return;
 
-			if (hasDelegateOwner(scope)) {
-				switch (scope.Methods[0].MethodDefinition.Name) {
+			if (hasDelegateOwner(group)) {
+				switch (group.Methods[0].MethodDefinition.Name) {
 				case "Invoke":
 				case "BeginInvoke":
 				case "EndInvoke":
@@ -1330,8 +1330,8 @@ namespace de4dot.code.renamer {
 				}
 			}
 
-			var overrideMethod = getOverrideMethod(scope);
-			var overridePrefix = getOverridePrefix(scope, overrideMethod);
+			var overrideMethod = getOverrideMethod(group);
+			var overridePrefix = getOverridePrefix(group, overrideMethod);
 			if (renameOverrides && overridePrefix == "")
 				return;
 			if (!renameOverrides && overridePrefix != "")
@@ -1347,15 +1347,15 @@ namespace de4dot.code.renamer {
 					newMethodName = getRealName(memberInfos.method(overriddenMethod).newName);
 			}
 			else {
-				newMethodName = getSuggestedMethodName(scope);
+				newMethodName = getSuggestedMethodName(group);
 				if (newMethodName == null) {
-					mergeStateHelper.merge(MergeStateFlags.Methods, scope);
-					newMethodName = getAvailableName(namePrefix, false, scope, (scope2, newName) => isMethodAvailable(scope2, newName));
+					mergeStateHelper.merge(MergeStateFlags.Methods, group);
+					newMethodName = getAvailableName(namePrefix, false, group, (group2, newName) => isMethodAvailable(group2, newName));
 				}
 			}
 
 			var newMethodNameWithPrefix = overridePrefix + newMethodName;
-			foreach (var method in scope.Methods)
+			foreach (var method in group.Methods)
 				memberInfos.type(method.Owner).renameMethod(method, newMethodNameWithPrefix);
 		}
 
@@ -1376,10 +1376,10 @@ namespace de4dot.code.renamer {
 				this.memberInfos = memberInfos;
 			}
 
-			public void merge(MergeStateFlags flags, MethodNameScope scope) {
+			public void merge(MergeStateFlags flags, MethodNameGroup group) {
 				this.flags = flags;
 				visited.Clear();
-				foreach (var method in scope.Methods)
+				foreach (var method in group.Methods)
 					merge(method.Owner);
 			}
 
@@ -1421,8 +1421,8 @@ namespace de4dot.code.renamer {
 			return modules.resolve(overrideMethod.MethodDefinition.Overrides[0]);
 		}
 
-		string getSuggestedMethodName(MethodNameScope scope) {
-			foreach (var method in scope.Methods) {
+		string getSuggestedMethodName(MethodNameGroup group) {
+			foreach (var method in group.Methods) {
 				var info = memberInfos.method(method);
 				if (info.suggestedName != null)
 					return info.suggestedName;
@@ -1430,8 +1430,8 @@ namespace de4dot.code.renamer {
 			return null;
 		}
 
-		bool hasInvalidMethodName(MethodNameScope scope) {
-			foreach (var method in scope.Methods) {
+		bool hasInvalidMethodName(MethodNameGroup group) {
+			foreach (var method in group.Methods) {
 				var typeInfo = memberInfos.type(method.Owner);
 				var methodInfo = memberInfos.method(method);
 				if (!typeInfo.NameChecker.isValidMethodName(methodInfo.oldName))
@@ -1440,40 +1440,40 @@ namespace de4dot.code.renamer {
 			return false;
 		}
 
-		static string getAvailableName(string prefix, bool tryWithoutZero, MethodNameScope scope, Func<MethodNameScope, string, bool> checkAvailable) {
+		static string getAvailableName(string prefix, bool tryWithoutZero, MethodNameGroup group, Func<MethodNameGroup, string, bool> checkAvailable) {
 			for (int i = 0; ; i++) {
 				string newName = i == 0 && tryWithoutZero ? prefix : prefix + i;
-				if (checkAvailable(scope, newName))
+				if (checkAvailable(group, newName))
 					return newName;
 			}
 		}
 
-		bool isMethodAvailable(MethodNameScope scope, string methodName) {
-			foreach (var method in scope.Methods) {
+		bool isMethodAvailable(MethodNameGroup group, string methodName) {
+			foreach (var method in group.Methods) {
 				if (memberInfos.type(method.Owner).variableNameState.isMethodNameUsed(methodName))
 					return false;
 			}
 			return true;
 		}
 
-		bool isPropertyAvailable(MethodNameScope scope, string methodName) {
-			foreach (var method in scope.Methods) {
+		bool isPropertyAvailable(MethodNameGroup group, string methodName) {
+			foreach (var method in group.Methods) {
 				if (memberInfos.type(method.Owner).variableNameState.isPropertyNameUsed(methodName))
 					return false;
 			}
 			return true;
 		}
 
-		bool isEventAvailable(MethodNameScope scope, string methodName) {
-			foreach (var method in scope.Methods) {
+		bool isEventAvailable(MethodNameGroup group, string methodName) {
+			foreach (var method in group.Methods) {
 				if (memberInfos.type(method.Owner).variableNameState.isEventNameUsed(methodName))
 					return false;
 			}
 			return true;
 		}
 
-		bool hasDelegateOwner(MethodNameScope scope) {
-			foreach (var method in scope.Methods) {
+		bool hasDelegateOwner(MethodNameGroup group) {
+			foreach (var method in group.Methods) {
 				if (isDelegateClass.check(method.Owner))
 					return true;
 			}
