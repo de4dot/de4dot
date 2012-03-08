@@ -145,8 +145,8 @@ namespace de4dot.code.renamer.asmmodules {
 		public void initialize() {
 			initializeCalled = true;
 			findAllMemberReferences();
-			resolveAllRefs();
 			initAllTypes();
+			resolveAllRefs();
 		}
 
 		void findAllMemberReferences() {
