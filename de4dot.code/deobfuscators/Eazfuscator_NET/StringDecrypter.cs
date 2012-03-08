@@ -118,7 +118,13 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			}
 		}
 
+		static string[] requiredFieldTypes = new string[] {
+			"System.Byte[]",
+			"System.Int16",
+		};
 		bool checkType(TypeDefinition type) {
+			if (!new FieldTypes(type).all(requiredFieldTypes))
+				return false;
 			if (type.NestedTypes.Count == 0) {
 				return DotNetUtils.findFieldType(type, "System.IO.BinaryReader", true) != null &&
 					DotNetUtils.findFieldType(type, "System.Collections.Generic.Dictionary`2<System.Int32,System.String>", true) != null;
@@ -156,10 +162,21 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return null;
 		}
 
+		static string[] requiredLocalTypes = new string[] {
+			"System.Boolean",
+			"System.Byte[]",
+			"System.Char[]",
+			"System.Int16",
+			"System.Int32",
+			"System.Reflection.Assembly",
+			"System.String",
+		};
 		static bool checkDecrypterMethod(MethodDefinition method) {
 			if (method == null || !method.IsStatic || method.Body == null)
 				return false;
 			if (!DotNetUtils.isMethod(method, "System.String", "(System.Int32)"))
+				return false;
+			if (!new LocalTypes(method).all(requiredLocalTypes))
 				return false;
 
 			foreach (var instr in method.Body.Instructions) {
