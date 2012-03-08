@@ -497,13 +497,7 @@ namespace de4dot.code.renamer.asmmodules {
 			}
 		}
 
-		Dictionary<MethodDefKey, bool> overrideMethods;
 		void initializeInterfaceMethods(MethodNameGroups groups) {
-			if (baseType != null)
-				overrideMethods = new Dictionary<MethodDefKey, bool>(baseType.typeDef.overrideMethods);
-			else
-				overrideMethods = new Dictionary<MethodDefKey, bool>();
-
 			initializeAllInterfaces();
 
 			if (TypeDefinition.IsInterface)
@@ -611,9 +605,7 @@ namespace de4dot.code.renamer.asmmodules {
 						continue;
 					}
 
-					var oldMethod = interfaceMethodInfos.addMethod(overrideMethod.DeclaringType, ifaceMethod, classMethod);
-					if (oldMethod != classMethod)
-						overrideMethods[new MethodDefKey(classMethod)] = true;
+					interfaceMethodInfos.addMethod(overrideMethod.DeclaringType, ifaceMethod, classMethod);
 				}
 			}
 
@@ -644,7 +636,7 @@ namespace de4dot.code.renamer.asmmodules {
 				foreach (var pair in info.IfaceMethodToClassMethod) {
 					if (pair.Value == null)
 						continue;
-					if (overrideMethods.ContainsKey(new MethodDefKey(pair.Value)))
+					if (pair.Key.methodDef.MethodDefinition.Name != pair.Value.MethodDefinition.Name)
 						continue;
 					groups.same(pair.Key.methodDef, pair.Value);
 				}
