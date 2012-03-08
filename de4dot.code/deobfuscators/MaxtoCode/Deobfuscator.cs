@@ -25,7 +25,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "MaxtoCode";
 		public const string THE_TYPE = "mc";
-		const string DEFAULT_REGEX = @"!^[oO01l]{4,}$&" + DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
+		const string DEFAULT_REGEX = @"!^[oO01l]+$&" + DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
 		public DeobfuscatorInfo()
 			: base(DEFAULT_REGEX) {
 		}
