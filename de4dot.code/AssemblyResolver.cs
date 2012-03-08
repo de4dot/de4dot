@@ -31,8 +31,6 @@ namespace de4dot.code {
 		Dictionary<string, bool> addedDirectories = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
 
 		static AssemblyResolver() {
-			// Make sure there's only ONE assembly resolver
-			GlobalAssemblyResolver.Instance = Instance;
 			addOtherAssemblySearchPaths();
 		}
 

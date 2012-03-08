@@ -60,7 +60,7 @@ namespace de4dot.code {
 
 			AssemblyDefinition asmDef = null;
 			try {
-				asmDef = GlobalAssemblyResolver.Instance.Resolve(asmFullName);
+				asmDef = AssemblyResolver.Instance.Resolve(asmFullName);
 			}
 			catch (ResolutionException) {
 			}
