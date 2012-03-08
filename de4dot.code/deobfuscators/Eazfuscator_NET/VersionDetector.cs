@@ -71,6 +71,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				"System.String",
 			};
 			if (otherMethods.Count == 0 &&
+				decryptStringType.NestedTypes.Count == 0 &&
 				!hasConstantM2 &&
 				!decryptStringMethod.NoInlining &&
 				decryptStringMethod.IsPublic &&
@@ -106,6 +107,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				"System.String",
 			};
 			if (otherMethods.Count == 0 &&
+				decryptStringType.NestedTypes.Count == 0 &&
 				!hasConstantM2 &&
 				!decryptStringMethod.NoInlining &&
 				decryptStringMethod.IsPublic &&
@@ -141,6 +143,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				"System.String",
 			};
 			if (otherMethods.Count == 0 &&
+				decryptStringType.NestedTypes.Count == 0 &&
 				!hasConstantM2 &&
 				!decryptStringMethod.NoInlining &&
 				decryptStringMethod.IsPublic &&
@@ -177,6 +180,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				"System.String",
 			};
 			if (otherMethods.Count == 0 &&
+				decryptStringType.NestedTypes.Count == 0 &&
 				!hasConstantM2 &&
 				!decryptStringMethod.NoInlining &&
 				decryptStringMethod.IsPublic &&
@@ -214,6 +218,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				"System.String",
 			};
 			if (otherMethods.Count == 0 &&
+				decryptStringType.NestedTypes.Count == 0 &&
 				!hasConstantM2 &&
 				!decryptStringMethod.NoInlining &&
 				decryptStringMethod.IsPublic &&
@@ -251,6 +256,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				"System.String",
 			};
 			if (otherMethods.Count == 0 &&
+				decryptStringType.NestedTypes.Count == 0 &&
 				!hasConstantM2 &&
 				decryptStringMethod.NoInlining &&
 				decryptStringMethod.IsPublic &&
@@ -289,6 +295,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				"System.String",
 			};
 			if (otherMethods.Count == 0 &&
+				decryptStringType.NestedTypes.Count == 0 &&
 				!hasConstantM2 &&
 				decryptStringMethod.NoInlining &&
 				decryptStringMethod.IsAssembly &&
@@ -331,6 +338,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				"System.Type",
 			};
 			if (otherMethods.Count == 0 &&
+				decryptStringType.NestedTypes.Count == 0 &&
 				!hasConstantM2 &&
 				decryptStringMethod.NoInlining &&
 				decryptStringMethod.IsAssembly &&
@@ -376,6 +384,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				"System.Int32",
 			};
 			if (otherMethods.Count == 1 &&
+				decryptStringType.NestedTypes.Count == 0 &&
 				DotNetUtils.isMethod(otherMethods[0], "System.Int32", "(System.Byte[],System.Int32,System.Byte[])") &&
 				otherMethods[0].IsPrivate &&
 				otherMethods[0].IsStatic &&
@@ -425,6 +434,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				"System.Int32",
 			};
 			if (otherMethods.Count == 1 &&
+				decryptStringType.NestedTypes.Count == 0 &&
 				DotNetUtils.isMethod(otherMethods[0], "System.Int32", "(System.Byte[],System.Int32,System.Byte[])") &&
 				otherMethods[0].IsPrivate &&
 				otherMethods[0].IsStatic &&
@@ -476,6 +486,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				"System.Int32",
 			};
 			if (otherMethods.Count == 1 &&
+				decryptStringType.NestedTypes.Count == 0 &&
 				DotNetUtils.isMethod(otherMethods[0], "System.Void", "(System.Byte[],System.Int32,System.Byte[])") &&
 				otherMethods[0].IsPrivate &&
 				otherMethods[0].IsStatic &&
@@ -490,6 +501,118 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				new LocalTypes(decryptStringMethod).exactly(locals32) &&
 				checkTypeFields(fields32)) {
 				return "3.2";
+			}
+
+			/////////////////////////////////////////////////////////////////
+			/////////////////////////////////////////////////////////////////
+			/////////////////////////////////////////////////////////////////
+
+			if (decryptStringType.NestedTypes.Count == 1) {
+				var fields33 = new string[] {
+					"System.Collections.Generic.Dictionary`2<System.Int32,System.String>",
+					"System.IO.BinaryReader",
+					"System.Byte[]",
+					"System.Int16",
+					"System.Int32",
+					"System.Byte[]",
+					"System.Int32",
+					"System.Int32",
+					decryptStringType.NestedTypes[0].FullName,
+				};
+				var locals33 = new string[] {
+					"System.Boolean",
+					"System.Byte",
+					"System.Byte[]",
+					"System.Char[]",
+					"System.Collections.Generic.Dictionary`2<System.Int32,System.String>",
+					"System.Diagnostics.StackFrame",
+					"System.Diagnostics.StackTrace",
+					"System.Int16",
+					"System.Int32",
+					"System.Int64",
+					"System.IO.Stream",
+					"System.Reflection.Assembly",
+					"System.Reflection.AssemblyName",
+					"System.Reflection.MethodBase",
+					"System.String",
+					"System.Type",
+				};
+				var olocals33 = new string[] {
+					"System.Int32",
+				};
+				if (otherMethods.Count == 1 &&
+					decryptStringType.NestedTypes.Count == 1 &&
+					DotNetUtils.isMethod(otherMethods[0], "System.Void", "(System.Byte[],System.Int32,System.Byte[])") &&
+					otherMethods[0].IsPrivate &&
+					otherMethods[0].IsStatic &&
+					new LocalTypes(otherMethods[0]).exactly(olocals33) &&
+					hasConstantM2 &&
+					decryptStringMethod.NoInlining &&
+					decryptStringMethod.IsAssembly &&
+					!decryptStringMethod.IsSynchronized &&
+					decryptStringMethod.Body.MaxStackSize >= 1 &&
+					decryptStringMethod.Body.MaxStackSize <= 8 &&
+					decryptStringMethod.Body.ExceptionHandlers.Count == 2 &&
+					new LocalTypes(decryptStringMethod).exactly(locals33) &&
+					checkTypeFields(fields33)) {
+					return "3.3.29 - 3.3.57 (BETA)";
+				}
+			}
+
+			/////////////////////////////////////////////////////////////////
+			/////////////////////////////////////////////////////////////////
+			/////////////////////////////////////////////////////////////////
+
+			if (decryptStringType.NestedTypes.Count == 3) {
+				var fields33 = new string[] {
+					decryptStringType.NestedTypes[0].FullName,
+					decryptStringType.NestedTypes[1].FullName,
+					"System.Byte[]",
+					"System.Int16",
+					"System.Int32",
+					"System.Byte[]",
+					"System.Int32",
+					"System.Int32",
+					decryptStringType.NestedTypes[2].FullName,
+				};
+				var locals33 = new string[] {
+					"System.Boolean",
+					"System.Byte",
+					"System.Byte[]",
+					"System.Char[]",
+					decryptStringType.NestedTypes[0].FullName,
+					"System.Diagnostics.StackFrame",
+					"System.Diagnostics.StackTrace",
+					"System.Int16",
+					"System.Int32",
+					"System.Int64",
+					"System.IO.Stream",
+					"System.Reflection.Assembly",
+					"System.Reflection.AssemblyName",
+					"System.Reflection.MethodBase",
+					"System.String",
+					"System.Type",
+				};
+				var olocals33 = new string[] {
+					"System.Int32",
+				};
+				if (otherMethods.Count == 1 &&
+					decryptStringType.NestedTypes.Count == 3 &&
+					DotNetUtils.isMethod(otherMethods[0], "System.Void", "(System.Byte[],System.Int32,System.Byte[])") &&
+					otherMethods[0].IsPrivate &&
+					otherMethods[0].IsStatic &&
+					new LocalTypes(otherMethods[0]).exactly(olocals33) &&
+					hasConstantM2 &&
+					decryptStringMethod.NoInlining &&
+					decryptStringMethod.IsAssembly &&
+					!decryptStringMethod.IsSynchronized &&
+					decryptStringMethod.Body.MaxStackSize >= 1 &&
+					decryptStringMethod.Body.MaxStackSize <= 8 &&
+					decryptStringMethod.Body.ExceptionHandlers.Count == 2 &&
+					new LocalTypes(decryptStringMethod).exactly(locals33) &&
+					checkTypeFields(fields33)) {
+					return "3.3";
+				}
 			}
 
 			return null;

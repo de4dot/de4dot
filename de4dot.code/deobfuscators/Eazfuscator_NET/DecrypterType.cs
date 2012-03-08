@@ -30,7 +30,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		MethodDefinition int64Method;
 		bool initialized;
 		ulong l1;
-		int i1, i2;
+		int i1, i2, i3;
 		int m1_i1, m2_i1, m2_i2, m3_i1;
 		int token1, token2, token3, token4, token5, token6;
 
@@ -56,9 +56,9 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			if (int64Method == null)
 				return false;
 
-			if (!findInt1())
+			if (!findInt1And2())
 				return false;
-			if (!findInt2())
+			if (!findInt3())
 				return false;
 			if (!findMethodInts())
 				return false;
@@ -110,19 +110,20 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return false;
 		}
 
-		bool findInt1() {
+		bool findInt1And2() {
 			var consts = getConstants(findNestedTypeMethod(1294352278));
 			if (consts.Count != 2)
 				return false;
-			i1 = consts[1];
+			i1 = consts[0];
+			i2 = consts[1];
 			return true;
 		}
 
-		bool findInt2() {
+		bool findInt3() {
 			var consts = getConstants(findNestedTypeMethod(1106695601));
 			if (consts.Count != 1)
 				return false;
-			i2 = consts[0];
+			i3 = consts[0];
 			return true;
 		}
 
@@ -277,7 +278,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		}
 
 		int constMethod3() {
-			return binOp3(binOp1(constMethod2() ^ 0x1F74F46E, token4), binOp2(token1 ^ token6, i1));
+			return binOp3(binOp1(constMethod2() ^ i1, token4), binOp2(token1 ^ token6, i2));
 		}
 
 		int constMethod4() {
@@ -289,7 +290,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		}
 
 		int constMethod6() {
-			return binOp1(token6, binOp3(binOp2(token5, token1), binOp3(token3 ^ i2, constMethod5())));
+			return binOp1(token6, binOp3(binOp2(token5, token1), binOp3(token3 ^ i3, constMethod5())));
 		}
 
 		public ulong getMagic() {

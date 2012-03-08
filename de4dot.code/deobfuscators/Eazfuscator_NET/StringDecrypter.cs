@@ -40,6 +40,37 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		EmbeddedResource encryptedResource;
 		BinaryReader reader;
 		DecrypterType decrypterType;
+		StreamHelperType streamHelperType;
+
+		class StreamHelperType {
+			public TypeDefinition type;
+			public MethodDefinition readInt16Method;
+			public MethodDefinition readInt32Method;
+			public MethodDefinition readBytesMethod;
+
+			public bool Detected {
+				get {
+					return readInt16Method != null &&
+						  readInt32Method != null &&
+						  readBytesMethod != null;
+				}
+			}
+
+			public StreamHelperType(TypeDefinition type) {
+				this.type = type;
+
+				foreach (var method in type.Methods) {
+					if (method.IsStatic || method.Body == null || method.IsPrivate || method.GenericParameters.Count > 0)
+						continue;
+					if (DotNetUtils.isMethod(method, "System.Int16", "()"))
+						readInt16Method = method;
+					else if (DotNetUtils.isMethod(method, "System.Int32", "()"))
+						readInt32Method = method;
+					else if (DotNetUtils.isMethod(method, "System.Byte[]", "(System.Int32)"))
+						readBytesMethod = method;
+				}
+			}
+		}
 
 		public TypeDefinition Type {
 			get { return stringType; }
@@ -73,9 +104,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 
 		public void find() {
 			foreach (var type in module.Types) {
-				if (DotNetUtils.findFieldType(type, "System.IO.BinaryReader", true) == null)
-					continue;
-				if (DotNetUtils.findFieldType(type, "System.Collections.Generic.Dictionary`2<System.Int32,System.String>", true) == null)
+				if (!checkType(type))
 					continue;
 
 				foreach (var method in type.Methods) {
@@ -87,6 +116,44 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					return;
 				}
 			}
+		}
+
+		bool checkType(TypeDefinition type) {
+			if (type.NestedTypes.Count == 0) {
+				return DotNetUtils.findFieldType(type, "System.IO.BinaryReader", true) != null &&
+					DotNetUtils.findFieldType(type, "System.Collections.Generic.Dictionary`2<System.Int32,System.String>", true) != null;
+			}
+			else if (type.NestedTypes.Count == 3) {
+				streamHelperType = findStreamHelperType(type);
+				return streamHelperType != null;
+			}
+			else if (type.NestedTypes.Count == 1) {
+				return type.NestedTypes[0].IsEnum;
+			}
+			else
+				return false;
+		}
+
+		static string[] streamHelperTypeFields = new string[] {
+			"System.IO.Stream",
+			"System.Byte[]",
+		};
+		static StreamHelperType findStreamHelperType(TypeDefinition type) {
+			foreach (var field in type.Fields) {
+				var nested = field.FieldType as TypeDefinition;
+				if (nested == null)
+					continue;
+				if (nested.DeclaringType != type)
+					continue;
+				if (!new FieldTypes(nested).exactly(streamHelperTypeFields))
+					continue;
+				var streamHelperType = new StreamHelperType(nested);
+				if (!streamHelperType.Detected)
+					continue;
+
+				return streamHelperType;
+			}
+			return null;
 		}
 
 		static bool checkDecrypterMethod(MethodDefinition method) {
@@ -144,8 +211,17 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				return false;
 
 			if (decrypterType.Detected) {
-				if (!findInts(stringMethod))
+				bool initializedAll;
+				if (!findInts(stringMethod, out initializedAll))
 					return false;
+
+				var cctor = DotNetUtils.getMethod(stringType, ".cctor");
+				if (!initializedAll && cctor != null) {
+					simpleDeobfuscator.deobfuscate(cctor);
+					if (!findIntsCctor(cctor))
+						return false;
+				}
+
 				if (!decrypterType.initialize())
 					return false;
 			}
@@ -315,19 +391,61 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return EfUtils.getInt16(method, ref index, ref s);
 		}
 
-		bool findInts(MethodDefinition method) {
-			int index = findIndexFirstIntegerConstant(method);
-			if (index < 0)
+		bool findInts(MethodDefinition method, out bool initializedAll) {
+			initializedAll = false;
+
+			// <= 3.2
+			int index = findIndexInt64Method_v1(method);
+			if (index >= 0) {
+				if (!EfUtils.getNextInt32(method, ref index, out i1))
+					return false;
+				int tmp;
+				if (!EfUtils.getNextInt32(method, ref index, out tmp))
+					return false;
+				if (!EfUtils.getNextInt32(method, ref index, out i2))
+					return false;
+
+				initializedAll = true;
+				return true;
+			}
+
+			// 3.3
+			index = findIndexInt64Method_v2(method);
+			if (index >= 0) {
+				if (!EfUtils.getNextInt32(method, ref index, out i2))
+					return false;
+
+				return true;
+			}
+
+			return false;
+		}
+
+		bool findIntsCctor(MethodDefinition cctor) {
+			int index = 0;
+			if (!findCallGetFrame(cctor, ref index))
 				return false;
 
-			if (!EfUtils.getNextInt32(method, ref index, out i1))
+			int tmp1, tmp2, tmp3;
+			if (!EfUtils.getNextInt32(cctor, ref index, out tmp1))
 				return false;
-			int tmp;
-			if (!EfUtils.getNextInt32(method, ref index, out tmp))
-				return false;
-			if (!EfUtils.getNextInt32(method, ref index, out i2))
+			if (!EfUtils.getNextInt32(cctor, ref index, out tmp2))
 				return false;
 
+			index = 0;
+			while (true) {
+				if (!EfUtils.getNextInt32(cctor, ref index, out tmp3))
+					return false;
+				int nextIndex = index;
+				int tmp4;
+				if (!EfUtils.getNextInt32(cctor, ref index, out tmp4))
+					return false;
+				if (tmp4 == 16)
+					break;
+				index = nextIndex;
+			}
+
+			i1 = tmp1 ^ tmp2 ^ tmp3;
 			return true;
 		}
 
@@ -424,7 +542,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			}
 		}
 
-		static int findIndexFirstIntegerConstant(MethodDefinition method) {
+		static int findIndexInt64Method_v1(MethodDefinition method) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 2; i++) {
 				var ldci4 = instrs[i];
@@ -450,21 +568,42 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return -1;
 		}
 
+		static int findIndexInt64Method_v2(MethodDefinition method) {
+			var instrs = method.Body.Instructions;
+			for (int i = 0; i < instrs.Count; i++) {
+				var call = instrs[i];
+				if (call.OpCode.Code != Code.Call)
+					continue;
+				var calledMethod = call.Operand as MethodDefinition;
+				if (calledMethod == null)
+					continue;
+				if (!DotNetUtils.isMethod(calledMethod, "System.Int64", "()"))
+					continue;
+
+				return i;
+			}
+			return -1;
+		}
+
 		static bool callsGetPublicKeyToken(MethodDefinition method) {
 			int index = 0;
 			return findCall(method, ref index, "System.Byte[] System.Reflection.AssemblyName::GetPublicKeyToken()");
 		}
 
-		static bool findCallReadInt16(MethodDefinition method, ref int index) {
-			return findCall(method, ref index, "System.Int16 System.IO.BinaryReader::ReadInt16()");
+		bool findCallReadInt16(MethodDefinition method, ref int index) {
+			return findCall(method, ref index, streamHelperType == null ? "System.Int16 System.IO.BinaryReader::ReadInt16()" : streamHelperType.readInt16Method.FullName);
 		}
 
-		static bool findCallReadInt32(MethodDefinition method, ref int index) {
-			return findCall(method, ref index, "System.Int32 System.IO.BinaryReader::ReadInt32()");
+		bool findCallReadInt32(MethodDefinition method, ref int index) {
+			return findCall(method, ref index, streamHelperType == null ? "System.Int32 System.IO.BinaryReader::ReadInt32()" : streamHelperType.readInt32Method.FullName);
 		}
 
-		static bool findCallReadBytes(MethodDefinition method, ref int index) {
-			return findCall(method, ref index, "System.Byte[] System.IO.BinaryReader::ReadBytes(System.Int32)");
+		bool findCallReadBytes(MethodDefinition method, ref int index) {
+			return findCall(method, ref index, streamHelperType == null ? "System.Byte[] System.IO.BinaryReader::ReadBytes(System.Int32)" : streamHelperType.readBytesMethod.FullName);
+		}
+
+		static bool findCallGetFrame(MethodDefinition method, ref int index) {
+			return findCall(method, ref index, "System.Diagnostics.StackFrame System.Diagnostics.StackTrace::GetFrame(System.Int32)");
 		}
 
 		static bool findCall(MethodDefinition method, ref int index, string methodFullName) {
