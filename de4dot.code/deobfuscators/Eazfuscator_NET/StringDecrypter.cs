@@ -335,7 +335,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 
 		static void decrypt1(byte[] dest, byte[] key) {
 			byte b = (byte)((key[1] + 7) ^ (dest.Length + 11));
-			uint lcg = (uint)((key[0] | key[2] << 8) + (b << 3));
+			uint lcg = (uint)((key[0] | (key[2] << 8)) + (b << 3));
 			b += 3;
 			ushort xn = 0;
 			for (int i = 0; i < dest.Length; i++) {
@@ -344,7 +344,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					xn = (ushort)(lcg >> 16);
 				}
 				byte tmp = dest[i];
-				dest[i] ^= (byte)(key[1] ^ (byte)xn ^ b);
+				dest[i] ^= (byte)(key[1] ^ xn ^ b);
 				b = (byte)(tmp + 3);
 				xn >>= 8;
 			}
