@@ -59,4 +59,6 @@
   <Target Name="AfterBuild">
   </Target>
   -->
+  <Target Name="_CopyFilesMarkedCopyLocal">
+  </Target>
 </Project>
