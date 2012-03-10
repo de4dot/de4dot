@@ -185,12 +185,11 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			var fields = new FieldTypes(type);
 			if (fields.exists("System.Collections.Hashtable") ||
 				fields.exists("System.Collections.Generic.Dictionary`2<System.Int32,System.String>") ||
-				fields.exactly(fields2x) ||
 				fields.exactly(fields3x)) {
 				if (DotNetUtils.getMethod(type, ".cctor") == null)
 					return false;
 			}
-			else if (fields.exactly(fields1x)) {
+			else if (fields.exactly(fields1x) || fields.exactly(fields2x)) {
 			}
 			else
 				return false;
