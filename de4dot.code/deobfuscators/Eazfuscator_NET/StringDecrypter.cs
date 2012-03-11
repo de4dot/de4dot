@@ -31,7 +31,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		MethodDefinition stringMethod;
 		TypeDefinition dataDecrypterType;
 		short s1, s2, s3;
-		int i1, i2, i3, i4, i5;
+		int i1, i2, i3, i4, i5, i6;
 		bool checkMinus2;
 		bool usePublicKeyToken;
 		int keyLen;
@@ -262,7 +262,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 
 		public string decrypt(int val) {
 			while (true) {
-				int offset = magic1 ^ i3 ^ val;
+				int offset = magic1 ^ i3 ^ val ^ i6;
 				reader.BaseStream.Position = offset;
 				byte[] tmpKey;
 				if (theKey == null) {
@@ -523,10 +523,21 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					continue;
 
 				i3 = DotNetUtils.getLdcI4Value(ldci4);
+				if (!findInt6(method, i + 5))
+					return false;
 				return true;
 			}
 
 			return false;
+		}
+
+		// v3.3.134.30672+ (not 3.3.128.10407)
+		bool findInt6(MethodDefinition method, int index) {
+			index = getNextLdci4InSameBlock(method, index);
+			if (index < 0)
+				return true;
+
+			return EfUtils.getNextInt32(method, ref index, out i6);
 		}
 
 		bool findInt4(MethodDefinition method) {
@@ -537,6 +548,19 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				return false;
 
 			return true;
+		}
+
+		static int getNextLdci4InSameBlock(MethodDefinition method, int index) {
+			var instrs = method.Body.Instructions;
+			for (int i = index; i < instrs.Count; i++) {
+				var instr = instrs[i];
+				if (instr.OpCode.FlowControl != FlowControl.Next)
+					return -1;
+				if (DotNetUtils.isLdcI4(instr))
+					return i;
+			}
+
+			return -1;
 		}
 
 		bool findInt5(MethodDefinition method) {
