@@ -17,6 +17,7 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Mono.Cecil;
@@ -61,6 +62,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		string obfuscatorName = "Crypto Obfuscator";
 		bool foundCryptoObfuscatorAttribute = false;
 		bool foundObfuscatedSymbols = false;
+		bool foundObfuscatorUserString = false;
 
 		ProxyDelegateFinder proxyDelegateFinder;
 		ResourceDecrypter resourceDecrypter;
@@ -104,7 +106,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 					toInt32(proxyDelegateFinder.Detected);
 			if (sum > 0)
 				val += 100 + 10 * (sum - 1);
-			if (foundCryptoObfuscatorAttribute || foundObfuscatedSymbols)
+			if (foundCryptoObfuscatorAttribute || foundObfuscatedSymbols || foundObfuscatorUserString)
 				val += 10;
 
 			return val;
@@ -127,6 +129,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			stringDecrypter.find();
 			tamperDetection = new TamperDetection(module);
 			tamperDetection.find();
+			foundObfuscatorUserString = Utils.StartsWith(module.GetUserString(1), "\u0011\"3D9B94A98B-76A8-4810-B1A0-4BE7C4F9C98D", StringComparison.Ordinal);
 		}
 
 		void initializeVersion(TypeDefinition attr) {
