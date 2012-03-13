@@ -17,6 +17,7 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -37,6 +38,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		int keyLen;
 		byte[] theKey;
 		int magic1;
+		uint rldFlag, bytesFlag;
 		EmbeddedResource encryptedResource;
 		BinaryReader reader;
 		DecrypterType decrypterType;
@@ -243,9 +245,56 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					return false;
 			}
 
+			initializeFlags();
 			initialize();
 
 			return true;
+		}
+
+		void initializeFlags() {
+			if (!decrypterType.Detected || !DeobUtils.hasInteger(stringMethod, 0xFFFFFFF)) {
+				// <= 3.3.134
+				rldFlag = 0x40000000;
+				bytesFlag = 0x80000000;
+				return;
+			}
+
+			// 3.3.136+
+			var instrs = stringMethod.Body.Instructions;
+			for (int i = 0; i < instrs.Count; i++) {
+				var ldci4 = instrs[i];
+				if (!DotNetUtils.isLdcI4(ldci4))
+					continue;
+				if (DotNetUtils.getLdcI4Value(ldci4) != 0xFFFFFFF)
+					continue;
+				if (findFlags(stringMethod, i))
+					return;
+			}
+
+			throw new ApplicationException("Could not find string decrypter flags");
+		}
+
+		bool findFlags(MethodDefinition method, int index) {
+			var flags = new List<uint>(3);
+			for (int i = index - 1; i >= 0; i--) {
+				var instr = method.Body.Instructions[i];
+				if (instr.OpCode.FlowControl != FlowControl.Next)
+					break;
+				if (!DotNetUtils.isLdcI4(instr))
+					continue;
+				uint value = (uint)DotNetUtils.getLdcI4Value(instr);
+				if (value != 0x80000000 && value != 0x40000000 && value != 0x20000000)
+					continue;
+				flags.Add(value);
+				if (flags.Count != 3)
+					continue;
+
+				rldFlag = flags[1];
+				bytesFlag = flags[2];
+				return true;
+			}
+
+			return false;
 		}
 
 		void initialize() {
@@ -290,9 +339,9 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 						bytes[i] ^= (byte)((pkt[i & 7] >> 5) + (pkt[i & 7] << 3));
 				}
 
-				if ((flags & 0x40000000) != 0)
+				if ((flags & rldFlag) != 0)
 					bytes = rld(bytes);
-				if ((flags & 0x80000000) != 0) {
+				if ((flags & bytesFlag) != 0) {
 					var sb = new StringBuilder(bytes.Length);
 					foreach (var b in bytes)
 						sb.Append((char)b);
