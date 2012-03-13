@@ -208,6 +208,7 @@ done:
 			addCallToBeRemoved(module.EntryPoint, resourceResolver.InitMethod);
 			addMethodToBeRemoved(resourceResolver.InitMethod, "Resource resolver init method");
 			addMethodToBeRemoved(resourceResolver.HandlerMethod, "Resource resolver handler method");
+			addMethodToBeRemoved(resourceResolver.GetDataMethod, "Resource resolver 'get resource data' method");
 		}
 
 		void dumpEmbeddedAssemblies() {

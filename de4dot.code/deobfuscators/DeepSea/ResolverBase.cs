@@ -18,6 +18,7 @@
 */
 
 using System;
+using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using de4dot.blocks;
@@ -80,16 +81,16 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			if (!checkResolverInitMethodInternal(resolverInitMethod))
 				return false;
 
-			var resolveHandlerMethod = getLdftnMethod(resolverInitMethod);
-			if (resolveHandlerMethod == null)
-				return false;
+			foreach (var resolveHandlerMethod in getLdftnMethods(resolverInitMethod)) {
+				if (!checkHandlerMethod(resolveHandlerMethod))
+					continue;
 
-			if (!checkHandlerMethod(resolveHandlerMethod))
-				return false;
+				initMethod = resolverInitMethod;
+				resolveHandler = resolveHandlerMethod;
+				return true;
+			}
 
-			initMethod = resolverInitMethod;
-			resolveHandler = resolveHandlerMethod;
-			return true;
+			return false;
 		}
 
 		protected abstract bool checkResolverInitMethodInternal(MethodDefinition resolverInitMethod);
@@ -107,15 +108,16 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return false;
 		}
 
-		MethodDefinition getLdftnMethod(MethodDefinition method) {
+		IEnumerable<MethodDefinition> getLdftnMethods(MethodDefinition method) {
+			var list = new List<MethodDefinition>();
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Ldftn)
 					continue;
 				var loadedMethod = instr.Operand as MethodDefinition;
 				if (loadedMethod != null)
-					return loadedMethod;
+					list.Add(loadedMethod);
 			}
-			return null;
+			return list;
 		}
 
 		bool checkHandlerMethod(MethodDefinition handler) {
