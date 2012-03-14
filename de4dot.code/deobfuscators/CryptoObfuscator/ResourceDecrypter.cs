@@ -110,13 +110,16 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				var ldci4 = instructions[i - 1];
 				if (!DotNetUtils.isLdcI4(ldci4))
 					continue;
+				int flagValue = DotNetUtils.getLdcI4Value(ldci4);
+				if (!isFlag(flagValue))
+					continue;
 				var ldloc = instructions[i - 2];
 				if (!DotNetUtils.isLdloc(ldloc))
 					continue;
 				var local = DotNetUtils.getLocalVar(method.Body.Variables, ldloc);
-				if (local.VariableType.ToString() != "System.Byte")
+				if (!local.VariableType.IsPrimitive)
 					continue;
-				constants.Add(DotNetUtils.getLdcI4Value(ldci4));
+				constants.Add(flagValue);
 			}
 
 			if (constants.Count == 2) {
@@ -125,6 +128,14 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				return true;
 			}
 
+			return false;
+		}
+
+		static bool isFlag(int value) {
+			for (uint tmp = (uint)value; tmp != 0; tmp >>= 1) {
+				if ((tmp & 1) != 0)
+					return tmp == 1;
+			}
 			return false;
 		}
 

@@ -61,7 +61,15 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 					continue;
 				if (type.Methods.Count < 3 || type.Methods.Count > 6)
 					continue;
-				if (DotNetUtils.getPInvokeMethod(type, "mscoree", "StrongNameSignatureVerificationEx") == null)
+				if (DotNetUtils.getPInvokeMethod(type, "mscoree", "StrongNameSignatureVerificationEx") != null) {
+				}
+				else if (DotNetUtils.getPInvokeMethod(type, "mscoree", "CLRCreateInstance") != null) {
+					if (type.NestedTypes.Count != 3)
+						continue;
+					if (!type.NestedTypes[0].IsInterface || !type.NestedTypes[1].IsInterface || !type.NestedTypes[2].IsInterface)
+						continue;
+				}
+				else
 					continue;
 
 				tamperType = type;
