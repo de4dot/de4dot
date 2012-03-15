@@ -266,10 +266,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 		}
 
 		bool hasModuleCctor() {
-			var type = DotNetUtils.getModuleType(module);
-			if (type == null)
-				return false;
-			return DotNetUtils.getMethod(type, ".cctor") != null;
+			return DotNetUtils.getModuleTypeCctor(module) != null;
 		}
 
 		bool hasEmptyClassesInEveryNamespace() {

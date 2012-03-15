@@ -46,7 +46,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 		}
 
 		public void find(ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
-			if (checkInitMethod(DotNetUtils.getMethod(DotNetUtils.getModuleType(module), ".cctor"), simpleDeobfuscator, deob))
+			if (checkInitMethod(DotNetUtils.getModuleTypeCctor(module), simpleDeobfuscator, deob))
 				return;
 			if (checkInitMethod(module.EntryPoint, simpleDeobfuscator, deob))
 				return;

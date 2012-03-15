@@ -51,7 +51,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		}
 
 		public void find() {
-			var cctor = DotNetUtils.getMethod(DotNetUtils.getModuleType(module), ".cctor");
+			var cctor = DotNetUtils.getModuleTypeCctor(module);
 			if (cctor == null)
 				return;
 
