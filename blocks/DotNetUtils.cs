@@ -24,6 +24,14 @@ using Mono.Cecil.Cil;
 using Mono.Cecil.Metadata;
 
 namespace de4dot.blocks {
+	public enum DotNetRuntimeType {
+		Unknown,
+		Desktop,
+		Silverlight,		// and WindowsPhone, XNA Xbox360
+		CompactFramework,
+		Zune,
+	}
+
 	class TypeCache {
 		ModuleDefinition module;
 		TypeDefinitionDict<TypeDefinition> typeRefToDef = new TypeDefinitionDict<TypeDefinition>();
@@ -1083,6 +1091,27 @@ namespace de4dot.blocks {
 			typeRef.MetadataToken = nextTypeRefToken();
 			typeRef.IsValueType = isValueType;
 			return typeRef;
+		}
+
+		public static DotNetRuntimeType getDotNetRuntimeType(ModuleDefinition module) {
+			foreach (var modRef in module.AssemblyReferences) {
+				if (modRef.Name != "mscorlib")
+					continue;
+				if (modRef.PublicKeyToken == null || modRef.PublicKeyToken.Length == 0)
+					continue;
+				switch (BitConverter.ToString(modRef.PublicKeyToken).Replace("-", "").ToLowerInvariant()) {
+				case "b77a5c561934e089":
+					return DotNetRuntimeType.Desktop;
+				case "7cec85d7bea7798e":
+					return DotNetRuntimeType.Silverlight;
+				case "969db8053d3322ac":
+					return DotNetRuntimeType.CompactFramework;
+				case "e92a8b81eba7ceb7":
+					return DotNetRuntimeType.Zune;
+				}
+			}
+
+			return DotNetRuntimeType.Unknown;
 		}
 	}
 }
