@@ -1113,5 +1113,36 @@ namespace de4dot.blocks {
 
 			return DotNetRuntimeType.Unknown;
 		}
+
+		public static bool callsMethod(MethodDefinition method, string methodFullName) {
+			if (method == null || method.Body == null)
+				return false;
+
+			foreach (var instr in method.Body.Instructions) {
+				if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt)
+					continue;
+				var calledMethod = instr.Operand as MethodReference;
+				if (calledMethod == null)
+					continue;
+				if (calledMethod.FullName == methodFullName)
+					return true;
+			}
+
+			return false;
+		}
+
+		public static bool callsMethod(MethodDefinition method, string returnType, string parameters) {
+			if (method == null || method.Body == null)
+				return false;
+
+			foreach (var instr in method.Body.Instructions) {
+				if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt)
+					continue;
+				if (isMethod(instr.Operand as MethodReference, returnType, parameters))
+					return true;
+			}
+
+			return false;
+		}
 	}
 }
