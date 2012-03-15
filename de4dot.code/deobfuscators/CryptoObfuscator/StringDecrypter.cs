@@ -81,6 +81,8 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				return defaultName;
 
 			foreach (var s in DotNetUtils.getCodeStrings(cctor)) {
+				if (DotNetUtils.getResource(module, s) != null)
+					return s;
 				try {
 					return Encoding.UTF8.GetString(Convert.FromBase64String(s));
 				}
@@ -107,7 +109,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 					continue;
 				if (DotNetUtils.findFieldType(type, "System.Byte[]", true) == null)
 					continue;
-				if (type.Methods.Count != 3)
+				if (type.Methods.Count != 2 && type.Methods.Count != 3)
 					continue;
 				if (type.NestedTypes.Count > 0)
 					continue;

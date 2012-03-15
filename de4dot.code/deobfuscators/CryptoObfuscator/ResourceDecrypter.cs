@@ -36,19 +36,45 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		byte desEncryptedFlag;
 		byte deflatedFlag;
 		byte bitwiseNotEncryptedFlag;
+		DotNetRuntimeType rtType;
 
 		public ResourceDecrypter(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator) {
 			this.module = module;
+			rtType = DotNetUtils.getDotNetRuntimeType(module);
 			find(simpleDeobfuscator);
 		}
 
 		void find(ISimpleDeobfuscator simpleDeobfuscator) {
-			var requiredTypes = new string[] {
-				"System.IO.MemoryStream",
-				"System.Object",
-				"System.Int32",
-			};
+			switch (rtType) {
+			case DotNetRuntimeType.Desktop:
+				if (module.Runtime >= TargetRuntime.Net_2_0)
+					findDesktopOrCompactFramework();
+				else
+					findDesktopOrCompactFrameworkV1();
+				break;
 
+			case DotNetRuntimeType.Silverlight:
+				findSilverlight();
+				break;
+
+			case DotNetRuntimeType.CompactFramework:
+				if (module.Runtime >= TargetRuntime.Net_2_0) {
+					if (findDesktopOrCompactFramework())
+						break;
+				}
+				findDesktopOrCompactFrameworkV1();
+				break;
+			}
+
+			initializeDecrypterFlags(simpleDeobfuscator);
+		}
+
+		static string[] requiredTypes = new string[] {
+			"System.IO.MemoryStream",
+			"System.Object",
+			"System.Int32",
+		};
+		bool findDesktopOrCompactFramework() {
 			resourceDecrypterType = null;
 			foreach (var type in module.Types) {
 				if (type.Fields.Count != 5)
@@ -64,10 +90,9 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 					continue;
 
 				resourceDecrypterType = type;
-				break;
+				return true;
 			}
-
-			initializeDecrypterFlags(simpleDeobfuscator);
+			return false;
 		}
 
 		bool checkCctor(MethodDefinition cctor) {
@@ -85,8 +110,65 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return stsfldCount >= cctor.DeclaringType.Fields.Count;
 		}
 
+		static string[] requiredLocals_v1 = new string[] {
+			"System.Boolean",
+			"System.Byte",
+			"System.Byte[]",
+			"System.Int32",
+			"System.Security.Cryptography.DESCryptoServiceProvider",
+		};
+		bool findDesktopOrCompactFrameworkV1() {
+			resourceDecrypterType = null;
+			foreach (var type in module.Types) {
+				if (type.Fields.Count != 0)
+					continue;
+
+				var method = getDecrypterMethod(type);
+				if (method == null)
+					continue;
+				if (!new LocalTypes(method).exactly(requiredLocals_v1))
+					continue;
+				if (!DotNetUtils.callsMethod(method, "System.Int64", "()"))
+					continue;
+				if (!DotNetUtils.callsMethod(method, "System.Int32", "(System.Byte[],System.Int32,System.Int32)"))
+					continue;
+				if (!DotNetUtils.callsMethod(method, "System.Void", "(System.Array,System.Int32,System.Array,System.Int32,System.Int32)"))
+					continue;
+				if (!DotNetUtils.callsMethod(method, "System.Security.Cryptography.ICryptoTransform", "()"))
+					continue;
+				if (!DotNetUtils.callsMethod(method, "System.Byte[]", "(System.Byte[],System.Int32,System.Int32)"))
+					continue;
+
+				resourceDecrypterType = type;
+				return true;
+			}
+			return false;
+		}
+
+		static string[] requiredLocals_sl = new string[] {
+			"System.Byte",
+			"System.Byte[]",
+			"System.Int32",
+		};
+		void findSilverlight() {
+			foreach (var type in module.Types) {
+				if (type.Fields.Count > 0)
+					continue;
+				if (type.HasNestedTypes || type.HasGenericParameters)
+					continue;
+				var method = getDecrypterMethod(type);
+				if (method == null)
+					continue;
+				if (!new LocalTypes(method).exactly(requiredLocals_sl))
+					continue;
+
+				resourceDecrypterType = type;
+				break;
+			}
+		}
+
 		void initializeDecrypterFlags(ISimpleDeobfuscator simpleDeobfuscator) {
-			if (resourceDecrypterType != null && getPublicKeyTokenMethod() != null) {
+			if (resourceDecrypterType != null) {
 				if (updateFlags(getDecrypterMethod(), simpleDeobfuscator))
 					return;
 			}
@@ -122,10 +204,36 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				constants.Add(flagValue);
 			}
 
-			if (constants.Count == 2) {
-				desEncryptedFlag = (byte)constants[0];
-				deflatedFlag = (byte)constants[1];
-				return true;
+			switch (rtType) {
+			case DotNetRuntimeType.Desktop:
+				if (module.Runtime >= TargetRuntime.Net_2_0) {
+					if (constants.Count == 2) {
+						desEncryptedFlag = (byte)constants[0];
+						deflatedFlag = (byte)constants[1];
+						return true;
+					}
+				}
+				else {
+					if (constants.Count == 1) {
+						desEncryptedFlag = (byte)constants[0];
+						return true;
+					}
+				}
+				break;
+
+			case DotNetRuntimeType.Silverlight:
+				if (constants.Count == 1) {
+					bitwiseNotEncryptedFlag = (byte)constants[0];
+					return true;
+				}
+				break;
+
+			case DotNetRuntimeType.CompactFramework:
+				if (constants.Count == 1) {
+					desEncryptedFlag = (byte)constants[0];
+					return true;
+				}
+				break;
 			}
 
 			return false;
@@ -139,37 +247,16 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return false;
 		}
 
-		MethodDefinition getPublicKeyTokenMethod() {
-			foreach (var method in resourceDecrypterType.Methods) {
-				if (isPublicKeyTokenMethod(method))
-					return method;
-			}
-			return null;
+		MethodDefinition getDecrypterMethod() {
+			return getDecrypterMethod(resourceDecrypterType);
 		}
 
-		MethodDefinition getDecrypterMethod() {
-			foreach (var method in resourceDecrypterType.Methods) {
+		static MethodDefinition getDecrypterMethod(TypeDefinition type) {
+			foreach (var method in type.Methods) {
 				if (DotNetUtils.isMethod(method, "System.Byte[]", "(System.IO.Stream)"))
 					return method;
 			}
 			return null;
-		}
-
-		bool isPublicKeyTokenMethod(MethodDefinition method) {
-			if (!method.IsStatic)
-				return false;
-			if (method.Body == null)
-				return false;
-			if (method.Body.ExceptionHandlers.Count < 1)
-				return false;
-			if (!DotNetUtils.isMethod(method, "System.Byte[]", "(System.Reflection.Assembly)"))
-				return false;
-
-			foreach (var s in DotNetUtils.getCodeStrings(method)) {
-				if (s.ToLowerInvariant() == "publickeytoken=")
-					return true;
-			}
-			return false;
 		}
 
 		public byte[] decrypt(Stream resourceStream) {
