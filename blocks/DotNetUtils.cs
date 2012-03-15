@@ -1061,18 +1061,6 @@ namespace de4dot.blocks {
 			return new MetadataToken(TokenType.Event, nextTokenRid--);
 		}
 
-		public static bool findLdcI4Constant(MethodDefinition method, int constant) {
-			if (method == null || method.Body == null)
-				return false;
-			foreach (var instr in method.Body.Instructions) {
-				if (instr.OpCode.Code != Code.Ldc_I4)
-					continue;
-				if (constant == (int)instr.Operand)
-					return true;
-			}
-			return false;
-		}
-
 		public static TypeReference findTypeReference(ModuleDefinition module, string asmSimpleName, string fullName) {
 			foreach (var type in module.GetTypeReferences()) {
 				if (type.FullName != fullName)

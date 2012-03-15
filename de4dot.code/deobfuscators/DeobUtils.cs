@@ -190,6 +190,8 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		public static bool hasInteger(MethodDefinition method, int value) {
+			if (method == null || method.Body == null)
+				return false;
 			foreach (var instr in method.Body.Instructions) {
 				if (!DotNetUtils.isLdcI4(instr))
 					continue;

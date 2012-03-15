@@ -142,18 +142,10 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			}
 			if (createMethod == null || !createMethod.HasBody)
 				return null;
-			if (!findLdci4(createMethod, 0xFFFFFF))
+			if (!DeobUtils.hasInteger(createMethod, 0xFFFFFF))
 				return null;
 
 			return createMethod;
-		}
-
-		bool findLdci4(MethodDefinition method, int value) {
-			foreach (var instr in method.Body.Instructions) {
-				if (instr.OpCode.Code == Code.Ldc_I4 && (int)instr.Operand == value)
-					return true;
-			}
-			return false;
 		}
 
 		ProxyCreatorType getProxyCreatorType(TypeDefinition type, MethodDefinition createMethod) {

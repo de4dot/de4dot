@@ -134,8 +134,8 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 						}
 					}
 
-					if (DotNetUtils.findLdcI4Constant(initMethod, 0xFFFFFF) &&
-						DotNetUtils.findLdcI4Constant(initMethod, 0xFFFF)) {
+					if (DeobUtils.hasInteger(initMethod, 0xFFFFFF) &&
+						DeobUtils.hasInteger(initMethod, 0xFFFF)) {
 						stringOffset ^= ((stringDecrypterMethod.MetadataToken.ToInt32() & 0xFFFFFF) - 1) % 0xFFFF;
 					}
 				}
