@@ -81,6 +81,7 @@ namespace de4dot.cui {
 			catch (Exception ex) {
 				printStackTrace(ex);
 				Log.e("\nTry the latest version before reporting this problem!");
+				Log.e("Send bug reports to de4dot@gmail.com or go to https://github.com/0xd4d/de4dot/issues");
 				exitCode = 1;
 			}
 
