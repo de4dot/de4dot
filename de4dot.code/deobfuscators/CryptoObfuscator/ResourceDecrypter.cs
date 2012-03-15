@@ -82,7 +82,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 					stsfldCount++;
 				}
 			}
-			return stsfldCount == cctor.DeclaringType.Fields.Count;
+			return stsfldCount >= cctor.DeclaringType.Fields.Count;
 		}
 
 		void initializeDecrypterFlags(ISimpleDeobfuscator simpleDeobfuscator) {
