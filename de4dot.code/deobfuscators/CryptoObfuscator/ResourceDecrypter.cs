@@ -36,28 +36,28 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		byte desEncryptedFlag;
 		byte deflatedFlag;
 		byte bitwiseNotEncryptedFlag;
-		DotNetRuntimeType rtType;
+		FrameworkType frameworkType;
 
 		public ResourceDecrypter(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator) {
 			this.module = module;
-			rtType = DotNetUtils.getDotNetRuntimeType(module);
+			frameworkType = DotNetUtils.getFrameworkType(module);
 			find(simpleDeobfuscator);
 		}
 
 		void find(ISimpleDeobfuscator simpleDeobfuscator) {
-			switch (rtType) {
-			case DotNetRuntimeType.Desktop:
+			switch (frameworkType) {
+			case FrameworkType.Desktop:
 				if (module.Runtime >= TargetRuntime.Net_2_0)
 					findDesktopOrCompactFramework();
 				else
 					findDesktopOrCompactFrameworkV1();
 				break;
 
-			case DotNetRuntimeType.Silverlight:
+			case FrameworkType.Silverlight:
 				findSilverlight();
 				break;
 
-			case DotNetRuntimeType.CompactFramework:
+			case FrameworkType.CompactFramework:
 				if (module.Runtime >= TargetRuntime.Net_2_0) {
 					if (findDesktopOrCompactFramework())
 						break;
@@ -204,8 +204,8 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				constants.Add(flagValue);
 			}
 
-			switch (rtType) {
-			case DotNetRuntimeType.Desktop:
+			switch (frameworkType) {
+			case FrameworkType.Desktop:
 				if (module.Runtime >= TargetRuntime.Net_2_0) {
 					if (constants.Count == 2) {
 						desEncryptedFlag = (byte)constants[0];
@@ -221,14 +221,14 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				}
 				break;
 
-			case DotNetRuntimeType.Silverlight:
+			case FrameworkType.Silverlight:
 				if (constants.Count == 1) {
 					bitwiseNotEncryptedFlag = (byte)constants[0];
 					return true;
 				}
 				break;
 
-			case DotNetRuntimeType.CompactFramework:
+			case FrameworkType.CompactFramework:
 				if (constants.Count == 1) {
 					desEncryptedFlag = (byte)constants[0];
 					return true;

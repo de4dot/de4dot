@@ -24,7 +24,7 @@ using Mono.Cecil.Cil;
 using Mono.Cecil.Metadata;
 
 namespace de4dot.blocks {
-	public enum DotNetRuntimeType {
+	public enum FrameworkType {
 		Unknown,
 		Desktop,
 		Silverlight,		// and WindowsPhone, XNA Xbox360
@@ -1093,7 +1093,7 @@ namespace de4dot.blocks {
 			return typeRef;
 		}
 
-		public static DotNetRuntimeType getDotNetRuntimeType(ModuleDefinition module) {
+		public static FrameworkType getFrameworkType(ModuleDefinition module) {
 			foreach (var modRef in module.AssemblyReferences) {
 				if (modRef.Name != "mscorlib")
 					continue;
@@ -1101,17 +1101,17 @@ namespace de4dot.blocks {
 					continue;
 				switch (BitConverter.ToString(modRef.PublicKeyToken).Replace("-", "").ToLowerInvariant()) {
 				case "b77a5c561934e089":
-					return DotNetRuntimeType.Desktop;
+					return FrameworkType.Desktop;
 				case "7cec85d7bea7798e":
-					return DotNetRuntimeType.Silverlight;
+					return FrameworkType.Silverlight;
 				case "969db8053d3322ac":
-					return DotNetRuntimeType.CompactFramework;
+					return FrameworkType.CompactFramework;
 				case "e92a8b81eba7ceb7":
-					return DotNetRuntimeType.Zune;
+					return FrameworkType.Zune;
 				}
 			}
 
-			return DotNetRuntimeType.Unknown;
+			return FrameworkType.Unknown;
 		}
 
 		public static bool callsMethod(MethodDefinition method, string methodFullName) {

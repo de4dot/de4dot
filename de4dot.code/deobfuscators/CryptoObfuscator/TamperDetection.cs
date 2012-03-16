@@ -25,7 +25,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		ModuleDefinition module;
 		TypeDefinition tamperType;
 		MethodDefinition tamperMethod;
-		DotNetRuntimeType rtType;
+		FrameworkType frameworkType;
 
 		public bool Detected {
 			get { return tamperMethod != null; }
@@ -41,7 +41,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 
 		public TamperDetection(ModuleDefinition module) {
 			this.module = module;
-			rtType = DotNetUtils.getDotNetRuntimeType(module);
+			frameworkType = DotNetUtils.getFrameworkType(module);
 		}
 
 		public void find() {
@@ -59,14 +59,14 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				var method = info.Item2;
 
 				bool result = false;
-				switch (rtType) {
-				case DotNetRuntimeType.Desktop:
+				switch (frameworkType) {
+				case FrameworkType.Desktop:
 					result = findDesktop(method);
 					break;
-				case DotNetRuntimeType.Silverlight:
+				case FrameworkType.Silverlight:
 					result = findSilverlight(method);
 					break;
-				case DotNetRuntimeType.CompactFramework:
+				case FrameworkType.CompactFramework:
 					result = findCompactFramework(method);
 					break;
 				}
