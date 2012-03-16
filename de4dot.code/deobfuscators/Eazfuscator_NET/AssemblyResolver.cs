@@ -36,6 +36,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		MethodDefinition decryptMethod;
 		TypeDefinition otherType;
 		List<AssemblyInfo> assemblyInfos = new List<AssemblyInfo>();
+		FrameworkType frameworkType;
 		byte[] decryptKey;
 
 		public class AssemblyInfo {
@@ -76,6 +77,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 
 		public AssemblyResolver(ModuleDefinition module, DecrypterType decrypterType) {
 			this.module = module;
+			this.frameworkType = DotNetUtils.getFrameworkType(module);
 			this.decrypterType = decrypterType;
 		}
 
@@ -90,20 +92,65 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Call)
 					continue;
-				if (!checkInitMethod(instr.Operand as MethodDefinition))
-					continue;
 
+				var calledMethod = instr.Operand as MethodDefinition;
+				if (calledMethod == null || !calledMethod.IsStatic || calledMethod.Body == null)
+					return false;
+				if (!DotNetUtils.isMethod(calledMethod, "System.Void", "()"))
+					return false;
+
+				if (frameworkType == FrameworkType.Silverlight) {
+					if (!checkInitMethodSilverlight(calledMethod))
+						continue;
+				}
+				else {
+					if (!checkInitMethod(calledMethod))
+						continue;
+				}
+
+				decryptMethod = getDecryptMethod();
+				updateDecrypterType();
 				return true;
 			}
 
 			return false;
 		}
 
+		bool checkInitMethodSilverlight(MethodDefinition method) {
+			var type = method.DeclaringType;
+			if (type.NestedTypes.Count != 2)
+				return false;
+
+			var resolveHandler = getResolveMethodSilverlight(method);
+			if (resolveHandler == null)
+				return false;
+
+			initMethod = method;
+			resolverType = type;
+			handlerMethod = resolveHandler;
+			return true;
+		}
+
+		static MethodDefinition getResolveMethodSilverlight(MethodDefinition initMethod) {
+			foreach (var instr in initMethod.Body.Instructions) {
+				if (instr.OpCode.Code != Code.Call)
+					continue;
+				var calledMethod = instr.Operand as MethodDefinition;
+				if (calledMethod == null)
+					continue;
+				if (!DotNetUtils.isMethod(calledMethod, "System.Void", "()"))
+					continue;
+				if (!DeobUtils.hasInteger(calledMethod, ',') ||
+					!DeobUtils.hasInteger(calledMethod, '|'))
+					continue;
+
+				return calledMethod;
+			}
+
+			return null;
+		}
+
 		bool checkInitMethod(MethodDefinition method) {
-			if (method == null || !method.IsStatic || method.Body == null)
-				return false;
-			if (!DotNetUtils.isMethod(method, "System.Void", "()"))
-				return false;
 			var type = method.DeclaringType;
 			if (type.NestedTypes.Count != 3)
 				return false;
@@ -120,8 +167,6 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			initMethod = method;
 			resolverType = type;
 			handlerMethod = resolveHandler;
-			decryptMethod = getDecryptMethod();
-			updateDecrypterType();
 			return true;
 		}
 
@@ -239,8 +284,9 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		}
 
 		bool createAssemblyInfos() {
+			int numElements = DeobUtils.hasInteger(handlerMethod, 3) ? 3 : 2;
 			foreach (var s in DotNetUtils.getCodeStrings(handlerMethod)) {
-				var infos = createAssemblyInfos(s);
+				var infos = createAssemblyInfos(s, numElements);
 				if (infos == null)
 					continue;
 
@@ -251,17 +297,16 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return false;
 		}
 
-		List<AssemblyInfo> createAssemblyInfos(string s) {
+		List<AssemblyInfo> createAssemblyInfos(string s, int numElements) {
 			try {
-				return tryCreateAssemblyInfos(s);
+				return tryCreateAssemblyInfos(s, numElements);
 			}
 			catch (FormatException) {
 				return null;	// Convert.FromBase64String() failed
 			}
 		}
 
-		List<AssemblyInfo> tryCreateAssemblyInfos(string s) {
-			int numElements = decrypterType.Detected ? 3 : 2;
+		List<AssemblyInfo> tryCreateAssemblyInfos(string s, int numElements) {
 			var ary = s.Split(',');
 			if (ary.Length == 0 || ary.Length % numElements != 0)
 				return null;

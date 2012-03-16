@@ -23,6 +23,7 @@ using System.IO;
 using System.Text;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Mono.Cecil.Metadata;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Eazfuscator_NET {
@@ -43,6 +44,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		BinaryReader reader;
 		DecrypterType decrypterType;
 		StreamHelperType streamHelperType;
+		bool isV32OrLater;
 
 		class StreamHelperType {
 			public TypeDefinition type;
@@ -104,6 +106,15 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			this.decrypterType = decrypterType;
 		}
 
+		static bool checkIfV32OrLater(TypeDefinition type) {
+			int numInts = 0;
+			foreach (var field in type.Fields) {
+				if (field.FieldType.EType == ElementType.I4)
+					numInts++;
+			}
+			return numInts >= 2;
+		}
+
 		public void find() {
 			foreach (var type in module.Types) {
 				if (!checkType(type))
@@ -115,6 +126,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 
 					stringType = type;
 					stringMethod = method;
+					isV32OrLater = checkIfV32OrLater(stringType);
 					return;
 				}
 			}
@@ -229,7 +241,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			if (dataDecrypterType == null)
 				return false;
 
-			if (decrypterType.Detected) {
+			if (isV32OrLater) {
 				bool initializedAll;
 				if (!findInts(stringMethod, out initializedAll))
 					return false;
@@ -241,7 +253,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 						return false;
 				}
 
-				if (!decrypterType.initialize())
+				if (decrypterType.Detected && !decrypterType.initialize())
 					return false;
 			}
 
@@ -252,7 +264,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		}
 
 		void initializeFlags() {
-			if (!decrypterType.Detected || !DeobUtils.hasInteger(stringMethod, 0xFFFFFFF)) {
+			if (!isV32OrLater || !DeobUtils.hasInteger(stringMethod, 0xFFFFFFF)) {
 				// <= 3.3.134
 				rldFlag = 0x40000000;
 				bytesFlag = 0x80000000;
@@ -305,8 +317,9 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			else
 				keyLen = reader.ReadInt16() ^ s2;
 
+			magic1 = i1 ^ i2;
 			if (decrypterType.Detected)
-				magic1 = (int)decrypterType.getMagic() ^ i1 ^ i2;
+				magic1 ^= (int)decrypterType.getMagic();
 		}
 
 		public string decrypt(int val) {
@@ -316,7 +329,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				byte[] tmpKey;
 				if (theKey == null) {
 					tmpKey = reader.ReadBytes(keyLen == -1 ? (short)(reader.ReadInt16() ^ s3 ^ offset) : keyLen);
-					if (decrypterType.Detected) {
+					if (isV32OrLater) {
 						for (int i = 0; i < tmpKey.Length; i++)
 							tmpKey[i] ^= (byte)(magic1 >> ((i & 3) << 3));
 					}
@@ -484,7 +497,28 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				return true;
 			}
 
+			// 3.2 (Silverlight)
+			if (findIntsSilverlight(method, ref initializedAll))
+				return true;
+
 			return false;
+		}
+
+		bool findIntsSilverlight(MethodDefinition method, ref bool initializedAll) {
+			int index = DeobUtils.indexOfLdci4Instruction(method, 268435314);
+			if (index < 0)
+				return false;
+			index--;
+			index = EfUtils.indexOfPreviousLdci4Instruction(method, index);
+			if (index < 0)
+				return false;
+
+			i1 = 0;
+			if (!EfUtils.getNextInt32(method, ref index, out i2))
+				return false;
+
+			initializedAll = method.Body.Instructions[index].OpCode.Code == Code.Stsfld;
+			return true;
 		}
 
 		bool findIntsCctor(MethodDefinition cctor) {
@@ -516,7 +550,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		}
 
 		bool findInt3(MethodDefinition method) {
-			if (!decrypterType.Detected)
+			if (!isV32OrLater)
 				return findInt3Old(method);
 			return findInt3New(method);
 		}

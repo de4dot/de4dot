@@ -190,15 +190,21 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		public static bool hasInteger(MethodDefinition method, int value) {
+			return indexOfLdci4Instruction(method, value) >= 0;
+		}
+
+		public static int indexOfLdci4Instruction(MethodDefinition method, int value) {
 			if (method == null || method.Body == null)
-				return false;
-			foreach (var instr in method.Body.Instructions) {
+				return -1;
+			var instrs = method.Body.Instructions;
+			for (int i = 0; i < instrs.Count; i++) {
+				var instr = instrs[i];
 				if (!DotNetUtils.isLdcI4(instr))
 					continue;
 				if (DotNetUtils.getLdcI4Value(instr) == value)
-					return true;
+					return i;
 			}
-			return false;
+			return -1;
 		}
 	}
 }

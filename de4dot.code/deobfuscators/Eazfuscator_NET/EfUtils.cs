@@ -24,6 +24,28 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 	static class EfUtils {
+		public static int indexOfPreviousLdci4Instruction(MethodDefinition method, int index) {
+			var instrs = method.Body.Instructions;
+			for (int i = index; i >= 0; i--) {
+				var instr = instrs[i];
+				if (DotNetUtils.isLdcI4(instr))
+					return i;
+			}
+			return -1;
+		}
+
+		public static int indexOfNextLdci4Instruction(MethodDefinition method, int index) {
+			if (index < 0)
+				return -1;
+			var instrs = method.Body.Instructions;
+			for (int i = index; i < instrs.Count; i++) {
+				var instr = instrs[i];
+				if (DotNetUtils.isLdcI4(instr))
+					return i;
+			}
+			return -1;
+		}
+
 		public static bool getNextInt32(MethodDefinition method, ref int index, out int val) {
 			for (; index < method.Body.Instructions.Count; index++) {
 				var instr = method.Body.Instructions[index];

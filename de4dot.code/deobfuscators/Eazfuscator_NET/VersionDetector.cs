@@ -49,6 +49,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				return null;
 
 			bool hasConstantM2 = DeobUtils.hasInteger(decryptStringMethod, -2);
+			var frameworkType = DotNetUtils.getFrameworkType(decryptStringType.Module);
 
 			/////////////////////////////////////////////////////////////////
 			/////////////////////////////////////////////////////////////////
@@ -345,7 +346,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				!decryptStringMethod.IsSynchronized &&
 				decryptStringMethod.Body.MaxStackSize >= 1 &&
 				decryptStringMethod.Body.MaxStackSize <= 8 &&
-				decryptStringMethod.Body.ExceptionHandlers.Count == 2 &&
+				(decryptStringMethod.Body.ExceptionHandlers.Count == 2 ||
+				(frameworkType == FrameworkType.Silverlight && decryptStringMethod.Body.ExceptionHandlers.Count == 1)) &&
 				new LocalTypes(decryptStringMethod).exactly(locals29) &&
 				checkTypeFields(fields29)) {
 				return "2.9";
@@ -395,7 +397,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				!decryptStringMethod.IsSynchronized &&
 				decryptStringMethod.Body.MaxStackSize >= 1 &&
 				decryptStringMethod.Body.MaxStackSize <= 8 &&
-				decryptStringMethod.Body.ExceptionHandlers.Count == 2 &&
+				(decryptStringMethod.Body.ExceptionHandlers.Count == 2 ||
+				(frameworkType == FrameworkType.Silverlight && decryptStringMethod.Body.ExceptionHandlers.Count == 1)) &&
 				new LocalTypes(decryptStringMethod).exactly(locals30) &&
 				checkTypeFields(fields30)) {
 				return "3.0";
@@ -445,7 +448,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				!decryptStringMethod.IsSynchronized &&
 				decryptStringMethod.Body.MaxStackSize >= 1 &&
 				decryptStringMethod.Body.MaxStackSize <= 8 &&
-				decryptStringMethod.Body.ExceptionHandlers.Count == 2 &&
+				(decryptStringMethod.Body.ExceptionHandlers.Count == 2 ||
+				(frameworkType == FrameworkType.Silverlight && decryptStringMethod.Body.ExceptionHandlers.Count == 1)) &&
 				new LocalTypes(decryptStringMethod).exactly(locals31) &&
 				checkTypeFields(fields31)) {
 				return "3.1";
@@ -497,7 +501,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				!decryptStringMethod.IsSynchronized &&
 				decryptStringMethod.Body.MaxStackSize >= 1 &&
 				decryptStringMethod.Body.MaxStackSize <= 8 &&
-				decryptStringMethod.Body.ExceptionHandlers.Count == 2 &&
+				(decryptStringMethod.Body.ExceptionHandlers.Count == 2 ||
+				(frameworkType == FrameworkType.Silverlight && decryptStringMethod.Body.ExceptionHandlers.Count == 1)) &&
 				new LocalTypes(decryptStringMethod).exactly(locals32) &&
 				checkTypeFields(fields32)) {
 				return "3.2";
@@ -552,7 +557,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					!decryptStringMethod.IsSynchronized &&
 					decryptStringMethod.Body.MaxStackSize >= 1 &&
 					decryptStringMethod.Body.MaxStackSize <= 8 &&
-					decryptStringMethod.Body.ExceptionHandlers.Count == 2 &&
+					(decryptStringMethod.Body.ExceptionHandlers.Count == 2 ||
+					(frameworkType == FrameworkType.Silverlight && decryptStringMethod.Body.ExceptionHandlers.Count == 1)) &&
 					new LocalTypes(decryptStringMethod).exactly(locals33) &&
 					checkTypeFields(fields33)) {
 					return "3.3.29 - 3.3.57 (BETA)";
@@ -608,7 +614,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					!decryptStringMethod.IsSynchronized &&
 					decryptStringMethod.Body.MaxStackSize >= 1 &&
 					decryptStringMethod.Body.MaxStackSize <= 8 &&
-					decryptStringMethod.Body.ExceptionHandlers.Count == 2 &&
+					(decryptStringMethod.Body.ExceptionHandlers.Count == 2 ||
+					(frameworkType == FrameworkType.Silverlight && decryptStringMethod.Body.ExceptionHandlers.Count == 1)) &&
 					new LocalTypes(decryptStringMethod).exactly(locals33) &&
 					checkTypeFields(fields33)) {
 					return "3.3";
