@@ -130,6 +130,16 @@ namespace de4dot.code.deobfuscators.DeepSea {
 
 		protected abstract bool checkHandlerMethodInternal(MethodDefinition handler);
 
+		// 3.0.3.41 - 3.0.4.44
+		protected static byte[] decryptResourceV3Old(EmbeddedResource resource) {
+			return decryptResourceV3Old(resource.GetResourceData());
+		}
+
+		// 3.0.3.41 - 3.0.4.44
+		protected static byte[] decryptResourceV3Old(byte[] data) {
+			return decryptResource(data, 0, data.Length, 0);
+		}
+
 		protected static byte[] decryptResourceV3(EmbeddedResource resource) {
 			return decryptResourceV3(resource.GetResourceData());
 		}

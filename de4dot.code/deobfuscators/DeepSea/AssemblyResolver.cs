@@ -27,8 +27,15 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.DeepSea {
 	class AssemblyResolver : ResolverBase {
-		bool isV3;
+		Version version;
 		List<FieldInfo> fieldInfos;
+
+		enum Version {
+			Unknown,
+			V3Old,
+			V3,
+			V4,
+		}
 
 		public class AssemblyInfo {
 			public byte[] data;
@@ -70,7 +77,10 @@ namespace de4dot.code.deobfuscators.DeepSea {
 
 		protected override bool checkHandlerMethodInternal(MethodDefinition handler) {
 			if (checkHandlerV3(handler) || checkHandlerSL(handler)) {
-				isV3 = true;
+				if (isV3Old(handler))
+					version = Version.V3Old;
+				else
+					version = Version.V3;
 				return true;
 			}
 
@@ -78,12 +88,17 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			List<FieldInfo> fieldInfosTmp;
 			if (checkHandlerV4(handler, out fieldInfosTmp) ||
 				checkHandlerV4_0_4(handler, out fieldInfosTmp)) {
-				isV3 = false;
+				version = Version.V4;
 				fieldInfos = fieldInfosTmp;
 				return true;
 			}
 
 			return false;
+		}
+
+		static bool isV3Old(MethodDefinition method) {
+			return DotNetUtils.callsMethod(method, "System.Int32 System.IO.Stream::Read(System.Byte[],System.Int32,System.Int32)") &&
+				!DotNetUtils.callsMethod(method, "System.Int32 System.IO.Stream::ReadByte()");
 		}
 
 		static string[] handlerLocalTypes_NET = new string[] {
@@ -205,9 +220,18 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		}
 
 		public IEnumerable<AssemblyInfo> getAssemblyInfos() {
-			if (isV3)
+			if (!Detected)
+				return new List<AssemblyInfo>();
+
+			switch (version) {
+			case Version.V3Old:
+			case Version.V3:
 				return getAssemblyInfosV3();
-			return getAssemblyInfosV4();
+			case Version.V4:
+				return getAssemblyInfosV4();
+			default:
+				throw new ApplicationException("Unknown version");
+			}
 		}
 
 		IEnumerable<AssemblyInfo> getAssemblyInfosV3() {
@@ -230,7 +254,8 @@ namespace de4dot.code.deobfuscators.DeepSea {
 
 		AssemblyInfo getAssemblyInfoV3(EmbeddedResource resource) {
 			try {
-				return getAssemblyInfo(decryptResourceV3(resource), resource);
+				var decrypted = version == Version.V3Old ? decryptResourceV3Old(resource) : decryptResourceV3(resource);
+				return getAssemblyInfo(decrypted, resource);
 			}
 			catch (Exception) {
 				return null;
