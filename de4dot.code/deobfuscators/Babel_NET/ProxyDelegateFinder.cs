@@ -159,8 +159,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		}
 
 		ProxyCreatorType getProxyCreatorType(MethodDefinition methodToCheck) {
-			foreach (var info in DotNetUtils.getCalledMethods(module, methodToCheck)) {
-				var calledMethod = info.Item2;
+			foreach (var calledMethod in DotNetUtils.getCalledMethods(module, methodToCheck)) {
 				if (!calledMethod.IsStatic || calledMethod.Body == null)
 					continue;
 				if (!MemberReferenceHelper.compareTypes(methodToCheck.DeclaringType, calledMethod.DeclaringType))

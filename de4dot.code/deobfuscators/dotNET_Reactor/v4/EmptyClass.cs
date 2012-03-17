@@ -48,8 +48,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				foreach (var method in type.Methods) {
 					if (method.Name != ".ctor" && method.Name != ".cctor" && module.EntryPoint != method)
 						continue;
-					foreach (var tuple in DotNetUtils.getCalledMethods(module, method)) {
-						var calledMethod = tuple.Item2;
+					foreach (var calledMethod in DotNetUtils.getCalledMethods(module, method)) {
 						if (!calledMethod.IsStatic || calledMethod.Body == null)
 							continue;
 						if (!DotNetUtils.isMethod(calledMethod, "System.Void", "()"))

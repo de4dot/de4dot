@@ -85,8 +85,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			if (cctor == null)
 				return;
 
-			foreach (var info in DotNetUtils.getCalledMethods(module, cctor)) {
-				var method = info.Item2;
+			foreach (var method in DotNetUtils.getCalledMethods(module, cctor)) {
 				if (method.Name != "Startup")
 					continue;
 				if (!DotNetUtils.isMethod(method, "System.Void", "()"))

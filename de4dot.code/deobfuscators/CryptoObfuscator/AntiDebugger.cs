@@ -52,9 +52,8 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		bool find(MethodDefinition methodToCheck) {
 			if (methodToCheck == null)
 				return false;
-			foreach (var info in DotNetUtils.getCalledMethods(module, methodToCheck)) {
-				var type = info.Item1;
-				var method = info.Item2;
+			foreach (var method in DotNetUtils.getCalledMethods(module, methodToCheck)) {
+				var type = method.DeclaringType;
 
 				if (!method.IsStatic || !DotNetUtils.isMethod(method, "System.Void", "()"))
 					continue;

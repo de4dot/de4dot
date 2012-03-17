@@ -496,8 +496,8 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		void addEntryPointCallToBeRemoved(MethodDefinition methodToBeRemoved) {
 			var entryPoint = module.EntryPoint;
 			addCallToBeRemoved(entryPoint, methodToBeRemoved);
-			foreach (var info in DotNetUtils.getCalledMethods(module, entryPoint))
-				addCallToBeRemoved(info.Item2, methodToBeRemoved);
+			foreach (var calledMethod in DotNetUtils.getCalledMethods(module, entryPoint))
+				addCallToBeRemoved(calledMethod, methodToBeRemoved);
 		}
 
 		void decryptResources() {

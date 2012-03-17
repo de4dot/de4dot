@@ -55,9 +55,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			if (methodToCheck == null)
 				return false;
 
-			foreach (var info in DotNetUtils.getCalledMethods(module, methodToCheck)) {
-				var method = info.Item2;
-
+			foreach (var method in DotNetUtils.getCalledMethods(module, methodToCheck)) {
 				bool result = false;
 				switch (frameworkType) {
 				case FrameworkType.Desktop:

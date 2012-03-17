@@ -164,8 +164,7 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 		}
 
 		string getPassword(MethodDefinition decryptMethod) {
-			foreach (var info in DotNetUtils.getCalledMethods(module, decryptMethod)) {
-				var method = info.Item2;
+			foreach (var method in DotNetUtils.getCalledMethods(module, decryptMethod)) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
 				if (!MemberReferenceHelper.compareTypes(method.DeclaringType, decryptMethod.DeclaringType))
@@ -200,8 +199,8 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 
 		string getPassword2(MethodDefinition method) {
 			string password = "";
-			foreach (var info in DotNetUtils.getCalledMethods(module, method)) {
-				var s = getPassword3(info.Item2);
+			foreach (var calledMethod in DotNetUtils.getCalledMethods(module, method)) {
+				var s = getPassword3(calledMethod);
 				if (string.IsNullOrEmpty(s))
 					return null;
 

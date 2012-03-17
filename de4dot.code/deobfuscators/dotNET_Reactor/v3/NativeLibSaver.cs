@@ -65,14 +65,14 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 		}
 
 		public void find() {
-			foreach (var info in DotNetUtils.getCalledMethods(module, DotNetUtils.getModuleTypeCctor(module))) {
-				if (!DotNetUtils.isMethod(info.Item2, "System.Void", "()"))
+			foreach (var calledMethod in DotNetUtils.getCalledMethods(module, DotNetUtils.getModuleTypeCctor(module))) {
+				if (!DotNetUtils.isMethod(calledMethod, "System.Void", "()"))
 					continue;
-				if (info.Item1.FullName != "<PrivateImplementationDetails>{F1C5056B-0AFC-4423-9B83-D13A26B48869}")
+				if (calledMethod.DeclaringType.FullName != "<PrivateImplementationDetails>{F1C5056B-0AFC-4423-9B83-D13A26B48869}")
 					continue;
 
-				nativeLibCallerType = info.Item1;
-				initMethod = info.Item2;
+				nativeLibCallerType = calledMethod.DeclaringType;
+				initMethod = calledMethod;
 				foreach (var s in DotNetUtils.getCodeStrings(initMethod)) {
 					nativeFileResource = DotNetUtils.getResource(module, s);
 					if (nativeFileResource != null)

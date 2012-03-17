@@ -231,8 +231,8 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		}
 
 		bool callsMethod(MethodDefinition methodToCheck, MethodDefinition calledMethod) {
-			foreach (var info in DotNetUtils.getCalledMethods(module, methodToCheck)) {
-				if (info.Item2 == calledMethod)
+			foreach (var method in DotNetUtils.getCalledMethods(module, methodToCheck)) {
+				if (method == calledMethod)
 					return true;
 			}
 			return false;

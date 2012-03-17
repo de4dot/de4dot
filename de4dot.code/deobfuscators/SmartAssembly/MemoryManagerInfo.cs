@@ -53,14 +53,13 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 		bool checkCalledMethods(MethodDefinition checkMethod) {
 			if (checkMethod == null)
 				return false;
-			foreach (var tuple in DotNetUtils.getCalledMethods(module, checkMethod)) {
-				var method = tuple.Item2;
+			foreach (var method in DotNetUtils.getCalledMethods(module, checkMethod)) {
 				if (method.Name == ".cctor" || method.Name == ".ctor")
 					continue;
 				if (!method.IsStatic || !DotNetUtils.isMethod(method, "System.Void", "()"))
 					continue;
-				if (checkMemoryManagerType(tuple.Item1, method)) {
-					memoryManagerType = tuple.Item1;
+				if (checkMemoryManagerType(method.DeclaringType, method)) {
+					memoryManagerType = method.DeclaringType;
 					attachAppMethod = method;
 					return true;
 				}

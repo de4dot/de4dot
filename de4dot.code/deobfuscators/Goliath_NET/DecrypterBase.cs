@@ -210,8 +210,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 				return false;
 
 			MethodDefinition initMethod = null;
-			foreach (var info in DotNetUtils.getCalledMethods(module, cctor)) {
-				var method = info.Item2;
+			foreach (var method in DotNetUtils.getCalledMethods(module, cctor)) {
 				if (DotNetUtils.isMethod(method, "System.Void", "(System.Type)")) {
 					initMethod = method;
 					break;

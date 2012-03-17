@@ -94,9 +94,8 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			};
 
 			simpleDeobfuscator.deobfuscate(methodToCheck);
-			foreach (var tuple in DotNetUtils.getCalledMethods(module, methodToCheck)) {
-				var type = tuple.Item1;
-				var method = tuple.Item2;
+			foreach (var method in DotNetUtils.getCalledMethods(module, methodToCheck)) {
+				var type = method.DeclaringType;
 				if (!DotNetUtils.isMethod(method, "System.Void", "()"))
 					continue;
 				if (!method.IsStatic)

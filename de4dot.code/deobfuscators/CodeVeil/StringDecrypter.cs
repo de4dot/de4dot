@@ -108,8 +108,8 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		void findV5(MethodDefinition method) {
 			if (!mainType.Detected)
 				return;
-			foreach (var info in DotNetUtils.getCalledMethods(module, mainType.InitMethod)) {
-				if (find(info.Item2))
+			foreach (var calledMethod in DotNetUtils.getCalledMethods(module, mainType.InitMethod)) {
+				if (find(calledMethod))
 					return;
 			}
 		}

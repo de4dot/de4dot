@@ -156,16 +156,16 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		}
 
 		bool initProxyType(Info infoTmp, MethodDefinition method) {
-			foreach (var call in DotNetUtils.getCalledMethods(module, method)) {
-				if (!call.Item2.IsStatic)
+			foreach (var calledMethod in DotNetUtils.getCalledMethods(module, method)) {
+				if (!calledMethod.IsStatic)
 					continue;
-				if (!DotNetUtils.isMethod(call.Item2, "System.Void", "(System.Int32)"))
+				if (!DotNetUtils.isMethod(calledMethod, "System.Void", "(System.Int32)"))
 					continue;
-				if (!checkProxyType(infoTmp, call.Item1))
+				if (!checkProxyType(infoTmp, calledMethod.DeclaringType))
 					continue;
 
-				infoTmp.proxyType = call.Item1;
-				infoTmp.initMethod = call.Item2;
+				infoTmp.proxyType = calledMethod.DeclaringType;
+				infoTmp.initMethod = calledMethod;
 				return true;
 			}
 			return false;

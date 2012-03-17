@@ -83,12 +83,11 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				if (typesLeft-- <= 0)
 					break;
 
-				foreach (var info in DotNetUtils.getCalledMethods(module, cctor)) {
-					var method = info.Item2;
+				foreach (var method in DotNetUtils.getCalledMethods(module, cctor)) {
 					var key = new MethodReferenceAndDeclaringTypeKey(method);
 					if (!checkedMethods.ContainsKey(key)) {
 						checkedMethods[key] = false;
-						if (info.Item1.BaseType == null || info.Item1.BaseType.FullName != "System.Object")
+						if (method.DeclaringType.BaseType == null || method.DeclaringType.BaseType.FullName != "System.Object")
 							continue;
 						if (!DotNetUtils.isMethod(method, "System.Void", "()"))
 							continue;

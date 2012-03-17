@@ -69,8 +69,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 		bool findTypes(MethodDefinition initMethod) {
 			if (initMethod == null)
 				return false;
-			foreach (var tuple in DotNetUtils.getCalledMethods(module, initMethod)) {
-				var method = tuple.Item2;
+			foreach (var method in DotNetUtils.getCalledMethods(module, initMethod)) {
 				if (method.Name == ".cctor" || method.Name == ".ctor")
 					continue;
 				if (!method.IsStatic || !DotNetUtils.isMethod(method, "System.Void", "()"))
@@ -87,8 +86,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			if (!attachAppMethod.HasBody)
 				return false;
 
-			foreach (var tuple in DotNetUtils.getCalledMethods(module, attachAppMethod)) {
-				var method = tuple.Item2;
+			foreach (var method in DotNetUtils.getCalledMethods(module, attachAppMethod)) {
 				if (method.Name == ".cctor" || method.Name == ".ctor")
 					continue;
 				if (!method.IsStatic || !DotNetUtils.isMethod(method, "System.Void", "()"))

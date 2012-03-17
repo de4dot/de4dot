@@ -117,8 +117,8 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		}
 
 		bool callsMainTypeTamperCheckMethod(MethodDefinition method) {
-			foreach (var info in DotNetUtils.getCalledMethods(module, method)) {
-				if (info.Item2 == mainType.TamperCheckMethod)
+			foreach (var calledMethod in DotNetUtils.getCalledMethods(module, method)) {
+				if (calledMethod == mainType.TamperCheckMethod)
 					return true;
 			}
 

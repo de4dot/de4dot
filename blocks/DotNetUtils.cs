@@ -689,7 +689,7 @@ namespace de4dot.blocks {
 			return (string)carg.Value;
 		}
 
-		public static IEnumerable<Tuple<TypeDefinition, MethodDefinition>> getCalledMethods(ModuleDefinition module, MethodDefinition method) {
+		public static IEnumerable<MethodDefinition> getCalledMethods(ModuleDefinition module, MethodDefinition method) {
 			if (method != null && method.HasBody) {
 				foreach (var call in method.Body.Instructions) {
 					if (call.OpCode.Code != Code.Call && call.OpCode.Code != Code.Callvirt)
@@ -699,12 +699,8 @@ namespace de4dot.blocks {
 						continue;
 					var type = getType(module, methodRef.DeclaringType);
 					var methodDef = getMethod(type, methodRef);
-					if (methodDef != null) {
-						yield return new Tuple<TypeDefinition, MethodDefinition> {
-							Item1 = type,
-							Item2 = methodDef,
-						};
-					}
+					if (methodDef != null)
+						yield return methodDef;
 				}
 			}
 		}

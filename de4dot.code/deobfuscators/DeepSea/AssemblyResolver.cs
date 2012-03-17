@@ -82,8 +82,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			if (resolverInitMethod.Body.ExceptionHandlers.Count != 1)
 				return false;
 
-			foreach (var info in DotNetUtils.getCalledMethods(module, resolverInitMethod)) {
-				var method = info.Item2;
+			foreach (var method in DotNetUtils.getCalledMethods(module, resolverInitMethod)) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
 				if (!method.IsPublic || method.HasGenericParameters)
