@@ -30,6 +30,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		protected IDeobfuscator deob;
 		protected MethodDefinition initMethod;
 		protected MethodDefinition resolveHandler;
+		protected FrameworkType frameworkType;
 
 		public MethodDefinition InitMethod {
 			get { return initMethod; }
@@ -45,6 +46,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 
 		public ResolverBase(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
 			this.module = module;
+			this.frameworkType = DotNetUtils.getFrameworkType(module);
 			this.simpleDeobfuscator = simpleDeobfuscator;
 			this.deob = deob;
 		}
@@ -77,12 +79,27 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		bool checkResolverInitMethod(MethodDefinition resolverInitMethod) {
 			if (resolverInitMethod == null || resolverInitMethod.Body == null)
 				return false;
+			if (resolverInitMethod.Body.ExceptionHandlers.Count != 1)
+				return false;
 
+			switch (frameworkType) {
+			case FrameworkType.Silverlight:
+				return checkResolverInitMethodSilverlight(resolverInitMethod);
+			case FrameworkType.Unknown:
+			case FrameworkType.Desktop:
+			case FrameworkType.CompactFramework:
+			case FrameworkType.Zune:
+			default:
+				return checkResolverInitMethodDesktop(resolverInitMethod);
+			}
+		}
+
+		bool checkResolverInitMethodDesktop(MethodDefinition resolverInitMethod) {
 			if (!checkResolverInitMethodInternal(resolverInitMethod))
 				return false;
 
 			foreach (var resolveHandlerMethod in getLdftnMethods(resolverInitMethod)) {
-				if (!checkHandlerMethod(resolveHandlerMethod))
+				if (!checkHandlerMethodDesktop(resolveHandlerMethod))
 					continue;
 
 				initMethod = resolverInitMethod;
@@ -90,6 +107,10 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				return true;
 			}
 
+			return false;
+		}
+
+		protected virtual bool checkResolverInitMethodSilverlight(MethodDefinition resolverInitMethod) {
 			return false;
 		}
 
@@ -120,15 +141,15 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return list;
 		}
 
-		bool checkHandlerMethod(MethodDefinition handler) {
+		bool checkHandlerMethodDesktop(MethodDefinition handler) {
 			if (handler == null || handler.Body == null || !handler.IsStatic)
 				return false;
 			if (!DotNetUtils.isMethod(handler, "System.Reflection.Assembly", "(System.Object,System.ResolveEventArgs)"))
 				return false;
-			return checkHandlerMethodInternal(handler);
+			return checkHandlerMethodDesktopInternal(handler);
 		}
 
-		protected abstract bool checkHandlerMethodInternal(MethodDefinition handler);
+		protected abstract bool checkHandlerMethodDesktopInternal(MethodDefinition handler);
 
 		// 3.0.3.41 - 3.0.4.44
 		protected static byte[] decryptResourceV3Old(EmbeddedResource resource) {

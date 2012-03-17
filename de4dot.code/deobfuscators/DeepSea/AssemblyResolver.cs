@@ -71,16 +71,58 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			: base(module, simpleDeobfuscator, deob) {
 		}
 
+		static string[] requiredLocals_sl = new string[] {
+			"System.Byte[]",
+			"System.IO.Stream",
+			"System.Reflection.Assembly",
+			"System.Security.Cryptography.SHA1Managed",
+			"System.Windows.AssemblyPart",
+		};
+		protected override bool checkResolverInitMethodSilverlight(MethodDefinition resolverInitMethod) {
+			if (resolverInitMethod.Body.ExceptionHandlers.Count != 1)
+				return false;
+
+			foreach (var info in DotNetUtils.getCalledMethods(module, resolverInitMethod)) {
+				var method = info.Item2;
+				if (!method.IsStatic || method.Body == null)
+					continue;
+				if (!method.IsPublic || method.HasGenericParameters)
+					continue;
+				if (!DotNetUtils.isMethod(method, "System.Void", "(System.String)"))
+					continue;
+				if (!new LocalTypes(method).all(requiredLocals_sl))
+					continue;
+
+				initMethod = resolverInitMethod;
+				resolveHandler = method;
+				updateVersion(resolveHandler);
+				return true;
+			}
+
+			return false;
+		}
+
+		void updateVersion(MethodDefinition handler) {
+			if (isV3Old(handler))
+				version = Version.V3Old;
+			else
+				version = Version.V3;
+		}
+
+		static bool isV3Old(MethodDefinition method) {
+			return DotNetUtils.callsMethod(method, "System.Int32 System.IO.Stream::Read(System.Byte[],System.Int32,System.Int32)") &&
+				!DotNetUtils.callsMethod(method, "System.Int32 System.IO.Stream::ReadByte()") &&
+				// Obfuscated System.Int32 System.IO.Stream::ReadByte()
+				!DotNetUtils.callsMethod(method, "System.Int32", "(System.IO.Stream,System.Int32,System.Int32)");
+		}
+
 		protected override bool checkResolverInitMethodInternal(MethodDefinition resolverInitMethod) {
 			return checkIfCalled(resolverInitMethod, "System.Void System.AppDomain::add_AssemblyResolve(System.ResolveEventHandler)");
 		}
 
-		protected override bool checkHandlerMethodInternal(MethodDefinition handler) {
+		protected override bool checkHandlerMethodDesktopInternal(MethodDefinition handler) {
 			if (checkHandlerV3(handler) || checkHandlerSL(handler)) {
-				if (isV3Old(handler))
-					version = Version.V3Old;
-				else
-					version = Version.V3;
+				updateVersion(handler);
 				return true;
 			}
 
@@ -94,11 +136,6 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			}
 
 			return false;
-		}
-
-		static bool isV3Old(MethodDefinition method) {
-			return DotNetUtils.callsMethod(method, "System.Int32 System.IO.Stream::Read(System.Byte[],System.Int32,System.Int32)") &&
-				!DotNetUtils.callsMethod(method, "System.Int32 System.IO.Stream::ReadByte()");
 		}
 
 		static string[] handlerLocalTypes_NET = new string[] {
