@@ -95,9 +95,9 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 
 				var calledMethod = instr.Operand as MethodDefinition;
 				if (calledMethod == null || !calledMethod.IsStatic || calledMethod.Body == null)
-					return false;
+					continue;
 				if (!DotNetUtils.isMethod(calledMethod, "System.Void", "()"))
-					return false;
+					continue;
 
 				if (frameworkType == FrameworkType.Silverlight) {
 					if (!checkInitMethodSilverlight(calledMethod))
