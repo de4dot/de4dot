@@ -497,28 +497,24 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				return true;
 			}
 
-			// 3.2 (Silverlight)
-			if (findIntsSilverlight(method, ref initializedAll))
+			// 3.2+ (Silverlight)
+			index = DeobUtils.indexOfLdci4Instruction(method, 268435314);
+			if (index >= 0) {
+				index--;
+				index = EfUtils.indexOfPreviousLdci4Instruction(method, index);
+				if (index < 0)
+					return false;
+
+				i1 = 0;
+				if (!EfUtils.getNextInt32(method, ref index, out i2))
+					return false;
+
+				// 3.2: true, 3.3+: false
+				initializedAll = method.Body.Instructions[index].OpCode.Code == Code.Stsfld;
 				return true;
+			}
 
 			return false;
-		}
-
-		bool findIntsSilverlight(MethodDefinition method, ref bool initializedAll) {
-			int index = DeobUtils.indexOfLdci4Instruction(method, 268435314);
-			if (index < 0)
-				return false;
-			index--;
-			index = EfUtils.indexOfPreviousLdci4Instruction(method, index);
-			if (index < 0)
-				return false;
-
-			i1 = 0;
-			if (!EfUtils.getNextInt32(method, ref index, out i2))
-				return false;
-
-			initializedAll = method.Body.Instructions[index].OpCode.Code == Code.Stsfld;
-			return true;
 		}
 
 		bool findIntsCctor(MethodDefinition cctor) {
