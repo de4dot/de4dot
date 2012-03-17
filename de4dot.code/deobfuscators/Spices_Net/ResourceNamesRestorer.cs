@@ -105,8 +105,13 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 
 			foreach (var type in module.GetTypes()) {
 				rename(numToResource, "", type.FullName);
+				rename(numToResource, "", type.FullName + ".g");
 				rename(numToResource, type.Namespace, type.Name);
+				rename(numToResource, type.Namespace, type.Name + ".g");
 			}
+
+			if (module.Assembly != null)
+				rename(numToResource, "", module.Assembly.Name.Name + ".g");
 		}
 
 		static void rename(Dictionary<uint, Resource> numToResource, string ns, string name) {
