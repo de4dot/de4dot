@@ -469,8 +469,6 @@ namespace de4dot.code.renamer {
 						if (calledMethodDef == null)
 							continue;
 						fieldRef = getFieldReference(calledMethodDef.MethodDefinition);
-						if (fieldRef == null)
-							continue;
 
 						var propDef = calledMethodDef.Property;
 						if (propDef == null)
@@ -510,6 +508,17 @@ namespace de4dot.code.renamer {
 			if (ldfld == null || ldfld.OpCode.Code != Code.Ldfld)
 				return null;
 			var ret = DotNetUtils.getInstruction(instructions, ref index);
+			if (ret == null)
+				return null;
+			if (DotNetUtils.isStloc(ret)) {
+				var local = DotNetUtils.getLocalVar(method.Body.Variables, ret);
+				ret = DotNetUtils.getInstruction(instructions, ref index);
+				if (ret == null || !DotNetUtils.isLdloc(ret))
+					return null;
+				if (DotNetUtils.getLocalVar(method.Body.Variables, ret) != local)
+					return null;
+				ret = DotNetUtils.getInstruction(instructions, ref index);
+			}
 			if (ret == null || ret.OpCode.Code != Code.Ret)
 				return null;
 			return ldfld.Operand as FieldReference;
