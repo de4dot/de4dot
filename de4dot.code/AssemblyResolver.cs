@@ -57,6 +57,9 @@ namespace de4dot.code {
 			addIfExists(path, @"Reference Assemblies\Microsoft\Framework\Silverlight\v3.0");
 			addIfExists(path, @"Reference Assemblies\Microsoft\Framework\Silverlight\v4.0");
 			addIfExists(path, @"Reference Assemblies\Microsoft\Framework\Silverlight\v5.0");
+			addIfExists(path, @"Reference Assemblies\Microsoft\FSharp\2.0\Runtime\v2.0");
+			addIfExists(path, @"Reference Assemblies\Microsoft\FSharp\2.0\Runtime\v4.0");
+			addIfExists(path, @"Reference Assemblies\Microsoft\WindowsPowerShell\v1.0");
 			addIfExists(path, @"Microsoft Visual Studio .NET\Common7\IDE\PublicAssemblies");
 			addIfExists(path, @"Microsoft Visual Studio .NET\Common7\IDE\PrivateAssemblies");
 			addIfExists(path, @"Microsoft Visual Studio 8.0\Common7\IDE\PublicAssemblies");
@@ -71,6 +74,11 @@ namespace de4dot.code {
 			addIfExists(path, @"Microsoft XNA\XNA Game Studio\v3.0\References\Xbox360");
 			addIfExists(path, @"Microsoft XNA\XNA Game Studio\v4.0\References\Windows\x86");
 			addIfExists(path, @"Microsoft XNA\XNA Game Studio\v4.0\References\Xbox360");
+			addIfExists(path, @"Windows CE Tools\wce500\Windows Mobile 5.0 Pocket PC SDK\Designtimereferences");
+			addIfExists(path, @"Windows CE Tools\wce500\Windows Mobile 5.0 Smartphone SDK\Designtimereferences");
+			addIfExists(path, @"Windows Mobile 5.0 SDK R2\Managed Libraries");
+			addIfExists(path, @"Windows Mobile 6 SDK\Managed Libraries");
+			addIfExists(path, @"Windows Mobile 6.5.3 DTK\Managed Libraries");
 		}
 
 		// basePath is eg. "C:\Program Files (x86)\Microsoft Silverlight"
