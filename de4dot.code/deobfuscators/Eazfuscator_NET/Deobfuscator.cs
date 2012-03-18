@@ -103,7 +103,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		}
 
 		void detectVersion() {
-			var version = new VersionDetector(stringDecrypter).detect();
+			var version = new VersionDetector(module, stringDecrypter).detect();
 			if (version == null)
 				return;
 

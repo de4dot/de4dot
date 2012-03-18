@@ -520,7 +520,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		bool findIntsCctor(MethodDefinition cctor) {
 			int index = 0;
 			if (!findCallGetFrame(cctor, ref index))
-				return false;
+				return findIntsCctor2(cctor);
 
 			int tmp1, tmp2, tmp3;
 			if (!EfUtils.getNextInt32(cctor, ref index, out tmp1))
@@ -543,6 +543,23 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 
 			i1 = tmp1 ^ tmp2 ^ tmp3;
 			return true;
+		}
+
+		// Compact Framework doesn't have StackFrame
+		bool findIntsCctor2(MethodDefinition cctor) {
+			int index = 0;
+			var instrs = cctor.Body.Instructions;
+			while (index >= 0) {
+				int val;
+				if (!EfUtils.getNextInt32(cctor, ref index, out val))
+					break;
+				if (index < instrs.Count && instrs[index].OpCode.Code == Code.Add) {
+					i1 = val;
+					return true;
+				}
+			}
+
+			return false;
 		}
 
 		bool findInt3(MethodDefinition method) {
