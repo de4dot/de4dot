@@ -29,6 +29,7 @@ namespace de4dot.blocks {
 		Desktop,
 		Silverlight,		// and WindowsPhone, XNA Xbox360
 		CompactFramework,
+		XNA,
 		Zune,
 	}
 
@@ -1102,6 +1103,8 @@ namespace de4dot.blocks {
 					return FrameworkType.Silverlight;
 				case "969db8053d3322ac":
 					return FrameworkType.CompactFramework;
+				case "1c9e259686f921e0":
+					return FrameworkType.XNA;
 				case "e92a8b81eba7ceb7":
 					return FrameworkType.Zune;
 				}
