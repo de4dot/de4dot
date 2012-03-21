@@ -84,10 +84,6 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			switch (frameworkType) {
 			case FrameworkType.Silverlight:
 				return checkResolverInitMethodSilverlight(resolverInitMethod);
-			case FrameworkType.Unknown:
-			case FrameworkType.Desktop:
-			case FrameworkType.CompactFramework:
-			case FrameworkType.Zune:
 			default:
 				return checkResolverInitMethodDesktop(resolverInitMethod);
 			}
