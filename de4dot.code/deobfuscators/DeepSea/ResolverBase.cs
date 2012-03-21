@@ -111,19 +111,6 @@ namespace de4dot.code.deobfuscators.DeepSea {
 
 		protected abstract bool checkResolverInitMethodInternal(MethodDefinition resolverInitMethod);
 
-		protected static bool checkIfCalled(MethodDefinition method, string fullName) {
-			foreach (var instr in method.Body.Instructions) {
-				if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt)
-					continue;
-				if (instr.Operand.ToString() != fullName)
-					continue;
-
-				return true;
-			}
-
-			return false;
-		}
-
 		IEnumerable<MethodDefinition> getLdftnMethods(MethodDefinition method) {
 			var list = new List<MethodDefinition>();
 			foreach (var instr in method.Body.Instructions) {

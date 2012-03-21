@@ -42,7 +42,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		}
 
 		protected override bool checkResolverInitMethodInternal(MethodDefinition resolverInitMethod) {
-			return checkIfCalled(resolverInitMethod, "System.Void System.AppDomain::add_ResourceResolve(System.ResolveEventHandler)");
+			return DotNetUtils.callsMethod(resolverInitMethod, "System.Void System.AppDomain::add_ResourceResolve(System.ResolveEventHandler)");
 		}
 
 		protected override bool checkHandlerMethodDesktopInternal(MethodDefinition handler) {
