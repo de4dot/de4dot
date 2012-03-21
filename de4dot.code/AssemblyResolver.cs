@@ -72,6 +72,10 @@ namespace de4dot.code {
 			addIfExists(path, @"Microsoft XNA\XNA Game Studio\v2.0\References\Xbox360");
 			addIfExists(path, @"Microsoft XNA\XNA Game Studio\v3.0\References\Windows\x86");
 			addIfExists(path, @"Microsoft XNA\XNA Game Studio\v3.0\References\Xbox360");
+			addIfExists(path, @"Microsoft XNA\XNA Game Studio\v3.0\References\Zune");
+			addIfExists(path, @"Microsoft XNA\XNA Game Studio\v3.1\References\Windows\x86");
+			addIfExists(path, @"Microsoft XNA\XNA Game Studio\v3.1\References\Xbox360");
+			addIfExists(path, @"Microsoft XNA\XNA Game Studio\v3.1\References\Zune");
 			addIfExists(path, @"Microsoft XNA\XNA Game Studio\v4.0\References\Windows\x86");
 			addIfExists(path, @"Microsoft XNA\XNA Game Studio\v4.0\References\Xbox360");
 			addIfExists(path, @"Windows CE Tools\wce500\Windows Mobile 5.0 Pocket PC SDK\Designtimereferences");
