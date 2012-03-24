@@ -81,10 +81,25 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		}
 
 		public void find() {
-			var cctor = getCctor();
-			if (cctor == null)
+			if (checkCctor(DotNetUtils.getModuleTypeCctor(module)))
 				return;
 
+			var entryPoint = module.EntryPoint;
+			if (entryPoint != null && checkCctor(DotNetUtils.getMethod(entryPoint.DeclaringType, ".cctor")))
+				return;
+
+			int checksLeft = 3;
+			foreach (var type in module.GetTypes()) {
+				if (type == DotNetUtils.getModuleType(module))
+					continue;
+				if (checkCctor(DotNetUtils.getMethod(type, ".cctor")))
+					return;
+				if (!type.IsEnum && --checksLeft <= 0)
+					break;
+			}
+		}
+
+		bool checkCctor(MethodDefinition cctor) {
 			foreach (var method in DotNetUtils.getCalledMethods(module, cctor)) {
 				if (method.Name != "Startup")
 					continue;
@@ -94,26 +109,16 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				ModuleReference module1, module2;
 				bool isOldTmp;
 				if (!checkType(method.DeclaringType, out module1, out module2, out isOldTmp))
-					return;
+					continue;
 
 				mcType = method.DeclaringType;
 				mcModule1 = module1;
 				mcModule2 = module2;
 				isOld = isOldTmp;
-				break;
+				return true;
 			}
-		}
 
-		MethodDefinition getCctor() {
-			int checksLeft = 3;
-			foreach (var type in module.GetTypes()) {
-				var cctor = DotNetUtils.getMethod(type, ".cctor");
-				if (cctor != null)
-					return cctor;
-				if (!type.IsEnum && --checksLeft <= 0)
-					return null;
-			}
-			return null;
+			return false;
 		}
 
 		static bool checkType(TypeDefinition type, out ModuleReference module1, out ModuleReference module2, out bool isOld) {
