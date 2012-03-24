@@ -114,7 +114,7 @@ namespace de4dot.code.PE {
 		SectionHeader getSectionHeader(uint rva) {
 			for (int i = 0; i < sectionHeaders.Length; i++) {
 				var section = sectionHeaders[i];
-				if (section.virtualAddress <= rva && rva < section.virtualAddress + section.virtualSize)
+				if (section.virtualAddress <= rva && rva < section.virtualAddress + Math.Max(section.virtualSize, section.sizeOfRawData))
 					return section;
 			}
 			return null;
