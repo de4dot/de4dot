@@ -18,8 +18,9 @@
 */
 
 using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
 using Mono.MyStuff;
 using de4dot.code.PE;
 
@@ -580,6 +581,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				return false;
 
 			decryptResources();
+			decryptStrings();
 
 			return true;
 		}
@@ -660,6 +662,58 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			int resourceOffset = (int)peImage.rvaToOffset(resourceRva);
 			for (int i = 0; i < resourceSize; i++)
 				fileData[resourceOffset + i] ^= mcKey[i % 0x2000];
+		}
+
+		void decryptStrings() {
+			uint usHeapRva = peHeader.getRva1(0x0E00, mcKey.readUInt32(0x0078));
+			uint usHeapSize = peHeader.readUInt32(0x0E04) ^ mcKey.readUInt32(0x0082);
+			if (usHeapRva == 0 || usHeapSize == 0)
+				return;
+			var usHeap = peImage.Cor20Header.metadata.getStream("#US");
+			if (usHeap == null ||
+				peImage.rvaToOffset(usHeapRva) != usHeap.fileOffset ||
+				usHeapSize != usHeap.length) {
+				Log.w("Invalid #US heap RVA and size found");
+			}
+
+			Log.v("Decrypting strings @ RVA {0:X8}, {1} bytes", usHeapRva, usHeapSize);
+			Log.indent();
+
+			int mcKeyOffset = 0;
+			int usHeapOffset = (int)peImage.rvaToOffset(usHeapRva);
+			int usHeapEnd = usHeapOffset + (int)usHeapSize;
+			usHeapOffset++;
+			while (usHeapOffset < usHeapEnd) {
+				if (fileData[usHeapOffset] == 0 || fileData[usHeapOffset] == 1) {
+					usHeapOffset++;
+					continue;
+				}
+
+				int usHeapOffsetOrig = usHeapOffset;
+				int len = DeobUtils.readVariableLengthInt32(fileData, ref usHeapOffset);
+				int usHeapOffsetString = usHeapOffset;
+				int stringLength = len - (usHeapOffset - usHeapOffsetOrig);
+				for (int i = 0; i < stringLength; i++) {
+					byte k = mcKey.readByte(mcKeyOffset++ % 0x2000);
+					fileData[usHeapOffset] = rolb((byte)(fileData[usHeapOffset] ^ k), 3);
+					usHeapOffset++;
+				}
+
+				try {
+					Log.v("Decrypted string: {0}", Utils.toCsharpString(Encoding.Unicode.GetString(fileData, usHeapOffsetString, (stringLength + 1) & ~1)));
+				}
+				catch {
+					Log.v("Could not decrypt string at offset {0:X8}", usHeapOffsetOrig);
+				}
+
+				usHeapOffset++;
+			}
+
+			Log.deIndent();
+		}
+
+		byte rolb(byte b, int n) {
+			return (byte)((b << n) | (b >> (8 - n)));
 		}
 	}
 }
