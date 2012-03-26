@@ -27,6 +27,10 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 	// Decrypts methods and resources
 	class FileDecrypter {
 		MainType mainType;
+		PeImage peImage;
+		PeHeader peHeader;
+		McKey mcKey;
+		byte[] fileData;
 
 		class PeHeader {
 			const int XOR_KEY = 0x7ABF931;
@@ -44,7 +48,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				}
 			}
 
-			public uint getMcHeaderRva() {
+			public uint getMcKeyRva() {
 				return getRva2(0x0FFC, XOR_KEY);
 			}
 
@@ -85,7 +89,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			}
 		}
 
-		class McHeader {
+		class McKey {
 			PeHeader peHeader;
 			byte[] data;
 
@@ -93,9 +97,9 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				get { return data[index]; }
 			}
 
-			public McHeader(PeImage peImage, PeHeader peHeader) {
+			public McKey(PeImage peImage, PeHeader peHeader) {
 				this.peHeader = peHeader;
-				this.data = peImage.readBytes(peHeader.getMcHeaderRva(), 0x2000);
+				this.data = peImage.readBytes(peHeader.getMcKeyRva(), 0x2000);
 			}
 
 			public byte readByte(int offset) {
@@ -170,7 +174,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			},
 		};
 
-		static EncryptionInfo[] encryptionInfos_McHeader8C0h = new EncryptionInfo[] {
+		static EncryptionInfo[] encryptionInfos_McKey8C0h = new EncryptionInfo[] {
 			// 462FA2D2 = Wed, 25 Apr 2007 18:49:54 (3.20)
 			new EncryptionInfo {
 				MagicLo = 0x6AA13B13,
@@ -209,7 +213,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			MainType mainType;
 			PeImage peImage;
 			PeHeader peHeader;
-			McHeader mcHeader;
+			McKey mcKey;
 			uint structSize;
 			uint methodInfosOffset;
 			uint encryptedDataOffset;
@@ -228,25 +232,25 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				}
 			}
 
-			public MethodInfos(MainType mainType, PeImage peImage, PeHeader peHeader, McHeader mcHeader) {
+			public MethodInfos(MainType mainType, PeImage peImage, PeHeader peHeader, McKey mcKey) {
 				this.mainType = mainType;
 				this.peImage = peImage;
 				this.peHeader = peHeader;
-				this.mcHeader = mcHeader;
+				this.mcKey = mcKey;
 
-				structSize = getStructSize(mcHeader);
+				structSize = getStructSize(mcKey);
 
-				uint methodInfosRva = peHeader.getRva2(0x0FF8, mcHeader.readUInt32(0x005A));
-				uint encryptedDataRva = peHeader.getRva2(0x0FF0, mcHeader.readUInt32(0x0046));
+				uint methodInfosRva = peHeader.getRva2(0x0FF8, mcKey.readUInt32(0x005A));
+				uint encryptedDataRva = peHeader.getRva2(0x0FF0, mcKey.readUInt32(0x0046));
 
 				methodInfosOffset = peImage.rvaToOffset(methodInfosRva);
 				encryptedDataOffset = peImage.rvaToOffset(encryptedDataRva);
 			}
 
-			static uint getStructSize(McHeader mcHeader) {
-				uint magicLo = mcHeader.readUInt32(0x8C0);
-				uint magicHi = mcHeader.readUInt32(0x8C4);
-				foreach (var info in encryptionInfos_McHeader8C0h) {
+			static uint getStructSize(McKey mcKey) {
+				uint magicLo = mcKey.readUInt32(0x8C0);
+				uint magicHi = mcKey.readUInt32(0x8C4);
+				foreach (var info in encryptionInfos_McKey8C0h) {
 					if (magicLo == info.MagicLo && magicHi == info.MagicHi)
 						return 0xC + 6 * ENCRYPTED_DATA_INFO_SIZE;
 				}
@@ -256,10 +260,10 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			EncryptionVersion getVersion() {
 				uint m1lo = peHeader.readUInt32(0x900);
 				uint m1hi = peHeader.readUInt32(0x904);
-				uint m2lo = mcHeader.readUInt32(0x8C0);
-				uint m2hi = mcHeader.readUInt32(0x8C4);
+				uint m2lo = mcKey.readUInt32(0x8C0);
+				uint m2hi = mcKey.readUInt32(0x8C4);
 
-				foreach (var info in encryptionInfos_McHeader8C0h) {
+				foreach (var info in encryptionInfos_McKey8C0h) {
 					if (info.MagicLo == m2lo && info.MagicHi == m2hi)
 						return info.Version;
 				}
@@ -473,7 +477,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			byte[] decrypt1(byte[] encrypted) {
 				var decrypted = new byte[encrypted.Length];
 				for (int i = 0; i < decrypted.Length; i++)
-					decrypted[i] = (byte)(encrypted[i] ^ mcHeader.readByte(i % 0x2000));
+					decrypted[i] = (byte)(encrypted[i] ^ mcKey.readByte(i % 0x2000));
 				return decrypted;
 			}
 
@@ -481,8 +485,8 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				if ((encrypted.Length & 7) != 0)
 					throw new ApplicationException("Invalid encryption #2 length");
 				const int offset = 0x00FA;
-				uint key4 = mcHeader.readUInt32(offset + 4 * 4);
-				uint key5 = mcHeader.readUInt32(offset + 5 * 4);
+				uint key4 = mcKey.readUInt32(offset + 4 * 4);
+				uint key5 = mcKey.readUInt32(offset + 5 * 4);
 
 				byte[] decrypted = new byte[encrypted.Length & ~7];
 				var writer = new BinaryWriter(new MemoryStream(decrypted));
@@ -506,8 +510,8 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				if ((encrypted.Length & 7) != 0)
 					throw new ApplicationException("Invalid encryption #3 length");
 				const int offset = 0x015E;
-				uint key0 = mcHeader.readUInt32(offset + 0 * 4);
-				uint key3 = mcHeader.readUInt32(offset + 3 * 4);
+				uint key0 = mcKey.readUInt32(offset + 0 * 4);
+				uint key3 = mcKey.readUInt32(offset + 3 * 4);
 
 				byte[] decrypted = new byte[encrypted.Length & ~7];
 				var writer = new BinaryWriter(new MemoryStream(decrypted));
@@ -537,9 +541,9 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				int count = encrypted.Length / 3;
 				int i = 0, j = 0, k = 0;
 				while (count-- > 0) {
-					byte k1 = mcHeader.readByte(j + 1);
-					byte k2 = mcHeader.readByte(j + 2);
-					byte k3 = mcHeader.readByte(j + 3);
+					byte k1 = mcKey.readByte(j + 1);
+					byte k2 = mcKey.readByte(j + 2);
+					byte k3 = mcKey.readByte(j + 3);
 					decrypted[k++] = (byte)(((encrypted[i + 1] ^ k2) >> 4) | ((encrypted[i] ^ k1) & 0xF0));
 					decrypted[k++] = (byte)(((encrypted[i + 1] ^ k2) << 4) + ((encrypted[i + 2] ^ k3) & 0x0F));
 					i += 3;
@@ -547,7 +551,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				}
 
 				if ((encrypted.Length % 3) != 0)
-					decrypted[k] = (byte)(encrypted[i] ^ mcHeader.readByte(j));
+					decrypted[k] = (byte)(encrypted[i] ^ mcKey.readByte(j));
 
 				return decrypted;
 			}
@@ -570,23 +574,24 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		}
 
 		public bool decrypt(byte[] fileData, ref DumpedMethods dumpedMethods) {
-			var peImage = new PeImage(fileData);
-			var peHeader = new PeHeader(mainType, peImage);
-			var mcHeader = new McHeader(peImage, peHeader);
+			peImage = new PeImage(fileData);
+			peHeader = new PeHeader(mainType, peImage);
+			mcKey = new McKey(peImage, peHeader);
+			this.fileData = fileData;
 
-			dumpedMethods = decryptMethods(peImage, peHeader, mcHeader);
+			dumpedMethods = decryptMethods();
 			if (dumpedMethods == null)
 				return false;
 
-			decryptResources(fileData, peImage, peHeader, mcHeader);
+			decryptResources();
 
 			return true;
 		}
 
-		DumpedMethods decryptMethods(PeImage peImage, PeHeader peHeader, McHeader mcHeader) {
+		DumpedMethods decryptMethods() {
 			var dumpedMethods = new DumpedMethods();
 
-			var methodInfos = new MethodInfos(mainType, peImage, peHeader, mcHeader);
+			var methodInfos = new MethodInfos(mainType, peImage, peHeader, mcKey);
 			methodInfos.initializeInfos();
 
 			var metadataTables = peImage.Cor20Header.createMetadataTables();
@@ -644,9 +649,9 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			return dumpedMethods;
 		}
 
-		void decryptResources(byte[] fileData, PeImage peImage, PeHeader peHeader, McHeader mcHeader) {
-			uint resourceRva = peHeader.getRva1(0x0E10, mcHeader.readUInt32(0x00A0));
-			uint resourceSize = peHeader.readUInt32(0x0E14) ^ mcHeader.readUInt32(0x00AA);
+		void decryptResources() {
+			uint resourceRva = peHeader.getRva1(0x0E10, mcKey.readUInt32(0x00A0));
+			uint resourceSize = peHeader.readUInt32(0x0E14) ^ mcKey.readUInt32(0x00AA);
 			if (resourceRva == 0 || resourceSize == 0)
 				return;
 			if (resourceRva != peImage.Cor20Header.resources.virtualAddress ||
@@ -658,7 +663,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 
 			int resourceOffset = (int)peImage.rvaToOffset(resourceRva);
 			for (int i = 0; i < resourceSize; i++)
-				fileData[resourceOffset + i] ^= mcHeader[i % 0x2000];
+				fileData[resourceOffset + i] ^= mcKey[i % 0x2000];
 		}
 	}
 }
