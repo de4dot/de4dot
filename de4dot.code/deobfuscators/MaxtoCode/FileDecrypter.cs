@@ -106,10 +106,6 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				return data[offset];
 			}
 
-			public void readBytes(int offset, Array dest, int size) {
-				Buffer.BlockCopy(data, offset, dest, 0, size);
-			}
-
 			public uint readUInt32(int offset) {
 				return BitConverter.ToUInt32(data, offset);
 			}
