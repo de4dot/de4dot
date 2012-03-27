@@ -690,17 +690,17 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				}
 
 				int usHeapOffsetOrig = usHeapOffset;
-				int len = DeobUtils.readVariableLengthInt32(fileData, ref usHeapOffset);
+				int stringDataLength = DeobUtils.readVariableLengthInt32(fileData, ref usHeapOffset);
 				int usHeapOffsetString = usHeapOffset;
-				int stringLength = len - (usHeapOffset - usHeapOffsetOrig);
-				for (int i = 0; i < stringLength; i++) {
+				int encryptedLength = stringDataLength - (usHeapOffset - usHeapOffsetOrig == 1 ? 1 : 2);
+				for (int i = 0; i < encryptedLength; i++) {
 					byte k = mcKey.readByte(mcKeyOffset++ % 0x2000);
 					fileData[usHeapOffset] = rolb((byte)(fileData[usHeapOffset] ^ k), 3);
 					usHeapOffset++;
 				}
 
 				try {
-					Log.v("Decrypted string: {0}", Utils.toCsharpString(Encoding.Unicode.GetString(fileData, usHeapOffsetString, (stringLength + 1) & ~1)));
+					Log.v("Decrypted string: {0}", Utils.toCsharpString(Encoding.Unicode.GetString(fileData, usHeapOffsetString, stringDataLength - 1)));
 				}
 				catch {
 					Log.v("Could not decrypt string at offset {0:X8}", usHeapOffsetOrig);
