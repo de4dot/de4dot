@@ -672,7 +672,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			var usHeap = peImage.Cor20Header.metadata.getStream("#US");
 			if (usHeap == null ||
 				peImage.rvaToOffset(usHeapRva) != usHeap.fileOffset ||
-				usHeapSize != usHeap.length) {
+				usHeapSize != usHeap.Length) {
 				Log.w("Invalid #US heap RVA and size found");
 			}
 
