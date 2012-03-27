@@ -32,10 +32,49 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 		ModuleDefinition module;
 		TypeDefinition decrypterType;
 		MethodDefinition decrypterCctor;
-		byte[] key;
-		byte[] iv;
 		FieldDefinitionAndDeclaringTypeDict<string> fieldToDecryptedString = new FieldDefinitionAndDeclaringTypeDict<string>();
 		bool canRemoveType;
+		IDecrypter decrypter;
+
+		interface IDecrypter {
+			string decrypt(string encrypted);
+		}
+
+		class DecrypterV1 : IDecrypter {
+			byte[] key;
+			byte[] iv;
+
+			public DecrypterV1(byte[] key, byte[] iv) {
+				this.key = key;
+				this.iv = iv;
+			}
+
+			public string decrypt(string encrypted) {
+				try {
+					return Encoding.Unicode.GetString(DeobUtils.des3Decrypt(Convert.FromBase64String(encrypted), key, iv));
+				}
+				catch (FormatException) {
+					return "";
+				}
+			}
+		}
+
+		class DecrypterV2 : IDecrypter {
+			public string decrypt(string encrypted) {
+				var ints = encrypted.Split(' ');
+				if (ints.Length % 3 != 0)
+					throw new ApplicationException("Invalid encrypted string");
+				var sb = new StringBuilder(ints.Length / 3);
+				for (int i = 0; i < ints.Length; i += 3) {
+					int val1 = int.Parse(ints[i]);
+					int val2 = int.Parse(ints[i + 1]);
+					if ((double)val2 / 2.0 == Math.Round((double)val2 / 2.0))
+						val1 += val1;
+					sb.Append((char)val1);
+				}
+				return sb.ToString();
+			}
+		}
 
 		public bool Detected {
 			get { return decrypterType != null; }
@@ -97,14 +136,7 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 				if (!MemberReferenceHelper.compareTypes(field.DeclaringType, decrypterType))
 					continue;
 
-				string decryptedString;
-				try {
-					decryptedString = Encoding.Unicode.GetString(DeobUtils.des3Decrypt(Convert.FromBase64String(encryptedString), key, iv));
-				}
-				catch (FormatException) {
-					decryptedString = "";
-				}
-				fieldToDecryptedString.add(field, decryptedString);
+				fieldToDecryptedString.add(field, decrypter.decrypt(encryptedString));
 			}
 		}
 
@@ -115,21 +147,49 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 				if (!DotNetUtils.isMethod(method, "System.String", "(System.String)"))
 					continue;
 
-				var salt = getSalt(method);
-				if (salt == null)
-					continue;
-
-				var password = getPassword(method);
-				if (string.IsNullOrEmpty(password))
-					continue;
-
-				var passwordBytes = new PasswordDeriveBytes(password, salt);
-				key = passwordBytes.GetBytes(16);
-				iv = passwordBytes.GetBytes(8);
-				return true;
+				if (checkMethodV1(method))
+					return true;
+				if (checkMethodV2(method))
+					return true;
 			}
 
 			return false;
+		}
+
+		bool checkMethodV1(MethodDefinition method) {
+			var salt = getSalt(method);
+			if (salt == null)
+				return false;
+
+			var password = getPassword(method);
+			if (string.IsNullOrEmpty(password))
+				return false;
+
+			var passwordBytes = new PasswordDeriveBytes(password, salt);
+			var key = passwordBytes.GetBytes(16);
+			var iv = passwordBytes.GetBytes(8);
+			decrypter = new DecrypterV1(key, iv);
+			return true;
+		}
+
+		static string[] callsMethodsV2 = new string[] {
+			"System.String[] System.String::Split(System.Char[])",
+			"System.Int32 System.Array::GetUpperBound(System.Int32)",
+			"System.String Microsoft.VisualBasic.CompilerServices.Conversions::ToString(System.Char)",
+			"System.Int32 Microsoft.VisualBasic.CompilerServices.Conversions::ToInteger(System.String)",
+			"System.String System.String::Concat(System.String,System.String)",
+			"System.Char Microsoft.VisualBasic.Strings::Chr(System.Int32)",
+		};
+		bool checkMethodV2(MethodDefinition method) {
+			if (!DeobUtils.hasInteger(method, ' '))
+				return false;
+			foreach (var calledMethodName in callsMethodsV2) {
+				if (!DotNetUtils.callsMethod(method, calledMethodName))
+					return false;
+			}
+
+			decrypter = new DecrypterV2();
+			return true;
 		}
 
 		static byte[] getSalt(MethodDefinition method) {
