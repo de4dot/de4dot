@@ -31,7 +31,7 @@ namespace de4dot.cui {
 		}
 	}
 
-	public class Program {
+	class Program {
 		static IList<IDeobfuscatorInfo> deobfuscatorInfos = createDeobfuscatorInfos();
 
 		static IList<IDeobfuscatorInfo> createDeobfuscatorInfos() {
