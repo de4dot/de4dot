@@ -19,4 +19,4 @@
 
 Official site: https://github.com/0xd4d/de4dot
 
-See the file COPYING for more info.
+See the file COPYING for more details.
