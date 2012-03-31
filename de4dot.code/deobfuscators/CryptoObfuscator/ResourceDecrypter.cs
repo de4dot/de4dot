@@ -37,6 +37,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		byte deflatedFlag;
 		byte bitwiseNotEncryptedFlag;
 		FrameworkType frameworkType;
+		bool flipFlagsBits;
 
 		public ResourceDecrypter(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator) {
 			this.module = module;
@@ -178,6 +179,26 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			bitwiseNotEncryptedFlag = 4;
 		}
 
+		static bool checkFlipBits(MethodDefinition method) {
+			var instrs = method.Body.Instructions;
+			for (int i = 0; i < instrs.Count - 1; i++) {
+				var ldloc = instrs[i];
+				if (!DotNetUtils.isLdloc(ldloc))
+					continue;
+				var local = DotNetUtils.getLocalVar(method.Body.Variables, ldloc);
+				if (local == null || !local.VariableType.IsPrimitive)
+					continue;
+
+				var not = instrs[i + 1];
+				if (not.OpCode.Code != Code.Not)
+					continue;
+
+				return true;
+			}
+
+			return false;
+		}
+
 		bool updateFlags(MethodDefinition method, ISimpleDeobfuscator simpleDeobfuscator) {
 			if (method == null || method.Body == null)
 				return false;
@@ -203,6 +224,8 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 					continue;
 				constants.Add(flagValue);
 			}
+
+			flipFlagsBits = checkFlipBits(method);
 
 			switch (frameworkType) {
 			case FrameworkType.Desktop:
@@ -261,6 +284,8 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 
 		public byte[] decrypt(Stream resourceStream) {
 			byte flags = (byte)resourceStream.ReadByte();
+			if (flipFlagsBits)
+				flags = (byte)~flags;
 			Stream sourceStream = resourceStream;
 			int sourceStreamOffset = 1;
 			bool didSomething = false;
