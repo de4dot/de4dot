@@ -17,28 +17,16 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using System.Collections.Generic;
-using de4dot.code.deobfuscators;
 using Mono.Cecil;
-using de4dot.code.renamer;
 
 namespace de4dot.code {
-	public interface IObfuscatedFile {
-		ModuleDefinition ModuleDefinition { get; }
-		IDeobfuscator Deobfuscator { get; }
-		IDeobfuscatorContext DeobfuscatorContext { get; set; }
-		string Filename { get; }
-		string NewFilename { get; }
-		INameChecker NameChecker { get; }
-		bool RenameResourcesInCode { get; }
-		bool RemoveNamespaceWithOneType { get; }
-
-		void deobfuscateBegin();
-		void deobfuscate();
-		void deobfuscateEnd();
-		void deobfuscateCleanUp();
-
-		void load(IEnumerable<IDeobfuscator> deobfuscators);
-		void save();
+	public interface IDeobfuscatorContext {
+		void clear();
+		void setData(string name, object data);
+		object getData(string name);
+		void clearData(string name);
+		TypeDefinition resolve(TypeReference type);
+		MethodDefinition resolve(MethodReference method);
+		FieldDefinition resolve(FieldReference field);
 	}
 }

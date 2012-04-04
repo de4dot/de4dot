@@ -27,19 +27,23 @@ using Mono.Cecil;
 namespace de4dot.code {
 	public class AssemblyResolver : DefaultAssemblyResolver {
 		public static readonly AssemblyResolver Instance = new AssemblyResolver();
-		Dictionary<string, bool> addedAssemblies = new Dictionary<string, bool>(StringComparer.Ordinal);
 		Dictionary<string, bool> addedDirectories = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
 
 		static AssemblyResolver() {
+			Instance.resetSearchPaths();
+		}
+
+		void resetSearchPaths() {
+			addedDirectories.Clear();
 			addOtherAssemblySearchPaths();
 		}
 
-		static void addOtherAssemblySearchPaths() {
+		void addOtherAssemblySearchPaths() {
 			addOtherAssemblySearchPaths(Environment.GetEnvironmentVariable("ProgramFiles"));
 			addOtherAssemblySearchPaths(Environment.GetEnvironmentVariable("ProgramFiles(x86)"));
 		}
 
-		static void addOtherAssemblySearchPaths(string path) {
+		void addOtherAssemblySearchPaths(string path) {
 			if (string.IsNullOrEmpty(path))
 				return;
 			addSilverlightDirs(Path.Combine(path, @"Microsoft Silverlight"));
@@ -86,7 +90,7 @@ namespace de4dot.code {
 		}
 
 		// basePath is eg. "C:\Program Files (x86)\Microsoft Silverlight"
-		static void addSilverlightDirs(string basePath) {
+		void addSilverlightDirs(string basePath) {
 			try {
 				var di = new DirectoryInfo(basePath);
 				foreach (var dir in di.GetDirectories()) {
@@ -98,7 +102,7 @@ namespace de4dot.code {
 			}
 		}
 
-		static void addIfExists(string basePath, string extraPath) {
+		void addIfExists(string basePath, string extraPath) {
 			try {
 				var path = Path.Combine(basePath, extraPath);
 				if (Utils.pathExists(path))
@@ -125,10 +129,7 @@ namespace de4dot.code {
 			var assembly = module.Assembly;
 			if (assembly != null) {
 				var name = assembly.Name.FullName;
-				if (!addedAssemblies.ContainsKey(name) && cache.ContainsKey(name))
-					throw new ApplicationException(string.Format("Assembly {0} was loaded by other code.", name));
-				addedAssemblies[name] = true;
-				RegisterAssembly(assembly);
+				cache[name] = assembly;
 			}
 		}
 
@@ -169,13 +170,12 @@ namespace de4dot.code {
 		public void removeModule(string asmFullName) {
 			if (string.IsNullOrEmpty(asmFullName))
 				return;
-			addedAssemblies.Remove(asmFullName);
 			cache.Remove(asmFullName);
 		}
 
 		public void clearAll() {
-			addedAssemblies.Clear();
 			cache.Clear();
+			resetSearchPaths();
 		}
 	}
 }

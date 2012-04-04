@@ -17,6 +17,7 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Collections.Generic;
 using Mono.Cecil;
 using de4dot.blocks;
@@ -50,7 +51,8 @@ namespace de4dot.code {
 
 	// Loads assemblies that aren't renamed
 	class ExternalAssemblies {
-		Dictionary<string, ExternalAssembly> assemblies = new Dictionary<string, ExternalAssembly>();
+		Dictionary<string, ExternalAssembly> assemblies = new Dictionary<string, ExternalAssembly>(StringComparer.Ordinal);
+		Dictionary<string, bool> failedLoads = new Dictionary<string, bool>(StringComparer.Ordinal);
 
 		ExternalAssembly load(TypeReference type) {
 			var asmFullName = DotNetUtils.getFullAssemblyName(type);
@@ -67,9 +69,9 @@ namespace de4dot.code {
 			catch (AssemblyResolutionException) {
 			}
 			if (asmDef == null) {
-				// If we can't load it now, we can't load it later. Make sure above code returns null.
-				assemblies[asmFullName] = null;
-				Log.w("Could not load assembly {0}", asmFullName);
+				if (!failedLoads.ContainsKey(asmFullName))
+					Log.w("Could not load assembly {0}", asmFullName);
+				failedLoads[asmFullName] = true;
 				return null;
 			}
 			if (assemblies.ContainsKey(asmDef.Name.FullName)) {
@@ -89,6 +91,8 @@ namespace de4dot.code {
 		}
 
 		public TypeDefinition resolve(TypeReference type) {
+			if (type == null)
+				return null;
 			var asm = load(type);
 			if (asm == null)
 				return null;
@@ -102,6 +106,7 @@ namespace de4dot.code {
 				pair.Value.unload(pair.Key);
 			}
 			assemblies.Clear();
+			failedLoads.Clear();
 		}
 	}
 }

@@ -40,7 +40,7 @@ namespace de4dot.code.renamer {
 		public bool RestoreEvents { get; set; }
 		public bool RestoreEventsFromNames { get; set; }
 
-		Modules modules = new Modules();
+		Modules modules;
 		MemberInfos memberInfos = new MemberInfos();
 		DerivedFrom isDelegateClass;
 		MergeStateHelper mergeStateHelper;
@@ -50,7 +50,7 @@ namespace de4dot.code.renamer {
 			"System.MulticastDelegate",
 		};
 
-		public Renamer(IEnumerable<IObfuscatedFile> files) {
+		public Renamer(IDeobfuscatorContext deobfuscatorContext, IEnumerable<IObfuscatedFile> files) {
 			RenameNamespaces = true;
 			RenameTypes = true;
 			RenameProperties = true;
@@ -64,6 +64,7 @@ namespace de4dot.code.renamer {
 			RestoreEvents = true;
 			RestoreEventsFromNames = true;
 
+			modules = new Modules(deobfuscatorContext);
 			isDelegateClass = new DerivedFrom(delegateClasses);
 			mergeStateHelper = new MergeStateHelper(memberInfos);
 

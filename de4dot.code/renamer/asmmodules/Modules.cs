@@ -25,6 +25,7 @@ using de4dot.blocks;
 namespace de4dot.code.renamer.asmmodules {
 	class Modules : IResolver {
 		bool initializeCalled = false;
+		IDeobfuscatorContext deobfuscatorContext;
 		List<Module> modules = new List<Module>();
 		Dictionary<ModuleDefinition, Module> modulesDict = new Dictionary<ModuleDefinition, Module>();
 		AssemblyHash assemblyHash = new AssemblyHash();
@@ -129,6 +130,10 @@ namespace de4dot.code.renamer.asmmodules {
 
 		public bool Empty {
 			get { return modules.Count == 0; }
+		}
+
+		public Modules(IDeobfuscatorContext deobfuscatorContext) {
+			this.deobfuscatorContext = deobfuscatorContext;
 		}
 
 		public void add(Module module) {
@@ -323,7 +328,6 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 
 		AssemblyKeyDictionary<TypeDef> typeToTypeDefDict = new AssemblyKeyDictionary<TypeDef>();
-		ExternalAssemblies externalAssemblies = new ExternalAssemblies();
 		public TypeDef resolveOther(TypeReference type) {
 			if (type == null)
 				return null;
@@ -333,7 +337,7 @@ namespace de4dot.code.renamer.asmmodules {
 			if (typeToTypeDefDict.tryGetValue(type, out typeDef))
 				return typeDef;
 
-			var typeDefinition = externalAssemblies.resolve(type);
+			var typeDefinition = deobfuscatorContext.resolve(type);
 			if (typeDefinition == null) {
 				typeToTypeDefDict.tryGetSimilarValue(type, out typeDef);
 				typeToTypeDefDict[type] = typeDef;
@@ -379,7 +383,6 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 
 		public void cleanUp() {
-			externalAssemblies.unloadAll();
 			foreach (var module in DotNetUtils.typeCaches.invalidateAll())
 				AssemblyResolver.Instance.removeModule(module);
 		}

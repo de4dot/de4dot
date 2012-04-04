@@ -48,6 +48,7 @@ namespace de4dot.code.deobfuscators {
 		IList<RemoveInfo<TypeDefinition>> attrsToRemove = new List<RemoveInfo<TypeDefinition>>();
 		IList<RemoveInfo<Resource>> resourcesToRemove = new List<RemoveInfo<Resource>>();
 		IList<RemoveInfo<ModuleReference>> modrefsToRemove = new List<RemoveInfo<ModuleReference>>();
+		IList<RemoveInfo<AssemblyNameReference>> asmrefsToRemove = new List<RemoveInfo<AssemblyNameReference>>();
 		List<string> namesToPossiblyRemove = new List<string>();
 		MethodCallRemover methodCallRemover = new MethodCallRemover();
 		byte[] moduleBytes;
@@ -181,6 +182,7 @@ namespace de4dot.code.deobfuscators {
 
 				deleteDllResources();
 				deleteModuleReferences();
+				deleteAssemblyReferences();
 			}
 
 			restoreBaseType();
@@ -377,6 +379,10 @@ namespace de4dot.code.deobfuscators {
 			modrefsToRemove.Add(new RemoveInfo<ModuleReference>(modref, reason));
 		}
 
+		protected void addAssemblyReferenceToBeRemoved(AssemblyNameReference asmRef, string reason) {
+			asmrefsToRemove.Add(new RemoveInfo<AssemblyNameReference>(asmRef, reason));
+		}
+
 		void deleteEmptyCctors() {
 			var emptyCctorsToRemove = new List<MethodDefinition>();
 			foreach (var type in module.GetTypes()) {
@@ -549,6 +555,22 @@ namespace de4dot.code.deobfuscators {
 					continue;
 				if (module.ModuleReferences.Remove(modref))
 					Log.v("Removed module reference {0} (reason: {1})", modref, info.reason);
+			}
+			Log.deIndent();
+		}
+
+		void deleteAssemblyReferences() {
+			if (!module.HasAssemblyReferences || asmrefsToRemove.Count == 0)
+				return;
+
+			Log.v("Removing assembly references");
+			Log.indent();
+			foreach (var info in asmrefsToRemove) {
+				var asmRef = info.obj;
+				if (asmRef == null)
+					continue;
+				if (module.AssemblyReferences.Remove(asmRef))
+					Log.v("Removed assembly reference {0} (reason: {1})", asmRef, info.reason);
 			}
 			Log.deIndent();
 		}

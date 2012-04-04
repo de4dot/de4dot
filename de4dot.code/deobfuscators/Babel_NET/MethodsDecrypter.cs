@@ -25,8 +25,9 @@ using Mono.Cecil.Cil;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Babel_NET {
-	class MethodsDecrypter : IDisposable {
+	class MethodsDecrypter {
 		ModuleDefinition module;
+		IDeobfuscatorContext deobfuscatorContext;
 		Dictionary<string, ImageReader> imageReaders = new Dictionary<string, ImageReader>(StringComparer.Ordinal);
 		TypeDefinition methodsDecrypterCreator;
 		TypeDefinition methodsDecrypter;
@@ -37,13 +38,9 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			get { return methodsDecrypterCreator != null; }
 		}
 
-		public MethodsDecrypter(ModuleDefinition module) {
+		public MethodsDecrypter(ModuleDefinition module, IDeobfuscatorContext deobfuscatorContext) {
 			this.module = module;
-		}
-
-		public void Dispose() {
-			foreach (var imageReader in imageReaders.Values)
-				imageReader.Dispose();
+			this.deobfuscatorContext = deobfuscatorContext;
 		}
 
 		public void find() {
@@ -104,7 +101,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		}
 
 		void addImageReader(string name, byte[] data) {
-			var imageReader = new ImageReader(module, data);
+			var imageReader = new ImageReader(deobfuscatorContext, module, data);
 			if (!imageReader.initialize()) {
 				Log.w("Could not read encrypted methods");
 				return;
@@ -147,9 +144,6 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			}
 			if (numNonDecryptedMethods > 0)
 				Log.w("{0}/{1} methods not decrypted", numNonDecryptedMethods, totalEncryptedMethods);
-
-			foreach (var imageReader in imageReaders.Values)
-				imageReader.Dispose();
 		}
 
 		List<EncryptInfo> getEncryptedMethods() {

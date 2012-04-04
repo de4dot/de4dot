@@ -27,7 +27,7 @@ using Mono.Cecil.Cil;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Babel_NET {
-	class ImageReader : IDisposable {
+	class ImageReader {
 		static int METHODS_SIG			= 0x0000BEBA;
 		static int METADATA_SIG			= 0x0100BEBA;
 		static int METHOD_NAMES_SIG		= 0x0200BEBA;
@@ -50,9 +50,10 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		Dictionary<string, int> methodOffsets;
 		List<TypeReference> typeReferences;
 		MemberReferenceConverter memberReferenceConverter;
-		ExternalAssemblies externalAssemblies = new ExternalAssemblies();
+		IDeobfuscatorContext deobfuscatorContext;
 
-		public ImageReader(ModuleDefinition module, byte[] data) {
+		public ImageReader(IDeobfuscatorContext deobfuscatorContext, ModuleDefinition module, byte[] data) {
+			this.deobfuscatorContext = deobfuscatorContext;
 			this.module = module;
 			this.reader = new BinaryReader(new MemoryStream(data));
 			this.memberReferenceConverter = new MemberReferenceConverter(module);
@@ -72,10 +73,6 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			initializeV10();
 
 			return true;
-		}
-
-		public void Dispose() {
-			externalAssemblies.unloadAll();
 		}
 
 		void initializeV10() {
@@ -254,7 +251,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			if (type.Module == module && isModuleAssembly(type.Scope))
 				return DotNetUtils.getType(module, type);
 
-			return externalAssemblies.resolve(type);
+			return deobfuscatorContext.resolve(type);
 		}
 
 		public CallSite readCallSite() {

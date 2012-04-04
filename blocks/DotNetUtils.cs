@@ -519,6 +519,16 @@ namespace de4dot.blocks {
 			return methodCalls;
 		}
 
+		public static bool hasString(MethodDefinition method, string s) {
+			if (method == null || method.Body == null)
+				return false;
+			foreach (var instr in method.Body.Instructions) {
+				if (instr.OpCode.Code == Code.Ldstr && (string)instr.Operand == s)
+					return true;
+			}
+			return false;
+		}
+
 		public static IList<string> getCodeStrings(MethodDefinition method) {
 			var strings = new List<string>();
 			if (method != null && method.Body != null) {

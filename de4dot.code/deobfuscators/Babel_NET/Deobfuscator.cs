@@ -141,7 +141,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			constantsDecrypter.find();
 			proxyDelegateFinder = new ProxyDelegateFinder(module);
 			proxyDelegateFinder.findDelegateCreator();
-			methodsDecrypter = new MethodsDecrypter(module);
+			methodsDecrypter = new MethodsDecrypter(module, DeobfuscatedFile.DeobfuscatorContext);
 			methodsDecrypter.find();
 		}
 
@@ -256,7 +256,6 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			}
 
 			removeProxyDelegates(proxyDelegateFinder);
-			methodsDecrypter.Dispose();
 			base.deobfuscateEnd();
 		}
 

@@ -58,6 +58,7 @@
     <Compile Include="AssemblyClient\NewProcessAssemblyServerLoader.cs" />
     <Compile Include="AssemblyClient\SameAppDomainAssemblyServerLoader.cs" />
     <Compile Include="AssemblyResolver.cs" />
+    <Compile Include="DeobfuscatorContext.cs" />
     <Compile Include="deobfuscators\ArrayFinder.cs" />
     <Compile Include="deobfuscators\Babel_NET\AssemblyResolver.cs" />
     <Compile Include="deobfuscators\Babel_NET\BabelUtils.cs" />
@@ -204,6 +205,7 @@
     <Compile Include="deobfuscators\ValueInlinerBase.cs" />
     <Compile Include="deobfuscators\Xenocode\Deobfuscator.cs" />
     <Compile Include="deobfuscators\Xenocode\StringDecrypter.cs" />
+    <Compile Include="IDeobfuscatorContext.cs" />
     <Compile Include="IObfuscatedFile.cs" />
     <Compile Include="Log.cs" />
     <Compile Include="AssemblyModule.cs" />

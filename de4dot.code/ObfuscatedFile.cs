@@ -38,6 +38,7 @@ namespace de4dot.code {
 		ModuleDefinition module;
 		IList<MethodDefinition> allMethods;
 		IDeobfuscator deob;
+		IDeobfuscatorContext deobfuscatorContext;
 		AssemblyModule assemblyModule;
 		IAssemblyClient assemblyClient;
 		DynamicStringInliner dynamicStringInliner;
@@ -121,6 +122,11 @@ namespace de4dot.code {
 
 		public IDeobfuscator Deobfuscator {
 			get { return deob; }
+		}
+
+		public IDeobfuscatorContext DeobfuscatorContext {
+			get { return deobfuscatorContext; }
+			set { deobfuscatorContext = value; }
 		}
 
 		public ObfuscatedFile(Options options, IAssemblyClientFactory assemblyClientFactory) {

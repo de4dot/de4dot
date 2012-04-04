@@ -30,6 +30,7 @@ using de4dot.code.AssemblyClient;
 namespace de4dot.cui {
 	class FilesDeobfuscator {
 		Options options;
+		IDeobfuscatorContext deobfuscatorContext = new DeobfuscatorContext();
 
 		public class Options {
 			public IList<IDeobfuscatorInfo> DeobfuscatorInfos { get; set; }
@@ -81,8 +82,10 @@ namespace de4dot.cui {
 		}
 
 		void detectObfuscators() {
-			foreach (var file in loadAllFiles(true))
+			foreach (var file in loadAllFiles(true)) {
 				removeModule(file.ModuleDefinition);
+				deobfuscatorContext.clear();
+			}
 		}
 
 		void deobfuscateOneAtATime() {
@@ -97,6 +100,7 @@ namespace de4dot.cui {
 
 					removeModule(file.ModuleDefinition);
 					AssemblyResolver.Instance.clearAll();
+					deobfuscatorContext.clear();
 				}
 				catch (Exception ex) {
 					Log.w("Could not deobfuscate {0}. Use -v to see stack trace", file.Filename);
@@ -124,6 +128,7 @@ namespace de4dot.cui {
 				DefaultStringDecrypterType = options.DefaultStringDecrypterType,
 				DefaultStringDecrypterMethods = options.DefaultStringDecrypterMethods,
 				AssemblyClientFactory = options.AssemblyClientFactory,
+				DeobfuscatorContext = deobfuscatorContext,
 				ControlFlowDeobfuscation = options.ControlFlowDeobfuscation,
 				KeepObfuscatorTypes = options.KeepObfuscatorTypes,
 				CreateDestinationDir = !onlyScan,
@@ -154,6 +159,7 @@ namespace de4dot.cui {
 				public DecrypterType? DefaultStringDecrypterType { get; set; }
 				public List<string> DefaultStringDecrypterMethods { get; set; }
 				public IAssemblyClientFactory AssemblyClientFactory { get; set; }
+				public IDeobfuscatorContext DeobfuscatorContext { get; set; }
 				public bool ControlFlowDeobfuscation { get; set; }
 				public bool KeepObfuscatorTypes { get; set; }
 				public bool CreateDestinationDir { get; set; }
@@ -185,6 +191,7 @@ namespace de4dot.cui {
 
 				int oldIndentLevel = Log.indentLevel;
 				try {
+					file.DeobfuscatorContext = options.DeobfuscatorContext;
 					file.load(options.CreateDeobfuscators());
 				}
 				catch (NotSupportedException) {
@@ -351,7 +358,7 @@ namespace de4dot.cui {
 		void rename(IEnumerable<IObfuscatedFile> theFiles) {
 			if (!options.RenameSymbols)
 				return;
-			var renamer = new Renamer(theFiles) {
+			var renamer = new Renamer(deobfuscatorContext, theFiles) {
 				RestorePropertiesFromNames = options.RestorePropsEvents,
 				RestoreEventsFromNames = options.RestorePropsEvents,
 			};
