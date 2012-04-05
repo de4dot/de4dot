@@ -266,7 +266,7 @@ namespace de4dot.code.deobfuscators {
 						case Code.Ldarg_1:
 						case Code.Ldarg_2:
 						case Code.Ldarg_3:
-							addMethodArgType(getParameter(methodParams, ldInstr), DotNetUtils.getParameter(calledMethodParams, calledMethodParamIndex));
+							addMethodArgType(method, getParameter(methodParams, ldInstr), DotNetUtils.getParameter(calledMethodParams, calledMethodParamIndex));
 							break;
 
 						default:
@@ -279,7 +279,7 @@ namespace de4dot.code.deobfuscators {
 					pushedArgs = MethodStack.getPushedArgInstructions(instructions, i);
 					if (pushedArgs.NumValidArgs < 1)
 						break;
-					addMethodArgType(getParameter(methodParams, pushedArgs.getEnd(0)), instr.Operand as TypeReference);
+					addMethodArgType(method, getParameter(methodParams, pushedArgs.getEnd(0)), instr.Operand as TypeReference);
 					break;
 
 				case Code.Stloc:
@@ -291,23 +291,23 @@ namespace de4dot.code.deobfuscators {
 					pushedArgs = MethodStack.getPushedArgInstructions(instructions, i);
 					if (pushedArgs.NumValidArgs < 1)
 						break;
-					addMethodArgType(getParameter(methodParams, pushedArgs.getEnd(0)), DotNetUtils.getLocalVar(method.Body.Variables, instr));
+					addMethodArgType(method, getParameter(methodParams, pushedArgs.getEnd(0)), DotNetUtils.getLocalVar(method.Body.Variables, instr));
 					break;
 
 				case Code.Stsfld:
 					pushedArgs = MethodStack.getPushedArgInstructions(instructions, i);
 					if (pushedArgs.NumValidArgs < 1)
 						break;
-					addMethodArgType(getParameter(methodParams, pushedArgs.getEnd(0)), instr.Operand as FieldReference);
+					addMethodArgType(method, getParameter(methodParams, pushedArgs.getEnd(0)), instr.Operand as FieldReference);
 					break;
 
 				case Code.Stfld:
 					pushedArgs = MethodStack.getPushedArgInstructions(instructions, i);
 					if (pushedArgs.NumValidArgs >= 1) {
 						var field = instr.Operand as FieldReference;
-						addMethodArgType(getParameter(methodParams, pushedArgs.getEnd(0)), field);
+						addMethodArgType(method, getParameter(methodParams, pushedArgs.getEnd(0)), field);
 						if (pushedArgs.NumValidArgs >= 2 && field != null)
-							addMethodArgType(getParameter(methodParams, pushedArgs.getEnd(1)), field.DeclaringType);
+							addMethodArgType(method, getParameter(methodParams, pushedArgs.getEnd(1)), field.DeclaringType);
 					}
 					break;
 
@@ -316,7 +316,7 @@ namespace de4dot.code.deobfuscators {
 					pushedArgs = MethodStack.getPushedArgInstructions(instructions, i);
 					if (pushedArgs.NumValidArgs < 1)
 						break;
-					addMethodArgType(getParameter(methodParams, pushedArgs.getEnd(0)), instr.Operand as FieldReference);
+					addMethodArgType(method, getParameter(methodParams, pushedArgs.getEnd(0)), instr.Operand as FieldReference);
 					break;
 
 				//TODO: For better results, these should be checked:
@@ -392,29 +392,29 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
-		bool addMethodArgType(ParameterDefinition methodParam, FieldReference field) {
+		bool addMethodArgType(MethodDefinition method, ParameterDefinition methodParam, FieldReference field) {
 			if (field == null)
 				return false;
-			return addMethodArgType(methodParam, field.FieldType);
+			return addMethodArgType(method, methodParam, field.FieldType);
 		}
 
-		bool addMethodArgType(ParameterDefinition methodParam, VariableDefinition otherLocal) {
+		bool addMethodArgType(MethodDefinition method, ParameterDefinition methodParam, VariableDefinition otherLocal) {
 			if (otherLocal == null)
 				return false;
-			return addMethodArgType(methodParam, otherLocal.VariableType);
+			return addMethodArgType(method, methodParam, otherLocal.VariableType);
 		}
 
-		bool addMethodArgType(ParameterDefinition methodParam, ParameterDefinition otherParam) {
+		bool addMethodArgType(MethodDefinition method, ParameterDefinition methodParam, ParameterDefinition otherParam) {
 			if (otherParam == null)
 				return false;
-			return addMethodArgType(methodParam, otherParam.ParameterType);
+			return addMethodArgType(method, methodParam, otherParam.ParameterType);
 		}
 
-		bool addMethodArgType(ParameterDefinition methodParam, TypeReference type) {
+		bool addMethodArgType(MethodDefinition method, ParameterDefinition methodParam, TypeReference type) {
 			if (methodParam == null || type == null)
 				return false;
 
-			if (!isValidType(type))
+			if (!isValidType(method, type))
 				return false;
 
 			TypeInfo<ParameterDefinition> info;
@@ -476,7 +476,7 @@ namespace de4dot.code.deobfuscators {
 							if (!fieldWrites.TryGetValue(new FieldReferenceAndDeclaringTypeKey(field), out info))
 								continue;
 							fieldType = calledMethodArgs[calledMethodArgs.Count - 1 - j];
-							if (!isValidType(fieldType))
+							if (!isValidType(method, fieldType))
 								continue;
 							info.add(fieldType);
 						}
@@ -505,12 +505,12 @@ namespace de4dot.code.deobfuscators {
 
 		TypeReference getLoadedType(MethodDefinition method, IList<Instruction> instructions, int instrIndex, out bool wasNewobj) {
 			var fieldType = MethodStack.getLoadedType(method, instructions, instrIndex, out wasNewobj);
-			if (fieldType == null || !isValidType(fieldType))
+			if (fieldType == null || !isValidType(method, fieldType))
 				return null;
 			return fieldType;
 		}
 
-		static bool isValidType(TypeReference type) {
+		static bool isValidType(MethodDefinition method, TypeReference type) {
 			if (type == null)
 				return false;
 			if (type.IsValueType)
@@ -529,9 +529,14 @@ namespace de4dot.code.deobfuscators {
 				case CecilType.TypeReference:
 					break;
 
+				case CecilType.GenericParameter:
+					var gp = (GenericParameter)type;
+					if (method.DeclaringType != gp.Owner && method != gp.Owner)
+						return false;
+					break;
+
 				case CecilType.ByReferenceType:
 				case CecilType.FunctionPointerType:
-				case CecilType.GenericParameter:
 				case CecilType.OptionalModifierType:
 				case CecilType.PinnedType:
 				case CecilType.RequiredModifierType:
