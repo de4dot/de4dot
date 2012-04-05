@@ -17,6 +17,7 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -27,7 +28,7 @@ namespace de4dot.code.deobfuscators {
 	// Restore the type of all fields / parameters that have had their type turned into object.
 	// This thing requires a lot more code than I have time to do now (similar to symbol renaming)
 	// so it will be a basic implementation only.
-	class TypesRestorer {
+	abstract class TypesRestorerBase {
 		ModuleDefinition module;
 		List<MethodDefinition> allMethods;
 		Dictionary<ParameterDefinition, TypeInfo<ParameterDefinition>> argInfos = new Dictionary<ParameterDefinition, TypeInfo<ParameterDefinition>>();
@@ -109,7 +110,7 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
-		public TypesRestorer(ModuleDefinition module) {
+		public TypesRestorerBase(ModuleDefinition module) {
 			this.module = module;
 		}
 
@@ -131,19 +132,42 @@ namespace de4dot.code.deobfuscators {
 
 		public void deobfuscate() {
 			allMethods = new List<MethodDefinition>();
-			foreach (var type in module.GetTypes())
-				allMethods.AddRange(type.Methods);
 
+			addAllMethods();
+			addAllFields();
+
+			deobfuscateLoop();
+
+			restoreFieldTypes();
+			restoreMethodTypes();
+		}
+
+		void addAllMethods() {
+			foreach (var type in module.GetTypes())
+				addMethods(type.Methods);
+		}
+
+		void addMethods(IEnumerable<MethodDefinition> methods) {
+			allMethods.AddRange(methods);
+		}
+
+		void addMethod(MethodDefinition method) {
+			allMethods.Add(method);
+		}
+
+		void addAllFields() {
 			foreach (var type in module.GetTypes()) {
 				foreach (var field in type.Fields) {
-					if (!MemberReferenceHelper.isSystemObject(field.FieldType))
+					if (!isUnknownType(field))
 						continue;
 
 					var key = new FieldReferenceAndDeclaringTypeKey(field);
 					fieldWrites[key] = new TypeInfo<FieldDefinition>(field);
 				}
 			}
+		}
 
+		void deobfuscateLoop() {
 			for (int i = 0; i < 10; i++) {
 				bool changed = false;
 				changed |= deobfuscateFields();
@@ -151,37 +175,49 @@ namespace de4dot.code.deobfuscators {
 				if (!changed)
 					break;
 			}
+		}
 
+		void restoreFieldTypes() {
 			var fields = new List<UpdatedField>(updatedFields.Values);
-			if (fields.Count > 0) {
-				Log.v("Changing field types from object -> real type");
-				fields.Sort((a, b) => Utils.compareInt32(a.token, b.token));
-				Log.indent();
-				foreach (var updatedField in fields)
-					Log.v("Field {0:X8}: type {1} ({2:X8})", updatedField.token, Utils.removeNewlines(updatedField.newFieldType.FullName), updatedField.newFieldType.MetadataToken.ToInt32());
-				Log.deIndent();
-			}
+			if (fields.Count == 0)
+				return;
 
+			Log.v("Changing field types to real type");
+			fields.Sort((a, b) => Utils.compareInt32(a.token, b.token));
+			Log.indent();
+			foreach (var updatedField in fields)
+				Log.v("Field {0:X8}: type {1} ({2:X8})", updatedField.token, Utils.removeNewlines(updatedField.newFieldType.FullName), updatedField.newFieldType.MetadataToken.ToInt32());
+			Log.deIndent();
+		}
+
+		void restoreMethodTypes() {
 			var methods = new List<UpdatedMethod>(updatedMethods.Values);
-			if (methods.Count > 0) {
-				Log.v("Changing method args and return types from object -> real type");
-				methods.Sort((a, b) => Utils.compareInt32(a.token, b.token));
+			if (methods.Count == 0)
+				return;
+
+			Log.v("Changing method args and return types to real type");
+			methods.Sort((a, b) => Utils.compareInt32(a.token, b.token));
+			Log.indent();
+			foreach (var updatedMethod in methods) {
+				Log.v("Method {0:X8}", updatedMethod.token);
 				Log.indent();
-				foreach (var updatedMethod in methods) {
-					Log.v("Method {0:X8}", updatedMethod.token);
-					Log.indent();
-					if (updatedMethod.newReturnType != null)
-						Log.v("ret: {0} ({1:X8})", Utils.removeNewlines(updatedMethod.newReturnType.FullName), updatedMethod.newReturnType.MetadataToken.ToInt32());
-					for (int i = 0; i < updatedMethod.newArgTypes.Length; i++) {
-						var updatedArg = updatedMethod.newArgTypes[i];
-						if (updatedArg == null)
-							continue;
-						Log.v("arg {0}: {1} ({2:X8})", i, Utils.removeNewlines(updatedArg.FullName), updatedArg.MetadataToken.ToInt32());
-					}
-					Log.deIndent();
+				if (updatedMethod.newReturnType != null) {
+					Log.v("ret: {0} ({1:X8})",
+							Utils.removeNewlines(updatedMethod.newReturnType.FullName),
+							updatedMethod.newReturnType.MetadataToken.ToInt32());
+				}
+				for (int i = 0; i < updatedMethod.newArgTypes.Length; i++) {
+					var updatedArg = updatedMethod.newArgTypes[i];
+					if (updatedArg == null)
+						continue;
+					Log.v("arg {0}: {1} ({2:X8})",
+							i,
+							Utils.removeNewlines(updatedArg.FullName),
+							updatedArg.MetadataToken.ToInt32());
 				}
 				Log.deIndent();
 			}
+			Log.deIndent();
 		}
 
 		bool deobfuscateMethods() {
@@ -218,13 +254,11 @@ namespace de4dot.code.deobfuscators {
 			if (!method.IsStatic || method.Body == null)
 				return;
 
-			bool fixReturnType = MemberReferenceHelper.isSystemObject(method.MethodReturnType.ReturnType);
+			bool fixReturnType = isUnknownType(method.MethodReturnType);
 
 			argInfos.Clear();
 			foreach (var arg in method.Parameters) {
-				if (arg.ParameterType == null || arg.ParameterType.IsValueType)
-					continue;
-				if (!MemberReferenceHelper.isSystemObject(arg.ParameterType))
+				if (!isUnknownType(arg))
 					continue;
 				argInfos[arg] = new TypeInfo<ParameterDefinition>(arg);
 			}
@@ -241,7 +275,7 @@ namespace de4dot.code.deobfuscators {
 					if (!fixReturnType)
 						break;
 					bool wasNewobj;
-					var type = getLoadedType(method, instructions, i, out wasNewobj);
+					var type = getLoadedType(method, method, instructions, i, out wasNewobj);
 					if (type == null)
 						break;
 					methodReturnInfo.add(type);
@@ -392,29 +426,29 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
-		bool addMethodArgType(MethodDefinition method, ParameterDefinition methodParam, FieldReference field) {
+		bool addMethodArgType(IGenericParameterProvider gpp, ParameterDefinition methodParam, FieldReference field) {
 			if (field == null)
 				return false;
-			return addMethodArgType(method, methodParam, field.FieldType);
+			return addMethodArgType(gpp, methodParam, field.FieldType);
 		}
 
-		bool addMethodArgType(MethodDefinition method, ParameterDefinition methodParam, VariableDefinition otherLocal) {
+		bool addMethodArgType(IGenericParameterProvider gpp, ParameterDefinition methodParam, VariableDefinition otherLocal) {
 			if (otherLocal == null)
 				return false;
-			return addMethodArgType(method, methodParam, otherLocal.VariableType);
+			return addMethodArgType(gpp, methodParam, otherLocal.VariableType);
 		}
 
-		bool addMethodArgType(MethodDefinition method, ParameterDefinition methodParam, ParameterDefinition otherParam) {
+		bool addMethodArgType(IGenericParameterProvider gpp, ParameterDefinition methodParam, ParameterDefinition otherParam) {
 			if (otherParam == null)
 				return false;
-			return addMethodArgType(method, methodParam, otherParam.ParameterType);
+			return addMethodArgType(gpp, methodParam, otherParam.ParameterType);
 		}
 
-		bool addMethodArgType(MethodDefinition method, ParameterDefinition methodParam, TypeReference type) {
+		bool addMethodArgType(IGenericParameterProvider gpp, ParameterDefinition methodParam, TypeReference type) {
 			if (methodParam == null || type == null)
 				return false;
 
-			if (!isValidType(method, type))
+			if (!isValidType(gpp, type))
 				return false;
 
 			TypeInfo<ParameterDefinition> info;
@@ -449,7 +483,7 @@ namespace de4dot.code.deobfuscators {
 						if (!fieldWrites.TryGetValue(new FieldReferenceAndDeclaringTypeKey(field), out info))
 							continue;
 						bool wasNewobj;
-						fieldType = getLoadedType(method, instructions, i, out wasNewobj);
+						fieldType = getLoadedType(info.arg.DeclaringType, method, instructions, i, out wasNewobj);
 						if (fieldType == null)
 							continue;
 						info.add(fieldType, wasNewobj);
@@ -476,7 +510,7 @@ namespace de4dot.code.deobfuscators {
 							if (!fieldWrites.TryGetValue(new FieldReferenceAndDeclaringTypeKey(field), out info))
 								continue;
 							fieldType = calledMethodArgs[calledMethodArgs.Count - 1 - j];
-							if (!isValidType(method, fieldType))
+							if (!isValidType(info.arg.DeclaringType, fieldType))
 								continue;
 							info.add(fieldType);
 						}
@@ -503,19 +537,15 @@ namespace de4dot.code.deobfuscators {
 			return changed;
 		}
 
-		TypeReference getLoadedType(MethodDefinition method, IList<Instruction> instructions, int instrIndex, out bool wasNewobj) {
+		TypeReference getLoadedType(IGenericParameterProvider gpp, MethodDefinition method, IList<Instruction> instructions, int instrIndex, out bool wasNewobj) {
 			var fieldType = MethodStack.getLoadedType(method, instructions, instrIndex, out wasNewobj);
-			if (fieldType == null || !isValidType(method, fieldType))
+			if (fieldType == null || !isValidType(gpp, fieldType))
 				return null;
 			return fieldType;
 		}
 
-		static bool isValidType(MethodDefinition method, TypeReference type) {
+		protected virtual bool isValidType(IGenericParameterProvider gpp, TypeReference type) {
 			if (type == null)
-				return false;
-			if (type.IsValueType)
-				return false;
-			if (MemberReferenceHelper.isSystemObject(type))
 				return false;
 			if (type.EType == ElementType.Void)
 				return false;
@@ -531,7 +561,17 @@ namespace de4dot.code.deobfuscators {
 
 				case CecilType.GenericParameter:
 					var gp = (GenericParameter)type;
-					if (method.DeclaringType != gp.Owner && method != gp.Owner)
+					var methodRef = gpp as MethodReference;
+					var typeRef = gpp as TypeReference;
+					if (methodRef != null) {
+						if (methodRef.DeclaringType != gp.Owner && methodRef != gp.Owner)
+							return false;
+					}
+					else if (typeRef != null) {
+						if (typeRef != gp.Owner)
+							return false;
+					}
+					else
 						return false;
 					break;
 
@@ -553,12 +593,46 @@ namespace de4dot.code.deobfuscators {
 			return type != null;
 		}
 
+		protected abstract bool isUnknownType(object o);
+
 		static TypeReference getCommonBaseClass(ModuleDefinition module, TypeReference a, TypeReference b) {
 			if (DotNetUtils.isDelegate(a) && DotNetUtils.derivesFromDelegate(DotNetUtils.getType(module, b)))
 				return b;
 			if (DotNetUtils.isDelegate(b) && DotNetUtils.derivesFromDelegate(DotNetUtils.getType(module, a)))
 				return a;
 			return null;	//TODO:
+		}
+	}
+
+	class TypesRestorer : TypesRestorerBase {
+		public TypesRestorer(ModuleDefinition module)
+			: base(module) {
+		}
+
+		protected override bool isValidType(IGenericParameterProvider gpp, TypeReference type) {
+			if (type == null)
+				return false;
+			if (type.IsValueType)
+				return false;
+			if (MemberReferenceHelper.isSystemObject(type))
+				return false;
+			return base.isValidType(gpp, type);
+		}
+
+		protected override bool isUnknownType(object o) {
+			var arg = o as ParameterDefinition;
+			if (arg != null)
+				return MemberReferenceHelper.isSystemObject(arg.ParameterType);
+
+			var field = o as FieldDefinition;
+			if (field != null)
+				return MemberReferenceHelper.isSystemObject(field.FieldType);
+
+			var retType = o as MethodReturnType;
+			if (retType != null)
+				return MemberReferenceHelper.isSystemObject(retType.ReturnType);
+
+			throw new ApplicationException(string.Format("Unknown type: {0}", o.GetType()));
 		}
 	}
 }
