@@ -81,6 +81,16 @@
     <Compile Include="deobfuscators\CliSecure\ResourceDecrypter.cs" />
     <Compile Include="deobfuscators\CliSecure\StackFrameHelper.cs" />
     <Compile Include="deobfuscators\CliSecure\StringDecrypter.cs" />
+    <Compile Include="deobfuscators\CliSecure\vm\CilOperandInstructionRestorer.cs" />
+    <Compile Include="deobfuscators\CliSecure\vm\Csvm.cs" />
+    <Compile Include="deobfuscators\CliSecure\vm\CsvmDataReader.cs" />
+    <Compile Include="deobfuscators\CliSecure\vm\CsvmMethodData.cs" />
+    <Compile Include="deobfuscators\CliSecure\vm\CsvmToCilMethodConverter.cs" />
+    <Compile Include="deobfuscators\CliSecure\vm\FieldsInfo.cs" />
+    <Compile Include="deobfuscators\CliSecure\vm\OpCodeHandler.cs" />
+    <Compile Include="deobfuscators\CliSecure\vm\UnknownHandlerInfo.cs" />
+    <Compile Include="deobfuscators\CliSecure\vm\VmOpCodeHandlerDetector.cs" />
+    <Compile Include="deobfuscators\CliSecure\vm\VmOperands.cs" />
     <Compile Include="deobfuscators\CodeVeil\AssemblyResolver.cs" />
     <Compile Include="deobfuscators\CodeVeil\ErexResourceReader.cs" />
     <Compile Include="deobfuscators\CodeVeil\InvalidDataException.cs" />
