@@ -96,13 +96,36 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 			var opcodeDetector = getVmOpCodeHandlerDetector();
 			var csvmMethods = new CsvmDataReader(resource.GetResourceStream()).read();
 			var converter = new CsvmToCilMethodConverter(deobfuscatorContext, module, opcodeDetector);
+			var methodPrinter = new MethodPrinter();
 			foreach (var csvmMethod in csvmMethods) {
 				var cilMethod = module.LookupToken(csvmMethod.Token) as MethodDefinition;
 				if (cilMethod == null)
 					throw new ApplicationException(string.Format("Could not find method {0:X8}", csvmMethod.Token));
 				converter.convert(cilMethod, csvmMethod);
 				Log.v("Restored method {0:X8}", cilMethod.MetadataToken.ToInt32());
+				printMethod(methodPrinter, cilMethod);
 			}
+			Log.deIndent();
+		}
+
+		static void printMethod(MethodPrinter methodPrinter, MethodDefinition method) {
+			const Log.LogLevel dumpLogLevel = Log.LogLevel.verbose;
+			if (!Log.isAtLeast(dumpLogLevel))
+				return;
+
+			Log.indent();
+
+			Log.v("Locals:");
+			Log.indent();
+			for (int i = 0; i < method.Body.Variables.Count; i++)
+				Log.v("#{0}: {1}", i, method.Body.Variables[i].VariableType);
+			Log.deIndent();
+
+			Log.v("Code:");
+			Log.indent();
+			methodPrinter.print(dumpLogLevel, method.Body.Instructions, method.Body.ExceptionHandlers);
+			Log.deIndent();
+
 			Log.deIndent();
 		}
 
