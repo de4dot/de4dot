@@ -214,57 +214,6 @@ namespace de4dot.code.deobfuscators {
 			return Utils.compareInt32(a.arg.Sequence, b.arg.Sequence);
 		}
 
-		class PushedArgs {
-			List<Instruction> args;
-			int nextIndex;
-
-			public bool CanAddMore {
-				get { return nextIndex >= 0; }
-			}
-
-			public int NumValidArgs {
-				get { return args.Count - (nextIndex + 1); }
-			}
-
-			public PushedArgs(int numArgs) {
-				nextIndex = numArgs - 1;
-				args = new List<Instruction>(numArgs);
-				for (int i = 0; i < numArgs; i++)
-					args.Add(null);
-			}
-
-			public void add(Instruction instr) {
-				args[nextIndex--] = instr;
-			}
-
-			public void set(int i, Instruction instr) {
-				args[i] = instr;
-			}
-
-			public Instruction get(int i) {
-				if (0 <= i && i < args.Count)
-					return args[i];
-				return null;
-			}
-
-			public Instruction getEnd(int i) {
-				return get(args.Count - 1 - i);
-			}
-
-			public void fixDups() {
-				Instruction prev = null, instr;
-				for (int i = 0; i < NumValidArgs; i++, prev = instr) {
-					instr = args[i];
-					if (instr == null || prev == null)
-						continue;
-					if (instr.OpCode.Code != Code.Dup)
-						continue;
-					args[i] = prev;
-					instr = prev;
-				}
-			}
-		}
-
 		void deobfuscateMethod(MethodDefinition method) {
 			if (!method.IsStatic || method.Body == null)
 				return;
@@ -302,7 +251,7 @@ namespace de4dot.code.deobfuscators {
 				case Code.Calli:
 				case Code.Callvirt:
 				case Code.Newobj:
-					pushedArgs = getPushedArgInstructions(instructions, i);
+					pushedArgs = MethodStack.getPushedArgInstructions(instructions, i);
 					var calledMethod = instr.Operand as MethodReference;
 					if (calledMethod == null)
 						break;
@@ -327,7 +276,7 @@ namespace de4dot.code.deobfuscators {
 					break;
 
 				case Code.Castclass:
-					pushedArgs = getPushedArgInstructions(instructions, i);
+					pushedArgs = MethodStack.getPushedArgInstructions(instructions, i);
 					if (pushedArgs.NumValidArgs < 1)
 						break;
 					addMethodArgType(getParameter(methodParams, pushedArgs.getEnd(0)), instr.Operand as TypeReference);
@@ -339,21 +288,21 @@ namespace de4dot.code.deobfuscators {
 				case Code.Stloc_1:
 				case Code.Stloc_2:
 				case Code.Stloc_3:
-					pushedArgs = getPushedArgInstructions(instructions, i);
+					pushedArgs = MethodStack.getPushedArgInstructions(instructions, i);
 					if (pushedArgs.NumValidArgs < 1)
 						break;
 					addMethodArgType(getParameter(methodParams, pushedArgs.getEnd(0)), DotNetUtils.getLocalVar(method.Body.Variables, instr));
 					break;
 
 				case Code.Stsfld:
-					pushedArgs = getPushedArgInstructions(instructions, i);
+					pushedArgs = MethodStack.getPushedArgInstructions(instructions, i);
 					if (pushedArgs.NumValidArgs < 1)
 						break;
 					addMethodArgType(getParameter(methodParams, pushedArgs.getEnd(0)), instr.Operand as FieldReference);
 					break;
 
 				case Code.Stfld:
-					pushedArgs = getPushedArgInstructions(instructions, i);
+					pushedArgs = MethodStack.getPushedArgInstructions(instructions, i);
 					if (pushedArgs.NumValidArgs >= 1) {
 						var field = instr.Operand as FieldReference;
 						addMethodArgType(getParameter(methodParams, pushedArgs.getEnd(0)), field);
@@ -364,7 +313,7 @@ namespace de4dot.code.deobfuscators {
 
 				case Code.Ldfld:
 				case Code.Ldflda:
-					pushedArgs = getPushedArgInstructions(instructions, i);
+					pushedArgs = MethodStack.getPushedArgInstructions(instructions, i);
 					if (pushedArgs.NumValidArgs < 1)
 						break;
 					addMethodArgType(getParameter(methodParams, pushedArgs.getEnd(0)), instr.Operand as FieldReference);
@@ -478,69 +427,6 @@ namespace de4dot.code.deobfuscators {
 			return true;
 		}
 
-		// May not return all args. The args are returned in reverse order.
-		PushedArgs getPushedArgInstructions(IList<Instruction> instructions, int index) {
-			try {
-				int pushes, pops;
-				DotNetUtils.calculateStackUsage(instructions[index], false, out pushes, out pops);
-				if (pops != -1)
-					return getPushedArgInstructions(instructions, index, pops);
-			}
-			catch (System.NullReferenceException) {
-				// Here if eg. invalid metadata token in a call instruction (operand is null)
-			}
-			return new PushedArgs(0);
-		}
-
-		// May not return all args. The args are returned in reverse order.
-		PushedArgs getPushedArgInstructions(IList<Instruction> instructions, int index, int numArgs) {
-			var pushedArgs = new PushedArgs(numArgs);
-
-			Instruction instr;
-			int skipPushes = 0;
-			while (index >= 0 && pushedArgs.CanAddMore) {
-				instr = getPreviousInstruction(instructions, ref index);
-				if (instr == null)
-					break;
-
-				int pushes, pops;
-				DotNetUtils.calculateStackUsage(instr, false, out pushes, out pops);
-				if (pops == -1)
-					break;
-				if (instr.OpCode.Code == Code.Dup) {
-					pushes = 1;
-					pops = 0;
-				}
-				if (pushes > 1)
-					break;
-
-				if (skipPushes > 0) {
-					skipPushes -= pushes;
-					if (skipPushes < 0)
-						break;
-					skipPushes += pops;
-				}
-				else {
-					if (pushes == 1)
-						pushedArgs.add(instr);
-					skipPushes += pops;
-				}
-			}
-			instr = pushedArgs.get(0);
-			if (instr != null && instr.OpCode.Code == Code.Dup) {
-				instr = getPreviousInstruction(instructions, ref index);
-				if (instr != null) {
-					int pushes, pops;
-					DotNetUtils.calculateStackUsage(instr, false, out pushes, out pops);
-					if (pushes == 1 && pops == 0)
-						pushedArgs.set(0, instr);
-				}
-			}
-			pushedArgs.fixDups();
-
-			return pushedArgs;
-		}
-
 		bool deobfuscateFields() {
 			foreach (var info in fieldWrites.Values)
 				info.clear();
@@ -573,7 +459,7 @@ namespace de4dot.code.deobfuscators {
 					case Code.Calli:
 					case Code.Callvirt:
 					case Code.Newobj:
-						var pushedArgs = getPushedArgInstructions(instructions, i);
+						var pushedArgs = MethodStack.getPushedArgInstructions(instructions, i);
 						var calledMethod = instr.Operand as MethodReference;
 						if (calledMethod == null)
 							continue;
@@ -618,84 +504,9 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		TypeReference getLoadedType(MethodDefinition method, IList<Instruction> instructions, int instrIndex, out bool wasNewobj) {
-			wasNewobj = false;
-			var pushedArgs = getPushedArgInstructions(instructions, instrIndex);
-			var pushInstr = pushedArgs.getEnd(0);
-			if (pushInstr == null)
+			var fieldType = MethodStack.getLoadedType(method, instructions, instrIndex, out wasNewobj);
+			if (fieldType == null || !isValidType(fieldType))
 				return null;
-
-			TypeReference fieldType;
-			switch (pushInstr.OpCode.Code) {
-			case Code.Ldstr:
-				fieldType = module.TypeSystem.String;
-				break;
-
-			case Code.Call:
-			case Code.Calli:
-			case Code.Callvirt:
-				var calledMethod = pushInstr.Operand as MethodReference;
-				if (calledMethod == null)
-					return null;
-				fieldType = calledMethod.MethodReturnType.ReturnType;
-				break;
-
-			case Code.Newarr:
-				fieldType = pushInstr.Operand as TypeReference;
-				if (fieldType == null)
-					return null;
-				fieldType = new ArrayType(fieldType);
-				wasNewobj = true;
-				break;
-
-			case Code.Newobj:
-				var ctor = pushInstr.Operand as MethodReference;
-				if (ctor == null)
-					return null;
-				fieldType = ctor.DeclaringType;
-				wasNewobj = true;
-				break;
-
-			case Code.Castclass:
-			case Code.Isinst:
-				fieldType = pushInstr.Operand as TypeReference;
-				break;
-
-			case Code.Ldarg:
-			case Code.Ldarg_S:
-			case Code.Ldarg_0:
-			case Code.Ldarg_1:
-			case Code.Ldarg_2:
-			case Code.Ldarg_3:
-				fieldType = DotNetUtils.getArgType(method, pushInstr);
-				break;
-
-			case Code.Ldloc:
-			case Code.Ldloc_S:
-			case Code.Ldloc_0:
-			case Code.Ldloc_1:
-			case Code.Ldloc_2:
-			case Code.Ldloc_3:
-				var local = DotNetUtils.getLocalVar(method.Body.Variables, pushInstr);
-				if (local == null)
-					return null;
-				fieldType = local.VariableType;
-				break;
-
-			case Code.Ldfld:
-			case Code.Ldsfld:
-				var field2 = pushInstr.Operand as FieldReference;
-				if (field2 == null)
-					return null;
-				fieldType = field2.FieldType;
-				break;
-
-			default:
-				return null;
-			}
-
-			if (!isValidType(fieldType))
-				return null;
-
 			return fieldType;
 		}
 
@@ -743,26 +554,6 @@ namespace de4dot.code.deobfuscators {
 			if (DotNetUtils.isDelegate(b) && DotNetUtils.derivesFromDelegate(DotNetUtils.getType(module, a)))
 				return a;
 			return null;	//TODO:
-		}
-
-		static Instruction getPreviousInstruction(IList<Instruction> instructions, ref int instrIndex) {
-			while (true) {
-				instrIndex--;
-				if (instrIndex < 0)
-					return null;
-				var instr = instructions[instrIndex];
-				if (instr.OpCode.Code == Code.Nop)
-					continue;
-				if (instr.OpCode.OpCodeType == OpCodeType.Prefix)
-					continue;
-				switch (instr.OpCode.FlowControl) {
-				case FlowControl.Next:
-				case FlowControl.Call:
-					return instr;
-				default:
-					return null;
-				}
-			}
 		}
 	}
 }

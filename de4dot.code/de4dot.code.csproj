@@ -169,6 +169,7 @@
     <Compile Include="deobfuscators\MaxtoCode\FileDecrypter.cs" />
     <Compile Include="deobfuscators\MaxtoCode\MainType.cs" />
     <Compile Include="deobfuscators\MethodCollection.cs" />
+    <Compile Include="deobfuscators\MethodStack.cs" />
     <Compile Include="deobfuscators\QuickLZ.cs" />
     <Compile Include="deobfuscators\RandomNameChecker.cs" />
     <Compile Include="deobfuscators\Skater_NET\Deobfuscator.cs" />
