@@ -340,7 +340,8 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		protected void addMethodToBeRemoved(MethodDefinition method, string reason) {
-			methodsToRemove.Add(new RemoveInfo<MethodDefinition>(method, reason));
+			if (method != null)
+				methodsToRemove.Add(new RemoveInfo<MethodDefinition>(method, reason));
 		}
 
 		protected void addFieldsToBeRemoved(IEnumerable<FieldDefinition> fields, string reason) {
@@ -349,10 +350,13 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		protected void addFieldToBeRemoved(FieldDefinition field, string reason) {
-			fieldsToRemove.Add(new RemoveInfo<FieldDefinition>(field, reason));
+			if (field != null)
+				fieldsToRemove.Add(new RemoveInfo<FieldDefinition>(field, reason));
 		}
 
 		protected void addAttributeToBeRemoved(TypeDefinition attr, string reason) {
+			if (attr == null)
+				return;
 			addTypeToBeRemoved(attr, reason);
 			attrsToRemove.Add(new RemoveInfo<TypeDefinition>(attr, reason));
 		}
@@ -363,11 +367,13 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		protected void addTypeToBeRemoved(TypeDefinition type, string reason) {
-			typesToRemove.Add(new RemoveInfo<TypeDefinition>(type, reason));
+			if (type != null)
+				typesToRemove.Add(new RemoveInfo<TypeDefinition>(type, reason));
 		}
 
 		protected void addResourceToBeRemoved(Resource resource, string reason) {
-			resourcesToRemove.Add(new RemoveInfo<Resource>(resource, reason));
+			if (resource != null)
+				resourcesToRemove.Add(new RemoveInfo<Resource>(resource, reason));
 		}
 
 		protected void addModuleReferencesToBeRemoved(IEnumerable<ModuleReference> modrefs, string reason) {
@@ -376,11 +382,13 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		protected void addModuleReferenceToBeRemoved(ModuleReference modref, string reason) {
-			modrefsToRemove.Add(new RemoveInfo<ModuleReference>(modref, reason));
+			if (modref != null)
+				modrefsToRemove.Add(new RemoveInfo<ModuleReference>(modref, reason));
 		}
 
 		protected void addAssemblyReferenceToBeRemoved(AssemblyNameReference asmRef, string reason) {
-			asmrefsToRemove.Add(new RemoveInfo<AssemblyNameReference>(asmRef, reason));
+			if (asmRef != null)
+				asmrefsToRemove.Add(new RemoveInfo<AssemblyNameReference>(asmRef, reason));
 		}
 
 		void deleteEmptyCctors() {
