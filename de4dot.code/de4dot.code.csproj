@@ -220,6 +220,7 @@
     <Compile Include="IObfuscatedFile.cs" />
     <Compile Include="Log.cs" />
     <Compile Include="AssemblyModule.cs" />
+    <Compile Include="MethodPrinter.cs" />
     <Compile Include="MethodReturnValueInliner.cs" />
     <Compile Include="NameRegexes.cs" />
     <Compile Include="ObfuscatedFile.cs" />
