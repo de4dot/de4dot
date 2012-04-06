@@ -43,12 +43,8 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 			var newLocals = readLocals(cilMethod, csvmMethod);
 			var newExceptions = readExceptions(cilMethod, csvmMethod, newInstructions);
 
-			cilMethod.Body.Variables.Clear();
-			foreach (var local in newLocals)
-				cilMethod.Body.Variables.Add(local);
-
 			fixInstructionOperands(newInstructions);
-			fixLocals(newInstructions, newLocals);
+			fixLocals(newInstructions, cilMethod.Body.Variables);
 			fixArgs(newInstructions, cilMethod);
 
 			DotNetUtils.restoreBody(cilMethod, newInstructions, newExceptions);
@@ -240,7 +236,7 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 				return locals;
 
 			int numLocals = reader.ReadInt32();
-			if (numLocals < 0)
+			if (numLocals < 0 || numLocals != cilMethod.Body.Variables.Count)
 				throw new ApplicationException("Invalid number of locals");
 
 			for (int i = 0; i < numLocals; i++)
@@ -271,6 +267,18 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 			case ElementType.U: return module.TypeSystem.UIntPtr;
 			case ElementType.Object: return module.TypeSystem.Object;
 
+			case ElementType.ValueType:
+			case ElementType.Var:
+			case ElementType.MVar:
+				return (TypeReference)module.LookupToken(reader.ReadInt32());
+
+			case ElementType.GenericInst:
+				etype = (ElementType)reader.ReadInt32();
+				if (etype == ElementType.ValueType)
+					return (TypeReference)module.LookupToken(reader.ReadInt32());
+				// ElementType.Class
+				return module.TypeSystem.Object;
+
 			case ElementType.Ptr:
 			case ElementType.Class:
 			case ElementType.Array:
@@ -287,22 +295,8 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 			case ElementType.Boxed:
 			case ElementType.Enum:
 			case ElementType.None:
-				return module.TypeSystem.Object;	//TODO: Detect type
-
-			case ElementType.ValueType:
-			case ElementType.Var:
-			case ElementType.MVar:
-				return (TypeReference)module.LookupToken(reader.ReadInt32());
-
-			case ElementType.GenericInst:
-				etype = (ElementType)reader.ReadInt32();
-				if (etype == ElementType.ValueType)
-					return (TypeReference)module.LookupToken(reader.ReadInt32());
-				// ElementType.Class
-				return module.TypeSystem.Object;	//TODO: Detect type
-
 			default:
-				throw new ApplicationException(string.Format("Unknown ElementType: {0}", (int)etype));
+				return module.TypeSystem.Object;
 			}
 		}
 
