@@ -53,13 +53,13 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 					break;
 
 				case Code.Ldobj:
-					operandType = MethodStack.getLoadedType(method, instrs, i, 0);
+					operandType = getPtrElementType(MethodStack.getLoadedType(method, instrs, i, 0));
 					break;
 
 				case Code.Stobj:
-					operandType = MethodStack.getLoadedType(method, instrs, i, 1);
-					if (operandType == null)
-						operandType = MethodStack.getLoadedType(method, instrs, i, 0);
+					operandType = MethodStack.getLoadedType(method, instrs, i, 0);
+					if (!isValidType(operandType))
+						operandType = getPtrElementType(MethodStack.getLoadedType(method, instrs, i, 1));
 					break;
 
 				default:
@@ -74,6 +74,18 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 			}
 
 			return atLeastOneFailed;
+		}
+
+		static TypeReference getPtrElementType(TypeReference type) {
+			if (type == null)
+				return null;
+			var pt = type as PointerType;
+			if (pt != null)
+				return pt.ElementType;
+			var bt = type as ByReferenceType;
+			if (bt != null)
+				return bt.ElementType;
+			return null;
 		}
 
 		bool isValidType(TypeReference type) {

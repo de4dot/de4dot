@@ -192,6 +192,7 @@ namespace de4dot.code.deobfuscators {
 
 			case Code.Castclass:
 			case Code.Isinst:
+			case Code.Unbox_Any:
 				fieldType = pushInstr.Operand as TypeReference;
 				break;
 
@@ -225,6 +226,10 @@ namespace de4dot.code.deobfuscators {
 				break;
 
 			case Code.Ldelema:
+				fieldType = createByReferenceType(pushInstr.Operand as TypeReference);
+				break;
+
+			case Code.Ldobj:
 				fieldType = pushInstr.Operand as TypeReference;
 				break;
 
@@ -233,6 +238,12 @@ namespace de4dot.code.deobfuscators {
 			}
 
 			return fieldType;
+		}
+
+		static ByReferenceType createByReferenceType(TypeReference elementType) {
+			if (elementType == null)
+				return null;
+			return new ByReferenceType(elementType);
 		}
 
 		static Instruction getPreviousInstruction(IList<Instruction> instructions, ref int instrIndex) {
