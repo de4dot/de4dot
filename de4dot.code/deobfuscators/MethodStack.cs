@@ -166,6 +166,37 @@ namespace de4dot.code.deobfuscators {
 				type = method.Module.TypeSystem.String;
 				break;
 
+			case Code.Conv_I:
+			case Code.Conv_Ovf_I:
+			case Code.Conv_Ovf_I_Un:
+				type = method.Module.TypeSystem.IntPtr;
+				break;
+
+			case Code.Conv_U:
+			case Code.Conv_Ovf_U:
+			case Code.Conv_Ovf_U_Un:
+				type = method.Module.TypeSystem.UIntPtr;
+				break;
+
+			case Code.Conv_I8:
+			case Code.Conv_Ovf_I8:
+			case Code.Conv_Ovf_I8_Un:
+				type = method.Module.TypeSystem.Int64;
+				break;
+
+			case Code.Conv_U8:
+			case Code.Conv_Ovf_U8:
+			case Code.Conv_Ovf_U8_Un:
+				type = method.Module.TypeSystem.UInt64;
+				break;
+
+			case Code.Conv_R8:
+			case Code.Ldc_R8:
+			case Code.Ldelem_R8:
+			case Code.Ldind_R8:
+				type = method.Module.TypeSystem.Double;
+				break;
+
 			case Code.Call:
 			case Code.Calli:
 			case Code.Callvirt:
@@ -194,6 +225,8 @@ namespace de4dot.code.deobfuscators {
 			case Code.Castclass:
 			case Code.Isinst:
 			case Code.Unbox_Any:
+			case Code.Ldelem_Any:
+			case Code.Ldobj:
 				type = pushInstr.Operand as TypeReference;
 				break;
 
@@ -233,18 +266,23 @@ namespace de4dot.code.deobfuscators {
 
 			case Code.Ldfld:
 			case Code.Ldsfld:
+				var field = pushInstr.Operand as FieldReference;
+				if (field == null)
+					return null;
+				type = field.FieldType;
+				break;
+
+			case Code.Ldflda:
+			case Code.Ldsflda:
 				var field2 = pushInstr.Operand as FieldReference;
 				if (field2 == null)
 					return null;
-				type = field2.FieldType;
+				type = createByReferenceType(field2.FieldType);
 				break;
 
 			case Code.Ldelema:
+			case Code.Unbox:
 				type = createByReferenceType(pushInstr.Operand as TypeReference);
-				break;
-
-			case Code.Ldobj:
-				type = pushInstr.Operand as TypeReference;
 				break;
 
 			default:
