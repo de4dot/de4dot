@@ -30,13 +30,12 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 	class CilOperandInstructionRestorer {
 		MethodDefinition method;
 
-		// Returns true if something was restored
 		public bool restore(MethodDefinition method) {
 			this.method = method;
-			bool changed = false;
+			bool atLeastOneFailed = false;
 
 			if (method == null || method.Body == null)
-				return changed;
+				return atLeastOneFailed;
 
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count; i++) {
@@ -66,14 +65,15 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 				default:
 					continue;
 				}
-				if (!isValidType(operandType))
+				if (!isValidType(operandType)) {
+					atLeastOneFailed = true;
 					continue;
+				}
 
 				instr.Operand = operandType;
-				changed = true;
 			}
 
-			return changed;
+			return atLeastOneFailed;
 		}
 
 		bool isValidType(TypeReference type) {
