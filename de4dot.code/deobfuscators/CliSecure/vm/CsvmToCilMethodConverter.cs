@@ -51,6 +51,7 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 
 			if (operandRestorer.restore(cilMethod))
 				Log.w("Failed to restore one or more instruction operands in CSVM method {0:X8}", cilMethod.MetadataToken.ToInt32());
+			restoreConstrainedPrefix(cilMethod);
 		}
 
 		void fixLocals(IList<Instruction> instrs, IList<VariableDefinition> locals) {
@@ -404,6 +405,41 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 			if (memberRef == null)
 				throw new ApplicationException(string.Format("Could not find member ref: {0:X8}", token));
 			return memberRef;
+		}
+
+		static void restoreConstrainedPrefix(MethodDefinition method) {
+			if (method == null || method.Body == null)
+				return;
+
+			var instrs = method.Body.Instructions;
+			for (int i = 0; i < instrs.Count; i++) {
+				var instr = instrs[i];
+				if (instr.OpCode.Code != Code.Callvirt)
+					continue;
+
+				var calledMethod = instr.Operand as MethodReference;
+				if (calledMethod == null || !calledMethod.HasThis)
+					continue;
+				var thisType = MethodStack.getLoadedType(method, instrs, i, calledMethod.Parameters.Count) as ByReferenceType;
+				if (thisType == null)
+					continue;
+				if (hasPrefix(instrs, i, Code.Constrained))
+					continue;
+				instrs.Insert(i, Instruction.Create(OpCodes.Constrained, thisType.ElementType));
+				i++;
+			}
+		}
+
+		static bool hasPrefix(IList<Instruction> instrs, int index, Code prefix) {
+			index--;
+			for (; index >= 0; index--) {
+				var instr = instrs[index];
+				if (instr.OpCode.OpCodeType != OpCodeType.Prefix)
+					break;
+				if (instr.OpCode.Code == prefix)
+					return true;
+			}
+			return false;
 		}
 	}
 }
