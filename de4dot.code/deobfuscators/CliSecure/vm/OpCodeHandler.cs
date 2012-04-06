@@ -1013,6 +1013,7 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 		public override string Name {
 			get { return "nop"; }
 		}
+
 		protected override OpCodeHandlerSigInfo OpCodeHandlerSigInfo {
 			get { return sigInfo; }
 		}
