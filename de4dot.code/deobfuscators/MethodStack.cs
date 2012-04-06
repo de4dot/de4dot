@@ -160,6 +160,7 @@ namespace de4dot.code.deobfuscators {
 				return null;
 
 			TypeReference fieldType;
+			VariableDefinition local;
 			switch (pushInstr.OpCode.Code) {
 			case Code.Ldstr:
 				fieldType = method.Module.TypeSystem.String;
@@ -211,10 +212,23 @@ namespace de4dot.code.deobfuscators {
 			case Code.Ldloc_1:
 			case Code.Ldloc_2:
 			case Code.Ldloc_3:
-				var local = DotNetUtils.getLocalVar(method.Body.Variables, pushInstr);
+				local = DotNetUtils.getLocalVar(method.Body.Variables, pushInstr);
 				if (local == null)
 					return null;
 				fieldType = local.VariableType;
+				break;
+
+			case Code.Ldloca:
+			case Code.Ldloca_S:
+				local = pushInstr.Operand as VariableDefinition;
+				if (local == null)
+					return null;
+				fieldType = createByReferenceType(local.VariableType);
+				break;
+
+			case Code.Ldarga:
+			case Code.Ldarga_S:
+				fieldType = createByReferenceType(DotNetUtils.getArgType(method, pushInstr));
 				break;
 
 			case Code.Ldfld:
