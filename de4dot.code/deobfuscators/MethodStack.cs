@@ -159,11 +159,11 @@ namespace de4dot.code.deobfuscators {
 			if (pushInstr == null)
 				return null;
 
-			TypeReference fieldType;
+			TypeReference type;
 			VariableDefinition local;
 			switch (pushInstr.OpCode.Code) {
 			case Code.Ldstr:
-				fieldType = method.Module.TypeSystem.String;
+				type = method.Module.TypeSystem.String;
 				break;
 
 			case Code.Call:
@@ -172,14 +172,14 @@ namespace de4dot.code.deobfuscators {
 				var calledMethod = pushInstr.Operand as MethodReference;
 				if (calledMethod == null)
 					return null;
-				fieldType = calledMethod.MethodReturnType.ReturnType;
+				type = calledMethod.MethodReturnType.ReturnType;
 				break;
 
 			case Code.Newarr:
-				fieldType = pushInstr.Operand as TypeReference;
-				if (fieldType == null)
+				type = pushInstr.Operand as TypeReference;
+				if (type == null)
 					return null;
-				fieldType = new ArrayType(fieldType);
+				type = new ArrayType(type);
 				wasNewobj = true;
 				break;
 
@@ -187,14 +187,14 @@ namespace de4dot.code.deobfuscators {
 				var ctor = pushInstr.Operand as MethodReference;
 				if (ctor == null)
 					return null;
-				fieldType = ctor.DeclaringType;
+				type = ctor.DeclaringType;
 				wasNewobj = true;
 				break;
 
 			case Code.Castclass:
 			case Code.Isinst:
 			case Code.Unbox_Any:
-				fieldType = pushInstr.Operand as TypeReference;
+				type = pushInstr.Operand as TypeReference;
 				break;
 
 			case Code.Ldarg:
@@ -203,7 +203,7 @@ namespace de4dot.code.deobfuscators {
 			case Code.Ldarg_1:
 			case Code.Ldarg_2:
 			case Code.Ldarg_3:
-				fieldType = DotNetUtils.getArgType(method, pushInstr);
+				type = DotNetUtils.getArgType(method, pushInstr);
 				break;
 
 			case Code.Ldloc:
@@ -215,7 +215,7 @@ namespace de4dot.code.deobfuscators {
 				local = DotNetUtils.getLocalVar(method.Body.Variables, pushInstr);
 				if (local == null)
 					return null;
-				fieldType = local.VariableType;
+				type = local.VariableType;
 				break;
 
 			case Code.Ldloca:
@@ -223,12 +223,12 @@ namespace de4dot.code.deobfuscators {
 				local = pushInstr.Operand as VariableDefinition;
 				if (local == null)
 					return null;
-				fieldType = createByReferenceType(local.VariableType);
+				type = createByReferenceType(local.VariableType);
 				break;
 
 			case Code.Ldarga:
 			case Code.Ldarga_S:
-				fieldType = createByReferenceType(DotNetUtils.getArgType(method, pushInstr));
+				type = createByReferenceType(DotNetUtils.getArgType(method, pushInstr));
 				break;
 
 			case Code.Ldfld:
@@ -236,22 +236,22 @@ namespace de4dot.code.deobfuscators {
 				var field2 = pushInstr.Operand as FieldReference;
 				if (field2 == null)
 					return null;
-				fieldType = field2.FieldType;
+				type = field2.FieldType;
 				break;
 
 			case Code.Ldelema:
-				fieldType = createByReferenceType(pushInstr.Operand as TypeReference);
+				type = createByReferenceType(pushInstr.Operand as TypeReference);
 				break;
 
 			case Code.Ldobj:
-				fieldType = pushInstr.Operand as TypeReference;
+				type = pushInstr.Operand as TypeReference;
 				break;
 
 			default:
 				return null;
 			}
 
-			return fieldType;
+			return type;
 		}
 
 		static ByReferenceType createByReferenceType(TypeReference elementType) {
