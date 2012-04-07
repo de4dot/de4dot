@@ -49,7 +49,7 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 
 			DotNetUtils.restoreBody(cilMethod, newInstructions, newExceptions);
 
-			if (operandRestorer.restore(cilMethod))
+			if (!operandRestorer.restore(cilMethod))
 				Log.w("Failed to restore one or more instruction operands in CSVM method {0:X8}", cilMethod.MetadataToken.ToInt32());
 			restoreConstrainedPrefix(cilMethod);
 		}
