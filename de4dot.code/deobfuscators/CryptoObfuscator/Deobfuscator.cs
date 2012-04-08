@@ -59,7 +59,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 
 	class Deobfuscator : DeobfuscatorBase {
 		Options options;
-		string obfuscatorName = "Crypto Obfuscator";
+		string obfuscatorName = DeobfuscatorInfo.THE_NAME;
 		bool foundCryptoObfuscatorAttribute = false;
 		bool foundObfuscatedSymbols = false;
 		bool foundObfuscatorUserString = false;
