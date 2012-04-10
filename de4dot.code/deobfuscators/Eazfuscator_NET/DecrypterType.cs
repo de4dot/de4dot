@@ -27,6 +27,7 @@ using de4dot.blocks;
 namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 	class DecrypterType {
 		ModuleDefinition module;
+		ISimpleDeobfuscator simpleDeobfuscator;
 		TypeDefinition type;
 		MethodDefinition int64Method;
 		bool initialized;
@@ -49,8 +50,9 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			get { return type != null; }
 		}
 
-		public DecrypterType(ModuleDefinition module) {
+		public DecrypterType(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator) {
 			this.module = module;
+			this.simpleDeobfuscator = simpleDeobfuscator;
 		}
 
 		public bool initialize() {
@@ -77,7 +79,55 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		bool initializeEfConstMethods() {
 			if (type == null)
 				return false;
-			foreach (var instr in int64Method.Body.Instructions) {
+
+			efConstMethods = new MethodDefinition[6];
+
+			efConstMethods[0] = findEfConstMethodCall(int64Method);
+			efConstMethods[5] = findEfConstMethodCall(efConstMethods[0]);
+			efConstMethods[4] = findEfConstMethodCall(efConstMethods[5]);
+			var calls = findEfConstMethodCalls(efConstMethods[4]);
+			if (calls.Count != 2)
+				return false;
+			if (getNumberOfTypeofs(calls[0]) == 3) {
+				efConstMethods[2] = calls[0];
+				efConstMethods[1] = calls[1];
+			}
+			else {
+				efConstMethods[2] = calls[0];
+				efConstMethods[1] = calls[1];
+			}
+			efConstMethods[3] = findEfConstMethodCall(efConstMethods[1]);
+
+			foreach (var m in efConstMethods) {
+				if (m == null)
+					return false;
+			}
+			return true;
+		}
+
+		static int getNumberOfTypeofs(MethodDefinition method) {
+			if (method == null)
+				return 0;
+			int count = 0;
+			foreach (var instr in method.Body.Instructions) {
+				if (instr.OpCode.Code == Code.Ldtoken)
+					count++;
+			}
+			return count;
+		}
+
+		MethodDefinition findEfConstMethodCall(MethodDefinition method) {
+			var list = findEfConstMethodCalls(method);
+			if (list == null || list.Count != 1)
+				return null;
+			return list[0];
+		}
+
+		List<MethodDefinition> findEfConstMethodCalls(MethodDefinition method) {
+			if (method == null)
+				return null;
+			var list = new List<MethodDefinition>();
+			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Call)
 					continue;
 				var calledMethod = instr.Operand as MethodDefinition;
@@ -85,40 +135,12 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					continue;
 				if (!DotNetUtils.isMethod(calledMethod, "System.Int32", "()"))
 					continue;
-				int index = type.NestedTypes.IndexOf(calledMethod.DeclaringType);
-				if (index < 0)
-					continue;
-				if (!initializeEfConstMethods(index))
+				if (type.NestedTypes.IndexOf(calledMethod.DeclaringType) < 0)
 					continue;
 
-				return true;
+				list.Add(calledMethod);
 			}
-
-			return false;
-		}
-
-		bool initializeEfConstMethods(int index) {
-			efConstMethods = new MethodDefinition[6];
-			for (int i = 0; i < efConstMethods.Length; i++) {
-				var constMethod = getEfConstMethod(type.NestedTypes[index++]);
-				if (constMethod == null)
-					return false;
-				efConstMethods[i] = constMethod;
-			}
-			return true;
-		}
-
-		MethodDefinition getEfConstMethod(TypeDefinition nestedType) {
-			foreach (var method in nestedType.Methods) {
-				if (!method.IsStatic || method.Body == null)
-					continue;
-				if (!DotNetUtils.isMethod(method, "System.Int32", "()"))
-					continue;
-
-				return method;
-			}
-
-			return null;
+			return list;
 		}
 
 		MethodDefinition findInt64Method() {
@@ -176,6 +198,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				var methods = getBinaryIntMethods(nestedType);
 				if (methods.Count < 3)
 					continue;
+				foreach (var m in methods)
+					simpleDeobfuscator.deobfuscate(m);
 				if (!findMethod1Int(methods))
 					continue;
 				if (!findMethod2Int(methods))
@@ -259,12 +283,13 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 
 			int index = 0;
 			var instrs = method.Body.Instructions;
+			var constantsReader = new ConstantsReader(method);
 			while (true) {
 				int val;
-				if (!EfUtils.getNextInt32(method, ref index, out val))
+				if (!constantsReader.getNextInt32(ref index, out val))
 					break;
 
-				if (index + 1 < instrs.Count && instrs[index].OpCode.Code != Code.Ret)
+				if (index < instrs.Count && instrs[index].OpCode.Code != Code.Ret)
 					list.Add(val);
 			}
 

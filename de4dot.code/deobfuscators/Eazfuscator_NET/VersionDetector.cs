@@ -569,22 +569,22 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 
 			if (decryptStringType.NestedTypes.Count == 3) {
 				var fields33 = new string[] {
-					decryptStringType.NestedTypes[0].FullName,
-					decryptStringType.NestedTypes[1].FullName,
+					getNestedTypeName(0),
+					getNestedTypeName(1),
 					"System.Byte[]",
 					"System.Int16",
 					"System.Int32",
 					"System.Byte[]",
 					"System.Int32",
 					"System.Int32",
-					decryptStringType.NestedTypes[2].FullName,
+					getNestedTypeName(2),
 				};
 				var locals33 = createLocalsArray(
 					"System.Boolean",
 					"System.Byte",
 					"System.Byte[]",
 					"System.Char[]",
-					decryptStringType.NestedTypes[0].FullName,
+					getNestedTypeName(0),
 					"System.Diagnostics.StackFrame",
 					"System.Diagnostics.StackTrace",
 					"System.Int16",
@@ -606,7 +606,6 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					otherMethods[0].IsPrivate &&
 					otherMethods[0].IsStatic &&
 					new LocalTypes(otherMethods[0]).exactly(olocals33) &&
-					hasConstantM2 &&
 					decryptStringMethod.NoInlining &&
 					decryptStringMethod.IsAssembly &&
 					!decryptStringMethod.IsSynchronized &&
@@ -617,9 +616,84 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					checkTypeFields(fields33)) {
 					return "3.3";
 				}
+
+				var fields33_149 = new string[] {
+					getNestedTypeName(0),
+					getNestedTypeName(1),
+					"System.Byte[]",
+					"System.Int16",
+					"System.Int32",
+					"System.Byte[]",
+					"System.Int32",
+					"System.Int32",
+					getNestedTypeName(2),
+				};
+				var locals33_149 = createLocalsArray(
+					"System.Boolean",
+					"System.Byte",
+					"System.Byte[]",
+					"System.Char[]",
+					getNestedTypeName(0),
+					"System.Diagnostics.StackFrame",
+					"System.Diagnostics.StackTrace",
+					"System.Int16",
+					"System.Int32",
+					"System.Int64",
+					"System.IO.Stream",
+					"System.Reflection.Assembly",
+					"System.Reflection.AssemblyName",
+					"System.Reflection.MethodBase",
+					"System.String",
+					"System.Text.StringBuilder",
+					"System.Type"
+				);
+				var olocals33_149 = createLocalsArray(
+					"System.Int32"
+				);
+				if (otherMethods.Count == 1 &&
+					decryptStringType.NestedTypes.Count == 3 &&
+					DotNetUtils.isMethod(otherMethods[0], "System.Void", "(System.Byte[],System.Int32,System.Byte[])") &&
+					otherMethods[0].IsPrivate &&
+					otherMethods[0].IsStatic &&
+					new LocalTypes(otherMethods[0]).exactly(olocals33_149) &&
+					decryptStringMethod.NoInlining &&
+					decryptStringMethod.IsAssembly &&
+					!decryptStringMethod.IsSynchronized &&
+					decryptStringMethod.Body.MaxStackSize >= 1 &&
+					decryptStringMethod.Body.MaxStackSize <= 8 &&
+					(decryptStringMethod.Body.ExceptionHandlers.Count == 1 || decryptStringMethod.Body.ExceptionHandlers.Count == 2) &&
+					new LocalTypes(decryptStringMethod).exactly(locals33_149) &&
+					checkTypeFields(fields33_149)) {
+					return "3.3";	// 3.3.149 (but not SL or CF)
+				}
 			}
 
 			return null;
+		}
+
+		TypeDefinition getNestedType(int n) {
+			var type = stringDecrypter.Type;
+
+			int fieldIndex;
+			switch (n) {
+			case 0: fieldIndex = 0; break;
+			case 1: fieldIndex = 1; break;
+			case 2: fieldIndex = 8; break;
+			default: throw new ApplicationException("Invalid index: " + n);
+			}
+
+			if (fieldIndex >= type.Fields.Count)
+				return null;
+			var nestedType = type.Fields[fieldIndex].FieldType as TypeDefinition;
+			if (nestedType == null || type.NestedTypes.IndexOf(nestedType) < 0)
+				return null;
+
+			return nestedType;
+		}
+
+		string getNestedTypeName(int n) {
+			var nestedType = getNestedType(n);
+			return nestedType == null ? null : nestedType.FullName;
 		}
 
 		bool checkTypeFields(string[] fieldTypes) {

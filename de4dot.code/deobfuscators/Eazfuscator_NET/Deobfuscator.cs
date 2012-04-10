@@ -91,7 +91,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		}
 
 		protected override void scanForObfuscator() {
-			decrypterType = new DecrypterType(module);
+			decrypterType = new DecrypterType(module, DeobfuscatedFile);
 			stringDecrypter = new StringDecrypter(module, decrypterType);
 			stringDecrypter.find();
 			assemblyResolver = new AssemblyResolver(module, decrypterType);
