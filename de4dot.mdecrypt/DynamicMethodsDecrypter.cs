@@ -373,15 +373,14 @@ namespace de4dot.mdecrypt {
 				// We're decrypting methods
 				var info2 = (CORINFO_METHOD_INFO*)info;
 				ctx.dm.code = new byte[info2->ILCodeSize];
-				Marshal.Copy(info2->ILCode, ctx.dm.code, 0, ctx.dm.code.Length);
 
-				int methodIndex = (int)(ctx.dm.token - 0x06000001);
-				byte* row = (byte*)methodDefTablePtr + methodIndex * methodDefTable.totalSize;
-				ctx.dm.mdImplFlags = (ushort)read(row, methodDefTable.fields[1]);
-				ctx.dm.mdFlags = (ushort)read(row, methodDefTable.fields[2]);
-				ctx.dm.mdName = read(row, methodDefTable.fields[3]);
-				ctx.dm.mdSignature = read(row, methodDefTable.fields[4]);
-				ctx.dm.mdParamList = read(row, methodDefTable.fields[5]);
+				Marshal.Copy(info2->ILCode, ctx.dm.code, 0, ctx.dm.code.Length);
+				ctx.dm.mhMaxStack = info2->maxStack;
+				ctx.dm.mhCodeSize = info2->ILCodeSize;
+				if ((ctx.dm.mhFlags & 8) != 0)
+					ctx.dm.extraSections = readExtraSections((byte*)info2->ILCode + info2->ILCodeSize);
+
+				updateFromMethodDefTableRow();
 
 				handled = true;
 				return 0;
@@ -408,6 +407,54 @@ namespace de4dot.mdecrypt {
 
 			handled = false;
 			return 0;
+		}
+
+		unsafe static byte* align(byte* p, int alignment) {
+			return (byte*)new IntPtr((long)((ulong)(p + alignment - 1) & ~(ulong)(alignment - 1)));
+		}
+
+		unsafe static byte[] readExtraSections(byte* p) {
+			p = align(p, 4);
+			byte* startPos = p;
+			p = parseSection(p);
+			int size = (int)(p - startPos);
+			var sections = new byte[size];
+			Marshal.Copy(new IntPtr(startPos), sections, 0, sections.Length);
+			return sections;
+		}
+
+		unsafe static byte* parseSection(byte* p) {
+			byte flags;
+			do {
+				p = align(p, 4);
+
+				flags = *p++;
+				if ((flags & 1) == 0)
+					throw new ApplicationException("Not an exception section");
+				if ((flags & 0x3E) != 0)
+					throw new ApplicationException("Invalid bits set");
+
+				if ((flags & 0x40) != 0) {
+					p--;
+					int num = (int)(*(uint*)p >> 8) / 24;
+					p += 4 + num * 24;
+				}
+				else {
+					int num = *p++ / 12;
+					p += 2 + num * 12;
+				}
+			} while ((flags & 0x80) != 0);
+			return p;
+		}
+
+		unsafe void updateFromMethodDefTableRow() {
+			int methodIndex = (int)(ctx.dm.token - 0x06000001);
+			byte* row = (byte*)methodDefTablePtr + methodIndex * methodDefTable.totalSize;
+			ctx.dm.mdImplFlags = (ushort)read(row, methodDefTable.fields[1]);
+			ctx.dm.mdFlags = (ushort)read(row, methodDefTable.fields[2]);
+			ctx.dm.mdName = read(row, methodDefTable.fields[3]);
+			ctx.dm.mdSignature = read(row, methodDefTable.fields[4]);
+			ctx.dm.mdParamList = read(row, methodDefTable.fields[5]);
 		}
 
 		static unsafe uint read(byte* row, MetadataField mdField) {
@@ -484,10 +531,13 @@ namespace de4dot.mdecrypt {
 			info.ILCode = new IntPtr(code);
 			info.ILCodeSize = ctx.dm.mhCodeSize;
 			info.maxStack = ctx.dm.mhMaxStack;
+			info.scope = moduleToDecryptScope;
 
 			initializeOurComp();
-			if (code == null)
+			if (code == null) {
 				ctx.dm.code = new byte[0];
+				updateFromMethodDefTableRow();
+			}
 			else
 				callMethodDelegate(*(IntPtr*)jitterVtbl, jitterInstance, ourCompMem, new IntPtr(&info), 0, new IntPtr(0x12345678), new IntPtr(0x3ABCDEF0));
 
