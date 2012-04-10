@@ -19,7 +19,7 @@
 
 using System.IO;
 
-namespace de4dot.code.PE {
+namespace de4dot.PE {
 	public struct DataDirectory {
 		public uint virtualAddress;
 		public uint size;

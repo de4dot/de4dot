@@ -24,7 +24,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.MyStuff;
 using de4dot.blocks;
-using de4dot.code.PE;
+using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 	class MethodsDecrypter {
@@ -170,7 +170,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				// DNR 4.0 - 4.4 (jitter is hooked)
 
 				var metadataTables = peImage.Cor20Header.createMetadataTables();
-				var methodDef = metadataTables.getMetadataType(PE.MetadataIndex.iMethodDef);
+				var methodDef = metadataTables.getMetadataType(MetadataIndex.iMethodDef);
 				var rvaToIndex = new Dictionary<uint, int>((int)methodDef.rows);
 				uint offset = methodDef.fileOffset;
 				for (int i = 0; i < methodDef.rows; i++) {

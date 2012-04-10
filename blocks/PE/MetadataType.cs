@@ -19,7 +19,7 @@
 
 using System.Collections.Generic;
 
-namespace de4dot.code.PE {
+namespace de4dot.PE {
 	public enum MetadataIndex {
 		iModule = 0,
 		iTypeRef = 1,

@@ -25,7 +25,7 @@ using System.Reflection;
 using Mono.MyStuff;
 using Mono.Cecil;
 using de4dot.blocks;
-using de4dot.code.PE;
+using de4dot.PE;
 
 namespace de4dot.mdecrypt {
 	public class DynamicMethodsDecrypter {
@@ -90,7 +90,7 @@ namespace de4dot.mdecrypt {
 		IntPtr ourCompMem;
 		bool compileMethodIsThisCall;
 
-		de4dot.code.PE.MetadataType methodDefTable;
+		de4dot.PE.MetadataType methodDefTable;
 		IntPtr methodDefTablePtr;
 		ModuleDefinition monoModule;
 		MethodDefinition moduleCctor;

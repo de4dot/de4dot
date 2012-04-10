@@ -19,7 +19,7 @@
 
 using System.Collections.Generic;
 
-namespace de4dot.code.PE {
+namespace de4dot.PE {
 	public class ResourceDirectory : ResourceDirectoryEntry {
 		Resources resources;
 		int offset;

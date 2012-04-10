@@ -21,7 +21,7 @@ using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.MyStuff;
 using de4dot.blocks;
-using de4dot.code.PE;
+using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.CliSecure {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {

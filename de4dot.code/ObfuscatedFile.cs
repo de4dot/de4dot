@@ -30,7 +30,7 @@ using de4dot.blocks;
 using de4dot.blocks.cflow;
 using de4dot.code.AssemblyClient;
 using de4dot.code.renamer;
-using de4dot.code.PE;
+using de4dot.PE;
 
 namespace de4dot.code {
 	public class ObfuscatedFile : IObfuscatedFile, IDeobfuscatedFile {

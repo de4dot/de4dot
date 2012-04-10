@@ -20,7 +20,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace de4dot.code.PE {
+namespace de4dot.PE {
 	enum MetadataVarType {
 		end,
 		stop,

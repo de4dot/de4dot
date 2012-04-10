@@ -20,7 +20,7 @@
 using System;
 using System.IO;
 
-namespace de4dot.code.PE {
+namespace de4dot.PE {
 	public class PeImage {
 		BinaryReader reader;
 		BinaryWriter writer;
