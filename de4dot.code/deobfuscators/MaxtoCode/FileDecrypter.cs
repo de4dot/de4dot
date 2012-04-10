@@ -117,6 +117,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			V1,
 			V2,
 			V3,
+			V4,
 		}
 
 		class EncryptionInfo {
@@ -169,6 +170,12 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				MagicHi = 0xF28EECA3,
 				Version = EncryptionVersion.V3,
 			},
+			// 4F832868 = Mon, Apr 09 2012 20:20:24
+			new EncryptionInfo {
+				MagicLo = 0xAA913B87,
+				MagicHi = 0xF28EE0A3,
+				Version = EncryptionVersion.V4,
+			},
 		};
 
 		static EncryptionInfo[] encryptionInfos_McKey8C0h = new EncryptionInfo[] {
@@ -203,6 +210,12 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				MagicLo = 0x6A731B13,
 				MagicHi = 0xD72B891F,
 				Version = EncryptionVersion.V3,
+			},
+			// 4F832868 = Mon, Apr 09 2012 20:20:24
+			new EncryptionInfo {
+				MagicLo = 0x6AD31B13,
+				MagicHi = 0xD72B8A1F,
+				Version = EncryptionVersion.V4,
 			},
 		};
 
@@ -375,6 +388,27 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				}
 			}
 
+			class DecrypterV4 : IDecrypter {
+				MethodInfos methodInfos;
+
+				public DecrypterV4(MethodInfos methodInfos) {
+					this.methodInfos = methodInfos;
+				}
+
+				public byte[] decrypt(int type, byte[] encrypted) {
+					switch (type) {
+					case 1: return methodInfos.decrypt2(encrypted);
+					case 2: return methodInfos.decrypt1(encrypted);
+					case 3: return methodInfos.decrypt3(encrypted);
+					case 4: return methodInfos.decrypt4(encrypted);
+					case 5: return methodInfos.decrypt5(encrypted);
+					case 6: return methodInfos.decrypt6(encrypted);
+					case 7: return methodInfos.decrypt7(encrypted);
+					default: throw new ApplicationException(string.Format("Invalid encryption type: {0:X2}", type));
+					}
+				}
+			}
+
 			void initializeDecrypter() {
 				switch (getVersion()) {
 				case EncryptionVersion.V1:
@@ -387,6 +421,10 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 
 				case EncryptionVersion.V3:
 					decrypter = new DecrypterV3(this);
+					break;
+
+				case EncryptionVersion.V4:
+					decrypter = new DecrypterV4(this);
 					break;
 
 				case EncryptionVersion.Unknown:
