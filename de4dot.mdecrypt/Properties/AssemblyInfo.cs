@@ -17,28 +17,17 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.MyStuff;
-using de4dot.mdecrypt;
+using System.Reflection;
+using System.Runtime.InteropServices;
 
-namespace AssemblyData {
-	public enum StringDecrypterType {
-		Delegate,
-		Emulate,
-	}
-
-	public interface IAssemblyService {
-		void doNothing();
-		void exit();
-
-		void loadAssembly(string filename);
-
-		void setStringDecrypterType(StringDecrypterType type);
-		int defineStringDecrypter(int methodToken);
-		object[] decryptStrings(int stringDecrypterMethod, object[] args, int callerToken);
-
-		void installCompileMethod(DecryptMethodsInfo decryptMethodsInfo);
-		void loadObfuscator(string filename);
-		bool canDecryptMethods();
-		DumpedMethods decryptMethods();
-	}
-}
+[assembly: AssemblyTitle("de4dot.mdecrypt")]
+[assembly: AssemblyDescription("Dynamically decrypt methods")]
+[assembly: AssemblyConfiguration("")]
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyProduct("de4dot.mdecrypt")]
+[assembly: AssemblyCopyright("Copyright (C) 2011-2012 de4dot@gmail.com")]
+[assembly: AssemblyTrademark("")]
+[assembly: AssemblyCulture("")]
+[assembly: ComVisible(false)]
+[assembly: AssemblyVersion("1.7.4.3405")]
+[assembly: AssemblyFileVersion("1.7.4.3405")]

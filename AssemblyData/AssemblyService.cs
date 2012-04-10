@@ -21,6 +21,8 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
+using Mono.MyStuff;
+using de4dot.mdecrypt;
 
 namespace AssemblyData {
 	public class AssemblyService : MarshalByRefObject, IAssemblyService {
@@ -28,8 +30,21 @@ namespace AssemblyData {
 		ManualResetEvent exitEvent = new ManualResetEvent(false);
 		Assembly assembly = null;
 		AssemblyResolver assemblyResolver = new AssemblyResolver();
+		bool installCompileMethodCalled = false;
 
 		public void doNothing() {
+		}
+
+		public void exit() {
+			exitEvent.Set();
+		}
+
+		public void waitExit() {
+			exitEvent.WaitOne();
+		}
+
+		public override object InitializeLifetimeService() {
+			return null;
 		}
 
 		void checkStringDecrypter() {
@@ -98,18 +113,6 @@ namespace AssemblyData {
 			}
 		}
 
-		public void exit() {
-			exitEvent.Set();
-		}
-
-		public void waitExit() {
-			exitEvent.WaitOne();
-		}
-
-		public override object InitializeLifetimeService() {
-			return null;
-		}
-
 		MethodInfo findMethod(int methodToken) {
 			checkAssembly();
 
@@ -120,6 +123,30 @@ namespace AssemblyData {
 			}
 
 			return null;
+		}
+
+		public void installCompileMethod(DecryptMethodsInfo decryptMethodsInfo) {
+			if (installCompileMethodCalled)
+				throw new ApplicationException("installCompileMethod() has already been called");
+			installCompileMethodCalled = true;
+			DynamicMethodsDecrypter.Instance.DecryptMethodsInfo = decryptMethodsInfo;
+			DynamicMethodsDecrypter.Instance.installCompileMethod();
+		}
+
+		public void loadObfuscator(string filename) {
+			loadAssembly(filename);
+			DynamicMethodsDecrypter.Instance.Module = assembly.ManifestModule;
+			DynamicMethodsDecrypter.Instance.loadObfuscator();
+		}
+
+		public bool canDecryptMethods() {
+			checkAssembly();
+			return DynamicMethodsDecrypter.Instance.canDecryptMethods();
+		}
+
+		public DumpedMethods decryptMethods() {
+			checkAssembly();
+			return DynamicMethodsDecrypter.Instance.decryptMethods();
 		}
 	}
 }

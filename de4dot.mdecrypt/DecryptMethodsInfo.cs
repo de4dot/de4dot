@@ -17,28 +17,21 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
+using System.Collections.Generic;
 using Mono.MyStuff;
-using de4dot.mdecrypt;
 
-namespace AssemblyData {
-	public enum StringDecrypterType {
-		Delegate,
-		Emulate,
-	}
+namespace de4dot.mdecrypt {
+	[Serializable]
+	public class DecryptMethodsInfo {
+		// The <Module>::.cctor() method body bytes.
+		// Initialize this so only the methods decrypter method gets executed in
+		// <Module>::.cctor(). If null, all code in the original <Module>::.cctor()
+		// gets executed.
+		public byte[] moduleCctorBytes;
 
-	public interface IAssemblyService {
-		void doNothing();
-		void exit();
-
-		void loadAssembly(string filename);
-
-		void setStringDecrypterType(StringDecrypterType type);
-		int defineStringDecrypter(int methodToken);
-		object[] decryptStrings(int stringDecrypterMethod, object[] args, int callerToken);
-
-		void installCompileMethod(DecryptMethodsInfo decryptMethodsInfo);
-		void loadObfuscator(string filename);
-		bool canDecryptMethods();
-		DumpedMethods decryptMethods();
+		// The metadata tokens of all methods to decrypt. Use null if all methods should
+		// be decrypted.
+		public List<uint> methodsToDecrypt;
 	}
 }
