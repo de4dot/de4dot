@@ -23,6 +23,10 @@ using Mono.MyStuff;
 using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.CliSecure {
+	[Serializable]
+	class InvalidDecryptedMethod : Exception {
+	}
+
 	class CodeHeader {
 		public byte[] signature;
 		public byte[] decryptionKey;
@@ -74,14 +78,29 @@ namespace de4dot.code.deobfuscators.CliSecure {
 
 			protected static byte[] getCodeBytes(byte[] methodBody) {
 				int codeOffset, codeSize;
-				if ((methodBody[0] & 3) == 2) {
+				switch ((methodBody[0] & 3)) {
+				case 2:
 					codeOffset = 1;
 					codeSize = methodBody[0] >> 2;
-				}
-				else {
+					break;
+
+				case 3:
 					codeOffset = 4 * (methodBody[1] >> 4);
+					if (codeOffset != 12)
+						throw new InvalidDecryptedMethod();
+
 					codeSize = BitConverter.ToInt32(methodBody, 4);
+					uint lsig = BitConverter.ToUInt32(methodBody, 8);
+					if (lsig != 0 && (lsig >> 24) != 0x11)
+						throw new InvalidDecryptedMethod();
+					break;
+
+				default:
+					throw new InvalidDecryptedMethod();
 				}
+
+				if (codeSize + codeOffset > methodBody.Length)
+					throw new InvalidDecryptedMethod();
 
 				var code = new byte[codeSize];
 				Array.Copy(methodBody, codeOffset, code, 0, codeSize);
@@ -155,9 +174,20 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			}
 		}
 
-		public bool decrypt(PeImage peImage, ref DumpedMethods dumpedMethods) {
+		public bool decrypt(PeImage peImage, string filename, ref DumpedMethods dumpedMethods) {
 			this.peImage = peImage;
+			try {
+				return decrypt2(ref dumpedMethods);
+			}
+			catch (InvalidDecryptedMethod) {
+				Log.w("Using dynamic method decryption");
+				byte[] moduleCctorBytes = null;
+				dumpedMethods = de4dot.code.deobfuscators.MethodsDecrypter.decrypt(filename, moduleCctorBytes);
+				return true;
+			}
+		}
 
+		public bool decrypt2(ref DumpedMethods dumpedMethods) {
 			uint offset = peImage.rvaToOffset(peImage.Cor20Header.metadataDirectory.virtualAddress + peImage.Cor20Header.metadataDirectory.size);
 			if (!readCodeHeader(offset))
 				return false;
