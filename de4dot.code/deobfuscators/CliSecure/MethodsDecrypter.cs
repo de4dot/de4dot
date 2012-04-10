@@ -20,7 +20,7 @@
 using System;
 using System.Collections.Generic;
 using Mono.MyStuff;
-using de4dot.code.PE;
+using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.CliSecure {
 	class CodeHeader {
@@ -163,7 +163,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 				return false;
 
 			var metadataTables = peImage.Cor20Header.createMetadataTables();
-			var methodDefTable = metadataTables.getMetadataType(PE.MetadataIndex.iMethodDef);
+			var methodDefTable = metadataTables.getMetadataType(MetadataIndex.iMethodDef);
 			if (methodDefTable.totalSize != codeHeader.methodDefElemSize)
 				return false;
 

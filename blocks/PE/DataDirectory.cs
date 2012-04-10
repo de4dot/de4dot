@@ -17,33 +17,20 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-namespace de4dot.code.PE {
-	class ResourceData : ResourceDirectoryEntry {
-		uint rva;
-		uint size;
+using System.IO;
 
-		public uint RVA {
-			get { return rva; }
-		}
+namespace de4dot.PE {
+	public struct DataDirectory {
+		public uint virtualAddress;
+		public uint size;
 
-		public uint Size {
-			get { return size; }
-		}
-
-		public ResourceData(int id, uint rva, uint size)
-			: base(id) {
-			this.rva = rva;
-			this.size = size;
-		}
-
-		public ResourceData(string name, uint dataOffset, uint dataSize)
-			: base(name) {
-			this.rva = dataOffset;
-			this.size = dataSize;
+		public void read(BinaryReader reader) {
+			virtualAddress = reader.ReadUInt32();
+			size = reader.ReadUInt32();
 		}
 
 		public override string ToString() {
-			return string.Format("RVA: {0:X8} SIZE: {1:X8}, NAME: {2}", rva, size, getName());
+			return string.Format("{0:X8} {1:X8}", virtualAddress, size);
 		}
 	}
 }

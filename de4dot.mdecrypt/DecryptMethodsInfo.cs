@@ -17,30 +17,21 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using System.IO;
+using System;
+using System.Collections.Generic;
+using Mono.MyStuff;
 
-namespace de4dot.code.PE {
-	class DotNetStream : IFileLocation {
-		public string name;
-		public uint fileOffset;
-		public uint length;
+namespace de4dot.mdecrypt {
+	[Serializable]
+	public class DecryptMethodsInfo {
+		// The <Module>::.cctor() method body bytes.
+		// Initialize this so only the methods decrypter method gets executed in
+		// <Module>::.cctor(). If null, all code in the original <Module>::.cctor()
+		// gets executed.
+		public byte[] moduleCctorBytes;
 
-		public uint Offset {
-			get { return fileOffset; }
-		}
-
-		public uint Length {
-			get { return length; }
-		}
-
-		public DotNetStream(string name, uint fileOffset, uint length) {
-			this.name = name;
-			this.fileOffset = fileOffset;
-			this.length = length;
-		}
-
-		public override string ToString() {
-			return string.Format("{0:X8} {1:X8} {2}", fileOffset, length, name);
-		}
+		// The metadata tokens of all methods to decrypt. Use null if all methods should
+		// be decrypted.
+		public List<uint> methodsToDecrypt;
 	}
 }

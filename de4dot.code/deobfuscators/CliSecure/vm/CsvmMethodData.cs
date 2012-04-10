@@ -17,9 +17,18 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-namespace de4dot.code.PE {
-	interface IFileLocation {
-		uint Offset { get; }
-		uint Length { get; }
+using System;
+
+namespace de4dot.code.deobfuscators.CliSecure.vm {
+	class CsvmMethodData {
+		public Guid Guid { get; set; }
+		public int Token { get; set; }
+		public byte[] Locals { get; set; }
+		public byte[] Instructions { get; set; }
+		public byte[] Exceptions { get; set; }
+
+		public override string ToString() {
+			return string.Format("{0:X8} - {1}", Token, Guid);
+		}
 	}
 }

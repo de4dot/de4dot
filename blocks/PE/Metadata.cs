@@ -21,8 +21,8 @@ using System;
 using System.IO;
 using System.Text;
 
-namespace de4dot.code.PE {
-	class Metadata : IFileLocation {
+namespace de4dot.PE {
+	public class Metadata : IFileLocation {
 		uint magic;
 		ushort majorVersion, minorVersion;
 		uint reserved;

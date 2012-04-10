@@ -21,7 +21,7 @@ using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.MyStuff;
 using de4dot.blocks;
-using de4dot.code.PE;
+using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.CliSecure {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
@@ -31,12 +31,14 @@ namespace de4dot.code.deobfuscators.CliSecure {
 		BoolOption decryptMethods;
 		BoolOption decryptResources;
 		BoolOption removeStackFrameHelper;
+		BoolOption restoreVmCode;
 
 		public DeobfuscatorInfo()
 			: base(DEFAULT_REGEX) {
 			decryptMethods = new BoolOption(null, makeArgName("methods"), "Decrypt methods", true);
 			decryptResources = new BoolOption(null, makeArgName("rsrc"), "Decrypt resources", true);
 			removeStackFrameHelper = new BoolOption(null, makeArgName("stack"), "Remove all StackFrameHelper code", true);
+			restoreVmCode = new BoolOption(null, makeArgName("vm"), "Restore VM code", true);
 		}
 
 		public override string Name {
@@ -53,6 +55,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 				DecryptMethods = decryptMethods.get(),
 				DecryptResources = decryptResources.get(),
 				RemoveStackFrameHelper = removeStackFrameHelper.get(),
+				RestoreVmCode = restoreVmCode.get(),
 			});
 		}
 
@@ -61,6 +64,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 				decryptMethods,
 				decryptResources,
 				removeStackFrameHelper,
+				restoreVmCode,
 			};
 		}
 	}
@@ -73,13 +77,14 @@ namespace de4dot.code.deobfuscators.CliSecure {
 		CliSecureRtType cliSecureRtType;
 		StringDecrypter stringDecrypter;
 
-		ResourceDecrypter resourceDecrypter;
 		StackFrameHelper stackFrameHelper;
+		vm.Csvm csvm;
 
 		internal class Options : OptionsBase {
 			public bool DecryptMethods { get; set; }
 			public bool DecryptResources { get; set; }
 			public bool RemoveStackFrameHelper { get; set; }
+			public bool RestoreVmCode { get; set; }
 		}
 
 		public override string Type {
@@ -108,7 +113,8 @@ namespace de4dot.code.deobfuscators.CliSecure {
 
 			int sum = toInt32(cliSecureRtType.Detected) +
 					toInt32(stringDecrypter.Detected) +
-					toInt32(proxyDelegateFinder.Detected);
+					toInt32(proxyDelegateFinder.Detected) +
+					toInt32(csvm.Detected);
 			if (sum > 0)
 				val += 100 + 10 * (sum - 1);
 			if (cliSecureAttribute != null)
@@ -125,6 +131,8 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			stringDecrypter.find();
 			proxyDelegateFinder = new ProxyDelegateFinder(module);
 			proxyDelegateFinder.findDelegateCreator();
+			csvm = new vm.Csvm(DeobfuscatedFile.DeobfuscatorContext, module);
+			csvm.find();
 		}
 
 		void findCliSecureAttribute() {
@@ -159,6 +167,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			newOne.cliSecureRtType = new CliSecureRtType(module, cliSecureRtType);
 			newOne.stringDecrypter = new StringDecrypter(module, stringDecrypter);
 			newOne.proxyDelegateFinder = new ProxyDelegateFinder(module, proxyDelegateFinder);
+			newOne.csvm = new vm.Csvm(DeobfuscatedFile.DeobfuscatorContext, module, csvm);
 			return newOne;
 		}
 
@@ -167,8 +176,13 @@ namespace de4dot.code.deobfuscators.CliSecure {
 
 			addAttributeToBeRemoved(cliSecureAttribute, "Obfuscator attribute");
 
-			resourceDecrypter = new ResourceDecrypter(module);
-			resourceDecrypter.find();
+			if (options.DecryptResources) {
+				var resourceDecrypter = new ResourceDecrypter(module);
+				resourceDecrypter.find();
+				decryptResources(resourceDecrypter);
+				addCctorInitCallToBeRemoved(resourceDecrypter.RsrcRrrMethod);
+			}
+
 			stackFrameHelper = new StackFrameHelper(module);
 			stackFrameHelper.find();
 
@@ -187,11 +201,15 @@ namespace de4dot.code.deobfuscators.CliSecure {
 				addCctorInitCallToBeRemoved(cliSecureRtType.PostInitializeMethod);
 				findPossibleNamesToRemove(cliSecureRtType.LoadMethod);
 			}
-			if (options.DecryptResources)
-				addCctorInitCallToBeRemoved(resourceDecrypter.RsrcRrrMethod);
+
+			if (options.RestoreVmCode) {
+				csvm.restore();
+				addAssemblyReferenceToBeRemoved(csvm.VmAssemblyReference, "CSVM assembly reference");
+				addResourceToBeRemoved(csvm.Resource, "CSVM data resource");
+			}
 		}
 
-		void decryptResources() {
+		void decryptResources(ResourceDecrypter resourceDecrypter) {
 			var rsrc = resourceDecrypter.mergeResources();
 			if (rsrc == null)
 				return;
@@ -206,8 +224,6 @@ namespace de4dot.code.deobfuscators.CliSecure {
 		}
 
 		public override void deobfuscateEnd() {
-			if (options.DecryptResources)
-				decryptResources();
 			removeProxyDelegates(proxyDelegateFinder);
 			if (options.RemoveStackFrameHelper) {
 				if (stackFrameHelper.ExceptionLoggerRemover.NumRemovedExceptionLoggers > 0)

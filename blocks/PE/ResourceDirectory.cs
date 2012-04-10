@@ -19,8 +19,8 @@
 
 using System.Collections.Generic;
 
-namespace de4dot.code.PE {
-	class ResourceDirectory : ResourceDirectoryEntry {
+namespace de4dot.PE {
+	public class ResourceDirectory : ResourceDirectoryEntry {
 		Resources resources;
 		int offset;
 		List<ResourceData> resourceDataList = new List<ResourceData>();

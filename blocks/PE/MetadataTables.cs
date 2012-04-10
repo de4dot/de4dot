@@ -20,10 +20,10 @@
 using System;
 using System.IO;
 
-namespace de4dot.code.PE {
+namespace de4dot.PE {
 	using MVT = MetadataVarType;
 
-	class MetadataTables {
+	public class MetadataTables {
 		BinaryReader reader;
 		Metadata metadata;
 		byte heapOffsetSizes;

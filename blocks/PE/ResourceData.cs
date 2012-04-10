@@ -17,28 +17,33 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.MyStuff;
-using de4dot.mdecrypt;
+namespace de4dot.PE {
+	public class ResourceData : ResourceDirectoryEntry {
+		uint rva;
+		uint size;
 
-namespace AssemblyData {
-	public enum StringDecrypterType {
-		Delegate,
-		Emulate,
-	}
+		public uint RVA {
+			get { return rva; }
+		}
 
-	public interface IAssemblyService {
-		void doNothing();
-		void exit();
+		public uint Size {
+			get { return size; }
+		}
 
-		void loadAssembly(string filename);
+		public ResourceData(int id, uint rva, uint size)
+			: base(id) {
+			this.rva = rva;
+			this.size = size;
+		}
 
-		void setStringDecrypterType(StringDecrypterType type);
-		int defineStringDecrypter(int methodToken);
-		object[] decryptStrings(int stringDecrypterMethod, object[] args, int callerToken);
+		public ResourceData(string name, uint dataOffset, uint dataSize)
+			: base(name) {
+			this.rva = dataOffset;
+			this.size = dataSize;
+		}
 
-		void installCompileMethod(DecryptMethodsInfo decryptMethodsInfo);
-		void loadObfuscator(string filename);
-		bool canDecryptMethods();
-		DumpedMethods decryptMethods();
+		public override string ToString() {
+			return string.Format("RVA: {0:X8} SIZE: {1:X8}, NAME: {2}", rva, size, getName());
+		}
 	}
 }

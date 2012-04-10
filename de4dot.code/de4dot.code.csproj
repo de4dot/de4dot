@@ -12,7 +12,6 @@
     <AssemblyName>de4dot.code</AssemblyName>
     <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <TargetFrameworkProfile />
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\de4dot.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
@@ -81,6 +80,16 @@
     <Compile Include="deobfuscators\CliSecure\ResourceDecrypter.cs" />
     <Compile Include="deobfuscators\CliSecure\StackFrameHelper.cs" />
     <Compile Include="deobfuscators\CliSecure\StringDecrypter.cs" />
+    <Compile Include="deobfuscators\CliSecure\vm\CilOperandInstructionRestorer.cs" />
+    <Compile Include="deobfuscators\CliSecure\vm\Csvm.cs" />
+    <Compile Include="deobfuscators\CliSecure\vm\CsvmDataReader.cs" />
+    <Compile Include="deobfuscators\CliSecure\vm\CsvmMethodData.cs" />
+    <Compile Include="deobfuscators\CliSecure\vm\CsvmToCilMethodConverter.cs" />
+    <Compile Include="deobfuscators\CliSecure\vm\FieldsInfo.cs" />
+    <Compile Include="deobfuscators\CliSecure\vm\OpCodeHandler.cs" />
+    <Compile Include="deobfuscators\CliSecure\vm\UnknownHandlerInfo.cs" />
+    <Compile Include="deobfuscators\CliSecure\vm\VmOpCodeHandlerDetector.cs" />
+    <Compile Include="deobfuscators\CliSecure\vm\VmOperands.cs" />
     <Compile Include="deobfuscators\CodeVeil\AssemblyResolver.cs" />
     <Compile Include="deobfuscators\CodeVeil\ErexResourceReader.cs" />
     <Compile Include="deobfuscators\CodeVeil\InvalidDataException.cs" />
@@ -211,26 +220,11 @@
     <Compile Include="IObfuscatedFile.cs" />
     <Compile Include="Log.cs" />
     <Compile Include="AssemblyModule.cs" />
+    <Compile Include="MethodPrinter.cs" />
     <Compile Include="MethodReturnValueInliner.cs" />
     <Compile Include="NameRegexes.cs" />
     <Compile Include="ObfuscatedFile.cs" />
     <Compile Include="Option.cs" />
-    <Compile Include="PE\Cor20Header.cs" />
-    <Compile Include="PE\DataDirectory.cs" />
-    <Compile Include="PE\FileHeader.cs" />
-    <Compile Include="PE\IFileLocation.cs" />
-    <Compile Include="PE\Metadata.cs" />
-    <Compile Include="PE\MetadataTables.cs" />
-    <Compile Include="PE\MetadataType.cs" />
-    <Compile Include="PE\MetadataTypeBuilder.cs" />
-    <Compile Include="PE\OptionalHeader.cs" />
-    <Compile Include="PE\PeImage.cs" />
-    <Compile Include="PE\ResourceData.cs" />
-    <Compile Include="PE\ResourceDirectory.cs" />
-    <Compile Include="PE\ResourceDirectoryEntry.cs" />
-    <Compile Include="PE\Resources.cs" />
-    <Compile Include="PE\SectionHeader.cs" />
-    <Compile Include="PE\DotNetStream.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="renamer\asmmodules\EventDef.cs" />
     <Compile Include="ExternalAssemblies.cs" />
@@ -284,6 +278,10 @@
     <ProjectReference Include="..\cecil\Mono.Cecil.csproj">
       <Project>{D68133BD-1E63-496E-9EDE-4FBDBF77B486}</Project>
       <Name>Mono.Cecil</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\de4dot.mdecrypt\de4dot.mdecrypt.csproj">
+      <Project>{5C93C5E2-196F-4877-BF65-96FEBFCEFCA1}</Project>
+      <Name>de4dot.mdecrypt</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup />

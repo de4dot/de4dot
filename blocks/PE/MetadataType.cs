@@ -19,8 +19,8 @@
 
 using System.Collections.Generic;
 
-namespace de4dot.code.PE {
-	enum MetadataIndex {
+namespace de4dot.PE {
+	public enum MetadataIndex {
 		iModule = 0,
 		iTypeRef = 1,
 		iTypeDef = 2,
@@ -60,7 +60,7 @@ namespace de4dot.code.PE {
 		iGenericParamConstraint = 44,
 	};
 
-	class MetadataType {
+	public class MetadataType {
 		public uint fileOffset;
 		public uint rows;
 		public uint totalSize;
@@ -78,7 +78,7 @@ namespace de4dot.code.PE {
 		}
 	}
 
-	struct MetadataField {
+	public struct MetadataField {
 		public int offset;
 		public int size;
 

@@ -159,10 +159,42 @@ namespace de4dot.code.deobfuscators {
 			if (pushInstr == null)
 				return null;
 
-			TypeReference fieldType;
+			TypeReference type;
+			VariableDefinition local;
 			switch (pushInstr.OpCode.Code) {
 			case Code.Ldstr:
-				fieldType = method.Module.TypeSystem.String;
+				type = method.Module.TypeSystem.String;
+				break;
+
+			case Code.Conv_I:
+			case Code.Conv_Ovf_I:
+			case Code.Conv_Ovf_I_Un:
+				type = method.Module.TypeSystem.IntPtr;
+				break;
+
+			case Code.Conv_U:
+			case Code.Conv_Ovf_U:
+			case Code.Conv_Ovf_U_Un:
+				type = method.Module.TypeSystem.UIntPtr;
+				break;
+
+			case Code.Conv_I8:
+			case Code.Conv_Ovf_I8:
+			case Code.Conv_Ovf_I8_Un:
+				type = method.Module.TypeSystem.Int64;
+				break;
+
+			case Code.Conv_U8:
+			case Code.Conv_Ovf_U8:
+			case Code.Conv_Ovf_U8_Un:
+				type = method.Module.TypeSystem.UInt64;
+				break;
+
+			case Code.Conv_R8:
+			case Code.Ldc_R8:
+			case Code.Ldelem_R8:
+			case Code.Ldind_R8:
+				type = method.Module.TypeSystem.Double;
 				break;
 
 			case Code.Call:
@@ -171,14 +203,14 @@ namespace de4dot.code.deobfuscators {
 				var calledMethod = pushInstr.Operand as MethodReference;
 				if (calledMethod == null)
 					return null;
-				fieldType = calledMethod.MethodReturnType.ReturnType;
+				type = calledMethod.MethodReturnType.ReturnType;
 				break;
 
 			case Code.Newarr:
-				fieldType = pushInstr.Operand as TypeReference;
-				if (fieldType == null)
+				type = pushInstr.Operand as TypeReference;
+				if (type == null)
 					return null;
-				fieldType = new ArrayType(fieldType);
+				type = new ArrayType(type);
 				wasNewobj = true;
 				break;
 
@@ -186,13 +218,16 @@ namespace de4dot.code.deobfuscators {
 				var ctor = pushInstr.Operand as MethodReference;
 				if (ctor == null)
 					return null;
-				fieldType = ctor.DeclaringType;
+				type = ctor.DeclaringType;
 				wasNewobj = true;
 				break;
 
 			case Code.Castclass:
 			case Code.Isinst:
-				fieldType = pushInstr.Operand as TypeReference;
+			case Code.Unbox_Any:
+			case Code.Ldelem_Any:
+			case Code.Ldobj:
+				type = pushInstr.Operand as TypeReference;
 				break;
 
 			case Code.Ldarg:
@@ -201,7 +236,7 @@ namespace de4dot.code.deobfuscators {
 			case Code.Ldarg_1:
 			case Code.Ldarg_2:
 			case Code.Ldarg_3:
-				fieldType = DotNetUtils.getArgType(method, pushInstr);
+				type = DotNetUtils.getArgType(method, pushInstr);
 				break;
 
 			case Code.Ldloc:
@@ -210,29 +245,57 @@ namespace de4dot.code.deobfuscators {
 			case Code.Ldloc_1:
 			case Code.Ldloc_2:
 			case Code.Ldloc_3:
-				var local = DotNetUtils.getLocalVar(method.Body.Variables, pushInstr);
+				local = DotNetUtils.getLocalVar(method.Body.Variables, pushInstr);
 				if (local == null)
 					return null;
-				fieldType = local.VariableType;
+				type = local.VariableType;
+				break;
+
+			case Code.Ldloca:
+			case Code.Ldloca_S:
+				local = pushInstr.Operand as VariableDefinition;
+				if (local == null)
+					return null;
+				type = createByReferenceType(local.VariableType);
+				break;
+
+			case Code.Ldarga:
+			case Code.Ldarga_S:
+				type = createByReferenceType(DotNetUtils.getArgType(method, pushInstr));
 				break;
 
 			case Code.Ldfld:
 			case Code.Ldsfld:
+				var field = pushInstr.Operand as FieldReference;
+				if (field == null)
+					return null;
+				type = field.FieldType;
+				break;
+
+			case Code.Ldflda:
+			case Code.Ldsflda:
 				var field2 = pushInstr.Operand as FieldReference;
 				if (field2 == null)
 					return null;
-				fieldType = field2.FieldType;
+				type = createByReferenceType(field2.FieldType);
 				break;
 
 			case Code.Ldelema:
-				fieldType = pushInstr.Operand as TypeReference;
+			case Code.Unbox:
+				type = createByReferenceType(pushInstr.Operand as TypeReference);
 				break;
 
 			default:
 				return null;
 			}
 
-			return fieldType;
+			return type;
+		}
+
+		static ByReferenceType createByReferenceType(TypeReference elementType) {
+			if (elementType == null)
+				return null;
+			return new ByReferenceType(elementType);
 		}
 
 		static Instruction getPreviousInstruction(IList<Instruction> instructions, ref int instrIndex) {

@@ -19,14 +19,14 @@
 
 using System.IO;
 
-namespace de4dot.code.PE {
-	enum Machine : ushort {
+namespace de4dot.PE {
+	public enum Machine : ushort {
 		i386 = 0x14C,
 		ia64 = 0x200,
 		amd64 = 0x8664,
 	}
 
-	class FileHeader : IFileLocation {
+	public class FileHeader : IFileLocation {
 		public Machine machine;
 		public ushort numberOfSections;
 		public uint timeDateStamp;

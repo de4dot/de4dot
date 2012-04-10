@@ -20,7 +20,7 @@
 using System;
 using System.IO;
 
-namespace de4dot.code.PE {
+namespace de4dot.PE {
 	public class PeImage {
 		BinaryReader reader;
 		BinaryWriter writer;
@@ -39,15 +39,15 @@ namespace de4dot.code.PE {
 			get { return (uint)reader.BaseStream.Length; }
 		}
 
-		internal Cor20Header Cor20Header {
+		public Cor20Header Cor20Header {
 			get { return cor20Header; }
 		}
 
-		internal Resources Resources {
+		public Resources Resources {
 			get { return resources; }
 		}
 
-		internal SectionHeader[] Sections {
+		public SectionHeader[] Sections {
 			get { return sectionHeaders; }
 		}
 
@@ -99,7 +99,7 @@ namespace de4dot.code.PE {
 			if (netRva != 0) {
 				seekRva(netRva);
 				cor20Header = new Cor20Header(reader);
-				dotNetSection = getSectionHeader(netRva);
+				dotNetSection = getSectionHeaderRva(netRva);
 				seekRva(cor20Header.metadataDirectory.virtualAddress);
 				cor20Header.initMetadataTable();
 			}
@@ -111,7 +111,7 @@ namespace de4dot.code.PE {
 			resources = new Resources(reader, resourceOffset, optionalHeader.dataDirectories[2].size);
 		}
 
-		SectionHeader getSectionHeader(uint rva) {
+		SectionHeader getSectionHeaderRva(uint rva) {
 			for (int i = 0; i < sectionHeaders.Length; i++) {
 				var section = sectionHeaders[i];
 				if (section.virtualAddress <= rva && rva < section.virtualAddress + Math.Max(section.virtualSize, section.sizeOfRawData))
@@ -120,11 +120,27 @@ namespace de4dot.code.PE {
 			return null;
 		}
 
+		SectionHeader getSectionHeaderOffset(uint offset) {
+			for (int i = 0; i < sectionHeaders.Length; i++) {
+				var section = sectionHeaders[i];
+				if (section.pointerToRawData <= offset && offset < section.pointerToRawData + section.sizeOfRawData)
+					return section;
+			}
+			return null;
+		}
+
 		public uint rvaToOffset(uint rva) {
-			var section = getSectionHeader(rva);
+			var section = getSectionHeaderRva(rva);
 			if (section == null)
 				throw new ApplicationException(string.Format("Invalid RVA {0:X8}", rva));
 			return rva - section.virtualAddress + section.pointerToRawData;
+		}
+
+		public uint offsetToRva(uint offset) {
+			var section = getSectionHeaderOffset(offset);
+			if (section == null)
+				throw new ApplicationException(string.Format("Invalid offset {0:X8}", offset));
+			return offset - section.pointerToRawData + section.virtualAddress;
 		}
 
 		bool intersect(uint offset1, uint length1, uint offset2, uint length2) {

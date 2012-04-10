@@ -1,0 +1,520 @@
+﻿/*
+    Copyright (C) 2011-2012 de4dot@gmail.com
+
+    This file is part of de4dot.
+
+    de4dot is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    de4dot is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+using System;
+using System.IO;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Reflection;
+using Mono.MyStuff;
+using Mono.Cecil;
+using de4dot.blocks;
+using de4dot.PE;
+
+namespace de4dot.mdecrypt {
+	public class DynamicMethodsDecrypter {
+		static DynamicMethodsDecrypter instance;
+		DecryptMethodsInfo decryptMethodsInfo;
+
+		struct FuncPtrInfo<D> {
+			public D del;
+			public IntPtr ptr;
+			public IntPtr ptrInDll;
+
+			public void prepare(Delegate del) {
+				RuntimeHelpers.PrepareDelegate(del);
+				ptr = Marshal.GetFunctionPointerForDelegate(del);
+			}
+		}
+
+		[StructLayout(LayoutKind.Sequential, Pack = 1)]
+		struct IMAGE_SECTION_HEADER {
+			public ulong name;
+			public uint VirtualSize;
+			public uint VirtualAddress;
+			public uint SizeOfRawData;
+			public uint PointerToRawData;
+			public uint PointerToRelocations;
+			public uint PointerToLinenumbers;
+			public ushort NumberOfRelocations;
+			public ushort NumberOfLinenumbers;
+			public uint Characteristics;
+		}
+
+		[StructLayout(LayoutKind.Sequential, Pack=1, Size=0x88)]
+		struct CORINFO_METHOD_INFO {
+			public IntPtr ftn;
+			public IntPtr scope;
+			public IntPtr ILCode;
+			public uint ILCodeSize;
+			public ushort maxStack;
+			public ushort EHCount;
+			// 0x64 other bytes here...
+		}
+
+		class DecryptContext {
+			public DumpedMethod dm;
+			public MethodDefinition method;
+		}
+
+		FuncPtrInfo<CompileMethod> ourCompileMethodInfo = new FuncPtrInfo<CompileMethod>();
+		FuncPtrInfo<ReturnMethodToken> returnMethodTokenInfo = new FuncPtrInfo<ReturnMethodToken>();
+		FuncPtrInfo<ReturnNameOfMethod> returnNameOfMethodInfo = new FuncPtrInfo<ReturnNameOfMethod>();
+
+		IntPtr origCompileMethod;
+		IntPtr jitterTextFreeMem;
+
+		IntPtr callMethod;
+		CallMethod callMethodDelegate;
+
+		IntPtr jitterInstance;
+		IntPtr jitterVtbl;
+		Module moduleToDecrypt;
+		IntPtr hInstModule;
+		IntPtr ourCompMem;
+		bool compileMethodIsThisCall;
+
+		de4dot.PE.MetadataType methodDefTable;
+		IntPtr methodDefTablePtr;
+		ModuleDefinition monoModule;
+		MethodDefinition moduleCctor;
+		uint moduleCctorCodeRva;
+		IntPtr moduleToDecryptScope;
+
+		DecryptContext ctx = new DecryptContext();
+
+		public static DynamicMethodsDecrypter Instance {
+			get {
+				if (instance != null)
+					return instance;
+				return instance = new DynamicMethodsDecrypter();
+			}
+		}
+
+		static Version VersionNet45 = new Version(4, 0, 30319, 17020);
+		DynamicMethodsDecrypter() {
+			if (UIntPtr.Size != 4)
+				throw new ApplicationException("Only 32-bit dynamic methods decryption is supported");
+
+			// .NET 4.5's compileMethod has thiscall calling convention
+			compileMethodIsThisCall = Environment.Version >= VersionNet45;
+		}
+
+		[DllImport("kernel32", CharSet = CharSet.Ansi)]
+		static extern IntPtr GetModuleHandle(string name);
+
+		[DllImport("kernel32", CharSet = CharSet.Ansi)]
+		static extern IntPtr GetProcAddress(IntPtr hModule, string name);
+
+		[DllImport("kernel32")]
+		static extern bool VirtualProtect(IntPtr addr, int size, uint newProtect, out uint oldProtect);
+		const uint PAGE_EXECUTE_READWRITE = 0x40;
+
+		[DllImport("kernel32")]
+		static extern void DebugBreak();
+
+		delegate IntPtr GetJit();
+		delegate int CompileMethod(IntPtr jitter, IntPtr comp, IntPtr info, uint flags, IntPtr nativeEntry, IntPtr nativeSizeOfCode, out bool handled);
+		delegate int ReturnMethodToken();
+		delegate string ReturnNameOfMethod();
+		delegate int CallMethod(IntPtr compileMethod, IntPtr jitter, IntPtr comp, IntPtr info, uint flags, IntPtr nativeEntry, IntPtr nativeSizeOfCode);
+
+		public DecryptMethodsInfo DecryptMethodsInfo {
+			set { decryptMethodsInfo = value; }
+		}
+
+		public unsafe Module Module {
+			set {
+				if (moduleToDecrypt != null)
+					throw new ApplicationException("Module has already been initialized");
+
+				moduleToDecrypt = value;
+				hInstModule = Marshal.GetHINSTANCE(moduleToDecrypt);
+				moduleToDecryptScope = getScope(moduleToDecrypt);
+
+				var peFile = new PeImage(File.ReadAllBytes(moduleToDecrypt.FullyQualifiedName));
+				methodDefTable = peFile.Cor20Header.createMetadataTables().getMetadataType(MetadataIndex.iMethodDef);
+				methodDefTablePtr = new IntPtr((byte*)hInstModule + peFile.offsetToRva(methodDefTable.fileOffset));
+
+				initializeMonoCecilMethods();
+			}
+		}
+
+		static IntPtr getScope(Module module) {
+			var obj = getFieldValue(module.ModuleHandle, "m_ptr");
+			if (obj is IntPtr)
+				return (IntPtr)obj;
+			if (obj.GetType().ToString() == "System.Reflection.RuntimeModule")
+				return (IntPtr)getFieldValue(obj, "m_pData");
+
+			throw new ApplicationException(string.Format("m_ptr is an invalid type: {0}", obj.GetType()));
+		}
+
+		static object getFieldValue(object obj, string fieldName) {
+			var field = obj.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+			if (field == null)
+				throw new ApplicationException(string.Format("Could not get field {0}::{1}", obj.GetType(), fieldName));
+			return field.GetValue(obj);
+		}
+
+		unsafe void initializeMonoCecilMethods() {
+			monoModule = ModuleDefinition.ReadModule(moduleToDecrypt.FullyQualifiedName);
+			moduleCctor = DotNetUtils.getModuleTypeCctor(monoModule);
+			if (moduleCctor == null)
+				moduleCctorCodeRva = 0;
+			else {
+				byte* p = (byte*)hInstModule + moduleCctor.RVA;
+				if ((*p & 3) == 2)
+					moduleCctorCodeRva = (uint)moduleCctor.RVA + 1;
+				else
+					moduleCctorCodeRva = (uint)(moduleCctor.RVA + (p[1] >> 4) * 4);
+			}
+		}
+
+		public unsafe void installCompileMethod() {
+			var hJitterDll = getJitterDllHandle();
+			jitterTextFreeMem = getEndOfText(hJitterDll);
+
+			var getJitPtr = GetProcAddress(hJitterDll, "getJit");
+			var getJit = (GetJit)Marshal.GetDelegateForFunctionPointer(getJitPtr, typeof(GetJit));
+			jitterInstance = getJit();
+			jitterVtbl = *(IntPtr*)jitterInstance;
+			origCompileMethod = *(IntPtr*)jitterVtbl;
+
+			prepareMethods();
+			initializeDelegateFunctionPointers();
+			installOurCode(createOurCode(origCompileMethod));
+			callMethodDelegate = (CallMethod)Marshal.GetDelegateForFunctionPointer(callMethod, typeof(CallMethod));
+
+			uint oldProtect;
+			if (!VirtualProtect(jitterVtbl, IntPtr.Size, PAGE_EXECUTE_READWRITE, out oldProtect))
+				throw new ApplicationException("Could not enable write access to jitter vtbl");
+			*(IntPtr*)jitterVtbl = ourCompileMethodInfo.ptrInDll;
+			VirtualProtect(jitterVtbl, IntPtr.Size, oldProtect, out oldProtect);
+		}
+
+		void initializeDelegateFunctionPointers() {
+			ourCompileMethodInfo.prepare(ourCompileMethodInfo.del = compileMethod);
+			returnMethodTokenInfo.prepare(returnMethodTokenInfo.del = returnMethodToken);
+			returnNameOfMethodInfo.prepare(returnNameOfMethodInfo.del = returnNameOfMethod);
+		}
+
+		public void loadObfuscator() {
+			RuntimeHelpers.RunModuleConstructor(moduleToDecrypt.ModuleHandle);
+		}
+
+		public unsafe bool canDecryptMethods() {
+			return *(IntPtr*)jitterVtbl != ourCompileMethodInfo.ptrInDll &&
+					*(IntPtr*)jitterVtbl != origCompileMethod;
+		}
+
+		unsafe static IntPtr getEndOfText(IntPtr hDll) {
+			byte* p = (byte*)hDll;
+			p += *(uint*)(p + 0x3C);	// add DOSHDR.e_lfanew
+			p += 4;
+			int numSections = *(ushort*)(p + 2);
+			int sizeOptionalHeader = *(ushort*)(p + 0x10);
+			p += 0x14;
+			uint sectionAlignment = *(uint*)(p + 0x20);
+			p += sizeOptionalHeader;
+
+			var textName = new byte[8] { (byte)'.', (byte)'t', (byte)'e', (byte)'x', (byte)'t', 0, 0, 0 };
+			var name = new byte[8];
+			var pSection = (IMAGE_SECTION_HEADER*)p;
+			for (int i = 0; i < numSections; i++, pSection++) {
+				Marshal.Copy(new IntPtr(pSection), name, 0, name.Length);
+				if (!compareName(textName, name, name.Length))
+					continue;
+
+				uint oldProtect;
+				if (!VirtualProtect(new IntPtr(pSection), sizeof(IMAGE_SECTION_HEADER), PAGE_EXECUTE_READWRITE, out oldProtect))
+					throw new ApplicationException("Could not enable write access to jitter .text section");
+				pSection->VirtualSize = (pSection->VirtualSize + sectionAlignment - 1) & ~(sectionAlignment - 1);
+				VirtualProtect(new IntPtr(pSection), sizeof(IMAGE_SECTION_HEADER), oldProtect, out oldProtect);
+
+				uint size = pSection->VirtualSize;
+				uint rva = pSection->VirtualAddress;
+				return new IntPtr((byte*)hDll + rva + size);
+			}
+
+			throw new ApplicationException("Could not find .text section");
+		}
+
+		static bool compareName(byte[] b1, byte[] b2, int len) {
+			for (int i = 0; i < len; i++) {
+				if (b1[i] != b2[i])
+					return false;
+			}
+			return true;
+		}
+
+		void prepareMethods() {
+			Marshal.PrelinkAll(GetType());
+			foreach (var methodInfo in GetType().GetMethods(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance))
+				RuntimeHelpers.PrepareMethod(methodInfo.MethodHandle);
+		}
+
+		unsafe byte[] createOurCode(IntPtr compileMethod) {
+			var code = new NativeCodeGenerator();
+
+			var origCode = new byte[0x60];
+			Marshal.Copy(compileMethod, origCode, 0, origCode.Length);
+
+			// our compileMethod() func
+			int compileMethodOffset = code.Size;
+			code.writeByte(0xE9);
+			code.writeDword((uint)origCode.Length);
+			writeOriginalCode(code, origCode, compileMethod);
+
+			int numPushedArgs = compileMethodIsThisCall ? 5 : 6;
+
+			code.writeByte(0x51);			// push ecx
+			code.writeByte(0x50);			// push eax
+			code.writeByte(0x54);			// push esp
+			for (int i = 0; i < 5; i++)
+				writePushDwordPtrEspDispl(code, (sbyte)(0xC + numPushedArgs * 4));	// push dword ptr [esp+XXh]
+			if (!compileMethodIsThisCall)
+				writePushDwordPtrEspDispl(code, (sbyte)(0xC + numPushedArgs * 4));	// push dword ptr [esp+XXh]
+			else
+				code.writeByte(0x51);		// push ecx
+			code.writeCall(ourCompileMethodInfo.ptr);
+			code.writeByte(0x5A);			// pop edx
+			code.writeByte(0x59);			// pop ecx
+			code.writeBytes(0x84, 0xD2);	// test dl, dl
+			code.writeBytes(0x74, 0x03);	// jz $+5
+			code.writeBytes(0xC2, (ushort)(numPushedArgs * 4)); // retn 14h/18h
+			for (int i = 0; i < numPushedArgs; i++)
+				writePushDwordPtrEspDispl(code, (sbyte)(numPushedArgs * 4));	// push dword ptr [esp+XXh]
+			code.writeCall(origCompileMethod);
+			code.writeBytes(0xC2, (ushort)(numPushedArgs * 4)); // retn 14h/18h
+
+			// Our callMethod() code. 1st arg is the method to call. stdcall calling convention.
+			int callMethodOffset = code.Size;
+			code.writeByte(0x58);			// pop eax (ret addr)
+			code.writeByte(0x5A);			// pop edx (method to call)
+			if (compileMethodIsThisCall)
+				code.writeByte(0x59);		// pop ecx (this ptr)
+			code.writeByte(0x50);			// push eax (ret addr)
+			code.writeBytes(0xFF, 0xE2);	// jmp edx
+
+			// Returns token of method
+			int getMethodTokenOffset = code.Size;
+			code.writeCall(returnMethodTokenInfo.ptr);
+			code.writeBytes(0xC2, (ushort)(IntPtr.Size * 2));
+
+			// Returns name of method
+			int getMethodNameOffset = code.Size;
+			code.writeCall(returnNameOfMethodInfo.ptr);
+			code.writeBytes(0xC2, (ushort)(IntPtr.Size * 3));
+
+			IntPtr baseAddr = new IntPtr((byte*)jitterTextFreeMem - code.Size);
+			ourCompileMethodInfo.ptrInDll = new IntPtr((byte*)baseAddr + compileMethodOffset);
+			callMethod = new IntPtr((byte*)baseAddr + callMethodOffset);
+			returnMethodTokenInfo.ptrInDll = new IntPtr((byte*)baseAddr + getMethodTokenOffset);
+			returnNameOfMethodInfo.ptrInDll = new IntPtr((byte*)baseAddr + getMethodNameOffset);
+			return code.getCode(baseAddr);
+		}
+
+		// Writes push dword ptr [esp+displ]
+		static void writePushDwordPtrEspDispl(NativeCodeGenerator code, sbyte displ) {
+			code.writeBytes(0xFF, 0x74);
+			code.writeBytes(0x24, (byte)displ);
+		}
+
+		static void writeOriginalCode(NativeCodeGenerator code, byte[] origCode, IntPtr origAddr) {
+			for (int i = 0; i < origCode.Length; i++) {
+				byte b = origCode[i];
+				if (b != 0xE8 || i + 5 >= origCode.Length) {
+					code.writeByte(b);
+					continue;
+				}
+
+				IntPtr dest = new IntPtr(origAddr.ToInt64() + i + 5 + BitConverter.ToInt32(origCode, i + 1));
+				code.writeCall(dest);
+				i += 4;
+			}
+		}
+
+		void installOurCode(byte[] ourCode) {
+			uint oldProtect;
+			if (!VirtualProtect(ourCompileMethodInfo.ptrInDll, ourCode.Length, PAGE_EXECUTE_READWRITE, out oldProtect))
+				throw new ApplicationException("Could not enable write access to jitter DLL");
+			Marshal.Copy(ourCode, 0, ourCompileMethodInfo.ptrInDll, ourCode.Length);
+			VirtualProtect(ourCompileMethodInfo.ptrInDll, ourCode.Length, oldProtect, out oldProtect);
+		}
+
+		static IntPtr getJitterDllHandle() {
+			var hJitterDll = GetModuleHandle("mscorjit");
+			if (hJitterDll == IntPtr.Zero)
+				hJitterDll = GetModuleHandle("clrjit");
+			if (hJitterDll == IntPtr.Zero)
+				throw new ApplicationException("Could not get a handle to the jitter DLL");
+			return hJitterDll;
+		}
+
+		unsafe int compileMethod(IntPtr jitter, IntPtr comp, IntPtr info, uint flags, IntPtr nativeEntry, IntPtr nativeSizeOfCode, out bool handled) {
+			if (ourCompMem != IntPtr.Zero && comp == ourCompMem) {
+				// We're decrypting methods
+				var info2 = (CORINFO_METHOD_INFO*)info;
+				ctx.dm.code = new byte[info2->ILCodeSize];
+				Marshal.Copy(info2->ILCode, ctx.dm.code, 0, ctx.dm.code.Length);
+
+				int methodIndex = (int)(ctx.dm.token - 0x06000001);
+				byte* row = (byte*)methodDefTablePtr + methodIndex * methodDefTable.totalSize;
+				ctx.dm.mdImplFlags = (ushort)read(row, methodDefTable.fields[1]);
+				ctx.dm.mdFlags = (ushort)read(row, methodDefTable.fields[2]);
+				ctx.dm.mdName = read(row, methodDefTable.fields[3]);
+				ctx.dm.mdSignature = read(row, methodDefTable.fields[4]);
+				ctx.dm.mdParamList = read(row, methodDefTable.fields[5]);
+
+				handled = true;
+				return 0;
+			}
+			else {
+				// We're not decrypting methods
+
+				var info2 = (CORINFO_METHOD_INFO*)info;
+				if (info2->scope != moduleToDecryptScope) {
+					handled = false;
+					return 0;
+				}
+
+				uint codeRva = (uint)((byte*)info2->ILCode - (byte*)hInstModule);
+				if (decryptMethodsInfo.moduleCctorBytes != null && moduleCctorCodeRva != 0 && moduleCctorCodeRva == codeRva) {
+					fixed (byte* newIlCodeBytes = &decryptMethodsInfo.moduleCctorBytes[0]) {
+						info2->ILCode = new IntPtr(newIlCodeBytes);
+						info2->ILCodeSize = (uint)decryptMethodsInfo.moduleCctorBytes.Length;
+						handled = true;
+						return callMethodDelegate(origCompileMethod, jitter, comp, info, flags, nativeEntry, nativeSizeOfCode);
+					}
+				}
+			}
+
+			handled = false;
+			return 0;
+		}
+
+		static unsafe uint read(byte* row, MetadataField mdField) {
+			switch (mdField.size) {
+			case 1: return *(row + mdField.offset);
+			case 2: return *(ushort*)(row + mdField.offset);
+			case 4: return *(uint*)(row + mdField.offset);
+			default: throw new ApplicationException(string.Format("Unknown size: {0}", mdField.size));
+			}
+		}
+
+		string returnNameOfMethod() {
+			return ctx.method.Name;
+		}
+
+		int returnMethodToken() {
+			return ctx.method.MetadataToken.ToInt32();
+		}
+
+		public DumpedMethods decryptMethods() {
+			var dumpedMethods = new DumpedMethods();
+
+			if (decryptMethodsInfo.methodsToDecrypt == null) {
+				for (uint i = 0; i < methodDefTable.rows; i++)
+					dumpedMethods.add(decryptMethod(0x06000001 + i));
+			}
+			else {
+				foreach (var token in decryptMethodsInfo.methodsToDecrypt)
+					dumpedMethods.add(decryptMethod(token));
+			}
+
+			return dumpedMethods;
+		}
+
+		unsafe DumpedMethod decryptMethod(uint token) {
+			if (!canDecryptMethods())
+				throw new ApplicationException("Can't decrypt methods since compileMethod() isn't hooked yet");
+
+			ctx = new DecryptContext();
+			ctx.dm = new DumpedMethod();
+			ctx.dm.token = token;
+
+			ctx.method = monoModule.LookupToken((int)token) as MethodDefinition;
+			if (ctx.method == null)
+				throw new ApplicationException(string.Format("Could not find method {0:X8}", token));
+
+			byte* mh = (byte*)hInstModule + ctx.method.RVA;
+			byte* code;
+			if (mh == (byte*)hInstModule) {
+				ctx.dm.mhMaxStack = 0;
+				ctx.dm.mhCodeSize = 0;
+				ctx.dm.mhFlags = 0;
+				ctx.dm.mhLocalVarSigTok = 0;
+				code = null;
+			}
+			else if ((*mh & 3) == 2) {
+				uint headerSize = 1;
+				ctx.dm.mhMaxStack = 8;
+				ctx.dm.mhCodeSize = (uint)(*mh >> 2);
+				ctx.dm.mhFlags = 2;
+				ctx.dm.mhLocalVarSigTok = 0;
+				code = mh + headerSize;
+			}
+			else {
+				uint headerSize = (uint)((mh[1] >> 4) * 4);
+				ctx.dm.mhMaxStack = *(ushort*)(mh + 2);
+				ctx.dm.mhCodeSize = *(uint*)(mh + 4);
+				ctx.dm.mhFlags = *(ushort*)mh;
+				ctx.dm.mhLocalVarSigTok = *(uint*)(mh + 8);
+				code = mh + headerSize;
+			}
+
+			CORINFO_METHOD_INFO info = default(CORINFO_METHOD_INFO);
+			info.ILCode = new IntPtr(code);
+			info.ILCodeSize = ctx.dm.mhCodeSize;
+			info.maxStack = ctx.dm.mhMaxStack;
+
+			initializeOurComp();
+			if (code == null)
+				ctx.dm.code = new byte[0];
+			else
+				callMethodDelegate(*(IntPtr*)jitterVtbl, jitterInstance, ourCompMem, new IntPtr(&info), 0, new IntPtr(0x12345678), new IntPtr(0x3ABCDEF0));
+
+			var dm = ctx.dm;
+			ctx = null;
+			return dm;
+		}
+
+		unsafe void initializeOurComp() {
+			const int numIndexes = 15;
+			if (ourCompMem == IntPtr.Zero)
+				ourCompMem = Marshal.AllocHGlobal(numIndexes * IntPtr.Size);
+			if (ourCompMem == IntPtr.Zero)
+				throw new ApplicationException("Could not allocate memory");
+
+			IntPtr* mem = (IntPtr*)ourCompMem;
+			for (int i = 0; i < numIndexes; i++)
+				mem[i] = IntPtr.Zero;
+
+			mem[1] = new IntPtr(mem + 2);
+			mem[3] = new IntPtr(IntPtr.Size * 5);
+			mem[5] = new IntPtr(IntPtr.Size * 7);
+			mem[6] = new IntPtr(mem + 7);
+			mem[7] = returnNameOfMethodInfo.ptrInDll;
+			mem[8] = new IntPtr(mem);
+			mem[13] = returnMethodTokenInfo.ptrInDll;	// .NET 2.0
+			mem[14] = returnMethodTokenInfo.ptrInDll;	// .NET 4.0
+		}
+	}
+}

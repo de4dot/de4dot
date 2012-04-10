@@ -23,7 +23,7 @@ using System.IO;
 using Mono.Cecil;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
-using de4dot.code.PE;
+using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 	class MemoryPatcher {
