@@ -21,7 +21,7 @@ using System.IO;
 using System.Text;
 
 namespace de4dot.code.PE {
-	class SectionHeader : IFileLocation {
+	public class SectionHeader : IFileLocation {
 		public byte[] name;
 		public uint virtualSize;
 		public uint virtualAddress;

@@ -20,7 +20,7 @@
 using System.Collections.Generic;
 
 namespace de4dot.code.PE {
-	abstract class ResourceDirectoryEntry {
+	public abstract class ResourceDirectoryEntry {
 		protected readonly string name;
 		protected readonly int id;
 

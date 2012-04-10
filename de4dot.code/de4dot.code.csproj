@@ -12,7 +12,6 @@
     <AssemblyName>de4dot.code</AssemblyName>
     <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <TargetFrameworkProfile />
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\de4dot.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
@@ -225,22 +224,6 @@
     <Compile Include="NameRegexes.cs" />
     <Compile Include="ObfuscatedFile.cs" />
     <Compile Include="Option.cs" />
-    <Compile Include="PE\Cor20Header.cs" />
-    <Compile Include="PE\DataDirectory.cs" />
-    <Compile Include="PE\FileHeader.cs" />
-    <Compile Include="PE\IFileLocation.cs" />
-    <Compile Include="PE\Metadata.cs" />
-    <Compile Include="PE\MetadataTables.cs" />
-    <Compile Include="PE\MetadataType.cs" />
-    <Compile Include="PE\MetadataTypeBuilder.cs" />
-    <Compile Include="PE\OptionalHeader.cs" />
-    <Compile Include="PE\PeImage.cs" />
-    <Compile Include="PE\ResourceData.cs" />
-    <Compile Include="PE\ResourceDirectory.cs" />
-    <Compile Include="PE\ResourceDirectoryEntry.cs" />
-    <Compile Include="PE\Resources.cs" />
-    <Compile Include="PE\SectionHeader.cs" />
-    <Compile Include="PE\DotNetStream.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="renamer\asmmodules\EventDef.cs" />
     <Compile Include="ExternalAssemblies.cs" />

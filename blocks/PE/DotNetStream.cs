@@ -20,17 +20,27 @@
 using System.IO;
 
 namespace de4dot.code.PE {
-	struct DataDirectory {
-		public uint virtualAddress;
-		public uint size;
+	public class DotNetStream : IFileLocation {
+		public string name;
+		public uint fileOffset;
+		public uint length;
 
-		public void read(BinaryReader reader) {
-			virtualAddress = reader.ReadUInt32();
-			size = reader.ReadUInt32();
+		public uint Offset {
+			get { return fileOffset; }
+		}
+
+		public uint Length {
+			get { return length; }
+		}
+
+		public DotNetStream(string name, uint fileOffset, uint length) {
+			this.name = name;
+			this.fileOffset = fileOffset;
+			this.length = length;
 		}
 
 		public override string ToString() {
-			return string.Format("{0:X8} {1:X8}", virtualAddress, size);
+			return string.Format("{0:X8} {1:X8} {2}", fileOffset, length, name);
 		}
 	}
 }

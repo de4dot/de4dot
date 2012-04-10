@@ -18,32 +18,8 @@
 */
 
 namespace de4dot.code.PE {
-	class ResourceData : ResourceDirectoryEntry {
-		uint rva;
-		uint size;
-
-		public uint RVA {
-			get { return rva; }
-		}
-
-		public uint Size {
-			get { return size; }
-		}
-
-		public ResourceData(int id, uint rva, uint size)
-			: base(id) {
-			this.rva = rva;
-			this.size = size;
-		}
-
-		public ResourceData(string name, uint dataOffset, uint dataSize)
-			: base(name) {
-			this.rva = dataOffset;
-			this.size = dataSize;
-		}
-
-		public override string ToString() {
-			return string.Format("RVA: {0:X8} SIZE: {1:X8}, NAME: {2}", rva, size, getName());
-		}
+	public interface IFileLocation {
+		uint Offset { get; }
+		uint Length { get; }
 	}
 }

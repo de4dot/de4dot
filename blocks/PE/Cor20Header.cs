@@ -20,7 +20,7 @@
 using System.IO;
 
 namespace de4dot.code.PE {
-	class Cor20Header : IFileLocation {
+	public class Cor20Header : IFileLocation {
 		public uint cb;
 		public ushort majorRuntimeVersion;
 		public ushort minorRuntimeVersion;
@@ -70,7 +70,7 @@ namespace de4dot.code.PE {
 			managedNativeHeader.read(reader);
 		}
 
-		public void initMetadataTable() {
+		internal void initMetadataTable() {
 			metadata = new Metadata(reader);
 		}
 
