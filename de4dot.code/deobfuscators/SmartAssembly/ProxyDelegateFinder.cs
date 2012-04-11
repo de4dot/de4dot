@@ -91,8 +91,13 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				if (specialCharsDict.TryGetValue(c, out val))
 					methodIndex = methodIndex * specialChars.Length + val;
 			}
-			if (methodIndex >= memberReferences.Count)
-				throw new ApplicationException(string.Format("methodIndex ({0}) >= memberReferences.Count ({1})", methodIndex, memberReferences.Count));
+
+			if (methodIndex >= memberReferences.Count) {
+				Log.w("Ignoring invalid methodIndex: {0:X8}, field: {1:X8}", methodIndex, field.MetadataToken.ToInt32());
+				calledMethod = null;
+				return;
+			}
+
 			calledMethod = memberReferences[methodIndex] as MethodReference;
 		}
 
