@@ -768,6 +768,8 @@ namespace de4dot.blocks {
 				pops += method.Parameters.Count;
 			if (implicitThis && instr.OpCode.Code != Code.Newobj)
 				pops++;
+			if (instr.OpCode.Code == Code.Calli)
+				pops++;
 		}
 
 		// Sets pops to -1 if the stack is supposed to be cleared
