@@ -289,6 +289,9 @@ namespace de4dot.blocks {
 
 			// Replace the BaseBlocks with a new BaseBlock, returning the old ones.
 			public List<BaseBlock> replace(int startInstr, int endInstr, ScopeBlock bb) {
+				if (endInstr < startInstr)
+					return new List<BaseBlock>();
+
 				int startIndex, endIndex;
 				var rv = getBlocks(startInstr, endInstr, out startIndex, out endIndex);
 				updateParent(rv, bb);

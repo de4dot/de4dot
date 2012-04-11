@@ -50,7 +50,7 @@ namespace de4dot.blocks {
 			public ExceptionInfo(int tryStart, int tryEnd, int filterStart,
 				int handlerStart, int handlerEnd, TypeReference catchType,
 				ExceptionHandlerType handlerType) {
-				if (tryStart > tryEnd || filterStart > handlerStart || handlerStart > handlerEnd ||
+				if (tryStart > tryEnd || filterStart > handlerStart ||
 					tryStart < 0 || tryEnd < 0 || filterStart < 0 || handlerStart < 0 || handlerEnd < 0)
 					throw new ApplicationException("Invalid start/end/filter/handler indexes");
 				this.tryStart = tryStart;
@@ -196,11 +196,11 @@ namespace de4dot.blocks {
 			}
 
 			foreach (var ex in exceptions) {
-				var tryStart = blockInfos[ex.tryStart].start;
-				var tryEnd = blockInfos[ex.tryEnd].end;
-				var filterStart = ex.filterStart == -1 ? -1 : blockInfos[ex.filterStart].start;
-				var handlerStart = blockInfos[ex.handlerStart].start;
-				var handlerEnd = blockInfos[ex.handlerEnd].end;
+				var tryStart = getBlockInfo(blockInfos, ex.tryStart).start;
+				var tryEnd = getBlockInfo(blockInfos, ex.tryEnd).end;
+				var filterStart = ex.filterStart == -1 ? -1 : getBlockInfo(blockInfos, ex.filterStart).start;
+				var handlerStart = getBlockInfo(blockInfos, ex.handlerStart).start;
+				var handlerEnd = getBlockInfo(blockInfos, ex.handlerEnd).end;
 
 				var eh = new ExceptionHandler(ex.handlerType);
 				eh.CatchType = ex.catchType;
@@ -212,6 +212,14 @@ namespace de4dot.blocks {
 
 				allExceptionHandlers.Add(eh);
 			}
+		}
+
+		static BlockInfo getBlockInfo(List<BlockInfo> blockInfos, int index) {
+			if (index >= blockInfos.Count)
+				index = blockInfos.Count - 1;
+			if (index < 0)
+				index = 0;
+			return blockInfos[index];
 		}
 
 		static Instruction getInstruction(IList<Instruction> allInstructions, int i) {
