@@ -174,17 +174,32 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			}
 		}
 
-		public bool decrypt(PeImage peImage, string filename, ref DumpedMethods dumpedMethods) {
+		public bool decrypt(PeImage peImage, string filename, CliSecureRtType csRtType, ref DumpedMethods dumpedMethods) {
 			this.peImage = peImage;
 			try {
 				return decrypt2(ref dumpedMethods);
 			}
 			catch (InvalidDecryptedMethod) {
 				Log.w("Using dynamic method decryption");
-				byte[] moduleCctorBytes = null;
+				byte[] moduleCctorBytes = getModuleCctorBytes(csRtType);
 				dumpedMethods = de4dot.code.deobfuscators.MethodsDecrypter.decrypt(filename, moduleCctorBytes);
 				return true;
 			}
+		}
+
+		static byte[] getModuleCctorBytes(CliSecureRtType csRtType) {
+			var initMethod = csRtType.InitializeMethod;
+			if (initMethod == null)
+				return null;
+			uint initToken = initMethod.MetadataToken.ToUInt32();
+			var moduleCctorBytes = new byte[6];
+			moduleCctorBytes[0] = 0x28;	// call
+			moduleCctorBytes[1] = (byte)initToken;
+			moduleCctorBytes[2] = (byte)(initToken >> 8);
+			moduleCctorBytes[3] = (byte)(initToken >> 16);
+			moduleCctorBytes[4] = (byte)(initToken >> 24);
+			moduleCctorBytes[5] = 0x2A;	// ret
+			return moduleCctorBytes;
 		}
 
 		public bool decrypt2(ref DumpedMethods dumpedMethods) {
