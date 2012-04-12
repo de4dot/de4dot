@@ -325,107 +325,41 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				byte[] decrypt(int type, byte[] encrypted);
 			}
 
-			class DecrypterV1 : IDecrypter {
+			class Decrypter : IDecrypter {
 				MethodInfos methodInfos;
+				int[] typeToMethod;
 
-				public DecrypterV1(MethodInfos methodInfos) {
+				public Decrypter(MethodInfos methodInfos, int[] typeToMethod) {
 					this.methodInfos = methodInfos;
+					this.typeToMethod = typeToMethod;
 				}
 
 				public byte[] decrypt(int type, byte[] encrypted) {
-					switch (type) {
-					case 1: return methodInfos.decrypt1(encrypted);
-					case 2: return methodInfos.decrypt4(encrypted);
-					case 3: return methodInfos.decrypt2(encrypted);
-					case 4: return methodInfos.decrypt3(encrypted);
-					case 5: return methodInfos.decrypt5(encrypted);
-					case 6: return methodInfos.decrypt6(encrypted);
-					case 7: return methodInfos.decrypt7(encrypted);
-					default: throw new ApplicationException(string.Format("Invalid encryption type: {0:X2}", type));
+					if (0 <= type && type < typeToMethod.Length) {
+						switch (typeToMethod[type]) {
+						case 1: return methodInfos.decrypt1(encrypted);
+						case 2: return methodInfos.decrypt2(encrypted);
+						case 3: return methodInfos.decrypt3(encrypted);
+						case 4: return methodInfos.decrypt4(encrypted);
+						case 5: return methodInfos.decrypt5(encrypted);
+						case 6: return methodInfos.decrypt6(encrypted);
+						case 7: return methodInfos.decrypt7(encrypted);
+						}
 					}
+					throw new ApplicationException(string.Format("Invalid encryption type: {0:X2}", type));
 				}
 			}
 
-			class DecrypterV2 : IDecrypter {
-				MethodInfos methodInfos;
-
-				public DecrypterV2(MethodInfos methodInfos) {
-					this.methodInfos = methodInfos;
-				}
-
-				public byte[] decrypt(int type, byte[] encrypted) {
-					switch (type) {
-					case 1: return methodInfos.decrypt3(encrypted);
-					case 2: return methodInfos.decrypt2(encrypted);
-					case 3: return methodInfos.decrypt1(encrypted);
-					case 4: return methodInfos.decrypt4(encrypted);
-					case 5: return methodInfos.decrypt5(encrypted);
-					case 6: return methodInfos.decrypt6(encrypted);
-					case 7: return methodInfos.decrypt7(encrypted);
-					default: throw new ApplicationException(string.Format("Invalid encryption type: {0:X2}", type));
-					}
-				}
-			}
-
-			class DecrypterV3 : IDecrypter {
-				MethodInfos methodInfos;
-
-				public DecrypterV3(MethodInfos methodInfos) {
-					this.methodInfos = methodInfos;
-				}
-
-				public byte[] decrypt(int type, byte[] encrypted) {
-					switch (type) {
-					case 1: return methodInfos.decrypt1(encrypted);
-					case 2: return methodInfos.decrypt2(encrypted);
-					case 3: return methodInfos.decrypt3(encrypted);
-					case 4: return methodInfos.decrypt4(encrypted);
-					case 5: return methodInfos.decrypt5(encrypted);
-					case 6: return methodInfos.decrypt6(encrypted);
-					case 7: return methodInfos.decrypt7(encrypted);
-					default: throw new ApplicationException(string.Format("Invalid encryption type: {0:X2}", type));
-					}
-				}
-			}
-
-			class DecrypterV4 : IDecrypter {
-				MethodInfos methodInfos;
-
-				public DecrypterV4(MethodInfos methodInfos) {
-					this.methodInfos = methodInfos;
-				}
-
-				public byte[] decrypt(int type, byte[] encrypted) {
-					switch (type) {
-					case 1: return methodInfos.decrypt2(encrypted);
-					case 2: return methodInfos.decrypt1(encrypted);
-					case 3: return methodInfos.decrypt3(encrypted);
-					case 4: return methodInfos.decrypt4(encrypted);
-					case 5: return methodInfos.decrypt5(encrypted);
-					case 6: return methodInfos.decrypt6(encrypted);
-					case 7: return methodInfos.decrypt7(encrypted);
-					default: throw new ApplicationException(string.Format("Invalid encryption type: {0:X2}", type));
-					}
-				}
-			}
-
+			static readonly int[] typeToTypesV1 = new int[] { -1, 1, 4, 2, 3, 5, 6, 7 };
+			static readonly int[] typeToTypesV2 = new int[] { -1, 3, 2, 1, 4, 5, 6, 7 };
+			static readonly int[] typeToTypesV3 = new int[] { -1, 1, 2, 3, 4, 5, 6, 7 };
+			static readonly int[] typeToTypesV4 = new int[] { -1, 2, 1, 3, 4, 5, 6, 7 };
 			void initializeDecrypter() {
 				switch (getVersion()) {
-				case EncryptionVersion.V1:
-					decrypter = new DecrypterV1(this);
-					break;
-
-				case EncryptionVersion.V2:
-					decrypter = new DecrypterV2(this);
-					break;
-
-				case EncryptionVersion.V3:
-					decrypter = new DecrypterV3(this);
-					break;
-
-				case EncryptionVersion.V4:
-					decrypter = new DecrypterV4(this);
-					break;
+				case EncryptionVersion.V1: decrypter = new Decrypter(this, typeToTypesV1); break;
+				case EncryptionVersion.V2: decrypter = new Decrypter(this, typeToTypesV2); break;
+				case EncryptionVersion.V3: decrypter = new Decrypter(this, typeToTypesV3); break;
+				case EncryptionVersion.V4: decrypter = new Decrypter(this, typeToTypesV4); break;
 
 				case EncryptionVersion.Unknown:
 				default:
