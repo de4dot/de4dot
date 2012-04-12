@@ -735,7 +735,10 @@ namespace de4dot.blocks {
 		}
 
 		public static bool hasReturnValue(IMethodSignature method) {
-			return method.MethodReturnType.ReturnType.EType != ElementType.Void;
+			var type = method.MethodReturnType.ReturnType;
+			while (type.IsOptionalModifier || type.IsRequiredModifier)
+				type = ((TypeSpecification)type).ElementType;
+			return type.EType != ElementType.Void;
 		}
 
 		public static void updateStack(Instruction instr, ref int stack, bool methodHasReturnValue) {
