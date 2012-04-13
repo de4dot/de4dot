@@ -171,7 +171,7 @@ namespace de4dot.cui {
 
 			public IEnumerable<IObfuscatedFile> load() {
 				foreach (var file in options.PossibleFiles) {
-					if (add(file))
+					if (add(file, false, true))
 						yield return file;
 				}
 
@@ -181,7 +181,7 @@ namespace de4dot.cui {
 				}
 			}
 
-			bool add(IObfuscatedFile file, bool skipUnknownObfuscator = false) {
+			bool add(IObfuscatedFile file, bool skipUnknownObfuscator = false, bool isFromPossibleFiles = false) {
 				var key = Utils.getFullPath(file.Filename);
 				if (allFiles.ContainsKey(key)) {
 					Log.w("Ingoring duplicate file: {0}", file.Filename);
@@ -198,6 +198,8 @@ namespace de4dot.cui {
 					return false;	// Eg. unsupported architecture
 				}
 				catch (BadImageFormatException) {
+					if (isFromPossibleFiles)
+						Log.w("The file isn't a .NET PE file: {0}", file.Filename);
 					return false;	// Not a .NET file
 				}
 				catch (EndOfStreamException) {
