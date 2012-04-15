@@ -125,9 +125,9 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		}
 
 		MethodDefinition getProxyCreateMethod(TypeDefinition type) {
-			if (type.Fields.Count < 1 || type.Fields.Count > 3)
-				return null;
 			if (DotNetUtils.findFieldType(type, "System.ModuleHandle", true) == null)
+				return null;
+			if (type.Fields.Count < 1 || type.Fields.Count > 4)
 				return null;
 
 			MethodDefinition createMethod = null;

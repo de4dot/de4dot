@@ -38,6 +38,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		byte bitwiseNotEncryptedFlag;
 		FrameworkType frameworkType;
 		bool flipFlagsBits;
+		int skipBytes;
 
 		public ResourceDecrypter(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator) {
 			this.module = module;
@@ -67,7 +68,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				break;
 			}
 
-			initializeDecrypterFlags(simpleDeobfuscator);
+			initializeHeaderInfo(simpleDeobfuscator);
 		}
 
 		static string[] requiredTypes = new string[] {
@@ -168,7 +169,9 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			}
 		}
 
-		void initializeDecrypterFlags(ISimpleDeobfuscator simpleDeobfuscator) {
+		void initializeHeaderInfo(ISimpleDeobfuscator simpleDeobfuscator) {
+			skipBytes = 0;
+
 			if (resourceDecrypterType != null) {
 				if (updateFlags(getDecrypterMethod(), simpleDeobfuscator))
 					return;
@@ -226,6 +229,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			}
 
 			flipFlagsBits = checkFlipBits(method);
+			skipBytes = getHeaderSkipBytes(method);
 
 			switch (frameworkType) {
 			case FrameworkType.Desktop:
@@ -262,6 +266,22 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return false;
 		}
 
+		static int getHeaderSkipBytes(MethodDefinition method) {
+			var instrs = method.Body.Instructions;
+			for (int i = 0; i < instrs.Count - 1; i++) {
+				var ldci4 = instrs[i];
+				if (!DotNetUtils.isLdcI4(ldci4))
+					continue;
+				if (DotNetUtils.getLdcI4Value(ldci4) != 2)
+					continue;
+				var blt = instrs[i + 1];
+				if (blt.OpCode.Code != Code.Blt && blt.OpCode.Code != Code.Blt_S)
+					continue;
+				return 1;
+			}
+			return 0;
+		}
+
 		static bool isFlag(int value) {
 			for (uint tmp = (uint)value; tmp != 0; tmp >>= 1) {
 				if ((tmp & 1) != 0)
@@ -289,6 +309,9 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			Stream sourceStream = resourceStream;
 			int sourceStreamOffset = 1;
 			bool didSomething = false;
+
+			sourceStream.Position += skipBytes;
+			sourceStreamOffset += skipBytes;
 
 			byte allFlags = (byte)(desEncryptedFlag | deflatedFlag | bitwiseNotEncryptedFlag);
 			if ((flags & ~allFlags) != 0)
