@@ -41,6 +41,8 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		public bool exists(string s) {
+			if (s == null)
+				return false;
 			return strings.ContainsKey(s);
 		}
 
