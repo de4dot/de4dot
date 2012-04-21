@@ -36,7 +36,6 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		int i1, i2, i3, i4, i5, i6;
 		bool checkMinus2;
 		bool usePublicKeyToken;
-		bool hasStringBuilder;
 		int keyLen;
 		byte[] theKey;
 		int magic1;
@@ -225,7 +224,6 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			if (!findResource(stringMethod))
 				return false;
 
-			hasStringBuilder = new LocalTypes(stringMethod).exists("System.Text.StringBuilder");
 			checkMinus2 = isV32OrLater || DeobUtils.hasInteger(stringMethod, -2);
 			usePublicKeyToken = callsGetPublicKeyToken(stringMethod);
 
