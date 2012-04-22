@@ -278,8 +278,12 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			return new CsHeader5(this);
 		}
 
+		static uint getCodeHeaderOffset(PeImage peImage) {
+			return peImage.rvaToOffset(peImage.Cor20Header.metadataDirectory.virtualAddress + peImage.Cor20Header.metadataDirectory.size);
+		}
+
 		public bool decrypt2(ref DumpedMethods dumpedMethods) {
-			uint codeHeaderOffset = peImage.rvaToOffset(peImage.Cor20Header.metadataDirectory.virtualAddress + peImage.Cor20Header.metadataDirectory.size);
+			uint codeHeaderOffset = getCodeHeaderOffset(peImage);
 			if (!readCodeHeader(codeHeaderOffset))
 				return false;
 
@@ -349,6 +353,17 @@ namespace de4dot.code.deobfuscators.CliSecure {
 				return false;
 
 			return true;
+		}
+
+		public static bool detect(PeImage peImage) {
+			try {
+				uint codeHeaderOffset = getCodeHeaderOffset(peImage);
+				var sig = peImage.offsetReadBytes(codeHeaderOffset, 16);
+				return Utils.compare(sig, normalSignature) || Utils.compare(sig, proSignature);
+			}
+			catch {
+				return false;
+			}
 		}
 	}
 }

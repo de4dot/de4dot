@@ -18,8 +18,10 @@
 */
 
 using System;
+using System.IO;
 using Mono.Cecil;
 using de4dot.blocks;
+using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.CliSecure {
 	class CliSecureRtType {
@@ -29,9 +31,10 @@ namespace de4dot.code.deobfuscators.CliSecure {
 		MethodDefinition initializeMethod;
 		MethodDefinition stringDecrypterMethod;
 		MethodDefinition loadMethod;
+		bool foundSig;
 
 		public bool Detected {
-			get { return cliSecureRtType != null; }
+			get { return foundSig || cliSecureRtType != null; }
 		}
 
 		public TypeDefinition Type {
@@ -76,7 +79,9 @@ namespace de4dot.code.deobfuscators.CliSecure {
 				return;
 			if (find2())
 				return;
-			findOld();
+			if (findOld())
+				return;
+			findNativeCode();
 		}
 
 		bool find2() {
@@ -141,6 +146,15 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			}
 
 			return false;
+		}
+
+		bool findNativeCode() {
+			if ((module.Attributes & ModuleAttributes.ILOnly) != 0)
+				return false;
+
+			var peImage = new PeImage(new FileStream(module.FullyQualifiedName, FileMode.Open, FileAccess.Read, FileShare.Read));
+			foundSig = MethodsDecrypter.detect(peImage);
+			return foundSig;
 		}
 
 		static bool hasPinvokeMethod(TypeDefinition type, string methodName) {
