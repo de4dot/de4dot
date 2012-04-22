@@ -59,6 +59,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 		}
 
 		PeImage peImage;
+		CliSecureRtType csRtType;
 		CodeHeader codeHeader = new CodeHeader();
 		IDecrypter decrypter;
 
@@ -115,16 +116,19 @@ namespace de4dot.code.deobfuscators.CliSecure {
 		}
 
 		class NormalDecrypter : DecrypterBase {
-			public NormalDecrypter(PeImage peImage, CodeHeader codeHeader)
+			uint codeHeaderSize;
+
+			public NormalDecrypter(PeImage peImage, CodeHeader codeHeader, uint codeHeaderSize)
 				: base(peImage, codeHeader) {
+					this.codeHeaderSize = codeHeaderSize;
 			}
 
 			public override MethodBodyHeader decrypt(MethodInfo methodInfo, out byte[] code, out byte[] extraSections) {
 				byte[] data = peImage.offsetReadBytes(endOfMetadata + methodInfo.codeOffs, (int)methodInfo.codeSize);
 				for (int i = 0; i < data.Length; i++) {
 					byte b = data[i];
-					b ^= codeHeader.decryptionKey[(methodInfo.codeOffs - 0x30 + i) % 16];
-					b ^= codeHeader.decryptionKey[(methodInfo.codeOffs - 0x30 + i + 7) % 16];
+					b ^= codeHeader.decryptionKey[(methodInfo.codeOffs - codeHeaderSize + i) % 16];
+					b ^= codeHeader.decryptionKey[(methodInfo.codeOffs - codeHeaderSize + i + 7) % 16];
 					data[i] = b;
 				}
 				return getCodeBytes(data, out code, out extraSections);
@@ -186,20 +190,24 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			void patchMethodDefTable(MetadataType methodDefTable, IList<MethodInfo> methodInfos);
 		}
 
-		// CS 4.0
-		class CsHeader40 : ICsHeader {
-			MethodsDecrypter methodsDecrypter;
+		abstract class CsHeaderBase : ICsHeader {
+			protected readonly MethodsDecrypter methodsDecrypter;
+			protected readonly uint codeHeaderSize;
 
-			public CsHeader40(MethodsDecrypter methodsDecrypter) {
+			public CsHeaderBase(MethodsDecrypter methodsDecrypter, uint codeHeaderSize) {
 				this.methodsDecrypter = methodsDecrypter;
+				this.codeHeaderSize = codeHeaderSize;
 			}
 
-			public IDecrypter createDecrypter() {
-				return new Decrypter40(methodsDecrypter.peImage);
+			public abstract IDecrypter createDecrypter();
+
+			public virtual void patchMethodDefTable(MetadataType methodDefTable, IList<MethodInfo> methodInfos) {
 			}
 
-			public List<MethodInfo> getMethodInfos(uint codeHeaderOffset) {
-				uint offset = codeHeaderOffset + methodsDecrypter.codeHeader.totalCodeSize + 0x28;
+			public abstract List<MethodInfo> getMethodInfos(uint codeHeaderOffset);
+
+			protected List<MethodInfo> getMethodInfos1(uint codeHeaderOffset) {
+				uint offset = codeHeaderOffset + methodsDecrypter.codeHeader.totalCodeSize + codeHeaderSize;
 				var methodInfos = new List<MethodInfo>((int)methodsDecrypter.codeHeader.numMethods);
 				for (int i = 0; i < (int)methodsDecrypter.codeHeader.numMethods; i++, offset += 4) {
 					uint codeOffs = methodsDecrypter.peImage.offsetReadUInt32(offset);
@@ -210,24 +218,8 @@ namespace de4dot.code.deobfuscators.CliSecure {
 				return methodInfos;
 			}
 
-			public void patchMethodDefTable(MetadataType methodDefTable, IList<MethodInfo> methodInfos) {
-			}
-		}
-
-		// CS 4.5
-		class CsHeader45 : ICsHeader {
-			MethodsDecrypter methodsDecrypter;
-
-			public CsHeader45(MethodsDecrypter methodsDecrypter) {
-				this.methodsDecrypter = methodsDecrypter;
-			}
-
-			public IDecrypter createDecrypter() {
-				return new Decrypter45(methodsDecrypter.peImage, methodsDecrypter.codeHeader);
-			}
-
-			public List<MethodInfo> getMethodInfos(uint codeHeaderOffset) {
-				uint offset = codeHeaderOffset + methodsDecrypter.codeHeader.totalCodeSize + 0x28;
+			protected List<MethodInfo> getMethodInfos2(uint codeHeaderOffset) {
+				uint offset = codeHeaderOffset + methodsDecrypter.codeHeader.totalCodeSize + codeHeaderSize;
 				var methodInfos = new List<MethodInfo>((int)methodsDecrypter.codeHeader.numMethods);
 				for (int i = 0; i < (int)methodsDecrypter.codeHeader.numMethods; i++, offset += 8) {
 					uint codeOffs = methodsDecrypter.peImage.offsetReadUInt32(offset);
@@ -237,34 +229,8 @@ namespace de4dot.code.deobfuscators.CliSecure {
 				return methodInfos;
 			}
 
-			public void patchMethodDefTable(MetadataType methodDefTable, IList<MethodInfo> methodInfos) {
-			}
-		}
-
-		// CS 5.2+
-		class CsHeader5 : ICsHeader {
-			MethodsDecrypter methodsDecrypter;
-
-			public CsHeader5(MethodsDecrypter methodsDecrypter) {
-				this.methodsDecrypter = methodsDecrypter;
-			}
-
-			public IDecrypter createDecrypter() {
-				switch (getSigType(methodsDecrypter.codeHeader.signature)) {
-				case SigType.Normal:
-					return new NormalDecrypter(methodsDecrypter.peImage, methodsDecrypter.codeHeader);
-
-				case SigType.Pro:
-					return new ProDecrypter(methodsDecrypter.peImage, methodsDecrypter.codeHeader);
-
-				case SigType.Unknown:
-				default:
-					throw new ArgumentException("sig");
-				}
-			}
-
-			public List<MethodInfo> getMethodInfos(uint codeHeaderOffset) {
-				uint offset = codeHeaderOffset + methodsDecrypter.codeHeader.totalCodeSize + 0x30;
+			protected List<MethodInfo> getMethodInfos4(uint codeHeaderOffset) {
+				uint offset = codeHeaderOffset + methodsDecrypter.codeHeader.totalCodeSize + codeHeaderSize;
 				var methodInfos = new List<MethodInfo>((int)methodsDecrypter.codeHeader.numMethods);
 				for (int i = 0; i < (int)methodsDecrypter.codeHeader.numMethods; i++, offset += 16) {
 					uint codeOffs = methodsDecrypter.peImage.offsetReadUInt32(offset);
@@ -275,8 +241,65 @@ namespace de4dot.code.deobfuscators.CliSecure {
 				}
 				return methodInfos;
 			}
+		}
 
-			public void patchMethodDefTable(MetadataType methodDefTable, IList<MethodInfo> methodInfos) {
+		// CS 4.0
+		class CsHeader40 : CsHeaderBase {
+			public CsHeader40(MethodsDecrypter methodsDecrypter)
+				: base(methodsDecrypter, 0x28) {
+			}
+
+			public override IDecrypter createDecrypter() {
+				return new Decrypter40(methodsDecrypter.peImage);
+			}
+
+			public override List<MethodInfo> getMethodInfos(uint codeHeaderOffset) {
+				return getMethodInfos1(codeHeaderOffset);
+			}
+		}
+
+		// CS 4.5
+		class CsHeader45 : CsHeaderBase {
+			public CsHeader45(MethodsDecrypter methodsDecrypter)
+				: base(methodsDecrypter, 0x28) {
+			}
+
+			public override IDecrypter createDecrypter() {
+				return new Decrypter45(methodsDecrypter.peImage, methodsDecrypter.codeHeader);
+			}
+
+			public override List<MethodInfo> getMethodInfos(uint codeHeaderOffset) {
+				return getMethodInfos2(codeHeaderOffset);
+			}
+		}
+
+		// CS 5.0+
+		class CsHeader5 : CsHeaderBase {
+			public CsHeader5(MethodsDecrypter methodsDecrypter, uint codeHeaderSize)
+				: base(methodsDecrypter, codeHeaderSize) {
+			}
+
+			public override IDecrypter createDecrypter() {
+				switch (getSigType(methodsDecrypter.codeHeader.signature)) {
+				case SigType.Normal:
+					return new NormalDecrypter(methodsDecrypter.peImage, methodsDecrypter.codeHeader, codeHeaderSize);
+
+				case SigType.Pro:
+					return new ProDecrypter(methodsDecrypter.peImage, methodsDecrypter.codeHeader);
+
+				case SigType.Unknown:
+				default:
+					throw new ArgumentException("sig");
+				}
+			}
+
+			public override List<MethodInfo> getMethodInfos(uint codeHeaderOffset) {
+				if (codeHeaderSize == 0x28)
+					return getMethodInfos2(codeHeaderOffset);
+				return getMethodInfos4(codeHeaderOffset);
+			}
+
+			public override void patchMethodDefTable(MetadataType methodDefTable, IList<MethodInfo> methodInfos) {
 				uint offset = methodDefTable.fileOffset - methodDefTable.totalSize;
 				foreach (var methodInfo in methodInfos) {
 					offset += methodDefTable.totalSize;
@@ -291,6 +314,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 
 		public bool decrypt(PeImage peImage, string filename, CliSecureRtType csRtType, ref DumpedMethods dumpedMethods) {
 			this.peImage = peImage;
+			this.csRtType = csRtType;
 			try {
 				return decrypt2(ref dumpedMethods);
 			}
@@ -321,12 +345,15 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			Unknown,
 			V40,
 			V45,
-			V52,
+			V50,	// 5.0, possibly also 5.1
+			V52,	// 5.2+ (or maybe 5.1+)
 		}
 
 		CsHeaderVersion getCsHeaderVersion(uint codeHeaderOffset, MetadataType methodDefTable) {
 			if (!isOldHeader(methodDefTable))
 				return CsHeaderVersion.V52;
+			if (csRtType.isAtLeastVersion50())
+				return CsHeaderVersion.V50;
 			if (isCsHeader40(codeHeaderOffset))
 				return CsHeaderVersion.V40;
 			return CsHeaderVersion.V45;
@@ -364,7 +391,8 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			switch (getCsHeaderVersion(codeHeaderOffset, methodDefTable)) {
 			case CsHeaderVersion.V40: return new CsHeader40(this);
 			case CsHeaderVersion.V45: return new CsHeader45(this);
-			case CsHeaderVersion.V52: return new CsHeader5(this);
+			case CsHeaderVersion.V50: return new CsHeader5(this, 0x28);
+			case CsHeaderVersion.V52: return new CsHeader5(this, 0x30);
 			default: throw new ApplicationException("Unknown CS header");
 			}
 		}

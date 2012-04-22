@@ -158,6 +158,8 @@ namespace de4dot.code.deobfuscators.CliSecure {
 		}
 
 		static bool hasPinvokeMethod(TypeDefinition type, string methodName) {
+			if (type == null)
+				return false;
 			foreach (var method in type.Methods) {
 				if (method.PInvokeInfo == null)
 					continue;
@@ -165,6 +167,10 @@ namespace de4dot.code.deobfuscators.CliSecure {
 					return true;
 			}
 			return false;
+		}
+
+		public bool isAtLeastVersion50() {
+			return hasPinvokeMethod(cliSecureRtType, "LoadLibraryA");
 		}
 	}
 }
