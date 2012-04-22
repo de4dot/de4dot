@@ -19,6 +19,7 @@
 
 using System;
 using Mono.Cecil;
+using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CliSecure {
 	class CliSecureRtType {
@@ -73,7 +74,12 @@ namespace de4dot.code.deobfuscators.CliSecure {
 		public void find() {
 			if (cliSecureRtType != null)
 				return;
+			if (find2())
+				return;
+			findOld();
+		}
 
+		bool find2() {
 			foreach (var type in module.Types) {
 				if (type.Namespace != "")
 					continue;
@@ -111,8 +117,40 @@ namespace de4dot.code.deobfuscators.CliSecure {
 				postInitializeMethod = postInitialize;
 				loadMethod = load;
 				cliSecureRtType = type;
-				return;
+				return true;
 			}
+
+			return false;
+		}
+
+		bool findOld() {
+			var methodToCheck = DotNetUtils.getModuleTypeCctor(module);
+			if (methodToCheck == null)
+				return false;
+
+			foreach (var calledMethod in DotNetUtils.getCalledMethods(module, methodToCheck)) {
+				var type = calledMethod.DeclaringType;
+				if (!hasPinvokeMethod(type, "_Initialize"))
+					continue;
+				if (!hasPinvokeMethod(type, "_Initialize64"))
+					continue;
+
+				initializeMethod = calledMethod;
+				cliSecureRtType = type;
+				return true;
+			}
+
+			return false;
+		}
+
+		static bool hasPinvokeMethod(TypeDefinition type, string methodName) {
+			foreach (var method in type.Methods) {
+				if (method.PInvokeInfo == null)
+					continue;
+				if (method.PInvokeInfo.EntryPoint == methodName)
+					return true;
+			}
+			return false;
 		}
 	}
 }
