@@ -21,33 +21,57 @@ using System;
 using System.IO;
 
 namespace de4dot.code.deobfuscators {
+	[Serializable]
+	class InvalidMethodBody : Exception {
+		public InvalidMethodBody() {
+		}
+
+		public InvalidMethodBody(string msg)
+			: base(msg) {
+		}
+	}
+
 	static class MethodBodyParser {
 		public static void parseMethodBody(BinaryReader reader, out byte[] code, out byte[] extraSections) {
-			long methodBodyOffset = reader.BaseStream.Position;
+			try {
+				parseMethodBody2(reader, out code, out extraSections);
+			}
+			catch (IOException) {
+				throw new InvalidMethodBody();
+			}
+		}
 
-			uint codeOffset;
-			int codeSize;
+		static void parseMethodBody2(BinaryReader reader, out byte[] code, out byte[] extraSections) {
+			uint codeOffset, codeSize;
 			ushort flags;
 			switch (peek(reader) & 3) {
 			case 2:
 				flags = 2;
 				codeOffset = 1;
-				codeSize = reader.ReadByte() >> 2;
+				codeSize = (uint)(reader.ReadByte() >> 2);
 				break;
 
 			case 3:
 				flags = reader.ReadUInt16();
 				codeOffset = (uint)(4 * (flags >> 12));
+				if (codeOffset != 12)
+					throw new InvalidMethodBody();
 				reader.ReadUInt16();	// maxStack
-				codeSize = reader.ReadInt32();
-				reader.ReadUInt32();	// LocalVarSigTok
+				codeSize = reader.ReadUInt32();
+				if (codeSize > int.MaxValue)
+					throw new InvalidMethodBody();
+				uint lsig = reader.ReadUInt32();
+				if (lsig != 0 && (lsig >> 24) != 0x11)
+					throw new InvalidMethodBody();
 				break;
 
 			default:
-				throw new ApplicationException("Invalid method body header");
+				throw new InvalidMethodBody();
 			}
 
-			code = reader.ReadBytes(codeSize);
+			if (codeSize + codeOffset > reader.BaseStream.Length)
+				throw new InvalidMethodBody();
+			code = reader.ReadBytes((int)codeSize);
 
 			if ((flags & 8) != 0)
 				extraSections = readExtraSections(reader);
@@ -75,9 +99,9 @@ namespace de4dot.code.deobfuscators {
 
 				flags = reader.ReadByte();
 				if ((flags & 1) == 0)
-					throw new ApplicationException("Not an exception section");
+					throw new InvalidMethodBody("Not an exception section");
 				if ((flags & 0x3E) != 0)
-					throw new ApplicationException("Invalid bits set");
+					throw new InvalidMethodBody("Invalid bits set");
 
 				if ((flags & 0x40) != 0) {
 					reader.BaseStream.Position--;
