@@ -53,7 +53,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				dm.mhCodeSize = (uint)DeobUtils.readVariableLengthInt32(methodsDataReader);
 				dm.code = methodsDataReader.ReadBytes((int)dm.mhCodeSize);
 				if ((dm.mhFlags & 8) != 0)
-					dm.extraSections = readExtraSections(methodsDataReader);
+					dm.extraSections = MethodBodyParser.readExtraSections(methodsDataReader);
 
 				if (!decryptCode(dm))
 					return false;
@@ -63,42 +63,6 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 
 			protected virtual bool decryptCode(DumpedMethod dm) {
 				return true;
-			}
-
-			static void align(BinaryReader reader, int alignment) {
-				reader.BaseStream.Position = (reader.BaseStream.Position + alignment - 1) & ~(alignment - 1);
-			}
-
-			static byte[] readExtraSections(BinaryReader reader) {
-				align(reader, 4);
-				int startPos = (int)reader.BaseStream.Position;
-				parseSection(reader);
-				int size = (int)reader.BaseStream.Position - startPos;
-				reader.BaseStream.Position = startPos;
-				return reader.ReadBytes(size);
-			}
-
-			static void parseSection(BinaryReader reader) {
-				byte flags;
-				do {
-					align(reader, 4);
-
-					flags = reader.ReadByte();
-					if ((flags & 1) == 0)
-						throw new ApplicationException("Not an exception section");
-					if ((flags & 0x3E) != 0)
-						throw new ApplicationException("Invalid bits set");
-
-					if ((flags & 0x40) != 0) {
-						reader.BaseStream.Position--;
-						int num = (int)(reader.ReadUInt32() >> 8) / 24;
-						reader.BaseStream.Position += num * 24;
-					}
-					else {
-						int num = reader.ReadByte() / 12;
-						reader.BaseStream.Position += 2 + num * 12;
-					}
-				} while ((flags & 0x80) != 0);
 			}
 		}
 

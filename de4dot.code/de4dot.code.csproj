@@ -178,6 +178,7 @@
     <Compile Include="deobfuscators\MaxtoCode\Deobfuscator.cs" />
     <Compile Include="deobfuscators\MaxtoCode\FileDecrypter.cs" />
     <Compile Include="deobfuscators\MaxtoCode\MainType.cs" />
+    <Compile Include="deobfuscators\MethodBodyParser.cs" />
     <Compile Include="deobfuscators\MethodCollection.cs" />
     <Compile Include="deobfuscators\MethodsDecrypter.cs" />
     <Compile Include="deobfuscators\MethodStack.cs" />
