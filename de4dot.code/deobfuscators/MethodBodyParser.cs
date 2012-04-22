@@ -31,37 +31,47 @@ namespace de4dot.code.deobfuscators {
 		}
 	}
 
+	class MethodBodyHeader {
+		public ushort flags;
+		public ushort maxStack;
+		public uint codeSize;
+		public uint localVarSigTok;
+	}
+
 	static class MethodBodyParser {
-		public static void parseMethodBody(BinaryReader reader, out byte[] code, out byte[] extraSections) {
+		public static MethodBodyHeader parseMethodBody(BinaryReader reader, out byte[] code, out byte[] extraSections) {
 			try {
-				parseMethodBody2(reader, out code, out extraSections);
+				return parseMethodBody2(reader, out code, out extraSections);
 			}
 			catch (IOException) {
 				throw new InvalidMethodBody();
 			}
 		}
 
-		static void parseMethodBody2(BinaryReader reader, out byte[] code, out byte[] extraSections) {
-			uint codeOffset, codeSize;
-			ushort flags;
+		static MethodBodyHeader parseMethodBody2(BinaryReader reader, out byte[] code, out byte[] extraSections) {
+			var mbHeader = new MethodBodyHeader();
+
+			uint codeOffset;
 			switch (peek(reader) & 3) {
 			case 2:
-				flags = 2;
+				mbHeader.flags = 2;
+				mbHeader.maxStack = 8;
+				mbHeader.codeSize = (uint)(reader.ReadByte() >> 2);
+				mbHeader.localVarSigTok = 0;
 				codeOffset = 1;
-				codeSize = (uint)(reader.ReadByte() >> 2);
 				break;
 
 			case 3:
-				flags = reader.ReadUInt16();
-				codeOffset = (uint)(4 * (flags >> 12));
+				mbHeader.flags = reader.ReadUInt16();
+				codeOffset = (uint)(4 * (mbHeader.flags >> 12));
 				if (codeOffset != 12)
 					throw new InvalidMethodBody();
-				reader.ReadUInt16();	// maxStack
-				codeSize = reader.ReadUInt32();
-				if (codeSize > int.MaxValue)
+				mbHeader.maxStack = reader.ReadUInt16();
+				mbHeader.codeSize = reader.ReadUInt32();
+				if (mbHeader.codeSize > int.MaxValue)
 					throw new InvalidMethodBody();
-				uint lsig = reader.ReadUInt32();
-				if (lsig != 0 && (lsig >> 24) != 0x11)
+				mbHeader.localVarSigTok = reader.ReadUInt32();
+				if (mbHeader.localVarSigTok != 0 && (mbHeader.localVarSigTok >> 24) != 0x11)
 					throw new InvalidMethodBody();
 				break;
 
@@ -69,14 +79,16 @@ namespace de4dot.code.deobfuscators {
 				throw new InvalidMethodBody();
 			}
 
-			if (codeSize + codeOffset > reader.BaseStream.Length)
+			if (mbHeader.codeSize + codeOffset > reader.BaseStream.Length)
 				throw new InvalidMethodBody();
-			code = reader.ReadBytes((int)codeSize);
+			code = reader.ReadBytes((int)mbHeader.codeSize);
 
-			if ((flags & 8) != 0)
+			if ((mbHeader.flags & 8) != 0)
 				extraSections = readExtraSections(reader);
 			else
 				extraSections = null;
+
+			return mbHeader;
 		}
 
 		static void align(BinaryReader reader, int alignment) {
