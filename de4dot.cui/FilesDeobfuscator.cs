@@ -134,17 +134,8 @@ namespace de4dot.cui {
 				CreateDestinationDir = !onlyScan,
 			});
 
-			bool ignoreNativeCodeFiles = !onlyScan;
-			foreach (var file in loader.load()) {
-				if (ignoreNativeCodeFiles) {
-					if ((file.ModuleDefinition.Attributes & ModuleAttributes.ILOnly) == 0) {
-						Log.w("Ignoring assembly with native code {0}", file.Filename);
-						removeModule(file.ModuleDefinition);
-						continue;
-					}
-				}
+			foreach (var file in loader.load())
 				yield return file;
-			}
 		}
 
 		class DotNetFileLoader {
