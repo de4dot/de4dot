@@ -67,19 +67,6 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			MethodBodyHeader decrypt(MethodInfo methodInfo, out byte[] code, out byte[] extraSections);
 		}
 
-		class Decrypter40 : IDecrypter {
-			PeImage peImage;
-
-			public Decrypter40(PeImage peImage) {
-				this.peImage = peImage;
-			}
-
-			public MethodBodyHeader decrypt(MethodInfo methodInfo, out byte[] code, out byte[] extraSections) {
-				peImage.Reader.BaseStream.Position = methodInfo.codeOffs;
-				return MethodBodyParser.parseMethodBody(peImage.Reader, out code, out extraSections);
-			}
-		}
-
 		abstract class DecrypterBase : IDecrypter {
 			protected PeImage peImage;
 			protected CodeHeader codeHeader;
@@ -95,6 +82,17 @@ namespace de4dot.code.deobfuscators.CliSecure {
 
 			protected MethodBodyHeader getCodeBytes(byte[] methodBody, out byte[] code, out byte[] extraSections) {
 				return MethodBodyParser.parseMethodBody(new BinaryReader(new MemoryStream(methodBody)), out code, out extraSections);
+			}
+		}
+
+		class Decrypter40 : DecrypterBase {
+			public Decrypter40(PeImage peImage, CodeHeader codeHeader)
+				: base(peImage, codeHeader) {
+			}
+
+			public override MethodBodyHeader decrypt(MethodInfo methodInfo, out byte[] code, out byte[] extraSections) {
+				peImage.Reader.BaseStream.Position = endOfMetadata + methodInfo.codeOffs;
+				return MethodBodyParser.parseMethodBody(peImage.Reader, out code, out extraSections);
 			}
 		}
 
@@ -211,8 +209,6 @@ namespace de4dot.code.deobfuscators.CliSecure {
 				var methodInfos = new List<MethodInfo>((int)methodsDecrypter.codeHeader.numMethods);
 				for (int i = 0; i < (int)methodsDecrypter.codeHeader.numMethods; i++, offset += 4) {
 					uint codeOffs = methodsDecrypter.peImage.offsetReadUInt32(offset);
-					if (codeOffs != 0)
-						codeOffs += codeHeaderOffset;
 					methodInfos.Add(new MethodInfo(codeOffs, 0, 0, 0));
 				}
 				return methodInfos;
@@ -250,7 +246,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			}
 
 			public override IDecrypter createDecrypter() {
-				return new Decrypter40(methodsDecrypter.peImage);
+				return new Decrypter40(methodsDecrypter.peImage, methodsDecrypter.codeHeader);
 			}
 
 			public override List<MethodInfo> getMethodInfos(uint codeHeaderOffset) {
