@@ -17,6 +17,7 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.MyStuff;
@@ -108,6 +109,33 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			base.init(module);
 		}
 
+		public override byte[] unpackNativeFile(PeImage peImage) {
+			const int dataDirNum = 6;	// debug dir
+			const int dotNetDirNum = 14;
+
+			if (peImage.OptionalHeader.dataDirectories[dataDirNum].virtualAddress == 0)
+				return null;
+			if (peImage.OptionalHeader.dataDirectories[dataDirNum].size != 0x48)
+				return null;
+
+			var fileData = peImage.readAllBytes();
+			int dataDir = (int)peImage.OptionalHeader.offsetOfDataDirectory(dataDirNum);
+			int dotNetDir = (int)peImage.OptionalHeader.offsetOfDataDirectory(dotNetDirNum);
+			writeUInt32(fileData, dotNetDir, BitConverter.ToUInt32(fileData, dataDir));
+			writeUInt32(fileData, dotNetDir + 4, BitConverter.ToUInt32(fileData, dataDir + 4));
+			writeUInt32(fileData, dataDir, 0);
+			writeUInt32(fileData, dataDir + 4, 0);
+			ModuleBytes = fileData;
+			return fileData;
+		}
+
+		static void writeUInt32(byte[] data, int offset, uint value) {
+			data[offset] = (byte)value;
+			data[offset + 1] = (byte)(value >> 8);
+			data[offset + 2] = (byte)(value >> 16);
+			data[offset + 3] = (byte)(value >> 24);
+		}
+
 		protected override int detectInternal() {
 			int val = 0;
 
@@ -148,7 +176,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			if (!options.DecryptMethods)
 				return false;
 
-			byte[] fileData = DeobUtils.readModule(module);
+			byte[] fileData = ModuleBytes ?? DeobUtils.readModule(module);
 			var peImage = new PeImage(fileData);
 
 			if (!new MethodsDecrypter().decrypt(peImage, module.FullyQualifiedName, cliSecureRtType, ref dumpedMethods)) {
