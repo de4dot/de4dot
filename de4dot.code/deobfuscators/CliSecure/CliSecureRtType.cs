@@ -68,6 +68,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			initializeMethod = lookup(oldOne.initializeMethod, "Could not find initializeMethod method");
 			stringDecrypterMethod = lookup(oldOne.stringDecrypterMethod, "Could not find stringDecrypterMethod method");
 			loadMethod = lookup(oldOne.loadMethod, "Could not find loadMethod method");
+			foundSig = oldOne.foundSig;
 		}
 
 		T lookup<T>(T def, string errorMessage) where T : MemberReference {
