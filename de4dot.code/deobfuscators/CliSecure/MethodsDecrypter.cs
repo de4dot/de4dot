@@ -113,10 +113,11 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			}
 		}
 
-		class NormalDecrypter : DecrypterBase {
+		// CS 5.0+
+		class Decrypter5 : DecrypterBase {
 			readonly uint codeHeaderSize;
 
-			public NormalDecrypter(PeImage peImage, CodeHeader codeHeader, uint codeHeaderSize)
+			public Decrypter5(PeImage peImage, CodeHeader codeHeader, uint codeHeaderSize)
 				: base(peImage, codeHeader) {
 					this.codeHeaderSize = codeHeaderSize;
 			}
@@ -133,7 +134,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			}
 		}
 
-		// Used when the anti-debugger protection is enabled
+		// CS 5.4+. Used when the anti-debugger protection is enabled
 		class ProDecrypter : DecrypterBase {
 			readonly uint[] key = new uint[4];
 
@@ -278,7 +279,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			public override IDecrypter createDecrypter() {
 				switch (getSigType(methodsDecrypter.codeHeader.signature)) {
 				case SigType.Normal:
-					return new NormalDecrypter(methodsDecrypter.peImage, methodsDecrypter.codeHeader, codeHeaderSize);
+					return new Decrypter5(methodsDecrypter.peImage, methodsDecrypter.codeHeader, codeHeaderSize);
 
 				case SigType.Pro:
 					return new ProDecrypter(methodsDecrypter.peImage, methodsDecrypter.codeHeader);
