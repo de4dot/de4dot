@@ -302,8 +302,8 @@ namespace de4dot.code.deobfuscators.CliSecure {
 					if (methodInfo.flags == 0 || methodInfo.codeOffs == 0)
 						continue;
 					uint rva = methodsDecrypter.peImage.offsetReadUInt32(offset);
-					methodsDecrypter.peImage.writeUint16(rva, (ushort)methodInfo.flags);
-					methodsDecrypter.peImage.writeUint32(rva + 8, methodInfo.localVarSigTok);
+					methodsDecrypter.peImage.writeUInt16(rva, (ushort)methodInfo.flags);
+					methodsDecrypter.peImage.writeUInt32(rva + 8, methodInfo.localVarSigTok);
 				}
 			}
 		}

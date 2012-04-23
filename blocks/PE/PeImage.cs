@@ -180,12 +180,12 @@ namespace de4dot.PE {
 			writer.Write(data);
 		}
 
-		public void writeUint16(uint rva, ushort data) {
+		public void writeUInt16(uint rva, ushort data) {
 			seekRva(rva);
 			writer.Write(data);
 		}
 
-		public void writeUint32(uint rva, uint data) {
+		public void writeUInt32(uint rva, uint data) {
 			seekRva(rva);
 			writer.Write(data);
 		}
