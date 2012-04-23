@@ -102,6 +102,10 @@ namespace de4dot.PE {
 			length = (uint)reader.BaseStream.Position - offset;
 		}
 
+		public uint offsetOfDataDirectory(int n) {
+			return offset + length - (uint)(16 - n) * 8;
+		}
+
 		ulong read4Or8(BinaryReader reader) {
 			if (is32bit())
 				return reader.ReadUInt32();

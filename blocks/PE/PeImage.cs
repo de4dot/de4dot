@@ -47,6 +47,10 @@ namespace de4dot.PE {
 			get { return resources; }
 		}
 
+		public OptionalHeader OptionalHeader {
+			get { return optionalHeader; }
+		}
+
 		public SectionHeader[] Sections {
 			get { return sectionHeaders; }
 		}
@@ -259,6 +263,11 @@ namespace de4dot.PE {
 		public void offsetWriteUInt32(uint offset, uint data) {
 			seek(offset);
 			writer.Write(data);
+		}
+
+		public byte[] readAllBytes() {
+			seek(0);
+			return reader.ReadBytes((int)reader.BaseStream.Length);
 		}
 	}
 }
