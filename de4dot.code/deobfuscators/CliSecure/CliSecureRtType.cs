@@ -152,9 +152,10 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			if ((module.Attributes & ModuleAttributes.ILOnly) != 0)
 				return false;
 
-			var peImage = new PeImage(new FileStream(module.FullyQualifiedName, FileMode.Open, FileAccess.Read, FileShare.Read));
-			foundSig = MethodsDecrypter.detect(peImage);
-			return foundSig;
+			using (var file = new FileStream(module.FullyQualifiedName, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+				var peImage = new PeImage(file);
+				return foundSig = MethodsDecrypter.detect(peImage);
+			}
 		}
 
 		static bool hasPinvokeMethod(TypeDefinition type, string methodName) {
