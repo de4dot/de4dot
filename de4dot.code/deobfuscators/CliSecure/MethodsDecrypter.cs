@@ -49,8 +49,8 @@ namespace de4dot.code.deobfuscators.CliSecure {
 	}
 
 	class MethodsDecrypter {
-		static byte[] normalSignature = new byte[16] { 0x08, 0x44, 0x65, 0xE1, 0x8C, 0x82, 0x13, 0x4C, 0x9C, 0x85, 0xB4, 0x17, 0xDA, 0x51, 0xAD, 0x25 };
-		static byte[] proSignature    = new byte[16] { 0x68, 0xA0, 0xBB, 0x60, 0x13, 0x65, 0x5F, 0x41, 0xAE, 0x42, 0xAB, 0x42, 0x9B, 0x6B, 0x4E, 0xC1 };
+		static readonly byte[] normalSignature = new byte[16] { 0x08, 0x44, 0x65, 0xE1, 0x8C, 0x82, 0x13, 0x4C, 0x9C, 0x85, 0xB4, 0x17, 0xDA, 0x51, 0xAD, 0x25 };
+		static readonly byte[] proSignature    = new byte[16] { 0x68, 0xA0, 0xBB, 0x60, 0x13, 0x65, 0x5F, 0x41, 0xAE, 0x42, 0xAB, 0x42, 0x9B, 0x6B, 0x4E, 0xC1 };
 
 		enum SigType {
 			Unknown,
@@ -68,9 +68,9 @@ namespace de4dot.code.deobfuscators.CliSecure {
 		}
 
 		abstract class DecrypterBase : IDecrypter {
-			protected PeImage peImage;
-			protected CodeHeader codeHeader;
-			protected uint endOfMetadata;
+			protected readonly PeImage peImage;
+			protected readonly CodeHeader codeHeader;
+			protected readonly uint endOfMetadata;
 
 			public DecrypterBase(PeImage peImage, CodeHeader codeHeader) {
 				this.peImage = peImage;
@@ -114,7 +114,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 		}
 
 		class NormalDecrypter : DecrypterBase {
-			uint codeHeaderSize;
+			readonly uint codeHeaderSize;
 
 			public NormalDecrypter(PeImage peImage, CodeHeader codeHeader, uint codeHeaderSize)
 				: base(peImage, codeHeader) {
@@ -135,7 +135,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 
 		// Used when the anti-debugger protection is enabled
 		class ProDecrypter : DecrypterBase {
-			uint[] key = new uint[4];
+			readonly uint[] key = new uint[4];
 
 			public ProDecrypter(PeImage peImage, CodeHeader codeHeader)
 				: base(peImage, codeHeader) {
