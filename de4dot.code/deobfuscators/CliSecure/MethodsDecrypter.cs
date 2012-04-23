@@ -141,7 +141,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			public ProDecrypter(PeImage peImage, CodeHeader codeHeader)
 				: base(peImage, codeHeader) {
 				for (int i = 0; i < 4; i++)
-					key[i] = be_readUint32(codeHeader.decryptionKey, i * 4);
+					key[i] = be_readUInt32(codeHeader.decryptionKey, i * 4);
 			}
 
 			public override MethodBodyHeader decrypt(MethodInfo methodInfo, out byte[] code, out byte[] extraSections) {
@@ -150,8 +150,8 @@ namespace de4dot.code.deobfuscators.CliSecure {
 				int numQwords = (int)(methodInfo.codeSize / 8);
 				for (int i = 0; i < numQwords; i++) {
 					int offset = i * 8;
-					uint q0 = be_readUint32(data, offset);
-					uint q1 = be_readUint32(data, offset + 4);
+					uint q0 = be_readUInt32(data, offset);
+					uint q1 = be_readUInt32(data, offset + 4);
 
 					const uint magic = 0x9E3779B8;
 					uint val = 0xC6EF3700;	// magic * 0x20
@@ -161,21 +161,21 @@ namespace de4dot.code.deobfuscators.CliSecure {
 						val -= magic;
 					}
 
-					be_writeUint32(data, offset, q0);
-					be_writeUint32(data, offset + 4, q1);
+					be_writeUInt32(data, offset, q0);
+					be_writeUInt32(data, offset + 4, q1);
 				}
 
 				return getCodeBytes(data, out code, out extraSections);
 			}
 
-			static uint be_readUint32(byte[] data, int offset) {
+			static uint be_readUInt32(byte[] data, int offset) {
 				return (uint)((data[offset] << 24) +
 						(data[offset + 1] << 16) +
 						(data[offset + 2] << 8) +
 						data[offset + 3]);
 			}
 
-			static void be_writeUint32(byte[] data, int offset, uint value) {
+			static void be_writeUInt32(byte[] data, int offset, uint value) {
 				data[offset] = (byte)(value >> 24);
 				data[offset + 1] = (byte)(value >> 16);
 				data[offset + 2] = (byte)(value >> 8);
