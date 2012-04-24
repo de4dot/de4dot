@@ -37,16 +37,9 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			const int XOR_KEY = 0x7ABF931;
 
 			byte[] headerData;
-			uint rvaDispl1;
-			uint rvaDispl2;
 
 			public PeHeader(MainType mainType, PeImage peImage) {
 				headerData = getPeHeaderData(peImage);
-
-				if (!mainType.IsOld && peImage.readUInt32(0x2008) != 0x48) {
-					rvaDispl1 = readUInt32(0x0FB0) ^ XOR_KEY;
-					rvaDispl2 = readUInt32(0x0FB4) ^ XOR_KEY;
-				}
 			}
 
 			public uint getMcKeyRva() {
@@ -54,11 +47,11 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			}
 
 			public uint getRva1(int offset, uint xorKey) {
-				return (readUInt32(offset) ^ xorKey) - rvaDispl1;
+				return (readUInt32(offset) ^ xorKey);
 			}
 
 			public uint getRva2(int offset, uint xorKey) {
-				return (readUInt32(offset) ^ xorKey) - rvaDispl2;
+				return (readUInt32(offset) ^ xorKey);
 			}
 
 			public uint readUInt32(int offset) {
@@ -375,15 +368,14 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 					throw new ApplicationException("Invalid number of encrypted methods");
 
 				xorKey = (uint)numMethods;
-				uint rvaDispl = !mainType.IsOld && peImage.readUInt32(0x2008) != 0x48 ? 0x1000U : 0;
 				int numEncryptedDataInfos = ((int)structSize - 0xC) / ENCRYPTED_DATA_INFO_SIZE;
 				var encryptedDataInfos = new byte[numEncryptedDataInfos][];
 
 				uint offset = 8;
 				for (int i = 0; i < numMethods; i++, offset += structSize) {
-					uint methodBodyRva = readEncryptedUInt32(offset) - rvaDispl;
+					uint methodBodyRva = readEncryptedUInt32(offset);
 					uint totalSize = readEncryptedUInt32(offset + 4);
-					uint methodInstructionRva = readEncryptedUInt32(offset + 8) - rvaDispl;
+					uint methodInstructionRva = readEncryptedUInt32(offset + 8);
 
 					var decryptedData = new byte[totalSize];
 
