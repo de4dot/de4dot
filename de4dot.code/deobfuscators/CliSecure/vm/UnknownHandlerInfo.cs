@@ -25,10 +25,11 @@ using de4dot.blocks;
 namespace de4dot.code.deobfuscators.CliSecure.vm {
 	class UnknownHandlerInfo {
 		TypeDefinition type;
+		CsvmInfo csvmInfo;
 		FieldsInfo fieldsInfo;
 		MethodDefinition readMethod, executeMethod;
 		int numStaticMethods, numInstanceMethods, numVirtualMethods, numCtors;
-		int executeMethodThrows;
+		int executeMethodThrows, executeMethodPops;
 
 		public MethodDefinition ReadMethod {
 			get { return readMethod; }
@@ -54,16 +55,22 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 			get { return executeMethodThrows; }
 		}
 
+		public int ExecuteMethodPops {
+			get { return executeMethodPops; }
+		}
+
 		public int NumCtors {
 			get { return numCtors; }
 		}
 
-		public UnknownHandlerInfo(TypeDefinition type) {
+		public UnknownHandlerInfo(TypeDefinition type, CsvmInfo csvmInfo) {
 			this.type = type;
+			this.csvmInfo = csvmInfo;
 			fieldsInfo = new FieldsInfo(type);
 			countMethods();
 			findOverrideMethods();
 			executeMethodThrows = countThrows(executeMethod);
+			executeMethodPops = countPops(executeMethod);
 		}
 
 		void countMethods() {
@@ -108,6 +115,20 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code == Code.Throw)
 					count++;
+			}
+			return count;
+		}
+
+		int countPops(MethodDefinition method) {
+			int count = 0;
+			foreach (var instr in method.Body.Instructions) {
+				if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt)
+					continue;
+				var calledMethod = instr.Operand as MethodReference;
+				if (!MemberReferenceHelper.compareMethodReferenceAndDeclaringType(calledMethod, csvmInfo.PopMethod))
+					continue;
+
+				count++;
 			}
 			return count;
 		}

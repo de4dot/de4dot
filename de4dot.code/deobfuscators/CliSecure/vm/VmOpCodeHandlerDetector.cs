@@ -29,10 +29,18 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 		public object[] RequiredFieldTypes { get; set; }
 		public string[] ExecuteMethodLocals { get; set; }
 		public int? ExecuteMethodThrows { get; set; }
+		public int? ExecuteMethodPops { get; set; }
 		public int? NumStaticMethods { get; set; }
 		public int? NumInstanceMethods { get; set; }
 		public int? NumVirtualMethods { get; set; }
 		public int? NumCtors { get; set; }
+	}
+
+	class CsvmInfo {
+		public TypeDefinition StackValue { get; set; }
+		public TypeDefinition Stack { get; set; }
+		public MethodDefinition PopMethod { get; set; }
+		public MethodDefinition PeekMethod { get; set; }
 	}
 
 	class VmOpCodeHandlerDetector {
@@ -87,7 +95,103 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 			if (vmHandlerTypes == null)
 				throw new ApplicationException("Could not find CSVM opcode handler types");
 
-			detectHandlers(vmHandlerTypes);
+			var csvmInfo = new CsvmInfo();
+			csvmInfo.StackValue = findStackValueType();
+			csvmInfo.Stack = findStackType(csvmInfo.StackValue);
+			initStackTypeMethods(csvmInfo);
+
+			detectHandlers(vmHandlerTypes, csvmInfo);
+		}
+
+		TypeDefinition findStackValueType() {
+			foreach (var type in module.Types) {
+				if (isStackType(type))
+					return type;
+			}
+			return null;
+		}
+
+		static bool isStackType(TypeDefinition type) {
+			if (type.Fields.Count != 2)
+				return false;
+
+			int enumTypes = 0;
+			int objectTypes = 0;
+			foreach (var field in type.Fields) {
+				var fieldType = field.FieldType as TypeDefinition;
+				if (fieldType != null && fieldType.IsEnum)
+					enumTypes++;
+				if (field.FieldType.FullName == "System.Object")
+					objectTypes++;
+			}
+			if (enumTypes != 1 || objectTypes != 1)
+				return false;
+
+			return true;
+		}
+
+		TypeDefinition findStackType(TypeDefinition stackValueType) {
+			foreach (var type in module.Types) {
+				if (isStackType(type, stackValueType))
+					return type;
+			}
+			return null;
+		}
+
+		bool isStackType(TypeDefinition type, TypeDefinition stackValueType) {
+			if (type.Interfaces.Count != 2)
+				return false;
+			if (!implementsInterface(type, "System.Collections.ICollection"))
+				return false;
+			if (!implementsInterface(type, "System.Collections.IEnumerable"))
+				return false;
+			if (type.NestedTypes.Count == 0)
+				return false;
+
+			int stackValueTypes = 0;
+			int int32Types = 0;
+			int objectTypes = 0;
+			foreach (var field in type.Fields) {
+				if (field.IsLiteral)
+					continue;
+				if (field.FieldType is ArrayType && ((ArrayType)field.FieldType).ElementType == stackValueType)
+					stackValueTypes++;
+				if (field.FieldType.FullName == "System.Int32")
+					int32Types++;
+				if (field.FieldType.FullName == "System.Object")
+					objectTypes++;
+			}
+			if (stackValueTypes != 2 || int32Types != 2 || objectTypes != 1)
+				return false;
+
+			return true;
+		}
+
+		static bool implementsInterface(TypeDefinition type, string ifaceName) {
+			foreach (var iface in type.Interfaces) {
+				if (iface.FullName == ifaceName)
+					return true;
+			}
+			return false;
+		}
+
+		void initStackTypeMethods(CsvmInfo csvmInfo) {
+			foreach (var method in csvmInfo.Stack.Methods) {
+				if (method.Parameters.Count == 0 && method.MethodReturnType.ReturnType == csvmInfo.StackValue) {
+					if (hasAdd(method))
+						csvmInfo.PopMethod = method;
+					else
+						csvmInfo.PeekMethod = method;
+				}
+			}
+		}
+
+		static bool hasAdd(MethodDefinition method) {
+			foreach (var instr in method.Body.Instructions) {
+				if (instr.OpCode.Code == Code.Add)
+					return true;
+			}
+			return false;
 		}
 
 		List<TypeDefinition> findVmHandlerTypes() {
@@ -132,11 +236,11 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 			return list;
 		}
 
-		void detectHandlers(List<TypeDefinition> handlerTypes) {
+		void detectHandlers(List<TypeDefinition> handlerTypes, CsvmInfo csvmInfo) {
 			opCodeHandlers = new List<OpCodeHandler>();
 			var detected = new List<OpCodeHandler>();
 			foreach (var handlerType in handlerTypes) {
-				var info = new UnknownHandlerInfo(handlerType);
+				var info = new UnknownHandlerInfo(handlerType, csvmInfo);
 				detected.Clear();
 				foreach (var opCodeHandler in opCodeHandlerDetectors) {
 					if (opCodeHandler.detect(info))
