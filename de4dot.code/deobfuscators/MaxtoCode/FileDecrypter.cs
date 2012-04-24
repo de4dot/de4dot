@@ -36,10 +36,17 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		class PeHeader {
 			const int XOR_KEY = 0x7ABF931;
 
+			EncryptionVersion version;
 			byte[] headerData;
 
+			public EncryptionVersion EncryptionVersion {
+				get { return version; }
+			}
+
 			public PeHeader(MainType mainType, PeImage peImage) {
-				headerData = getPeHeaderData(peImage);
+				uint headerOffset;
+				version = getHeaderOffsetAndVersion(peImage, out headerOffset);
+				headerData = peImage.offsetReadBytes(headerOffset, 0x1000);
 			}
 
 			public uint getMcKeyRva() {
@@ -58,28 +65,39 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				return BitConverter.ToUInt32(headerData, offset);
 			}
 
-			static byte[] getPeHeaderData(PeImage peImage) {
-				var data = new byte[0x1000];
+			static EncryptionVersion getHeaderOffsetAndVersion(PeImage peImage, out uint headerOffset) {
+				headerOffset = 0;
 
-				var firstSection = peImage.Sections[0];
-				readTo(peImage, data, 0, 0, firstSection.pointerToRawData);
+				var version = getVersion(peImage, headerOffset);
+				if (version != EncryptionVersion.Unknown)
+					return version;
 
-				foreach (var section in peImage.Sections) {
-					if (section.virtualAddress >= data.Length)
-						continue;
-					int offset = (int)section.virtualAddress;
-					readTo(peImage, data, offset, section.pointerToRawData, section.sizeOfRawData);
+				var section = peImage.findSection(".rsrc");
+				if (section == null)
+					return EncryptionVersion.Unknown;
+
+				headerOffset = section.pointerToRawData;
+				uint end = section.pointerToRawData + section.sizeOfRawData - 7;
+				while (headerOffset < end) {
+					version = getVersion(peImage, headerOffset);
+					if (version != EncryptionVersion.Unknown)
+						return version;
+					headerOffset++;
 				}
 
-				return data;
+				return EncryptionVersion.Unknown;
 			}
 
-			static void readTo(PeImage peImage, byte[] data, int destOffset, uint imageOffset, uint maxLength) {
-				if (destOffset > data.Length)
-					return;
-				int len = Math.Min(data.Length - destOffset, (int)maxLength);
-				var newData = peImage.offsetReadBytes(imageOffset, len);
-				Array.Copy(newData, 0, data, destOffset, newData.Length);
+			static EncryptionVersion getVersion(PeImage peImage, uint headerOffset) {
+				uint m1lo = peImage.offsetReadUInt32(headerOffset + 0x900);
+				uint m1hi = peImage.offsetReadUInt32(headerOffset + 0x904);
+
+				foreach (var info in encryptionInfos_Rva900h) {
+					if (info.MagicLo == m1lo && info.MagicHi == m1hi)
+						return info.Version;
+				}
+
+				return EncryptionVersion.Unknown;
 			}
 		}
 
@@ -111,6 +129,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			V2,
 			V3,
 			V4,
+			V5,
 		}
 
 		class EncryptionInfo {
@@ -119,7 +138,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			public EncryptionVersion Version { get; set; }
 		}
 
-		static EncryptionInfo[] encryptionInfos_Rva900h = new EncryptionInfo[] {
+		static readonly EncryptionInfo[] encryptionInfos_Rva900h = new EncryptionInfo[] {
 			// PE header timestamp
 			// 462FA2D2 = Wed, 25 Apr 2007 18:49:54 (3.20)
 			new EncryptionInfo {
@@ -169,9 +188,15 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				MagicHi = 0xF28EE0A3,
 				Version = EncryptionVersion.V4,
 			},
+			// 4F8E262C = Wed, 18 Apr 2012 02:25:48
+			new EncryptionInfo {
+				MagicLo = 0xBA983B87,
+				MagicHi = 0xF28EDDA3,
+				Version = EncryptionVersion.V5,
+			},
 		};
 
-		static EncryptionInfo[] encryptionInfos_McKey8C0h = new EncryptionInfo[] {
+		static readonly EncryptionInfo[] encryptionInfos_McKey8C0h = new EncryptionInfo[] {
 			// 462FA2D2 = Wed, 25 Apr 2007 18:49:54 (3.20)
 			new EncryptionInfo {
 				MagicLo = 0x6AA13B13,
@@ -209,6 +234,12 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				MagicLo = 0x6AD31B13,
 				MagicHi = 0xD72B8A1F,
 				Version = EncryptionVersion.V4,
+			},
+			// 4F8E262C = Wed, 18 Apr 2012 02:25:48
+			new EncryptionInfo {
+				MagicLo = 0xAA731B13,
+				MagicHi = 0xD723891F,
+				Version = EncryptionVersion.V5,
 			},
 		};
 
@@ -261,8 +292,9 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			}
 
 			EncryptionVersion getVersion() {
-				uint m1lo = peHeader.readUInt32(0x900);
-				uint m1hi = peHeader.readUInt32(0x904);
+				if (peHeader.EncryptionVersion != EncryptionVersion.Unknown)
+					return peHeader.EncryptionVersion;
+
 				uint m2lo = mcKey.readUInt32(0x8C0);
 				uint m2hi = mcKey.readUInt32(0x8C4);
 
@@ -271,12 +303,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 						return info.Version;
 				}
 
-				foreach (var info in encryptionInfos_Rva900h) {
-					if (info.MagicLo == m1lo && info.MagicHi == m1hi)
-						return info.Version;
-				}
-
-				Log.w("Could not detect MC version. Magic1: {0:X8} {1:X8}, Magic2: {2:X8} {3:X8}", m1lo, m1hi, m2lo, m2hi);
+				Log.w("Could not detect MC version. Magic2: {0:X8} {1:X8}", m2lo, m2hi);
 				return EncryptionVersion.Unknown;
 			}
 
@@ -347,12 +374,14 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			static readonly int[] typeToTypesV2 = new int[] { -1, 3, 2, 1, 4, 5, 6, 7 };
 			static readonly int[] typeToTypesV3 = new int[] { -1, 1, 2, 3, 4, 5, 6, 7 };
 			static readonly int[] typeToTypesV4 = new int[] { -1, 2, 1, 3, 4, 5, 6, 7 };
+			static readonly int[] typeToTypesV5 = new int[] { -1, 4, 2, 3, 1, 5, 6, 7 };
 			void initializeDecrypter() {
 				switch (getVersion()) {
 				case EncryptionVersion.V1: decrypter = new Decrypter(this, typeToTypesV1); break;
 				case EncryptionVersion.V2: decrypter = new Decrypter(this, typeToTypesV2); break;
 				case EncryptionVersion.V3: decrypter = new Decrypter(this, typeToTypesV3); break;
 				case EncryptionVersion.V4: decrypter = new Decrypter(this, typeToTypesV4); break;
+				case EncryptionVersion.V5: decrypter = new Decrypter(this, typeToTypesV5); break;
 
 				case EncryptionVersion.Unknown:
 				default:
