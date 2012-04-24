@@ -45,6 +45,8 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 				return false;
 			if (!compare(sigInfo.ExecuteMethodThrows, info.ExecuteMethodThrows))
 				return false;
+			if (!compare(sigInfo.ExecuteMethodPops, info.ExecuteMethodPops))
+				return false;
 			if (!info.hasSameFieldTypes(sigInfo.RequiredFieldTypes))
 				return false;
 			if (sigInfo.ExecuteMethodLocals != null && !new LocalTypes(info.ExecuteMethod).all(sigInfo.ExecuteMethodLocals))
@@ -758,6 +760,7 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 		static readonly OpCodeHandlerSigInfo sigInfo = new OpCodeHandlerSigInfo {
 			RequiredFieldTypes = new object[0],
 			ExecuteMethodThrows = 1,
+			ExecuteMethodPops = 1,
 			NumStaticMethods = 0,
 			NumInstanceMethods = 0,
 			NumVirtualMethods = 2,
@@ -773,7 +776,7 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 		}
 
 		protected override bool detectInternal(UnknownHandlerInfo info) {
-			return info.ExecuteMethod.Body.Variables.Count == 2;
+			return true;
 		}
 
 		public override Instruction read(BinaryReader reader) {
@@ -1023,8 +1026,13 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 		}
 
 		static bool isEmptyMethod(MethodDefinition method) {
-			return method.Body.Instructions.Count == 1 &&
-				method.Body.Instructions[0].OpCode.Code == Code.Ret;
+			foreach (var instr in method.Body.Instructions) {
+				if (instr.OpCode.Code == Code.Ret)
+					return true;
+				if (instr.OpCode.Code != Code.Nop)
+					break;
+			}
+			return false;
 		}
 
 		public override Instruction read(BinaryReader reader) {
@@ -1136,6 +1144,7 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 		static readonly OpCodeHandlerSigInfo sigInfo = new OpCodeHandlerSigInfo {
 			RequiredFieldTypes = new object[0],
 			ExecuteMethodThrows = 1,
+			ExecuteMethodPops = 2,
 			NumStaticMethods = 0,
 			NumInstanceMethods = 0,
 			NumVirtualMethods = 2,
@@ -1151,7 +1160,7 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 		}
 
 		protected override bool detectInternal(UnknownHandlerInfo info) {
-			return info.ExecuteMethod.Body.Variables.Count == 3;
+			return true;
 		}
 
 		public override Instruction read(BinaryReader reader) {
