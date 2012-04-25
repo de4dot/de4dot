@@ -77,7 +77,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 					return EncryptionVersion.Unknown;
 
 				headerOffset = section.pointerToRawData;
-				uint end = section.pointerToRawData + section.sizeOfRawData - 7;
+				uint end = section.pointerToRawData + section.sizeOfRawData - 0x1000 + 1;
 				while (headerOffset < end) {
 					version = getVersion(peImage, headerOffset);
 					if (version != EncryptionVersion.Unknown)
