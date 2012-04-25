@@ -382,6 +382,22 @@ namespace de4dot.blocks {
 			return method != null && method.FullName == returnType + " " + method.DeclaringType.FullName + "::" + method.Name + parameters;
 		}
 
+		public static bool hasPinvokeMethod(TypeDefinition type, string methodName) {
+			return getPInvokeMethod(type, methodName) != null;
+		}
+
+		public static MethodDefinition getPInvokeMethod(TypeDefinition type, string methodName) {
+			if (type == null)
+				return null;
+			foreach (var method in type.Methods) {
+				if (method.PInvokeInfo == null)
+					continue;
+				if (method.PInvokeInfo.EntryPoint == methodName)
+					return method;
+			}
+			return null;
+		}
+
 		public static MethodDefinition getPInvokeMethod(TypeDefinition type, string dll, string funcName) {
 			foreach (var method in type.Methods) {
 				if (isPinvokeMethod(method, dll, funcName))
