@@ -85,6 +85,19 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			}
 		}
 
+		// CS 3.0 (could be other versions too)
+		class Decrypter30 : DecrypterBase {
+			public Decrypter30(PeImage peImage, CodeHeader codeHeader)
+				: base(peImage, codeHeader) {
+			}
+
+			public override MethodBodyHeader decrypt(MethodInfo methodInfo, out byte[] code, out byte[] extraSections) {
+				peImage.Reader.BaseStream.Position = peImage.rvaToOffset(methodInfo.codeOffs);
+				return MethodBodyParser.parseMethodBody(peImage.Reader, out code, out extraSections);
+			}
+		}
+
+		// CS 4.0 (could be other versions too)
 		class Decrypter40 : DecrypterBase {
 			public Decrypter40(PeImage peImage, CodeHeader codeHeader)
 				: base(peImage, codeHeader) {
@@ -96,7 +109,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			}
 		}
 
-		// CS 4.5
+		// CS 4.5 (could be other versions too)
 		class Decrypter45 : DecrypterBase {
 			public Decrypter45(PeImage peImage, CodeHeader codeHeader)
 				: base(peImage, codeHeader) {
@@ -240,7 +253,22 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			}
 		}
 
-		// CS 4.0
+		// CS 3.0 (could be other versions too)
+		class CsHeader30 : CsHeaderBase {
+			public CsHeader30(MethodsDecrypter methodsDecrypter)
+				: base(methodsDecrypter, 0x28) {
+			}
+
+			public override IDecrypter createDecrypter() {
+				return new Decrypter30(methodsDecrypter.peImage, methodsDecrypter.codeHeader);
+			}
+
+			public override List<MethodInfo> getMethodInfos(uint codeHeaderOffset) {
+				return getMethodInfos1(codeHeaderOffset);
+			}
+		}
+
+		// CS 4.0 (could be other versions too)
 		class CsHeader40 : CsHeaderBase {
 			public CsHeader40(MethodsDecrypter methodsDecrypter)
 				: base(methodsDecrypter, 0x28) {
@@ -255,7 +283,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			}
 		}
 
-		// CS 4.5
+		// CS 4.5 (could be other versions too)
 		class CsHeader45 : CsHeaderBase {
 			public CsHeader45(MethodsDecrypter methodsDecrypter)
 				: base(methodsDecrypter, 0x28) {
@@ -309,51 +337,30 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			}
 		}
 
-		public bool decrypt(PeImage peImage, string filename, CliSecureRtType csRtType, ref DumpedMethods dumpedMethods) {
-			this.peImage = peImage;
-			this.csRtType = csRtType;
-			try {
-				return decrypt2(ref dumpedMethods);
-			}
-			catch (InvalidMethodBody) {
-				Log.w("Using dynamic method decryption");
-				byte[] moduleCctorBytes = getModuleCctorBytes(csRtType);
-				dumpedMethods = de4dot.code.deobfuscators.MethodsDecrypter.decrypt(filename, moduleCctorBytes);
-				return true;
-			}
-		}
-
-		static byte[] getModuleCctorBytes(CliSecureRtType csRtType) {
-			var initMethod = csRtType.InitializeMethod;
-			if (initMethod == null)
-				return null;
-			uint initToken = initMethod.MetadataToken.ToUInt32();
-			var moduleCctorBytes = new byte[6];
-			moduleCctorBytes[0] = 0x28;	// call
-			moduleCctorBytes[1] = (byte)initToken;
-			moduleCctorBytes[2] = (byte)(initToken >> 8);
-			moduleCctorBytes[3] = (byte)(initToken >> 16);
-			moduleCctorBytes[4] = (byte)(initToken >> 24);
-			moduleCctorBytes[5] = 0x2A;	// ret
-			return moduleCctorBytes;
-		}
-
 		enum CsHeaderVersion {
 			Unknown,
+			V30,
 			V40,
 			V45,
 			V50,	// 5.0, possibly also 5.1
 			V52,	// 5.2+ (or maybe 5.1+)
 		}
 
-		CsHeaderVersion getCsHeaderVersion(uint codeHeaderOffset, MetadataType methodDefTable) {
+		List<CsHeaderVersion> getCsHeaderVersions(uint codeHeaderOffset, MetadataType methodDefTable) {
 			if (!isOldHeader(methodDefTable))
-				return CsHeaderVersion.V52;
+				return new List<CsHeaderVersion> { CsHeaderVersion.V52 };
 			if (csRtType.isAtLeastVersion50())
-				return CsHeaderVersion.V50;
-			if (isCsHeader40(codeHeaderOffset))
-				return CsHeaderVersion.V40;
-			return CsHeaderVersion.V45;
+				return new List<CsHeaderVersion> { CsHeaderVersion.V50 };
+			if (isCsHeader40(codeHeaderOffset)) {
+				return new List<CsHeaderVersion> {
+					CsHeaderVersion.V40,
+					CsHeaderVersion.V30,
+				};
+			}
+			return new List<CsHeaderVersion> {
+				CsHeaderVersion.V45,
+				CsHeaderVersion.V50,
+			};
 		}
 
 		bool isCsHeader40(uint codeHeaderOffset) {
@@ -384,8 +391,9 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			return false;
 		}
 
-		ICsHeader createCsHeader(uint codeHeaderOffset, MetadataType methodDefTable) {
-			switch (getCsHeaderVersion(codeHeaderOffset, methodDefTable)) {
+		ICsHeader createCsHeader(CsHeaderVersion version) {
+			switch (version) {
+			case CsHeaderVersion.V30: return new CsHeader30(this);
 			case CsHeaderVersion.V40: return new CsHeader40(this);
 			case CsHeaderVersion.V45: return new CsHeader45(this);
 			case CsHeaderVersion.V50: return new CsHeader5(this, 0x28);
@@ -394,11 +402,38 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			}
 		}
 
+		public bool decrypt(PeImage peImage, string filename, CliSecureRtType csRtType, ref DumpedMethods dumpedMethods) {
+			this.peImage = peImage;
+			this.csRtType = csRtType;
+			if (decrypt2(ref dumpedMethods))
+				return true;
+
+			Log.w("Using dynamic method decryption");
+			byte[] moduleCctorBytes = getModuleCctorBytes(csRtType);
+			dumpedMethods = de4dot.code.deobfuscators.MethodsDecrypter.decrypt(filename, moduleCctorBytes);
+			return true;
+		}
+
+		static byte[] getModuleCctorBytes(CliSecureRtType csRtType) {
+			var initMethod = csRtType.InitializeMethod;
+			if (initMethod == null)
+				return null;
+			uint initToken = initMethod.MetadataToken.ToUInt32();
+			var moduleCctorBytes = new byte[6];
+			moduleCctorBytes[0] = 0x28;	// call
+			moduleCctorBytes[1] = (byte)initToken;
+			moduleCctorBytes[2] = (byte)(initToken >> 8);
+			moduleCctorBytes[3] = (byte)(initToken >> 16);
+			moduleCctorBytes[4] = (byte)(initToken >> 24);
+			moduleCctorBytes[5] = 0x2A;	// ret
+			return moduleCctorBytes;
+		}
+
 		static uint getCodeHeaderOffset(PeImage peImage) {
 			return peImage.rvaToOffset(peImage.Cor20Header.metadataDirectory.virtualAddress + peImage.Cor20Header.metadataDirectory.size);
 		}
 
-		public bool decrypt2(ref DumpedMethods dumpedMethods) {
+		bool decrypt2(ref DumpedMethods dumpedMethods) {
 			uint codeHeaderOffset = getCodeHeaderOffset(peImage);
 			if (!readCodeHeader(codeHeaderOffset))
 				return false;
@@ -406,7 +441,19 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			var metadataTables = peImage.Cor20Header.createMetadataTables();
 			var methodDefTable = metadataTables.getMetadataType(MetadataIndex.iMethodDef);
 
-			var csHeader = createCsHeader(codeHeaderOffset, methodDefTable);
+			foreach (var version in getCsHeaderVersions(codeHeaderOffset, methodDefTable)) {
+				try {
+					decryptMethods(codeHeaderOffset, methodDefTable, createCsHeader(version), ref dumpedMethods);
+					return true;
+				}
+				catch {
+				}
+			}
+
+			return false;
+		}
+
+		void decryptMethods(uint codeHeaderOffset, MetadataType methodDefTable, ICsHeader csHeader, ref DumpedMethods dumpedMethods) {
 			var methodInfos = csHeader.getMethodInfos(codeHeaderOffset);
 			csHeader.patchMethodDefTable(methodDefTable, methodInfos);
 
@@ -435,8 +482,6 @@ namespace de4dot.code.deobfuscators.CliSecure {
 
 				dumpedMethods.add(dm);
 			}
-
-			return true;
 		}
 
 		bool readCodeHeader(uint offset) {

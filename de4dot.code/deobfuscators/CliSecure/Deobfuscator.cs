@@ -267,6 +267,8 @@ namespace de4dot.code.deobfuscators.CliSecure {
 				addModuleReferences("Obfuscator protection files");
 			}
 
+			module.Attributes |= ModuleAttributes.ILOnly;
+
 			base.deobfuscateEnd();
 		}
 

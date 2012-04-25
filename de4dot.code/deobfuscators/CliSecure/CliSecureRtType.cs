@@ -130,20 +130,18 @@ namespace de4dot.code.deobfuscators.CliSecure {
 		}
 
 		bool findOld() {
-			var methodToCheck = DotNetUtils.getModuleTypeCctor(module);
-			if (methodToCheck == null)
-				return false;
+			foreach (var cctor in DeobUtils.getInitCctors(module, 3)) {
+				foreach (var calledMethod in DotNetUtils.getCalledMethods(module, cctor)) {
+					var type = calledMethod.DeclaringType;
+					if (!hasPinvokeMethod(type, "_Initialize"))
+						continue;
+					if (!hasPinvokeMethod(type, "_Initialize64"))
+						continue;
 
-			foreach (var calledMethod in DotNetUtils.getCalledMethods(module, methodToCheck)) {
-				var type = calledMethod.DeclaringType;
-				if (!hasPinvokeMethod(type, "_Initialize"))
-					continue;
-				if (!hasPinvokeMethod(type, "_Initialize64"))
-					continue;
-
-				initializeMethod = calledMethod;
-				cliSecureRtType = type;
-				return true;
+					initializeMethod = calledMethod;
+					cliSecureRtType = type;
+					return true;
+				}
 			}
 
 			return false;
