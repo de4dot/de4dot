@@ -80,6 +80,8 @@ namespace de4dot.code.deobfuscators.CliSecure {
 				return;
 			if (find2())
 				return;
+			if (find3())
+				return;
 			findNativeCode();
 		}
 
@@ -114,6 +116,28 @@ namespace de4dot.code.deobfuscators.CliSecure {
 					cliSecureRtType = type;
 					return true;
 				}
+			}
+
+			return false;
+		}
+
+		bool find3() {
+			foreach (var type in module.Types) {
+				if (type.Fields.Count != 1)
+					continue;
+				if (type.Fields[0].FieldType.FullName != "System.Byte[]")
+					continue;
+				if (type.Methods.Count != 2)
+					continue;
+				if (DotNetUtils.getMethod(type, ".cctor") == null)
+					continue;
+				var cs = DotNetUtils.getMethod(type, "cs");
+				if (cs == null)
+					continue;
+
+				stringDecrypterMethod = cs;
+				cliSecureRtType = type;
+				return true;
 			}
 
 			return false;
