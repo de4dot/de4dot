@@ -402,16 +402,29 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			}
 		}
 
+		enum DecryptResult {
+			NotEncrypted,
+			Decrypted,
+			Error,
+		}
+
 		public bool decrypt(PeImage peImage, string filename, CliSecureRtType csRtType, ref DumpedMethods dumpedMethods) {
 			this.peImage = peImage;
 			this.csRtType = csRtType;
-			if (decrypt2(ref dumpedMethods))
+
+			switch (decrypt2(ref dumpedMethods)) {
+			case DecryptResult.Decrypted: return true;
+			case DecryptResult.NotEncrypted: return false;
+
+			case DecryptResult.Error:
+				Log.w("Using dynamic method decryption");
+				byte[] moduleCctorBytes = getModuleCctorBytes(csRtType);
+				dumpedMethods = de4dot.code.deobfuscators.MethodsDecrypter.decrypt(filename, moduleCctorBytes);
 				return true;
 
-			Log.w("Using dynamic method decryption");
-			byte[] moduleCctorBytes = getModuleCctorBytes(csRtType);
-			dumpedMethods = de4dot.code.deobfuscators.MethodsDecrypter.decrypt(filename, moduleCctorBytes);
-			return true;
+			default:
+				throw new ApplicationException("Invalid DecryptResult");
+			}
 		}
 
 		static byte[] getModuleCctorBytes(CliSecureRtType csRtType) {
@@ -433,10 +446,11 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			return peImage.rvaToOffset(peImage.Cor20Header.metadataDirectory.virtualAddress + peImage.Cor20Header.metadataDirectory.size);
 		}
 
-		bool decrypt2(ref DumpedMethods dumpedMethods) {
+		DecryptResult decrypt2(ref DumpedMethods dumpedMethods) {
 			uint codeHeaderOffset = getCodeHeaderOffset(peImage);
-			if (!readCodeHeader(codeHeaderOffset))
-				return false;
+			readCodeHeader(codeHeaderOffset);
+			if (!isValidSignature(codeHeader.signature))
+				return DecryptResult.NotEncrypted;
 
 			var metadataTables = peImage.Cor20Header.createMetadataTables();
 			var methodDefTable = metadataTables.getMetadataType(MetadataIndex.iMethodDef);
@@ -444,13 +458,13 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			foreach (var version in getCsHeaderVersions(codeHeaderOffset, methodDefTable)) {
 				try {
 					decryptMethods(codeHeaderOffset, methodDefTable, createCsHeader(version), ref dumpedMethods);
-					return true;
+					return DecryptResult.Decrypted;
 				}
 				catch {
 				}
 			}
 
-			return false;
+			return DecryptResult.Error;
 		}
 
 		void decryptMethods(uint codeHeaderOffset, MetadataType methodDefTable, ICsHeader csHeader, ref DumpedMethods dumpedMethods) {
@@ -484,22 +498,13 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			}
 		}
 
-		bool readCodeHeader(uint offset) {
+		void readCodeHeader(uint offset) {
 			codeHeader.signature = peImage.offsetReadBytes(offset, 16);
 			codeHeader.decryptionKey = peImage.offsetReadBytes(offset + 0x10, 16);
 			codeHeader.totalCodeSize = peImage.offsetReadUInt32(offset + 0x20);
 			codeHeader.numMethods = peImage.offsetReadUInt32(offset + 0x24);
 			codeHeader.methodDefTableOffset = peImage.offsetReadUInt32(offset + 0x28);
 			codeHeader.methodDefElemSize = peImage.offsetReadUInt32(offset + 0x2C);
-
-			if (!isValidSignature(codeHeader.signature))
-				return false;
-			if (codeHeader.totalCodeSize > 0x10000000)
-				return false;
-			if (codeHeader.numMethods > 512*1024)
-				return false;
-
-			return true;
 		}
 
 		static SigType getSigType(byte[] sig) {
