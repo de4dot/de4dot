@@ -81,20 +81,8 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		}
 
 		public void find() {
-			if (checkCctor(DotNetUtils.getModuleTypeCctor(module)))
-				return;
-
-			var entryPoint = module.EntryPoint;
-			if (entryPoint != null && checkCctor(DotNetUtils.getMethod(entryPoint.DeclaringType, ".cctor")))
-				return;
-
-			int checksLeft = 3;
-			foreach (var type in module.GetTypes()) {
-				if (type == DotNetUtils.getModuleType(module))
-					continue;
-				if (checkCctor(DotNetUtils.getMethod(type, ".cctor")))
-					return;
-				if (!type.IsEnum && --checksLeft <= 0)
+			foreach (var cctor in DeobUtils.getInitCctors(module, 3)) {
+				if (checkCctor(cctor))
 					break;
 			}
 		}

@@ -18,6 +18,7 @@
 */
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using Mono.Cecil;
@@ -205,6 +206,30 @@ namespace de4dot.code.deobfuscators {
 					return i;
 			}
 			return -1;
+		}
+
+		public static IEnumerable<MethodDefinition> getInitCctors(ModuleDefinition module, int maxCctors) {
+			var cctor = DotNetUtils.getModuleTypeCctor(module);
+			if (cctor != null)
+				yield return cctor;
+
+			var entryPoint = module.EntryPoint;
+			if (entryPoint != null) {
+				cctor = DotNetUtils.getMethod(entryPoint.DeclaringType, ".cctor");
+				if (cctor != null)
+					yield return cctor;
+			}
+
+			foreach (var type in module.GetTypes()) {
+				if (type == DotNetUtils.getModuleType(module))
+					continue;
+				cctor = DotNetUtils.getMethod(type, ".cctor");
+				if (cctor == null)
+					continue;
+				yield return cctor;
+				if (!type.IsEnum && --maxCctors <= 0)
+					break;
+			}
 		}
 	}
 }
