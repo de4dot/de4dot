@@ -84,7 +84,7 @@ namespace de4dot.code.deobfuscators {
 			code = reader.ReadBytes((int)mbHeader.codeSize);
 
 			if ((mbHeader.flags & 8) != 0)
-				extraSections = readExtraSections(reader);
+				extraSections = readExtraSections2(reader);
 			else
 				extraSections = null;
 
@@ -96,6 +96,15 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		public static byte[] readExtraSections(BinaryReader reader) {
+			try {
+				return readExtraSections2(reader);
+			}
+			catch (IOException) {
+				throw new InvalidMethodBody();
+			}
+		}
+
+		static byte[] readExtraSections2(BinaryReader reader) {
 			align(reader, 4);
 			int startPos = (int)reader.BaseStream.Position;
 			parseSection(reader);
