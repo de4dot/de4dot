@@ -354,6 +354,11 @@ namespace de4dot.code.deobfuscators {
 				fieldsToRemove.Add(new RemoveInfo<FieldDefinition>(field, reason));
 		}
 
+		protected void addAttributesToBeRemoved(IEnumerable<TypeDefinition> attrs, string reason) {
+			foreach (var attr in attrs)
+				addAttributeToBeRemoved(attr, reason);
+		}
+
 		protected void addAttributeToBeRemoved(TypeDefinition attr, string reason) {
 			if (attr == null)
 				return;
