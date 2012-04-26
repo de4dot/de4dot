@@ -94,6 +94,10 @@ namespace de4dot.code.deobfuscators.CliSecure {
 		};
 		static readonly string[] requiredFields3 = new string[] {
 			"System.Boolean",
+			"System.Byte[]",
+		};
+		static readonly string[] requiredFields4 = new string[] {
+			"System.Boolean",
 			"System.Reflection.Assembly",
 			"System.Byte[]",
 		};
@@ -104,7 +108,8 @@ namespace de4dot.code.deobfuscators.CliSecure {
 					if (type.IsPublic)
 						continue;
 					var fieldTypes = new FieldTypes(type);
-					if (!fieldTypes.exactly(requiredFields1) && !fieldTypes.exactly(requiredFields2) && !fieldTypes.exactly(requiredFields3))
+					if (!fieldTypes.exactly(requiredFields1) && !fieldTypes.exactly(requiredFields2) &&
+						!fieldTypes.exactly(requiredFields3) && !fieldTypes.exactly(requiredFields4))
 						continue;
 					if (!hasInitializeMethod(type, "_Initialize") && !hasInitializeMethod(type, "_Initialize64"))
 						continue;
