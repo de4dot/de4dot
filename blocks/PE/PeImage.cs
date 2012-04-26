@@ -71,6 +71,14 @@ namespace de4dot.PE {
 			init();
 		}
 
+		public SectionHeader findSection(string displayName) {
+			foreach (var section in sectionHeaders) {
+				if (section.displayName == displayName)
+					return section;
+			}
+			return null;
+		}
+
 		void seek(uint position) {
 			reader.BaseStream.Position = position;
 		}
