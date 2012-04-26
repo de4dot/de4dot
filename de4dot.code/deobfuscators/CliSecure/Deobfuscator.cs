@@ -78,6 +78,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 		ProxyDelegateFinder proxyDelegateFinder;
 		CliSecureRtType cliSecureRtType;
 		StringDecrypter stringDecrypter;
+		ResourceDecrypter resourceDecrypter;
 
 		StackFrameHelper stackFrameHelper;
 		vm.Csvm csvm;
@@ -143,6 +144,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			int sum = toInt32(cliSecureRtType.Detected) +
 					toInt32(stringDecrypter.Detected) +
 					toInt32(proxyDelegateFinder.Detected) +
+					toInt32(resourceDecrypter.Detected) +
 					toInt32(csvm.Detected);
 			if (sum > 0)
 				val += 100 + 10 * (sum - 1);
@@ -158,6 +160,8 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			cliSecureRtType.find();
 			stringDecrypter = new StringDecrypter(module, cliSecureRtType.StringDecrypterMethod);
 			stringDecrypter.find();
+			resourceDecrypter = new ResourceDecrypter(module);
+			resourceDecrypter.find();
 			proxyDelegateFinder = new ProxyDelegateFinder(module);
 			proxyDelegateFinder.findDelegateCreator();
 			csvm = new vm.Csvm(DeobfuscatedFile.DeobfuscatorContext, module);
@@ -199,6 +203,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			newOne.cliSecureAttributes = lookup(module, cliSecureAttributes, "Could not find CliSecure attribute");
 			newOne.cliSecureRtType = new CliSecureRtType(module, cliSecureRtType);
 			newOne.stringDecrypter = new StringDecrypter(module, stringDecrypter);
+			newOne.resourceDecrypter = new ResourceDecrypter(module, resourceDecrypter);
 			newOne.proxyDelegateFinder = new ProxyDelegateFinder(module, proxyDelegateFinder);
 			newOne.csvm = new vm.Csvm(DeobfuscatedFile.DeobfuscatorContext, module, csvm);
 			return newOne;
@@ -220,8 +225,6 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			addAttributesToBeRemoved(cliSecureAttributes, "Obfuscator attribute");
 
 			if (options.DecryptResources) {
-				var resourceDecrypter = new ResourceDecrypter(module);
-				resourceDecrypter.find();
 				decryptResources(resourceDecrypter);
 				addCctorInitCallToBeRemoved(resourceDecrypter.RsrcRrrMethod);
 			}

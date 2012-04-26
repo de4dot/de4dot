@@ -28,7 +28,11 @@ namespace de4dot.code.deobfuscators.CliSecure {
 		ModuleDefinition module;
 		TypeDefinition rsrcType;
 		MethodDefinition rsrcRrrMethod;
-		MethodDefinition rsrcDecryptMethod;
+		MethodDefinition rsrcResolveMethod;
+
+		public bool Detected {
+			get { return rsrcType != null; }
+		}
 
 		public TypeDefinition Type {
 			get { return rsrcType; }
@@ -42,39 +46,57 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			this.module = module;
 		}
 
+		public ResourceDecrypter(ModuleDefinition module, ResourceDecrypter oldOne) {
+			this.module = module;
+			rsrcType = lookup(oldOne.rsrcType, "Could not find rsrcType");
+			rsrcRrrMethod = lookup(oldOne.rsrcRrrMethod, "Could not find rsrcRrrMethod");
+			rsrcResolveMethod = lookup(oldOne.rsrcResolveMethod, "Could not find rsrcResolveMethod");
+		}
+
+		T lookup<T>(T def, string errorMessage) where T : MemberReference {
+			return DeobUtils.lookup(module, def, errorMessage);
+		}
+
 		public void find() {
 			findResourceType();
 		}
 
+		static readonly string[] requiredFields = new string[] {
+			"System.Reflection.Assembly",
+			"System.String[]",
+		};
 		void findResourceType() {
-			foreach (var type in module.Types) {
-				MethodDefinition rrrMethod = null;
-				MethodDefinition decryptMethod = null;
+			var cctor = DotNetUtils.getModuleTypeCctor(module);
+			if (cctor == null)
+				return;
 
-				foreach (var method in type.Methods) {
-					if (method.Name == "rrr" && DotNetUtils.isMethod(method, "System.Void", "()"))
-						rrrMethod = method;
-					else if (DotNetUtils.isMethod(method, "System.Reflection.Assembly", "(System.Object,System.ResolveEventArgs)"))
-						decryptMethod = method;
-				}
-				if (rrrMethod == null || decryptMethod == null)
+			foreach (var calledMethod in DotNetUtils.getCalledMethods(module, cctor)) {
+				if (!calledMethod.IsStatic || calledMethod.Body == null)
+					continue;
+				if (!DotNetUtils.isMethod(calledMethod, "System.Void", "()"))
+					continue;
+				var type = calledMethod.DeclaringType;
+				if (!new FieldTypes(type).exactly(requiredFields))
 					continue;
 
-				var methodCalls = DotNetUtils.getMethodCallCounts(rrrMethod);
-				if (methodCalls.count("System.Void System.ResolveEventHandler::.ctor(System.Object,System.IntPtr)") != 1)
+				var resolveHandler = DotNetUtils.getMethod(type, "System.Reflection.Assembly", "(System.Object,System.ResolveEventArgs)");
+				var decryptMethod = DotNetUtils.getMethod(type, "System.Byte[]", "(System.IO.Stream)");
+				if (resolveHandler == null || !resolveHandler.IsStatic)
+					continue;
+				if (decryptMethod == null || !decryptMethod.IsStatic)
 					continue;
 
 				rsrcType = type;
-				rsrcRrrMethod = rrrMethod;
-				rsrcDecryptMethod = decryptMethod;
+				rsrcRrrMethod = calledMethod;
+				rsrcResolveMethod = resolveHandler;
 				return;
 			}
 		}
 
 		public EmbeddedResource mergeResources() {
-			if (rsrcDecryptMethod == null)
+			if (rsrcResolveMethod == null)
 				return null;
-			var resource = DotNetUtils.getResource(module, DotNetUtils.getCodeStrings(rsrcDecryptMethod)) as EmbeddedResource;
+			var resource = DotNetUtils.getResource(module, DotNetUtils.getCodeStrings(rsrcResolveMethod)) as EmbeddedResource;
 			if (resource == null)
 				return null;
 			DeobUtils.decryptAndAddResources(module, resource.Name, () => decryptResource(resource));
