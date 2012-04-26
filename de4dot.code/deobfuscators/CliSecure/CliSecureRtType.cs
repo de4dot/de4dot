@@ -18,6 +18,7 @@
 */
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using Mono.Cecil;
 using de4dot.blocks;
@@ -55,6 +56,22 @@ namespace de4dot.code.deobfuscators.CliSecure {
 
 		public MethodDefinition LoadMethod {
 			get { return loadMethod; }
+		}
+
+		public IEnumerable<ModuleReference> DecryptModuleReferences {
+			get {
+				var list = new List<ModuleReference>();
+				addModuleReference(list, "_Initialize");
+				addModuleReference(list, "_Initialize64");
+				return list;
+			}
+		}
+
+		void addModuleReference(List<ModuleReference> list, string methodName) {
+			var method = DotNetUtils.getPInvokeMethod(cliSecureRtType, methodName);
+			if (method == null)
+				return;
+			list.Add(method.PInvokeInfo.Module);
 		}
 
 		public CliSecureRtType(ModuleDefinition module) {

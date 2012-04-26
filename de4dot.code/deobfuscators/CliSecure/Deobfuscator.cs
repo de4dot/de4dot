@@ -279,6 +279,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			}
 			if (options.DecryptMethods) {
 				addResources("Obfuscator protection files");
+				addModuleReferencesToBeRemoved(cliSecureRtType.DecryptModuleReferences, "Obfuscator protection files");
 				addModuleReferences("Obfuscator protection files");
 			}
 
