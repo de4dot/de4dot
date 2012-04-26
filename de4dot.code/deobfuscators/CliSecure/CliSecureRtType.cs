@@ -202,5 +202,35 @@ namespace de4dot.code.deobfuscators.CliSecure {
 		public bool isAtLeastVersion50() {
 			return DotNetUtils.hasPinvokeMethod(cliSecureRtType, "LoadLibraryA");
 		}
+
+		public void findStringDecrypterMethod() {
+			if (cliSecureRtType != null)
+				return;
+
+			foreach (var type in module.Types) {
+				if (type.Fields.Count != 0)
+					continue;
+				if (type.Methods.Count != 1)
+					continue;
+				var cs = type.Methods[0];
+				if (!isOldStringDecrypterMethod(cs))
+					continue;
+
+				cliSecureRtType = type;
+				stringDecrypterMethod = cs;
+				return;
+			}
+		}
+
+		static bool isOldStringDecrypterMethod(MethodDefinition method) {
+			if (method == null || method.Body == null || !method.IsStatic)
+				return false;
+			if (!DotNetUtils.isMethod(method, "System.String", "(System.String)"))
+				return false;
+			if (!DeobUtils.hasInteger(method, 0xFF))
+				return false;
+
+			return true;
+		}
 	}
 }

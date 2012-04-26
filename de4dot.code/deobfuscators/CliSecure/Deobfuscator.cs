@@ -214,6 +214,9 @@ namespace de4dot.code.deobfuscators.CliSecure {
 		public override void deobfuscateBegin() {
 			base.deobfuscateBegin();
 
+			cliSecureRtType.findStringDecrypterMethod();
+			stringDecrypter.Method = cliSecureRtType.StringDecrypterMethod;
+
 			addAttributesToBeRemoved(cliSecureAttributes, "Obfuscator attribute");
 
 			if (options.DecryptResources) {

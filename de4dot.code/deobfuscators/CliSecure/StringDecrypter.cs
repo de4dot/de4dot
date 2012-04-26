@@ -38,6 +38,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 
 		public MethodDefinition Method {
 			get { return stringDecrypterMethod; }
+			set { stringDecrypterMethod = value; }
 		}
 
 		public StringDecrypter(ModuleDefinition module, MethodDefinition stringDecrypterMethod) {
