@@ -73,7 +73,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 	class Deobfuscator : DeobfuscatorBase {
 		Options options;
 
-		TypeDefinition cliSecureAttribute;
+		List<TypeDefinition> cliSecureAttributes = new List<TypeDefinition>();
 		ProxyDelegateFinder proxyDelegateFinder;
 		CliSecureRtType cliSecureRtType;
 		StringDecrypter stringDecrypter;
@@ -145,7 +145,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 					toInt32(csvm.Detected);
 			if (sum > 0)
 				val += 100 + 10 * (sum - 1);
-			if (cliSecureAttribute != null)
+			if (cliSecureAttributes.Count != 0)
 				val += 10;
 
 			return val;
@@ -165,9 +165,9 @@ namespace de4dot.code.deobfuscators.CliSecure {
 
 		void findCliSecureAttribute() {
 			foreach (var type in module.Types) {
-				if (type.FullName == "SecureTeam.Attributes.ObfuscatedByCliSecureAttribute") {
-					cliSecureAttribute = type;
-					break;
+				if (Utils.StartsWith(type.FullName, "SecureTeam.Attributes.ObfuscatedByCliSecureAttribute", StringComparison.Ordinal) ||
+					Utils.StartsWith(type.FullName, "SecureTeam.Attributes.ObfuscatedByAgileDotNetAttribute", StringComparison.Ordinal)) {
+					cliSecureAttributes.Add(type);
 				}
 			}
 		}
@@ -191,7 +191,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 		public override IDeobfuscator moduleReloaded(ModuleDefinition module) {
 			var newOne = new Deobfuscator(options);
 			newOne.setModule(module);
-			newOne.cliSecureAttribute = DeobUtils.lookup(module, cliSecureAttribute, "Could not find CliSecure attribute");
+			newOne.cliSecureAttributes = lookup(module, cliSecureAttributes, "Could not find CliSecure attribute");
 			newOne.cliSecureRtType = new CliSecureRtType(module, cliSecureRtType);
 			newOne.stringDecrypter = new StringDecrypter(module, stringDecrypter);
 			newOne.proxyDelegateFinder = new ProxyDelegateFinder(module, proxyDelegateFinder);
@@ -199,10 +199,17 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			return newOne;
 		}
 
+		static List<TypeDefinition> lookup(ModuleDefinition module, List<TypeDefinition> types, string errorMsg) {
+			var list = new List<TypeDefinition>(types.Count);
+			foreach (var type in types)
+				list.Add(DeobUtils.lookup(module, type, errorMsg));
+			return list;
+		}
+
 		public override void deobfuscateBegin() {
 			base.deobfuscateBegin();
 
-			addAttributeToBeRemoved(cliSecureAttribute, "Obfuscator attribute");
+			addAttributesToBeRemoved(cliSecureAttributes, "Obfuscator attribute");
 
 			if (options.DecryptResources) {
 				var resourceDecrypter = new ResourceDecrypter(module);
