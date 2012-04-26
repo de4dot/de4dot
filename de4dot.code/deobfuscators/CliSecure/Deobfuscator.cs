@@ -72,6 +72,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 
 	class Deobfuscator : DeobfuscatorBase {
 		Options options;
+		string obfuscatorName = DeobfuscatorInfo.THE_NAME;
 
 		List<TypeDefinition> cliSecureAttributes = new List<TypeDefinition>();
 		ProxyDelegateFinder proxyDelegateFinder;
@@ -97,7 +98,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 		}
 
 		public override string Name {
-			get { return TypeLong; }
+			get { return obfuscatorName; }
 		}
 
 		public Deobfuscator(Options options)
@@ -165,9 +166,13 @@ namespace de4dot.code.deobfuscators.CliSecure {
 
 		void findCliSecureAttribute() {
 			foreach (var type in module.Types) {
-				if (Utils.StartsWith(type.FullName, "SecureTeam.Attributes.ObfuscatedByCliSecureAttribute", StringComparison.Ordinal) ||
-					Utils.StartsWith(type.FullName, "SecureTeam.Attributes.ObfuscatedByAgileDotNetAttribute", StringComparison.Ordinal)) {
+				if (Utils.StartsWith(type.FullName, "SecureTeam.Attributes.ObfuscatedByCliSecureAttribute", StringComparison.Ordinal)) {
 					cliSecureAttributes.Add(type);
+					obfuscatorName = "CliSecure";
+				}
+				else if (Utils.StartsWith(type.FullName, "SecureTeam.Attributes.ObfuscatedByAgileDotNetAttribute", StringComparison.Ordinal)) {
+					cliSecureAttributes.Add(type);
+					obfuscatorName = "Agile.NET";
 				}
 			}
 		}
