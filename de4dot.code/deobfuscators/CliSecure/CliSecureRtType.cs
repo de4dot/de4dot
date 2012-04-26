@@ -106,7 +106,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 					var fieldTypes = new FieldTypes(type);
 					if (!fieldTypes.exactly(requiredFields1) && !fieldTypes.exactly(requiredFields2) && !fieldTypes.exactly(requiredFields3))
 						continue;
-					if (!hasInitializeMethod(type, "_Initialize"))
+					if (!hasInitializeMethod(type, "_Initialize") && !hasInitializeMethod(type, "_Initialize64"))
 						continue;
 
 					stringDecrypterMethod = findStringDecrypterMethod(type);
