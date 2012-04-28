@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.IO;
 using Mono.MyStuff;
 using de4dot.PE;
+using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CliSecure {
 	class CodeHeader {
@@ -49,19 +50,23 @@ namespace de4dot.code.deobfuscators.CliSecure {
 	}
 
 	class MethodsDecrypter {
+		static readonly byte[] oldSignature    = new byte[16] { 0x1F, 0x68, 0x9D, 0x2B, 0x07, 0x4A, 0xA6, 0x4A, 0x92, 0xBB, 0x31, 0x7E, 0x60, 0x7F, 0xD7, 0xCD };
 		static readonly byte[] normalSignature = new byte[16] { 0x08, 0x44, 0x65, 0xE1, 0x8C, 0x82, 0x13, 0x4C, 0x9C, 0x85, 0xB4, 0x17, 0xDA, 0x51, 0xAD, 0x25 };
 		static readonly byte[] proSignature    = new byte[16] { 0x68, 0xA0, 0xBB, 0x60, 0x13, 0x65, 0x5F, 0x41, 0xAE, 0x42, 0xAB, 0x42, 0x9B, 0x6B, 0x4E, 0xC1 };
 
 		enum SigType {
 			Unknown,
+			Old,
 			Normal,
 			Pro,
 		}
 
 		PeImage peImage;
+		Mono.Cecil.ModuleDefinition module;
 		CliSecureRtType csRtType;
 		CodeHeader codeHeader = new CodeHeader();
 		IDecrypter decrypter;
+		SigType sigType;
 
 		interface IDecrypter {
 			MethodBodyHeader decrypt(MethodInfo methodInfo, out byte[] code, out byte[] extraSections);
@@ -82,6 +87,24 @@ namespace de4dot.code.deobfuscators.CliSecure {
 
 			protected MethodBodyHeader getCodeBytes(byte[] methodBody, out byte[] code, out byte[] extraSections) {
 				return MethodBodyParser.parseMethodBody(new BinaryReader(new MemoryStream(methodBody)), out code, out extraSections);
+			}
+		}
+
+		// CS 1.1 (could be other versions too)
+		class Decrypter10 {
+			PeImage peImage;
+			CsBlowfish blowfish;
+
+			public Decrypter10(PeImage peImage, byte[] key) {
+				this.peImage = peImage;
+				this.blowfish = new CsBlowfish(key);
+			}
+
+			public MethodBodyHeader decrypt(uint bodyOffset, out byte[] code, out byte[] extraSections) {
+				peImage.Reader.BaseStream.Position = bodyOffset;
+				var mbHeader = MethodBodyParser.parseMethodBody(peImage.Reader, out code, out extraSections);
+				blowfish.decrypt(code);
+				return mbHeader;
 			}
 		}
 
@@ -339,6 +362,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 
 		enum CsHeaderVersion {
 			Unknown,
+			V10,
 			V30,
 			V40,
 			V45,
@@ -347,6 +371,8 @@ namespace de4dot.code.deobfuscators.CliSecure {
 		}
 
 		List<CsHeaderVersion> getCsHeaderVersions(uint codeHeaderOffset, MetadataType methodDefTable) {
+			if (sigType == SigType.Old)
+				return new List<CsHeaderVersion> { CsHeaderVersion.V10 };
 			if (!isOldHeader(methodDefTable))
 				return new List<CsHeaderVersion> { CsHeaderVersion.V52 };
 			if (csRtType.isAtLeastVersion50())
@@ -408,9 +434,10 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			Error,
 		}
 
-		public bool decrypt(PeImage peImage, string filename, CliSecureRtType csRtType, ref DumpedMethods dumpedMethods) {
+		public bool decrypt(PeImage peImage, Mono.Cecil.ModuleDefinition module, CliSecureRtType csRtType, ref DumpedMethods dumpedMethods) {
 			this.peImage = peImage;
 			this.csRtType = csRtType;
+			this.module = module;
 
 			switch (decrypt2(ref dumpedMethods)) {
 			case DecryptResult.Decrypted: return true;
@@ -419,7 +446,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			case DecryptResult.Error:
 				Log.w("Using dynamic method decryption");
 				byte[] moduleCctorBytes = getModuleCctorBytes(csRtType);
-				dumpedMethods = de4dot.code.deobfuscators.MethodsDecrypter.decrypt(filename, moduleCctorBytes);
+				dumpedMethods = de4dot.code.deobfuscators.MethodsDecrypter.decrypt(module.FullyQualifiedName, moduleCctorBytes);
 				return true;
 
 			default:
@@ -446,10 +473,31 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			return peImage.rvaToOffset(peImage.Cor20Header.metadataDirectory.virtualAddress + peImage.Cor20Header.metadataDirectory.size);
 		}
 
+		static string[] sections = new string[] {
+			".text", ".rsrc", ".data", ".rdata",
+		};
+		static uint getOldCodeHeaderOffset(PeImage peImage) {
+			var sect = getLastOf(peImage, sections);
+			if (sect == null || sect.virtualSize < 0x100)
+				return 0;
+			return peImage.rvaToOffset(sect.virtualAddress + sect.virtualSize - 0x100);
+		}
+
+		static SectionHeader getLastOf(PeImage peImage, string[] sections) {
+			SectionHeader sect = null;
+			foreach (var name in sections) {
+				var sect2 = peImage.findSection(name);
+				if (sect2 == null)
+					continue;
+				if (sect == null || sect2.virtualAddress > sect.virtualAddress)
+					sect = sect2;
+			}
+			return sect;
+		}
+
 		DecryptResult decrypt2(ref DumpedMethods dumpedMethods) {
-			uint codeHeaderOffset = getCodeHeaderOffset(peImage);
-			readCodeHeader(codeHeaderOffset);
-			if (!isValidSignature(codeHeader.signature))
+			uint codeHeaderOffset = initializeCodeHeader();
+			if (sigType == SigType.Unknown)
 				return DecryptResult.NotEncrypted;
 
 			var metadataTables = peImage.Cor20Header.createMetadataTables();
@@ -457,7 +505,10 @@ namespace de4dot.code.deobfuscators.CliSecure {
 
 			foreach (var version in getCsHeaderVersions(codeHeaderOffset, methodDefTable)) {
 				try {
-					decryptMethods(codeHeaderOffset, methodDefTable, createCsHeader(version), ref dumpedMethods);
+					if (version == CsHeaderVersion.V10)
+						decryptMethodsOld(methodDefTable, ref dumpedMethods);
+					else
+						decryptMethods(codeHeaderOffset, methodDefTable, createCsHeader(version), ref dumpedMethods);
 					return DecryptResult.Decrypted;
 				}
 				catch {
@@ -465,6 +516,54 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			}
 
 			return DecryptResult.Error;
+		}
+
+		uint initializeCodeHeader() {
+			uint codeHeaderOffset = getCodeHeaderOffset(peImage);
+			readCodeHeader(codeHeaderOffset);
+			sigType = getSigType(codeHeader.signature);
+
+			if (sigType == SigType.Unknown) {
+				codeHeaderOffset = getOldCodeHeaderOffset(peImage);
+				if (codeHeaderOffset != 0) {
+					readCodeHeader(codeHeaderOffset);
+					sigType = getSigType(codeHeader.signature);
+				}
+			}
+
+			return codeHeaderOffset;
+		}
+
+		void decryptMethodsOld(MetadataType methodDefTable, ref DumpedMethods dumpedMethods) {
+			dumpedMethods = new DumpedMethods();
+			uint offset = methodDefTable.fileOffset;
+			var decrypter = new Decrypter10(peImage, codeHeader.decryptionKey);
+			for (int i = 0; i < methodDefTable.rows; i++, offset += methodDefTable.totalSize) {
+				var dm = new DumpedMethod();
+				dm.token = 0x06000001 + (uint)i;
+
+				var method = (Mono.Cecil.MethodDefinition)module.LookupToken((int)dm.token);
+				if (method == null || method.DeclaringType == DotNetUtils.getModuleType(module))
+					continue;
+
+				uint rva = peImage.offsetReadUInt32(offset + (uint)methodDefTable.fields[0].offset);
+				if (rva == 0)
+					continue;
+				uint bodyOffset = peImage.rvaToOffset(rva);
+				dm.mdImplFlags = peImage.offsetReadUInt16(offset + (uint)methodDefTable.fields[1].offset);
+				dm.mdFlags = peImage.offsetReadUInt16(offset + (uint)methodDefTable.fields[2].offset);
+				dm.mdName = peImage.offsetRead(offset + (uint)methodDefTable.fields[3].offset, methodDefTable.fields[3].size);
+				dm.mdSignature = peImage.offsetRead(offset + (uint)methodDefTable.fields[4].offset, methodDefTable.fields[4].size);
+				dm.mdParamList = peImage.offsetRead(offset + (uint)methodDefTable.fields[5].offset, methodDefTable.fields[5].size);
+
+				var mbHeader = decrypter.decrypt(bodyOffset, out dm.code, out dm.extraSections);
+				dm.mhFlags = mbHeader.flags;
+				dm.mhMaxStack = mbHeader.maxStack;
+				dm.mhCodeSize = (uint)dm.code.Length;
+				dm.mhLocalVarSigTok = mbHeader.localVarSigTok;
+
+				dumpedMethods.add(dm);
+			}
 		}
 
 		void decryptMethods(uint codeHeaderOffset, MetadataType methodDefTable, ICsHeader csHeader, ref DumpedMethods dumpedMethods) {
@@ -512,6 +611,8 @@ namespace de4dot.code.deobfuscators.CliSecure {
 				return SigType.Normal;
 			else if (Utils.compare(sig, proSignature))
 				return SigType.Pro;
+			else if (Utils.compare(sig, oldSignature))
+				return SigType.Old;
 			return SigType.Unknown;
 		}
 
@@ -522,12 +623,21 @@ namespace de4dot.code.deobfuscators.CliSecure {
 		public static bool detect(PeImage peImage) {
 			try {
 				uint codeHeaderOffset = getCodeHeaderOffset(peImage);
-				var sig = peImage.offsetReadBytes(codeHeaderOffset, 16);
-				return isValidSignature(sig);
+				if (isValidSignature(peImage.offsetReadBytes(codeHeaderOffset, 16)))
+					return true;
 			}
 			catch {
-				return false;
 			}
+
+			try {
+				uint codeHeaderOffset = getOldCodeHeaderOffset(peImage);
+				if (codeHeaderOffset != 0 && isValidSignature(peImage.offsetReadBytes(codeHeaderOffset, 16)))
+					return true;
+			}
+			catch {
+			}
+
+			return false;
 		}
 	}
 }

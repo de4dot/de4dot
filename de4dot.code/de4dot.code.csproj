@@ -73,7 +73,9 @@
     <Compile Include="deobfuscators\Babel_NET\ResourceDecrypter.cs" />
     <Compile Include="deobfuscators\Babel_NET\ResourceResolver.cs" />
     <Compile Include="deobfuscators\Babel_NET\StringDecrypter.cs" />
+    <Compile Include="deobfuscators\Blowfish.cs" />
     <Compile Include="deobfuscators\CliSecure\CliSecureRtType.cs" />
+    <Compile Include="deobfuscators\CliSecure\CsBlowfish.cs" />
     <Compile Include="deobfuscators\CliSecure\Deobfuscator.cs" />
     <Compile Include="deobfuscators\CliSecure\MethodsDecrypter.cs" />
     <Compile Include="deobfuscators\CliSecure\ProxyDelegateFinder.cs" />

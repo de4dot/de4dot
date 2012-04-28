@@ -92,14 +92,14 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			return DeobUtils.lookup(module, def, errorMessage);
 		}
 
-		public void find() {
+		public void find(byte[] moduleBytes) {
 			if (cliSecureRtType != null)
 				return;
 			if (find2())
 				return;
 			if (find3())
 				return;
-			findNativeCode();
+			findNativeCode(moduleBytes);
 		}
 
 		static readonly string[] requiredFields1 = new string[] {
@@ -206,12 +206,12 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			return true;
 		}
 
-		bool findNativeCode() {
-			if ((module.Attributes & ModuleAttributes.ILOnly) != 0)
-				return false;
-
-			using (var file = new FileStream(module.FullyQualifiedName, FileMode.Open, FileAccess.Read, FileShare.Read)) {
-				var peImage = new PeImage(file);
+		bool findNativeCode(byte[] moduleBytes) {
+			var stream = moduleBytes != null ?
+				(Stream)new MemoryStream(moduleBytes) :
+				(Stream)new FileStream(module.FullyQualifiedName, FileMode.Open, FileAccess.Read, FileShare.Read);
+			using (stream) {
+				var peImage = new PeImage(stream);
 				return foundSig = MethodsDecrypter.detect(peImage);
 			}
 		}

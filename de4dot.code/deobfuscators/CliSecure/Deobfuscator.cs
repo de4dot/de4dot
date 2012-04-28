@@ -112,6 +112,11 @@ namespace de4dot.code.deobfuscators.CliSecure {
 		}
 
 		public override byte[] unpackNativeFile(PeImage peImage) {
+			return unpackNativeFile1(peImage) ?? unpackNativeFile2(peImage);
+		}
+
+		// Old CS versions
+		byte[] unpackNativeFile1(PeImage peImage) {
 			const int dataDirNum = 6;	// debug dir
 			const int dotNetDirNum = 14;
 
@@ -129,6 +134,20 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			writeUInt32(fileData, dataDir + 4, 0);
 			ModuleBytes = fileData;
 			return fileData;
+		}
+
+		// CS 1.x
+		byte[] unpackNativeFile2(PeImage peImage) {
+			var dir = peImage.Resources.getRoot();
+			if ((dir = dir.getDirectory("ASSEMBLY")) == null)
+				return null;
+			if ((dir = dir.getDirectory(101)) == null)
+				return null;
+			var data = dir.getData(0);
+			if (data == null)
+				return null;
+
+			return ModuleBytes = peImage.readBytes(data.RVA, (int)data.Size);
 		}
 
 		static void writeUInt32(byte[] data, int offset, uint value) {
@@ -157,7 +176,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 		protected override void scanForObfuscator() {
 			findCliSecureAttribute();
 			cliSecureRtType = new CliSecureRtType(module);
-			cliSecureRtType.find();
+			cliSecureRtType.find(ModuleBytes);
 			stringDecrypter = new StringDecrypter(module, cliSecureRtType.StringDecrypterMethod);
 			stringDecrypter.find();
 			resourceDecrypter = new ResourceDecrypter(module);
@@ -188,7 +207,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			byte[] fileData = ModuleBytes ?? DeobUtils.readModule(module);
 			var peImage = new PeImage(fileData);
 
-			if (!new MethodsDecrypter().decrypt(peImage, module.FullyQualifiedName, cliSecureRtType, ref dumpedMethods)) {
+			if (!new MethodsDecrypter().decrypt(peImage, module, cliSecureRtType, ref dumpedMethods)) {
 				Log.v("Methods aren't encrypted or invalid signature");
 				return false;
 			}
