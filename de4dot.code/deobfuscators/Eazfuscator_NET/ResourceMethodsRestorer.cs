@@ -21,7 +21,7 @@ using Mono.Cecil;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Eazfuscator_NET {
-	class ResourceMethodsRestorer : ResourceMethodsRestorerBase {
+	class ResourceMethodsRestorer : MethodCallRestorerBase {
 		TypeDefinition getManifestResourceStreamType;
 		EmbeddedResource getManifestResourceStreamTypeResource;
 

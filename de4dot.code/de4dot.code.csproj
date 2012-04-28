@@ -160,7 +160,7 @@
     <Compile Include="deobfuscators\Eazfuscator_NET\StringDecrypter.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\VersionDetector.cs" />
     <Compile Include="deobfuscators\ExceptionLoggerRemover.cs" />
-    <Compile Include="deobfuscators\ResourceMethodsRestorerBase.cs" />
+    <Compile Include="deobfuscators\MethodCallRestorerBase.cs" />
     <Compile Include="deobfuscators\Goliath_NET\ArrayDecrypter.cs" />
     <Compile Include="deobfuscators\Goliath_NET\ArrayValueInliner.cs" />
     <Compile Include="deobfuscators\Goliath_NET\DecrypterBase.cs" />

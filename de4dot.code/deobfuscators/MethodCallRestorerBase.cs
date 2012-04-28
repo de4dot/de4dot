@@ -23,7 +23,7 @@ using Mono.Cecil.Cil;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators {
-	class ResourceMethodsRestorerBase {
+	class MethodCallRestorerBase {
 		protected MemberReferenceBuilder builder;
 		protected ModuleDefinition module;
 
@@ -39,7 +39,7 @@ namespace de4dot.code.deobfuscators {
 
 		MethodDefinitionAndDeclaringTypeDict<NewMethodInfo> oldToNewMethod = new MethodDefinitionAndDeclaringTypeDict<NewMethodInfo>();
 
-		public ResourceMethodsRestorerBase(ModuleDefinition module) {
+		public MethodCallRestorerBase(ModuleDefinition module) {
 			this.module = module;
 			this.builder = new MemberReferenceBuilder(module);
 		}
