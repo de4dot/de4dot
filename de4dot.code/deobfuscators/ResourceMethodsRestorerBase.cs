@@ -27,7 +27,17 @@ namespace de4dot.code.deobfuscators {
 		protected MemberReferenceBuilder builder;
 		protected ModuleDefinition module;
 
-		MethodDefinitionAndDeclaringTypeDict<MethodReference> oldToNewMethod = new MethodDefinitionAndDeclaringTypeDict<MethodReference>();
+		class NewMethodInfo {
+			public OpCode opCode;
+			public MethodReference method;
+
+			public NewMethodInfo(OpCode opCode, MethodReference method) {
+				this.opCode = opCode;
+				this.method = method;
+			}
+		}
+
+		MethodDefinitionAndDeclaringTypeDict<NewMethodInfo> oldToNewMethod = new MethodDefinitionAndDeclaringTypeDict<NewMethodInfo>();
 
 		public ResourceMethodsRestorerBase(ModuleDefinition module) {
 			this.module = module;
@@ -35,31 +45,55 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		public void createGetManifestResourceStream1(MethodDefinition oldMethod) {
+			if (oldMethod == null)
+				return;
 			var assemblyType = builder.type("System.Reflection", "Assembly", builder.CorLib);
 			var streamType = builder.type("System.IO", "Stream", builder.CorLib);
 			var newMethod = builder.instanceMethod("GetManifestResourceStream", assemblyType, streamType, builder.String);
-			add(oldMethod, newMethod);
+			add(oldMethod, newMethod, OpCodes.Callvirt);
 		}
 
 		public void createGetManifestResourceStream2(MethodDefinition oldMethod) {
+			if (oldMethod == null)
+				return;
 			var assemblyType = builder.type("System.Reflection", "Assembly", builder.CorLib);
 			var typeType = builder.type("System", "Type", builder.CorLib);
 			var streamType = builder.type("System.IO", "Stream", builder.CorLib);
 			var newMethod = builder.instanceMethod("GetManifestResourceStream", assemblyType, streamType, typeType, builder.String);
-			add(oldMethod, newMethod);
+			add(oldMethod, newMethod, OpCodes.Callvirt);
 		}
 
 		public void createGetManifestResourceNames(MethodDefinition oldMethod) {
+			if (oldMethod == null)
+				return;
 			var assemblyType = builder.type("System.Reflection", "Assembly", builder.CorLib);
 			var stringArrayType = builder.array(builder.String);
 			var newMethod = builder.instanceMethod("GetManifestResourceNames", assemblyType, stringArrayType);
-			add(oldMethod, newMethod);
+			add(oldMethod, newMethod, OpCodes.Callvirt);
 		}
 
-		void add(MethodDefinition oldMethod, MethodReference newMethod) {
+		public void createBitmapCtor(MethodDefinition oldMethod) {
 			if (oldMethod == null)
 				return;
-			oldToNewMethod.add(oldMethod, newMethod);
+			var bitmapType = builder.type("System.Drawing", "Bitmap", "System.Drawing");
+			var typeType = builder.type("System", "Type", builder.CorLib);
+			var newMethod = builder.instanceMethod(".ctor", bitmapType, builder.Void, typeType, builder.String);
+			add(oldMethod, newMethod, OpCodes.Newobj);
+		}
+
+		public void createIconCtor(MethodDefinition oldMethod) {
+			if (oldMethod == null)
+				return;
+			var iconType = builder.type("System.Drawing", "Icon", "System.Drawing");
+			var typeType = builder.type("System", "Type", builder.CorLib);
+			var newMethod = builder.instanceMethod(".ctor", iconType, builder.Void, typeType, builder.String);
+			add(oldMethod, newMethod, OpCodes.Newobj);
+		}
+
+		void add(MethodDefinition oldMethod, MethodReference newMethod, OpCode opCode) {
+			if (oldMethod == null)
+				return;
+			oldToNewMethod.add(oldMethod, new NewMethodInfo(opCode, newMethod));
 		}
 
 		public void deobfuscate(Blocks blocks) {
@@ -73,11 +107,11 @@ namespace de4dot.code.deobfuscators {
 					if (calledMethod == null)
 						continue;
 
-					var newMethod = oldToNewMethod.find(calledMethod);
-					if (newMethod == null)
+					var newMethodInfo = oldToNewMethod.find(calledMethod);
+					if (newMethodInfo == null)
 						continue;
 
-					instrs[i] = new Instr(Instruction.Create(OpCodes.Callvirt, newMethod));
+					instrs[i] = new Instr(Instruction.Create(newMethodInfo.opCode, newMethodInfo.method));
 				}
 			}
 		}
