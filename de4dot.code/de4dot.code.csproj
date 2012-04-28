@@ -155,12 +155,12 @@
     <Compile Include="deobfuscators\Eazfuscator_NET\DecrypterType.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\Deobfuscator.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\EfUtils.cs" />
-    <Compile Include="deobfuscators\Eazfuscator_NET\GetManifestResourceRestorer.cs" />
+    <Compile Include="deobfuscators\Eazfuscator_NET\ResourceMethodsRestorer.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\ResourceResolver.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\StringDecrypter.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\VersionDetector.cs" />
     <Compile Include="deobfuscators\ExceptionLoggerRemover.cs" />
-    <Compile Include="deobfuscators\GetManifestResourceRestorerBase.cs" />
+    <Compile Include="deobfuscators\ResourceMethodsRestorerBase.cs" />
     <Compile Include="deobfuscators\Goliath_NET\ArrayDecrypter.cs" />
     <Compile Include="deobfuscators\Goliath_NET\ArrayValueInliner.cs" />
     <Compile Include="deobfuscators\Goliath_NET\DecrypterBase.cs" />
@@ -181,6 +181,7 @@
     <Compile Include="deobfuscators\MaxtoCode\FileDecrypter.cs" />
     <Compile Include="deobfuscators\MaxtoCode\MainType.cs" />
     <Compile Include="deobfuscators\MethodBodyParser.cs" />
+    <Compile Include="deobfuscators\MemberReferenceBuilder.cs" />
     <Compile Include="deobfuscators\MethodCollection.cs" />
     <Compile Include="deobfuscators\MethodsDecrypter.cs" />
     <Compile Include="deobfuscators\MethodStack.cs" />

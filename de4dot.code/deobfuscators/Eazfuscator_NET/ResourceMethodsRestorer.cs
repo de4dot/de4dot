@@ -21,7 +21,7 @@ using Mono.Cecil;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Eazfuscator_NET {
-	class GetManifestResourceRestorer : GetManifestResourceRestorerBase {
+	class ResourceMethodsRestorer : ResourceMethodsRestorerBase {
 		TypeDefinition getManifestResourceStreamType;
 		EmbeddedResource getManifestResourceStreamTypeResource;
 
@@ -33,7 +33,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			get { return getManifestResourceStreamTypeResource; }
 		}
 
-		public GetManifestResourceRestorer(ModuleDefinition module)
+		public ResourceMethodsRestorer(ModuleDefinition module)
 			: base(module) {
 		}
 
@@ -58,9 +58,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					continue;
 
 				getManifestResourceStreamType = type;
-				getManifestResourceStream1Method = null;
-				getManifestResourceStream2Method = getStream2;
-				getManifestResourceNamesMethod = getNames;
+				createGetManifestResourceStream2(getStream2);
+				createGetManifestResourceNames(getNames);
 				getManifestResourceStreamTypeResource = resource;
 				break;
 			}

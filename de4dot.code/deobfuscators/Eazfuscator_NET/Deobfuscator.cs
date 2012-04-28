@@ -54,7 +54,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		StringDecrypter stringDecrypter;
 		AssemblyResolver assemblyResolver;
 		ResourceResolver resourceResolver;
-		GetManifestResourceRestorer getManifestResourceRestorer;
+		ResourceMethodsRestorer resourceMethodsRestorer;
 
 		internal class Options : OptionsBase {
 		}
@@ -129,8 +129,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				addResourceToBeRemoved(info.Resource, "Encrypted resources");
 			addModuleCctorInitCallToBeRemoved(resourceResolver.InitMethod);
 
-			getManifestResourceRestorer = new GetManifestResourceRestorer(module);
-			getManifestResourceRestorer.find(DeobfuscatedFile, this);
+			resourceMethodsRestorer = new ResourceMethodsRestorer(module);
+			resourceMethodsRestorer.find(DeobfuscatedFile, this);
 
 			dumpEmbeddedAssemblies();
 		}
@@ -143,7 +143,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		}
 
 		public override void deobfuscateMethodEnd(Blocks blocks) {
-			getManifestResourceRestorer.deobfuscate(blocks);
+			resourceMethodsRestorer.deobfuscate(blocks);
 			base.deobfuscateMethodEnd(blocks);
 		}
 
@@ -156,8 +156,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			addTypeToBeRemoved(assemblyResolver.Type, "Assembly resolver type");
 			addTypeToBeRemoved(assemblyResolver.OtherType, "Assembly resolver other type");
 			addTypeToBeRemoved(resourceResolver.Type, "Resource resolver type");
-			addTypeToBeRemoved(getManifestResourceRestorer.Type, "GetManifestResourceStream type");
-			addResourceToBeRemoved(getManifestResourceRestorer.Resource, "GetManifestResourceStream type resource");
+			addTypeToBeRemoved(resourceMethodsRestorer.Type, "GetManifestResourceStream type");
+			addResourceToBeRemoved(resourceMethodsRestorer.Resource, "GetManifestResourceStream type resource");
 
 			fixInterfaces();
 			base.deobfuscateEnd();
