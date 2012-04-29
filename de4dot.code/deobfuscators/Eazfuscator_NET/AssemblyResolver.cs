@@ -38,6 +38,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		List<AssemblyInfo> assemblyInfos = new List<AssemblyInfo>();
 		FrameworkType frameworkType;
 		byte[] decryptKey;
+		CodeCompilerMethodCallRestorer codeCompilerMethodCallRestorer;
 
 		public class AssemblyInfo {
 			public bool IsEncrypted { get; set; }
@@ -79,6 +80,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			this.module = module;
 			this.frameworkType = DotNetUtils.getFrameworkType(module);
 			this.decrypterType = decrypterType;
+			this.codeCompilerMethodCallRestorer = new CodeCompilerMethodCallRestorer(module);
 		}
 
 		public void find() {
@@ -110,6 +112,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 
 				decryptMethod = getDecryptMethod();
 				updateDecrypterType();
+				findCodeDomMethods();
 				return true;
 			}
 
@@ -152,7 +155,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 
 		bool checkInitMethod(MethodDefinition method) {
 			var type = method.DeclaringType;
-			if (type.NestedTypes.Count != 3)
+			if (type.NestedTypes.Count < 2 || type.NestedTypes.Count > 6)
 				return false;
 			if (DotNetUtils.getPInvokeMethod(type, "kernel32", "MoveFileEx") == null)
 				return false;
@@ -419,6 +422,70 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			}
 
 			return null;
+		}
+
+		public void deobfuscate(Blocks blocks) {
+			codeCompilerMethodCallRestorer.deobfuscate(blocks);
+		}
+
+		void findCodeDomMethods() {
+			if (resolverType == null)
+				return;
+
+			foreach (var nestedType in resolverType.NestedTypes) {
+				if (nestedType.Fields.Count != 0)
+					continue;
+
+				var CompileAssemblyFromDom1         = getTheOnlyMethod(nestedType, "System.CodeDom.Compiler.CodeDomProvider", "CompileAssemblyFromDom", "System.CodeDom.Compiler.CompilerResults", "System.CodeDom.Compiler.CompilerParameters,System.CodeDom.CodeCompileUnit[]");
+				var CompileAssemblyFromFile1        = getTheOnlyMethod(nestedType, "System.CodeDom.Compiler.CodeDomProvider", "CompileAssemblyFromFile", "System.CodeDom.Compiler.CompilerResults", "System.CodeDom.Compiler.CompilerParameters,System.String[]");
+				var CompileAssemblyFromSource1      = getTheOnlyMethod(nestedType, "System.CodeDom.Compiler.CodeDomProvider", "CompileAssemblyFromSource", "System.CodeDom.Compiler.CompilerResults", "System.CodeDom.Compiler.CompilerParameters,System.String[]");
+				var CompileAssemblyFromDom2         = getTheOnlyMethod(nestedType, "System.CodeDom.Compiler.ICodeCompiler", "CompileAssemblyFromDom", "System.CodeDom.Compiler.CompilerResults", "System.CodeDom.Compiler.CompilerParameters,System.CodeDom.CodeCompileUnit");
+				var CompileAssemblyFromDomBatch2    = getTheOnlyMethod(nestedType, "System.CodeDom.Compiler.ICodeCompiler", "CompileAssemblyFromDomBatch", "System.CodeDom.Compiler.CompilerResults", "System.CodeDom.Compiler.CompilerParameters,System.CodeDom.CodeCompileUnit[]");
+				var CompileAssemblyFromFile2        = getTheOnlyMethod(nestedType, "System.CodeDom.Compiler.ICodeCompiler", "CompileAssemblyFromFile", "System.CodeDom.Compiler.CompilerResults", "System.CodeDom.Compiler.CompilerParameters,System.String");
+				var CompileAssemblyFromFileBatch2   = getTheOnlyMethod(nestedType, "System.CodeDom.Compiler.ICodeCompiler", "CompileAssemblyFromFileBatch", "System.CodeDom.Compiler.CompilerResults", "System.CodeDom.Compiler.CompilerParameters,System.String[]");
+				var CompileAssemblyFromSource2      = getTheOnlyMethod(nestedType, "System.CodeDom.Compiler.ICodeCompiler", "CompileAssemblyFromSource", "System.CodeDom.Compiler.CompilerResults", "System.CodeDom.Compiler.CompilerParameters,System.String");
+				var CompileAssemblyFromSourceBatch2 = getTheOnlyMethod(nestedType, "System.CodeDom.Compiler.ICodeCompiler", "CompileAssemblyFromSourceBatch", "System.CodeDom.Compiler.CompilerResults", "System.CodeDom.Compiler.CompilerParameters,System.String[]");
+
+				if (CompileAssemblyFromDom1 == null && CompileAssemblyFromFile1 == null &&
+					CompileAssemblyFromSource1 == null && CompileAssemblyFromDom2 == null &&
+					CompileAssemblyFromDomBatch2 == null && CompileAssemblyFromFile2 == null &&
+					CompileAssemblyFromFileBatch2 == null && CompileAssemblyFromSource2 == null &&
+					CompileAssemblyFromSourceBatch2 == null) {
+					continue;
+				}
+
+				codeCompilerMethodCallRestorer.add_CodeDomProvider_CompileAssemblyFromDom(CompileAssemblyFromDom1);
+				codeCompilerMethodCallRestorer.add_CodeDomProvider_CompileAssemblyFromFile(CompileAssemblyFromFile1);
+				codeCompilerMethodCallRestorer.add_CodeDomProvider_CompileAssemblyFromSource(CompileAssemblyFromSource1);
+				codeCompilerMethodCallRestorer.add_ICodeCompiler_CompileAssemblyFromDom(CompileAssemblyFromDom2);
+				codeCompilerMethodCallRestorer.add_ICodeCompiler_CompileAssemblyFromDomBatch(CompileAssemblyFromDomBatch2);
+				codeCompilerMethodCallRestorer.add_ICodeCompiler_CompileAssemblyFromFile(CompileAssemblyFromFile2);
+				codeCompilerMethodCallRestorer.add_ICodeCompiler_CompileAssemblyFromFileBatch(CompileAssemblyFromFileBatch2);
+				codeCompilerMethodCallRestorer.add_ICodeCompiler_CompileAssemblyFromSource(CompileAssemblyFromSource2);
+				codeCompilerMethodCallRestorer.add_ICodeCompiler_CompileAssemblyFromSourceBatch(CompileAssemblyFromSourceBatch2);
+				break;
+			}
+		}
+
+		static MethodDefinition getTheOnlyMethod(TypeDefinition type, string typeName, string methodName, string returnType, string parameters) {
+			MethodDefinition foundMethod = null;
+
+			foreach (var method in type.Methods) {
+				if (!method.IsStatic || method.Body == null || method.HasGenericParameters)
+					continue;
+				if (method.IsPrivate)
+					continue;
+				if (!DotNetUtils.isMethod(method, returnType, "(" + typeName + "," + parameters + ")"))
+					continue;
+				if (!DotNetUtils.callsMethod(method, returnType + " " + typeName + "::" + methodName + "(" + parameters + ")"))
+					continue;
+
+				if (foundMethod != null)
+					return null;
+				foundMethod = method;
+			}
+
+			return foundMethod;
 		}
 	}
 }

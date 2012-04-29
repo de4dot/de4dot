@@ -90,7 +90,11 @@ namespace de4dot.code.deobfuscators {
 			add(oldMethod, newMethod, OpCodes.Newobj);
 		}
 
-		void add(MethodDefinition oldMethod, MethodReference newMethod, OpCode opCode) {
+		protected void add(MethodDefinition oldMethod, MethodReference newMethod) {
+			add(oldMethod, newMethod, OpCodes.Callvirt);
+		}
+
+		protected void add(MethodDefinition oldMethod, MethodReference newMethod, OpCode opCode) {
 			if (oldMethod == null)
 				return;
 			oldToNewMethod.add(oldMethod, new NewMethodInfo(opCode, newMethod));

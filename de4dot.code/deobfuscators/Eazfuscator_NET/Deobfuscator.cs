@@ -144,6 +144,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 
 		public override void deobfuscateMethodEnd(Blocks blocks) {
 			resourceMethodsRestorer.deobfuscate(blocks);
+			assemblyResolver.deobfuscate(blocks);
 			base.deobfuscateMethodEnd(blocks);
 		}
 
