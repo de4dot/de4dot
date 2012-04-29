@@ -26,6 +26,7 @@ namespace de4dot.code.deobfuscators {
 	class MethodCallRestorerBase {
 		protected MemberReferenceBuilder builder;
 		protected ModuleDefinition module;
+		MethodDefinitionAndDeclaringTypeDict<NewMethodInfo> oldToNewMethod = new MethodDefinitionAndDeclaringTypeDict<NewMethodInfo>();
 
 		class NewMethodInfo {
 			public OpCode opCode;
@@ -36,8 +37,6 @@ namespace de4dot.code.deobfuscators {
 				this.method = method;
 			}
 		}
-
-		MethodDefinitionAndDeclaringTypeDict<NewMethodInfo> oldToNewMethod = new MethodDefinitionAndDeclaringTypeDict<NewMethodInfo>();
 
 		public MethodCallRestorerBase(ModuleDefinition module) {
 			this.module = module;
