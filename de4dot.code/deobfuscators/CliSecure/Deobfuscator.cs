@@ -33,6 +33,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 		BoolOption decryptResources;
 		BoolOption removeStackFrameHelper;
 		BoolOption restoreVmCode;
+		BoolOption setInitLocals;
 
 		public DeobfuscatorInfo()
 			: base(DEFAULT_REGEX) {
@@ -40,6 +41,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			decryptResources = new BoolOption(null, makeArgName("rsrc"), "Decrypt resources", true);
 			removeStackFrameHelper = new BoolOption(null, makeArgName("stack"), "Remove all StackFrameHelper code", true);
 			restoreVmCode = new BoolOption(null, makeArgName("vm"), "Restore VM code", true);
+			setInitLocals = new BoolOption(null, makeArgName("initlocals"), "Set initlocals in method header", true);
 		}
 
 		public override string Name {
@@ -57,6 +59,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 				DecryptResources = decryptResources.get(),
 				RemoveStackFrameHelper = removeStackFrameHelper.get(),
 				RestoreVmCode = restoreVmCode.get(),
+				SetInitLocals = setInitLocals.get(),
 			});
 		}
 
@@ -66,6 +69,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 				decryptResources,
 				removeStackFrameHelper,
 				restoreVmCode,
+				setInitLocals,
 			};
 		}
 	}
@@ -88,6 +92,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			public bool DecryptResources { get; set; }
 			public bool RemoveStackFrameHelper { get; set; }
 			public bool RestoreVmCode { get; set; }
+			public bool SetInitLocals { get; set; }
 		}
 
 		public override string Type {
@@ -289,6 +294,8 @@ namespace de4dot.code.deobfuscators.CliSecure {
 		}
 
 		public override void deobfuscateEnd() {
+			if (options.SetInitLocals)
+				setInitLocals();
 			removeProxyDelegates(proxyDelegateFinder);
 			if (options.RemoveStackFrameHelper) {
 				if (stackFrameHelper.ExceptionLoggerRemover.NumRemovedExceptionLoggers > 0)

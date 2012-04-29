@@ -588,6 +588,40 @@ namespace de4dot.code.deobfuscators {
 			Log.deIndent();
 		}
 
+		protected void setInitLocals() {
+			foreach (var type in module.GetTypes()) {
+				foreach (var method in type.Methods) {
+					if (isFatHeader(method))
+						method.Body.InitLocals = true;
+				}
+			}
+		}
+
+		static bool isFatHeader(MethodDefinition method) {
+			if (method == null || method.Body == null)
+				return false;
+			var body = method.Body;
+			if (body.InitLocals || body.MaxStackSize > 8)
+				return true;
+			if (body.Variables.Count > 0)
+				return true;
+			if (body.ExceptionHandlers.Count > 0)
+				return true;
+			if (getCodeSize(method) > 63)
+				return true;
+
+			return false;
+		}
+
+		static int getCodeSize(MethodDefinition method) {
+			if (method == null || method.Body == null)
+				return 0;
+			int size = 0;
+			foreach (var instr in method.Body.Instructions)
+				size += instr.GetSize();
+			return size;
+		}
+
 		public override string ToString() {
 			return Name;
 		}
