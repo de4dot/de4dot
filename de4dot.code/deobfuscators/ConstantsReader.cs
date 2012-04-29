@@ -23,39 +23,57 @@ using Mono.Cecil.Cil;
 using Mono.Cecil.Metadata;
 using de4dot.blocks;
 
-namespace de4dot.code.deobfuscators.Eazfuscator_NET {
+namespace de4dot.code.deobfuscators {
 	class ConstantsReader {
-		IList<Instruction> instructions;
-		IList<VariableDefinition> locals;
-		Dictionary<VariableDefinition, int> localsValues = new Dictionary<VariableDefinition, int>();
+		protected IInstructions instructions;
+		protected IList<VariableDefinition> locals;
+		protected Dictionary<VariableDefinition, int> localsValues = new Dictionary<VariableDefinition, int>();
 
-		public ConstantsReader(MethodDefinition method) {
-			instructions = method.Body.Instructions;
-			locals = method.Body.Variables;
-			initialize();
+		public interface IInstructions {
+			int Count { get; }
+			Instruction this[int index] { get; }
 		}
 
-		void initialize() {
-			findConstants();
-		}
+		class ListInstructions : IInstructions {
+			IList<Instruction> instrs;
 
-		void findConstants() {
-			for (int index = 0; index < instructions.Count; ) {
-				int value;
-				if (!getInt32(ref index, out value))
-					break;
-				var stloc = instructions[index];
-				if (!DotNetUtils.isStloc(stloc))
-					break;
-				var local = DotNetUtils.getLocalVar(locals, stloc);
-				if (local == null || local.VariableType.EType != ElementType.I4)
-					break;
-				localsValues[local] = value;
-				index++;
+			public int Count {
+				get { return instrs.Count; }
 			}
 
-			if (localsValues.Count != 2)
-				localsValues.Clear();
+			public Instruction this[int index] {
+				get { return instrs[index]; }
+			}
+
+			public ListInstructions(IList<Instruction> instrs) {
+				this.instrs = instrs;
+			}
+		}
+
+		class ListInstrs : IInstructions {
+			IList<Instr> instrs;
+
+			public int Count {
+				get { return instrs.Count; }
+			}
+
+			public Instruction this[int index] {
+				get { return instrs[index].Instruction; }
+			}
+
+			public ListInstrs(IList<Instr> instrs) {
+				this.instrs = instrs;
+			}
+		}
+
+		public ConstantsReader(MethodDefinition method) {
+			this.locals = method.Body.Variables;
+			this.instructions = new ListInstructions(method.Body.Instructions);
+		}
+
+		public ConstantsReader(IList<VariableDefinition> locals, IList<Instr> instrs) {
+			this.locals = locals;
+			this.instructions = new ListInstrs(instrs);
 		}
 
 		public bool getNextInt32(ref int index, out int val) {

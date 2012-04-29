@@ -283,7 +283,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 
 			int index = 0;
 			var instrs = method.Body.Instructions;
-			var constantsReader = new ConstantsReader(method);
+			var constantsReader = new EfConstantsReader(method);
 			while (true) {
 				int val;
 				if (!constantsReader.getNextInt32(ref index, out val))

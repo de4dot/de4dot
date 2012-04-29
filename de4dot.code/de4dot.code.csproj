@@ -107,6 +107,7 @@
     <Compile Include="deobfuscators\CodeVeil\Deobfuscator.cs" />
     <Compile Include="deobfuscators\CodeVeil\ProxyDelegateFinder.cs" />
     <Compile Include="deobfuscators\CodeVeil\TamperDetection.cs" />
+    <Compile Include="deobfuscators\ConstantsReader.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\AntiDebugger.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\AssemblyResolver.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\Deobfuscator.cs" />
@@ -152,7 +153,7 @@
     <Compile Include="deobfuscators\dotNET_Reactor\v3\MemoryPatcher.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\AssemblyResolver.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\CodeCompilerMethodCallRestorer.cs" />
-    <Compile Include="deobfuscators\Eazfuscator_NET\ConstantsReader.cs" />
+    <Compile Include="deobfuscators\Eazfuscator_NET\EfConstantsReader.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\DecrypterType.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\Deobfuscator.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\EfUtils.cs" />
