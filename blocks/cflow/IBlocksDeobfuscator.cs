@@ -17,13 +17,13 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-namespace de4dot.blocks.cflow {
-	public class NoMethodInliner : IMethodCallInliner {
-		public void init(Blocks blocks, Block block) {
-		}
+using System.Collections.Generic;
 
-		public bool deobfuscate() {
-			return false;
-		}
+namespace de4dot.blocks.cflow {
+	public interface IBlocksDeobfuscator {
+		void deobfuscateBegin(Blocks blocks);
+
+		// Returns true if something was updated
+		bool deobfuscate(List<Block> allBlocks);
 	}
 }

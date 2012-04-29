@@ -17,11 +17,12 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
 namespace de4dot.blocks.cflow {
-	public abstract class MethodCallInlinerBase : IMethodCallInliner {
+	public abstract class MethodCallInlinerBase : IBlocksDeobfuscator {
 		// We can't catch all infinite loops, so inline methods at most this many times
 		const int MAX_ITERATIONS = 10;
 
@@ -29,17 +30,21 @@ namespace de4dot.blocks.cflow {
 		protected Block block;
 		int iteration;
 
-		public void init(Blocks blocks, Block block) {
+		public void deobfuscateBegin(Blocks blocks) {
 			this.blocks = blocks;
-			this.block = block;
-			this.iteration = 0;
+			iteration = 0;
 		}
 
-		public bool deobfuscate() {
+		public bool deobfuscate(List<Block> allBlocks) {
 			if (iteration++ >= MAX_ITERATIONS)
 				return false;
 
-			return deobfuscateInternal();
+			bool changed = false;
+			foreach (var block in allBlocks) {
+				this.block = block;
+				changed |= deobfuscateInternal();
+			}
+			return changed;
 		}
 
 		protected abstract bool deobfuscateInternal();

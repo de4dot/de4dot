@@ -23,31 +23,11 @@ using Mono.Cecil.Cil;
 namespace de4dot.blocks.cflow {
 	// Removes dead code that is the result of one of our optimizations, or created by the
 	// obfuscator.
-	class DeadCodeRemover {
-		List<Block> allBlocks;
+	class DeadCodeRemover : BlockDeobfuscator {
 		List<int> allDeadInstructions = new List<int>();
 		InstructionExpressionFinder instructionExpressionFinder = new InstructionExpressionFinder();
 
-		public void init(List<Block> allBlocks) {
-			this.allBlocks = allBlocks;
-		}
-
-		public bool remove() {
-			bool changed = false;
-
-			foreach (var block in allBlocks) {
-				try {
-					changed |= remove(block);
-				}
-				catch (System.NullReferenceException) {
-					// Here if eg. invalid metadata token in a call instruction (operand is null)
-				}
-			}
-
-			return changed;
-		}
-
-		bool remove(Block block) {
+		protected override bool deobfuscate(Block block) {
 			allDeadInstructions.Clear();
 
 			bool changed = false;

@@ -105,11 +105,12 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			get { return startedDeobfuscating ? options.InlineMethods : true; }
 		}
 
-		public override IMethodCallInliner MethodCallInliner {
+		public override IEnumerable<IBlocksDeobfuscator> BlocksDeobfuscators {
 			get {
+				var list = new List<IBlocksDeobfuscator>();
 				if (CanInlineMethods)
-					return new MethodCallInliner();
-				return new NoMethodInliner();
+					list.Add(new MethodCallInliner());
+				return list;
 			}
 		}
 
