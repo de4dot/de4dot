@@ -80,6 +80,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		ResourceResolver resourceResolver;
 		AssemblyResolver assemblyResolver;
 		FieldsRestorer fieldsRestorer;
+		ArrayBlockDeobfuscator arrayBlockDeobfuscator;
 
 		internal class Options : OptionsBase {
 			public bool InlineMethods { get; set; }
@@ -108,8 +109,11 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		public override IEnumerable<IBlocksDeobfuscator> BlocksDeobfuscators {
 			get {
 				var list = new List<IBlocksDeobfuscator>();
-				if (CanInlineMethods)
+				if (CanInlineMethods) {
 					list.Add(new MethodCallInliner());
+					if (arrayBlockDeobfuscator.Detected)
+						list.Add(arrayBlockDeobfuscator);
+				}
 				return list;
 			}
 		}
@@ -132,6 +136,8 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		}
 
 		protected override void scanForObfuscator() {
+			arrayBlockDeobfuscator = new ArrayBlockDeobfuscator(module);
+			arrayBlockDeobfuscator.init();
 			stringDecrypter = new StringDecrypter(module);
 			stringDecrypter.find(DeobfuscatedFile);
 			resourceResolver = new ResourceResolver(module, DeobfuscatedFile, this);
