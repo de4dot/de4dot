@@ -153,8 +153,10 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				if (detectMethodProxyObfuscation())
 					return DeobfuscatorInfo.THE_NAME + " 3.5";
 				return DeobfuscatorInfo.THE_NAME + " 1.x-3.x";
-			case StringDecrypter.DecrypterVersion.V4:
-				return DeobfuscatorInfo.THE_NAME + " 4.x";
+			case StringDecrypter.DecrypterVersion.V4_0:
+				return DeobfuscatorInfo.THE_NAME + " 4.0";
+			case StringDecrypter.DecrypterVersion.V4_1:
+				return DeobfuscatorInfo.THE_NAME + " 4.1";
 			}
 
 			return DeobfuscatorInfo.THE_NAME;
