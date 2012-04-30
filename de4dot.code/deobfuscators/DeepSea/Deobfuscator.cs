@@ -136,6 +136,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		}
 
 		protected override void scanForObfuscator() {
+			staticStringInliner.UseUnknownArgs = true;
 			arrayBlockDeobfuscator = new ArrayBlockDeobfuscator(module);
 			arrayBlockDeobfuscator.init();
 			stringDecrypter = new StringDecrypter(module);

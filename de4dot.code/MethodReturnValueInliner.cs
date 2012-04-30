@@ -146,6 +146,12 @@ namespace de4dot.code {
 		Blocks blocks;
 		VariableValues variableValues;
 		int errors = 0;
+		bool useUnknownArgs = false;
+
+		public bool UseUnknownArgs {
+			get { return useUnknownArgs; }
+			set { useUnknownArgs = value; }
+		}
 
 		protected class CallResult {
 			public Block block;
@@ -331,7 +337,7 @@ namespace de4dot.code {
 				default:
 					int pushes, pops;
 					DotNetUtils.calculateStackUsage(instr.Instruction, false, out pushes, out pops);
-					if (pushes != 1) {
+					if (!useUnknownArgs || pushes != 1) {
 						Log.w("Could not find all arguments to method {0} ({1:X8}), instr: {2}",
 									Utils.removeNewlines(method),
 									method.MetadataToken.ToInt32(),
