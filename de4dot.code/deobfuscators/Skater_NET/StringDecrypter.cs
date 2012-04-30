@@ -110,10 +110,11 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 			}
 		}
 
-		public void initialize() {
+		public void initialize(ISimpleDeobfuscator deobfuscator) {
 			if (decrypterCctor == null)
 				return;
 
+			deobfuscator.deobfuscate(decrypterCctor);
 			var instrs = decrypterCctor.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 4; i++) {
 				var ldstr = instrs[i];

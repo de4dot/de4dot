@@ -102,7 +102,7 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 
 			enumClassFinder = new EnumClassFinder(module);
 
-			stringDecrypter.initialize();
+			stringDecrypter.initialize(DeobfuscatedFile);
 		}
 
 		public override void deobfuscateMethodEnd(Blocks blocks) {
