@@ -272,7 +272,6 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				int offset = magic ^ magic2 ^ magic3;
 				var keyChar = encryptedData[offset + 2];
 				int cachedIndex = encryptedData[offset + 1] ^ keyChar;
-				var sb = new StringBuilder();
 				int flags = encryptedData[offset] ^ keyChar;
 				int numChars = (flags >> 1) & ~7 | (flags & 7);
 				if ((flags & 8) != 0) {
@@ -281,6 +280,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 					offset++;
 				}
 				offset += 3;
+				var sb = new StringBuilder(numChars);
 				for (int i = 0; i < numChars; i++)
 					sb.Append((char)(keyChar ^ encryptedData[offset + numChars - i - 1] ^ key[(i + 1 + offset) % key.Length]));
 				return sb.ToString();
