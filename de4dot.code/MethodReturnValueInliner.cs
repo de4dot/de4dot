@@ -200,13 +200,16 @@ namespace de4dot.code {
 			}
 		}
 
-		void getLocalVariableValue(VariableDefinition variable, out object value) {
+		bool getLocalVariableValue(VariableDefinition variable, out object value) {
 			if (variableValues == null)
 				variableValues = new VariableValues(blocks.Locals, allBlocks);
 			var val = variableValues.getValue(variable);
-			if (!val.isValid())
-				throw new ApplicationException("Could not get value of local variable");
+			if (!val.isValid()) {
+				value = null;
+				return false;
+			}
 			value = val.Value;
+			return true;
 		}
 
 		void findAllCallResults() {
@@ -320,17 +323,29 @@ namespace de4dot.code {
 					getLocalVariableValue(Instr.getLocalVar(blocks.Locals, instr), out arg);
 					break;
 
+				case Code.Ldfld:
 				case Code.Ldsfld:
 					arg = instr.Operand;
 					break;
 
 				default:
-					Log.w("Could not find all arguments to method {0} ({1:X8}), instr: {2}",
-								Utils.removeNewlines(method),
-								method.MetadataToken.ToInt32(),
-								instr);
-					errors++;
-					return false;
+					int pushes, pops;
+					DotNetUtils.calculateStackUsage(instr.Instruction, false, out pushes, out pops);
+					if (pushes != 1) {
+						Log.w("Could not find all arguments to method {0} ({1:X8}), instr: {2}",
+									Utils.removeNewlines(method),
+									method.MetadataToken.ToInt32(),
+									instr);
+						errors++;
+						return false;
+					}
+
+					for (int i = 0; i < pops; i++) {
+						if (!getArg(method, block, ref arg, ref instrIndex))
+							return false;
+					}
+					arg = null;
+					break;
 				}
 				break;
 			}
