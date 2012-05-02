@@ -26,6 +26,7 @@ using Mono.Cecil.Metadata;
 namespace de4dot.blocks.cflow {
 	public class InstructionEmulator {
 		ValueStack valueStack = new ValueStack();
+		Dictionary<Value, bool> protectedStackValues = new Dictionary<Value, bool>();
 		IList<ParameterDefinition> parameterDefinitions;
 		IList<VariableDefinition> variableDefinitions;
 		List<Value> args = new List<Value>();
@@ -52,6 +53,7 @@ namespace de4dot.blocks.cflow {
 			this.parameterDefinitions = method.Parameters;
 			this.variableDefinitions = method.Body.Variables;
 			valueStack.init();
+			protectedStackValues.Clear();
 
 			if (method != prev_method) {
 				prev_method = method;
@@ -77,6 +79,10 @@ namespace de4dot.blocks.cflow {
 			locals.AddRange(cached_locals);
 		}
 
+		public void setProtected(Value value) {
+			protectedStackValues[value] = true;
+		}
+
 		static Value getUnknownValue(TypeReference typeReference) {
 			if (typeReference == null)
 				return new UnknownValue();
@@ -94,8 +100,10 @@ namespace de4dot.blocks.cflow {
 			return new UnknownValue();
 		}
 
-		static Value truncateValue(Value value, TypeReference typeReference) {
+		Value truncateValue(Value value, TypeReference typeReference) {
 			if (typeReference == null)
+				return value;
+			if (protectedStackValues.ContainsKey(value))
 				return value;
 
 			switch (typeReference.EType) {
@@ -206,6 +214,10 @@ namespace de4dot.blocks.cflow {
 			if (0 <= index && index < variableDefinitions.Count)
 				return getUnknownValue(variableDefinitions[index].VariableType);
 			return new UnknownValue();
+		}
+
+		public int stackSize() {
+			return valueStack.Size;
 		}
 
 		public void push(Value value) {
