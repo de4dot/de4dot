@@ -592,6 +592,25 @@ namespace de4dot.blocks {
 			return null;
 		}
 
+		// Copies most things but not everything
+		public static MethodDefinition clone(MethodDefinition method) {
+			var newMethod = new MethodDefinition(method.Name, method.Attributes, method.MethodReturnType.ReturnType);
+			newMethod.MetadataToken = method.MetadataToken;
+			newMethod.Attributes = method.Attributes;
+			newMethod.ImplAttributes = method.ImplAttributes;
+			newMethod.HasThis = method.HasThis;
+			newMethod.ExplicitThis = method.ExplicitThis;
+			newMethod.CallingConvention = method.CallingConvention;
+			newMethod.SemanticsAttributes = method.SemanticsAttributes;
+			newMethod.DeclaringType = method.DeclaringType;
+			foreach (var arg in method.Parameters)
+				newMethod.Parameters.Add(new ParameterDefinition(arg.Name, arg.Attributes, arg.ParameterType));
+			foreach (var gp in method.GenericParameters)
+				newMethod.GenericParameters.Add(new GenericParameter(gp.Name, newMethod) { Attributes = gp.Attributes });
+			DotNetUtils.copyBodyFromTo(method, newMethod);
+			return newMethod;
+		}
+
 		public static Instruction clone(Instruction instr) {
 			return new Instruction {
 				Offset = instr.Offset,
