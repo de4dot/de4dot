@@ -71,9 +71,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		}
 
 		bool inlineMethod(MethodDefinition methodToInline, int instrIndex, int const1, int const2) {
-			if (hasSecuritySafeCriticalAttribute(methodToInline))
-				methodToInline = cflowDeobfuscator.deobfuscate(methodToInline);
-			this.methodToInline = methodToInline;
+			this.methodToInline = methodToInline = cflowDeobfuscator.deobfuscate(methodToInline);
 
 			parameters = DotNetUtils.getParameters(methodToInline);
 			arg1 = parameters[parameters.Count - 2];
@@ -312,55 +310,16 @@ done:
 				return false;
 			var param1 = parameters[paramCount - 1];
 			var param2 = parameters[paramCount - 2];
-			if (hasSecuritySafeCriticalAttribute(method)) {
-				if (!isIntType(param1.ParameterType.EType))
-					return false;
-				if (!isIntType(param2.ParameterType.EType))
-					return false;
-			}
-			else {
-				if (param1.ParameterType.EType != ElementType.I4)
-					return false;
-				if (param2.ParameterType.EType != ElementType.I4)
-					return false;
-				if (!checkInstrs(method))
-					return false;
-			}
+			if (!isIntType(param1.ParameterType.EType))
+				return false;
+			if (!isIntType(param2.ParameterType.EType))
+				return false;
 
 			return true;
 		}
 
 		static bool isIntType(ElementType etype) {
 			return etype == ElementType.Char || etype == ElementType.I2 || etype == ElementType.I4;
-		}
-
-		static bool hasSecuritySafeCriticalAttribute(MethodDefinition method) {
-			return hasAttribute(method, "System.Security.SecuritySafeCriticalAttribute");
-		}
-
-		static bool hasAttribute(MethodDefinition method, string attrName) {
-			foreach (var attr in method.CustomAttributes) {
-				if (attr.Constructor.DeclaringType.FullName == attrName)
-					return true;
-			}
-			return false;
-		}
-
-		static bool checkInstrs(MethodDefinition method) {
-			bool foundSwitch = false, foundXor = false;
-			foreach (var instr in method.Body.Instructions) {
-				if (foundSwitch && foundXor)
-					break;
-				switch (instr.OpCode.Code) {
-				case Code.Switch:
-					foundSwitch = true;
-					break;
-				case Code.Xor:
-					foundXor = true;
-					break;
-				}
-			}
-			return foundSwitch && foundXor;
 		}
 
 		protected override bool isReturn(MethodDefinition methodToInline, int instrIndex) {
