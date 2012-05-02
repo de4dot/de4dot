@@ -110,7 +110,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			get {
 				var list = new List<IBlocksDeobfuscator>();
 				if (CanInlineMethods) {
-					list.Add(new MethodCallInliner());
+					list.Add(new DsMethodCallInliner());
 					if (arrayBlockDeobfuscator.Detected)
 						list.Add(arrayBlockDeobfuscator);
 				}
@@ -175,7 +175,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 						continue;
 					if (checkedMethods++ >= 1000)
 						goto done;
-					if (!DeepSea.MethodCallInliner.canInline(method))
+					if (!DeepSea.DsMethodCallInliner.canInline(method))
 						continue;
 					foundProxies++;
 				}

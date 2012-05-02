@@ -117,6 +117,7 @@
     <Compile Include="deobfuscators\CryptoObfuscator\StringDecrypter.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\TamperDetection.cs" />
     <Compile Include="deobfuscators\DeepSea\ArrayBlockDeobfuscator.cs" />
+    <Compile Include="deobfuscators\DeepSea\DsConstantsReader.cs" />
     <Compile Include="deobfuscators\DeepSea\FieldsRestorer.cs" />
     <Compile Include="deobfuscators\DeobfuscatorBase.cs" />
     <Compile Include="deobfuscators\DeobfuscatorInfoBase.cs" />
@@ -127,7 +128,7 @@
     <Compile Include="deobfuscators\DeepSea\ResourceResolver.cs" />
     <Compile Include="deobfuscators\DeepSea\StringDecrypter.cs" />
     <Compile Include="deobfuscators\DeepSea\Deobfuscator.cs" />
-    <Compile Include="deobfuscators\DeepSea\MethodCallInliner.cs" />
+    <Compile Include="deobfuscators\DeepSea\DsMethodCallInliner.cs" />
     <Compile Include="deobfuscators\Dotfuscator\Deobfuscator.cs" />
     <Compile Include="deobfuscators\Dotfuscator\StringDecrypter.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v3\AntiStrongName.cs" />

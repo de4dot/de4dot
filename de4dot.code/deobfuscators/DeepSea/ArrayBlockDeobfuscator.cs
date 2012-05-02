@@ -29,7 +29,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		ModuleDefinition module;
 		FieldDefinitionAndDeclaringTypeDict<FieldInfo> fieldToInfo = new FieldDefinitionAndDeclaringTypeDict<FieldInfo>();
 		Dictionary<VariableDefinition, FieldInfo> localToInfo = new Dictionary<VariableDefinition, FieldInfo>();
-		ConstantsReader constantsReader;
+		DsConstantsReader constantsReader;
 
 		class FieldInfo {
 			public FieldDefinition field;
@@ -200,7 +200,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 
 		bool deobfuscate3(Block block, int i) {
 			var instrs = block.Instructions;
-			if (i >= instrs.Count)
+			if (i + 1 >= instrs.Count)
 				return false;
 
 			int start = i;
@@ -211,9 +211,12 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			if (info == null)
 				return false;
 
+			if (!instrs[i + 1].isLdcI4())
+				return false;
+
 			var constants = getConstantsReader(block);
 			int value;
-			i++;
+			i += 2;
 			if (!constants.getInt32(ref i, out value))
 				return false;
 
@@ -227,10 +230,10 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return true;
 		}
 
-		ConstantsReader getConstantsReader(Block block) {
+		DsConstantsReader getConstantsReader(Block block) {
 			if (constantsReader != null)
 				return constantsReader;
-			return constantsReader = new ConstantsReader(blocks.Locals, block.Instructions);
+			return constantsReader = new DsConstantsReader(block.Instructions);
 		}
 	}
 }

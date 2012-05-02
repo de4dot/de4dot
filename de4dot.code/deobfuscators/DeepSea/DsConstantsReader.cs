@@ -18,21 +18,23 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
+using Mono.Cecil.Cil;
+using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.DeepSea {
-	static class DsInlinedMethodsFinder {
-		public static List<MethodDefinition> find(ModuleDefinition module) {
-			var inlinedMethods = new List<MethodDefinition>();
+	class DsConstantsReader : ConstantsReader {
+		public DsConstantsReader(List<Instr> instrs)
+			: base(instrs) {
+		}
 
-			foreach (var type in module.GetTypes()) {
-				foreach (var method in type.Methods) {
-					if (DsMethodCallInliner.canInline(method))
-						inlinedMethods.Add(method);
-				}
-			}
+		protected override bool getLocalConstant(Instruction instr, out int value) {
+			value = 0;
+			return true;
+		}
 
-			return inlinedMethods;
+		protected override bool getArgConstant(Instruction instr, out int value) {
+			value = 0;
+			return true;
 		}
 	}
 }
