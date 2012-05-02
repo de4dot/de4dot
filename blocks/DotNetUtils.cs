@@ -200,6 +200,21 @@ namespace de4dot.blocks {
 			}
 		}
 
+		// Returns true if it's one of the ldarg instructions
+		public static bool isLdarg(Instruction instr) {
+			switch (instr.OpCode.Code) {
+			case Code.Ldarg:
+			case Code.Ldarg_S:
+			case Code.Ldarg_0:
+			case Code.Ldarg_1:
+			case Code.Ldarg_2:
+			case Code.Ldarg_3:
+				return true;
+			default:
+				return false;
+			}
+		}
+
 		// Return true if it's one of the stloc instructions
 		public static bool isStloc(Instruction instr) {
 			switch (instr.OpCode.Code) {
