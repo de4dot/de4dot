@@ -110,9 +110,10 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			get {
 				var list = new List<IBlocksDeobfuscator>();
 				if (CanInlineMethods) {
-					list.Add(new DsMethodCallInliner());
 					if (arrayBlockDeobfuscator.Detected)
 						list.Add(arrayBlockDeobfuscator);
+
+					list.Add(new DsMethodCallInliner(new CachedCflowDeobfuscator(list)));
 				}
 				return list;
 			}

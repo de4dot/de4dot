@@ -31,6 +31,11 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		ParameterDefinition arg1, arg2;
 		Value returnValue;
 		MethodDefinition methodToInline;
+		CachedCflowDeobfuscator cflowDeobfuscator;
+
+		public DsMethodCallInliner(CachedCflowDeobfuscator cflowDeobfuscator) {
+			this.cflowDeobfuscator = cflowDeobfuscator;
+		}
 
 		protected override bool deobfuscateInternal() {
 			bool changed = false;
@@ -66,6 +71,8 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		}
 
 		bool inlineMethod(MethodDefinition methodToInline, int instrIndex, int const1, int const2) {
+			if (hasSecuritySafeCriticalAttribute(methodToInline))
+				methodToInline = cflowDeobfuscator.deobfuscate(methodToInline);
 			this.methodToInline = methodToInline;
 
 			parameters = DotNetUtils.getParameters(methodToInline);
@@ -224,7 +231,8 @@ done:
 					return false;
 				if (!foundOpCodes.ContainsKey(Code.Rem))
 					return false;
-				if (!foundOpCodes.ContainsKey(Code.Brtrue) && !foundOpCodes.ContainsKey(Code.Brtrue_S))
+				if (!foundOpCodes.ContainsKey(Code.Brtrue) && !foundOpCodes.ContainsKey(Code.Brtrue_S) &&
+					!foundOpCodes.ContainsKey(Code.Brfalse) && !foundOpCodes.ContainsKey(Code.Brfalse_S))
 					return false;
 			}
 			return true;
