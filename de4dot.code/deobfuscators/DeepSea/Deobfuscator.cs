@@ -31,6 +31,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		BoolOption decryptResources;
 		BoolOption dumpEmbeddedAssemblies;
 		BoolOption restoreFields;
+		BoolOption renameResourceKeys;
 
 		public DeobfuscatorInfo()
 			: base() {
@@ -39,6 +40,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			decryptResources = new BoolOption(null, makeArgName("rsrc"), "Decrypt resources", true);
 			dumpEmbeddedAssemblies = new BoolOption(null, makeArgName("embedded"), "Dump embedded assemblies", true);
 			restoreFields = new BoolOption(null, makeArgName("fields"), "Restore fields", true);
+			renameResourceKeys = new BoolOption(null, makeArgName("keys"), "Rename resource keys", true);
 		}
 
 		public override string Name {
@@ -57,6 +59,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				DecryptResources = decryptResources.get(),
 				DumpEmbeddedAssemblies = dumpEmbeddedAssemblies.get(),
 				RestoreFields = restoreFields.get(),
+				RenameResourceKeys = renameResourceKeys.get(),
 			});
 		}
 
@@ -67,6 +70,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				decryptResources,
 				dumpEmbeddedAssemblies,
 				restoreFields,
+				renameResourceKeys,
 			};
 		}
 	}
@@ -88,6 +92,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			public bool DecryptResources { get; set; }
 			public bool DumpEmbeddedAssemblies { get; set; }
 			public bool RestoreFields { get; set; }
+			public bool RenameResourceKeys { get; set; }
 		}
 
 		public override string Type {
@@ -128,6 +133,11 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		public Deobfuscator(Options options)
 			: base(options) {
 			this.options = options;
+
+			if (options.RenameResourceKeys)
+				this.RenamingOptions |= RenamingOptions.RenameResourceKeys;
+			else
+				this.RenamingOptions &= ~RenamingOptions.RenameResourceKeys;
 		}
 
 		protected override int detectInternal() {
