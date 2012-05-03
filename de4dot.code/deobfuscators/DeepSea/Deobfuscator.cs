@@ -268,7 +268,7 @@ done:
 		void removeInlinedMethods() {
 			if (!options.InlineMethods || !options.RemoveInlinedMethods)
 				return;
-			removeInlinedMethods(DsInlinedMethodsFinder.find(module));
+			removeInlinedMethods(DsInlinedMethodsFinder.find(module, staticStringInliner.Methods));
 		}
 
 		public override IEnumerable<int> getStringDecrypterMethods() {

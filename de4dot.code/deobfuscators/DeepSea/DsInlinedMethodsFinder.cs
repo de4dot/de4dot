@@ -22,12 +22,16 @@ using Mono.Cecil;
 
 namespace de4dot.code.deobfuscators.DeepSea {
 	static class DsInlinedMethodsFinder {
-		public static List<MethodDefinition> find(ModuleDefinition module) {
+		public static List<MethodDefinition> find(ModuleDefinition module, IEnumerable<MethodDefinition> notInlinedMethods) {
+			var notInlinedMethodsDict = new Dictionary<MethodDefinition, bool>();
+			foreach (var method in notInlinedMethods)
+				notInlinedMethodsDict[method] = true;
+
 			var inlinedMethods = new List<MethodDefinition>();
 
 			foreach (var type in module.GetTypes()) {
 				foreach (var method in type.Methods) {
-					if (DsMethodCallInliner.canInline(method))
+					if (!notInlinedMethodsDict.ContainsKey(method) && DsMethodCallInliner.canInline(method))
 						inlinedMethods.Add(method);
 				}
 			}
