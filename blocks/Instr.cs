@@ -111,6 +111,10 @@ namespace de4dot.blocks {
 			return DotNetUtils.getLdcI4Value(instruction);
 		}
 
+		public bool isLdarg() {
+			return DotNetUtils.isLdarg(instruction);
+		}
+
 		public bool isStloc() {
 			return DotNetUtils.isStloc(instruction);
 		}
