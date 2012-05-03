@@ -108,15 +108,21 @@ namespace de4dot.code.deobfuscators.DeepSea {
 
 		public override IEnumerable<IBlocksDeobfuscator> BlocksDeobfuscators {
 			get {
-				var list = new List<IBlocksDeobfuscator>();
-				if (CanInlineMethods) {
-					if (arrayBlockDeobfuscator.Detected)
-						list.Add(arrayBlockDeobfuscator);
-
-					list.Add(new DsMethodCallInliner(new CachedCflowDeobfuscator(list)));
-				}
+				var list = new List<IBlocksDeobfuscator>(getBlocksDeobfuscators());
+				if (CanInlineMethods)
+					list.Add(new DsMethodCallInliner(new CachedCflowDeobfuscator(getBlocksDeobfuscators())));
 				return list;
 			}
+		}
+
+		List<IBlocksDeobfuscator> getBlocksDeobfuscators() {
+			var list = new List<IBlocksDeobfuscator>();
+			if (CanInlineMethods) {
+				if (arrayBlockDeobfuscator.Detected)
+					list.Add(arrayBlockDeobfuscator);
+				list.Add(new CastDeobfuscator());
+			}
+			return list;
 		}
 
 		public Deobfuscator(Options options)

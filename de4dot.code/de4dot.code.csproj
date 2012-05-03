@@ -117,6 +117,7 @@
     <Compile Include="deobfuscators\CryptoObfuscator\StringDecrypter.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\TamperDetection.cs" />
     <Compile Include="deobfuscators\DeepSea\ArrayBlockDeobfuscator.cs" />
+    <Compile Include="deobfuscators\DeepSea\CastDeobfuscator.cs" />
     <Compile Include="deobfuscators\DeepSea\DsConstantsReader.cs" />
     <Compile Include="deobfuscators\DeepSea\FieldsRestorer.cs" />
     <Compile Include="deobfuscators\DeobfuscatorBase.cs" />
