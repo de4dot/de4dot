@@ -745,6 +745,10 @@ namespace de4dot.code.deobfuscators {
 			return name != null && checkValidName(name);
 		}
 
+		public virtual bool isValidResourceKeyName(string name) {
+			return name != null && checkValidName(name);
+		}
+
 		public virtual void OnBeforeAddingResources(MetadataBuilder builder) {
 		}
 
