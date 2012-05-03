@@ -26,6 +26,10 @@ namespace de4dot.code.resources {
 		readonly ResourceTypeCode code;
 		readonly object data;
 
+		public object Data {
+			get { return data; }
+		}
+
 		public ResourceTypeCode Code {
 			get { return code; }
 		}
