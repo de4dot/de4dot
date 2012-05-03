@@ -396,8 +396,60 @@ namespace de4dot.code.renamer {
 			var allGroups = groups.getAllGroups();
 			restoreVirtualProperties(allGroups);
 			restorePropertiesFromNames(allGroups);
+			resetVirtualPropertyNames(allGroups);
 			restoreVirtualEvents(allGroups);
 			restoreEventsFromNames(allGroups);
+			resetVirtualEventNames(allGroups);
+		}
+
+		void resetVirtualPropertyNames(IEnumerable<MethodNameGroup> allGroups) {
+			if (!this.RenameProperties)
+				return;
+			foreach (var group in allGroups) {
+				PropertyDef prop = null;
+				foreach (var method in group.Methods) {
+					if (method.Property == null)
+						continue;
+					if (method.Owner.HasModule)
+						continue;
+					prop = method.Property;
+					break;
+				}
+				if (prop == null)
+					continue;
+				foreach (var method in group.Methods) {
+					if (!method.Owner.HasModule)
+						continue;
+					if (method.Property == null)
+						continue;
+					memberInfos.prop(method.Property).rename(prop.PropertyDefinition.Name);
+				}
+			}
+		}
+
+		void resetVirtualEventNames(IEnumerable<MethodNameGroup> allGroups) {
+			if (!this.RenameEvents)
+				return;
+			foreach (var group in allGroups) {
+				EventDef evt = null;
+				foreach (var method in group.Methods) {
+					if (method.Event == null)
+						continue;
+					if (method.Owner.HasModule)
+						continue;
+					evt = method.Event;
+					break;
+				}
+				if (evt == null)
+					continue;
+				foreach (var method in group.Methods) {
+					if (!method.Owner.HasModule)
+						continue;
+					if (method.Event == null)
+						continue;
+					memberInfos.evt(method.Event).rename(evt.EventDefinition.Name);
+				}
+			}
 		}
 
 		void restoreVirtualProperties(IEnumerable<MethodNameGroup> allGroups) {
