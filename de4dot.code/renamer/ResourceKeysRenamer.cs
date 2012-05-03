@@ -40,15 +40,15 @@ namespace de4dot.code.renamer {
 		}
 
 		public void rename() {
-			Log.v("Renaming resource keys...");
+			Log.v("Renaming resource keys ({0})", module);
 			Log.indent();
 			foreach (var type in module.GetTypes()) {
 				string resourceName = getResourceName(type);
 				if (resourceName == null)
 					continue;
-				var resource = DotNetUtils.getResource(module, resourceName) as EmbeddedResource;
+				var resource = getResource(resourceName);
 				if (resource == null) {
-					Log.w("Could not find resource {0}", Utils.removeNewlines(resource));
+					Log.w("Could not find resource {0}", Utils.removeNewlines(resourceName));
 					continue;
 				}
 				Log.v("Resource: {0}", Utils.toCsharpString(resource.Name));
@@ -57,6 +57,23 @@ namespace de4dot.code.renamer {
 				Log.deIndent();
 			}
 			Log.deIndent();
+		}
+
+		EmbeddedResource getResource(string resourceName) {
+			var resource = DotNetUtils.getResource(module, resourceName + ".resources") as EmbeddedResource;
+			if (resource != null)
+				return resource;
+
+			string name = "";
+			var pieces = resourceName.Split('.');
+			Array.Reverse(pieces);
+			foreach (var piece in pieces) {
+				name = piece + name;
+				resource = DotNetUtils.getResource(module, name + ".resources") as EmbeddedResource;
+				if (resource != null)
+					return resource;
+			}
+			return null;
 		}
 
 		static string getResourceName(TypeDefinition type) {
@@ -81,7 +98,7 @@ namespace de4dot.code.renamer {
 							continue;
 						}
 
-						return resourceName + ".resources";
+						return resourceName;
 					}
 				}
 			}
@@ -174,10 +191,8 @@ namespace de4dot.code.renamer {
 					}
 
 					RenameInfo info;
-					if (!nameToInfo.TryGetValue(name, out info)) {
-						Log.w("Could not find resource key '{0}'", Utils.removeNewlines(name));
-						continue;
-					}
+					if (!nameToInfo.TryGetValue(name, out info))
+						continue;	// should not be renamed
 
 					ldstr.Operand = info.newName;
 					Log.v("Renamed resource key {0} => {1}", Utils.toCsharpString(info.element.Name), Utils.toCsharpString(info.newName));
@@ -196,7 +211,7 @@ namespace de4dot.code.renamer {
 			if (elem.ResourceData.Code != ResourceTypeCode.String)
 				return createDefaultName();
 			var stringData = (BuiltInResourceData)elem.ResourceData;
-			return createName(createPrefixFromStringData((string)stringData.Data), false);
+			return createPrefixFromStringData((string)stringData.Data);
 		}
 
 		string createPrefixFromStringData(string data) {

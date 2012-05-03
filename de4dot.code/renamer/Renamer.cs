@@ -95,7 +95,7 @@ namespace de4dot.code.renamer {
 
 		void renameResourceKeys() {
 			foreach (var module in modules.TheModules) {
-				if (!module.ObfuscatedFile.RenameResourcesInCode)
+				if (!module.ObfuscatedFile.RenameResourceKeys)
 					continue;
 				new ResourceKeysRenamer(module.ModuleDefinition, module.ObfuscatedFile.NameChecker).rename();
 			}
