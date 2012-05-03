@@ -78,6 +78,7 @@ namespace de4dot.code.renamer {
 			Log.n("Renaming all obfuscated symbols");
 
 			modules.initialize();
+			renameResourceKeys();
 			var groups = modules.initializeVirtualMembers();
 			memberInfos.initialize(modules);
 			renameTypeDefinitions();
@@ -90,6 +91,14 @@ namespace de4dot.code.renamer {
 			removeUselessOverrides(groups);
 			renameResources();
 			modules.cleanUp();
+		}
+
+		void renameResourceKeys() {
+			foreach (var module in modules.TheModules) {
+				if (!module.ObfuscatedFile.RenameResourcesInCode)
+					continue;
+				new ResourceKeysRenamer(module.ModuleDefinition, module.ObfuscatedFile.NameChecker).rename();
+			}
 		}
 
 		void removeUselessOverrides(MethodNameGroups groups) {

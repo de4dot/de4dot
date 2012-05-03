@@ -120,6 +120,10 @@ namespace de4dot.code {
 			get { return (deob.RenamingOptions & RenamingOptions.RemoveNamespaceIfOneType) != 0; }
 		}
 
+		public bool RenameResourceKeys {
+			get { return (deob.RenamingOptions & RenamingOptions.RenameResourceKeys) != 0; }
+		}
+
 		public IDeobfuscator Deobfuscator {
 			get { return deob; }
 		}

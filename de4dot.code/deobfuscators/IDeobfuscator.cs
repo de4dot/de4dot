@@ -50,6 +50,7 @@ namespace de4dot.code.deobfuscators {
 	[Flags]
 	public enum RenamingOptions {
 		RemoveNamespaceIfOneType = 1,
+		RenameResourceKeys = 2,
 	}
 
 	public interface IDeobfuscator : INameChecker {
