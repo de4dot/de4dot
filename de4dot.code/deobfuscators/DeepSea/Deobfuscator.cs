@@ -32,6 +32,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		BoolOption dumpEmbeddedAssemblies;
 		BoolOption restoreFields;
 		BoolOption renameResourceKeys;
+		BoolOption castDeobfuscation;
 
 		public DeobfuscatorInfo()
 			: base() {
@@ -41,6 +42,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			dumpEmbeddedAssemblies = new BoolOption(null, makeArgName("embedded"), "Dump embedded assemblies", true);
 			restoreFields = new BoolOption(null, makeArgName("fields"), "Restore fields", true);
 			renameResourceKeys = new BoolOption(null, makeArgName("keys"), "Rename resource keys", true);
+			castDeobfuscation = new BoolOption(null, makeArgName("cast"), "Deobfuscate casts", true);
 		}
 
 		public override string Name {
@@ -60,6 +62,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				DumpEmbeddedAssemblies = dumpEmbeddedAssemblies.get(),
 				RestoreFields = restoreFields.get(),
 				RenameResourceKeys = renameResourceKeys.get(),
+				CastDeobfuscation = castDeobfuscation.get(),
 			});
 		}
 
@@ -71,6 +74,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				dumpEmbeddedAssemblies,
 				restoreFields,
 				renameResourceKeys,
+				castDeobfuscation,
 			};
 		}
 	}
@@ -93,6 +97,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			public bool DumpEmbeddedAssemblies { get; set; }
 			public bool RestoreFields { get; set; }
 			public bool RenameResourceKeys { get; set; }
+			public bool CastDeobfuscation { get; set; }
 		}
 
 		public override string Type {
@@ -122,11 +127,10 @@ namespace de4dot.code.deobfuscators.DeepSea {
 
 		List<IBlocksDeobfuscator> getBlocksDeobfuscators() {
 			var list = new List<IBlocksDeobfuscator>();
-			if (CanInlineMethods) {
-				if (arrayBlockDeobfuscator.Detected)
-					list.Add(arrayBlockDeobfuscator);
+			if (arrayBlockDeobfuscator.Detected)
+				list.Add(arrayBlockDeobfuscator);
+			if (!startedDeobfuscating || options.CastDeobfuscation)
 				list.Add(new CastDeobfuscator());
-			}
 			return list;
 		}
 
