@@ -21,6 +21,8 @@ using System.Collections.Generic;
 
 namespace de4dot.blocks.cflow {
 	public interface IBlocksDeobfuscator {
+		bool ExecuteOnNoChange { get; }
+
 		void deobfuscateBegin(Blocks blocks);
 
 		// Returns true if something was updated

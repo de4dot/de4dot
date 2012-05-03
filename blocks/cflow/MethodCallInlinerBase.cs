@@ -30,6 +30,8 @@ namespace de4dot.blocks.cflow {
 		protected Block block;
 		int iteration;
 
+		public bool ExecuteOnNoChange { get; set; }
+
 		public void deobfuscateBegin(Blocks blocks) {
 			this.blocks = blocks;
 			iteration = 0;

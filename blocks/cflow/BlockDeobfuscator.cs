@@ -25,6 +25,8 @@ namespace de4dot.blocks.cflow {
 		protected List<Block> allBlocks;
 		protected Blocks blocks;
 
+		public bool ExecuteOnNoChange { get; set; }
+
 		public virtual void deobfuscateBegin(Blocks blocks) {
 			this.blocks = blocks;
 		}

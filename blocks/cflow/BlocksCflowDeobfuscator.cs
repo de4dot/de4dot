@@ -26,8 +26,7 @@ namespace de4dot.blocks.cflow {
 		Blocks blocks;
 		List<Block> allBlocks = new List<Block>();
 		List<IBlocksDeobfuscator> userBlocksDeobfuscators = new List<IBlocksDeobfuscator>();
-		List<IBlocksDeobfuscator> callAlways = new List<IBlocksDeobfuscator>();
-		List<IBlocksDeobfuscator> callNoChange = new List<IBlocksDeobfuscator>();
+		List<IBlocksDeobfuscator> ourBlocksDeobfuscators = new List<IBlocksDeobfuscator>();
 
 		public BlocksCflowDeobfuscator() {
 			init();
@@ -39,12 +38,12 @@ namespace de4dot.blocks.cflow {
 		}
 
 		void init() {
-			callAlways.Add(new BlockCflowDeobfuscator());
-			callAlways.Add(new SwitchCflowDeobfuscator());
-			callAlways.Add(new DeadStoreRemover());
-			callAlways.Add(new DeadCodeRemover());
-			callNoChange.Add(new ConstantsFolder());
-			callNoChange.Add(new StLdlocFixer());
+			ourBlocksDeobfuscators.Add(new BlockCflowDeobfuscator { ExecuteOnNoChange = false });
+			ourBlocksDeobfuscators.Add(new SwitchCflowDeobfuscator { ExecuteOnNoChange = false });
+			ourBlocksDeobfuscators.Add(new DeadStoreRemover { ExecuteOnNoChange = false });
+			ourBlocksDeobfuscators.Add(new DeadCodeRemover { ExecuteOnNoChange = false });
+			ourBlocksDeobfuscators.Add(new ConstantsFolder { ExecuteOnNoChange = true });
+			ourBlocksDeobfuscators.Add(new StLdlocFixer { ExecuteOnNoChange = true });
 		}
 
 		public void add(IEnumerable<IBlocksDeobfuscator> blocksDeobfuscators) {
@@ -66,8 +65,7 @@ namespace de4dot.blocks.cflow {
 			int iterations = -1;
 
 			deobfuscateBegin(userBlocksDeobfuscators);
-			deobfuscateBegin(callAlways);
-			deobfuscateBegin(callNoChange);
+			deobfuscateBegin(ourBlocksDeobfuscators);
 
 			do {
 				iterations++;
@@ -81,13 +79,9 @@ namespace de4dot.blocks.cflow {
 					changed |= fixDotfuscatorLoop();
 
 				changed |= deobfuscate(userBlocksDeobfuscators, allBlocks);
-				changed |= deobfuscate(callAlways, allBlocks);
-
-				foreach (var bd in callNoChange) {
-					if (changed)
-						break;
-					changed |= bd.deobfuscate(allBlocks);
-				}
+				changed |= deobfuscate(ourBlocksDeobfuscators, allBlocks);
+				changed |= deobfuscateNoChange(changed, userBlocksDeobfuscators, allBlocks);
+				changed |= deobfuscateNoChange(changed, ourBlocksDeobfuscators, allBlocks);
 			} while (changed);
 		}
 
@@ -98,8 +92,22 @@ namespace de4dot.blocks.cflow {
 
 		bool deobfuscate(IEnumerable<IBlocksDeobfuscator> bds, List<Block> allBlocks) {
 			bool changed = false;
-			foreach (var bd in bds)
+			foreach (var bd in bds) {
+				if (bd.ExecuteOnNoChange)
+					continue;
 				changed |= bd.deobfuscate(allBlocks);
+			}
+			return changed;
+		}
+
+		bool deobfuscateNoChange(bool changed, IEnumerable<IBlocksDeobfuscator> bds, List<Block> allBlocks) {
+			foreach (var bd in bds) {
+				if (changed)
+					break;
+				if (!bd.ExecuteOnNoChange)
+					continue;
+				changed |= bd.deobfuscate(allBlocks);
+			}
 			return changed;
 		}
 
