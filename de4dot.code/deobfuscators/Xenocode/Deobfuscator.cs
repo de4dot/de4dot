@@ -89,6 +89,8 @@ namespace de4dot.code.deobfuscators.Xenocode {
 				switch (type.FullName) {
 				case "Xenocode.Client.Attributes.AssemblyAttributes.ProcessedByXenocode":
 				case "Xenocode.Client.Attributes.AssemblyAttributes.SuppressDisassembly":
+				case "XenoCode.User.Attributes.AssemblyAttributes.ProcessedByXenoCode":
+				case "XenoCode.User.Attributes.AssemblyAttributes.SuppressDisassembly":
 					addAttributeToBeRemoved(type, "Obfuscator attribute");
 					foundXenocodeAttribute = true;
 					break;
