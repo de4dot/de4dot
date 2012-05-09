@@ -112,7 +112,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				var calledMethod = instr.Operand as MethodDefinition;
 				if (calledMethod == null)
 					continue;
-				var args = getArgValues(DotNetUtils.getArgPushes(instrs, i));
+				var args = DsUtils.getArgValues(instrs, i);
 				if (args == null)
 					continue;
 
@@ -193,66 +193,6 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				return field;
 			}
 			return null;
-		}
-
-		static IList<object> getArgValues(IList<Instruction> argInstrs) {
-			if (argInstrs == null)
-				return null;
-			var args = new List<object>(argInstrs.Count);
-			foreach (var argInstr in argInstrs) {
-				object arg;
-				getArgValue(argInstr, out arg);
-				args.Add(arg);
-			}
-			return args;
-		}
-
-		static bool getArgValue(MethodDefinition method, int index, out object arg) {
-			return getArgValue(method.Body.Instructions[index], out arg);
-		}
-
-		static bool getArgValue(Instruction instr, out object arg) {
-			switch (instr.OpCode.Code) {
-			case Code.Ldc_I4_S: arg = (int)(sbyte)instr.Operand; return true;
-			case Code.Ldc_I4_M1: arg = -1; return true;
-			case Code.Ldc_I4_0: arg = 0; return true;
-			case Code.Ldc_I4_1: arg = 1; return true;
-			case Code.Ldc_I4_2: arg = 2; return true;
-			case Code.Ldc_I4_3: arg = 3; return true;
-			case Code.Ldc_I4_4: arg = 4; return true;
-			case Code.Ldc_I4_5: arg = 5; return true;
-			case Code.Ldc_I4_6: arg = 6; return true;
-			case Code.Ldc_I4_7: arg = 7; return true;
-			case Code.Ldc_I4_8: arg = 8; return true;
-			case Code.Ldnull: arg = null; return true;
-
-			case Code.Ldstr:
-			case Code.Ldc_I4:
-			case Code.Ldc_I8:
-			case Code.Ldc_R4:
-			case Code.Ldc_R8:
-				arg = instr.Operand;
-				return true;
-
-			case Code.Ldarg:
-			case Code.Ldarg_S:
-			case Code.Ldarg_0:
-			case Code.Ldarg_1:
-			case Code.Ldarg_2:
-			case Code.Ldarg_3:
-			case Code.Ldloc:
-			case Code.Ldloc_S:
-			case Code.Ldloc_0:
-			case Code.Ldloc_1:
-			case Code.Ldloc_2:
-			case Code.Ldloc_3:
-				arg = null;
-				return true;
-
-			default:
-				arg = null;
-				return false;
-			}
 		}
 
 		static string[] handlerLocalTypes_V3 = new string[] {
