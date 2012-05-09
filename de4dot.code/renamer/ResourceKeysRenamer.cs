@@ -29,10 +29,12 @@ using de4dot.code.resources;
 
 namespace de4dot.code.renamer {
 	class ResourceKeysRenamer {
+		const int RESOURCE_KEY_MAX_LEN = 50;
+		const string DEFAULT_KEY_NAME = "Key";
+
 		ModuleDefinition module;
 		INameChecker nameChecker;
 		Dictionary<string, bool> newNames = new Dictionary<string, bool>();
-		const string DEFAULT_KEY_NAME = "Key";
 
 		public ResourceKeysRenamer(ModuleDefinition module, INameChecker nameChecker) {
 			this.module = module;
@@ -166,13 +168,13 @@ namespace de4dot.code.renamer {
 					int ldstrIndex;
 					switch (calledMethod.FullName) {
 					case "System.String System.Resources.ResourceManager::GetString(System.String,System.Globalization.CultureInfo)":
-					case "System.IO.UnmanagedMemoryStream System.Resources.ResourceManager::GetString(System.String,System.Globalization.CultureInfo)":
+					case "System.IO.UnmanagedMemoryStream System.Resources.ResourceManager::GetStream(System.String,System.Globalization.CultureInfo)":
 					case "System.Object System.Resources.ResourceManager::GetObject(System.String,System.Globalization.CultureInfo)":
 						ldstrIndex = i - 2;
 						break;
 
 					case "System.String System.Resources.ResourceManager::GetString(System.String)":
-					case "System.IO.UnmanagedMemoryStream System.Resources.ResourceManager::GetString(System.String)":
+					case "System.IO.UnmanagedMemoryStream System.Resources.ResourceManager::GetStream(System.String)":
 					case "System.Object System.Resources.ResourceManager::GetObject(System.String)":
 						ldstrIndex = i - 1;
 						break;
@@ -211,22 +213,20 @@ namespace de4dot.code.renamer {
 			if (elem.ResourceData.Code != ResourceTypeCode.String)
 				return createDefaultName();
 			var stringData = (BuiltInResourceData)elem.ResourceData;
-			return createPrefixFromStringData((string)stringData.Data);
+			var name = createPrefixFromStringData((string)stringData.Data);
+			return createName(counter => counter == 0 ? name : string.Format("{0}_{1}", name, counter));
 		}
 
 		string createPrefixFromStringData(string data) {
-			const int MAX_LEN = 30;
-
 			var sb = new StringBuilder();
 			data = data.Substring(0, Math.Min(data.Length, 100));
 			data = Regex.Replace(data, "[`'\"]", "");
-			data = Regex.Replace(data, @"[^\w]", " ");
-			data = Regex.Replace(data, @"[\s]", " ");
+			data = Regex.Replace(data, @"[^\w]+", " ");
 			foreach (var piece in data.Split(' ')) {
 				if (piece.Length == 0)
 					continue;
 				var piece2 = piece.Substring(0, 1).ToUpperInvariant() + piece.Substring(1).ToLowerInvariant();
-				int maxLen = MAX_LEN - sb.Length;
+				int maxLen = RESOURCE_KEY_MAX_LEN - sb.Length;
 				if (maxLen <= 0)
 					break;
 				if (piece2.Length > maxLen)
@@ -239,16 +239,12 @@ namespace de4dot.code.renamer {
 		}
 
 		string createDefaultName() {
-			return createName(DEFAULT_KEY_NAME, true);
+			return createName(counter => string.Format("{0}{1}", DEFAULT_KEY_NAME, counter));
 		}
 
-		string createName(string prefix, bool useZeroPostfix) {
+		string createName(Func<int, string> create) {
 			for (int counter = 0; ; counter++) {
-				string newName;
-				if (useZeroPostfix || counter != 0)
-					newName = prefix + counter;
-				else
-					newName = prefix;
+				string newName = create(counter);
 				if (!newNames.ContainsKey(newName)) {
 					newNames[newName] = true;
 					return newName;
