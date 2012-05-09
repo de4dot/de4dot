@@ -35,6 +35,8 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			V3Old,
 			V3,
 			V4,
+			V404,
+			V41,
 		}
 
 		public class AssemblyInfo {
@@ -127,9 +129,15 @@ namespace de4dot.code.deobfuscators.DeepSea {
 
 			simpleDeobfuscator.deobfuscate(handler);
 			List<FieldInfo> fieldInfosTmp;
-			if (checkHandlerV4(handler, out fieldInfosTmp) ||
-				checkHandlerV4_0_4(handler, out fieldInfosTmp)) {
+			if (checkHandlerV4(handler, out fieldInfosTmp)) {
 				version = Version.V4;
+				fieldInfos = fieldInfosTmp;
+				return true;
+			}
+
+			Version versionTmp = checkHandlerV404_41(handler, out fieldInfosTmp);
+			if (fieldInfosTmp.Count != 0) {
+				version = versionTmp;
 				fieldInfos = fieldInfosTmp;
 				return true;
 			}
@@ -202,12 +210,13 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return fieldInfos.Count != 0;
 		}
 
-		// 4.0.4+
-		bool checkHandlerV4_0_4(MethodDefinition handler, out List<FieldInfo> fieldInfos) {
+		// 4.0.4, 4.1+
+		Version checkHandlerV404_41(MethodDefinition handler, out List<FieldInfo> fieldInfos) {
+			Version version = Version.Unknown;
 			fieldInfos = new List<FieldInfo>();
 
 			var instrs = handler.Body.Instructions;
-			for (int i = 0; i < instrs.Count - 8; i++) {
+			for (int i = 0; i < instrs.Count - 6; i++) {
 				int index = i;
 
 				var ldci4_len = instrs[index++];
@@ -233,26 +242,136 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				if (!DotNetUtils.isMethod(call1.Operand as MethodReference, "System.Void", "(System.Array,System.RuntimeFieldHandle)"))
 					continue;
 
-				if (!DotNetUtils.isLdloc(instrs[index++]))
+				int callIndex = getCallDecryptMethodIndex(instrs, index);
+				if (callIndex < 0)
 					continue;
+				var args = DsUtils.getArgValues(instrs, callIndex);
+				if (args == null)
+					continue;
+				var decryptMethod = instrs[callIndex].Operand as MethodDefinition;
+				if (decryptMethod == null)
+					continue;
+				int magic;
+				Version versionTmp;
+				getMagic(decryptMethod, args, out versionTmp, out magic);
 
-				var ldci4_magic = instrs[index++];
-				if (!DotNetUtils.isLdcI4(ldci4_magic))
-					continue;
-				int magic = DotNetUtils.getLdcI4Value(ldci4_magic);
-
-				var call2 = instrs[index++];
-				if (call2.OpCode.Code == Code.Tail)
-					call2 = instrs[index++];
-				if (call2.OpCode.Code != Code.Call)
-					continue;
-				if (!DotNetUtils.isMethod(call2.Operand as MethodReference, "System.Reflection.Assembly", "(System.Byte[],System.Int32)"))
-					continue;
-
+				version = versionTmp;
 				fieldInfos.Add(new FieldInfo(field, magic));
 			}
 
-			return fieldInfos.Count != 0;
+			return version;
+		}
+
+		static bool getMagic(MethodDefinition method, IList<object> args, out Version version, out int magic) {
+			magic = 0;
+			int magicIndex = getMagicIndex(method, out version);
+			if (magicIndex < 0 || magicIndex >= args.Count)
+				return false;
+			var val = args[magicIndex];
+			if (!(val is int))
+				return false;
+
+			magic = (int)val;
+			return true;
+		}
+
+		static int getMagicIndex(MethodDefinition method, out Version version) {
+			int magicIndex = getMagicIndex404(method);
+			if (magicIndex >= 0) {
+				version = Version.V404;
+				return magicIndex;
+			}
+
+			magicIndex = getMagicIndex41Trial(method);
+			if (magicIndex >= 0) {
+				version = Version.V41;
+				return magicIndex;
+			}
+
+			version = Version.Unknown;
+			return -1;
+		}
+
+		static int getMagicIndex404(MethodDefinition method) {
+			var instrs = method.Body.Instructions;
+			for (int i = 0; i < instrs.Count - 4; i++) {
+				int index = i;
+				if (!DotNetUtils.isLdloc(instrs[index++]))
+					continue;
+				var ldarg = instrs[index++];
+				if (!DotNetUtils.isLdarg(ldarg))
+					continue;
+				if (instrs[index++].OpCode.Code != Code.Add)
+					continue;
+				var ldci4 = instrs[index++];
+				if (!DotNetUtils.isLdcI4(ldci4))
+					continue;
+				if (DotNetUtils.getLdcI4Value(ldci4) != 0xFF)
+					continue;
+				return DotNetUtils.getArgIndex(ldarg);
+			}
+			return -1;
+		}
+
+		static int getMagicIndex41Trial(MethodDefinition method) {
+			var instrs = method.Body.Instructions;
+			for (int i = 0; i < instrs.Count - 4; i++) {
+				int index = i;
+				if (instrs[index++].OpCode.Code != Code.Div)
+					continue;
+				var ldarg = instrs[index++];
+				if (!DotNetUtils.isLdarg(ldarg))
+					continue;
+				if (instrs[index++].OpCode.Code != Code.Add)
+					continue;
+				var ldci4 = instrs[index++];
+				if (!DotNetUtils.isLdcI4(ldci4))
+					continue;
+				if (DotNetUtils.getLdcI4Value(ldci4) != 0xFF)
+					continue;
+				return DotNetUtils.getArgIndex(ldarg);
+			}
+			return -1;
+		}
+
+		static int getCallDecryptMethodIndex(IList<Instruction> instrs, int index) {
+			index = getRetIndex(instrs, index);
+			if (index < 0)
+				return -1;
+			for (int i = index - 1; i >= 0; i--) {
+				var instr = instrs[i];
+				if (!isCallOrNext(instr))
+					break;
+				if (instr.OpCode.Code != Code.Call)
+					continue;
+				var calledMethod = instr.Operand as MethodReference;
+				if (calledMethod == null || calledMethod.Parameters.Count < 2)
+					continue;
+
+				return i;
+			}
+			return -1;
+		}
+
+		static int getRetIndex(IList<Instruction> instrs, int index) {
+			for (int i = index; i < instrs.Count; i++) {
+				var instr = instrs[i];
+				if (instr.OpCode.Code == Code.Ret)
+					return i;
+				if (!isCallOrNext(instr))
+					break;
+			}
+			return -1;
+		}
+
+		static bool isCallOrNext(Instruction instr) {
+			switch (instr.OpCode.FlowControl) {
+			case FlowControl.Call:
+			case FlowControl.Next:
+				return true;
+			default:
+				return false;
+			}
 		}
 
 		public IEnumerable<AssemblyInfo> getAssemblyInfos() {
@@ -264,7 +383,10 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			case Version.V3:
 				return getAssemblyInfosV3();
 			case Version.V4:
+			case Version.V404:
 				return getAssemblyInfosV4();
+			case Version.V41:
+				return getAssemblyInfosV41();
 			default:
 				throw new ApplicationException("Unknown version");
 			}
@@ -306,20 +428,34 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return new AssemblyInfo(decryptedData, fullName, simpleName, extension, resource);
 		}
 
-		IEnumerable<AssemblyInfo> getAssemblyInfosV4() {
+		IEnumerable<AssemblyInfo> getAssemblyInfos(Func<byte[], int, byte[]> decrypter) {
 			var infos = new List<AssemblyInfo>();
 
 			if (fieldInfos == null)
 				return infos;
 
 			foreach (var fieldInfo in fieldInfos) {
-				var decrypted = decryptResourceV4(fieldInfo.field.InitialValue, fieldInfo.magic);
+				var decrypted = decrypter(fieldInfo.field.InitialValue, fieldInfo.magic);
 				infos.Add(getAssemblyInfo(decrypted, null));
 				fieldInfo.field.InitialValue = new byte[1];
 				fieldInfo.field.FieldType = module.TypeSystem.Byte;
 			}
 
 			return infos;
+		}
+
+		IEnumerable<AssemblyInfo> getAssemblyInfosV4() {
+			return getAssemblyInfos((data, magic) => decryptResourceV4(data, magic));
+		}
+
+		IEnumerable<AssemblyInfo> getAssemblyInfosV41() {
+			return getAssemblyInfos((data, magic) => inflateIfNeeded(decrypt41Trial(data, magic)));
+		}
+
+		static byte[] decrypt41Trial(byte[] data, int magic) {
+			for (int i = 0; i < data.Length; i++)
+				data[i] ^= (byte)(i / 3 + magic);
+			return data;
 		}
 	}
 }

@@ -158,7 +158,14 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		protected static byte[] decryptResource(byte[] data, int start, int len, int magic) {
 			for (int i = start; i < start + len; i++)
 				data[i] ^= (byte)(i - start + magic);
+			return inflateIfNeeded(data, start, len);
+		}
 
+		protected static byte[] inflateIfNeeded(byte[] data) {
+			return inflateIfNeeded(data, 0, data.Length);
+		}
+
+		protected static byte[] inflateIfNeeded(byte[] data, int start, int len) {
 			if (BitConverter.ToInt16(data, start) != 0x5A4D)
 				return DeobUtils.inflate(data, start, len, true);
 
