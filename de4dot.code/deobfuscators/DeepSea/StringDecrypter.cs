@@ -46,6 +46,12 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		}
 
 		static short[] findKey(MethodDefinition initMethod, FieldDefinition keyField) {
+			var fields = new FieldDefinitionAndDeclaringTypeDict<bool>();
+			fields.add(keyField, true);
+			return findKey(initMethod, fields);
+		}
+
+		static short[] findKey(MethodDefinition initMethod, FieldDefinitionAndDeclaringTypeDict<bool> fields) {
 			var instrs = initMethod.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 2; i++) {
 				var ldci4 = instrs[i];
@@ -71,7 +77,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				var field = getStoreField(initMethod, startInitIndex, local);
 				if (field == null)
 					continue;
-				if (keyField == field)
+				if (fields.find(field))
 					return array;
 			}
 
@@ -128,7 +134,9 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			FieldDefinitionAndDeclaringTypeDict<bool> fields;
 			ArrayInfo arrayInfo;
 			ushort[] encryptedData;
-			ushort[] key;
+			short[] key;
+			int keyShift;
+			bool isTrial;
 
 			class ArrayInfo {
 				public int sizeInElems;
@@ -208,11 +216,56 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				encryptedData = new ushort[arrayInfo.initField.InitialValue.Length / 2];
 				Buffer.BlockCopy(arrayInfo.initField.InitialValue, 0, encryptedData, 0, arrayInfo.initField.InitialValue.Length);
 
+				isTrial = !DeobUtils.hasInteger(Method, 0xFFF0);
+				keyShift = findKeyShift(cctor);
 				key = findKey();
 				if (key == null || key.Length == 0)
 					return false;
 
 				return true;
+			}
+
+			int findKeyShift(MethodDefinition method) {
+				var instrs = method.Body.Instructions;
+				for (int i = 0; i < instrs.Count - 3; i++) {
+					int index = i;
+
+					var ldci4 = instrs[index++];
+					if (!DotNetUtils.isLdcI4(ldci4))
+						continue;
+					if (DotNetUtils.getLdcI4Value(ldci4) != 0xFF)
+						continue;
+
+					if (instrs[index++].OpCode.Code != Code.And)
+						continue;
+					if (instrs[index++].OpCode.Code != Code.Dup)
+						continue;
+
+					var ldci4_2 = instrs[index++];
+					if (!DotNetUtils.isLdcI4(ldci4_2))
+						continue;
+
+					if (findNextFieldUse(method, index) < 0)
+						continue;
+
+					return DotNetUtils.getLdcI4Value(ldci4_2);
+				}
+				return -1;
+			}
+
+			int findNextFieldUse(MethodDefinition method, int index) {
+				var instrs = method.Body.Instructions;
+				for (int i = index; i < instrs.Count; i++) {
+					var instr = instrs[i];
+					if (instr.OpCode.Code != Code.Ldsfld && instr.OpCode.Code != Code.Stsfld)
+						continue;
+					var field = instr.Operand as FieldReference;
+					if (!fields.find(field))
+						return -1;
+
+					return i;
+				}
+				return -1;
 			}
 
 			ArrayInfo getArrayInfo(MethodDefinition method) {
@@ -242,7 +295,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				return null;
 			}
 
-			ushort[] findKey() {
+			short[] findKey() {
 				if (cctor.Module.Assembly == null)
 					return null;
 				var pkt = cctor.Module.Assembly.Name.PublicKeyToken;
@@ -251,24 +304,40 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				return findKey(cctor);
 			}
 
-			ushort[] findKey(MethodDefinition initMethod) {
-				throw new NotImplementedException();	//TODO:
+			short[] findKey(MethodDefinition initMethod) {
+				return StringDecrypter.findKey(initMethod, fields);
 			}
 
-			static ushort[] getPublicKeyTokenKey(byte[] publicKeyToken) {
-				var key = new ushort[publicKeyToken.Length];
+			short[] getPublicKeyTokenKey(byte[] publicKeyToken) {
+				if (keyShift < 0)
+					throw new ApplicationException("Could not find shift value");
+				var key = new short[publicKeyToken.Length];
 				for (int i = 0; i < publicKeyToken.Length; i++) {
 					int b = publicKeyToken[i];
-					key[i] = (ushort)((b << 7) ^ b);
+					key[i] = (short)((b << keyShift) ^ b);
 				}
 				return key;
 			}
 
 			public string decrypt(object[] args) {
-				return decrypt((int)args[arg1], (int)args[arg2]);
+				if (isTrial)
+					return decryptTrial((int)args[arg1], (int)args[arg2]);
+				return decryptRetail((int)args[arg1], (int)args[arg2]);
 			}
 
-			string decrypt(int magic2, int magic3) {
+			string decryptTrial(int magic2, int magic3) {
+				int offset = magic ^ magic2 ^ magic3;
+				var keyChar = encryptedData[offset + 1];
+				int cachedIndex = encryptedData[offset] ^ keyChar;
+				int numChars = ((keyChar ^ encryptedData[offset + 2]) << 16) + (keyChar ^ encryptedData[offset + 3]);
+				offset += 4;
+				var sb = new StringBuilder(numChars);
+				for (int i = 0; i < numChars; i++)
+					sb.Append((char)(keyChar ^ encryptedData[offset + i] ^ key[(offset + i) % key.Length]));
+				return sb.ToString();
+			}
+
+			string decryptRetail(int magic2, int magic3) {
 				int offset = magic ^ magic2 ^ magic3;
 				var keyChar = encryptedData[offset + 2];
 				int cachedIndex = encryptedData[offset + 1] ^ keyChar;
