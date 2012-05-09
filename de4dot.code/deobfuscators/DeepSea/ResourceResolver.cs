@@ -25,17 +25,9 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.DeepSea {
 	class ResourceResolver : ResolverBase {
-		// V3
-		EmbeddedResource resource;
-
-		// V40
-		FieldDefinition resourceField;
-		MethodDefinition getDataMethod;
-		int magicV4;
-
-		// V41
+		Data30 data30;
+		Data40 data40;
 		Data41 data41;
-
 		ResourceVersion version = ResourceVersion.Unknown;
 
 		enum ResourceVersion {
@@ -43,6 +35,16 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			V3,
 			V40,
 			V41,
+		}
+
+		class Data30 {
+			public EmbeddedResource resource;
+		}
+
+		class Data40 {
+			public FieldDefinition resourceField;
+			public MethodDefinition getDataMethod;
+			public int magic;
 		}
 
 		class Data41 {
@@ -63,11 +65,11 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		}
 
 		public MethodDefinition GetDataMethod {
-			get { return getDataMethod; }
+			get { return data40 != null ? data40.getDataMethod : null; }
 		}
 
 		public EmbeddedResource Resource {
-			get { return resource; }
+			get { return data30 != null ? data30.resource : null; }
 		}
 
 		public ResourceResolver(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob)
@@ -84,13 +86,9 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				return true;
 			}
 
-			FieldDefinition resourceFieldTmp;
-			MethodDefinition getDataMethodTmp;
 			simpleDeobfuscator.deobfuscate(handler);
-			if (checkHandlerV40(handler, out resourceFieldTmp, out getDataMethodTmp, out magicV4)) {
+			if ((data40 = checkHandlerV40(handler)) != null) {
 				version = ResourceVersion.V40;
-				resourceField = resourceFieldTmp;
-				getDataMethod = getDataMethodTmp;
 				return true;
 			}
 
@@ -272,7 +270,9 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return new LocalTypes(handler).all(handlerLocalTypes_V3);
 		}
 
-		static bool checkHandlerV40(MethodDefinition handler, out FieldDefinition resourceField, out MethodDefinition getDataMethod, out int magic) {
+		static Data40 checkHandlerV40(MethodDefinition handler) {
+			var data40 = new Data40();
+
 			var instrs = handler.Body.Instructions;
 			for (int i = 0; i < instrs.Count; i++) {
 				int index = i;
@@ -313,7 +313,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				var ldci4_magic = instrs[index++];
 				if (!DotNetUtils.isLdcI4(ldci4_magic))
 					continue;
-				magic = DotNetUtils.getLdcI4Value(ldci4_magic);
+				data40.magic = DotNetUtils.getLdcI4Value(ldci4_magic);
 
 				var call = instrs[index++];
 				if (call.OpCode.Code == Code.Tail)
@@ -323,15 +323,12 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				if (!DotNetUtils.isMethod(call.Operand as MethodReference, "System.Reflection.Assembly", methodSig))
 					continue;
 
-				resourceField = field;
-				getDataMethod = method;
-				return true;
+				data40.resourceField = field;
+				data40.getDataMethod = method;
+				return data40;
 			}
 
-			magic = 0;
-			resourceField = null;
-			getDataMethod = null;
-			return false;
+			return null;
 		}
 
 		static FieldDefinition getResourceField(MethodDefinition method) {
@@ -353,8 +350,9 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			if (version == ResourceVersion.V3) {
 				simpleDeobfuscator.deobfuscate(resolveHandler);
 				simpleDeobfuscator.decryptStrings(resolveHandler, deob);
-				resource = DeobUtils.getEmbeddedResourceFromCodeStrings(module, resolveHandler);
-				if (resource == null) {
+				data30 = new Data30();
+				data30.resource = DeobUtils.getEmbeddedResourceFromCodeStrings(module, resolveHandler);
+				if (data30.resource == null) {
 					Log.w("Could not find resource of encrypted resources");
 					return;
 				}
@@ -366,15 +364,15 @@ namespace de4dot.code.deobfuscators.DeepSea {
 
 			switch (version) {
 			case ResourceVersion.V3:
-				if (resource == null)
+				if (data30.resource == null)
 					return false;
 
-				DeobUtils.decryptAndAddResources(module, resource.Name, () => decryptResourceV3(resource));
-				rsrc = resource;
+				DeobUtils.decryptAndAddResources(module, data30.resource.Name, () => decryptResourceV3(data30.resource));
+				rsrc = data30.resource;
 				return true;
 
 			case ResourceVersion.V40:
-				return decryptResource(resourceField, magicV4);
+				return decryptResource(data40.resourceField, data40.magic);
 
 			case ResourceVersion.V41:
 				return decryptResource(data41.resourceField, data41.magic);
