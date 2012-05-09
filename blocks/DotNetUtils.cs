@@ -607,7 +607,7 @@ namespace de4dot.blocks {
 				newMethod.Parameters.Add(new ParameterDefinition(arg.Name, arg.Attributes, arg.ParameterType));
 			foreach (var gp in method.GenericParameters)
 				newMethod.GenericParameters.Add(new GenericParameter(gp.Name, newMethod) { Attributes = gp.Attributes });
-			DotNetUtils.copyBodyFromTo(method, newMethod);
+			copyBodyFromTo(method, newMethod);
 			return newMethod;
 		}
 
