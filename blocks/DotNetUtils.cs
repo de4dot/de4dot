@@ -1208,5 +1208,50 @@ namespace de4dot.blocks {
 
 			return false;
 		}
+
+		public static IList<Instruction> getArgPushes(IList<Instruction> instrs, int index) {
+			return getArgPushes(instrs, ref index);
+		}
+
+		public static IList<Instruction> getArgPushes(IList<Instruction> instrs, ref int index) {
+			if (index < 0 || index >= instrs.Count)
+				return null;
+			var startInstr = instrs[index];
+			int pushes, pops;
+			calculateStackUsage(startInstr, false, out pushes, out pops);
+
+			index--;
+			int numArgs = pops;
+			var args = new List<Instruction>(numArgs);
+			int stackSize = numArgs;
+			while (index >= 0 && args.Count != numArgs) {
+				var instr = instrs[index--];
+				calculateStackUsage(instr, false, out pushes, out pops);
+				if (instr.OpCode.Code == Code.Dup) {
+					args.Add(instr);
+					stackSize--;
+				}
+				else {
+					if (pushes == 1)
+						args.Add(instr);
+					else if (pushes > 1)
+						throw new NotImplementedException();
+					stackSize -= pushes;
+
+					if (pops != 0) {
+						index++;
+						if (getArgPushes(instrs, ref index) == null)
+							return null;
+					}
+				}
+
+				if (stackSize < 0)
+					return null;
+			}
+			if (args.Count != numArgs)
+				return null;
+			args.Reverse();
+			return args;
+		}
 	}
 }
