@@ -126,8 +126,10 @@ namespace de4dot.code.renamer {
 			var resourceSet = ResourceReader.read(module, resource.GetResourceStream());
 			var renamed = new List<RenameInfo>();
 			foreach (var elem in resourceSet.ResourceElements) {
-				if (nameChecker.isValidResourceKeyName(elem.Name))
+				if (nameChecker.isValidResourceKeyName(elem.Name)) {
+					newNames.Add(elem.Name, true);
 					continue;
+				}
 
 				renamed.Add(new RenameInfo(elem, getNewName(elem)));
 			}
