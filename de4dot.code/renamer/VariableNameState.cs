@@ -89,12 +89,23 @@ namespace de4dot.code.renamer {
 		public string getNewPropertyName(PropertyDefinition propertyDefinition) {
 			var propType = propertyDefinition.PropertyType;
 			string newName;
-			if (propType is GenericParameter)
+			if (isGeneric(propType))
 				newName = existingPropertyNames.getName(propertyDefinition.Name, genericPropertyNameCreator);
 			else
 				newName = existingPropertyNames.getName(propertyDefinition.Name, () => propertyNameCreator.create(propType));
 			addPropertyName(newName);
 			return newName;
+		}
+
+		static bool isGeneric(TypeReference type) {
+			while (true) {
+				if (type is GenericParameter)
+					return true;
+				var ts = type as TypeSpecification;
+				if (ts == null)
+					return false;
+				type = ts.ElementType;
+			}
 		}
 
 		public string getNewEventName(EventDefinition eventDefinition) {
