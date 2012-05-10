@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Mono.Cecil.Metadata;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.DeepSea {
@@ -35,13 +36,28 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			get {
 				var list = new List<TypeDefinition>(structToOwners.Count);
 				foreach (var structType in structToOwners.getKeys()) {
-					if (structType.Methods.Count != 0)
+					if (!hasNoMethods(structType))
 						continue;
 
 					list.Add(structType);
 				}
 				return list;
 			}
+		}
+
+		static bool hasNoMethods(TypeDefinition type) {
+			if (type.Methods.Count == 0)
+				return true;
+			if (type.BaseType == null)
+				return false;
+			if (type.BaseType.EType != ElementType.Object)
+				return false;
+			if (type.Methods.Count != 1)
+				return false;
+			var ctor = type.Methods[0];
+			if (ctor.Name != ".ctor" || ctor.Parameters.Count != 0)
+				return false;
+			return true;
 		}
 
 		public FieldsRestorer(ModuleDefinition module) {
@@ -78,7 +94,9 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			foreach (var type in module.GetTypes()) {
 				foreach (var field in getPossibleFields(type)) {
 					var fieldType = DotNetUtils.getType(module, field.FieldType);
-					if (fieldType == null || !fieldType.IsValueType)
+					if (fieldType == null)
+						continue;
+					if (!checkBaseType(fieldType))
 						continue;
 					if ((fieldType.Attributes & ~TypeAttributes.Sealed) != TypeAttributes.NestedAssembly)
 						continue;
@@ -90,9 +108,9 @@ namespace de4dot.code.deobfuscators.DeepSea {
 						continue;
 					if (fieldType.HasEvents || fieldType.HasProperties || fieldType.HasInterfaces)
 						continue;
-					if (hasNonStaticMethods(fieldType))
+					if (checkMethods(fieldType))
 						continue;
-					if (hasStaticFields(fieldType))
+					if (!checkFields(fieldType))
 						continue;
 
 					List<TypeDefinition> list;
@@ -132,7 +150,9 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				if (field.Attributes != FieldAttributes.Private)
 					continue;
 				var fieldType = DotNetUtils.getType(module, field.FieldType);
-				if (fieldType == null || !fieldType.IsValueType)
+				if (fieldType == null)
+					continue;
+				if (!checkBaseType(fieldType))
 					continue;
 				var list = typeToFields.find(fieldType);
 				if (list == null)
@@ -146,6 +166,12 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			}
 		}
 
+		static bool checkBaseType(TypeDefinition type) {
+			if (type == null || type.BaseType == null)
+				return false;
+			return type.BaseType.FullName == "System.ValueType" || type.BaseType.EType == ElementType.Object;
+		}
+
 		void removeType(Dictionary<TypeDefinition, List<TypeDefinition>> candidates, TypeReference type) {
 			var typeDef = DotNetUtils.getType(module, type);
 			if (typeDef == null)
@@ -153,9 +179,11 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			candidates.Remove(typeDef);
 		}
 
-		static bool hasNonStaticMethods(TypeDefinition type) {
+		static bool checkMethods(TypeDefinition type) {
 			foreach (var method in type.Methods) {
 				if (method.Name == ".cctor")
+					continue;
+				if (type.BaseType != null && type.BaseType.EType == ElementType.Object && method.Name == ".ctor" && method.Parameters.Count == 0)
 					continue;
 				if (!method.IsStatic)
 					return true;
@@ -169,22 +197,31 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return false;
 		}
 
-		static bool hasStaticFields(TypeDefinition type) {
+		static bool checkFields(TypeDefinition type) {
+			if (type.Fields.Count == 0)
+				return false;
 			foreach (var field in type.Fields) {
 				if (field.IsStatic)
-					return true;
+					return false;
+				if (!field.IsAssembly)
+					return false;
 			}
-			return false;
+			return true;
 		}
 
 		public void deobfuscate(Blocks blocks) {
+			deobfuscateNormal(blocks);
+			fixFieldCtorCalls(blocks);
+		}
+
+		void deobfuscateNormal(Blocks blocks) {
 			var instrsToRemove = new List<int>();
 			foreach (var block in blocks.MethodBlocks.getAllBlocks()) {
 				instrsToRemove.Clear();
 				var instrs = block.Instructions;
 				for (int i = instrs.Count - 1; i >= 0; i--) {
 					var instr = instrs[i];
-					if (instr.OpCode.Code != Code.Ldflda)
+					if (instr.OpCode.Code != Code.Ldflda && instr.OpCode.Code != Code.Ldfld)
 						continue;
 					var structField = instr.Operand as FieldReference;
 					if (structField == null || !structFieldsToFix.find(structField))
@@ -197,6 +234,40 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				if (instrsToRemove.Count > 0)
 					block.remove(instrsToRemove);
 			}
+		}
+
+		void fixFieldCtorCalls(Blocks blocks) {
+			if (blocks.Method.Name != ".ctor")
+				return;
+			var instrsToRemove = new List<int>();
+			foreach (var block in blocks.MethodBlocks.getAllBlocks()) {
+				var instrs = block.Instructions;
+				for (int i = 0; i < instrs.Count; i++) {
+					var stfld = instrs[i];
+					if (stfld.OpCode.Code != Code.Stfld)
+						continue;
+					var field = stfld.Operand as FieldReference;
+					if (field == null)
+						continue;
+					if (!structFieldsToFix.find(field))
+						continue;
+					var instrs2 = toInstructionList(instrs);
+					var instrPushes = DotNetUtils.getArgPushes(instrs2, i);
+					if (instrPushes == null || instrPushes.Count != 2)
+						continue;
+					block.remove(i, 1);
+					block.remove(instrs2.IndexOf(instrPushes[1]), 1);
+					block.remove(instrs2.IndexOf(instrPushes[0]), 1);
+					i -= 3;
+				}
+			}
+		}
+
+		static IList<Instruction> toInstructionList(IEnumerable<Instr> instrs) {
+			var newInstrs = new List<Instruction>();
+			foreach (var instr in instrs)
+				newInstrs.Add(instr.Instruction);
+			return newInstrs;
 		}
 
 		FieldDefinition getNewField(FieldReference structField, FieldReference oldFieldRef) {
