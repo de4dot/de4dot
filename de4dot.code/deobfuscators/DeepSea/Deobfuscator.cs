@@ -238,6 +238,7 @@ done:
 			addCctorInitCallToBeRemoved(resourceResolver.InitMethod);
 			addCallToBeRemoved(module.EntryPoint, resourceResolver.InitMethod);
 			addMethodToBeRemoved(resourceResolver.InitMethod, "Resource resolver init method");
+			addMethodToBeRemoved(resourceResolver.InitMethod2, "Resource resolver init method #2");
 			addMethodToBeRemoved(resourceResolver.HandlerMethod, "Resource resolver handler method");
 			addMethodToBeRemoved(resourceResolver.GetDataMethod, "Resource resolver 'get resource data' method");
 		}
@@ -255,6 +256,7 @@ done:
 			addCallToBeRemoved(module.EntryPoint, assemblyResolver.InitMethod);
 			addMethodToBeRemoved(assemblyResolver.InitMethod, "Assembly resolver init method");
 			addMethodToBeRemoved(assemblyResolver.HandlerMethod, "Assembly resolver handler method");
+			addMethodToBeRemoved(assemblyResolver.DecryptMethod, "Assembly resolver decrypt method");
 		}
 
 		public override void deobfuscateMethodEnd(Blocks blocks) {

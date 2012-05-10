@@ -43,6 +43,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 
 		class Data40 {
 			public FieldDefinition resourceField;
+			public MethodDefinition resolveHandler2;
 			public MethodDefinition getDataMethod;
 			public int magic;
 		}
@@ -61,6 +62,16 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			public HandlerInfo(MethodDefinition handler, IList<object> args) {
 				this.handler = handler;
 				this.args = args;
+			}
+		}
+
+		public MethodDefinition InitMethod2 {
+			get {
+				if (data40 != null)
+					return data40.resolveHandler2;
+				if (data41 != null)
+					return data41.resolveHandler2;
+				return null;
 			}
 		}
 
@@ -260,11 +271,13 @@ namespace de4dot.code.deobfuscators.DeepSea {
 					call = instrs[index++];
 				if (call.OpCode.Code != Code.Call)
 					continue;
-				if (!DotNetUtils.isMethod(call.Operand as MethodReference, "System.Reflection.Assembly", methodSig))
+				var resolveHandler2 = call.Operand as MethodDefinition;
+				if (!DotNetUtils.isMethod(resolveHandler2, "System.Reflection.Assembly", methodSig))
 					continue;
 
 				data40.resourceField = field;
 				data40.getDataMethod = method;
+				data40.resolveHandler2 = resolveHandler2;
 				return data40;
 			}
 

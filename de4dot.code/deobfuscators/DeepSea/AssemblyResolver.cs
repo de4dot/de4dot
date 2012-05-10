@@ -29,6 +29,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 	class AssemblyResolver : ResolverBase {
 		Version version;
 		List<FieldInfo> fieldInfos;
+		MethodDefinition decryptMethod;
 
 		enum Version {
 			Unknown,
@@ -67,6 +68,10 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				this.field = field;
 				this.magic = magic;
 			}
+		}
+
+		public MethodDefinition DecryptMethod {
+			get { return decryptMethod; }
 		}
 
 		public AssemblyResolver(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob)
@@ -129,16 +134,19 @@ namespace de4dot.code.deobfuscators.DeepSea {
 
 			simpleDeobfuscator.deobfuscate(handler);
 			List<FieldInfo> fieldInfosTmp;
-			if (checkHandlerV4(handler, out fieldInfosTmp)) {
+			MethodDefinition decryptMethodTmp;
+			if (checkHandlerV4(handler, out fieldInfosTmp, out decryptMethodTmp)) {
 				version = Version.V4;
 				fieldInfos = fieldInfosTmp;
+				decryptMethod = decryptMethodTmp;
 				return true;
 			}
 
-			Version versionTmp = checkHandlerV404_41(handler, out fieldInfosTmp);
+			Version versionTmp = checkHandlerV404_41(handler, out fieldInfosTmp, out decryptMethodTmp);
 			if (fieldInfosTmp.Count != 0) {
 				version = versionTmp;
 				fieldInfos = fieldInfosTmp;
+				decryptMethod = decryptMethodTmp;
 				return true;
 			}
 
@@ -171,8 +179,9 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		}
 
 		// 4.0.1.18 .. 4.0.3
-		bool checkHandlerV4(MethodDefinition handler, out List<FieldInfo> fieldInfos) {
+		bool checkHandlerV4(MethodDefinition handler, out List<FieldInfo> fieldInfos, out MethodDefinition decryptMethod) {
 			fieldInfos = new List<FieldInfo>();
+			decryptMethod = null;
 
 			var instrs = handler.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 3; i++) {
@@ -201,9 +210,11 @@ namespace de4dot.code.deobfuscators.DeepSea {
 					call = instrs[index++];
 				if (call.OpCode.Code != Code.Call)
 					return false;
-				if (!DotNetUtils.isMethod(call.Operand as MethodReference, "System.Reflection.Assembly", "(System.RuntimeFieldHandle,System.Int32,System.Int32)"))
+				var decryptMethodTmp = call.Operand as MethodDefinition;
+				if (!DotNetUtils.isMethod(decryptMethodTmp, "System.Reflection.Assembly", "(System.RuntimeFieldHandle,System.Int32,System.Int32)"))
 					return false;
 
+				decryptMethod = decryptMethodTmp;
 				fieldInfos.Add(new FieldInfo(field, magic));
 			}
 
@@ -211,9 +222,10 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		}
 
 		// 4.0.4, 4.1+
-		Version checkHandlerV404_41(MethodDefinition handler, out List<FieldInfo> fieldInfos) {
+		Version checkHandlerV404_41(MethodDefinition handler, out List<FieldInfo> fieldInfos, out MethodDefinition decryptMethod) {
 			Version version = Version.Unknown;
 			fieldInfos = new List<FieldInfo>();
+			decryptMethod = null;
 
 			var instrs = handler.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 6; i++) {
@@ -248,14 +260,15 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				var args = DsUtils.getArgValues(instrs, callIndex);
 				if (args == null)
 					continue;
-				var decryptMethod = instrs[callIndex].Operand as MethodDefinition;
-				if (decryptMethod == null)
+				var decryptMethodTmp = instrs[callIndex].Operand as MethodDefinition;
+				if (decryptMethodTmp == null)
 					continue;
 				int magic;
 				Version versionTmp;
-				getMagic(decryptMethod, args, out versionTmp, out magic);
+				getMagic(decryptMethodTmp, args, out versionTmp, out magic);
 
 				version = versionTmp;
+				decryptMethod = decryptMethodTmp;
 				fieldInfos.Add(new FieldInfo(field, magic));
 			}
 
