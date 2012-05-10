@@ -278,6 +278,8 @@ done:
 				stringDecrypter.cleanup();
 			}
 
+			addFieldsToBeRemoved(arrayBlockDeobfuscator.cleanUp(), "Control flow obfuscation array");
+
 			base.deobfuscateEnd();
 		}
 

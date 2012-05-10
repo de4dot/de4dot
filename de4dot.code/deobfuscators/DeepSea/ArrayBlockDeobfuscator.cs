@@ -32,12 +32,14 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		DsConstantsReader constantsReader;
 
 		class FieldInfo {
-			public FieldDefinition field;
-			public byte[] array;
+			public readonly FieldDefinition field;
+			public readonly FieldDefinition arrayInitField;
+			public readonly byte[] array;
 
-			public FieldInfo(FieldDefinition field, byte[] array) {
+			public FieldInfo(FieldDefinition field, FieldDefinition arrayInitField) {
 				this.field = field;
-				this.array = array;
+				this.arrayInitField = arrayInitField;
+				this.array = (byte[])arrayInitField.InitialValue.Clone();
 			}
 		}
 
@@ -83,7 +85,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				if (targetField == null)
 					continue;
 
-				fieldToInfo.add(targetField, new FieldInfo(targetField, (byte[])arrayInitField.InitialValue.Clone()));
+				fieldToInfo.add(targetField, new FieldInfo(targetField, arrayInitField));
 			}
 		}
 
@@ -234,6 +236,91 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			if (constantsReader != null)
 				return constantsReader;
 			return constantsReader = new DsConstantsReader(block.Instructions);
+		}
+
+		public IEnumerable<FieldDefinition> cleanUp() {
+			var removedFields = new List<FieldDefinition>();
+			var moduleCctor = DotNetUtils.getModuleTypeCctor(module);
+			if (moduleCctor == null)
+				return removedFields;
+			var moduleCctorBlocks = new Blocks(moduleCctor);
+
+			var keep = findFieldsToKeep();
+			foreach (var fieldInfo in fieldToInfo.getValues()) {
+				if (keep.ContainsKey(fieldInfo))
+					continue;
+				if (removeInitCode(moduleCctorBlocks, fieldInfo)) {
+					removedFields.Add(fieldInfo.field);
+					removedFields.Add(fieldInfo.arrayInitField);
+				}
+				fieldInfo.arrayInitField.InitialValue = new byte[1];
+				fieldInfo.arrayInitField.FieldType = module.TypeSystem.Byte;
+			}
+
+			IList<Instruction> allInstructions;
+			IList<ExceptionHandler> allExceptionHandlers;
+			blocks.getCode(out allInstructions, out allExceptionHandlers);
+			DotNetUtils.restoreBody(moduleCctorBlocks.Method, allInstructions, allExceptionHandlers);
+			return removedFields;
+		}
+
+		bool removeInitCode(Blocks blocks, FieldInfo info) {
+			bool removedSomething = false;
+			foreach (var block in blocks.MethodBlocks.getAllBlocks()) {
+				var instrs = block.Instructions;
+				for (int i = 0; i < instrs.Count - 5; i++) {
+					var ldci4 = instrs[i];
+					if (!ldci4.isLdcI4())
+						continue;
+					if (instrs[i + 1].OpCode.Code != Code.Newarr)
+						continue;
+					if (instrs[i + 2].OpCode.Code != Code.Dup)
+						continue;
+					var ldtoken = instrs[i + 3];
+					if (ldtoken.OpCode.Code != Code.Ldtoken)
+						continue;
+					if (ldtoken.Operand != info.arrayInitField)
+						continue;
+					var call = instrs[i + 4];
+					if (call.OpCode.Code != Code.Call)
+						continue;
+					var calledMethod = call.Operand as MethodReference;
+					if (calledMethod == null || calledMethod.FullName != "System.Void System.Runtime.CompilerServices.RuntimeHelpers::InitializeArray(System.Array,System.RuntimeFieldHandle)")
+						continue;
+					var stsfld = instrs[i + 5];
+					if (stsfld.OpCode.Code != Code.Stsfld)
+						continue;
+					if (stsfld.Operand != info.field)
+						continue;
+					block.remove(i, 6);
+					i--;
+					removedSomething = true;
+				}
+			}
+			return removedSomething;
+		}
+
+		Dictionary<FieldInfo, bool> findFieldsToKeep() {
+			var keep = new Dictionary<FieldInfo, bool>();
+			foreach (var type in module.GetTypes()) {
+				foreach (var method in type.Methods) {
+					if (type == DotNetUtils.getModuleType(module) && method.Name == ".cctor")
+						continue;
+					if (method.Body == null)
+						continue;
+
+					foreach (var instr in method.Body.Instructions) {
+						var field = instr.Operand as FieldReference;
+						if (field == null)
+							continue;
+						var fieldInfo = fieldToInfo.find(field);
+						if (fieldInfo == null)
+							continue;
+						keep[fieldInfo] = true;
+					}
+				}
+			}
+			return keep;
 		}
 	}
 }
