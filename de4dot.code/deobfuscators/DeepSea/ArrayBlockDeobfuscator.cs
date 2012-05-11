@@ -259,7 +259,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 
 			IList<Instruction> allInstructions;
 			IList<ExceptionHandler> allExceptionHandlers;
-			blocks.getCode(out allInstructions, out allExceptionHandlers);
+			moduleCctorBlocks.getCode(out allInstructions, out allExceptionHandlers);
 			DotNetUtils.restoreBody(moduleCctorBlocks.Method, allInstructions, allExceptionHandlers);
 			return removedFields;
 		}
