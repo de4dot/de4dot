@@ -196,7 +196,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 						continue;
 					if (checkedMethods++ >= 1000)
 						goto done;
-					if (!DeepSea.DsMethodCallInliner.canInline(method))
+					if (!DsMethodCallInliner.canInline(method))
 						continue;
 					foundProxies++;
 				}
