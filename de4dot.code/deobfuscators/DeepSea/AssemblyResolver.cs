@@ -38,6 +38,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			V4,
 			V404,
 			V41,
+			V41SL,
 		}
 
 		public class AssemblyInfo {
@@ -96,6 +97,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 					continue;
 				if (!DotNetUtils.isMethod(method, "System.Void", "(System.String)"))
 					continue;
+				simpleDeobfuscator.deobfuscate(method);
 				if (!new LocalTypes(method).all(requiredLocals_sl))
 					continue;
 
@@ -109,10 +111,50 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		}
 
 		void updateVersion(MethodDefinition handler) {
-			if (isV3Old(handler))
+			if (isV3Old(handler)) {
 				version = Version.V3Old;
-			else
-				version = Version.V3;
+				return;
+			}
+			if (isV3SL(handler)) {
+				version = Version.V3;	// 3.x-4.0.4
+				return;
+			}
+			if (isV41SL(handler)) {
+				version = Version.V41SL;
+				return;
+			}
+		}
+
+		static bool isV3SL(MethodDefinition handler) {
+			var instrs = handler.Body.Instructions;
+			for (int i = 0; i < instrs.Count - 3; i++) {
+				if (!DotNetUtils.isLdloc(instrs[i]))
+					continue;
+				if (instrs[i + 1].OpCode.Code != Code.Add)
+					continue;
+				if (!DotNetUtils.isLdcI4(instrs[i + 2]))
+					continue;
+				if (instrs[i + 3].OpCode.Code != Code.And)
+					continue;
+				return true;
+			}
+			return false;
+		}
+
+		static bool isV41SL(MethodDefinition handler) {
+			var instrs = handler.Body.Instructions;
+			for (int i = 0; i < instrs.Count; i++) {
+				if (!DotNetUtils.isLdcI4(instrs[i]) || DotNetUtils.getLdcI4Value(instrs[i]) != 5)
+					continue;
+				if (instrs[i + 1].OpCode.Code != Code.And)
+					continue;
+				if (!DotNetUtils.isLdcI4(instrs[i + 2]) || DotNetUtils.getLdcI4Value(instrs[i + 2]) != 0x1F)
+					continue;
+				if (instrs[i + 3].OpCode.Code != Code.And)
+					continue;
+				return true;
+			}
+			return false;
 		}
 
 		static bool isV3Old(MethodDefinition method) {
@@ -393,19 +435,22 @@ namespace de4dot.code.deobfuscators.DeepSea {
 
 			switch (version) {
 			case Version.V3Old:
+				return getAssemblyInfos(resource => decryptResourceV3Old(resource));
 			case Version.V3:
-				return getAssemblyInfosV3();
+				return getAssemblyInfos(resource => decryptResourceV3(resource));
 			case Version.V4:
 			case Version.V404:
 				return getAssemblyInfosV4();
 			case Version.V41:
 				return getAssemblyInfosV41();
+			case Version.V41SL:
+				return getAssemblyInfos(resource => decryptResourceV41SL(resource));
 			default:
 				throw new ApplicationException("Unknown version");
 			}
 		}
 
-		IEnumerable<AssemblyInfo> getAssemblyInfosV3() {
+		IEnumerable<AssemblyInfo> getAssemblyInfos(Func<EmbeddedResource, byte[]> decrypter) {
 			var infos = new List<AssemblyInfo>();
 
 			foreach (var tmp in module.Resources) {
@@ -414,7 +459,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 					continue;
 				if (!Regex.IsMatch(resource.Name, @"^[0-9A-F]{40}$"))
 					continue;
-				var info = getAssemblyInfoV3(resource);
+				var info = getAssemblyInfo(resource, decrypter);
 				if (info == null)
 					continue;
 				infos.Add(info);
@@ -423,9 +468,9 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return infos;
 		}
 
-		AssemblyInfo getAssemblyInfoV3(EmbeddedResource resource) {
+		AssemblyInfo getAssemblyInfo(EmbeddedResource resource, Func<EmbeddedResource, byte[]> decrypter) {
 			try {
-				var decrypted = version == Version.V3Old ? decryptResourceV3Old(resource) : decryptResourceV3(resource);
+				var decrypted = decrypter(resource);
 				return getAssemblyInfo(decrypted, resource);
 			}
 			catch (Exception) {

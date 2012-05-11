@@ -143,6 +143,14 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return decryptResource(data, 0, data.Length, 0);
 		}
 
+		protected static byte[] decryptResourceV41SL(EmbeddedResource resource) {
+			var data = resource.GetResourceData();
+			byte k = data[0];
+			for (int i = 0; i < data.Length - 1; i++)
+				data[i + 1] ^= (byte)((k << (i & 5)) + i);
+			return inflateIfNeeded(data, 1, data.Length - 1);
+		}
+
 		protected static byte[] decryptResourceV3(EmbeddedResource resource) {
 			return decryptResourceV3(resource.GetResourceData());
 		}
