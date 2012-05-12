@@ -95,11 +95,12 @@ namespace de4dot.code.deobfuscators {
 			get { return Operations.DecryptStrings != OpDecryptString.None && staticStringInliner.InlinedAllCalls; }
 		}
 
-		public virtual IMethodCallInliner MethodCallInliner {
+		public virtual IEnumerable<IBlocksDeobfuscator> BlocksDeobfuscators {
 			get {
+				var list = new List<IBlocksDeobfuscator>();
 				if (CanInlineMethods)
-					return new MethodCallInliner(false);
-				return new NoMethodInliner();
+					list.Add(new MethodCallInliner(false));
+				return list;
 			}
 		}
 
@@ -741,6 +742,10 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		public virtual bool isValidMethodArgName(string name) {
+			return name != null && checkValidName(name);
+		}
+
+		public virtual bool isValidResourceKeyName(string name) {
 			return name != null && checkValidName(name);
 		}
 

@@ -120,6 +120,10 @@ namespace de4dot.code {
 			get { return (deob.RenamingOptions & RenamingOptions.RemoveNamespaceIfOneType) != 0; }
 		}
 
+		public bool RenameResourceKeys {
+			get { return (deob.RenamingOptions & RenamingOptions.RenameResourceKeys) != 0; }
+		}
+
 		public IDeobfuscator Deobfuscator {
 			get { return deob; }
 		}
@@ -541,7 +545,7 @@ namespace de4dot.code {
 
 			Log.v("Deobfuscating methods");
 			var methodPrinter = new MethodPrinter();
-			var cflowDeobfuscator = new BlocksCflowDeobfuscator { MethodCallInliner = deob.MethodCallInliner };
+			var cflowDeobfuscator = new BlocksCflowDeobfuscator(deob.BlocksDeobfuscators);
 			foreach (var method in allMethods) {
 				Log.v("Deobfuscating {0} ({1:X8})", Utils.removeNewlines(method), method.MetadataToken.ToUInt32());
 				Log.indent();
@@ -715,7 +719,7 @@ namespace de4dot.code {
 				return;
 
 			deobfuscate(method, "Deobfuscating control flow", (blocks) => {
-				var cflowDeobfuscator = new BlocksCflowDeobfuscator { MethodCallInliner = deob.MethodCallInliner };
+				var cflowDeobfuscator = new BlocksCflowDeobfuscator(deob.BlocksDeobfuscators);
 				cflowDeobfuscator.init(blocks);
 				cflowDeobfuscator.deobfuscate();
 			});

@@ -25,6 +25,10 @@ namespace de4dot.blocks.cflow {
 	class ValueStack {
 		List<Value> stack = new List<Value>();
 
+		public int Size {
+			get { return stack.Count; }
+		}
+
 		public void init() {
 			stack.Clear();
 		}

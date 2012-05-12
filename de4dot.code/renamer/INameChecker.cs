@@ -27,5 +27,6 @@ namespace de4dot.code.renamer {
 		bool isValidFieldName(string name);
 		bool isValidGenericParamName(string name);
 		bool isValidMethodArgName(string name);
+		bool isValidResourceKeyName(string name);
 	}
 }

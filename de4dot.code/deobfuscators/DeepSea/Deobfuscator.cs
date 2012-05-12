@@ -31,6 +31,8 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		BoolOption decryptResources;
 		BoolOption dumpEmbeddedAssemblies;
 		BoolOption restoreFields;
+		BoolOption renameResourceKeys;
+		BoolOption castDeobfuscation;
 
 		public DeobfuscatorInfo()
 			: base() {
@@ -39,6 +41,8 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			decryptResources = new BoolOption(null, makeArgName("rsrc"), "Decrypt resources", true);
 			dumpEmbeddedAssemblies = new BoolOption(null, makeArgName("embedded"), "Dump embedded assemblies", true);
 			restoreFields = new BoolOption(null, makeArgName("fields"), "Restore fields", true);
+			renameResourceKeys = new BoolOption(null, makeArgName("keys"), "Rename resource keys", true);
+			castDeobfuscation = new BoolOption(null, makeArgName("casts"), "Deobfuscate casts", true);
 		}
 
 		public override string Name {
@@ -57,6 +61,8 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				DecryptResources = decryptResources.get(),
 				DumpEmbeddedAssemblies = dumpEmbeddedAssemblies.get(),
 				RestoreFields = restoreFields.get(),
+				RenameResourceKeys = renameResourceKeys.get(),
+				CastDeobfuscation = castDeobfuscation.get(),
 			});
 		}
 
@@ -67,6 +73,8 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				decryptResources,
 				dumpEmbeddedAssemblies,
 				restoreFields,
+				renameResourceKeys,
+				castDeobfuscation,
 			};
 		}
 	}
@@ -80,6 +88,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		ResourceResolver resourceResolver;
 		AssemblyResolver assemblyResolver;
 		FieldsRestorer fieldsRestorer;
+		ArrayBlockDeobfuscator arrayBlockDeobfuscator;
 
 		internal class Options : OptionsBase {
 			public bool InlineMethods { get; set; }
@@ -87,6 +96,8 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			public bool DecryptResources { get; set; }
 			public bool DumpEmbeddedAssemblies { get; set; }
 			public bool RestoreFields { get; set; }
+			public bool RenameResourceKeys { get; set; }
+			public bool CastDeobfuscation { get; set; }
 		}
 
 		public override string Type {
@@ -105,17 +116,32 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			get { return startedDeobfuscating ? options.InlineMethods : true; }
 		}
 
-		public override IMethodCallInliner MethodCallInliner {
+		public override IEnumerable<IBlocksDeobfuscator> BlocksDeobfuscators {
 			get {
+				var list = new List<IBlocksDeobfuscator>(getBlocksDeobfuscators());
 				if (CanInlineMethods)
-					return new MethodCallInliner();
-				return new NoMethodInliner();
+					list.Add(new DsMethodCallInliner(new CachedCflowDeobfuscator(getBlocksDeobfuscators())));
+				return list;
 			}
+		}
+
+		List<IBlocksDeobfuscator> getBlocksDeobfuscators() {
+			var list = new List<IBlocksDeobfuscator>();
+			if (arrayBlockDeobfuscator.Detected)
+				list.Add(arrayBlockDeobfuscator);
+			if (!startedDeobfuscating || options.CastDeobfuscation)
+				list.Add(new CastDeobfuscator());
+			return list;
 		}
 
 		public Deobfuscator(Options options)
 			: base(options) {
 			this.options = options;
+
+			if (options.RenameResourceKeys)
+				this.RenamingOptions |= RenamingOptions.RenameResourceKeys;
+			else
+				this.RenamingOptions &= ~RenamingOptions.RenameResourceKeys;
 		}
 
 		protected override int detectInternal() {
@@ -131,6 +157,9 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		}
 
 		protected override void scanForObfuscator() {
+			staticStringInliner.UseUnknownArgs = true;
+			arrayBlockDeobfuscator = new ArrayBlockDeobfuscator(module);
+			arrayBlockDeobfuscator.init();
 			stringDecrypter = new StringDecrypter(module);
 			stringDecrypter.find(DeobfuscatedFile);
 			resourceResolver = new ResourceResolver(module, DeobfuscatedFile, this);
@@ -146,8 +175,10 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				if (detectMethodProxyObfuscation())
 					return DeobfuscatorInfo.THE_NAME + " 3.5";
 				return DeobfuscatorInfo.THE_NAME + " 1.x-3.x";
-			case StringDecrypter.DecrypterVersion.V4:
-				return DeobfuscatorInfo.THE_NAME + " 4.x";
+			case StringDecrypter.DecrypterVersion.V4_0:
+				return DeobfuscatorInfo.THE_NAME + " 4.0";
+			case StringDecrypter.DecrypterVersion.V4_1:
+				return DeobfuscatorInfo.THE_NAME + " 4.1";
 			}
 
 			return DeobfuscatorInfo.THE_NAME;
@@ -165,7 +196,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 						continue;
 					if (checkedMethods++ >= 1000)
 						goto done;
-					if (!DeepSea.MethodCallInliner.canInline(method))
+					if (!DsMethodCallInliner.canInline(method))
 						continue;
 					foundProxies++;
 				}
@@ -207,6 +238,7 @@ done:
 			addCctorInitCallToBeRemoved(resourceResolver.InitMethod);
 			addCallToBeRemoved(module.EntryPoint, resourceResolver.InitMethod);
 			addMethodToBeRemoved(resourceResolver.InitMethod, "Resource resolver init method");
+			addMethodToBeRemoved(resourceResolver.InitMethod2, "Resource resolver init method #2");
 			addMethodToBeRemoved(resourceResolver.HandlerMethod, "Resource resolver handler method");
 			addMethodToBeRemoved(resourceResolver.GetDataMethod, "Resource resolver 'get resource data' method");
 		}
@@ -224,6 +256,7 @@ done:
 			addCallToBeRemoved(module.EntryPoint, assemblyResolver.InitMethod);
 			addMethodToBeRemoved(assemblyResolver.InitMethod, "Assembly resolver init method");
 			addMethodToBeRemoved(assemblyResolver.HandlerMethod, "Assembly resolver handler method");
+			addMethodToBeRemoved(assemblyResolver.DecryptMethod, "Assembly resolver decrypt method");
 		}
 
 		public override void deobfuscateMethodEnd(Blocks blocks) {
@@ -245,13 +278,15 @@ done:
 				stringDecrypter.cleanup();
 			}
 
+			addFieldsToBeRemoved(arrayBlockDeobfuscator.cleanUp(), "Control flow obfuscation array");
+
 			base.deobfuscateEnd();
 		}
 
 		void removeInlinedMethods() {
 			if (!options.InlineMethods || !options.RemoveInlinedMethods)
 				return;
-			removeInlinedMethods(DsInlinedMethodsFinder.find(module));
+			removeInlinedMethods(DsInlinedMethodsFinder.find(module, staticStringInliner.Methods));
 		}
 
 		public override IEnumerable<int> getStringDecrypterMethods() {

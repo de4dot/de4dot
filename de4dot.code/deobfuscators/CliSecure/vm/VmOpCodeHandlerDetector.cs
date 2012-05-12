@@ -200,7 +200,7 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 				"System.Collections.Generic.Dictionary`2<System.UInt16,System.Type>",
 				"System.UInt16",
 			};
-			var cflowDeobfuscator = new CflowDeobfuscator(new NoMethodInliner());
+			var cflowDeobfuscator = new CflowDeobfuscator();
 			foreach (var type in module.Types) {
 				var cctor = DotNetUtils.getMethod(type, ".cctor");
 				if (cctor == null)

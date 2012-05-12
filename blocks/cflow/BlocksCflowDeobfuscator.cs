@@ -23,16 +23,38 @@ using Mono.Cecil.Cil;
 
 namespace de4dot.blocks.cflow {
 	public class BlocksCflowDeobfuscator {
-		BlockCflowDeobfuscator blockCflowDeobfuscator = new BlockCflowDeobfuscator();
 		Blocks blocks;
 		List<Block> allBlocks = new List<Block>();
-		SwitchCflowDeobfuscator switchCflowDeobfuscator = new SwitchCflowDeobfuscator();
-		DeadCodeRemover deadCodeRemover = new DeadCodeRemover();
-		DeadStoreRemover deadStoreRemover = new DeadStoreRemover();
-		StLdlocFixer stLdlocFixer = new StLdlocFixer();
-		ConstantsFolder constantsFolder = new ConstantsFolder();
+		List<IBlocksDeobfuscator> userBlocksDeobfuscators = new List<IBlocksDeobfuscator>();
+		List<IBlocksDeobfuscator> ourBlocksDeobfuscators = new List<IBlocksDeobfuscator>();
 
-		public IMethodCallInliner MethodCallInliner { get; set; }
+		public BlocksCflowDeobfuscator() {
+			init();
+		}
+
+		public BlocksCflowDeobfuscator(IEnumerable<IBlocksDeobfuscator> blocksDeobfuscator) {
+			init();
+			add(blocksDeobfuscator);
+		}
+
+		void init() {
+			ourBlocksDeobfuscators.Add(new BlockCflowDeobfuscator { ExecuteOnNoChange = false });
+			ourBlocksDeobfuscators.Add(new SwitchCflowDeobfuscator { ExecuteOnNoChange = false });
+			ourBlocksDeobfuscators.Add(new DeadStoreRemover { ExecuteOnNoChange = false });
+			ourBlocksDeobfuscators.Add(new DeadCodeRemover { ExecuteOnNoChange = false });
+			ourBlocksDeobfuscators.Add(new ConstantsFolder { ExecuteOnNoChange = true });
+			ourBlocksDeobfuscators.Add(new StLdlocFixer { ExecuteOnNoChange = true });
+		}
+
+		public void add(IEnumerable<IBlocksDeobfuscator> blocksDeobfuscators) {
+			foreach (var bd in blocksDeobfuscators)
+				add(bd);
+		}
+
+		public void add(IBlocksDeobfuscator blocksDeobfuscator) {
+			if (blocksDeobfuscator != null)
+				userBlocksDeobfuscators.Add(blocksDeobfuscator);
+		}
 
 		public void init(Blocks blocks) {
 			this.blocks = blocks;
@@ -41,6 +63,10 @@ namespace de4dot.blocks.cflow {
 		public void deobfuscate() {
 			bool changed;
 			int iterations = -1;
+
+			deobfuscateBegin(userBlocksDeobfuscators);
+			deobfuscateBegin(ourBlocksDeobfuscators);
+
 			do {
 				iterations++;
 				changed = false;
@@ -52,38 +78,37 @@ namespace de4dot.blocks.cflow {
 				if (iterations == 0)
 					changed |= fixDotfuscatorLoop();
 
-				foreach (var block in allBlocks) {
-					MethodCallInliner.init(blocks, block);
-					changed |= MethodCallInliner.deobfuscate();
-				}
-
-				foreach (var block in allBlocks) {
-					var lastInstr = block.LastInstr;
-					if (!DotNetUtils.isConditionalBranch(lastInstr.OpCode.Code) && lastInstr.OpCode.Code != Code.Switch)
-						continue;
-					blockCflowDeobfuscator.init(blocks, block);
-					changed |= blockCflowDeobfuscator.deobfuscate();
-				}
-
-				switchCflowDeobfuscator.init(blocks, allBlocks);
-				changed |= switchCflowDeobfuscator.deobfuscate();
-
-				deadStoreRemover.init(blocks, allBlocks);
-				changed |= deadStoreRemover.remove();
-
-				deadCodeRemover.init(allBlocks);
-				changed |= deadCodeRemover.remove();
-
-				if (!changed) {
-					constantsFolder.init(blocks, allBlocks);
-					changed |= constantsFolder.deobfuscate();
-				}
-
-				if (!changed) {
-					stLdlocFixer.init(allBlocks, blocks.Locals);
-					changed |= stLdlocFixer.fix();
-				}
+				changed |= deobfuscate(userBlocksDeobfuscators, allBlocks);
+				changed |= deobfuscate(ourBlocksDeobfuscators, allBlocks);
+				changed |= deobfuscateNoChange(changed, userBlocksDeobfuscators, allBlocks);
+				changed |= deobfuscateNoChange(changed, ourBlocksDeobfuscators, allBlocks);
 			} while (changed);
+		}
+
+		void deobfuscateBegin(IEnumerable<IBlocksDeobfuscator> bds) {
+			foreach (var bd in bds)
+				bd.deobfuscateBegin(blocks);
+		}
+
+		bool deobfuscate(IEnumerable<IBlocksDeobfuscator> bds, List<Block> allBlocks) {
+			bool changed = false;
+			foreach (var bd in bds) {
+				if (bd.ExecuteOnNoChange)
+					continue;
+				changed |= bd.deobfuscate(allBlocks);
+			}
+			return changed;
+		}
+
+		bool deobfuscateNoChange(bool changed, IEnumerable<IBlocksDeobfuscator> bds, List<Block> allBlocks) {
+			foreach (var bd in bds) {
+				if (changed)
+					break;
+				if (!bd.ExecuteOnNoChange)
+					continue;
+				changed |= bd.deobfuscate(allBlocks);
+			}
+			return changed;
 		}
 
 		// Hack for old Dotfuscator

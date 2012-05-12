@@ -26,16 +26,11 @@ namespace de4dot.blocks.cflow {
 	// dead code and remove it.
 	// I've only seen Xenocode generate this kind of code, so the code below is a special case of
 	// the more general case.
-	class DeadStoreRemover {
+	class DeadStoreRemover : IBlocksDeobfuscator {
 		Blocks blocks;
-		List<Block> allBlocks = new List<Block>();
+		List<Block> allBlocks;
 		List<AccessFlags> localFlags = new List<AccessFlags>();
 		List<bool> deadLocals = new List<bool>();
-
-		public void init(Blocks blocks, List<Block> allBlocks) {
-			this.blocks = blocks;
-			this.allBlocks = allBlocks;
-		}
 
 		[Flags]
 		enum AccessFlags {
@@ -44,7 +39,18 @@ namespace de4dot.blocks.cflow {
 			Write = 2,
 		}
 
-		public bool remove() {
+		public bool ExecuteOnNoChange { get; set; }
+
+		public void deobfuscateBegin(Blocks blocks) {
+			this.blocks = blocks;
+		}
+
+		public bool deobfuscate(List<Block> allBlocks) {
+			this.allBlocks = allBlocks;
+			return remove();
+		}
+
+		bool remove() {
 			if (blocks.Locals.Count == 0)
 				return false;
 

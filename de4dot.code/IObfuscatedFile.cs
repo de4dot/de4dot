@@ -32,6 +32,7 @@ namespace de4dot.code {
 		INameChecker NameChecker { get; }
 		bool RenameResourcesInCode { get; }
 		bool RemoveNamespaceWithOneType { get; }
+		bool RenameResourceKeys { get; }
 
 		void deobfuscateBegin();
 		void deobfuscate();

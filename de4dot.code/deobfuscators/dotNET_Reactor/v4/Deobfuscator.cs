@@ -222,6 +222,10 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			return name != null && checkValidName(name, isRandomNameMembers);
 		}
 
+		public override bool isValidResourceKeyName(string name) {
+			return name != null && checkValidName(name, isRandomNameMembers);
+		}
+
 		protected override int detectInternal() {
 			int val = 0;
 

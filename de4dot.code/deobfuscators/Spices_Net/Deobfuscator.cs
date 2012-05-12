@@ -100,11 +100,12 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			get { return startedDeobfuscating ? options.InlineMethods : true; }
 		}
 
-		public override IMethodCallInliner MethodCallInliner {
+		public override IEnumerable<IBlocksDeobfuscator> BlocksDeobfuscators {
 			get {
+				var list = new List<IBlocksDeobfuscator>();
 				if (CanInlineMethods)
-					return methodCallInliner;
-				return new NoMethodInliner();
+					list.Add(methodCallInliner);
+				return list;
 			}
 		}
 

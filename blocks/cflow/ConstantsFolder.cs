@@ -17,6 +17,7 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -24,65 +25,62 @@ using de4dot.blocks;
 
 namespace de4dot.blocks.cflow {
 	// Very simple constants folder which is all that's needed at the moment
-	class ConstantsFolder {
-		List<Block> allBlocks;
-		Blocks blocks;
+	class ConstantsFolder : BlockDeobfuscator {
 		InstructionEmulator instructionEmulator = new InstructionEmulator();
 		List<ParameterDefinition> args;
 
-		public void init(Blocks blocks, List<Block> allBlocks) {
-			this.blocks = blocks;
-			this.allBlocks = allBlocks;
+		protected override void init(List<Block> allBlocks) {
+			base.init(allBlocks);
 			args = DotNetUtils.getParameters(blocks.Method);
 		}
 
-		public bool deobfuscate() {
+		protected override bool deobfuscate(Block block) {
 			bool changed = false;
-			foreach (var block in allBlocks) {
-				instructionEmulator.init(blocks);
-				var instrs = block.Instructions;
-				for (int i = 0; i < instrs.Count; i++) {
-					var instr = instrs[i];
 
-					switch (instr.OpCode.Code) {
-					case Code.Ldarg:
-					case Code.Ldarg_0:
-					case Code.Ldarg_1:
-					case Code.Ldarg_2:
-					case Code.Ldarg_3:
-					case Code.Ldarg_S:
-						changed |= fixLoadInstruction(block, i, instructionEmulator.getArg(DotNetUtils.getParameter(args, instr.Instruction)));
-						break;
+			instructionEmulator.init(blocks);
+			var instrs = block.Instructions;
+			for (int i = 0; i < instrs.Count; i++) {
+				var instr = instrs[i];
 
-					case Code.Ldloc:
-					case Code.Ldloc_0:
-					case Code.Ldloc_1:
-					case Code.Ldloc_2:
-					case Code.Ldloc_3:
-					case Code.Ldloc_S:
-						changed |= fixLoadInstruction(block, i, instructionEmulator.getLocal(DotNetUtils.getLocalVar(blocks.Locals, instr.Instruction)));
-						break;
+				switch (instr.OpCode.Code) {
+				case Code.Ldarg:
+				case Code.Ldarg_0:
+				case Code.Ldarg_1:
+				case Code.Ldarg_2:
+				case Code.Ldarg_3:
+				case Code.Ldarg_S:
+					changed |= fixLoadInstruction(block, i, instructionEmulator.getArg(DotNetUtils.getParameter(args, instr.Instruction)));
+					break;
 
-					case Code.Ldarga:
-					case Code.Ldarga_S:
-						instructionEmulator.makeArgUnknown((ParameterDefinition)instr.Operand);
-						break;
+				case Code.Ldloc:
+				case Code.Ldloc_0:
+				case Code.Ldloc_1:
+				case Code.Ldloc_2:
+				case Code.Ldloc_3:
+				case Code.Ldloc_S:
+					changed |= fixLoadInstruction(block, i, instructionEmulator.getLocal(DotNetUtils.getLocalVar(blocks.Locals, instr.Instruction)));
+					break;
 
-					case Code.Ldloca:
-					case Code.Ldloca_S:
-						instructionEmulator.makeLocalUnknown((VariableDefinition)instr.Operand);
-						break;
-					}
+				case Code.Ldarga:
+				case Code.Ldarga_S:
+					instructionEmulator.makeArgUnknown((ParameterDefinition)instr.Operand);
+					break;
 
-					try {
-						instructionEmulator.emulate(instr.Instruction);
-					}
-					catch (System.NullReferenceException) {
-						// Here if eg. invalid metadata token in a call instruction (operand is null)
-						break;
-					}
+				case Code.Ldloca:
+				case Code.Ldloca_S:
+					instructionEmulator.makeLocalUnknown((VariableDefinition)instr.Operand);
+					break;
+				}
+
+				try {
+					instructionEmulator.emulate(instr.Instruction);
+				}
+				catch (NullReferenceException) {
+					// Here if eg. invalid metadata token in a call instruction (operand is null)
+					break;
 				}
 			}
+
 			return changed;
 		}
 

@@ -17,11 +17,24 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-namespace de4dot.blocks.cflow {
-	public interface IMethodCallInliner {
-		void init(Blocks blocks, Block block);
+using System.Collections.Generic;
+using Mono.Cecil.Cil;
+using de4dot.blocks;
 
-		// Returns true if something was inlined
-		bool deobfuscate();
+namespace de4dot.code.deobfuscators.DeepSea {
+	class DsConstantsReader : ConstantsReader {
+		public DsConstantsReader(List<Instr> instrs)
+			: base(instrs) {
+		}
+
+		protected override bool getLocalConstant(Instruction instr, out int value) {
+			value = 0;
+			return true;
+		}
+
+		protected override bool getArgConstant(Instruction instr, out int value) {
+			value = 0;
+			return true;
+		}
 	}
 }

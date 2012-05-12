@@ -200,6 +200,21 @@ namespace de4dot.blocks {
 			}
 		}
 
+		// Returns true if it's one of the ldarg instructions
+		public static bool isLdarg(Instruction instr) {
+			switch (instr.OpCode.Code) {
+			case Code.Ldarg:
+			case Code.Ldarg_S:
+			case Code.Ldarg_0:
+			case Code.Ldarg_1:
+			case Code.Ldarg_2:
+			case Code.Ldarg_3:
+				return true;
+			default:
+				return false;
+			}
+		}
+
 		// Return true if it's one of the stloc instructions
 		public static bool isStloc(Instruction instr) {
 			switch (instr.OpCode.Code) {
@@ -575,6 +590,25 @@ namespace de4dot.blocks {
 			}
 
 			return null;
+		}
+
+		// Copies most things but not everything
+		public static MethodDefinition clone(MethodDefinition method) {
+			var newMethod = new MethodDefinition(method.Name, method.Attributes, method.MethodReturnType.ReturnType);
+			newMethod.MetadataToken = method.MetadataToken;
+			newMethod.Attributes = method.Attributes;
+			newMethod.ImplAttributes = method.ImplAttributes;
+			newMethod.HasThis = method.HasThis;
+			newMethod.ExplicitThis = method.ExplicitThis;
+			newMethod.CallingConvention = method.CallingConvention;
+			newMethod.SemanticsAttributes = method.SemanticsAttributes;
+			newMethod.DeclaringType = method.DeclaringType;
+			foreach (var arg in method.Parameters)
+				newMethod.Parameters.Add(new ParameterDefinition(arg.Name, arg.Attributes, arg.ParameterType));
+			foreach (var gp in method.GenericParameters)
+				newMethod.GenericParameters.Add(new GenericParameter(gp.Name, newMethod) { Attributes = gp.Attributes });
+			copyBodyFromTo(method, newMethod);
+			return newMethod;
 		}
 
 		public static Instruction clone(Instruction instr) {
@@ -1173,6 +1207,51 @@ namespace de4dot.blocks {
 			}
 
 			return false;
+		}
+
+		public static IList<Instruction> getArgPushes(IList<Instruction> instrs, int index) {
+			return getArgPushes(instrs, ref index);
+		}
+
+		public static IList<Instruction> getArgPushes(IList<Instruction> instrs, ref int index) {
+			if (index < 0 || index >= instrs.Count)
+				return null;
+			var startInstr = instrs[index];
+			int pushes, pops;
+			calculateStackUsage(startInstr, false, out pushes, out pops);
+
+			index--;
+			int numArgs = pops;
+			var args = new List<Instruction>(numArgs);
+			int stackSize = numArgs;
+			while (index >= 0 && args.Count != numArgs) {
+				var instr = instrs[index--];
+				calculateStackUsage(instr, false, out pushes, out pops);
+				if (instr.OpCode.Code == Code.Dup) {
+					args.Add(instr);
+					stackSize--;
+				}
+				else {
+					if (pushes == 1)
+						args.Add(instr);
+					else if (pushes > 1)
+						throw new NotImplementedException();
+					stackSize -= pushes;
+
+					if (pops != 0) {
+						index++;
+						if (getArgPushes(instrs, ref index) == null)
+							return null;
+					}
+				}
+
+				if (stackSize < 0)
+					return null;
+			}
+			if (args.Count != numArgs)
+				return null;
+			args.Reverse();
+			return args;
 		}
 	}
 }

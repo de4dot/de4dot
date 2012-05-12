@@ -17,24 +17,22 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
 namespace de4dot.blocks.cflow {
-	class BlockCflowDeobfuscator {
-		Blocks blocks;
+	class BlockCflowDeobfuscator : BlockDeobfuscator {
 		Block block;
 		InstructionEmulator instructionEmulator = new InstructionEmulator();
 
-		public void init(Blocks blocks, Block block) {
-			this.blocks = blocks;
+		protected override bool deobfuscate(Block block) {
 			this.block = block;
+			if (!DotNetUtils.isConditionalBranch(block.LastInstr.OpCode.Code) && block.LastInstr.OpCode.Code != Code.Switch)
+				return false;
 			instructionEmulator.init(blocks);
-		}
 
-		// Returns true if code was updated, false otherwise
-		public bool deobfuscate() {
 			var instructions = block.Instructions;
 			if (instructions.Count == 0)
 				return false;
@@ -44,7 +42,7 @@ namespace de4dot.blocks.cflow {
 					instructionEmulator.emulate(instr);
 				}
 			}
-			catch (System.NullReferenceException) {
+			catch (NullReferenceException) {
 				// Here if eg. invalid metadata token in a call instruction (operand is null)
 				return false;
 			}

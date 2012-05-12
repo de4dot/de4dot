@@ -17,26 +17,39 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Collections.Generic;
-using Mono.Cecil;
 
-namespace de4dot.code.deobfuscators.DeepSea {
-	static class DsInlinedMethodsFinder {
-		public static List<MethodDefinition> find(ModuleDefinition module, IEnumerable<MethodDefinition> notInlinedMethods) {
-			var notInlinedMethodsDict = new Dictionary<MethodDefinition, bool>();
-			foreach (var method in notInlinedMethods)
-				notInlinedMethodsDict[method] = true;
+namespace de4dot.blocks.cflow {
+	public abstract class BlockDeobfuscator : IBlocksDeobfuscator {
+		protected List<Block> allBlocks;
+		protected Blocks blocks;
 
-			var inlinedMethods = new List<MethodDefinition>();
+		public bool ExecuteOnNoChange { get; set; }
 
-			foreach (var type in module.GetTypes()) {
-				foreach (var method in type.Methods) {
-					if (!notInlinedMethodsDict.ContainsKey(method) && DsMethodCallInliner.canInline(method))
-						inlinedMethods.Add(method);
+		public virtual void deobfuscateBegin(Blocks blocks) {
+			this.blocks = blocks;
+		}
+
+		public bool deobfuscate(List<Block> allBlocks) {
+			init(allBlocks);
+
+			bool changed = false;
+			foreach (var block in allBlocks) {
+				try {
+					changed |= deobfuscate(block);
+				}
+				catch (NullReferenceException) {
+					// Here if eg. invalid metadata token in a call instruction (operand is null)
 				}
 			}
-
-			return inlinedMethods;
+			return changed;
 		}
+
+		protected virtual void init(List<Block> allBlocks) {
+			this.allBlocks = allBlocks;
+		}
+
+		protected abstract bool deobfuscate(Block block);
 	}
 }

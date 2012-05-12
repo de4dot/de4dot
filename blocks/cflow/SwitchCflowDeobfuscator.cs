@@ -17,54 +17,34 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Collections.Generic;
 using Mono.Cecil.Cil;
 
 namespace de4dot.blocks.cflow {
-	class SwitchCflowDeobfuscator {
-		List<Block> allBlocks;
-		Blocks blocks;
+	class SwitchCflowDeobfuscator : BlockDeobfuscator {
 		InstructionEmulator instructionEmulator = new InstructionEmulator();
 
-		public void init(Blocks blocks, List<Block> allBlocks) {
-			this.blocks = blocks;
-			this.allBlocks = allBlocks;
-		}
+		protected override bool deobfuscate(Block switchBlock) {
+			if (switchBlock.LastInstr.OpCode.Code != Code.Switch)
+				return false;
 
-		public bool deobfuscate() {
-			bool changed = false;
+			if (isSwitchTopOfStack(switchBlock) && deobfuscateTos(switchBlock))
+				return true;
 
-			foreach (var switchBlock in allBlocks) {
-				if (switchBlock.LastInstr.OpCode.Code != Code.Switch)
-					continue;
+			if (isLdlocBranch(switchBlock, true) && deobfuscateLdloc(switchBlock))
+				return true;
 
-				if (isSwitchTopOfStack(switchBlock) && deobfuscateTos(switchBlock)) {
-					changed = true;
-					continue;
-				}
+			if (isStLdlocBranch(switchBlock, true) && deobfuscateStLdloc(switchBlock))
+				return true;
 
-				if (isLdlocBranch(switchBlock, true) && deobfuscateLdloc(switchBlock)) {
-					changed = true;
-					continue;
-				}
+			if (isSwitchType1(switchBlock) && deobfuscateType1(switchBlock))
+				return true;
 
-				if (isStLdlocBranch(switchBlock, true) && deobfuscateStLdloc(switchBlock)) {
-					changed = true;
-					continue;
-				}
+			if (switchBlock.FirstInstr.isLdloc() && fixSwitchBranch(switchBlock))
+				return true;
 
-				if (isSwitchType1(switchBlock) && deobfuscateType1(switchBlock)) {
-					changed = true;
-					continue;
-				}
-
-				if (switchBlock.FirstInstr.isLdloc() && fixSwitchBranch(switchBlock)) {
-					changed = true;
-					continue;
-				}
-			}
-
-			return changed;
+			return false;
 		}
 
 		static bool isSwitchTopOfStack(Block switchBlock) {
@@ -268,7 +248,7 @@ namespace de4dot.blocks.cflow {
 			try {
 				instructionEmulator.emulate(switchBlock.Instructions, 0, switchBlock.Instructions.Count - 1);
 			}
-			catch (System.NullReferenceException) {
+			catch (NullReferenceException) {
 				// Here if eg. invalid metadata token in a call instruction (operand is null)
 				target = null;
 				return false;
@@ -283,7 +263,7 @@ namespace de4dot.blocks.cflow {
 				instructionEmulator.emulate(source.Instructions);
 				instructionEmulator.emulate(switchBlock.Instructions, 0, switchBlock.Instructions.Count - 1);
 			}
-			catch (System.NullReferenceException) {
+			catch (NullReferenceException) {
 				// Here if eg. invalid metadata token in a call instruction (operand is null)
 				return false;
 			}

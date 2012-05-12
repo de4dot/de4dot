@@ -107,6 +107,7 @@
     <Compile Include="deobfuscators\CodeVeil\Deobfuscator.cs" />
     <Compile Include="deobfuscators\CodeVeil\ProxyDelegateFinder.cs" />
     <Compile Include="deobfuscators\CodeVeil\TamperDetection.cs" />
+    <Compile Include="deobfuscators\ConstantsReader.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\AntiDebugger.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\AssemblyResolver.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\Deobfuscator.cs" />
@@ -115,6 +116,10 @@
     <Compile Include="deobfuscators\CryptoObfuscator\ResourceResolver.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\StringDecrypter.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\TamperDetection.cs" />
+    <Compile Include="deobfuscators\DeepSea\ArrayBlockDeobfuscator.cs" />
+    <Compile Include="deobfuscators\DeepSea\CastDeobfuscator.cs" />
+    <Compile Include="deobfuscators\DeepSea\DsConstantsReader.cs" />
+    <Compile Include="deobfuscators\DeepSea\DsUtils.cs" />
     <Compile Include="deobfuscators\DeepSea\FieldsRestorer.cs" />
     <Compile Include="deobfuscators\DeobfuscatorBase.cs" />
     <Compile Include="deobfuscators\DeobfuscatorInfoBase.cs" />
@@ -125,7 +130,7 @@
     <Compile Include="deobfuscators\DeepSea\ResourceResolver.cs" />
     <Compile Include="deobfuscators\DeepSea\StringDecrypter.cs" />
     <Compile Include="deobfuscators\DeepSea\Deobfuscator.cs" />
-    <Compile Include="deobfuscators\DeepSea\MethodCallInliner.cs" />
+    <Compile Include="deobfuscators\DeepSea\DsMethodCallInliner.cs" />
     <Compile Include="deobfuscators\Dotfuscator\Deobfuscator.cs" />
     <Compile Include="deobfuscators\Dotfuscator\StringDecrypter.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v3\AntiStrongName.cs" />
@@ -152,7 +157,7 @@
     <Compile Include="deobfuscators\dotNET_Reactor\v3\MemoryPatcher.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\AssemblyResolver.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\CodeCompilerMethodCallRestorer.cs" />
-    <Compile Include="deobfuscators\Eazfuscator_NET\ConstantsReader.cs" />
+    <Compile Include="deobfuscators\Eazfuscator_NET\EfConstantsReader.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\DecrypterType.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\Deobfuscator.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\EfUtils.cs" />
@@ -253,6 +258,7 @@
     <Compile Include="renamer\MemberInfos.cs" />
     <Compile Include="renamer\NameCreators.cs" />
     <Compile Include="renamer\Renamer.cs" />
+    <Compile Include="renamer\ResourceKeysRenamer.cs" />
     <Compile Include="renamer\ResourceRenamer.cs" />
     <Compile Include="renamer\TypeInfo.cs" />
     <Compile Include="renamer\TypeNames.cs" />
@@ -262,6 +268,7 @@
     <Compile Include="resources\IResourceData.cs" />
     <Compile Include="resources\ResourceElement.cs" />
     <Compile Include="resources\ResourceElementSet.cs" />
+    <Compile Include="resources\ResourceReader.cs" />
     <Compile Include="resources\ResourceTypeCode.cs" />
     <Compile Include="resources\ResourceDataCreator.cs" />
     <Compile Include="resources\ResourceWriter.cs" />

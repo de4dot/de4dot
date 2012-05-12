@@ -22,25 +22,15 @@ using Mono.Cecil.Cil;
 
 namespace de4dot.blocks.cflow {
 	// Replace stloc + ldloc with dup + stloc
-	class StLdlocFixer {
+	class StLdlocFixer : BlockDeobfuscator {
 		IList<VariableDefinition> locals;
-		List<Block> allBlocks;
 
-		public void init(List<Block> allBlocks, IList<VariableDefinition> locals) {
-			this.allBlocks = allBlocks;
-			this.locals = locals;
+		protected override void init(List<Block> allBlocks) {
+			base.init(allBlocks);
+			locals = blocks.Locals;
 		}
 
-		public bool fix() {
-			bool changed = false;
-
-			foreach (var block in allBlocks)
-				changed |= fix(block);
-
-			return changed;
-		}
-
-		bool fix(Block block) {
+		protected override bool deobfuscate(Block block) {
 			bool changed = false;
 			var instructions = block.Instructions;
 			for (int i = 0; i < instructions.Count; i++) {
