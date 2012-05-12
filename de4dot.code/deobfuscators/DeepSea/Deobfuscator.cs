@@ -42,7 +42,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			dumpEmbeddedAssemblies = new BoolOption(null, makeArgName("embedded"), "Dump embedded assemblies", true);
 			restoreFields = new BoolOption(null, makeArgName("fields"), "Restore fields", true);
 			renameResourceKeys = new BoolOption(null, makeArgName("keys"), "Rename resource keys", true);
-			castDeobfuscation = new BoolOption(null, makeArgName("cast"), "Deobfuscate casts", true);
+			castDeobfuscation = new BoolOption(null, makeArgName("casts"), "Deobfuscate casts", true);
 		}
 
 		public override string Name {
