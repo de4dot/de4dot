@@ -18,6 +18,7 @@
 */
 
 using System;
+using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using de4dot.blocks;
@@ -66,11 +67,32 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 		public UnknownHandlerInfo(TypeDefinition type, CsvmInfo csvmInfo) {
 			this.type = type;
 			this.csvmInfo = csvmInfo;
-			fieldsInfo = new FieldsInfo(type);
+			fieldsInfo = new FieldsInfo(getFields(type));
 			countMethods();
 			findOverrideMethods();
 			executeMethodThrows = countThrows(executeMethod);
 			executeMethodPops = countPops(executeMethod);
+		}
+
+		static IEnumerable<FieldDefinition> getFields(TypeDefinition type) {
+			var typeFields = new FieldDefinitionAndDeclaringTypeDict<FieldDefinition>();
+			foreach (var field in type.Fields)
+				typeFields.add(field, field);
+			var realFields = new Dictionary<FieldDefinition, bool>();
+			foreach (var method in type.Methods) {
+				if (method.Body == null)
+					continue;
+				foreach (var instr in method.Body.Instructions) {
+					var fieldRef = instr.Operand as FieldReference;
+					if (fieldRef == null)
+						continue;
+					var field = typeFields.find(fieldRef);
+					if (field == null)
+						continue;
+					realFields[field] = true;
+				}
+			}
+			return realFields.Keys;
 		}
 
 		void countMethods() {

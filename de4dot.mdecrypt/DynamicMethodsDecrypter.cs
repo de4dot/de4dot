@@ -242,12 +242,6 @@ namespace de4dot.mdecrypt {
 				if (!compareName(textName, name, name.Length))
 					continue;
 
-				uint oldProtect;
-				if (!VirtualProtect(new IntPtr(pSection), sizeof(IMAGE_SECTION_HEADER), PAGE_EXECUTE_READWRITE, out oldProtect))
-					throw new ApplicationException("Could not enable write access to jitter .text section");
-				pSection->VirtualSize = (pSection->VirtualSize + sectionAlignment - 1) & ~(sectionAlignment - 1);
-				VirtualProtect(new IntPtr(pSection), sizeof(IMAGE_SECTION_HEADER), oldProtect, out oldProtect);
-
 				uint size = pSection->VirtualSize;
 				uint rva = pSection->VirtualAddress;
 				return new IntPtr((byte*)hDll + rva + size);
