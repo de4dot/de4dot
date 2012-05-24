@@ -558,9 +558,15 @@ namespace de4dot.code {
 					throw;
 				}
 				catch (Exception ex) {
-					Log.w("Could not deobfuscate method {0:X8}. Hello, E.T.: {1}",	// E.T. = exception type
+					if (!canLoadMethodBody(method)) {
+						Log.v("Invalid method body. {0:X8}", method.MetadataToken.ToInt32());
+						method.Body = new MethodBody(method);
+					}
+					else {
+						Log.w("Could not deobfuscate method {0:X8}. Hello, E.T.: {1}",	// E.T. = exception type
 								method.MetadataToken.ToInt32(),
 								ex.GetType());
+					}
 				}
 				finally {
 					Log.indentLevel = oldIndentLevel;
@@ -568,6 +574,16 @@ namespace de4dot.code {
 				removeNoInliningAttribute(method);
 
 				Log.deIndent();
+			}
+		}
+
+		static bool canLoadMethodBody(MethodDefinition method) {
+			try {
+				var body = method.Body;
+				return true;
+			}
+			catch {
+				return false;
 			}
 		}
 
