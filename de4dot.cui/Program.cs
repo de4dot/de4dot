@@ -86,7 +86,8 @@ namespace de4dot.cui {
 				}
 				else {
 					Log.e("\n\n");
-					Log.e("Hmmmm... something didn't work. Try the latest version. ({0})", ex.GetType());
+					Log.e("Hmmmm... something didn't work. Try the latest version.");
+					Log.e("    EX: {0} : message: {1}", ex.GetType(), ex.Message);
 					Log.e("If it's a supported obfuscator, it could be a bug or a new obfuscator version.");
 					Log.e("If it's an unsupported obfuscator, make sure the methods are decrypted!");
 					Log.e("Send bug reports to de4dot@gmail.com or go to https://github.com/0xd4d/de4dot/issues");
