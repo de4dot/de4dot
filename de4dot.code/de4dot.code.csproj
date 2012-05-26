@@ -107,6 +107,7 @@
     <Compile Include="deobfuscators\CodeVeil\Deobfuscator.cs" />
     <Compile Include="deobfuscators\CodeVeil\ProxyDelegateFinder.cs" />
     <Compile Include="deobfuscators\CodeVeil\TamperDetection.cs" />
+    <Compile Include="deobfuscators\CodeWall\AssemblyDecrypter.cs" />
     <Compile Include="deobfuscators\CodeWall\Deobfuscator.cs" />
     <Compile Include="deobfuscators\CodeWall\MethodsDecrypter.cs" />
     <Compile Include="deobfuscators\CodeWall\randomc\CRandomMersenne.cs" />

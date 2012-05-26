@@ -29,9 +29,11 @@ namespace de4dot.code.deobfuscators.CodeWall {
 		public const string THE_NAME = "CodeWall";
 		public const string THE_TYPE = "cw";
 		const string DEFAULT_REGEX = @"!^[_<>{}$.`-]$&" + DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
+		BoolOption dumpEmbeddedAssemblies;
 
 		public DeobfuscatorInfo()
 			: base(DEFAULT_REGEX) {
+			dumpEmbeddedAssemblies = new BoolOption(null, makeArgName("embedded"), "Dump embedded assemblies", true);
 		}
 
 		public override string Name {
@@ -45,11 +47,13 @@ namespace de4dot.code.deobfuscators.CodeWall {
 		public override IDeobfuscator createDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
 				ValidNameRegex = validNameRegex.get(),
+				DumpEmbeddedAssemblies = dumpEmbeddedAssemblies.get(),
 			});
 		}
 
 		protected override IEnumerable<Option> getOptionsInternal() {
 			return new List<Option>() {
+				dumpEmbeddedAssemblies,
 			};
 		}
 	}
@@ -60,6 +64,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 		StringDecrypter stringDecrypter;
 
 		internal class Options : OptionsBase {
+			public bool DumpEmbeddedAssemblies { get; set; }
 		}
 
 		public override string Type {
@@ -127,6 +132,21 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			foreach (var info in stringDecrypter.Infos)
 				staticStringInliner.add(info.Method, (method, args) => stringDecrypter.decrypt(method, (int)args[0], (int)args[1], (int)args[2]));
 			DeobfuscatedFile.stringDecryptersAdded();
+
+			dumpEmbeddedAssemblies();
+		}
+
+		void dumpEmbeddedAssemblies() {
+			if (!options.DumpEmbeddedAssemblies)
+				return;
+			var asmDecrypter = new AssemblyDecrypter(module, DeobfuscatedFile, this);
+			asmDecrypter.find();
+			foreach (var info in asmDecrypter.AssemblyInfos) {
+				var asmName = info.assemblySimpleName;
+				if (info.isEntryPointAssembly)
+					asmName += "_real";
+				DeobfuscatedFile.createAssemblyFile(info.data, asmName, info.extension);
+			}
 		}
 
 		public override void deobfuscateMethodEnd(Blocks blocks) {
