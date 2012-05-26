@@ -30,6 +30,12 @@ namespace de4dot.code.deobfuscators.CodeWall {
 		ModuleDefinition module;
 		MethodDefinitionAndDeclaringTypeDict<StringEncrypterInfo> stringEncrypterInfos = new MethodDefinitionAndDeclaringTypeDict<StringEncrypterInfo>();
 
+		enum Version {
+			Unknown,
+			V30,	// 3.0 - 3.5
+			V36,	// 3.6 - 4.1
+		}
+
 		public class StringEncrypterInfo {
 			MethodDefinition method;
 
@@ -118,18 +124,81 @@ namespace de4dot.code.deobfuscators.CodeWall {
 
 		public void find() {
 			foreach (var type in module.Types) {
-				var decrypterMethod = checkType(type);
-				if (decrypterMethod == null)
+				MethodDefinition decrypterMethod;
+				var version = checkType(type, out decrypterMethod);
+				if (version == Version.Unknown)
 					continue;
 				stringEncrypterInfos.add(decrypterMethod, new StringEncrypterInfo(decrypterMethod));
 			}
 		}
 
-		static readonly string[] requiredTypes = new string[] {
+		Version checkType(TypeDefinition type, out MethodDefinition decrypterMethod) {
+			MethodDefinition method;
+
+			if ((method = checkType_v30(type)) != null) {
+				decrypterMethod = method;
+				return Version.V30;
+			}
+
+			if ((method = checkType_v36(type)) != null) {
+				decrypterMethod = method;
+				return Version.V36;
+			}
+
+			decrypterMethod = null;
+			return Version.Unknown;
+		}
+
+		static readonly string[] requiredTypes_v30 = new string[] {
+			"System.Collections.Generic.Dictionary`2<System.Int32,System.String>",
+		};
+		static readonly string[] requiredLocals_v30 = new string[] {
+			"System.Int32",
+			"System.Byte[]",
+			"System.Reflection.Assembly",
+			"System.IO.Stream",
+			"System.Random",
+			"System.String",
+		};
+		MethodDefinition checkType_v30(TypeDefinition type) {
+			MethodDefinition decrypterMethod = checkMethods_v30(type);
+			if (decrypterMethod == null)
+				return null;
+			if (!new FieldTypes(type).exactly(requiredTypes_v30))
+				return null;
+			if (!new LocalTypes(decrypterMethod).exactly(requiredLocals_v30))
+				return null;
+
+			return decrypterMethod;
+		}
+
+		static MethodDefinition checkMethods_v30(TypeDefinition type) {
+			if (type.Methods.Count < 1 || type.Methods.Count > 2)
+				return null;
+
+			MethodDefinition decrypterMethod = null;
+			MethodDefinition cctor = null;
+			foreach (var method in type.Methods) {
+				if (method.Name == ".cctor") {
+					cctor = method;
+					continue;
+				}
+				if (decrypterMethod != null)
+					return null;
+				if (!DotNetUtils.isMethod(method, "System.String", "(System.Int32,System.Int32,System.Int32)"))
+					return null;
+				decrypterMethod = method;
+			}
+			if (decrypterMethod == null || !decrypterMethod.IsStatic)
+				return null;
+			return decrypterMethod;
+		}
+
+		static readonly string[] requiredTypes_v36 = new string[] {
 			"System.Object",
 			"System.Collections.Generic.Dictionary`2<System.Int32,System.String>",
 		};
-		static readonly string[] requiredLocals = new string[] {
+		static readonly string[] requiredLocals_v36 = new string[] {
 			"System.Int32",
 			"System.Byte[]",
 			"System.Reflection.Assembly",
@@ -138,19 +207,19 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			"System.String",
 			"System.Object",
 		};
-		MethodDefinition checkType(TypeDefinition type) {
-			MethodDefinition decrypterMethod = checkMethods(type);
+		MethodDefinition checkType_v36(TypeDefinition type) {
+			MethodDefinition decrypterMethod = checkMethods_v36(type);
 			if (decrypterMethod == null)
 				return null;
-			if (!new FieldTypes(type).exactly(requiredTypes))
+			if (!new FieldTypes(type).exactly(requiredTypes_v36))
 				return null;
-			if (!new LocalTypes(decrypterMethod).exactly(requiredLocals))
+			if (!new LocalTypes(decrypterMethod).exactly(requiredLocals_v36))
 				return null;
 
 			return decrypterMethod;
 		}
 
-		static MethodDefinition checkMethods(TypeDefinition type) {
+		static MethodDefinition checkMethods_v36(TypeDefinition type) {
 			if (type.Methods.Count != 2)
 				return null;
 
