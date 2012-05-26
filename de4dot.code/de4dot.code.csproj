@@ -112,6 +112,7 @@
     <Compile Include="deobfuscators\CodeWall\randomc\CRandomMersenne.cs" />
     <Compile Include="deobfuscators\CodeWall\randomc\CRandomMother.cs" />
     <Compile Include="deobfuscators\CodeWall\KeyGenerator.cs" />
+    <Compile Include="deobfuscators\CodeWall\StringDecrypter.cs" />
     <Compile Include="deobfuscators\ConstantsReader.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\AntiDebugger.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\AssemblyResolver.cs" />

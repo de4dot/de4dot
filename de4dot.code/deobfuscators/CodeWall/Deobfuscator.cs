@@ -56,6 +56,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 	class Deobfuscator : DeobfuscatorBase {
 		Options options;
 		MethodsDecrypter methodsDecrypter;
+		StringDecrypter stringDecrypter;
 
 		internal class Options : OptionsBase {
 		}
@@ -80,7 +81,8 @@ namespace de4dot.code.deobfuscators.CodeWall {
 		protected override int detectInternal() {
 			int val = 0;
 
-			int sum = toInt32(methodsDecrypter.Detected);
+			int sum = toInt32(methodsDecrypter.Detected) +
+					toInt32(stringDecrypter.Detected);
 			if (sum > 0)
 				val += 100 + 10 * (sum - 1);
 
@@ -90,6 +92,8 @@ namespace de4dot.code.deobfuscators.CodeWall {
 		protected override void scanForObfuscator() {
 			methodsDecrypter = new MethodsDecrypter(module);
 			methodsDecrypter.find();
+			stringDecrypter = new StringDecrypter(module);
+			stringDecrypter.find();
 		}
 
 		public override bool getDecryptedModule(ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
@@ -110,12 +114,18 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			var newOne = new Deobfuscator(options);
 			newOne.setModule(module);
 			newOne.methodsDecrypter = new MethodsDecrypter(module, methodsDecrypter);
+			newOne.stringDecrypter = new StringDecrypter(module, stringDecrypter);
 			return newOne;
 		}
 
 		public override void deobfuscateBegin() {
 			base.deobfuscateBegin();
 			addAssemblyReferenceToBeRemoved(methodsDecrypter.AssemblyNameReference, "Obfuscator decrypter DLL reference");
+
+			stringDecrypter.initialize(DeobfuscatedFile);
+			foreach (var info in stringDecrypter.Infos)
+				staticStringInliner.add(info.Method, (method, args) => stringDecrypter.decrypt(method, (int)args[0], (int)args[1], (int)args[2]));
+			DeobfuscatedFile.stringDecryptersAdded();
 		}
 
 		public override void deobfuscateMethodEnd(Blocks blocks) {
@@ -124,12 +134,19 @@ namespace de4dot.code.deobfuscators.CodeWall {
 		}
 
 		public override void deobfuscateEnd() {
+			if (CanRemoveStringDecrypterType) {
+				foreach (var info in stringDecrypter.Infos) {
+					addResourceToBeRemoved(info.Resource, "Encrypted strings");
+					addTypeToBeRemoved(info.Type, "String decrypter type");
+				}
+			}
 			base.deobfuscateEnd();
 		}
 
 		public override IEnumerable<int> getStringDecrypterMethods() {
 			var list = new List<int>();
-			//TODO:
+			foreach (var info in stringDecrypter.Infos)
+				list.Add(info.Method.MetadataToken.ToInt32());
 			return list;
 		}
 	}
