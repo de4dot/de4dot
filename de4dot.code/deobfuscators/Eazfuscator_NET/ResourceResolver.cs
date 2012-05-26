@@ -83,7 +83,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			if (DotNetUtils.getField(type, "System.Reflection.Assembly") == null)
 				return false;
 
-			var resolveHandler = EfUtils.getResolveMethod(method);
+			var resolveHandler = DeobUtils.getResolveMethod(method);
 			if (resolveHandler == null)
 				return false;
 

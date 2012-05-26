@@ -160,7 +160,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			if (DotNetUtils.getPInvokeMethod(type, "kernel32", "MoveFileEx") == null)
 				return false;
 
-			var resolveHandler = EfUtils.getResolveMethod(method);
+			var resolveHandler = DeobUtils.getResolveMethod(method);
 			if (resolveHandler == null)
 				return false;
 			if (!DeobUtils.hasInteger(resolveHandler, ',') ||

@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using Mono.Cecil;
+using Mono.Cecil.Cil;
 using ICSharpCode.SharpZipLib.Zip.Compression;
 using de4dot.blocks;
 
@@ -230,6 +231,30 @@ namespace de4dot.code.deobfuscators {
 				if (!type.IsEnum && --maxCctors <= 0)
 					break;
 			}
+		}
+
+		public static List<MethodDefinition> getAllResolveHandlers(MethodDefinition method) {
+			var list = new List<MethodDefinition>();
+			if (method == null || method.Body == null)
+				return list;
+			foreach (var instr in method.Body.Instructions) {
+				if (instr.OpCode.Code != Code.Ldftn && instr.OpCode.Code != Code.Ldvirtftn)
+					continue;
+				var handler = instr.Operand as MethodDefinition;
+				if (handler == null)
+					continue;
+				if (!DotNetUtils.isMethod(handler, "System.Reflection.Assembly", "(System.Object,System.ResolveEventArgs)"))
+					continue;
+				list.Add(handler);
+			}
+			return list;
+		}
+
+		public static MethodDefinition getResolveMethod(MethodDefinition method) {
+			var handlers = DeobUtils.getAllResolveHandlers(method);
+			if (handlers.Count == 0)
+				return null;
+			return handlers[0];
 		}
 	}
 }

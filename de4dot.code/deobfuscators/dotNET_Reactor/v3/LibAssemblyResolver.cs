@@ -72,7 +72,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 				var ctor = DotNetUtils.getMethod(type, ".ctor");
 				if (ctor == null)
 					continue;
-				var handler = getHandler(ctor);
+				var handler = DeobUtils.getResolveMethod(ctor);
 				if (handler == null)
 					continue;
 				simpleDeobfuscator.decryptStrings(handler, deob);
@@ -92,27 +92,6 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			}
 
 			return false;
-		}
-
-		MethodDefinition getHandler(MethodDefinition ctor) {
-			if (ctor == null || ctor.Body == null)
-				return null;
-			foreach (var instr in ctor.Body.Instructions) {
-				if (instr.OpCode.Code != Code.Ldftn)
-					continue;
-				var handler = instr.Operand as MethodReference;
-				if (handler == null)
-					continue;
-				if (!DotNetUtils.isMethod(handler, "System.Reflection.Assembly", "(System.Object,System.ResolveEventArgs)"))
-					continue;
-				var handlerDef = DotNetUtils.getMethod(module, handler);
-				if (handlerDef == null)
-					continue;
-
-				return handlerDef;
-			}
-
-			return null;
 		}
 
 		string getResourcePrefix(MethodDefinition handler) {
