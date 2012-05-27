@@ -93,6 +93,12 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			if (sum > 0)
 				val += 100 + 10 * (sum - 1);
 
+			// If methods are encrypted, and more than one obfuscator has been used, then CW
+			// was most likely the last obfuscator used. Increment val so the user doesn't have
+			// to force CW.
+			if (methodsDecrypter.Detected)
+				val += 50;
+
 			return val;
 		}
 
