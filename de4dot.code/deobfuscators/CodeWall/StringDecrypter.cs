@@ -29,8 +29,9 @@ namespace de4dot.code.deobfuscators.CodeWall {
 	class StringDecrypter {
 		ModuleDefinition module;
 		MethodDefinitionAndDeclaringTypeDict<StringEncrypterInfo> stringEncrypterInfos = new MethodDefinitionAndDeclaringTypeDict<StringEncrypterInfo>();
+		Version version;
 
-		enum Version {
+		public enum Version {
 			Unknown,
 			V30,	// 3.0 - 3.5
 			V36,	// 3.6 - 4.1
@@ -102,6 +103,10 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			get { return stringEncrypterInfos.Count != 0; }
 		}
 
+		public Version TheVersion {
+			get { return version; }
+		}
+
 		public IEnumerable<StringEncrypterInfo> Infos {
 			get { return stringEncrypterInfos.getValues(); }
 		}
@@ -125,9 +130,10 @@ namespace de4dot.code.deobfuscators.CodeWall {
 		public void find() {
 			foreach (var type in module.Types) {
 				MethodDefinition decrypterMethod;
-				var version = checkType(type, out decrypterMethod);
-				if (version == Version.Unknown)
+				var decrypterVersion = checkType(type, out decrypterMethod);
+				if (decrypterVersion == Version.Unknown)
 					continue;
+				version = decrypterVersion;
 				stringEncrypterInfos.add(decrypterMethod, new StringEncrypterInfo(decrypterMethod));
 			}
 		}

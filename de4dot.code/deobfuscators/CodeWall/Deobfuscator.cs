@@ -62,6 +62,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 		Options options;
 		MethodsDecrypter methodsDecrypter;
 		StringDecrypter stringDecrypter;
+		string obfuscatorName = DeobfuscatorInfo.THE_NAME;
 
 		internal class Options : OptionsBase {
 			public bool DumpEmbeddedAssemblies { get; set; }
@@ -76,7 +77,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 		}
 
 		public override string Name {
-			get { return DeobfuscatorInfo.THE_NAME; }
+			get { return obfuscatorName; }
 		}
 
 		public Deobfuscator(Options options)
@@ -100,6 +101,23 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			methodsDecrypter.find();
 			stringDecrypter = new StringDecrypter(module);
 			stringDecrypter.find();
+			var version = detectVersion();
+			if (version != null)
+				obfuscatorName = DeobfuscatorInfo.THE_NAME + " " + version;
+		}
+
+		string detectVersion() {
+			if (stringDecrypter.Detected) {
+				switch (stringDecrypter.TheVersion) {
+				case StringDecrypter.Version.V30: return "v3.0 - v3.5";
+				case StringDecrypter.Version.V36: return "v3.6 - v4.1";
+				}
+			}
+
+			if (methodsDecrypter.Detected)
+				return "v3.0 - v4.1";
+
+			return null;
 		}
 
 		public override bool getDecryptedModule(ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
