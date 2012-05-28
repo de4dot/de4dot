@@ -49,6 +49,7 @@ namespace de4dot.cui {
 				new de4dot.code.deobfuscators.Eazfuscator_NET.DeobfuscatorInfo(),
 				new de4dot.code.deobfuscators.Goliath_NET.DeobfuscatorInfo(),
 				new de4dot.code.deobfuscators.MaxtoCode.DeobfuscatorInfo(),
+				new de4dot.code.deobfuscators.MPRESS.DeobfuscatorInfo(),
 				new de4dot.code.deobfuscators.Skater_NET.DeobfuscatorInfo(),
 				new de4dot.code.deobfuscators.SmartAssembly.DeobfuscatorInfo(),
 				new de4dot.code.deobfuscators.Spices_Net.DeobfuscatorInfo(),
