@@ -47,6 +47,10 @@ namespace de4dot.PE {
 			get { return resources; }
 		}
 
+		public FileHeader FileHeader {
+			get { return fileHeader; }
+		}
+
 		public OptionalHeader OptionalHeader {
 			get { return optionalHeader; }
 		}
