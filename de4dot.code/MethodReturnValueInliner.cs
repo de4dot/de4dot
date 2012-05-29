@@ -191,7 +191,7 @@ namespace de4dot.code {
 			try {
 				blocks = theBlocks;
 				callResults = new List<CallResult>();
-				allBlocks = new List<Block>(blocks.MethodBlocks.getAllBlocks());
+				allBlocks = blocks.MethodBlocks.getAllBlocks();
 
 				findAllCallResults();
 				inlineAllCalls();

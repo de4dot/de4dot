@@ -291,7 +291,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 		}
 
 		bool removeTamperProtection(Blocks blocks) {
-			var allBlocks = new List<Block>(blocks.MethodBlocks.getAllBlocks());
+			var allBlocks = blocks.MethodBlocks.getAllBlocks();
 			var tamperBlocks = findTamperBlocks(blocks, allBlocks);
 
 			if (tamperBlocks == null) {
