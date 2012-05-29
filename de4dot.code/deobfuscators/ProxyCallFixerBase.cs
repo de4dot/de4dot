@@ -192,7 +192,7 @@ namespace de4dot.code.deobfuscators {
 			fieldToDelegateInfo.add(di.field, di);
 		}
 
-		DelegateInfo getDelegateInfo(FieldReference field) {
+		protected DelegateInfo getDelegateInfo(FieldReference field) {
 			if (field == null)
 				return null;
 			return fieldToDelegateInfo.find(field);
@@ -257,8 +257,7 @@ namespace de4dot.code.deobfuscators {
 					if (di == null)
 						continue;
 
-					var visited = new Dictionary<Block, bool>();
-					var callInfo = findProxyCall(di, block, i, visited, 1);
+					var callInfo = findProxyCall(di, block, i);
 					if (callInfo != null) {
 						add(removeInfos, block, i, null);
 						add(removeInfos, callInfo.Block, callInfo.Index, di);
@@ -275,6 +274,10 @@ namespace de4dot.code.deobfuscators {
 			}
 
 			return fixProxyCalls(removeInfos);
+		}
+
+		protected virtual BlockInstr findProxyCall(DelegateInfo di, Block block, int index) {
+			return findProxyCall(di, block, index, new Dictionary<Block, bool>(), 1);
 		}
 
 		BlockInstr findProxyCall(DelegateInfo di, Block block, int index, Dictionary<Block, bool> visited, int stack) {
@@ -451,6 +454,40 @@ namespace de4dot.code.deobfuscators {
 			}
 
 			return fixProxyCalls(removeInfos);
+		}
+	}
+
+	// Fixes proxy calls that call a static method with the instance of
+	// of a delegate as the last arg, which then calls the Invoke method.
+	//		...push args...
+	//		ldsfld delegate instance
+	//		call static method
+	abstract class ProxyCallFixer3 : ProxyCallFixer1 {
+		protected ProxyCallFixer3(ModuleDefinition module)
+			: base(module) {
+		}
+
+		protected ProxyCallFixer3(ModuleDefinition module, ProxyCallFixer3 oldOne)
+			: base(module, oldOne) {
+		}
+
+		protected override BlockInstr findProxyCall(DelegateInfo di, Block block, int index) {
+			index++;
+			if (index >= block.Instructions.Count)
+				return null;
+			var calledMethod = getCalledMethod(block.Instructions[index]);
+			if (calledMethod == null)
+				return null;
+			return new BlockInstr {
+				Block = block,
+				Index = index,
+			};
+		}
+
+		static MethodReference getCalledMethod(Instr instr) {
+			if (instr.OpCode.Code != Code.Call)
+				return null;
+			return instr.Operand as MethodReference;
 		}
 	}
 }
