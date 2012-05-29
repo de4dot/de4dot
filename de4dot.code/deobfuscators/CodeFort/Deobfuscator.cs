@@ -17,15 +17,21 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
+using Mono.Cecil;
+using Mono.MyStuff;
+using de4dot.blocks;
+using de4dot.PE;
 
-namespace de4dot.code.deobfuscators.Unknown {
+namespace de4dot.code.deobfuscators.CodeFort {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
-		public const string THE_NAME = "Unknown";
-		public const string THE_TYPE = "un";
+		public const string THE_NAME = "CodeFort";
+		public const string THE_TYPE = "cf";
+		const string DEFAULT_REGEX = @"!^[_<>{}$.`-]$&" + DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
+
 		public DeobfuscatorInfo()
-			: base() {
+			: base(DEFAULT_REGEX) {
 		}
 
 		public override string Name {
@@ -38,14 +44,19 @@ namespace de4dot.code.deobfuscators.Unknown {
 
 		public override IDeobfuscator createDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
-				RenameResourcesInCode = false,
 				ValidNameRegex = validNameRegex.get(),
 			});
+		}
+
+		protected override IEnumerable<Option> getOptionsInternal() {
+			return new List<Option>() {
+			};
 		}
 	}
 
 	class Deobfuscator : DeobfuscatorBase {
-		string obfuscatorName;
+		Options options;
+		ProxyCallFixer proxyCallFixer;
 
 		internal class Options : OptionsBase {
 		}
@@ -59,59 +70,55 @@ namespace de4dot.code.deobfuscators.Unknown {
 		}
 
 		public override string Name {
-			get { return obfuscatorName ?? "Unknown Obfuscator"; }
+			get { return DeobfuscatorInfo.THE_NAME; }
 		}
 
-		protected override bool KeepTypes {
-			get { return true; }
-		}
-
-		internal Deobfuscator(Options options)
+		public Deobfuscator(Options options)
 			: base(options) {
-		}
-
-		void setName(string name) {
-			if (obfuscatorName == null && name != null)
-				obfuscatorName = name;
-		}
-
-		public override int earlyDetect() {
-			setName(earlyScanTypes());
-			return obfuscatorName != null ? 1 : 0;
-		}
-
-		string earlyScanTypes() {
-			foreach (var type in module.Types) {
-				if (type.FullName == "ConfusedByAttribute")
-					return "Confuser";
-			}
-			return null;
+			this.options = options;
 		}
 
 		protected override int detectInternal() {
-			setName(scanTypes());
-			return 1;
+			int val = 0;
+
+			int sum = toInt32(proxyCallFixer.Detected);
+			if (sum > 0)
+				val += 100 + 10 * (sum - 1);
+
+			return val;
 		}
 
 		protected override void scanForObfuscator() {
+			proxyCallFixer = new ProxyCallFixer(module);
+			proxyCallFixer.findDelegateCreator();
 		}
 
-		string scanTypes() {
-			foreach (var type in module.Types) {
-				if (type.FullName == "ZYXDNGuarder")
-					return "DNGuard HVM";
-				if (type.Name.Contains("();\t"))
-					return "Manco .NET Obfuscator";
-				if (Regex.IsMatch(type.FullName, @"^EMyPID_\d+_$"))
-					return "BitHelmet Obfuscator";
-				if (type.FullName == "YanoAttribute")
-					return "Yano Obfuscator";
-			}
-			return null;
+		public override void deobfuscateBegin() {
+			base.deobfuscateBegin();
+
+			proxyCallFixer.find();
+		}
+
+		public override void deobfuscateMethodEnd(Blocks blocks) {
+			proxyCallFixer.deobfuscate(blocks);
+			inlineMethods(blocks);
+			base.deobfuscateMethodEnd(blocks);
+		}
+
+		void inlineMethods(Blocks blocks) {
+			var inliner = new CfMethodCallInliner();
+			inliner.deobfuscateBegin(blocks);
+			inliner.deobfuscate(blocks.MethodBlocks.getAllBlocks());
+		}
+
+		public override void deobfuscateEnd() {
+			removeProxyDelegates(proxyCallFixer);
+			base.deobfuscateEnd();
 		}
 
 		public override IEnumerable<int> getStringDecrypterMethods() {
-			return new List<int>();
+			var list = new List<int>();
+			return list;
 		}
 	}
 }
