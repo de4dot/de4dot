@@ -23,7 +23,7 @@ using Mono.Cecil.Cil;
 
 namespace de4dot.blocks.cflow {
 	public class MethodCallInliner : MethodCallInlinerBase {
-		bool inlineInstanceMethods;
+		protected readonly bool inlineInstanceMethods;
 
 		public MethodCallInliner(bool inlineInstanceMethods) {
 			this.inlineInstanceMethods = inlineInstanceMethods;
@@ -43,7 +43,7 @@ namespace de4dot.blocks.cflow {
 		protected virtual bool canInline(MethodDefinition method) {
 			if (method.GenericParameters.Count > 0)
 				return false;
-			if (MemberReferenceHelper.compareMethodReferenceAndDeclaringType(method, blocks.Method))
+			if (method == blocks.Method)
 				return false;
 			if (!MemberReferenceHelper.compareTypes(method.DeclaringType, blocks.Method.DeclaringType))
 				return false;
