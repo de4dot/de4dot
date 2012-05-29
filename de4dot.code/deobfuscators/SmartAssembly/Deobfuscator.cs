@@ -88,7 +88,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 		ResourceResolver resourceResolver;
 		MemoryManagerInfo memoryManagerInfo;
 
-		ProxyDelegateFinder proxyDelegateFinder;
+		ProxyCallFixer proxyCallFixer;
 		AutomatedErrorReportingFinder automatedErrorReportingFinder;
 		TamperProtectionRemover tamperProtectionRemover;
 
@@ -142,8 +142,8 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			findSmartAssemblyAttributes();
 			memoryManagerInfo = new MemoryManagerInfo(module);
 			memoryManagerInfo.find();
-			proxyDelegateFinder = new ProxyDelegateFinder(module, DeobfuscatedFile);
-			proxyDelegateFinder.findDelegateCreator(module);
+			proxyCallFixer = new ProxyCallFixer(module, DeobfuscatedFile);
+			proxyCallFixer.findDelegateCreator(module);
 
 			if (!foundVersion)
 				guessVersion();
@@ -187,7 +187,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			if (poweredByAttributeString == "Powered by {smartassembly}") {
 				// It's SA 1.x - 4.x
 
-				if (proxyDelegateFinder.Detected || hasEmptyClassesInEveryNamespace()) {
+				if (proxyCallFixer.Detected || hasEmptyClassesInEveryNamespace()) {
 					ObfuscatorName = "SmartAssembly 4.x";
 					approxVersion = new Version(4, 0, 0, 0);
 					return;
@@ -303,7 +303,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			}
 
 			initDecrypters();
-			proxyDelegateFinder.find();
+			proxyCallFixer.find();
 		}
 
 		void initDecrypters() {
@@ -430,7 +430,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 		}
 
 		public override void deobfuscateMethodEnd(Blocks blocks) {
-			proxyDelegateFinder.deobfuscate(blocks);
+			proxyCallFixer.deobfuscate(blocks);
 			removeAutomatedErrorReportingCode(blocks);
 			removeTamperProtection(blocks);
 			removeStringsInitCode(blocks);
@@ -439,7 +439,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 
 		public override void deobfuscateEnd() {
 			canRemoveTypes = findBigType() == null;
-			removeProxyDelegates(proxyDelegateFinder, canRemoveTypes);
+			removeProxyDelegates(proxyCallFixer, canRemoveTypes);
 			removeMemoryManagerStuff();
 			removeTamperProtectionStuff();
 			removeStringDecryptionStuff();

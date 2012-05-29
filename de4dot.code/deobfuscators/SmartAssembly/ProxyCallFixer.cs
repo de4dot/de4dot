@@ -24,7 +24,7 @@ using Mono.Cecil.Cil;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.SmartAssembly {
-	class ProxyDelegateFinder : ProxyDelegateFinderBase {
+	class ProxyCallFixer : ProxyCallFixer1 {
 		static readonly Dictionary<char, int> specialCharsDict = new Dictionary<char, int>();
 		static readonly char[] specialChars = new char[] {
 			'\x01', '\x02', '\x03', '\x04', '\x05', '\x06', '\x07', '\x08',
@@ -40,12 +40,12 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 		IList<MemberReference> memberReferences;
 		ISimpleDeobfuscator simpleDeobfuscator;
 
-		static ProxyDelegateFinder() {
+		static ProxyCallFixer() {
 			for (int i = 0; i < specialChars.Length; i++)
 				specialCharsDict[specialChars[i]] = i;
 		}
 
-		public ProxyDelegateFinder(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator)
+		public ProxyCallFixer(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator)
 			: base(module) {
 			this.memberReferences = new List<MemberReference>(module.GetMemberReferences());
 			this.simpleDeobfuscator = simpleDeobfuscator;

@@ -24,14 +24,14 @@ using Mono.Cecil.Cil;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CliSecure {
-	class ProxyDelegateFinder : ProxyDelegateFinderBase {
+	class ProxyCallFixer : ProxyCallFixer1 {
 		IList<MemberReference> memberReferences;
 
-		public ProxyDelegateFinder(ModuleDefinition module)
+		public ProxyCallFixer(ModuleDefinition module)
 			: base(module) {
 		}
 
-		public ProxyDelegateFinder(ModuleDefinition module, ProxyDelegateFinder oldOne)
+		public ProxyCallFixer(ModuleDefinition module, ProxyCallFixer oldOne)
 			: base(module) {
 			foreach (var method in oldOne.delegateCreatorMethods)
 				setDelegateCreatorMethod(lookup(method, "Could not find delegate creator method"));

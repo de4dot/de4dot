@@ -24,10 +24,10 @@ using Mono.Cecil.Cil;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Babel_NET {
-	class ProxyDelegateFinder : ProxyDelegateFinderBase {
+	class ProxyCallFixer : ProxyCallFixer2 {
 		MethodDefinitionAndDeclaringTypeDict<ProxyCreatorType> methodToType = new MethodDefinitionAndDeclaringTypeDict<ProxyCreatorType>();
 
-		public ProxyDelegateFinder(ModuleDefinition module)
+		public ProxyCallFixer(ModuleDefinition module)
 			: base(module) {
 		}
 
@@ -95,7 +95,8 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return null;
 		}
 
-		protected override void onFoundProxyDelegate(TypeDefinition type) {
+		protected override Dictionary<FieldDefinition, MethodDefinition> getFieldToMethodDictionary(TypeDefinition type) {
+			var dict = new Dictionary<FieldDefinition, MethodDefinition>();
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic || !method.HasBody || method.Name == ".cctor")
 					continue;
@@ -106,10 +107,11 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 					if (instr.OpCode.Code != Code.Ldsfld)
 						continue;
 
-					add(method, (FieldDefinition)instr.Operand);
+					dict[(FieldDefinition)instr.Operand] = method;
 					break;
 				}
 			}
+			return dict;
 		}
 
 		protected override void getCallInfo(object context, FieldDefinition field, out MethodReference calledMethod, out OpCode callOpcode) {

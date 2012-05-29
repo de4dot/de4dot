@@ -64,7 +64,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		bool foundObfuscatedSymbols = false;
 		bool foundObfuscatorUserString = false;
 
-		ProxyDelegateFinder proxyDelegateFinder;
+		ProxyCallFixer proxyCallFixer;
 		ResourceDecrypter resourceDecrypter;
 		ResourceResolver resourceResolver;
 		AssemblyResolver assemblyResolver;
@@ -103,7 +103,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 
 			int sum = toInt32(stringDecrypter.Detected) +
 					toInt32(tamperDetection.Detected) +
-					toInt32(proxyDelegateFinder.Detected);
+					toInt32(proxyCallFixer.Detected);
 			if (sum > 0)
 				val += 100 + 10 * (sum - 1);
 			if (foundCryptoObfuscatorAttribute || foundObfuscatedSymbols || foundObfuscatorUserString)
@@ -123,8 +123,8 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			if (checkCryptoObfuscator())
 				foundObfuscatedSymbols = true;
 
-			proxyDelegateFinder = new ProxyDelegateFinder(module);
-			proxyDelegateFinder.findDelegateCreator();
+			proxyCallFixer = new ProxyCallFixer(module);
+			proxyCallFixer.findDelegateCreator();
 			stringDecrypter = new StringDecrypter(module);
 			stringDecrypter.find();
 			tamperDetection = new TamperDetection(module);
@@ -191,18 +191,18 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			addTypeToBeRemoved(tamperDetection.Type, "Tamper detection type");
 			addTypeToBeRemoved(antiDebugger.Type, "Anti-debugger type");
 
-			proxyDelegateFinder.find();
+			proxyCallFixer.find();
 
 			dumpEmbeddedAssemblies();
 		}
 
 		public override void deobfuscateMethodEnd(Blocks blocks) {
-			proxyDelegateFinder.deobfuscate(blocks);
+			proxyCallFixer.deobfuscate(blocks);
 			base.deobfuscateMethodEnd(blocks);
 		}
 
 		public override void deobfuscateEnd() {
-			removeProxyDelegates(proxyDelegateFinder);
+			removeProxyDelegates(proxyCallFixer);
 			if (CanRemoveStringDecrypterType) {
 				addResourceToBeRemoved(stringDecrypter.Resource, "Encrypted strings");
 				addTypeToBeRemoved(stringDecrypter.Type, "String decrypter type");

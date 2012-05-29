@@ -24,8 +24,8 @@ using Mono.Cecil.Cil;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Goliath_NET {
-	class ProxyDelegateFinder : ProxyDelegateFinderBase {
-		public ProxyDelegateFinder(ModuleDefinition module)
+	class ProxyCallFixer : ProxyCallFixer2 {
+		public ProxyCallFixer(ModuleDefinition module)
 			: base(module) {
 		}
 
@@ -61,8 +61,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 				Log.indent();
 				foreach (var info in infos) {
 					var di = info.delegateInfo;
-					add(info.method, di.field);
-					addDelegateInfo(di);
+					add(info.method, di);
 					Log.v("Field: {0}, Opcode: {1}, Method: {2} ({3:X8})",
 								Utils.removeNewlines(di.field.Name),
 								di.callOpcode,
@@ -137,8 +136,8 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			throw new System.NotImplementedException();
 		}
 
-		protected override void onFoundProxyDelegate(TypeDefinition type) {
-			throw new System.NotImplementedException();
+		protected override Dictionary<FieldDefinition, MethodDefinition> getFieldToMethodDictionary(TypeDefinition type) {
+			throw new NotImplementedException();
 		}
 
 		protected override void getCallInfo(object context, FieldDefinition field, out MethodReference calledMethod, out OpCode callOpcode) {

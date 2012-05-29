@@ -80,7 +80,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 		Options options;
 		string obfuscatorName = DeobfuscatorInfo.THE_NAME;
 
-		ProxyDelegateFinder proxyDelegateFinder;
+		ProxyCallFixer proxyCallFixer;
 		LocalsRestorer localsRestorer;
 		LogicalExpressionFixer logicalExpressionFixer;
 		StringDecrypter stringDecrypter;
@@ -177,8 +177,8 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 		public override void deobfuscateBegin() {
 			base.deobfuscateBegin();
 
-			proxyDelegateFinder = new ProxyDelegateFinder(module);
-			proxyDelegateFinder.find();
+			proxyCallFixer = new ProxyCallFixer(module);
+			proxyCallFixer.find();
 			localsRestorer = new LocalsRestorer(module);
 			if (options.RestoreLocals)
 				localsRestorer.find();
@@ -220,7 +220,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 		}
 
 		public override void deobfuscateMethodBegin(Blocks blocks) {
-			proxyDelegateFinder.deobfuscate(blocks);
+			proxyCallFixer.deobfuscate(blocks);
 			base.deobfuscateMethodBegin(blocks);
 		}
 
@@ -239,7 +239,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 		}
 
 		public override void deobfuscateEnd() {
-			removeProxyDelegates(proxyDelegateFinder);
+			removeProxyDelegates(proxyCallFixer);
 			removeInlinedMethods();
 			addTypesToBeRemoved(localsRestorer.Types, "Method locals obfuscation type");
 

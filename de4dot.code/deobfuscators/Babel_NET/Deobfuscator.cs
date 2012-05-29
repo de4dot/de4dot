@@ -80,7 +80,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		Int64ValueInliner int64ValueInliner;
 		SingleValueInliner singleValueInliner;
 		DoubleValueInliner doubleValueInliner;
-		ProxyDelegateFinder proxyDelegateFinder;
+		ProxyCallFixer proxyCallFixer;
 		MethodsDecrypter methodsDecrypter;
 
 		internal class Options : OptionsBase {
@@ -118,7 +118,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 					toInt32(assemblyResolver.Detected) +
 					toInt32(stringDecrypter.Detected) +
 					toInt32(constantsDecrypter.Detected) +
-					toInt32(proxyDelegateFinder.Detected) +
+					toInt32(proxyCallFixer.Detected) +
 					toInt32(methodsDecrypter.Detected) +
 					toInt32(hasMetadataStream("Babel"));
 			if (sum > 0)
@@ -139,8 +139,8 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			stringDecrypter.find();
 			constantsDecrypter = new ConstantsDecrypter(module, initializedDataCreator);
 			constantsDecrypter.find();
-			proxyDelegateFinder = new ProxyDelegateFinder(module);
-			proxyDelegateFinder.findDelegateCreator();
+			proxyCallFixer = new ProxyCallFixer(module);
+			proxyCallFixer.findDelegateCreator();
 			methodsDecrypter = new MethodsDecrypter(module, DeobfuscatedFile.DeobfuscatorContext);
 			methodsDecrypter.find();
 		}
@@ -215,7 +215,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				doubleValueInliner.add(constantsDecrypter.DoubleDecrypter, (method, args) => constantsDecrypter.decryptDouble((int)args[0]));
 			}
 
-			proxyDelegateFinder.find();
+			proxyCallFixer.find();
 		}
 
 		void dumpEmbeddedAssemblies() {
@@ -238,7 +238,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		}
 
 		public override void deobfuscateMethodEnd(Blocks blocks) {
-			proxyDelegateFinder.deobfuscate(blocks);
+			proxyCallFixer.deobfuscate(blocks);
 			if (options.DecryptConstants) {
 				int32ValueInliner.decrypt(blocks);
 				int64ValueInliner.decrypt(blocks);
@@ -255,7 +255,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				addTypeToBeRemoved(stringDecrypter.Type, "String decrypter type");
 			}
 
-			removeProxyDelegates(proxyDelegateFinder);
+			removeProxyDelegates(proxyCallFixer);
 			base.deobfuscateEnd();
 		}
 

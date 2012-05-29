@@ -26,7 +26,7 @@ using Mono.Cecil.Metadata;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CodeVeil {
-	class ProxyDelegateFinder : ProxyDelegateFinderBase {
+	class ProxyCallFixer : ProxyCallFixer1 {
 		MainType mainType;
 		Info info = new Info();
 		BinaryReader reader;
@@ -73,12 +73,12 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			get { return info.methodInfoType; }
 		}
 
-		public ProxyDelegateFinder(ModuleDefinition module, MainType mainType)
+		public ProxyCallFixer(ModuleDefinition module, MainType mainType)
 			: base(module) {
 			this.mainType = mainType;
 		}
 
-		public ProxyDelegateFinder(ModuleDefinition module, MainType mainType, ProxyDelegateFinder oldOne)
+		public ProxyCallFixer(ModuleDefinition module, MainType mainType, ProxyCallFixer oldOne)
 			: base(module, oldOne) {
 			this.mainType = mainType;
 			info.proxyType = lookup(oldOne.info.proxyType, "Could not find proxyType");
@@ -110,9 +110,6 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				return string.Empty;	// It's non-null
 			}
 			return null;
-		}
-
-		protected override void onFoundProxyDelegate(TypeDefinition type) {
 		}
 
 		protected override void getCallInfo(object context, FieldDefinition field, out MethodReference calledMethod, out OpCode callOpcode) {

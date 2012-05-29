@@ -69,7 +69,7 @@
     <Compile Include="deobfuscators\Babel_NET\MethodReferenceReader.cs" />
     <Compile Include="deobfuscators\Babel_NET\MethodBodyReaderBase.cs" />
     <Compile Include="deobfuscators\Babel_NET\MethodsDecrypter.cs" />
-    <Compile Include="deobfuscators\Babel_NET\ProxyDelegateFinder.cs" />
+    <Compile Include="deobfuscators\Babel_NET\ProxyCallFixer.cs" />
     <Compile Include="deobfuscators\Babel_NET\ResourceDecrypter.cs" />
     <Compile Include="deobfuscators\Babel_NET\ResourceResolver.cs" />
     <Compile Include="deobfuscators\Babel_NET\StringDecrypter.cs" />
@@ -78,7 +78,7 @@
     <Compile Include="deobfuscators\CliSecure\CsBlowfish.cs" />
     <Compile Include="deobfuscators\CliSecure\Deobfuscator.cs" />
     <Compile Include="deobfuscators\CliSecure\MethodsDecrypter.cs" />
-    <Compile Include="deobfuscators\CliSecure\ProxyDelegateFinder.cs" />
+    <Compile Include="deobfuscators\CliSecure\ProxyCallFixer.cs" />
     <Compile Include="deobfuscators\CliSecure\ResourceDecrypter.cs" />
     <Compile Include="deobfuscators\CliSecure\StackFrameHelper.cs" />
     <Compile Include="deobfuscators\CliSecure\StringDecrypter.cs" />
@@ -105,7 +105,7 @@
     <Compile Include="deobfuscators\CodeVeil\ResourceReader.cs" />
     <Compile Include="deobfuscators\CodeVeil\StringDecrypter.cs" />
     <Compile Include="deobfuscators\CodeVeil\Deobfuscator.cs" />
-    <Compile Include="deobfuscators\CodeVeil\ProxyDelegateFinder.cs" />
+    <Compile Include="deobfuscators\CodeVeil\ProxyCallFixer.cs" />
     <Compile Include="deobfuscators\CodeVeil\TamperDetection.cs" />
     <Compile Include="deobfuscators\CodeWall\AssemblyDecrypter.cs" />
     <Compile Include="deobfuscators\CodeWall\Deobfuscator.cs" />
@@ -118,7 +118,7 @@
     <Compile Include="deobfuscators\CryptoObfuscator\AntiDebugger.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\AssemblyResolver.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\Deobfuscator.cs" />
-    <Compile Include="deobfuscators\CryptoObfuscator\ProxyDelegateFinder.cs" />
+    <Compile Include="deobfuscators\CryptoObfuscator\ProxyCallFixer.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\ResourceDecrypter.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\ResourceResolver.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\StringDecrypter.cs" />
@@ -181,7 +181,7 @@
     <Compile Include="deobfuscators\Goliath_NET\IntegerDecrypter.cs" />
     <Compile Include="deobfuscators\Goliath_NET\LocalsRestorer.cs" />
     <Compile Include="deobfuscators\Goliath_NET\LogicalExpressionFixer.cs" />
-    <Compile Include="deobfuscators\Goliath_NET\ProxyDelegateFinder.cs" />
+    <Compile Include="deobfuscators\Goliath_NET\ProxyCallFixer.cs" />
     <Compile Include="deobfuscators\Goliath_NET\StringDecrypter.cs" />
     <Compile Include="deobfuscators\Goliath_NET\StrongNameChecker.cs" />
     <Compile Include="deobfuscators\IDeobfuscatedFile.cs" />
@@ -212,13 +212,13 @@
     <Compile Include="deobfuscators\Spices_Net\StringDecrypter.cs" />
     <Compile Include="deobfuscators\StringCounts.cs" />
     <Compile Include="deobfuscators\Operations.cs" />
-    <Compile Include="deobfuscators\ProxyDelegateFinderBase.cs" />
+    <Compile Include="deobfuscators\ProxyCallFixerBase.cs" />
     <Compile Include="deobfuscators\SmartAssembly\AssemblyResolver.cs" />
     <Compile Include="deobfuscators\SmartAssembly\AssemblyResolverInfo.cs" />
     <Compile Include="deobfuscators\SmartAssembly\AutomatedErrorReportingFinder.cs" />
     <Compile Include="deobfuscators\SmartAssembly\Deobfuscator.cs" />
     <Compile Include="deobfuscators\SmartAssembly\MemoryManagerInfo.cs" />
-    <Compile Include="deobfuscators\SmartAssembly\ProxyDelegateFinder.cs" />
+    <Compile Include="deobfuscators\SmartAssembly\ProxyCallFixer.cs" />
     <Compile Include="deobfuscators\SmartAssembly\ResolverInfoBase.cs" />
     <Compile Include="deobfuscators\SmartAssembly\ResourceDecrypter.cs" />
     <Compile Include="deobfuscators\SmartAssembly\ResourceDecrypterInfo.cs" />

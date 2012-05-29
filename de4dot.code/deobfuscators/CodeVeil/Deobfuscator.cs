@@ -59,7 +59,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 
 		MainType mainType;
 		MethodsDecrypter methodsDecrypter;
-		ProxyDelegateFinder proxyDelegateFinder;
+		ProxyCallFixer proxyCallFixer;
 		StringDecrypter stringDecrypter;
 		AssemblyResolver assemblyResolver;
 		TypeDefinition killType;
@@ -92,7 +92,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			int sum = toInt32(mainType.Detected) +
 					toInt32(methodsDecrypter.Detected) +
 					toInt32(stringDecrypter.Detected) +
-					toInt32(proxyDelegateFinder.Detected);
+					toInt32(proxyCallFixer.Detected);
 			if (sum > 0)
 				val += 100 + 10 * (sum - 1);
 
@@ -103,8 +103,8 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			findKillType();
 			mainType = new MainType(module);
 			mainType.find();
-			proxyDelegateFinder = new ProxyDelegateFinder(module, mainType);
-			proxyDelegateFinder.findDelegateCreator();
+			proxyCallFixer = new ProxyCallFixer(module, mainType);
+			proxyCallFixer.findDelegateCreator();
 			methodsDecrypter = new MethodsDecrypter(mainType);
 			methodsDecrypter.find();
 			stringDecrypter = new StringDecrypter(module, mainType);
@@ -167,7 +167,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			newOne.mainType = new MainType(module, mainType);
 			newOne.methodsDecrypter = new MethodsDecrypter(mainType, methodsDecrypter);
 			newOne.stringDecrypter = new StringDecrypter(module, newOne.mainType, stringDecrypter);
-			newOne.proxyDelegateFinder = new ProxyDelegateFinder(module, newOne.mainType, proxyDelegateFinder);
+			newOne.proxyCallFixer = new ProxyCallFixer(module, newOne.mainType, proxyCallFixer);
 			newOne.killType = DeobUtils.lookup(module, killType, "Could not find KILL type");
 			return newOne;
 		}
@@ -199,8 +199,8 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 
 			removeTamperDetection();
 
-			proxyDelegateFinder.initialize();
-			proxyDelegateFinder.find();
+			proxyCallFixer.initialize();
+			proxyCallFixer.find();
 
 			resourceDecrypter = new ResourceDecrypter(module);
 			resourceDecrypter.initialize();
@@ -232,7 +232,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		}
 
 		public override void deobfuscateMethodBegin(Blocks blocks) {
-			proxyDelegateFinder.deobfuscate(blocks);
+			proxyCallFixer.deobfuscate(blocks);
 			base.deobfuscateMethodBegin(blocks);
 		}
 
@@ -243,7 +243,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		}
 
 		public override void deobfuscateEnd() {
-			bool canRemoveProxyTypes = proxyDelegateFinder.CanRemoveTypes;
+			bool canRemoveProxyTypes = proxyCallFixer.CanRemoveTypes;
 
 			if (CanRemoveStringDecrypterType)
 				addTypeToBeRemoved(stringDecrypter.Type, "String decrypter type");
@@ -251,7 +251,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			if (!mainType.Detected) {
 			}
 			else if (mainType.Version >= ObfuscatorVersion.V5_0) {
-				if (!proxyDelegateFinder.FoundProxyType || canRemoveProxyTypes)
+				if (!proxyCallFixer.FoundProxyType || canRemoveProxyTypes)
 					addTypeToBeRemoved(mainType.Type, "Main CV type");
 			}
 			else {
@@ -264,11 +264,11 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				}
 			}
 
-			removeProxyDelegates(proxyDelegateFinder, canRemoveProxyTypes);
+			removeProxyDelegates(proxyCallFixer, canRemoveProxyTypes);
 			if (canRemoveProxyTypes) {
-				addTypeToBeRemoved(proxyDelegateFinder.IlGeneratorType, "Obfuscator proxy method ILGenerator type");
-				addTypeToBeRemoved(proxyDelegateFinder.FieldInfoType, "Obfuscator proxy method FieldInfo type");
-				addTypeToBeRemoved(proxyDelegateFinder.MethodInfoType, "Obfuscator proxy method MethodInfo type");
+				addTypeToBeRemoved(proxyCallFixer.IlGeneratorType, "Obfuscator proxy method ILGenerator type");
+				addTypeToBeRemoved(proxyCallFixer.FieldInfoType, "Obfuscator proxy method FieldInfo type");
+				addTypeToBeRemoved(proxyCallFixer.MethodInfoType, "Obfuscator proxy method MethodInfo type");
 			}
 
 			addMethodsToBeRemoved(InvalidMethodsFinder.findAll(module), "Anti-reflection method");

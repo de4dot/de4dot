@@ -79,7 +79,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 		string obfuscatorName = DeobfuscatorInfo.THE_NAME;
 
 		List<TypeDefinition> cliSecureAttributes = new List<TypeDefinition>();
-		ProxyDelegateFinder proxyDelegateFinder;
+		ProxyCallFixer proxyCallFixer;
 		CliSecureRtType cliSecureRtType;
 		StringDecrypter stringDecrypter;
 		ResourceDecrypter resourceDecrypter;
@@ -167,7 +167,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 
 			int sum = toInt32(cliSecureRtType.Detected) +
 					toInt32(stringDecrypter.Detected) +
-					toInt32(proxyDelegateFinder.Detected) +
+					toInt32(proxyCallFixer.Detected) +
 					toInt32(resourceDecrypter.Detected) +
 					toInt32(csvm.Detected);
 			if (sum > 0)
@@ -186,8 +186,8 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			stringDecrypter.find();
 			resourceDecrypter = new ResourceDecrypter(module);
 			resourceDecrypter.find();
-			proxyDelegateFinder = new ProxyDelegateFinder(module);
-			proxyDelegateFinder.findDelegateCreator();
+			proxyCallFixer = new ProxyCallFixer(module);
+			proxyCallFixer.findDelegateCreator();
 			csvm = new vm.Csvm(DeobfuscatedFile.DeobfuscatorContext, module);
 			csvm.find();
 		}
@@ -228,7 +228,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			newOne.cliSecureRtType = new CliSecureRtType(module, cliSecureRtType);
 			newOne.stringDecrypter = new StringDecrypter(module, stringDecrypter);
 			newOne.resourceDecrypter = new ResourceDecrypter(module, resourceDecrypter);
-			newOne.proxyDelegateFinder = new ProxyDelegateFinder(module, proxyDelegateFinder);
+			newOne.proxyCallFixer = new ProxyCallFixer(module, proxyCallFixer);
 			newOne.csvm = new vm.Csvm(DeobfuscatedFile.DeobfuscatorContext, module, csvm);
 			return newOne;
 		}
@@ -261,7 +261,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 					this.addTypeToBeRemoved(type, "Obfuscator type");
 			}
 
-			proxyDelegateFinder.find();
+			proxyCallFixer.find();
 
 			staticStringInliner.add(stringDecrypter.Method, (method, args) => stringDecrypter.decrypt((string)args[0]));
 			DeobfuscatedFile.stringDecryptersAdded();
@@ -288,7 +288,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 		}
 
 		public override void deobfuscateMethodEnd(Blocks blocks) {
-			proxyDelegateFinder.deobfuscate(blocks);
+			proxyCallFixer.deobfuscate(blocks);
 			removeStackFrameHelperCode(blocks);
 			base.deobfuscateMethodEnd(blocks);
 		}
@@ -296,7 +296,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 		public override void deobfuscateEnd() {
 			if (options.SetInitLocals)
 				setInitLocals();
-			removeProxyDelegates(proxyDelegateFinder);
+			removeProxyDelegates(proxyCallFixer);
 			if (options.RemoveStackFrameHelper) {
 				if (stackFrameHelper.ExceptionLoggerRemover.NumRemovedExceptionLoggers > 0)
 					addTypeToBeRemoved(stackFrameHelper.Type, "StackFrameHelper type");

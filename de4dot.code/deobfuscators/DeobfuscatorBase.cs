@@ -663,14 +663,14 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
-		protected void removeProxyDelegates(ProxyDelegateFinderBase proxyDelegateFinder, bool removeCreators = true) {
-			if (proxyDelegateFinder.Errors != 0) {
+		protected void removeProxyDelegates(ProxyCallFixerBase proxyCallFixer, bool removeCreators = true) {
+			if (proxyCallFixer.Errors != 0) {
 				Log.v("Not removing proxy delegates and creator type since errors were detected.");
 				return;
 			}
-			addTypesToBeRemoved(proxyDelegateFinder.DelegateTypes, "Proxy delegate type");
-			if (removeCreators && proxyDelegateFinder.RemovedDelegateCreatorCalls > 0)
-				addTypesToBeRemoved(proxyDelegateFinder.DelegateCreatorTypes, "Proxy delegate creator type");
+			addTypesToBeRemoved(proxyCallFixer.DelegateTypes, "Proxy delegate type");
+			if (removeCreators && proxyCallFixer.RemovedDelegateCreatorCalls > 0)
+				addTypesToBeRemoved(proxyCallFixer.DelegateCreatorTypes, "Proxy delegate creator type");
 		}
 
 		protected Resource getResource(IEnumerable<string> strings) {
