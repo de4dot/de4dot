@@ -57,6 +57,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 	class Deobfuscator : DeobfuscatorBase {
 		Options options;
 		ProxyCallFixer proxyCallFixer;
+		StringDecrypter stringDecrypter;
 
 		internal class Options : OptionsBase {
 		}
@@ -81,7 +82,8 @@ namespace de4dot.code.deobfuscators.CodeFort {
 		protected override int detectInternal() {
 			int val = 0;
 
-			int sum = toInt32(proxyCallFixer.Detected);
+			int sum = toInt32(proxyCallFixer.Detected) +
+					toInt32(stringDecrypter.Detected);
 			if (sum > 0)
 				val += 100 + 10 * (sum - 1);
 
@@ -91,10 +93,15 @@ namespace de4dot.code.deobfuscators.CodeFort {
 		protected override void scanForObfuscator() {
 			proxyCallFixer = new ProxyCallFixer(module);
 			proxyCallFixer.findDelegateCreator();
+			stringDecrypter = new StringDecrypter(module);
+			stringDecrypter.find();
 		}
 
 		public override void deobfuscateBegin() {
 			base.deobfuscateBegin();
+
+			staticStringInliner.add(stringDecrypter.Method, (method, args) => stringDecrypter.decrypt((string)args[0]));
+			DeobfuscatedFile.stringDecryptersAdded();
 
 			proxyCallFixer.find();
 		}
@@ -113,11 +120,15 @@ namespace de4dot.code.deobfuscators.CodeFort {
 
 		public override void deobfuscateEnd() {
 			removeProxyDelegates(proxyCallFixer);
+			if (CanRemoveStringDecrypterType)
+				addTypeToBeRemoved(stringDecrypter.Type, "String decrypter type");
 			base.deobfuscateEnd();
 		}
 
 		public override IEnumerable<int> getStringDecrypterMethods() {
 			var list = new List<int>();
+			if (stringDecrypter.Method != null)
+				list.Add(stringDecrypter.Method.MetadataToken.ToInt32());
 			return list;
 		}
 	}

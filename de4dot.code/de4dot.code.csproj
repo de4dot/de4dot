@@ -95,6 +95,7 @@
     <Compile Include="deobfuscators\CodeFort\CfMethodCallInliner.cs" />
     <Compile Include="deobfuscators\CodeFort\Deobfuscator.cs" />
     <Compile Include="deobfuscators\CodeFort\ProxyCallFixer.cs" />
+    <Compile Include="deobfuscators\CodeFort\StringDecrypter.cs" />
     <Compile Include="deobfuscators\CodeVeil\AssemblyResolver.cs" />
     <Compile Include="deobfuscators\CodeVeil\ErexResourceReader.cs" />
     <Compile Include="deobfuscators\CodeVeil\InvalidDataException.cs" />
