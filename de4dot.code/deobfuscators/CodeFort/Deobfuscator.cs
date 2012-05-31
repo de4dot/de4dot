@@ -58,6 +58,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 		Options options;
 		ProxyCallFixer proxyCallFixer;
 		StringDecrypter stringDecrypter;
+		AssemblyDecrypter assemblyDecrypter;
 
 		internal class Options : OptionsBase {
 		}
@@ -83,7 +84,8 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			int val = 0;
 
 			int sum = toInt32(proxyCallFixer.Detected) +
-					toInt32(stringDecrypter.Detected);
+					toInt32(stringDecrypter.Detected) +
+					toInt32(assemblyDecrypter.Detected);
 			if (sum > 0)
 				val += 100 + 10 * (sum - 1);
 
@@ -95,6 +97,35 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			proxyCallFixer.findDelegateCreator();
 			stringDecrypter = new StringDecrypter(module);
 			stringDecrypter.find();
+			assemblyDecrypter = new AssemblyDecrypter(module);
+			assemblyDecrypter.find();
+		}
+
+		public override bool getDecryptedModule(ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
+			if (!assemblyDecrypter.EncryptedDetected)
+				return false;
+
+			newFileData = assemblyDecrypter.decrypt();
+			return newFileData != null;
+		}
+
+		public override IDeobfuscator moduleReloaded(ModuleDefinition module) {
+			var newOne = new Deobfuscator(options);
+			newOne.setModule(module);
+			newOne.proxyCallFixer = new ProxyCallFixer(module);
+			newOne.proxyCallFixer.findDelegateCreator();
+			newOne.stringDecrypter = new StringDecrypter(module);
+			newOne.stringDecrypter.find();
+			newOne.assemblyDecrypter = new AssemblyDecrypter(module, assemblyDecrypter);
+			newOne.assemblyDecrypter.find();
+			return newOne;
+		}
+
+		static List<TypeDefinition> lookup(ModuleDefinition module, List<TypeDefinition> types, string errorMsg) {
+			var list = new List<TypeDefinition>(types.Count);
+			foreach (var type in types)
+				list.Add(DeobUtils.lookup(module, type, errorMsg));
+			return list;
 		}
 
 		public override void deobfuscateBegin() {
@@ -104,6 +135,18 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			DeobfuscatedFile.stringDecryptersAdded();
 
 			proxyCallFixer.find();
+
+			dumpEmbeddedAssemblies();
+		}
+
+		void dumpEmbeddedAssemblies() {
+			foreach (var info in assemblyDecrypter.getAssemblyInfos(DeobfuscatedFile, this)) {
+				DeobfuscatedFile.createAssemblyFile(info.data, info.asmSimpleName, info.extension);
+				addResourceToBeRemoved(info.resource, string.Format("Embedded assembly: {0}", info.asmFullName));
+			}
+			addCctorInitCallToBeRemoved(assemblyDecrypter.InitMethod);
+			addCallToBeRemoved(module.EntryPoint, assemblyDecrypter.InitMethod);
+			addTypeToBeRemoved(assemblyDecrypter.Type, "Assembly resolver type");
 		}
 
 		public override void deobfuscateMethodEnd(Blocks blocks) {

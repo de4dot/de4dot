@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Security.Cryptography;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -152,6 +153,15 @@ namespace de4dot.code.deobfuscators {
 				memStream.Write(buffer, 0, count);
 			}
 			return memStream.ToArray();
+		}
+
+		public static byte[] gunzip(Stream input, int decompressedSize) {
+			using (var gzip = new GZipStream(input, CompressionMode.Decompress)) {
+				var decompressed = new byte[decompressedSize];
+				if (gzip.Read(decompressed, 0, decompressedSize) != decompressedSize)
+					throw new ApplicationException("Could not gzip decompress");
+				return decompressed;
+			}
 		}
 
 		public static EmbeddedResource getEmbeddedResourceFromCodeStrings(ModuleDefinition module, MethodDefinition method) {

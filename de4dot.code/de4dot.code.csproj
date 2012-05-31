@@ -92,6 +92,9 @@
     <Compile Include="deobfuscators\CliSecure\vm\UnknownHandlerInfo.cs" />
     <Compile Include="deobfuscators\CliSecure\vm\VmOpCodeHandlerDetector.cs" />
     <Compile Include="deobfuscators\CliSecure\vm\VmOperands.cs" />
+    <Compile Include="deobfuscators\CodeFort\PasswordFinder.cs" />
+    <Compile Include="deobfuscators\CodeFort\AssemblyData.cs" />
+    <Compile Include="deobfuscators\CodeFort\AssemblyDecrypter.cs" />
     <Compile Include="deobfuscators\CodeFort\CfMethodCallInliner.cs" />
     <Compile Include="deobfuscators\CodeFort\Deobfuscator.cs" />
     <Compile Include="deobfuscators\CodeFort\ProxyCallFixer.cs" />
