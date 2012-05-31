@@ -191,13 +191,13 @@ namespace de4dot.code.renamer {
 			if (RenameTypes && info.gotNewName()) {
 				var old = typeDefinition.Name;
 				typeDefinition.Name = info.newName;
-				Log.v("Name: {0} => {1}", Utils.removeNewlines(old), typeDefinition.Name);
+				Log.v("Name: {0} => {1}", Utils.removeNewlines(old), Utils.removeNewlines(typeDefinition.Name));
 			}
 
 			if (RenameNamespaces && info.newNamespace != null) {
 				var old = typeDefinition.Namespace;
 				typeDefinition.Namespace = info.newNamespace;
-				Log.v("Namespace: {0} => {1}", Utils.removeNewlines(old), typeDefinition.Namespace);
+				Log.v("Namespace: {0} => {1}", Utils.removeNewlines(old), Utils.removeNewlines(typeDefinition.Namespace));
 			}
 
 			Log.deIndent();
@@ -211,7 +211,7 @@ namespace de4dot.code.renamer {
 				if (!info.gotNewName())
 					continue;
 				param.GenericParameter.Name = info.newName;
-				Log.v("GenParam: {0} => {1}", Utils.removeNewlines(info.oldFullName), param.GenericParameter.FullName);
+				Log.v("GenParam: {0} => {1}", Utils.removeNewlines(info.oldFullName), Utils.removeNewlines(param.GenericParameter.FullName));
 			}
 		}
 
@@ -298,7 +298,7 @@ namespace de4dot.code.renamer {
 
 				if (RenameMethods && methodInfo.gotNewName()) {
 					methodDef.MethodDefinition.Name = methodInfo.newName;
-					Log.v("Name: {0} => {1}", Utils.removeNewlines(methodInfo.oldFullName), methodDef.MethodDefinition.FullName);
+					Log.v("Name: {0} => {1}", Utils.removeNewlines(methodInfo.oldFullName), Utils.removeNewlines(methodDef.MethodDefinition.FullName));
 				}
 
 				if (RenameMethodArgs) {
@@ -307,7 +307,7 @@ namespace de4dot.code.renamer {
 						if (!paramInfo.gotNewName())
 							continue;
 						param.ParameterDefinition.Name = paramInfo.newName;
-						Log.v("Param ({0}/{1}): {2} => {3}", param.Index + 1, methodDef.ParamDefs.Count, Utils.removeNewlines(paramInfo.oldName), paramInfo.newName);
+						Log.v("Param ({0}/{1}): {2} => {3}", param.Index + 1, methodDef.ParamDefs.Count, Utils.removeNewlines(paramInfo.oldName), Utils.removeNewlines(paramInfo.newName));
 					}
 				}
 
