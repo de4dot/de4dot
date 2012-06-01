@@ -101,8 +101,11 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			sb.Append(getTypeName());
 			if (genericArgs != null && genericArgs.Length > 0) {
 				sb.Append('<');
-				foreach (var ga in genericArgs)
-					sb.Append(ga.ToString());
+				for (int i = 0; i < genericArgs.Length; i++) {
+					if (i != 0)
+						sb.Append(',');
+					sb.Append(genericArgs[i].ToString());
+				}
 				sb.Append('>');
 			}
 			return sb.ToString();
