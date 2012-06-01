@@ -140,7 +140,14 @@ namespace de4dot.code.deobfuscators.CodeFort {
 		}
 
 		bool findEmbedded() {
-			foreach (var calledMethod in DotNetUtils.getCalledMethods(module, DotNetUtils.getModuleTypeCctor(module))) {
+			return findEmbedded(DotNetUtils.getModuleTypeCctor(module)) ||
+				findEmbedded(module.EntryPoint);
+		}
+
+		bool findEmbedded(MethodDefinition method) {
+			if (method == null || method.Body == null)
+				return false;
+			foreach (var calledMethod in DotNetUtils.getCalledMethods(module, method)) {
 				var resolver = checkInitMethod(calledMethod);
 				if (resolver == null)
 					continue;
