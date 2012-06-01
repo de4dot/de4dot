@@ -59,8 +59,12 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			get { return assemblyEncryptedResource != null; }
 		}
 
+		public bool MainAssemblyHasAssemblyResolver {
+			get { return embedInitMethod != null; }
+		}
+
 		public bool Detected {
-			get { return EncryptedDetected || embedInitMethod != null; ; }
+			get { return EncryptedDetected || MainAssemblyHasAssemblyResolver; }
 		}
 
 		public TypeDefinition Type {

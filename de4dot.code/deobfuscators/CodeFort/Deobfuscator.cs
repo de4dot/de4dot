@@ -29,9 +29,11 @@ namespace de4dot.code.deobfuscators.CodeFort {
 		public const string THE_NAME = "CodeFort";
 		public const string THE_TYPE = "cf";
 		const string DEFAULT_REGEX = @"!^[_<>{}$.`-]$&" + DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
+		BoolOption dumpEmbeddedAssemblies;
 
 		public DeobfuscatorInfo()
 			: base(DEFAULT_REGEX) {
+			dumpEmbeddedAssemblies = new BoolOption(null, makeArgName("embedded"), "Dump embedded assemblies", true);
 		}
 
 		public override string Name {
@@ -45,11 +47,13 @@ namespace de4dot.code.deobfuscators.CodeFort {
 		public override IDeobfuscator createDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
 				ValidNameRegex = validNameRegex.get(),
+				DumpEmbeddedAssemblies = dumpEmbeddedAssemblies.get(),
 			});
 		}
 
 		protected override IEnumerable<Option> getOptionsInternal() {
 			return new List<Option>() {
+				dumpEmbeddedAssemblies,
 			};
 		}
 	}
@@ -61,6 +65,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 		AssemblyDecrypter assemblyDecrypter;
 
 		internal class Options : OptionsBase {
+			public bool DumpEmbeddedAssemblies { get; set; }
 		}
 
 		public override string Type {
@@ -140,6 +145,8 @@ namespace de4dot.code.deobfuscators.CodeFort {
 		}
 
 		void dumpEmbeddedAssemblies() {
+			if (assemblyDecrypter.MainAssemblyHasAssemblyResolver && !options.DumpEmbeddedAssemblies)
+				return;
 			foreach (var info in assemblyDecrypter.getAssemblyInfos(DeobfuscatedFile, this)) {
 				DeobfuscatedFile.createAssemblyFile(info.data, info.asmSimpleName, info.extension);
 				addResourceToBeRemoved(info.resource, string.Format("Embedded assembly: {0}", info.asmFullName));
