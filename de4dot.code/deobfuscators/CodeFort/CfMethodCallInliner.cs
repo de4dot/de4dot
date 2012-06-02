@@ -23,21 +23,19 @@ using de4dot.blocks.cflow;
 
 namespace de4dot.code.deobfuscators.CodeFort {
 	class CfMethodCallInliner : MethodCallInliner {
-		public CfMethodCallInliner()
+		ProxyCallFixer proxyCallFixer;
+
+		public CfMethodCallInliner(ProxyCallFixer proxyCallFixer)
 			: base(false) {
+			this.proxyCallFixer = proxyCallFixer;
 		}
 
 		protected override bool canInline(MethodDefinition method) {
-			if (method.GenericParameters.Count > 0)
-				return false;
-			if (method == blocks.Method)
-				return false;
+			return proxyCallFixer.isProxyTargetMethod(method);
+		}
 
-			if (method.IsStatic)
-				return true;
-			if (method.IsVirtual)
-				return false;
-			return inlineInstanceMethods;
+		protected override bool isCompatibleType(int paramIndex, TypeReference origType, TypeReference newType) {
+			return true;
 		}
 	}
 }

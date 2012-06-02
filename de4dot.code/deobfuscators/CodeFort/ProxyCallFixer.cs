@@ -26,9 +26,19 @@ using de4dot.blocks;
 namespace de4dot.code.deobfuscators.CodeFort {
 	class ProxyCallFixer : ProxyCallFixer3 {
 		IList<MemberReference> memberReferences;
+		MethodDefinitionAndDeclaringTypeDict<bool> proxyTargetMethods = new MethodDefinitionAndDeclaringTypeDict<bool>();
+		TypeDefinition proxyMethodsType;
+
+		public TypeDefinition ProxyMethodsType {
+			get { return proxyMethodsType; }
+		}
 
 		public ProxyCallFixer(ModuleDefinition module)
 			: base(module) {
+		}
+
+		public bool isProxyTargetMethod(MethodReference method) {
+			return proxyTargetMethods.find(method);
 		}
 
 		public void findDelegateCreator() {
@@ -98,8 +108,11 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			rid &= 0x00FFFFFF;
 			calledMethod = (MethodReference)memberReferences[rid - 1];
 			var calledMethodDef = DotNetUtils.getMethod(module, calledMethod);
-			if (calledMethodDef != null)
+			if (calledMethodDef != null) {
+				proxyMethodsType = calledMethodDef.DeclaringType;
+				proxyTargetMethods.add(calledMethodDef, true);
 				calledMethod = calledMethodDef;
+			}
 			callOpcode = OpCodes.Call;
 		}
 

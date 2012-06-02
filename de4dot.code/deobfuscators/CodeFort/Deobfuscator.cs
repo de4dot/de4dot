@@ -63,6 +63,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 		ProxyCallFixer proxyCallFixer;
 		StringDecrypter stringDecrypter;
 		AssemblyDecrypter assemblyDecrypter;
+		CfMethodCallInliner cfMethodCallInliner;
 
 		internal class Options : OptionsBase {
 			public bool DumpEmbeddedAssemblies { get; set; }
@@ -140,6 +141,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			DeobfuscatedFile.stringDecryptersAdded();
 
 			proxyCallFixer.find();
+			cfMethodCallInliner = new CfMethodCallInliner(proxyCallFixer);
 
 			dumpEmbeddedAssemblies();
 		}
@@ -163,13 +165,13 @@ namespace de4dot.code.deobfuscators.CodeFort {
 		}
 
 		void inlineMethods(Blocks blocks) {
-			var inliner = new CfMethodCallInliner();
-			inliner.deobfuscateBegin(blocks);
-			inliner.deobfuscate(blocks.MethodBlocks.getAllBlocks());
+			cfMethodCallInliner.deobfuscateBegin(blocks);
+			cfMethodCallInliner.deobfuscate(blocks.MethodBlocks.getAllBlocks());
 		}
 
 		public override void deobfuscateEnd() {
 			removeProxyDelegates(proxyCallFixer);
+			addTypeToBeRemoved(proxyCallFixer.ProxyMethodsType, "Type with proxy methods");
 			if (CanRemoveStringDecrypterType)
 				addTypeToBeRemoved(stringDecrypter.Type, "String decrypter type");
 			base.deobfuscateEnd();
