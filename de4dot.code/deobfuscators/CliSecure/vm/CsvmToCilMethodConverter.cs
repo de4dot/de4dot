@@ -212,7 +212,7 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 			int offset = 0;
 			while (reader.BaseStream.Position < reader.BaseStream.Length) {
 				int vmOpCode = reader.ReadUInt16();
-				var instr = opCodeDetector.Handlers[vmOpCode].read(reader);
+				var instr = opCodeDetector.Handlers[vmOpCode].Read(reader);
 				instr.Offset = offset;
 				offset += getInstructionSize(instr);
 				instrs.Add(instr);

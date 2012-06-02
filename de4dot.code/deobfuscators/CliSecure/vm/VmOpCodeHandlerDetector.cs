@@ -45,39 +45,6 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 
 	class VmOpCodeHandlerDetector {
 		ModuleDefinition module;
-		static readonly OpCodeHandler[] opCodeHandlerDetectors = new OpCodeHandler[] {
-			new ArithmeticOpCodeHandler(),
-			new ArrayOpCodeHandler(),
-			new BoxOpCodeHandler(),
-			new CallOpCodeHandler(),
-			new CastOpCodeHandler(),
-			new CompareOpCodeHandler(),
-			new ConvertOpCodeHandler(),
-			new DupPopOpCodeHandler(),
-			new ElemOpCodeHandler(),
-			new EndfinallyOpCodeHandler(),
-			new FieldOpCodeHandler(),
-			new InitobjOpCodeHandler(),
-			new LdLocalArgOpCodeHandler(),
-			new LdLocalArgAddrOpCodeHandler(),
-			new LdelemaOpCodeHandler(),
-			new LdlenOpCodeHandler(),
-			new LdobjOpCodeHandler(),
-			new LdstrOpCodeHandler(),
-			new LdtokenOpCodeHandler(),
-			new LeaveOpCodeHandler(),
-			new LoadConstantOpCodeHandler(),
-			new LoadFuncOpCodeHandler(),
-			new LogicalOpCodeHandler(),
-			new NopOpCodeHandler(),
-			new RetOpCodeHandler(),
-			new RethrowOpCodeHandler(),
-			new StLocalArgOpCodeHandler(),
-			new StobjOpCodeHandler(),
-			new SwitchOpCodeHandler(),
-			new ThrowOpCodeHandler(),
-			new UnaryOpCodeHandler(),
-		};
 		List<OpCodeHandler> opCodeHandlers;
 
 		public List<OpCodeHandler> Handlers {
@@ -95,12 +62,15 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 			if (vmHandlerTypes == null)
 				throw new ApplicationException("Could not find CSVM opcode handler types");
 
+			detectHandlers(vmHandlerTypes, createCsvmInfo());
+		}
+
+		internal CsvmInfo createCsvmInfo() {
 			var csvmInfo = new CsvmInfo();
 			csvmInfo.StackValue = findStackValueType();
 			csvmInfo.Stack = findStackType(csvmInfo.StackValue);
 			initStackTypeMethods(csvmInfo);
-
-			detectHandlers(vmHandlerTypes, csvmInfo);
+			return csvmInfo;
 		}
 
 		TypeDefinition findStackValueType() {
@@ -239,19 +209,26 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 		void detectHandlers(List<TypeDefinition> handlerTypes, CsvmInfo csvmInfo) {
 			opCodeHandlers = new List<OpCodeHandler>();
 			var detected = new List<OpCodeHandler>();
-			foreach (var handlerType in handlerTypes) {
-				var info = new UnknownHandlerInfo(handlerType, csvmInfo);
-				detected.Clear();
-				foreach (var opCodeHandler in opCodeHandlerDetectors) {
-					if (opCodeHandler.detect(info))
-						detected.Add(opCodeHandler);
+
+			foreach (var handlersList in OpCodeHandlers.opcodeHandlers) {
+				opCodeHandlers.Clear();
+
+				foreach (var handlerType in handlerTypes) {
+					var info = new UnknownHandlerInfo(handlerType, csvmInfo);
+					detected.Clear();
+					foreach (var opCodeHandler in handlersList) {
+						if (opCodeHandler.detect(info))
+							detected.Add(opCodeHandler);
+					}
+					if (detected.Count != 1)
+						goto next;
+					opCodeHandlers.Add(detected[0]);
 				}
-				if (detected.Count != 1)
-					throw new ApplicationException("Could not detect VM opcode handler");
-				opCodeHandlers.Add(detected[0]);
+				if (new List<OpCodeHandler>(Utils.unique(opCodeHandlers)).Count == opCodeHandlers.Count)
+					return;
+next: ;
 			}
-			if (new List<OpCodeHandler>(Utils.unique(opCodeHandlers)).Count != opCodeHandlers.Count)
-				throw new ApplicationException("Could not detect all VM opcode handlers");
+			throw new ApplicationException("Could not detect all VM opcode handlers");
 		}
 	}
 }

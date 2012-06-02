@@ -89,6 +89,7 @@
     <Compile Include="deobfuscators\CliSecure\vm\CsvmToCilMethodConverter.cs" />
     <Compile Include="deobfuscators\CliSecure\vm\FieldsInfo.cs" />
     <Compile Include="deobfuscators\CliSecure\vm\OpCodeHandler.cs" />
+    <Compile Include="deobfuscators\CliSecure\vm\OpCodeHandlers.cs" />
     <Compile Include="deobfuscators\CliSecure\vm\UnknownHandlerInfo.cs" />
     <Compile Include="deobfuscators\CliSecure\vm\VmOpCodeHandlerDetector.cs" />
     <Compile Include="deobfuscators\CliSecure\vm\VmOperands.cs" />

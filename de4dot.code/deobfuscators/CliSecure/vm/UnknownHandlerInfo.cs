@@ -74,7 +74,7 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 			executeMethodPops = countPops(executeMethod);
 		}
 
-		static IEnumerable<FieldDefinition> getFields(TypeDefinition type) {
+		static internal IEnumerable<FieldDefinition> getFields(TypeDefinition type) {
 			var typeFields = new FieldDefinitionAndDeclaringTypeDict<FieldDefinition>();
 			foreach (var field in type.Fields)
 				typeFields.add(field, field);
