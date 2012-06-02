@@ -19,6 +19,7 @@
 
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Unknown {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
@@ -72,7 +73,7 @@ namespace de4dot.code.deobfuscators.Unknown {
 
 		void setName(string name) {
 			if (obfuscatorName == null && name != null)
-				obfuscatorName = name;
+				obfuscatorName = string.Format("{0} (not supported)", name);
 		}
 
 		public override int earlyDetect() {
@@ -97,6 +98,8 @@ namespace de4dot.code.deobfuscators.Unknown {
 		}
 
 		string scanTypes() {
+			if (checkILProtector())
+				return "ILProtector";
 			foreach (var type in module.Types) {
 				if (type.FullName == "ZYXDNGuarder")
 					return "DNGuard HVM";
@@ -108,6 +111,27 @@ namespace de4dot.code.deobfuscators.Unknown {
 					return "Yano Obfuscator";
 			}
 			return null;
+		}
+
+		static string[] ilpLocals = new string[] {
+			"System.Boolean",
+			"System.IntPtr",
+			"System.Object[]",
+		};
+		bool checkILProtector() {
+			var cctor = DotNetUtils.getModuleTypeCctor(module);
+			if (cctor == null)
+				return false;
+			if (!new LocalTypes(cctor).exactly(ilpLocals))
+				return false;
+
+			var type = cctor.DeclaringType;
+			if (!DotNetUtils.hasPinvokeMethod(type, "Protect") && !DotNetUtils.hasPinvokeMethod(type, "P0"))
+				return false;
+			if (type.Fields.Count != 1)
+				return false;
+
+			return true;
 		}
 
 		public override IEnumerable<int> getStringDecrypterMethods() {
