@@ -127,13 +127,6 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			return newOne;
 		}
 
-		static List<TypeDefinition> lookup(ModuleDefinition module, List<TypeDefinition> types, string errorMsg) {
-			var list = new List<TypeDefinition>(types.Count);
-			foreach (var type in types)
-				list.Add(DeobUtils.lookup(module, type, errorMsg));
-			return list;
-		}
-
 		public override void deobfuscateBegin() {
 			base.deobfuscateBegin();
 
