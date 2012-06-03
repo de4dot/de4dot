@@ -232,5 +232,22 @@ namespace de4dot.code {
 				return fileData;
 			}
 		}
+
+		public static uint readEncodedUInt32(BinaryReader reader) {
+			uint val = 0;
+			int bits = 0;
+			for (int i = 0; i < 5; i++) {
+				byte b = reader.ReadByte();
+				val |= (uint)(b & 0x7F) << bits;
+				if ((b & 0x80) == 0)
+					return val;
+				bits += 7;
+			}
+			throw new ApplicationException("Invalid encoded int32");
+		}
+
+		public static int readEncodedInt32(BinaryReader reader) {
+			return (int)readEncodedUInt32(reader);
+		}
 	}
 }

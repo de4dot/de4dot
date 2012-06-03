@@ -154,14 +154,12 @@ namespace de4dot.code.resources {
 		}
 
 		static uint readUInt32(BinaryReader reader) {
-			uint val = 0;
-			for (int i = 0; i < 5; i++) {
-				byte b = reader.ReadByte();
-				val |= b;
-				if ((b & 0x80) == 0)
-					return val;
+			try {
+				return Utils.readEncodedUInt32(reader);
 			}
-			throw new ResourceReaderException("Invalid encoded int32");
+			catch {
+				throw new ResourceReaderException("Invalid encoded int32");
+			}
 		}
 
 		bool checkReaders() {
