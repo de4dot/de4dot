@@ -30,7 +30,7 @@ namespace de4dot.code.deobfuscators {
 		public List<VariableDefinition> Locals { get; set; }
 		public Instruction[] Instructions { get; set; }
 		public ExceptionHandler[] ExceptionHandlers { get; set; }
-		protected ParameterDefinition[] parameters;
+		protected IList<ParameterDefinition> parameters;
 		int currentOffset;
 
 		public MethodBodyReaderBase(BinaryReader reader) {
