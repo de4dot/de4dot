@@ -67,6 +67,8 @@
     <Compile Include="deobfuscators\Babel_NET\MemberReferenceConverter.cs" />
     <Compile Include="deobfuscators\Babel_NET\MethodBodyReader.cs" />
     <Compile Include="deobfuscators\Babel_NET\MethodReferenceReader.cs" />
+    <Compile Include="deobfuscators\ILProtector\MethodReader.cs" />
+    <Compile Include="deobfuscators\ILProtector\MethodsDecrypter.cs" />
     <Compile Include="deobfuscators\MethodBodyReaderBase.cs" />
     <Compile Include="deobfuscators\Babel_NET\MethodsDecrypter.cs" />
     <Compile Include="deobfuscators\Babel_NET\ProxyDelegateFinder.cs" />
@@ -167,6 +169,8 @@
     <Compile Include="deobfuscators\Eazfuscator_NET\StringDecrypter.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\VersionDetector.cs" />
     <Compile Include="deobfuscators\ExceptionLoggerRemover.cs" />
+    <Compile Include="deobfuscators\ILProtector\Deobfuscator.cs" />
+    <Compile Include="deobfuscators\ILProtector\MainType.cs" />
     <Compile Include="deobfuscators\MethodCallRestorerBase.cs" />
     <Compile Include="deobfuscators\Goliath_NET\ArrayDecrypter.cs" />
     <Compile Include="deobfuscators\Goliath_NET\ArrayValueInliner.cs" />
