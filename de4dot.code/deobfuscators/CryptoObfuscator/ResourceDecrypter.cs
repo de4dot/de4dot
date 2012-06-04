@@ -298,6 +298,8 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			foreach (var method in type.Methods) {
 				if (DotNetUtils.isMethod(method, "System.Byte[]", "(System.IO.Stream)"))
 					return method;
+				if (DotNetUtils.isMethod(method, "System.Byte[]", "(System.Int32,System.IO.Stream)"))
+					return method;
 			}
 			return null;
 		}
