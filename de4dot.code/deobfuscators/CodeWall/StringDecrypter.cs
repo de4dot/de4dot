@@ -108,7 +108,14 @@ namespace de4dot.code.deobfuscators.CodeWall {
 		}
 
 		public IEnumerable<StringEncrypterInfo> Infos {
-			get { return stringEncrypterInfos.getValues(); }
+			get {
+				var list = new List<StringEncrypterInfo>();
+				foreach (var info in stringEncrypterInfos.getValues()) {
+					if (info.Resource != null)
+						list.Add(info);
+				}
+				return list;
+			}
 		}
 
 		public StringDecrypter(ModuleDefinition module) {
@@ -253,6 +260,10 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			foreach (var info in stringEncrypterInfos.getValues()) {
 				simpleDeobfuscator.deobfuscate(info.Method);
 				info.Resource = findResource(info.Method);
+				if (info.Resource == null) {
+					Log.w("Could not find encrypted strings resource (Method {0:X8})", info.Method.MetadataToken.ToInt32());
+					continue;
+				}
 				info.Magic1 = findMagic1(info.Method);
 				info.Magic2 = findMagic2(info.Method);
 				info.Magic3 = findMagic3(info.Method);
