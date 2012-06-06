@@ -66,12 +66,16 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			int metadataOffset = getMetadataOffset();
 			if (metadataOffset < 0)
 				return false;
-			reader.BaseStream.Position = metadataOffset + 4;
+			long pos = metadataOffset + 4;
+			reader.BaseStream.Position = pos;
 			int version = reader.ReadInt16();	// major, minor
-			if (version != 0x0001)
-				return false;
-			initializeV10();
+			if (version == 0x0001) {
+				initializeV10();
+				return true;
+			}
 
+			reader.BaseStream.Position = pos;
+			initializeV55();
 			return true;
 		}
 
@@ -81,6 +85,18 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			int typeReferencesOffset = (int)reader.ReadInt64();
 			int assemblyReferencesOffset = (int)reader.ReadInt64();
 			int stringsOffset = (int)reader.ReadInt64();
+
+			initializeStrings(stringsOffset);
+			initializeAssemblyNames(assemblyReferencesOffset);
+			initializeMethodNames(methodNamesOffset);
+			initializeTypeReferences(typeReferencesOffset);
+		}
+
+		void initializeV55() {
+			int methodNamesOffset = (int)reader.ReadInt64() ^ METADATA_SIG;
+			int typeReferencesOffset = (int)reader.ReadInt64() ^ (METADATA_SIG << 1);
+			int assemblyReferencesOffset = (int)reader.ReadInt64() ^ ((METADATA_SIG << 1) + 1);
+			int stringsOffset = (int)reader.ReadInt64() ^ (((METADATA_SIG << 1) + 1) << 1);
 
 			initializeStrings(stringsOffset);
 			initializeAssemblyNames(assemblyReferencesOffset);

@@ -136,7 +136,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			assemblyResolver = new AssemblyResolver(module);
 			assemblyResolver.find();
 			stringDecrypter = new StringDecrypter(module);
-			stringDecrypter.find();
+			stringDecrypter.find(DeobfuscatedFile);
 			constantsDecrypter = new ConstantsDecrypter(module, initializedDataCreator);
 			constantsDecrypter.find();
 			proxyCallFixer = new ProxyCallFixer(module);

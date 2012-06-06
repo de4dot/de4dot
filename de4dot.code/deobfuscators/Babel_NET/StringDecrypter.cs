@@ -28,6 +28,7 @@ using de4dot.blocks;
 namespace de4dot.code.deobfuscators.Babel_NET {
 	class StringDecrypter {
 		ModuleDefinition module;
+		ISimpleDeobfuscator simpleDeobfuscator;
 		TypeDefinition decrypterType;
 		EmbeddedResource encryptedResource;
 		IDecrypterInfo decrypterInfo;
@@ -91,6 +92,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		class DecrypterInfoV3 : IDecrypterInfo {
 			Dictionary<int, string> offsetToString = new Dictionary<int, string>();
 
+			public int OffsetMagic { get; set; }
 			public MethodDefinition Decrypter { get; set; }
 			public bool NeedsResource {
 				get { return true; }
@@ -108,7 +110,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			}
 
 			string decrypt(int offset) {
-				return offsetToString[offset];
+				return offsetToString[offset ^ OffsetMagic];
 			}
 		}
 
@@ -132,7 +134,8 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			this.module = module;
 		}
 
-		public void find() {
+		public void find(ISimpleDeobfuscator simpleDeobfuscator) {
+			this.simpleDeobfuscator = simpleDeobfuscator;
 			foreach (var type in module.Types) {
 				var info = checkDecrypterType(type);
 				if (info == null)
@@ -228,7 +231,8 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				if (!MemberReferenceHelper.compareTypes(nested.Fields[0].FieldType, nested))
 					return null;
 
-				if (DotNetUtils.getMethod(nested, "System.Reflection.Emit.MethodBuilder", "(System.Reflection.Emit.TypeBuilder)") == null)
+				var decrypterBuilderMethod = DotNetUtils.getMethod(nested, "System.Reflection.Emit.MethodBuilder", "(System.Reflection.Emit.TypeBuilder)");
+				if (decrypterBuilderMethod == null)
 					return null;
 
 				var nestedDecrypter = DotNetUtils.getMethod(nested, "System.String", "(System.Int32)");
@@ -238,7 +242,11 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				if (decrypter == null || !decrypter.IsStatic)
 					return null;
 
-				return new DecrypterInfoV3 { Decrypter = decrypter };
+				simpleDeobfuscator.deobfuscate(decrypterBuilderMethod);
+				return new DecrypterInfoV3 {
+					Decrypter = decrypter,
+					OffsetMagic = getOffsetMagic(decrypterBuilderMethod),
+				};
 			}
 			else if (nested.Fields.Count == 2) {
 				// 3.0 - 3.5
@@ -270,6 +278,48 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			}
 
 			return null;
+		}
+
+		static int getOffsetMagic(MethodDefinition method) {
+			var instrs = method.Body.Instructions;
+			for (int i = 0; i < instrs.Count - 4; i++) {
+				int index = i;
+
+				var ldsfld1 = instrs[index++];
+				if (ldsfld1.OpCode.Code != Code.Ldsfld)
+					continue;
+
+				var ldci4 = instrs[index++];
+				if (!DotNetUtils.isLdcI4(ldci4))
+					continue;
+
+				var callvirt = instrs[index++];
+				if (callvirt.OpCode.Code != Code.Callvirt)
+					continue;
+				var calledMethod = callvirt.Operand as MethodReference;
+				if (calledMethod == null)
+					continue;
+				if (calledMethod.FullName != "System.Void System.Reflection.Emit.ILGenerator::Emit(System.Reflection.Emit.OpCode,System.Int32)")
+					continue;
+
+				if (!DotNetUtils.isLdloc(instrs[index++]))
+					continue;
+
+				var ldsfld2 = instrs[index++];
+				if (ldsfld2.OpCode.Code != Code.Ldsfld)
+					continue;
+				var field = ldsfld2.Operand as FieldReference;
+				if (field == null)
+					continue;
+				if (field.FullName != "System.Reflection.Emit.OpCode System.Reflection.Emit.OpCodes::Xor")
+					continue;
+
+				// Here if Babel.NET 5.5
+				return DotNetUtils.getLdcI4Value(ldci4);
+			}
+
+			// Here if Babel.NET <= 5.0
+			return 0;
 		}
 
 		bool checkFields(TypeDefinition type, string fieldType1, TypeDefinition fieldType2) {
