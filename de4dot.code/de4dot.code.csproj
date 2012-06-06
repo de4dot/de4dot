@@ -194,6 +194,8 @@
     <Compile Include="deobfuscators\MethodStack.cs" />
     <Compile Include="deobfuscators\QuickLZ.cs" />
     <Compile Include="deobfuscators\RandomNameChecker.cs" />
+    <Compile Include="deobfuscators\Rummage\Deobfuscator.cs" />
+    <Compile Include="deobfuscators\Rummage\StringDecrypter.cs" />
     <Compile Include="deobfuscators\Skater_NET\Deobfuscator.cs" />
     <Compile Include="deobfuscators\Skater_NET\EnumClassFinder.cs" />
     <Compile Include="deobfuscators\Skater_NET\StringDecrypter.cs" />
