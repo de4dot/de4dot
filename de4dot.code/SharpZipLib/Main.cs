@@ -1,4 +1,7 @@
-<LICENSE>
+// Main.cs
+//
+// Copyright (C) 2001 Mike Krueger
+//
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
 // as published by the Free Software Foundation; either version 2
@@ -29,6 +32,5 @@
 // this exception to your version of the library, but you are not
 // obligated to do so.  If you do not wish to do so, delete this
 // exception statement from your version.
-</LICENSE>
+//
 
-Official site: http://www.icsharpcode.net/opensource/sharpziplib/
