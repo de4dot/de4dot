@@ -27,6 +27,7 @@ using de4dot.blocks;
 namespace de4dot.code.deobfuscators.Babel_NET {
 	class MethodsDecrypter {
 		ModuleDefinition module;
+		ResourceDecrypter resourceDecrypter;
 		IDeobfuscatorContext deobfuscatorContext;
 		Dictionary<string, ImageReader> imageReaders = new Dictionary<string, ImageReader>(StringComparer.Ordinal);
 		TypeDefinition methodsDecrypterCreator;
@@ -38,8 +39,9 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			get { return methodsDecrypterCreator != null; }
 		}
 
-		public MethodsDecrypter(ModuleDefinition module, IDeobfuscatorContext deobfuscatorContext) {
+		public MethodsDecrypter(ModuleDefinition module, ResourceDecrypter resourceDecrypter, IDeobfuscatorContext deobfuscatorContext) {
 			this.module = module;
+			this.resourceDecrypter = resourceDecrypter;
 			this.deobfuscatorContext = deobfuscatorContext;
 		}
 
@@ -62,11 +64,22 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				if (decrypterType == null)
 					continue;
 
+				resourceDecrypter.DecryptMethod = findDecryptMethod(decrypterType);
+
 				methodsDecrypterCreator = type;
 				methodsDecrypter = decrypterType;
 				decryptExecuteMethod = executeMethod;
 				return;
 			}
+		}
+
+		static MethodDefinition findDecryptMethod(TypeDefinition type) {
+			foreach (var method in type.Methods) {
+				var decryptMethod = ResourceDecrypter.findDecrypterMethod(method);
+				if (decryptMethod != null)
+					return decryptMethod;
+			}
+			return null;
 		}
 
 		TypeDefinition findMethodsDecrypterType(TypeDefinition type) {
@@ -92,29 +105,35 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				return;
 
 			encryptedResource = BabelUtils.findEmbeddedResource(module, methodsDecrypter, simpleDeobfuscator, deob);
-			if (encryptedResource == null) {
-				Log.w("Could not find encrypted methods resource");
-				return;
-			}
-
-			addImageReader("", new ResourceDecrypter(module).decrypt(encryptedResource.GetResourceData()));
+			if (encryptedResource != null)
+				addImageReader("", resourceDecrypter.decrypt(encryptedResource.GetResourceData()));
 		}
 
-		void addImageReader(string name, byte[] data) {
+		ImageReader addImageReader(string name, byte[] data) {
 			var imageReader = new ImageReader(deobfuscatorContext, module, data);
 			if (!imageReader.initialize()) {
 				Log.w("Could not read encrypted methods");
-				return;
+				return null;
 			}
 			if (imageReaders.ContainsKey(name))
 				throw new ApplicationException(string.Format("ImageReader for name '{0}' already exists", name));
 			imageReaders[name] = imageReader;
+			return imageReader;
 		}
 
 		class EncryptInfo {
 			public string encryptedMethodName;
 			public string feature;
 			public MethodDefinition method;
+
+			public string FullName {
+				get {
+					if (string.IsNullOrEmpty(feature))
+						return encryptedMethodName;
+					return string.Format("{0}:{1}", feature, encryptedMethodName);
+				}
+			}
+
 			public EncryptInfo(string encryptedMethodName, string feature, MethodDefinition method) {
 				this.encryptedMethodName = encryptedMethodName;
 				this.feature = feature;
@@ -134,16 +153,51 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			int totalEncryptedMethods = 0;
 			foreach (var info in getEncryptedMethods()) {
 				totalEncryptedMethods++;
-				ImageReader imageReader;
-				if (!imageReaders.TryGetValue(info.feature, out imageReader)) {
+				var imageReader = getImageReader(info.feature);
+				if (imageReader == null) {
 					numNonDecryptedMethods++;
 					continue;
 				}
 				Log.v("Decrypting method {0:X8}", info.method.MetadataToken.ToInt32());
-				imageReader.restore(info.encryptedMethodName, info.method);
+				imageReader.restore(info.FullName, info.method);
 			}
 			if (numNonDecryptedMethods > 0)
 				Log.w("{0}/{1} methods not decrypted", numNonDecryptedMethods, totalEncryptedMethods);
+		}
+
+		ImageReader getImageReader(string feature) {
+			ImageReader imageReader;
+			if (imageReaders.TryGetValue(feature, out imageReader))
+				return imageReader;
+
+			return createImageReader(feature);
+		}
+
+		ImageReader createImageReader(string feature) {
+			if (string.IsNullOrEmpty(feature))
+				return null;
+
+			try {
+				var encrypted = File.ReadAllBytes(getFile(Path.GetDirectoryName(module.FullyQualifiedName), feature));
+				var decrypted = resourceDecrypter.decrypt(encrypted);
+				return addImageReader(feature, decrypted);
+			}
+			catch {
+				return null;
+			}
+		}
+
+		static string getFile(string dir, string name) {
+			try {
+				var di = new DirectoryInfo(dir);
+				foreach (var file in di.GetFiles()) {
+					if (Utils.StartsWith(file.Name, name, StringComparison.OrdinalIgnoreCase))
+						return file.FullName;
+				}
+			}
+			catch {
+			}
+			return null;
 		}
 
 		List<EncryptInfo> getEncryptedMethods() {

@@ -21,11 +21,14 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Mono.Cecil;
 using de4dot.blocks;
+using de4dot.blocks.cflow;
 
 namespace de4dot.code.deobfuscators.Babel_NET {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "Babel .NET";
 		public const string THE_TYPE = "bl";
+		BoolOption inlineMethods;
+		BoolOption removeInlinedMethods;
 		BoolOption decryptMethods;
 		BoolOption decryptResources;
 		BoolOption decryptConstants;
@@ -33,6 +36,8 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 		public DeobfuscatorInfo()
 			: base() {
+			inlineMethods = new BoolOption(null, makeArgName("inline"), "Inline short methods", true);
+			removeInlinedMethods = new BoolOption(null, makeArgName("remove-inlined"), "Remove inlined methods", true);
 			decryptMethods = new BoolOption(null, makeArgName("methods"), "Decrypt methods", true);
 			decryptResources = new BoolOption(null, makeArgName("rsrc"), "Decrypt resources", true);
 			decryptConstants = new BoolOption(null, makeArgName("consts"), "Decrypt constants and arrays", true);
@@ -50,6 +55,8 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		public override IDeobfuscator createDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
 				ValidNameRegex = validNameRegex.get(),
+				InlineMethods = inlineMethods.get(),
+				RemoveInlinedMethods = removeInlinedMethods.get(),
 				DecryptMethods = decryptMethods.get(),
 				DecryptResources = decryptResources.get(),
 				DecryptConstants = decryptConstants.get(),
@@ -59,6 +66,8 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 		protected override IEnumerable<Option> getOptionsInternal() {
 			return new List<Option>() {
+				inlineMethods,
+				removeInlinedMethods,
 				decryptMethods,
 				decryptResources,
 				decryptConstants,
@@ -71,6 +80,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		Options options;
 		bool foundBabelAttribute = false;
 		string obfuscatorName = DeobfuscatorInfo.THE_NAME;
+		bool startedDeobfuscating = false;
 
 		ResourceResolver resourceResolver;
 		AssemblyResolver assemblyResolver;
@@ -84,6 +94,8 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		MethodsDecrypter methodsDecrypter;
 
 		internal class Options : OptionsBase {
+			public bool InlineMethods { get; set; }
+			public bool RemoveInlinedMethods { get; set; }
 			public bool DecryptMethods { get; set; }
 			public bool DecryptResources { get; set; }
 			public bool DecryptConstants { get; set; }
@@ -100,6 +112,19 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 		public override string Name {
 			get { return obfuscatorName; }
+		}
+
+		protected override bool CanInlineMethods {
+			get { return startedDeobfuscating ? options.InlineMethods : true; }
+		}
+
+		public override IEnumerable<IBlocksDeobfuscator> BlocksDeobfuscators {
+			get {
+				var list = new List<IBlocksDeobfuscator>();
+				if (CanInlineMethods)
+					list.Add(new BabelMethodCallInliner());
+				return list;
+			}
 		}
 
 		public Deobfuscator(Options options)
@@ -131,17 +156,18 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 		protected override void scanForObfuscator() {
 			findBabelAttribute();
-			resourceResolver = new ResourceResolver(module);
+			var resourceDecrypterCreator = new ResourceDecrypterCreator(module, DeobfuscatedFile);
+			resourceResolver = new ResourceResolver(module, resourceDecrypterCreator.create(), DeobfuscatedFile);
 			resourceResolver.find();
-			assemblyResolver = new AssemblyResolver(module);
+			assemblyResolver = new AssemblyResolver(module, resourceDecrypterCreator.create());
 			assemblyResolver.find();
-			stringDecrypter = new StringDecrypter(module);
+			stringDecrypter = new StringDecrypter(module, resourceDecrypterCreator.create());
 			stringDecrypter.find(DeobfuscatedFile);
-			constantsDecrypter = new ConstantsDecrypter(module, initializedDataCreator);
+			constantsDecrypter = new ConstantsDecrypter(module, resourceDecrypterCreator.create(), initializedDataCreator);
 			constantsDecrypter.find();
 			proxyCallFixer = new ProxyCallFixer(module);
 			proxyCallFixer.findDelegateCreator();
-			methodsDecrypter = new MethodsDecrypter(module, DeobfuscatedFile.DeobfuscatorContext);
+			methodsDecrypter = new MethodsDecrypter(module, resourceDecrypterCreator.create(), DeobfuscatedFile.DeobfuscatorContext);
 			methodsDecrypter.find();
 		}
 
@@ -216,6 +242,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			}
 
 			proxyCallFixer.find();
+			startedDeobfuscating = true;
 		}
 
 		void dumpEmbeddedAssemblies() {
@@ -250,6 +277,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		}
 
 		public override void deobfuscateEnd() {
+			removeInlinedMethods();
 			if (CanRemoveStringDecrypterType) {
 				addResourceToBeRemoved(stringDecrypter.Resource, "Encrypted strings");
 				addTypeToBeRemoved(stringDecrypter.Type, "String decrypter type");
@@ -257,6 +285,12 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 			removeProxyDelegates(proxyCallFixer);
 			base.deobfuscateEnd();
+		}
+
+		void removeInlinedMethods() {
+			if (!options.InlineMethods || !options.RemoveInlinedMethods)
+				return;
+			removeInlinedMethods(BabelMethodCallInliner.find(module, staticStringInliner.Methods));
 		}
 
 		public override IEnumerable<int> getStringDecrypterMethods() {

@@ -57,10 +57,13 @@
     <Compile Include="DeobfuscatorContext.cs" />
     <Compile Include="deobfuscators\ArrayFinder.cs" />
     <Compile Include="deobfuscators\Babel_NET\AssemblyResolver.cs" />
+    <Compile Include="deobfuscators\Babel_NET\BabelInflater.cs" />
+    <Compile Include="deobfuscators\Babel_NET\BabelMethodCallInliner.cs" />
     <Compile Include="deobfuscators\Babel_NET\BabelUtils.cs" />
     <Compile Include="deobfuscators\Babel_NET\ConstantsDecrypter.cs" />
     <Compile Include="deobfuscators\Babel_NET\Deobfuscator.cs" />
     <Compile Include="deobfuscators\Babel_NET\ImageReader.cs" />
+    <Compile Include="deobfuscators\Babel_NET\InflaterCreator.cs" />
     <Compile Include="deobfuscators\Babel_NET\MemberReferenceConverter.cs" />
     <Compile Include="deobfuscators\Babel_NET\MethodBodyReader.cs" />
     <Compile Include="deobfuscators\Babel_NET\MethodReferenceReader.cs" />

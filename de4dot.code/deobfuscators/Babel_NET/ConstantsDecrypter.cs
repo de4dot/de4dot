@@ -28,6 +28,7 @@ using de4dot.blocks;
 namespace de4dot.code.deobfuscators.Babel_NET {
 	class ConstantsDecrypter {
 		ModuleDefinition module;
+		ResourceDecrypter resourceDecrypter;
 		InitializedDataCreator initializedDataCreator;
 		TypeDefinition decrypterType;
 		MethodDefinition int32Decrypter;
@@ -77,8 +78,9 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			get { return arrayDecrypter; }
 		}
 
-		public ConstantsDecrypter(ModuleDefinition module, InitializedDataCreator initializedDataCreator) {
+		public ConstantsDecrypter(ModuleDefinition module, ResourceDecrypter resourceDecrypter, InitializedDataCreator initializedDataCreator) {
 			this.module = module;
+			this.resourceDecrypter = resourceDecrypter;
 			this.initializedDataCreator = initializedDataCreator;
 		}
 
@@ -106,6 +108,8 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			var nested = type.NestedTypes[0];
 			if (!checkNestedFields(nested))
 				return false;
+
+			resourceDecrypter.DecryptMethod = ResourceDecrypter.findDecrypterMethod(DotNetUtils.getMethod(nested, ".ctor"));
 
 			if (DotNetUtils.getMethod(type, "System.Int32", "(System.Int32)") == null)
 				return false;
@@ -147,7 +151,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				return;
 			}
 
-			var decrypted = new ResourceDecrypter(module).decrypt(encryptedResource.GetResourceData());
+			var decrypted = resourceDecrypter.decrypt(encryptedResource.GetResourceData());
 			var reader = new BinaryReader(new MemoryStream(decrypted));
 			int count;
 
@@ -270,7 +274,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		}
 
 		byte[] decryptArray(byte[] encryptedData, int elemSize) {
-			var decrypted = new ResourceDecrypter(module).decrypt(encryptedData);
+			var decrypted = resourceDecrypter.decrypt(encryptedData);
 			var ary = (Array)new BinaryFormatter().Deserialize(new MemoryStream(decrypted));
 			if (ary is byte[])
 				return (byte[])ary;

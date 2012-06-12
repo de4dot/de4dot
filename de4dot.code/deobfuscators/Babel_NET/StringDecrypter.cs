@@ -24,10 +24,12 @@ using System.Text;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using de4dot.blocks;
+using de4dot.blocks.cflow;
 
 namespace de4dot.code.deobfuscators.Babel_NET {
 	class StringDecrypter {
 		ModuleDefinition module;
+		ResourceDecrypter resourceDecrypter;
 		ISimpleDeobfuscator simpleDeobfuscator;
 		TypeDefinition decrypterType;
 		EmbeddedResource encryptedResource;
@@ -91,18 +93,39 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 		class DecrypterInfoV3 : IDecrypterInfo {
 			Dictionary<int, string> offsetToString = new Dictionary<int, string>();
+			ResourceDecrypter resourceDecrypter;
+			InstructionEmulator emulator = new InstructionEmulator();
 
-			public int OffsetMagic { get; set; }
+			public IList<Instruction> OffsetCalcInstructions { get; set; }
 			public MethodDefinition Decrypter { get; set; }
 			public bool NeedsResource {
 				get { return true; }
 			}
 
+			public DecrypterInfoV3(ResourceDecrypter resourceDecrypter) {
+				this.resourceDecrypter = resourceDecrypter;
+			}
+
 			public void initialize(ModuleDefinition module, EmbeddedResource resource) {
-				var decrypted = new ResourceDecrypter(module).decrypt(resource.GetResourceData());
+				var decrypted = resourceDecrypter.decrypt(resource.GetResourceData());
 				var reader = new BinaryReader(new MemoryStream(decrypted));
 				while (reader.BaseStream.Position < reader.BaseStream.Length)
-					offsetToString[(int)reader.BaseStream.Position] = reader.ReadString();
+					offsetToString[getOffset((int)reader.BaseStream.Position)] = reader.ReadString();
+			}
+
+			MethodDefinition dummyMethod;
+			int getOffset(int offset) {
+				if (OffsetCalcInstructions == null || OffsetCalcInstructions.Count == 0)
+					return offset;
+				if (dummyMethod == null) {
+					dummyMethod = new MethodDefinition("", 0, new TypeReference("", "", null, null));
+					dummyMethod.Body = new MethodBody(dummyMethod);
+				}
+				emulator.init(dummyMethod);
+				emulator.push(new Int32Value(offset));
+				foreach (var instr in OffsetCalcInstructions)
+					emulator.emulate(instr);
+				return ((Int32Value)emulator.pop()).value;
 			}
 
 			public string decrypt(object[] args) {
@@ -110,7 +133,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			}
 
 			string decrypt(int offset) {
-				return offsetToString[offset ^ OffsetMagic];
+				return offsetToString[offset];
 			}
 		}
 
@@ -130,8 +153,9 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			get { return encryptedResource; }
 		}
 
-		public StringDecrypter(ModuleDefinition module) {
+		public StringDecrypter(ModuleDefinition module, ResourceDecrypter resourceDecrypter) {
 			this.module = module;
+			this.resourceDecrypter = resourceDecrypter;
 		}
 
 		public void find(ISimpleDeobfuscator simpleDeobfuscator) {
@@ -225,15 +249,17 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			if (DotNetUtils.getMethod(nested, ".ctor") == null)
 				return null;
 
-			if (nested.Fields.Count == 1) {
+			if (nested.Fields.Count == 1 || nested.Fields.Count == 3) {
 				// 4.0+
 
-				if (!MemberReferenceHelper.compareTypes(nested.Fields[0].FieldType, nested))
+				if (!hasFieldType(nested.Fields, nested))
 					return null;
 
 				var decrypterBuilderMethod = DotNetUtils.getMethod(nested, "System.Reflection.Emit.MethodBuilder", "(System.Reflection.Emit.TypeBuilder)");
 				if (decrypterBuilderMethod == null)
 					return null;
+
+				resourceDecrypter.DecryptMethod = ResourceDecrypter.findDecrypterMethod(DotNetUtils.getMethod(nested, ".ctor"));
 
 				var nestedDecrypter = DotNetUtils.getMethod(nested, "System.String", "(System.Int32)");
 				if (nestedDecrypter == null || nestedDecrypter.IsStatic)
@@ -243,16 +269,16 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 					return null;
 
 				simpleDeobfuscator.deobfuscate(decrypterBuilderMethod);
-				return new DecrypterInfoV3 {
+				return new DecrypterInfoV3(resourceDecrypter) {
 					Decrypter = decrypter,
-					OffsetMagic = getOffsetMagic(decrypterBuilderMethod),
+					OffsetCalcInstructions = getOffsetCalcInstructions(decrypterBuilderMethod),
 				};
 			}
 			else if (nested.Fields.Count == 2) {
 				// 3.0 - 3.5
 
 				if (checkFields(nested, "System.Collections.Hashtable", nested)) {
-					// 3.5
+					// 3.0 - 3.5
 					var nestedDecrypter = DotNetUtils.getMethod(nested, "System.String", "(System.Int32)");
 					if (nestedDecrypter == null || nestedDecrypter.IsStatic)
 						return null;
@@ -260,7 +286,9 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 					if (decrypter == null || !decrypter.IsStatic)
 						return null;
 
-					return new DecrypterInfoV3 { Decrypter = decrypter };
+					resourceDecrypter.DecryptMethod = ResourceDecrypter.findDecrypterMethod(DotNetUtils.getMethod(nested, ".ctor"));
+
+					return new DecrypterInfoV3(resourceDecrypter) { Decrypter = decrypter };
 				}
 				else if (checkFields(nested, "System.Byte[]", nested)) {
 					// 3.0
@@ -278,6 +306,205 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			}
 
 			return null;
+		}
+
+		class ReflectionToCecilMethodCreator {
+			MethodDefinition method;
+			List<Instruction> instructions = new List<Instruction>();
+			InstructionEmulator emulator;
+			int index;
+
+			class UserValue : UnknownValue {
+				public readonly object obj;
+				public UserValue(object obj) {
+					this.obj = obj;
+				}
+				public override string ToString() {
+					if (obj == null)
+						return "<null>";
+					return obj.ToString();
+				}
+			}
+
+			public List<Instruction> Instructions {
+				get { return instructions; }
+			}
+
+			public ReflectionToCecilMethodCreator(MethodDefinition method) {
+				this.method = method;
+				this.emulator = new InstructionEmulator(method);
+			}
+
+			public bool create() {
+				int arrayIndex;
+				Value array;
+				object value;
+				while (true) {
+					var instr = method.Body.Instructions[index];
+					switch (instr.OpCode.Code) {
+					case Code.Ret:
+						return true;
+
+					case Code.Newarr:
+						var arrayType = (TypeReference)instr.Operand;
+						int arrayCount = ((Int32Value)emulator.pop()).value;
+						if (arrayType.FullName == "System.Char")
+							emulator.push(new UserValue(new char[arrayCount]));
+						else
+							emulator.push(new UnknownValue());
+						break;
+
+					case Code.Call:
+					case Code.Callvirt:
+						if (!doCall(instr))
+							return false;
+						break;
+
+					case Code.Ldelem_U1:
+						arrayIndex = ((Int32Value)emulator.pop()).value;
+						array = (Value)emulator.pop();
+						if (array is UserValue)
+							emulator.push(new Int32Value(((byte[])((UserValue)array).obj)[arrayIndex]));
+						else
+							emulator.push(Int32Value.createUnknownUInt8());
+						break;
+
+					case Code.Stelem_I1:
+						value = emulator.pop();
+						arrayIndex = ((Int32Value)emulator.pop()).value;
+						array = (Value)emulator.pop();
+						if (array is UserValue)
+							((byte[])((UserValue)array).obj)[arrayIndex] = (byte)((Int32Value)value).value;
+						break;
+
+					case Code.Stelem_I2:
+						value = emulator.pop();
+						arrayIndex = ((Int32Value)emulator.pop()).value;
+						array = (Value)emulator.pop();
+						if (array is UserValue)
+							((char[])((UserValue)array).obj)[arrayIndex] = (char)((Int32Value)value).value;
+						break;
+
+					case Code.Ldelem_Ref:
+						arrayIndex = ((Int32Value)emulator.pop()).value;
+						array = (Value)emulator.pop();
+						var userValue = array as UserValue;
+						if (userValue != null && userValue.obj is string[])
+							emulator.push(new StringValue(((string[])userValue.obj)[arrayIndex]));
+						else
+							emulator.push(new UnknownValue());
+						break;
+
+					case Code.Ldsfld:
+						emulator.push(new UserValue((FieldReference)instr.Operand));
+						break;
+
+					default:
+						emulator.emulate(instr);
+						break;
+					}
+
+					index++;
+				}
+			}
+
+			bool doCall(Instruction instr) {
+				var calledMethod = (MethodReference)instr.Operand;
+				if (calledMethod.FullName == "System.Byte[] System.Convert::FromBase64String(System.String)") {
+					emulator.push(new UserValue(Convert.FromBase64String(((StringValue)emulator.pop()).value)));
+					return true;
+				}
+				else if (calledMethod.FullName == "System.String System.Text.Encoding::GetString(System.Byte[])") {
+					emulator.push(new StringValue(Encoding.UTF8.GetString((byte[])((UserValue)emulator.pop()).obj)));
+					return true;
+				}
+				else if (calledMethod.FullName == "System.Int32 System.Int32::Parse(System.String)") {
+					emulator.push(new Int32Value(int.Parse(((StringValue)emulator.pop()).value)));
+					return true;
+				}
+				else if (calledMethod.FullName == "System.String[] System.String::Split(System.Char[])") {
+					var ary = (char[])((UserValue)emulator.pop()).obj;
+					var s = ((StringValue)emulator.pop()).value;
+					emulator.push(new UserValue(s.Split(ary)));
+					return true;
+				}
+				else if (calledMethod.HasThis && calledMethod.DeclaringType.FullName == "System.Reflection.Emit.ILGenerator" && calledMethod.Name == "Emit") {
+					Value operand = null;
+					if (calledMethod.Parameters.Count == 2)
+						operand = emulator.pop();
+					var opcode = reflectionToCecilOpCode((FieldReference)((UserValue)emulator.pop()).obj);
+					emulator.pop();	// the this ptr
+					addInstruction(new Instruction {
+						OpCode = opcode,
+						Operand = createCecilOperand(opcode, operand),
+					});
+					return true;
+				}
+				else {
+					emulator.emulate(instr);
+					return true;
+				}
+			}
+
+			object createCecilOperand(OpCode opcode, Value op) {
+				if (op is Int32Value)
+					return ((Int32Value)op).value;
+				if (op is StringValue)
+					return ((StringValue)op).value;
+				return null;
+			}
+
+			void addInstruction(Instruction instr) {
+				instructions.Add(instr);
+			}
+
+			static OpCode reflectionToCecilOpCode(FieldReference reflectionField) {
+				var field = typeof(OpCodes).GetField(reflectionField.Name);
+				if (field == null || field.FieldType != typeof(OpCode))
+					return null;
+				return (OpCode)field.GetValue(null);
+			}
+		}
+
+		static List<Instruction> getOffsetCalcInstructions(MethodDefinition method) {
+			var creator = new ReflectionToCecilMethodCreator(method);
+			creator.create();
+			var instrs = creator.Instructions;
+
+			int index = 0;
+
+			index = findInstruction(instrs, index, OpCodes.Conv_I4);
+			if (index < 0)
+				return null;
+			int startInstr = ++index;
+
+			index = findInstruction(instrs, index, OpCodes.Box);
+			if (index < 0)
+				return null;
+			int endInstr = index - 1;
+
+			var transformInstructions = new List<Instruction>();
+			for (int i = startInstr; i <= endInstr; i++)
+				transformInstructions.Add(instrs[i]);
+			return transformInstructions;
+		}
+
+		static int findInstruction(IList<Instruction> instrs, int index, OpCode opcode) {
+			if (index < 0)
+				return -1;
+			for (int i = index; i < instrs.Count; i++) {
+				if (instrs[i].OpCode == opcode)
+					return i;
+			}
+			return -1;
+		}
+
+		static bool hasFieldType(IEnumerable<FieldDefinition> fields, TypeReference fieldType) {
+			foreach (var field in fields) {
+				if (MemberReferenceHelper.compareTypes(field.FieldType, fieldType))
+					return true;
+			}
+			return false;
 		}
 
 		static int getOffsetMagic(MethodDefinition method) {

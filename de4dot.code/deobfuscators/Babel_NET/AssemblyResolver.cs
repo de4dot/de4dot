@@ -17,6 +17,7 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.IO;
 using Mono.Cecil;
 using de4dot.blocks;
@@ -24,6 +25,7 @@ using de4dot.blocks;
 namespace de4dot.code.deobfuscators.Babel_NET {
 	class AssemblyResolver {
 		ModuleDefinition module;
+		ResourceDecrypter resourceDecrypter;
 		TypeDefinition resolverType;
 		MethodDefinition registerMethod;
 		EmbeddedResource encryptedResource;
@@ -61,8 +63,9 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			get { return embeddedAssemblyInfos; }
 		}
 
-		public AssemblyResolver(ModuleDefinition module) {
+		public AssemblyResolver(ModuleDefinition module, ResourceDecrypter resourceDecrypter) {
 			this.module = module;
+			this.resourceDecrypter = resourceDecrypter;
 		}
 
 		public void find() {
@@ -81,10 +84,24 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				if (!BabelUtils.findRegisterMethod(type, out regMethod, out handler))
 					continue;
 
+				var decryptMethod = findDecryptMethod(type);
+				if (decryptMethod == null)
+					throw new ApplicationException("Couldn't find resource type decrypt method");
+				resourceDecrypter.DecryptMethod = ResourceDecrypter.findDecrypterMethod(decryptMethod);
+
 				resolverType = type;
 				registerMethod = regMethod;
 				return;
 			}
+		}
+
+		static MethodDefinition findDecryptMethod(TypeDefinition type) {
+			foreach (var method in type.Methods) {
+				if (!DotNetUtils.isMethod(method, "System.Void", "(System.IO.Stream)"))
+					continue;
+				return method;
+			}
+			return null;
 		}
 
 		public void initialize(ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
@@ -97,7 +114,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				return;
 			}
 
-			var decrypted = new ResourceDecrypter(module).decrypt(encryptedResource.GetResourceData());
+			var decrypted = resourceDecrypter.decrypt(encryptedResource.GetResourceData());
 			var reader = new BinaryReader(new MemoryStream(decrypted));
 			int numAssemblies = reader.ReadInt32();
 			embeddedAssemblyInfos = new EmbeddedAssemblyInfo[numAssemblies];
