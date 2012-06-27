@@ -67,7 +67,7 @@
     <Compile Include="deobfuscators\Babel_NET\MemberReferenceConverter.cs" />
     <Compile Include="deobfuscators\Babel_NET\MethodBodyReader.cs" />
     <Compile Include="deobfuscators\Babel_NET\MethodReferenceReader.cs" />
-    <Compile Include="deobfuscators\Babel_NET\MethodBodyReaderBase.cs" />
+    <Compile Include="deobfuscators\MethodBodyReaderBase.cs" />
     <Compile Include="deobfuscators\Babel_NET\MethodsDecrypter.cs" />
     <Compile Include="deobfuscators\Babel_NET\ProxyCallFixer.cs" />
     <Compile Include="deobfuscators\Babel_NET\ResourceDecrypter.cs" />
@@ -89,6 +89,7 @@
     <Compile Include="deobfuscators\CliSecure\vm\CsvmToCilMethodConverter.cs" />
     <Compile Include="deobfuscators\CliSecure\vm\FieldsInfo.cs" />
     <Compile Include="deobfuscators\CliSecure\vm\OpCodeHandler.cs" />
+    <Compile Include="deobfuscators\CliSecure\vm\OpCodeHandlers.cs" />
     <Compile Include="deobfuscators\CliSecure\vm\UnknownHandlerInfo.cs" />
     <Compile Include="deobfuscators\CliSecure\vm\VmOpCodeHandlerDetector.cs" />
     <Compile Include="deobfuscators\CliSecure\vm\VmOperands.cs" />
@@ -209,6 +210,8 @@
     <Compile Include="deobfuscators\MPRESS\Lzmat.cs" />
     <Compile Include="deobfuscators\QuickLZ.cs" />
     <Compile Include="deobfuscators\RandomNameChecker.cs" />
+    <Compile Include="deobfuscators\Rummage\Deobfuscator.cs" />
+    <Compile Include="deobfuscators\Rummage\StringDecrypter.cs" />
     <Compile Include="deobfuscators\Skater_NET\Deobfuscator.cs" />
     <Compile Include="deobfuscators\Skater_NET\EnumClassFinder.cs" />
     <Compile Include="deobfuscators\Skater_NET\StringDecrypter.cs" />

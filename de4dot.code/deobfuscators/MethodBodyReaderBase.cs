@@ -24,13 +24,13 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using de4dot.blocks;
 
-namespace de4dot.code.deobfuscators.Babel_NET {
+namespace de4dot.code.deobfuscators {
 	abstract class MethodBodyReaderBase {
 		protected BinaryReader reader;
 		public List<VariableDefinition> Locals { get; set; }
 		public Instruction[] Instructions { get; set; }
 		public ExceptionHandler[] ExceptionHandlers { get; set; }
-		protected ParameterDefinition[] parameters;
+		protected IList<ParameterDefinition> parameters;
 		int currentOffset;
 
 		public MethodBodyReaderBase(BinaryReader reader) {

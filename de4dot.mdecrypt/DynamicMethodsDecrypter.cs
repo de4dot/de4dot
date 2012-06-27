@@ -244,7 +244,8 @@ namespace de4dot.mdecrypt {
 
 				uint size = pSection->VirtualSize;
 				uint rva = pSection->VirtualAddress;
-				return new IntPtr((byte*)hDll + rva + size);
+				int displ = -4;
+				return new IntPtr((byte*)hDll + rva + size + displ);
 			}
 
 			throw new ApplicationException("Could not find .text section");

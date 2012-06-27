@@ -124,6 +124,17 @@ namespace de4dot.code.deobfuscators {
 			} while ((sum -= DELTA) != 0);
 		}
 
+		// Code converted from C implementation @ http://en.wikipedia.org/wiki/XTEA (decipher() func)
+		public static void xteaDecrypt(ref uint v0, ref uint v1, uint[] key, int rounds) {
+			const uint delta = 0x9E3779B9;
+			uint sum = (uint)(delta * rounds);
+			for (int i = 0; i < rounds; i++) {
+				v1 -= (((v0 << 4) ^ (v0 >> 5)) + v0) ^ (sum + key[(sum >> 11) & 3]);
+				sum -= delta;
+				v0 -= (((v1 << 4) ^ (v1 >> 5)) + v1) ^ (sum + key[sum & 3]);
+			}
+		}
+
 		public static string getExtension(ModuleKind kind) {
 			switch (kind) {
 			case ModuleKind.Dll:
