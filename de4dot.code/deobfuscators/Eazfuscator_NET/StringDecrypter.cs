@@ -665,6 +665,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				return false;
 			if (!constantsReader.getNextInt32(ref index, out tmp2))
 				return false;
+			if (tmp2 == 0 && !constantsReader.getNextInt32(ref index, out tmp2))
+				return false;
 
 			index = 0;
 			var instrs = cctor.Body.Instructions;

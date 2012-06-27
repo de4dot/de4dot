@@ -62,7 +62,8 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				if (DotNetUtils.getPInvokeMethod(type, "kernel32", "GetProcAddress") == null)
 					continue;
 				deobfuscate(method);
-				if (!containsString(method, "debugger is activ"))
+				if (!containsString(method, "debugger is activ") &&
+					!containsString(method, "debugger is running"))
 					continue;
 
 				antiDebuggerType = type;

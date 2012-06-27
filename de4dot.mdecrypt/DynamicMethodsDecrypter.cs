@@ -244,7 +244,7 @@ namespace de4dot.mdecrypt {
 
 				uint size = pSection->VirtualSize;
 				uint rva = pSection->VirtualAddress;
-				int displ = -4;
+				int displ = -8;
 				return new IntPtr((byte*)hDll + rva + size + displ);
 			}
 
