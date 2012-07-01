@@ -37,6 +37,9 @@ namespace de4dot.code.deobfuscators.ILProtector {
 		Version ilpVersion;
 		Dictionary<int, MethodInfo2> methodInfos = new Dictionary<int, MethodInfo2>();
 		List<TypeDefinition> delegateTypes = new List<TypeDefinition>();
+		int startOffset;
+		byte[] decryptionKey;
+		int decryptionKeyMod;
 
 		class MethodInfo2 {
 			public int id;
@@ -80,16 +83,42 @@ namespace de4dot.code.deobfuscators.ILProtector {
 				if (resource == null)
 					continue;
 				var reader = new BinaryReader(resource.GetResourceStream());
-				if (reader.BaseStream.Length < 8)
+				if (!checkResourceV100(reader) &&
+					!checkResourceV105(reader))
 					continue;
-				if (reader.ReadUInt32() != RESOURCE_MAGIC)
-					continue;
-				var version = new Version(reader.ReadByte(), reader.ReadByte(), reader.ReadByte(), reader.ReadByte());
 
 				methodsResource = resource;
-				ilpVersion = version;
 				break;
 			}
+		}
+
+		// 1.0.0 - 1.0.4
+		bool checkResourceV100(BinaryReader reader) {
+			reader.BaseStream.Position = 0;
+			if (reader.BaseStream.Length < 12)
+				return false;
+			if (reader.ReadUInt32() != RESOURCE_MAGIC)
+				return false;
+			ilpVersion = new Version(reader.ReadByte(), reader.ReadByte(), reader.ReadByte(), reader.ReadByte());
+			startOffset = 8;
+			decryptionKey = ilpPublicKeyToken;
+			decryptionKeyMod = 8;
+			return true;
+		}
+
+		// 1.0.5+
+		bool checkResourceV105(BinaryReader reader) {
+			reader.BaseStream.Position = 0;
+			if (reader.BaseStream.Length < 0xA4)
+				return false;
+			var key = reader.ReadBytes(0x94);
+			if (!Utils.compare(reader.ReadBytes(8), ilpPublicKeyToken))
+				return false;
+			ilpVersion = new Version(reader.ReadByte(), reader.ReadByte(), reader.ReadByte(), reader.ReadByte());
+			startOffset = 0xA0;
+			decryptionKey = key;
+			decryptionKeyMod = key.Length - 1;
+			return true;
 		}
 
 		public void decrypt() {
@@ -102,17 +131,17 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			restoreMethods();
 		}
 
-		static byte[] getMethodsData(EmbeddedResource resource) {
+		byte[] getMethodsData(EmbeddedResource resource) {
 			var reader = new BinaryReader(resource.GetResourceStream());
-			reader.BaseStream.Position += 8;
+			reader.BaseStream.Position = startOffset;
 			if ((reader.ReadInt32() & 1) != 0)
 				return decompress(reader);
 			else
 				return reader.ReadBytes((int)(reader.BaseStream.Length - reader.BaseStream.Position));
 		}
 
-		static byte[] decompress(BinaryReader reader) {
-			return decompress(reader, ilpPublicKeyToken);
+		byte[] decompress(BinaryReader reader) {
+			return decompress(reader, decryptionKey, decryptionKeyMod);
 		}
 
 		static void copy(byte[] src, int srcIndex, byte[] dst, int dstIndex, int size) {
@@ -120,7 +149,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 				dst[dstIndex++] = src[srcIndex++];
 		}
 
-		static byte[] decompress(BinaryReader reader, byte[] key) {
+		static byte[] decompress(BinaryReader reader, byte[] key, int keyMod) {
 			var decrypted = new byte[Utils.readEncodedInt32(reader)];
 
 			int destIndex = 0;
@@ -138,7 +167,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 					else {
 						byte b = reader.ReadByte();
 						if (key != null)
-							b ^= key[destIndex & 7];
+							b ^= key[destIndex % keyMod];
 						decrypted[destIndex++] = b;
 					}
 				}

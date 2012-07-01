@@ -113,10 +113,6 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			mainType.cleanUp();
 		}
 
-		public override void deobfuscateEnd() {
-			base.deobfuscateEnd();
-		}
-
 		public override IEnumerable<int> getStringDecrypterMethods() {
 			return new List<int>();
 		}
