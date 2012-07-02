@@ -84,7 +84,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			return true;
 		}
 
-		List<MethodDefinition> getPinvokeMethods(TypeDefinition type, string name) {
+		static List<MethodDefinition> getPinvokeMethods(TypeDefinition type, string name) {
 			var list = new List<MethodDefinition>();
 			foreach (var method in type.Methods) {
 				if (method.PInvokeInfo != null && method.PInvokeInfo.EntryPoint == name)
