@@ -208,9 +208,9 @@ namespace de4dot.code.deobfuscators.ILProtector {
 						continue;
 
 					if (restoreMethod(method)) {
-						Log.v("Restored method {0:X8} ({1}). Instrs:{2}, Locals:{3}, Exceptions:{4}",
-							method.MetadataToken.ToInt32(),
+						Log.v("Restored method {0} ({1:X8}). Instrs:{2}, Locals:{3}, Exceptions:{4}",
 							Utils.removeNewlines(method.FullName),
+							method.MetadataToken.ToInt32(),
 							method.Body.Instructions.Count,
 							method.Body.Variables.Count,
 							method.Body.ExceptionHandlers.Count);
