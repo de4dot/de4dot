@@ -49,7 +49,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			}
 		}
 
-		protected override object checkCctor(TypeDefinition type, MethodDefinition cctor) {
+		protected override object checkCctor(ref TypeDefinition type, MethodDefinition cctor) {
 			var instrs = cctor.Body.Instructions;
 			if (instrs.Count != 3)
 				return null;

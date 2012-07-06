@@ -203,14 +203,15 @@ namespace de4dot.code.deobfuscators {
 				return;
 
 			Log.v("Finding all proxy delegates");
-			foreach (var type in getDelegateTypes()) {
+			foreach (var tmp in getDelegateTypes()) {
+				var type = tmp;
 				var cctor = DotNetUtils.getMethod(type, ".cctor");
 				if (cctor == null || !cctor.HasBody)
 					continue;
 				if (!type.HasFields)
 					continue;
 
-				object context = checkCctor(type, cctor);
+				object context = checkCctor(ref type, cctor);
 				if (context == null)
 					continue;
 
@@ -240,7 +241,7 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
-		protected abstract object checkCctor(TypeDefinition type, MethodDefinition cctor);
+		protected abstract object checkCctor(ref TypeDefinition type, MethodDefinition cctor);
 		protected abstract void getCallInfo(object context, FieldDefinition field, out MethodReference calledMethod, out OpCode callOpcode);
 
 		protected override bool deobfuscate(Blocks blocks, IList<Block> allBlocks) {
@@ -458,7 +459,7 @@ namespace de4dot.code.deobfuscators {
 	}
 
 	// Fixes proxy calls that call a static method with the instance of
-	// of a delegate as the last arg, which then calls the Invoke method.
+	// a delegate as the last arg, which then calls the Invoke method.
 	//		...push args...
 	//		ldsfld delegate instance
 	//		call static method

@@ -89,7 +89,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			info.methodInfoType = lookup(oldOne.info.methodInfoType, "Could not find methodInfoType");
 		}
 
-		protected override object checkCctor(TypeDefinition type, MethodDefinition cctor) {
+		protected override object checkCctor(ref TypeDefinition type, MethodDefinition cctor) {
 			var instrs = cctor.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 1; i++) {
 				var ldci4 = instrs[i];
