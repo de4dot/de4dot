@@ -112,6 +112,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		ResourceResolver resourceResolver;
 		AntiStrongName antiStrongname;
 		EmptyClass emptyClass;
+		ProxyCallFixer proxyCallFixer;
 
 		bool unpackedNativeFile = false;
 		bool canRemoveDecrypterType = true;
@@ -413,6 +414,10 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		public override void deobfuscateBegin() {
 			base.deobfuscateBegin();
 
+			proxyCallFixer = new ProxyCallFixer(module, DeobfuscatedFile);
+			proxyCallFixer.findDelegateCreator();
+			proxyCallFixer.find();
+
 			stringDecrypter.init(peImage, fileData, DeobfuscatedFile);
 			booleanDecrypter.init(fileData, DeobfuscatedFile);
 			booleanValueInliner = new BooleanValueInliner();
@@ -526,6 +531,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		}
 
 		public override void deobfuscateMethodEnd(Blocks blocks) {
+			proxyCallFixer.deobfuscate(blocks);
 			metadataTokenObfuscator.deobfuscate(blocks);
 			fixTypeofDecrypterInstructions(blocks);
 			removeAntiStrongNameCode(blocks);
@@ -562,6 +568,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		}
 
 		public override void deobfuscateEnd() {
+			removeProxyDelegates(proxyCallFixer);
 			removeInlinedMethods();
 			if (options.RestoreTypes)
 				new TypesRestorer(module).deobfuscate();

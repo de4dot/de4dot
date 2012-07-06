@@ -67,6 +67,7 @@
     <Compile Include="deobfuscators\Babel_NET\MemberReferenceConverter.cs" />
     <Compile Include="deobfuscators\Babel_NET\MethodBodyReader.cs" />
     <Compile Include="deobfuscators\Babel_NET\MethodReferenceReader.cs" />
+    <Compile Include="deobfuscators\dotNET_Reactor\v4\ProxyCallFixer.cs" />
     <Compile Include="deobfuscators\ILProtector\MethodReader.cs" />
     <Compile Include="deobfuscators\ILProtector\MethodsDecrypter.cs" />
     <Compile Include="deobfuscators\MethodBodyReaderBase.cs" />
