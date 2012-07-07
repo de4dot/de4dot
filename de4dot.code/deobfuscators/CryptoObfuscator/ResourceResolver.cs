@@ -18,6 +18,7 @@
 */
 
 using System;
+using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using de4dot.blocks;
@@ -69,7 +70,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			if (mergedIt)
 				return null;
 
-			var resource = DotNetUtils.getResource(module, getResourceName()) as EmbeddedResource;
+			var resource = DotNetUtils.getResource(module, getResourceNames()) as EmbeddedResource;
 			if (resource == null)
 				return null;
 
@@ -78,12 +79,24 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return resource;
 		}
 
-		string getResourceName() {
+		IEnumerable<string> getResourceNames() {
+			var names = new List<string>();
+
 			switch (resolverVersion) {
-			case ResolverVersion.V1: return module.Assembly.Name.Name;
-			case ResolverVersion.V2: return string.Format("{0}{0}{0}", module.Assembly.Name.Name);
-			default: throw new ApplicationException("Unknown version");
+			case ResolverVersion.V1:
+				names.Add(module.Assembly.Name.Name);
+				break;
+
+			case ResolverVersion.V2:
+				names.Add(string.Format("{0}{0}{0}", module.Assembly.Name.Name));
+				names.Add(string.Format("{0}&", module.Assembly.Name.Name));
+				break;
+
+			default:
+				throw new ApplicationException("Unknown version");
 			}
+
+			return names;
 		}
 
 		bool checkType(MethodDefinition initMethod) {

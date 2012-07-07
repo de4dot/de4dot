@@ -197,7 +197,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				return resourceModule.Assembly.Name.FullName;
 			}
 			catch {
-				return string.Format("unknown_name_{0}", unknownNameCounter);
+				return string.Format("unknown_name_{0}", unknownNameCounter++);
 			}
 		}
 	}

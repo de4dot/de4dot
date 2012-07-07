@@ -87,6 +87,8 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				return false;
 
 			foreach (var method in DotNetUtils.getCalledMethods(module, attachAppMethod)) {
+				if (attachAppMethod == method)
+					continue;
 				if (method.Name == ".cctor" || method.Name == ".ctor")
 					continue;
 				if (!method.IsStatic || !DotNetUtils.isMethod(method, "System.Void", "()"))
