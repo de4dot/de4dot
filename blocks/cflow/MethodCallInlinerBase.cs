@@ -80,7 +80,11 @@ namespace de4dot.blocks.cflow {
 			return true;
 		}
 
-		protected bool inlineOtherMethod(int patchIndex, MethodDefinition methodToInline, Instruction instr, int instrIndex, int popLastArgs = 0) {
+		protected bool inlineOtherMethod(int patchIndex, MethodDefinition methodToInline, Instruction instr, int instrIndex) {
+			return inlineOtherMethod(patchIndex, methodToInline, instr, instrIndex, 0);
+		}
+
+		protected bool inlineOtherMethod(int patchIndex, MethodDefinition methodToInline, Instruction instr, int instrIndex, int popLastArgs) {
 			return patchMethod(methodToInline, tryInlineOtherMethod(patchIndex, methodToInline, instr, instrIndex, popLastArgs));
 		}
 
@@ -95,7 +99,11 @@ namespace de4dot.blocks.cflow {
 			return true;
 		}
 
-		protected InstructionPatcher tryInlineOtherMethod(int patchIndex, MethodDefinition methodToInline, Instruction instr, int instrIndex, int popLastArgs = 0) {
+		protected InstructionPatcher tryInlineOtherMethod(int patchIndex, MethodDefinition methodToInline, Instruction instr, int instrIndex) {
+			return tryInlineOtherMethod(patchIndex, methodToInline, instr, instrIndex, 0);
+		}
+
+		protected InstructionPatcher tryInlineOtherMethod(int patchIndex, MethodDefinition methodToInline, Instruction instr, int instrIndex, int popLastArgs) {
 			int loadIndex = 0;
 			int methodArgsCount = DotNetUtils.getArgsCount(methodToInline);
 			bool foundLdarga = false;
@@ -183,7 +191,11 @@ namespace de4dot.blocks.cflow {
 			return instr != null && instr.OpCode.Code == Code.Ret;
 		}
 
-		protected bool checkSameMethods(MethodReference method, MethodDefinition methodToInline, int ignoreLastMethodToInlineArgs = 0) {
+		protected bool checkSameMethods(MethodReference method, MethodDefinition methodToInline) {
+			return checkSameMethods(method, methodToInline, 0);
+		}
+
+		protected bool checkSameMethods(MethodReference method, MethodDefinition methodToInline, int ignoreLastMethodToInlineArgs) {
 			var methodToInlineArgs = DotNetUtils.getArgs(methodToInline);
 			var methodArgs = DotNetUtils.getArgs(method);
 			if (methodToInlineArgs.Count - ignoreLastMethodToInlineArgs != methodArgs.Count)

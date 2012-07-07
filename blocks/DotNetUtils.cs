@@ -362,7 +362,11 @@ namespace de4dot.blocks {
 			return null;
 		}
 
-		public static IEnumerable<MethodDefinition> findMethods(IEnumerable<MethodDefinition> methods, string returnType, string[] argsTypes, bool isStatic = true) {
+		public static IEnumerable<MethodDefinition> findMethods(IEnumerable<MethodDefinition> methods, string returnType, string[] argsTypes) {
+			return findMethods(methods, returnType, argsTypes, true);
+		}
+
+		public static IEnumerable<MethodDefinition> findMethods(IEnumerable<MethodDefinition> methods, string returnType, string[] argsTypes, bool isStatic) {
 			foreach (var method in methods) {
 				if (!method.HasBody || method.CallingConvention != MethodCallingConvention.Default)
 					continue;

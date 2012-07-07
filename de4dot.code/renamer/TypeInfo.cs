@@ -405,7 +405,11 @@ namespace de4dot.code.renamer {
 			return true;
 		}
 
-		void prepareRenameGenericParams(IEnumerable<GenericParamDef> genericParams, INameChecker checker, IEnumerable<GenericParamDef> otherGenericParams = null) {
+		void prepareRenameGenericParams(IEnumerable<GenericParamDef> genericParams, INameChecker checker) {
+			prepareRenameGenericParams(genericParams, checker, null);
+		}
+
+		void prepareRenameGenericParams(IEnumerable<GenericParamDef> genericParams, INameChecker checker, IEnumerable<GenericParamDef> otherGenericParams) {
 			var usedNames = new Dictionary<string, bool>(StringComparer.Ordinal);
 			var nameCreator = new GenericParamNameCreator();
 

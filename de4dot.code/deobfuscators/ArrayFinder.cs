@@ -25,7 +25,11 @@ using de4dot.blocks.cflow;
 
 namespace de4dot.code.deobfuscators {
 	static class ArrayFinder {
-		public static List<byte[]> getArrays(MethodDefinition method, TypeReference arrayElemntType = null) {
+		public static List<byte[]> getArrays(MethodDefinition method) {
+			return getArrays(method, null);
+		}
+
+		public static List<byte[]> getArrays(MethodDefinition method, TypeReference arrayElemntType) {
 			var arrays = new List<byte[]>();
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count; i++) {

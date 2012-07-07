@@ -138,7 +138,11 @@ namespace de4dot.cui {
 			return hasEnv("windir") && !hasEnv("PROMPT");
 		}
 
-		public static void printStackTrace(Exception ex, Log.LogLevel logLevel = Log.LogLevel.error) {
+		public static void printStackTrace(Exception ex) {
+			printStackTrace(ex, Log.LogLevel.error);
+		}
+
+		public static void printStackTrace(Exception ex, Log.LogLevel logLevel) {
 			var line = new string('-', 78);
 			Log.log(logLevel, "\n\n");
 			Log.log(logLevel, line);

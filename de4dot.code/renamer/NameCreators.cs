@@ -63,7 +63,11 @@ namespace de4dot.code.renamer {
 	class NameCreator : NameCreatorCounter {
 		string prefix;
 
-		public NameCreator(string prefix, int num = 0) {
+		public NameCreator(string prefix)
+			: this(prefix, 0) {
+		}
+
+		public NameCreator(string prefix, int num) {
 			this.prefix = prefix;
 			this.num = num;
 		}
@@ -82,7 +86,11 @@ namespace de4dot.code.renamer {
 		string prefix;
 		const string separator = "_";
 
-		public NameCreator2(string prefix, int num = 0) {
+		public NameCreator2(string prefix)
+			: this(prefix, 0) {
+		}
+
+		public NameCreator2(string prefix, int num) {
 			this.prefix = prefix;
 			this.num = num;
 		}
@@ -99,7 +107,7 @@ namespace de4dot.code.renamer {
 	}
 
 	interface ITypeNameCreator {
-		string create(TypeDefinition typeDefinition, string newBaseTypeName = null);
+		string create(TypeDefinition typeDefinition, string newBaseTypeName);
 	}
 
 	class NameInfos {
@@ -164,7 +172,7 @@ namespace de4dot.code.renamer {
 			return new NameCreator(prefix);
 		}
 
-		public string create(TypeDefinition typeDefinition, string newBaseTypeName = null) {
+		public string create(TypeDefinition typeDefinition, string newBaseTypeName) {
 			var nameCreator = getNameCreator(typeDefinition, newBaseTypeName);
 			return existingNames.getName(typeDefinition.Name, nameCreator);
 		}

@@ -23,7 +23,11 @@ namespace de4dot.code.deobfuscators {
 	public abstract class DeobfuscatorInfoBase : IDeobfuscatorInfo {
 		protected NameRegexOption validNameRegex;
 
-		public DeobfuscatorInfoBase(string nameRegex = null) {
+		public DeobfuscatorInfoBase()
+			: this(null) {
+		}
+
+		public DeobfuscatorInfoBase(string nameRegex) {
 			validNameRegex = new NameRegexOption(null, makeArgName("name"), "Valid name regex pattern", nameRegex ?? DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX);
 		}
 

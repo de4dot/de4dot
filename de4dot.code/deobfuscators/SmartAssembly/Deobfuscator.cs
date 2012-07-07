@@ -336,7 +336,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 		void dumpEmbeddedAssemblies() {
 			assemblyResolver.resolveResources();
 			foreach (var tuple in assemblyResolver.getDecryptedResources()) {
-				DeobfuscatedFile.createAssemblyFile(tuple.Item2, tuple.Item1.simpleName);
+				DeobfuscatedFile.createAssemblyFile(tuple.Item2, tuple.Item1.simpleName, null);
 				addResourceToBeRemoved(tuple.Item1.resource, string.Format("Embedded assembly: {0}", tuple.Item1.assemblyName));
 			}
 		}

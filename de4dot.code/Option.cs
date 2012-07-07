@@ -214,7 +214,11 @@ namespace de4dot.code {
 			get { return false; }
 		}
 
-		public NoArgOption(string shortName, string longName, string description, Action action = null)
+		public NoArgOption(string shortName, string longName, string description)
+			: this(shortName, longName, description, null) {
+		}
+
+		public NoArgOption(string shortName, string longName, string description, Action action)
 			: base(shortName, longName, description) {
 			this.action = action;
 		}

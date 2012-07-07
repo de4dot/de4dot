@@ -109,7 +109,11 @@ namespace de4dot.code.deobfuscators.MPRESS {
 			public readonly string parameters;
 			public readonly string name;
 
-			public MethodInfo(string returnType, string parameters, string name = null) {
+			public MethodInfo(string returnType, string parameters)
+				: this(returnType, parameters, null) {
+			}
+
+			public MethodInfo(string returnType, string parameters, string name) {
 				this.returnType = returnType;
 				this.parameters = parameters;
 				this.name = name;

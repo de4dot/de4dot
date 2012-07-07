@@ -31,7 +31,11 @@ namespace de4dot.blocks {
 		IGenericInstance gim;
 		bool modified;
 
-		public static TypeReference make(TypeReference typeReference, GenericInstanceType git, IGenericInstance gim = null) {
+		public static TypeReference make(TypeReference typeReference, GenericInstanceType git) {
+			return make(typeReference, git, null);
+		}
+
+		public static TypeReference make(TypeReference typeReference, GenericInstanceType git, IGenericInstance gim) {
 			if (git == null && gim == null)
 				return typeReference;
 			return new TypeReferenceInstance(typeReference, git, gim).makeInstance();
@@ -88,7 +92,11 @@ namespace de4dot.blocks {
 		IGenericInstance gim;
 		bool modified;
 
-		public MultiTypeRefInstance(GenericInstanceType git, IGenericInstance gim = null) {
+		public MultiTypeRefInstance(GenericInstanceType git)
+			: this(git, null) {
+		}
+
+		public MultiTypeRefInstance(GenericInstanceType git, IGenericInstance gim) {
 			this.git = git;
 			this.gim = gim;
 		}
@@ -112,7 +120,11 @@ namespace de4dot.blocks {
 	public class MethodReferenceInstance : MultiTypeRefInstance {
 		MethodReference methodReference;
 
-		public static MethodReference make(MethodReference methodReference, GenericInstanceType git, IGenericInstance gim = null) {
+		public static MethodReference make(MethodReference methodReference, GenericInstanceType git) {
+			return make(methodReference, git, null);
+		}
+
+		public static MethodReference make(MethodReference methodReference, GenericInstanceType git, IGenericInstance gim) {
 			if (git == null && gim == null)
 				return methodReference;
 			return new MethodReferenceInstance(methodReference, git, gim).makeInstance();

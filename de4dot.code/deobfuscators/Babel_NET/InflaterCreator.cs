@@ -40,7 +40,11 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return new BabelInflater(noHeader, magic.Value);
 		}
 
-		static Inflater createNormal(bool noHeader, string errorMessage = null) {
+		static Inflater createNormal(bool noHeader) {
+			return createNormal(noHeader, null);
+		}
+
+		static Inflater createNormal(bool noHeader, string errorMessage) {
 			if (errorMessage != null)
 				Log.w("{0}", errorMessage);
 			return new Inflater(noHeader);

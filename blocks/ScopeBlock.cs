@@ -71,7 +71,11 @@ namespace de4dot.blocks {
 			}
 		}
 
-		List<Block> findBlocks(Func<Block, bool> blockChecker = null) {
+		List<Block> findBlocks() {
+			return findBlocks(null);
+		}
+
+		List<Block> findBlocks(Func<Block, bool> blockChecker) {
 			var blocks = new List<Block>();
 			foreach (var bb in getBaseBlocks()) {
 				Block block = bb as Block;

@@ -521,7 +521,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				return;
 			foreach (var info in assemblyResolver.getEmbeddedAssemblies(DeobfuscatedFile, this)) {
 				var simpleName = Utils.getAssemblySimpleName(info.name);
-				DeobfuscatedFile.createAssemblyFile(info.resource.GetResourceData(), simpleName);
+				DeobfuscatedFile.createAssemblyFile(info.resource.GetResourceData(), simpleName, null);
 				addResourceToBeRemoved(info.resource, string.Format("Embedded assembly: {0}", info.name));
 			}
 		}

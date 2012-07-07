@@ -120,7 +120,11 @@ namespace de4dot.cui {
 			saveAllFiles(allFiles);
 		}
 
-		IEnumerable<IObfuscatedFile> loadAllFiles(bool onlyScan = false) {
+		IEnumerable<IObfuscatedFile> loadAllFiles() {
+			return loadAllFiles(false);
+		}
+
+		IEnumerable<IObfuscatedFile> loadAllFiles(bool onlyScan) {
 			var loader = new DotNetFileLoader(new DotNetFileLoader.Options {
 				PossibleFiles  = options.Files,
 				SearchDirs = options.SearchDirs,
@@ -172,7 +176,7 @@ namespace de4dot.cui {
 				}
 			}
 
-			bool add(IObfuscatedFile file, bool skipUnknownObfuscator = false, bool isFromPossibleFiles = false) {
+			bool add(IObfuscatedFile file, bool skipUnknownObfuscator, bool isFromPossibleFiles) {
 				var key = Utils.getFullPath(file.Filename);
 				if (allFiles.ContainsKey(key)) {
 					Log.w("Ingoring duplicate file: {0}", file.Filename);
@@ -301,7 +305,7 @@ namespace de4dot.cui {
 				}
 
 				var obfuscatedFile = new ObfuscatedFile(fileOptions, options.AssemblyClientFactory);
-				if (add(obfuscatedFile, searchDir.SkipUnknownObfuscators))
+				if (add(obfuscatedFile, searchDir.SkipUnknownObfuscators, false))
 					return obfuscatedFile;
 				return null;
 			}

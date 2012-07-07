@@ -663,7 +663,11 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
-		protected void removeProxyDelegates(ProxyCallFixerBase proxyCallFixer, bool removeCreators = true) {
+		protected void removeProxyDelegates(ProxyCallFixerBase proxyCallFixer) {
+			removeProxyDelegates(proxyCallFixer, true);
+		}
+
+		protected void removeProxyDelegates(ProxyCallFixerBase proxyCallFixer, bool removeCreators) {
 			if (proxyCallFixer.Errors != 0) {
 				Log.v("Not removing proxy delegates and creator type since errors were detected.");
 				return;

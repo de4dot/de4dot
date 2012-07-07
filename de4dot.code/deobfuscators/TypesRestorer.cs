@@ -71,7 +71,11 @@ namespace de4dot.code.deobfuscators {
 				this.arg = arg;
 			}
 
-			public void add(TypeReference type, bool wasNewobj = false) {
+			public void add(TypeReference type) {
+				add(type, false);
+			}
+
+			public void add(TypeReference type, bool wasNewobj) {
 				if (wasNewobj) {
 					if (!newobjTypes)
 						clear();
