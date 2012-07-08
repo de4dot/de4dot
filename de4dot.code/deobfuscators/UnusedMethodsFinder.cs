@@ -79,7 +79,7 @@ namespace de4dot.code.deobfuscators {
 					continue;
 				}
 
-				var calledMethod = DotNetUtils.getMethod(module, instr.Operand as MethodReference);
+				var calledMethod = DotNetUtils.getMethod2(module, instr.Operand as MethodReference);
 				if (calledMethod == null)
 					continue;
 				if (possiblyUnusedMethods.ContainsKey(calledMethod))
