@@ -126,7 +126,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			case ElementType.U: return module.TypeSystem.UIntPtr;
 			case ElementType.Object: return module.TypeSystem.Object;
 			case ElementType.SzArray: return new ArrayType(readType());
-			case ElementType.Sentinel: return readType();
+			case ElementType.Sentinel: return new SentinelType(readType());
 			case ElementType.Pinned: return new PinnedType(readType());
 
 			case ElementType.ValueType:
