@@ -172,7 +172,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 		}
 
 		protected override CallSite readInlineSig(Instruction instr) {
-			throw new NotImplementedException();	//TODO:
+			return module.ReadCallSite(new MetadataToken(reader.ReadUInt32()));
 		}
 
 		protected override string readInlineString(Instruction instr) {
