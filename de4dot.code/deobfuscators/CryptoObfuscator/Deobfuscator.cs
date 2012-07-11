@@ -29,10 +29,12 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		public const string THE_TYPE = "co";
 		const string DEFAULT_REGEX = @"!^(get_|set_|add_|remove_)?[A-Z]{1,3}(?:`\d+)?$&!^(get_|set_|add_|remove_)?c[0-9a-f]{32}(?:`\d+)?$&" + DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
 		BoolOption removeTamperProtection;
+		BoolOption decryptConstants;
 
 		public DeobfuscatorInfo()
 			: base(DEFAULT_REGEX) {
 			removeTamperProtection = new BoolOption(null, makeArgName("tamper"), "Remove tamper protection code", true);
+			decryptConstants = new BoolOption(null, makeArgName("consts"), "Decrypt constants", true);
 		}
 
 		public override string Name {
@@ -47,12 +49,14 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return new Deobfuscator(new Deobfuscator.Options {
 				ValidNameRegex = validNameRegex.get(),
 				RemoveTamperProtection = removeTamperProtection.get(),
+				DecryptConstants = decryptConstants.get(),
 			});
 		}
 
 		protected override IEnumerable<Option> getOptionsInternal() {
 			return new List<Option>() {
 				removeTamperProtection,
+				decryptConstants,
 			};
 		}
 	}
@@ -71,9 +75,15 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		StringDecrypter stringDecrypter;
 		TamperDetection tamperDetection;
 		AntiDebugger antiDebugger;
+		ConstantsDecrypter constantsDecrypter;
+		Int32ValueInliner int32ValueInliner;
+		Int64ValueInliner int64ValueInliner;
+		SingleValueInliner singleValueInliner;
+		DoubleValueInliner doubleValueInliner;
 
 		internal class Options : OptionsBase {
 			public bool RemoveTamperProtection { get; set; }
+			public bool DecryptConstants { get; set; }
 		}
 
 		public override string Type {
@@ -103,7 +113,8 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 
 			int sum = toInt32(stringDecrypter.Detected) +
 					toInt32(tamperDetection.Detected) +
-					toInt32(proxyDelegateFinder.Detected);
+					toInt32(proxyDelegateFinder.Detected) +
+					toInt32(constantsDecrypter.Detected);
 			if (sum > 0)
 				val += 100 + 10 * (sum - 1);
 			if (foundCryptoObfuscatorAttribute || foundObfuscatedSymbols || foundObfuscatorUserString)
@@ -129,6 +140,8 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			stringDecrypter.find();
 			tamperDetection = new TamperDetection(module);
 			tamperDetection.find();
+			constantsDecrypter = new ConstantsDecrypter(module);
+			constantsDecrypter.find();
 			foundObfuscatorUserString = Utils.StartsWith(module.GetUserString(1), "\u0011\"3D9B94A98B-76A8-4810-B1A0-4BE7C4F9C98D", StringComparison.Ordinal);
 		}
 
@@ -180,6 +193,20 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			antiDebugger = new AntiDebugger(module, DeobfuscatedFile, this);
 			antiDebugger.find();
 
+			if (options.DecryptConstants) {
+				constantsDecrypter.init(resourceDecrypter);
+				int32ValueInliner = new Int32ValueInliner();
+				int32ValueInliner.add(constantsDecrypter.Int32Decrypter, (method, args) => constantsDecrypter.decryptInt32((int)args[0]));
+				int64ValueInliner = new Int64ValueInliner();
+				int64ValueInliner.add(constantsDecrypter.Int64Decrypter, (method, args) => constantsDecrypter.decryptInt64((int)args[0]));
+				singleValueInliner = new SingleValueInliner();
+				singleValueInliner.add(constantsDecrypter.SingleDecrypter, (method, args) => constantsDecrypter.decryptSingle((int)args[0]));
+				doubleValueInliner = new DoubleValueInliner();
+				doubleValueInliner.add(constantsDecrypter.DoubleDecrypter, (method, args) => constantsDecrypter.decryptDouble((int)args[0]));
+				addTypeToBeRemoved(constantsDecrypter.Type, "Constants decrypter type");
+				addResourceToBeRemoved(constantsDecrypter.Resource, "Encrypted constants");
+			}
+
 			addModuleCctorInitCallToBeRemoved(resourceResolver.Method);
 			addModuleCctorInitCallToBeRemoved(assemblyResolver.Method);
 			addCallToBeRemoved(module.EntryPoint, tamperDetection.Method);
@@ -198,6 +225,12 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 
 		public override void deobfuscateMethodEnd(Blocks blocks) {
 			proxyDelegateFinder.deobfuscate(blocks);
+			if (options.DecryptConstants) {
+				int32ValueInliner.decrypt(blocks);
+				int64ValueInliner.decrypt(blocks);
+				singleValueInliner.decrypt(blocks);
+				doubleValueInliner.decrypt(blocks);
+			}
 			base.deobfuscateMethodEnd(blocks);
 		}
 
