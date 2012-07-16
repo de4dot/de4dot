@@ -20,73 +20,17 @@
 using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
-using Mono.Cecil.Metadata;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
 
 namespace de4dot.code.deobfuscators.DeepSea {
 	class ArrayBlockDeobfuscator : BlockDeobfuscator {
-		ModuleDefinition module;
-		FieldDefinitionAndDeclaringTypeDict<FieldInfo> fieldToInfo = new FieldDefinitionAndDeclaringTypeDict<FieldInfo>();
-		Dictionary<VariableDefinition, FieldInfo> localToInfo = new Dictionary<VariableDefinition, FieldInfo>();
+		ArrayBlockState arrayBlockState;
+		Dictionary<VariableDefinition, ArrayBlockState.FieldInfo> localToInfo = new Dictionary<VariableDefinition, ArrayBlockState.FieldInfo>();
 		DsConstantsReader constantsReader;
 
-		class FieldInfo {
-			public readonly FieldDefinition field;
-			public readonly FieldDefinition arrayInitField;
-			public readonly byte[] array;
-
-			public FieldInfo(FieldDefinition field, FieldDefinition arrayInitField) {
-				this.field = field;
-				this.arrayInitField = arrayInitField;
-				this.array = (byte[])arrayInitField.InitialValue.Clone();
-			}
-		}
-
-		public bool Detected {
-			get { return fieldToInfo.Count != 0; }
-		}
-
-		public ArrayBlockDeobfuscator(ModuleDefinition module) {
-			this.module = module;
-		}
-
-		public void init() {
-			initializeArrays(DotNetUtils.getModuleTypeCctor(module));
-		}
-
-		void initializeArrays(MethodDefinition method) {
-			if (method == null || method.Body == null)
-				return;
-
-			var instructions = method.Body.Instructions;
-			for (int i = 0; i < instructions.Count; i++) {
-				var ldci4 = instructions[i];
-				if (!DotNetUtils.isLdcI4(ldci4))
-					continue;
-				i++;
-				var instrs = DotNetUtils.getInstructions(instructions, i, OpCodes.Newarr, OpCodes.Dup, OpCodes.Ldtoken, OpCodes.Call, OpCodes.Stsfld);
-				if (instrs == null)
-					continue;
-
-				var arrayType = instrs[0].Operand as TypeReference;
-				if (arrayType == null || arrayType.EType != ElementType.U1)
-					continue;
-
-				var arrayInitField = instrs[2].Operand as FieldDefinition;
-				if (arrayInitField == null || arrayInitField.InitialValue == null || arrayInitField.InitialValue.Length == 0)
-					continue;
-
-				var calledMethod = instrs[3].Operand as MethodReference;
-				if (calledMethod == null || calledMethod.FullName != "System.Void System.Runtime.CompilerServices.RuntimeHelpers::InitializeArray(System.Array,System.RuntimeFieldHandle)")
-					continue;
-
-				var targetField = instrs[4].Operand as FieldDefinition;
-				if (targetField == null)
-					continue;
-
-				fieldToInfo.add(targetField, new FieldInfo(targetField, arrayInitField));
-			}
+		public ArrayBlockDeobfuscator(ArrayBlockState arrayBlockState) {
+			this.arrayBlockState = arrayBlockState;
 		}
 
 		public override void deobfuscateBegin(Blocks blocks) {
@@ -107,7 +51,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 					if (!stloc.isStloc())
 						continue;
 
-					var info = fieldToInfo.find((FieldReference)ldsfld.Operand);
+					var info = arrayBlockState.getFieldInfo((FieldReference)ldsfld.Operand);
 					if (info == null)
 						continue;
 					var local = DotNetUtils.getLocalVar(blocks.Locals, stloc.Instruction);
@@ -158,7 +102,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			var local = DotNetUtils.getLocalVar(blocks.Locals, ldloc.Instruction);
 			if (local == null)
 				return false;
-			FieldInfo info;
+			ArrayBlockState.FieldInfo info;
 			if (!localToInfo.TryGetValue(local, out info))
 				return false;
 
@@ -183,7 +127,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			var ldsfld = instrs[i];
 			if (ldsfld.OpCode.Code != Code.Ldsfld)
 				return false;
-			var info = fieldToInfo.find(ldsfld.Operand as FieldReference);
+			var info = arrayBlockState.getFieldInfo(ldsfld.Operand as FieldReference);
 			if (info == null)
 				return false;
 
@@ -209,7 +153,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			var ldsfld = instrs[i];
 			if (ldsfld.OpCode.Code != Code.Ldsfld)
 				return false;
-			var info = fieldToInfo.find(ldsfld.Operand as FieldReference);
+			var info = arrayBlockState.getFieldInfo(ldsfld.Operand as FieldReference);
 			if (info == null)
 				return false;
 
@@ -236,91 +180,6 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			if (constantsReader != null)
 				return constantsReader;
 			return constantsReader = new DsConstantsReader(block.Instructions);
-		}
-
-		public IEnumerable<FieldDefinition> cleanUp() {
-			var removedFields = new List<FieldDefinition>();
-			var moduleCctor = DotNetUtils.getModuleTypeCctor(module);
-			if (moduleCctor == null)
-				return removedFields;
-			var moduleCctorBlocks = new Blocks(moduleCctor);
-
-			var keep = findFieldsToKeep();
-			foreach (var fieldInfo in fieldToInfo.getValues()) {
-				if (keep.ContainsKey(fieldInfo))
-					continue;
-				if (removeInitCode(moduleCctorBlocks, fieldInfo)) {
-					removedFields.Add(fieldInfo.field);
-					removedFields.Add(fieldInfo.arrayInitField);
-				}
-				fieldInfo.arrayInitField.InitialValue = new byte[1];
-				fieldInfo.arrayInitField.FieldType = module.TypeSystem.Byte;
-			}
-
-			IList<Instruction> allInstructions;
-			IList<ExceptionHandler> allExceptionHandlers;
-			moduleCctorBlocks.getCode(out allInstructions, out allExceptionHandlers);
-			DotNetUtils.restoreBody(moduleCctorBlocks.Method, allInstructions, allExceptionHandlers);
-			return removedFields;
-		}
-
-		bool removeInitCode(Blocks blocks, FieldInfo info) {
-			bool removedSomething = false;
-			foreach (var block in blocks.MethodBlocks.getAllBlocks()) {
-				var instrs = block.Instructions;
-				for (int i = 0; i < instrs.Count - 5; i++) {
-					var ldci4 = instrs[i];
-					if (!ldci4.isLdcI4())
-						continue;
-					if (instrs[i + 1].OpCode.Code != Code.Newarr)
-						continue;
-					if (instrs[i + 2].OpCode.Code != Code.Dup)
-						continue;
-					var ldtoken = instrs[i + 3];
-					if (ldtoken.OpCode.Code != Code.Ldtoken)
-						continue;
-					if (ldtoken.Operand != info.arrayInitField)
-						continue;
-					var call = instrs[i + 4];
-					if (call.OpCode.Code != Code.Call)
-						continue;
-					var calledMethod = call.Operand as MethodReference;
-					if (calledMethod == null || calledMethod.FullName != "System.Void System.Runtime.CompilerServices.RuntimeHelpers::InitializeArray(System.Array,System.RuntimeFieldHandle)")
-						continue;
-					var stsfld = instrs[i + 5];
-					if (stsfld.OpCode.Code != Code.Stsfld)
-						continue;
-					if (stsfld.Operand != info.field)
-						continue;
-					block.remove(i, 6);
-					i--;
-					removedSomething = true;
-				}
-			}
-			return removedSomething;
-		}
-
-		Dictionary<FieldInfo, bool> findFieldsToKeep() {
-			var keep = new Dictionary<FieldInfo, bool>();
-			foreach (var type in module.GetTypes()) {
-				foreach (var method in type.Methods) {
-					if (type == DotNetUtils.getModuleType(module) && method.Name == ".cctor")
-						continue;
-					if (method.Body == null)
-						continue;
-
-					foreach (var instr in method.Body.Instructions) {
-						var field = instr.Operand as FieldReference;
-						if (field == null)
-							continue;
-						var fieldInfo = fieldToInfo.find(field);
-						if (fieldInfo == null)
-							continue;
-						keep[fieldInfo] = true;
-					}
-				}
-			}
-			return keep;
 		}
 	}
 }

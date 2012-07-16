@@ -88,7 +88,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		ResourceResolver resourceResolver;
 		AssemblyResolver assemblyResolver;
 		FieldsRestorer fieldsRestorer;
-		ArrayBlockDeobfuscator arrayBlockDeobfuscator;
+		ArrayBlockState arrayBlockState;
 
 		internal class Options : OptionsBase {
 			public bool InlineMethods { get; set; }
@@ -127,8 +127,8 @@ namespace de4dot.code.deobfuscators.DeepSea {
 
 		List<IBlocksDeobfuscator> getBlocksDeobfuscators() {
 			var list = new List<IBlocksDeobfuscator>();
-			if (arrayBlockDeobfuscator.Detected)
-				list.Add(arrayBlockDeobfuscator);
+			if (arrayBlockState != null && arrayBlockState.Detected)
+				list.Add(new ArrayBlockDeobfuscator(arrayBlockState));
 			if (!startedDeobfuscating || options.CastDeobfuscation)
 				list.Add(new CastDeobfuscator());
 			return list;
@@ -158,8 +158,8 @@ namespace de4dot.code.deobfuscators.DeepSea {
 
 		protected override void scanForObfuscator() {
 			staticStringInliner.UseUnknownArgs = true;
-			arrayBlockDeobfuscator = new ArrayBlockDeobfuscator(module);
-			arrayBlockDeobfuscator.init();
+			arrayBlockState = new ArrayBlockState(module);
+			arrayBlockState.init(DeobfuscatedFile);
 			stringDecrypter = new StringDecrypter(module);
 			stringDecrypter.find(DeobfuscatedFile);
 			resourceResolver = new ResourceResolver(module, DeobfuscatedFile, this);
@@ -278,7 +278,7 @@ done:
 				stringDecrypter.cleanup();
 			}
 
-			addFieldsToBeRemoved(arrayBlockDeobfuscator.cleanUp(), "Control flow obfuscation array");
+			addFieldsToBeRemoved(arrayBlockState.cleanUp(), "Control flow obfuscation array");
 
 			base.deobfuscateEnd();
 		}
