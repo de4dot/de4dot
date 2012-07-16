@@ -90,6 +90,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		}
 
 		bool checkResolverInitMethodDesktop(MethodDefinition resolverInitMethod) {
+			simpleDeobfuscator.deobfuscate(resolverInitMethod);
 			if (!checkResolverInitMethodInternal(resolverInitMethod))
 				return false;
 
