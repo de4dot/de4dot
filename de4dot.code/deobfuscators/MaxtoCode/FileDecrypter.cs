@@ -75,8 +75,8 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 
 				structSize = getStructSize(mcKey);
 
-				uint methodInfosRva = peHeader.getRva2(0x0FF8, mcKey.readUInt32(0x005A));
-				uint encryptedDataRva = peHeader.getRva2(0x0FF0, mcKey.readUInt32(0x0046));
+				uint methodInfosRva = peHeader.getRva(0x0FF8, mcKey.readUInt32(0x005A));
+				uint encryptedDataRva = peHeader.getRva(0x0FF0, mcKey.readUInt32(0x0046));
 
 				methodInfosOffset = peImage.rvaToOffset(methodInfosRva);
 				encryptedDataOffset = peImage.rvaToOffset(encryptedDataRva);
@@ -505,7 +505,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			var peImage = decrypterInfo.peImage;
 			var fileData = decrypterInfo.fileData;
 
-			uint resourceRva = peHeader.getRva1(0x0E10, mcKey.readUInt32(0x00A0));
+			uint resourceRva = peHeader.getRva(0x0E10, mcKey.readUInt32(0x00A0));
 			uint resourceSize = peHeader.readUInt32(0x0E14) ^ mcKey.readUInt32(0x00AA);
 			if (resourceRva == 0 || resourceSize == 0)
 				return;
@@ -527,7 +527,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			var peImage = decrypterInfo.peImage;
 			var fileData = decrypterInfo.fileData;
 
-			uint usHeapRva = peHeader.getRva1(0x0E00, mcKey.readUInt32(0x0078));
+			uint usHeapRva = peHeader.getRva(0x0E00, mcKey.readUInt32(0x0078));
 			uint usHeapSize = peHeader.readUInt32(0x0E04) ^ mcKey.readUInt32(0x0082);
 			if (usHeapRva == 0 || usHeapSize == 0)
 				return;

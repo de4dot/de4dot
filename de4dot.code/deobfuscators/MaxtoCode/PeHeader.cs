@@ -47,14 +47,10 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		}
 
 		public uint getMcKeyRva() {
-			return getRva2(0x0FFC, XOR_KEY);
+			return getRva(0x0FFC, XOR_KEY);
 		}
 
-		public uint getRva1(int offset, uint xorKey) {
-			return (readUInt32(offset) ^ xorKey);
-		}
-
-		public uint getRva2(int offset, uint xorKey) {
+		public uint getRva(int offset, uint xorKey) {
 			return (readUInt32(offset) ^ xorKey);
 		}
 
