@@ -17,7 +17,9 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Collections.Generic;
+using System.Text;
 using Mono.Cecil;
 using Mono.MyStuff;
 
@@ -26,8 +28,11 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		public const string THE_NAME = "MaxtoCode";
 		public const string THE_TYPE = "mc";
 		const string DEFAULT_REGEX = @"!^[oO01l]+$&" + DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
+		IntOption stringCodePage;
+
 		public DeobfuscatorInfo()
 			: base(DEFAULT_REGEX) {
+			stringCodePage = new IntOption(null, makeArgName("cp"), "String code page", 936);
 		}
 
 		public override string Name {
@@ -42,7 +47,14 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			return new Deobfuscator(new Deobfuscator.Options {
 				RenameResourcesInCode = false,
 				ValidNameRegex = validNameRegex.get(),
+				StringCodePage = stringCodePage.get(),
 			});
+		}
+
+		protected override IEnumerable<Option> getOptionsInternal() {
+			return new List<Option>() {
+				stringCodePage,
+			};
 		}
 	}
 
@@ -50,8 +62,10 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		Options options;
 		MainType mainType;
 		DecrypterInfo decrypterInfo;
+		StringDecrypter stringDecrypter;
 
 		internal class Options : OptionsBase {
+			public int StringCodePage { get; set; }
 		}
 
 		public override string Type {
@@ -69,6 +83,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		internal Deobfuscator(Options options)
 			: base(options) {
 			this.options = options;
+			StringFeatures = StringFeatures.AllowStaticDecryption | StringFeatures.AllowDynamicDecryption;
 		}
 
 		protected override int detectInternal() {
@@ -111,14 +126,34 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		public override void deobfuscateBegin() {
 			base.deobfuscateBegin();
 
+			stringDecrypter = new StringDecrypter(decrypterInfo);
+			stringDecrypter.find();
+			if (stringDecrypter.Detected) {
+				stringDecrypter.initialize(getEncoding(options.StringCodePage));
+				staticStringInliner.add(stringDecrypter.Method, (method, args) => stringDecrypter.decrypt((uint)args[0]));
+				DeobfuscatedFile.stringDecryptersAdded();
+			}
+
 			foreach (var method in mainType.InitMethods)
 				addCctorInitCallToBeRemoved(method);
 			addTypeToBeRemoved(mainType.Type, "Obfuscator type");
 			addModuleReferencesToBeRemoved(mainType.ModuleReferences, "MC runtime module reference");
 		}
 
+		static Encoding getEncoding(int cp) {
+			try {
+				return Encoding.GetEncoding(cp);
+			}
+			catch {
+				throw new UserException(string.Format("Code page {0} doesn't exist", cp));
+			}
+		}
+
 		public override IEnumerable<int> getStringDecrypterMethods() {
-			return new List<int>();
+			var list = new List<int>();
+			if (stringDecrypter != null && stringDecrypter.Detected)
+				list.Add(stringDecrypter.Method.MetadataToken.ToInt32());
+			return list;
 		}
 	}
 }
