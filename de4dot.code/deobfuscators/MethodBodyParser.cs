@@ -48,6 +48,25 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
+		public static bool verify(byte[] data) {
+			return verify(new BinaryReader(new MemoryStream(data)));
+		}
+
+		public static bool verify(Stream data) {
+			return verify(new BinaryReader(data));
+		}
+
+		public static bool verify(BinaryReader reader) {
+			try {
+				byte[] code, extraSections;
+				parseMethodBody(reader, out code, out extraSections);
+				return true;
+			}
+			catch (InvalidMethodBody) {
+				return false;
+			}
+		}
+
 		static MethodBodyHeader parseMethodBody2(BinaryReader reader, out byte[] code, out byte[] extraSections) {
 			var mbHeader = new MethodBodyHeader();
 
