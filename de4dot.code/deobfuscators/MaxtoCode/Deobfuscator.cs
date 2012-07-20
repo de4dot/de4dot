@@ -49,6 +49,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 	class Deobfuscator : DeobfuscatorBase {
 		Options options;
 		MainType mainType;
+		DecrypterInfo decrypterInfo;
 
 		internal class Options : OptionsBase {
 		}
@@ -88,10 +89,11 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			if (!mainType.Detected)
 				return false;
 
-			var fileDecrypter = new FileDecrypter(mainType);
-
 			var fileData = DeobUtils.readModule(module);
-			if (!fileDecrypter.decrypt(fileData, ref dumpedMethods))
+			decrypterInfo = new DecrypterInfo(mainType, fileData);
+			var fileDecrypter = new FileDecrypter(decrypterInfo);
+
+			if (!fileDecrypter.decrypt(ref dumpedMethods))
 				return false;
 
 			newFileData = fileData;
@@ -102,6 +104,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			var newOne = new Deobfuscator(options);
 			newOne.setModule(module);
 			newOne.mainType = new MainType(module, mainType);
+			newOne.decrypterInfo = decrypterInfo;
 			return newOne;
 		}
 

@@ -70,6 +70,10 @@
     <Compile Include="deobfuscators\DeepSea\ArrayBlockState.cs" />
     <Compile Include="deobfuscators\MaxtoCode\CryptDecrypter.cs" />
     <Compile Include="deobfuscators\MaxtoCode\Decrypter6.cs" />
+    <Compile Include="deobfuscators\MaxtoCode\DecrypterInfo.cs" />
+    <Compile Include="deobfuscators\MaxtoCode\EncryptionInfos.cs" />
+    <Compile Include="deobfuscators\MaxtoCode\McKey.cs" />
+    <Compile Include="deobfuscators\MaxtoCode\PeHeader.cs" />
     <Compile Include="deobfuscators\MethodBodyReaderBase.cs" />
     <Compile Include="deobfuscators\Babel_NET\MethodsDecrypter.cs" />
     <Compile Include="deobfuscators\Babel_NET\ProxyDelegateFinder.cs" />
