@@ -68,6 +68,8 @@
     <Compile Include="deobfuscators\Babel_NET\MethodBodyReader.cs" />
     <Compile Include="deobfuscators\Babel_NET\MethodReferenceReader.cs" />
     <Compile Include="deobfuscators\DeepSea\ArrayBlockState.cs" />
+    <Compile Include="deobfuscators\MaxtoCode\CryptDecrypter.cs" />
+    <Compile Include="deobfuscators\MaxtoCode\Decrypter6.cs" />
     <Compile Include="deobfuscators\MethodBodyReaderBase.cs" />
     <Compile Include="deobfuscators\Babel_NET\MethodsDecrypter.cs" />
     <Compile Include="deobfuscators\Babel_NET\ProxyDelegateFinder.cs" />
