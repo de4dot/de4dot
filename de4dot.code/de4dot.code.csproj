@@ -78,6 +78,7 @@
     <Compile Include="deobfuscators\MaxtoCode\McKey.cs" />
     <Compile Include="deobfuscators\MaxtoCode\PeHeader.cs" />
     <Compile Include="deobfuscators\MaxtoCode\StringDecrypter.cs" />
+    <Compile Include="deobfuscators\CryptoObfuscator\ConstantsDecrypter.cs" />
     <Compile Include="deobfuscators\MethodBodyReaderBase.cs" />
     <Compile Include="deobfuscators\Babel_NET\MethodsDecrypter.cs" />
     <Compile Include="deobfuscators\Babel_NET\ProxyCallFixer.cs" />
