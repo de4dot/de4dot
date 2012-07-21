@@ -318,6 +318,22 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
+		public void encrypt_LE(byte[] data) {
+			for (int i = 0; i + 8 <= data.Length; i += 8) {
+				uint xl = BitConverter.ToUInt32(data, i);
+				uint xr = BitConverter.ToUInt32(data, i + 4);
+				encrypt(ref xl, ref xr);
+				data[i] = (byte)xl;
+				data[i + 1] = (byte)(xl >> 8);
+				data[i + 2] = (byte)(xl >> 16);
+				data[i + 3] = (byte)(xl >> 24);
+				data[i + 4] = (byte)xr;
+				data[i + 5] = (byte)(xr >> 8);
+				data[i + 6] = (byte)(xr >> 16);
+				data[i + 7] = (byte)(xr >> 24);
+			}
+		}
+
 		public void encrypt(byte[] data) {
 			for (int i = 0; i + 8 <= data.Length; i += 8) {
 				uint xl = (uint)((data[i] << 24) | (data[i + 1] << 16) | (data[i + 2] << 8) | data[i + 3]);
@@ -345,6 +361,22 @@ namespace de4dot.code.deobfuscators {
 			}
 			rxr = xl ^ P[16];
 			rxl = xr ^ P[17];
+		}
+
+		public void decrypt_LE(byte[] data) {
+			for (int i = 0; i + 8 <= data.Length; i += 8) {
+				uint xl = BitConverter.ToUInt32(data, i);
+				uint xr = BitConverter.ToUInt32(data, i + 4);
+				decrypt(ref xl, ref xr);
+				data[i] = (byte)xl;
+				data[i + 1] = (byte)(xl >> 8);
+				data[i + 2] = (byte)(xl >> 16);
+				data[i + 3] = (byte)(xl >> 24);
+				data[i + 4] = (byte)xr;
+				data[i + 5] = (byte)(xr >> 8);
+				data[i + 6] = (byte)(xr >> 16);
+				data[i + 7] = (byte)(xr >> 24);
+			}
 		}
 
 		public void decrypt(byte[] data) {

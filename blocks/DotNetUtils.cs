@@ -464,9 +464,21 @@ namespace de4dot.blocks {
 		public static MethodDefinition getMethod(ModuleDefinition module, MethodReference method) {
 			if (method == null)
 				return null;
+			return getMethod(module, method, method.DeclaringType);
+		}
+
+		public static MethodDefinition getMethod2(ModuleDefinition module, MethodReference method) {
+			if (method == null)
+				return null;
+			return getMethod(module, method, method.DeclaringType.GetElementType());
+		}
+
+		static MethodDefinition getMethod(ModuleDefinition module, MethodReference method, TypeReference declaringType) {
+			if (method == null)
+				return null;
 			if (method is MethodDefinition)
 				return (MethodDefinition)method;
-			return getMethod(getType(module, method.DeclaringType), method);
+			return getMethod(getType(module, declaringType), method);
 		}
 
 		public static MethodDefinition getMethod(TypeDefinition type, string returnType, string parameters) {

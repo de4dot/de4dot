@@ -123,6 +123,8 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				var calledMethod = instr.Operand as MethodDefinition;
 				if (calledMethod == null)
 					continue;
+				if (getLdtokenField(calledMethod) == null)
+					continue;
 				var args = DsUtils.getArgValues(instrs, i);
 				if (args == null)
 					continue;

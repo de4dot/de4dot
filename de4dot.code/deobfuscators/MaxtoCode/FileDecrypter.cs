@@ -27,221 +27,7 @@ using de4dot.PE;
 namespace de4dot.code.deobfuscators.MaxtoCode {
 	// Decrypts methods and resources
 	class FileDecrypter {
-		MainType mainType;
-		PeImage peImage;
-		PeHeader peHeader;
-		McKey mcKey;
-		byte[] fileData;
-
-		class PeHeader {
-			const int XOR_KEY = 0x7ABF931;
-
-			EncryptionVersion version;
-			byte[] headerData;
-
-			public EncryptionVersion EncryptionVersion {
-				get { return version; }
-			}
-
-			public PeHeader(MainType mainType, PeImage peImage) {
-				uint headerOffset;
-				version = getHeaderOffsetAndVersion(peImage, out headerOffset);
-				headerData = peImage.offsetReadBytes(headerOffset, 0x1000);
-			}
-
-			public uint getMcKeyRva() {
-				return getRva2(0x0FFC, XOR_KEY);
-			}
-
-			public uint getRva1(int offset, uint xorKey) {
-				return (readUInt32(offset) ^ xorKey);
-			}
-
-			public uint getRva2(int offset, uint xorKey) {
-				return (readUInt32(offset) ^ xorKey);
-			}
-
-			public uint readUInt32(int offset) {
-				return BitConverter.ToUInt32(headerData, offset);
-			}
-
-			static EncryptionVersion getHeaderOffsetAndVersion(PeImage peImage, out uint headerOffset) {
-				headerOffset = 0;
-
-				var version = getVersion(peImage, headerOffset);
-				if (version != EncryptionVersion.Unknown)
-					return version;
-
-				var section = peImage.findSection(".rsrc");
-				if (section == null)
-					return EncryptionVersion.Unknown;
-
-				headerOffset = section.pointerToRawData;
-				uint end = section.pointerToRawData + section.sizeOfRawData - 0x1000 + 1;
-				while (headerOffset < end) {
-					version = getVersion(peImage, headerOffset);
-					if (version != EncryptionVersion.Unknown)
-						return version;
-					headerOffset++;
-				}
-
-				return EncryptionVersion.Unknown;
-			}
-
-			static EncryptionVersion getVersion(PeImage peImage, uint headerOffset) {
-				uint m1lo = peImage.offsetReadUInt32(headerOffset + 0x900);
-				uint m1hi = peImage.offsetReadUInt32(headerOffset + 0x904);
-
-				foreach (var info in encryptionInfos_Rva900h) {
-					if (info.MagicLo == m1lo && info.MagicHi == m1hi)
-						return info.Version;
-				}
-
-				return EncryptionVersion.Unknown;
-			}
-		}
-
-		class McKey {
-			PeHeader peHeader;
-			byte[] data;
-
-			public byte this[int index] {
-				get { return data[index]; }
-			}
-
-			public McKey(PeImage peImage, PeHeader peHeader) {
-				this.peHeader = peHeader;
-				this.data = peImage.readBytes(peHeader.getMcKeyRva(), 0x2000);
-			}
-
-			public byte readByte(int offset) {
-				return data[offset];
-			}
-
-			public uint readUInt32(int offset) {
-				return BitConverter.ToUInt32(data, offset);
-			}
-		}
-
-		enum EncryptionVersion {
-			Unknown,
-			V1,
-			V2,
-			V3,
-			V4,
-			V5,
-		}
-
-		class EncryptionInfo {
-			public uint MagicLo { get; set; }
-			public uint MagicHi { get; set; }
-			public EncryptionVersion Version { get; set; }
-		}
-
-		static readonly EncryptionInfo[] encryptionInfos_Rva900h = new EncryptionInfo[] {
-			// PE header timestamp
-			// 462FA2D2 = Wed, 25 Apr 2007 18:49:54 (3.20)
-			new EncryptionInfo {
-				MagicLo = 0xA098B387,
-				MagicHi = 0x1E8EBCA3,
-				Version = EncryptionVersion.V1,
-			},
-			// 482384FB = Thu, 08 May 2008 22:55:55 (3.36)
-			new EncryptionInfo {
-				MagicLo = 0xAA98B387,
-				MagicHi = 0x1E8EECA3,
-				Version = EncryptionVersion.V2,
-			},
-			// 4A5EEC64 = Thu, 16 Jul 2009 09:01:24
-			// 4C6220EC = Wed, 11 Aug 2010 04:02:52
-			// 4C622357 = Wed, 11 Aug 2010 04:13:11
-			new EncryptionInfo {
-				MagicLo = 0xAA98B387,
-				MagicHi = 0x128EECA3,
-				Version = EncryptionVersion.V2,
-			},
-			// 4C6E4605 = Fri, 20 Aug 2010 09:08:21
-			// 4D0E220D = Sun, 19 Dec 2010 15:17:33
-			// 4DC2FC75 = Thu, 05 May 2011 19:37:25
-			// 4DFA3D5D = Thu, 16 Jun 2011 17:29:01
-			new EncryptionInfo {
-				MagicLo = 0xAA98B387,
-				MagicHi = 0xF28EECA3,
-				Version = EncryptionVersion.V2,
-			},
-			// 4DC2FE0C = Thu, 05 May 2011 19:44:12
-			new EncryptionInfo {
-				MagicLo = 0xAA98B387,
-				MagicHi = 0xF28EEAA3,
-				Version = EncryptionVersion.V2,
-			},
-			// 4ED76740 = Thu, 01 Dec 2011 11:38:40
-			// 4EE1FAD1 = Fri, 09 Dec 2011 12:10:57
-			new EncryptionInfo {
-				MagicLo = 0xAA983B87,
-				MagicHi = 0xF28EECA3,
-				Version = EncryptionVersion.V3,
-			},
-			// 4F832868 = Mon, Apr 09 2012 20:20:24
-			new EncryptionInfo {
-				MagicLo = 0xAA913B87,
-				MagicHi = 0xF28EE0A3,
-				Version = EncryptionVersion.V4,
-			},
-			// 4F8E262C = Wed, 18 Apr 2012 02:25:48
-			new EncryptionInfo {
-				MagicLo = 0xBA983B87,
-				MagicHi = 0xF28EDDA3,
-				Version = EncryptionVersion.V5,
-			},
-		};
-
-		static readonly EncryptionInfo[] encryptionInfos_McKey8C0h = new EncryptionInfo[] {
-			// 462FA2D2 = Wed, 25 Apr 2007 18:49:54 (3.20)
-			new EncryptionInfo {
-				MagicLo = 0x6AA13B13,
-				MagicHi = 0xD72B991F,
-				Version = EncryptionVersion.V1,
-			},
-			// 482384FB = Thu, 08 May 2008 22:55:55 (3.36)
-			new EncryptionInfo {
-				MagicLo = 0x6A713B13,
-				MagicHi = 0xD72B891F,
-				Version = EncryptionVersion.V2,
-			},
-			// 4A5EEC64 = Thu, 16 Jul 2009 09:01:24
-			// 4C6220EC = Wed, 11 Aug 2010 04:02:52
-			// 4C622357 = Wed, 11 Aug 2010 04:13:11
-			// 4C6E4605 = Fri, 20 Aug 2010 09:08:21
-			// 4D0E220D = Sun, 19 Dec 2010 15:17:33
-			// 4DC2FC75 = Thu, 05 May 2011 19:37:25
-			// 4DC2FE0C = Thu, 05 May 2011 19:44:12
-			// 4DFA3D5D = Thu, 16 Jun 2011 17:29:01
-			new EncryptionInfo {
-				MagicLo = 0x6A713B13,
-				MagicHi = 0xD72B891F,
-				Version = EncryptionVersion.V2,
-			},
-			// 4ED76740 = Thu, 01 Dec 2011 11:38:40
-			// 4EE1FAD1 = Fri, 09 Dec 2011 12:10:57
-			new EncryptionInfo {
-				MagicLo = 0x6A731B13,
-				MagicHi = 0xD72B891F,
-				Version = EncryptionVersion.V3,
-			},
-			// 4F832868 = Mon, Apr 09 2012 20:20:24
-			new EncryptionInfo {
-				MagicLo = 0x6AD31B13,
-				MagicHi = 0xD72B8A1F,
-				Version = EncryptionVersion.V4,
-			},
-			// 4F8E262C = Wed, 18 Apr 2012 02:25:48
-			new EncryptionInfo {
-				MagicLo = 0xAA731B13,
-				MagicHi = 0xD723891F,
-				Version = EncryptionVersion.V5,
-			},
-		};
+		DecrypterInfo decrypterInfo;
 
 		class MethodInfos {
 			MainType mainType;
@@ -253,8 +39,17 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			uint encryptedDataOffset;
 			uint xorKey;
 			Dictionary<uint, DecryptedMethodInfo> infos = new Dictionary<uint, DecryptedMethodInfo>();
-			IDecrypter decrypter;
+			List<IDecrypter> decrypters = new List<IDecrypter>();
 			const int ENCRYPTED_DATA_INFO_SIZE = 0x13;
+
+			delegate byte[] Decrypt(byte[] encrypted);
+			readonly Decrypt[] decryptHandlersV1;
+			readonly Decrypt[] decryptHandlersV2;
+			readonly Decrypt[] decryptHandlersV3;
+			readonly Decrypt[] decryptHandlersV4;
+			readonly Decrypt[] decryptHandlersV5a;
+			readonly Decrypt[] decryptHandlersV5b;
+			readonly Decrypt[] decryptHandlersV5c;
 
 			public class DecryptedMethodInfo {
 				public uint bodyRva;
@@ -272,10 +67,18 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				this.peHeader = peHeader;
 				this.mcKey = mcKey;
 
+				decryptHandlersV1 = new Decrypt[] { decrypt1a, decrypt4a, decrypt2a, decrypt3a, decrypt5, decrypt6, decrypt7 };
+				decryptHandlersV2 = new Decrypt[] { decrypt3a, decrypt2a, decrypt1a, decrypt4a, decrypt5, decrypt6, decrypt7 };
+				decryptHandlersV3 = new Decrypt[] { decrypt1a, decrypt2a, decrypt3a, decrypt4a, decrypt5, decrypt6, decrypt7 };
+				decryptHandlersV4 = new Decrypt[] { decrypt2a, decrypt1a, decrypt3a, decrypt4a, decrypt5, decrypt6, decrypt7 };
+				decryptHandlersV5a = new Decrypt[] { decrypt4a, decrypt2a, decrypt3a, decrypt1a, decrypt5, decrypt6, decrypt7 };
+				decryptHandlersV5b = new Decrypt[] { decrypt4b, decrypt2b, decrypt3b, decrypt1b, decrypt6, decrypt7, decrypt5 };
+				decryptHandlersV5c = new Decrypt[] { decrypt4c, decrypt2c, decrypt3c, decrypt1c, decrypt6, decrypt7, decrypt5 };
+
 				structSize = getStructSize(mcKey);
 
-				uint methodInfosRva = peHeader.getRva2(0x0FF8, mcKey.readUInt32(0x005A));
-				uint encryptedDataRva = peHeader.getRva2(0x0FF0, mcKey.readUInt32(0x0046));
+				uint methodInfosRva = peHeader.getRva(0x0FF8, mcKey.readUInt32(0x005A));
+				uint encryptedDataRva = peHeader.getRva(0x0FF0, mcKey.readUInt32(0x0046));
 
 				methodInfosOffset = peImage.rvaToOffset(methodInfosRva);
 				encryptedDataOffset = peImage.rvaToOffset(encryptedDataRva);
@@ -284,7 +87,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			static uint getStructSize(McKey mcKey) {
 				uint magicLo = mcKey.readUInt32(0x8C0);
 				uint magicHi = mcKey.readUInt32(0x8C4);
-				foreach (var info in encryptionInfos_McKey8C0h) {
+				foreach (var info in EncryptionInfos.McKey8C0h) {
 					if (magicLo == info.MagicLo && magicHi == info.MagicHi)
 						return 0xC + 6 * ENCRYPTED_DATA_INFO_SIZE;
 				}
@@ -298,7 +101,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				uint m2lo = mcKey.readUInt32(0x8C0);
 				uint m2hi = mcKey.readUInt32(0x8C4);
 
-				foreach (var info in encryptionInfos_McKey8C0h) {
+				foreach (var info in EncryptionInfos.McKey8C0h) {
 					if (info.MagicLo == m2lo && info.MagicHi == m2hi)
 						return info.Version;
 				}
@@ -346,42 +149,30 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			}
 
 			class Decrypter : IDecrypter {
-				MethodInfos methodInfos;
-				int[] typeToMethod;
+				Decrypt[] decrypterHandlers;
 
-				public Decrypter(MethodInfos methodInfos, int[] typeToMethod) {
-					this.methodInfos = methodInfos;
-					this.typeToMethod = typeToMethod;
+				public Decrypter(Decrypt[] decrypterHandlers) {
+					this.decrypterHandlers = decrypterHandlers;
 				}
 
 				public byte[] decrypt(int type, byte[] encrypted) {
-					if (0 <= type && type < typeToMethod.Length) {
-						switch (typeToMethod[type]) {
-						case 1: return methodInfos.decrypt1(encrypted);
-						case 2: return methodInfos.decrypt2(encrypted);
-						case 3: return methodInfos.decrypt3(encrypted);
-						case 4: return methodInfos.decrypt4(encrypted);
-						case 5: return methodInfos.decrypt5(encrypted);
-						case 6: return methodInfos.decrypt6(encrypted);
-						case 7: return methodInfos.decrypt7(encrypted);
-						}
-					}
+					if (1 <= type && type <= decrypterHandlers.Length)
+						return decrypterHandlers[type - 1](encrypted);
 					throw new ApplicationException(string.Format("Invalid encryption type: {0:X2}", type));
 				}
 			}
 
-			static readonly int[] typeToTypesV1 = new int[] { -1, 1, 4, 2, 3, 5, 6, 7 };
-			static readonly int[] typeToTypesV2 = new int[] { -1, 3, 2, 1, 4, 5, 6, 7 };
-			static readonly int[] typeToTypesV3 = new int[] { -1, 1, 2, 3, 4, 5, 6, 7 };
-			static readonly int[] typeToTypesV4 = new int[] { -1, 2, 1, 3, 4, 5, 6, 7 };
-			static readonly int[] typeToTypesV5 = new int[] { -1, 4, 2, 3, 1, 5, 6, 7 };
 			void initializeDecrypter() {
 				switch (getVersion()) {
-				case EncryptionVersion.V1: decrypter = new Decrypter(this, typeToTypesV1); break;
-				case EncryptionVersion.V2: decrypter = new Decrypter(this, typeToTypesV2); break;
-				case EncryptionVersion.V3: decrypter = new Decrypter(this, typeToTypesV3); break;
-				case EncryptionVersion.V4: decrypter = new Decrypter(this, typeToTypesV4); break;
-				case EncryptionVersion.V5: decrypter = new Decrypter(this, typeToTypesV5); break;
+				case EncryptionVersion.V1: decrypters.Add(new Decrypter(decryptHandlersV1)); break;
+				case EncryptionVersion.V2: decrypters.Add(new Decrypter(decryptHandlersV2)); break;
+				case EncryptionVersion.V3: decrypters.Add(new Decrypter(decryptHandlersV3)); break;
+				case EncryptionVersion.V4: decrypters.Add(new Decrypter(decryptHandlersV4)); break;
+				case EncryptionVersion.V5:
+					decrypters.Add(new Decrypter(decryptHandlersV5a));
+					decrypters.Add(new Decrypter(decryptHandlersV5b));
+					decrypters.Add(new Decrypter(decryptHandlersV5c));
+					break;
 
 				case EncryptionVersion.Unknown:
 				default:
@@ -391,7 +182,23 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 
 			public void initializeInfos() {
 				initializeDecrypter();
+				if (!initializeInfos2())
+					throw new ApplicationException("Could not decrypt methods");
+			}
 
+			bool initializeInfos2() {
+				foreach (var decrypter in decrypters) {
+					try {
+						if (initializeInfos2(decrypter))
+							return true;
+					}
+					catch {
+					}
+				}
+				return false;
+			}
+
+			bool initializeInfos2(IDecrypter decrypter) {
 				int numMethods = readInt32(0) ^ readInt32(4);
 				if (numMethods < 0)
 					throw new ApplicationException("Invalid number of encrypted methods");
@@ -405,8 +212,6 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 					uint methodBodyRva = readEncryptedUInt32(offset);
 					uint totalSize = readEncryptedUInt32(offset + 4);
 					uint methodInstructionRva = readEncryptedUInt32(offset + 8);
-
-					var decryptedData = new byte[totalSize];
 
 					// Read the method body header and method body (instrs + exception handlers).
 					// The method body header is always in the first one. The instrs + ex handlers
@@ -425,18 +230,24 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 						if (j == 1 && exOffset == 0)
 							encryptedDataInfos[j] = null;
 						else
-							encryptedDataInfos[j] = decrypt(encryptionType, dataOffset, encryptedSize, realSize);
+							encryptedDataInfos[j] = decrypt(decrypter, encryptionType, dataOffset, encryptedSize, realSize);
 					}
 
+					var decryptedData = new byte[totalSize];
 					int copyOffset = 0;
 					copyOffset = copyData(decryptedData, encryptedDataInfos[0], copyOffset);
 					for (int j = 2; j < encryptedDataInfos.Length; j++)
 						copyOffset = copyData(decryptedData, encryptedDataInfos[j], copyOffset);
 					copyData(decryptedData, encryptedDataInfos[1], exOffset); // Exceptions or padding
 
+					if (!MethodBodyParser.verify(decryptedData))
+						throw new InvalidMethodBody();
+
 					var info = new DecryptedMethodInfo(methodBodyRva, decryptedData);
 					infos[info.bodyRva] = info;
 				}
+
+				return true;
 			}
 
 			static int copyData(byte[] dest, byte[] source, int offset) {
@@ -450,7 +261,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				return peImage.offsetReadBytes(encryptedDataOffset + offset, size);
 			}
 
-			byte[] decrypt(int type, uint dataOffset, uint encryptedSize, uint realSize) {
+			byte[] decrypt(IDecrypter decrypter, int type, uint dataOffset, uint encryptedSize, uint realSize) {
 				if (realSize == 0)
 					return null;
 				if (realSize > encryptedSize)
@@ -464,17 +275,43 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				return decrypted;
 			}
 
-			byte[] decrypt1(byte[] encrypted) {
+			byte[] decrypt1a(byte[] encrypted) {
+				return decrypt1(encrypted, 0, 0, 0x2000);
+			}
+
+			byte[] decrypt1b(byte[] encrypted) {
+				return decrypt1(encrypted, 6, 6, 0x500);
+			}
+
+			byte[] decrypt1c(byte[] encrypted) {
+				return decrypt1(encrypted, 6, 0, 0x1000);
+			}
+
+			byte[] decrypt1(byte[] encrypted, int keyStart, int keyReset, int keyEnd) {
 				var decrypted = new byte[encrypted.Length];
-				for (int i = 0; i < decrypted.Length; i++)
-					decrypted[i] = (byte)(encrypted[i] ^ mcKey.readByte(i % 0x2000));
+				for (int i = 0, ki = keyStart; i < decrypted.Length; i++) {
+					decrypted[i] = (byte)(encrypted[i] ^ mcKey.readByte(ki));
+					if (++ki == keyEnd)
+						ki = keyReset;
+				}
 				return decrypted;
 			}
 
-			byte[] decrypt2(byte[] encrypted) {
+			byte[] decrypt2a(byte[] encrypted) {
+				return decrypt2(encrypted, 0x00FA);
+			}
+
+			byte[] decrypt2b(byte[] encrypted) {
+				return decrypt2(encrypted, 0x00FA + 9);
+			}
+
+			byte[] decrypt2c(byte[] encrypted) {
+				return decrypt2(encrypted, 0x00FA + 0x24);
+			}
+
+			byte[] decrypt2(byte[] encrypted, int offset) {
 				if ((encrypted.Length & 7) != 0)
 					throw new ApplicationException("Invalid encryption #2 length");
-				const int offset = 0x00FA;
 				uint key4 = mcKey.readUInt32(offset + 4 * 4);
 				uint key5 = mcKey.readUInt32(offset + 5 * 4);
 
@@ -495,11 +332,22 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				return decrypted;
 			}
 
-			static byte[] decrypt3Shifts = new byte[16] { 5, 11, 14, 21, 6, 20, 17, 29, 4, 10, 3, 2, 7, 1, 26, 18 };
-			byte[] decrypt3(byte[] encrypted) {
+			byte[] decrypt3a(byte[] encrypted) {
+				return decrypt3(encrypted, 0x015E);
+			}
+
+			byte[] decrypt3b(byte[] encrypted) {
+				return decrypt3(encrypted, 0x015E + 0xE5);
+			}
+
+			byte[] decrypt3c(byte[] encrypted) {
+				return decrypt3(encrypted, 0x015E + 0x28);
+			}
+
+			static readonly byte[] decrypt3Shifts = new byte[16] { 5, 11, 14, 21, 6, 20, 17, 29, 4, 10, 3, 2, 7, 1, 26, 18 };
+			byte[] decrypt3(byte[] encrypted, int offset) {
 				if ((encrypted.Length & 7) != 0)
 					throw new ApplicationException("Invalid encryption #3 length");
-				const int offset = 0x015E;
 				uint key0 = mcKey.readUInt32(offset + 0 * 4);
 				uint key3 = mcKey.readUInt32(offset + 3 * 4);
 
@@ -525,50 +373,79 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				return decrypted;
 			}
 
-			byte[] decrypt4(byte[] encrypted) {
+			byte[] decrypt4a(byte[] encrypted) {
+				return decrypt4(encrypted, 0, 0, 0x2000);
+			}
+
+			byte[] decrypt4b(byte[] encrypted) {
+				return decrypt4(encrypted, 0x14, 0x14, 0x1000);
+			}
+
+			byte[] decrypt4c(byte[] encrypted) {
+				return decrypt4(encrypted, 5, 0, 0x2000);
+			}
+
+			byte[] decrypt4(byte[] encrypted, int keyStart, int keyReset, int keyEnd) {
 				var decrypted = new byte[encrypted.Length / 3 * 2 + 1];
 
 				int count = encrypted.Length / 3;
-				int i = 0, j = 0, k = 0;
+				int i = 0, ki = keyStart, j = 0;
 				while (count-- > 0) {
-					byte k1 = mcKey.readByte(j + 1);
-					byte k2 = mcKey.readByte(j + 2);
-					byte k3 = mcKey.readByte(j + 3);
-					decrypted[k++] = (byte)(((encrypted[i + 1] ^ k2) >> 4) | ((encrypted[i] ^ k1) & 0xF0));
-					decrypted[k++] = (byte)(((encrypted[i + 1] ^ k2) << 4) + ((encrypted[i + 2] ^ k3) & 0x0F));
+					byte k1 = mcKey.readByte(ki + 1);
+					byte k2 = mcKey.readByte(ki + 2);
+					byte k3 = mcKey.readByte(ki + 3);
+					decrypted[j++] = (byte)(((encrypted[i + 1] ^ k2) >> 4) | ((encrypted[i] ^ k1) & 0xF0));
+					decrypted[j++] = (byte)(((encrypted[i + 1] ^ k2) << 4) + ((encrypted[i + 2] ^ k3) & 0x0F));
 					i += 3;
-					j = (j + 4) % 0x2000;
+					ki += 4;
+					if (ki == keyEnd)
+						ki = keyReset;
 				}
 
 				if ((encrypted.Length % 3) != 0)
-					decrypted[k] = (byte)(encrypted[i] ^ mcKey.readByte(j));
+					decrypted[j] = (byte)(encrypted[i] ^ mcKey.readByte(ki));
 
 				return decrypted;
 			}
 
 			byte[] decrypt5(byte[] encrypted) {
-				throw new NotImplementedException("Encryption type #5 not implemented yet");
+				return CryptDecrypter.decrypt(mcKey.readBytes(0x0032, 15), encrypted);
 			}
 
 			byte[] decrypt6(byte[] encrypted) {
-				throw new NotImplementedException("Encryption type #6 not implemented yet");
+				return Decrypter6.decrypt(mcKey.readBytes(0x0096, 32), encrypted);
 			}
 
 			byte[] decrypt7(byte[] encrypted) {
-				throw new NotImplementedException("Encryption type #7 not implemented yet");
+				var decrypted = (byte[])encrypted.Clone();
+				new Blowfish(getBlowfishKey()).decrypt_LE(decrypted);
+				return decrypted;
+			}
+
+			byte[] blowfishKey;
+			byte[] getBlowfishKey() {
+				if (blowfishKey != null)
+					return blowfishKey;
+				var key = new byte[100];
+				int i;
+				for (i = 0; i < key.Length; i++) {
+					byte b = mcKey.readByte(i);
+					if (b == 0)
+						break;
+					key[i] = b;
+				}
+				for (; i < key.Length; i++)
+					key[i] = 0;
+				key[key.Length - 1] = 0;
+				return blowfishKey = key;
 			}
 		}
 
-		public FileDecrypter(MainType mainType) {
-			this.mainType = mainType;
+		public FileDecrypter(DecrypterInfo decrypterInfo) {
+			this.decrypterInfo = decrypterInfo;
 		}
 
-		public bool decrypt(byte[] fileData, ref DumpedMethods dumpedMethods) {
-			peImage = new PeImage(fileData);
-			peHeader = new PeHeader(mainType, peImage);
-			mcKey = new McKey(peImage, peHeader);
-			this.fileData = fileData;
-
+		public bool decrypt(ref DumpedMethods dumpedMethods) {
 			dumpedMethods = decryptMethods();
 			if (dumpedMethods == null)
 				return false;
@@ -582,7 +459,8 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		DumpedMethods decryptMethods() {
 			var dumpedMethods = new DumpedMethods();
 
-			var methodInfos = new MethodInfos(mainType, peImage, peHeader, mcKey);
+			var peImage = decrypterInfo.peImage;
+			var methodInfos = new MethodInfos(decrypterInfo.mainType, peImage, decrypterInfo.peHeader, decrypterInfo.mcKey);
 			methodInfos.initializeInfos();
 
 			var metadataTables = peImage.Cor20Header.createMetadataTables();
@@ -641,7 +519,12 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		}
 
 		void decryptResources() {
-			uint resourceRva = peHeader.getRva1(0x0E10, mcKey.readUInt32(0x00A0));
+			var peHeader = decrypterInfo.peHeader;
+			var mcKey = decrypterInfo.mcKey;
+			var peImage = decrypterInfo.peImage;
+			var fileData = decrypterInfo.fileData;
+
+			uint resourceRva = peHeader.getRva(0x0E10, mcKey.readUInt32(0x00A0));
 			uint resourceSize = peHeader.readUInt32(0x0E14) ^ mcKey.readUInt32(0x00AA);
 			if (resourceRva == 0 || resourceSize == 0)
 				return;
@@ -658,7 +541,12 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		}
 
 		void decryptStrings() {
-			uint usHeapRva = peHeader.getRva1(0x0E00, mcKey.readUInt32(0x0078));
+			var peHeader = decrypterInfo.peHeader;
+			var mcKey = decrypterInfo.mcKey;
+			var peImage = decrypterInfo.peImage;
+			var fileData = decrypterInfo.fileData;
+
+			uint usHeapRva = peHeader.getRva(0x0E00, mcKey.readUInt32(0x0078));
 			uint usHeapSize = peHeader.readUInt32(0x0E04) ^ mcKey.readUInt32(0x0082);
 			if (usHeapRva == 0 || usHeapSize == 0)
 				return;

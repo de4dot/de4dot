@@ -127,6 +127,29 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return false;
 		}
 
+		static void removeInitializeArrayCall(MethodDefinition method, FieldDefinition field) {
+			var instrs = method.Body.Instructions;
+			for (int i = 0; i < instrs.Count - 1; i++) {
+				var ldtoken = instrs[i];
+				if (ldtoken.OpCode.Code != Code.Ldtoken)
+					continue;
+				if (ldtoken.Operand != field)
+					continue;
+
+				var call = instrs[i + 1];
+				if (call.OpCode.Code != Code.Call)
+					continue;
+				var calledMethod = call.Operand as MethodReference;
+				if (calledMethod == null)
+					continue;
+				if (calledMethod.ToString() != "System.Void System.Runtime.CompilerServices.RuntimeHelpers::InitializeArray(System.Array,System.RuntimeFieldHandle)")
+					continue;
+
+				instrs[i] = Instruction.Create(OpCodes.Pop);
+				instrs[i + 1] = Instruction.Create(OpCodes.Nop);
+			}
+		}
+
 		class DecrypterInfo41 : IDecrypterInfo {
 			MethodDefinition cctor;
 			int magic;
@@ -358,6 +381,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			public void cleanup() {
 				arrayInfo.initField.InitialValue = new byte[1];
 				arrayInfo.initField.FieldType = arrayInfo.initField.Module.TypeSystem.Byte;
+				removeInitializeArrayCall(cctor, arrayInfo.initField);
 			}
 		}
 
@@ -516,6 +540,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			public void cleanup() {
 				encryptedDataField.InitialValue = new byte[1];
 				encryptedDataField.FieldType = encryptedDataField.Module.TypeSystem.Byte;
+				removeInitializeArrayCall(cctor, encryptedDataField);
 			}
 		}
 

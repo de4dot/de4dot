@@ -22,6 +22,7 @@ using Mono.Cecil;
 namespace de4dot.code.deobfuscators {
 	public interface ISimpleDeobfuscator {
 		void deobfuscate(MethodDefinition method);
+		void deobfuscate(MethodDefinition method, bool force);
 		void decryptStrings(MethodDefinition method, IDeobfuscator deob);
 	}
 }

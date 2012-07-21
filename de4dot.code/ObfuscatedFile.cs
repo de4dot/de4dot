@@ -731,7 +731,11 @@ namespace de4dot.code {
 		}
 
 		void ISimpleDeobfuscator.deobfuscate(MethodDefinition method) {
-			if (check(method, SimpleDeobFlags.HasDeobfuscated))
+			((ISimpleDeobfuscator)this).deobfuscate(method, false);
+		}
+
+		void ISimpleDeobfuscator.deobfuscate(MethodDefinition method, bool force) {
+			if (!force && check(method, SimpleDeobFlags.HasDeobfuscated))
 				return;
 
 			deobfuscate(method, "Deobfuscating control flow", (blocks) => {

@@ -17,17 +17,22 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using System.Reflection;
-using System.Runtime.InteropServices;
+using de4dot.PE;
 
-[assembly: AssemblyTitle("Test.Rename")]
-[assembly: AssemblyDescription("Other renamer tests")]
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Test.Rename")]
-[assembly: AssemblyCopyright("Copyright (C) 2011-2012 de4dot@gmail.com")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
-[assembly: ComVisible(false)]
-[assembly: AssemblyVersion("1.8.7.3405")]
-[assembly: AssemblyFileVersion("1.8.7.3405")]
+namespace de4dot.code.deobfuscators.MaxtoCode {
+	class DecrypterInfo {
+		public readonly MainType mainType;
+		public readonly PeImage peImage;
+		public readonly PeHeader peHeader;
+		public readonly McKey mcKey;
+		public readonly byte[] fileData;
+
+		public DecrypterInfo(MainType mainType, byte[] fileData) {
+			this.mainType = mainType;
+			this.peImage = new PeImage(fileData);
+			this.peHeader = new PeHeader(mainType, peImage);
+			this.mcKey = new McKey(peImage, peHeader);
+			this.fileData = fileData;
+		}
+	}
+}
