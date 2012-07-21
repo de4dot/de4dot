@@ -49,6 +49,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			readonly Decrypt[] decryptHandlersV4;
 			readonly Decrypt[] decryptHandlersV5a;
 			readonly Decrypt[] decryptHandlersV5b;
+			readonly Decrypt[] decryptHandlersV5c;
 
 			public class DecryptedMethodInfo {
 				public uint bodyRva;
@@ -72,6 +73,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				decryptHandlersV4 = new Decrypt[] { decrypt2a, decrypt1a, decrypt3a, decrypt4a, decrypt5, decrypt6, decrypt7 };
 				decryptHandlersV5a = new Decrypt[] { decrypt4a, decrypt2a, decrypt3a, decrypt1a, decrypt5, decrypt6, decrypt7 };
 				decryptHandlersV5b = new Decrypt[] { decrypt4b, decrypt2b, decrypt3b, decrypt1b, decrypt6, decrypt7, decrypt5 };
+				decryptHandlersV5c = new Decrypt[] { decrypt4c, decrypt2c, decrypt3c, decrypt1c, decrypt6, decrypt7, decrypt5 };
 
 				structSize = getStructSize(mcKey);
 
@@ -169,6 +171,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				case EncryptionVersion.V5:
 					decrypters.Add(new Decrypter(decryptHandlersV5a));
 					decrypters.Add(new Decrypter(decryptHandlersV5b));
+					decrypters.Add(new Decrypter(decryptHandlersV5c));
 					break;
 
 				case EncryptionVersion.Unknown:
@@ -273,19 +276,23 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			}
 
 			byte[] decrypt1a(byte[] encrypted) {
-				return decrypt1(encrypted, 0, 0x2000);
+				return decrypt1(encrypted, 0, 0, 0x2000);
 			}
 
 			byte[] decrypt1b(byte[] encrypted) {
-				return decrypt1(encrypted, 6, 0x500);
+				return decrypt1(encrypted, 6, 6, 0x500);
 			}
 
-			byte[] decrypt1(byte[] encrypted, int keyStart, int keyEnd) {
+			byte[] decrypt1c(byte[] encrypted) {
+				return decrypt1(encrypted, 6, 0, 0x1000);
+			}
+
+			byte[] decrypt1(byte[] encrypted, int keyStart, int keyReset, int keyEnd) {
 				var decrypted = new byte[encrypted.Length];
 				for (int i = 0, ki = keyStart; i < decrypted.Length; i++) {
 					decrypted[i] = (byte)(encrypted[i] ^ mcKey.readByte(ki));
 					if (++ki == keyEnd)
-						ki = keyStart;
+						ki = keyReset;
 				}
 				return decrypted;
 			}
@@ -296,6 +303,10 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 
 			byte[] decrypt2b(byte[] encrypted) {
 				return decrypt2(encrypted, 0x00FA + 9);
+			}
+
+			byte[] decrypt2c(byte[] encrypted) {
+				return decrypt2(encrypted, 0x00FA + 0x24);
 			}
 
 			byte[] decrypt2(byte[] encrypted, int offset) {
@@ -329,6 +340,10 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				return decrypt3(encrypted, 0x015E + 0xE5);
 			}
 
+			byte[] decrypt3c(byte[] encrypted) {
+				return decrypt3(encrypted, 0x015E + 0x28);
+			}
+
 			static readonly byte[] decrypt3Shifts = new byte[16] { 5, 11, 14, 21, 6, 20, 17, 29, 4, 10, 3, 2, 7, 1, 26, 18 };
 			byte[] decrypt3(byte[] encrypted, int offset) {
 				if ((encrypted.Length & 7) != 0)
@@ -359,14 +374,18 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			}
 
 			byte[] decrypt4a(byte[] encrypted) {
-				return decrypt4(encrypted, 0, 0x2000);
+				return decrypt4(encrypted, 0, 0, 0x2000);
 			}
 
 			byte[] decrypt4b(byte[] encrypted) {
-				return decrypt4(encrypted, 0x14, 0x1000);
+				return decrypt4(encrypted, 0x14, 0x14, 0x1000);
 			}
 
-			byte[] decrypt4(byte[] encrypted, int keyStart, int keyEnd) {
+			byte[] decrypt4c(byte[] encrypted) {
+				return decrypt4(encrypted, 5, 0, 0x2000);
+			}
+
+			byte[] decrypt4(byte[] encrypted, int keyStart, int keyReset, int keyEnd) {
 				var decrypted = new byte[encrypted.Length / 3 * 2 + 1];
 
 				int count = encrypted.Length / 3;
@@ -380,7 +399,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 					i += 3;
 					ki += 4;
 					if (ki == keyEnd)
-						ki = keyStart;
+						ki = keyReset;
 				}
 
 				if ((encrypted.Length % 3) != 0)
