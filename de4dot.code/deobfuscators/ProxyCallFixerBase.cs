@@ -340,7 +340,7 @@ namespace de4dot.code.deobfuscators {
 					if (call.OpCode != OpCodes.Call && call.OpCode != OpCodes.Callvirt)
 						continue;
 					var methodRef = call.Operand as MethodReference;
-					if (methodRef.Name != "Invoke")
+					if (methodRef == null || methodRef.Name != "Invoke")
 						continue;
 					var method = DotNetUtils.getMethod(module, methodRef);
 					if (method == null)
