@@ -89,6 +89,7 @@ namespace de4dot.mdecrypt {
 		IntPtr hInstModule;
 		IntPtr ourCompMem;
 		bool compileMethodIsThisCall;
+		IntPtr ourCodeAddr;
 
 		de4dot.PE.MetadataType methodDefTable;
 		IntPtr methodDefTablePtr;
@@ -127,7 +128,7 @@ namespace de4dot.mdecrypt {
 		const uint PAGE_EXECUTE_READWRITE = 0x40;
 
 		[DllImport("kernel32")]
-		static extern void DebugBreak();
+		static extern IntPtr VirtualAlloc(IntPtr lpAddress, UIntPtr dwSize, uint flAllocationType, uint flProtect);
 
 		delegate IntPtr GetJit();
 		delegate int CompileMethod(IntPtr jitter, IntPtr comp, IntPtr info, uint flags, IntPtr nativeEntry, IntPtr nativeSizeOfCode, out bool handled);
@@ -199,13 +200,17 @@ namespace de4dot.mdecrypt {
 
 			prepareMethods();
 			initializeDelegateFunctionPointers();
-			installOurCode(createOurCode(origCompileMethod));
+			createOurCode();
 			callMethodDelegate = (CallMethod)Marshal.GetDelegateForFunctionPointer(callMethod, typeof(CallMethod));
 
+			writeCompileMethod(ourCompileMethodInfo.ptrInDll);
+		}
+
+		unsafe void writeCompileMethod(IntPtr newCompileMethod) {
 			uint oldProtect;
 			if (!VirtualProtect(jitterVtbl, IntPtr.Size, PAGE_EXECUTE_READWRITE, out oldProtect))
 				throw new ApplicationException("Could not enable write access to jitter vtbl");
-			*(IntPtr*)jitterVtbl = ourCompileMethodInfo.ptrInDll;
+			*(IntPtr*)jitterVtbl = newCompileMethod;
 			VirtualProtect(jitterVtbl, IntPtr.Size, oldProtect, out oldProtect);
 		}
 
@@ -265,17 +270,11 @@ namespace de4dot.mdecrypt {
 				RuntimeHelpers.PrepareMethod(methodInfo.MethodHandle);
 		}
 
-		unsafe byte[] createOurCode(IntPtr compileMethod) {
+		unsafe void createOurCode() {
 			var code = new NativeCodeGenerator();
-
-			var origCode = new byte[0x60];
-			Marshal.Copy(compileMethod, origCode, 0, origCode.Length);
 
 			// our compileMethod() func
 			int compileMethodOffset = code.Size;
-			code.writeByte(0xE9);
-			code.writeDword((uint)origCode.Length);
-			writeOriginalCode(code, origCode, compileMethod);
 
 			int numPushedArgs = compileMethodIsThisCall ? 5 : 6;
 
@@ -318,40 +317,20 @@ namespace de4dot.mdecrypt {
 			code.writeCall(returnNameOfMethodInfo.ptr);
 			code.writeBytes(0xC2, (ushort)(IntPtr.Size * 3));
 
-			IntPtr baseAddr = new IntPtr((byte*)jitterTextFreeMem - code.Size);
+			ourCodeAddr = VirtualAlloc(IntPtr.Zero, new UIntPtr((ulong)code.Size), 0x00001000, PAGE_EXECUTE_READWRITE);
+			IntPtr baseAddr = ourCodeAddr;
 			ourCompileMethodInfo.ptrInDll = new IntPtr((byte*)baseAddr + compileMethodOffset);
 			callMethod = new IntPtr((byte*)baseAddr + callMethodOffset);
 			returnMethodTokenInfo.ptrInDll = new IntPtr((byte*)baseAddr + getMethodTokenOffset);
 			returnNameOfMethodInfo.ptrInDll = new IntPtr((byte*)baseAddr + getMethodNameOffset);
-			return code.getCode(baseAddr);
+			byte[] theCode = code.getCode(baseAddr);
+			Marshal.Copy(theCode, 0, baseAddr, theCode.Length);
 		}
 
 		// Writes push dword ptr [esp+displ]
 		static void writePushDwordPtrEspDispl(NativeCodeGenerator code, sbyte displ) {
 			code.writeBytes(0xFF, 0x74);
 			code.writeBytes(0x24, (byte)displ);
-		}
-
-		static void writeOriginalCode(NativeCodeGenerator code, byte[] origCode, IntPtr origAddr) {
-			for (int i = 0; i < origCode.Length; i++) {
-				byte b = origCode[i];
-				if (b != 0xE8 || i + 5 >= origCode.Length) {
-					code.writeByte(b);
-					continue;
-				}
-
-				IntPtr dest = new IntPtr(origAddr.ToInt64() + i + 5 + BitConverter.ToInt32(origCode, i + 1));
-				code.writeCall(dest);
-				i += 4;
-			}
-		}
-
-		void installOurCode(byte[] ourCode) {
-			uint oldProtect;
-			if (!VirtualProtect(ourCompileMethodInfo.ptrInDll, ourCode.Length, PAGE_EXECUTE_READWRITE, out oldProtect))
-				throw new ApplicationException("Could not enable write access to jitter DLL");
-			Marshal.Copy(ourCode, 0, ourCompileMethodInfo.ptrInDll, ourCode.Length);
-			VirtualProtect(ourCompileMethodInfo.ptrInDll, ourCode.Length, oldProtect, out oldProtect);
 		}
 
 		static IntPtr getJitterDllHandle() {
@@ -392,6 +371,7 @@ namespace de4dot.mdecrypt {
 				uint codeRva = (uint)((byte*)info2->ILCode - (byte*)hInstModule);
 				if (decryptMethodsInfo.moduleCctorBytes != null && moduleCctorCodeRva != 0 && moduleCctorCodeRva == codeRva) {
 					fixed (byte* newIlCodeBytes = &decryptMethodsInfo.moduleCctorBytes[0]) {
+						writeCompileMethod(origCompileMethod);
 						info2->ILCode = new IntPtr(newIlCodeBytes);
 						info2->ILCodeSize = (uint)decryptMethodsInfo.moduleCctorBytes.Length;
 						handled = true;
@@ -470,6 +450,10 @@ namespace de4dot.mdecrypt {
 		}
 
 		public DumpedMethods decryptMethods() {
+			if (!canDecryptMethods())
+				throw new ApplicationException("Can't decrypt methods since compileMethod() isn't hooked yet");
+			installCompileMethod2();
+
 			var dumpedMethods = new DumpedMethods();
 
 			if (decryptMethodsInfo.methodsToDecrypt == null) {
@@ -560,6 +544,37 @@ namespace de4dot.mdecrypt {
 			mem[8] = new IntPtr(mem);
 			mem[13] = returnMethodTokenInfo.ptrInDll;	// .NET 2.0
 			mem[14] = returnMethodTokenInfo.ptrInDll;	// .NET 4.0
+		}
+
+		bool hasInstalledCompileMethod2 = false;
+		unsafe void installCompileMethod2() {
+			if (hasInstalledCompileMethod2)
+				return;
+
+			if (!patchDword(*(IntPtr*)jitterVtbl, 0x30000, origCompileMethod, ourCompileMethodInfo.ptrInDll))
+				throw new ApplicationException("Couldn't patch compileMethod");
+
+			hasInstalledCompileMethod2 = true;
+			return;
+		}
+
+		unsafe bool patchDword(IntPtr addr, int size, IntPtr origValue, IntPtr newValue) {
+			addr = new IntPtr(addr.ToInt64() & ~0xFFF);
+			var endAddr = new IntPtr(addr.ToInt64() + size);
+			for (; addr.ToPointer() < endAddr.ToPointer(); addr = new IntPtr(addr.ToInt64() + 0x1000)) {
+				try {
+					for (int i = 0; i < 0x1000; i += IntPtr.Size) {
+						var addr2 = (IntPtr*)((byte*)addr + i);
+						if (*addr2 == origValue) {
+							*addr2 = newValue;
+							return true;
+						}
+					}
+				}
+				catch {
+				}
+			}
+			return false;
 		}
 	}
 }
