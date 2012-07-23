@@ -98,11 +98,11 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 					bytes[j] = b;
 				}
 
-				decryptedStrings[i] = decode(encoding, bytes);
+				decryptedStrings[i] = decode(bytes);
 			}
 		}
 
-		string decode(Encoding encoding, byte[] bytes) {
+		string decode(byte[] bytes) {
 			string s = encoding.GetString(bytes);
 			int len = s.Length;
 			if (len == 0 || s[len - 1] != 0)
