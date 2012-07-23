@@ -138,6 +138,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				addCctorInitCallToBeRemoved(method);
 			addTypeToBeRemoved(mainType.Type, "Obfuscator type");
 			addModuleReferencesToBeRemoved(mainType.ModuleReferences, "MC runtime module reference");
+			removeDuplicateEmbeddedResources();
 		}
 
 		static Encoding getEncoding(int cp) {
@@ -146,6 +147,43 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			}
 			catch {
 				throw new UserException(string.Format("Code page {0} doesn't exist", cp));
+			}
+		}
+
+		void removeDuplicateEmbeddedResources() {
+			var resources = new Dictionary<uint, List<EmbeddedResource>>();
+			foreach (var tmp in module.Resources) {
+				var rsrc = tmp as EmbeddedResource;
+				if (rsrc == null)
+					continue;
+				if (rsrc.Offset == null)
+					continue;
+				List<EmbeddedResource> list;
+				if (!resources.TryGetValue(rsrc.Offset.Value, out list))
+					resources[rsrc.Offset.Value] = list = new List<EmbeddedResource>();
+				list.Add(rsrc);
+			}
+
+			foreach (var list in resources.Values) {
+				if (list.Count <= 1)
+					continue;
+
+				EmbeddedResource resourceToKeep = null;
+				foreach (var rsrc in list) {
+					if (string.IsNullOrEmpty(rsrc.Name))
+						continue;
+
+					resourceToKeep = rsrc;
+					break;
+				}
+				if (resourceToKeep == null)
+					continue;
+
+				foreach (var rsrc in list) {
+					if (rsrc == resourceToKeep)
+						continue;
+					addResourceToBeRemoved(rsrc, string.Format("Duplicate of resource {0}", Utils.toCsharpString(resourceToKeep.Name)));
+				}
 			}
 		}
 
