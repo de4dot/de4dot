@@ -146,7 +146,8 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				return Encoding.GetEncoding(cp);
 			}
 			catch {
-				throw new UserException(string.Format("Code page {0} doesn't exist", cp));
+				Log.w("Invalid code page {0}!", cp);
+				return Encoding.Default;
 			}
 		}
 
