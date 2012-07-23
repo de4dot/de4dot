@@ -19,6 +19,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Security.Cryptography;
+using System.Text;
 using Mono.Cecil;
 using Mono.MyStuff;
 using de4dot.PE;
@@ -234,6 +236,25 @@ namespace de4dot.code.deobfuscators.MPRESS {
 			var newOne = new Deobfuscator(options);
 			newOne.setModule(module);
 			return newOne;
+		}
+
+		public override void deobfuscateBegin() {
+			base.deobfuscateBegin();
+
+			fixInvalidMvid();
+		}
+
+		void fixInvalidMvid() {
+			if (module.Mvid == Guid.Empty) {
+				var hash = new SHA1Managed().ComputeHash(Encoding.UTF8.GetBytes(module.ToString()));
+				var guid = new Guid(BitConverter.ToInt32(hash, 0),
+									BitConverter.ToInt16(hash, 4),
+									BitConverter.ToInt16(hash, 6),
+									hash[8], hash[9], hash[10], hash[11],
+									hash[12], hash[13], hash[14], hash[15]);
+				Log.v("Updating MVID: {0}", guid.ToString("B"));
+				module.Mvid = guid;
+			}
 		}
 
 		public override IEnumerable<int> getStringDecrypterMethods() {
