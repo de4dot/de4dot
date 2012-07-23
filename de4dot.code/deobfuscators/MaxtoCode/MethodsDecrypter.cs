@@ -26,7 +26,7 @@ using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.MaxtoCode {
 	// Decrypts methods and resources
-	class FileDecrypter {
+	class MethodsDecrypter {
 		DecrypterInfo decrypterInfo;
 
 		class MethodInfos {
@@ -441,7 +441,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			}
 		}
 
-		public FileDecrypter(DecrypterInfo decrypterInfo) {
+		public MethodsDecrypter(DecrypterInfo decrypterInfo) {
 			this.decrypterInfo = decrypterInfo;
 		}
 
