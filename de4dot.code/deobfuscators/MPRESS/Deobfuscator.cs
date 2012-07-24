@@ -190,8 +190,8 @@ namespace de4dot.code.deobfuscators.MPRESS {
 			return false;
 		}
 
-		public override bool getDecryptedModule(ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
-			if (version == Version.Unknown)
+		public override bool getDecryptedModule(int count, ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
+			if (count != 0 || version == Version.Unknown)
 				return false;
 
 			byte[] fileData = ModuleBytes ?? DeobUtils.readModule(module);

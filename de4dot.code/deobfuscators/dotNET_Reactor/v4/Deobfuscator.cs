@@ -367,7 +367,9 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			return false;
 		}
 
-		public override bool getDecryptedModule(ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
+		public override bool getDecryptedModule(int count, ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
+			if (count != 0)
+				return false;
 			fileData = ModuleBytes ?? DeobUtils.readModule(module);
 			peImage = new PeImage(fileData);
 

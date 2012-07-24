@@ -100,8 +100,8 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			mainType.find();
 		}
 
-		public override bool getDecryptedModule(ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
-			if (!mainType.Detected)
+		public override bool getDecryptedModule(int count, ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
+			if (count != 0 || !mainType.Detected)
 				return false;
 
 			var fileData = DeobUtils.readModule(module);

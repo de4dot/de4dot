@@ -126,7 +126,9 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			return null;
 		}
 
-		public override bool getDecryptedModule(ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
+		public override bool getDecryptedModule(int count, ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
+			if (count != 0)
+				return false;
 			if (!methodsDecrypter.Detected)
 				return false;
 

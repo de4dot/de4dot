@@ -205,8 +205,8 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			}
 		}
 
-		public override bool getDecryptedModule(ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
-			if (!options.DecryptMethods)
+		public override bool getDecryptedModule(int count, ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
+			if (count != 0 || !options.DecryptMethods)
 				return false;
 
 			byte[] fileData = ModuleBytes ?? DeobUtils.readModule(module);

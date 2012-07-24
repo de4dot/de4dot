@@ -372,10 +372,13 @@ namespace de4dot.code {
 			Log.n("Cleaning {0}", options.Filename);
 			initAssemblyClient();
 
-			byte[] fileData = null;
-			DumpedMethods dumpedMethods = null;
-			if (deob.getDecryptedModule(ref fileData, ref dumpedMethods))
+			for (int i = 0; ; i++) {
+				byte[] fileData = null;
+				DumpedMethods dumpedMethods = null;
+				if (!deob.getDecryptedModule(i, ref fileData, ref dumpedMethods))
+					break;
 				reloadModule(fileData, dumpedMethods);
+			}
 
 			deob.deobfuscateBegin();
 			deobfuscateMethods();

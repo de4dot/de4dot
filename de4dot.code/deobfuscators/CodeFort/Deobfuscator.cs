@@ -107,8 +107,8 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			assemblyDecrypter.find();
 		}
 
-		public override bool getDecryptedModule(ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
-			if (!assemblyDecrypter.EncryptedDetected)
+		public override bool getDecryptedModule(int count, ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
+			if (count != 0 || !assemblyDecrypter.EncryptedDetected)
 				return false;
 
 			newFileData = assemblyDecrypter.decrypt();

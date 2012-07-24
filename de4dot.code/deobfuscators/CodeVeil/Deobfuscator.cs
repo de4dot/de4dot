@@ -149,8 +149,8 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			}
 		}
 
-		public override bool getDecryptedModule(ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
-			if (!methodsDecrypter.Detected)
+		public override bool getDecryptedModule(int count, ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
+			if (count != 0 || !methodsDecrypter.Detected)
 				return false;
 
 			var fileData = DeobUtils.readModule(module);
