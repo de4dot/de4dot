@@ -26,14 +26,14 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		readonly byte[] gen2 = new byte[0x100];
 		readonly byte[] gen3 = new byte[0x100];
 		readonly byte[] gen4 = new byte[0x100];
-		static readonly byte[] d1 = new byte[16] { 14, 4, 13, 21, 2, 15, 11, 8, 3, 10, 6, 12, 5, 9, 0, 7 };
-		static readonly byte[] d2 = new byte[16] { 15, 1, 8, 14, 6, 11, 3, 4, 30, 7, 2, 13, 12, 0, 5, 10 };
-		static readonly byte[] d3 = new byte[16] { 10, 0, 9, 14, 6, 3, 15, 5, 23, 13, 12, 7, 11, 4, 2, 8 };
-		static readonly byte[] d4 = new byte[16] { 7, 13, 14, 3, 0, 6, 9, 10, 1, 2, 8, 5, 11, 12, 4, 15 };
-		static readonly byte[] d5 = new byte[16] { 2, 12, 4, 1, 7, 10, 11, 6, 8, 5, 3, 15, 13, 0, 14, 9 };
-		static readonly byte[] d6 = new byte[16] { 12, 1, 10, 15, 9, 2, 6, 8, 2, 13, 3, 4, 14, 7, 5, 11 };
-		static readonly byte[] d7 = new byte[16] { 4, 11, 12, 14, 15, 0, 8, 13, 3, 12, 9, 7, 5, 10, 6, 1 };
-		static readonly byte[] d8 = new byte[16] { 13, 2, 8, 14, 6, 7, 11, 1, 10, 9, 3, 14, 5, 0, 12, 7 };
+		static readonly byte[] d1h = new byte[16] { 14, 4, 13, 21, 2, 15, 11, 8, 3, 10, 6, 12, 5, 9, 0, 7 };
+		static readonly byte[] d1l = new byte[16] { 15, 1, 8, 14, 6, 11, 3, 4, 30, 7, 2, 13, 12, 0, 5, 10 };
+		static readonly byte[] d2h = new byte[16] { 10, 0, 9, 14, 6, 3, 15, 5, 23, 13, 12, 7, 11, 4, 2, 8 };
+		static readonly byte[] d2l = new byte[16] { 7, 13, 14, 3, 0, 6, 9, 10, 1, 2, 8, 5, 11, 12, 4, 15 };
+		static readonly byte[] d3h = new byte[16] { 2, 12, 4, 1, 7, 10, 11, 6, 8, 5, 3, 15, 13, 0, 14, 9 };
+		static readonly byte[] d3l = new byte[16] { 12, 1, 10, 15, 9, 2, 6, 8, 2, 13, 3, 4, 14, 7, 5, 11 };
+		static readonly byte[] d4h = new byte[16] { 4, 11, 12, 14, 15, 0, 8, 13, 3, 12, 9, 7, 5, 10, 6, 1 };
+		static readonly byte[] d4l = new byte[16] { 13, 2, 8, 14, 6, 7, 11, 1, 10, 9, 3, 14, 5, 0, 12, 7 };
 
 		public static byte[] decrypt(byte[] key, byte[] encrypted) {
 			return new Decrypter6(key).decrypt(encrypted);
@@ -74,10 +74,10 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 
 		void initialize() {
 			for (int i = 0; i < 0x100; i++) {
-				gen1[i] = (byte)((d1[i / 16] << 4) | d2[i & 0x0F]);
-				gen2[i] = (byte)((d3[i / 16] << 4) | d4[i & 0x0F]);
-				gen3[i] = (byte)((d5[i / 16] << 4) | d6[i & 0x0F]);
-				gen4[i] = (byte)((d7[i / 16] << 4) | d8[i & 0x0F]);
+				gen1[i] = (byte)((d1h[i / 16] << 4) | d1l[i & 0x0F]);
+				gen2[i] = (byte)((d2h[i / 16] << 4) | d2l[i & 0x0F]);
+				gen3[i] = (byte)((d3h[i / 16] << 4) | d3l[i & 0x0F]);
+				gen4[i] = (byte)((d4h[i / 16] << 4) | d4l[i & 0x0F]);
 			}
 		}
 
