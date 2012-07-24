@@ -127,7 +127,7 @@ namespace de4dot.blocks.cflow {
 				instructionEmulator.init(blocks);
 				instructionEmulator.emulate(source.Instructions);
 
-				var target = getSwitchTarget(switchTargets, switchFallThrough, source, instructionEmulator.pop());
+				var target = getSwitchTarget(switchTargets, switchFallThrough, instructionEmulator.pop());
 				if (target == null)
 					continue;
 				source.replaceLastNonBranchWithBranch(0, target);
@@ -141,23 +141,39 @@ namespace de4dot.blocks.cflow {
 		//	blk1:
 		//		ldc.i4 X
 		//		stloc N
-		//		br swblk
+		//		br swblk / bcc swblk
 		//	swblk:
 		//		ldloc N
 		//		switch (......)
 		bool deobfuscateLdloc(IList<Block> switchTargets, Block switchFallThrough, Block block, VariableDefinition switchVariable) {
 			bool changed = false;
 			foreach (var source in new List<Block>(block.Sources)) {
-				if (!isBranchBlock(source))
-					continue;
-				instructionEmulator.init(blocks);
-				instructionEmulator.emulate(source.Instructions);
+				if (isBranchBlock(source)) {
+					instructionEmulator.init(blocks);
+					instructionEmulator.emulate(source.Instructions);
 
-				var target = getSwitchTarget(switchTargets, switchFallThrough, source, instructionEmulator.getLocal(switchVariable));
-				if (target == null)
-					continue;
-				source.replaceLastNonBranchWithBranch(0, target);
-				changed = true;
+					var target = getSwitchTarget(switchTargets, switchFallThrough, instructionEmulator.getLocal(switchVariable));
+					if (target == null)
+						continue;
+					source.replaceLastNonBranchWithBranch(0, target);
+					changed = true;
+				}
+				else if (isBccBlock(source)) {
+					instructionEmulator.init(blocks);
+					instructionEmulator.emulate(source.Instructions);
+
+					var target = getSwitchTarget(switchTargets, switchFallThrough, instructionEmulator.getLocal(switchVariable));
+					if (target == null)
+						continue;
+					if (source.Targets[0] == block) {
+						source.setNewTarget(0, target);
+						changed = true;
+					}
+					if (source.FallThrough == block) {
+						source.setNewFallThrough(target);
+						changed = true;
+					}
+				}
 			}
 			return changed;
 		}
@@ -176,7 +192,7 @@ namespace de4dot.blocks.cflow {
 				instructionEmulator.init(blocks);
 				instructionEmulator.emulate(source.Instructions);
 
-				var target = getSwitchTarget(switchTargets, switchFallThrough, source, instructionEmulator.pop());
+				var target = getSwitchTarget(switchTargets, switchFallThrough, instructionEmulator.pop());
 				if (target == null) {
 					changed |= deobfuscateTos_Ldloc(switchTargets, switchFallThrough, source);
 				}
@@ -208,7 +224,7 @@ namespace de4dot.blocks.cflow {
 			return false;
 		}
 
-		bool isBranchBlock(Block block) {
+		static bool isBranchBlock(Block block) {
 			if (block.Targets != null)
 				return false;
 			if (block.FallThrough == null)
@@ -220,6 +236,42 @@ namespace de4dot.blocks.cflow {
 				return false;
 			default:
 				return true;
+			}
+		}
+
+		static bool isBccBlock(Block block) {
+			if (block.Targets == null || block.Targets.Count != 1)
+				return false;
+			if (block.FallThrough == null)
+				return false;
+			switch (block.LastInstr.OpCode.Code) {
+			case Code.Beq:
+			case Code.Beq_S:
+			case Code.Bge:
+			case Code.Bge_S:
+			case Code.Bge_Un:
+			case Code.Bge_Un_S:
+			case Code.Bgt:
+			case Code.Bgt_S:
+			case Code.Bgt_Un:
+			case Code.Bgt_Un_S:
+			case Code.Ble:
+			case Code.Ble_S:
+			case Code.Ble_Un:
+			case Code.Ble_Un_S:
+			case Code.Blt:
+			case Code.Blt_S:
+			case Code.Blt_Un:
+			case Code.Blt_Un_S:
+			case Code.Bne_Un:
+			case Code.Bne_Un_S:
+			case Code.Brfalse:
+			case Code.Brfalse_S:
+			case Code.Brtrue:
+			case Code.Brtrue_S:
+				return true;
+			default:
+				return false;
 			}
 		}
 
@@ -277,13 +329,13 @@ namespace de4dot.blocks.cflow {
 			return CflowUtils.getSwitchTarget(switchBlock.Targets, switchBlock.FallThrough, (Int32Value)val1);
 		}
 
-		Block getSwitchTarget(IList<Block> targets, Block fallThrough, Block source, Value value) {
+		static Block getSwitchTarget(IList<Block> targets, Block fallThrough, Value value) {
 			if (!value.isInt32())
 				return null;
 			return CflowUtils.getSwitchTarget(targets, fallThrough, (Int32Value)value);
 		}
 
-		bool fixSwitchBranch(Block switchBlock) {
+		static bool fixSwitchBranch(Block switchBlock) {
 			// Code:
 			//	blk1:
 			//		ldc.i4 XXX
