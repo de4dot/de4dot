@@ -25,7 +25,7 @@ using Mono.MyStuff;
 using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.MaxtoCode {
-	// Decrypts methods and resources
+	// Decrypts methods, resources and strings (#US heap)
 	class MethodsDecrypter {
 		DecrypterInfo decrypterInfo;
 
