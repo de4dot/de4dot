@@ -62,6 +62,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 		Options options;
 		MethodsDecrypter methodsDecrypter;
 		StringDecrypter stringDecrypter;
+		AssemblyDecrypter assemblyDecrypter;
 		string obfuscatorName = DeobfuscatorInfo.THE_NAME;
 
 		internal class Options : OptionsBase {
@@ -126,9 +127,35 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			return null;
 		}
 
+		[Flags]
+		enum DecryptState {
+			CanDecryptMethods = 1,
+			CanGetMainAssembly = 2,
+		}
+		DecryptState decryptState = DecryptState.CanDecryptMethods | DecryptState.CanGetMainAssembly;
 		public override bool getDecryptedModule(int count, ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
-			if (count != 0)
-				return false;
+			if ((decryptState & DecryptState.CanDecryptMethods) != 0) {
+				if (decryptModule(ref newFileData, ref dumpedMethods)) {
+					ModuleBytes = newFileData;
+					decryptState &= ~DecryptState.CanDecryptMethods;
+					return true;
+				}
+			}
+
+			if ((decryptState & DecryptState.CanGetMainAssembly) != 0) {
+				newFileData = getMainAssemblyBytes();
+				if (newFileData != null) {
+					ModuleBytes = newFileData;
+					decryptState &= ~DecryptState.CanGetMainAssembly;
+					decryptState |= DecryptState.CanDecryptMethods;
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		bool decryptModule(ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
 			if (!methodsDecrypter.Detected)
 				return false;
 
@@ -142,11 +169,36 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			return true;
 		}
 
+		byte[] getMainAssemblyBytes() {
+			try {
+				initializeStringDecrypter();
+				initializeAssemblyDecrypter();
+			}
+			catch {
+				return null;
+			}
+
+			var asm = module.Assembly;
+			if (asm == null || assemblyDecrypter == null)
+				return null;
+			var asmInfo = assemblyDecrypter.findMain(asm.FullName);
+			if (asmInfo == null)
+				return null;
+
+			assemblyDecrypter.remove(asmInfo);
+			return asmInfo.data;
+		}
+
 		public override IDeobfuscator moduleReloaded(ModuleDefinition module) {
 			var newOne = new Deobfuscator(options);
 			newOne.setModule(module);
-			newOne.methodsDecrypter = new MethodsDecrypter(module, methodsDecrypter);
-			newOne.stringDecrypter = new StringDecrypter(module, stringDecrypter);
+			newOne.methodsDecrypter = new MethodsDecrypter(module);
+			newOne.methodsDecrypter.find();
+			newOne.stringDecrypter = new StringDecrypter(module);
+			newOne.stringDecrypter.find();
+			newOne.assemblyDecrypter = assemblyDecrypter;
+			newOne.ModuleBytes = ModuleBytes;
+			newOne.decryptState = decryptState;
 			return newOne;
 		}
 
@@ -154,20 +206,33 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			base.deobfuscateBegin();
 			addAssemblyReferenceToBeRemoved(methodsDecrypter.AssemblyNameReference, "Obfuscator decrypter DLL reference");
 
+			initializeStringDecrypter();
+			initializeAssemblyDecrypter();
+			dumpEmbeddedAssemblies();
+		}
+
+		bool hasInitializedStringDecrypter = false;
+		void initializeStringDecrypter() {
+			if (hasInitializedStringDecrypter)
+				return;
 			stringDecrypter.initialize(DeobfuscatedFile);
 			foreach (var info in stringDecrypter.Infos)
 				staticStringInliner.add(info.Method, (method, args) => stringDecrypter.decrypt(method, (int)args[0], (int)args[1], (int)args[2]));
 			DeobfuscatedFile.stringDecryptersAdded();
+			hasInitializedStringDecrypter = true;
+		}
 
-			dumpEmbeddedAssemblies();
+		void initializeAssemblyDecrypter() {
+			if (!options.DumpEmbeddedAssemblies || assemblyDecrypter != null)
+				return;
+			assemblyDecrypter = new AssemblyDecrypter(module, DeobfuscatedFile, this);
+			assemblyDecrypter.find();
 		}
 
 		void dumpEmbeddedAssemblies() {
-			if (!options.DumpEmbeddedAssemblies)
+			if (assemblyDecrypter == null)
 				return;
-			var asmDecrypter = new AssemblyDecrypter(module, DeobfuscatedFile, this);
-			asmDecrypter.find();
-			foreach (var info in asmDecrypter.AssemblyInfos) {
+			foreach (var info in assemblyDecrypter.AssemblyInfos) {
 				var asmName = info.assemblySimpleName;
 				if (info.isEntryPointAssembly)
 					asmName += "_real";

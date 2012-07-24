@@ -122,18 +122,6 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			this.module = module;
 		}
 
-		public StringDecrypter(ModuleDefinition module, StringDecrypter oldOne) {
-			this.module = module;
-			foreach (var oldInfo in oldOne.stringEncrypterInfos.getValues()) {
-				var method = lookup(oldInfo.Method, "Could not find string decrypter method");
-				stringEncrypterInfos.add(method, new StringEncrypterInfo(method));
-			}
-		}
-
-		T lookup<T>(T def, string errorMessage) where T : MemberReference {
-			return DeobUtils.lookup(module, def, errorMessage);
-		}
-
 		public void find() {
 			foreach (var type in module.Types) {
 				MethodDefinition decrypterMethod;

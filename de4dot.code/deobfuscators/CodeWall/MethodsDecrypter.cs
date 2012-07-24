@@ -44,15 +44,6 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			this.module = module;
 		}
 
-		public MethodsDecrypter(ModuleDefinition module, MethodsDecrypter oldOne) {
-			this.module = module;
-			initMethod = lookup(oldOne.initMethod, "Could not find initMethod");
-		}
-
-		T lookup<T>(T def, string errorMessage) where T : MemberReference {
-			return DeobUtils.lookup(module, def, errorMessage);
-		}
-
 		public void find() {
 			foreach (var cctor in DeobUtils.getInitCctors(module, 3)) {
 				if (checkCctor(cctor))

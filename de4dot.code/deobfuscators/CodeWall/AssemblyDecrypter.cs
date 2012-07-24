@@ -233,5 +233,17 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			var keyGenerator = new PasswordDeriveBytes(resourcePassword, Encoding.ASCII.GetBytes(resourceSalt));
 			return DeobUtils.inflate(DeobUtils.aesDecrypt(encrypted, keyGenerator.GetBytes(32), keyGenerator.GetBytes(16)), false);
 		}
+
+		public AssemblyInfo findMain(string asmFullName) {
+			foreach (var asmInfo in assemblyInfos) {
+				if (asmInfo.isEntryPointAssembly && asmInfo.assemblyFullName == asmFullName)
+					return asmInfo;
+			}
+			return null;
+		}
+
+		public void remove(AssemblyInfo asmInfo) {
+			assemblyInfos.Remove(asmInfo);
+		}
 	}
 }
