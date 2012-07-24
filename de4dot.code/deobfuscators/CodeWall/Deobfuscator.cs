@@ -186,7 +186,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			var asm = module.Assembly;
 			if (asm == null || assemblyDecrypter == null)
 				return null;
-			var asmInfo = assemblyDecrypter.findMain(asm.FullName);
+			var asmInfo = assemblyDecrypter.findMain(asm.FullName) ?? assemblyDecrypter.findMain();
 			if (asmInfo == null)
 				return null;
 

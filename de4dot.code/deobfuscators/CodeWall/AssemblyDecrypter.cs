@@ -242,6 +242,14 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			return null;
 		}
 
+		public AssemblyInfo findMain() {
+			foreach (var asmInfo in assemblyInfos) {
+				if (asmInfo.isEntryPointAssembly)
+					return asmInfo;
+			}
+			return null;
+		}
+
 		public void remove(AssemblyInfo asmInfo) {
 			assemblyInfos.Remove(asmInfo);
 		}
