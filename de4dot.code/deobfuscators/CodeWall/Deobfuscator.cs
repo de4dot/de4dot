@@ -30,10 +30,12 @@ namespace de4dot.code.deobfuscators.CodeWall {
 		public const string THE_TYPE = "cw";
 		const string DEFAULT_REGEX = @"!^[0-9A-F]{32}$&!^[_<>{}$.`-]$&" + DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
 		BoolOption dumpEmbeddedAssemblies;
+		BoolOption decryptMainAsm;
 
 		public DeobfuscatorInfo()
 			: base(DEFAULT_REGEX) {
 			dumpEmbeddedAssemblies = new BoolOption(null, makeArgName("embedded"), "Dump embedded assemblies", true);
+			decryptMainAsm = new BoolOption(null, makeArgName("decrypt-main"), "Decrypt main embedded assembly", true);
 		}
 
 		public override string Name {
@@ -48,12 +50,14 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			return new Deobfuscator(new Deobfuscator.Options {
 				ValidNameRegex = validNameRegex.get(),
 				DumpEmbeddedAssemblies = dumpEmbeddedAssemblies.get(),
+				DecryptMainAsm = decryptMainAsm.get(),
 			});
 		}
 
 		protected override IEnumerable<Option> getOptionsInternal() {
 			return new List<Option>() {
 				dumpEmbeddedAssemblies,
+				decryptMainAsm,
 			};
 		}
 	}
@@ -67,6 +71,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 
 		internal class Options : OptionsBase {
 			public bool DumpEmbeddedAssemblies { get; set; }
+			public bool DecryptMainAsm { get; set; }
 		}
 
 		public override string Type {
@@ -142,7 +147,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 				}
 			}
 
-			if ((decryptState & DecryptState.CanGetMainAssembly) != 0) {
+			if (options.DecryptMainAsm && (decryptState & DecryptState.CanGetMainAssembly) != 0) {
 				newFileData = getMainAssemblyBytes();
 				if (newFileData != null) {
 					ModuleBytes = newFileData;
