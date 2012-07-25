@@ -27,12 +27,12 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			: base(instrs) {
 		}
 
-		protected override bool getLocalConstant(Instruction instr, out int value) {
+		protected override bool getLocalConstant32(Instruction instr, out int value) {
 			value = 0;
 			return true;
 		}
 
-		protected override bool getArgConstant(Instruction instr, out int value) {
+		protected override bool getArgConstant32(Instruction instr, out int value) {
 			value = 0;
 			return true;
 		}

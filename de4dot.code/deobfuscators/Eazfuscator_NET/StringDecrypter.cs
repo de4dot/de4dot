@@ -275,7 +275,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			var instrs = stringMethod.Body.Instructions;
 			for (int i = 0; i < instrs.Count; i++) {
 				var ldci4 = instrs[i];
-				if (!stringMethodConsts.isLoadConstant(ldci4))
+				if (!stringMethodConsts.isLoadConstant32(ldci4))
 					continue;
 				int index = i, tmp;
 				if (!stringMethodConsts.getInt32(ref index, out tmp) || !isFlagsMask(tmp))
@@ -320,7 +320,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				var instr = stringMethod.Body.Instructions[i];
 				if (instr.OpCode.FlowControl != FlowControl.Next)
 					break;
-				if (!stringMethodConsts.isLoadConstant(instr))
+				if (!stringMethodConsts.isLoadConstant32(instr))
 					continue;
 				int index2 = i, value;
 				if (!stringMethodConsts.getInt32(ref index2, out value))
@@ -512,7 +512,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					sb.Append((char)(val >> shift));
 					shift = 0;
 				}
-				if (stringMethodConsts.isLoadConstant(instr)) {
+				if (stringMethodConsts.isLoadConstant32(instr)) {
 					int tmp;
 					if (!stringMethodConsts.getInt32(ref i, out tmp))
 						break;
@@ -599,7 +599,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				if (instr.OpCode.Code != Code.Call && instr.OpCode.FlowControl != FlowControl.Next)
 					break;
 
-				if (!stringMethodConsts.isLoadConstant(instr))
+				if (!stringMethodConsts.isLoadConstant32(instr))
 					continue;
 
 				int tmp;
@@ -795,7 +795,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				var instr = instrs[i];
 				if (instr.OpCode.FlowControl != FlowControl.Next)
 					return -1;
-				if (stringMethodConsts.isLoadConstant(instr))
+				if (stringMethodConsts.isLoadConstant32(instr))
 					return i;
 			}
 

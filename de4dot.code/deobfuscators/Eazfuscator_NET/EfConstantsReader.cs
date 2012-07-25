@@ -43,12 +43,12 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				var local = DotNetUtils.getLocalVar(locals, stloc);
 				if (local == null || local.VariableType.EType != ElementType.I4)
 					break;
-				localsValues[local] = value;
+				localsValues32[local] = value;
 				index++;
 			}
 
-			if (localsValues.Count != 2)
-				localsValues.Clear();
+			if (localsValues32.Count != 2)
+				localsValues32.Clear();
 		}
 	}
 }
