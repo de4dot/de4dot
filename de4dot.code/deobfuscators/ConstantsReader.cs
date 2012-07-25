@@ -28,6 +28,7 @@ namespace de4dot.code.deobfuscators {
 		protected IInstructions instructions;
 		protected IList<VariableDefinition> locals;
 		protected Dictionary<VariableDefinition, int> localsValues32 = new Dictionary<VariableDefinition, int>();
+		protected Dictionary<VariableDefinition, int> localsValues64 = new Dictionary<VariableDefinition, int>();
 		bool emulateConvInstrs;
 
 		public interface IInstructions {
@@ -134,6 +135,20 @@ namespace de4dot.code.deobfuscators {
 			return false;
 		}
 
+		public bool isLoadConstant64(Instruction instr) {
+			if (instr.OpCode.Code == Code.Ldc_I8)
+				return true;
+			if (DotNetUtils.isLdloc(instr)) {
+				int tmp;
+				return getLocalConstant64(instr, out tmp);
+			}
+			if (DotNetUtils.isLdarg(instr)) {
+				int tmp;
+				return getArgConstant64(instr, out tmp);
+			}
+			return false;
+		}
+
 		public bool getInt16(ref int index, out short val) {
 			int tmp;
 			if (!getInt32(ref index, out tmp)) {
@@ -192,16 +207,20 @@ namespace de4dot.code.deobfuscators {
 
 				case Code.Conv_I4:
 				case Code.Conv_U4:
-					if (!emulateConvInstrs)
+					if (!emulateConvInstrs || stack.Count < 1)
 						goto done;
 					stack.Push(new ConstantInfo<int>(index, stack.Pop().constant));
 					break;
 
 				case Code.Not:
+					if (stack.Count < 1)
+						goto done;
 					stack.Push(new ConstantInfo<int>(index, ~stack.Pop().constant));
 					break;
 
 				case Code.Neg:
+					if (stack.Count < 1)
+						goto done;
 					stack.Push(new ConstantInfo<int>(index, -stack.Pop().constant));
 					break;
 
@@ -321,6 +340,178 @@ done:
 			return true;
 		}
 
+		public bool getInt64(ref int index, out long val) {
+			val = 0;
+			if (index >= instructions.Count)
+				return false;
+
+			var stack = new Stack<ConstantInfo<long>>();
+
+			int op1;
+			ConstantInfo<long> info1, info2;
+			for (; index < instructions.Count; index++) {
+				var instr = instructions[index];
+				switch (instr.OpCode.Code) {
+				case Code.Conv_I1:
+					if (!emulateConvInstrs || stack.Count < 1)
+						goto done;
+					stack.Push(new ConstantInfo<long>(index, (sbyte)stack.Pop().constant));
+					break;
+
+				case Code.Conv_U1:
+					if (!emulateConvInstrs || stack.Count < 1)
+						goto done;
+					stack.Push(new ConstantInfo<long>(index, (byte)stack.Pop().constant));
+					break;
+
+				case Code.Conv_I2:
+					if (!emulateConvInstrs || stack.Count < 1)
+						goto done;
+					stack.Push(new ConstantInfo<long>(index, (short)stack.Pop().constant));
+					break;
+
+				case Code.Conv_U2:
+					if (!emulateConvInstrs || stack.Count < 1)
+						goto done;
+					stack.Push(new ConstantInfo<long>(index, (ushort)stack.Pop().constant));
+					break;
+
+				case Code.Conv_I4:
+					if (!emulateConvInstrs || stack.Count < 1)
+						goto done;
+					stack.Push(new ConstantInfo<long>(index, (int)stack.Pop().constant));
+					break;
+
+				case Code.Conv_U4:
+					if (!emulateConvInstrs || stack.Count < 1)
+						goto done;
+					stack.Push(new ConstantInfo<long>(index, (uint)stack.Pop().constant));
+					break;
+
+				case Code.Conv_I8:
+				case Code.Conv_U8:
+					if (!emulateConvInstrs || stack.Count < 1)
+						goto done;
+					stack.Push(new ConstantInfo<long>(index, stack.Pop().constant));
+					break;
+
+				case Code.Not:
+					if (stack.Count < 1)
+						goto done;
+					stack.Push(new ConstantInfo<long>(index, ~stack.Pop().constant));
+					break;
+
+				case Code.Neg:
+					if (stack.Count < 1)
+						goto done;
+					stack.Push(new ConstantInfo<long>(index, -stack.Pop().constant));
+					break;
+
+				case Code.Ldloc:
+				case Code.Ldloc_S:
+				case Code.Ldloc_0:
+				case Code.Ldloc_1:
+				case Code.Ldloc_2:
+				case Code.Ldloc_3:
+					if (!getLocalConstant64(instr, out op1))
+						goto done;
+					stack.Push(new ConstantInfo<long>(index, op1));
+					break;
+
+				case Code.Ldarg:
+				case Code.Ldarg_S:
+				case Code.Ldarg_0:
+				case Code.Ldarg_1:
+				case Code.Ldarg_2:
+				case Code.Ldarg_3:
+					if (!getArgConstant64(instr, out op1))
+						goto done;
+					stack.Push(new ConstantInfo<long>(index, op1));
+					break;
+
+				case Code.Ldc_I8:
+					stack.Push(new ConstantInfo<long>(index, (long)instr.Operand));
+					break;
+
+				case Code.Add:
+					if (stack.Count < 2)
+						goto done;
+					info2 = stack.Pop();
+					info1 = stack.Pop();
+					stack.Push(new ConstantInfo<long>(index, info1.constant + info2.constant));
+					break;
+
+				case Code.Sub:
+					if (stack.Count < 2)
+						goto done;
+					info2 = stack.Pop();
+					info1 = stack.Pop();
+					stack.Push(new ConstantInfo<long>(index, info1.constant - info2.constant));
+					break;
+
+				case Code.Xor:
+					if (stack.Count < 2)
+						goto done;
+					info2 = stack.Pop();
+					info1 = stack.Pop();
+					stack.Push(new ConstantInfo<long>(index, info1.constant ^ info2.constant));
+					break;
+
+				case Code.Or:
+					if (stack.Count < 2)
+						goto done;
+					info2 = stack.Pop();
+					info1 = stack.Pop();
+					stack.Push(new ConstantInfo<long>(index, info1.constant | info2.constant));
+					break;
+
+				case Code.And:
+					if (stack.Count < 2)
+						goto done;
+					info2 = stack.Pop();
+					info1 = stack.Pop();
+					stack.Push(new ConstantInfo<long>(index, info1.constant & info2.constant));
+					break;
+
+				case Code.Mul:
+					if (stack.Count < 2)
+						goto done;
+					info2 = stack.Pop();
+					info1 = stack.Pop();
+					stack.Push(new ConstantInfo<long>(index, info1.constant * info2.constant));
+					break;
+
+				case Code.Div:
+					if (stack.Count < 2)
+						goto done;
+					info2 = stack.Pop();
+					info1 = stack.Pop();
+					stack.Push(new ConstantInfo<long>(index, info1.constant / info2.constant));
+					break;
+
+				case Code.Div_Un:
+					if (stack.Count < 2)
+						goto done;
+					info2 = stack.Pop();
+					info1 = stack.Pop();
+					stack.Push(new ConstantInfo<long>(index, (int)((uint)info1.constant / (uint)info2.constant)));
+					break;
+
+				default:
+					goto done;
+				}
+			}
+done:
+			if (stack.Count == 0)
+				return false;
+			while (stack.Count > 1)
+				stack.Pop();
+			info1 = stack.Pop();
+			index = info1.index + 1;
+			val = info1.constant;
+			return true;
+		}
+
 		protected virtual bool getLocalConstant32(Instruction instr, out int value) {
 			value = 0;
 			if (locals == null)
@@ -328,12 +519,29 @@ done:
 			var local = DotNetUtils.getLocalVar(locals, instr);
 			if (local == null)
 				return false;
-			if (local.VariableType.EType != ElementType.I4)
+			if (local.VariableType.EType != ElementType.I4 && local.VariableType.EType != ElementType.U4)
 				return false;
 			return localsValues32.TryGetValue(local, out value);
 		}
 
 		protected virtual bool getArgConstant32(Instruction instr, out int value) {
+			value = 0;
+			return false;
+		}
+
+		protected virtual bool getLocalConstant64(Instruction instr, out int value) {
+			value = 0;
+			if (locals == null)
+				return false;
+			var local = DotNetUtils.getLocalVar(locals, instr);
+			if (local == null)
+				return false;
+			if (local.VariableType.EType != ElementType.I8 && local.VariableType.EType != ElementType.U8)
+				return false;
+			return localsValues64.TryGetValue(local, out value);
+		}
+
+		protected virtual bool getArgConstant64(Instruction instr, out int value) {
 			value = 0;
 			return false;
 		}
