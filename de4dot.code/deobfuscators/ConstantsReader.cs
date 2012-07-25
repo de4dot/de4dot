@@ -28,6 +28,7 @@ namespace de4dot.code.deobfuscators {
 		protected IInstructions instructions;
 		protected IList<VariableDefinition> locals;
 		protected Dictionary<VariableDefinition, int> localsValues = new Dictionary<VariableDefinition, int>();
+		bool emulateConvInstrs;
 
 		public interface IInstructions {
 			int Count { get; }
@@ -66,12 +67,34 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
-		public ConstantsReader(IList<Instruction> instrs) {
-			this.instructions = new ListInstructions(instrs);
+		public bool EmulateConvInstructions {
+			get { return emulateConvInstrs; }
+			set { emulateConvInstrs = value; }
 		}
 
-		public ConstantsReader(IList<Instr> instrs) {
-			this.instructions = new ListInstrs(instrs);
+		ConstantsReader(IInstructions instructions)
+			: this(instructions, true) {
+		}
+
+		ConstantsReader(IInstructions instructions, bool emulateConvInstrs) {
+			this.instructions = instructions;
+			this.emulateConvInstrs = emulateConvInstrs;
+		}
+
+		public ConstantsReader(IList<Instruction> instrs)
+			: this(new ListInstructions(instrs)) {
+		}
+
+		public ConstantsReader(IList<Instruction> instrs, bool emulateConvInstrs)
+			: this(new ListInstructions(instrs), emulateConvInstrs) {
+		}
+
+		public ConstantsReader(IList<Instr> instrs)
+			: this(new ListInstrs(instrs)) {
+		}
+
+		public ConstantsReader(IList<Instr> instrs, bool emulateConvInstrs)
+			: this(new ListInstrs(instrs), emulateConvInstrs) {
 		}
 
 		public ConstantsReader(MethodDefinition method)
@@ -144,31 +167,33 @@ namespace de4dot.code.deobfuscators {
 				var instr = instructions[index];
 				switch (instr.OpCode.Code) {
 				case Code.Conv_I1:
-					if (stack.Count < 1)
+					if (!emulateConvInstrs || stack.Count < 1)
 						goto done;
 					stack.Push(new ConstantInfo(index, (sbyte)stack.Pop().constant));
 					break;
 
 				case Code.Conv_U1:
-					if (stack.Count < 1)
+					if (!emulateConvInstrs || stack.Count < 1)
 						goto done;
 					stack.Push(new ConstantInfo(index, (byte)stack.Pop().constant));
 					break;
 
 				case Code.Conv_I2:
-					if (stack.Count < 1)
+					if (!emulateConvInstrs || stack.Count < 1)
 						goto done;
 					stack.Push(new ConstantInfo(index, (short)stack.Pop().constant));
 					break;
 
 				case Code.Conv_U2:
-					if (stack.Count < 1)
+					if (!emulateConvInstrs || stack.Count < 1)
 						goto done;
 					stack.Push(new ConstantInfo(index, (ushort)stack.Pop().constant));
 					break;
 
 				case Code.Conv_I4:
 				case Code.Conv_U4:
+					if (!emulateConvInstrs)
+						goto done;
 					stack.Push(new ConstantInfo(index, stack.Pop().constant));
 					break;
 
