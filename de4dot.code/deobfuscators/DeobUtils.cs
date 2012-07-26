@@ -79,6 +79,14 @@ namespace de4dot.code.deobfuscators {
 			return true;
 		}
 
+		public static byte[] md5Sum(byte[] data) {
+			return MD5.Create().ComputeHash(data);
+		}
+
+		public static byte[] sha256Sum(byte[] data) {
+			return SHA256.Create().ComputeHash(data);
+		}
+
 		public static byte[] aesDecrypt(byte[] data, byte[] key, byte[] iv) {
 			using (var aes = new RijndaelManaged { Mode = CipherMode.CBC }) {
 				using (var transform = aes.CreateDecryptor(key, iv)) {
