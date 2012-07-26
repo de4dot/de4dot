@@ -32,6 +32,10 @@ namespace de4dot.PE {
 
 		uint offset, headerLength, length;
 
+		public DotNetStream[] Streams {
+			get { return streams; }
+		}
+
 		public uint Offset {
 			get { return offset; }
 		}
