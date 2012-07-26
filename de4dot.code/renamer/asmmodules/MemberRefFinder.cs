@@ -570,6 +570,8 @@ namespace de4dot.code.renamer.asmmodules {
 			addTypeSpecification(st);
 		}
 		void addCallSite(CallSite cs) {
+			if (cs == null)
+				return;
 			pushMember(cs.signature);
 		}
 
