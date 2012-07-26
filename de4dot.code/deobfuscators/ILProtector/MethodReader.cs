@@ -176,7 +176,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 		}
 
 		protected override string readInlineString(Instruction instr) {
-			return module.GetUserString(reader.ReadUInt32() & 0x00FFFFFF);
+			return module.GetUserString(reader.ReadUInt32());
 		}
 
 		protected override MemberReference readInlineTok(Instruction instr) {

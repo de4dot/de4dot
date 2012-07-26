@@ -142,7 +142,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			tamperDetection.find();
 			constantsDecrypter = new ConstantsDecrypter(module);
 			constantsDecrypter.find();
-			foundObfuscatorUserString = Utils.StartsWith(module.GetUserString(1), "\u0011\"3D9B94A98B-76A8-4810-B1A0-4BE7C4F9C98D", StringComparison.Ordinal);
+			foundObfuscatorUserString = Utils.StartsWith(module.GetUserString(0x70000001), "\u0011\"3D9B94A98B-76A8-4810-B1A0-4BE7C4F9C98D", StringComparison.Ordinal);
 		}
 
 		void initializeVersion(TypeDefinition attr) {
