@@ -68,6 +68,7 @@
     <Compile Include="deobfuscators\Babel_NET\MethodBodyReader.cs" />
     <Compile Include="deobfuscators\Babel_NET\MethodReferenceReader.cs" />
     <Compile Include="deobfuscators\Confuser\AntiDebugger.cs" />
+    <Compile Include="deobfuscators\Confuser\AntiDumping.cs" />
     <Compile Include="deobfuscators\Confuser\ConfuserUtils.cs" />
     <Compile Include="deobfuscators\Confuser\ConstantsFolder.cs" />
     <Compile Include="deobfuscators\Confuser\Deobfuscator.cs" />

@@ -30,10 +30,12 @@ namespace de4dot.code.deobfuscators.Confuser {
 		public const string THE_NAME = "Confuser";
 		public const string THE_TYPE = "cn";
 		BoolOption removeAntiDebug;
+		BoolOption removeAntiDump;
 
 		public DeobfuscatorInfo()
 			: base() {
 			removeAntiDebug = new BoolOption(null, makeArgName("antidb"), "Remove anti debug code", true);
+			removeAntiDump = new BoolOption(null, makeArgName("antidump"), "Remove anti dump code", true);
 		}
 
 		public override string Name {
@@ -48,12 +50,14 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return new Deobfuscator(new Deobfuscator.Options {
 				ValidNameRegex = validNameRegex.get(),
 				RemoveAntiDebug = removeAntiDebug.get(),
+				RemoveAntiDump = removeAntiDump.get(),
 			});
 		}
 
 		protected override IEnumerable<Option> getOptionsInternal() {
 			return new List<Option>() {
 				removeAntiDebug,
+				removeAntiDump,
 			};
 		}
 	}
@@ -65,9 +69,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 		JitMethodsDecrypter jitMethodsDecrypter;
 		ProxyCallFixer proxyCallFixer;
 		AntiDebugger antiDebugger;
+		AntiDumping antiDumping;
 
 		internal class Options : OptionsBase {
 			public bool RemoveAntiDebug { get; set; }
+			public bool RemoveAntiDump { get; set; }
 		}
 
 		public override string Type {
@@ -100,7 +106,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			int sum = toInt32(jitMethodsDecrypter.Detected) +
 					toInt32(proxyCallFixer != null ? proxyCallFixer.Detected : false) +
-					toInt32(antiDebugger != null ? antiDebugger.Detected : false);
+					toInt32(antiDebugger != null ? antiDebugger.Detected : false) +
+					toInt32(antiDumping != null ? antiDumping.Detected : false);
 			if (sum > 0)
 				val += 100 + 10 * (sum - 1);
 
@@ -120,6 +127,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 			proxyCallFixer.findDelegateCreator();
 			antiDebugger = new AntiDebugger(module);
 			antiDebugger.find();
+			antiDumping = new AntiDumping(module);
+			antiDumping.find();
 		}
 
 		byte[] getFileData() {
@@ -168,6 +177,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 			if (options.RemoveAntiDebug) {
 				addModuleCctorInitCallToBeRemoved(antiDebugger.InitMethod);
 				addTypeToBeRemoved(antiDebugger.Type, "Anti debugger type");
+			}
+
+			if (options.RemoveAntiDump) {
+				addModuleCctorInitCallToBeRemoved(antiDumping.InitMethod);
+				addTypeToBeRemoved(antiDumping.Type, "Anti dumping type");
 			}
 
 			proxyCallFixer.find();
