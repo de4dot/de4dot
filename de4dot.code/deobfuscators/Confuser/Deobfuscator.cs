@@ -70,6 +70,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		ProxyCallFixer proxyCallFixer;
 		AntiDebugger antiDebugger;
 		AntiDumping antiDumping;
+		ResourceDecrypter resourceDecrypter;
 
 		internal class Options : OptionsBase {
 			public bool RemoveAntiDebug { get; set; }
@@ -107,7 +108,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 			int sum = toInt32(jitMethodsDecrypter.Detected) +
 					toInt32(proxyCallFixer != null ? proxyCallFixer.Detected : false) +
 					toInt32(antiDebugger != null ? antiDebugger.Detected : false) +
-					toInt32(antiDumping != null ? antiDumping.Detected : false);
+					toInt32(antiDumping != null ? antiDumping.Detected : false) +
+					toInt32(resourceDecrypter != null ? resourceDecrypter.Detected : false);
 			if (sum > 0)
 				val += 100 + 10 * (sum - 1);
 
@@ -129,6 +131,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 			antiDebugger.find();
 			antiDumping = new AntiDumping(module);
 			antiDumping.find();
+			resourceDecrypter = new ResourceDecrypter(module, DeobfuscatedFile);
+			resourceDecrypter.find();
 		}
 
 		byte[] getFileData() {
@@ -171,6 +175,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			removeObfuscatorAttribute();
 
+			decryptResources();
+
 			if (jitMethodsDecrypter != null) {
 				addModuleCctorInitCallToBeRemoved(jitMethodsDecrypter.InitMethod);
 				addTypeToBeRemoved(jitMethodsDecrypter.Type, "Method decrypter (JIT) type");
@@ -189,6 +195,15 @@ namespace de4dot.code.deobfuscators.Confuser {
 			proxyCallFixer.find();
 		}
 
+		void decryptResources() {
+			var rsrc = resourceDecrypter.mergeResources();
+			if (rsrc == null)
+				return;
+			addResourceToBeRemoved(rsrc, "Encrypted resources");
+			addMethodToBeRemoved(resourceDecrypter.Handler, "Resource decrypter handler");
+			addFieldsToBeRemoved(resourceDecrypter.Fields, "Resource decrypter field");
+		}
+
 		void removeObfuscatorAttribute() {
 			foreach (var type in module.Types) {
 				if (type.FullName == "ConfusedByAttribute")
@@ -198,6 +213,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		public override void deobfuscateMethodEnd(Blocks blocks) {
 			proxyCallFixer.deobfuscate(blocks);
+			resourceDecrypter.deobfuscate(blocks);
 			base.deobfuscateMethodEnd(blocks);
 		}
 
