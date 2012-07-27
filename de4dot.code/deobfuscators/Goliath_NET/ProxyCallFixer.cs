@@ -136,10 +136,6 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			throw new System.NotImplementedException();
 		}
 
-		protected override Dictionary<FieldDefinition, MethodDefinition> getFieldToMethodDictionary(TypeDefinition type) {
-			throw new NotImplementedException();
-		}
-
 		protected override void getCallInfo(object context, FieldDefinition field, out MethodReference calledMethod, out OpCode callOpcode) {
 			throw new System.NotImplementedException();
 		}

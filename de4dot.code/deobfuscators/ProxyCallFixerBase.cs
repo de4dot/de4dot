@@ -431,8 +431,29 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		protected abstract object checkCctor(TypeDefinition type, MethodDefinition cctor);
-		protected abstract Dictionary<FieldDefinition, MethodDefinition> getFieldToMethodDictionary(TypeDefinition type);
 		protected abstract void getCallInfo(object context, FieldDefinition field, out MethodReference calledMethod, out OpCode callOpcode);
+
+		Dictionary<FieldDefinition, MethodDefinition> getFieldToMethodDictionary(TypeDefinition type) {
+			var dict = new Dictionary<FieldDefinition, MethodDefinition>();
+			foreach (var method in type.Methods) {
+				if (!method.IsStatic || !method.HasBody || method.Name == ".cctor")
+					continue;
+
+				var instructions = method.Body.Instructions;
+				for (int i = 0; i < instructions.Count; i++) {
+					var instr = instructions[i];
+					if (instr.OpCode.Code != Code.Ldsfld)
+						continue;
+					var field = instr.Operand as FieldDefinition;
+					if (field == null)
+						continue;
+
+					dict[field] = method;
+					break;
+				}
+			}
+			return dict;
+		}
 
 		protected override bool deobfuscate(Blocks blocks, IList<Block> allBlocks) {
 			var removeInfos = new Dictionary<Block, List<RemoveInfo>>();
