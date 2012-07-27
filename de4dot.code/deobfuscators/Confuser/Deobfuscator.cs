@@ -59,6 +59,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		string obfuscatorName = DeobfuscatorInfo.THE_NAME;
 
 		JitMethodsDecrypter jitMethodsDecrypter;
+		ProxyCallFixer proxyCallFixer;
 
 		internal class Options : OptionsBase {
 		}
@@ -91,7 +92,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 		protected override int detectInternal() {
 			int val = 0;
 
-			int sum = toInt32(jitMethodsDecrypter.Detected);
+			int sum = toInt32(jitMethodsDecrypter.Detected) +
+					toInt32(proxyCallFixer != null ? proxyCallFixer.Detected : false);
 			if (sum > 0)
 				val += 100 + 10 * (sum - 1);
 
@@ -101,13 +103,27 @@ namespace de4dot.code.deobfuscators.Confuser {
 		protected override void scanForObfuscator() {
 			jitMethodsDecrypter = new JitMethodsDecrypter(module, DeobfuscatedFile);
 			jitMethodsDecrypter.find();
+			if (jitMethodsDecrypter.Detected)
+				return;
+			initTheRest();
+		}
+
+		void initTheRest() {
+			proxyCallFixer = new ProxyCallFixer(module, getFileData(), DeobfuscatedFile);
+			proxyCallFixer.findDelegateCreator();
+		}
+
+		byte[] getFileData() {
+			if (ModuleBytes != null)
+				return ModuleBytes;
+			return ModuleBytes = DeobUtils.readModule(module);
 		}
 
 		public override bool getDecryptedModule(int count, ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
 			if (count != 0 || !jitMethodsDecrypter.Detected)
 				return false;
 
-			byte[] fileData = ModuleBytes ?? DeobUtils.readModule(module);
+			byte[] fileData = getFileData();
 			var peImage = new PeImage(fileData);
 
 			if (jitMethodsDecrypter.Detected) {
@@ -124,13 +140,29 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		public override IDeobfuscator moduleReloaded(ModuleDefinition module) {
 			var newOne = new Deobfuscator(options);
+			newOne.DeobfuscatedFile = DeobfuscatedFile;
 			newOne.setModule(module);
 			newOne.jitMethodsDecrypter = new JitMethodsDecrypter(module, jitMethodsDecrypter);
+			newOne.initTheRest();
+			newOne.ModuleBytes = ModuleBytes;
 			return newOne;
 		}
 
 		public override void deobfuscateBegin() {
 			base.deobfuscateBegin();
+
+			proxyCallFixer.find();
+		}
+
+		public override void deobfuscateMethodEnd(Blocks blocks) {
+			proxyCallFixer.deobfuscate(blocks);
+			base.deobfuscateMethodEnd(blocks);
+		}
+
+		public override void deobfuscateEnd() {
+			removeProxyDelegates(proxyCallFixer);
+
+			base.deobfuscateEnd();
 		}
 
 		public override IEnumerable<int> getStringDecrypterMethods() {
