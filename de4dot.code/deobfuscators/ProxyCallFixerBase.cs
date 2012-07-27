@@ -58,6 +58,10 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
+		public virtual IEnumerable<Tuple<MethodDefinition, string>> OtherMethods {
+			get { return new List<Tuple<MethodDefinition, string>>(); }
+		}
+
 		public bool Detected {
 			get { return delegateCreatorMethods.Count != 0; }
 		}
