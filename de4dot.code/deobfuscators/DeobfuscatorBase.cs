@@ -472,9 +472,10 @@ namespace de4dot.code.deobfuscators {
 
 			Log.v("Removing types");
 			Log.indent();
+			var moduleType = DotNetUtils.getModuleType(module);
 			foreach (var info in typesToRemove) {
 				var typeDef = info.obj;
-				if (typeDef == null)
+				if (typeDef == null || typeDef == moduleType)
 					continue;
 				bool removed;
 				if (typeDef.IsNested)
@@ -663,18 +664,22 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
-		protected void removeProxyDelegates(ProxyCallFixerBase proxyCallFixer) {
-			removeProxyDelegates(proxyCallFixer, true);
+		protected bool removeProxyDelegates(ProxyCallFixerBase proxyCallFixer) {
+			return removeProxyDelegates(proxyCallFixer, true);
 		}
 
-		protected void removeProxyDelegates(ProxyCallFixerBase proxyCallFixer, bool removeCreators) {
+		protected bool removeProxyDelegates(ProxyCallFixerBase proxyCallFixer, bool removeCreators) {
 			if (proxyCallFixer.Errors != 0) {
 				Log.v("Not removing proxy delegates and creator type since errors were detected.");
-				return;
+				return false;
 			}
 			addTypesToBeRemoved(proxyCallFixer.DelegateTypes, "Proxy delegate type");
-			if (removeCreators && proxyCallFixer.RemovedDelegateCreatorCalls > 0)
+			if (removeCreators && proxyCallFixer.RemovedDelegateCreatorCalls > 0) {
 				addTypesToBeRemoved(proxyCallFixer.DelegateCreatorTypes, "Proxy delegate creator type");
+				foreach (var tuple in proxyCallFixer.OtherMethods)
+					addMethodToBeRemoved(tuple.Item1, tuple.Item2);
+			}
+			return true;
 		}
 
 		protected Resource getResource(IEnumerable<string> strings) {
