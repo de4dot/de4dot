@@ -29,9 +29,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "Confuser";
 		public const string THE_TYPE = "cn";
+		BoolOption removeAntiDebug;
 
 		public DeobfuscatorInfo()
 			: base() {
+			removeAntiDebug = new BoolOption(null, makeArgName("antidb"), "Remove anti debug code", true);
 		}
 
 		public override string Name {
@@ -45,11 +47,13 @@ namespace de4dot.code.deobfuscators.Confuser {
 		public override IDeobfuscator createDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
 				ValidNameRegex = validNameRegex.get(),
+				RemoveAntiDebug = removeAntiDebug.get(),
 			});
 		}
 
 		protected override IEnumerable<Option> getOptionsInternal() {
 			return new List<Option>() {
+				removeAntiDebug,
 			};
 		}
 	}
@@ -60,8 +64,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		JitMethodsDecrypter jitMethodsDecrypter;
 		ProxyCallFixer proxyCallFixer;
+		AntiDebugger antiDebugger;
 
 		internal class Options : OptionsBase {
+			public bool RemoveAntiDebug { get; set; }
 		}
 
 		public override string Type {
@@ -93,7 +99,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 			int val = 0;
 
 			int sum = toInt32(jitMethodsDecrypter.Detected) +
-					toInt32(proxyCallFixer != null ? proxyCallFixer.Detected : false);
+					toInt32(proxyCallFixer != null ? proxyCallFixer.Detected : false) +
+					toInt32(antiDebugger != null ? antiDebugger.Detected : false);
 			if (sum > 0)
 				val += 100 + 10 * (sum - 1);
 
@@ -111,6 +118,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 		void initTheRest() {
 			proxyCallFixer = new ProxyCallFixer(module, getFileData(), DeobfuscatedFile);
 			proxyCallFixer.findDelegateCreator();
+			antiDebugger = new AntiDebugger(module);
+			antiDebugger.find();
 		}
 
 		byte[] getFileData() {
@@ -141,10 +150,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 		public override IDeobfuscator moduleReloaded(ModuleDefinition module) {
 			var newOne = new Deobfuscator(options);
 			newOne.DeobfuscatedFile = DeobfuscatedFile;
+			newOne.ModuleBytes = ModuleBytes;
 			newOne.setModule(module);
 			newOne.jitMethodsDecrypter = new JitMethodsDecrypter(module, jitMethodsDecrypter);
 			newOne.initTheRest();
-			newOne.ModuleBytes = ModuleBytes;
 			return newOne;
 		}
 
@@ -154,6 +163,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 			if (jitMethodsDecrypter != null) {
 				addModuleCctorInitCallToBeRemoved(jitMethodsDecrypter.InitMethod);
 				addTypeToBeRemoved(jitMethodsDecrypter.Type, "Method decrypter (JIT) type");
+			}
+
+			if (options.RemoveAntiDebug) {
+				addModuleCctorInitCallToBeRemoved(antiDebugger.InitMethod);
+				addTypeToBeRemoved(antiDebugger.Type, "Anti debugger type");
 			}
 
 			proxyCallFixer.find();
