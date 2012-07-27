@@ -50,6 +50,14 @@ namespace de4dot.code.deobfuscators.Confuser {
 			public int options;
 		}
 
+		public MethodDefinition InitMethod {
+			get { return initMethod; }
+		}
+
+		public TypeDefinition Type {
+			get { return initMethod != null ? initMethod.DeclaringType : null; }
+		}
+
 		public bool Detected {
 			get { return initMethod != null; }
 		}

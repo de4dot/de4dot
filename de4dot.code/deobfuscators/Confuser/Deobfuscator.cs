@@ -151,6 +151,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 		public override void deobfuscateBegin() {
 			base.deobfuscateBegin();
 
+			if (jitMethodsDecrypter != null) {
+				addModuleCctorInitCallToBeRemoved(jitMethodsDecrypter.InitMethod);
+				addTypeToBeRemoved(jitMethodsDecrypter.Type, "Method decrypter (JIT) type");
+			}
+
 			proxyCallFixer.find();
 		}
 
