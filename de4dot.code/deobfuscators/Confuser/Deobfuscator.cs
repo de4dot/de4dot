@@ -169,6 +169,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 		public override void deobfuscateBegin() {
 			base.deobfuscateBegin();
 
+			removeObfuscatorAttribute();
+
 			if (jitMethodsDecrypter != null) {
 				addModuleCctorInitCallToBeRemoved(jitMethodsDecrypter.InitMethod);
 				addTypeToBeRemoved(jitMethodsDecrypter.Type, "Method decrypter (JIT) type");
@@ -185,6 +187,13 @@ namespace de4dot.code.deobfuscators.Confuser {
 			}
 
 			proxyCallFixer.find();
+		}
+
+		void removeObfuscatorAttribute() {
+			foreach (var type in module.Types) {
+				if (type.FullName == "ConfusedByAttribute")
+					addAttributeToBeRemoved(type, "Obfuscator attribute");
+			}
 		}
 
 		public override void deobfuscateMethodEnd(Blocks blocks) {
