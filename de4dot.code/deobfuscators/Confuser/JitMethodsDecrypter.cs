@@ -466,11 +466,14 @@ namespace de4dot.code.deobfuscators.Confuser {
 				if (index3 < 0)
 					continue;
 
-				var field1 = (FieldDefinition)instrs[index1].Operand;
-				var field2 = (FieldDefinition)instrs[index2].Operand;
-				var field3 = (FieldDefinition)instrs[index3].Operand;
+				var field1 = instrs[index1].Operand as FieldDefinition;
+				var field2 = instrs[index2].Operand as FieldDefinition;
+				var field3 = instrs[index3].Operand as FieldDefinition;
+				if (field1 == null || field2 == null || field3 == null)
+					continue;
 				if (field1.DeclaringType != field2.DeclaringType || field1.DeclaringType != field3.DeclaringType)
 					continue;
+
 				maxStackIndex = getInstanceFieldIndex(field1);
 				ehsIndex = getInstanceFieldIndex(field2);
 				optionsIndex = getInstanceFieldIndex(field3);
