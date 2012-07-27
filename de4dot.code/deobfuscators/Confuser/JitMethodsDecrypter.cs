@@ -315,14 +315,14 @@ namespace de4dot.code.deobfuscators.Confuser {
 				return false;
 			if (!DotNetUtils.isLdloc(instrs[i++]))
 				return false;
-			if (!isCallMethod(instrs[i++], Code.Callvirt, "System.Int32 System.IO.BinaryReader::ReadInt32()"))
+			if (!ConfuserUtils.isCallMethod(instrs[i++], Code.Callvirt, "System.Int32 System.IO.BinaryReader::ReadInt32()"))
 				return false;
 			var ldci4 = instrs[i++];
 			if (!DotNetUtils.isLdcI4(ldci4))
 				return false;
 			if (instrs[i++].OpCode.Code != Code.Xor)
 				return false;
-			if (!isCallMethod(instrs[i++], Code.Callvirt, "System.Byte[] System.IO.BinaryReader::ReadBytes(System.Int32)"))
+			if (!ConfuserUtils.isCallMethod(instrs[i++], Code.Callvirt, "System.Byte[] System.IO.BinaryReader::ReadBytes(System.Int32)"))
 				return false;
 			if (!DotNetUtils.isStloc(instrs[i++]))
 				return false;
@@ -335,7 +335,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		static bool findKey4(MethodDefinition method, out uint key) {
 			var instrs = method.Body.Instructions;
 			for (int index = 0; index < instrs.Count; index++) {
-				index = findCallMethod(instrs, index, Code.Call, "System.Void System.Runtime.InteropServices.Marshal::Copy(System.Byte[],System.Int32,System.IntPtr,System.Int32)");
+				index = ConfuserUtils.findCallMethod(instrs, index, Code.Call, "System.Void System.Runtime.InteropServices.Marshal::Copy(System.Byte[],System.Int32,System.IntPtr,System.Int32)");
 				if (index < 0)
 					break;
 				if (index + 2 >= instrs.Count)
@@ -411,7 +411,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			if (!DotNetUtils.isLdloc(instrs[index]))
 				return false;
-			if (!isCallMethod(instrs[index + 1], Code.Callvirt, "System.UInt32 System.IO.BinaryReader::ReadUInt32()"))
+			if (!ConfuserUtils.isCallMethod(instrs[index + 1], Code.Callvirt, "System.UInt32 System.IO.BinaryReader::ReadUInt32()"))
 				return false;
 			if (!DotNetUtils.isStloc(instrs[index + 2]))
 				return false;
@@ -421,28 +421,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		static int findCallvirtReadUInt32(IList<Instruction> instrs, int index) {
-			return findCallMethod(instrs, index, Code.Callvirt, "System.UInt32 System.IO.BinaryReader::ReadUInt32()");
+			return ConfuserUtils.findCallMethod(instrs, index, Code.Callvirt, "System.UInt32 System.IO.BinaryReader::ReadUInt32()");
 		}
 
 		static int findCallvirtReadUInt64(IList<Instruction> instrs, int index) {
-			return findCallMethod(instrs, index, Code.Callvirt, "System.UInt64 System.IO.BinaryReader::ReadUInt64()");
-		}
-
-		static int findCallMethod(IList<Instruction> instrs, int index, Code callCode, string methodFullName) {
-			for (int i = index; i < instrs.Count; i++) {
-				if (!isCallMethod(instrs[i], callCode, methodFullName))
-					continue;
-
-				return i;
-			}
-			return -1;
-		}
-
-		static bool isCallMethod(Instruction instr, Code callCode, string methodFullName) {
-			if (instr.OpCode.Code != callCode)
-				return false;
-			var calledMethod = instr.Operand as MethodReference;
-			return calledMethod != null && calledMethod.FullName == methodFullName;
+			return ConfuserUtils.findCallMethod(instrs, index, Code.Callvirt, "System.UInt64 System.IO.BinaryReader::ReadUInt64()");
 		}
 
 		bool initializeMethodDataIndexes(MethodDefinition method) {
