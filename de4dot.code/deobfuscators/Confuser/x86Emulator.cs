@@ -126,7 +126,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			reader.BaseStream.Position = peImage.rvaToOffset(rva);
 			if (!isBytes(prolog))
-				throw new ApplicationException(string.Format("Missing epilog @ RVA {0:X8}", rva));
+				throw new ApplicationException(string.Format("Missing prolog @ RVA {0:X8}", rva));
 			reader.BaseStream.Position += prolog.Length;
 
 			while (!isBytes(epilog))
