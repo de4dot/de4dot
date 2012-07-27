@@ -683,6 +683,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 						numExceptions < 0 || numExceptions > 0x1000 ||
 						codeSize < 0 || codeSize > 0x00100000 ||
 						(options & ~0x1FF) != 0) {
+						Log.v("MethodData isn't encrypted. Token {0:X8}", dm.token);
 						Buffer.BlockCopy(methodsData, methodDataOffset, methodData, 0, 20);
 						Array.Copy(methodsData, methodDataOffset + 20, codeData, 0, codeData.Length);
 					}
