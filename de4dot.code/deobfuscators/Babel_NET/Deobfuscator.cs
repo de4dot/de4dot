@@ -207,7 +207,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			if (Operations.DecryptStrings != OpDecryptString.None) {
 				if (stringDecrypter.Resource != null)
 					Log.v("Adding string decrypter. Resource: {0}", Utils.toCsharpString(stringDecrypter.Resource.Name));
-				staticStringInliner.add(stringDecrypter.DecryptMethod, (method, args) => {
+				staticStringInliner.add(stringDecrypter.DecryptMethod, (method, gim, args) => {
 					return stringDecrypter.decrypt(args);
 				});
 				DeobfuscatedFile.stringDecryptersAdded();
@@ -232,13 +232,13 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				addTypeToBeRemoved(constantsDecrypter.Type, "Constants decrypter type");
 				addResourceToBeRemoved(constantsDecrypter.Resource, "Encrypted constants");
 				int32ValueInliner = new Int32ValueInliner();
-				int32ValueInliner.add(constantsDecrypter.Int32Decrypter, (method, args) => constantsDecrypter.decryptInt32((int)args[0]));
+				int32ValueInliner.add(constantsDecrypter.Int32Decrypter, (method, gim, args) => constantsDecrypter.decryptInt32((int)args[0]));
 				int64ValueInliner = new Int64ValueInliner();
-				int64ValueInliner.add(constantsDecrypter.Int64Decrypter, (method, args) => constantsDecrypter.decryptInt64((int)args[0]));
+				int64ValueInliner.add(constantsDecrypter.Int64Decrypter, (method, gim, args) => constantsDecrypter.decryptInt64((int)args[0]));
 				singleValueInliner = new SingleValueInliner();
-				singleValueInliner.add(constantsDecrypter.SingleDecrypter, (method, args) => constantsDecrypter.decryptSingle((int)args[0]));
+				singleValueInliner.add(constantsDecrypter.SingleDecrypter, (method, gim, args) => constantsDecrypter.decryptSingle((int)args[0]));
 				doubleValueInliner = new DoubleValueInliner();
-				doubleValueInliner.add(constantsDecrypter.DoubleDecrypter, (method, args) => constantsDecrypter.decryptDouble((int)args[0]));
+				doubleValueInliner.add(constantsDecrypter.DoubleDecrypter, (method, gim, args) => constantsDecrypter.decryptDouble((int)args[0]));
 			}
 
 			proxyCallFixer.find();

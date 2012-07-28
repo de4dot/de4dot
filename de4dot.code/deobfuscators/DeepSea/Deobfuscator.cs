@@ -214,7 +214,7 @@ done:
 			}
 
 			foreach (var method in stringDecrypter.DecrypterMethods) {
-				staticStringInliner.add(method, (method2, args) => {
+				staticStringInliner.add(method, (method2, gim, args) => {
 					return stringDecrypter.decrypt(method2, args);
 				});
 			}

@@ -263,7 +263,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 
 			proxyCallFixer.find();
 
-			staticStringInliner.add(stringDecrypter.Method, (method, args) => stringDecrypter.decrypt((string)args[0]));
+			staticStringInliner.add(stringDecrypter.Method, (method, gim, args) => stringDecrypter.decrypt((string)args[0]));
 			DeobfuscatedFile.stringDecryptersAdded();
 
 			if (options.DecryptMethods) {

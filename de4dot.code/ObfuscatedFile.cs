@@ -720,14 +720,19 @@ namespace de4dot.code {
 			Log.indent();
 
 			if (hasNonEmptyBody(method)) {
-				var blocks = new Blocks(method);
+				try {
+					var blocks = new Blocks(method);
 
-				handler(blocks);
+					handler(blocks);
 
-				IList<Instruction> allInstructions;
-				IList<ExceptionHandler> allExceptionHandlers;
-				blocks.getCode(out allInstructions, out allExceptionHandlers);
-				DotNetUtils.restoreBody(method, allInstructions, allExceptionHandlers);
+					IList<Instruction> allInstructions;
+					IList<ExceptionHandler> allExceptionHandlers;
+					blocks.getCode(out allInstructions, out allExceptionHandlers);
+					DotNetUtils.restoreBody(method, allInstructions, allExceptionHandlers);
+				}
+				catch {
+					Log.w("Could not deobfuscate {0:X8}", method.MetadataToken.ToInt32());
+				}
 			}
 
 			Log.deIndent();

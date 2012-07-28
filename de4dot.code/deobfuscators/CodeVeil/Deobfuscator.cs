@@ -185,7 +185,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 
 			if (Operations.DecryptStrings != OpDecryptString.None) {
 				stringDecrypter.initialize();
-				staticStringInliner.add(stringDecrypter.DecryptMethod, (method, args) => {
+				staticStringInliner.add(stringDecrypter.DecryptMethod, (method, gim, args) => {
 					return stringDecrypter.decrypt((int)args[0]);
 				});
 				DeobfuscatedFile.stringDecryptersAdded();

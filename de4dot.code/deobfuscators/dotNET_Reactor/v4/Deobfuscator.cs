@@ -426,18 +426,18 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			emptyClass = new EmptyClass(module);
 
 			if (options.DecryptBools) {
-				booleanValueInliner.add(booleanDecrypter.Method, (method, args) => {
+				booleanValueInliner.add(booleanDecrypter.Method, (method, gim, args) => {
 					return booleanDecrypter.decrypt((int)args[0]);
 				});
 			}
 
 			foreach (var info in stringDecrypter.DecrypterInfos) {
-				staticStringInliner.add(info.method, (method2, args) => {
+				staticStringInliner.add(info.method, (method2, gim, args) => {
 					return stringDecrypter.decrypt(method2, (int)args[0]);
 				});
 			}
 			if (stringDecrypter.OtherStringDecrypter != null) {
-				staticStringInliner.add(stringDecrypter.OtherStringDecrypter, (method2, args) => {
+				staticStringInliner.add(stringDecrypter.OtherStringDecrypter, (method2, gim, args) => {
 					return stringDecrypter.decrypt((string)args[0]);
 				});
 			}

@@ -163,7 +163,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 
 			stringDecrypter.initialize();
 			foreach (var info in stringDecrypter.DecrypterInfos) {
-				staticStringInliner.add(info.method, (method2, args) => {
+				staticStringInliner.add(info.method, (method2, gim, args) => {
 					return stringDecrypter.decrypt(method2);
 				});
 			}
