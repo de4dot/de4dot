@@ -71,6 +71,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 		AntiDebugger antiDebugger;
 		AntiDumping antiDumping;
 		ResourceDecrypter resourceDecrypter;
+		ConstantsDecrypter constantsDecrypter;
+		Int32ValueInliner int32ValueInliner;
+		Int64ValueInliner int64ValueInliner;
+		SingleValueInliner singleValueInliner;
+		DoubleValueInliner doubleValueInliner;
 
 		internal class Options : OptionsBase {
 			public bool RemoveAntiDebug { get; set; }
@@ -100,6 +105,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		public Deobfuscator(Options options)
 			: base(options) {
 			this.options = options;
+			StringFeatures = StringFeatures.AllowStaticDecryption | StringFeatures.AllowDynamicDecryption;
 		}
 
 		protected override int detectInternal() {
@@ -109,7 +115,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 					toInt32(proxyCallFixer != null ? proxyCallFixer.Detected : false) +
 					toInt32(antiDebugger != null ? antiDebugger.Detected : false) +
 					toInt32(antiDumping != null ? antiDumping.Detected : false) +
-					toInt32(resourceDecrypter != null ? resourceDecrypter.Detected : false);
+					toInt32(resourceDecrypter != null ? resourceDecrypter.Detected : false) +
+					toInt32(constantsDecrypter != null ? constantsDecrypter.Detected : false);
 			if (sum > 0)
 				val += 100 + 10 * (sum - 1);
 
@@ -133,6 +140,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 			antiDumping.find();
 			resourceDecrypter = new ResourceDecrypter(module, DeobfuscatedFile);
 			resourceDecrypter.find();
+			constantsDecrypter = new ConstantsDecrypter(module, getFileData(), DeobfuscatedFile);
+			constantsDecrypter.find();
 		}
 
 		byte[] getFileData() {
@@ -192,6 +201,24 @@ namespace de4dot.code.deobfuscators.Confuser {
 				addTypeToBeRemoved(antiDumping.Type, "Anti dumping type");
 			}
 
+			constantsDecrypter.initialize();
+			int32ValueInliner = new Int32ValueInliner();
+			int64ValueInliner = new Int64ValueInliner();
+			singleValueInliner = new SingleValueInliner();
+			doubleValueInliner = new DoubleValueInliner();
+			foreach (var info in constantsDecrypter.Decrypters) {
+				staticStringInliner.add(info.method, (method, gim, args) => constantsDecrypter.decryptString(method, gim, (uint)args[0], (ulong)args[1]));
+				int32ValueInliner.add(info.method, (method, gim, args) => constantsDecrypter.decryptInt32(method, gim, (uint)args[0], (ulong)args[1]));
+				int64ValueInliner.add(info.method, (method, gim, args) => constantsDecrypter.decryptInt64(method, gim, (uint)args[0], (ulong)args[1]));
+				singleValueInliner.add(info.method, (method, gim, args) => constantsDecrypter.decryptSingle(method, gim, (uint)args[0], (ulong)args[1]));
+				doubleValueInliner.add(info.method, (method, gim, args) => constantsDecrypter.decryptDouble(method, gim, (uint)args[0], (ulong)args[1]));
+			}
+			DeobfuscatedFile.stringDecryptersAdded();
+			addTypesToBeRemoved(constantsDecrypter.Types, "Constants decrypter type");
+			addFieldsToBeRemoved(constantsDecrypter.Fields, "Constants decrypter field");
+			addMethodToBeRemoved(constantsDecrypter.NativeMethod, "Constants decrypter native method");
+			addResourceToBeRemoved(constantsDecrypter.Resource, "Encrypted constants");
+
 			proxyCallFixer.find();
 		}
 
@@ -214,11 +241,16 @@ namespace de4dot.code.deobfuscators.Confuser {
 		public override void deobfuscateMethodEnd(Blocks blocks) {
 			proxyCallFixer.deobfuscate(blocks);
 			resourceDecrypter.deobfuscate(blocks);
+			int32ValueInliner.decrypt(blocks);
+			int64ValueInliner.decrypt(blocks);
+			singleValueInliner.decrypt(blocks);
+			doubleValueInliner.decrypt(blocks);
 			base.deobfuscateMethodEnd(blocks);
 		}
 
 		public override void deobfuscateEnd() {
 			removeProxyDelegates(proxyCallFixer);
+			constantsDecrypter.cleanUp();
 
 			base.deobfuscateEnd();
 		}
