@@ -222,7 +222,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 				return;
 			stringDecrypter.initialize(DeobfuscatedFile);
 			foreach (var info in stringDecrypter.Infos)
-				staticStringInliner.add(info.Method, (method, args) => stringDecrypter.decrypt(method, (int)args[0], (int)args[1], (int)args[2]));
+				staticStringInliner.add(info.Method, (method, gim, args) => stringDecrypter.decrypt(method, (int)args[0], (int)args[1], (int)args[2]));
 			DeobfuscatedFile.stringDecryptersAdded();
 			hasInitializedStringDecrypter = true;
 		}

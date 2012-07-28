@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Mono.Cecil.Metadata;
 using de4dot.blocks;
 
 namespace de4dot.code {
@@ -183,7 +184,7 @@ namespace de4dot.code {
 		protected abstract void inlineAllCalls();
 
 		// Returns null if method is not a method we should inline
-		protected abstract CallResult createCallResult(MethodReference method, Block block, int callInstrIndex);
+		protected abstract CallResult createCallResult(MethodReference method, GenericInstanceMethod gim, Block block, int callInstrIndex);
 
 		public int decrypt(Blocks theBlocks) {
 			if (!HasHandlers)
@@ -232,7 +233,11 @@ namespace de4dot.code {
 				if (method == null)
 					continue;
 
-				var callResult = createCallResult(method, block, i);
+				MethodReference elementMethod = method;
+				var gim = method as GenericInstanceMethod;
+				if (gim != null)
+					elementMethod = gim.ElementMethod;
+				var callResult = createCallResult(elementMethod, gim, block, i);
 				if (callResult == null)
 					continue;
 
@@ -255,6 +260,8 @@ namespace de4dot.code {
 					return false;
 				if (arg is int)
 					arg = fixIntArg(methodArgs[i].ParameterType, (int)arg);
+				else if (arg is long)
+					arg = fixIntArg(methodArgs[i].ParameterType, (long)arg);
 				args[i] = arg;
 			}
 
@@ -263,18 +270,18 @@ namespace de4dot.code {
 			return true;
 		}
 
-		object fixIntArg(TypeReference type, int value) {
-			if (type.IsPrimitive) {
-				switch (type.FullName) {
-				case "System.Boolean":	return value != 0;
-				case "System.Char":		return (char)value;
-				case "System.Byte":		return (byte)value;
-				case "System.SByte":	return (sbyte)value;
-				case "System.Int16":	return (short)value;
-				case "System.UInt16":	return (ushort)value;
-				case "System.Int32":	return (int)value;
-				case "System.UInt32":	return (uint)value;
-				}
+		object fixIntArg(TypeReference type, long value) {
+			switch (type.EType) {
+			case ElementType.Boolean: return value != 0;
+			case ElementType.Char: return (char)value;
+			case ElementType.I1: return (sbyte)value;
+			case ElementType.U1: return (byte)value;
+			case ElementType.I2: return (short)value;
+			case ElementType.U2: return (ushort)value;
+			case ElementType.I4: return (int)value;
+			case ElementType.U4: return (uint)value;
+			case ElementType.I8: return (long)value;
+			case ElementType.U8: return (ulong)value;
 			}
 			throw new ApplicationException(string.Format("Wrong type {0}", type));
 		}
@@ -360,6 +367,7 @@ namespace de4dot.code {
 		}
 
 		void inlineReturnValues() {
+			callResults = removeNulls(callResults);
 			callResults.Sort((a, b) => {
 				int i1 = allBlocks.FindIndex((x) => a.block == x);
 				int i2 = allBlocks.FindIndex((x) => b.block == x);
@@ -370,6 +378,15 @@ namespace de4dot.code {
 			});
 			callResults.Reverse();
 			inlineReturnValues(callResults);
+		}
+
+		static List<CallResult> removeNulls(List<CallResult> inList) {
+			var outList = new List<CallResult>(inList.Count);
+			foreach (var callResult in inList) {
+				if (callResult.returnValue != null)
+					outList.Add(callResult);
+			}
+			return outList;
 		}
 
 		protected abstract void inlineReturnValues(IList<CallResult> callResults);

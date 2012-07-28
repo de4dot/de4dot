@@ -115,7 +115,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			base.deobfuscateBegin();
 
 			stringDecrypter.initialize(DeobfuscatedFile);
-			staticStringInliner.add(stringDecrypter.Method, (method2, args) => {
+			staticStringInliner.add(stringDecrypter.Method, (method2, gim, args) => {
 				return stringDecrypter.decrypt((int)args[0]);
 			});
 			DeobfuscatedFile.stringDecryptersAdded();

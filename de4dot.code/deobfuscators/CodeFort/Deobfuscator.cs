@@ -130,7 +130,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 		public override void deobfuscateBegin() {
 			base.deobfuscateBegin();
 
-			staticStringInliner.add(stringDecrypter.Method, (method, args) => stringDecrypter.decrypt((string)args[0]));
+			staticStringInliner.add(stringDecrypter.Method, (method, gim, args) => stringDecrypter.decrypt((string)args[0]));
 			DeobfuscatedFile.stringDecryptersAdded();
 
 			proxyCallFixer.find();

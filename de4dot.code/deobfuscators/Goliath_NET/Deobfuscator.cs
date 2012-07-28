@@ -191,7 +191,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			if (options.DecryptIntegers) {
 				int32ValueInliner = new Int32ValueInliner();
 				foreach (var method in integerDecrypter.getMethods()) {
-					int32ValueInliner.add(method, (method2, args) => {
+					int32ValueInliner.add(method, (method2, gim, args) => {
 						return integerDecrypter.decrypt(method2);
 					});
 				}
@@ -200,14 +200,14 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			if (options.DecryptArrays) {
 				arrayValueInliner = new ArrayValueInliner(module, initializedDataCreator);
 				foreach (var method in arrayDecrypter.getMethods()) {
-					arrayValueInliner.add(method, (method2, args) => {
+					arrayValueInliner.add(method, (method2, gim, args) => {
 						return arrayDecrypter.decrypt(method2);
 					});
 				}
 			}
 
 			foreach (var method in stringDecrypter.getMethods()) {
-				staticStringInliner.add(method, (method2, args) => {
+				staticStringInliner.add(method, (method2, gim, args) => {
 					return stringDecrypter.decrypt(method2);
 				});
 				DeobfuscatedFile.stringDecryptersAdded();

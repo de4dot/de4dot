@@ -130,7 +130,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			stringDecrypter.find();
 			if (stringDecrypter.Detected) {
 				stringDecrypter.initialize(getEncoding(options.StringCodePage));
-				staticStringInliner.add(stringDecrypter.Method, (method, args) => stringDecrypter.decrypt((uint)args[0]));
+				staticStringInliner.add(stringDecrypter.Method, (method, gim, args) => stringDecrypter.decrypt((uint)args[0]));
 				DeobfuscatedFile.stringDecryptersAdded();
 			}
 
