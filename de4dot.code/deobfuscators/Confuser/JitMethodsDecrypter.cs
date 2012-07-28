@@ -669,30 +669,13 @@ namespace de4dot.code.deobfuscators.Confuser {
 				byte[] codeData;
 				decryptMethodData(methodsData, methodDataOffset, (uint)key, len, out methodData, out codeData);
 
-				uint options = 0;
-				int codeSize = 0, numExceptions = 0;
-				for (int j = 0; j < 2; j++) {
-					dm.mhFlags = 0x03;
-					int maxStack = (int)methodData[methodDataIndexes.maxStack];
-					dm.mhMaxStack = (ushort)maxStack;
-					dm.mhLocalVarSigTok = methodData[methodDataIndexes.localVarSigTok];
-					numExceptions = (int)methodData[methodDataIndexes.ehs];
-					options = methodData[methodDataIndexes.options];
-					codeSize = (int)methodData[methodDataIndexes.codeSize];
-
-					// Sometimes the data isn't encrypted!
-					if (maxStack < 0 || maxStack > 0xFFFF ||
-						(dm.mhLocalVarSigTok != 0 && (dm.mhLocalVarSigTok >> 24) != 0x11) ||
-						numExceptions < 0 || numExceptions > 0x1000 ||
-						codeSize < 0 || codeSize > 0x00100000 ||
-						(options & ~0x1FF) != 0) {
-						Log.v("MethodData isn't encrypted. Token {0:X8}", dm.token);
-						Buffer.BlockCopy(methodsData, methodDataOffset, methodData, 0, 20);
-						Array.Copy(methodsData, methodDataOffset + 20, codeData, 0, codeData.Length);
-					}
-					else
-						break;
-				}
+				dm.mhFlags = 0x03;
+				int maxStack = (int)methodData[methodDataIndexes.maxStack];
+				dm.mhMaxStack = (ushort)maxStack;
+				dm.mhLocalVarSigTok = methodData[methodDataIndexes.localVarSigTok];
+				int numExceptions = (int)methodData[methodDataIndexes.ehs];
+				uint options = methodData[methodDataIndexes.options];
+				int codeSize = (int)methodData[methodDataIndexes.codeSize];
 
 				var codeDataReader = new BinaryReader(new MemoryStream(codeData));
 				if ((options >> 8) == 0) {
