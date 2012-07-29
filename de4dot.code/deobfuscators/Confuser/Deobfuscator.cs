@@ -118,7 +118,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		protected override int detectInternal() {
 			int val = 0;
 
-			int sum = toInt32(jitMethodsDecrypter.Detected) +
+			int sum = toInt32(jitMethodsDecrypter != null ? jitMethodsDecrypter.Detected : false) +
 					toInt32(proxyCallFixer != null ? proxyCallFixer.Detected : false) +
 					toInt32(antiDebugger != null ? antiDebugger.Detected : false) +
 					toInt32(antiDumping != null ? antiDumping.Detected : false) +
