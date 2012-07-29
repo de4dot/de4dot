@@ -51,6 +51,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 			}
 		}
 
+		protected override bool ProxyCallIsObfuscated {
+			get { return true; }
+		}
+
 		public override IEnumerable<Tuple<MethodDefinition, string>> OtherMethods {
 			get {
 				var list = new List<Tuple<MethodDefinition, string>>();
@@ -225,7 +229,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				return false;
 
 			key = (uint)DotNetUtils.getLdcI4Value(ldci4);
-			throw new NotSupportedException("TODO: Test this method, then return true");
+			return true;
 		}
 
 		static MethodDefinition getNativeMethod(IList<Instruction> instrs, int index) {

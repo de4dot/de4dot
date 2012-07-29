@@ -77,6 +77,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 		SingleValueInliner singleValueInliner;
 		DoubleValueInliner doubleValueInliner;
 
+		bool startedDeobfuscating = false;
+
 		internal class Options : OptionsBase {
 			public bool RemoveAntiDebug { get; set; }
 			public bool RemoveAntiDump { get; set; }
@@ -98,6 +100,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 			get {
 				var list = new List<IBlocksDeobfuscator>();
 				list.Add(new ConstantsFolder { ExecuteOnNoChange = true });
+
+				// Add this one last so all cflow is deobfuscated whenever it executes
+				if (!startedDeobfuscating && int32ValueInliner != null)
+					list.Add(new ConstantsInliner(int32ValueInliner, int64ValueInliner, singleValueInliner, doubleValueInliner) { ExecuteOnNoChange = true });
+
 				return list;
 			}
 		}
@@ -132,16 +139,18 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		void initTheRest() {
+			resourceDecrypter = new ResourceDecrypter(module, DeobfuscatedFile);
+			resourceDecrypter.find();
+			constantsDecrypter = new ConstantsDecrypter(module, getFileData(), DeobfuscatedFile);
+			constantsDecrypter.find();
+			if (constantsDecrypter.Detected)
+				initializeConstantsDecrypter();
 			proxyCallFixer = new ProxyCallFixer(module, getFileData(), DeobfuscatedFile);
 			proxyCallFixer.findDelegateCreator();
 			antiDebugger = new AntiDebugger(module);
 			antiDebugger.find();
 			antiDumping = new AntiDumping(module);
-			antiDumping.find();
-			resourceDecrypter = new ResourceDecrypter(module, DeobfuscatedFile);
-			resourceDecrypter.find();
-			constantsDecrypter = new ConstantsDecrypter(module, getFileData(), DeobfuscatedFile);
-			constantsDecrypter.find();
+			antiDumping.find(DeobfuscatedFile);
 		}
 
 		byte[] getFileData() {
@@ -171,6 +180,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		public override IDeobfuscator moduleReloaded(ModuleDefinition module) {
 			var newOne = new Deobfuscator(options);
+			DeobfuscatedFile.setDeobfuscator(newOne);
 			newOne.DeobfuscatedFile = DeobfuscatedFile;
 			newOne.ModuleBytes = ModuleBytes;
 			newOne.setModule(module);
@@ -183,8 +193,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			base.deobfuscateBegin();
 
 			removeObfuscatorAttribute();
-
-			decryptResources();
+			initializeConstantsDecrypter();
 
 			if (jitMethodsDecrypter != null) {
 				addModuleCctorInitCallToBeRemoved(jitMethodsDecrypter.InitMethod);
@@ -201,6 +210,18 @@ namespace de4dot.code.deobfuscators.Confuser {
 				addTypeToBeRemoved(antiDumping.Type, "Anti dumping type");
 			}
 
+			proxyCallFixer.find();
+
+			startedDeobfuscating = true;
+		}
+
+		bool hasInitializeConstantsDecrypter = false;
+		void initializeConstantsDecrypter() {
+			if (hasInitializeConstantsDecrypter)
+				return;
+			hasInitializeConstantsDecrypter = true;
+
+			decryptResources();
 			constantsDecrypter.initialize();
 			int32ValueInliner = new Int32ValueInliner();
 			int64ValueInliner = new Int64ValueInliner();
@@ -218,8 +239,6 @@ namespace de4dot.code.deobfuscators.Confuser {
 			addFieldsToBeRemoved(constantsDecrypter.Fields, "Constants decrypter field");
 			addMethodToBeRemoved(constantsDecrypter.NativeMethod, "Constants decrypter native method");
 			addResourceToBeRemoved(constantsDecrypter.Resource, "Encrypted constants");
-
-			proxyCallFixer.find();
 		}
 
 		void decryptResources() {

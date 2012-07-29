@@ -42,12 +42,12 @@ namespace de4dot.code.deobfuscators.Confuser {
 			this.module = module;
 		}
 
-		public void find() {
-			if (checkMethod(DotNetUtils.getModuleTypeCctor(module)))
+		public void find(ISimpleDeobfuscator simpleDeobfuscator) {
+			if (checkMethod(simpleDeobfuscator, DotNetUtils.getModuleTypeCctor(module)))
 				return;
 		}
 
-		bool checkMethod(MethodDefinition method) {
+		bool checkMethod(ISimpleDeobfuscator simpleDeobfuscator, MethodDefinition method) {
 			if (method == null || method.Body == null)
 				return false;
 
@@ -58,6 +58,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				if (calledMethod == null)
 					continue;
 
+				simpleDeobfuscator.deobfuscate(calledMethod, true);
 				if (checkInitMethod(calledMethod)) {
 					initMethod = calledMethod;
 					return true;
