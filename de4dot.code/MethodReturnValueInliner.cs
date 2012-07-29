@@ -144,7 +144,7 @@ namespace de4dot.code {
 	abstract class MethodReturnValueInliner {
 		protected List<CallResult> callResults;
 		List<Block> allBlocks;
-		Blocks blocks;
+		MethodDefinition theMethod;
 		VariableValues variableValues;
 		int errors = 0;
 		bool useUnknownArgs = false;
@@ -178,7 +178,7 @@ namespace de4dot.code {
 		public abstract bool HasHandlers { get; }
 
 		protected MethodDefinition Method {
-			get { return blocks.Method; }
+			get { return theMethod; }
 		}
 
 		protected abstract void inlineAllCalls();
@@ -186,13 +186,19 @@ namespace de4dot.code {
 		// Returns null if method is not a method we should inline
 		protected abstract CallResult createCallResult(MethodReference method, GenericInstanceMethod gim, Block block, int callInstrIndex);
 
-		public int decrypt(Blocks theBlocks) {
+		public int decrypt(Blocks blocks) {
+			if (!HasHandlers)
+				return 0;
+			return decrypt(blocks.Method, blocks.MethodBlocks.getAllBlocks());
+		}
+
+		public int decrypt(MethodDefinition method, List<Block> allBlocks) {
 			if (!HasHandlers)
 				return 0;
 			try {
-				blocks = theBlocks;
+				theMethod = method;
 				callResults = new List<CallResult>();
-				allBlocks = blocks.MethodBlocks.getAllBlocks();
+				this.allBlocks = allBlocks;
 
 				findAllCallResults();
 				inlineAllCalls();
@@ -200,16 +206,16 @@ namespace de4dot.code {
 				return callResults.Count;
 			}
 			finally {
-				blocks = null;
+				theMethod = null;
 				callResults = null;
-				allBlocks = null;
+				this.allBlocks = null;
 				variableValues = null;
 			}
 		}
 
 		bool getLocalVariableValue(VariableDefinition variable, out object value) {
 			if (variableValues == null)
-				variableValues = new VariableValues(blocks.Locals, allBlocks);
+				variableValues = new VariableValues(theMethod.Body.Variables, allBlocks);
 			var val = variableValues.getValue(variable);
 			if (!val.isValid()) {
 				value = null;
@@ -333,7 +339,7 @@ namespace de4dot.code {
 				case Code.Ldloc_1:
 				case Code.Ldloc_2:
 				case Code.Ldloc_3:
-					getLocalVariableValue(Instr.getLocalVar(blocks.Locals, instr), out arg);
+					getLocalVariableValue(Instr.getLocalVar(theMethod.Body.Variables, instr), out arg);
 					break;
 
 				case Code.Ldfld:
