@@ -22,5 +22,6 @@ namespace de4dot.code.deobfuscators {
 		IDeobfuscatorContext DeobfuscatorContext { get; }
 		void createAssemblyFile(byte[] data, string assemblyName, string extension);
 		void stringDecryptersAdded();
+		void setDeobfuscator(IDeobfuscator deob);
 	}
 }

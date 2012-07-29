@@ -771,5 +771,9 @@ namespace de4dot.code {
 		void IDeobfuscatedFile.stringDecryptersAdded() {
 			updateDynamicStringInliner();
 		}
+
+		void IDeobfuscatedFile.setDeobfuscator(IDeobfuscator deob) {
+			this.deob = deob;
+		}
 	}
 }
