@@ -67,6 +67,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		string obfuscatorName = DeobfuscatorInfo.THE_NAME;
 
 		JitMethodsDecrypter jitMethodsDecrypter;
+		MemoryMethodsDecrypter memoryMethodsDecrypter;
 		ProxyCallFixer proxyCallFixer;
 		AntiDebugger antiDebugger;
 		AntiDumping antiDumping;
@@ -119,6 +120,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			int val = 0;
 
 			int sum = toInt32(jitMethodsDecrypter != null ? jitMethodsDecrypter.Detected : false) +
+					toInt32(memoryMethodsDecrypter != null ? memoryMethodsDecrypter.Detected : false) +
 					toInt32(proxyCallFixer != null ? proxyCallFixer.Detected : false) +
 					toInt32(antiDebugger != null ? antiDebugger.Detected : false) +
 					toInt32(antiDumping != null ? antiDumping.Detected : false) +
@@ -132,8 +134,16 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		protected override void scanForObfuscator() {
 			jitMethodsDecrypter = new JitMethodsDecrypter(module, DeobfuscatedFile);
-			jitMethodsDecrypter.find();
+			try {
+				jitMethodsDecrypter.find();
+			}
+			catch {
+			}
 			if (jitMethodsDecrypter.Detected)
+				return;
+			memoryMethodsDecrypter = new MemoryMethodsDecrypter(module, DeobfuscatedFile);
+			memoryMethodsDecrypter.find();
+			if (memoryMethodsDecrypter.Detected)
 				return;
 			initTheRest();
 		}
@@ -160,15 +170,24 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		public override bool getDecryptedModule(int count, ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
-			if (count != 0 || !jitMethodsDecrypter.Detected)
+			if (count != 0 || (!jitMethodsDecrypter.Detected && !memoryMethodsDecrypter.Detected))
 				return false;
 
 			byte[] fileData = getFileData();
 			var peImage = new PeImage(fileData);
 
-			if (jitMethodsDecrypter.Detected) {
+			if (jitMethodsDecrypter != null && jitMethodsDecrypter.Detected) {
 				jitMethodsDecrypter.initialize();
 				if (!jitMethodsDecrypter.decrypt(peImage, fileData, ref dumpedMethods))
+					return false;
+
+				newFileData = fileData;
+				return true;
+			}
+
+			if (memoryMethodsDecrypter != null && memoryMethodsDecrypter.Detected) {
+				memoryMethodsDecrypter.initialize();
+				if (!memoryMethodsDecrypter.decrypt(peImage, fileData, ref dumpedMethods))
 					return false;
 
 				newFileData = fileData;
@@ -185,6 +204,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			newOne.ModuleBytes = ModuleBytes;
 			newOne.setModule(module);
 			newOne.jitMethodsDecrypter = new JitMethodsDecrypter(module, jitMethodsDecrypter);
+			newOne.memoryMethodsDecrypter = new MemoryMethodsDecrypter(module, memoryMethodsDecrypter);
 			newOne.initTheRest();
 			return newOne;
 		}
@@ -198,6 +218,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 			if (jitMethodsDecrypter != null) {
 				addModuleCctorInitCallToBeRemoved(jitMethodsDecrypter.InitMethod);
 				addTypeToBeRemoved(jitMethodsDecrypter.Type, "Method decrypter (JIT) type");
+			}
+
+			if (memoryMethodsDecrypter != null) {
+				addModuleCctorInitCallToBeRemoved(memoryMethodsDecrypter.InitMethod);
+				addTypeToBeRemoved(memoryMethodsDecrypter.Type, "Method decrypter (memory) type");
 			}
 
 			if (options.RemoveAntiDebug) {
