@@ -464,23 +464,88 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return DeobUtils.inflate(DeobUtils.aesDecrypt(decrypted, key, DeobUtils.md5Sum(key)), true);
 		}
 
+		static int getDynamicStartIndex(IList<Instruction> instrs, int ldlocIndex) {
+			for (int i = ldlocIndex - 1; i >= 0; i--) {
+				if (instrs[i].OpCode.FlowControl != FlowControl.Next)
+					return i + 1;
+			}
+			return 0;
+		}
+
+		int getDynamicEndIndex(int startIndex, VariableDefinition local) {
+			var instrs = installMethod.Body.Instructions;
+			for (int i = startIndex; i < instrs.Count; i++) {
+				var instr = instrs[i];
+				if (DotNetUtils.isStloc(instr) && DotNetUtils.getLocalVar(installMethod.Body.Variables, instr) == local)
+					return i;
+			}
+			return -1;
+		}
+
+		VariableDefinition getDynamicLocal(out int instrIndex) {
+			var instrs = installMethod.Body.Instructions;
+			for (int i = 0; i < instrs.Count; i++) {
+				i = ConfuserUtils.findCallMethod(instrs, i, Code.Callvirt, "System.Void System.IO.BinaryWriter::Write(System.Byte)");
+				if (i < 0)
+					break;
+				int index = i - 2;
+				if (index < 0)
+					continue;
+				var ldloc = instrs[index];
+				if (!DotNetUtils.isLdloc(ldloc))
+					continue;
+				if (instrs[index + 1].OpCode.Code != Code.Conv_U1)
+					continue;
+
+				instrIndex = index;
+				return DotNetUtils.getLocalVar(installMethod.Body.Variables, ldloc);
+			}
+			instrIndex = 0;
+			return null;
+		}
+
 		byte[] decryptDynamic(byte[] encrypted) {
-			throw new NotSupportedException();	//TODO:
+			int ldlocIndex;
+			var local = getDynamicLocal(out ldlocIndex);
+			if (local == null)
+				throw new ApplicationException("Could not find local");
+
+			var instrs = installMethod.Body.Instructions;
+			int startIndex = getDynamicStartIndex(instrs, ldlocIndex);
+			int endIndex = getDynamicEndIndex(startIndex, local);
+			if (endIndex < 0)
+				throw new ApplicationException("Could not find endIndex");
+
+			var constReader = new ConstantsReader(installMethod);
+
+			return decrypt(encrypted, magic => {
+				constReader.setConstant32(local, magic);
+				int index = startIndex, result;
+				if (!constReader.getNextInt32(ref index, out result))
+					throw new ApplicationException("Could not get constant");
+				if (index != endIndex)
+					throw new ApplicationException("Wrong constant");
+				return (byte)result;
+			});
 		}
 
 		byte[] decryptNative(byte[] encrypted) {
+			var x86Emu = new x86Emulator(new PeImage(fileData));
+			return decrypt(encrypted, magic => (byte)x86Emu.emulate((uint)nativeMethod.RVA, magic));
+		}
+
+		byte[] decrypt(byte[] encrypted, Func<uint, byte> decryptFunc) {
 			var key = getSigKey();
 
 			var decrypted = DeobUtils.aesDecrypt(encrypted, key, DeobUtils.md5Sum(key));
 			decrypted = DeobUtils.inflate(decrypted, true);
 
-			var x86Emu = new x86Emulator(new PeImage(fileData));
 			var reader = new BinaryReader(new MemoryStream(decrypted));
 			var result = new MemoryStream();
 			var writer = new BinaryWriter(result);
 			while (reader.BaseStream.Position < reader.BaseStream.Length) {
 				uint magic = Utils.readEncodedUInt32(reader);
-				writer.Write((byte)x86Emu.emulate((uint)nativeMethod.RVA, magic));
+				writer.Write(decryptFunc(magic));
 			}
 
 			return result.ToArray();
