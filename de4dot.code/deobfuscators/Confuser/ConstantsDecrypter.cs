@@ -39,6 +39,14 @@ namespace de4dot.code.deobfuscators.Confuser {
 		MethodDefinition nativeMethod;
 		EmbeddedResource resource;
 		byte[] constants;
+		ConstType constType = ConstType.Unknown;
+
+		enum ConstType {
+			Unknown,
+			Normal,		// type is not dynamic and native
+			Dynamic,	// type="dynamic"
+			Native,		// type="native"
+		}
 
 		public class DecrypterInfo {
 			readonly ConstantsDecrypter constantsDecrypter;
@@ -210,14 +218,25 @@ namespace de4dot.code.deobfuscators.Confuser {
 			if (!findKeys())
 				throw new ApplicationException("Could not find keys");
 			nativeMethod = findNativeMethod(installMethod, installMethod.DeclaringType);
-			if (nativeMethod == null)
-				throw new ApplicationException("Could not find nativeMethod");
+
+			constType = detectConstType();
+			if (constType == ConstType.Unknown)
+				throw new ApplicationException("Could not detect const type");
 
 			if ((resource = findResource(key0)) == null)
 				throw new ApplicationException("Could not find resource");
 			constants = decrypt(resource.GetResourceData());
 
 			findDecrypters();
+		}
+
+		ConstType detectConstType() {
+			if (nativeMethod != null)
+				return ConstType.Native;
+			else if (DeobUtils.hasInteger(installMethod, 0x10000))
+				return ConstType.Normal;
+			else
+				return ConstType.Dynamic;
 		}
 
 		EmbeddedResource findResource(uint magic) {
@@ -413,10 +432,44 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		byte[] decrypt(byte[] encrypted) {
+			switch (constType) {
+			case ConstType.Normal: return decryptNormal(encrypted);
+			case ConstType.Dynamic: return decryptDynamic(encrypted);
+			case ConstType.Native: return decryptNative(encrypted);
+			default: throw new ApplicationException(string.Format("Unknown const type: {0}", constType));
+			}
+		}
+
+		byte[] getSigKey() {
 			uint sigToken = key0d ^ installMethod.MetadataToken.ToUInt32();
 			if ((sigToken & 0xFF000000) != 0x11000000)
 				throw new ApplicationException("Invalid sig token");
-			var key = module.GetSignatureBlob(sigToken);
+			return module.GetSignatureBlob(sigToken);
+		}
+
+		byte[] decryptNormal(byte[] encrypted) {
+			var key = getSigKey();
+
+			var decrypted = new byte[encrypted.Length];
+			uint seed = BitConverter.ToUInt32(key, 12) * (uint)key0;
+			ushort _m = (ushort)(seed >> 16);
+			ushort _c = (ushort)seed;
+			ushort m = _c; ushort c = _m;
+			for (int i = 0; i < decrypted.Length; i++) {
+				decrypted[i] = (byte)(encrypted[i] ^ ((seed * m + c) & 0xFF));
+				m = (ushort)(seed * m + _m);
+				c = (ushort)(seed * c + _c);
+			}
+
+			return DeobUtils.inflate(DeobUtils.aesDecrypt(decrypted, key, DeobUtils.md5Sum(key)), true);
+		}
+
+		byte[] decryptDynamic(byte[] encrypted) {
+			throw new NotSupportedException();	//TODO:
+		}
+
+		byte[] decryptNative(byte[] encrypted) {
+			var key = getSigKey();
 
 			var decrypted = DeobUtils.aesDecrypt(encrypted, key, DeobUtils.md5Sum(key));
 			decrypted = DeobUtils.inflate(decrypted, true);
@@ -475,6 +528,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		public void cleanUp() {
+			if (installMethod == null)
+				return;
+
 			//TODO: Only remove its code
 			installMethod.Body.Instructions.Clear();
 			installMethod.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
