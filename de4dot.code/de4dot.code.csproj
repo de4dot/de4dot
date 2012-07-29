@@ -72,6 +72,7 @@
     <Compile Include="deobfuscators\Confuser\ConfuserUtils.cs" />
     <Compile Include="deobfuscators\Confuser\ConstantsDecrypter.cs" />
     <Compile Include="deobfuscators\Confuser\ConstantsFolder.cs" />
+    <Compile Include="deobfuscators\Confuser\ConstantsInliner.cs" />
     <Compile Include="deobfuscators\Confuser\Deobfuscator.cs" />
     <Compile Include="deobfuscators\Confuser\JitMethodsDecrypter.cs" />
     <Compile Include="deobfuscators\Confuser\ProxyCallFixer.cs" />
