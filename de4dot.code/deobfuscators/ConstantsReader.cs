@@ -28,7 +28,7 @@ namespace de4dot.code.deobfuscators {
 		protected IInstructions instructions;
 		protected IList<VariableDefinition> locals;
 		protected Dictionary<VariableDefinition, int> localsValues32 = new Dictionary<VariableDefinition, int>();
-		protected Dictionary<VariableDefinition, int> localsValues64 = new Dictionary<VariableDefinition, int>();
+		protected Dictionary<VariableDefinition, long> localsValues64 = new Dictionary<VariableDefinition, long>();
 		bool emulateConvInstrs;
 
 		public interface IInstructions {
@@ -108,6 +108,22 @@ namespace de4dot.code.deobfuscators {
 			this.locals = locals;
 		}
 
+		public void setConstant32(VariableDefinition local, int value) {
+			localsValues32[local] = value;
+		}
+
+		public void setConstant32(VariableDefinition local, uint value) {
+			setConstant32(local, (int)value);
+		}
+
+		public void setConstant64(VariableDefinition local, long value) {
+			localsValues64[local] = value;
+		}
+
+		public void setConstant64(VariableDefinition local, ulong value) {
+			setConstant64(local, (long)value);
+		}
+
 		public bool getNextInt32(ref int index, out int val) {
 			for (; index < instructions.Count; index++) {
 				var instr = instructions[index];
@@ -139,11 +155,11 @@ namespace de4dot.code.deobfuscators {
 			if (instr.OpCode.Code == Code.Ldc_I8)
 				return true;
 			if (DotNetUtils.isLdloc(instr)) {
-				int tmp;
+				long tmp;
 				return getLocalConstant64(instr, out tmp);
 			}
 			if (DotNetUtils.isLdarg(instr)) {
-				int tmp;
+				long tmp;
 				return getArgConstant64(instr, out tmp);
 			}
 			return false;
@@ -347,7 +363,7 @@ done:
 
 			var stack = new Stack<ConstantInfo<long>>();
 
-			int op1;
+			long op1;
 			ConstantInfo<long> info1, info2;
 			for (; index < instructions.Count; index++) {
 				var instr = instructions[index];
@@ -529,7 +545,7 @@ done:
 			return false;
 		}
 
-		protected virtual bool getLocalConstant64(Instruction instr, out int value) {
+		protected virtual bool getLocalConstant64(Instruction instr, out long value) {
 			value = 0;
 			if (locals == null)
 				return false;
@@ -541,7 +557,7 @@ done:
 			return localsValues64.TryGetValue(local, out value);
 		}
 
-		protected virtual bool getArgConstant64(Instruction instr, out int value) {
+		protected virtual bool getArgConstant64(Instruction instr, out long value) {
 			value = 0;
 			return false;
 		}
