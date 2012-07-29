@@ -58,7 +58,7 @@ namespace de4dot.code.deobfuscators {
 			foreach (var tmp in callResults) {
 				var callResult = (MyCallResult)tmp;
 				var handler = decrypterMethods.find(callResult.methodReference);
-				callResult.returnValue = (TValue)handler((MethodDefinition)callResult.methodReference, callResult.gim, callResult.args);
+				callResult.returnValue = handler((MethodDefinition)callResult.methodReference, callResult.gim, callResult.args);
 			}
 		}
 
