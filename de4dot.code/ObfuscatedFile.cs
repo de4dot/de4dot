@@ -302,7 +302,13 @@ namespace de4dot.code {
 			int detectVal = 0;
 			foreach (var deob in deobfuscators) {
 				this.deob = deob;	// So we can call deob.CanInlineMethods in deobfuscate()
-				int val = deob.detect();
+				int val;
+				try {
+					val = deob.detect();
+				}
+				catch {
+					val = deob.Type == "un" ? 1 : 0;
+				}
 				Log.v("{0,3}: {1}", val, deob.TypeLong);
 				if (val > 0 && deob.Type != "un")
 					allDetected.Add(deob);
@@ -731,7 +737,7 @@ namespace de4dot.code {
 					DotNetUtils.restoreBody(method, allInstructions, allExceptionHandlers);
 				}
 				catch {
-					Log.w("Could not deobfuscate {0:X8}", method.MetadataToken.ToInt32());
+					Log.v("Could not deobfuscate {0:X8}", method.MetadataToken.ToInt32());
 				}
 			}
 
