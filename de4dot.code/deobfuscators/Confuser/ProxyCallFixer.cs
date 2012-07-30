@@ -156,6 +156,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 				var creatorType = getProxyCreatorType(method);
 				if (creatorType == ProxyCreatorType.None)
 					continue;
+				if (!DotNetUtils.callsMethod(method, "System.Byte[] System.Reflection.Module::ResolveSignature(System.Int32)"))
+					continue;
+				if (!DotNetUtils.callsMethod(method, "System.Reflection.MethodBase System.Reflection.Module::ResolveMethod(System.Int32)"))
+					continue;
 
 				methodToInfo.add(method, createProxyCreatorInfo(method, creatorType));
 				setDelegateCreatorMethod(method);
