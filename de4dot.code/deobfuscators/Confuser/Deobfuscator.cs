@@ -78,6 +78,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		Int64ValueInliner int64ValueInliner;
 		SingleValueInliner singleValueInliner;
 		DoubleValueInliner doubleValueInliner;
+		StringDecrypter stringDecrypter;
 
 		bool startedDeobfuscating = false;
 
@@ -127,7 +128,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 					toInt32(antiDebugger != null ? antiDebugger.Detected : false) +
 					toInt32(antiDumping != null ? antiDumping.Detected : false) +
 					toInt32(resourceDecrypter != null ? resourceDecrypter.Detected : false) +
-					toInt32(constantsDecrypter != null ? constantsDecrypter.Detected : false);
+					toInt32(constantsDecrypter != null ? constantsDecrypter.Detected : false) +
+					toInt32(stringDecrypter != null ? stringDecrypter.Detected : false);
 			if (sum > 0)
 				val += 100 + 10 * (sum - 1);
 
@@ -167,6 +169,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 			antiDebugger.find();
 			antiDumping = new AntiDumping(module);
 			antiDumping.find(DeobfuscatedFile);
+			stringDecrypter = new StringDecrypter(module);
+			stringDecrypter.find(DeobfuscatedFile);
 		}
 
 		byte[] getFileData() {
@@ -246,6 +250,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 			if (proxyCallFixerV1 != null)
 				proxyCallFixerV1.find();
 
+			if (stringDecrypter != null) {
+				stringDecrypter.initialize();
+				staticStringInliner.add(stringDecrypter.Method, (method, gim, args) => stringDecrypter.decrypt(staticStringInliner.Method, (int)args[0]));
+			}
+
 			startedDeobfuscating = true;
 		}
 
@@ -313,6 +322,13 @@ namespace de4dot.code.deobfuscators.Confuser {
 				proxyCallFixerV1.cleanUp();
 			}
 			constantsDecrypter.cleanUp();
+
+			if (CanRemoveStringDecrypterType) {
+				if (stringDecrypter != null) {
+					addMethodToBeRemoved(stringDecrypter.Method, "String decrypter method");
+					addResourceToBeRemoved(stringDecrypter.Resource, "Encrypted strings");
+				}
+			}
 
 			base.deobfuscateEnd();
 		}
