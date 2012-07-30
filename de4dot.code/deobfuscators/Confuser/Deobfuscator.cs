@@ -79,6 +79,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		SingleValueInliner singleValueInliner;
 		DoubleValueInliner doubleValueInliner;
 		StringDecrypter stringDecrypter;
+		Unpacker unpacker;
 
 		bool startedDeobfuscating = false;
 
@@ -129,7 +130,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 					toInt32(antiDumping != null ? antiDumping.Detected : false) +
 					toInt32(resourceDecrypter != null ? resourceDecrypter.Detected : false) +
 					toInt32(constantsDecrypter != null ? constantsDecrypter.Detected : false) +
-					toInt32(stringDecrypter != null ? stringDecrypter.Detected : false);
+					toInt32(stringDecrypter != null ? stringDecrypter.Detected : false) +
+					toInt32(unpacker != null ? unpacker.Detected : false);
 			if (sum > 0)
 				val += 100 + 10 * (sum - 1);
 
@@ -171,6 +173,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 			antiDumping.find(DeobfuscatedFile);
 			stringDecrypter = new StringDecrypter(module);
 			stringDecrypter.find(DeobfuscatedFile);
+			initializeStringDecrypter();
+			unpacker = new Unpacker(module);
+			unpacker.find(DeobfuscatedFile, this);
 		}
 
 		byte[] getFileData() {
@@ -179,29 +184,48 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return ModuleBytes = DeobUtils.readModule(module);
 		}
 
+		[Flags]
+		enum DecryptState {
+			CanDecryptMethods = 1,
+			CanUnpack = 2,
+		}
+		DecryptState decryptState = DecryptState.CanDecryptMethods | DecryptState.CanUnpack;
 		public override bool getDecryptedModule(int count, ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
-			if (count != 0 || (!jitMethodsDecrypter.Detected && !memoryMethodsDecrypter.Detected))
-				return false;
-
 			byte[] fileData = getFileData();
 			var peImage = new PeImage(fileData);
 
-			if (jitMethodsDecrypter != null && jitMethodsDecrypter.Detected) {
-				jitMethodsDecrypter.initialize();
-				if (!jitMethodsDecrypter.decrypt(peImage, fileData, ref dumpedMethods))
-					return false;
+			if ((decryptState & DecryptState.CanDecryptMethods) != 0) {
+				if (jitMethodsDecrypter != null && jitMethodsDecrypter.Detected) {
+					jitMethodsDecrypter.initialize();
+					if (!jitMethodsDecrypter.decrypt(peImage, fileData, ref dumpedMethods))
+						return false;
 
-				newFileData = fileData;
-				return true;
+					decryptState &= ~DecryptState.CanDecryptMethods;
+					newFileData = fileData;
+					ModuleBytes = newFileData;
+					return true;
+				}
+
+				if (memoryMethodsDecrypter != null && memoryMethodsDecrypter.Detected) {
+					memoryMethodsDecrypter.initialize();
+					if (!memoryMethodsDecrypter.decrypt(peImage, fileData, ref dumpedMethods))
+						return false;
+
+					decryptState &= ~DecryptState.CanDecryptMethods;
+					newFileData = fileData;
+					ModuleBytes = newFileData;
+					return true;
+				}
 			}
 
-			if (memoryMethodsDecrypter != null && memoryMethodsDecrypter.Detected) {
-				memoryMethodsDecrypter.initialize();
-				if (!memoryMethodsDecrypter.decrypt(peImage, fileData, ref dumpedMethods))
-					return false;
-
-				newFileData = fileData;
-				return true;
+			if ((decryptState & DecryptState.CanUnpack) != 0) {
+				if (unpacker != null && unpacker.Detected) {
+					decryptState &= ~DecryptState.CanUnpack;
+					decryptState |= DecryptState.CanDecryptMethods;
+					newFileData = unpacker.unpack();
+					ModuleBytes = newFileData;
+					return true;
+				}
 			}
 
 			return false;
@@ -210,6 +234,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		public override IDeobfuscator moduleReloaded(ModuleDefinition module) {
 			var newOne = new Deobfuscator(options);
 			DeobfuscatedFile.setDeobfuscator(newOne);
+			newOne.decryptState = decryptState;
 			newOne.DeobfuscatedFile = DeobfuscatedFile;
 			newOne.ModuleBytes = ModuleBytes;
 			newOne.setModule(module);
@@ -224,6 +249,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			removeObfuscatorAttribute();
 			initializeConstantsDecrypter();
+			initializeStringDecrypter();
 
 			if (jitMethodsDecrypter != null) {
 				addModuleCctorInitCallToBeRemoved(jitMethodsDecrypter.InitMethod);
@@ -250,19 +276,26 @@ namespace de4dot.code.deobfuscators.Confuser {
 			if (proxyCallFixerV1 != null)
 				proxyCallFixerV1.find();
 
+			startedDeobfuscating = true;
+		}
+
+		bool hasInitializedStringDecrypter = false;
+		void initializeStringDecrypter() {
+			if (hasInitializedStringDecrypter)
+				return;
+			hasInitializedStringDecrypter = true;
+
 			if (stringDecrypter != null) {
 				stringDecrypter.initialize();
 				staticStringInliner.add(stringDecrypter.Method, (method, gim, args) => stringDecrypter.decrypt(staticStringInliner.Method, (int)args[0]));
 			}
-
-			startedDeobfuscating = true;
 		}
 
-		bool hasInitializeConstantsDecrypter = false;
+		bool hasInitializedConstantsDecrypter = false;
 		void initializeConstantsDecrypter() {
-			if (hasInitializeConstantsDecrypter)
+			if (hasInitializedConstantsDecrypter)
 				return;
-			hasInitializeConstantsDecrypter = true;
+			hasInitializedConstantsDecrypter = true;
 
 			decryptResources();
 			constantsDecrypter.initialize();
