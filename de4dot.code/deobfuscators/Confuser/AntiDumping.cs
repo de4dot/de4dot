@@ -57,6 +57,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 				var calledMethod = instr.Operand as MethodDefinition;
 				if (calledMethod == null)
 					continue;
+				if (!DotNetUtils.isMethod(calledMethod, "System.Void", "()"))
+					continue;
 
 				simpleDeobfuscator.deobfuscate(calledMethod, true);
 				if (checkInitMethod(calledMethod)) {
