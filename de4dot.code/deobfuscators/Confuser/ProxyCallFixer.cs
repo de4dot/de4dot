@@ -162,7 +162,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			}
 		}
 
-		ProxyCreatorType getProxyCreatorType(MethodDefinition method) {
+		static ProxyCreatorType getProxyCreatorType(MethodDefinition method) {
 			foreach (var instr in method.Body.Instructions) {
 				var field = instr.Operand as FieldReference;
 				if (field == null)
