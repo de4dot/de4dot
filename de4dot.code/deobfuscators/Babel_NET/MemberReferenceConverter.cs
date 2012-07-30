@@ -127,25 +127,11 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		}
 
 		public AssemblyNameReference convert(AssemblyNameReference asmRef) {
-			foreach (var modAsmRef in module.AssemblyReferences) {
-				if (modAsmRef.FullName == asmRef.FullName)
-					return modAsmRef;
-			}
-
-			var newAsmRef = AssemblyNameReference.Parse(asmRef.FullName);
-			module.AssemblyReferences.Add(newAsmRef);
-			return newAsmRef;
+			return DotNetUtils.addAssemblyReference(module, asmRef);
 		}
 
 		public ModuleReference convert(ModuleReference modRef) {
-			foreach (var modModRef in module.ModuleReferences) {
-				if (modModRef.Name == modRef.Name)
-					return modModRef;
-			}
-
-			var newModRef = new ModuleReference(modRef.Name);
-			module.ModuleReferences.Add(newModRef);
-			return newModRef;
+			return DotNetUtils.addModuleReference(module, modRef);
 		}
 
 		public TypeReference tryGetTypeDefinition(TypeReference typeRef) {
