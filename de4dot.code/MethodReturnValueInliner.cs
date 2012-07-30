@@ -177,7 +177,7 @@ namespace de4dot.code {
 
 		public abstract bool HasHandlers { get; }
 
-		protected MethodDefinition Method {
+		public MethodDefinition Method {
 			get { return theMethod; }
 		}
 
