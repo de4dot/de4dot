@@ -143,6 +143,16 @@ namespace de4dot.blocks.cflow {
 				if (value.isInt64())
 					return value;
 				return Int64Value.createUnknown();
+
+			case ElementType.R4:
+				if (value.isReal8())
+					return new Real8Value((float)((Real8Value)value).value);
+				return new UnknownValue();
+
+			case ElementType.R8:
+				if (value.isReal8())
+					return value;
+				return new UnknownValue();
 			}
 			return value;
 		}
