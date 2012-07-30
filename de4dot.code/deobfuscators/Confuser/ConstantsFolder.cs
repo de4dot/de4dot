@@ -33,29 +33,80 @@ namespace de4dot.code.deobfuscators.Confuser {
 				int index = 0;
 				Instruction newInstr = null;
 				var instr = instrs[i];
-				if (constantsReader.isLoadConstant32(instr.Instruction)) {
+				if (constantsReader.isLoadConstantInt32(instr.Instruction)) {
 					index = i;
 					int val;
 					if (!constantsReader.getInt32(ref index, out val))
 						continue;
 					newInstr = DotNetUtils.createLdci4(val);
 				}
-				else if (constantsReader.isLoadConstant64(instr.Instruction)) {
+				else if (constantsReader.isLoadConstantInt64(instr.Instruction)) {
 					index = i;
 					long val;
 					if (!constantsReader.getInt64(ref index, out val))
 						continue;
 					newInstr = Instruction.Create(OpCodes.Ldc_I8, val);
 				}
+				else if (constantsReader.isLoadConstantDouble(instr.Instruction)) {
+					index = i;
+					double val;
+					if (!constantsReader.getDouble(ref index, out val))
+						continue;
+					newInstr = Instruction.Create(OpCodes.Ldc_R8, val);
+				}
 
-				if (newInstr == null || index - i <= 1)
+				if (newInstr != null && index - i > 1) {
+					block.insert(index++, Instruction.Create(OpCodes.Pop));
+					block.insert(index++, newInstr);
+					i = index - 1;
+					constantsReader = createConstantsReader(instrs);
+					modified = true;
 					continue;
+				}
 
-				block.insert(index++, Instruction.Create(OpCodes.Pop));
-				block.insert(index++, newInstr);
-				i = index - 1;
-				constantsReader = createConstantsReader(instrs);
-				modified = true;
+				// Convert ldc.r4/r8 followed by conv to the appropriate ldc.i4/i8 instr
+				if (i + 1 < instrs.Count && (instr.OpCode.Code == Code.Ldc_R4 || instr.OpCode.Code == Code.Ldc_R8)) {
+					var conv = instrs[i + 1];
+					int vali32 = instr.OpCode.Code == Code.Ldc_R4 ? (int)(float)instr.Operand : (int)(double)instr.Operand;
+					long vali64 = instr.OpCode.Code == Code.Ldc_R4 ? (long)(float)instr.Operand : (long)(double)instr.Operand;
+					uint valu32 = instr.OpCode.Code == Code.Ldc_R4 ? (uint)(float)instr.Operand : (uint)(double)instr.Operand;
+					ulong valu64 = instr.OpCode.Code == Code.Ldc_R4 ? (ulong)(float)instr.Operand : (ulong)(double)instr.Operand;
+					switch (conv.OpCode.Code) {
+					case Code.Conv_I1:
+						newInstr = DotNetUtils.createLdci4(instr.OpCode.Code == Code.Ldc_R4 ? (sbyte)(float)instr.Operand : (sbyte)(double)instr.Operand);
+						break;
+					case Code.Conv_U1:
+						newInstr = DotNetUtils.createLdci4(instr.OpCode.Code == Code.Ldc_R4 ? (byte)(float)instr.Operand : (byte)(double)instr.Operand);
+						break;
+					case Code.Conv_I2:
+						newInstr = DotNetUtils.createLdci4(instr.OpCode.Code == Code.Ldc_R4 ? (short)(float)instr.Operand : (short)(double)instr.Operand);
+						break;
+					case Code.Conv_U2:
+						newInstr = DotNetUtils.createLdci4(instr.OpCode.Code == Code.Ldc_R4 ? (ushort)(float)instr.Operand : (ushort)(double)instr.Operand);
+						break;
+					case Code.Conv_I4:
+						newInstr = DotNetUtils.createLdci4(instr.OpCode.Code == Code.Ldc_R4 ? (int)(float)instr.Operand : (int)(double)instr.Operand);
+						break;
+					case Code.Conv_U4:
+						newInstr = DotNetUtils.createLdci4(instr.OpCode.Code == Code.Ldc_R4 ? (int)(uint)(float)instr.Operand : (int)(uint)(double)instr.Operand);
+						break;
+					case Code.Conv_I8:
+						newInstr = Instruction.Create(OpCodes.Ldc_I8, instr.OpCode.Code == Code.Ldc_R4 ? (long)(float)instr.Operand : (long)(double)instr.Operand);
+						break;
+					case Code.Conv_U8:
+						newInstr = Instruction.Create(OpCodes.Ldc_I8, instr.OpCode.Code == Code.Ldc_R4 ? (ulong)(float)instr.Operand : (ulong)(double)instr.Operand);
+						break;
+					default:
+						newInstr = null;
+						break;
+					}
+					if (newInstr != null) {
+						block.replace(i, 2, newInstr);
+						constantsReader = createConstantsReader(instrs);
+						modified = true;
+						continue;
+					}
+				}
 			}
 
 			return modified;

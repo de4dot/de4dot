@@ -519,7 +519,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			var constReader = new ConstantsReader(installMethod);
 
 			return decrypt(encrypted, magic => {
-				constReader.setConstant32(local, magic);
+				constReader.setConstantInt32(local, magic);
 				int index = startIndex, result;
 				if (!constReader.getNextInt32(ref index, out result))
 					throw new ApplicationException("Could not get constant");
