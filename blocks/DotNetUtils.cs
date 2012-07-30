@@ -596,7 +596,8 @@ namespace de4dot.blocks {
 				return null;
 
 			var resources = module.Resources;
-			foreach (var resourceName in strings) {
+			foreach (var tmp in strings) {
+				var resourceName = removeFromNullChar(tmp);
 				if (resourceName == null)
 					continue;
 				foreach (var resource in resources) {
@@ -606,6 +607,13 @@ namespace de4dot.blocks {
 			}
 
 			return null;
+		}
+
+		static string removeFromNullChar(string s) {
+			int index = s.IndexOf((char)0);
+			if (index < 0)
+				return s;
+			return s.Substring(0, index);
 		}
 
 		// Copies most things but not everything
