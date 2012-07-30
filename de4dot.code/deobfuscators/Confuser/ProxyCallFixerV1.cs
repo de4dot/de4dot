@@ -30,6 +30,13 @@ namespace de4dot.code.deobfuscators.Confuser {
 		MethodDefinitionAndDeclaringTypeDict<ProxyCreatorInfo> methodToInfo = new MethodDefinitionAndDeclaringTypeDict<ProxyCreatorInfo>();
 		FieldDefinitionAndDeclaringTypeDict<MethodDefinition> fieldToMethod = new FieldDefinitionAndDeclaringTypeDict<MethodDefinition>();
 		string ourAsm;
+		ConfuserVersion version = ConfuserVersion.Unknown;
+
+		enum ConfuserVersion {
+			Unknown,
+			v10_r42915,
+			v10_r48717,
+		}
 
 		enum ProxyCreatorType {
 			None,
@@ -40,10 +47,12 @@ namespace de4dot.code.deobfuscators.Confuser {
 		class ProxyCreatorInfo {
 			public readonly MethodDefinition creatorMethod;
 			public readonly ProxyCreatorType proxyCreatorType;
+			public readonly ConfuserVersion version;
 
-			public ProxyCreatorInfo(MethodDefinition creatorMethod, ProxyCreatorType proxyCreatorType) {
+			public ProxyCreatorInfo(MethodDefinition creatorMethod, ProxyCreatorType proxyCreatorType, ConfuserVersion version) {
 				this.creatorMethod = creatorMethod;
 				this.proxyCreatorType = proxyCreatorType;
+				this.version = version;
 			}
 		}
 
@@ -51,6 +60,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 			public readonly byte[] data;
 			public readonly FieldDefinition field;
 			public readonly MethodDefinition creatorMethod;
+
+			public DelegateInitInfo(FieldDefinition field, MethodDefinition creatorMethod) {
+				this.field = field;
+				this.creatorMethod = creatorMethod;
+			}
 
 			public DelegateInitInfo(string data, FieldDefinition field, MethodDefinition creatorMethod) {
 				this.data = Convert.FromBase64String(data);
@@ -99,6 +113,21 @@ namespace de4dot.code.deobfuscators.Confuser {
 			var info = (DelegateInitInfo)context;
 			var creatorInfo = methodToInfo.find(info.creatorMethod);
 
+			switch (creatorInfo.version) {
+			case ConfuserVersion.v10_r42915:
+				getCallInfo_v10_r42915(info, creatorInfo, out calledMethod, out callOpcode);
+				break;
+
+			case ConfuserVersion.v10_r48717:
+				getCallInfo_v10_r48717(info, creatorInfo, out calledMethod, out callOpcode);
+				break;
+
+			default:
+				throw new ApplicationException("Unknown version");
+			}
+		}
+
+		void getCallInfo_v10_r42915(DelegateInitInfo info, ProxyCreatorInfo creatorInfo, out MethodReference calledMethod, out OpCode callOpcode) {
 			var reader = new BinaryReader(new MemoryStream(info.data));
 
 			bool isCallvirt = false;
@@ -106,7 +135,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 				isCallvirt = reader.ReadBoolean();
 
 			var asmRef = readAssemblyNameReference(reader);
-			uint token = reader.ReadUInt32();
+			// If < 1.0 r42919, then high byte is 06, else it's cleared.
+			uint token = (reader.ReadUInt32() & 0x00FFFFFF) | 0x06000000;
 			if (reader.BaseStream.Position != reader.BaseStream.Length)
 				throw new ApplicationException("Extra data");
 
@@ -115,6 +145,22 @@ namespace de4dot.code.deobfuscators.Confuser {
 			else
 				calledMethod = createMethodReference(asmRef, token);
 
+			callOpcode = getCallOpCode(creatorInfo, isCallvirt);
+		}
+
+		void getCallInfo_v10_r48717(DelegateInitInfo info, ProxyCreatorInfo creatorInfo, out MethodReference calledMethod, out OpCode callOpcode) {
+			int offs = creatorInfo.proxyCreatorType == ProxyCreatorType.CallOrCallvirt ? 2 : 1;
+			uint token = BitConverter.ToUInt32(Encoding.Unicode.GetBytes(info.field.Name.ToCharArray(), offs, 2), 0);
+			if (info.field.Name[0] == (char)1)
+				calledMethod = (MethodReference)module.LookupToken((int)token);
+			else {
+				var asmRef = module.AssemblyReferences[info.field.Name[0] - 2];
+				calledMethod = createMethodReference(asmRef, token);
+			}
+
+			bool isCallvirt = false;
+			if (creatorInfo.proxyCreatorType == ProxyCreatorType.CallOrCallvirt && info.field.Name[1] == '\r')
+				isCallvirt = true;
 			callOpcode = getCallOpCode(creatorInfo, isCallvirt);
 		}
 
@@ -168,13 +214,22 @@ namespace de4dot.code.deobfuscators.Confuser {
 			foreach (var method in type.Methods) {
 				if (method.Body == null || !method.IsStatic || !method.IsAssembly)
 					continue;
-				if (!DotNetUtils.isMethod(method, "System.Void", "(System.String,System.RuntimeFieldHandle)"))
+				ConfuserVersion theVersion = ConfuserVersion.Unknown;
+
+				if (DotNetUtils.isMethod(method, "System.Void", "(System.String,System.RuntimeFieldHandle)"))
+					theVersion = ConfuserVersion.v10_r42915;
+				else if (DotNetUtils.isMethod(method, "System.Void", "(System.RuntimeFieldHandle)"))
+					theVersion = ConfuserVersion.v10_r48717;
+				else
 					continue;
+
 				var proxyType = getProxyCreatorType(method);
 				if (proxyType == ProxyCreatorType.None)
 					continue;
+
 				setDelegateCreatorMethod(method);
-				methodToInfo.add(method, new ProxyCreatorInfo(method, proxyType));
+				methodToInfo.add(method, new ProxyCreatorInfo(method, proxyType, theVersion));
+				version = theVersion;
 			}
 		}
 
@@ -251,6 +306,14 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		FieldDefinitionAndDeclaringTypeDict<DelegateInitInfo> createDelegateInitInfos(MethodDefinition method) {
+			switch (version) {
+			case ConfuserVersion.v10_r42915: return createDelegateInitInfos_v10_r42915(method);
+			case ConfuserVersion.v10_r48717: return createDelegateInitInfos_v10_r48717(method);
+			default: throw new ApplicationException("Invalid version");
+			}
+		}
+
+		FieldDefinitionAndDeclaringTypeDict<DelegateInitInfo> createDelegateInitInfos_v10_r42915(MethodDefinition method) {
 			var infos = new FieldDefinitionAndDeclaringTypeDict<DelegateInitInfo>();
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 2; i++) {
@@ -280,6 +343,33 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 				infos.add(delegateField, new DelegateInitInfo(info, delegateField, delegateCreatorMethod));
 				i += 2;
+			}
+			return infos;
+		}
+
+		FieldDefinitionAndDeclaringTypeDict<DelegateInitInfo> createDelegateInitInfos_v10_r48717(MethodDefinition method) {
+			var infos = new FieldDefinitionAndDeclaringTypeDict<DelegateInitInfo>();
+			var instrs = method.Body.Instructions;
+			for (int i = 0; i < instrs.Count - 1; i++) {
+				var ldtoken = instrs[i];
+				if (ldtoken.OpCode.Code != Code.Ldtoken)
+					continue;
+				var delegateField = ldtoken.Operand as FieldDefinition;
+				if (delegateField == null)
+					continue;
+				var delegateType = delegateField.FieldType as TypeDefinition;
+				if (!DotNetUtils.derivesFromDelegate(delegateType))
+					continue;
+
+				var call = instrs[i + 1];
+				if (call.OpCode.Code != Code.Call)
+					continue;
+				var delegateCreatorMethod = call.Operand as MethodDefinition;
+				if (delegateCreatorMethod == null || !isDelegateCreatorMethod(delegateCreatorMethod))
+					continue;
+
+				infos.add(delegateField, new DelegateInitInfo(delegateField, delegateCreatorMethod));
+				i += 1;
 			}
 			return infos;
 		}
