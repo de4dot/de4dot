@@ -199,7 +199,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 		void getCallInfo_v10_r48717(DelegateInitInfo info, ProxyCreatorInfo creatorInfo, out MethodReference calledMethod, out OpCode callOpcode) {
 			int offs = creatorInfo.proxyCreatorType == ProxyCreatorType.CallOrCallvirt ? 2 : 1;
 			uint token = BitConverter.ToUInt32(Encoding.Unicode.GetBytes(info.field.Name.ToCharArray(), offs, 2), 0);
-			if (info.field.Name[0] == (char)1)
+			// 1.3 r55346 now correctly uses method reference tokens and finally fixed the old
+			// bug of using methoddef tokens to reference external methods.
+			if (info.field.Name[0] == (char)1 || ((token >> 24) != 0x06))
 				calledMethod = (MethodReference)module.LookupToken((int)token);
 			else {
 				var asmRef = module.AssemblyReferences[info.field.Name[0] - 2];
@@ -213,7 +215,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		// A method token is not a stable value so this method can fail to return the correct method!
-		// There's nothing I can do about that. It's an obfuscator bug.
+		// There's nothing I can do about that. It's an obfuscator bug. It was fixed in 1.3 r55346.
 		MethodReference createMethodReference(AssemblyNameReference asmRef, uint methodToken) {
 			var asm = AssemblyResolver.Instance.Resolve(asmRef);
 			if (asm == null)
