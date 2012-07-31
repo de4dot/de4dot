@@ -39,12 +39,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 		};
 		static string[] requiredEntryPointLocals = new string[] {
 			"System.Byte[]",
-			"System.Diagnostics.Process",
 			"System.Int32",
 			"System.IO.BinaryReader",
 			"System.IO.Stream",
-			"System.String",
-			"System.String[]",
 		};
 		public void find(ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
 			var entryPoint = module.EntryPoint;
