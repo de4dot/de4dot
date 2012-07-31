@@ -27,6 +27,14 @@ using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.Confuser {
 	class MemoryMethodsDecrypter : MethodsDecrypterBase {
+		ConfuserVersion version = ConfuserVersion.Unknown;
+
+		enum ConfuserVersion {
+			Unknown,
+			v14_r57884,
+			vXX,
+		}
+
 		public MemoryMethodsDecrypter(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator)
 			: base(module, simpleDeobfuscator) {
 		}
@@ -42,13 +50,16 @@ namespace de4dot.code.deobfuscators.Confuser {
 				return false;
 			if (DotNetUtils.getPInvokeMethod(type, "kernel32", "VirtualProtect") == null)
 				return false;
-			if (!DotNetUtils.hasString(initMethod, "Module error"))
-				return false;
 			if (!DotNetUtils.hasString(initMethod, "Broken file"))
 				return false;
 
 			if ((decryptMethod = findDecryptMethod(type)) == null)
 				return false;
+
+			if (!DotNetUtils.hasString(initMethod, "Module error"))
+				version = ConfuserVersion.v14_r57884;
+			else
+				version = ConfuserVersion.vXX;
 
 			return true;
 		}
@@ -56,11 +67,22 @@ namespace de4dot.code.deobfuscators.Confuser {
 		public void initialize() {
 			if (initMethod == null)
 				return;
-			if (!initializeKeys())
-				throw new ApplicationException("Could not find all decryption keys");
+
+			switch (version) {
+			case ConfuserVersion.v14_r57884:
+				break;
+
+			case ConfuserVersion.vXX:
+				if (!initializeKeys_vXX())
+					throw new ApplicationException("Could not find all decryption keys");
+				break;
+
+			default:
+				throw new ApplicationException("Unknown version");
+			}
 		}
 
-		bool initializeKeys() {
+		bool initializeKeys_vXX() {
 			simpleDeobfuscator.deobfuscate(initMethod);
 			if (!findLKey0(initMethod, out lkey0))
 				return false;
@@ -156,14 +178,63 @@ namespace de4dot.code.deobfuscators.Confuser {
 		public bool decrypt(PeImage peImage, byte[] fileData, ref DumpedMethods dumpedMethods) {
 			if (initMethod == null)
 				return false;
+
+			switch (version) {
+			case ConfuserVersion.v14_r57884: return decrypt_v14_r57884(peImage, fileData, ref dumpedMethods);
+			case ConfuserVersion.vXX: return decrypt_vXX(peImage, fileData, ref dumpedMethods);
+			default: throw new ApplicationException("Unknown version");
+			}
+		}
+
+		bool decrypt_v14_r57884(PeImage peImage, byte[] fileData, ref DumpedMethods dumpedMethods) {
+			methodsData = decryptMethodsData_v14_r57884(peImage);
+
+			var reader = new BinaryReader(new MemoryStream(methodsData));
+			reader.ReadInt16();	// sig
+			var writer = new BinaryWriter(new MemoryStream(fileData));
+			int numInfos = reader.ReadInt32();
+			for (int i = 0; i < numInfos; i++) {
+				uint rva = reader.ReadUInt32();
+				if (rva == 0)
+					continue;
+				writer.BaseStream.Position = peImage.rvaToOffset(rva);
+				writer.Write(reader.ReadBytes(reader.ReadInt32()));
+			}
+
+			return true;
+		}
+
+		byte[] decryptMethodsData_v14_r57884(PeImage peImage) {
+			var reader = peImage.Reader;
+			reader.BaseStream.Position = 0;
+			var md5SumData = reader.ReadBytes((int)peImage.OptionalHeader.checkSum);
+
+			int csOffs = (int)peImage.OptionalHeader.Offset + 0x40;
+			md5SumData[csOffs] = 0;
+			md5SumData[csOffs + 1] = 0;
+			md5SumData[csOffs + 2] = 0;
+			md5SumData[csOffs + 3] = 0;
+			var md5Sum = DeobUtils.md5Sum(md5SumData);
+			ulong checkSum = reader.ReadUInt64();
+			if (checkSum != calcChecksum(md5SumData))
+				throw new ApplicationException("Invalid checksum. File has been modified.");
+			var iv = reader.ReadBytes(reader.ReadInt32());
+			var encrypted = reader.ReadBytes(reader.ReadInt32());
+			var decrypted = decrypt(encrypted, iv, md5SumData);
+			if (BitConverter.ToInt16(decrypted, 0) != 0x6FD6)
+				throw new ApplicationException("Invalid magic");
+			return decrypted;
+		}
+
+		bool decrypt_vXX(PeImage peImage, byte[] fileData, ref DumpedMethods dumpedMethods) {
 			if (peImage.OptionalHeader.checkSum == 0)
 				return false;
 
 			methodsData = decryptMethodsData(peImage);
-			return decrypt(peImage, fileData);
+			return decrypt_vXX(peImage, fileData);
 		}
 
-		bool decrypt(PeImage peImage, byte[] fileData) {
+		bool decrypt_vXX(PeImage peImage, byte[] fileData) {
 			var reader = new BinaryReader(new MemoryStream(methodsData));
 			reader.ReadInt16();	// sig
 			int numInfos = reader.ReadInt32();

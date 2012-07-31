@@ -318,7 +318,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return memStream.ToArray();
 		}
 
-		static ulong calcChecksum(byte[] data) {
+		protected static ulong calcChecksum(byte[] data) {
 			var sum = DeobUtils.md5Sum(data);
 			return BitConverter.ToUInt64(sum, 0) ^ BitConverter.ToUInt64(sum, 8);
 		}
@@ -330,7 +330,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return hash;
 		}
 
-		byte[] decrypt(byte[] encrypted, byte[] iv, byte[] streamsBuffer) {
+		protected byte[] decrypt(byte[] encrypted, byte[] iv, byte[] streamsBuffer) {
 			var decrypted = DeobUtils.aesDecrypt(encrypted, DeobUtils.sha256Sum(streamsBuffer), iv);
 			var sha = SHA512.Create();
 			var hash = sha.ComputeHash(streamsBuffer);
