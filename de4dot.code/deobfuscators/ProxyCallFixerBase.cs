@@ -391,6 +391,10 @@ namespace de4dot.code.deobfuscators {
 				return;
 
 			Log.v("Finding all proxy delegates");
+			find2();
+		}
+
+		protected void find2() {
 			foreach (var type in getDelegateTypes()) {
 				var cctor = DotNetUtils.getMethod(type, ".cctor");
 				if (cctor == null || !cctor.HasBody)
