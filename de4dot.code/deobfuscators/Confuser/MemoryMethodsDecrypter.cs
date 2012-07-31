@@ -32,6 +32,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		enum ConfuserVersion {
 			Unknown,
 			v14_r57884,
+			v14_r58004,
 			vXX,
 		}
 
@@ -58,6 +59,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			if (!DotNetUtils.hasString(initMethod, "Module error"))
 				version = ConfuserVersion.v14_r57884;
+			else if (DotNetUtils.callsMethod(initMethod, "System.Void System.IO.FileStream::.ctor(System.String,System.IO.FileMode,System.IO.FileAccess,System.IO.FileShare)"))
+				version = ConfuserVersion.v14_r58004;
 			else
 				version = ConfuserVersion.vXX;
 
@@ -70,6 +73,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			switch (version) {
 			case ConfuserVersion.v14_r57884:
+			case ConfuserVersion.v14_r58004:
 				break;
 
 			case ConfuserVersion.vXX:
@@ -181,6 +185,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			switch (version) {
 			case ConfuserVersion.v14_r57884: return decrypt_v14_r57884(peImage, fileData, ref dumpedMethods);
+			case ConfuserVersion.v14_r58004: return decrypt_v14_r58004(peImage, fileData, ref dumpedMethods);
 			case ConfuserVersion.vXX: return decrypt_vXX(peImage, fileData, ref dumpedMethods);
 			default: throw new ApplicationException("Unknown version");
 			}
@@ -224,6 +229,27 @@ namespace de4dot.code.deobfuscators.Confuser {
 			if (BitConverter.ToInt16(decrypted, 0) != 0x6FD6)
 				throw new ApplicationException("Invalid magic");
 			return decrypted;
+		}
+
+		bool decrypt_v14_r58004(PeImage peImage, byte[] fileData, ref DumpedMethods dumpedMethods) {
+			methodsData = decryptMethodsData_v14_r57884(peImage);
+
+			var reader = new BinaryReader(new MemoryStream(methodsData));
+			reader.ReadInt16();	// sig
+			var writer = new BinaryWriter(new MemoryStream(fileData));
+			int numInfos = reader.ReadInt32();
+			for (int i = 0; i < numInfos; i++) {
+				uint offs = reader.ReadUInt32();
+				if (offs == 0)
+					continue;
+				uint rva = reader.ReadUInt32();
+				if (peImage.rvaToOffset(rva) != offs)
+					throw new ApplicationException("Invalid offs & rva");
+				writer.BaseStream.Position = peImage.rvaToOffset(rva);
+				writer.Write(reader.ReadBytes(reader.ReadInt32()));
+			}
+
+			return true;
 		}
 
 		bool decrypt_vXX(PeImage peImage, byte[] fileData, ref DumpedMethods dumpedMethods) {
