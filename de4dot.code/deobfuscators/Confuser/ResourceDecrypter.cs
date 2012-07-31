@@ -37,7 +37,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		enum ConfuserVersion {
 			Unknown,
-			v13_r55802,
+			v14_r55802,
 			vXX,
 		}
 
@@ -82,9 +82,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 			simpleDeobfuscator.deobfuscate(tmpHandler, true);
 			ConfuserVersion tmpVersion = ConfuserVersion.Unknown;
 			if (DotNetUtils.callsMethod(tmpHandler, "System.Object System.AppDomain::GetData(System.String)")) {
-				tmpVersion = ConfuserVersion.v13_r55802;
+				tmpVersion = ConfuserVersion.v14_r55802;
 
-				if (!findKey0Key1_v13_r55802(tmpHandler, out key0, out key1))
+				if (!findKey0Key1_v14_r55802(tmpHandler, out key0, out key1))
 					return false;
 			}
 			else {
@@ -219,7 +219,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		static bool findKey0Key1_v13_r55802(MethodDefinition method, out byte key0, out byte key1) {
+		static bool findKey0Key1_v14_r55802(MethodDefinition method, out byte key0, out byte key1) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 5; i++) {
 				if (!DotNetUtils.isLdcI4(instrs[i]))
@@ -257,13 +257,13 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		byte[] decryptResource() {
 			switch (version) {
-			case ConfuserVersion.v13_r55802: return decrypt_v13_r55802();
+			case ConfuserVersion.v14_r55802: return decrypt_v14_r55802();
 			case ConfuserVersion.vXX: return decrypt_vXX();
 			default: throw new ApplicationException("Unknown version");
 			}
 		}
 
-		byte[] decrypt_v13_r55802() {
+		byte[] decrypt_v14_r55802() {
 			var reader = new BinaryReader(new MemoryStream(DeobUtils.inflate(resource.GetResourceData(), true)));
 			var encypted = reader.ReadBytes(reader.ReadInt32());
 			if ((encypted.Length & 1) != 0)
