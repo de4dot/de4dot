@@ -119,11 +119,46 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		protected override object checkCctor(TypeDefinition type, MethodDefinition cctor) {
-			throw new NotSupportedException();
+			// Here if 1.2 r54564 (almost 1.3) or later
+
+			var fieldToInfo = new FieldDefinitionAndDeclaringTypeDict<DelegateInitInfo>();
+
+			var instrs = cctor.Body.Instructions;
+			for (int i = 0; i < instrs.Count - 1; i++) {
+				var ldtoken = instrs[i];
+				if (ldtoken.OpCode.Code != Code.Ldtoken)
+					continue;
+				var field = ldtoken.Operand as FieldDefinition;
+				if (field == null || field.DeclaringType != cctor.DeclaringType)
+					continue;
+
+				var call = instrs[i + 1];
+				if (call.OpCode.Code != Code.Call)
+					continue;
+				var calledMethod = call.Operand as MethodDefinition;
+				if (calledMethod == null)
+					continue;
+				if (!isDelegateCreatorMethod(calledMethod))
+					continue;
+				var info = methodToInfo.find(calledMethod);
+				if (info == null)
+					continue;
+
+				i++;
+				fieldToInfo.add(field, new DelegateInitInfo(field, calledMethod));
+			}
+			return fieldToInfo.Count == 0 ? null : fieldToInfo;
 		}
 
 		protected override void getCallInfo(object context, FieldDefinition field, out MethodReference calledMethod, out OpCode callOpcode) {
-			var info = (DelegateInitInfo)context;
+			var info = context as DelegateInitInfo;
+			if (info == null) {
+				var fieldToInfo = context as FieldDefinitionAndDeclaringTypeDict<DelegateInitInfo>;
+				if (fieldToInfo != null)
+					info = fieldToInfo.find(field);
+			}
+			if (info == null)
+				throw new ApplicationException("Couldn't get the delegate info");
 			var creatorInfo = methodToInfo.find(info.creatorMethod);
 
 			switch (creatorInfo.version) {
@@ -318,6 +353,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 				Log.deIndent();
 				delegateTypesDict[type] = true;
 			}
+
+			// 1.2 r54564 (almost 1.3) now moves method proxy init code to the delegate cctors
+			find2();
 		}
 
 		FieldDefinitionAndDeclaringTypeDict<DelegateInitInfo> createDelegateInitInfos(MethodDefinition method) {
