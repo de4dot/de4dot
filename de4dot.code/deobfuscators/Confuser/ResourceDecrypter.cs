@@ -250,7 +250,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 			if (resource == null)
 				return null;
 			DeobUtils.decryptAndAddResources(module, resource.Name, () => decryptResource());
-			return resource;
+			var tmpResource = resource;
+			resource = null;
+			return tmpResource;
 		}
 
 		byte[] decryptResource() {
