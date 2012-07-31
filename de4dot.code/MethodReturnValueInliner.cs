@@ -205,6 +205,10 @@ namespace de4dot.code {
 				inlineReturnValues();
 				return callResults.Count;
 			}
+			catch {
+				errors++;
+				throw;
+			}
 			finally {
 				theMethod = null;
 				callResults = null;
