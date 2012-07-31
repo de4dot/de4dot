@@ -61,7 +61,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 					continue;
 
 				simpleDeobfuscator.deobfuscate(calledMethod, true);
-				if (checkInitMethod(calledMethod)) {
+				if (checkInitMethod_vXX(calledMethod) || checkInitMethod_v14_r58564(calledMethod)) {
 					initMethod = calledMethod;
 					return true;
 				}
@@ -69,7 +69,31 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		bool checkInitMethod(MethodDefinition method) {
+		static bool checkInitMethod_v14_r58564(MethodDefinition method) {
+			if (method == null || method.Body == null || !method.IsStatic)
+				return false;
+			if (!DotNetUtils.isMethod(method, "System.Void", "()"))
+				return false;
+			if (DotNetUtils.getPInvokeMethod(method.DeclaringType, "kernel32", "VirtualProtect") == null)
+				return false;
+			if (!DeobUtils.hasInteger(method, 224))
+				return false;
+			if (!DeobUtils.hasInteger(method, 240))
+				return false;
+			if (!DeobUtils.hasInteger(method, 267))
+				return false;
+			var type = method.DeclaringType;
+			if (type.Methods.Count != 2)
+				return false;
+			if (type.Fields.Count != 0)
+				return false;
+			if (type.Properties.Count != 0)
+				return false;
+
+			return true;
+		}
+
+		static bool checkInitMethod_vXX(MethodDefinition method) {
 			if (method == null || method.Body == null || !method.IsStatic)
 				return false;
 			if (!DotNetUtils.isMethod(method, "System.Void", "()"))
