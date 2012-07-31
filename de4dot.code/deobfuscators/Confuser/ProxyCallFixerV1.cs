@@ -28,7 +28,7 @@ using de4dot.blocks;
 namespace de4dot.code.deobfuscators.Confuser {
 	class ProxyCallFixerV1 : ProxyCallFixer2 {
 		MethodDefinitionAndDeclaringTypeDict<ProxyCreatorInfo> methodToInfo = new MethodDefinitionAndDeclaringTypeDict<ProxyCreatorInfo>();
-		FieldDefinitionAndDeclaringTypeDict<MethodDefinition> fieldToMethod = new FieldDefinitionAndDeclaringTypeDict<MethodDefinition>();
+		FieldDefinitionAndDeclaringTypeDict<List<MethodDefinition>> fieldToMethods = new FieldDefinitionAndDeclaringTypeDict<List<MethodDefinition>>();
 		string ourAsm;
 		ConfuserVersion version = ConfuserVersion.Unknown;
 
@@ -78,7 +78,18 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		public IEnumerable<FieldDefinition> Fields {
-			get { return fieldToMethod.getKeys(); }
+			get {
+				var fields = new List<FieldDefinition>(fieldToMethods.getKeys());
+				var type = DotNetUtils.getModuleType(module);
+				if (fields.Count > 0 && type != null) {
+					foreach (var field in type.Fields) {
+						var fieldType = field.FieldType as TypeDefinition;
+						if (fieldType != null && delegateTypesDict.ContainsKey(fieldType))
+							fields.Add(field);
+					}
+				}
+				return fields;
+			}
 		}
 
 		public override IEnumerable<Tuple<MethodDefinition, string>> OtherMethods {
@@ -90,11 +101,13 @@ namespace de4dot.code.deobfuscators.Confuser {
 						Item2 = "Delegate creator method",
 					});
 				}
-				foreach (var method in fieldToMethod.getValues()) {
-					list.Add(new Tuple<MethodDefinition, string> {
-						Item1 = method,
-						Item2 = "Proxy delegate method",
-					});
+				foreach (var methods in fieldToMethods.getValues()) {
+					foreach (var method in methods) {
+						list.Add(new Tuple<MethodDefinition, string> {
+							Item1 = method,
+							Item2 = "Proxy delegate method",
+						});
+					}
 				}
 				return list;
 			}
@@ -260,11 +273,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 			Log.v("Finding all proxy delegates");
 
 			var delegateInfos = createDelegateInitInfos(cctor);
-			fieldToMethod = createFieldToMethodDictionary(cctor.DeclaringType);
-			if (delegateInfos.Count != fieldToMethod.Count)
+			fieldToMethods = createFieldToMethodsDictionary(cctor.DeclaringType);
+			if (delegateInfos.Count < fieldToMethods.Count)
 				throw new ApplicationException("Missing proxy delegates");
 			var delegateToFields = new Dictionary<TypeDefinition, List<FieldDefinition>>();
-			foreach (var field in fieldToMethod.getKeys()) {
+			foreach (var field in fieldToMethods.getKeys()) {
 				List<FieldDefinition> list;
 				if (!delegateToFields.TryGetValue((TypeDefinition)field.FieldType, out list))
 					delegateToFields[(TypeDefinition)field.FieldType] = list = new List<FieldDefinition>();
@@ -280,8 +293,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 				Log.indent();
 				foreach (var field in fields) {
-					var proxyMethod = fieldToMethod.find(field);
-					if (proxyMethod == null)
+					var proxyMethods = fieldToMethods.find(field);
+					if (proxyMethods == null)
 						continue;
 					var info = delegateInfos.find(field);
 					if (info == null)
@@ -293,12 +306,14 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 					if (calledMethod == null)
 						continue;
-					add(proxyMethod, new DelegateInfo(field, calledMethod, callOpcode));
-					Log.v("Field: {0}, Opcode: {1}, Method: {2} ({3:X8})",
-								Utils.removeNewlines(field.Name),
-								callOpcode,
-								Utils.removeNewlines(calledMethod),
-								calledMethod.MetadataToken.ToUInt32());
+					foreach (var proxyMethod in proxyMethods) {
+						add(proxyMethod, new DelegateInfo(field, calledMethod, callOpcode));
+						Log.v("Field: {0}, Opcode: {1}, Method: {2} ({3:X8})",
+									Utils.removeNewlines(field.Name),
+									callOpcode,
+									Utils.removeNewlines(calledMethod),
+									calledMethod.MetadataToken.ToUInt32());
+					}
 				}
 				Log.deIndent();
 				delegateTypesDict[type] = true;
@@ -374,15 +389,18 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return infos;
 		}
 
-		static FieldDefinitionAndDeclaringTypeDict<MethodDefinition> createFieldToMethodDictionary(TypeDefinition type) {
-			var dict = new FieldDefinitionAndDeclaringTypeDict<MethodDefinition>();
+		static FieldDefinitionAndDeclaringTypeDict<List<MethodDefinition>> createFieldToMethodsDictionary(TypeDefinition type) {
+			var dict = new FieldDefinitionAndDeclaringTypeDict<List<MethodDefinition>>();
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic || method.Body == null || method.Name == ".cctor")
 					continue;
 				var delegateField = getDelegateField(method);
 				if (delegateField == null)
 					continue;
-				dict.add(delegateField, method);
+				var methods = dict.find(delegateField);
+				if (methods == null)
+					dict.add(delegateField, methods = new List<MethodDefinition>());
+				methods.Add(method);
 			}
 			return dict;
 		}
