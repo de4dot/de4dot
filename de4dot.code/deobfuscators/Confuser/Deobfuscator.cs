@@ -264,6 +264,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 			if (options.RemoveAntiDebug) {
 				addModuleCctorInitCallToBeRemoved(antiDebugger.InitMethod);
 				addTypeToBeRemoved(antiDebugger.Type, "Anti debugger type");
+				if (antiDebugger.Type == DotNetUtils.getModuleType(module))
+					addMethodToBeRemoved(antiDebugger.InitMethod, "Anti debugger method");
 			}
 
 			if (options.RemoveAntiDump) {

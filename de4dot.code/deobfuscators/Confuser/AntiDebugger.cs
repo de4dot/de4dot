@@ -60,7 +60,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				if (!DotNetUtils.isMethod(calledMethod, "System.Void", "()"))
 					continue;
 
-				if (checkInitMethod(calledMethod)) {
+				if (checkInitMethod(calledMethod) || checkInitMethod2(calledMethod)) {
 					initMethod = calledMethod;
 					return true;
 				}
@@ -68,7 +68,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		static bool checkInitMethod(MethodDefinition method) {
+		bool checkInitMethod(MethodDefinition method) {
 			if (method == null || method.Body == null || !method.IsStatic)
 				return false;
 			if (!DotNetUtils.isMethod(method, "System.Void", "()"))
@@ -79,18 +79,30 @@ namespace de4dot.code.deobfuscators.Confuser {
 				return false;
 			if (!DotNetUtils.hasString(method, "Profiler detected"))
 				return false;
-			if (DotNetUtils.getPInvokeMethod(method.DeclaringType, "ntdll", "NtQueryInformationProcess") == null)
-				return false;
-			if (DotNetUtils.getPInvokeMethod(method.DeclaringType, "ntdll", "NtSetInformationProcess") == null)
-				return false;
-			if (DotNetUtils.getPInvokeMethod(method.DeclaringType, "kernel32", "CloseHandle") == null)
-				return false;
-			if (DotNetUtils.getPInvokeMethod(method.DeclaringType, "kernel32", "IsDebuggerPresent") == null)
-				return false;
-			if (DotNetUtils.getPInvokeMethod(method.DeclaringType, "kernel32", "OutputDebugString") == null)
-				return false;
+			if (method.DeclaringType != DotNetUtils.getModuleType(module)) {
+				if (DotNetUtils.getPInvokeMethod(method.DeclaringType, "ntdll", "NtQueryInformationProcess") == null)
+					return false;
+				if (DotNetUtils.getPInvokeMethod(method.DeclaringType, "ntdll", "NtSetInformationProcess") == null)
+					return false;
+				if (DotNetUtils.getPInvokeMethod(method.DeclaringType, "kernel32", "CloseHandle") == null)
+					return false;
+			}
 
 			return true;
+		}
+
+		bool checkInitMethod2(MethodDefinition method) {
+			if (method.DeclaringType == DotNetUtils.getModuleType(module))
+				return false;
+			var instrs = method.Body.Instructions;
+			for (int i = 0; i < instrs.Count; i++) {
+				var call = instrs[i];
+				if (call.OpCode.Code != Code.Call)
+					continue;
+				if (checkInitMethod(call.Operand as MethodDefinition))
+					return true;
+			}
+			return false;
 		}
 	}
 }
