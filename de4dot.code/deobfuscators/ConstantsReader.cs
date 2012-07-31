@@ -195,13 +195,25 @@ namespace de4dot.code.deobfuscators {
 			return true;
 		}
 
-		struct ConstantInfo<T> {
+		protected struct ConstantInfo<T> {
 			public int index;
 			public T constant;
 			public ConstantInfo(int index, T constant) {
 				this.index = index;
 				this.constant = constant;
 			}
+		}
+
+		protected virtual bool processInstructionInt32(ref int index, Stack<ConstantInfo<int>> stack) {
+			return false;
+		}
+
+		protected virtual bool processInstructionInt64(ref int index, Stack<ConstantInfo<long>> stack) {
+			return false;
+		}
+
+		protected virtual bool processInstructionDouble(ref int index, Stack<ConstantInfo<double>> stack) {
+			return false;
 		}
 
 		public bool getInt32(ref int index, out int val) {
@@ -214,6 +226,10 @@ namespace de4dot.code.deobfuscators {
 			int op1;
 			ConstantInfo<int> info1, info2;
 			for (; index < instructions.Count; index++) {
+				if (processInstructionInt32(ref index, stack)) {
+					index--;
+					continue;
+				}
 				var instr = instructions[index];
 				switch (instr.OpCode.Code) {
 				case Code.Conv_I1:
@@ -385,6 +401,10 @@ done:
 			long op1;
 			ConstantInfo<long> info1, info2;
 			for (; index < instructions.Count; index++) {
+				if (processInstructionInt64(ref index, stack)) {
+					index--;
+					continue;
+				}
 				var instr = instructions[index];
 				switch (instr.OpCode.Code) {
 				case Code.Conv_I1:
@@ -557,6 +577,10 @@ done:
 			double op1;
 			ConstantInfo<double> info1, info2;
 			for (; index < instructions.Count; index++) {
+				if (processInstructionDouble(ref index, stack)) {
+					index--;
+					continue;
+				}
 				var instr = instructions[index];
 				switch (instr.OpCode.Code) {
 				case Code.Conv_R4:
