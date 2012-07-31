@@ -309,12 +309,15 @@ namespace de4dot.code.deobfuscators.Confuser {
 				if (!findMagic2(method, out magic2))
 					continue;
 
-				if (!localTypes.exists("System.Random"))
+				if (DotNetUtils.callsMethod(method, "System.Text.Encoding System.Text.Encoding::get_UTF8()"))
+					version = ConfuserVersion.v10_r42915;
+				else if (!localTypes.exists("System.Random"))
 					version = ConfuserVersion.v11_r49299;
 				else if (localTypes.exists("System.Collections.Generic.Dictionary`2<System.Int32,System.String>"))
 					version = ConfuserVersion.v10_r48832;
 				else
-					version = ConfuserVersion.v10_r42915;
+					continue;
+
 				resource = tmpResource;
 				decryptMethod = method;
 				break;
