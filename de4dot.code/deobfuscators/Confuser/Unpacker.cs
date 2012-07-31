@@ -17,6 +17,8 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
+using System.IO;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using de4dot.blocks;
@@ -25,6 +27,14 @@ namespace de4dot.code.deobfuscators.Confuser {
 	class Unpacker {
 		ModuleDefinition module;
 		EmbeddedResource resource;
+		uint key;
+		ConfuserVersion version = ConfuserVersion.Unknown;
+
+		enum ConfuserVersion {
+			Unknown,
+			v10_r42915,
+			v14_r58564,
+		}
 
 		public bool Detected {
 			get { return resource != null; }
@@ -52,17 +62,46 @@ namespace de4dot.code.deobfuscators.Confuser {
 			var type = entryPoint.DeclaringType;
 			if (!new FieldTypes(type).all(requiredFields))
 				return;
-			if (findDecryptMethod(type) == null)
+			var decyptMethod = findDecryptMethod(type);
+			if (decyptMethod == null)
 				return;
+			if (new LocalTypes(decyptMethod).exists("System.IO.MemoryStream"))
+				version = ConfuserVersion.v10_r42915;
+			else
+				version = ConfuserVersion.v14_r58564;
 
 			var cctor = DotNetUtils.getMethod(type, ".cctor");
 			if (cctor == null)
 				return;
 
+			if (version == ConfuserVersion.v14_r58564) {
+				simpleDeobfuscator.deobfuscate(decyptMethod);
+				if (!findKey(decyptMethod, out key))
+					throw new ApplicationException("Could not find magic");
+			}
+
 			simpleDeobfuscator.deobfuscate(cctor);
 			simpleDeobfuscator.decryptStrings(cctor, deob);
 
 			resource = findResource(cctor);
+		}
+
+		static bool findKey(MethodDefinition method, out uint key) {
+			var instrs = method.Body.Instructions;
+			for (int i = 0; i < instrs.Count - 2; i++) {
+				if (instrs[i].OpCode.Code != Code.Xor)
+					continue;
+				var ldci4 = instrs[i + 1];
+				if (!DotNetUtils.isLdcI4(ldci4))
+					continue;
+				if (instrs[i + 2].OpCode.Code != Code.Xor)
+					continue;
+
+				key = (uint)DotNetUtils.getLdcI4Value(ldci4);
+				return true;
+			}
+			key = 0;
+			return false;
 		}
 
 		EmbeddedResource findResource(MethodDefinition method) {
@@ -72,7 +111,6 @@ namespace de4dot.code.deobfuscators.Confuser {
 		static string[] requiredDecryptLocals = new string[] {
 			"System.Byte[]",
 			"System.IO.Compression.DeflateStream",
-			"System.IO.MemoryStream",
 		};
 		static MethodDefinition findDecryptMethod(TypeDefinition type) {
 			foreach (var method in type.Methods) {
@@ -93,8 +131,14 @@ namespace de4dot.code.deobfuscators.Confuser {
 				return null;
 			var data = resource.GetResourceData();
 			for (int i = 0; i < data.Length; i++)
-				data[i] ^= (byte)i;
+				data[i] ^= (byte)(i ^ key);
 			data = DeobUtils.inflate(data, true);
+
+			if (version == ConfuserVersion.v14_r58564) {
+				var reader = new BinaryReader(new MemoryStream(data));
+				data = reader.ReadBytes(reader.ReadInt32());
+			}
+
 			return data;
 		}
 	}

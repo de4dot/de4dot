@@ -46,8 +46,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 			: base(module, simpleDeobfuscator) {
 		}
 
-		public JitMethodsDecrypter(ModuleDefinition module, JitMethodsDecrypter other)
-			: base(module, other) {
+		public JitMethodsDecrypter(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator, JitMethodsDecrypter other)
+			: base(module, simpleDeobfuscator, other) {
 		}
 
 		protected override bool checkType(TypeDefinition type, MethodDefinition initMethod) {

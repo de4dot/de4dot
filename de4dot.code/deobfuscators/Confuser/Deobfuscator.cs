@@ -195,23 +195,23 @@ namespace de4dot.code.deobfuscators.Confuser {
 			var peImage = new PeImage(fileData);
 
 			if ((decryptState & DecryptState.CanDecryptMethods) != 0) {
+				bool decrypted = false;
 				if (jitMethodsDecrypter != null && jitMethodsDecrypter.Detected) {
 					jitMethodsDecrypter.initialize();
 					if (!jitMethodsDecrypter.decrypt(peImage, fileData, ref dumpedMethods))
 						return false;
-
-					decryptState &= ~DecryptState.CanDecryptMethods;
-					newFileData = fileData;
-					ModuleBytes = newFileData;
-					return true;
+					decrypted = true;
 				}
-
-				if (memoryMethodsDecrypter != null && memoryMethodsDecrypter.Detected) {
+				else if (memoryMethodsDecrypter != null && memoryMethodsDecrypter.Detected) {
 					memoryMethodsDecrypter.initialize();
 					if (!memoryMethodsDecrypter.decrypt(peImage, fileData, ref dumpedMethods))
 						return false;
+					decrypted = true;
+				}
 
+				if (decrypted) {
 					decryptState &= ~DecryptState.CanDecryptMethods;
+					decryptState |= DecryptState.CanUnpack;
 					newFileData = fileData;
 					ModuleBytes = newFileData;
 					return true;
@@ -220,8 +220,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			if ((decryptState & DecryptState.CanUnpack) != 0) {
 				if (unpacker != null && unpacker.Detected) {
-					decryptState &= ~DecryptState.CanUnpack;
-					decryptState |= DecryptState.CanDecryptMethods;
+					decryptState |= DecryptState.CanDecryptMethods | DecryptState.CanUnpack;
 					newFileData = unpacker.unpack();
 					ModuleBytes = newFileData;
 					return true;
@@ -238,8 +237,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 			newOne.DeobfuscatedFile = DeobfuscatedFile;
 			newOne.ModuleBytes = ModuleBytes;
 			newOne.setModule(module);
-			newOne.jitMethodsDecrypter = new JitMethodsDecrypter(module, jitMethodsDecrypter);
-			if ((decryptState & DecryptState.CanDecryptMethods) != 0) {
+			newOne.jitMethodsDecrypter = new JitMethodsDecrypter(module, DeobfuscatedFile, jitMethodsDecrypter);
+			if ((newOne.decryptState & DecryptState.CanDecryptMethods) != 0) {
 				try {
 					newOne.jitMethodsDecrypter.find();
 				}
@@ -248,8 +247,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 				if (newOne.jitMethodsDecrypter.Detected)
 					return newOne;
 			}
-			newOne.memoryMethodsDecrypter = new MemoryMethodsDecrypter(module, memoryMethodsDecrypter);
-			if ((decryptState & DecryptState.CanDecryptMethods) != 0) {
+			newOne.memoryMethodsDecrypter = new MemoryMethodsDecrypter(module, DeobfuscatedFile, memoryMethodsDecrypter);
+			if ((newOne.decryptState & DecryptState.CanDecryptMethods) != 0) {
 				newOne.memoryMethodsDecrypter.find();
 				if (newOne.memoryMethodsDecrypter.Detected)
 					return newOne;

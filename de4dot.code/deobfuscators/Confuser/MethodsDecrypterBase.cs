@@ -53,8 +53,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 			this.simpleDeobfuscator = simpleDeobfuscator;
 		}
 
-		protected MethodsDecrypterBase(ModuleDefinition module, MethodsDecrypterBase other) {
+		protected MethodsDecrypterBase(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator, MethodsDecrypterBase other) {
 			this.module = module;
+			this.simpleDeobfuscator = simpleDeobfuscator;
 			if (other != null)
 				this.initMethod = lookup(other.initMethod, "Could not find initMethod");
 		}

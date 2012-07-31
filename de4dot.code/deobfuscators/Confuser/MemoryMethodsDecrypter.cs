@@ -41,8 +41,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 			: base(module, simpleDeobfuscator) {
 		}
 
-		public MemoryMethodsDecrypter(ModuleDefinition module, MemoryMethodsDecrypter other)
-			: base(module, other) {
+		public MemoryMethodsDecrypter(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator, MemoryMethodsDecrypter other)
+			: base(module, simpleDeobfuscator, other) {
 		}
 
 		protected override bool checkType(TypeDefinition type, MethodDefinition initMethod) {
