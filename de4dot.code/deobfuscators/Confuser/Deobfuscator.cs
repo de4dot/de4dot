@@ -276,7 +276,20 @@ namespace de4dot.code.deobfuscators.Confuser {
 			if (proxyCallFixerV1 != null)
 				proxyCallFixerV1.find();
 
+			removeInvalidResources();
+
 			startedDeobfuscating = true;
+		}
+
+		void removeInvalidResources() {
+			foreach (var rsrc in module.Resources) {
+				var resource = rsrc as EmbeddedResource;
+				if (resource == null)
+					continue;
+				if (resource.Offset != 0xFFFFFFFF)
+					continue;
+				addResourceToBeRemoved(resource, "Invalid resource");
+			}
 		}
 
 		bool hasInitializedStringDecrypter = false;
