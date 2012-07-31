@@ -412,6 +412,8 @@ namespace de4dot.code.deobfuscators {
 			Log.indent();
 			foreach (var cctor in emptyCctorsToRemove) {
 				var type = cctor.DeclaringType;
+				if (type == null)
+					continue;
 				if (type.Methods.Remove(cctor))
 					Log.v("{0:X8}, type: {1} ({2:X8})",
 								cctor.MetadataToken.ToUInt32(),
@@ -455,6 +457,8 @@ namespace de4dot.code.deobfuscators {
 				if (field == null)
 					continue;
 				var type = field.DeclaringType;
+				if (type == null)
+					continue;
 				if (type.Fields.Remove(field))
 					Log.v("Removed field {0} ({1:X8}) (Type: {2}) (reason: {3})",
 								Utils.removeNewlines(field),
