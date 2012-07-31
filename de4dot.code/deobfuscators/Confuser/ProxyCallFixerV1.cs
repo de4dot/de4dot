@@ -36,6 +36,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			Unknown,
 			v10_r42915,
 			v10_r48717,
+			v14_r58564,
 		}
 
 		enum ProxyCreatorType {
@@ -48,11 +49,13 @@ namespace de4dot.code.deobfuscators.Confuser {
 			public readonly MethodDefinition creatorMethod;
 			public readonly ProxyCreatorType proxyCreatorType;
 			public readonly ConfuserVersion version;
+			public readonly uint magic;
 
-			public ProxyCreatorInfo(MethodDefinition creatorMethod, ProxyCreatorType proxyCreatorType, ConfuserVersion version) {
+			public ProxyCreatorInfo(MethodDefinition creatorMethod, ProxyCreatorType proxyCreatorType, ConfuserVersion version, uint magic) {
 				this.creatorMethod = creatorMethod;
 				this.proxyCreatorType = proxyCreatorType;
 				this.version = version;
+				this.magic = magic;
 			}
 		}
 
@@ -167,6 +170,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				break;
 
 			case ConfuserVersion.v10_r48717:
+			case ConfuserVersion.v14_r58564:
 				getCallInfo_v10_r48717(info, creatorInfo, out calledMethod, out callOpcode);
 				break;
 
@@ -198,7 +202,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		void getCallInfo_v10_r48717(DelegateInitInfo info, ProxyCreatorInfo creatorInfo, out MethodReference calledMethod, out OpCode callOpcode) {
 			int offs = creatorInfo.proxyCreatorType == ProxyCreatorType.CallOrCallvirt ? 2 : 1;
-			uint token = BitConverter.ToUInt32(Encoding.Unicode.GetBytes(info.field.Name.ToCharArray(), offs, 2), 0);
+			uint token = BitConverter.ToUInt32(Encoding.Unicode.GetBytes(info.field.Name.ToCharArray(), offs, 2), 0) ^ creatorInfo.magic;
 			// 1.3 r55346 now correctly uses method reference tokens and finally fixed the old
 			// bug of using methoddef tokens to reference external methods.
 			if (info.field.Name[0] == (char)1 || ((token >> 24) != 0x06))
@@ -259,7 +263,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			}
 		}
 
-		public void findDelegateCreator() {
+		public void findDelegateCreator(ISimpleDeobfuscator simpleDeobfuscator) {
 			var type = DotNetUtils.getModuleType(module);
 			foreach (var method in type.Methods) {
 				if (method.Body == null || !method.IsStatic || !method.IsAssembly)
@@ -276,11 +280,37 @@ namespace de4dot.code.deobfuscators.Confuser {
 				var proxyType = getProxyCreatorType(method);
 				if (proxyType == ProxyCreatorType.None)
 					continue;
+				simpleDeobfuscator.deobfuscate(method);
+				uint magic;
+				if (findMagic(method, out magic))
+					theVersion = ConfuserVersion.v14_r58564;
 
 				setDelegateCreatorMethod(method);
-				methodToInfo.add(method, new ProxyCreatorInfo(method, proxyType, theVersion));
+				methodToInfo.add(method, new ProxyCreatorInfo(method, proxyType, theVersion, magic));
 				version = theVersion;
 			}
+		}
+
+		static bool findMagic(MethodDefinition method, out uint magic) {
+			var instrs = method.Body.Instructions;
+			for (int i = 0; i < instrs.Count; i++) {
+				int index = ConfuserUtils.findCallMethod(instrs, i, Code.Call, "System.Int32 System.BitConverter::ToInt32(System.Byte[],System.Int32)");
+				if (index < 0)
+					break;
+				int index2 = ConfuserUtils.findCallMethod(instrs, i, Code.Callvirt, "System.Reflection.MethodBase System.Reflection.Module::ResolveMethod(System.Int32)");
+				if (index2 < 0 || index2 - index != 3)
+					continue;
+				var ldci4 = instrs[index + 1];
+				if (!DotNetUtils.isLdcI4(ldci4))
+					continue;
+				if (instrs[index + 2].OpCode.Code != Code.Xor)
+					continue;
+
+				magic = (uint)DotNetUtils.getLdcI4Value(ldci4);
+				return true;
+			}
+			magic = 0;
+			return false;
 		}
 
 		static ProxyCreatorType getProxyCreatorType(MethodDefinition method) {
@@ -364,6 +394,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			switch (version) {
 			case ConfuserVersion.v10_r42915: return createDelegateInitInfos_v10_r42915(method);
 			case ConfuserVersion.v10_r48717: return createDelegateInitInfos_v10_r48717(method);
+			case ConfuserVersion.v14_r58564: return createDelegateInitInfos_v10_r48717(method);
 			default: throw new ApplicationException("Invalid version");
 			}
 		}

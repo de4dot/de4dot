@@ -165,7 +165,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			proxyCallFixer.findDelegateCreator();
 			if (!proxyCallFixer.Detected) {
 				proxyCallFixerV1 = new ProxyCallFixerV1(module);
-				proxyCallFixerV1.findDelegateCreator();
+				proxyCallFixerV1.findDelegateCreator(DeobfuscatedFile);
 			}
 			antiDebugger = new AntiDebugger(module);
 			antiDebugger.find();
