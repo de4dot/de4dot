@@ -301,9 +301,6 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 				simpleDeobfuscator.deobfuscate(method);
 
-				var tmpResource = findResource(method);
-				if (tmpResource == null)
-					continue;
 				if (!findMagic1(method, out magic1))
 					continue;
 				if (!findMagic2(method, out magic2))
@@ -318,7 +315,6 @@ namespace de4dot.code.deobfuscators.Confuser {
 				else
 					continue;
 
-				resource = tmpResource;
 				decryptMethod = method;
 				break;
 			}
@@ -384,6 +380,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 		public void initialize() {
 			if (decryptMethod == null)
 				return;
+
+			resource = findResource(decryptMethod);
+			if (resource == null)
+				throw new ApplicationException("Could not find encrypted strings resource");
 			reader = new BinaryReader(new MemoryStream(DeobUtils.inflate(resource.GetResourceData(), true)));
 
 			switch (version) {

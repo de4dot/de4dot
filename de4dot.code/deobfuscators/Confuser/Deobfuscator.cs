@@ -285,7 +285,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 				return;
 			hasInitializedStringDecrypter = true;
 
-			if (stringDecrypter != null) {
+			if (stringDecrypter != null && stringDecrypter.Detected) {
+				decryptResources();
 				stringDecrypter.initialize();
 				staticStringInliner.add(stringDecrypter.Method, (method, gim, args) => stringDecrypter.decrypt(staticStringInliner.Method, (int)args[0]));
 			}
