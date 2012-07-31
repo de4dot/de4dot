@@ -239,7 +239,21 @@ namespace de4dot.code.deobfuscators.Confuser {
 			newOne.ModuleBytes = ModuleBytes;
 			newOne.setModule(module);
 			newOne.jitMethodsDecrypter = new JitMethodsDecrypter(module, jitMethodsDecrypter);
+			if ((decryptState & DecryptState.CanDecryptMethods) != 0) {
+				try {
+					newOne.jitMethodsDecrypter.find();
+				}
+				catch {
+				}
+				if (newOne.jitMethodsDecrypter.Detected)
+					return newOne;
+			}
 			newOne.memoryMethodsDecrypter = new MemoryMethodsDecrypter(module, memoryMethodsDecrypter);
+			if ((decryptState & DecryptState.CanDecryptMethods) != 0) {
+				newOne.memoryMethodsDecrypter.find();
+				if (newOne.memoryMethodsDecrypter.Detected)
+					return newOne;
+			}
 			newOne.initTheRest();
 			return newOne;
 		}
