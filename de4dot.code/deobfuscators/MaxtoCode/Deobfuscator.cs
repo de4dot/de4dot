@@ -151,8 +151,31 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			}
 		}
 
+		class ResourceKey {
+			readonly EmbeddedResource resource;
+
+			public ResourceKey(EmbeddedResource resource) {
+				this.resource = resource;
+			}
+
+			public override int GetHashCode() {
+				return resource._GetHashCode();
+			}
+
+			public override bool Equals(object obj) {
+				var other = obj as ResourceKey;
+				if (other == null)
+					return false;
+				return resource._Equals(other.resource);
+			}
+
+			public override string ToString() {
+				return resource.Name;
+			}
+		}
+
 		void removeDuplicateEmbeddedResources() {
-			var resources = new Dictionary<uint, List<EmbeddedResource>>();
+			var resources = new Dictionary<ResourceKey, List<EmbeddedResource>>();
 			foreach (var tmp in module.Resources) {
 				var rsrc = tmp as EmbeddedResource;
 				if (rsrc == null)
@@ -160,8 +183,9 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				if (rsrc.Offset == null)
 					continue;
 				List<EmbeddedResource> list;
-				if (!resources.TryGetValue(rsrc.Offset.Value, out list))
-					resources[rsrc.Offset.Value] = list = new List<EmbeddedResource>();
+				var key = new ResourceKey(rsrc);
+				if (!resources.TryGetValue(key, out list))
+					resources[key] = list = new List<EmbeddedResource>();
 				list.Add(rsrc);
 			}
 
