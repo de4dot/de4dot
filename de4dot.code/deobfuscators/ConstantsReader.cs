@@ -364,6 +364,8 @@ namespace de4dot.code.deobfuscators {
 					if (stack.Count < 2)
 						goto done;
 					info2 = stack.Pop();
+					if (info2.constant == 0)
+						goto done;
 					info1 = stack.Pop();
 					stack.Push(new ConstantInfo<int>(index, info1.constant / info2.constant));
 					break;
@@ -372,6 +374,8 @@ namespace de4dot.code.deobfuscators {
 					if (stack.Count < 2)
 						goto done;
 					info2 = stack.Pop();
+					if (info2.constant == 0)
+						goto done;
 					info1 = stack.Pop();
 					stack.Push(new ConstantInfo<int>(index, (int)((uint)info1.constant / (uint)info2.constant)));
 					break;
@@ -540,6 +544,8 @@ done:
 					if (stack.Count < 2)
 						goto done;
 					info2 = stack.Pop();
+					if (info2.constant == 0)
+						goto done;
 					info1 = stack.Pop();
 					stack.Push(new ConstantInfo<long>(index, info1.constant / info2.constant));
 					break;
@@ -548,6 +554,8 @@ done:
 					if (stack.Count < 2)
 						goto done;
 					info2 = stack.Pop();
+					if (info2.constant == 0)
+						goto done;
 					info1 = stack.Pop();
 					stack.Push(new ConstantInfo<long>(index, (int)((uint)info1.constant / (uint)info2.constant)));
 					break;
