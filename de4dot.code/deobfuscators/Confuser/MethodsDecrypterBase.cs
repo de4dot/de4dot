@@ -179,7 +179,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				var ldci4_2 = instrs[index++];
 				if (!DotNetUtils.isLdcI4(ldci4_2))
 					continue;
-				if (DotNetUtils.getLdcI4Value(ldci4_2) != 0)
+				if (DotNetUtils.getLdcI4Value(ldci4_2) != 0 && DotNetUtils.getLdcI4Value(ldci4_1) != DotNetUtils.getLdcI4Value(ldci4_2))
 					continue;
 
 				key = (uint)DotNetUtils.getLdcI4Value(ldci4_1);
