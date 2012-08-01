@@ -201,11 +201,20 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		void getCallInfo_v10_r48717(DelegateInitInfo info, ProxyCreatorInfo creatorInfo, out MethodReference calledMethod, out OpCode callOpcode) {
+			bool isNew = isNewFieldNameEncoding(info);
 			int offs = creatorInfo.proxyCreatorType == ProxyCreatorType.CallOrCallvirt ? 2 : 1;
+			if (isNew)
+				offs--;
+			int callvirtOffs = isNew ? 0 : 1;
+
 			uint token = BitConverter.ToUInt32(Encoding.Unicode.GetBytes(info.field.Name.ToCharArray(), offs, 2), 0) ^ creatorInfo.magic;
+			uint table = token >> 24;
+			if (table != 0 && table != 6 && table != 0x0A && table != 0x2B)
+				throw new ApplicationException("Invalid method token");
+
 			// 1.3 r55346 now correctly uses method reference tokens and finally fixed the old
 			// bug of using methoddef tokens to reference external methods.
-			if (info.field.Name[0] == (char)1 || ((token >> 24) != 0x06))
+			if (isNew || info.field.Name[0] == (char)1 || table != 0x06)
 				calledMethod = (MethodReference)module.LookupToken((int)token);
 			else {
 				var asmRef = module.AssemblyReferences[info.field.Name[0] - 2];
@@ -213,9 +222,34 @@ namespace de4dot.code.deobfuscators.Confuser {
 			}
 
 			bool isCallvirt = false;
-			if (creatorInfo.proxyCreatorType == ProxyCreatorType.CallOrCallvirt && info.field.Name[1] == '\r')
+			if (creatorInfo.proxyCreatorType == ProxyCreatorType.CallOrCallvirt && info.field.Name[callvirtOffs] == '\r')
 				isCallvirt = true;
 			callOpcode = getCallOpCode(creatorInfo, isCallvirt);
+		}
+
+		// Returns true if Confuser 1.4 r58802 or later
+		bool isNewFieldNameEncoding(DelegateInitInfo info) {
+			var creatorInfo = methodToInfo.find(info.creatorMethod);
+			int oldLen, newLen;
+			switch (creatorInfo.proxyCreatorType) {
+			case ProxyCreatorType.Newobj:
+				oldLen = 3;
+				newLen = 2;
+				break;
+
+			case ProxyCreatorType.CallOrCallvirt:
+				oldLen = 4;
+				newLen = 3;
+				break;
+
+			default: throw new ApplicationException("Invalid proxy creator type");
+			}
+
+			if (info.field.Name.Length == oldLen)
+				return false;
+			if (info.field.Name.Length != newLen)
+				throw new ApplicationException("Invalid field name length");
+			return true;
 		}
 
 		// A method token is not a stable value so this method can fail to return the correct method!
