@@ -31,11 +31,13 @@ namespace de4dot.code.deobfuscators.Confuser {
 		public const string THE_TYPE = "cr";
 		BoolOption removeAntiDebug;
 		BoolOption removeAntiDump;
+		BoolOption decryptMainAsm;
 
 		public DeobfuscatorInfo()
 			: base() {
 			removeAntiDebug = new BoolOption(null, makeArgName("antidb"), "Remove anti debug code", true);
 			removeAntiDump = new BoolOption(null, makeArgName("antidump"), "Remove anti dump code", true);
+			decryptMainAsm = new BoolOption(null, makeArgName("decrypt-main"), "Decrypt main embedded assembly", true);
 		}
 
 		public override string Name {
@@ -51,6 +53,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				ValidNameRegex = validNameRegex.get(),
 				RemoveAntiDebug = removeAntiDebug.get(),
 				RemoveAntiDump = removeAntiDump.get(),
+				DecryptMainAsm = decryptMainAsm.get(),
 			});
 		}
 
@@ -58,6 +61,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return new List<Option>() {
 				removeAntiDebug,
 				removeAntiDump,
+				decryptMainAsm,
 			};
 		}
 	}
@@ -81,12 +85,14 @@ namespace de4dot.code.deobfuscators.Confuser {
 		DoubleValueInliner doubleValueInliner;
 		StringDecrypter stringDecrypter;
 		Unpacker unpacker;
+		EmbeddedAssemblyInfo mainAsmInfo;
 
 		bool startedDeobfuscating = false;
 
 		internal class Options : OptionsBase {
 			public bool RemoveAntiDebug { get; set; }
 			public bool RemoveAntiDump { get; set; }
+			public bool DecryptMainAsm { get; set; }
 		}
 
 		public override string Type {
@@ -221,11 +227,19 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			if ((decryptState & DecryptState.CanUnpack) != 0) {
 				if (unpacker != null && unpacker.Detected) {
-					decryptState |= DecryptState.CanDecryptMethods | DecryptState.CanUnpack;
-					newFileData = unpacker.unpackMainAssembly().data;
-					embeddedAssemblyInfos.AddRange(unpacker.getEmbeddedAssemblyInfos());
-					ModuleBytes = newFileData;
-					return true;
+					if (options.DecryptMainAsm) {
+						decryptState |= DecryptState.CanDecryptMethods | DecryptState.CanUnpack;
+						newFileData = unpacker.unpackMainAssembly().data;
+						embeddedAssemblyInfos.AddRange(unpacker.getEmbeddedAssemblyInfos());
+						ModuleBytes = newFileData;
+						return true;
+					}
+					else {
+						decryptState &= ~DecryptState.CanUnpack;
+						mainAsmInfo = unpacker.unpackMainAssembly();
+						embeddedAssemblyInfos.AddRange(unpacker.getEmbeddedAssemblyInfos());
+						return false;
+					}
 				}
 			}
 
@@ -301,6 +315,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		void dumpEmbeddedAssemblies() {
+			if (mainAsmInfo != null) {
+				DeobfuscatedFile.createAssemblyFile(mainAsmInfo.data, mainAsmInfo.asmSimpleName + "_real", mainAsmInfo.extension);
+				addResourceToBeRemoved(mainAsmInfo.resource, string.Format("Embedded assembly: {0}", mainAsmInfo.asmFullName));
+			}
 			foreach (var info in embeddedAssemblyInfos) {
 				if (info.asmFullName != module.Assembly.Name.FullName)
 					DeobfuscatedFile.createAssemblyFile(info.data, info.asmSimpleName, info.extension);
