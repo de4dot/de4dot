@@ -177,6 +177,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 			default:
 				throw new ApplicationException("Unknown version");
 			}
+
+			if (calledMethod == null) {
+				Log.w("Could not find real method. Proxy field: {0:X8}", info.field.MetadataToken.ToInt32());
+				errors++;
+			}
 		}
 
 		void getCallInfo_v10_r42915(DelegateInitInfo info, ProxyCreatorInfo creatorInfo, out MethodReference calledMethod, out OpCode callOpcode) {
@@ -201,11 +206,17 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		void getCallInfo_v10_r48717(DelegateInitInfo info, ProxyCreatorInfo creatorInfo, out MethodReference calledMethod, out OpCode callOpcode) {
-			bool isNew = isNewFieldNameEncoding(info);
+			bool? isNew = isNewFieldNameEncoding(info);
+			if (isNew == null) {
+				calledMethod = null;
+				callOpcode = OpCodes.Call;
+				return;
+			}
+
 			int offs = creatorInfo.proxyCreatorType == ProxyCreatorType.CallOrCallvirt ? 2 : 1;
-			if (isNew)
+			if (isNew.Value)
 				offs--;
-			int callvirtOffs = isNew ? 0 : 1;
+			int callvirtOffs = isNew.Value ? 0 : 1;
 
 			uint token = BitConverter.ToUInt32(Encoding.Unicode.GetBytes(info.field.Name.ToCharArray(), offs, 2), 0) ^ creatorInfo.magic;
 			uint table = token >> 24;
@@ -214,7 +225,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			// 1.3 r55346 now correctly uses method reference tokens and finally fixed the old
 			// bug of using methoddef tokens to reference external methods.
-			if (isNew || info.field.Name[0] == (char)1 || table != 0x06)
+			if (isNew.Value || info.field.Name[0] == (char)1 || table != 0x06)
 				calledMethod = (MethodReference)module.LookupToken((int)token);
 			else {
 				var asmRef = module.AssemblyReferences[info.field.Name[0] - 2];
@@ -228,7 +239,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		// Returns true if Confuser 1.4 r58802 or later
-		bool isNewFieldNameEncoding(DelegateInitInfo info) {
+		bool? isNewFieldNameEncoding(DelegateInitInfo info) {
 			var creatorInfo = methodToInfo.find(info.creatorMethod);
 			int oldLen, newLen;
 			switch (creatorInfo.proxyCreatorType) {
@@ -247,8 +258,12 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			if (info.field.Name.Length == oldLen)
 				return false;
-			if (info.field.Name.Length != newLen)
-				throw new ApplicationException("Invalid field name length");
+			if (info.field.Name.Length != newLen) {
+				// This is an obfuscator bug. Field names are stored in the #Strings heap,
+				// and strings in that heap are UTF8 zero terminated strings, but Confuser
+				// can generate names with zeros in them.
+				return null;
+			}
 			return true;
 		}
 
