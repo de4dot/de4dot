@@ -42,6 +42,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v11_r49299,
 			v14_r58802_safe,	// "safe" string decrypter
 			v14_r58802_dynamic,	// "dynamic" string decrypter
+			// The string decrypter "confusion" was disabled from 1.5 r60785 and it was
+			// replaced by the constants "confusion".
 		}
 
 		abstract class Decrypter {
