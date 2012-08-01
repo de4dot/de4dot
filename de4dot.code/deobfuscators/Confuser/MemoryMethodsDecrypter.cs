@@ -34,6 +34,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v14_r57884,
 			v14_r58004,
 			v14_r58564,
+			v15a_r59014,
 			vXX,
 		}
 
@@ -62,14 +63,35 @@ namespace de4dot.code.deobfuscators.Confuser {
 			bool callsFileStreamCtor = DotNetUtils.callsMethod(initMethod, "System.Void System.IO.FileStream::.ctor(System.String,System.IO.FileMode,System.IO.FileAccess,System.IO.FileShare)");
 			if (!DotNetUtils.hasString(initMethod, "Module error"))
 				version = ConfuserVersion.v14_r57884;
-			else if (virtProtect.IsPrivate && callsFileStreamCtor)
-				version = ConfuserVersion.v14_r58564;
+			else if (virtProtect.IsPrivate && callsFileStreamCtor) {
+				int calls = countMethodCalls(initMethod, "System.Void System.Buffer::BlockCopy(System.Array,System.Int32,System.Array,System.Int32,System.Int32)");
+				if (calls <= 2)
+					version = ConfuserVersion.v14_r58564;
+				else if (calls == 4)
+					version = ConfuserVersion.v15a_r59014;
+				else
+					return false;
+			}
 			else if (callsFileStreamCtor)
 				version = ConfuserVersion.v14_r58004;
 			else
 				version = ConfuserVersion.vXX;
 
 			return true;
+		}
+
+		static int countMethodCalls(MethodDefinition method, string methodFullName) {
+			if (method == null || method.Body == null)
+				return 0;
+			int count = 0;
+			foreach (var instr in method.Body.Instructions) {
+				if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt && instr.OpCode.Code != Code.Newobj)
+					continue;
+				var calledMethod = instr.Operand as MethodReference;
+				if (calledMethod != null && calledMethod.FullName == methodFullName)
+					count++;
+			}
+			return count;
 		}
 
 		public void initialize() {
@@ -82,6 +104,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				break;
 
 			case ConfuserVersion.v14_r58564:
+			case ConfuserVersion.v15a_r59014:
 				if (!initializeKeys_v14_r58564())
 					throw new ApplicationException("Could not find all decryption keys");
 				break;
@@ -217,13 +240,14 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v14_r57884: return decrypt_v14_r57884(peImage, fileData, ref dumpedMethods);
 			case ConfuserVersion.v14_r58004: return decrypt_v14_r58004(peImage, fileData, ref dumpedMethods);
 			case ConfuserVersion.v14_r58564: return decrypt_v14_r58004(peImage, fileData, ref dumpedMethods);
+			case ConfuserVersion.v15a_r59014:return decrypt_v15a_r59014(peImage, fileData, ref dumpedMethods);
 			case ConfuserVersion.vXX: return decrypt_vXX(peImage, fileData, ref dumpedMethods);
 			default: throw new ApplicationException("Unknown version");
 			}
 		}
 
 		bool decrypt_v14_r57884(PeImage peImage, byte[] fileData, ref DumpedMethods dumpedMethods) {
-			methodsData = decryptMethodsData_v14_r57884(peImage);
+			methodsData = decryptMethodsData_v14_r57884(peImage, false);
 
 			var reader = new BinaryReader(new MemoryStream(methodsData));
 			reader.ReadInt16();	// sig
@@ -240,18 +264,25 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return true;
 		}
 
-		byte[] decryptMethodsData_v14_r57884(PeImage peImage) {
+		byte[] decryptMethodsData_v14_r57884(PeImage peImage, bool hasStrongNameInfo) {
 			var reader = peImage.Reader;
 			reader.BaseStream.Position = 0;
 			var md5SumData = reader.ReadBytes((int)peImage.OptionalHeader.checkSum ^ (int)key0);
 
 			int csOffs = (int)peImage.OptionalHeader.Offset + 0x40;
-			md5SumData[csOffs] = 0;
-			md5SumData[csOffs + 1] = 0;
-			md5SumData[csOffs + 2] = 0;
-			md5SumData[csOffs + 3] = 0;
+			Array.Clear(md5SumData, csOffs, 4);
 			var md5Sum = DeobUtils.md5Sum(md5SumData);
 			ulong checkSum = reader.ReadUInt64() ^ lkey0;
+			if (hasStrongNameInfo) {
+				int sn = reader.ReadInt32();
+				int snLen = reader.ReadInt32();
+				if (sn != 0) {
+					if (peImage.rvaToOffset(peImage.Cor20Header.strongNameSignature.virtualAddress) != sn ||
+						peImage.Cor20Header.strongNameSignature.size != snLen)
+						throw new ApplicationException("Invalid sn and snLen");
+					Array.Clear(md5SumData, sn, snLen);
+				}
+			}
 			if (checkSum != calcChecksum(md5SumData))
 				throw new ApplicationException("Invalid checksum. File has been modified.");
 			var iv = reader.ReadBytes(reader.ReadInt32() ^ (int)key2);
@@ -263,7 +294,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		bool decrypt_v14_r58004(PeImage peImage, byte[] fileData, ref DumpedMethods dumpedMethods) {
-			methodsData = decryptMethodsData_v14_r57884(peImage);
+			methodsData = decryptMethodsData_v14_r57884(peImage, false);
 			return decryptImage_v14_r58004(peImage, fileData, ref dumpedMethods);
 		}
 
@@ -284,6 +315,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 			}
 
 			return true;
+		}
+
+		bool decrypt_v15a_r59014(PeImage peImage, byte[] fileData, ref DumpedMethods dumpedMethods) {
+			methodsData = decryptMethodsData_v14_r57884(peImage, true);
+			return decryptImage_v14_r58004(peImage, fileData, ref dumpedMethods);
 		}
 
 		bool decrypt_vXX(PeImage peImage, byte[] fileData, ref DumpedMethods dumpedMethods) {
