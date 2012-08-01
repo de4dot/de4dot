@@ -28,7 +28,7 @@ using de4dot.PE;
 namespace de4dot.code.deobfuscators.Confuser {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "Confuser";
-		public const string THE_TYPE = "cn";
+		public const string THE_TYPE = "cr";
 		BoolOption removeAntiDebug;
 		BoolOption removeAntiDump;
 
