@@ -59,11 +59,12 @@ namespace de4dot.code.deobfuscators.Confuser {
 			if ((decryptMethod = findDecryptMethod(type)) == null)
 				return false;
 
+			bool callsFileStreamCtor = DotNetUtils.callsMethod(initMethod, "System.Void System.IO.FileStream::.ctor(System.String,System.IO.FileMode,System.IO.FileAccess,System.IO.FileShare)");
 			if (!DotNetUtils.hasString(initMethod, "Module error"))
 				version = ConfuserVersion.v14_r57884;
-			else if (virtProtect.IsPrivate)
+			else if (virtProtect.IsPrivate && callsFileStreamCtor)
 				version = ConfuserVersion.v14_r58564;
-			else if (DotNetUtils.callsMethod(initMethod, "System.Void System.IO.FileStream::.ctor(System.String,System.IO.FileMode,System.IO.FileAccess,System.IO.FileShare)"))
+			else if (callsFileStreamCtor)
 				version = ConfuserVersion.v14_r58004;
 			else
 				version = ConfuserVersion.vXX;
