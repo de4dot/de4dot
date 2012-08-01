@@ -52,7 +52,6 @@ namespace de4dot.code.deobfuscators.Confuser {
 		uint key0, key1;
 		ConfuserVersion version = ConfuserVersion.Unknown;
 		MethodDefinition asmResolverMethod;
-		bool unpackedMainAssembly = false;
 
 		enum ConfuserVersion {
 			Unknown,
@@ -205,7 +204,6 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		public EmbeddedAssemblyInfo unpackMainAssembly() {
-			unpackedMainAssembly = true;
 			if (mainAsmResource == null)
 				return null;
 			return createEmbeddedAssemblyInfo(mainAsmResource, decrypt(mainAsmResource));
@@ -223,8 +221,6 @@ namespace de4dot.code.deobfuscators.Confuser {
 				catch {
 				}
 			}
-			if (!unpackedMainAssembly)
-				infos.Add(unpackMainAssembly());
 			return infos;
 		}
 
