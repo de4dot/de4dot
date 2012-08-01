@@ -18,26 +18,51 @@
 */
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Confuser {
+	class EmbeddedAssemblyInfo {
+		public readonly byte[] data;
+		public readonly string asmFullName;
+		public readonly string asmSimpleName;
+		public readonly string extension;
+		public readonly EmbeddedResource resource;
+
+		public EmbeddedAssemblyInfo(EmbeddedResource resource, byte[] data, string asmFullName, string extension) {
+			this.resource = resource;
+			this.data = data;
+			this.asmFullName = asmFullName;
+			this.asmSimpleName = Utils.getAssemblySimpleName(asmFullName);
+			this.extension = extension;
+		}
+
+		public override string ToString() {
+			return asmFullName;
+		}
+	}
+
 	class Unpacker {
 		ModuleDefinition module;
-		EmbeddedResource resource;
-		uint key;
+		EmbeddedResource mainAsmResource;
+		List<EmbeddedResource> resources = new List<EmbeddedResource>();
+		uint key0, key1;
 		ConfuserVersion version = ConfuserVersion.Unknown;
+		MethodDefinition asmResolverMethod;
+		bool unpackedMainAssembly = false;
 
 		enum ConfuserVersion {
 			Unknown,
 			v10_r42915,
 			v14_r58564,
+			v14_r58802,
 		}
 
 		public bool Detected {
-			get { return resource != null; }
+			get { return mainAsmResource != null; }
 		}
 
 		public Unpacker(ModuleDefinition module) {
@@ -74,19 +99,50 @@ namespace de4dot.code.deobfuscators.Confuser {
 			if (cctor == null)
 				return;
 
-			if (version == ConfuserVersion.v14_r58564) {
+			if ((asmResolverMethod = findAssemblyResolverMethod(entryPoint.DeclaringType)) != null) {
+				version = ConfuserVersion.v14_r58802;
+				simpleDeobfuscator.deobfuscate(asmResolverMethod);
+				if (!findKey1(asmResolverMethod, out key1))
+					return;
+			}
+
+			switch (version) {
+			case ConfuserVersion.v10_r42915:
+				break;
+
+			case ConfuserVersion.v14_r58564:
+			case ConfuserVersion.v14_r58802:
 				simpleDeobfuscator.deobfuscate(decyptMethod);
-				if (!findKey(decyptMethod, out key))
+				if (!findKey0(decyptMethod, out key0))
 					throw new ApplicationException("Could not find magic");
+				break;
+
+			default:
+				throw new ApplicationException("Invalid version");
 			}
 
 			simpleDeobfuscator.deobfuscate(cctor);
 			simpleDeobfuscator.decryptStrings(cctor, deob);
 
-			resource = findResource(cctor);
+			mainAsmResource = findResource(cctor);
+			if (mainAsmResource == null)
+				throw new ApplicationException("Could not find main assembly resource");
+			resources.Add(mainAsmResource);
 		}
 
-		static bool findKey(MethodDefinition method, out uint key) {
+		static MethodDefinition findAssemblyResolverMethod(TypeDefinition type) {
+			foreach (var method in type.Methods) {
+				if (!method.IsStatic || method.Body == null)
+					continue;
+				if (!DotNetUtils.isMethod(method, "System.Reflection.Assembly", "(System.Object,System.ResolveEventArgs)"))
+					continue;
+
+				return method;
+			}
+			return null;
+		}
+
+		static bool findKey0(MethodDefinition method, out uint key) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 2; i++) {
 				if (instrs[i].OpCode.Code != Code.Xor)
@@ -95,6 +151,28 @@ namespace de4dot.code.deobfuscators.Confuser {
 				if (!DotNetUtils.isLdcI4(ldci4))
 					continue;
 				if (instrs[i + 2].OpCode.Code != Code.Xor)
+					continue;
+
+				key = (uint)DotNetUtils.getLdcI4Value(ldci4);
+				return true;
+			}
+			key = 0;
+			return false;
+		}
+
+		static bool findKey1(MethodDefinition method, out uint key) {
+			var instrs = method.Body.Instructions;
+			for (int i = 0; i < instrs.Count - 4; i++) {
+				if (instrs[i].OpCode.Code != Code.Ldelem_U1)
+					continue;
+				var ldci4 = instrs[i + 1];
+				if (!DotNetUtils.isLdcI4(ldci4))
+					continue;
+				if (instrs[i + 2].OpCode.Code != Code.Xor)
+					continue;
+				if (!DotNetUtils.isLdloc(instrs[i + 3]))
+					continue;
+				if (instrs[i + 4].OpCode.Code != Code.Xor)
 					continue;
 
 				key = (uint)DotNetUtils.getLdcI4Value(ldci4);
@@ -126,20 +204,55 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return null;
 		}
 
-		public byte[] unpack() {
-			if (resource == null)
+		public EmbeddedAssemblyInfo unpackMainAssembly() {
+			unpackedMainAssembly = true;
+			if (mainAsmResource == null)
 				return null;
+			return createEmbeddedAssemblyInfo(mainAsmResource, decrypt(mainAsmResource));
+		}
+
+		public List<EmbeddedAssemblyInfo> getEmbeddedAssemblyInfos() {
+			var infos = new List<EmbeddedAssemblyInfo>();
+			foreach (var rsrc in module.Resources) {
+				var resource = rsrc as EmbeddedResource;
+				if (resource == null || resource == mainAsmResource)
+					continue;
+				try {
+					infos.Add(createEmbeddedAssemblyInfo(resource, decrypt(resource)));
+				}
+				catch {
+				}
+			}
+			if (!unpackedMainAssembly)
+				infos.Add(unpackMainAssembly());
+			return infos;
+		}
+
+		static EmbeddedAssemblyInfo createEmbeddedAssemblyInfo(EmbeddedResource resource, byte[] data) {
+			var mod = ModuleDefinition.ReadModule(new MemoryStream(data));
+			return new EmbeddedAssemblyInfo(resource, data, mod.Assembly.Name.FullName, DeobUtils.getExtension(mod.Kind));
+		}
+
+		byte[] decrypt(EmbeddedResource resource) {
 			var data = resource.GetResourceData();
 			for (int i = 0; i < data.Length; i++)
-				data[i] ^= (byte)(i ^ key);
+				data[i] ^= (byte)(i ^ key0);
 			data = DeobUtils.inflate(data, true);
 
-			if (version == ConfuserVersion.v14_r58564) {
+			if (version != ConfuserVersion.v10_r42915) {
 				var reader = new BinaryReader(new MemoryStream(data));
 				data = reader.ReadBytes(reader.ReadInt32());
 			}
 
 			return data;
+		}
+
+		public void deobfuscate(Blocks blocks) {
+			if (asmResolverMethod == null)
+				return;
+			if (blocks.Method != DotNetUtils.getModuleTypeCctor(module))
+				return;
+			ConfuserUtils.removeResourceHookCode(blocks, asmResolverMethod);
 		}
 	}
 }

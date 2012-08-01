@@ -66,6 +66,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		Options options;
 		string obfuscatorName = DeobfuscatorInfo.THE_NAME;
 
+		List<EmbeddedAssemblyInfo> embeddedAssemblyInfos = new List<EmbeddedAssemblyInfo>();
 		JitMethodsDecrypter jitMethodsDecrypter;
 		MemoryMethodsDecrypter memoryMethodsDecrypter;
 		ProxyCallFixer proxyCallFixer;
@@ -221,7 +222,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 			if ((decryptState & DecryptState.CanUnpack) != 0) {
 				if (unpacker != null && unpacker.Detected) {
 					decryptState |= DecryptState.CanDecryptMethods | DecryptState.CanUnpack;
-					newFileData = unpacker.unpack();
+					newFileData = unpacker.unpackMainAssembly().data;
+					embeddedAssemblyInfos.AddRange(unpacker.getEmbeddedAssemblyInfos());
 					ModuleBytes = newFileData;
 					return true;
 				}
@@ -236,6 +238,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			newOne.decryptState = decryptState;
 			newOne.DeobfuscatedFile = DeobfuscatedFile;
 			newOne.ModuleBytes = ModuleBytes;
+			newOne.embeddedAssemblyInfos.AddRange(embeddedAssemblyInfos);
 			newOne.setModule(module);
 			newOne.jitMethodsDecrypter = new JitMethodsDecrypter(module, DeobfuscatedFile, jitMethodsDecrypter);
 			if ((newOne.decryptState & DecryptState.CanDecryptMethods) != 0) {
@@ -292,8 +295,18 @@ namespace de4dot.code.deobfuscators.Confuser {
 				proxyCallFixerV1.find();
 
 			removeInvalidResources();
+			dumpEmbeddedAssemblies();
 
 			startedDeobfuscating = true;
+		}
+
+		void dumpEmbeddedAssemblies() {
+			foreach (var info in embeddedAssemblyInfos) {
+				if (info.asmFullName != module.Assembly.Name.FullName)
+					DeobfuscatedFile.createAssemblyFile(info.data, info.asmSimpleName, info.extension);
+				addResourceToBeRemoved(info.resource, string.Format("Embedded assembly: {0}", info.asmFullName));
+			}
+			embeddedAssemblyInfos.Clear();
 		}
 
 		void removeInvalidResources() {
@@ -368,6 +381,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			if (proxyCallFixerV1 != null)
 				proxyCallFixerV1.deobfuscate(blocks);
 			resourceDecrypter.deobfuscate(blocks);
+			unpacker.deobfuscate(blocks);
 			int32ValueInliner.decrypt(blocks);
 			int64ValueInliner.decrypt(blocks);
 			singleValueInliner.decrypt(blocks);
