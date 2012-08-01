@@ -417,7 +417,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			var memStream = new MemoryStream();
 			var writer = new BinaryWriter(memStream);
 
-			ulong header64 = (ulong)(((numExceptions * 24) << 8) | 0x41);
+			ulong header64 = (((ulong)numExceptions * 24) << 8) | 0x41;
 			if (header64 > uint.MaxValue)
 				throw new ApplicationException("Too many exception handlers...");
 			writer.Write((uint)header64);
