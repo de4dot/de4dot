@@ -118,9 +118,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 					version = ConfuserVersion.v14_r58852;
 					break;
 				}
-
 				throw new ApplicationException("Could not find magic");
-				break;
 
 			default:
 				throw new ApplicationException("Invalid version");
