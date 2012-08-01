@@ -34,6 +34,16 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return -1;
 		}
 
+		public static int findCallMethod(IList<Instr> instrs, int index, Code callCode, string methodFullName) {
+			for (int i = index; i < instrs.Count; i++) {
+				if (!isCallMethod(instrs[i].Instruction, callCode, methodFullName))
+					continue;
+
+				return i;
+			}
+			return -1;
+		}
+
 		public static bool isCallMethod(Instruction instr, Code callCode, string methodFullName) {
 			if (instr.OpCode.Code != callCode)
 				return false;
