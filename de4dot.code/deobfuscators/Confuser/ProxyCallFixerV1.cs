@@ -37,6 +37,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v10_r42915,
 			v10_r48717,
 			v14_r58564,
+			v14_r58857,
 		}
 
 		enum ProxyCreatorType {
@@ -174,6 +175,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 				getCallInfo_v10_r48717(info, creatorInfo, out calledMethod, out callOpcode);
 				break;
 
+			case ConfuserVersion.v14_r58857:
+				getCallInfo_v14_r58857(info, creatorInfo, out calledMethod, out callOpcode);
+				break;
+
 			default:
 				throw new ApplicationException("Unknown version");
 			}
@@ -261,10 +266,34 @@ namespace de4dot.code.deobfuscators.Confuser {
 			if (info.field.Name.Length != newLen) {
 				// This is an obfuscator bug. Field names are stored in the #Strings heap,
 				// and strings in that heap are UTF8 zero terminated strings, but Confuser
-				// can generate names with zeros in them.
+				// can generate names with zeros in them. This was fixed in 1.4 58857.
 				return null;
 			}
 			return true;
+		}
+
+		void getCallInfo_v14_r58857(DelegateInitInfo info, ProxyCreatorInfo creatorInfo, out MethodReference calledMethod, out OpCode callOpcode) {
+			int offs = creatorInfo.proxyCreatorType == ProxyCreatorType.CallOrCallvirt ? 1 : 0;
+			var nameInfo = decryptFieldName(info.field.Name);
+
+			uint token = BitConverter.ToUInt32(nameInfo, offs) ^ creatorInfo.magic;
+			uint table = token >> 24;
+			if (table != 6 && table != 0x0A && table != 0x2B)
+				throw new ApplicationException("Invalid method token");
+
+			calledMethod = (MethodReference)module.LookupToken((int)token);
+
+			bool isCallvirt = false;
+			if (creatorInfo.proxyCreatorType == ProxyCreatorType.CallOrCallvirt && nameInfo[0] == '\r')
+				isCallvirt = true;
+			callOpcode = getCallOpCode(creatorInfo, isCallvirt);
+		}
+
+		static byte[] decryptFieldName(string name) {
+			var chars = new char[name.Length];
+			for (int i = 0; i < chars.Length; i++)
+				chars[i] = (char)((byte)name[i] ^ i);
+			return Convert.FromBase64CharArray(chars, 0, chars.Length);
 		}
 
 		// A method token is not a stable value so this method can fail to return the correct method!
@@ -331,8 +360,12 @@ namespace de4dot.code.deobfuscators.Confuser {
 					continue;
 				simpleDeobfuscator.deobfuscate(method);
 				uint magic;
-				if (findMagic(method, out magic))
-					theVersion = ConfuserVersion.v14_r58564;
+				if (findMagic(method, out magic)) {
+					if (!DotNetUtils.callsMethod(method, "System.Byte[] System.Convert::FromBase64String(System.String)"))
+						theVersion = ConfuserVersion.v14_r58564;
+					else
+						theVersion = ConfuserVersion.v14_r58857;
+				}
 
 				setDelegateCreatorMethod(method);
 				methodToInfo.add(method, new ProxyCreatorInfo(method, proxyType, theVersion, magic));
@@ -444,6 +477,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v10_r42915: return createDelegateInitInfos_v10_r42915(method);
 			case ConfuserVersion.v10_r48717: return createDelegateInitInfos_v10_r48717(method);
 			case ConfuserVersion.v14_r58564: return createDelegateInitInfos_v10_r48717(method);
+			case ConfuserVersion.v14_r58857: return createDelegateInitInfos_v10_r48717(method);
 			default: throw new ApplicationException("Invalid version");
 			}
 		}
