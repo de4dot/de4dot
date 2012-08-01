@@ -20,6 +20,7 @@
 using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Confuser {
 	static class ConfuserUtils {
@@ -38,6 +39,56 @@ namespace de4dot.code.deobfuscators.Confuser {
 				return false;
 			var calledMethod = instr.Operand as MethodReference;
 			return calledMethod != null && calledMethod.FullName == methodFullName;
+		}
+
+		public static bool removeResourceHookCode(Blocks blocks, MethodDefinition handler) {
+			return removeResolveHandlerCode(blocks, handler, "System.Void System.AppDomain::add_ResourceResolve(System.ResolveEventHandler)");
+		}
+
+		public static bool removeAssemblyHookCode(Blocks blocks, MethodDefinition handler) {
+			return removeResolveHandlerCode(blocks, handler, "System.Void System.AppDomain::add_AssemblyResolve(System.ResolveEventHandler)");
+		}
+
+		static bool removeResolveHandlerCode(Blocks blocks, MethodDefinition handler, string installHandlerMethod) {
+			bool modified = false;
+			foreach (var block in blocks.MethodBlocks.getAllBlocks()) {
+				var instrs = block.Instructions;
+				for (int i = 0; i < instrs.Count - 4; i++) {
+					var call = instrs[i];
+					if (call.OpCode.Code != Code.Call)
+						continue;
+					var calledMethod = call.Operand as MethodReference;
+					if (calledMethod == null || calledMethod.FullName != "System.AppDomain System.AppDomain::get_CurrentDomain()")
+						continue;
+
+					if (instrs[i + 1].OpCode.Code != Code.Ldnull)
+						continue;
+
+					var ldftn = instrs[i + 2];
+					if (ldftn.OpCode.Code != Code.Ldftn)
+						continue;
+					if (ldftn.Operand != handler)
+						continue;
+
+					var newobj = instrs[i + 3];
+					if (newobj.OpCode.Code != Code.Newobj)
+						continue;
+					var ctor = newobj.Operand as MethodReference;
+					if (ctor == null || ctor.FullName != "System.Void System.ResolveEventHandler::.ctor(System.Object,System.IntPtr)")
+						continue;
+
+					var callvirt = instrs[i + 4];
+					if (callvirt.OpCode.Code != Code.Callvirt)
+						continue;
+					calledMethod = callvirt.Operand as MethodReference;
+					if (calledMethod == null || calledMethod.FullName != installHandlerMethod)
+						continue;
+
+					block.remove(i, 5);
+					modified = true;
+				}
+			}
+			return modified;
 		}
 	}
 }
