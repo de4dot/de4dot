@@ -61,7 +61,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 					continue;
 
 				simpleDeobfuscator.deobfuscate(calledMethod, true);
-				if (checkInitMethod_vXX(calledMethod) || checkInitMethod_v14_r58564(calledMethod)) {
+				if (checkInitMethod_v14_r58852(calledMethod) || checkInitMethod_v14_r58564(calledMethod)) {
 					initMethod = calledMethod;
 					return true;
 				}
@@ -93,7 +93,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return true;
 		}
 
-		static bool checkInitMethod_vXX(MethodDefinition method) {
+		static bool checkInitMethod_v14_r58852(MethodDefinition method) {
 			if (method == null || method.Body == null || !method.IsStatic)
 				return false;
 			if (!DotNetUtils.isMethod(method, "System.Void", "()"))
