@@ -30,7 +30,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		ModuleDefinition module;
 		MethodDefinition decryptMethod;
 		EmbeddedResource resource;
-		uint magic1, magic2;
+		uint magic1, magic2, key1;
 		BinaryReader reader;
 		ConfuserVersion version = ConfuserVersion.Unknown;
 		Decrypter decrypter;
@@ -40,6 +40,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v10_r42915,
 			v10_r48832,
 			v11_r49299,
+			v14_r58802_safe,	// "safe" string decrypter
+			v14_r58802_dynamic,	// "dynamic" string decrypter
 		}
 
 		abstract class Decrypter {
@@ -53,8 +55,15 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		class Decrypter_v10_r42915 : Decrypter {
+			int? key;
+
 			public Decrypter_v10_r42915(StringDecrypter stringDecrypter)
+				: this(stringDecrypter, null) {
+			}
+
+			public Decrypter_v10_r42915(StringDecrypter stringDecrypter, int? key)
 				: base(stringDecrypter) {
+				this.key = key;
 			}
 
 			public override string decrypt(MethodDefinition caller, int magic) {
@@ -62,7 +71,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				reader.BaseStream.Position = (caller.MetadataToken.ToInt32() ^ magic) - stringDecrypter.magic1;
 				int len = reader.ReadInt32() ^ (int)~stringDecrypter.magic2;
 				var bytes = reader.ReadBytes(len);
-				var rand = new Random(caller.MetadataToken.ToInt32());
+				var rand = new Random(key == null ? caller.MetadataToken.ToInt32() : key.Value);
 
 				int mask = 0;
 				for (int i = 0; i < bytes.Length; i++) {
@@ -301,18 +310,35 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 				simpleDeobfuscator.deobfuscate(method);
 
-				if (!findMagic1(method, out magic1))
+				bool foundOldMagic1;
+				if (findMagic1(method, out magic1))
+					foundOldMagic1 = true;
+				else if (findNewMagic1(method, out magic1))
+					foundOldMagic1 = false;
+				else
 					continue;
 				if (!findMagic2(method, out magic2))
 					continue;
 
-				if (DotNetUtils.callsMethod(method, "System.Text.Encoding System.Text.Encoding::get_UTF8()"))
-					version = ConfuserVersion.v10_r42915;
-				else if (!localTypes.exists("System.Random"))
-					version = ConfuserVersion.v11_r49299;
+				version = ConfuserVersion.Unknown;
+				if (DotNetUtils.callsMethod(method, "System.Text.Encoding System.Text.Encoding::get_UTF8()")) {
+					if (foundOldMagic1)
+						version = ConfuserVersion.v10_r42915;
+					else {
+						if (!findSafeKey1(method, out key1))
+							continue;
+						version = ConfuserVersion.v14_r58802_safe;
+					}
+				}
+				else if (!localTypes.exists("System.Random")) {
+					if (foundOldMagic1)
+						version = ConfuserVersion.v11_r49299;
+					else
+						version = ConfuserVersion.v14_r58802_dynamic;
+				}
 				else if (localTypes.exists("System.Collections.Generic.Dictionary`2<System.Int32,System.String>"))
 					version = ConfuserVersion.v10_r48832;
-				else
+				if (version == ConfuserVersion.Unknown)
 					continue;
 
 				decryptMethod = method;
@@ -351,6 +377,28 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
+		static bool findNewMagic1(MethodDefinition method, out uint magic) {
+			var instrs = method.Body.Instructions;
+			for (int i = 0; i < instrs.Count - 4; i++) {
+				if (instrs[i].OpCode.Code != Code.Ldarg_0)
+					continue;
+				if (instrs[i + 1].OpCode.Code != Code.Xor)
+					continue;
+				var ldci4 = instrs[i + 2];
+				if (!DotNetUtils.isLdcI4(ldci4))
+					continue;
+				if (instrs[i + 3].OpCode.Code != Code.Sub)
+					continue;
+				if (!DotNetUtils.isStloc(instrs[i + 4]))
+					continue;
+
+				magic = (uint)DotNetUtils.getLdcI4Value(ldci4);
+				return true;
+			}
+			magic = 0;
+			return false;
+		}
+
 		static bool findMagic2(MethodDefinition method, out uint magic) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count; i++) {
@@ -377,6 +425,26 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
+		static bool findSafeKey1(MethodDefinition method, out uint key) {
+			var instrs = method.Body.Instructions;
+			for (int i = 0; i < instrs.Count; i++) {
+				int index = ConfuserUtils.findCallMethod(instrs, i, Code.Newobj, "System.Void System.Random::.ctor(System.Int32)");
+				if (index < 0)
+					break;
+				if (index == 0)
+					continue;
+
+				var ldci4 = instrs[index - 1];
+				if (!DotNetUtils.isLdcI4(ldci4))
+					continue;
+
+				key = (uint)DotNetUtils.getLdcI4Value(ldci4);
+				return true;
+			}
+			key = 0;
+			return false;
+		}
+
 		public void initialize() {
 			if (decryptMethod == null)
 				return;
@@ -396,7 +464,12 @@ namespace de4dot.code.deobfuscators.Confuser {
 				break;
 
 			case ConfuserVersion.v11_r49299:
+			case ConfuserVersion.v14_r58802_dynamic:
 				decrypter = new Decrypter_v11_r49299(this);
+				break;
+
+			case ConfuserVersion.v14_r58802_safe:
+				decrypter = new Decrypter_v10_r42915(this, (int)key1);
 				break;
 
 			default:
