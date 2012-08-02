@@ -473,6 +473,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		int getDynamicEndIndex(int startIndex, VariableDefinition local) {
+			if (startIndex < 0)
+				return -1;
 			var instrs = installMethod.Body.Instructions;
 			for (int i = startIndex; i < instrs.Count; i++) {
 				var instr = instrs[i];
