@@ -449,18 +449,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		byte[] decryptNormal(byte[] encrypted) {
 			var key = getSigKey();
-
-			var decrypted = new byte[encrypted.Length];
-			uint seed = BitConverter.ToUInt32(key, 12) * (uint)key0;
-			ushort _m = (ushort)(seed >> 16);
-			ushort _c = (ushort)seed;
-			ushort m = _c; ushort c = _m;
-			for (int i = 0; i < decrypted.Length; i++) {
-				decrypted[i] = (byte)(encrypted[i] ^ ((seed * m + c) & 0xFF));
-				m = (ushort)(seed * m + _m);
-				c = (ushort)(seed * c + _c);
-			}
-
+			var decrypted = ConfuserUtils.decrypt(BitConverter.ToUInt32(key, 12) * (uint)key0, encrypted);
 			return DeobUtils.inflate(DeobUtils.aesDecrypt(decrypted, key, DeobUtils.md5Sum(key)), true);
 		}
 

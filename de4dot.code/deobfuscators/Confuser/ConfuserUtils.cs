@@ -114,5 +114,18 @@ namespace de4dot.code.deobfuscators.Confuser {
 			}
 			return decrypted;
 		}
+
+		public static byte[] decrypt(uint seed, byte[] encrypted) {
+			var decrypted = new byte[encrypted.Length];
+			ushort _m = (ushort)(seed >> 16);
+			ushort _c = (ushort)seed;
+			ushort m = _c; ushort c = _m;
+			for (int i = 0; i < decrypted.Length; i++) {
+				decrypted[i] = (byte)(encrypted[i] ^ ((seed * m + c) & 0xFF));
+				m = (ushort)(seed * m + _m);
+				c = (ushort)(seed * c + _c);
+			}
+			return decrypted;
+		}
 	}
 }
