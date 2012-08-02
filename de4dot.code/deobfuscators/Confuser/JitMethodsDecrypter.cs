@@ -38,6 +38,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		enum ConfuserVersion {
 			Unknown,
 			v17_r73404,
+			v17_r73477,
 			vXX,
 		}
 
@@ -62,17 +63,17 @@ namespace de4dot.code.deobfuscators.Confuser {
 				return false;
 
 			var theVersion = ConfuserVersion.Unknown;
-			if (type.NestedTypes.Count == 35)
-				theVersion = ConfuserVersion.v17_r73404;
-			else if (type.NestedTypes.Count == 27)
-				theVersion = ConfuserVersion.vXX;
-			else
-				return false;
+			switch (type.NestedTypes.Count) {
+			case 35: theVersion = ConfuserVersion.v17_r73404; break;
+			case 38: theVersion = ConfuserVersion.v17_r73477; break;
+			case 27: theVersion = ConfuserVersion.vXX; break;
+			default: return false;
+			}
 
 			compileMethod = findCompileMethod(type);
 			if (compileMethod == null)
 				return false;
-			if (theVersion == ConfuserVersion.vXX) {
+			if (theVersion == ConfuserVersion.vXX || theVersion == ConfuserVersion.v17_r73477) {
 				hookConstructStr = findHookConstructStr(type);
 				if (hookConstructStr == null)
 					return false;
@@ -109,7 +110,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		static MethodDefinition findHookConstructStr(TypeDefinition type) {
 			foreach (var nested in type.NestedTypes) {
-				if (nested.Fields.Count != 10)
+				if (nested.Fields.Count != 8 && nested.Fields.Count != 10)
 					continue;
 				foreach (var method in nested.Methods) {
 					if (method.IsStatic || method.Body == null)
@@ -122,7 +123,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 						continue;
 					if (method.Parameters[2].ParameterType.EType != ElementType.U4)
 						continue;
-					if (method.Parameters[3].ParameterType.FullName != "System.IntPtr&")
+					if (method.Parameters[3].ParameterType.EType != ElementType.I && method.Parameters[3].ParameterType.FullName != "System.IntPtr&")
 						continue;
 
 					return method;
@@ -143,6 +144,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		bool initializeKeys() {
 			switch (version) {
 			case ConfuserVersion.v17_r73404: return initializeKeys_v17_r73404();
+			case ConfuserVersion.v17_r73477: return initializeKeys_v17_r73404();
 			case ConfuserVersion.vXX: return initializeKeys_vXX();
 			default: throw new ApplicationException("Invalid version");
 			}
@@ -242,12 +244,13 @@ namespace de4dot.code.deobfuscators.Confuser {
 		bool initializeMethodDataIndexes(MethodDefinition compileMethod) {
 			switch (version) {
 			case ConfuserVersion.v17_r73404: return true;
-			case ConfuserVersion.vXX: return initializeMethodDataIndexes_vXX(compileMethod);
+			case ConfuserVersion.v17_r73477: return initializeMethodDataIndexes_v17_r73477(compileMethod);
+			case ConfuserVersion.vXX: return initializeMethodDataIndexes_v17_r73477(compileMethod);
 			default: throw new ApplicationException("Invalid version");
 			}
 		}
 
-		bool initializeMethodDataIndexes_vXX(MethodDefinition method) {
+		bool initializeMethodDataIndexes_v17_r73477(MethodDefinition method) {
 			simpleDeobfuscator.deobfuscate(method);
 			var methodDataType = findFirstThreeIndexes(method, out methodDataIndexes.maxStack, out methodDataIndexes.ehs, out methodDataIndexes.options);
 			if (methodDataType == null)
@@ -380,6 +383,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			switch (version) {
 			case ConfuserVersion.v17_r73404: return decrypt_v17_r73404(peImage, fileData, ref dumpedMethods);
+			case ConfuserVersion.v17_r73477: return decrypt_v17_r73477(peImage, fileData, ref dumpedMethods);
 			case ConfuserVersion.vXX: return decrypt_vXX(peImage, fileData, ref dumpedMethods);
 			default: throw new ApplicationException("Unknown version");
 			}
@@ -438,6 +442,16 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return dumpedMethods;
 		}
 
+		bool decrypt_v17_r73477(PeImage peImage, byte[] fileData, ref DumpedMethods dumpedMethods) {
+			methodsData = decryptMethodsData_v17_r73404(peImage);
+			dumpedMethods = decrypt_v17_r73477(peImage, fileData);
+			return dumpedMethods != null;
+		}
+
+		DumpedMethods decrypt_v17_r73477(PeImage peImage, byte[] fileData) {
+			return decrypt(peImage, fileData, new DecryptMethodData_v17_r73477());
+		}
+
 		bool decrypt_vXX(PeImage peImage, byte[] fileData, ref DumpedMethods dumpedMethods) {
 			if (peImage.OptionalHeader.checkSum == 0)
 				return false;
@@ -447,6 +461,61 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		DumpedMethods decrypt_vXX(PeImage peImage, byte[] fileData) {
+			return decrypt(peImage, fileData, new DecryptMethodData_vXX(this));
+		}
+
+		abstract class DecryptMethodData {
+			public abstract void decrypt(byte[] fileData, int offset, uint k1, int size, out uint[] methodData, out byte[] codeData);
+			public abstract bool isCodeFollowedByExtraSections(uint options);
+		}
+
+		class DecryptMethodData_v17_r73477 : DecryptMethodData {
+			public override void decrypt(byte[] fileData, int offset, uint k1, int size, out uint[] methodData, out byte[] codeData) {
+				var data = new byte[size];
+				Array.Copy(fileData, offset, data, 0, data.Length);
+				var key = BitConverter.GetBytes(k1);
+				for (int i = 0; i < data.Length; i++)
+					data[i] ^= key[i & 3];
+
+				methodData = new uint[5];
+				Buffer.BlockCopy(data, 0, methodData, 0, 20);
+				codeData = new byte[size - 20];
+				Array.Copy(data, 20, codeData, 0, codeData.Length);
+			}
+
+			public override bool isCodeFollowedByExtraSections(uint options) {
+				return (options >> 8) != 0;
+			}
+		}
+
+		class DecryptMethodData_vXX : DecryptMethodData {
+			JitMethodsDecrypter jitDecrypter;
+
+			public DecryptMethodData_vXX(JitMethodsDecrypter jitDecrypter) {
+				this.jitDecrypter = jitDecrypter;
+			}
+
+			public override void decrypt(byte[] fileData, int offset, uint k1, int size, out uint[] methodData, out byte[] codeData) {
+				var data = new byte[size];
+				Array.Copy(fileData, offset, data, 0, data.Length);
+				uint k2 = jitDecrypter.key4 * k1;
+				for (int i = 0; i < data.Length; i++) {
+					data[i] ^= (byte)k2;
+					k2 = (byte)((k2 * data[i] + k1) % 0xFF);
+				}
+
+				methodData = new uint[5];
+				Buffer.BlockCopy(data, 0, methodData, 0, 20);
+				codeData = new byte[size - 20];
+				Array.Copy(data, 20, codeData, 0, codeData.Length);
+			}
+
+			public override bool isCodeFollowedByExtraSections(uint options) {
+				return (options >> 8) == 0;
+			}
+		}
+
+		DumpedMethods decrypt(PeImage peImage, byte[] fileData, DecryptMethodData decrypter) {
 			var dumpedMethods = new DumpedMethods { StringDecrypter = this };
 
 			var metadataTables = peImage.Cor20Header.createMetadataTables();
@@ -475,7 +544,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				int methodDataOffset = mdOffs + 2;
 				uint[] methodData;
 				byte[] codeData;
-				decryptMethodData_vXX(methodsData, methodDataOffset, (uint)key, len, out methodData, out codeData);
+				decrypter.decrypt(methodsData, methodDataOffset, (uint)key, len, out methodData, out codeData);
 
 				dm.mhFlags = 0x03;
 				int maxStack = (int)methodData[methodDataIndexes.maxStack];
@@ -486,7 +555,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				int codeSize = (int)methodData[methodDataIndexes.codeSize];
 
 				var codeDataReader = new BinaryReader(new MemoryStream(codeData));
-				if ((options >> 8) == 0) {
+				if (decrypter.isCodeFollowedByExtraSections(options)) {
 					dm.code = codeDataReader.ReadBytes(codeSize);
 					dm.extraSections = readExceptionHandlers(codeDataReader, numExceptions);
 				}
@@ -551,21 +620,6 @@ namespace de4dot.code.deobfuscators.Confuser {
 			for (int i = 0; i < size; i++)
 				data[i] = (byte)(fileData[offset + i] ^ kbytes[i & 3]);
 			return data;
-		}
-
-		void decryptMethodData_vXX(byte[] fileData, int offset, uint k1, int size, out uint[] methodData, out byte[] codeData) {
-			var data = new byte[size];
-			Array.Copy(fileData, offset, data, 0, data.Length);
-			uint k2 = key4 * k1;
-			for (int i = 0; i < data.Length; i++) {
-				data[i] ^= (byte)k2;
-				k2 = (byte)((k2 * data[i] + k1) % 0xFF);
-			}
-
-			methodData = new uint[5];
-			Buffer.BlockCopy(data, 0, methodData, 0, 20);
-			codeData = new byte[size - 20];
-			Array.Copy(data, 20, codeData, 0, codeData.Length);
 		}
 
 		string IStringDecrypter.decrypt(uint token) {
