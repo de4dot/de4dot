@@ -316,7 +316,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return ConfuserUtils.findCallMethod(instrs, index, Code.Callvirt, "System.UInt64 System.IO.BinaryReader::ReadUInt64()");
 		}
 
-		protected byte[] decryptMethodsData_vXX(PeImage peImage) {
+		protected byte[] decryptMethodsData_v17_r73404(PeImage peImage) {
 			return decryptMethodsData_v16_r71742(peImage, getEncryptedHeaderOffset_vXX(peImage.Sections));
 		}
 

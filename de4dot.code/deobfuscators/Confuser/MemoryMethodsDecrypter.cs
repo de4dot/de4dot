@@ -360,7 +360,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			if (peImage.OptionalHeader.checkSum == 0)
 				return false;
 
-			methodsData = decryptMethodsData_vXX(peImage);
+			methodsData = decryptMethodsData_v17_r73404(peImage);
 			return decryptImage_v16_r71742(peImage, fileData);
 		}
 
