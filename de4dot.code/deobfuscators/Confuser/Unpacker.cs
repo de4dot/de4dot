@@ -58,6 +58,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v14_r58564,
 			v14_r58802,
 			v14_r58852,
+			v15_r60785,
 		}
 
 		public bool Detected {
@@ -89,7 +90,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 			var decyptMethod = findDecryptMethod(type);
 			if (decyptMethod == null)
 				return;
-			if (new LocalTypes(decyptMethod).exists("System.IO.MemoryStream"))
+			var decryptLocals = new LocalTypes(decyptMethod);
+			if (decryptLocals.exists("System.IO.MemoryStream"))
 				version = ConfuserVersion.v10_r42915;
 			else
 				version = ConfuserVersion.v14_r58564;
@@ -115,7 +117,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 				if (findKey0_v14_r58564(decyptMethod, out key0))
 					break;
 				if (findKey0_v14_r58852(decyptMethod, out key0)) {
-					version = ConfuserVersion.v14_r58852;
+					if (!decryptLocals.exists("System.Security.Cryptography.RijndaelManaged")) {
+						version = ConfuserVersion.v14_r58852;
+						break;
+					}
+					version = ConfuserVersion.v15_r60785;
 					break;
 				}
 				throw new ApplicationException("Could not find magic");
@@ -260,6 +266,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v14_r58564: return decrypt_v14_r58564(data);
 			case ConfuserVersion.v14_r58802: return decrypt_v14_r58564(data);
 			case ConfuserVersion.v14_r58852: return decrypt_v14_r58852(data);
+			case ConfuserVersion.v15_r60785: return decrypt_v15_r60785(data);
 			default: throw new ApplicationException("Unknown version");
 			}
 		}
@@ -286,6 +293,21 @@ namespace de4dot.code.deobfuscators.Confuser {
 				data[i] -= (byte)i;
 			}
 			return data;
+		}
+
+		byte[] decrypt_v15_r60785(byte[] data) {
+			var reader = new BinaryReader(new MemoryStream(DeobUtils.inflate(data, true)));
+			var encrypted = reader.ReadBytes(reader.ReadInt32());
+			var iv = reader.ReadBytes(reader.ReadInt32());
+			var key = reader.ReadBytes(reader.ReadInt32());
+			for (int i = 0; i < key.Length; i += 4) {
+				key[i] ^= (byte)key0;
+				key[i + 1] ^= (byte)(key0 >> 8);
+				key[i + 2] ^= (byte)(key0 >> 16);
+				key[i + 3] ^= (byte)(key0 >> 24);
+			}
+			reader = new BinaryReader(new MemoryStream(DeobUtils.aesDecrypt(encrypted, key, iv)));
+			return reader.ReadBytes(reader.ReadInt32());
 		}
 
 		public void deobfuscate(Blocks blocks) {
