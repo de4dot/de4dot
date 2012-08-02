@@ -128,7 +128,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		protected static bool findKey0(MethodDefinition method, out uint key) {
+		protected static bool findKey0_v16_r71742(MethodDefinition method, out uint key) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i + 5 < instrs.Count; i++) {
 				i = findCallvirtReadUInt32(instrs, i);
@@ -316,12 +316,16 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return ConfuserUtils.findCallMethod(instrs, index, Code.Callvirt, "System.UInt64 System.IO.BinaryReader::ReadUInt64()");
 		}
 
-		protected byte[] decryptMethodsData(PeImage peImage) {
+		protected byte[] decryptMethodsData_vXX(PeImage peImage) {
+			return decryptMethodsData_v16_r71742(peImage, getEncryptedHeaderOffset_vXX(peImage.Sections));
+		}
+
+		protected byte[] decryptMethodsData_v16_r71742(PeImage peImage, uint encryptedHeaderOffset) {
 			uint mdRva = peImage.OptionalHeader.checkSum ^ (uint)key0;
 			if (peImage.rvaToOffset(mdRva) != peImage.Cor20Header.MetadataOffset)
 				throw new ApplicationException("Invalid metadata rva");
 			var reader = peImage.Reader;
-			reader.BaseStream.Position = getEncryptedHeaderOffset(peImage.Sections);
+			reader.BaseStream.Position = encryptedHeaderOffset;
 			ulong checkSum = reader.ReadUInt64() ^ lkey0;
 			reader.ReadInt32();	// strong name RVA
 			reader.ReadInt32();	// strong name len
@@ -336,7 +340,16 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return decrypted;
 		}
 
-		uint getEncryptedHeaderOffset(IList<SectionHeader> sections) {
+		protected uint getEncryptedHeaderOffset_v16_r71742(IList<SectionHeader> sections) {
+			for (int i = sections.Count - 1; i >= 0; i--) {
+				var section = sections[i];
+				if (section.displayName == ".confuse")
+					return section.pointerToRawData;
+			}
+			throw new ApplicationException("Could not find encrypted section");
+		}
+
+		uint getEncryptedHeaderOffset_vXX(IList<SectionHeader> sections) {
 			for (int i = sections.Count - 1; i >= 0; i--) {
 				var section = sections[i];
 				if (getSectionNameHash(section) == (uint)key1)

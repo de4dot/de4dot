@@ -128,7 +128,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			simpleDeobfuscator.deobfuscate(initMethod);
 			if (!findLKey0(initMethod, out lkey0))
 				return false;
-			if (!findKey0(initMethod, out key0))
+			if (!findKey0_v16_r71742(initMethod, out key0))
 				return false;
 			if (!findKey1(initMethod, out key1))
 				return false;
@@ -329,7 +329,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			if (peImage.OptionalHeader.checkSum == 0)
 				return false;
 
-			methodsData = decryptMethodsData(peImage);
+			methodsData = decryptMethodsData_vXX(peImage);
 			dumpedMethods = decrypt(peImage, fileData);
 			return dumpedMethods != null;
 		}

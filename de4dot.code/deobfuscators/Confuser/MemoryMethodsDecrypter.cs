@@ -35,6 +35,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v14_r58004,
 			v14_r58564,
 			v15a_r59014,
+			v16_r71742,
 			vXX,
 		}
 
@@ -74,6 +75,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 			}
 			else if (callsFileStreamCtor)
 				version = ConfuserVersion.v14_r58004;
+			else if (DotNetUtils.callsMethod(initMethod, "System.Int32 System.Object::GetHashCode()"))
+				version = ConfuserVersion.v16_r71742;
 			else
 				version = ConfuserVersion.vXX;
 
@@ -109,6 +112,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 					throw new ApplicationException("Could not find all decryption keys");
 				break;
 
+			case ConfuserVersion.v16_r71742:
+				if (!initializeKeys_v16_r71742())
+					throw new ApplicationException("Could not find all decryption keys");
+				break;
+
 			case ConfuserVersion.vXX:
 				if (!initializeKeys_vXX())
 					throw new ApplicationException("Could not find all decryption keys");
@@ -139,11 +147,31 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return true;
 		}
 
+		bool initializeKeys_v16_r71742() {
+			simpleDeobfuscator.deobfuscate(initMethod);
+			if (!findLKey0(initMethod, out lkey0))
+				return false;
+			if (!findKey0_v16_r71742(initMethod, out key0))
+				return false;
+			if (!findKey2Key3(initMethod, out key2, out key3))
+				return false;
+			if (!findKey4(initMethod, out key4))
+				return false;
+			if (!findKey5(initMethod, out key5))
+				return false;
+
+			simpleDeobfuscator.deobfuscate(decryptMethod);
+			if (!findKey6(decryptMethod, out key6))
+				return false;
+
+			return true;
+		}
+
 		bool initializeKeys_vXX() {
 			simpleDeobfuscator.deobfuscate(initMethod);
 			if (!findLKey0(initMethod, out lkey0))
 				return false;
-			if (!findKey0(initMethod, out key0))
+			if (!findKey0_v16_r71742(initMethod, out key0))
 				return false;
 			if (!findKey1(initMethod, out key1))
 				return false;
@@ -232,21 +260,22 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		public bool decrypt(PeImage peImage, byte[] fileData, ref DumpedMethods dumpedMethods) {
+		public bool decrypt(PeImage peImage, byte[] fileData) {
 			if (initMethod == null)
 				return false;
 
 			switch (version) {
-			case ConfuserVersion.v14_r57884: return decrypt_v14_r57884(peImage, fileData, ref dumpedMethods);
-			case ConfuserVersion.v14_r58004: return decrypt_v14_r58004(peImage, fileData, ref dumpedMethods);
-			case ConfuserVersion.v14_r58564: return decrypt_v14_r58004(peImage, fileData, ref dumpedMethods);
-			case ConfuserVersion.v15a_r59014:return decrypt_v15a_r59014(peImage, fileData, ref dumpedMethods);
-			case ConfuserVersion.vXX: return decrypt_vXX(peImage, fileData, ref dumpedMethods);
+			case ConfuserVersion.v14_r57884: return decrypt_v14_r57884(peImage, fileData);
+			case ConfuserVersion.v14_r58004: return decrypt_v14_r58004(peImage, fileData);
+			case ConfuserVersion.v14_r58564: return decrypt_v14_r58004(peImage, fileData);
+			case ConfuserVersion.v15a_r59014:return decrypt_v15a_r59014(peImage, fileData);
+			case ConfuserVersion.v16_r71742: return decrypt_v16_r71742(peImage, fileData);
+			case ConfuserVersion.vXX: return decrypt_vXX(peImage, fileData);
 			default: throw new ApplicationException("Unknown version");
 			}
 		}
 
-		bool decrypt_v14_r57884(PeImage peImage, byte[] fileData, ref DumpedMethods dumpedMethods) {
+		bool decrypt_v14_r57884(PeImage peImage, byte[] fileData) {
 			methodsData = decryptMethodsData_v14_r57884(peImage, false);
 
 			var reader = new BinaryReader(new MemoryStream(methodsData));
@@ -293,12 +322,12 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return decrypted;
 		}
 
-		bool decrypt_v14_r58004(PeImage peImage, byte[] fileData, ref DumpedMethods dumpedMethods) {
+		bool decrypt_v14_r58004(PeImage peImage, byte[] fileData) {
 			methodsData = decryptMethodsData_v14_r57884(peImage, false);
-			return decryptImage_v14_r58004(peImage, fileData, ref dumpedMethods);
+			return decryptImage_v14_r58004(peImage, fileData);
 		}
 
-		bool decryptImage_v14_r58004(PeImage peImage, byte[] fileData, ref DumpedMethods dumpedMethods) {
+		bool decryptImage_v14_r58004(PeImage peImage, byte[] fileData) {
 			var reader = new BinaryReader(new MemoryStream(methodsData));
 			reader.ReadInt16();	// sig
 			var writer = new BinaryWriter(new MemoryStream(fileData));
@@ -317,20 +346,25 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return true;
 		}
 
-		bool decrypt_v15a_r59014(PeImage peImage, byte[] fileData, ref DumpedMethods dumpedMethods) {
+		bool decrypt_v15a_r59014(PeImage peImage, byte[] fileData) {
 			methodsData = decryptMethodsData_v14_r57884(peImage, true);
-			return decryptImage_v14_r58004(peImage, fileData, ref dumpedMethods);
+			return decryptImage_v14_r58004(peImage, fileData);
 		}
 
-		bool decrypt_vXX(PeImage peImage, byte[] fileData, ref DumpedMethods dumpedMethods) {
-			if (peImage.OptionalHeader.checkSum == 0)
-				return false;
-
-			methodsData = decryptMethodsData(peImage);
-			return decrypt_vXX(peImage, fileData);
+		bool decrypt_v16_r71742(PeImage peImage, byte[] fileData) {
+			methodsData = decryptMethodsData_v16_r71742(peImage, getEncryptedHeaderOffset_v16_r71742(peImage.Sections));
+			return decryptImage_v16_r71742(peImage, fileData);
 		}
 
 		bool decrypt_vXX(PeImage peImage, byte[] fileData) {
+			if (peImage.OptionalHeader.checkSum == 0)
+				return false;
+
+			methodsData = decryptMethodsData_vXX(peImage);
+			return decryptImage_v16_r71742(peImage, fileData);
+		}
+
+		bool decryptImage_v16_r71742(PeImage peImage, byte[] fileData) {
 			var reader = new BinaryReader(new MemoryStream(methodsData));
 			reader.ReadInt16();	// sig
 			int numInfos = reader.ReadInt32();

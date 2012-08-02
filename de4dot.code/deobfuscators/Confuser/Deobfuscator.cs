@@ -218,7 +218,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				}
 				else if (memoryMethodsDecrypter != null && memoryMethodsDecrypter.Detected) {
 					memoryMethodsDecrypter.initialize();
-					if (!memoryMethodsDecrypter.decrypt(peImage, fileData, ref dumpedMethods))
+					if (!memoryMethodsDecrypter.decrypt(peImage, fileData))
 						return false;
 					decrypted = true;
 				}
