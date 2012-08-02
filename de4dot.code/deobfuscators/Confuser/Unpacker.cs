@@ -59,6 +59,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v14_r58802,
 			v14_r58852,
 			v15_r60785,
+			v17_r73404,
 		}
 
 		public bool Detected {
@@ -121,7 +122,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 						version = ConfuserVersion.v14_r58852;
 						break;
 					}
-					version = ConfuserVersion.v15_r60785;
+					if (isDecryptMethod_v17_r73404(decyptMethod))
+						version = ConfuserVersion.v17_r73404;
+					else
+						version = ConfuserVersion.v15_r60785;
 					break;
 				}
 				throw new ApplicationException("Could not find magic");
@@ -136,6 +140,28 @@ namespace de4dot.code.deobfuscators.Confuser {
 			mainAsmResource = findResource(cctor);
 			if (mainAsmResource == null)
 				throw new ApplicationException("Could not find main assembly resource");
+		}
+
+		static bool isDecryptMethod_v17_r73404(MethodDefinition method) {
+			var instrs = method.Body.Instructions;
+			if (instrs.Count < 4)
+				return false;
+			if (!DotNetUtils.isLdarg(instrs[0]))
+				return false;
+			if (!isCallorNewobj(instrs[1]) && !isCallorNewobj(instrs[2]))
+				return false;
+			var stloc = instrs[3];
+			if (!DotNetUtils.isStloc(stloc))
+				return false;
+			var local = DotNetUtils.getLocalVar(method.Body.Variables, stloc);
+			if (local == null || local.VariableType.FullName != "System.IO.BinaryReader")
+				return false;
+
+			return true;
+		}
+
+		static bool isCallorNewobj(Instruction instr) {
+			return instr.OpCode.Code == Code.Call || instr.OpCode.Code == Code.Newobj;
 		}
 
 		static MethodDefinition findAssemblyResolverMethod(TypeDefinition type) {
@@ -267,6 +293,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v14_r58802: return decrypt_v14_r58564(data);
 			case ConfuserVersion.v14_r58852: return decrypt_v14_r58852(data);
 			case ConfuserVersion.v15_r60785: return decrypt_v15_r60785(data);
+			case ConfuserVersion.v17_r73404: return decrypt_v17_r73404(data);
 			default: throw new ApplicationException("Unknown version");
 			}
 		}
@@ -297,16 +324,30 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		byte[] decrypt_v15_r60785(byte[] data) {
 			var reader = new BinaryReader(new MemoryStream(DeobUtils.inflate(data, true)));
+			byte[] key, iv;
+			data = decrypt_v15_r60785(reader, out key, out iv);
+			reader = new BinaryReader(new MemoryStream(DeobUtils.aesDecrypt(data, key, iv)));
+			return reader.ReadBytes(reader.ReadInt32());
+		}
+
+		byte[] decrypt_v15_r60785(BinaryReader reader, out byte[] key, out byte[] iv) {
 			var encrypted = reader.ReadBytes(reader.ReadInt32());
-			var iv = reader.ReadBytes(reader.ReadInt32());
-			var key = reader.ReadBytes(reader.ReadInt32());
+			iv = reader.ReadBytes(reader.ReadInt32());
+			key = reader.ReadBytes(reader.ReadInt32());
 			for (int i = 0; i < key.Length; i += 4) {
 				key[i] ^= (byte)key0;
 				key[i + 1] ^= (byte)(key0 >> 8);
 				key[i + 2] ^= (byte)(key0 >> 16);
 				key[i + 3] ^= (byte)(key0 >> 24);
 			}
-			reader = new BinaryReader(new MemoryStream(DeobUtils.aesDecrypt(encrypted, key, iv)));
+			return encrypted;
+		}
+
+		byte[] decrypt_v17_r73404(byte[] data) {
+			var reader = new BinaryReader(new MemoryStream(data));
+			byte[] key, iv;
+			data = decrypt_v15_r60785(reader, out key, out iv);
+			reader = new BinaryReader(new MemoryStream(DeobUtils.inflate(DeobUtils.aesDecrypt(data, key, iv), true)));
 			return reader.ReadBytes(reader.ReadInt32());
 		}
 
