@@ -40,6 +40,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			Unknown,
 			v15_r60785_normal,
 			v15_r60785_dynamic,
+			v17_r73404_normal,
 		}
 
 		public MethodDefinition Method {
@@ -81,6 +82,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 					continue;
 				if (localTypes.exists("System.Collections.BitArray"))	// or System.Random
 					version = ConfuserVersion.v15_r60785_normal;
+				else if (DeobUtils.hasInteger(method, 0x100) &&
+						DeobUtils.hasInteger(method, 0x10000) &&
+						DeobUtils.hasInteger(method, 0xFFFF))
+					version = ConfuserVersion.v17_r73404_normal;
 				else
 					version = ConfuserVersion.v15_r60785_dynamic;
 
@@ -320,6 +325,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			switch (version) {
 			case ConfuserVersion.v15_r60785_normal: return decryptConstant_v15_r60785_normal(encrypted, offs);
 			case ConfuserVersion.v15_r60785_dynamic: return decryptConstant_v15_r60785_dynamic(encrypted, offs);
+			case ConfuserVersion.v17_r73404_normal: return decryptConstant_v17_r73404_normal(encrypted, offs);
 			default: throw new ApplicationException("Invalid version");
 			}
 		}
@@ -373,6 +379,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 					return i;
 			}
 			return -1;
+		}
+
+		byte[] decryptConstant_v17_r73404_normal(byte[] encrypted, uint offs) {
+			return ConfuserUtils.decrypt(key0 ^ offs, encrypted);
 		}
 
 		uint calcHash(uint x) {
