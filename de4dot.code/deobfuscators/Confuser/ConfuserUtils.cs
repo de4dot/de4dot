@@ -17,7 +17,9 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Collections.Generic;
+using System.IO;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using de4dot.blocks;
@@ -99,6 +101,18 @@ namespace de4dot.code.deobfuscators.Confuser {
 				}
 			}
 			return modified;
+		}
+
+		public static byte[] decryptCompressedInt32Data(Arg64ConstantsReader constReader, int exprStart, int expEnd, BinaryReader reader, byte[] decrypted) {
+			for (int i = 0; i < decrypted.Length; i++) {
+				constReader.Arg = Utils.readEncodedInt32(reader);
+				int index = exprStart;
+				long result;
+				if (!constReader.getInt64(ref index, out result) || index != expEnd)
+					throw new ApplicationException("Could not decrypt integer");
+				decrypted[i] = (byte)result;
+			}
+			return decrypted;
 		}
 	}
 }

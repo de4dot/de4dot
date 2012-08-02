@@ -119,37 +119,6 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		class Decrypter_v11_r49299 : Decrypter {
-			MyConstantsReader constReader;
-
-			class MyConstantsReader : ConstantsReader {
-				long arg;
-				bool firstTime;
-
-				public long Arg {
-					get { return arg; }
-					set {
-						arg = value;
-						firstTime = true;
-					}
-				}
-
-				public MyConstantsReader(IList<Instruction> instrs, bool emulateConvInstrs)
-					: base(instrs, emulateConvInstrs) {
-				}
-
-				protected override bool processInstructionInt64(ref int index, Stack<ConstantInfo<long>> stack) {
-					if (!firstTime)
-						return false;
-					firstTime = false;
-					if (instructions[index].OpCode.Code != Code.Conv_I8)
-						return false;
-
-					stack.Push(new ConstantInfo<long>(index, arg));
-					index = index + 1;
-					return true;
-				}
-			}
-
 			public Decrypter_v11_r49299(StringDecrypter stringDecrypter)
 				: base(stringDecrypter) {
 			}
@@ -164,16 +133,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 				if (!findPolyStartEndIndexes(out startIndex, out endIndex))
 					throw new ApplicationException("Could not get start/end indexes");
 
-				constReader = new MyConstantsReader(stringDecrypter.decryptMethod.Body.Instructions, false);
-				for (int i = 0; i < len; i++) {
-					constReader.Arg = Utils.readEncodedInt32(reader);
-					int index = startIndex;
-					long result;
-					if (!constReader.getInt64(ref index, out result) || index != endIndex)
-						throw new ApplicationException("Could not decrypt integer");
-					decrypted[i] = (byte)result;
-				}
-
+				var constReader = new Arg64ConstantsReader(stringDecrypter.decryptMethod.Body.Instructions, false);
+				ConfuserUtils.decryptCompressedInt32Data(constReader, startIndex, endIndex, reader, decrypted);
 				return Encoding.Unicode.GetString(decrypted);
 			}
 
