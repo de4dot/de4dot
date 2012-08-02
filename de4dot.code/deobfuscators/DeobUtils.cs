@@ -156,12 +156,12 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
-		public static byte[] inflate(byte[] data, bool hasHeader) {
-			return inflate(data, 0, data.Length, hasHeader);
+		public static byte[] inflate(byte[] data, bool noHeader) {
+			return inflate(data, 0, data.Length, noHeader);
 		}
 
-		public static byte[] inflate(byte[] data, int start, int len, bool hasHeader) {
-			return inflate(data, start, len, new Inflater(hasHeader));
+		public static byte[] inflate(byte[] data, int start, int len, bool noHeader) {
+			return inflate(data, start, len, new Inflater(noHeader));
 		}
 
 		public static byte[] inflate(byte[] data, Inflater inflater) {
