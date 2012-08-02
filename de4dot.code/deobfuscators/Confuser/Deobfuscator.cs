@@ -74,7 +74,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		JitMethodsDecrypter jitMethodsDecrypter;
 		MemoryMethodsDecrypter memoryMethodsDecrypter;
 		ProxyCallFixer proxyCallFixer;
-		ProxyCallFixerV1 proxyCallFixerV1;
+		ProxyCallFixerV10 proxyCallFixerV10;
 		AntiDebugger antiDebugger;
 		AntiDumping antiDumping;
 		ResourceDecrypter resourceDecrypter;
@@ -133,7 +133,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			int sum = toInt32(jitMethodsDecrypter != null ? jitMethodsDecrypter.Detected : false) +
 					toInt32(memoryMethodsDecrypter != null ? memoryMethodsDecrypter.Detected : false) +
 					toInt32(proxyCallFixer != null ? proxyCallFixer.Detected : false) +
-					toInt32(proxyCallFixerV1 != null ? proxyCallFixerV1.Detected : false) +
+					toInt32(proxyCallFixerV10 != null ? proxyCallFixerV10.Detected : false) +
 					toInt32(antiDebugger != null ? antiDebugger.Detected : false) +
 					toInt32(antiDumping != null ? antiDumping.Detected : false) +
 					toInt32(resourceDecrypter != null ? resourceDecrypter.Detected : false) +
@@ -178,8 +178,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 			proxyCallFixer = new ProxyCallFixer(module, getFileData(), DeobfuscatedFile);
 			proxyCallFixer.findDelegateCreator();
 			if (!proxyCallFixer.Detected) {
-				proxyCallFixerV1 = new ProxyCallFixerV1(module);
-				proxyCallFixerV1.findDelegateCreator(DeobfuscatedFile);
+				proxyCallFixerV10 = new ProxyCallFixerV10(module);
+				proxyCallFixerV10.findDelegateCreator(DeobfuscatedFile);
 			}
 			antiDebugger = new AntiDebugger(module);
 			antiDebugger.find();
@@ -313,8 +313,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			if (proxyCallFixer != null)
 				proxyCallFixer.find();
-			if (proxyCallFixerV1 != null)
-				proxyCallFixerV1.find();
+			if (proxyCallFixerV10 != null)
+				proxyCallFixerV10.find();
 
 			removeInvalidResources();
 			dumpEmbeddedAssemblies();
@@ -428,8 +428,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 		public override void deobfuscateMethodEnd(Blocks blocks) {
 			if (proxyCallFixer != null)
 				proxyCallFixer.deobfuscate(blocks);
-			if (proxyCallFixerV1 != null)
-				proxyCallFixerV1.deobfuscate(blocks);
+			if (proxyCallFixerV10 != null)
+				proxyCallFixerV10.deobfuscate(blocks);
 			resourceDecrypter.deobfuscate(blocks);
 			unpacker.deobfuscate(blocks);
 			if (int32ValueInliner != null) {
@@ -444,10 +444,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 		public override void deobfuscateEnd() {
 			if (proxyCallFixer != null)
 				removeProxyDelegates(proxyCallFixer);
-			if (proxyCallFixerV1 != null) {
-				if (removeProxyDelegates(proxyCallFixerV1))
-					addFieldsToBeRemoved(proxyCallFixerV1.Fields, "Proxy delegate instance field");
-				proxyCallFixerV1.cleanUp();
+			if (proxyCallFixerV10 != null) {
+				if (removeProxyDelegates(proxyCallFixerV10))
+					addFieldsToBeRemoved(proxyCallFixerV10.Fields, "Proxy delegate instance field");
+				proxyCallFixerV10.cleanUp();
 			}
 			constantsDecrypter.cleanUp();
 

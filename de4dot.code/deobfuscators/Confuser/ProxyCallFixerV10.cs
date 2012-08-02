@@ -26,7 +26,7 @@ using Mono.Cecil.Cil;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Confuser {
-	class ProxyCallFixerV1 : ProxyCallFixer2 {
+	class ProxyCallFixerV10 : ProxyCallFixer2 {
 		MethodDefinitionAndDeclaringTypeDict<ProxyCreatorInfo> methodToInfo = new MethodDefinitionAndDeclaringTypeDict<ProxyCreatorInfo>();
 		FieldDefinitionAndDeclaringTypeDict<List<MethodDefinition>> fieldToMethods = new FieldDefinitionAndDeclaringTypeDict<List<MethodDefinition>>();
 		string ourAsm;
@@ -117,7 +117,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			}
 		}
 
-		public ProxyCallFixerV1(ModuleDefinition module)
+		public ProxyCallFixerV10(ModuleDefinition module)
 			: base(module) {
 			ourAsm = (module.Assembly.Name ?? new AssemblyNameReference(" -1-1-1-1-1- ", new Version(1, 2, 3, 4))).FullName;
 		}

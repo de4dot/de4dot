@@ -80,7 +80,7 @@
     <Compile Include="deobfuscators\Confuser\MemoryMethodsDecrypter.cs" />
     <Compile Include="deobfuscators\Confuser\MethodsDecrypterBase.cs" />
     <Compile Include="deobfuscators\Confuser\ProxyCallFixer.cs" />
-    <Compile Include="deobfuscators\Confuser\ProxyCallFixerV1.cs" />
+    <Compile Include="deobfuscators\Confuser\ProxyCallFixerV10.cs" />
     <Compile Include="deobfuscators\Confuser\ResourceDecrypter.cs" />
     <Compile Include="deobfuscators\Confuser\StringDecrypter.cs" />
     <Compile Include="deobfuscators\Confuser\Unpacker.cs" />
