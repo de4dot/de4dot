@@ -34,6 +34,13 @@ namespace de4dot.code.deobfuscators.Confuser {
 		uint key0, key1, key2, key3;
 		byte doubleType, singleType, int32Type, int64Type, stringType;
 		BinaryReader reader;
+		ConfuserVersion version = ConfuserVersion.Unknown;
+
+		enum ConfuserVersion {
+			Unknown,
+			v15_r60785_normal,
+			v15_r60785_dynamic,
+		}
 
 		public MethodDefinition Method {
 			get { return decryptMethod; }
@@ -58,7 +65,6 @@ namespace de4dot.code.deobfuscators.Confuser {
 			"System.IO.BinaryReader",
 			"System.IO.Compression.DeflateStream",
 			"System.IO.MemoryStream",
-			"System.Random",
 			"System.Reflection.Assembly",
 		};
 		public void find() {
@@ -73,6 +79,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 				var localTypes = new LocalTypes(method);
 				if (!localTypes.all(requiredLocals))
 					continue;
+				if (localTypes.exists("System.Collections.BitArray"))	// or System.Random
+					version = ConfuserVersion.v15_r60785_normal;
+				else
+					version = ConfuserVersion.v15_r60785_dynamic;
 
 				decryptMethod = method;
 				break;
@@ -83,6 +93,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			if ((resource = findResource(decryptMethod)) == null)
 				throw new ApplicationException("Could not find encrypted consts resource");
 
+			simpleDeobfuscator.deobfuscate(decryptMethod);
 			if (!initializeKeys())
 				throw new ApplicationException("Could not find all keys");
 			if (!initializeTypeCodes())
@@ -203,7 +214,23 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
+		static Block fixBlock(Block block) {
+			if (block.Sources.Count != 1)
+				return block;
+			if (block.getOnlyTarget() == null)
+				return block;
+			if (block.Instructions.Count == 0) {
+			}
+			else if (block.Instructions.Count == 1 && block.Instructions[0].OpCode.Code == Code.Nop) {
+			}
+			else
+				return block;
+			return block.Sources[0];
+		}
+
 		static bool findTypeCode(Block block, out byte typeCode) {
+			block = fixBlock(block);
+
 			var instrs = block.Instructions;
 			int numCeq = 0;
 			for (int i = instrs.Count - 1; i >= 0; i--) {
@@ -286,14 +313,66 @@ namespace de4dot.code.deobfuscators.Confuser {
 				throw new ApplicationException("Invalid type code");
 
 			var encrypted = reader.ReadBytes(reader.ReadInt32());
+			return decryptConstant(encrypted, offs);
+		}
+
+		byte[] decryptConstant(byte[] encrypted, uint offs) {
+			switch (version) {
+			case ConfuserVersion.v15_r60785_normal: return decryptConstant_v15_r60785_normal(encrypted, offs);
+			case ConfuserVersion.v15_r60785_dynamic: return decryptConstant_v15_r60785_dynamic(encrypted, offs);
+			default: throw new ApplicationException("Invalid version");
+			}
+		}
+
+		byte[] decryptConstant_v15_r60785_normal(byte[] encrypted, uint offs) {
 			var rand = new Random((int)(key0 ^ offs));
 			var decrypted = new byte[encrypted.Length];
 			rand.NextBytes(decrypted);
 			for (int i = 0; i < decrypted.Length; i++)
 				decrypted[i] ^= encrypted[i];
-
 			return decrypted;
+		}
 
+		byte[] decryptConstant_v15_r60785_dynamic(byte[] encrypted, uint offs) {
+			var instrs = decryptMethod.Body.Instructions;
+			int startIndex = getDynamicStartIndex(instrs);
+			int endIndex = getDynamicEndIndex(instrs, startIndex);
+			if (endIndex < 0)
+				throw new ApplicationException("Could not find start/endIndex");
+
+			var dataReader = new BinaryReader(new MemoryStream(encrypted));
+			var decrypted = new byte[dataReader.ReadInt32()];
+			var constReader = new Arg64ConstantsReader(instrs, false);
+			ConfuserUtils.decryptCompressedInt32Data(constReader, startIndex, endIndex, dataReader, decrypted);
+			return decrypted;
+		}
+
+		static int getDynamicStartIndex(IList<Instruction> instrs) {
+			int index = findInstruction(instrs, 0, Code.Conv_I8);
+			if (index < 0)
+				return -1;
+			if (findInstruction(instrs, index + 1, Code.Conv_I8) >= 0)
+				return -1;
+			return index;
+		}
+
+		static int getDynamicEndIndex(IList<Instruction> instrs, int index) {
+			for (int i = index; i < instrs.Count; i++) {
+				var instr = instrs[i];
+				if (instr.OpCode.FlowControl != FlowControl.Next)
+					break;
+				if (instr.OpCode.Code == Code.Conv_U1)
+					return i;
+			}
+			return -1;
+		}
+
+		static int findInstruction(IList<Instruction> instrs, int index, Code code) {
+			for (int i = index; i < instrs.Count; i++) {
+				if (instrs[i].OpCode.Code == code)
+					return i;
+			}
+			return -1;
 		}
 
 		uint calcHash(uint x) {
