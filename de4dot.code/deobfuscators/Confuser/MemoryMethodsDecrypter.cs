@@ -101,26 +101,25 @@ namespace de4dot.code.deobfuscators.Confuser {
 			if (initMethod == null)
 				return;
 
+			if (!initializeKeys())
+				throw new ApplicationException("Could not find all decryption keys");
+		}
+
+		bool initializeKeys() {
 			switch (version) {
 			case ConfuserVersion.v14_r57884:
 			case ConfuserVersion.v14_r58004:
-				break;
+				return true;
 
 			case ConfuserVersion.v14_r58564:
 			case ConfuserVersion.v15a_r59014:
-				if (!initializeKeys_v14_r58564())
-					throw new ApplicationException("Could not find all decryption keys");
-				break;
+				return initializeKeys_v14_r58564();
 
 			case ConfuserVersion.v16_r71742:
-				if (!initializeKeys_v16_r71742())
-					throw new ApplicationException("Could not find all decryption keys");
-				break;
+				return initializeKeys_v16_r71742();
 
 			case ConfuserVersion.vXX:
-				if (!initializeKeys_vXX())
-					throw new ApplicationException("Could not find all decryption keys");
-				break;
+				return initializeKeys_vXX();
 
 			default:
 				throw new ApplicationException("Unknown version");
