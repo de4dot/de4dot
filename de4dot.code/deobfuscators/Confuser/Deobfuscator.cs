@@ -87,6 +87,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		StringDecrypter stringDecrypter;
 		Unpacker unpacker;
 		EmbeddedAssemblyInfo mainAsmInfo;
+		RealAssemblyInfo realAssemblyInfo;
 
 		bool startedDeobfuscating = false;
 
@@ -236,7 +237,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 				if (unpacker != null && unpacker.Detected) {
 					if (options.DecryptMainAsm) {
 						decryptState |= DecryptState.CanDecryptMethods | DecryptState.CanUnpack;
-						newFileData = unpacker.unpackMainAssembly().data;
+						var mainInfo = unpacker.unpackMainAssembly();
+						newFileData = mainInfo.data;
+						realAssemblyInfo = mainInfo.realAssemblyInfo;
 						embeddedAssemblyInfos.AddRange(unpacker.getEmbeddedAssemblyInfos());
 						ModuleBytes = newFileData;
 						return true;
@@ -254,8 +257,20 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		public override IDeobfuscator moduleReloaded(ModuleDefinition module) {
+			if (module.Assembly != null)
+				realAssemblyInfo = null;
+			if (realAssemblyInfo != null) {
+				module.Assembly = realAssemblyInfo.realAssembly;
+				module.Assembly.MainModule = module;
+				if (realAssemblyInfo.entryPointToken != 0)
+					module.EntryPoint = (MethodDefinition)module.LookupToken((int)realAssemblyInfo.entryPointToken);
+				module.Kind = realAssemblyInfo.kind;
+				module.Name = realAssemblyInfo.moduleName;
+			}
+
 			var newOne = new Deobfuscator(options);
 			DeobfuscatedFile.setDeobfuscator(newOne);
+			newOne.realAssemblyInfo = realAssemblyInfo;
 			newOne.decryptState = decryptState;
 			newOne.DeobfuscatedFile = DeobfuscatedFile;
 			newOne.ModuleBytes = ModuleBytes;

@@ -22,22 +22,40 @@ using System.Collections.Generic;
 using System.IO;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Mono.Cecil.Metadata;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Confuser {
+	class RealAssemblyInfo {
+		public AssemblyDefinition realAssembly;
+		public uint entryPointToken;
+		public ModuleKind kind;
+		public string moduleName;
+
+		public RealAssemblyInfo(AssemblyDefinition realAssembly, uint entryPointToken, ModuleKind kind) {
+			this.realAssembly = realAssembly;
+			this.entryPointToken = entryPointToken;
+			this.kind = kind;
+			this.moduleName = realAssembly.Name.Name + DeobUtils.getExtension(kind);
+		}
+	}
+
 	class EmbeddedAssemblyInfo {
 		public readonly byte[] data;
-		public readonly string asmFullName;
-		public readonly string asmSimpleName;
-		public readonly string extension;
+		public string asmFullName;
+		public string asmSimpleName;
+		public string extension;
+		public ModuleKind kind;
 		public readonly EmbeddedResource resource;
+		public RealAssemblyInfo realAssemblyInfo;
 
-		public EmbeddedAssemblyInfo(EmbeddedResource resource, byte[] data, string asmFullName, string extension) {
+		public EmbeddedAssemblyInfo(EmbeddedResource resource, byte[] data, string asmFullName, ModuleKind kind) {
 			this.resource = resource;
 			this.data = data;
 			this.asmFullName = asmFullName;
 			this.asmSimpleName = Utils.getAssemblySimpleName(asmFullName);
-			this.extension = extension;
+			this.kind = kind;
+			this.extension = DeobUtils.getExtension(kind);
 		}
 
 		public override string ToString() {
@@ -49,6 +67,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		ModuleDefinition module;
 		EmbeddedResource mainAsmResource;
 		uint key0, key1;
+		uint entryPointToken;
 		ConfuserVersion version = ConfuserVersion.Unknown;
 		MethodDefinition asmResolverMethod;
 
@@ -60,6 +79,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v14_r58852,
 			v15_r60785,
 			v17_r73404,
+			v17_r73477,
 		}
 
 		public bool Detected {
@@ -137,9 +157,80 @@ namespace de4dot.code.deobfuscators.Confuser {
 			simpleDeobfuscator.deobfuscate(cctor);
 			simpleDeobfuscator.decryptStrings(cctor, deob);
 
+			if (findEntryPointToken(simpleDeobfuscator, cctor, entryPoint, out entryPointToken))
+				version = ConfuserVersion.v17_r73477;
+
 			mainAsmResource = findResource(cctor);
 			if (mainAsmResource == null)
 				throw new ApplicationException("Could not find main assembly resource");
+		}
+
+		bool findEntryPointToken(ISimpleDeobfuscator simpleDeobfuscator, MethodDefinition cctor, MethodDefinition entryPoint, out uint token) {
+			token = 0;
+			ulong @base;
+			if (!findBase(cctor, out @base))
+				return false;
+
+			var modPowMethod = DotNetUtils.getMethod(cctor.DeclaringType, "System.UInt64", "(System.UInt64,System.UInt64,System.UInt64)");
+			if (modPowMethod == null)
+				throw new ApplicationException("Could not find modPow()");
+
+			simpleDeobfuscator.deobfuscate(entryPoint);
+			ulong mod;
+			if (!findMod(entryPoint, out mod))
+				throw new ApplicationException("Could not find modulus");
+
+			token = 0x06000000 | (uint)modPow(@base, 0x47, mod);
+			if ((token >> 24) != 0x06)
+				throw new ApplicationException("Illegal entry point token");
+			return true;
+		}
+
+		static ulong modPow(ulong @base, ulong pow, ulong mod) {
+			ulong m = 1;
+			while (pow > 0) {
+				if ((pow & 1) != 0)
+					m = (m * @base) % mod;
+				pow = pow >> 1;
+				@base = (@base * @base) % mod;
+			}
+			return m;
+		}
+
+		static bool findMod(MethodDefinition method, out ulong mod) {
+			var instrs = method.Body.Instructions;
+			for (int i = 0; i < instrs.Count; i++) {
+				var ldci8 = instrs[i];
+				if (ldci8.OpCode.Code != Code.Ldc_I8)
+					continue;
+
+				mod = (ulong)(long)ldci8.Operand;
+				return true;
+			}
+			mod = 0;
+			return false;
+		}
+
+		static bool findBase(MethodDefinition method, out ulong @base) {
+			var instrs = method.Body.Instructions;
+			for (int i = 0; i < instrs.Count - 2; i++) {
+				var ldci8 = instrs[i];
+				if (ldci8.OpCode.Code != Code.Ldc_I8)
+					continue;
+				var stsfld = instrs[i + 1];
+				if (stsfld.OpCode.Code != Code.Stsfld)
+					continue;
+				var field = stsfld.Operand as FieldDefinition;
+				if (field == null || field.DeclaringType != method.DeclaringType)
+					continue;
+				if (field.FieldType.EType != ElementType.U8)
+					continue;
+
+				@base = (ulong)(long)ldci8.Operand;
+				return true;
+			}
+			@base = 0;
+			return false;
 		}
 
 		static bool isDecryptMethod_v17_r73404(MethodDefinition method) {
@@ -262,7 +353,20 @@ namespace de4dot.code.deobfuscators.Confuser {
 		public EmbeddedAssemblyInfo unpackMainAssembly() {
 			if (mainAsmResource == null)
 				return null;
-			return createEmbeddedAssemblyInfo(mainAsmResource, decrypt(mainAsmResource));
+			var info = createEmbeddedAssemblyInfo(mainAsmResource, decrypt(mainAsmResource));
+
+			var asm = module.Assembly;
+			if (asm != null && entryPointToken != 0 && info.kind == ModuleKind.NetModule) {
+				info.extension = DeobUtils.getExtension(module.Kind);
+				info.kind = module.Kind;
+
+				var realAsm = new AssemblyDefinition { Name = asm.Name };
+				info.realAssemblyInfo = new RealAssemblyInfo(realAsm, entryPointToken, info.kind);
+				info.asmFullName = realAsm.Name.FullName;
+				info.asmSimpleName = realAsm.Name.Name;
+			}
+
+			return info;
 		}
 
 		public List<EmbeddedAssemblyInfo> getEmbeddedAssemblyInfos() {
@@ -282,7 +386,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		static EmbeddedAssemblyInfo createEmbeddedAssemblyInfo(EmbeddedResource resource, byte[] data) {
 			var mod = ModuleDefinition.ReadModule(new MemoryStream(data));
-			return new EmbeddedAssemblyInfo(resource, data, mod.Assembly.Name.FullName, DeobUtils.getExtension(mod.Kind));
+			var asmFullName = mod.Assembly != null ? mod.Assembly.Name.FullName : mod.Name;
+			return new EmbeddedAssemblyInfo(resource, data, asmFullName, mod.Kind);
 		}
 
 		byte[] decrypt(EmbeddedResource resource) {
@@ -294,6 +399,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v14_r58852: return decrypt_v14_r58852(data);
 			case ConfuserVersion.v15_r60785: return decrypt_v15_r60785(data);
 			case ConfuserVersion.v17_r73404: return decrypt_v17_r73404(data);
+			case ConfuserVersion.v17_r73477: return decrypt_v17_r73404(data);
 			default: throw new ApplicationException("Unknown version");
 			}
 		}
