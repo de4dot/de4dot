@@ -119,7 +119,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		public ProxyCallFixerV10(ModuleDefinition module)
 			: base(module) {
-			ourAsm = (module.Assembly.Name ?? new AssemblyNameReference(" -1-1-1-1-1- ", new Version(1, 2, 3, 4))).FullName;
+			if (module.Assembly == null || module.Assembly.Name == null)
+				ourAsm = new AssemblyNameReference(" -1-1-1-1-1- ", new Version(1, 2, 3, 4)).FullName;
+			else
+				ourAsm = module.Assembly.FullName;
 		}
 
 		protected override object checkCctor(TypeDefinition type, MethodDefinition cctor) {

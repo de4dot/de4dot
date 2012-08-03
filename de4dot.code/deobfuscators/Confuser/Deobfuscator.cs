@@ -328,7 +328,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				addResourceToBeRemoved(mainAsmInfo.resource, string.Format("Embedded assembly: {0}", mainAsmInfo.asmFullName));
 			}
 			foreach (var info in embeddedAssemblyInfos) {
-				if (info.asmFullName != module.Assembly.Name.FullName)
+				if (module.Assembly == null || info.asmFullName != module.Assembly.Name.FullName)
 					DeobfuscatedFile.createAssemblyFile(info.data, info.asmSimpleName, info.extension);
 				addResourceToBeRemoved(info.resource, string.Format("Embedded assembly: {0}", info.asmFullName));
 			}
