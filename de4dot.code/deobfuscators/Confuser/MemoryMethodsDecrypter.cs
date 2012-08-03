@@ -36,6 +36,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v14_r58564,
 			v15a_r59014,
 			v16_r71742,
+			// Removed in Confuser 1.7 r73404 and restored in Confuser 1.7 r73605
 			vXX,
 		}
 
