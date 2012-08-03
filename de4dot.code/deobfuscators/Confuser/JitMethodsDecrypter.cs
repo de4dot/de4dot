@@ -466,7 +466,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		abstract class DecryptMethodData {
 			public abstract void decrypt(byte[] fileData, int offset, uint k1, int size, out uint[] methodData, out byte[] codeData);
-			public abstract bool isCodeFollowedByExtraSections(uint options);
+
+			public bool isCodeFollowedByExtraSections(uint options) {
+				return (options >> 8) == 0;
+			}
 		}
 
 		class DecryptMethodData_v17_r73477 : DecryptMethodData {
@@ -481,10 +484,6 @@ namespace de4dot.code.deobfuscators.Confuser {
 				Buffer.BlockCopy(data, 0, methodData, 0, 20);
 				codeData = new byte[size - 20];
 				Array.Copy(data, 20, codeData, 0, codeData.Length);
-			}
-
-			public override bool isCodeFollowedByExtraSections(uint options) {
-				return (options >> 8) != 0;
 			}
 		}
 
@@ -508,10 +507,6 @@ namespace de4dot.code.deobfuscators.Confuser {
 				Buffer.BlockCopy(data, 0, methodData, 0, 20);
 				codeData = new byte[size - 20];
 				Array.Copy(data, 20, codeData, 0, codeData.Length);
-			}
-
-			public override bool isCodeFollowedByExtraSections(uint options) {
-				return (options >> 8) == 0;
 			}
 		}
 
