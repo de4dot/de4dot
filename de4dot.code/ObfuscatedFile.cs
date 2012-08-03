@@ -36,7 +36,6 @@ namespace de4dot.code {
 	public class ObfuscatedFile : IObfuscatedFile, IDeobfuscatedFile {
 		Options options;
 		ModuleDefinition module;
-		IList<MethodDefinition> allMethods;
 		IDeobfuscator deob;
 		IDeobfuscatorContext deobfuscatorContext;
 		AssemblyModule assemblyModule;
@@ -165,9 +164,6 @@ namespace de4dot.code {
 			loadModule(deobfuscators);
 			AssemblyResolver.Instance.addSearchDirectory(Utils.getDirName(Filename));
 			AssemblyResolver.Instance.addSearchDirectory(Utils.getDirName(NewFilename));
-
-			allMethods = getAllMethods();
-
 			detectObfuscator(deobfuscators);
 			if (deob == null)
 				throw new ApplicationException("Could not detect obfuscator!");
@@ -395,7 +391,6 @@ namespace de4dot.code {
 			Log.v("Reloading decrypted assembly (original filename: {0})", Filename);
 			simpleDeobfuscatorFlags.Clear();
 			module = assemblyModule.reload(newModuleData, dumpedMethods);
-			allMethods = getAllMethods();
 			deob = deob.moduleReloaded(module);
 			initializeDeobfuscator();
 			deob.DeobfuscatedFile = this;
@@ -555,7 +550,7 @@ namespace de4dot.code {
 			Log.v("Deobfuscating methods");
 			var methodPrinter = new MethodPrinter();
 			var cflowDeobfuscator = new BlocksCflowDeobfuscator(deob.BlocksDeobfuscators);
-			foreach (var method in allMethods) {
+			foreach (var method in getAllMethods()) {
 				Log.v("Deobfuscating {0} ({1:X8})", Utils.removeNewlines(method), method.MetadataToken.ToUInt32());
 				Log.indent();
 
