@@ -41,6 +41,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v15_r60785_normal,
 			v15_r60785_dynamic,
 			v17_r73404_normal,
+			v17_r73740_dynamic,
 		}
 
 		public MethodDefinition Method {
@@ -86,8 +87,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 						DeobUtils.hasInteger(method, 0x10000) &&
 						DeobUtils.hasInteger(method, 0xFFFF))
 					version = ConfuserVersion.v17_r73404_normal;
-				else
+				else if (findInstruction(method.Body.Instructions, 0, Code.Conv_I8) >= 0)
 					version = ConfuserVersion.v15_r60785_dynamic;
+				else
+					version = ConfuserVersion.v17_r73740_dynamic;
 
 				decryptMethod = method;
 				break;
@@ -326,6 +329,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v15_r60785_normal: return decryptConstant_v15_r60785_normal(encrypted, offs);
 			case ConfuserVersion.v15_r60785_dynamic: return decryptConstant_v15_r60785_dynamic(encrypted, offs);
 			case ConfuserVersion.v17_r73404_normal: return decryptConstant_v17_r73404_normal(encrypted, offs);
+			case ConfuserVersion.v17_r73740_dynamic: return decryptConstant_v17_r73740_dynamic(encrypted, offs);
 			default: throw new ApplicationException("Invalid version");
 			}
 		}
@@ -341,8 +345,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		byte[] decryptConstant_v15_r60785_dynamic(byte[] encrypted, uint offs) {
 			var instrs = decryptMethod.Body.Instructions;
-			int startIndex = getDynamicStartIndex(instrs);
-			int endIndex = getDynamicEndIndex(instrs, startIndex);
+			int startIndex = getDynamicStartIndex_v15_r60785(instrs);
+			int endIndex = getDynamicEndIndex_v15_r60785(instrs, startIndex);
 			if (endIndex < 0)
 				throw new ApplicationException("Could not find start/endIndex");
 
@@ -353,7 +357,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return decrypted;
 		}
 
-		static int getDynamicStartIndex(IList<Instruction> instrs) {
+		static int getDynamicStartIndex_v15_r60785(IList<Instruction> instrs) {
 			int index = findInstruction(instrs, 0, Code.Conv_I8);
 			if (index < 0)
 				return -1;
@@ -362,7 +366,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return index;
 		}
 
-		static int getDynamicEndIndex(IList<Instruction> instrs, int index) {
+		static int getDynamicEndIndex_v15_r60785(IList<Instruction> instrs, int index) {
+			if (index < 0)
+				return -1;
 			for (int i = index; i < instrs.Count; i++) {
 				var instr = instrs[i];
 				if (instr.OpCode.FlowControl != FlowControl.Next)
@@ -383,6 +389,95 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		byte[] decryptConstant_v17_r73404_normal(byte[] encrypted, uint offs) {
 			return ConfuserUtils.decrypt(key0 ^ offs, encrypted);
+		}
+
+		static VariableDefinition getDynamicLocal_v17_r73740(MethodDefinition method) {
+			var instrs = method.Body.Instructions;
+			for (int i = 0; i < instrs.Count; i++) {
+				i = ConfuserUtils.findCallMethod(instrs, i, Code.Callvirt, "System.Byte System.IO.BinaryReader::ReadByte()");
+				if (i < 0 || i + 5 >= instrs.Count)
+					break;
+				if (!DotNetUtils.isStloc(instrs[i + 1]))
+					continue;
+				var ldloc = instrs[i + 2];
+				if (!DotNetUtils.isLdloc(ldloc))
+					continue;
+				if (!DotNetUtils.isLdloc(instrs[i + 3]))
+					continue;
+				var ldci4 = instrs[i + 4];
+				if (!DotNetUtils.isLdcI4(ldci4) || DotNetUtils.getLdcI4Value(ldci4) != 0x7F)
+					continue;
+				if (instrs[i + 5].OpCode.Code != Code.And)
+					continue;
+
+				return DotNetUtils.getLocalVar(method.Body.Variables, ldloc);
+			}
+			return null;
+		}
+
+		static int getDynamicEndIndex_v17_r73740(MethodDefinition method, VariableDefinition local) {
+			var instrs = method.Body.Instructions;
+			for (int i = 0; i < instrs.Count - 5; i++) {
+				var stloc = instrs[i];
+				if (!DotNetUtils.isStloc(stloc) || DotNetUtils.getLocalVar(method.Body.Variables, stloc) != local)
+					continue;
+				if (!DotNetUtils.isLdloc(instrs[i + 1]))
+					continue;
+				if (!DotNetUtils.isLdloc(instrs[i + 2]))
+					continue;
+				var ldloc = instrs[i + 3];
+				if (!DotNetUtils.isLdloc(ldloc) || DotNetUtils.getLocalVar(method.Body.Variables, ldloc) != local)
+					continue;
+				if (instrs[i + 4].OpCode.Code != Code.Conv_U1)
+					continue;
+				if (instrs[i + 5].OpCode.Code != Code.Stelem_I1)
+					continue;
+
+				return i;
+			}
+			return -1;
+		}
+
+		static int getDynamicStartIndex_v17_r73740(MethodDefinition method, int endIndex) {
+			if (endIndex < 0)
+				return -1;
+			var instrs = method.Body.Instructions;
+			for (int i = endIndex; i >= 0; i--) {
+				if (i == 0)
+					return i == endIndex ? -1 : i + 1;
+				if (instrs[i].OpCode.FlowControl == FlowControl.Next)
+					continue;
+
+				return i + 1;
+			}
+			return -1;
+		}
+
+		byte[] decryptConstant_v17_r73740_dynamic(byte[] encrypted, uint offs) {
+			var local = getDynamicLocal_v17_r73740(decryptMethod);
+			if (local == null)
+				throw new ApplicationException("Could not find local");
+
+			int endIndex = getDynamicEndIndex_v17_r73740(decryptMethod, local);
+			int startIndex = getDynamicStartIndex_v17_r73740(decryptMethod, endIndex);
+			if (startIndex < 0)
+				throw new ApplicationException("Could not find start/end index");
+
+			var constReader = new ConstantsReader(decryptMethod);
+			var dataReader = new BinaryReader(new MemoryStream(encrypted));
+			var decrypted = new byte[dataReader.ReadInt32()];
+			return decryptCompressedInt32Data(constReader, local, startIndex, endIndex, dataReader, decrypted);
+		}
+
+		static byte[] decryptCompressedInt32Data(ConstantsReader constReader, VariableDefinition local, int exprStart, int exprEnd, BinaryReader reader, byte[] decrypted) {
+			for (int i = 0; i < decrypted.Length; i++) {
+				constReader.setConstantInt32(local, Utils.readEncodedInt32(reader));
+				int index = exprStart, result;
+				if (!constReader.getNextInt32(ref index, out result) || index != exprEnd)
+					throw new ApplicationException("Could not decrypt integer");
+				decrypted[i] = (byte)result;
+			}
+			return decrypted;
 		}
 
 		uint calcHash(uint x) {
