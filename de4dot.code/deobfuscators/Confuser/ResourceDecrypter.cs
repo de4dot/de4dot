@@ -39,6 +39,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			Unknown,
 			v14_r55802,
 			v17_r73404,
+			v17_r73822,
 			vXX,
 		}
 
@@ -94,13 +95,14 @@ namespace de4dot.code.deobfuscators.Confuser {
 					return false;
 			}
 			else {
-				tmpVersion = ConfuserVersion.vXX;
 				if (addFields(findFields(tmpHandler, method.DeclaringType)) != 1)
 					return false;
 
-				if (!findKey0_vXX(tmpHandler, out key0))
-					return false;
-				if (!findKey1_vXX(tmpHandler, out key1))
+				if (findKey0_v17_r73404(tmpHandler, out key0) && findKey1_v17_r73404(tmpHandler, out key1))
+					tmpVersion = ConfuserVersion.v17_r73822;
+				else if (findKey0_vXX(tmpHandler, out key0) && findKey1_vXX(tmpHandler, out key1))
+					tmpVersion = ConfuserVersion.vXX;
+				else
 					return false;
 			}
 
@@ -310,6 +312,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			switch (version) {
 			case ConfuserVersion.v14_r55802: return decrypt_v14_r55802();
 			case ConfuserVersion.v17_r73404: return decrypt_v17_r73404();
+			case ConfuserVersion.v17_r73822: return decrypt_v17_r73404();
 			case ConfuserVersion.vXX: return decrypt_vXX();
 			default: throw new ApplicationException("Unknown version");
 			}
