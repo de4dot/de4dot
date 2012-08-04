@@ -179,7 +179,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			proxyCallFixer = new ProxyCallFixer(module, getFileData(), DeobfuscatedFile);
 			proxyCallFixer.findDelegateCreator();
 			if (!proxyCallFixer.Detected) {
-				proxyCallFixerV10 = new ProxyCallFixerV10(module);
+				proxyCallFixerV10 = new ProxyCallFixerV10(module, getFileData());
 				proxyCallFixerV10.findDelegateCreator(DeobfuscatedFile);
 			}
 			antiDebugger = new AntiDebugger(module);

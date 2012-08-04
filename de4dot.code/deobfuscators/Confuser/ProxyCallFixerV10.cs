@@ -24,6 +24,7 @@ using System.Text;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using de4dot.blocks;
+using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.Confuser {
 	class ProxyCallFixerV10 : ProxyCallFixer2 {
@@ -31,6 +32,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 		FieldDefinitionAndDeclaringTypeDict<List<MethodDefinition>> fieldToMethods = new FieldDefinitionAndDeclaringTypeDict<List<MethodDefinition>>();
 		string ourAsm;
 		ConfuserVersion version = ConfuserVersion.Unknown;
+		byte[] fileData;
+		x86Emulator x86emu;
 
 		enum ConfuserVersion {
 			Unknown,
@@ -38,6 +41,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v10_r48717,
 			v14_r58564,
 			v14_r58857,
+			v17_r73740_normal,
+			v17_r73740_native,
 		}
 
 		enum ProxyCreatorType {
@@ -51,12 +56,14 @@ namespace de4dot.code.deobfuscators.Confuser {
 			public readonly ProxyCreatorType proxyCreatorType;
 			public readonly ConfuserVersion version;
 			public readonly uint magic;
+			public readonly MethodDefinition nativeMethod;
 
-			public ProxyCreatorInfo(MethodDefinition creatorMethod, ProxyCreatorType proxyCreatorType, ConfuserVersion version, uint magic) {
+			public ProxyCreatorInfo(MethodDefinition creatorMethod, ProxyCreatorType proxyCreatorType, ConfuserVersion version, uint magic, MethodDefinition nativeMethod) {
 				this.creatorMethod = creatorMethod;
 				this.proxyCreatorType = proxyCreatorType;
 				this.version = version;
 				this.magic = magic;
+				this.nativeMethod = nativeMethod;
 			}
 		}
 
@@ -99,10 +106,14 @@ namespace de4dot.code.deobfuscators.Confuser {
 		public override IEnumerable<Tuple<MethodDefinition, string>> OtherMethods {
 			get {
 				var list = new List<Tuple<MethodDefinition, string>>();
-				foreach (var creatorMethod in methodToInfo.getKeys()) {
+				foreach (var info in methodToInfo.getValues()) {
 					list.Add(new Tuple<MethodDefinition, string> {
-						Item1 = creatorMethod,
+						Item1 = info.creatorMethod,
 						Item2 = "Delegate creator method",
+					});
+					list.Add(new Tuple<MethodDefinition, string> {
+						Item1 = info.nativeMethod,
+						Item2 = "Calculate RID native method",
 					});
 				}
 				foreach (var methods in fieldToMethods.getValues()) {
@@ -117,8 +128,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 			}
 		}
 
-		public ProxyCallFixerV10(ModuleDefinition module)
+		public ProxyCallFixerV10(ModuleDefinition module, byte[] fileData)
 			: base(module) {
+			this.fileData = fileData;
 			if (module.Assembly == null || module.Assembly.Name == null)
 				ourAsm = new AssemblyNameReference(" -1-1-1-1-1- ", new Version(1, 2, 3, 4)).FullName;
 			else
@@ -180,6 +192,14 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			case ConfuserVersion.v14_r58857:
 				getCallInfo_v14_r58857(info, creatorInfo, out calledMethod, out callOpcode);
+				break;
+
+			case ConfuserVersion.v17_r73740_normal:
+				getCallInfo_v17_r73740_normal(info, creatorInfo, out calledMethod, out callOpcode);
+				break;
+
+			case ConfuserVersion.v17_r73740_native:
+				getCallInfo_v17_r73740_native(info, creatorInfo, out calledMethod, out callOpcode);
 				break;
 
 			default:
@@ -299,6 +319,49 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return Convert.FromBase64CharArray(chars, 0, chars.Length);
 		}
 
+		void extract_v17_r73740(ProxyCreatorInfo creatorInfo, byte[] nameInfo, out uint arg, out uint table, out bool isCallvirt) {
+			switch (creatorInfo.proxyCreatorType) {
+			case ProxyCreatorType.CallOrCallvirt:
+				arg = BitConverter.ToUInt32(nameInfo, 1);
+				table = (uint)(nameInfo[0] & 0x7F) << 24;
+				isCallvirt = (nameInfo[0] & 0x80) != 0;
+				break;
+
+			case ProxyCreatorType.Newobj:
+				arg = BitConverter.ToUInt32(nameInfo, 0);
+				table = (uint)nameInfo[4] << 24;
+				isCallvirt = false;
+				break;
+
+			default:
+				throw new ApplicationException("Invalid creator type");
+			}
+		}
+
+		void getCallInfo_v17_r73740_normal(DelegateInitInfo info, ProxyCreatorInfo creatorInfo, out MethodReference calledMethod, out OpCode callOpcode) {
+			var nameInfo = decryptFieldName(info.field.Name);
+			uint arg, table;
+			bool isCallvirt;
+			extract_v17_r73740(creatorInfo, nameInfo, out arg, out table, out isCallvirt);
+			uint token = (arg ^ creatorInfo.magic) | table;
+
+			calledMethod = module.LookupToken((int)token) as MethodReference;
+			callOpcode = getCallOpCode(creatorInfo, isCallvirt);
+		}
+
+		void getCallInfo_v17_r73740_native(DelegateInitInfo info, ProxyCreatorInfo creatorInfo, out MethodReference calledMethod, out OpCode callOpcode) {
+			var nameInfo = decryptFieldName(info.field.Name);
+			uint arg, table;
+			bool isCallvirt;
+			extract_v17_r73740(creatorInfo, nameInfo, out arg, out table, out isCallvirt);
+			if (x86emu == null)
+				x86emu = new x86Emulator(new PeImage(fileData));
+			uint token = x86emu.emulate((uint)creatorInfo.nativeMethod.RVA, arg) | table;
+
+			calledMethod = module.LookupToken((int)token) as MethodReference;
+			callOpcode = getCallOpCode(creatorInfo, isCallvirt);
+		}
+
 		// A method token is not a stable value so this method can fail to return the correct method!
 		// There's nothing I can do about that. It's an obfuscator bug. It was fixed in 1.3 r55346.
 		MethodReference createMethodReference(AssemblyNameReference asmRef, uint methodToken) {
@@ -361,22 +424,102 @@ namespace de4dot.code.deobfuscators.Confuser {
 				var proxyType = getProxyCreatorType(method);
 				if (proxyType == ProxyCreatorType.None)
 					continue;
+
 				simpleDeobfuscator.deobfuscate(method);
+				MethodDefinition nativeMethod = null;
 				uint magic;
-				if (findMagic(method, out magic)) {
+				if (findMagic_v14_r58564(method, out magic)) {
 					if (!DotNetUtils.callsMethod(method, "System.Byte[] System.Convert::FromBase64String(System.String)"))
 						theVersion = ConfuserVersion.v14_r58564;
 					else
 						theVersion = ConfuserVersion.v14_r58857;
 				}
+				else if (is_v17_r73740(method)) {
+					if ((nativeMethod = findNativeMethod_v17_r73740(method)) != null)
+						theVersion = ConfuserVersion.v17_r73740_native;
+					else if (findMagic_v17_r73740(method, out magic))
+						theVersion = ConfuserVersion.v17_r73740_normal;
+					else
+						continue;
+				}
 
 				setDelegateCreatorMethod(method);
-				methodToInfo.add(method, new ProxyCreatorInfo(method, proxyType, theVersion, magic));
+				methodToInfo.add(method, new ProxyCreatorInfo(method, proxyType, theVersion, magic, nativeMethod));
 				version = theVersion;
 			}
 		}
 
-		static bool findMagic(MethodDefinition method, out uint magic) {
+		static bool findMagic_v17_r73740(MethodDefinition method, out uint magic) {
+			var instrs = method.Body.Instructions;
+			for (int i = 0; i < instrs.Count; i++) {
+				int index = ConfuserUtils.findCallMethod(instrs, i, Code.Call, "System.Int32 System.BitConverter::ToInt32(System.Byte[],System.Int32)");
+				if (index < 0)
+					break;
+				if (index < 1 || index + 2 >= instrs.Count)
+					continue;
+
+				if (!DotNetUtils.isLdcI4(instrs[index - 1]))
+					continue;
+				var ldci4 = instrs[index + 1];
+				if (!DotNetUtils.isLdcI4(ldci4))
+					continue;
+				if (instrs[index + 2].OpCode.Code != Code.Xor)
+					continue;
+
+				magic = (uint)DotNetUtils.getLdcI4Value(ldci4);
+				return true;
+			}
+			magic = 0;
+			return false;
+		}
+
+		static MethodDefinition findNativeMethod_v17_r73740(MethodDefinition method) {
+			var instrs = method.Body.Instructions;
+			for (int i = 0; i < instrs.Count; i++) {
+				int index = ConfuserUtils.findCallMethod(instrs, i, Code.Call, "System.Int32 System.BitConverter::ToInt32(System.Byte[],System.Int32)");
+				if (index < 0)
+					break;
+				if (index < 1 || index + 1 >= instrs.Count)
+					continue;
+
+				if (!DotNetUtils.isLdcI4(instrs[index - 1]))
+					continue;
+				var call = instrs[index + 1];
+				if (call.OpCode.Code != Code.Call)
+					continue;
+				var calledMethod = call.Operand as MethodDefinition;
+				if (calledMethod == null || calledMethod.Body != null || !calledMethod.IsNative)
+					continue;
+
+				return calledMethod;
+			}
+			return null;
+		}
+
+		static bool is_v17_r73740(MethodDefinition method) {
+			var instrs = method.Body.Instructions;
+			for (int i = 0; i < instrs.Count; i++) {
+				int index = ConfuserUtils.findCallMethod(instrs, i, Code.Callvirt, "System.Reflection.MethodBase System.Reflection.Module::ResolveMethod(System.Int32)");
+				if (index < 0)
+					break;
+				if (index < 3)
+					continue;
+
+				index -= 3;
+				var ldci4 = instrs[index];
+				if (!DotNetUtils.isLdcI4(ldci4) || DotNetUtils.getLdcI4Value(ldci4) != 24)
+					continue;
+				if (instrs[index + 1].OpCode.Code != Code.Shl)
+					continue;
+				if (instrs[index + 2].OpCode.Code != Code.Or)
+					continue;
+
+				return true;
+			}
+			return false;
+		}
+
+		static bool findMagic_v14_r58564(MethodDefinition method, out uint magic) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count; i++) {
 				int index = ConfuserUtils.findCallMethod(instrs, i, Code.Call, "System.Int32 System.BitConverter::ToInt32(System.Byte[],System.Int32)");
@@ -477,11 +620,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		FieldDefinitionAndDeclaringTypeDict<DelegateInitInfo> createDelegateInitInfos(MethodDefinition method) {
 			switch (version) {
-			case ConfuserVersion.v10_r42915: return createDelegateInitInfos_v10_r42915(method);
-			case ConfuserVersion.v10_r48717: return createDelegateInitInfos_v10_r48717(method);
-			case ConfuserVersion.v14_r58564: return createDelegateInitInfos_v10_r48717(method);
-			case ConfuserVersion.v14_r58857: return createDelegateInitInfos_v10_r48717(method);
-			default: throw new ApplicationException("Invalid version");
+			case ConfuserVersion.v10_r42915:
+				return createDelegateInitInfos_v10_r42915(method);
+			default:
+				return createDelegateInitInfos_v10_r48717(method);
 			}
 		}
 
