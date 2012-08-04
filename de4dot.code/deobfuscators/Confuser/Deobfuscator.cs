@@ -169,7 +169,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			resourceDecrypter.find();
 			constantsDecrypter = new ConstantsDecrypter(module, getFileData(), DeobfuscatedFile);
 			constantsDecrypter.find();
-			constantsDecrypterV15 = new ConstantsDecrypterV15(module, DeobfuscatedFile);
+			constantsDecrypterV15 = new ConstantsDecrypterV15(module, getFileData(), DeobfuscatedFile);
 			if (!constantsDecrypter.Detected)
 				constantsDecrypterV15.find();
 			if (constantsDecrypter.Detected)
@@ -421,6 +421,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			doubleValueInliner.RemoveUnbox = true;
 			DeobfuscatedFile.stringDecryptersAdded();
 			addMethodToBeRemoved(constantsDecrypterV15.Method, "Constants decrypter method");
+			addMethodToBeRemoved(constantsDecrypterV15.NativeMethod, "Constants decrypter native method");
 			addResourceToBeRemoved(constantsDecrypterV15.Resource, "Encrypted constants");
 		}
 

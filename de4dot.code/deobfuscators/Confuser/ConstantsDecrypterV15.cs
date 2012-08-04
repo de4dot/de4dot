@@ -24,12 +24,15 @@ using System.Text;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using de4dot.blocks;
+using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.Confuser {
 	class ConstantsDecrypterV15 {
 		ModuleDefinition module;
+		byte[] fileData;
 		ISimpleDeobfuscator simpleDeobfuscator;
 		MethodDefinition decryptMethod;
+		MethodDefinition nativeMethod;
 		EmbeddedResource resource;
 		uint key0, key1, key2, key3;
 		byte doubleType, singleType, int32Type, int64Type, stringType;
@@ -42,10 +45,16 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v15_r60785_dynamic,
 			v17_r73404_normal,
 			v17_r73740_dynamic,
+			v17_r73764_dynamic,
+			v17_r73764_native,
 		}
 
 		public MethodDefinition Method {
 			get { return decryptMethod; }
+		}
+
+		public MethodDefinition NativeMethod {
+			get { return nativeMethod; }
 		}
 
 		public EmbeddedResource Resource {
@@ -56,8 +65,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 			get { return decryptMethod != null; }
 		}
 
-		public ConstantsDecrypterV15(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator) {
+		public ConstantsDecrypterV15(ModuleDefinition module, byte[] fileData, ISimpleDeobfuscator simpleDeobfuscator) {
 			this.module = module;
+			this.fileData = fileData;
 			this.simpleDeobfuscator = simpleDeobfuscator;
 		}
 
@@ -87,14 +97,41 @@ namespace de4dot.code.deobfuscators.Confuser {
 						DeobUtils.hasInteger(method, 0x10000) &&
 						DeobUtils.hasInteger(method, 0xFFFF))
 					version = ConfuserVersion.v17_r73404_normal;
-				else if (findInstruction(method.Body.Instructions, 0, Code.Conv_I8) >= 0)
-					version = ConfuserVersion.v15_r60785_dynamic;
+				else if (DotNetUtils.callsMethod(method, "System.String System.Text.Encoding::GetString(System.Byte[])")) {
+					if (findInstruction(method.Body.Instructions, 0, Code.Conv_I8) >= 0)
+						version = ConfuserVersion.v15_r60785_dynamic;
+					else
+						version = ConfuserVersion.v17_r73740_dynamic;
+				}
+				else if (DotNetUtils.callsMethod(method, "System.String System.Text.Encoding::GetString(System.Byte[],System.Int32,System.Int32)")) {
+					if ((nativeMethod = findNativeMethod(method)) == null)
+						version = ConfuserVersion.v17_r73764_dynamic;
+					else
+						version = ConfuserVersion.v17_r73764_native;
+				}
 				else
-					version = ConfuserVersion.v17_r73740_dynamic;
+					continue;
 
 				decryptMethod = method;
 				break;
 			}
+		}
+
+		static MethodDefinition findNativeMethod(MethodDefinition method) {
+			var instrs = method.Body.Instructions;
+			for (int i = 0; i < instrs.Count; i++) {
+				var call = instrs[i];
+				if (call.OpCode.Code != Code.Call)
+					continue;
+				var calledMethod = call.Operand as MethodDefinition;
+				if (calledMethod == null || !calledMethod.IsStatic || !calledMethod.IsNative)
+					continue;
+				if (!DotNetUtils.isMethod(calledMethod, "System.Int32", "(System.Int32)"))
+					continue;
+
+				return calledMethod;
+			}
+			return null;
 		}
 
 		public void initialize() {
@@ -200,7 +237,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 				return false;
 			if (!findTypeCode(allBlocks, out int64Type, Code.Call, "System.Int64 System.BitConverter::ToInt64(System.Byte[],System.Int32)"))
 				return false;
-			if (!findTypeCode(allBlocks, out stringType, Code.Callvirt, "System.String System.Text.Encoding::GetString(System.Byte[])"))
+			if (!findTypeCode(allBlocks, out stringType, Code.Callvirt, "System.String System.Text.Encoding::GetString(System.Byte[])") &&
+				!findTypeCode(allBlocks, out stringType, Code.Callvirt, "System.String System.Text.Encoding::GetString(System.Byte[],System.Int32,System.Int32)"))
 				return false;
 			return true;
 		}
@@ -330,6 +368,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v15_r60785_dynamic: return decryptConstant_v15_r60785_dynamic(encrypted, offs);
 			case ConfuserVersion.v17_r73404_normal: return decryptConstant_v17_r73404_normal(encrypted, offs);
 			case ConfuserVersion.v17_r73740_dynamic: return decryptConstant_v17_r73740_dynamic(encrypted, offs);
+			case ConfuserVersion.v17_r73764_dynamic: return decryptConstant_v17_r73740_dynamic(encrypted, offs);
+			case ConfuserVersion.v17_r73764_native: return decryptConstant_v17_r73764_native(encrypted, offs);
 			default: throw new ApplicationException("Invalid version");
 			}
 		}
@@ -464,19 +504,28 @@ namespace de4dot.code.deobfuscators.Confuser {
 				throw new ApplicationException("Could not find start/end index");
 
 			var constReader = new ConstantsReader(decryptMethod);
-			var dataReader = new BinaryReader(new MemoryStream(encrypted));
-			var decrypted = new byte[dataReader.ReadInt32()];
-			return decryptCompressedInt32Data(constReader, local, startIndex, endIndex, dataReader, decrypted);
+			return decrypt(encrypted, magic => {
+				constReader.setConstantInt32(local, magic);
+				int index = startIndex, result;
+				if (!constReader.getNextInt32(ref index, out result) || index != endIndex)
+					throw new ApplicationException("Could not decrypt integer");
+				return (byte)result;
+			});
 		}
 
-		static byte[] decryptCompressedInt32Data(ConstantsReader constReader, VariableDefinition local, int exprStart, int exprEnd, BinaryReader reader, byte[] decrypted) {
+		byte[] decryptConstant_v17_r73764_native(byte[] encrypted, uint offs) {
+			var x86Emu = new x86Emulator(new PeImage(fileData));
+			return decrypt(encrypted, magic => (byte)x86Emu.emulate((uint)nativeMethod.RVA, magic));
+		}
+
+		byte[] decrypt(byte[] encrypted, Func<uint, byte> decryptFunc) {
+			var reader = new BinaryReader(new MemoryStream(encrypted));
+			var decrypted = new byte[reader.ReadInt32()];
 			for (int i = 0; i < decrypted.Length; i++) {
-				constReader.setConstantInt32(local, Utils.readEncodedInt32(reader));
-				int index = exprStart, result;
-				if (!constReader.getNextInt32(ref index, out result) || index != exprEnd)
-					throw new ApplicationException("Could not decrypt integer");
-				decrypted[i] = (byte)result;
+				uint magic = Utils.readEncodedUInt32(reader);
+				decrypted[i] = decryptFunc(magic);
 			}
+
 			return decrypted;
 		}
 
