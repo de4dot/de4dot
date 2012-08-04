@@ -252,8 +252,8 @@ namespace de4dot.blocks {
 			removeLastBr();		// Get rid of last br/br.s if present
 
 			var newInstructions = new List<Instr>(instructions.Count + other.instructions.Count);
-			addInstructions(newInstructions, instructions);
-			addInstructions(newInstructions, other.instructions);
+			addInstructions(newInstructions, instructions, false);
+			addInstructions(newInstructions, other.instructions, true);
 			instructions = newInstructions;
 
 			disconnectFromFallThroughAndTargets();
@@ -265,11 +265,11 @@ namespace de4dot.blocks {
 			updateSources();
 		}
 
-		void addInstructions(IList<Instr> dest, IList<Instr> instrs) {
+		void addInstructions(IList<Instr> dest, IList<Instr> instrs, bool clone) {
 			for (int i = 0; i < instrs.Count; i++) {
 				var instr = instrs[i];
 				if (instr.OpCode != OpCodes.Nop)
-					dest.Add(instr);
+					dest.Add(clone ? new Instr(DotNetUtils.clone(instr.Instruction)) : instr);
 			}
 		}
 
