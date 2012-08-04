@@ -332,6 +332,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				proxyCallFixerV10.find();
 
 			removeInvalidResources();
+			removeInvalidAssemblyReferences();
 			dumpEmbeddedAssemblies();
 
 			startedDeobfuscating = true;
@@ -358,6 +359,28 @@ namespace de4dot.code.deobfuscators.Confuser {
 				if (resource.Offset != 0xFFFFFFFF)
 					continue;
 				addResourceToBeRemoved(resource, "Invalid resource");
+			}
+		}
+
+		void removeInvalidAssemblyReferences() {
+			// Confuser 1.7 r73764 adds an invalid assembly reference:
+			//	version: 0.0.0.0
+			//	attrs: SideBySideCompatible
+			//	key: 0 (cecil sets pkt to zero length array)
+			//	name: 0xFFFF
+			//	culture: 0
+			//	hash: 0xFFFF
+			foreach (var asmRef in module.AssemblyReferences) {
+				if (asmRef.Attributes != AssemblyAttributes.SideBySideCompatible)
+					continue;
+				if (asmRef.Version != null && asmRef.Version != new Version(0, 0, 0, 0))
+					continue;
+				if (asmRef.PublicKeyToken == null || asmRef.PublicKeyToken.Length != 0)
+					continue;
+				if (asmRef.Culture.Length != 0)
+					continue;
+
+				addAssemblyReferenceToBeRemoved(asmRef, "Invalid assembly reference");
 			}
 		}
 
