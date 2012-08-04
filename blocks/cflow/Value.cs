@@ -21,6 +21,7 @@ namespace de4dot.blocks.cflow {
 	public enum ValueType : byte {
 		Unknown,
 		Null,
+		Object,
 		Boxed,
 		Int32,
 		Int64,
@@ -43,6 +44,10 @@ namespace de4dot.blocks.cflow {
 
 		public bool isNull() {
 			return valueType == ValueType.Null;
+		}
+
+		public bool isObject() {
+			return valueType == ValueType.Object;
 		}
 
 		public bool isBoxed() {
@@ -77,6 +82,23 @@ namespace de4dot.blocks.cflow {
 
 		public override string ToString() {
 			return "<unknown>";
+		}
+	}
+
+	public class ObjectValue : Value {
+		public readonly object obj;	// can be null but that doesn't mean that this ObjectValue instance is null
+
+		public ObjectValue()
+			: this(null) {
+		}
+
+		public ObjectValue(object obj)
+			: base(ValueType.Object) {
+			this.obj = obj;
+		}
+
+		public override string ToString() {
+			return "<non-null object>";
 		}
 	}
 

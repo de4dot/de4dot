@@ -385,6 +385,12 @@ namespace de4dot.blocks.cflow {
 			case Code.Ldfld:	emulate_Ldfld(instr); break;
 			case Code.Ldsfld:	emulate_Ldsfld(instr); break;
 
+			case Code.Ldftn:	valueStack.push(new ObjectValue(instr.Operand)); break;
+			case Code.Ldsflda:	valueStack.push(new ObjectValue(instr.Operand)); break;
+			case Code.Ldtoken:	valueStack.push(new ObjectValue(instr.Operand)); break;
+			case Code.Ldvirtftn:valueStack.pop(); valueStack.push(new ObjectValue()); break;
+			case Code.Ldflda:	valueStack.pop(); valueStack.push(new ObjectValue()); break;
+
 			case Code.Unbox:
 
 			case Code.Conv_R_Un:
@@ -440,16 +446,11 @@ namespace de4dot.blocks.cflow {
 			case Code.Ldelem_R4:
 			case Code.Ldelem_R8:
 			case Code.Ldelem_Ref:
-			case Code.Ldflda:
-			case Code.Ldftn:
 			case Code.Ldind_I:
 			case Code.Ldind_R4:
 			case Code.Ldind_R8:
 			case Code.Ldind_Ref:
 			case Code.Ldobj:
-			case Code.Ldsflda:
-			case Code.Ldtoken:
-			case Code.Ldvirtftn:
 			case Code.Leave:
 			case Code.Leave_S:
 			case Code.Localloc:
