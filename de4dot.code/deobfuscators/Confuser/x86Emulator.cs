@@ -24,12 +24,18 @@ using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.Confuser {
 	class x86Emulator {
-		static readonly byte[] prolog = new byte[] {
+		static readonly byte[] prolog1 = new byte[] {
+			0x8B, 0x44, 0x24, 0x04, 0x53, 0x50,
+		};
+		static readonly byte[] epilog1 = new byte[] {
+			0x5B, 0xC3,
+		};
+		static readonly byte[] prolog2 = new byte[] {
 			0x89, 0xE0, 0x53, 0x57, 0x56, 0x29, 0xE0, 0x83,
 			0xF8, 0x18, 0x74, 0x07, 0x8B, 0x44, 0x24, 0x10,
 			0x50, 0xEB, 0x01, 0x51,
 		};
-		static readonly byte[] epilog = new byte[] {
+		static readonly byte[] epilog2 = new byte[] {
 			0x5E, 0x5F, 0x5B, 0xC3,
 		};
 
@@ -125,7 +131,16 @@ namespace de4dot.code.deobfuscators.Confuser {
 			initialize(args);
 
 			reader.BaseStream.Position = peImage.rvaToOffset(rva);
-			if (!isBytes(prolog))
+			byte[] prolog, epilog;
+			if (isBytes(prolog1)) {
+				prolog = prolog1;
+				epilog = epilog1;
+			}
+			else if (isBytes(prolog2)) {
+				prolog = prolog2;
+				epilog = epilog2;
+			}
+			else
 				throw new ApplicationException(string.Format("Missing prolog @ RVA {0:X8}", rva));
 			reader.BaseStream.Position += prolog.Length;
 
