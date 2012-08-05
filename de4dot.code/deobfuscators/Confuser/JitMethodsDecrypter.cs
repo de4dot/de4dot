@@ -40,6 +40,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v17_r73404,
 			v17_r73477,
 			v17_r73479,
+			v17_r74021,
 			vXX,
 		}
 
@@ -79,6 +80,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				}
 				break;
 
+			case 39: theVersion = ConfuserVersion.v17_r74021; break;
 			case 27: theVersion = ConfuserVersion.vXX; break;
 			default: return false;
 			}
@@ -167,6 +169,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v17_r73404: return initializeKeys_v17_r73404();
 			case ConfuserVersion.v17_r73477: return initializeKeys_v17_r73404();
 			case ConfuserVersion.v17_r73479: return initializeKeys_v17_r73404();
+			case ConfuserVersion.v17_r74021: return initializeKeys_v17_r73404();
 			case ConfuserVersion.vXX: return initializeKeys_vXX();
 			default: throw new ApplicationException("Invalid version");
 			}
@@ -268,6 +271,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v17_r73404: return true;
 			case ConfuserVersion.v17_r73477: return initializeMethodDataIndexes_v17_r73477(compileMethod);
 			case ConfuserVersion.v17_r73479: return initializeMethodDataIndexes_v17_r73477(compileMethod);
+			case ConfuserVersion.v17_r74021: return initializeMethodDataIndexes_v17_r73477(compileMethod);
 			case ConfuserVersion.vXX: return initializeMethodDataIndexes_v17_r73477(compileMethod);
 			default: throw new ApplicationException("Invalid version");
 			}
@@ -408,6 +412,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v17_r73404: return decrypt_v17_r73404(peImage, fileData, ref dumpedMethods);
 			case ConfuserVersion.v17_r73477: return decrypt_v17_r73477(peImage, fileData, ref dumpedMethods);
 			case ConfuserVersion.v17_r73479: return decrypt_v17_r73479(peImage, fileData, ref dumpedMethods);
+			case ConfuserVersion.v17_r74021: return decrypt_v17_r73479(peImage, fileData, ref dumpedMethods);
 			case ConfuserVersion.vXX: return decrypt_vXX(peImage, fileData, ref dumpedMethods);
 			default: throw new ApplicationException("Unknown version");
 			}
