@@ -193,8 +193,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 				var callvirt = instrs[i];
 				if (callvirt.OpCode.Code != Code.Callvirt)
 					continue;
-				var ctor = callvirt.Operand as MethodReference;
-				if (ctor == null || ctor.FullName != "System.Byte[] System.IO.MemoryStream::ToArray()")
+				var calledMethod = callvirt.Operand as MethodReference;
+				if (calledMethod == null || calledMethod.FullName != "System.Byte[] System.IO.MemoryStream::ToArray()")
 					continue;
 
 				var stsfld = instrs[i + 1];
