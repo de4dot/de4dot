@@ -43,6 +43,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v14_r58857,
 			v17_r73740_normal,
 			v17_r73740_native,
+			v17_r74708_normal,
+			v17_r74708_native,
 		}
 
 		enum ProxyCreatorType {
@@ -195,10 +197,12 @@ namespace de4dot.code.deobfuscators.Confuser {
 				break;
 
 			case ConfuserVersion.v17_r73740_normal:
+			case ConfuserVersion.v17_r74708_normal:
 				getCallInfo_v17_r73740_normal(info, creatorInfo, out calledMethod, out callOpcode);
 				break;
 
 			case ConfuserVersion.v17_r73740_native:
+			case ConfuserVersion.v17_r74708_native:
 				getCallInfo_v17_r73740_native(info, creatorInfo, out calledMethod, out callOpcode);
 				break;
 
@@ -435,12 +439,22 @@ namespace de4dot.code.deobfuscators.Confuser {
 						theVersion = ConfuserVersion.v14_r58857;
 				}
 				else if (is_v17_r73740(method)) {
-					if ((nativeMethod = findNativeMethod_v17_r73740(method)) != null)
-						theVersion = ConfuserVersion.v17_r73740_native;
-					else if (findMagic_v17_r73740(method, out magic))
-						theVersion = ConfuserVersion.v17_r73740_normal;
-					else
-						continue;
+					if (DotNetUtils.callsMethod(method, "System.Boolean System.Type::get_IsArray()")) {
+						if ((nativeMethod = findNativeMethod_v17_r73740(method)) != null)
+							theVersion = ConfuserVersion.v17_r74708_native;
+						else if (findMagic_v17_r73740(method, out magic))
+							theVersion = ConfuserVersion.v17_r74708_normal;
+						else
+							continue;
+					}
+					else {
+						if ((nativeMethod = findNativeMethod_v17_r73740(method)) != null)
+							theVersion = ConfuserVersion.v17_r73740_native;
+						else if (findMagic_v17_r73740(method, out magic))
+							theVersion = ConfuserVersion.v17_r73740_normal;
+						else
+							continue;
+					}
 				}
 
 				setDelegateCreatorMethod(method);
