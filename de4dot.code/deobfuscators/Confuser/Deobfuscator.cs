@@ -443,6 +443,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			singleValueInliner.RemoveUnbox = true;
 			doubleValueInliner.RemoveUnbox = true;
 			DeobfuscatedFile.stringDecryptersAdded();
+			addFieldsToBeRemoved(constantsDecrypterV15.Fields, "Constants decrypter field");
 			addMethodToBeRemoved(constantsDecrypterV15.Method, "Constants decrypter method");
 			addMethodToBeRemoved(constantsDecrypterV15.NativeMethod, "Constants decrypter native method");
 			addResourceToBeRemoved(constantsDecrypterV15.Resource, "Encrypted constants");

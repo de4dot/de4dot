@@ -31,6 +31,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		ModuleDefinition module;
 		byte[] fileData;
 		ISimpleDeobfuscator simpleDeobfuscator;
+		FieldDefinition dictField, streamField;
 		MethodDefinition decryptMethod;
 		MethodDefinition nativeMethod;
 		EmbeddedResource resource;
@@ -47,6 +48,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v17_r73740_dynamic,
 			v17_r73764_dynamic,
 			v17_r73764_native,
+			v17_r73822_normal,
+			v17_r73822_dynamic,
+			v17_r73822_native,
 		}
 
 		public MethodDefinition Method {
@@ -55,6 +59,15 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		public MethodDefinition NativeMethod {
 			get { return nativeMethod; }
+		}
+
+		public IEnumerable<FieldDefinition> Fields {
+			get {
+				return new List<FieldDefinition> {
+					streamField,
+					dictField,
+				};
+			}
 		}
 
 		public EmbeddedResource Resource {
@@ -71,12 +84,18 @@ namespace de4dot.code.deobfuscators.Confuser {
 			this.simpleDeobfuscator = simpleDeobfuscator;
 		}
 
-		static readonly string[] requiredLocals = new string[] {
+		static readonly string[] requiredLocals1 = new string[] {
 			"System.Byte[]",
 			"System.Collections.Generic.Dictionary`2<System.UInt32,System.Object>",
 			"System.IO.BinaryReader",
 			"System.IO.Compression.DeflateStream",
 			"System.IO.MemoryStream",
+			"System.Reflection.Assembly",
+		};
+		static readonly string[] requiredLocals2 = new string[] {
+			"System.Byte[]",
+			"System.IO.BinaryReader",
+			"System.IO.Compression.DeflateStream",
 			"System.Reflection.Assembly",
 		};
 		public void find() {
@@ -88,26 +107,39 @@ namespace de4dot.code.deobfuscators.Confuser {
 					continue;
 				if (!DotNetUtils.isMethod(method, "System.Object", "(System.UInt32)"))
 					continue;
+
 				var localTypes = new LocalTypes(method);
-				if (!localTypes.all(requiredLocals))
-					continue;
-				if (localTypes.exists("System.Collections.BitArray"))	// or System.Random
-					version = ConfuserVersion.v15_r60785_normal;
-				else if (DeobUtils.hasInteger(method, 0x100) &&
+				if (localTypes.all(requiredLocals1)) {
+					if (localTypes.exists("System.Collections.BitArray"))	// or System.Random
+						version = ConfuserVersion.v15_r60785_normal;
+					else if (DeobUtils.hasInteger(method, 0x100) &&
+							DeobUtils.hasInteger(method, 0x10000) &&
+							DeobUtils.hasInteger(method, 0xFFFF))
+						version = ConfuserVersion.v17_r73404_normal;
+					else if (DotNetUtils.callsMethod(method, "System.String System.Text.Encoding::GetString(System.Byte[])")) {
+						if (findInstruction(method.Body.Instructions, 0, Code.Conv_I8) >= 0)
+							version = ConfuserVersion.v15_r60785_dynamic;
+						else
+							version = ConfuserVersion.v17_r73740_dynamic;
+					}
+					else if (DotNetUtils.callsMethod(method, "System.String System.Text.Encoding::GetString(System.Byte[],System.Int32,System.Int32)")) {
+						if ((nativeMethod = findNativeMethod(method)) == null)
+							version = ConfuserVersion.v17_r73764_dynamic;
+						else
+							version = ConfuserVersion.v17_r73764_native;
+					}
+					else
+						continue;
+				}
+				else if (localTypes.all(requiredLocals2)) {
+					if (DeobUtils.hasInteger(method, 0x100) &&
 						DeobUtils.hasInteger(method, 0x10000) &&
 						DeobUtils.hasInteger(method, 0xFFFF))
-					version = ConfuserVersion.v17_r73404_normal;
-				else if (DotNetUtils.callsMethod(method, "System.String System.Text.Encoding::GetString(System.Byte[])")) {
-					if (findInstruction(method.Body.Instructions, 0, Code.Conv_I8) >= 0)
-						version = ConfuserVersion.v15_r60785_dynamic;
+						version = ConfuserVersion.v17_r73822_normal;
+					else if ((nativeMethod = findNativeMethod(method)) == null)
+						version = ConfuserVersion.v17_r73822_dynamic;
 					else
-						version = ConfuserVersion.v17_r73740_dynamic;
-				}
-				else if (DotNetUtils.callsMethod(method, "System.String System.Text.Encoding::GetString(System.Byte[],System.Int32,System.Int32)")) {
-					if ((nativeMethod = findNativeMethod(method)) == null)
-						version = ConfuserVersion.v17_r73764_dynamic;
-					else
-						version = ConfuserVersion.v17_r73764_native;
+						version = ConfuserVersion.v17_r73822_native;
 				}
 				else
 					continue;
@@ -143,9 +175,77 @@ namespace de4dot.code.deobfuscators.Confuser {
 				throw new ApplicationException("Could not find all keys");
 			if (!initializeTypeCodes())
 				throw new ApplicationException("Could not find all type codes");
+			if (!initializeFields())
+				throw new ApplicationException("Could not find all fields");
 
 			var constants = DeobUtils.inflate(resource.GetResourceData(), true);
 			reader = new BinaryReader(new MemoryStream(constants));
+		}
+
+		bool initializeFields() {
+			switch (version) {
+			case ConfuserVersion.v17_r73822_normal:
+			case ConfuserVersion.v17_r73822_dynamic:
+			case ConfuserVersion.v17_r73822_native:
+				if ((dictField = findDictField(decryptMethod, decryptMethod.DeclaringType)) == null)
+					return false;
+				if ((streamField = findStreamField(decryptMethod, decryptMethod.DeclaringType)) == null)
+					return false;
+				break;
+
+			default:
+				break;
+			}
+
+			return true;
+		}
+
+		static FieldDefinition findDictField(MethodDefinition method, TypeDefinition declaringType) {
+			var instrs = method.Body.Instructions;
+			for (int i = 0; i < instrs.Count - 1; i++) {
+				var newobj = instrs[i];
+				if (newobj.OpCode.Code != Code.Newobj)
+					continue;
+				var ctor = newobj.Operand as MethodReference;
+				if (ctor == null || ctor.FullName != "System.Void System.Collections.Generic.Dictionary`2<System.UInt32,System.Object>::.ctor()")
+					continue;
+
+				var stsfld = instrs[i + 1];
+				if (stsfld.OpCode.Code != Code.Stsfld)
+					continue;
+				var field = stsfld.Operand as FieldDefinition;
+				if (field == null || field.DeclaringType != declaringType)
+					continue;
+				if (field.FieldType.FullName != "System.Collections.Generic.Dictionary`2<System.UInt32,System.Object>")
+					continue;
+
+				return field;
+			}
+			return null;
+		}
+
+		static FieldDefinition findStreamField(MethodDefinition method, TypeDefinition declaringType) {
+			var instrs = method.Body.Instructions;
+			for (int i = 0; i < instrs.Count - 1; i++) {
+				var newobj = instrs[i];
+				if (newobj.OpCode.Code != Code.Newobj)
+					continue;
+				var ctor = newobj.Operand as MethodReference;
+				if (ctor == null || ctor.FullName != "System.Void System.IO.MemoryStream::.ctor()")
+					continue;
+
+				var stsfld = instrs[i + 1];
+				if (stsfld.OpCode.Code != Code.Stsfld)
+					continue;
+				var field = stsfld.Operand as FieldDefinition;
+				if (field == null || field.DeclaringType != declaringType)
+					continue;
+				if (field.FieldType.FullName != "System.IO.MemoryStream")
+					continue;
+
+				return field;
+			}
+			return null;
 		}
 
 		bool initializeKeys() {
@@ -370,6 +470,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v17_r73740_dynamic: return decryptConstant_v17_r73740_dynamic(encrypted, offs);
 			case ConfuserVersion.v17_r73764_dynamic: return decryptConstant_v17_r73740_dynamic(encrypted, offs);
 			case ConfuserVersion.v17_r73764_native: return decryptConstant_v17_r73764_native(encrypted, offs);
+			case ConfuserVersion.v17_r73822_normal: return decryptConstant_v17_r73404_normal(encrypted, offs);
+			case ConfuserVersion.v17_r73822_dynamic: return decryptConstant_v17_r73740_dynamic(encrypted, offs);
+			case ConfuserVersion.v17_r73822_native: return decryptConstant_v17_r73764_native(encrypted, offs);
 			default: throw new ApplicationException("Invalid version");
 			}
 		}
