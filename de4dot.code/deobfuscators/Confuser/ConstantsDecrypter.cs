@@ -155,60 +155,12 @@ namespace de4dot.code.deobfuscators.Confuser {
 				return;
 			simpleDeobfuscator.deobfuscate(cctor, true);
 
-			if ((dictField = findDictField(cctor, cctor.DeclaringType)) == null)
+			if ((dictField = ConstantsDecrypterUtils.findDictField(cctor, cctor.DeclaringType)) == null)
 				return;
-			if ((dataField = findDataField(cctor, cctor.DeclaringType)) == null)
+			if ((dataField = ConstantsDecrypterUtils.findDataField(cctor, cctor.DeclaringType)) == null)
 				return;
 
 			installMethod = cctor;
-		}
-
-		static FieldDefinition findDictField(MethodDefinition method, TypeDefinition declaringType) {
-			var instrs = method.Body.Instructions;
-			for (int i = 0; i < instrs.Count - 1; i++) {
-				var newobj = instrs[i];
-				if (newobj.OpCode.Code != Code.Newobj)
-					continue;
-				var ctor = newobj.Operand as MethodReference;
-				if (ctor == null || ctor.FullName != "System.Void System.Collections.Generic.Dictionary`2<System.UInt32,System.Object>::.ctor()")
-					continue;
-
-				var stsfld = instrs[i + 1];
-				if (stsfld.OpCode.Code != Code.Stsfld)
-					continue;
-				var field = stsfld.Operand as FieldDefinition;
-				if (field == null || field.DeclaringType != declaringType)
-					continue;
-				if (field.FieldType.FullName != "System.Collections.Generic.Dictionary`2<System.UInt32,System.Object>")
-					continue;
-
-				return field;
-			}
-			return null;
-		}
-
-		static FieldDefinition findDataField(MethodDefinition method, TypeDefinition declaringType) {
-			var instrs = method.Body.Instructions;
-			for (int i = 0; i < instrs.Count - 1; i++) {
-				var callvirt = instrs[i];
-				if (callvirt.OpCode.Code != Code.Callvirt)
-					continue;
-				var calledMethod = callvirt.Operand as MethodReference;
-				if (calledMethod == null || calledMethod.FullName != "System.Byte[] System.IO.MemoryStream::ToArray()")
-					continue;
-
-				var stsfld = instrs[i + 1];
-				if (stsfld.OpCode.Code != Code.Stsfld)
-					continue;
-				var field = stsfld.Operand as FieldDefinition;
-				if (field == null || field.DeclaringType != declaringType)
-					continue;
-				if (field.FieldType.FullName != "System.Byte[]")
-					continue;
-
-				return field;
-			}
-			return null;
 		}
 
 		public void initialize() {

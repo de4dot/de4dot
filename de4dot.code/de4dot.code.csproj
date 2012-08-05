@@ -72,6 +72,8 @@
     <Compile Include="deobfuscators\Confuser\Arg64ConstantsReader.cs" />
     <Compile Include="deobfuscators\Confuser\ConfuserUtils.cs" />
     <Compile Include="deobfuscators\Confuser\ConstantsDecrypter.cs" />
+    <Compile Include="deobfuscators\Confuser\ConstantsDecrypterBase.cs" />
+    <Compile Include="deobfuscators\Confuser\ConstantsDecrypterUtils.cs" />
     <Compile Include="deobfuscators\Confuser\ConstantsDecrypterV15.cs" />
     <Compile Include="deobfuscators\Confuser\ConstantsFolder.cs" />
     <Compile Include="deobfuscators\Confuser\ConstantsInliner.cs" />

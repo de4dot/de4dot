@@ -428,30 +428,38 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		bool hasInitializedConstantsDecrypter15 = false;
 		void initializeConstantsDecrypter15() {
-			if (hasInitializedConstantsDecrypter15 || (constantsDecrypterV15 == null || !constantsDecrypterV15.Detected))
+			initialize(constantsDecrypterV15, ref hasInitializedConstantsDecrypter15);
+		}
+
+		void initialize(ConstantsDecrypterBase constDecrypter, ref bool hasInitialized) {
+			if (hasInitialized || (constDecrypter == null || !constDecrypter.Detected))
 				return;
 			hasInitializedConstantsDecrypter15 = true;
 
 			decryptResources();
-			constantsDecrypterV15.initialize();
+			constDecrypter.initialize();
 			int32ValueInliner = new Int32ValueInliner();
 			int64ValueInliner = new Int64ValueInliner();
 			singleValueInliner = new SingleValueInliner();
 			doubleValueInliner = new DoubleValueInliner();
-			staticStringInliner.add(constantsDecrypterV15.Method, (method, gim, args) => constantsDecrypterV15.decryptString(staticStringInliner.Method, (uint)args[0]));
-			int32ValueInliner.add(constantsDecrypterV15.Method, (method, gim, args) => constantsDecrypterV15.decryptInt32(int32ValueInliner.Method, (uint)args[0]));
-			int64ValueInliner.add(constantsDecrypterV15.Method, (method, gim, args) => constantsDecrypterV15.decryptInt64(int64ValueInliner.Method, (uint)args[0]));
-			singleValueInliner.add(constantsDecrypterV15.Method, (method, gim, args) => constantsDecrypterV15.decryptSingle(singleValueInliner.Method, (uint)args[0]));
-			doubleValueInliner.add(constantsDecrypterV15.Method, (method, gim, args) => constantsDecrypterV15.decryptDouble(doubleValueInliner.Method, (uint)args[0]));
+			foreach (var info in constDecrypter.DecrypterInfos) {
+				staticStringInliner.add(info.decryptMethod, (method, gim, args) => constDecrypter.decryptString(staticStringInliner.Method, method, args));
+				int32ValueInliner.add(info.decryptMethod, (method, gim, args) => constDecrypter.decryptInt32(int32ValueInliner.Method, method, args));
+				int64ValueInliner.add(info.decryptMethod, (method, gim, args) => constDecrypter.decryptInt64(int64ValueInliner.Method, method, args));
+				singleValueInliner.add(info.decryptMethod, (method, gim, args) => constDecrypter.decryptSingle(singleValueInliner.Method, method, args));
+				doubleValueInliner.add(info.decryptMethod, (method, gim, args) => constDecrypter.decryptDouble(doubleValueInliner.Method, method, args));
+			}
 			int32ValueInliner.RemoveUnbox = true;
 			int64ValueInliner.RemoveUnbox = true;
 			singleValueInliner.RemoveUnbox = true;
 			doubleValueInliner.RemoveUnbox = true;
 			DeobfuscatedFile.stringDecryptersAdded();
-			addFieldsToBeRemoved(constantsDecrypterV15.Fields, "Constants decrypter field");
-			addMethodToBeRemoved(constantsDecrypterV15.Method, "Constants decrypter method");
-			addMethodToBeRemoved(constantsDecrypterV15.NativeMethod, "Constants decrypter native method");
-			addResourceToBeRemoved(constantsDecrypterV15.Resource, "Encrypted constants");
+			addFieldsToBeRemoved(constDecrypter.Fields, "Constants decrypter field");
+			foreach (var info in constDecrypter.DecrypterInfos) {
+				addMethodToBeRemoved(info.decryptMethod, "Constants decrypter method");
+				addMethodToBeRemoved(info.nativeMethod, "Constants decrypter native method");
+			}
+			addResourceToBeRemoved(constDecrypter.Resource, "Encrypted constants");
 		}
 
 		void decryptResources() {
