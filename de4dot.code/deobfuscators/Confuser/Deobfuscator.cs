@@ -205,7 +205,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 			CanUnpack = 2,
 		}
 		DecryptState decryptState = DecryptState.CanDecryptMethods | DecryptState.CanUnpack;
+		bool hasUnpacked = false;
 		public override bool getDecryptedModule(int count, ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
+			hasUnpacked = false;
 			byte[] fileData = getFileData();
 			var peImage = new PeImage(fileData);
 
@@ -242,6 +244,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 						realAssemblyInfo = mainInfo.realAssemblyInfo;
 						embeddedAssemblyInfos.AddRange(unpacker.getEmbeddedAssemblyInfos());
 						ModuleBytes = newFileData;
+						hasUnpacked = true;
 						return true;
 					}
 					else {
@@ -276,7 +279,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 			newOne.ModuleBytes = ModuleBytes;
 			newOne.embeddedAssemblyInfos.AddRange(embeddedAssemblyInfos);
 			newOne.setModule(module);
-			newOne.jitMethodsDecrypter = new JitMethodsDecrypter(module, DeobfuscatedFile, jitMethodsDecrypter);
+			newOne.jitMethodsDecrypter = hasUnpacked ? new JitMethodsDecrypter(module, DeobfuscatedFile) :
+						new JitMethodsDecrypter(module, DeobfuscatedFile, jitMethodsDecrypter);
 			if ((newOne.decryptState & DecryptState.CanDecryptMethods) != 0) {
 				try {
 					newOne.jitMethodsDecrypter.find();
@@ -286,7 +290,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 				if (newOne.jitMethodsDecrypter.Detected)
 					return newOne;
 			}
-			newOne.memoryMethodsDecrypter = new MemoryMethodsDecrypter(module, DeobfuscatedFile, memoryMethodsDecrypter);
+			newOne.memoryMethodsDecrypter = hasUnpacked ? new MemoryMethodsDecrypter(module, DeobfuscatedFile) :
+						new MemoryMethodsDecrypter(module, DeobfuscatedFile, memoryMethodsDecrypter);
 			if ((newOne.decryptState & DecryptState.CanDecryptMethods) != 0) {
 				newOne.memoryMethodsDecrypter.find();
 				if (newOne.memoryMethodsDecrypter.Detected)
