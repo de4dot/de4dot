@@ -24,12 +24,15 @@ using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.Confuser {
 	class x86Emulator {
+		// Confuser 1.7 r73740 - r73822
 		static readonly byte[] prolog1 = new byte[] {
 			0x8B, 0x44, 0x24, 0x04, 0x53, 0x50,
 		};
 		static readonly byte[] epilog1 = new byte[] {
 			0x5B, 0xC3,
 		};
+
+		// Confuser 1.7 r74021+
 		static readonly byte[] prolog2 = new byte[] {
 			0x89, 0xE0, 0x53, 0x57, 0x56, 0x29, 0xE0, 0x83,
 			0xF8, 0x18, 0x74, 0x07, 0x8B, 0x44, 0x24, 0x10,
