@@ -24,6 +24,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Metadata;
 using de4dot.blocks;
+using SevenZip.Compression.LZMA;
 
 namespace de4dot.code.deobfuscators.Confuser {
 	class RealAssemblyInfo {
@@ -80,6 +81,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v15_r60785,
 			v17_r73404,
 			v17_r73477,
+			v17_r75076,
 		}
 
 		public bool Detected {
@@ -108,7 +110,12 @@ namespace de4dot.code.deobfuscators.Confuser {
 			var type = entryPoint.DeclaringType;
 			if (!new FieldTypes(type).all(requiredFields))
 				return;
-			var decyptMethod = findDecryptMethod(type);
+			bool use7zip = type.NestedTypes.Count == 6;
+			MethodDefinition decyptMethod;
+			if (use7zip)
+				decyptMethod = findDecryptMethod_7zip(type);
+			else
+				decyptMethod = findDecryptMethod_inflate(type);
 			if (decyptMethod == null)
 				return;
 			var decryptLocals = new LocalTypes(decyptMethod);
@@ -142,7 +149,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 						version = ConfuserVersion.v14_r58852;
 						break;
 					}
-					if (isDecryptMethod_v17_r73404(decyptMethod))
+					if (use7zip)
+						version = ConfuserVersion.v17_r75076;
+					else if (isDecryptMethod_v17_r73404(decyptMethod))
 						version = ConfuserVersion.v17_r73404;
 					else
 						version = ConfuserVersion.v15_r60785;
@@ -157,7 +166,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			simpleDeobfuscator.deobfuscate(cctor);
 			simpleDeobfuscator.decryptStrings(cctor, deob);
 
-			if (findEntryPointToken(simpleDeobfuscator, cctor, entryPoint, out entryPointToken))
+			if (findEntryPointToken(simpleDeobfuscator, cctor, entryPoint, out entryPointToken) && !use7zip)
 				version = ConfuserVersion.v17_r73477;
 
 			mainAsmResource = findResource(cctor);
@@ -332,17 +341,39 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return DotNetUtils.getResource(module, DotNetUtils.getCodeStrings(method)) as EmbeddedResource;
 		}
 
-		static string[] requiredDecryptLocals = new string[] {
+		static string[] requiredDecryptLocals_inflate = new string[] {
 			"System.Byte[]",
 			"System.IO.Compression.DeflateStream",
 		};
-		static MethodDefinition findDecryptMethod(TypeDefinition type) {
+		static MethodDefinition findDecryptMethod_inflate(TypeDefinition type) {
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
 				if (!DotNetUtils.isMethod(method, "System.Byte[]", "(System.Byte[])"))
 					continue;
-				if (!new LocalTypes(method).all(requiredDecryptLocals))
+				if (!new LocalTypes(method).all(requiredDecryptLocals_inflate))
+					continue;
+
+				return method;
+			}
+			return null;
+		}
+
+		static string[] requiredDecryptLocals_7zip = new string[] {
+			"System.Byte[]",
+			"System.Int64",
+			"System.IO.BinaryReader",
+			"System.IO.MemoryStream",
+			"System.Security.Cryptography.CryptoStream",
+			"System.Security.Cryptography.RijndaelManaged",
+		};
+		static MethodDefinition findDecryptMethod_7zip(TypeDefinition type) {
+			foreach (var method in type.Methods) {
+				if (!method.IsStatic || method.Body == null)
+					continue;
+				if (!DotNetUtils.isMethod(method, "System.Byte[]", "(System.Byte[])"))
+					continue;
+				if (!new LocalTypes(method).all(requiredDecryptLocals_7zip))
 					continue;
 
 				return method;
@@ -400,6 +431,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v15_r60785: return decrypt_v15_r60785(data);
 			case ConfuserVersion.v17_r73404: return decrypt_v17_r73404(data);
 			case ConfuserVersion.v17_r73477: return decrypt_v17_r73404(data);
+			case ConfuserVersion.v17_r75076: return decrypt_v17_r75076(data);
 			default: throw new ApplicationException("Unknown version");
 			}
 		}
@@ -455,6 +487,27 @@ namespace de4dot.code.deobfuscators.Confuser {
 			data = decrypt_v15_r60785(reader, out key, out iv);
 			reader = new BinaryReader(new MemoryStream(DeobUtils.inflate(DeobUtils.aesDecrypt(data, key, iv), true)));
 			return reader.ReadBytes(reader.ReadInt32());
+		}
+
+		byte[] decrypt_v17_r75076(byte[] data) {
+			var reader = new BinaryReader(new MemoryStream(data));
+			byte[] key, iv;
+			data = decrypt_v15_r60785(reader, out key, out iv);
+			return sevenzipDecompress(DeobUtils.aesDecrypt(data, key, iv));
+		}
+
+		static byte[] sevenzipDecompress(byte[] data) {
+			var reader = new BinaryReader(new MemoryStream(data));
+			int totalSize = reader.ReadInt32();
+			var props = reader.ReadBytes(5);
+			var decoder = new Decoder();
+			decoder.SetDecoderProperties(props);
+			if ((long)totalSize != reader.ReadInt64())
+				throw new ApplicationException("Invalid total size");
+			long compressedSize = data.Length - props.Length - 8;
+			var decompressed = new byte[totalSize];
+			decoder.Code(reader.BaseStream, new MemoryStream(decompressed, true), compressedSize, totalSize, null);
+			return decompressed;
 		}
 
 		public void deobfuscate(Blocks blocks) {
