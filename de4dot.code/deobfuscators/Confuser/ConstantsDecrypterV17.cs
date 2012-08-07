@@ -19,6 +19,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using de4dot.blocks;
@@ -28,6 +29,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 	class ConstantsDecrypterV17 : ConstantsDecrypterBase {
 		MethodDefinition initMethod;
 		ConfuserVersion version = ConfuserVersion.Unknown;
+		string resourceName;
 
 		enum ConfuserVersion {
 			Unknown,
@@ -40,6 +42,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v17_r74816_normal,
 			v17_r74816_dynamic,
 			v17_r74816_native,
+			v17_r75056_normal,
+			v17_r75056_dynamic,
+			v17_r75056_native,
 		}
 
 		class DecrypterInfoV17 : DecrypterInfo {
@@ -97,6 +102,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				case ConfuserVersion.v17_r74708_normal:
 				case ConfuserVersion.v17_r74788_normal:
 				case ConfuserVersion.v17_r74816_normal:
+				case ConfuserVersion.v17_r75056_normal:
 					return findKey4_normal(method, out key);
 				case ConfuserVersion.v17_r74708_dynamic:
 				case ConfuserVersion.v17_r74708_native:
@@ -104,6 +110,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 				case ConfuserVersion.v17_r74788_native:
 				case ConfuserVersion.v17_r74816_dynamic:
 				case ConfuserVersion.v17_r74816_native:
+				case ConfuserVersion.v17_r75056_dynamic:
+				case ConfuserVersion.v17_r75056_native:
 					return findKey4_other(method, out key);
 				default:
 					throw new ApplicationException("Invalid version");
@@ -161,6 +169,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 				case ConfuserVersion.v17_r74816_normal:
 				case ConfuserVersion.v17_r74816_dynamic:
 				case ConfuserVersion.v17_r74816_native:
+				case ConfuserVersion.v17_r75056_normal:
+				case ConfuserVersion.v17_r75056_dynamic:
+				case ConfuserVersion.v17_r75056_native:
 					return findKey5_v17_r74788(method, out key);
 				default:
 					key = 0;
@@ -218,7 +229,12 @@ namespace de4dot.code.deobfuscators.Confuser {
 			var method = getDecryptMethod();
 			if (method == null)
 				return;
-			if (DotNetUtils.callsMethod(method, "System.String System.Reflection.Module::get_ScopeName()"))
+
+			resourceName = getResourceName(cctor);
+
+			if (resourceName != null)
+				initVersion(method, ConfuserVersion.v17_r75056_normal, ConfuserVersion.v17_r75056_dynamic, ConfuserVersion.v17_r75056_native);
+			else if (DotNetUtils.callsMethod(method, "System.String System.Reflection.Module::get_ScopeName()"))
 				initVersion(method, ConfuserVersion.v17_r74816_normal, ConfuserVersion.v17_r74816_dynamic, ConfuserVersion.v17_r74816_native);
 			else if (DotNetUtils.callsMethod(method, "System.Reflection.Module System.Reflection.Assembly::GetModule(System.String)"))
 				initVersion(method, ConfuserVersion.v17_r74788_normal, ConfuserVersion.v17_r74788_dynamic, ConfuserVersion.v17_r74788_native);
@@ -280,6 +296,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v17_r74816_normal: return decryptConstant_v17_r74788_normal(info, encrypted, offs, typeCode);
 			case ConfuserVersion.v17_r74816_dynamic: return decryptConstant_v17_r74788_dynamic(info, encrypted, offs, typeCode);
 			case ConfuserVersion.v17_r74816_native: return decryptConstant_v17_r74788_native(info, encrypted, offs, typeCode);
+			case ConfuserVersion.v17_r75056_normal: return decryptConstant_v17_r74788_normal(info, encrypted, offs, typeCode);
+			case ConfuserVersion.v17_r75056_dynamic: return decryptConstant_v17_r74788_dynamic(info, encrypted, offs, typeCode);
+			case ConfuserVersion.v17_r75056_native: return decryptConstant_v17_r74788_native(info, encrypted, offs, typeCode);
 			default:
 				throw new ApplicationException("Invalid version");
 			}
@@ -314,7 +333,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		public override void initialize() {
-			if ((resource = findResource(initMethod)) == null)
+			if (resourceName != null)
+				resource = DotNetUtils.getResource(module, resourceName) as EmbeddedResource;
+			else
+				resource = findResource(initMethod);
+			if (resource == null)
 				throw new ApplicationException("Could not find encrypted consts resource");
 
 			findDecrypterInfos();
@@ -352,6 +375,22 @@ namespace de4dot.code.deobfuscators.Confuser {
 				numMethods++;
 			}
 			return numMethods > 0;
+		}
+
+		static string getResourceName(MethodDefinition method) {
+			var instrs = method.Body.Instructions;
+			for (int i = 0; i < instrs.Count; i++) {
+				i = ConfuserUtils.findCallMethod(instrs, i, Code.Call, "System.Byte[] System.BitConverter::GetBytes(System.Int32)");
+				if (i < 0)
+					break;
+				if (i == 0)
+					continue;
+				var ldci4 = instrs[i - 1];
+				if (!DotNetUtils.isLdcI4(ldci4))
+					continue;
+				return Encoding.UTF8.GetString(BitConverter.GetBytes(DotNetUtils.getLdcI4Value(ldci4)));
+			}
+			return null;
 		}
 	}
 }
