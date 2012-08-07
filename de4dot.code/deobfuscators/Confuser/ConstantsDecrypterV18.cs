@@ -28,7 +28,8 @@ using de4dot.blocks;
 using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.Confuser {
-	class ConstantsDecrypter {
+	// Since v1.8 r75367
+	class ConstantsDecrypterV18 {
 		ModuleDefinition module;
 		byte[] fileData;
 		ISimpleDeobfuscator simpleDeobfuscator;
@@ -49,12 +50,12 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		public class DecrypterInfo {
-			readonly ConstantsDecrypter constantsDecrypter;
+			readonly ConstantsDecrypterV18 constantsDecrypter;
 			public readonly MethodDefinition method;
 			public ulong key0l, key1l, key2l;
 			public uint key0, key0d;
 
-			public DecrypterInfo(ConstantsDecrypter constantsDecrypter, MethodDefinition method) {
+			public DecrypterInfo(ConstantsDecrypterV18 constantsDecrypter, MethodDefinition method) {
 				this.constantsDecrypter = constantsDecrypter;
 				this.method = method;
 			}
@@ -143,7 +144,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			get { return installMethod != null; }
 		}
 
-		public ConstantsDecrypter(ModuleDefinition module, byte[] fileData, ISimpleDeobfuscator simpleDeobfuscator) {
+		public ConstantsDecrypterV18(ModuleDefinition module, byte[] fileData, ISimpleDeobfuscator simpleDeobfuscator) {
 			this.module = module;
 			this.fileData = fileData;
 			this.simpleDeobfuscator = simpleDeobfuscator;
