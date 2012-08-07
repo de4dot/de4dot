@@ -30,7 +30,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		MethodDefinition initMethod;
 		ConfuserVersion version = ConfuserVersion.Unknown;
 		string resourceName;
-		int keyArraySize;
+		int keyArraySize = 8;
 
 		enum ConfuserVersion {
 			Unknown,
