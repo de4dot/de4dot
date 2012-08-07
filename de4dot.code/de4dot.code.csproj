@@ -45,6 +45,13 @@
     <Reference Include="System.XML" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="7zip\Compress\LZMA\LzmaBase.cs" />
+    <Compile Include="7zip\Compress\LZMA\LzmaDecoder.cs" />
+    <Compile Include="7zip\Compress\LZ\LzOutWindow.cs" />
+    <Compile Include="7zip\Compress\RangeCoder\RangeCoder.cs" />
+    <Compile Include="7zip\Compress\RangeCoder\RangeCoderBit.cs" />
+    <Compile Include="7zip\Compress\RangeCoder\RangeCoderBitTree.cs" />
+    <Compile Include="7zip\ICoder.cs" />
     <Compile Include="AssemblyClient\AssemblyClient.cs" />
     <Compile Include="AssemblyClient\AssemblyClientFactory.cs" />
     <Compile Include="AssemblyClient\IAssemblyClient.cs" />
