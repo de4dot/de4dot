@@ -115,7 +115,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return decrypted;
 		}
 
-		static readonly byte[] defaultDecryptKey = new byte[8];
+		static readonly byte[] defaultDecryptKey = new byte[1];
 		public static byte[] decrypt(uint seed, byte[] encrypted) {
 			return decrypt(seed, encrypted, defaultDecryptKey);
 		}
@@ -126,7 +126,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			ushort _c = (ushort)seed;
 			ushort m = _c; ushort c = _m;
 			for (int i = 0; i < decrypted.Length; i++) {
-				decrypted[i] = (byte)(encrypted[i] ^ (seed * m + c) ^ key[i & 7]);
+				decrypted[i] = (byte)(encrypted[i] ^ (seed * m + c) ^ key[i % key.Length]);
 				m = (ushort)(seed * m + _m);
 				c = (ushort)(seed * c + _c);
 			}

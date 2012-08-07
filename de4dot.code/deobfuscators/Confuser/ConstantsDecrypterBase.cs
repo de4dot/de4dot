@@ -367,7 +367,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				if (!DotNetUtils.isLdloc(instrs[i + 5]))
 					continue;
 				var ldci4 = instrs[i + 6];
-				if (!DotNetUtils.isLdcI4(ldci4) || DotNetUtils.getLdcI4Value(ldci4) != 8)
+				if (!DotNetUtils.isLdcI4(ldci4) || (DotNetUtils.getLdcI4Value(ldci4) != 8 && DotNetUtils.getLdcI4Value(ldci4) != 16))
 					continue;
 				if (instrs[i + 7].OpCode.Code != Code.Rem)
 					continue;
@@ -400,7 +400,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return -1;
 		}
 
-		static readonly byte[] defaultDecryptKey_v17 = new byte[8];
+		static readonly byte[] defaultDecryptKey_v17 = new byte[1];
 		protected byte[] decryptConstant_v17_r73740_dynamic(DecrypterInfo info, byte[] encrypted, uint offs, uint key) {
 			return decryptConstant_v17_r73740_dynamic(info, encrypted, offs, key, defaultDecryptKey_v17);
 		}
@@ -423,7 +423,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				int index = startIndex, result;
 				if (!constReader.getNextInt32(ref index, out result) || index != endIndex)
 					throw new ApplicationException("Could not decrypt integer");
-				return (byte)(result ^ key2[i & 7]);
+				return (byte)(result ^ key2[i % key2.Length]);
 			});
 		}
 
@@ -433,7 +433,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		protected byte[] decryptConstant_v17_r73764_native(DecrypterInfo info, byte[] encrypted, uint offs, uint key1, byte[] key2) {
 			var x86Emu = new x86Emulator(new PeImage(fileData));
-			return decrypt(encrypted, key1, (magic, i) => (byte)(x86Emu.emulate((uint)nativeMethod.RVA, magic) ^ key2[i & 7]));
+			return decrypt(encrypted, key1, (magic, i) => (byte)(x86Emu.emulate((uint)nativeMethod.RVA, magic) ^ key2[i % key2.Length]));
 		}
 
 		static byte[] decrypt(byte[] encrypted, uint key, Func<uint, int, byte> decryptFunc) {
