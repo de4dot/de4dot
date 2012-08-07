@@ -82,6 +82,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v17_r73404,
 			v17_r73477,
 			v17_r75076,
+			v18_r75184,
 		}
 
 		public bool Detected {
@@ -149,8 +150,12 @@ namespace de4dot.code.deobfuscators.Confuser {
 						version = ConfuserVersion.v14_r58852;
 						break;
 					}
-					if (use7zip)
-						version = ConfuserVersion.v17_r75076;
+					if (use7zip) {
+						if (new LocalTypes(decyptMethod).exists("System.IO.MemoryStream"))
+							version = ConfuserVersion.v17_r75076;
+						else
+							version = ConfuserVersion.v18_r75184;
+					}
 					else if (isDecryptMethod_v17_r73404(decyptMethod))
 						version = ConfuserVersion.v17_r73404;
 					else
@@ -363,7 +368,6 @@ namespace de4dot.code.deobfuscators.Confuser {
 			"System.Byte[]",
 			"System.Int64",
 			"System.IO.BinaryReader",
-			"System.IO.MemoryStream",
 			"System.Security.Cryptography.CryptoStream",
 			"System.Security.Cryptography.RijndaelManaged",
 		};
@@ -432,6 +436,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v17_r73404: return decrypt_v17_r73404(data);
 			case ConfuserVersion.v17_r73477: return decrypt_v17_r73404(data);
 			case ConfuserVersion.v17_r75076: return decrypt_v17_r75076(data);
+			case ConfuserVersion.v18_r75184: return decrypt_v17_r75076(data);
 			default: throw new ApplicationException("Unknown version");
 			}
 		}
