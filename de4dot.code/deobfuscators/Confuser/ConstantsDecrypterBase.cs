@@ -350,6 +350,41 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return -1;
 		}
 
+		static int getDynamicEndIndex_v17_r74788(MethodDefinition method, VariableDefinition local) {
+			var instrs = method.Body.Instructions;
+			for (int i = 0; i < instrs.Count - 11; i++) {
+				var stloc = instrs[i];
+				if (!DotNetUtils.isStloc(stloc) || DotNetUtils.getLocalVar(method.Body.Variables, stloc) != local)
+					continue;
+				if (!DotNetUtils.isLdloc(instrs[i + 1]))
+					continue;
+				if (!DotNetUtils.isLdloc(instrs[i + 2]))
+					continue;
+				if (!DotNetUtils.isLdloc(instrs[i + 3]))
+					continue;
+				if (!DotNetUtils.isLdloc(instrs[i + 4]))
+					continue;
+				if (!DotNetUtils.isLdloc(instrs[i + 5]))
+					continue;
+				var ldci4 = instrs[i + 6];
+				if (!DotNetUtils.isLdcI4(ldci4) || DotNetUtils.getLdcI4Value(ldci4) != 8)
+					continue;
+				if (instrs[i + 7].OpCode.Code != Code.Rem)
+					continue;
+				if (instrs[i + 8].OpCode.Code != Code.Ldelem_U1)
+					continue;
+				if (instrs[i + 9].OpCode.Code != Code.Xor)
+					continue;
+				if (instrs[i + 10].OpCode.Code != Code.Conv_U1)
+					continue;
+				if (instrs[i + 11].OpCode.Code != Code.Stelem_I1)
+					continue;
+
+				return i;
+			}
+			return -1;
+		}
+
 		static int getDynamicStartIndex_v17_r73740(MethodDefinition method, int endIndex) {
 			if (endIndex < 0)
 				return -1;
@@ -365,37 +400,48 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return -1;
 		}
 
+		static readonly byte[] defaultDecryptKey_v17 = new byte[8];
 		protected byte[] decryptConstant_v17_r73740_dynamic(DecrypterInfo info, byte[] encrypted, uint offs, uint key) {
+			return decryptConstant_v17_r73740_dynamic(info, encrypted, offs, key, defaultDecryptKey_v17);
+		}
+
+		protected byte[] decryptConstant_v17_r73740_dynamic(DecrypterInfo info, byte[] encrypted, uint offs, uint key1, byte[] key2) {
 			var local = getDynamicLocal_v17_r73740(info.decryptMethod);
 			if (local == null)
 				throw new ApplicationException("Could not find local");
 
 			int endIndex = getDynamicEndIndex_v17_r73740(info.decryptMethod, local);
+			if (endIndex < 0)
+				endIndex = getDynamicEndIndex_v17_r74788(info.decryptMethod, local);
 			int startIndex = getDynamicStartIndex_v17_r73740(info.decryptMethod, endIndex);
 			if (startIndex < 0)
 				throw new ApplicationException("Could not find start/end index");
 
 			var constReader = new ConstantsReader(info.decryptMethod);
-			return decrypt(encrypted, key, magic => {
+			return decrypt(encrypted, key1, (magic, i) => {
 				constReader.setConstantInt32(local, magic);
 				int index = startIndex, result;
 				if (!constReader.getNextInt32(ref index, out result) || index != endIndex)
 					throw new ApplicationException("Could not decrypt integer");
-				return (byte)result;
+				return (byte)(result ^ key2[i & 7]);
 			});
 		}
 
 		protected byte[] decryptConstant_v17_r73764_native(DecrypterInfo info, byte[] encrypted, uint offs, uint key) {
-			var x86Emu = new x86Emulator(new PeImage(fileData));
-			return decrypt(encrypted, key, magic => (byte)x86Emu.emulate((uint)nativeMethod.RVA, magic));
+			return decryptConstant_v17_r73764_native(info, encrypted, offs, key, defaultDecryptKey_v17);
 		}
 
-		static byte[] decrypt(byte[] encrypted, uint key, Func<uint, byte> decryptFunc) {
+		protected byte[] decryptConstant_v17_r73764_native(DecrypterInfo info, byte[] encrypted, uint offs, uint key1, byte[] key2) {
+			var x86Emu = new x86Emulator(new PeImage(fileData));
+			return decrypt(encrypted, key1, (magic, i) => (byte)(x86Emu.emulate((uint)nativeMethod.RVA, magic) ^ key2[i & 7]));
+		}
+
+		static byte[] decrypt(byte[] encrypted, uint key, Func<uint, int, byte> decryptFunc) {
 			var reader = new BinaryReader(new MemoryStream(encrypted));
 			var decrypted = new byte[reader.ReadInt32() ^ key];
 			for (int i = 0; i < decrypted.Length; i++) {
 				uint magic = Utils.readEncodedUInt32(reader);
-				decrypted[i] = decryptFunc(magic);
+				decrypted[i] = decryptFunc(magic, i);
 			}
 
 			return decrypted;
