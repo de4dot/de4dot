@@ -37,6 +37,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v17_r74788_normal,
 			v17_r74788_dynamic,
 			v17_r74788_native,
+			v17_r74816_normal,
+			v17_r74816_dynamic,
+			v17_r74816_native,
 		}
 
 		class DecrypterInfoV17 : DecrypterInfo {
@@ -93,11 +96,14 @@ namespace de4dot.code.deobfuscators.Confuser {
 				switch (version) {
 				case ConfuserVersion.v17_r74708_normal:
 				case ConfuserVersion.v17_r74788_normal:
+				case ConfuserVersion.v17_r74816_normal:
 					return findKey4_normal(method, out key);
 				case ConfuserVersion.v17_r74708_dynamic:
 				case ConfuserVersion.v17_r74708_native:
 				case ConfuserVersion.v17_r74788_dynamic:
 				case ConfuserVersion.v17_r74788_native:
+				case ConfuserVersion.v17_r74816_dynamic:
+				case ConfuserVersion.v17_r74816_native:
 					return findKey4_other(method, out key);
 				default:
 					throw new ApplicationException("Invalid version");
@@ -152,6 +158,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 				case ConfuserVersion.v17_r74788_normal:
 				case ConfuserVersion.v17_r74788_dynamic:
 				case ConfuserVersion.v17_r74788_native:
+				case ConfuserVersion.v17_r74816_normal:
+				case ConfuserVersion.v17_r74816_dynamic:
+				case ConfuserVersion.v17_r74816_native:
 					return findKey5_v17_r74788(method, out key);
 				default:
 					key = 0;
@@ -209,7 +218,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 			var method = getDecryptMethod();
 			if (method == null)
 				return;
-			if (DotNetUtils.callsMethod(method, "System.Reflection.Module System.Reflection.Assembly::GetModule(System.String)"))
+			if (DotNetUtils.callsMethod(method, "System.String System.Reflection.Module::get_ScopeName()"))
+				initVersion(method, ConfuserVersion.v17_r74816_normal, ConfuserVersion.v17_r74816_dynamic, ConfuserVersion.v17_r74816_native);
+			else if (DotNetUtils.callsMethod(method, "System.Reflection.Module System.Reflection.Assembly::GetModule(System.String)"))
 				initVersion(method, ConfuserVersion.v17_r74788_normal, ConfuserVersion.v17_r74788_dynamic, ConfuserVersion.v17_r74788_native);
 			else
 				initVersion(method, ConfuserVersion.v17_r74708_normal, ConfuserVersion.v17_r74708_dynamic, ConfuserVersion.v17_r74708_native);
@@ -266,6 +277,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v17_r74788_normal: return decryptConstant_v17_r74788_normal(info, encrypted, offs, typeCode);
 			case ConfuserVersion.v17_r74788_dynamic: return decryptConstant_v17_r74788_dynamic(info, encrypted, offs, typeCode);
 			case ConfuserVersion.v17_r74788_native: return decryptConstant_v17_r74788_native(info, encrypted, offs, typeCode);
+			case ConfuserVersion.v17_r74816_normal: return decryptConstant_v17_r74788_normal(info, encrypted, offs, typeCode);
+			case ConfuserVersion.v17_r74816_dynamic: return decryptConstant_v17_r74788_dynamic(info, encrypted, offs, typeCode);
+			case ConfuserVersion.v17_r74816_native: return decryptConstant_v17_r74788_native(info, encrypted, offs, typeCode);
 			default:
 				throw new ApplicationException("Invalid version");
 			}
