@@ -290,5 +290,12 @@ namespace de4dot.blocks {
 				throw new ApplicationException("Could not remove dead block");
 			block.removeGuaranteedDeadBlock();
 		}
+
+		public void add(Block block) {
+			if (block.Parent != null)
+				throw new ApplicationException("Block already has a parent");
+			baseBlocks.Add(block);
+			block.Parent = this;
+		}
 	}
 }
