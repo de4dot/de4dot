@@ -41,6 +41,9 @@ namespace de4dot.blocks.cflow {
 			if (isSwitchType1(switchBlock) && deobfuscateType1(switchBlock))
 				return true;
 
+			if (isSwitchType2(switchBlock) && deobfuscateType2(switchBlock))
+				return true;
+
 			if (switchBlock.FirstInstr.isLdloc() && fixSwitchBranch(switchBlock))
 				return true;
 
@@ -58,6 +61,36 @@ namespace de4dot.blocks.cflow {
 
 		static bool isSwitchType1(Block switchBlock) {
 			return switchBlock.FirstInstr.isLdloc();
+		}
+
+		bool isSwitchType2(Block switchBlock) {
+			VariableDefinition local = null;
+			foreach (var instr in switchBlock.Instructions) {
+				if (!instr.isLdloc())
+					continue;
+				local = Instr.getLocalVar(blocks.Locals, instr);
+				break;
+			}
+			if (local == null)
+				return false;
+
+			foreach (var source in switchBlock.Sources) {
+				var instrs = source.Instructions;
+				for (int i = 1; i < instrs.Count; i++) {
+					var ldci4 = instrs[i - 1];
+					if (!ldci4.isLdcI4())
+						continue;
+					var stloc = instrs[i];
+					if (!stloc.isStloc())
+						continue;
+					if (Instr.getLocalVar(blocks.Locals, stloc) != local)
+						continue;
+
+					return true;
+				}
+			}
+
+			return false;
 		}
 
 		bool isStLdlocBranch(Block switchBlock, bool isSwitch) {
@@ -293,6 +326,83 @@ namespace de4dot.blocks.cflow {
 			}
 
 			return changed;
+		}
+
+		bool deobfuscateType2(Block switchBlock) {
+			bool changed = false;
+
+			var bccSources = new List<Block>();
+			foreach (var source in new List<Block>(switchBlock.Sources)) {
+				if (source.LastInstr.isConditionalBranch()) {
+					bccSources.Add(source);
+					continue;
+				}
+				if (!source.canAppend(switchBlock))
+					continue;
+				if (!willHaveKnownTarget(switchBlock, source))
+					continue;
+
+				source.append(switchBlock);
+				changed = true;
+			}
+
+			foreach (var bccSource in bccSources) {
+				if (!willHaveKnownTarget(switchBlock, bccSource))
+					continue;
+				var consts = getBccLocalConstants(bccSource);
+				if (consts.Count == 0)
+					continue;
+				var newFallThrough = createBlock(consts, bccSource.FallThrough);
+				var newTarget = createBlock(consts, bccSource.Targets[0]);
+				var oldFallThrough = bccSource.FallThrough;
+				var oldTarget = bccSource.Targets[0];
+				bccSource.setNewFallThrough(newFallThrough);
+				bccSource.setNewTarget(0, newTarget);
+				newFallThrough.setNewFallThrough(oldFallThrough);
+				newTarget.setNewFallThrough(oldTarget);
+				changed = true;
+			}
+
+			return changed;
+		}
+
+		static Block createBlock(Dictionary<VariableDefinition, int> consts, Block fallThrough) {
+			var block = new Block();
+			foreach (var kv in consts) {
+				block.Instructions.Add(new Instr(DotNetUtils.createLdci4(kv.Value)));
+				block.Instructions.Add(new Instr(Instruction.Create(OpCodes.Stloc, kv.Key)));
+			}
+			fallThrough.Parent.add(block);
+			return block;
+		}
+
+		Dictionary<VariableDefinition, int> getBccLocalConstants(Block block) {
+			var dict = new Dictionary<VariableDefinition, int>();
+			var instrs = block.Instructions;
+			for (int i = 0; i < instrs.Count; i++) {
+				var instr = instrs[i];
+				if (instr.isStloc()) {
+					var local = Instr.getLocalVar(blocks.Locals, instr);
+					if (local == null)
+						continue;
+					var ldci4 = i == 0 ? null : instrs[i - 1];
+					if (ldci4 == null || !ldci4.isLdcI4())
+						dict.Remove(local);
+					else
+						dict[local] = ldci4.getLdcI4Value();
+				}
+				else if (instr.isLdloc()) {
+					var local = Instr.getLocalVar(blocks.Locals, instr);
+					if (local != null)
+						dict.Remove(local);
+				}
+				else if (instr.OpCode.Code == Code.Ldloca || instr.OpCode.Code == Code.Ldloca_S) {
+					var local = instr.Operand as VariableDefinition;
+					if (local != null)
+						dict.Remove(local);
+				}
+			}
+			return dict;
 		}
 
 		bool emulateGetTarget(Block switchBlock, out Block target) {
