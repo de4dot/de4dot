@@ -121,7 +121,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			ushort _c = (ushort)seed;
 			ushort m = _c; ushort c = _m;
 			for (int i = 0; i < decrypted.Length; i++) {
-				decrypted[i] = (byte)(encrypted[i] ^ ((seed * m + c) & 0xFF));
+				decrypted[i] = (byte)(encrypted[i] ^ (seed * m + c));
 				m = (ushort)(seed * m + _m);
 				c = (ushort)(seed * c + _c);
 			}

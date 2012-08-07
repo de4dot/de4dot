@@ -71,6 +71,14 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		public static FieldDefinition findStreamField(MethodDefinition method, TypeDefinition declaringType) {
+			return findStreamField(method, declaringType, "System.IO.Stream");
+		}
+
+		public static FieldDefinition findMemoryStreamField(MethodDefinition method, TypeDefinition declaringType) {
+			return findStreamField(method, declaringType, "System.IO.MemoryStream");
+		}
+
+		public static FieldDefinition findStreamField(MethodDefinition method, TypeDefinition declaringType, string fieldTypeName) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 1; i++) {
 				var newobj = instrs[i];
@@ -86,7 +94,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				var field = stsfld.Operand as FieldDefinition;
 				if (field == null || field.DeclaringType != declaringType)
 					continue;
-				if (field.FieldType.FullName != "System.IO.MemoryStream")
+				if (field.FieldType.FullName != fieldTypeName)
 					continue;
 
 				return field;

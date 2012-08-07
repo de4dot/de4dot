@@ -24,12 +24,14 @@ using System.Text;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using de4dot.blocks;
+using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.Confuser {
 	abstract class ConstantsDecrypterBase {
 		protected ModuleDefinition module;
 		protected byte[] fileData;
 		protected ISimpleDeobfuscator simpleDeobfuscator;
+		protected MethodDefinition nativeMethod;
 		MethodDefinitionAndDeclaringTypeDict<DecrypterInfo> methodToDecrypterInfo = new MethodDefinitionAndDeclaringTypeDict<DecrypterInfo>();
 		FieldDefinitionAndDeclaringTypeDict<bool> fields = new FieldDefinitionAndDeclaringTypeDict<bool>();
 		protected EmbeddedResource resource;
@@ -37,7 +39,6 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		public class DecrypterInfo {
 			public MethodDefinition decryptMethod;
-			public MethodDefinition nativeMethod;
 			public uint key0, key1, key2, key3;
 			public byte doubleType, singleType, int32Type, int64Type, stringType;
 
@@ -48,7 +49,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 					throw new ApplicationException("Could not find all type codes");
 			}
 
-			bool initializeKeys() {
+			protected virtual bool initializeKeys() {
 				if (!findKey0(decryptMethod, out key0))
 					return false;
 				if (!findKey1(decryptMethod, out key1))
@@ -59,7 +60,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				return true;
 			}
 
-			static bool findKey0(MethodDefinition method, out uint key) {
+			protected static bool findKey0(MethodDefinition method, out uint key) {
 				var instrs = method.Body.Instructions;
 				for (int i = 0; i < instrs.Count - 5; i++) {
 					if (!DotNetUtils.isLdloc(instrs[i]))
@@ -104,7 +105,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				return false;
 			}
 
-			static bool findKey2Key3(MethodDefinition method, out uint key2, out uint key3) {
+			protected static bool findKey2Key3(MethodDefinition method, out uint key2, out uint key3) {
 				var instrs = method.Body.Instructions;
 				for (int i = 0; i < instrs.Count - 3; i++) {
 					var ldci4_1 = instrs[i];
@@ -231,6 +232,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		public abstract bool Detected { get; }
 
+		public MethodDefinition NativeMethod {
+			get { return nativeMethod; }
+		}
+
 		public EmbeddedResource Resource {
 			get { return resource; }
 		}
@@ -271,6 +276,129 @@ namespace de4dot.code.deobfuscators.Confuser {
 				simpleDeobfuscator.deobfuscate(info.decryptMethod);
 				info.initialize();
 			}
+		}
+
+		protected void setConstantsData(byte[] constants) {
+			reader = new BinaryReader(new MemoryStream(constants));
+		}
+
+		protected EmbeddedResource findResource(MethodDefinition method) {
+			return DotNetUtils.getResource(module, DotNetUtils.getCodeStrings(method)) as EmbeddedResource;
+		}
+
+		protected static MethodDefinition findNativeMethod(MethodDefinition method) {
+			var instrs = method.Body.Instructions;
+			for (int i = 0; i < instrs.Count; i++) {
+				var call = instrs[i];
+				if (call.OpCode.Code != Code.Call)
+					continue;
+				var calledMethod = call.Operand as MethodDefinition;
+				if (calledMethod == null || !calledMethod.IsStatic || !calledMethod.IsNative)
+					continue;
+				if (!DotNetUtils.isMethod(calledMethod, "System.Int32", "(System.Int32)"))
+					continue;
+
+				return calledMethod;
+			}
+			return null;
+		}
+
+		static VariableDefinition getDynamicLocal_v17_r73740(MethodDefinition method) {
+			var instrs = method.Body.Instructions;
+			for (int i = 0; i < instrs.Count; i++) {
+				i = ConfuserUtils.findCallMethod(instrs, i, Code.Callvirt, "System.Byte System.IO.BinaryReader::ReadByte()");
+				if (i < 0 || i + 5 >= instrs.Count)
+					break;
+				if (!DotNetUtils.isStloc(instrs[i + 1]))
+					continue;
+				var ldloc = instrs[i + 2];
+				if (!DotNetUtils.isLdloc(ldloc))
+					continue;
+				if (!DotNetUtils.isLdloc(instrs[i + 3]))
+					continue;
+				var ldci4 = instrs[i + 4];
+				if (!DotNetUtils.isLdcI4(ldci4) || DotNetUtils.getLdcI4Value(ldci4) != 0x7F)
+					continue;
+				if (instrs[i + 5].OpCode.Code != Code.And)
+					continue;
+
+				return DotNetUtils.getLocalVar(method.Body.Variables, ldloc);
+			}
+			return null;
+		}
+
+		static int getDynamicEndIndex_v17_r73740(MethodDefinition method, VariableDefinition local) {
+			var instrs = method.Body.Instructions;
+			for (int i = 0; i < instrs.Count - 5; i++) {
+				var stloc = instrs[i];
+				if (!DotNetUtils.isStloc(stloc) || DotNetUtils.getLocalVar(method.Body.Variables, stloc) != local)
+					continue;
+				if (!DotNetUtils.isLdloc(instrs[i + 1]))
+					continue;
+				if (!DotNetUtils.isLdloc(instrs[i + 2]))
+					continue;
+				var ldloc = instrs[i + 3];
+				if (!DotNetUtils.isLdloc(ldloc) || DotNetUtils.getLocalVar(method.Body.Variables, ldloc) != local)
+					continue;
+				if (instrs[i + 4].OpCode.Code != Code.Conv_U1)
+					continue;
+				if (instrs[i + 5].OpCode.Code != Code.Stelem_I1)
+					continue;
+
+				return i;
+			}
+			return -1;
+		}
+
+		static int getDynamicStartIndex_v17_r73740(MethodDefinition method, int endIndex) {
+			if (endIndex < 0)
+				return -1;
+			var instrs = method.Body.Instructions;
+			for (int i = endIndex; i >= 0; i--) {
+				if (i == 0)
+					return i == endIndex ? -1 : i + 1;
+				if (instrs[i].OpCode.FlowControl == FlowControl.Next)
+					continue;
+
+				return i + 1;
+			}
+			return -1;
+		}
+
+		protected byte[] decryptConstant_v17_r73740_dynamic(DecrypterInfo info, byte[] encrypted, uint offs, uint key) {
+			var local = getDynamicLocal_v17_r73740(info.decryptMethod);
+			if (local == null)
+				throw new ApplicationException("Could not find local");
+
+			int endIndex = getDynamicEndIndex_v17_r73740(info.decryptMethod, local);
+			int startIndex = getDynamicStartIndex_v17_r73740(info.decryptMethod, endIndex);
+			if (startIndex < 0)
+				throw new ApplicationException("Could not find start/end index");
+
+			var constReader = new ConstantsReader(info.decryptMethod);
+			return decrypt(encrypted, key, magic => {
+				constReader.setConstantInt32(local, magic);
+				int index = startIndex, result;
+				if (!constReader.getNextInt32(ref index, out result) || index != endIndex)
+					throw new ApplicationException("Could not decrypt integer");
+				return (byte)result;
+			});
+		}
+
+		protected byte[] decryptConstant_v17_r73764_native(DecrypterInfo info, byte[] encrypted, uint offs, uint key) {
+			var x86Emu = new x86Emulator(new PeImage(fileData));
+			return decrypt(encrypted, key, magic => (byte)x86Emu.emulate((uint)nativeMethod.RVA, magic));
+		}
+
+		static byte[] decrypt(byte[] encrypted, uint key, Func<uint, byte> decryptFunc) {
+			var reader = new BinaryReader(new MemoryStream(encrypted));
+			var decrypted = new byte[reader.ReadInt32() ^ key];
+			for (int i = 0; i < decrypted.Length; i++) {
+				uint magic = Utils.readEncodedUInt32(reader);
+				decrypted[i] = decryptFunc(magic);
+			}
+
+			return decrypted;
 		}
 
 		public object decryptInt32(MethodDefinition caller, MethodDefinition decryptMethod, object[] args) {
