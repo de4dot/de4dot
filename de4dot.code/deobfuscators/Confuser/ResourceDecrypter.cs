@@ -41,7 +41,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v17_r73404,
 			v17_r73822,
 			v18_r75367,
-			vXX,
+			v18_r75369,
 		}
 
 		public IEnumerable<FieldDefinition> Fields {
@@ -103,8 +103,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 					tmpVersion = ConfuserVersion.v17_r73822;
 				else if (findKey0_v18_r75367(tmpHandler, out key0) && findKey1_v17_r73404(tmpHandler, out key1))
 					tmpVersion = ConfuserVersion.v18_r75367;
-				else if (findKey0_vXX(tmpHandler, out key0) && findKey1_vXX(tmpHandler, out key1))
-					tmpVersion = ConfuserVersion.vXX;
+				else if (findKey0_v18_r75369(tmpHandler, out key0) && findKey1_v18_r75369(tmpHandler, out key1))
+					tmpVersion = ConfuserVersion.v18_r75369;
 				else
 					return false;
 			}
@@ -201,7 +201,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		static bool findKey0_vXX(MethodDefinition method, out byte key0) {
+		static bool findKey0_v18_r75369(MethodDefinition method, out byte key0) {
 			var instrs = method.Body.Instructions;
 			for (int index = 0; index < instrs.Count; index++) {
 				index = ConfuserUtils.findCallMethod(instrs, index, Code.Callvirt, "System.Int32 System.IO.Stream::Read(System.Byte[],System.Int32,System.Int32)");
@@ -230,7 +230,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		static bool findKey1_vXX(MethodDefinition method, out byte key1) {
+		static bool findKey1_v18_r75369(MethodDefinition method, out byte key1) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 4; i++) {
 				int index = i;
@@ -342,7 +342,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v17_r73404: return decrypt_v17_r73404();
 			case ConfuserVersion.v17_r73822: return decrypt_v17_r73404();
 			case ConfuserVersion.v18_r75367: return decrypt_v18_r75367();
-			case ConfuserVersion.vXX: return decrypt_v18_r75367();
+			case ConfuserVersion.v18_r75369: return decrypt_v18_r75367();
 			default: throw new ApplicationException("Unknown version");
 			}
 		}
