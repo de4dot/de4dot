@@ -34,10 +34,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v14_r57884,
 			v14_r58004,
 			v14_r58564,
-			v15a_r59014,
+			v15_r59014,
 			v16_r71742,
 			// Removed in Confuser 1.7 r73404 and restored in Confuser 1.7 r73605
-			vXX,
+			v17_r73605,
 		}
 
 		public MemoryMethodsDecrypter(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator)
@@ -70,7 +70,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				if (calls <= 2)
 					version = ConfuserVersion.v14_r58564;
 				else if (calls == 4)
-					version = ConfuserVersion.v15a_r59014;
+					version = ConfuserVersion.v15_r59014;
 				else
 					return false;
 			}
@@ -79,7 +79,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			else if (DotNetUtils.callsMethod(initMethod, "System.Int32 System.Object::GetHashCode()"))
 				version = ConfuserVersion.v16_r71742;
 			else
-				version = ConfuserVersion.vXX;
+				version = ConfuserVersion.v17_r73605;
 
 			return true;
 		}
@@ -113,14 +113,14 @@ namespace de4dot.code.deobfuscators.Confuser {
 				return true;
 
 			case ConfuserVersion.v14_r58564:
-			case ConfuserVersion.v15a_r59014:
+			case ConfuserVersion.v15_r59014:
 				return initializeKeys_v14_r58564();
 
 			case ConfuserVersion.v16_r71742:
 				return initializeKeys_v16_r71742();
 
-			case ConfuserVersion.vXX:
-				return initializeKeys_vXX();
+			case ConfuserVersion.v17_r73605:
+				return initializeKeys_v17_r73605();
 
 			default:
 				throw new ApplicationException("Unknown version");
@@ -167,7 +167,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return true;
 		}
 
-		bool initializeKeys_vXX() {
+		bool initializeKeys_v17_r73605() {
 			simpleDeobfuscator.deobfuscate(initMethod);
 			if (!findLKey0(initMethod, out lkey0))
 				return false;
@@ -268,9 +268,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v14_r57884: return decrypt_v14_r57884(peImage, fileData);
 			case ConfuserVersion.v14_r58004: return decrypt_v14_r58004(peImage, fileData);
 			case ConfuserVersion.v14_r58564: return decrypt_v14_r58004(peImage, fileData);
-			case ConfuserVersion.v15a_r59014:return decrypt_v15a_r59014(peImage, fileData);
+			case ConfuserVersion.v15_r59014:return decrypt_v15_r59014(peImage, fileData);
 			case ConfuserVersion.v16_r71742: return decrypt_v16_r71742(peImage, fileData);
-			case ConfuserVersion.vXX: return decrypt_vXX(peImage, fileData);
+			case ConfuserVersion.v17_r73605: return decrypt_v17_r73605(peImage, fileData);
 			default: throw new ApplicationException("Unknown version");
 			}
 		}
@@ -346,7 +346,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return true;
 		}
 
-		bool decrypt_v15a_r59014(PeImage peImage, byte[] fileData) {
+		bool decrypt_v15_r59014(PeImage peImage, byte[] fileData) {
 			methodsData = decryptMethodsData_v14_r57884(peImage, true);
 			return decryptImage_v14_r58004(peImage, fileData);
 		}
@@ -356,7 +356,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return decryptImage_v16_r71742(peImage, fileData);
 		}
 
-		bool decrypt_vXX(PeImage peImage, byte[] fileData) {
+		bool decrypt_v17_r73605(PeImage peImage, byte[] fileData) {
 			if (peImage.OptionalHeader.checkSum == 0)
 				return false;
 
