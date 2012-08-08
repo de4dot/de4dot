@@ -174,17 +174,17 @@ namespace de4dot.code.deobfuscators.Confuser {
 			do {
 				constantsDecrypterV18.find();
 				if (constantsDecrypterV18.Detected) {
-					initializeConstantsDecrypter();
+					initializeConstantsDecrypterV18();
 					break;
 				}
 				constantsDecrypterV17.find();
 				if (constantsDecrypterV17.Detected) {
-					initializeConstantsDecrypter17();
+					initializeConstantsDecrypterV17();
 					break;
 				}
 				constantsDecrypterV15.find();
 				if (constantsDecrypterV15.Detected) {
-					initializeConstantsDecrypter15();
+					initializeConstantsDecrypterV15();
 					break;
 				}
 			} while (false);
@@ -314,8 +314,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 			base.deobfuscateBegin();
 
 			removeObfuscatorAttribute();
-			initializeConstantsDecrypter();
-			initializeConstantsDecrypter15();
+			initializeConstantsDecrypterV18();
+			initializeConstantsDecrypterV17();
+			initializeConstantsDecrypterV15();
 			initializeStringDecrypter();
 
 			if (jitMethodsDecrypter != null) {
@@ -408,7 +409,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		bool hasInitializedConstantsDecrypter = false;
-		void initializeConstantsDecrypter() {
+		void initializeConstantsDecrypterV18() {
 			if (hasInitializedConstantsDecrypter || (constantsDecrypterV18 == null || !constantsDecrypterV18.Detected))
 				return;
 			hasInitializedConstantsDecrypter = true;
@@ -434,12 +435,12 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		bool hasInitializedConstantsDecrypter15 = false;
-		void initializeConstantsDecrypter15() {
+		void initializeConstantsDecrypterV15() {
 			initialize(constantsDecrypterV15, ref hasInitializedConstantsDecrypter15);
 		}
 
 		bool hasInitializedConstantsDecrypter17 = false;
-		void initializeConstantsDecrypter17() {
+		void initializeConstantsDecrypterV17() {
 			initialize(constantsDecrypterV17, ref hasInitializedConstantsDecrypter17);
 		}
 
