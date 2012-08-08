@@ -48,6 +48,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v17_r74708_native,
 			v18_r75367_normal,
 			v18_r75367_native,
+			v19_r76101_normal,
+			v19_r76101_native,
 		}
 
 		enum ProxyCreatorType {
@@ -212,10 +214,12 @@ namespace de4dot.code.deobfuscators.Confuser {
 				break;
 
 			case ConfuserVersion.v18_r75367_normal:
+			case ConfuserVersion.v19_r76101_normal:
 				getCallInfo_v18_r75367_normal(info, creatorInfo, out calledMethod, out callOpcode);
 				break;
 
 			case ConfuserVersion.v18_r75367_native:
+			case ConfuserVersion.v19_r76101_native:
 				getCallInfo_v18_r75367_native(info, creatorInfo, out calledMethod, out callOpcode);
 				break;
 
@@ -500,6 +504,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 						theVersion = ConfuserVersion.v18_r75367_native;
 					else if (findMagic_v18_r75367(method, out magic))
 						theVersion = ConfuserVersion.v18_r75367_normal;
+					else if (findMagic_v19_r76101(method, out magic))
+						theVersion = ConfuserVersion.v19_r76101_normal;
+					else if ((nativeMethod = findNativeMethod_v19_r76101(method)) != null)
+						theVersion = ConfuserVersion.v19_r76101_native;
 					else
 						continue;
 				}
@@ -526,6 +534,63 @@ namespace de4dot.code.deobfuscators.Confuser {
 				methodToInfo.add(method, new ProxyCreatorInfo(method, proxyType, theVersion, magic, nativeMethod, callvirtChar));
 				version = theVersion;
 			}
+		}
+
+		static bool findMagic_v19_r76101(MethodDefinition method, out uint magic) {
+			var instrs = method.Body.Instructions;
+			for (int i = 0; i < instrs.Count - 7; i++) {
+				var ldci4_1 = instrs[i];
+				if (!DotNetUtils.isLdcI4(ldci4_1) || DotNetUtils.getLdcI4Value(ldci4_1) != 24)
+					continue;
+				if (instrs[i + 1].OpCode.Code != Code.Shl)
+					continue;
+				if (instrs[i + 2].OpCode.Code != Code.Or)
+					continue;
+				if (!DotNetUtils.isStloc(instrs[i + 3]))
+					continue;
+				if (!DotNetUtils.isLdloc(instrs[i + 4]))
+					continue;
+				if (!DotNetUtils.isLdloc(instrs[i + 5]))
+					continue;
+				var ldci4_2 = instrs[i + 6];
+				if (!DotNetUtils.isLdcI4(ldci4_2))
+					continue;
+				if (instrs[i + 7].OpCode.Code != Code.Xor)
+					continue;
+
+				magic = (uint)DotNetUtils.getLdcI4Value(ldci4_2);
+				return true;
+			}
+			magic = 0;
+			return false;
+		}
+
+		static MethodDefinition findNativeMethod_v19_r76101(MethodDefinition method) {
+			var instrs = method.Body.Instructions;
+			for (int i = 0; i < instrs.Count - 6; i++) {
+				var ldci4 = instrs[i];
+				if (!DotNetUtils.isLdcI4(ldci4) || DotNetUtils.getLdcI4Value(ldci4) != 24)
+					continue;
+				if (instrs[i + 1].OpCode.Code != Code.Shl)
+					continue;
+				if (instrs[i + 2].OpCode.Code != Code.Or)
+					continue;
+				if (!DotNetUtils.isStloc(instrs[i + 3]))
+					continue;
+				if (!DotNetUtils.isLdloc(instrs[i + 4]))
+					continue;
+				if (!DotNetUtils.isLdloc(instrs[i + 5]))
+					continue;
+				var call = instrs[i + 6];
+				if (call.OpCode.Code != Code.Call)
+					continue;
+				var calledMethod = call.Operand as MethodDefinition;
+				if (calledMethod == null || calledMethod.Body != null || !calledMethod.IsNative)
+					continue;
+
+				return calledMethod;
+			}
+			return null;
 		}
 
 		static bool findMagic_v18_r75367(MethodDefinition method, out uint magic) {
