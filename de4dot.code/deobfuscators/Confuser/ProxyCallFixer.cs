@@ -25,6 +25,7 @@ using de4dot.blocks;
 using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.Confuser {
+	// Since 1.8 r75367
 	class ProxyCallFixer : ProxyCallFixer2 {
 		byte[] fileData;
 		ISimpleDeobfuscator simpleDeobfuscator;
