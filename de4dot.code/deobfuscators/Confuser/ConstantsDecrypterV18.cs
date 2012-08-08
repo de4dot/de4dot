@@ -47,9 +47,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v18_r75367_normal,
 			v18_r75367_dynamic,
 			v18_r75367_native,
-			vXX_normal,
-			vXX_dynamic,
-			vXX_native,
+			v18_r75369_normal,
+			v18_r75369_dynamic,
+			v18_r75369_native,
 		}
 
 		public class DecrypterInfo {
@@ -102,9 +102,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 				case ConfuserVersion.v18_r75367_dynamic:
 				case ConfuserVersion.v18_r75367_native:
 					return hash1(key0l ^ magic);
-				case ConfuserVersion.vXX_normal:
-				case ConfuserVersion.vXX_dynamic:
-				case ConfuserVersion.vXX_native:
+				case ConfuserVersion.v18_r75369_normal:
+				case ConfuserVersion.v18_r75369_dynamic:
+				case ConfuserVersion.v18_r75369_native:
 					return hash1(key0l * magic);
 				default:
 					throw new ApplicationException("Invalid version");
@@ -189,8 +189,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 			var info = new DecrypterInfo(this, method, ConfuserVersion.Unknown);
 			if (findKeys_v18_r75367(info))
 				initVersion(cctor, ConfuserVersion.v18_r75367_normal, ConfuserVersion.v18_r75367_dynamic, ConfuserVersion.v18_r75367_native);
-			else if (findKeys_vXX(info))
-				initVersion(cctor, ConfuserVersion.vXX_normal, ConfuserVersion.vXX_dynamic, ConfuserVersion.vXX_native);
+			else if (findKeys_v18_r75369(info))
+				initVersion(cctor, ConfuserVersion.v18_r75369_normal, ConfuserVersion.v18_r75369_dynamic, ConfuserVersion.v18_r75369_native);
 			else
 				return;
 
@@ -374,10 +374,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v18_r75367_dynamic:
 			case ConfuserVersion.v18_r75367_native:
 				return findKeys_v18_r75367(info);
-			case ConfuserVersion.vXX_normal:
-			case ConfuserVersion.vXX_dynamic:
-			case ConfuserVersion.vXX_native:
-				return findKeys_vXX(info);
+			case ConfuserVersion.v18_r75369_normal:
+			case ConfuserVersion.v18_r75369_dynamic:
+			case ConfuserVersion.v18_r75369_native:
+				return findKeys_v18_r75369(info);
 			default:
 				throw new ApplicationException("Invalid version");
 			}
@@ -393,10 +393,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return true;
 		}
 
-		static bool findKeys_vXX(DecrypterInfo info) {
-			if (!findLKeys_vXX(info))
+		static bool findKeys_v18_r75369(DecrypterInfo info) {
+			if (!findLKeys_v18_r75369(info))
 				return false;
-			if (!findKey0_vXX(info))
+			if (!findKey0_v18_r75369(info))
 				return false;
 			if (!findKey0d_v18_r75367(info))
 				return false;
@@ -484,7 +484,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		static bool findLKeys_vXX(DecrypterInfo info) {
+		static bool findLKeys_v18_r75369(DecrypterInfo info) {
 			var instrs = info.method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 8; i++) {
 				var ldci8_1 = instrs[i];
@@ -517,7 +517,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		static bool findKey0_vXX(DecrypterInfo info) {
+		static bool findKey0_v18_r75369(DecrypterInfo info) {
 			var instrs = info.method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 4; i++) {
 				if (!DotNetUtils.isLdloc(instrs[i]))
@@ -541,15 +541,15 @@ namespace de4dot.code.deobfuscators.Confuser {
 		byte[] decryptResource(byte[] encrypted) {
 			switch (version) {
 			case ConfuserVersion.v18_r75367_normal:
-			case ConfuserVersion.vXX_normal:
+			case ConfuserVersion.v18_r75369_normal:
 				return decryptResource_v18_r75367_normal(encrypted);
 
 			case ConfuserVersion.v18_r75367_dynamic:
-			case ConfuserVersion.vXX_dynamic:
+			case ConfuserVersion.v18_r75369_dynamic:
 				return decryptResource_v18_r75367_dynamic(encrypted);
 
 			case ConfuserVersion.v18_r75367_native:
-			case ConfuserVersion.vXX_native:
+			case ConfuserVersion.v18_r75369_native:
 				return decryptResource_v18_r75367_native(encrypted);
 
 			default:
