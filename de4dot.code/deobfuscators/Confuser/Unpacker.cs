@@ -406,6 +406,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 				var realAsm = new AssemblyDefinition { Name = asm.Name };
 				info.realAssemblyInfo = new RealAssemblyInfo(realAsm, entryPointToken, info.kind);
+				if (module.Name != "Stub.exe")
+					info.realAssemblyInfo.moduleName = module.Name;
 				info.asmFullName = realAsm.Name.FullName;
 				info.asmSimpleName = realAsm.Name.Name;
 			}
