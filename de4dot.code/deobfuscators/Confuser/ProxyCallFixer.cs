@@ -27,7 +27,7 @@ using de4dot.blocks;
 using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.Confuser {
-	class ProxyCallFixerV10 : ProxyCallFixer2 {
+	class ProxyCallFixer : ProxyCallFixer2 {
 		MethodDefinitionAndDeclaringTypeDict<ProxyCreatorInfo> methodToInfo = new MethodDefinitionAndDeclaringTypeDict<ProxyCreatorInfo>();
 		FieldDefinitionAndDeclaringTypeDict<List<MethodDefinition>> fieldToMethods = new FieldDefinitionAndDeclaringTypeDict<List<MethodDefinition>>();
 		string ourAsm;
@@ -135,7 +135,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			}
 		}
 
-		public ProxyCallFixerV10(ModuleDefinition module, byte[] fileData)
+		public ProxyCallFixer(ModuleDefinition module, byte[] fileData)
 			: base(module) {
 			this.fileData = fileData;
 			if (module.Assembly == null || module.Assembly.Name == null)
