@@ -73,9 +73,14 @@ namespace de4dot.code.deobfuscators.Confuser {
 				return false;
 			if (!DotNetUtils.isMethod(method, "System.Void", "()"))
 				return false;
-			if (!DotNetUtils.hasString(method, "COR_ENABLE_PROFILING"))
-				return false;
-			if (!DotNetUtils.hasString(method, "COR_PROFILER"))
+			if (DotNetUtils.hasString(method, "COR_ENABLE_PROFILING") &&
+				DotNetUtils.hasString(method, "COR_PROFILER")) {
+			}
+			else if (DotNetUtils.hasString(method, "COR_") &&
+				DotNetUtils.hasString(method, "ENABLE_PROFILING") &&
+				DotNetUtils.hasString(method, "PROFILER")) {
+			}
+			else
 				return false;
 			if (!DotNetUtils.hasString(method, "Profiler detected"))
 				return false;
