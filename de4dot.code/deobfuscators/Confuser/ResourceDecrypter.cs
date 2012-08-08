@@ -40,6 +40,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v14_r55802,
 			v17_r73404,
 			v17_r73822,
+			v18_r75367,
 			vXX,
 		}
 
@@ -100,6 +101,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 				if (findKey0_v17_r73404(tmpHandler, out key0) && findKey1_v17_r73404(tmpHandler, out key1))
 					tmpVersion = ConfuserVersion.v17_r73822;
+				else if (findKey0_v18_r75367(tmpHandler, out key0) && findKey1_v17_r73404(tmpHandler, out key1))
+					tmpVersion = ConfuserVersion.v18_r75367;
 				else if (findKey0_vXX(tmpHandler, out key0) && findKey1_vXX(tmpHandler, out key1))
 					tmpVersion = ConfuserVersion.vXX;
 				else
@@ -171,6 +174,31 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		EmbeddedResource findResource(MethodDefinition method) {
 			return DotNetUtils.getResource(module, DotNetUtils.getCodeStrings(method)) as EmbeddedResource;
+		}
+
+		static bool findKey0_v18_r75367(MethodDefinition method, out byte key0) {
+			var instrs = method.Body.Instructions;
+			for (int i = 0; i < instrs.Count; i++) {
+				i = ConfuserUtils.findCallMethod(instrs, i, Code.Callvirt, "System.Int32 System.IO.Stream::Read(System.Byte[],System.Int32,System.Int32)");
+				if (i < 0)
+					break;
+				if (i + 3 >= instrs.Count)
+					break;
+
+				if (instrs[i + 1].OpCode.Code != Code.Pop)
+					continue;
+				var ldci4 = instrs[i + 2];
+				if (!DotNetUtils.isLdcI4(ldci4))
+					continue;
+				if (!DotNetUtils.isStloc(instrs[i + 3]))
+					continue;
+
+				key0 = (byte)DotNetUtils.getLdcI4Value(ldci4);
+				return true;
+			}
+
+			key0 = 0;
+			return false;
 		}
 
 		static bool findKey0_vXX(MethodDefinition method, out byte key0) {
@@ -313,7 +341,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v14_r55802: return decrypt_v14_r55802();
 			case ConfuserVersion.v17_r73404: return decrypt_v17_r73404();
 			case ConfuserVersion.v17_r73822: return decrypt_v17_r73404();
-			case ConfuserVersion.vXX: return decrypt_vXX();
+			case ConfuserVersion.v18_r75367: return decrypt_v18_r75367();
+			case ConfuserVersion.vXX: return decrypt_v18_r75367();
 			default: throw new ApplicationException("Unknown version");
 			}
 		}
@@ -341,7 +370,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return decrypted;
 		}
 
-		byte[] decrypt_vXX() {
+		byte[] decrypt_v18_r75367() {
 			var encrypted = resource.GetResourceData();
 			byte k = key0;
 			for (int i = 0; i < encrypted.Length; i++) {
