@@ -508,8 +508,6 @@ namespace de4dot.code.deobfuscators.Confuser {
 						theVersion = ConfuserVersion.v19_r76101_normal;
 					else if ((nativeMethod = findNativeMethod_v19_r76101(method)) != null)
 						theVersion = ConfuserVersion.v19_r76101_native;
-					else
-						continue;
 				}
 				else if (is_v17_r73740(method)) {
 					if (DotNetUtils.callsMethod(method, "System.Boolean System.Type::get_IsArray()")) {
