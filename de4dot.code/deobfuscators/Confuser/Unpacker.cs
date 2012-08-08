@@ -213,9 +213,18 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		static bool findMod(MethodDefinition method, out ulong mod) {
 			var instrs = method.Body.Instructions;
-			for (int i = 0; i < instrs.Count; i++) {
+			for (int i = 0; i < instrs.Count - 1; i++) {
 				var ldci8 = instrs[i];
 				if (ldci8.OpCode.Code != Code.Ldc_I8)
+					continue;
+
+				var call = instrs[i + 1];
+				if (call.OpCode.Code != Code.Call)
+					continue;
+				var calledMethod = call.Operand as MethodReference;
+				if (calledMethod == null)
+					continue;
+				if (!DotNetUtils.isMethod(calledMethod, "System.UInt64", "(System.UInt64,System.UInt64,System.UInt64)"))
 					continue;
 
 				mod = (ulong)(long)ldci8.Operand;
