@@ -41,7 +41,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v17_r73477,
 			v17_r73479,
 			v17_r74021,
-			vXX,
+			v18_r75402,
 		}
 
 		struct MethodDataIndexes {
@@ -81,7 +81,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				break;
 
 			case 39: theVersion = ConfuserVersion.v17_r74021; break;
-			case 27: theVersion = ConfuserVersion.vXX; break;
+			case 27: theVersion = ConfuserVersion.v18_r75402; break;
 			default: return false;
 			}
 
@@ -170,7 +170,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v17_r73477: return initializeKeys_v17_r73404();
 			case ConfuserVersion.v17_r73479: return initializeKeys_v17_r73404();
 			case ConfuserVersion.v17_r74021: return initializeKeys_v17_r73404();
-			case ConfuserVersion.vXX: return initializeKeys_vXX();
+			case ConfuserVersion.v18_r75402: return initializeKeys_v18_r75402();
 			default: throw new ApplicationException("Invalid version");
 			}
 		}
@@ -193,7 +193,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return true;
 		}
 
-		bool initializeKeys_vXX() {
+		bool initializeKeys_v18_r75402() {
 			simpleDeobfuscator.deobfuscate(initMethod);
 			if (!findLKey0(initMethod, out lkey0))
 				return false;
@@ -272,7 +272,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v17_r73477: return initializeMethodDataIndexes_v17_r73477(compileMethod);
 			case ConfuserVersion.v17_r73479: return initializeMethodDataIndexes_v17_r73477(compileMethod);
 			case ConfuserVersion.v17_r74021: return initializeMethodDataIndexes_v17_r73477(compileMethod);
-			case ConfuserVersion.vXX: return initializeMethodDataIndexes_v17_r73477(compileMethod);
+			case ConfuserVersion.v18_r75402: return initializeMethodDataIndexes_v17_r73477(compileMethod);
 			default: throw new ApplicationException("Invalid version");
 			}
 		}
@@ -413,7 +413,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v17_r73477: return decrypt_v17_r73477(peImage, fileData, ref dumpedMethods);
 			case ConfuserVersion.v17_r73479: return decrypt_v17_r73479(peImage, fileData, ref dumpedMethods);
 			case ConfuserVersion.v17_r74021: return decrypt_v17_r73479(peImage, fileData, ref dumpedMethods);
-			case ConfuserVersion.vXX: return decrypt_vXX(peImage, fileData, ref dumpedMethods);
+			case ConfuserVersion.v18_r75402: return decrypt_v18_r75402(peImage, fileData, ref dumpedMethods);
 			default: throw new ApplicationException("Unknown version");
 			}
 		}
@@ -491,16 +491,16 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return decrypt(peImage, fileData, new DecryptMethodData_v17_r73479());
 		}
 
-		bool decrypt_vXX(PeImage peImage, byte[] fileData, ref DumpedMethods dumpedMethods) {
+		bool decrypt_v18_r75402(PeImage peImage, byte[] fileData, ref DumpedMethods dumpedMethods) {
 			if (peImage.OptionalHeader.checkSum == 0)
 				return false;
 			methodsData = decryptMethodsData_v17_r73404(peImage);
-			dumpedMethods = decrypt_vXX(peImage, fileData);
+			dumpedMethods = decrypt_v18_r75402(peImage, fileData);
 			return dumpedMethods != null;
 		}
 
-		DumpedMethods decrypt_vXX(PeImage peImage, byte[] fileData) {
-			return decrypt(peImage, fileData, new DecryptMethodData_vXX(this));
+		DumpedMethods decrypt_v18_r75402(PeImage peImage, byte[] fileData) {
+			return decrypt(peImage, fileData, new DecryptMethodData_v18_r75402(this));
 		}
 
 		abstract class DecryptMethodData {
@@ -543,10 +543,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 			}
 		}
 
-		class DecryptMethodData_vXX : DecryptMethodData {
+		class DecryptMethodData_v18_r75402 : DecryptMethodData {
 			JitMethodsDecrypter jitDecrypter;
 
-			public DecryptMethodData_vXX(JitMethodsDecrypter jitDecrypter) {
+			public DecryptMethodData_v18_r75402(JitMethodsDecrypter jitDecrypter) {
 				this.jitDecrypter = jitDecrypter;
 			}
 
