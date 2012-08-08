@@ -268,7 +268,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v14_r57884: return decrypt_v14_r57884(peImage, fileData);
 			case ConfuserVersion.v14_r58004: return decrypt_v14_r58004(peImage, fileData);
 			case ConfuserVersion.v14_r58564: return decrypt_v14_r58004(peImage, fileData);
-			case ConfuserVersion.v15_r59014:return decrypt_v15_r59014(peImage, fileData);
+			case ConfuserVersion.v15_r59014: return decrypt_v15_r59014(peImage, fileData);
 			case ConfuserVersion.v16_r71742: return decrypt_v16_r71742(peImage, fileData);
 			case ConfuserVersion.v17_r73605: return decrypt_v17_r73605(peImage, fileData);
 			default: throw new ApplicationException("Unknown version");
