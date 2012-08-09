@@ -25,6 +25,7 @@ using Mono.Cecil.Cil;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Confuser {
+	// From v1.5 r60785 to v1.7 r74637
 	class ConstantsDecrypterV15 : ConstantsDecrypterBase {
 		ConfuserVersion version = ConfuserVersion.Unknown;
 		DecrypterInfo theDecrypterInfo;
@@ -40,6 +41,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v17_r73822_normal,
 			v17_r73822_dynamic,
 			v17_r73822_native,
+			// v1.7 r74637 was the last version using this constants encrypter.
 		}
 
 		public override bool Detected {
