@@ -40,8 +40,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v10_r42915,
 			v10_r48832,
 			v11_r49299,
-			v14_r58802_safe,	// "safe" string decrypter
-			v14_r58802_dynamic,	// "dynamic" string decrypter
+			v13_r55604_safe,
+			v14_r58802_safe,
+			v14_r58802_dynamic,
 			// The string decrypter "confusion" was disabled from 1.5 r60785 and it was
 			// replaced by the constants "confusion".
 		}
@@ -285,8 +286,12 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 				version = ConfuserVersion.Unknown;
 				if (DotNetUtils.callsMethod(method, "System.Text.Encoding System.Text.Encoding::get_UTF8()")) {
-					if (foundOldMagic1)
-						version = ConfuserVersion.v10_r42915;
+					if (foundOldMagic1) {
+						if (DotNetUtils.callsMethod(method, "System.Object System.AppDomain::GetData(System.String)"))
+							version = ConfuserVersion.v13_r55604_safe;
+						else
+							version = ConfuserVersion.v10_r42915;
+					}
 					else {
 						if (!findSafeKey1(method, out key1))
 							continue;
@@ -419,6 +424,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			switch (version) {
 			case ConfuserVersion.v10_r42915:
+			case ConfuserVersion.v13_r55604_safe:
 				decrypter = new Decrypter_v10_r42915(this);
 				break;
 
