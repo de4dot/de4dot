@@ -90,8 +90,15 @@ namespace de4dot.code.deobfuscators.Confuser {
 			if (minRev > maxRev || minRev < 0)
 				return null;
 			var minVersion = revToVersion[minRev];
-			if (maxRev == int.MaxValue)
+			if (maxRev == int.MaxValue) {
+				var latestRev = revs[revs.Length - 1];
+				if (minRev == latestRev)
+					return string.Format("v{0}.{1} (r{2})", minVersion.Major, minVersion.Minor, minRev);
+				var latestVersion = revToVersion[latestRev];
+				if (minVersion == latestVersion)
+					return string.Format("v{0}.{1} (r{2}+)", minVersion.Major, minVersion.Minor, minRev);
 				return string.Format("v{0}.{1}+ (r{2}+)", minVersion.Major, minVersion.Minor, minRev);
+			}
 			var maxVersion = revToVersion[maxRev];
 			if (minVersion == maxVersion) {
 				if (minRev == maxRev)
