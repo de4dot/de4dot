@@ -586,7 +586,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			case ConfuserVersion.v18_r75184:
 				minRev = 75184;
-				maxRev = 75349;
+				maxRev = int.MaxValue;
 				return true;
 
 			case ConfuserVersion.v18_r75367:
