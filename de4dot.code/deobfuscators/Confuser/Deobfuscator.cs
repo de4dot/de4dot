@@ -286,7 +286,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				if (unpacker != null && unpacker.Detected) {
 					if (options.DecryptMainAsm) {
 						decryptState |= DecryptState.CanDecryptMethods | DecryptState.CanUnpack;
-						var mainInfo = unpacker.unpackMainAssembly();
+						var mainInfo = unpacker.unpackMainAssembly(true);
 						newFileData = mainInfo.data;
 						realAssemblyInfo = mainInfo.realAssemblyInfo;
 						embeddedAssemblyInfos.AddRange(unpacker.getEmbeddedAssemblyInfos());
@@ -296,7 +296,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 					}
 					else {
 						decryptState &= ~DecryptState.CanUnpack;
-						mainAsmInfo = unpacker.unpackMainAssembly();
+						mainAsmInfo = unpacker.unpackMainAssembly(false);
 						embeddedAssemblyInfos.AddRange(unpacker.getEmbeddedAssemblyInfos());
 						return false;
 					}
@@ -395,7 +395,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		void dumpEmbeddedAssemblies() {
 			if (mainAsmInfo != null) {
-				DeobfuscatedFile.createAssemblyFile(mainAsmInfo.data, mainAsmInfo.asmSimpleName + "_real", mainAsmInfo.extension);
+				var asm = module.Assembly;
+				var name = asm == null ? module.Name : asm.Name.Name;
+				DeobfuscatedFile.createAssemblyFile(mainAsmInfo.data, name + "_real", mainAsmInfo.extension);
 				addResourceToBeRemoved(mainAsmInfo.resource, string.Format("Embedded assembly: {0}", mainAsmInfo.asmFullName));
 			}
 			foreach (var info in embeddedAssemblyInfos) {

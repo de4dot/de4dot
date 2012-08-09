@@ -397,13 +397,13 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return null;
 		}
 
-		public EmbeddedAssemblyInfo unpackMainAssembly() {
+		public EmbeddedAssemblyInfo unpackMainAssembly(bool createAssembly) {
 			if (mainAsmResource == null)
 				return null;
 			var info = createEmbeddedAssemblyInfo(mainAsmResource, decrypt(mainAsmResource));
 
 			var asm = module.Assembly;
-			if (asm != null && entryPointToken != 0 && info.kind == ModuleKind.NetModule) {
+			if (createAssembly && asm != null && entryPointToken != 0 && info.kind == ModuleKind.NetModule) {
 				info.extension = DeobUtils.getExtension(module.Kind);
 				info.kind = module.Kind;
 
