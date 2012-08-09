@@ -27,7 +27,7 @@ using de4dot.blocks;
 using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.Confuser {
-	abstract class MethodsDecrypterBase {
+	abstract class MethodsDecrypterBase : IVersionProvider {
 		protected ModuleDefinition module;
 		protected ISimpleDeobfuscator simpleDeobfuscator;
 		protected MethodDefinition initMethod;
@@ -63,6 +63,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 		T lookup<T>(T def, string errorMessage) where T : MemberReference {
 			return DeobUtils.lookup(module, def, errorMessage);
 		}
+
+		public abstract bool getRevisionRange(out int minRev, out int maxRev);
 
 		public void find() {
 			find(DotNetUtils.getModuleTypeCctor(module));

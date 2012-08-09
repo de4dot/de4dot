@@ -78,8 +78,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 		AntiDumping antiDumping;
 		ResourceDecrypter resourceDecrypter;
 		ConstantsDecrypterV18 constantsDecrypterV18;
-		ConstantsDecrypterV15 constantsDecrypterV15;
 		ConstantsDecrypterV17 constantsDecrypterV17;
+		ConstantsDecrypterV15 constantsDecrypterV15;
 		Int32ValueInliner int32ValueInliner;
 		Int64ValueInliner int64ValueInliner;
 		SingleValueInliner singleValueInliner;
@@ -149,19 +149,22 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		protected override void scanForObfuscator() {
-			jitMethodsDecrypter = new JitMethodsDecrypter(module, DeobfuscatedFile);
-			try {
-				jitMethodsDecrypter.find();
-			}
-			catch {
-			}
-			if (jitMethodsDecrypter.Detected)
-				return;
-			memoryMethodsDecrypter = new MemoryMethodsDecrypter(module, DeobfuscatedFile);
-			memoryMethodsDecrypter.find();
-			if (memoryMethodsDecrypter.Detected)
-				return;
-			initTheRest();
+			do {
+				jitMethodsDecrypter = new JitMethodsDecrypter(module, DeobfuscatedFile);
+				try {
+					jitMethodsDecrypter.find();
+				}
+				catch {
+				}
+				if (jitMethodsDecrypter.Detected)
+					break;
+				memoryMethodsDecrypter = new MemoryMethodsDecrypter(module, DeobfuscatedFile);
+				memoryMethodsDecrypter.find();
+				if (memoryMethodsDecrypter.Detected)
+					break;
+				initTheRest();
+			} while (false);
+			initializeObfuscatorName();
 		}
 
 		void initTheRest() {
@@ -200,6 +203,41 @@ namespace de4dot.code.deobfuscators.Confuser {
 			initializeStringDecrypter();
 			unpacker = new Unpacker(module);
 			unpacker.find(DeobfuscatedFile, this);
+			initializeObfuscatorName();
+		}
+
+		void initializeObfuscatorName() {
+			var versionString = getVersionString();
+			if (string.IsNullOrEmpty(versionString))
+				obfuscatorName = DeobfuscatorInfo.THE_NAME;
+			else
+				obfuscatorName = string.Format("{0} {1}", DeobfuscatorInfo.THE_NAME, versionString);
+		}
+
+		string getVersionString() {
+			var versionProviders = new IVersionProvider[] {
+				jitMethodsDecrypter,
+				memoryMethodsDecrypter,
+				proxyCallFixer,
+				antiDebugger,
+				antiDumping,
+				resourceDecrypter,
+				constantsDecrypterV18,
+				constantsDecrypterV17,
+				constantsDecrypterV15,
+				stringDecrypter,
+				unpacker,
+			};
+
+			var vd = new VersionDetector();
+			foreach (var versionProvider in versionProviders) {
+				if (versionProvider == null)
+					continue;
+				int minRev, maxRev;
+				if (versionProvider.getRevisionRange(out minRev, out maxRev))
+					vd.addRevs(minRev, maxRev);
+			}
+			return vd.getVersionString();
 		}
 
 		byte[] getFileData() {
@@ -312,6 +350,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		public override void deobfuscateBegin() {
 			base.deobfuscateBegin();
+
+			var versionString = getVersionString();
+			if (!string.IsNullOrEmpty(versionString))
+				Log.v("Detected version: {0}", versionString);
 
 			removeObfuscatorAttribute();
 			initializeConstantsDecrypterV18();

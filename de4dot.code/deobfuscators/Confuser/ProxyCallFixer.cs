@@ -27,7 +27,7 @@ using de4dot.blocks;
 using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.Confuser {
-	class ProxyCallFixer : ProxyCallFixer2 {
+	class ProxyCallFixer : ProxyCallFixer2, IVersionProvider {
 		MethodDefinitionAndDeclaringTypeDict<ProxyCreatorInfo> methodToInfo = new MethodDefinitionAndDeclaringTypeDict<ProxyCreatorInfo>();
 		FieldDefinitionAndDeclaringTypeDict<List<MethodDefinition>> fieldToMethods = new FieldDefinitionAndDeclaringTypeDict<List<MethodDefinition>>();
 		string ourAsm;
@@ -944,6 +944,60 @@ namespace de4dot.code.deobfuscators.Confuser {
 				return;
 			cctor.Body.Instructions.Clear();
 			cctor.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
+		}
+
+		public bool getRevisionRange(out int minRev, out int maxRev) {
+			switch (version) {
+			case ConfuserVersion.Unknown:
+				minRev = maxRev = 0;
+				return false;
+
+			case ConfuserVersion.v10_r42915:
+				minRev = 42915;
+				maxRev = 48509;
+				return true;
+
+			case ConfuserVersion.v10_r48717:
+				minRev = 48717;
+				maxRev = 58446;
+				return true;
+
+			case ConfuserVersion.v14_r58564:
+				minRev = 58564;
+				maxRev = 58852;
+				return true;
+
+			case ConfuserVersion.v14_r58857:
+				minRev = 58857;
+				maxRev = 73605;
+				return true;
+
+			case ConfuserVersion.v17_r73740_normal:
+			case ConfuserVersion.v17_r73740_native:
+				minRev = 73740;
+				maxRev = 74637;
+				return true;
+
+			case ConfuserVersion.v17_r74708_normal:
+			case ConfuserVersion.v17_r74708_native:
+				minRev = 74708;
+				maxRev = 75349;
+				return true;
+
+			case ConfuserVersion.v18_r75367_normal:
+			case ConfuserVersion.v18_r75367_native:
+				minRev = 75367;
+				maxRev = 75926;
+				return true;
+
+			case ConfuserVersion.v19_r76101_normal:
+			case ConfuserVersion.v19_r76101_native:
+				minRev = 76101;
+				maxRev = int.MaxValue;
+				return true;
+
+			default: throw new ApplicationException("Invalid version");
+			}
 		}
 	}
 }

@@ -231,5 +231,44 @@ namespace de4dot.code.deobfuscators.Confuser {
 		byte[] decryptConstant_v17_r73404_normal(DecrypterInfo info, byte[] encrypted, uint offs) {
 			return ConfuserUtils.decrypt(info.key0 ^ offs, encrypted);
 		}
+
+		public override bool getRevisionRange(out int minRev, out int maxRev) {
+			switch (version) {
+			case ConfuserVersion.Unknown:
+				minRev = maxRev = 0;
+				return false;
+
+			case ConfuserVersion.v15_r60785_normal:
+			case ConfuserVersion.v15_r60785_dynamic:
+				minRev = 60785;
+				maxRev = 72989;
+				return true;
+
+			case ConfuserVersion.v17_r73404_normal:
+				minRev = 73404;
+				maxRev = 73605;
+				return true;
+
+			case ConfuserVersion.v17_r73740_dynamic:
+				minRev = 73740;
+				maxRev = 73740;
+				return true;
+
+			case ConfuserVersion.v17_r73764_dynamic:
+			case ConfuserVersion.v17_r73764_native:
+				minRev = 73764;
+				maxRev = 73791;
+				return true;
+
+			case ConfuserVersion.v17_r73822_normal:
+			case ConfuserVersion.v17_r73822_dynamic:
+			case ConfuserVersion.v17_r73822_native:
+				minRev = 73822;
+				maxRev = 74637;
+				return true;
+
+			default: throw new ApplicationException("Invalid version");
+			}
+		}
 	}
 }

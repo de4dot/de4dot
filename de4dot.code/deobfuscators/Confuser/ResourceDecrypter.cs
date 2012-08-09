@@ -25,7 +25,7 @@ using Mono.Cecil.Cil;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Confuser {
-	class ResourceDecrypter {
+	class ResourceDecrypter : IVersionProvider {
 		ModuleDefinition module;
 		ISimpleDeobfuscator simpleDeobfuscator;
 		MethodDefinition handler;
@@ -385,6 +385,41 @@ namespace de4dot.code.deobfuscators.Confuser {
 			if (blocks.Method != installMethod)
 				return;
 			ConfuserUtils.removeResourceHookCode(blocks, handler);
+		}
+
+		public bool getRevisionRange(out int minRev, out int maxRev) {
+			switch (version) {
+			case ConfuserVersion.Unknown:
+				minRev = maxRev = 0;
+				return false;
+
+			case ConfuserVersion.v14_r55802:
+				minRev = 55802;
+				maxRev = 72989;
+				return true;
+
+			case ConfuserVersion.v17_r73404:
+				minRev = 73404;
+				maxRev = 73791;
+				return true;
+
+			case ConfuserVersion.v17_r73822:
+				minRev = 73822;
+				maxRev = 75349;
+				return true;
+
+			case ConfuserVersion.v18_r75367:
+				minRev = 75367;
+				maxRev = 75367;
+				return true;
+
+			case ConfuserVersion.v18_r75369:
+				minRev = 75369;
+				maxRev = int.MaxValue;
+				return true;
+
+			default: throw new ApplicationException("Invalid version");
+			}
 		}
 	}
 }

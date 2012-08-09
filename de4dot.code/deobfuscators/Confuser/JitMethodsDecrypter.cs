@@ -58,6 +58,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		public JitMethodsDecrypter(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator, JitMethodsDecrypter other)
 			: base(module, simpleDeobfuscator, other) {
+			if (other != null)
+				this.version = other.version;
 		}
 
 		protected override bool checkType(TypeDefinition type, MethodDefinition initMethod) {
@@ -688,6 +690,41 @@ namespace de4dot.code.deobfuscators.Confuser {
 			for (int i = 0; i < chars; i++)
 				sb.Append((char)(reader.ReadUInt16() ^ key5));
 			return sb.ToString();
+		}
+
+		public override bool getRevisionRange(out int minRev, out int maxRev) {
+			switch (version) {
+			case ConfuserVersion.Unknown:
+				minRev = maxRev = 0;
+				return false;
+
+			case ConfuserVersion.v17_r73404:
+				minRev = 73404;
+				maxRev = 73430;
+				return true;
+
+			case ConfuserVersion.v17_r73477:
+				minRev = 73477;
+				maxRev = 73477;
+				return true;
+
+			case ConfuserVersion.v17_r73479:
+				minRev = 73479;
+				maxRev = 73822;
+				return true;
+
+			case ConfuserVersion.v17_r74021:
+				minRev = 74021;
+				maxRev = 75369;
+				return true;
+
+			case ConfuserVersion.v18_r75402:
+				minRev = 75402;
+				maxRev = int.MaxValue;
+				return true;
+
+			default: throw new ApplicationException("Invalid version");
+			}
 		}
 	}
 }

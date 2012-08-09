@@ -64,7 +64,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 	}
 
-	class Unpacker {
+	class Unpacker : IVersionProvider {
 		ModuleDefinition module;
 		EmbeddedResource mainAsmResource;
 		uint key0, key1;
@@ -536,6 +536,66 @@ namespace de4dot.code.deobfuscators.Confuser {
 			if (blocks.Method != DotNetUtils.getModuleTypeCctor(module))
 				return;
 			ConfuserUtils.removeResourceHookCode(blocks, asmResolverMethod);
+		}
+
+		public bool getRevisionRange(out int minRev, out int maxRev) {
+			switch (version) {
+			case ConfuserVersion.Unknown:
+				minRev = maxRev = 0;
+				return false;
+
+			case ConfuserVersion.v10_r42915:
+				minRev = 42915;
+				maxRev = 58446;
+				return true;
+
+			case ConfuserVersion.v14_r58564:
+				minRev = 58564;
+				maxRev = 58741;
+				return true;
+
+			case ConfuserVersion.v14_r58802:
+				minRev = 58802;
+				maxRev = 58817;
+				return true;
+
+			case ConfuserVersion.v14_r58852:
+				minRev = 58852;
+				maxRev = 60408;
+				return true;
+
+			case ConfuserVersion.v15_r60785:
+				minRev = 60785;
+				maxRev = 72989;
+				return true;
+
+			case ConfuserVersion.v17_r73404:
+				minRev = 73404;
+				maxRev = 73430;
+				return true;
+
+			case ConfuserVersion.v17_r73477:
+				minRev = 73477;
+				maxRev = 75056;
+				return true;
+
+			case ConfuserVersion.v17_r75076:
+				minRev = 75076;
+				maxRev = 75158;
+				return true;
+
+			case ConfuserVersion.v18_r75184:
+				minRev = 75184;
+				maxRev = 75349;
+				return true;
+
+			case ConfuserVersion.v18_r75367:
+				minRev = 75367;
+				maxRev = int.MaxValue;
+				return true;
+
+			default: throw new ApplicationException("Invalid version");
+			}
 		}
 	}
 }

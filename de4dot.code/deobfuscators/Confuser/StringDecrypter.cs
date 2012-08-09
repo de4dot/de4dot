@@ -26,7 +26,7 @@ using Mono.Cecil.Cil;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Confuser {
-	class StringDecrypter {
+	class StringDecrypter : IVersionProvider {
 		ModuleDefinition module;
 		MethodDefinition decryptMethod;
 		EmbeddedResource resource;
@@ -448,6 +448,42 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		public string decrypt(MethodDefinition caller, int magic) {
 			return decrypter.decrypt(caller, magic);
+		}
+
+		public bool getRevisionRange(out int minRev, out int maxRev) {
+			switch (version) {
+			case ConfuserVersion.Unknown:
+				minRev = maxRev = 0;
+				return false;
+
+			case ConfuserVersion.v10_r42915:
+				minRev = 42915;
+				maxRev = 48771;
+				return true;
+
+			case ConfuserVersion.v10_r48832:
+				minRev = 48832;
+				maxRev = 49238;
+				return true;
+
+			case ConfuserVersion.v11_r49299:
+				minRev = 49299;
+				maxRev = 58741;
+				return true;
+
+			case ConfuserVersion.v13_r55604_safe:
+				minRev = 55604;
+				maxRev = 58741;
+				return true;
+
+			case ConfuserVersion.v14_r58802_safe:
+			case ConfuserVersion.v14_r58802_dynamic:
+				minRev = 58802;
+				maxRev = 60408;
+				return true;
+
+			default: throw new ApplicationException("Invalid version");
+			}
 		}
 	}
 }

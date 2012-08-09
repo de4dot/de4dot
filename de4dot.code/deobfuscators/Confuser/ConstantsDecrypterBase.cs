@@ -27,7 +27,7 @@ using de4dot.blocks;
 using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.Confuser {
-	abstract class ConstantsDecrypterBase {
+	abstract class ConstantsDecrypterBase : IVersionProvider {
 		protected ModuleDefinition module;
 		protected byte[] fileData;
 		protected ISimpleDeobfuscator simpleDeobfuscator;
@@ -258,6 +258,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			this.simpleDeobfuscator = simpleDeobfuscator;
 		}
 
+		public abstract bool getRevisionRange(out int minRev, out int maxRev);
 		public abstract void initialize();
 
 		protected void add(DecrypterInfo info) {

@@ -29,7 +29,7 @@ using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.Confuser {
 	// Since v1.8 r75367
-	class ConstantsDecrypterV18 {
+	class ConstantsDecrypterV18 : IVersionProvider {
 		ModuleDefinition module;
 		byte[] fileData;
 		ISimpleDeobfuscator simpleDeobfuscator;
@@ -707,6 +707,30 @@ namespace de4dot.code.deobfuscators.Confuser {
 			//TODO: Only remove its code
 			installMethod.Body.Instructions.Clear();
 			installMethod.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
+		}
+
+		public bool getRevisionRange(out int minRev, out int maxRev) {
+			switch (version) {
+			case ConfuserVersion.Unknown:
+				minRev = maxRev = 0;
+				return false;
+
+			case ConfuserVersion.v18_r75367_normal:
+			case ConfuserVersion.v18_r75367_dynamic:
+			case ConfuserVersion.v18_r75367_native:
+				minRev = 75367;
+				maxRev = 75367;
+				return true;
+
+			case ConfuserVersion.v18_r75369_normal:
+			case ConfuserVersion.v18_r75369_dynamic:
+			case ConfuserVersion.v18_r75369_native:
+				minRev = 75369;
+				maxRev = int.MaxValue;
+				return true;
+
+			default: throw new ApplicationException("Invalid version");
+			}
 		}
 	}
 }

@@ -438,5 +438,50 @@ namespace de4dot.code.deobfuscators.Confuser {
 			}
 			return -1;
 		}
+
+		public override bool getRevisionRange(out int minRev, out int maxRev) {
+			switch (version) {
+			case ConfuserVersion.Unknown:
+				minRev = maxRev = 0;
+				return false;
+
+			case ConfuserVersion.v17_r74708_normal:
+			case ConfuserVersion.v17_r74708_dynamic:
+			case ConfuserVersion.v17_r74708_native:
+				minRev = 74708;
+				maxRev = 74708;
+				return true;
+
+			case ConfuserVersion.v17_r74788_normal:
+			case ConfuserVersion.v17_r74788_dynamic:
+			case ConfuserVersion.v17_r74788_native:
+				minRev = 74788;
+				maxRev = 74788;
+				return true;
+
+			case ConfuserVersion.v17_r74816_normal:
+			case ConfuserVersion.v17_r74816_dynamic:
+			case ConfuserVersion.v17_r74816_native:
+				minRev = 74816;
+				maxRev = 74852;
+				return true;
+
+			case ConfuserVersion.v17_r75056_normal:
+			case ConfuserVersion.v17_r75056_dynamic:
+			case ConfuserVersion.v17_r75056_native:
+				minRev = 75056;
+				maxRev = 75184;
+				return true;
+
+			case ConfuserVersion.v18_r75257_normal:
+			case ConfuserVersion.v18_r75257_dynamic:
+			case ConfuserVersion.v18_r75257_native:
+				minRev = 75257;
+				maxRev = 75349;
+				return true;
+
+			default: throw new ApplicationException("Invalid version");
+			}
+		}
 	}
 }

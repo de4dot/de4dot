@@ -22,7 +22,7 @@ using Mono.Cecil.Cil;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Confuser {
-	class AntiDumping {
+	class AntiDumping : IVersionProvider {
 		ModuleDefinition module;
 		MethodDefinition initMethod;
 
@@ -112,6 +112,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 				return false;
 
 			return true;
+		}
+
+		public bool getRevisionRange(out int minRev, out int maxRev) {
+			minRev = maxRev = 0;
+			return false;
 		}
 	}
 }
