@@ -547,7 +547,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 				setDelegateCreatorMethod(method);
 				methodToInfo.add(method, new ProxyCreatorInfo(method, proxyType, theVersion, magic, nativeMethod, callvirtChar));
-				version = theVersion;
+				version = (ConfuserVersion)Math.Max((int)version, (int)theVersion);
 			}
 		}
 
