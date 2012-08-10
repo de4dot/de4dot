@@ -50,6 +50,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v14_r58857,
 			v16_r66631,
 			v16_r70489,
+			v17_r73479,
 			v17_r73740_normal,
 			v17_r73740_native,
 			v17_r74708_normal,
@@ -216,6 +217,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v14_r58857:
 			case ConfuserVersion.v16_r66631:
 			case ConfuserVersion.v16_r70489:
+			case ConfuserVersion.v17_r73479:
 				getCallInfo_v14_r58857(info, creatorInfo, out calledMethod, out callOpcode);
 				break;
 
@@ -488,6 +490,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 						else
 							theVersion = ConfuserVersion.v14_r58802;
 					}
+					else if (DotNetUtils.callsMethod(method, "System.Reflection.Module System.Reflection.MemberInfo::get_Module()"))
+						theVersion = ConfuserVersion.v17_r73479;
 					else if (proxyType != ProxyCreatorType.CallOrCallvirt || !hasFieldReference(method, "System.Reflection.Emit.OpCode System.Reflection.Emit.OpCodes::Castclass"))
 						theVersion = ConfuserVersion.v14_r58857;
 					else if (proxyType == ProxyCreatorType.CallOrCallvirt && DotNetUtils.callsMethod(method, "System.Void System.Reflection.Emit.DynamicMethod::.ctor(System.String,System.Type,System.Type[],System.Boolean)"))
@@ -1083,7 +1087,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			case ConfuserVersion.v14_r58857:
 				minRev = 58857;
-				maxRev = 73605;
+				maxRev = 73477;
 				return true;
 
 			case ConfuserVersion.v16_r66631:
@@ -1093,6 +1097,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			case ConfuserVersion.v16_r70489:
 				minRev = 70489;
+				maxRev = 73477;
+				return true;
+
+			case ConfuserVersion.v17_r73479:
+				minRev = 73479;
 				maxRev = 73605;
 				return true;
 
