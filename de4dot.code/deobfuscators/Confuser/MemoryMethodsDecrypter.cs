@@ -40,6 +40,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v17_r72989,
 			// Removed in Confuser 1.7 r73404 and restored in Confuser 1.7 r73605
 			v17_r73605,
+			v18_r75288,
 		}
 
 		public MemoryMethodsDecrypter(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator)
@@ -88,8 +89,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 				else
 					version = ConfuserVersion.v16_r71742;
 			}
-			else
+			else if (DotNetUtils.callsMethod(decryptMethod, "System.Security.Cryptography.Rijndael System.Security.Cryptography.Rijndael::Create()"))
 				version = ConfuserVersion.v17_r73605;
+			else
+				version = ConfuserVersion.v18_r75288;
 
 			return true;
 		}
@@ -132,6 +135,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				return initializeKeys_v16_r71742();
 
 			case ConfuserVersion.v17_r73605:
+			case ConfuserVersion.v18_r75288:
 				return initializeKeys_v17_r73605();
 
 			default:
@@ -285,6 +289,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v16_r71742: return decrypt_v16_r71742(peImage, fileData);
 			case ConfuserVersion.v17_r72989: return decrypt_v16_r71742(peImage, fileData);
 			case ConfuserVersion.v17_r73605: return decrypt_v17_r73605(peImage, fileData);
+			case ConfuserVersion.v18_r75288: return decrypt_v17_r73605(peImage, fileData);
 			default: throw new ApplicationException("Unknown version");
 			}
 		}
@@ -439,6 +444,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			case ConfuserVersion.v17_r73605:
 				minRev = 73605;
+				maxRev = 75267;
+				return true;
+
+			case ConfuserVersion.v18_r75288:
+				minRev = 75288;
 				maxRev = int.MaxValue;
 				return true;
 
