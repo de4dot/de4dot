@@ -48,6 +48,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v14_r58564,
 			v14_r58802,
 			v14_r58857,
+			v16_r66631,
 			v17_r73740_normal,
 			v17_r73740_native,
 			v17_r74708_normal,
@@ -212,6 +213,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				break;
 
 			case ConfuserVersion.v14_r58857:
+			case ConfuserVersion.v16_r66631:
 				getCallInfo_v14_r58857(info, creatorInfo, out calledMethod, out callOpcode);
 				break;
 
@@ -484,8 +486,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 						else
 							theVersion = ConfuserVersion.v14_r58802;
 					}
-					else
+					else if (proxyType != ProxyCreatorType.CallOrCallvirt || !hasFieldReference(method, "System.Reflection.Emit.OpCode System.Reflection.Emit.OpCodes::Castclass"))
 						theVersion = ConfuserVersion.v14_r58857;
+					else
+						theVersion = ConfuserVersion.v16_r66631;
 				}
 				else if (!DotNetUtils.callsMethod(method, "System.Byte[] System.Convert::FromBase64String(System.String)") &&
 					DotNetUtils.callsMethod(method, "System.Reflection.MethodBase System.Reflection.Module::ResolveMethod(System.Int32)")) {
@@ -538,6 +542,17 @@ namespace de4dot.code.deobfuscators.Confuser {
 				methodToInfo.add(method, new ProxyCreatorInfo(method, proxyType, theVersion, magic, nativeMethod, callvirtChar));
 				version = (ConfuserVersion)Math.Max((int)version, (int)theVersion);
 			}
+		}
+
+		static bool hasFieldReference(MethodDefinition method, string fieldFullName) {
+			foreach (var instr in method.Body.Instructions) {
+				var field = instr.Operand as FieldReference;
+				if (field == null)
+					continue;
+				if (field.FullName == fieldFullName)
+					return true;
+			}
+			return false;
 		}
 
 		static bool isMethodCreator_v14_r58802(MethodDefinition method, ProxyCreatorType proxyType) {
@@ -1029,7 +1044,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			case ConfuserVersion.v10_r48717:
 				minRev = 48717;
-				maxRev = 50359;
+				maxRev = 54431;
 				return true;
 
 			case ConfuserVersion.v11_r50378:
@@ -1064,6 +1079,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			case ConfuserVersion.v14_r58857:
 				minRev = 58857;
+				maxRev = 73605;
+				return true;
+
+			case ConfuserVersion.v16_r66631:
+				minRev = 66631;
 				maxRev = 73605;
 				return true;
 
