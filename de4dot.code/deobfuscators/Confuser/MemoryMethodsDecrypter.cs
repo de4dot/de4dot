@@ -37,6 +37,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v14_r58852,
 			v15_r59014,
 			v16_r71742,
+			v17_r72989,
 			// Removed in Confuser 1.7 r73404 and restored in Confuser 1.7 r73605
 			v17_r73605,
 		}
@@ -81,8 +82,12 @@ namespace de4dot.code.deobfuscators.Confuser {
 			}
 			else if (callsFileStreamCtor)
 				version = ConfuserVersion.v14_r58004;
-			else if (DotNetUtils.callsMethod(initMethod, "System.Int32 System.Object::GetHashCode()"))
-				version = ConfuserVersion.v16_r71742;
+			else if (DotNetUtils.callsMethod(initMethod, "System.Int32 System.Object::GetHashCode()")) {
+				if (DotNetUtils.hasString(initMethod, "<Unknown>"))
+					version = ConfuserVersion.v17_r72989;
+				else
+					version = ConfuserVersion.v16_r71742;
+			}
 			else
 				version = ConfuserVersion.v17_r73605;
 
@@ -123,6 +128,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				return initializeKeys_v14_r58564();
 
 			case ConfuserVersion.v16_r71742:
+			case ConfuserVersion.v17_r72989:
 				return initializeKeys_v16_r71742();
 
 			case ConfuserVersion.v17_r73605:
@@ -277,6 +283,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v14_r58852: return decrypt_v14_r58004(peImage, fileData);
 			case ConfuserVersion.v15_r59014: return decrypt_v15_r59014(peImage, fileData);
 			case ConfuserVersion.v16_r71742: return decrypt_v16_r71742(peImage, fileData);
+			case ConfuserVersion.v17_r72989: return decrypt_v16_r71742(peImage, fileData);
 			case ConfuserVersion.v17_r73605: return decrypt_v17_r73605(peImage, fileData);
 			default: throw new ApplicationException("Unknown version");
 			}
@@ -422,6 +429,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			case ConfuserVersion.v16_r71742:
 				minRev = 71742;
+				maxRev = 72868;
+				return true;
+
+			case ConfuserVersion.v17_r72989:
+				minRev = 72989;
 				maxRev = 72989;
 				return true;
 
