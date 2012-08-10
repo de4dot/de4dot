@@ -331,19 +331,27 @@ namespace de4dot.code.deobfuscators.Confuser {
 		static int getDynamicEndIndex_v17_r73740(MethodDefinition method, VariableDefinition local) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 5; i++) {
-				var stloc = instrs[i];
+				int index = i;
+				var stloc = instrs[index++];
 				if (!DotNetUtils.isStloc(stloc) || DotNetUtils.getLocalVar(method.Body.Variables, stloc) != local)
 					continue;
-				if (!DotNetUtils.isLdloc(instrs[i + 1]))
+				if (!DotNetUtils.isLdloc(instrs[index++]))
 					continue;
-				if (!DotNetUtils.isLdloc(instrs[i + 2]))
+				if (instrs[index].OpCode.Code == Code.Call) {
+					if (i + 7 >= instrs.Count)
+						continue;
+					index++;
+					if (!DotNetUtils.isLdloc(instrs[index++]))
+						continue;
+				}
+				if (!DotNetUtils.isLdloc(instrs[index++]))
 					continue;
-				var ldloc = instrs[i + 3];
+				var ldloc = instrs[index++];
 				if (!DotNetUtils.isLdloc(ldloc) || DotNetUtils.getLocalVar(method.Body.Variables, ldloc) != local)
 					continue;
-				if (instrs[i + 4].OpCode.Code != Code.Conv_U1)
+				if (instrs[index++].OpCode.Code != Code.Conv_U1)
 					continue;
-				if (instrs[i + 5].OpCode.Code != Code.Stelem_I1)
+				if (instrs[index++].OpCode.Code != Code.Stelem_I1)
 					continue;
 
 				return i;
