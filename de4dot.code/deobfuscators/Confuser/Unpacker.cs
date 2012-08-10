@@ -125,9 +125,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 				return;
 			var decryptLocals = new LocalTypes(decyptMethod);
 			if (decryptLocals.exists("System.IO.MemoryStream")) {
-				if (DotNetUtils.hasString(entryPoint, ".exe"))
+				if (DotNetUtils.callsMethod(entryPoint, "System.Void", "(System.String,System.Byte[])"))
 					version = ConfuserVersion.v10_r42915;
-				else if (DotNetUtils.callsMethod(entryPoint, "System.Void System.Security.PermissionSet::.ctor(System.Security.Permissions.PermissionState)"))
+				else if (DotNetUtils.callsMethod(entryPoint, "System.Void", "(System.Security.Permissions.PermissionState)"))
 					version = ConfuserVersion.v10_r48717;
 				else
 					version = ConfuserVersion.v14_r57778;
