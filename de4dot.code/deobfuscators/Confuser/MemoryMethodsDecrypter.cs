@@ -34,6 +34,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v14_r57884,
 			v14_r58004,
 			v14_r58564,
+			v14_r58852,
 			v15_r59014,
 			v16_r71742,
 			// Removed in Confuser 1.7 r73404 and restored in Confuser 1.7 r73605
@@ -69,8 +70,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 				version = ConfuserVersion.v14_r57884;
 			else if (virtProtect.IsPrivate && callsFileStreamCtor) {
 				int calls = countMethodCalls(initMethod, "System.Void System.Buffer::BlockCopy(System.Array,System.Int32,System.Array,System.Int32,System.Int32)");
-				if (calls <= 2)
+				if (calls <= 1)
 					version = ConfuserVersion.v14_r58564;
+				else if (calls == 2)
+					version = ConfuserVersion.v14_r58852;
 				else if (calls == 4)
 					version = ConfuserVersion.v15_r59014;
 				else
@@ -115,6 +118,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				return true;
 
 			case ConfuserVersion.v14_r58564:
+			case ConfuserVersion.v14_r58852:
 			case ConfuserVersion.v15_r59014:
 				return initializeKeys_v14_r58564();
 
@@ -270,6 +274,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v14_r57884: return decrypt_v14_r57884(peImage, fileData);
 			case ConfuserVersion.v14_r58004: return decrypt_v14_r58004(peImage, fileData);
 			case ConfuserVersion.v14_r58564: return decrypt_v14_r58004(peImage, fileData);
+			case ConfuserVersion.v14_r58852: return decrypt_v14_r58004(peImage, fileData);
 			case ConfuserVersion.v15_r59014: return decrypt_v15_r59014(peImage, fileData);
 			case ConfuserVersion.v16_r71742: return decrypt_v16_r71742(peImage, fileData);
 			case ConfuserVersion.v17_r73605: return decrypt_v17_r73605(peImage, fileData);
@@ -402,6 +407,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			case ConfuserVersion.v14_r58564:
 				minRev = 58564;
+				maxRev = 58817;
+				return true;
+
+			case ConfuserVersion.v14_r58852:
+				minRev = 58852;
 				maxRev = 58919;
 				return true;
 
