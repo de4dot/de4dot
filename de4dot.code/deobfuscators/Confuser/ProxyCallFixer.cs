@@ -44,6 +44,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v11_r50378,
 			v12_r54564,
 			v13_r55346,
+			v13_r55604,
 			v14_r58564,
 			v14_r58857,
 			v17_r73740_normal,
@@ -203,6 +204,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v11_r50378:
 			case ConfuserVersion.v12_r54564:
 			case ConfuserVersion.v13_r55346:
+			case ConfuserVersion.v13_r55604:
 			case ConfuserVersion.v14_r58564:
 				getCallInfo_v10_r48717(info, creatorInfo, out calledMethod, out callOpcode);
 				break;
@@ -524,6 +526,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 							theVersion = ConfuserVersion.v12_r54564;
 						if (!DotNetUtils.callsMethod(method, "System.Reflection.Assembly System.Reflection.Assembly::Load(System.Reflection.AssemblyName)"))
 							theVersion = ConfuserVersion.v13_r55346;
+						if (DotNetUtils.callsMethod(method, "System.Void System.Runtime.CompilerServices.RuntimeHelpers::RunClassConstructor(System.RuntimeTypeHandle)"))
+							theVersion = ConfuserVersion.v13_r55604;
 					}
 				}
 				else if (is_v17_r73740(method)) {
@@ -1017,6 +1021,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			case ConfuserVersion.v13_r55346:
 				minRev = 55346;
+				maxRev = 55346;
+				return true;
+
+			case ConfuserVersion.v13_r55604:
+				minRev = 55604;
 				maxRev = 58446;
 				return true;
 
