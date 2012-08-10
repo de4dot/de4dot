@@ -76,6 +76,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			Unknown,
 			v10_r42915,
 			v10_r48717,
+			v14_r57778,
 			v14_r58564,
 			v14_r58802,
 			v14_r58852,
@@ -125,8 +126,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 			if (decryptLocals.exists("System.IO.MemoryStream")) {
 				if (DotNetUtils.hasString(entryPoint, ".exe"))
 					version = ConfuserVersion.v10_r42915;
-				else
+				else if (DotNetUtils.callsMethod(entryPoint, "System.Void System.Security.PermissionSet::.ctor(System.Security.Permissions.PermissionState)"))
 					version = ConfuserVersion.v10_r48717;
+				else
+					version = ConfuserVersion.v14_r57778;
 			}
 			else
 				version = ConfuserVersion.v14_r58564;
@@ -145,6 +148,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			switch (version) {
 			case ConfuserVersion.v10_r42915:
 			case ConfuserVersion.v10_r48717:
+			case ConfuserVersion.v14_r57778:
 				break;
 
 			case ConfuserVersion.v14_r58564:
@@ -450,6 +454,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			switch (version) {
 			case ConfuserVersion.v10_r42915: return decrypt_v10_r42915(data);
 			case ConfuserVersion.v10_r48717: return decrypt_v10_r42915(data);
+			case ConfuserVersion.v14_r57778: return decrypt_v10_r42915(data);
 			case ConfuserVersion.v14_r58564: return decrypt_v14_r58564(data);
 			case ConfuserVersion.v14_r58802: return decrypt_v14_r58564(data);
 			case ConfuserVersion.v14_r58852: return decrypt_v14_r58852(data);
@@ -558,6 +563,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			case ConfuserVersion.v10_r48717:
 				minRev = 48717;
+				maxRev = 57699;
+				return true;
+
+			case ConfuserVersion.v14_r57778:
+				minRev = 57778;
 				maxRev = 58446;
 				return true;
 
