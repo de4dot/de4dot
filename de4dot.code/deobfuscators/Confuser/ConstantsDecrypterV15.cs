@@ -34,6 +34,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			Unknown,
 			v15_r60785_normal,
 			v15_r60785_dynamic,
+			v17_r72989_dynamic,
 			v17_r73404_normal,
 			v17_r73740_dynamic,
 			v17_r73764_dynamic,
@@ -86,8 +87,12 @@ namespace de4dot.code.deobfuscators.Confuser {
 							DeobUtils.hasInteger(method, 0xFFFF))
 						version = ConfuserVersion.v17_r73404_normal;
 					else if (DotNetUtils.callsMethod(method, "System.String System.Text.Encoding::GetString(System.Byte[])")) {
-						if (findInstruction(method.Body.Instructions, 0, Code.Conv_I8) >= 0)
-							version = ConfuserVersion.v15_r60785_dynamic;
+						if (findInstruction(method.Body.Instructions, 0, Code.Conv_I8) >= 0) {
+							if (DotNetUtils.callsMethod(method, "System.Void System.Console::WriteLine()"))
+								version = ConfuserVersion.v15_r60785_dynamic;
+							else
+								version = ConfuserVersion.v17_r72989_dynamic;
+						}
 						else
 							version = ConfuserVersion.v17_r73740_dynamic;
 					}
@@ -166,6 +171,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			switch (version) {
 			case ConfuserVersion.v15_r60785_normal: return decryptConstant_v15_r60785_normal(info, encrypted, offs);
 			case ConfuserVersion.v15_r60785_dynamic: return decryptConstant_v15_r60785_dynamic(info, encrypted, offs);
+			case ConfuserVersion.v17_r72989_dynamic: return decryptConstant_v15_r60785_dynamic(info, encrypted, offs);
 			case ConfuserVersion.v17_r73404_normal: return decryptConstant_v17_r73404_normal(info, encrypted, offs);
 			case ConfuserVersion.v17_r73740_dynamic: return decryptConstant_v17_r73740_dynamic(info, encrypted, offs, 0);
 			case ConfuserVersion.v17_r73764_dynamic: return decryptConstant_v17_r73740_dynamic(info, encrypted, offs, 0);
@@ -241,13 +247,22 @@ namespace de4dot.code.deobfuscators.Confuser {
 				return false;
 
 			case ConfuserVersion.v15_r60785_normal:
-			case ConfuserVersion.v15_r60785_dynamic:
 				minRev = 60785;
 				maxRev = 72989;
 				return true;
 
 			case ConfuserVersion.v17_r73404_normal:
 				minRev = 73404;
+				maxRev = 73791;
+				return true;
+
+			case ConfuserVersion.v15_r60785_dynamic:
+				minRev = 60785;
+				maxRev = 72868;
+				return true;
+
+			case ConfuserVersion.v17_r72989_dynamic:
+				minRev = 72989;
 				maxRev = 73605;
 				return true;
 
