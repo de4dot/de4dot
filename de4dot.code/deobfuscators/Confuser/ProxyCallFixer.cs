@@ -57,6 +57,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v17_r74708_native,
 			v18_r75367_normal,
 			v18_r75367_native,
+			v18_r75369_normal,
+			v18_r75369_native,
 			v19_r76101_normal,
 			v19_r76101_native,
 		}
@@ -232,11 +234,13 @@ namespace de4dot.code.deobfuscators.Confuser {
 				break;
 
 			case ConfuserVersion.v18_r75367_normal:
+			case ConfuserVersion.v18_r75369_normal:
 			case ConfuserVersion.v19_r76101_normal:
 				getCallInfo_v18_r75367_normal(info, creatorInfo, out calledMethod, out callOpcode);
 				break;
 
 			case ConfuserVersion.v18_r75367_native:
+			case ConfuserVersion.v18_r75369_native:
 			case ConfuserVersion.v19_r76101_native:
 				getCallInfo_v18_r75367_native(info, creatorInfo, out calledMethod, out callOpcode);
 				break;
@@ -504,9 +508,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 					if (proxyType == ProxyCreatorType.CallOrCallvirt && !findCallvirtChar(method, out callvirtChar))
 						continue;
 					if ((nativeMethod = findNativeMethod_v18_r75367(method)) != null)
-						theVersion = ConfuserVersion.v18_r75367_native;
+						theVersion = proxyType != ProxyCreatorType.CallOrCallvirt || callvirtChar == 9 ? ConfuserVersion.v18_r75367_native : ConfuserVersion.v18_r75369_native;
 					else if (findMagic_v18_r75367(method, out magic))
-						theVersion = ConfuserVersion.v18_r75367_normal;
+						theVersion = proxyType != ProxyCreatorType.CallOrCallvirt || callvirtChar == 9 ? ConfuserVersion.v18_r75367_normal : ConfuserVersion.v18_r75369_normal;
 					else if (findMagic_v19_r76101(method, out magic))
 						theVersion = ConfuserVersion.v19_r76101_normal;
 					else if ((nativeMethod = findNativeMethod_v19_r76101(method)) != null)
@@ -1120,6 +1124,12 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v18_r75367_normal:
 			case ConfuserVersion.v18_r75367_native:
 				minRev = 75367;
+				maxRev = 75926;
+				return true;
+
+			case ConfuserVersion.v18_r75369_normal:
+			case ConfuserVersion.v18_r75369_native:
+				minRev = 75369;
 				maxRev = 75926;
 				return true;
 
