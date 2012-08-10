@@ -42,6 +42,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v17_r73822_normal,
 			v17_r73822_dynamic,
 			v17_r73822_native,
+			v17_r74021_dynamic,
+			v17_r74021_native,
 			// v1.7 r74637 was the last version using this constants encrypter.
 		}
 
@@ -110,6 +112,12 @@ namespace de4dot.code.deobfuscators.Confuser {
 						DeobUtils.hasInteger(method, 0x10000) &&
 						DeobUtils.hasInteger(method, 0xFFFF))
 						version = ConfuserVersion.v17_r73822_normal;
+					else if (DotNetUtils.callsMethod(method, "System.Int32 System.Object::GetHashCode()")) {
+						if ((nativeMethod = findNativeMethod(method)) == null)
+							version = ConfuserVersion.v17_r74021_dynamic;
+						else
+							version = ConfuserVersion.v17_r74021_native;
+					}
 					else if ((nativeMethod = findNativeMethod(method)) == null)
 						version = ConfuserVersion.v17_r73822_dynamic;
 					else
@@ -141,6 +149,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v17_r73822_normal:
 			case ConfuserVersion.v17_r73822_dynamic:
 			case ConfuserVersion.v17_r73822_native:
+			case ConfuserVersion.v17_r74021_dynamic:
+			case ConfuserVersion.v17_r74021_native:
 				if (!add(ConstantsDecrypterUtils.findDictField(info.decryptMethod, info.decryptMethod.DeclaringType)))
 					return false;
 				if (!add(ConstantsDecrypterUtils.findMemoryStreamField(info.decryptMethod, info.decryptMethod.DeclaringType)))
@@ -179,6 +189,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v17_r73822_normal: return decryptConstant_v17_r73404_normal(info, encrypted, offs);
 			case ConfuserVersion.v17_r73822_dynamic: return decryptConstant_v17_r73740_dynamic(info, encrypted, offs, 0);
 			case ConfuserVersion.v17_r73822_native: return decryptConstant_v17_r73764_native(info, encrypted, offs, 0);
+			case ConfuserVersion.v17_r74021_dynamic: return decryptConstant_v17_r73740_dynamic(info, encrypted, offs, 0);
+			case ConfuserVersion.v17_r74021_native: return decryptConstant_v17_r73764_native(info, encrypted, offs, 0);
 			default: throw new ApplicationException("Invalid version");
 			}
 		}
@@ -256,6 +268,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 				maxRev = 73791;
 				return true;
 
+			case ConfuserVersion.v17_r73822_normal:
+				minRev = 73822;
+				maxRev = 74637;
+				return true;
+
 			case ConfuserVersion.v15_r60785_dynamic:
 				minRev = 60785;
 				maxRev = 72868;
@@ -277,10 +294,15 @@ namespace de4dot.code.deobfuscators.Confuser {
 				maxRev = 73791;
 				return true;
 
-			case ConfuserVersion.v17_r73822_normal:
 			case ConfuserVersion.v17_r73822_dynamic:
 			case ConfuserVersion.v17_r73822_native:
 				minRev = 73822;
+				maxRev = 73822;
+				return true;
+
+			case ConfuserVersion.v17_r74021_dynamic:
+			case ConfuserVersion.v17_r74021_native:
+				minRev = 74021;
 				maxRev = 74637;
 				return true;
 
