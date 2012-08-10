@@ -38,6 +38,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		enum ConfuserVersion {
 			Unknown,
 			v17_r73404,
+			v17_r73430,
 			v17_r73477,
 			v17_r73479,
 			v17_r74021,
@@ -72,7 +73,14 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			var theVersion = ConfuserVersion.Unknown;
 			switch (type.NestedTypes.Count) {
-			case 35: theVersion = ConfuserVersion.v17_r73404; break;
+			case 35:
+				if (type.Fields.Count == 9)
+					theVersion = ConfuserVersion.v17_r73404;
+				else if (type.Fields.Count == 10)
+					theVersion = ConfuserVersion.v17_r73430;
+				else
+					return false;
+				break;
 
 			case 38:
 				switch (countInt32s(compileMethod, 0xFF)) {
@@ -169,6 +177,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		bool initializeKeys() {
 			switch (version) {
 			case ConfuserVersion.v17_r73404: return initializeKeys_v17_r73404();
+			case ConfuserVersion.v17_r73430: return initializeKeys_v17_r73404();
 			case ConfuserVersion.v17_r73477: return initializeKeys_v17_r73404();
 			case ConfuserVersion.v17_r73479: return initializeKeys_v17_r73404();
 			case ConfuserVersion.v17_r74021: return initializeKeys_v17_r73404();
@@ -271,6 +280,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		bool initializeMethodDataIndexes(MethodDefinition compileMethod) {
 			switch (version) {
 			case ConfuserVersion.v17_r73404: return true;
+			case ConfuserVersion.v17_r73430: return true;
 			case ConfuserVersion.v17_r73477: return initializeMethodDataIndexes_v17_r73477(compileMethod);
 			case ConfuserVersion.v17_r73479: return initializeMethodDataIndexes_v17_r73477(compileMethod);
 			case ConfuserVersion.v17_r74021: return initializeMethodDataIndexes_v17_r73477(compileMethod);
@@ -412,6 +422,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			switch (version) {
 			case ConfuserVersion.v17_r73404: return decrypt_v17_r73404(peImage, fileData, ref dumpedMethods);
+			case ConfuserVersion.v17_r73430: return decrypt_v17_r73404(peImage, fileData, ref dumpedMethods);
 			case ConfuserVersion.v17_r73477: return decrypt_v17_r73477(peImage, fileData, ref dumpedMethods);
 			case ConfuserVersion.v17_r73479: return decrypt_v17_r73479(peImage, fileData, ref dumpedMethods);
 			case ConfuserVersion.v17_r74021: return decrypt_v17_r73479(peImage, fileData, ref dumpedMethods);
@@ -700,6 +711,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			case ConfuserVersion.v17_r73404:
 				minRev = 73404;
+				maxRev = 73404;
+				return true;
+
+			case ConfuserVersion.v17_r73430:
+				minRev = 73430;
 				maxRev = 73430;
 				return true;
 
