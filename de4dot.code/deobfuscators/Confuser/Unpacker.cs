@@ -83,6 +83,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v15_r60785,
 			v17_r73404,
 			v17_r73477,
+			v17_r73566,
 			v17_r75076,
 			v18_r75184,
 			v18_r75367,
@@ -184,8 +185,12 @@ namespace de4dot.code.deobfuscators.Confuser {
 			simpleDeobfuscator.deobfuscate(cctor);
 			simpleDeobfuscator.decryptStrings(cctor, deob);
 
-			if (findEntryPointToken(simpleDeobfuscator, cctor, entryPoint, out entryPointToken) && !use7zip)
-				version = ConfuserVersion.v17_r73477;
+			if (findEntryPointToken(simpleDeobfuscator, cctor, entryPoint, out entryPointToken) && !use7zip) {
+				if (DotNetUtils.callsMethod(asmResolverMethod, "System.Void", "(System.String)"))
+					version = ConfuserVersion.v17_r73477;
+				else
+					version = ConfuserVersion.v17_r73566;
+			}
 
 			mainAsmResource = findResource(cctor);
 			if (mainAsmResource == null)
@@ -461,6 +466,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v15_r60785: return decrypt_v15_r60785(data);
 			case ConfuserVersion.v17_r73404: return decrypt_v17_r73404(data);
 			case ConfuserVersion.v17_r73477: return decrypt_v17_r73404(data);
+			case ConfuserVersion.v17_r73566: return decrypt_v17_r73404(data);
 			case ConfuserVersion.v17_r75076: return decrypt_v17_r75076(data);
 			case ConfuserVersion.v18_r75184: return decrypt_v17_r75076(data);
 			case ConfuserVersion.v18_r75367: return decrypt_v17_r75076(data);
@@ -598,6 +604,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			case ConfuserVersion.v17_r73477:
 				minRev = 73477;
+				maxRev = 73479;
+				return true;
+
+			case ConfuserVersion.v17_r73566:
+				minRev = 73566;
 				maxRev = 75056;
 				return true;
 
