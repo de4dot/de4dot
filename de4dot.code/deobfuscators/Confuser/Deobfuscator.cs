@@ -162,12 +162,12 @@ namespace de4dot.code.deobfuscators.Confuser {
 				memoryMethodsDecrypter.find();
 				if (memoryMethodsDecrypter.Detected)
 					break;
-				initTheRest();
+				initTheRest(null);
 			} while (false);
 			initializeObfuscatorName();
 		}
 
-		void initTheRest() {
+		void initTheRest(Deobfuscator oldOne) {
 			resourceDecrypter = new ResourceDecrypter(module, DeobfuscatedFile);
 			resourceDecrypter.find();
 
@@ -201,7 +201,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			stringDecrypter = new StringDecrypter(module);
 			stringDecrypter.find(DeobfuscatedFile);
 			initializeStringDecrypter();
-			unpacker = new Unpacker(module);
+			unpacker = new Unpacker(module, oldOne == null ? null : oldOne.unpacker);
 			unpacker.find(DeobfuscatedFile, this);
 			initializeObfuscatorName();
 		}
@@ -344,7 +344,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				if (newOne.memoryMethodsDecrypter.Detected)
 					return newOne;
 			}
-			newOne.initTheRest();
+			newOne.initTheRest(this);
 			return newOne;
 		}
 

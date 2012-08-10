@@ -93,8 +93,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 			get { return mainAsmResource != null; }
 		}
 
-		public Unpacker(ModuleDefinition module) {
+		public Unpacker(ModuleDefinition module, Unpacker other) {
 			this.module = module;
+			if (other != null)
+				this.version = other.version;
 		}
 
 		static string[] requiredFields = new string[] {
@@ -115,6 +117,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			var type = entryPoint.DeclaringType;
 			if (!new FieldTypes(type).all(requiredFields))
 				return;
+
 			bool use7zip = type.NestedTypes.Count == 6;
 			MethodDefinition decyptMethod;
 			if (use7zip)
@@ -123,30 +126,32 @@ namespace de4dot.code.deobfuscators.Confuser {
 				decyptMethod = findDecryptMethod_inflate(type);
 			if (decyptMethod == null)
 				return;
+
+			ConfuserVersion theVersion = ConfuserVersion.Unknown;
 			var decryptLocals = new LocalTypes(decyptMethod);
 			if (decryptLocals.exists("System.IO.MemoryStream")) {
 				if (DotNetUtils.callsMethod(entryPoint, "System.Void", "(System.String,System.Byte[])"))
-					version = ConfuserVersion.v10_r42915;
+					theVersion = ConfuserVersion.v10_r42915;
 				else if (DotNetUtils.callsMethod(entryPoint, "System.Void", "(System.Security.Permissions.PermissionState)"))
-					version = ConfuserVersion.v10_r48717;
+					theVersion = ConfuserVersion.v10_r48717;
 				else
-					version = ConfuserVersion.v14_r57778;
+					theVersion = ConfuserVersion.v14_r57778;
 			}
 			else
-				version = ConfuserVersion.v14_r58564;
+				theVersion = ConfuserVersion.v14_r58564;
 
 			var cctor = DotNetUtils.getMethod(type, ".cctor");
 			if (cctor == null)
 				return;
 
 			if ((asmResolverMethod = findAssemblyResolverMethod(entryPoint.DeclaringType)) != null) {
-				version = ConfuserVersion.v14_r58802;
+				theVersion = ConfuserVersion.v14_r58802;
 				simpleDeobfuscator.deobfuscate(asmResolverMethod);
 				if (!findKey1(asmResolverMethod, out key1))
 					return;
 			}
 
-			switch (version) {
+			switch (theVersion) {
 			case ConfuserVersion.v10_r42915:
 			case ConfuserVersion.v10_r48717:
 			case ConfuserVersion.v14_r57778:
@@ -159,21 +164,21 @@ namespace de4dot.code.deobfuscators.Confuser {
 					break;
 				if (findKey0_v14_r58852(decyptMethod, out key0)) {
 					if (!decryptLocals.exists("System.Security.Cryptography.RijndaelManaged")) {
-						version = ConfuserVersion.v14_r58852;
+						theVersion = ConfuserVersion.v14_r58852;
 						break;
 					}
 					if (use7zip) {
 						if (new LocalTypes(decyptMethod).exists("System.IO.MemoryStream"))
-							version = ConfuserVersion.v17_r75076;
+							theVersion = ConfuserVersion.v17_r75076;
 						else if (module.Name == "Stub.exe")
-							version = ConfuserVersion.v18_r75184;
+							theVersion = ConfuserVersion.v18_r75184;
 						else
-							version = ConfuserVersion.v18_r75367;
+							theVersion = ConfuserVersion.v18_r75367;
 					}
 					else if (isDecryptMethod_v17_r73404(decyptMethod))
-						version = ConfuserVersion.v17_r73404;
+						theVersion = ConfuserVersion.v17_r73404;
 					else
-						version = ConfuserVersion.v15_r60785;
+						theVersion = ConfuserVersion.v15_r60785;
 					break;
 				}
 				throw new ApplicationException("Could not find magic");
@@ -187,14 +192,15 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			if (findEntryPointToken(simpleDeobfuscator, cctor, entryPoint, out entryPointToken) && !use7zip) {
 				if (DotNetUtils.callsMethod(asmResolverMethod, "System.Void", "(System.String)"))
-					version = ConfuserVersion.v17_r73477;
+					theVersion = ConfuserVersion.v17_r73477;
 				else
-					version = ConfuserVersion.v17_r73566;
+					theVersion = ConfuserVersion.v17_r73566;
 			}
 
 			mainAsmResource = findResource(cctor);
 			if (mainAsmResource == null)
 				throw new ApplicationException("Could not find main assembly resource");
+			version = theVersion;
 		}
 
 		bool findEntryPointToken(ISimpleDeobfuscator simpleDeobfuscator, MethodDefinition cctor, MethodDefinition entryPoint, out uint token) {
