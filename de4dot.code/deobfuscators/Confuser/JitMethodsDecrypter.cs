@@ -43,6 +43,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v17_r73479,
 			v17_r74021,
 			v18_r75257,
+			v18_r75288,
 			v18_r75402,
 		}
 
@@ -72,6 +73,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 			if (compileMethod == null)
 				return false;
 
+			decryptMethod = findDecryptMethod(type);
+			if (decryptMethod == null)
+				return false;
+
 			var theVersion = ConfuserVersion.Unknown;
 			switch (type.NestedTypes.Count) {
 			case 35:
@@ -94,8 +99,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case 39:
 				if (!DotNetUtils.callsMethod(initMethod, "System.Void System.Console::WriteLine(System.Char)"))
 					theVersion = ConfuserVersion.v17_r74021;
-				else
+				else if (DotNetUtils.callsMethod(decryptMethod, "System.Security.Cryptography.Rijndael System.Security.Cryptography.Rijndael::Create()"))
 					theVersion = ConfuserVersion.v18_r75257;
+				else
+					theVersion = ConfuserVersion.v18_r75288;
 				break;
 
 			case 27: theVersion = ConfuserVersion.v18_r75402; break;
@@ -107,9 +114,6 @@ namespace de4dot.code.deobfuscators.Confuser {
 				if (hookConstructStr == null)
 					return false;
 			}
-			decryptMethod = findDecryptMethod(type);
-			if (decryptMethod == null)
-				return false;
 
 			version = theVersion;
 			return true;
@@ -189,6 +193,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v17_r73479: return initializeKeys_v17_r73404();
 			case ConfuserVersion.v17_r74021: return initializeKeys_v17_r73404();
 			case ConfuserVersion.v18_r75257: return initializeKeys_v17_r73404();
+			case ConfuserVersion.v18_r75288: return initializeKeys_v17_r73404();
 			case ConfuserVersion.v18_r75402: return initializeKeys_v18_r75402();
 			default: throw new ApplicationException("Invalid version");
 			}
@@ -293,6 +298,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v17_r73479: return initializeMethodDataIndexes_v17_r73477(compileMethod);
 			case ConfuserVersion.v17_r74021: return initializeMethodDataIndexes_v17_r73477(compileMethod);
 			case ConfuserVersion.v18_r75257: return initializeMethodDataIndexes_v17_r73477(compileMethod);
+			case ConfuserVersion.v18_r75288: return initializeMethodDataIndexes_v17_r73477(compileMethod);
 			case ConfuserVersion.v18_r75402: return initializeMethodDataIndexes_v17_r73477(compileMethod);
 			default: throw new ApplicationException("Invalid version");
 			}
@@ -436,6 +442,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v17_r73479: return decrypt_v17_r73479(peImage, fileData, ref dumpedMethods);
 			case ConfuserVersion.v17_r74021: return decrypt_v17_r73479(peImage, fileData, ref dumpedMethods);
 			case ConfuserVersion.v18_r75257: return decrypt_v17_r73479(peImage, fileData, ref dumpedMethods);
+			case ConfuserVersion.v18_r75288: return decrypt_v17_r73479(peImage, fileData, ref dumpedMethods);
 			case ConfuserVersion.v18_r75402: return decrypt_v18_r75402(peImage, fileData, ref dumpedMethods);
 			default: throw new ApplicationException("Unknown version");
 			}
@@ -746,6 +753,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			case ConfuserVersion.v18_r75257:
 				minRev = 75257;
+				maxRev = 75267;
+				return true;
+
+			case ConfuserVersion.v18_r75288:
+				minRev = 75288;
 				maxRev = 75369;
 				return true;
 
