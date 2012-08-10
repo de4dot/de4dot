@@ -46,6 +46,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v18_r75288,
 			v18_r75291,
 			v18_r75402,
+			v19_r75725,
 		}
 
 		struct MethodDataIndexes {
@@ -110,8 +111,15 @@ namespace de4dot.code.deobfuscators.Confuser {
 					theVersion = ConfuserVersion.v18_r75288;
 				break;
 
-			case 27: theVersion = ConfuserVersion.v18_r75402; break;
-			default: return false;
+			case 27:
+				if (DotNetUtils.callsMethod(initMethod, "System.Int32 System.String::get_Length()"))
+					theVersion = ConfuserVersion.v18_r75402;
+				else
+					theVersion = ConfuserVersion.v19_r75725;
+				break;
+
+			default:
+				return false;
 			}
 
 			if (theVersion >= ConfuserVersion.v17_r73477) {
@@ -201,6 +209,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v18_r75288: return initializeKeys_v17_r73404();
 			case ConfuserVersion.v18_r75291: return initializeKeys_v17_r73404();
 			case ConfuserVersion.v18_r75402: return initializeKeys_v18_r75402();
+			case ConfuserVersion.v19_r75725: return initializeKeys_v18_r75402();
 			default: throw new ApplicationException("Invalid version");
 			}
 		}
@@ -307,6 +316,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v18_r75288: return initializeMethodDataIndexes_v17_r73477(compileMethod);
 			case ConfuserVersion.v18_r75291: return initializeMethodDataIndexes_v17_r73477(compileMethod);
 			case ConfuserVersion.v18_r75402: return initializeMethodDataIndexes_v17_r73477(compileMethod);
+			case ConfuserVersion.v19_r75725: return initializeMethodDataIndexes_v17_r73477(compileMethod);
 			default: throw new ApplicationException("Invalid version");
 			}
 		}
@@ -452,6 +462,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v18_r75288: return decrypt_v17_r73479(peImage, fileData, ref dumpedMethods);
 			case ConfuserVersion.v18_r75291: return decrypt_v17_r73479(peImage, fileData, ref dumpedMethods);
 			case ConfuserVersion.v18_r75402: return decrypt_v18_r75402(peImage, fileData, ref dumpedMethods);
+			case ConfuserVersion.v19_r75725: return decrypt_v18_r75402(peImage, fileData, ref dumpedMethods);
 			default: throw new ApplicationException("Unknown version");
 			}
 		}
@@ -776,6 +787,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			case ConfuserVersion.v18_r75402:
 				minRev = 75402;
+				maxRev = 75720;
+				return true;
+
+			case ConfuserVersion.v19_r75725:
+				minRev = 75725;
 				maxRev = int.MaxValue;
 				return true;
 
