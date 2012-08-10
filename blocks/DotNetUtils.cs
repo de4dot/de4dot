@@ -1224,7 +1224,7 @@ namespace de4dot.blocks {
 				return false;
 
 			foreach (var instr in method.Body.Instructions) {
-				if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt)
+				if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt && instr.OpCode.Code != Code.Newobj)
 					continue;
 				if (isMethod(instr.Operand as MethodReference, returnType, parameters))
 					return true;
