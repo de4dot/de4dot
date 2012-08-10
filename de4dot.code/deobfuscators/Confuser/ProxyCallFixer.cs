@@ -46,6 +46,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v13_r55346,
 			v13_r55604,
 			v14_r58564,
+			v14_r58802,
 			v14_r58857,
 			v17_r73740_normal,
 			v17_r73740_native,
@@ -206,6 +207,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v13_r55346:
 			case ConfuserVersion.v13_r55604:
 			case ConfuserVersion.v14_r58564:
+			case ConfuserVersion.v14_r58802:
 				getCallInfo_v10_r48717(info, creatorInfo, out calledMethod, out callOpcode);
 				break;
 
@@ -265,17 +267,21 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		void getCallInfo_v10_r48717(DelegateInitInfo info, ProxyCreatorInfo creatorInfo, out MethodReference calledMethod, out OpCode callOpcode) {
-			bool? isNew = isNewFieldNameEncoding(info);
-			if (isNew == null) {
+			bool isNew = creatorInfo.version == ConfuserVersion.v14_r58802;
+
+			int offs = creatorInfo.proxyCreatorType == ProxyCreatorType.CallOrCallvirt ? 2 : 1;
+			if (isNew)
+				offs--;
+			int callvirtOffs = isNew ? 0 : 1;
+
+			// This is an obfuscator bug. Field names are stored in the #Strings heap,
+			// and strings in that heap are UTF8 zero terminated strings, but Confuser
+			// can generate names with zeros in them. This was fixed in 1.4 58857.
+			if (offs + 2 > info.field.Name.Length) {
 				calledMethod = null;
 				callOpcode = OpCodes.Call;
 				return;
 			}
-
-			int offs = creatorInfo.proxyCreatorType == ProxyCreatorType.CallOrCallvirt ? 2 : 1;
-			if (isNew.Value)
-				offs--;
-			int callvirtOffs = isNew.Value ? 0 : 1;
 
 			uint token = BitConverter.ToUInt32(Encoding.Unicode.GetBytes(info.field.Name.ToCharArray(), offs, 2), 0) ^ creatorInfo.magic;
 			uint table = token >> 24;
@@ -284,7 +290,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			// 1.3 r55346 now correctly uses method reference tokens and finally fixed the old
 			// bug of using methoddef tokens to reference external methods.
-			if (isNew.Value || info.field.Name[0] == (char)1 || table != 0x06)
+			if (isNew || info.field.Name[0] == (char)1 || table != 0x06)
 				calledMethod = (MethodReference)module.LookupToken((int)token);
 			else {
 				var asmRef = module.AssemblyReferences[info.field.Name[0] - 2];
@@ -295,35 +301,6 @@ namespace de4dot.code.deobfuscators.Confuser {
 			if (creatorInfo.proxyCreatorType == ProxyCreatorType.CallOrCallvirt && info.field.Name[callvirtOffs] == '\r')
 				isCallvirt = true;
 			callOpcode = getCallOpCode(creatorInfo, isCallvirt);
-		}
-
-		// Returns true if Confuser 1.4 r58802 or later
-		bool? isNewFieldNameEncoding(DelegateInitInfo info) {
-			var creatorInfo = methodToInfo.find(info.creatorMethod);
-			int oldLen, newLen;
-			switch (creatorInfo.proxyCreatorType) {
-			case ProxyCreatorType.Newobj:
-				oldLen = 3;
-				newLen = 2;
-				break;
-
-			case ProxyCreatorType.CallOrCallvirt:
-				oldLen = 4;
-				newLen = 3;
-				break;
-
-			default: throw new ApplicationException("Invalid proxy creator type");
-			}
-
-			if (info.field.Name.Length == oldLen)
-				return false;
-			if (info.field.Name.Length != newLen) {
-				// This is an obfuscator bug. Field names are stored in the #Strings heap,
-				// and strings in that heap are UTF8 zero terminated strings, but Confuser
-				// can generate names with zeros in them. This was fixed in 1.4 58857.
-				return null;
-			}
-			return true;
 		}
 
 		void getCallInfo_v14_r58857(DelegateInitInfo info, ProxyCreatorInfo creatorInfo, out MethodReference calledMethod, out OpCode callOpcode) {
@@ -501,8 +478,12 @@ namespace de4dot.code.deobfuscators.Confuser {
 				MethodDefinition nativeMethod = null;
 				uint magic;
 				if (findMagic_v14_r58564(method, out magic)) {
-					if (!DotNetUtils.callsMethod(method, "System.Byte[] System.Convert::FromBase64String(System.String)"))
-						theVersion = ConfuserVersion.v14_r58564;
+					if (!DotNetUtils.callsMethod(method, "System.Byte[] System.Convert::FromBase64String(System.String)")) {
+						if (!isMethodCreator_v14_r58802(method, proxyType))
+							theVersion = ConfuserVersion.v14_r58564;
+						else
+							theVersion = ConfuserVersion.v14_r58802;
+					}
 					else
 						theVersion = ConfuserVersion.v14_r58857;
 				}
@@ -557,6 +538,48 @@ namespace de4dot.code.deobfuscators.Confuser {
 				methodToInfo.add(method, new ProxyCreatorInfo(method, proxyType, theVersion, magic, nativeMethod, callvirtChar));
 				version = (ConfuserVersion)Math.Max((int)version, (int)theVersion);
 			}
+		}
+
+		static bool isMethodCreator_v14_r58802(MethodDefinition method, ProxyCreatorType proxyType) {
+			int index = getFieldNameIndex(method);
+			if (index < 0)
+				throw new ApplicationException("Could not find field name index");
+			switch (proxyType) {
+			case ProxyCreatorType.Newobj:
+				if (index == 1)
+					return false;
+				if (index == 0)
+					return true;
+				break;
+
+			case ProxyCreatorType.CallOrCallvirt:
+				if (index == 2)
+					return false;
+				if (index == 1)
+					return true;
+				break;
+
+			default: throw new ApplicationException("Invalid proxy creator type");
+			}
+
+			throw new ApplicationException("Could not find field name index");
+		}
+
+		static int getFieldNameIndex(MethodDefinition method) {
+			var instrs = method.Body.Instructions;
+			for (int i = 0; i < instrs.Count; i++) {
+				i = ConfuserUtils.findCallMethod(instrs, i, Code.Callvirt, "System.Byte[] System.Text.Encoding::GetBytes(System.Char[],System.Int32,System.Int32)");
+				if (i < 0)
+					break;
+				if (i < 2)
+					continue;
+				var ldci4 = instrs[i - 2];
+				if (!DotNetUtils.isLdcI4(ldci4))
+					continue;
+
+				return DotNetUtils.getLdcI4Value(ldci4);
+			}
+			return -1;
 		}
 
 		static int countCalls(MethodDefinition method, string methodFullName) {
@@ -1031,6 +1054,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			case ConfuserVersion.v14_r58564:
 				minRev = 58564;
+				maxRev = 58741;
+				return true;
+
+			case ConfuserVersion.v14_r58802:
+				minRev = 58802;
 				maxRev = 58852;
 				return true;
 
