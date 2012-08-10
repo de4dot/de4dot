@@ -39,6 +39,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		enum ConfuserVersion {
 			Unknown,
 			v10_r42915,
+			v10_r42919,
 			v10_r48717,
 			v14_r58564,
 			v14_r58857,
@@ -191,6 +192,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			switch (creatorInfo.version) {
 			case ConfuserVersion.v10_r42915:
+			case ConfuserVersion.v10_r42919:
 				getCallInfo_v10_r42915(info, creatorInfo, out calledMethod, out callOpcode);
 				break;
 
@@ -527,6 +529,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 							continue;
 					}
 				}
+				else if (theVersion == ConfuserVersion.v10_r42915) {
+					if (DeobUtils.hasInteger(method, 0x06000000))
+						theVersion = ConfuserVersion.v10_r42919;
+				}
 
 				setDelegateCreatorMethod(method);
 				methodToInfo.add(method, new ProxyCreatorInfo(method, proxyType, theVersion, magic, nativeMethod, callvirtChar));
@@ -807,6 +813,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		FieldDefinitionAndDeclaringTypeDict<DelegateInitInfo> createDelegateInitInfos(MethodDefinition method) {
 			switch (version) {
 			case ConfuserVersion.v10_r42915:
+			case ConfuserVersion.v10_r42919:
 				return createDelegateInitInfos_v10_r42915(method);
 			default:
 				return createDelegateInitInfos_v10_r48717(method);
@@ -954,6 +961,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			case ConfuserVersion.v10_r42915:
 				minRev = 42915;
+				maxRev = 42917;
+				return true;
+
+			case ConfuserVersion.v10_r42919:
+				minRev = 42919;
 				maxRev = 48509;
 				return true;
 
