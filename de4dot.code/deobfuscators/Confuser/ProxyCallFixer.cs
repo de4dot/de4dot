@@ -518,7 +518,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 					else {
 						if (proxyType == ProxyCreatorType.CallOrCallvirt && !DotNetUtils.callsMethod(method, "System.Int32 System.String::get_Length()"))
 							theVersion = ConfuserVersion.v11_r50378;
-						int numCalls = countCalls(method, "System.Byte[] System.Text.Encoding::GetBytes(System.Char[],System.Int32,System.Int32)");
+						int numCalls = ConfuserUtils.countCalls(method, "System.Byte[] System.Text.Encoding::GetBytes(System.Char[],System.Int32,System.Int32)");
 						if (numCalls == 2)
 							theVersion = ConfuserVersion.v12_r54564;
 						if (!DotNetUtils.callsMethod(method, "System.Reflection.Assembly System.Reflection.Assembly::Load(System.Reflection.AssemblyName)"))
@@ -607,22 +607,6 @@ namespace de4dot.code.deobfuscators.Confuser {
 				return DotNetUtils.getLdcI4Value(ldci4);
 			}
 			return -1;
-		}
-
-		static int countCalls(MethodDefinition method, string methodFullName) {
-			int count = 0;
-			foreach (var instr in method.Body.Instructions) {
-				if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt && instr.OpCode.Code != Code.Newobj)
-					continue;
-				var calledMethod = instr.Operand as MethodReference;
-				if (calledMethod == null)
-					continue;
-				if (calledMethod.FullName != methodFullName)
-					continue;
-
-				count++;
-			}
-			return count;
 		}
 
 		static bool findMagic_v19_r76101(MethodDefinition method, out uint magic) {

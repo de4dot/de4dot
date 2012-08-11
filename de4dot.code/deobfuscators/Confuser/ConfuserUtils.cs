@@ -132,5 +132,44 @@ namespace de4dot.code.deobfuscators.Confuser {
 			}
 			return decrypted;
 		}
+
+		public static int countCalls(MethodDefinition method, string methodFullName) {
+			if (method == null || method.Body == null)
+				return 0;
+			int count = 0;
+			foreach (var instr in method.Body.Instructions) {
+				if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt && instr.OpCode.Code != Code.Newobj)
+					continue;
+				var calledMethod = instr.Operand as MethodReference;
+				if (calledMethod != null && calledMethod.FullName == methodFullName)
+					count++;
+			}
+			return count;
+		}
+
+		public static int countCalls(MethodDefinition method, MethodDefinition calledMethod) {
+			if (method == null || method.Body == null)
+				return 0;
+			int count = 0;
+			foreach (var instr in method.Body.Instructions) {
+				if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt && instr.OpCode.Code != Code.Newobj)
+					continue;
+				if (instr.Operand == calledMethod)
+					count++;
+			}
+			return count;
+		}
+
+		public static int countOpCode(MethodDefinition method, Code code) {
+			if (method == null || method.Body == null)
+				return 0;
+
+			int count = 0;
+			foreach (var instr in method.Body.Instructions) {
+				if (instr.OpCode.Code == code)
+					count++;
+			}
+			return count;
+		}
 	}
 }

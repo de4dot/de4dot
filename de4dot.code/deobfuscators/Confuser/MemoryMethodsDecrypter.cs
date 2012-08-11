@@ -72,7 +72,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			if (!DotNetUtils.hasString(initMethod, "Module error"))
 				version = ConfuserVersion.v14_r57884;
 			else if (virtProtect.IsPrivate && callsFileStreamCtor) {
-				int calls = countMethodCalls(initMethod, "System.Void System.Buffer::BlockCopy(System.Array,System.Int32,System.Array,System.Int32,System.Int32)");
+				int calls = ConfuserUtils.countCalls(initMethod, "System.Void System.Buffer::BlockCopy(System.Array,System.Int32,System.Array,System.Int32,System.Int32)");
 				if (calls <= 1)
 					version = ConfuserVersion.v14_r58564;
 				else if (calls == 2)
@@ -98,20 +98,6 @@ namespace de4dot.code.deobfuscators.Confuser {
 				version = ConfuserVersion.v19_r75725;
 
 			return true;
-		}
-
-		static int countMethodCalls(MethodDefinition method, string methodFullName) {
-			if (method == null || method.Body == null)
-				return 0;
-			int count = 0;
-			foreach (var instr in method.Body.Instructions) {
-				if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt && instr.OpCode.Code != Code.Newobj)
-					continue;
-				var calledMethod = instr.Operand as MethodReference;
-				if (calledMethod != null && calledMethod.FullName == methodFullName)
-					count++;
-			}
-			return count;
 		}
 
 		public void initialize() {
