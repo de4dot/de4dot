@@ -17,6 +17,7 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using de4dot.blocks;
@@ -25,6 +26,21 @@ namespace de4dot.code.deobfuscators.Confuser {
 	class AntiDebugger : IVersionProvider {
 		ModuleDefinition module;
 		MethodDefinition initMethod;
+		ConfuserVersion version = ConfuserVersion.Unknown;
+
+		enum ConfuserVersion {
+			Unknown,
+			v14_r57588_normal,
+			v14_r57588_safe,
+			v14_r60785_normal,
+			v16_r61954_normal,
+			v16_r61954_safe,
+			v17_r73822_normal,
+			v17_r73822_safe,
+			v17_r74021_normal,
+			v17_r74021_safe,
+			v19_r76119_safe,
+		}
 
 		public MethodDefinition InitMethod {
 			get { return initMethod; }
@@ -55,64 +71,224 @@ namespace de4dot.code.deobfuscators.Confuser {
 				if (instr.OpCode.Code != Code.Call)
 					continue;
 				var calledMethod = instr.Operand as MethodDefinition;
-				if (calledMethod == null)
+				if (calledMethod == null || !calledMethod.IsStatic)
 					continue;
 				if (!DotNetUtils.isMethod(calledMethod, "System.Void", "()"))
 					continue;
+				var type = calledMethod.DeclaringType;
+				if (type == null)
+					continue;
 
-				if (checkInitMethod(calledMethod) || checkInitMethod2(calledMethod)) {
+				if (checkMethod_normal(type, calledMethod) || checkMethod_safe(type, calledMethod)) {
 					initMethod = calledMethod;
 					return true;
 				}
 			}
+
 			return false;
 		}
 
-		bool checkInitMethod(MethodDefinition method) {
-			if (method == null || method.Body == null || !method.IsStatic)
+		static bool checkProfilerStrings1(MethodDefinition method) {
+			if (!DotNetUtils.hasString(method, "COR_ENABLE_PROFILING"))
 				return false;
-			if (!DotNetUtils.isMethod(method, "System.Void", "()"))
+			if (!DotNetUtils.hasString(method, "COR_PROFILER"))
 				return false;
-			if (DotNetUtils.hasString(method, "COR_ENABLE_PROFILING") &&
-				DotNetUtils.hasString(method, "COR_PROFILER")) {
+
+			return true;
+		}
+
+		static bool checkProfilerStrings2(MethodDefinition method) {
+			if (!DotNetUtils.hasString(method, "COR_"))
+				return false;
+			if (!DotNetUtils.hasString(method, "ENABLE_PROFILING"))
+				return false;
+			if (!DotNetUtils.hasString(method, "PROFILER"))
+				return false;
+
+			return true;
+		}
+
+		static MethodDefinition getAntiDebugMethod(TypeDefinition type, MethodDefinition initMethod) {
+			foreach (var method in type.Methods) {
+				if (method.Body == null || method == initMethod)
+					continue;
+				if (!method.IsStatic || method.Name == ".cctor")
+					continue;
+				if (!method.IsPrivate)
+					continue;
+				if (!DotNetUtils.isMethod(method, "System.Void", "()") && !DotNetUtils.isMethod(method, "System.Void", "(System.Object)"))
+					continue;
+
+				return method;
 			}
-			else if (DotNetUtils.hasString(method, "COR_") &&
-				DotNetUtils.hasString(method, "ENABLE_PROFILING") &&
-				DotNetUtils.hasString(method, "PROFILER")) {
+			return null;
+		}
+
+		bool checkMethod_normal(TypeDefinition type, MethodDefinition initMethod) {
+			var ntQueryInformationProcess = DotNetUtils.getPInvokeMethod(type, "ntdll", "NtQueryInformationProcess");
+			if (ntQueryInformationProcess == null)
+				return false;
+			if (DotNetUtils.getPInvokeMethod(type, "ntdll", "NtSetInformationProcess") == null)
+				return false;
+			if (DotNetUtils.getPInvokeMethod(type, "kernel32", "CloseHandle") == null)
+				return false;
+			var antiDebugMethod = getAntiDebugMethod(type, initMethod);
+			if (antiDebugMethod == null)
+				return false;
+			if (!DotNetUtils.hasString(antiDebugMethod, "Debugger detected (Managed)"))
+				return false;
+
+			if (DotNetUtils.callsMethod(initMethod, "System.Void System.Threading.Thread::.ctor(System.Threading.ParameterizedThreadStart)")) {
+				int failFastCalls = ConfuserUtils.countCalls(antiDebugMethod, "System.Void System.Environment::FailFast(System.String)");
+				if (failFastCalls != 6 && failFastCalls != 8)
+					return false;
+
+				if (!checkProfilerStrings1(initMethod))
+					return false;
+
+				if (!DotNetUtils.callsMethod(antiDebugMethod, "System.Void System.Threading.Thread::.ctor(System.Threading.ParameterizedThreadStart)")) {
+					if (ConfuserUtils.countCalls(antiDebugMethod, ntQueryInformationProcess) != 2)
+						return false;
+					version = ConfuserVersion.v16_r61954_normal;
+				}
+				else if (failFastCalls == 8) {
+					if (ConfuserUtils.countCalls(antiDebugMethod, ntQueryInformationProcess) != 2)
+						return false;
+					version = ConfuserVersion.v17_r73822_normal;
+				}
+				else if (failFastCalls == 6) {
+					if (DotNetUtils.getPInvokeMethod(type, "IsDebuggerPresent") == null)
+						return false;
+					if (ConfuserUtils.countCalls(antiDebugMethod, ntQueryInformationProcess) != 0)
+						return false;
+					version = ConfuserVersion.v17_r74021_normal;
+				}
+				else
+					return false;
 			}
-			else
-				return false;
-			if (!DotNetUtils.hasString(method, "Profiler detected"))
-				return false;
-			if (method.DeclaringType != DotNetUtils.getModuleType(module)) {
-				if (DotNetUtils.getPInvokeMethod(method.DeclaringType, "ntdll", "NtQueryInformationProcess") == null)
+			else if (!DotNetUtils.callsMethod(initMethod, "System.Void System.Threading.ThreadStart::.ctor(System.Object,System.IntPtr)")) {
+				if (!DotNetUtils.callsMethod(initMethod, "System.Void System.Diagnostics.Process::EnterDebugMode()"))
 					return false;
-				if (DotNetUtils.getPInvokeMethod(method.DeclaringType, "ntdll", "NtSetInformationProcess") == null)
+				if (!checkProfilerStrings1(antiDebugMethod))
 					return false;
-				if (DotNetUtils.getPInvokeMethod(method.DeclaringType, "kernel32", "CloseHandle") == null)
+				version = ConfuserVersion.v14_r57588_normal;
+			}
+			else {
+				if (!DotNetUtils.callsMethod(initMethod, "System.Void System.Diagnostics.Process::EnterDebugMode()"))
 					return false;
+				if (!checkProfilerStrings1(antiDebugMethod))
+					return false;
+				version = ConfuserVersion.v14_r60785_normal;
 			}
 
 			return true;
 		}
 
-		bool checkInitMethod2(MethodDefinition method) {
-			if (method.DeclaringType == DotNetUtils.getModuleType(module))
-				return false;
-			var instrs = method.Body.Instructions;
-			for (int i = 0; i < instrs.Count; i++) {
-				var call = instrs[i];
-				if (call.OpCode.Code != Code.Call)
-					continue;
-				if (checkInitMethod(call.Operand as MethodDefinition))
-					return true;
+		bool checkMethod_safe(TypeDefinition type, MethodDefinition initMethod) {
+			if (type == DotNetUtils.getModuleType(module)) {
+				if (!DotNetUtils.hasString(initMethod, "Debugger detected (Managed)"))
+					return false;
+				if (!checkProfilerStrings1(initMethod))
+					return false;
+
+				version = ConfuserVersion.v14_r57588_safe;
 			}
-			return false;
+			else {
+				var ntQueryInformationProcess = DotNetUtils.getPInvokeMethod(type, "ntdll", "NtQueryInformationProcess");
+				if (ntQueryInformationProcess == null)
+					return false;
+				if (DotNetUtils.getPInvokeMethod(type, "ntdll", "NtSetInformationProcess") == null)
+					return false;
+				if (DotNetUtils.getPInvokeMethod(type, "kernel32", "CloseHandle") == null)
+					return false;
+				var antiDebugMethod = getAntiDebugMethod(type, initMethod);
+				if (antiDebugMethod == null)
+					return false;
+				if (!DotNetUtils.hasString(antiDebugMethod, "Debugger detected (Managed)") &&
+					!DotNetUtils.hasString(antiDebugMethod, "Debugger is detected (Managed)"))
+					return false;
+				if (!DotNetUtils.callsMethod(initMethod, "System.Void System.Threading.Thread::.ctor(System.Threading.ParameterizedThreadStart)"))
+					return false;
+				if (ConfuserUtils.countCalls(antiDebugMethod, ntQueryInformationProcess) != 0)
+					return false;
+				if (!checkProfilerStrings1(initMethod) && !checkProfilerStrings2(initMethod))
+					return false;
+
+				int failFastCalls = ConfuserUtils.countCalls(antiDebugMethod, "System.Void System.Environment::FailFast(System.String)");
+				if (failFastCalls != 2)
+					return false;
+
+				if (!DotNetUtils.callsMethod(antiDebugMethod, "System.Void System.Threading.Thread::.ctor(System.Threading.ParameterizedThreadStart)"))
+					version = ConfuserVersion.v16_r61954_safe;
+				else if (DotNetUtils.getPInvokeMethod(type, "IsDebuggerPresent") == null)
+					version = ConfuserVersion.v17_r73822_safe;
+				else if (checkProfilerStrings1(initMethod))
+					version = ConfuserVersion.v17_r74021_safe;
+				else
+					version = ConfuserVersion.v19_r76119_safe;
+			}
+
+			return true;
 		}
 
 		public bool getRevisionRange(out int minRev, out int maxRev) {
-			minRev = maxRev = 0;
-			return false;
+			switch (version) {
+			case ConfuserVersion.Unknown:
+				minRev = maxRev = 0;
+				return false;
+
+			case ConfuserVersion.v14_r57588_safe:
+				minRev = 57588;
+				maxRev = 60787;
+				return true;
+
+			case ConfuserVersion.v16_r61954_safe:
+				minRev = 61954;
+				maxRev = 73791;
+				return true;
+
+			case ConfuserVersion.v17_r73822_safe:
+				minRev = 73822;
+				maxRev = 73822;
+				return true;
+
+			case ConfuserVersion.v17_r74021_safe:
+				minRev = 74021;
+				maxRev = 76101;
+				return true;
+
+			case ConfuserVersion.v19_r76119_safe:
+				minRev = 76119;
+				maxRev = int.MaxValue;
+				return true;
+
+			case ConfuserVersion.v14_r57588_normal:
+				minRev = 57588;
+				maxRev = 60408;
+				return true;
+
+			case ConfuserVersion.v14_r60785_normal:
+				minRev = 60785;
+				maxRev = 60787;
+				return true;
+
+			case ConfuserVersion.v16_r61954_normal:
+				minRev = 61954;
+				maxRev = 73791;
+				return true;
+
+			case ConfuserVersion.v17_r73822_normal:
+				minRev = 73822;
+				maxRev = 73822;
+				return true;
+
+			case ConfuserVersion.v17_r74021_normal:
+				minRev = 74021;
+				maxRev = int.MaxValue;
+				return true;
+
+			default: throw new ApplicationException("Invalid version");
+			}
 		}
 	}
 }
