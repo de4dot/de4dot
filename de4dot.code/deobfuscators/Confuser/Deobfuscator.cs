@@ -149,22 +149,23 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		protected override void scanForObfuscator() {
-			do {
-				jitMethodsDecrypter = new JitMethodsDecrypter(module, DeobfuscatedFile);
-				try {
-					jitMethodsDecrypter.find();
-				}
-				catch {
-				}
-				if (jitMethodsDecrypter.Detected)
-					break;
-				memoryMethodsDecrypter = new MemoryMethodsDecrypter(module, DeobfuscatedFile);
-				memoryMethodsDecrypter.find();
-				if (memoryMethodsDecrypter.Detected)
-					break;
-				initTheRest(null);
-			} while (false);
-			initializeObfuscatorName();
+			jitMethodsDecrypter = new JitMethodsDecrypter(module, DeobfuscatedFile);
+			try {
+				jitMethodsDecrypter.find();
+			}
+			catch {
+			}
+			if (jitMethodsDecrypter.Detected) {
+				initializeObfuscatorName();
+				return;
+			}
+			memoryMethodsDecrypter = new MemoryMethodsDecrypter(module, DeobfuscatedFile);
+			memoryMethodsDecrypter.find();
+			if (memoryMethodsDecrypter.Detected) {
+				initializeObfuscatorName();
+				return;
+			}
+			initTheRest(null);
 		}
 
 		void initTheRest(Deobfuscator oldOne) {
@@ -234,8 +235,13 @@ namespace de4dot.code.deobfuscators.Confuser {
 				if (versionProvider == null)
 					continue;
 				int minRev, maxRev;
-				if (versionProvider.getRevisionRange(out minRev, out maxRev))
+				if (versionProvider.getRevisionRange(out minRev, out maxRev)) {
+					if (maxRev == int.MaxValue)
+						Log.v("r{0}-latest : {1}", minRev, versionProvider.GetType().Name);
+					else
+						Log.v("r{0}-r{1} : {2}", minRev, maxRev, versionProvider.GetType().Name);
 					vd.addRevs(minRev, maxRev);
+				}
 			}
 			return vd.getVersionString();
 		}
@@ -351,9 +357,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		public override void deobfuscateBegin() {
 			base.deobfuscateBegin();
 
-			var versionString = getVersionString();
-			if (!string.IsNullOrEmpty(versionString))
-				Log.v("Detected version: {0}", versionString);
+			Log.v("Detected {0}", obfuscatorName);
 
 			removeObfuscatorAttribute();
 			initializeConstantsDecrypterV18();
