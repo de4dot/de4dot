@@ -104,7 +104,6 @@ namespace de4dot.code.deobfuscators.Confuser {
 		};
 		static string[] requiredEntryPointLocals = new string[] {
 			"System.Byte[]",
-			"System.Int32",
 			"System.IO.BinaryReader",
 			"System.IO.Stream",
 		};
