@@ -71,6 +71,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 					throw new ApplicationException();
 				else
 					revToVersion[rev] = currentVersion;
+				prevRev = rev;
 			}
 		}
 
