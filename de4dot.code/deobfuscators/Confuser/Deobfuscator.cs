@@ -573,6 +573,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 				}
 			}
 
+			module.Attributes |= ModuleAttributes.ILOnly;
+
 			base.deobfuscateEnd();
 		}
 
