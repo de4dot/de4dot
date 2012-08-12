@@ -76,19 +76,6 @@ namespace de4dot.code.deobfuscators.Unknown {
 				obfuscatorName = string.Format("{0} (not supported)", name);
 		}
 
-		public override int earlyDetect() {
-			setName(earlyScanTypes());
-			return obfuscatorName != null ? 1 : 0;
-		}
-
-		string earlyScanTypes() {
-			foreach (var type in module.Types) {
-				if (type.FullName == "ConfusedByAttribute")
-					return "Confuser";
-			}
-			return null;
-		}
-
 		protected override int detectInternal() {
 			setName(scanTypes());
 			return 1;
@@ -99,6 +86,8 @@ namespace de4dot.code.deobfuscators.Unknown {
 
 		string scanTypes() {
 			foreach (var type in module.Types) {
+				if (type.FullName == "ConfusedByAttribute")
+					return "Confuser";
 				if (type.FullName == "ZYXDNGuarder")
 					return "DNGuard HVM";
 				if (type.Name.Contains("();\t"))

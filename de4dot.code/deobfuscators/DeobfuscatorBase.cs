@@ -127,10 +127,6 @@ namespace de4dot.code.deobfuscators {
 			return optionsBase.ValidNameRegex.isMatch(name);
 		}
 
-		public virtual int earlyDetect() {
-			return 0;
-		}
-
 		public virtual int detect() {
 			scanForObfuscator();
 			return detectInternal();
