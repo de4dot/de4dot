@@ -454,6 +454,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			decryptResources();
 			stringDecrypter.initialize();
 			staticStringInliner.add(stringDecrypter.Method, (method, gim, args) => stringDecrypter.decrypt(staticStringInliner.Method, (int)args[0]));
+			DeobfuscatedFile.stringDecryptersAdded();
 		}
 
 		bool hasInitializedConstantsDecrypter = false;
@@ -577,6 +578,20 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		public override IEnumerable<int> getStringDecrypterMethods() {
 			var list = new List<int>();
+			if (stringDecrypter != null && stringDecrypter.Method != null)
+				list.Add(stringDecrypter.Method.MetadataToken.ToInt32());
+			if (constantsDecrypterV15 != null) {
+				foreach (var info in constantsDecrypterV15.DecrypterInfos)
+					list.Add(info.decryptMethod.MetadataToken.ToInt32());
+			}
+			if (constantsDecrypterV17 != null) {
+				foreach (var info in constantsDecrypterV17.DecrypterInfos)
+					list.Add(info.decryptMethod.MetadataToken.ToInt32());
+			}
+			if (constantsDecrypterV18 != null) {
+				foreach (var info in constantsDecrypterV18.Decrypters)
+					list.Add(info.method.MetadataToken.ToInt32());
+			}
 			return list;
 		}
 	}
