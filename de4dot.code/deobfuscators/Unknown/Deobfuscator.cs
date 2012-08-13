@@ -86,6 +86,8 @@ namespace de4dot.code.deobfuscators.Unknown {
 
 		string scanTypes() {
 			foreach (var type in module.Types) {
+				if (type.FullName == "ConfusedByAttribute")
+					return "Confuser";
 				if (type.FullName == "ZYXDNGuarder")
 					return "DNGuard HVM";
 				if (type.Name.Contains("();\t"))

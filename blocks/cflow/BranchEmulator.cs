@@ -220,7 +220,7 @@ namespace de4dot.blocks.cflow {
 				return emulateBranch(1, Int64Value.compareFalse((Int64Value)val1));
 			else if (val1.isNull())
 				return emulateBranch(1, true);
-			else if (val1.isObject() || val1.isString() || val1.isBoxed())
+			else if (val1.isObject() || val1.isString())
 				return emulateBranch(1, false);
 			else
 				return false;
@@ -235,7 +235,7 @@ namespace de4dot.blocks.cflow {
 				return emulateBranch(1, Int64Value.compareTrue((Int64Value)val1));
 			else if (val1.isNull())
 				return emulateBranch(1, false);
-			else if (val1.isObject() || val1.isString() || val1.isBoxed())
+			else if (val1.isObject() || val1.isString())
 				return emulateBranch(1, true);
 			else
 				return false;

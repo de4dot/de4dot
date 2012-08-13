@@ -72,11 +72,6 @@ namespace de4dot.code.deobfuscators {
 
 		void init(ModuleDefinition module);
 
-		// Same as detect() but may be used by deobfuscators to detect obfuscator that decrypt
-		// metadata at runtime. Code in detect() assume they can access everything. 0 should be
-		// returned if not detected.
-		int earlyDetect();
-
 		// Returns 0 if it's not detected, or > 0 if detected (higher value => more likely true).
 		// This method is always called.
 		int detect();

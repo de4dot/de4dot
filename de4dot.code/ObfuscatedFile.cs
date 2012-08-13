@@ -248,7 +248,6 @@ namespace de4dot.code {
 			if (this.deob != null) {
 				deob.init(module);
 				deob.DeobfuscatedFile = this;
-				deob.earlyDetect();
 				deob.detect();
 				return;
 			}
@@ -261,35 +260,14 @@ namespace de4dot.code {
 			if (options.ForcedObfuscatorType != null) {
 				foreach (var deob in deobfuscators) {
 					if (string.Equals(options.ForcedObfuscatorType, deob.Type, StringComparison.OrdinalIgnoreCase)) {
-						deob.earlyDetect();
 						this.deob = deob;
 						deob.detect();
 						return;
 					}
 				}
 			}
-			else {
-				this.deob = earlyDetectObfuscator(deobfuscators);
-				if (this.deob == null)
-					this.deob = detectObfuscator2(deobfuscators);
-				else
-					this.deob.detect();
-			}
-		}
-
-		IDeobfuscator earlyDetectObfuscator(IEnumerable<IDeobfuscator> deobfuscators) {
-			IDeobfuscator detected = null;
-			int detectVal = 0;
-			foreach (var deob in deobfuscators) {
-				int val = deob.earlyDetect();
-				if (val > 0)
-					Log.v("{0,3}: {1}", val, deob.TypeLong);
-				if (val > detectVal) {
-					detectVal = val;
-					detected = deob;
-				}
-			}
-			return detected;
+			else
+				this.deob = detectObfuscator2(deobfuscators);
 		}
 
 		IDeobfuscator detectObfuscator2(IEnumerable<IDeobfuscator> deobfuscators) {
