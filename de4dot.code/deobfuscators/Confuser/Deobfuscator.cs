@@ -69,6 +69,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 	class Deobfuscator : DeobfuscatorBase {
 		Options options;
 		string obfuscatorName = DeobfuscatorInfo.THE_NAME;
+		Version approxVersion;
 
 		List<EmbeddedAssemblyInfo> embeddedAssemblyInfos = new List<EmbeddedAssemblyInfo>();
 		JitMethodsDecrypter jitMethodsDecrypter;
@@ -149,6 +150,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		protected override void scanForObfuscator() {
+			removeObfuscatorAttribute();
 			jitMethodsDecrypter = new JitMethodsDecrypter(module, DeobfuscatedFile);
 			try {
 				jitMethodsDecrypter.find();
@@ -215,6 +217,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				obfuscatorName = string.Format("{0} {1}", DeobfuscatorInfo.THE_NAME, versionString);
 		}
 
+		const bool useAttributeVersion = true;
 		string getVersionString() {
 			var versionProviders = new IVersionProvider[] {
 				jitMethodsDecrypter,
@@ -243,6 +246,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 					vd.addRevs(minRev, maxRev);
 				}
 			}
+			if (useAttributeVersion)
+				vd.setVersion(approxVersion);
 			return vd.getVersionString();
 		}
 
@@ -332,6 +337,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			newOne.ModuleBytes = ModuleBytes;
 			newOne.embeddedAssemblyInfos.AddRange(embeddedAssemblyInfos);
 			newOne.setModule(module);
+			newOne.removeObfuscatorAttribute();
 			newOne.jitMethodsDecrypter = hasUnpacked ? new JitMethodsDecrypter(module, DeobfuscatedFile) :
 						new JitMethodsDecrypter(module, DeobfuscatedFile, jitMethodsDecrypter);
 			if ((newOne.decryptState & DecryptState.CanDecryptMethods) != 0) {
@@ -359,7 +365,6 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			Log.v("Detected {0}", obfuscatorName);
 
-			removeObfuscatorAttribute();
 			initializeConstantsDecrypterV18();
 			initializeConstantsDecrypterV17();
 			initializeConstantsDecrypterV15();
@@ -539,9 +544,25 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		void removeObfuscatorAttribute() {
 			foreach (var type in module.Types) {
-				if (type.FullName == "ConfusedByAttribute")
+				if (type.FullName == "ConfusedByAttribute") {
+					setConfuserVersion(type);
 					addAttributeToBeRemoved(type, "Obfuscator attribute");
+					break;
+				}
 			}
+		}
+
+		void setConfuserVersion(TypeDefinition type) {
+			var s = DotNetUtils.getCustomArgAsString(getModuleAttribute(type) ?? getAssemblyAttribute(type), 0);
+			if (s == null)
+				return;
+			var val = System.Text.RegularExpressions.Regex.Match(s, @"^Confuser v(\d+)\.(\d+)\.(\d+)\.(\d+)$");
+			if (val.Groups.Count < 5)
+				return;
+			approxVersion = new Version(int.Parse(val.Groups[1].ToString()),
+										int.Parse(val.Groups[2].ToString()),
+										int.Parse(val.Groups[3].ToString()),
+										int.Parse(val.Groups[4].ToString()));
 		}
 
 		public override void deobfuscateMethodEnd(Blocks blocks) {

@@ -87,6 +87,25 @@ namespace de4dot.code.deobfuscators.Confuser {
 				maxRev = max;
 		}
 
+		public void setVersion(Version version) {
+			if (version == null)
+				return;
+			int minRev = int.MaxValue, maxRev = int.MinValue;
+			foreach (var kv in revToVersion) {
+				if (kv.Value.Major != version.Major || kv.Value.Minor != version.Minor)
+					continue;
+				if (minRev > kv.Key)
+					minRev = kv.Key;
+				if (maxRev < kv.Key)
+					maxRev = kv.Key;
+			}
+			if (minRev == int.MaxValue)
+				return;
+			if (maxRev == revs[revs.Length - 1])
+				maxRev = int.MaxValue;
+			addRevs(minRev, maxRev);
+		}
+
 		public string getVersionString() {
 			if (minRev > maxRev || minRev < 0)
 				return null;
