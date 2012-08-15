@@ -754,11 +754,11 @@ namespace de4dot.blocks {
 			}
 		}
 
-		public static IEnumerable<CustomAttribute> findAttributes(AssemblyDefinition asm, TypeReference attr) {
+		public static IEnumerable<CustomAttribute> findAttributes(ICustomAttributeProvider custAttrProvider, TypeReference attr) {
 			var list = new List<CustomAttribute>();
-			if (asm == null)
+			if (custAttrProvider == null)
 				return list;
-			foreach (var cattr in asm.CustomAttributes) {
+			foreach (var cattr in custAttrProvider.CustomAttributes) {
 				if (MemberReferenceHelper.compareTypes(attr, cattr.AttributeType))
 					list.Add(cattr);
 			}

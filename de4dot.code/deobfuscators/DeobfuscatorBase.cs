@@ -691,6 +691,11 @@ namespace de4dot.code.deobfuscators {
 			return list.Count == 0 ? null : list[0];
 		}
 
+		protected CustomAttribute getModuleAttribute(TypeReference attr) {
+			var list = new List<CustomAttribute>(DotNetUtils.findAttributes(module, attr));
+			return list.Count == 0 ? null : list[0];
+		}
+
 		protected bool hasMetadataStream(string name) {
 			foreach (var stream in module.MetadataStreams) {
 				if (stream.Name == name)
