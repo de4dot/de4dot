@@ -106,24 +106,8 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			if (decrypterType == null)
 				return;
 
-			encryptedResource = getResource(module, DotNetUtils.getCodeStrings(DotNetUtils.getMethod(decrypterType, ".cctor")));
+			encryptedResource = CoUtils.getResource(module, DotNetUtils.getCodeStrings(DotNetUtils.getMethod(decrypterType, ".cctor")));
 			constantsData = resourceDecrypter.decrypt(encryptedResource.GetResourceStream());
-		}
-
-		static EmbeddedResource getResource(ModuleDefinition module, IEnumerable<string> names) {
-			foreach (var name in names) {
-				var resource = DotNetUtils.getResource(module, name) as EmbeddedResource;
-				if (resource != null)
-					return resource;
-				try {
-					resource = DotNetUtils.getResource(module, Encoding.UTF8.GetString(Convert.FromBase64String(name))) as EmbeddedResource;
-					if (resource != null)
-						return resource;
-				}
-				catch {
-				}
-			}
-			return null;
 		}
 
 		public int decryptInt32(int index) {
