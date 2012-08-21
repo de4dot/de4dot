@@ -174,7 +174,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				return false;
 
 			var instrs = cctor.Body.Instructions;
-			for (int i = 0; i < instrs.Count - 4; i++) {
+			for (int i = 0; i < instrs.Count - 3; i++) {
 				var ldci4_1 = instrs[i];
 				if (!DotNetUtils.isLdcI4(ldci4_1))
 					continue;
@@ -199,7 +199,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				return true;
 			}
 
-			return true;
+			return false;
 		}
 	}
 }
