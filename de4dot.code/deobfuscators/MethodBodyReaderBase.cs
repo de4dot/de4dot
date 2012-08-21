@@ -254,7 +254,7 @@ namespace de4dot.code.deobfuscators {
 
 		protected abstract ExceptionHandler readExceptionHandler();
 
-		public void restoreMethod(MethodDefinition method) {
+		public virtual void restoreMethod(MethodDefinition method) {
 			var body = method.Body;
 
 			body.Variables.Clear();
