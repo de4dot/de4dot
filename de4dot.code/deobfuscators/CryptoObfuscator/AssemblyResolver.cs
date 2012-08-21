@@ -46,6 +46,10 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			}
 		}
 
+		public bool Detected {
+			get { return resolverType != null; }
+		}
+
 		public List<AssemblyInfo> AssemblyInfos {
 			get { return assemblyInfos; }
 		}
