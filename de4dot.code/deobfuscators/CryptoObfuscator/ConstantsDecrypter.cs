@@ -82,7 +82,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		bool checkType(TypeDefinition type) {
 			if (type.Methods.Count != 7)
 				return false;
-			if (type.Fields.Count != 1)
+			if (type.Fields.Count < 1 || type.Fields.Count > 2)
 				return false;
 			if (!new FieldTypes(type).all(requiredTypes))
 				return false;
