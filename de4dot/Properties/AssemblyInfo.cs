@@ -21,7 +21,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 
 [assembly: AssemblyTitle("de4dot")]
-[assembly: AssemblyDescription("Deobfuscates obfuscated .NET applications - AnyCpu")]
+[assembly: AssemblyDescription("Deobfuscates obfuscated .NET applications - x86")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("de4dot")]
