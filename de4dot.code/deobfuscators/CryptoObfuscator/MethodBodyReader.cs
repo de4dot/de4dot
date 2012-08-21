@@ -114,5 +114,10 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 
 			return eh;
 		}
+
+		public override void restoreMethod(MethodDefinition method) {
+			base.restoreMethod(method);
+			method.Body.MaxStackSize = maxStackSize;
+		}
 	}
 }
