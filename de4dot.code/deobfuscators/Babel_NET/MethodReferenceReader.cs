@@ -60,9 +60,9 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 		public int Flags2 { get; set; }
 		public short MaxStack { get; set; }
-		public List<VariableDefinition> Locals { get; set; }
-		public Instruction[] Instructions { get; set; }
-		public ExceptionHandler[] ExceptionHandlers { get; set; }
+		public IList<VariableDefinition> Locals { get; set; }
+		public IList<Instruction> Instructions { get; set; }
+		public IList<ExceptionHandler> ExceptionHandlers { get; set; }
 
 		public bool IsStatic {
 			get { return (Flags2 & 0x10) != 0; }

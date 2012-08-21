@@ -241,28 +241,9 @@ namespace de4dot.code.deobfuscators.ILProtector {
 		}
 
 		static void restoreMethod(MethodDefinition method, MethodReader methodReader) {
-			var body = method.Body;
-
 			// body.MaxStackSize = <let Mono.Cecil calculate this>
-			body.InitLocals = methodReader.InitLocals;
-
-			body.Variables.Clear();
-			if (methodReader.Locals != null) {
-				foreach (var local in methodReader.Locals)
-					body.Variables.Add(local);
-			}
-
-			body.Instructions.Clear();
-			if (methodReader.Instructions != null) {
-				foreach (var instr in methodReader.Instructions)
-					body.Instructions.Add(instr);
-			}
-
-			body.ExceptionHandlers.Clear();
-			if (methodReader.ExceptionHandlers != null) {
-				foreach (var eh in methodReader.ExceptionHandlers)
-					body.ExceptionHandlers.Add(eh);
-			}
+			method.Body.InitLocals = methodReader.InitLocals;
+			methodReader.restoreMethod(method);
 		}
 
 		int getMethodId(MethodDefinition method) {

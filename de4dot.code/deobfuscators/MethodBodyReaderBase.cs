@@ -27,9 +27,9 @@ using de4dot.blocks;
 namespace de4dot.code.deobfuscators {
 	abstract class MethodBodyReaderBase {
 		protected BinaryReader reader;
-		public List<VariableDefinition> Locals { get; set; }
-		public Instruction[] Instructions { get; set; }
-		public ExceptionHandler[] ExceptionHandlers { get; set; }
+		public IList<VariableDefinition> Locals { get; set; }
+		public IList<Instruction> Instructions { get; set; }
+		public IList<ExceptionHandler> ExceptionHandlers { get; set; }
 		protected IList<ParameterDefinition> parameters;
 		int currentOffset;
 
@@ -46,17 +46,34 @@ namespace de4dot.code.deobfuscators {
 		protected void readInstructions(int numInstrs) {
 			Instructions = new Instruction[numInstrs];
 			currentOffset = 0;
-			for (int i = 0; i < Instructions.Length; i++) {
-				var instr = readInstruction();
-				Instructions[i] = instr;
-				if (instr.OpCode.Code == Code.Switch) {
-					int[] targets = (int[])instr.Operand;
-					currentOffset += instr.OpCode.Size + 4 + 4 * targets.Length;
-				}
-				else
-					currentOffset += Instructions[i].GetSize();
-			}
+			for (int i = 0; i < Instructions.Count; i++)
+				Instructions[i] = readOneInstruction();
+			fixBranches();
+		}
 
+		protected void readInstructionsNumBytes(uint codeSize) {
+			var instrs = new List<Instruction>();
+			long endOffs = reader.BaseStream.Position + codeSize;
+			while (reader.BaseStream.Position < endOffs)
+				instrs.Add(readOneInstruction());
+			if (reader.BaseStream.Position != endOffs)
+				throw new ApplicationException("Could not read all instructions");
+			Instructions = instrs;
+			fixBranches();
+		}
+
+		Instruction readOneInstruction() {
+			var instr = readInstruction();
+			if (instr.OpCode.Code == Code.Switch) {
+				int[] targets = (int[])instr.Operand;
+				currentOffset += instr.OpCode.Size + 4 + 4 * targets.Length;
+			}
+			else
+				currentOffset += instr.GetSize();
+			return instr;
+		}
+
+		void fixBranches() {
 			foreach (var instr in Instructions) {
 				switch (instr.OpCode.OperandType) {
 				case OperandType.InlineBrTarget:
@@ -231,10 +248,32 @@ namespace de4dot.code.deobfuscators {
 
 		protected void readExceptionHandlers(int numExceptionHandlers) {
 			ExceptionHandlers = new ExceptionHandler[numExceptionHandlers];
-			for (int i = 0; i < ExceptionHandlers.Length; i++)
+			for (int i = 0; i < ExceptionHandlers.Count; i++)
 				ExceptionHandlers[i] = readExceptionHandler();
 		}
 
 		protected abstract ExceptionHandler readExceptionHandler();
+
+		public void restoreMethod(MethodDefinition method) {
+			var body = method.Body;
+
+			body.Variables.Clear();
+			if (Locals != null) {
+				foreach (var local in Locals)
+					body.Variables.Add(local);
+			}
+
+			body.Instructions.Clear();
+			if (Instructions != null) {
+				foreach (var instr in Instructions)
+					body.Instructions.Add(instr);
+			}
+
+			body.ExceptionHandlers.Clear();
+			if (ExceptionHandlers != null) {
+				foreach (var eh in ExceptionHandlers)
+					body.ExceptionHandlers.Add(eh);
+			}
+		}
 	}
 }
