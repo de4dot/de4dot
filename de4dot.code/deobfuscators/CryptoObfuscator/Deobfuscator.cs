@@ -68,6 +68,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		bool foundObfuscatedSymbols = false;
 		bool foundObfuscatorUserString = false;
 
+		MethodsDecrypter methodsDecrypter;
 		ProxyCallFixer proxyCallFixer;
 		ResourceDecrypter resourceDecrypter;
 		ResourceResolver resourceResolver;
@@ -111,7 +112,8 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		protected override int detectInternal() {
 			int val = 0;
 
-			int sum = toInt32(stringDecrypter.Detected) +
+			int sum = toInt32(methodsDecrypter.Detected) +
+					toInt32(stringDecrypter.Detected) +
 					toInt32(tamperDetection.Detected) +
 					toInt32(proxyCallFixer.Detected) +
 					toInt32(constantsDecrypter.Detected);
@@ -134,6 +136,8 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			if (checkCryptoObfuscator())
 				foundObfuscatedSymbols = true;
 
+			methodsDecrypter = new MethodsDecrypter(module);
+			methodsDecrypter.find();
 			proxyCallFixer = new ProxyCallFixer(module);
 			proxyCallFixer.findDelegateCreator();
 			stringDecrypter = new StringDecrypter(module);
@@ -190,6 +194,14 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				DeobfuscatedFile.stringDecryptersAdded();
 			}
 
+			methodsDecrypter.decrypt(resourceDecrypter);
+
+			if (methodsDecrypter.Detected) {
+				if (!assemblyResolver.Detected)
+					assemblyResolver.find();
+				if (!tamperDetection.Detected)
+					tamperDetection.find();
+			}
 			antiDebugger = new AntiDebugger(module, DeobfuscatedFile, this);
 			antiDebugger.find();
 
@@ -217,6 +229,9 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			addTypeToBeRemoved(assemblyResolver.Type, "Assembly resolver type");
 			addTypeToBeRemoved(tamperDetection.Type, "Tamper detection type");
 			addTypeToBeRemoved(antiDebugger.Type, "Anti-debugger type");
+			addTypeToBeRemoved(methodsDecrypter.Type, "Methods decrypter type");
+			addTypesToBeRemoved(methodsDecrypter.DelegateTypes, "Methods decrypter delegate type");
+			addResourceToBeRemoved(methodsDecrypter.Resource, "Encrypted methods");
 
 			proxyCallFixer.find();
 

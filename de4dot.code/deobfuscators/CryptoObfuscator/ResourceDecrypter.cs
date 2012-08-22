@@ -304,7 +304,11 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 					return method;
 				if (DotNetUtils.isMethod(method, "System.Byte[]", "(System.Byte,System.IO.Stream)"))
 					return method;
+				if (DotNetUtils.isMethod(method, "System.Byte[]", "(System.SByte,System.IO.Stream)"))
+					return method;
 				if (DotNetUtils.isMethod(method, "System.Byte[]", "(System.Byte,System.IO.Stream,System.Int32)"))
+					return method;
+				if (DotNetUtils.isMethod(method, "System.Byte[]", "(System.SByte,System.IO.Stream,System.UInt32)"))
 					return method;
 			}
 			return null;
