@@ -56,6 +56,8 @@ namespace de4dot.code {
 
 		ExternalAssembly load(TypeReference type) {
 			var asmFullName = DotNetUtils.getFullAssemblyName(type);
+			if (asmFullName == null)
+				return null;
 			ExternalAssembly asm;
 			if (assemblies.TryGetValue(asmFullName, out asm))
 				return asm;
