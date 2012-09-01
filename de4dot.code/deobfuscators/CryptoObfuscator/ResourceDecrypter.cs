@@ -272,12 +272,13 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				var ldci4 = instrs[i];
 				if (!DotNetUtils.isLdcI4(ldci4))
 					continue;
-				if (DotNetUtils.getLdcI4Value(ldci4) != 2)
+				int loopCount = DotNetUtils.getLdcI4Value(ldci4);
+				if (loopCount < 2 || loopCount > 3)
 					continue;
 				var blt = instrs[i + 1];
 				if (blt.OpCode.Code != Code.Blt && blt.OpCode.Code != Code.Blt_S)
 					continue;
-				return 1;
+				return loopCount - 1;
 			}
 			return 0;
 		}

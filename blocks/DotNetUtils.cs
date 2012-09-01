@@ -926,6 +926,9 @@ namespace de4dot.blocks {
 
 		public static AssemblyNameReference getAssemblyNameReference(TypeReference type) {
 			var scope = type.Scope;
+			if (scope == null)
+				return null;
+
 			if (scope is ModuleDefinition) {
 				var moduleDefinition = (ModuleDefinition)scope;
 				return moduleDefinition.Assembly.Name;
@@ -946,7 +949,7 @@ namespace de4dot.blocks {
 
 		public static string getFullAssemblyName(TypeReference type) {
 			var asmRef = getAssemblyNameReference(type);
-			return asmRef.FullName;
+			return asmRef == null ? null : asmRef.FullName;
 		}
 
 		public static bool isAssembly(IMetadataScope scope, string assemblySimpleName) {

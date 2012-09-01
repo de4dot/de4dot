@@ -71,16 +71,15 @@ namespace de4dot.code.deobfuscators {
 			var mbHeader = new MethodBodyHeader();
 
 			uint codeOffset;
-			switch (peek(reader) & 3) {
-			case 2:
+			byte b = peek(reader);
+			if ((b & 3) == 2) {
 				mbHeader.flags = 2;
 				mbHeader.maxStack = 8;
 				mbHeader.codeSize = (uint)(reader.ReadByte() >> 2);
 				mbHeader.localVarSigTok = 0;
 				codeOffset = 1;
-				break;
-
-			case 3:
+			}
+			else if ((b & 7) == 3) {
 				mbHeader.flags = reader.ReadUInt16();
 				codeOffset = (uint)(4 * (mbHeader.flags >> 12));
 				if (codeOffset != 12)
@@ -92,11 +91,9 @@ namespace de4dot.code.deobfuscators {
 				mbHeader.localVarSigTok = reader.ReadUInt32();
 				if (mbHeader.localVarSigTok != 0 && (mbHeader.localVarSigTok >> 24) != 0x11)
 					throw new InvalidMethodBody();
-				break;
-
-			default:
-				throw new InvalidMethodBody();
 			}
+			else
+				throw new InvalidMethodBody();
 
 			if (mbHeader.codeSize + codeOffset > reader.BaseStream.Length)
 				throw new InvalidMethodBody();
