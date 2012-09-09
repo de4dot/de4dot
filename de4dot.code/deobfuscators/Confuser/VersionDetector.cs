@@ -43,7 +43,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			75306, 75318, 75349, 75367, 75369, 75402, 75459, 75461,
 			75573, 75719, 75720, 75725, 75806, 75807, 75926, 76101,
 			76119, 76163, 76186, 76271, 76360, 76509, 76542, 76548,
-			76558, 76580,
+			76558, 76580, 76656,
 		};
 
 		static Dictionary<int, Version> revToVersion = new Dictionary<int, Version> {
