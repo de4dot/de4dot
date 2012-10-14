@@ -380,14 +380,14 @@ namespace de4dot.code.deobfuscators.Confuser {
 				addTypeToBeRemoved(memoryMethodsDecrypter.Type, "Method decrypter (memory) type");
 			}
 
-			if (options.RemoveAntiDebug) {
+			if (options.RemoveAntiDebug && antiDebugger != null) {
 				addModuleCctorInitCallToBeRemoved(antiDebugger.InitMethod);
 				addTypeToBeRemoved(antiDebugger.Type, "Anti debugger type");
 				if (antiDebugger.Type == DotNetUtils.getModuleType(module))
 					addMethodToBeRemoved(antiDebugger.InitMethod, "Anti debugger method");
 			}
 
-			if (options.RemoveAntiDump) {
+			if (options.RemoveAntiDump && antiDumping != null) {
 				addModuleCctorInitCallToBeRemoved(antiDumping.InitMethod);
 				addTypeToBeRemoved(antiDumping.Type, "Anti dumping type");
 			}
@@ -585,7 +585,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 					addFieldsToBeRemoved(proxyCallFixer.Fields, "Proxy delegate instance field");
 				proxyCallFixer.cleanUp();
 			}
-			constantsDecrypterV18.cleanUp();
+			if (constantsDecrypterV18 != null)
+				constantsDecrypterV18.cleanUp();
 
 			if (CanRemoveStringDecrypterType) {
 				if (stringDecrypter != null) {
