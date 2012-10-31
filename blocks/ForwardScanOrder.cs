@@ -19,8 +19,6 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
 
 namespace de4dot.blocks {
 	// This class makes sure that each block that is entered with a non-empty stack has at

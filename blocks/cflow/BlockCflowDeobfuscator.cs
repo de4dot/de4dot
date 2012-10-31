@@ -18,7 +18,7 @@
 */
 
 using System;
-using Mono.Cecil.Cil;
+using dot10.DotNet.Emit;
 
 namespace de4dot.blocks.cflow {
 	class BlockCflowDeobfuscator : BlockDeobfuscator, IBranchHandler {
@@ -33,7 +33,7 @@ namespace de4dot.blocks.cflow {
 
 		protected override bool deobfuscate(Block block) {
 			this.block = block;
-			if (!DotNetUtils.isConditionalBranch(block.LastInstr.OpCode.Code) && block.LastInstr.OpCode.Code != Code.Switch)
+			if (!block.LastInstr.isConditionalBranch() && block.LastInstr.OpCode.Code != Code.Switch)
 				return false;
 			instructionEmulator.init(blocks);
 

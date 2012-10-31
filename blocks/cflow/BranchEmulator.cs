@@ -17,7 +17,7 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.Cecil.Cil;
+using dot10.DotNet.Emit;
 
 namespace de4dot.blocks.cflow {
 	public interface IBranchHandler {

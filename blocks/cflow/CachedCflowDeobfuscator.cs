@@ -18,14 +18,14 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 
 namespace de4dot.blocks.cflow {
 	// Only deobfuscates a method once. A copy of the method (now deobfuscated) is returned.
 	public class CachedCflowDeobfuscator {
 		BlocksCflowDeobfuscator cflowDeobfuscator = new BlocksCflowDeobfuscator();
-		Dictionary<MethodDefinition, MethodDefinition> deobfuscated = new Dictionary<MethodDefinition, MethodDefinition>();
+		Dictionary<MethodDef, MethodDef> deobfuscated = new Dictionary<MethodDef, MethodDef>();
 
 		public CachedCflowDeobfuscator() {
 		}
@@ -43,12 +43,12 @@ namespace de4dot.blocks.cflow {
 			cflowDeobfuscator.add(blocksDeobfuscator);
 		}
 
-		public MethodDefinition deobfuscate(MethodDefinition method) {
-			MethodDefinition deobfuscatedMethod;
+		public MethodDef deobfuscate(MethodDef method) {
+			MethodDef deobfuscatedMethod;
 			if (deobfuscated.TryGetValue(method, out deobfuscatedMethod))
 				return deobfuscatedMethod;
 
-			if (method.Body == null || method.Body.Instructions.Count == 0) {
+			if (method.CilBody == null || method.CilBody.Instructions.Count == 0) {
 				deobfuscated[method] = method;
 				return method;
 			}

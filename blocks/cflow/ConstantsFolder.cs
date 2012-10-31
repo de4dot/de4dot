@@ -19,19 +19,19 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.blocks.cflow {
 	// Very simple constants folder which is all that's needed at the moment
 	class ConstantsFolder : BlockDeobfuscator {
 		InstructionEmulator instructionEmulator = new InstructionEmulator();
-		List<ParameterDefinition> args;
+		IList<Parameter> args;
 
 		protected override void init(List<Block> allBlocks) {
 			base.init(allBlocks);
-			args = DotNetUtils.getParameters(blocks.Method);
+			args = blocks.Method.Parameters;
 		}
 
 		protected override bool deobfuscate(Block block) {
@@ -49,7 +49,7 @@ namespace de4dot.blocks.cflow {
 				case Code.Ldarg_2:
 				case Code.Ldarg_3:
 				case Code.Ldarg_S:
-					changed |= fixLoadInstruction(block, i, instructionEmulator.getArg(DotNetUtils.getParameter(args, instr.Instruction)));
+					changed |= fixLoadInstruction(block, i, instructionEmulator.getArg(instr.Instruction.GetParameter(args)));
 					break;
 
 				case Code.Ldloc:
@@ -58,17 +58,17 @@ namespace de4dot.blocks.cflow {
 				case Code.Ldloc_2:
 				case Code.Ldloc_3:
 				case Code.Ldloc_S:
-					changed |= fixLoadInstruction(block, i, instructionEmulator.getLocal(DotNetUtils.getLocalVar(blocks.Locals, instr.Instruction)));
+					changed |= fixLoadInstruction(block, i, instructionEmulator.getLocal(instr.Instruction.GetLocal(blocks.Locals)));
 					break;
 
 				case Code.Ldarga:
 				case Code.Ldarga_S:
-					instructionEmulator.makeArgUnknown((ParameterDefinition)instr.Operand);
+					instructionEmulator.makeArgUnknown((Parameter)instr.Operand);
 					break;
 
 				case Code.Ldloca:
 				case Code.Ldloca_S:
-					instructionEmulator.makeLocalUnknown((VariableDefinition)instr.Operand);
+					instructionEmulator.makeLocalUnknown((Local)instr.Operand);
 					break;
 				}
 
@@ -89,7 +89,7 @@ namespace de4dot.blocks.cflow {
 				var intValue = (Int32Value)value;
 				if (!intValue.allBitsValid())
 					return false;
-				block.Instructions[index] = new Instr(DotNetUtils.createLdci4(intValue.value));
+				block.Instructions[index] = new Instr(Instruction.CreateLdcI4(intValue.value));
 				return true;
 			}
 			else if (value.isInt64()) {

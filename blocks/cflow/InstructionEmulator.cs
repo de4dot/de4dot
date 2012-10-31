@@ -42,11 +42,9 @@ namespace de4dot.blocks.cflow {
 			init(method);
 		}
 
-#if PORT
 		public void init(Blocks blocks) {
 			init(blocks.Method);
 		}
-#endif
 
 		public void init(MethodDef method) {
 			this.parameterDefs = method.Parameters;
@@ -234,7 +232,6 @@ namespace de4dot.blocks.cflow {
 			return valueStack.peek();
 		}
 
-#if PORT
 		public void emulate(IEnumerable<Instr> instructions) {
 			foreach (var instr in instructions)
 				emulate(instr.Instruction);
@@ -244,7 +241,6 @@ namespace de4dot.blocks.cflow {
 			for (int i = start; i < end; i++)
 				emulate(instructions[i].Instruction);
 		}
-#endif
 
 		public void emulate(Instruction instr) {
 			switch (instr.OpCode.Code) {

@@ -19,7 +19,7 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil.Cil;
+using dot10.DotNet.Emit;
 
 namespace de4dot.blocks.cflow {
 	// Removes dead stores by replacing the stloc with a pop. Other optimizations will notice it's
@@ -80,7 +80,7 @@ namespace de4dot.blocks.cflow {
 		void findLoadStores() {
 			foreach (var block in allBlocks) {
 				foreach (var instr in block.Instructions) {
-					VariableDefinition local;
+					Local local;
 					AccessFlags flags;
 					switch (instr.OpCode.Code) {
 					case Code.Ldloc:
@@ -105,7 +105,7 @@ namespace de4dot.blocks.cflow {
 
 					case Code.Ldloca_S:
 					case Code.Ldloca:
-						local = instr.Operand as VariableDefinition;
+						local = instr.Operand as Local;
 						flags = AccessFlags.Read | AccessFlags.Write;
 						break;
 
@@ -128,7 +128,7 @@ namespace de4dot.blocks.cflow {
 				var instructions = block.Instructions;
 				for (int i = 0; i < instructions.Count; i++) {
 					var instr = instructions[i];
-					VariableDefinition local;
+					Local local;
 					switch (instr.OpCode.Code) {
 					case Code.Stloc:
 					case Code.Stloc_S:

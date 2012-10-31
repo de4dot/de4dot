@@ -19,7 +19,8 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 
 namespace de4dot.blocks.cflow {
 	class SwitchCflowDeobfuscator : BlockDeobfuscator {
@@ -64,7 +65,7 @@ namespace de4dot.blocks.cflow {
 		}
 
 		bool isSwitchType2(Block switchBlock) {
-			VariableDefinition local = null;
+			Local local = null;
 			foreach (var instr in switchBlock.Instructions) {
 				if (!instr.isLdloc())
 					continue;
@@ -178,7 +179,7 @@ namespace de4dot.blocks.cflow {
 		//	swblk:
 		//		ldloc N
 		//		switch (......)
-		bool deobfuscateLdloc(IList<Block> switchTargets, Block switchFallThrough, Block block, VariableDefinition switchVariable) {
+		bool deobfuscateLdloc(IList<Block> switchTargets, Block switchFallThrough, Block block, Local switchVariable) {
 			bool changed = false;
 			foreach (var source in new List<Block>(block.Sources)) {
 				if (isBranchBlock(source)) {
@@ -366,18 +367,18 @@ namespace de4dot.blocks.cflow {
 			return changed;
 		}
 
-		static Block createBlock(Dictionary<VariableDefinition, int> consts, Block fallThrough) {
+		static Block createBlock(Dictionary<Local, int> consts, Block fallThrough) {
 			var block = new Block();
 			foreach (var kv in consts) {
-				block.Instructions.Add(new Instr(DotNetUtils.createLdci4(kv.Value)));
+				block.Instructions.Add(new Instr(Instruction.CreateLdcI4(kv.Value)));
 				block.Instructions.Add(new Instr(Instruction.Create(OpCodes.Stloc, kv.Key)));
 			}
 			fallThrough.Parent.add(block);
 			return block;
 		}
 
-		Dictionary<VariableDefinition, int> getBccLocalConstants(Block block) {
-			var dict = new Dictionary<VariableDefinition, int>();
+		Dictionary<Local, int> getBccLocalConstants(Block block) {
+			var dict = new Dictionary<Local, int>();
 			var instrs = block.Instructions;
 			for (int i = 0; i < instrs.Count; i++) {
 				var instr = instrs[i];
@@ -397,7 +398,7 @@ namespace de4dot.blocks.cflow {
 						dict.Remove(local);
 				}
 				else if (instr.OpCode.Code == Code.Ldloca || instr.OpCode.Code == Code.Ldloca_S) {
-					var local = instr.Operand as VariableDefinition;
+					var local = instr.Operand as Local;
 					if (local != null)
 						dict.Remove(local);
 				}

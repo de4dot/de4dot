@@ -18,8 +18,8 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 
 namespace de4dot.blocks.cflow {
 	public abstract class MethodCallInlinerBase : IBlocksDeobfuscator {
@@ -60,7 +60,7 @@ namespace de4dot.blocks.cflow {
 				this.patchIndex = patchIndex;
 				this.afterIndex = afterIndex;
 				this.lastInstr = lastInstr;
-				this.clonedInstr = new Instr(DotNetUtils.clone(lastInstr));
+				this.clonedInstr = new Instr(lastInstr.Clone());
 			}
 
 			public void patch(Block block) {
@@ -68,7 +68,7 @@ namespace de4dot.blocks.cflow {
 			}
 		}
 
-		protected bool inlineLoadMethod(int patchIndex, MethodDefinition methodToInline, Instruction loadInstr, int instrIndex) {
+		protected bool inlineLoadMethod(int patchIndex, MethodDef methodToInline, Instruction loadInstr, int instrIndex) {
 			if (!isReturn(methodToInline, instrIndex))
 				return false;
 
@@ -76,19 +76,19 @@ namespace de4dot.blocks.cflow {
 			for (int i = 0; i < methodArgsCount; i++)
 				block.insert(patchIndex++, Instruction.Create(OpCodes.Pop));
 
-			block.Instructions[patchIndex] = new Instr(DotNetUtils.clone(loadInstr));
+			block.Instructions[patchIndex] = new Instr(loadInstr.Clone());
 			return true;
 		}
 
-		protected bool inlineOtherMethod(int patchIndex, MethodDefinition methodToInline, Instruction instr, int instrIndex) {
+		protected bool inlineOtherMethod(int patchIndex, MethodDef methodToInline, Instruction instr, int instrIndex) {
 			return inlineOtherMethod(patchIndex, methodToInline, instr, instrIndex, 0);
 		}
 
-		protected bool inlineOtherMethod(int patchIndex, MethodDefinition methodToInline, Instruction instr, int instrIndex, int popLastArgs) {
+		protected bool inlineOtherMethod(int patchIndex, MethodDef methodToInline, Instruction instr, int instrIndex, int popLastArgs) {
 			return patchMethod(methodToInline, tryInlineOtherMethod(patchIndex, methodToInline, instr, instrIndex, popLastArgs));
 		}
 
-		protected bool patchMethod(MethodDefinition methodToInline, InstructionPatcher patcher) {
+		protected bool patchMethod(MethodDef methodToInline, InstructionPatcher patcher) {
 			if (patcher == null)
 				return false;
 
@@ -99,11 +99,11 @@ namespace de4dot.blocks.cflow {
 			return true;
 		}
 
-		protected InstructionPatcher tryInlineOtherMethod(int patchIndex, MethodDefinition methodToInline, Instruction instr, int instrIndex) {
+		protected InstructionPatcher tryInlineOtherMethod(int patchIndex, MethodDef methodToInline, Instruction instr, int instrIndex) {
 			return tryInlineOtherMethod(patchIndex, methodToInline, instr, instrIndex, 0);
 		}
 
-		protected InstructionPatcher tryInlineOtherMethod(int patchIndex, MethodDefinition methodToInline, Instruction instr, int instrIndex, int popLastArgs) {
+		protected InstructionPatcher tryInlineOtherMethod(int patchIndex, MethodDef methodToInline, Instruction instr, int instrIndex, int popLastArgs) {
 			int loadIndex = 0;
 			int methodArgsCount = DotNetUtils.getArgsCount(methodToInline);
 			bool foundLdarga = false;
@@ -128,10 +128,10 @@ namespace de4dot.blocks.cflow {
 				if (!isLdarg)
 					break;
 
-				if (DotNetUtils.getArgIndex(instr) != loadIndex)
+				if (instr.GetParameterIndex() != loadIndex)
 					return null;
 				loadIndex++;
-				instr = DotNetUtils.getInstruction(methodToInline.Body.Instructions, ref instrIndex);
+				instr = DotNetUtils.getInstruction(methodToInline.CilBody.Instructions, ref instrIndex);
 			}
 			if (instr == null || loadIndex != methodArgsCount - popLastArgs)
 				return null;
@@ -140,11 +140,11 @@ namespace de4dot.blocks.cflow {
 				if (foundLdarga)
 					return null;
 				var callInstr = instr;
-				var calledMethod = callInstr.Operand as MethodReference;
+				var calledMethod = callInstr.Operand as IMethod;
 				if (calledMethod == null)
 					return null;
 
-				if (!isCompatibleType(-1, calledMethod.MethodReturnType.ReturnType, methodToInline.MethodReturnType.ReturnType))
+				if (!isCompatibleType(-1, calledMethod.MethodSig.RetType, methodToInline.MethodSig.RetType))
 					return null;
 
 				if (!checkSameMethods(calledMethod, methodToInline, popLastArgs))
@@ -156,19 +156,19 @@ namespace de4dot.blocks.cflow {
 				if (foundLdarga)
 					return null;
 				var newobjInstr = instr;
-				var ctor = newobjInstr.Operand as MethodReference;
+				var ctor = newobjInstr.Operand as IMethod;
 				if (ctor == null)
 					return null;
 
-				if (!isCompatibleType(-1, ctor.DeclaringType, methodToInline.MethodReturnType.ReturnType))
+				if (!isCompatibleType(-1, ctor.DeclaringType, methodToInline.MethodSig.RetType))
 					return null;
 
-				var methodArgs = DotNetUtils.getArgs(methodToInline);
+				var methodArgs = methodToInline.Parameters;
 				var calledMethodArgs = DotNetUtils.getArgs(ctor);
-				if (methodArgs.Count + 1 - popLastArgs != calledMethodArgs.Count)
+				if (methodArgs.Length + 1 - popLastArgs != calledMethodArgs.Count)
 					return null;
 				for (int i = 1; i < calledMethodArgs.Count; i++) {
-					if (!isCompatibleType(i, calledMethodArgs[i], methodArgs[i - 1]))
+					if (!isCompatibleType(i, calledMethodArgs[i], methodArgs[i - 1].Type))
 						return null;
 				}
 
@@ -186,25 +186,26 @@ namespace de4dot.blocks.cflow {
 			return null;
 		}
 
-		protected virtual bool isReturn(MethodDefinition methodToInline, int instrIndex) {
-			var instr = DotNetUtils.getInstruction(methodToInline.Body.Instructions, ref instrIndex);
+		protected virtual bool isReturn(MethodDef methodToInline, int instrIndex) {
+			var instr = DotNetUtils.getInstruction(methodToInline.CilBody.Instructions, ref instrIndex);
 			return instr != null && instr.OpCode.Code == Code.Ret;
 		}
 
-		protected bool checkSameMethods(MethodReference method, MethodDefinition methodToInline) {
+		protected bool checkSameMethods(IMethod method, MethodDef methodToInline) {
 			return checkSameMethods(method, methodToInline, 0);
 		}
 
-		protected bool checkSameMethods(MethodReference method, MethodDefinition methodToInline, int ignoreLastMethodToInlineArgs) {
-			var methodToInlineArgs = DotNetUtils.getArgs(methodToInline);
+		protected bool checkSameMethods(IMethod method, MethodDef methodToInline, int ignoreLastMethodToInlineArgs) {
+			var methodToInlineArgs = methodToInline.Parameters;
 			var methodArgs = DotNetUtils.getArgs(method);
-			if (methodToInlineArgs.Count - ignoreLastMethodToInlineArgs != methodArgs.Count)
+			bool hasImplicitThis = method.MethodSig.HasThis && !method.MethodSig.ExplicitThis;
+			if (methodToInlineArgs.Length - ignoreLastMethodToInlineArgs != methodArgs.Count)
 				return false;
 			for (int i = 0; i < methodArgs.Count; i++) {
 				var methodArg = methodArgs[i];
-				var methodToInlineArg = methodToInlineArgs[i];
+				var methodToInlineArg = methodToInlineArgs[i].Type;
 				if (!isCompatibleType(i, methodArg, methodToInlineArg)) {
-					if (i != 0 || !method.HasImplicitThis)
+					if (i != 0 || !hasImplicitThis)
 						return false;
 					if (!isCompatibleValueThisPtr(methodArg, methodToInlineArg))
 						return false;
@@ -214,17 +215,24 @@ namespace de4dot.blocks.cflow {
 			return true;
 		}
 
-		protected virtual bool isCompatibleType(int paramIndex, TypeReference origType, TypeReference newType) {
-			return MemberReferenceHelper.compareTypes(origType, newType);
+		protected virtual bool isCompatibleType(int paramIndex, IType origType, IType newType) {
+			return new SigComparer().Equals(origType, newType);
 		}
 
-		static bool isCompatibleValueThisPtr(TypeReference origType, TypeReference newType) {
-			var newByRef = newType as ByReferenceType;
+		static bool isCompatibleValueThisPtr(IType origType, IType newType) {
+			var newByRef = newType as ByRefSig;
 			if (newByRef == null)
 				return false;
-			if (!newByRef.ElementType.IsValueType || !origType.IsValueType)
+			if (!isValueType(newByRef.Next) || !isValueType(origType))
 				return false;
-			return MemberReferenceHelper.compareTypes(origType, newByRef.ElementType);
+			return new SigComparer().Equals(origType, newByRef.Next);
+		}
+
+		protected static bool isValueType(IType type) {
+			if (type == null)
+				return false;
+			//TODO:
+			return false;
 		}
 	}
 }

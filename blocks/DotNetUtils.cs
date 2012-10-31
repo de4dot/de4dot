@@ -23,6 +23,10 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Metadata;
 
+//TODO: Remove these
+using DN = dot10.DotNet;
+using DNE = dot10.DotNet.Emit;
+
 namespace de4dot.blocks {
 	public enum FrameworkType {
 		Unknown,
@@ -635,6 +639,11 @@ namespace de4dot.blocks {
 			return newMethod;
 		}
 
+		// Copies most things but not everything
+		public static DN.MethodDef clone(DN.MethodDef method) {
+			return null;	//TODO:
+		}
+
 		public static Instruction clone(Instruction instr) {
 			return new Instruction {
 				Offset = instr.Offset,
@@ -702,6 +711,22 @@ namespace de4dot.blocks {
 				bodyInstrs.Add(instr);
 
 			var bodyExceptionHandlers = method.Body.ExceptionHandlers;
+			bodyExceptionHandlers.Clear();
+			foreach (var eh in exceptionHandlers)
+				bodyExceptionHandlers.Add(eh);
+		}
+
+
+		public static void restoreBody(DN.MethodDef method, IEnumerable<DNE.Instruction> instructions, IEnumerable<DNE.ExceptionHandler> exceptionHandlers) {
+			if (method == null || method.CilBody == null)
+				return;
+
+			var bodyInstrs = method.CilBody.Instructions;
+			bodyInstrs.Clear();
+			foreach (var instr in instructions)
+				bodyInstrs.Add(instr);
+
+			var bodyExceptionHandlers = method.CilBody.ExceptionHandlers;
 			bodyExceptionHandlers.Clear();
 			foreach (var eh in exceptionHandlers)
 				bodyExceptionHandlers.Add(eh);
@@ -1035,6 +1060,16 @@ namespace de4dot.blocks {
 			return args;
 		}
 
+		public static List<DN.IType> getArgs(DN.IMethod method) {
+			var sig = method.MethodSig;
+			var args = new List<DN.IType>(sig.Params.Count + 1);
+			if (sig.HasThis && !sig.ExplicitThis)
+				args.Add(method.DeclaringType);
+			foreach (var arg in sig.Params)
+				args.Add(arg);
+			return args;
+		}
+
 		public static TypeReference getArgType(MethodReference method, Instruction instr) {
 			return getArgType(getArgs(method), instr);
 		}
@@ -1052,6 +1087,16 @@ namespace de4dot.blocks {
 		public static int getArgsCount(MethodReference method) {
 			int count = method.Parameters.Count;
 			if (method.HasImplicitThis)
+				count++;
+			return count;
+		}
+
+		public static int getArgsCount(DN.IMethod method) {
+			var sig = method.MethodSig;
+			if (sig == null)
+				return 0;
+			int count = sig.Params.Count;
+			if (sig.HasThis && !sig.ExplicitThis)
 				count++;
 			return count;
 		}
@@ -1106,6 +1151,25 @@ namespace de4dot.blocks {
 				if (instr == null || (instr.OpCode.Code != Code.Br && instr.OpCode.Code != Code.Br_S))
 					return instr;
 				instr = instr.Operand as Instruction;
+				if (instr == null)
+					return null;
+				index = instructions.IndexOf(instr);
+			}
+			return null;
+		}
+
+		public static DNE.Instruction getInstruction(IList<DNE.Instruction> instructions, ref int index) {
+			for (int i = 0; i < 10; i++) {
+				if (index < 0 || index >= instructions.Count)
+					return null;
+				var instr = instructions[index++];
+				if (instr.OpCode.Code == DNE.Code.Nop)
+					continue;
+				if (instr.OpCode.OpCodeType == DNE.OpCodeType.Prefix)
+					continue;
+				if (instr == null || (instr.OpCode.Code != DNE.Code.Br && instr.OpCode.Code != DNE.Code.Br_S))
+					return instr;
+				instr = instr.Operand as DNE.Instruction;
 				if (instr == null)
 					return null;
 				index = instructions.IndexOf(instr);

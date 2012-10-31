@@ -18,8 +18,8 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 
 namespace de4dot.blocks.cflow {
 	public class MethodCallInliner : MethodCallInlinerBase {
@@ -40,12 +40,12 @@ namespace de4dot.blocks.cflow {
 			return changed;
 		}
 
-		protected virtual bool canInline(MethodDefinition method) {
-			if (method.GenericParameters.Count > 0)
+		protected virtual bool canInline(MethodDef method) {
+			if (method.GenericParams.Count > 0)
 				return false;
 			if (method == blocks.Method)
 				return false;
-			if (!MemberReferenceHelper.compareTypes(method.DeclaringType, blocks.Method.DeclaringType))
+			if (!new SigComparer().Equals(method.DeclaringType, blocks.Method.DeclaringType))
 				return false;
 
 			if (method.IsStatic)
@@ -56,13 +56,13 @@ namespace de4dot.blocks.cflow {
 		}
 
 		bool inlineMethod(Instruction callInstr, int instrIndex) {
-			var methodToInline = callInstr.Operand as MethodDefinition;
+			var methodToInline = callInstr.Operand as MethodDef;
 			if (methodToInline == null)
 				return false;
 
 			if (!canInline(methodToInline))
 				return false;
-			var body = methodToInline.Body;
+			var body = methodToInline.CilBody;
 			if (body == null)
 				return false;
 
@@ -113,10 +113,10 @@ namespace de4dot.blocks.cflow {
 			}
 		}
 
-		protected override bool isCompatibleType(int paramIndex, TypeReference origType, TypeReference newType) {
-			if (MemberReferenceHelper.compareTypes(origType, newType))
+		protected override bool isCompatibleType(int paramIndex, IType origType, IType newType) {
+			if (new SigComparer().Equals(origType, newType))
 				return true;
-			if (newType.IsValueType || origType.IsValueType)
+			if (isValueType(newType) || isValueType(origType))
 				return false;
 			return newType.FullName == "System.Object";
 		}

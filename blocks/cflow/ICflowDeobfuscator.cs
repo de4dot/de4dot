@@ -17,10 +17,10 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.Cecil;
+using dot10.DotNet;
 
 namespace de4dot.blocks.cflow {
 	public interface ICflowDeobfuscator {
-		void deobfuscate(MethodDefinition method);
+		void deobfuscate(MethodDef method);
 	}
 }

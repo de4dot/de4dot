@@ -18,8 +18,6 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
 
 namespace de4dot.blocks {
 	public class FilterHandlerBlock : ScopeBlock {
