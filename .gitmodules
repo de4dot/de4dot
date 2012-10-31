@@ -1,3 +1,6 @@
 [submodule "cecil"]
 	path = cecil
 	url = git@github.com:0xd4d/cecil.git
+[submodule "dot10"]
+	path = dot10
+	url = e:/work/dot10.git
