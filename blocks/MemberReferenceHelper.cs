@@ -22,29 +22,7 @@ using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Metadata;
 
-namespace de4dot.blocks {
-	public enum CecilType {
-		ArrayType,
-		ByReferenceType,
-		EventDefinition,
-		FieldDefinition,
-		FieldReference,
-		FunctionPointerType,
-		GenericInstanceMethod,
-		GenericInstanceType,
-		GenericParameter,
-		MethodDefinition,
-		MethodReference,
-		OptionalModifierType,
-		PinnedType,
-		PointerType,
-		PropertyDefinition,
-		RequiredModifierType,
-		SentinelType,
-		TypeDefinition,
-		TypeReference,
-	}
-
+namespace de4dot.blocks.OLD_REMOVE {
 	public class TypeDefinitionDict<TValue> {
 		Dictionary<ScopeAndTokenKey, TValue> tokenToValue = new Dictionary<ScopeAndTokenKey, TValue>();
 		Dictionary<ScopeAndTokenKey, TypeDefinition> tokenToKey = new Dictionary<ScopeAndTokenKey, TypeDefinition>();
@@ -781,6 +759,30 @@ namespace de4dot.blocks {
 		public override string ToString() {
 			return methodRef.ToString();
 		}
+	}
+}
+
+namespace de4dot.blocks {
+	public enum CecilType {
+		ArrayType,
+		ByReferenceType,
+		EventDefinition,
+		FieldDefinition,
+		FieldReference,
+		FunctionPointerType,
+		GenericInstanceMethod,
+		GenericInstanceType,
+		GenericParameter,
+		MethodDefinition,
+		MethodReference,
+		OptionalModifierType,
+		PinnedType,
+		PointerType,
+		PropertyDefinition,
+		RequiredModifierType,
+		SentinelType,
+		TypeDefinition,
+		TypeReference,
 	}
 
 	public static class MemberReferenceHelper {

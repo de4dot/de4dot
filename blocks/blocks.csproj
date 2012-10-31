@@ -68,6 +68,7 @@
     <Compile Include="HandlerBlock.cs" />
     <Compile Include="Instr.cs" />
     <Compile Include="InstructionListParser.cs" />
+    <Compile Include="MemberDefDict.cs" />
     <Compile Include="MemberReferenceHelper.cs" />
     <Compile Include="MemberRefInstance.cs" />
     <Compile Include="MethodBlocks.cs" />

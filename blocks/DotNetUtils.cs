@@ -39,7 +39,7 @@ namespace de4dot.blocks {
 
 	class TypeCache {
 		ModuleDefinition module;
-		TypeDefinitionDict<TypeDefinition> typeRefToDef = new TypeDefinitionDict<TypeDefinition>();
+		de4dot.blocks.OLD_REMOVE.TypeDefinitionDict<TypeDefinition> typeRefToDef = new de4dot.blocks.OLD_REMOVE.TypeDefinitionDict<TypeDefinition>();
 
 		public TypeCache(ModuleDefinition module) {
 			this.module = module;
@@ -83,11 +83,11 @@ namespace de4dot.blocks {
 	}
 
 	public class CallCounter {
-		Dictionary<MethodReferenceAndDeclaringTypeKey, int> calls = new Dictionary<MethodReferenceAndDeclaringTypeKey, int>();
+		Dictionary<de4dot.blocks.OLD_REMOVE.MethodReferenceAndDeclaringTypeKey, int> calls = new Dictionary<de4dot.blocks.OLD_REMOVE.MethodReferenceAndDeclaringTypeKey, int>();
 
 		public void add(MethodReference calledMethod) {
 			int count;
-			var key = new MethodReferenceAndDeclaringTypeKey(calledMethod);
+			var key = new de4dot.blocks.OLD_REMOVE.MethodReferenceAndDeclaringTypeKey(calledMethod);
 			calls.TryGetValue(key, out count);
 			calls[key] = count + 1;
 		}
