@@ -19,7 +19,7 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil.Cil;
+using dot10.DotNet.Emit;
 
 namespace de4dot.blocks {
 	public class Block : BaseBlock {
@@ -269,7 +269,7 @@ namespace de4dot.blocks {
 			for (int i = 0; i < instrs.Count; i++) {
 				var instr = instrs[i];
 				if (instr.OpCode != OpCodes.Nop)
-					dest.Add(clone ? new Instr(DotNetUtils.clone(instr.Instruction)) : instr);
+					dest.Add(clone ? new Instr(instr.Instruction.Clone()) : instr);
 			}
 		}
 

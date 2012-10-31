@@ -52,7 +52,7 @@ namespace de4dot.blocks {
 
 				int stack = stackStart;
 				foreach (var instr in block.Instructions)
-					DotNetUtils.updateStack(instr.Instruction, ref stack, false);
+					instr.Instruction.UpdateStack(ref stack, false);
 				stackEnd = stack;
 			}
 		}

@@ -19,35 +19,35 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 
 namespace de4dot.blocks {
 	public class Blocks {
-		MethodDefinition method;
-		IList<VariableDefinition> locals;
+		MethodDef method;
+		IList<Local> locals;
 		MethodBlocks methodBlocks;
 
 		public MethodBlocks MethodBlocks {
 			get { return methodBlocks; }
 		}
 
-		public IList<VariableDefinition> Locals {
+		public IList<Local> Locals {
 			get { return locals; }
 		}
 
-		public MethodDefinition Method {
+		public MethodDef Method {
 			get { return method; }
 		}
 
-		public Blocks(MethodDefinition method) {
+		public Blocks(MethodDef method) {
 			this.method = method;
 			updateBlocks();
 		}
 
 		public void updateBlocks() {
-			var body = method.Body;
-			locals = body.Variables;
+			var body = method.CilBody;
+			locals = body.LocalList;
 			methodBlocks = new InstructionListParser(body.Instructions, body.ExceptionHandlers).parse();
 		}
 
@@ -79,11 +79,11 @@ namespace de4dot.blocks {
 			if (locals.Count == 0)
 				return 0;
 
-			var usedLocals = new Dictionary<VariableDefinition, List<LocalVariableInfo>>();
+			var usedLocals = new Dictionary<Local, List<LocalVariableInfo>>();
 			foreach (var block in methodBlocks.getAllBlocks()) {
 				for (int i = 0; i < block.Instructions.Count; i++) {
 					var instr = block.Instructions[i];
-					VariableDefinition local;
+					Local local;
 					switch (instr.OpCode.Code) {
 					case Code.Ldloc:
 					case Code.Ldloc_S:
@@ -102,7 +102,7 @@ namespace de4dot.blocks {
 
 					case Code.Ldloca_S:
 					case Code.Ldloca:
-						local = (VariableDefinition)instr.Operand;
+						local = (Local)instr.Operand;
 						break;
 
 					default:
@@ -122,7 +122,7 @@ namespace de4dot.blocks {
 			}
 
 			int newIndex = -1;
-			var newLocals = new List<VariableDefinition>(usedLocals.Count);
+			var newLocals = new List<Local>(usedLocals.Count);
 			foreach (var local in usedLocals.Keys) {
 				newIndex++;
 				newLocals.Add(local);
@@ -137,7 +137,7 @@ namespace de4dot.blocks {
 			return numRemoved;
 		}
 
-		static Instruction optimizeLocalInstr(Instr instr, VariableDefinition local, uint newIndex) {
+		static Instruction optimizeLocalInstr(Instr instr, Local local, uint newIndex) {
 			switch (instr.OpCode.Code) {
 			case Code.Ldloc:
 			case Code.Ldloc_S:
@@ -194,7 +194,7 @@ namespace de4dot.blocks {
 				}
 				catch (NullReferenceException) {
 					//TODO: Send this message to the log
-					Console.WriteLine("Null ref exception! Invalid metadata token in code? Method: {0:X8}: {1}", method.MetadataToken.ToUInt32(), method.FullName);
+					Console.WriteLine("Null ref exception! Invalid metadata token in code? Method: {0:X8}: {1}", method.MDToken.Raw, method.FullName);
 					return;
 				}
 			}

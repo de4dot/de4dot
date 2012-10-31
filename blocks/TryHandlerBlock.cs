@@ -17,8 +17,8 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 
 namespace de4dot.blocks {
 	// Contains the filter handler block and the catch handler block.
@@ -27,14 +27,14 @@ namespace de4dot.blocks {
 		HandlerBlock handlerBlock = new HandlerBlock();
 
 		// State for an ExceptionHandler instance
-		TypeReference catchType;
-		ExceptionHandlerType handlerType;
+		ITypeDefOrRef catchType;
+		ExceptionClause handlerType;
 
-		public TypeReference CatchType {
+		public ITypeDefOrRef CatchType {
 			get { return catchType; }
 		}
 
-		public ExceptionHandlerType HandlerType {
+		public ExceptionClause HandlerType {
 			get { return handlerType; }
 		}
 
