@@ -18,23 +18,23 @@
 */
 
 using System.Reflection;
-using Mono.Cecil;
+using dot10.DotNet;
 
 namespace AssemblyData.methodsrewriter {
 	class MMethod {
 		public MethodBase methodBase;
-		public MethodDefinition methodDefinition;
-		public MMethod(MethodBase methodBase, MethodDefinition methodDefinition) {
+		public MethodDef methodDef;
+		public MMethod(MethodBase methodBase, MethodDef methodDefinition) {
 			this.methodBase = methodBase;
-			this.methodDefinition = methodDefinition;
+			this.methodDef = methodDefinition;
 		}
 
 		public bool hasInstructions() {
-			return methodDefinition.Body != null && methodDefinition.Body.Instructions.Count != 0;
+			return methodDef.CilBody != null && methodDef.CilBody.Instructions.Count != 0;
 		}
 
 		public override string ToString() {
-			return methodDefinition.ToString();
+			return methodDef.ToString();
 		}
 	}
 }

@@ -20,31 +20,31 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 
 namespace AssemblyData.methodsrewriter {
 	class MType {
 		public Type type;
-		public TypeDefinition typeDefinition;
+		public TypeDef typeDef;
 		Dictionary<int, MMethod> tokenToMethod;
 		MethodDefinitionDict<MMethod> methodReferenceToMethod;
 		Dictionary<int, MField> tokenToField;
 		FieldDefinitionDict<MField> fieldReferenceToField;
 
-		public MType(Type type, TypeDefinition typeDefinition) {
+		public MType(Type type, TypeDef typeDefinition) {
 			this.type = type;
-			this.typeDefinition = typeDefinition;
+			this.typeDef = typeDefinition;
 		}
 
-		public MMethod getMethod(MethodReference methodReference) {
+		public MMethod getMethod(IMethod methodRef) {
 			initMethods();
-			return methodReferenceToMethod.find(methodReference);
+			return methodReferenceToMethod.find(methodRef);
 		}
 
-		public MField getField(FieldReference fieldReference) {
+		public MField getField(IField fieldRef) {
 			initFields();
-			return fieldReferenceToField.find(fieldReference);
+			return fieldReferenceToField.find(fieldRef);
 		}
 
 		public MMethod getMethod(int token) {
@@ -60,41 +60,41 @@ namespace AssemblyData.methodsrewriter {
 		void initMethods() {
 			if (tokenToMethod != null)
 				return;
-			tokenToMethod = new Dictionary<int, MMethod>(typeDefinition.Methods.Count);
+			tokenToMethod = new Dictionary<int, MMethod>(typeDef.Methods.Count);
 			methodReferenceToMethod = new MethodDefinitionDict<MMethod>();
 
 			var tmpTokenToMethod = new Dictionary<int, MethodBase>();
 			var flags = BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
 			foreach (var m in ResolverUtils.getMethodBases(type, flags))
 				tmpTokenToMethod[m.MetadataToken] = m;
-			foreach (var m in typeDefinition.Methods) {
-				var token = m.MetadataToken.ToInt32();
+			foreach (var m in typeDef.Methods) {
+				var token = (int)m.MDToken.Raw;
 				var method = new MMethod(tmpTokenToMethod[token], m);
 				tokenToMethod[token] = method;
-				methodReferenceToMethod.add(method.methodDefinition, method);
+				methodReferenceToMethod.add(method.methodDef, method);
 			}
 		}
 
 		void initFields() {
 			if (tokenToField != null)
 				return;
-			tokenToField = new Dictionary<int, MField>(typeDefinition.Fields.Count);
+			tokenToField = new Dictionary<int, MField>(typeDef.Fields.Count);
 			fieldReferenceToField = new FieldDefinitionDict<MField>();
 
 			var tmpTokenToField = new Dictionary<int, FieldInfo>();
 			var flags = BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
 			foreach (var f in type.GetFields(flags))
 				tmpTokenToField[f.MetadataToken] = f;
-			foreach (var f in typeDefinition.Fields) {
-				var token = f.MetadataToken.ToInt32();
+			foreach (var f in typeDef.Fields) {
+				var token = (int)f.MDToken.Raw;
 				var field = new MField(tmpTokenToField[token], f);
 				tokenToField[token] = field;
-				fieldReferenceToField.add(field.fieldDefinition, field);
+				fieldReferenceToField.add(field.fieldDef, field);
 			}
 		}
 
 		public override string ToString() {
-			return string.Format("{0:X8} - {1}", typeDefinition.MetadataToken.ToUInt32(), typeDefinition.FullName);
+			return string.Format("{0:X8} - {1}", typeDef.MDToken.Raw, typeDef.FullName);
 		}
 	}
 }

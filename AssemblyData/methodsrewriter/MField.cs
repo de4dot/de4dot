@@ -18,20 +18,20 @@
 */
 
 using System.Reflection;
-using Mono.Cecil;
+using dot10.DotNet;
 
 namespace AssemblyData.methodsrewriter {
 	class MField {
 		public FieldInfo fieldInfo;
-		public FieldDefinition fieldDefinition;
+		public FieldDef fieldDef;
 
-		public MField(FieldInfo fieldInfo, FieldDefinition fieldDefinition) {
+		public MField(FieldInfo fieldInfo, FieldDef fieldDef) {
 			this.fieldInfo = fieldInfo;
-			this.fieldDefinition = fieldDefinition;
+			this.fieldDef = fieldDef;
 		}
 
 		public override string ToString() {
-			return fieldDefinition.ToString();
+			return fieldDef.ToString();
 		}
 	}
 }

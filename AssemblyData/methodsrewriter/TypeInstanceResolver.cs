@@ -20,7 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 
 namespace AssemblyData.methodsrewriter {
@@ -29,23 +29,23 @@ namespace AssemblyData.methodsrewriter {
 		Dictionary<string, List<MethodBase>> methods;
 		Dictionary<string, List<FieldInfo>> fields;
 
-		public TypeInstanceResolver(Type type, TypeReference typeReference) {
-			this.type = ResolverUtils.makeInstanceType(type, typeReference);
+		public TypeInstanceResolver(Type type, ITypeDefOrRef typeRef) {
+			this.type = ResolverUtils.makeInstanceType(type, typeRef);
 		}
 
-		public FieldInfo resolve(FieldReference fieldReference) {
+		public FieldInfo resolve(IField fieldRef) {
 			initFields();
 
 			List<FieldInfo> list;
-			if (!fields.TryGetValue(fieldReference.Name, out list))
+			if (!fields.TryGetValue(fieldRef.Name, out list))
 				return null;
 
-			var git = fieldReference.DeclaringType as GenericInstanceType;
+			var git = fieldRef.DeclaringType.ToGenericInstSig();
 			if (git != null)
-				fieldReference = FieldReferenceInstance.make(fieldReference, git);
+				fieldRef = FieldReferenceInstance.make(fieldRef, git);
 
 			foreach (var field in list) {
-				if (ResolverUtils.compareFields(field, fieldReference))
+				if (ResolverUtils.compareFields(field, fieldRef))
 					return field;
 			}
 
@@ -66,19 +66,19 @@ namespace AssemblyData.methodsrewriter {
 			}
 		}
 
-		public MethodBase resolve(MethodReference methodReference) {
+		public MethodBase resolve(IMethod methodRef) {
 			initMethods();
 
 			List<MethodBase> list;
-			if (!methods.TryGetValue(methodReference.Name, out list))
+			if (!methods.TryGetValue(methodRef.Name, out list))
 				return null;
 
-			var git = methodReference.DeclaringType as GenericInstanceType;
-			var gim = methodReference as GenericInstanceMethod;
-			methodReference = MethodReferenceInstance.make(methodReference, git, gim);
+			var git = methodRef.DeclaringType.ToGenericInstSig();
+			var gim = methodRef as MethodSpec;
+			methodRef = MethodReferenceInstance.make(methodRef, git, gim);
 
 			foreach (var method in list) {
-				if (ResolverUtils.compareMethods(method, methodReference))
+				if (ResolverUtils.compareMethods(method, methodRef))
 					return method;
 			}
 

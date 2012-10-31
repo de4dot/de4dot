@@ -78,6 +78,10 @@
       <Project>{5C93C5E2-196F-4877-BF65-96FEBFCEFCA1}</Project>
       <Name>de4dot.mdecrypt</Name>
     </ProjectReference>
+    <ProjectReference Include="..\dot10\src\dot10.csproj">
+      <Project>{FDFC1237-143F-4919-8318-4926901F4639}</Project>
+      <Name>dot10</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
