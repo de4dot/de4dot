@@ -62,7 +62,9 @@ namespace de4dot.code.deobfuscators {
 		StringFeatures StringFeatures { get; }
 		RenamingOptions RenamingOptions { get; }
 		DecrypterType DefaultDecrypterType { get; }
+#if PORT
 		IEnumerable<IBlocksDeobfuscator> BlocksDeobfuscators { get; }
+#endif
 
 		// This is non-null only in detect() and deobfuscateBegin().
 		IDeobfuscatedFile DeobfuscatedFile { get; set; }

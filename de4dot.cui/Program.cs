@@ -37,6 +37,7 @@ namespace de4dot.cui {
 		static IList<IDeobfuscatorInfo> createDeobfuscatorInfos() {
 			return new List<IDeobfuscatorInfo> {
 				new de4dot.code.deobfuscators.Unknown.DeobfuscatorInfo(),
+#if PORT
 				new de4dot.code.deobfuscators.Babel_NET.DeobfuscatorInfo(),
 				new de4dot.code.deobfuscators.CliSecure.DeobfuscatorInfo(),
 				new de4dot.code.deobfuscators.CodeFort.DeobfuscatorInfo(),
@@ -57,6 +58,7 @@ namespace de4dot.cui {
 				new de4dot.code.deobfuscators.SmartAssembly.DeobfuscatorInfo(),
 				new de4dot.code.deobfuscators.Spices_Net.DeobfuscatorInfo(),
 				new de4dot.code.deobfuscators.Xenocode.DeobfuscatorInfo(),
+#endif
 			};
 		}
 

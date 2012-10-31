@@ -527,14 +527,18 @@ namespace de4dot.code {
 
 			Log.v("Deobfuscating methods");
 			var methodPrinter = new MethodPrinter();
+#if PORT
 			var cflowDeobfuscator = new BlocksCflowDeobfuscator(deob.BlocksDeobfuscators);
+#endif
 			foreach (var method in getAllMethods()) {
 				Log.v("Deobfuscating {0} ({1:X8})", Utils.removeNewlines(method), method.MetadataToken.ToUInt32());
 				Log.indent();
 
 				int oldIndentLevel = Log.indentLevel;
 				try {
+#if PORT
 					deobfuscate(method, cflowDeobfuscator, methodPrinter);
+#endif
 				}
 				catch (ApplicationException) {
 					throw;
@@ -569,6 +573,7 @@ namespace de4dot.code {
 			}
 		}
 
+#if PORT
 		void deobfuscate(MethodDefinition method, BlocksCflowDeobfuscator cflowDeobfuscator, MethodPrinter methodPrinter) {
 			if (!hasNonEmptyBody(method))
 				return;
@@ -613,6 +618,7 @@ namespace de4dot.code {
 				Log.deIndent();
 			}
 		}
+#endif
 
 		bool hasNonEmptyBody(MethodDefinition method) {
 			return method.HasBody && method.Body.Instructions.Count > 0;
@@ -726,9 +732,11 @@ namespace de4dot.code {
 				return;
 
 			deobfuscate(method, "Deobfuscating control flow", (blocks) => {
+#if PORT
 				var cflowDeobfuscator = new BlocksCflowDeobfuscator(deob.BlocksDeobfuscators);
 				cflowDeobfuscator.init(blocks);
 				cflowDeobfuscator.deobfuscate();
+#endif
 			});
 		}
 

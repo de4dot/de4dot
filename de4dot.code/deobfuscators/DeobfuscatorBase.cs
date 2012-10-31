@@ -95,6 +95,7 @@ namespace de4dot.code.deobfuscators {
 			get { return Operations.DecryptStrings != OpDecryptString.None && staticStringInliner.InlinedAllCalls; }
 		}
 
+#if PORT
 		public virtual IEnumerable<IBlocksDeobfuscator> BlocksDeobfuscators {
 			get {
 				var list = new List<IBlocksDeobfuscator>();
@@ -103,6 +104,7 @@ namespace de4dot.code.deobfuscators {
 				return list;
 			}
 		}
+#endif
 
 		public DeobfuscatorBase(OptionsBase optionsBase) {
 			this.optionsBase = optionsBase;
@@ -821,7 +823,7 @@ namespace de4dot.code.deobfuscators {
 			return false;
 		}
 
-		public static int toInt32(bool b) {
+		protected static int toInt32(bool b) {
 			return b ? 1 : 0;
 		}
 	}
