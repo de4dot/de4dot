@@ -254,7 +254,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 					var arrayType = castclass.Operand as ArrayType;
 					if (arrayType == null)
 						continue;
-					if (arrayType.ElementType.PrimitiveSize == -1) {
+					if (arrayType.ElementType.GetPrimitiveSize() == -1) {
 						Log.w("Can't decrypt non-primitive type array in method {0}", blocks.Method.MetadataToken.ToInt32());
 						continue;
 					}
@@ -264,7 +264,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 				infos.Reverse();
 				foreach (var info in infos) {
-					var elemSize = info.arrayType.ElementType.PrimitiveSize;
+					var elemSize = info.arrayType.ElementType.GetPrimitiveSize();
 					var decrypted = decryptArray(info.encryptedField.InitialValue, elemSize);
 
 					initializedDataCreator.addInitializeArrayCode(block, info.start, info.len, info.arrayType.ElementType, decrypted);

@@ -26,6 +26,7 @@ using Mono.Cecil.Metadata;
 //TODO: Remove these
 using DN = dot10.DotNet;
 using DNE = dot10.DotNet.Emit;
+using DNM = dot10.DotNet.MD;
 
 namespace de4dot.blocks {
 	public enum FrameworkType {
@@ -315,6 +316,40 @@ namespace de4dot.blocks {
 			return null;
 		}
 
+		public static DN.MethodDef getMethod2(DN.ModuleDef module, DN.IMethod method) {
+			if (method == null)
+				return null;
+			return getMethod(module, method, method.DeclaringType.ScopeType);
+		}
+
+		static DN.TypeDef getType(DN.ModuleDef module, DN.ITypeDefOrRef type) {
+			var td = type as DN.TypeDef;
+			if (td != null)
+				return td;
+
+			var tr = type as DN.TypeRef;
+			if (tr != null)
+				return tr.Resolve();
+
+			return null;
+		}
+
+		static DN.MethodDef getMethod(DN.ModuleDef module, DN.IMethod method, DN.ITypeDefOrRef declaringType) {
+			if (method == null)
+				return null;
+			if (method is DN.MethodDef)
+				return (DN.MethodDef)method;
+			return getMethod(getType(module, declaringType), method);
+		}
+
+		public static DN.MethodDef getMethod(DN.TypeDef type, DN.IMethod methodRef) {
+			if (type == null || methodRef == null)
+				return null;
+			if (methodRef is DN.MethodDef)
+				return (DN.MethodDef)methodRef;
+			return type.FindMethod(methodRef.Name, methodRef.MethodSig);
+		}
+
 		public static IEnumerable<MethodDefinition> getNormalMethods(TypeDefinition type) {
 			foreach (var method in type.Methods) {
 				if (method.HasPInvokeInfo)
@@ -413,11 +448,11 @@ namespace de4dot.blocks {
 			return strings;
 		}
 
-		public static Resource getResource(ModuleDefinition module, string name) {
+		public static DN.Resource getResource(DN.ModuleDef module, string name) {
 			return getResource(module, new List<string> { name });
 		}
 
-		public static Resource getResource(ModuleDefinition module, IEnumerable<string> strings) {
+		public static DN.Resource getResource(DN.ModuleDef module, IEnumerable<string> strings) {
 			if (!module.HasResources)
 				return null;
 
@@ -426,8 +461,9 @@ namespace de4dot.blocks {
 				var resourceName = removeFromNullChar(tmp);
 				if (resourceName == null)
 					continue;
+				var name = new DNM.UTF8String(resourceName);
 				foreach (var resource in resources) {
-					if (resource.Name == resourceName)
+					if (DNM.UTF8String.Equals(resource.Name, name))
 						return resource;
 				}
 			}
@@ -1050,6 +1086,14 @@ namespace de4dot.blocks {
 			typeRef.MetadataToken = nextTypeRefToken();
 			typeRef.IsValueType = isValueType;
 			return typeRef;
+		}
+
+		public static DN.TypeDefOrRefSig findOrCreateTypeReference(DN.ModuleDef module, DN.AssemblyRef asmRef, string ns, string name, bool isValueType) {
+			var typeRef = module.UpdateRowId(new DN.TypeRefUser(module, ns, name, asmRef));
+			if (isValueType)
+				return new DN.ValueTypeSig(typeRef);
+			else
+				return new DN.ClassSig(typeRef);
 		}
 
 		public static FrameworkType getFrameworkType(ModuleDefinition module) {

@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using dot10.DotNet.MD;
 
 namespace de4dot.code {
 	// These are in .NET 3.5 and later...
@@ -59,6 +60,10 @@ namespace de4dot.code {
 			foreach (var val in values)
 				dict[val] = true;
 			return dict.Keys;
+		}
+
+		public static string toCsharpString(UTF8String s) {
+			return toCsharpString(UTF8String.ToSystemStringOrEmpty(s));
 		}
 
 		public static string toCsharpString(string s) {
