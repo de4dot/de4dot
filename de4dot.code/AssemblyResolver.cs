@@ -72,6 +72,8 @@ namespace de4dot.code {
 			addIfExists(path, @"Microsoft Visual Studio 9.0\Common7\IDE\PrivateAssemblies");
 			addIfExists(path, @"Microsoft Visual Studio 10.0\Common7\IDE\PublicAssemblies");
 			addIfExists(path, @"Microsoft Visual Studio 10.0\Common7\IDE\PrivateAssemblies");
+			addIfExists(path, @"Microsoft Visual Studio 11.0\Common7\IDE\PublicAssemblies");
+			addIfExists(path, @"Microsoft Visual Studio 11.0\Common7\IDE\PrivateAssemblies");
 			addIfExists(path, @"Microsoft XNA\XNA Game Studio\v2.0\References\Windows\x86");
 			addIfExists(path, @"Microsoft XNA\XNA Game Studio\v2.0\References\Xbox360");
 			addIfExists(path, @"Microsoft XNA\XNA Game Studio\v3.0\References\Windows\x86");
@@ -87,6 +89,15 @@ namespace de4dot.code {
 			addIfExists(path, @"Windows Mobile 5.0 SDK R2\Managed Libraries");
 			addIfExists(path, @"Windows Mobile 6 SDK\Managed Libraries");
 			addIfExists(path, @"Windows Mobile 6.5.3 DTK\Managed Libraries");
+			addIfExists(path, @"Microsoft SQL Server\90\SDK\Assemblies");
+			addIfExists(path, @"Microsoft SQL Server\100\SDK\Assemblies");
+			addIfExists(path, @"Microsoft SQL Server\110\SDK\Assemblies");
+			addIfExists(path, @"Microsoft ASP.NET\ASP.NET MVC 2\Assemblies");
+			addIfExists(path, @"Microsoft ASP.NET\ASP.NET MVC 3\Assemblies");
+			addIfExists(path, @"Microsoft ASP.NET\ASP.NET MVC 4\Assemblies");
+			addIfExists(path, @"Microsoft ASP.NET\ASP.NET Web Pages\v1.0\Assemblies");
+			addIfExists(path, @"Microsoft ASP.NET\ASP.NET Web Pages\v2.0\Assemblies");
+			addIfExists(path, @"Microsoft SDKs\F#\3.0\Framework\v4.0");
 		}
 
 		// basePath is eg. "C:\Program Files (x86)\Microsoft Silverlight"

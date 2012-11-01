@@ -556,8 +556,14 @@ namespace de4dot.code.deobfuscators {
 
 			while (type != null) {
 				switch (MemberReferenceHelper.getMemberReferenceType(type)) {
-				case CecilType.ArrayType:
 				case CecilType.GenericInstanceType:
+					foreach (var ga in ((GenericInstanceType)type).GenericArguments) {
+						if (!isValidType(gpp, ga))
+							return false;
+					}
+					break;
+
+				case CecilType.ArrayType:
 				case CecilType.PointerType:
 				case CecilType.TypeDefinition:
 				case CecilType.TypeReference:
