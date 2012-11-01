@@ -26,35 +26,7 @@ namespace de4dot.blocks {
 			if (a == null)
 				return null;
 
-			var type = MemberReferenceHelper.getMemberReferenceType(a);
-			switch (type) {
-			case CecilType.ArrayType:
-				return updateArrayType((ArrayType)a);
-			case CecilType.ByReferenceType:
-				return updateByReferenceType((ByReferenceType)a);
-			case CecilType.FunctionPointerType:
-				return updateFunctionPointerType((FunctionPointerType)a);
-			case CecilType.GenericInstanceType:
-				return updateGenericInstanceType((GenericInstanceType)a);
-			case CecilType.GenericParameter:
-				return updateGenericParameter((GenericParameter)a);
-			case CecilType.OptionalModifierType:
-				return updateOptionalModifierType((OptionalModifierType)a);
-			case CecilType.PinnedType:
-				return updatePinnedType((PinnedType)a);
-			case CecilType.PointerType:
-				return updatePointerType((PointerType)a);
-			case CecilType.RequiredModifierType:
-				return updateRequiredModifierType((RequiredModifierType)a);
-			case CecilType.SentinelType:
-				return updateSentinelType((SentinelType)a);
-			case CecilType.TypeDefinition:
-				return updateTypeDefinition((TypeDefinition)a);
-			case CecilType.TypeReference:
-				return updateTypeReference((TypeReference)a);
-			default:
-				throw new ApplicationException(string.Format("Unknown cecil type {0}", type));
-			}
+			throw new NotImplementedException();
 		}
 
 		protected virtual ArrayType updateArrayType(ArrayType a) {
