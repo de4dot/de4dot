@@ -58,7 +58,7 @@ namespace AssemblyData.methodsrewriter {
 			}
 		}
 
-		public MType getType(ITypeDefOrRef typeRef) {
+		public MType getType(IType typeRef) {
 			return typeReferenceToType.find(typeRef);
 		}
 

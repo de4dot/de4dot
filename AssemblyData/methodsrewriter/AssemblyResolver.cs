@@ -130,7 +130,8 @@ namespace AssemblyData.methodsrewriter {
 			if (resolver != null)
 				return resolver.type;
 
-			if (typeRef.IsGenericParameter)
+			var ts = typeRef as TypeSpec;
+			if (ts != null && ts.TypeSig is GenericSig)
 				return typeof(MGenericParameter);
 
 			return null;

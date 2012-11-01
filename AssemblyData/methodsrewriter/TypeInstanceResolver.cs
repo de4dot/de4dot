@@ -37,12 +37,14 @@ namespace AssemblyData.methodsrewriter {
 			initFields();
 
 			List<FieldInfo> list;
-			if (!fields.TryGetValue(fieldRef.Name, out list))
+			if (!fields.TryGetValue(fieldRef.Name.String, out list))
 				return null;
 
 			var git = fieldRef.DeclaringType.ToGenericInstSig();
-			if (git != null)
-				fieldRef = FieldReferenceInstance.make(fieldRef, git);
+			if (git != null) {
+				//TODO: Replace all generic params with generic args and create a new field ref
+				fieldRef = null;
+			}
 
 			foreach (var field in list) {
 				if (ResolverUtils.compareFields(field, fieldRef))
@@ -70,12 +72,14 @@ namespace AssemblyData.methodsrewriter {
 			initMethods();
 
 			List<MethodBase> list;
-			if (!methods.TryGetValue(methodRef.Name, out list))
+			if (!methods.TryGetValue(methodRef.Name.String, out list))
 				return null;
 
 			var git = methodRef.DeclaringType.ToGenericInstSig();
 			var gim = methodRef as MethodSpec;
-			methodRef = MethodReferenceInstance.make(methodRef, git, gim);
+			if (git != null && gim != null) {
+				//TODO: Create a new method ref with all generic params replaced with generic args
+			}
 
 			foreach (var method in list) {
 				if (ResolverUtils.compareMethods(method, methodRef))

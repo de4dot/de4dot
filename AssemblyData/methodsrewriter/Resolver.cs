@@ -64,7 +64,7 @@ namespace AssemblyData.methodsrewriter {
 			return null;
 		}
 
-		public static MType getType(ITypeDefOrRef typeRef) {
+		public static MType getType(IType typeRef) {
 			if (typeRef == null)
 				return null;
 			var module = getModule(typeRef.Scope);
@@ -104,7 +104,7 @@ namespace AssemblyData.methodsrewriter {
 			throw new ApplicationException(string.Format("Unknown MemberReference: {0}", memberRef));
 		}
 
-		public static Type getRtType(ITypeDefOrRef typeRef) {
+		public static Type getRtType(IType typeRef) {
 			var mtype = getType(typeRef);
 			if (mtype != null)
 				return mtype.type;
@@ -139,12 +139,14 @@ namespace AssemblyData.methodsrewriter {
 		static Type resolve(IType typeRef) {
 			if (typeRef == null)
 				return null;
-			var elemType = typeRef.GetElementType();
-			var resolver = getAssemblyResolver(elemType);
-			var resolvedType = resolver.resolve(elemType);
+			var scopeType = typeRef.ScopeType;
+			var resolver = getAssemblyResolver(scopeType);
+			var resolvedType = resolver.resolve(scopeType);
 			if (resolvedType != null)
 				return fixType(typeRef, resolvedType);
-			throw new ApplicationException(string.Format("Could not resolve type {0} ({1:X8}) in assembly {2}", typeRef, typeRef.MDToken.Raw, resolver));
+			var tdr = typeRef as ITypeDefOrRef;
+			uint token = tdr == null ? 0 : tdr.MDToken.Raw;
+			throw new ApplicationException(string.Format("Could not resolve type {0} ({1:X8}) in assembly {2}", typeRef, token, resolver));
 		}
 
 		static FieldInfo resolve(IField fieldRef) {
@@ -167,11 +169,13 @@ namespace AssemblyData.methodsrewriter {
 			throw new ApplicationException(string.Format("Could not resolve method {0} ({1:X8}) in assembly {2}", methodRef, methodRef.MDToken.Raw, resolver));
 		}
 
-		static Type fixType(ITypeDefOrRef typeRef, Type type) {
-			var ts = typeRef as TypeSpec;
-			if (ts == null)
-				return type;
-			var sig = ts.TypeSig;
+		static Type fixType(IType typeRef, Type type) {
+			var sig = typeRef as TypeSig;
+			if (sig != null) {
+				var ts = typeRef as TypeSpec;
+				if (ts != null)
+					sig = ts.TypeSig;
+			}
 			while (sig != null) {
 				switch (sig.ElementType) {
 				case ElementType.SZArray:

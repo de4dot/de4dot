@@ -178,8 +178,8 @@ namespace AssemblyData.methodsrewriter {
 
 		void initLocals() {
 			locals = new List<LocalBuilder>();
-			foreach (var local in methodInfo.methodDef.CilBody.Variables)
-				locals.Add(ilg.DeclareLocal(Resolver.getRtType(local.VariableType), local.IsPinned));
+			foreach (var local in methodInfo.methodDef.CilBody.LocalList)
+				locals.Add(ilg.DeclareLocal(Resolver.getRtType(local.Type), local.Type.IsPinned));
 			tempObjLocal = ilg.DeclareLocal(typeof(object));
 			tempObjArrayLocal = ilg.DeclareLocal(typeof(object[]));
 		}
@@ -256,14 +256,6 @@ namespace AssemblyData.methodsrewriter {
 			return labels;
 		}
 
-		int getArgIndex(Parameter arg) {
-			return arg.Index;
-		}
-
-		int getLocalIndex(Local local) {
-			return local.Index;
-		}
-
 		void writeInstr(Instruction instr) {
 			var opcode = convertOpCode(instr.OpCode);
 			switch (instr.OpCode.OperandType) {
@@ -324,20 +316,12 @@ namespace AssemblyData.methodsrewriter {
 					throw new ApplicationException(string.Format("Unknown type: {0}", (obj == null ? obj : obj.GetType())));
 				break;
 
-			case OperandType.InlineArg:
-				ilg.Emit(opcode, checked((short)getArgIndex((Parameter)instr.Operand)));
-				break;
-
-			case OperandType.ShortInlineArg:
-				ilg.Emit(opcode, checked((byte)getArgIndex((Parameter)instr.Operand)));
-				break;
-
 			case OperandType.InlineVar:
-				ilg.Emit(opcode, checked((short)getLocalIndex((Local)instr.Operand)));
+				ilg.Emit(opcode, checked((short)((IVariable)instr.Operand).Number));
 				break;
 
 			case OperandType.ShortInlineVar:
-				ilg.Emit(opcode, checked((byte)getLocalIndex((Local)instr.Operand)));
+				ilg.Emit(opcode, checked((byte)((IVariable)instr.Operand).Number));
 				break;
 
 			case OperandType.InlineSig:	//TODO:
