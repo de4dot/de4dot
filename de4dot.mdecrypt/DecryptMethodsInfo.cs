@@ -19,7 +19,6 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.MyStuff;
 
 namespace de4dot.mdecrypt {
 	[Serializable]

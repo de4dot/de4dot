@@ -22,8 +22,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Reflection;
-using Mono.MyStuff;
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 using de4dot.PE;
 
@@ -70,7 +69,7 @@ namespace de4dot.mdecrypt {
 
 		class DecryptContext {
 			public DumpedMethod dm;
-			public MethodDefinition method;
+			public MethodDef method;
 		}
 
 		FuncPtrInfo<CompileMethod> ourCompileMethodInfo = new FuncPtrInfo<CompileMethod>();
@@ -93,8 +92,8 @@ namespace de4dot.mdecrypt {
 
 		de4dot.PE.MetadataType methodDefTable;
 		IntPtr methodDefTablePtr;
-		ModuleDefinition monoModule;
-		MethodDefinition moduleCctor;
+		ModuleDefMD dot10Module;
+		MethodDef moduleCctor;
 		uint moduleCctorCodeRva;
 		IntPtr moduleToDecryptScope;
 
@@ -175,16 +174,16 @@ namespace de4dot.mdecrypt {
 		}
 
 		unsafe void initializeMonoCecilMethods() {
-			monoModule = ModuleDefinition.ReadModule(moduleToDecrypt.FullyQualifiedName);
-			moduleCctor = DotNetUtils.getModuleTypeCctor(monoModule);
+			dot10Module = ModuleDefMD.Load(moduleToDecrypt.FullyQualifiedName);
+			moduleCctor = DotNetUtils.getModuleTypeCctor(dot10Module);
 			if (moduleCctor == null)
 				moduleCctorCodeRva = 0;
 			else {
-				byte* p = (byte*)hInstModule + moduleCctor.RVA;
+				byte* p = (byte*)hInstModule + (uint)moduleCctor.RVA;
 				if ((*p & 3) == 2)
 					moduleCctorCodeRva = (uint)moduleCctor.RVA + 1;
 				else
-					moduleCctorCodeRva = (uint)(moduleCctor.RVA + (p[1] >> 4) * 4);
+					moduleCctorCodeRva = (uint)((uint)moduleCctor.RVA + (p[1] >> 4) * 4);
 			}
 		}
 
@@ -442,11 +441,11 @@ namespace de4dot.mdecrypt {
 		}
 
 		string returnNameOfMethod() {
-			return ctx.method.Name;
+			return ctx.method.Name.String;
 		}
 
 		int returnMethodToken() {
-			return ctx.method.MetadataToken.ToInt32();
+			return ctx.method.MDToken.ToInt32();
 		}
 
 		public DumpedMethods decryptMethods() {
@@ -476,11 +475,11 @@ namespace de4dot.mdecrypt {
 			ctx.dm = new DumpedMethod();
 			ctx.dm.token = token;
 
-			ctx.method = monoModule.LookupToken((int)token) as MethodDefinition;
+			ctx.method = dot10Module.ResolveToken(token) as MethodDef;
 			if (ctx.method == null)
 				throw new ApplicationException(string.Format("Could not find method {0:X8}", token));
 
-			byte* mh = (byte*)hInstModule + ctx.method.RVA;
+			byte* mh = (byte*)hInstModule + (uint)ctx.method.RVA;
 			byte* code;
 			if (mh == (byte*)hInstModule) {
 				ctx.dm.mhMaxStack = 0;
