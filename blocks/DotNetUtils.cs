@@ -149,7 +149,11 @@ namespace de4dot.blocks {
 			return module.GlobalType;
 		}
 
-		public static MethodDefinition getModuleTypeCctor(ModuleDefinition module) {
+		public static DN.MethodDef getModuleTypeCctor(DN.ModuleDef module) {
+			foreach (var m in module.GlobalType.Methods) {
+				if (m.Name == ".cctor")
+					return m;
+			}
 			return null;
 		}
 

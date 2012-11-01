@@ -63,6 +63,8 @@
     <Compile Include="CodeGenerator.cs" />
     <Compile Include="DeadBlocksRemover.cs" />
     <Compile Include="DotNetUtils.cs" />
+    <Compile Include="DumpedMethod.cs" />
+    <Compile Include="DumpedMethods.cs" />
     <Compile Include="FilterHandlerBlock.cs" />
     <Compile Include="ForwardScanOrder.cs" />
     <Compile Include="HandlerBlock.cs" />
