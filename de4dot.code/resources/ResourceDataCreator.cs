@@ -227,7 +227,7 @@ namespace de4dot.code.resources {
 
 		public List<UserResourceType> getSortedTypes() {
 			var list = new List<UserResourceType>(dict.Values);
-			list.Sort((a, b) => Utils.compareInt32((int)a.Code, (int)b.Code));
+			list.Sort((a, b) => ((int)a.Code).CompareTo((int)b.Code));
 			return list;
 		}
 	}

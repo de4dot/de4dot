@@ -19,20 +19,20 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code {
 	class ExternalAssembly {
-		AssemblyDefinition asmDef;
+		AssemblyDef asmDef;
 
-		public ExternalAssembly(AssemblyDefinition asmDef) {
+		public ExternalAssembly(AssemblyDef asmDef) {
 			this.asmDef = asmDef;
 		}
 
-		public TypeDefinition resolve(TypeReference type) {
+		public TypeDef resolve(ITypeDefOrRef type) {
 			foreach (var module in asmDef.Modules) {
-				var typeDef = DotNetUtils.getType(module, type);
+				var typeDef = module.Find(type);
 				if (typeDef != null)
 					return typeDef;
 			}
@@ -42,7 +42,7 @@ namespace de4dot.code {
 
 		public void unload(string asmFullName) {
 			foreach (var module in asmDef.Modules) {
-				DotNetUtils.typeCaches.invalidate(module);
+				//TODO: DotNetUtils.typeCaches.invalidate(module);
 				AssemblyResolver.Instance.removeModule(module);
 			}
 			AssemblyResolver.Instance.removeModule(asmFullName);
@@ -54,45 +54,38 @@ namespace de4dot.code {
 		Dictionary<string, ExternalAssembly> assemblies = new Dictionary<string, ExternalAssembly>(StringComparer.Ordinal);
 		Dictionary<string, bool> failedLoads = new Dictionary<string, bool>(StringComparer.Ordinal);
 
-		ExternalAssembly load(TypeReference type) {
-			var asmFullName = DotNetUtils.getFullAssemblyName(type);
-			if (asmFullName == null)
+		ExternalAssembly load(TypeRef type) {
+			if (type == null || type.DefinitionAssembly == null)
 				return null;
+			var asmFullName = type.DefinitionAssembly.FullName;
 			ExternalAssembly asm;
 			if (assemblies.TryGetValue(asmFullName, out asm))
 				return asm;
 
-			AssemblyDefinition asmDef = null;
-			try {
-				asmDef = AssemblyResolver.Instance.Resolve(asmFullName);
-			}
-			catch (ResolutionException) {
-			}
-			catch (AssemblyResolutionException) {
-			}
+			var asmDef = AssemblyResolver.Instance.Resolve(type.DefinitionAssembly, type.OwnerModule);
 			if (asmDef == null) {
 				if (!failedLoads.ContainsKey(asmFullName))
 					Log.w("Could not load assembly {0}", asmFullName);
 				failedLoads[asmFullName] = true;
 				return null;
 			}
-			if (assemblies.ContainsKey(asmDef.Name.FullName)) {
-				assemblies[asmFullName] = assemblies[asmDef.Name.FullName];
-				return assemblies[asmDef.Name.FullName];
+			if (assemblies.ContainsKey(asmDef.FullName)) {
+				assemblies[asmFullName] = assemblies[asmDef.FullName];
+				return assemblies[asmDef.FullName];
 			}
 
-			if (asmFullName == asmDef.Name.FullName)
+			if (asmFullName == asmDef.FullName)
 				Log.v("Loaded assembly {0}", asmFullName);
 			else
-				Log.v("Loaded assembly {0} (but wanted {1})", asmDef.Name.FullName, asmFullName);
+				Log.v("Loaded assembly {0} (but wanted {1})", asmDef.FullName, asmFullName);
 
 			asm = new ExternalAssembly(asmDef);
 			assemblies[asmFullName] = asm;
-			assemblies[asmDef.Name.FullName] = asm;
+			assemblies[asmDef.FullName] = asm;
 			return asm;
 		}
 
-		public TypeDefinition resolve(TypeReference type) {
+		public TypeDef resolve(TypeRef type) {
 			if (type == null)
 				return null;
 			var asm = load(type);

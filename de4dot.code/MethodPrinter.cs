@@ -19,8 +19,8 @@
 
 using System.Collections.Generic;
 using System.Text;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code {
@@ -83,7 +83,7 @@ namespace de4dot.code {
 			}
 
 			var sortedTargets = new List<Instruction>(targets.Keys);
-			sortedTargets.Sort((a, b) => Utils.compareInt32(a.Offset, b.Offset));
+			sortedTargets.Sort((a, b) => a.Offset.CompareTo(b.Offset));
 			for (int i = 0; i < sortedTargets.Count; i++)
 				labels[sortedTargets[i]] = string.Format("label_{0}", i);
 		}
@@ -131,13 +131,13 @@ namespace de4dot.code {
 				ExInfo exInfo;
 				if (exInfos.TryGetValue(instr, out exInfo))
 					printExInfo(exInfo);
-				var instrString = instr.GetOpCodeString();
+				var instrString = instr.OpCode.Name;
 				var operandString = getOperandString(instr);
-				var memberReference = instr.Operand as MemberReference;
+				var memberReference = instr.Operand as ITokenOperand;
 				if (operandString == "")
 					Log.log(logLevel, "{0}", instrString);
 				else if (memberReference != null)
-					Log.log(logLevel, "{0,-9} {1} // {2:X8}", instrString, Utils.removeNewlines(operandString), memberReference.MetadataToken.ToUInt32());
+					Log.log(logLevel, "{0,-9} {1} // {2:X8}", instrString, Utils.removeNewlines(operandString), memberReference.MDToken.ToUInt32());
 				else
 					Log.log(logLevel, "{0,-9} {1}", instrString, Utils.removeNewlines(operandString));
 			}
@@ -160,12 +160,12 @@ namespace de4dot.code {
 			}
 			else if (instr.Operand is string)
 				return Utils.toCsharpString((string)instr.Operand);
-			else if (instr.Operand is ParameterDefinition) {
-				var arg = (ParameterDefinition)instr.Operand;
+			else if (instr.Operand is Parameter) {
+				var arg = (Parameter)instr.Operand;
 				var s = instr.GetOperandString();
 				if (s != "")
 					return s;
-				return string.Format("<arg_{0}>", DotNetUtils.getArgIndex(arg));
+				return string.Format("<arg_{0}>", arg.Index);
 			}
 			else
 				return instr.GetOperandString();

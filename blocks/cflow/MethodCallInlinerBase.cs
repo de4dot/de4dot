@@ -198,7 +198,7 @@ namespace de4dot.blocks.cflow {
 		protected bool checkSameMethods(IMethod method, MethodDef methodToInline, int ignoreLastMethodToInlineArgs) {
 			var methodToInlineArgs = methodToInline.Parameters;
 			var methodArgs = DotNetUtils.getArgs(method);
-			bool hasImplicitThis = method.MethodSig.HasThis && !method.MethodSig.ExplicitThis;
+			bool hasImplicitThis = method.MethodSig.ImplicitThis;
 			if (methodToInlineArgs.Length - ignoreLastMethodToInlineArgs != methodArgs.Count)
 				return false;
 			for (int i = 0; i < methodArgs.Count; i++) {

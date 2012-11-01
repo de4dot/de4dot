@@ -109,7 +109,7 @@ namespace de4dot.code.resources {
 		}
 
 		static int sortResourceInfo(ResourceInfo a, ResourceInfo b) {
-			return Utils.compareInt32((int)a.offset, (int)b.offset);
+			return ((int)a.offset).CompareTo((int)b.offset);
 		}
 
 		class ResourceInfo {

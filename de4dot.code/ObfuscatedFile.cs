@@ -432,26 +432,28 @@ namespace de4dot.code {
 				if (typeString != null && typeString != type.FullName)
 					continue;
 				foreach (var method in type.Methods) {
-					if (!method.IsStatic || method.MethodReturnType.ReturnType.FullName != "System.String")
+					if (!method.IsStatic)
+						continue;
+					if (method.MethodSig.RetType.ElementType != ElementType.String && method.MethodSig.RetType.ElementType != ElementType.Object)
 						continue;
 					if (methodName != null && methodName != method.Name)
 						continue;
 
 					if (argsStrings == null) {
-						if (method.Parameters.Count == 0)
+						if (method.Parameters.Length == 0)
 							continue;
 					}
 					else {
-						if (argsStrings.Length != method.Parameters.Count)
+						if (argsStrings.Length != method.Parameters.Length)
 							continue;
 						for (int i = 0; i < argsStrings.Length; i++) {
-							if (argsStrings[i] != method.Parameters[i].ParameterType.FullName)
+							if (argsStrings[i] != method.Parameters[i].Type.FullName)
 								continue;
 						}
 					}
 
-					Log.v("Adding string decrypter; token: {0:X8}, method: {1}", method.MetadataToken.ToInt32(), Utils.removeNewlines(method.FullName));
-					tokens.Add(method.MetadataToken.ToInt32());
+					Log.v("Adding string decrypter; token: {0:X8}, method: {1}", method.MDToken.ToInt32(), Utils.removeNewlines(method.FullName));
+					tokens.Add(method.MDToken.ToInt32());
 				}
 			}
 
@@ -530,30 +532,26 @@ namespace de4dot.code {
 
 			Log.v("Deobfuscating methods");
 			var methodPrinter = new MethodPrinter();
-#if PORT
 			var cflowDeobfuscator = new BlocksCflowDeobfuscator(deob.BlocksDeobfuscators);
-#endif
 			foreach (var method in getAllMethods()) {
-				Log.v("Deobfuscating {0} ({1:X8})", Utils.removeNewlines(method), method.MetadataToken.ToUInt32());
+				Log.v("Deobfuscating {0} ({1:X8})", Utils.removeNewlines(method), method.MDToken.ToUInt32());
 				Log.indent();
 
 				int oldIndentLevel = Log.indentLevel;
 				try {
-#if PORT
 					deobfuscate(method, cflowDeobfuscator, methodPrinter);
-#endif
 				}
 				catch (ApplicationException) {
 					throw;
 				}
 				catch (Exception ex) {
 					if (!canLoadMethodBody(method)) {
-						Log.v("Invalid method body. {0:X8}", method.MetadataToken.ToInt32());
-						method.CilBody = new MethodBody(method);
+						Log.v("Invalid method body. {0:X8}", method.MDToken.ToInt32());
+						method.CilBody = new CilBody();
 					}
 					else {
 						Log.w("Could not deobfuscate method {0:X8}. Hello, E.T.: {1}",	// E.T. = exception type
-								method.MetadataToken.ToInt32(),
+								method.MDToken.ToInt32(),
 								ex.GetType());
 					}
 				}
@@ -576,7 +574,6 @@ namespace de4dot.code {
 			}
 		}
 
-#if PORT
 		void deobfuscate(MethodDef method, BlocksCflowDeobfuscator cflowDeobfuscator, MethodPrinter methodPrinter) {
 			if (!hasNonEmptyBody(method))
 				return;
@@ -621,10 +618,9 @@ namespace de4dot.code {
 				Log.deIndent();
 			}
 		}
-#endif
 
 		bool hasNonEmptyBody(MethodDef method) {
-			return method.HasBody && method.CilBody.Instructions.Count > 0;
+			return method.HasCilBody && method.CilBody.Instructions.Count > 0;
 		}
 
 		void deobfuscateStrings(Blocks blocks) {
@@ -647,10 +643,10 @@ namespace de4dot.code {
 		}
 
 		void removeNoInliningAttribute(MethodDef method) {
-			method.ImplAttributes = method.ImplAttributes & ~MethodImplAttributes.NoInlining;
+			method.IsNoInlining = false;
 			for (int i = 0; i < method.CustomAttributes.Count; i++) {
 				var cattr = method.CustomAttributes[i];
-				if (cattr.AttributeType.FullName != "System.Runtime.CompilerServices.MethodImplAttribute")
+				if (cattr.TypeFullName != "System.Runtime.CompilerServices.MethodImplAttribute")
 					continue;
 				int options = 0;
 				if (!getMethodImplOptions(cattr, ref options))
@@ -663,13 +659,13 @@ namespace de4dot.code {
 		}
 
 		static bool getMethodImplOptions(CustomAttribute cattr, ref int value) {
-			if (cattr.ConstructorArguments.Count != 1)
+			if (cattr.Arguments.Count != 1)
 				return false;
-			if (cattr.ConstructorArguments[0].Type.FullName != "System.Int16" &&
-				cattr.ConstructorArguments[0].Type.FullName != "System.Runtime.CompilerServices.MethodImplOptions")
+			if (cattr.Arguments[0].Type.ElementType != ElementType.I2 &&
+				cattr.Arguments[0].Type.FullName != "System.Runtime.CompilerServices.MethodImplOptions")
 				return false;
 
-			var arg = cattr.ConstructorArguments[0].Value;
+			var arg = cattr.Arguments[0].Value;
 			if (arg is short) {
 				value = (short)arg;
 				return true;
@@ -704,7 +700,7 @@ namespace de4dot.code {
 			if (savedMethodBodies != null)
 				savedMethodBodies.save(method);
 
-			Log.v("{0}: {1} ({2:X8})", msg, Utils.removeNewlines(method), method.MetadataToken.ToUInt32());
+			Log.v("{0}: {1} ({2:X8})", msg, Utils.removeNewlines(method), method.MDToken.ToUInt32());
 			Log.indent();
 
 			if (hasNonEmptyBody(method)) {
@@ -719,7 +715,7 @@ namespace de4dot.code {
 					DotNetUtils.restoreBody(method, allInstructions, allExceptionHandlers);
 				}
 				catch {
-					Log.v("Could not deobfuscate {0:X8}", method.MetadataToken.ToInt32());
+					Log.v("Could not deobfuscate {0:X8}", method.MDToken.ToInt32());
 				}
 			}
 

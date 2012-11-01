@@ -214,12 +214,6 @@ namespace de4dot.code {
 			return true;
 		}
 
-		public static int compareInt32(int a, int b) {
-			if (a < b) return -1;
-			if (a > b) return 1;
-			return 0;
-		}
-
 		public static byte[] readFile(string filename) {
 			// If the file is on the network, and we read more than 2MB, we'll read from the wrong
 			// offset in the file! Tested: VMware 8, Win7 x64.

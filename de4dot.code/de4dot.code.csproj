@@ -219,7 +219,6 @@
     <None Include="deobfuscators\MaxtoCode\StringDecrypter.cs" />
     <Compile Include="deobfuscators\MemberReferenceBuilder.cs" />
     <Compile Include="deobfuscators\MethodBodyParser.cs" />
-    <Compile Include="deobfuscators\MethodBodyReaderBase.cs" />
     <Compile Include="deobfuscators\MethodCallRestorerBase.cs" />
     <Compile Include="deobfuscators\MethodCollection.cs" />
     <Compile Include="deobfuscators\MethodsDecrypter.cs" />

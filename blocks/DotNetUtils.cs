@@ -933,11 +933,11 @@ namespace de4dot.blocks {
 			return args;
 		}
 
-		public static List<DN.IType> getArgs(DN.IMethod method) {
+		public static List<DN.TypeSig> getArgs(DN.IMethod method) {
 			var sig = method.MethodSig;
-			var args = new List<DN.IType>(sig.Params.Count + 1);
-			if (sig.HasThis && !sig.ExplicitThis)
-				args.Add(method.DeclaringType);
+			var args = new List<DN.TypeSig>(sig.Params.Count + 1);
+			if (sig.ImplicitThis)
+				args.Add(DN.Extensions.ToTypeSig(method.DeclaringType));
 			foreach (var arg in sig.Params)
 				args.Add(arg);
 			return args;
@@ -969,7 +969,7 @@ namespace de4dot.blocks {
 			if (sig == null)
 				return 0;
 			int count = sig.Params.Count;
-			if (sig.HasThis && !sig.ExplicitThis)
+			if (sig.ImplicitThis)
 				count++;
 			return count;
 		}

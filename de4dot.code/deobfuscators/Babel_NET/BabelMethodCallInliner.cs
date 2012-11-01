@@ -120,7 +120,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				return false;
 
 			block.Instructions[instrIndex - 1] = new Instr(Instruction.Create(OpCodes.Nop));
-			block.Instructions[instrIndex] = new Instr(DotNetUtils.createLdci4(newValue));
+			block.Instructions[instrIndex] = new Instr(Instruction.CreateLdcI4(newValue));
 			return true;
 		}
 

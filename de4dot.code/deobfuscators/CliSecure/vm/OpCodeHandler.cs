@@ -392,7 +392,7 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 
 		static Instruction ldc_read(BinaryReader reader) {
 			switch ((ElementType)reader.ReadByte()) {
-			case ElementType.I4: return DotNetUtils.createLdci4(reader.ReadInt32());
+			case ElementType.I4: return Instruction.CreateLdcI4(reader.ReadInt32());
 			case ElementType.I8: return Instruction.Create(OpCodes.Ldc_I8, reader.ReadInt64());
 			case ElementType.R4: return Instruction.Create(OpCodes.Ldc_R4, reader.ReadSingle());
 			case ElementType.R8: return Instruction.Create(OpCodes.Ldc_R8, reader.ReadDouble());

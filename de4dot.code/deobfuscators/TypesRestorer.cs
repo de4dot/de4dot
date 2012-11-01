@@ -186,7 +186,7 @@ namespace de4dot.code.deobfuscators {
 				return;
 
 			Log.v("Changing field types to real type");
-			fields.Sort((a, b) => Utils.compareInt32(a.token, b.token));
+			fields.Sort((a, b) => a.token.CompareTo(b.token));
 			Log.indent();
 			foreach (var updatedField in fields)
 				Log.v("Field {0:X8}: type {1} ({2:X8})", updatedField.token, Utils.removeNewlines(updatedField.newFieldType.FullName), updatedField.newFieldType.MDToken.ToInt32());
@@ -199,7 +199,7 @@ namespace de4dot.code.deobfuscators {
 				return;
 
 			Log.v("Changing method args and return types to real type");
-			methods.Sort((a, b) => Utils.compareInt32(a.token, b.token));
+			methods.Sort((a, b) => a.token.CompareTo(b.token));
 			Log.indent();
 			foreach (var updatedMethod in methods) {
 				Log.v("Method {0:X8}", updatedMethod.token);
@@ -250,7 +250,7 @@ namespace de4dot.code.deobfuscators {
 			if (a.arg.Method.MDToken.ToInt32() < b.arg.Method.MDToken.ToInt32()) return -1;
 			if (a.arg.Method.MDToken.ToInt32() > b.arg.Method.MDToken.ToInt32()) return 1;
 
-			return Utils.compareInt32(a.arg.Sequence, b.arg.Sequence);
+			return a.arg.Sequence.CompareTo(b.arg.Sequence);
 		}
 
 		void deobfuscateMethod(MethodDef method) {

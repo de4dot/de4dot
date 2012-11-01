@@ -19,7 +19,7 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code {
@@ -48,6 +48,7 @@ namespace de4dot.code {
 			dataDict.Remove(name);
 		}
 
+#if PORT
 		static TypeReference getNonGenericTypeReference(TypeReference typeReference) {
 			if (typeReference == null)
 				return null;
@@ -104,5 +105,6 @@ namespace de4dot.code {
 
 			return null;
 		}
+#endif
 	}
 }

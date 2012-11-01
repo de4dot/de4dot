@@ -18,8 +18,8 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators {
@@ -79,7 +79,7 @@ namespace de4dot.code.deobfuscators {
 		public static PushedArgs getPushedArgInstructions(IList<Instruction> instructions, int index) {
 			try {
 				int pushes, pops;
-				DotNetUtils.calculateStackUsage(instructions[index], false, out pushes, out pops);
+				instructions[index].CalculateStackUsage(false, out pushes, out pops);
 				if (pops != -1)
 					return getPushedArgInstructions(instructions, index, pops);
 			}
@@ -101,7 +101,7 @@ namespace de4dot.code.deobfuscators {
 					break;
 
 				int pushes, pops;
-				DotNetUtils.calculateStackUsage(instr, false, out pushes, out pops);
+				instr.CalculateStackUsage(false, out pushes, out pops);
 				if (pops == -1)
 					break;
 				if (instr.OpCode.Code == Code.Dup) {
@@ -128,7 +128,7 @@ namespace de4dot.code.deobfuscators {
 				instr = getPreviousInstruction(instructions, ref index);
 				if (instr != null) {
 					int pushes, pops;
-					DotNetUtils.calculateStackUsage(instr, false, out pushes, out pops);
+					instr.CalculateStackUsage(false, out pushes, out pops);
 					if (pushes == 1 && pops == 0)
 						pushedArgs.set(0, instr);
 				}
@@ -138,96 +138,97 @@ namespace de4dot.code.deobfuscators {
 			return pushedArgs;
 		}
 
-		public static TypeReference getLoadedType(MethodDefinition method, IList<Instruction> instructions, int instrIndex) {
+		public static TypeSig getLoadedType(MethodDef method, IList<Instruction> instructions, int instrIndex) {
 			bool wasNewobj;
 			return getLoadedType(method, instructions, instrIndex, 0, out wasNewobj);
 		}
 
-		public static TypeReference getLoadedType(MethodDefinition method, IList<Instruction> instructions, int instrIndex, int argIndexFromEnd) {
+		public static TypeSig getLoadedType(MethodDef method, IList<Instruction> instructions, int instrIndex, int argIndexFromEnd) {
 			bool wasNewobj;
 			return getLoadedType(method, instructions, instrIndex, argIndexFromEnd, out wasNewobj);
 		}
 
-		public static TypeReference getLoadedType(MethodDefinition method, IList<Instruction> instructions, int instrIndex, out bool wasNewobj) {
+		public static TypeSig getLoadedType(MethodDef method, IList<Instruction> instructions, int instrIndex, out bool wasNewobj) {
 			return getLoadedType(method, instructions, instrIndex, 0, out wasNewobj);
 		}
 
-		public static TypeReference getLoadedType(MethodDefinition method, IList<Instruction> instructions, int instrIndex, int argIndexFromEnd, out bool wasNewobj) {
+		public static TypeSig getLoadedType(MethodDef method, IList<Instruction> instructions, int instrIndex, int argIndexFromEnd, out bool wasNewobj) {
 			wasNewobj = false;
 			var pushedArgs = MethodStack.getPushedArgInstructions(instructions, instrIndex);
 			var pushInstr = pushedArgs.getEnd(argIndexFromEnd);
 			if (pushInstr == null)
 				return null;
 
-			TypeReference type;
-			VariableDefinition local;
+			TypeSig type;
+			Local local;
+			var corLibTypes = method.DeclaringType.OwnerModule.CorLibTypes;
 			switch (pushInstr.OpCode.Code) {
 			case Code.Ldstr:
-				type = method.Module.TypeSystem.String;
+				type = corLibTypes.String;
 				break;
 
 			case Code.Conv_I:
 			case Code.Conv_Ovf_I:
 			case Code.Conv_Ovf_I_Un:
-				type = method.Module.TypeSystem.IntPtr;
+				type = corLibTypes.IntPtr;
 				break;
 
 			case Code.Conv_U:
 			case Code.Conv_Ovf_U:
 			case Code.Conv_Ovf_U_Un:
-				type = method.Module.TypeSystem.UIntPtr;
+				type = corLibTypes.UIntPtr;
 				break;
 
 			case Code.Conv_I8:
 			case Code.Conv_Ovf_I8:
 			case Code.Conv_Ovf_I8_Un:
-				type = method.Module.TypeSystem.Int64;
+				type = corLibTypes.Int64;
 				break;
 
 			case Code.Conv_U8:
 			case Code.Conv_Ovf_U8:
 			case Code.Conv_Ovf_U8_Un:
-				type = method.Module.TypeSystem.UInt64;
+				type = corLibTypes.UInt64;
 				break;
 
 			case Code.Conv_R8:
 			case Code.Ldc_R8:
 			case Code.Ldelem_R8:
 			case Code.Ldind_R8:
-				type = method.Module.TypeSystem.Double;
+				type = corLibTypes.Double;
 				break;
 
 			case Code.Call:
 			case Code.Calli:
 			case Code.Callvirt:
-				var calledMethod = pushInstr.Operand as MethodReference;
+				var calledMethod = pushInstr.Operand as IMethod;
 				if (calledMethod == null)
 					return null;
-				type = calledMethod.MethodReturnType.ReturnType;
+				type = calledMethod.MethodSig.RetType;
 				break;
 
 			case Code.Newarr:
-				type = pushInstr.Operand as TypeReference;
-				if (type == null)
+				var type2 = pushInstr.Operand as ITypeDefOrRef;
+				if (type2 == null)
 					return null;
-				type = new ArrayType(type);
+				type = new SZArraySig(type2.ToTypeSig());
 				wasNewobj = true;
 				break;
 
 			case Code.Newobj:
-				var ctor = pushInstr.Operand as MethodReference;
+				var ctor = pushInstr.Operand as IMethod;
 				if (ctor == null)
 					return null;
-				type = ctor.DeclaringType;
+				type = ctor.DeclaringType.ToTypeSig();
 				wasNewobj = true;
 				break;
 
 			case Code.Castclass:
 			case Code.Isinst:
 			case Code.Unbox_Any:
-			case Code.Ldelem_Any:
+			case Code.Ldelem:
 			case Code.Ldobj:
-				type = pushInstr.Operand as TypeReference;
+				type = (pushInstr.Operand as ITypeDefOrRef).ToTypeSig();
 				break;
 
 			case Code.Ldarg:
@@ -236,7 +237,7 @@ namespace de4dot.code.deobfuscators {
 			case Code.Ldarg_1:
 			case Code.Ldarg_2:
 			case Code.Ldarg_3:
-				type = DotNetUtils.getArgType(method, pushInstr);
+				type = pushInstr.GetArgumentType(method.MethodSig, method.DeclaringType);
 				break;
 
 			case Code.Ldloc:
@@ -245,44 +246,44 @@ namespace de4dot.code.deobfuscators {
 			case Code.Ldloc_1:
 			case Code.Ldloc_2:
 			case Code.Ldloc_3:
-				local = DotNetUtils.getLocalVar(method.Body.Variables, pushInstr);
+				local = pushInstr.GetLocal(method.CilBody.LocalList);
 				if (local == null)
 					return null;
-				type = local.VariableType;
+				type = local.Type.RemovePinned();
 				break;
 
 			case Code.Ldloca:
 			case Code.Ldloca_S:
-				local = pushInstr.Operand as VariableDefinition;
+				local = pushInstr.Operand as Local;
 				if (local == null)
 					return null;
-				type = createByReferenceType(local.VariableType);
+				type = createByReferenceType(local.Type.RemovePinned());
 				break;
 
 			case Code.Ldarga:
 			case Code.Ldarga_S:
-				type = createByReferenceType(DotNetUtils.getArgType(method, pushInstr));
+				type = createByReferenceType(pushInstr.GetArgumentType(method.MethodSig, method.DeclaringType));
 				break;
 
 			case Code.Ldfld:
 			case Code.Ldsfld:
-				var field = pushInstr.Operand as FieldReference;
-				if (field == null)
+				var field = pushInstr.Operand as IField;
+				if (field == null || field.FieldSig == null)
 					return null;
-				type = field.FieldType;
+				type = field.FieldSig.Type;
 				break;
 
 			case Code.Ldflda:
 			case Code.Ldsflda:
-				var field2 = pushInstr.Operand as FieldReference;
-				if (field2 == null)
+				var field2 = pushInstr.Operand as IField;
+				if (field2 == null || field2.FieldSig == null)
 					return null;
-				type = createByReferenceType(field2.FieldType);
+				type = createByReferenceType(field2.FieldSig.Type);
 				break;
 
 			case Code.Ldelema:
 			case Code.Unbox:
-				type = createByReferenceType(pushInstr.Operand as TypeReference);
+				type = createByReferenceType(pushInstr.Operand as ITypeDefOrRef);
 				break;
 
 			default:
@@ -292,10 +293,16 @@ namespace de4dot.code.deobfuscators {
 			return type;
 		}
 
-		static ByReferenceType createByReferenceType(TypeReference elementType) {
+		static ByRefSig createByReferenceType(ITypeDefOrRef elementType) {
 			if (elementType == null)
 				return null;
-			return new ByReferenceType(elementType);
+			return new ByRefSig(elementType.ToTypeSig());
+		}
+
+		static ByRefSig createByReferenceType(TypeSig elementType) {
+			if (elementType == null)
+				return null;
+			return new ByRefSig(elementType);
 		}
 
 		static Instruction getPreviousInstruction(IList<Instruction> instructions, ref int instrIndex) {

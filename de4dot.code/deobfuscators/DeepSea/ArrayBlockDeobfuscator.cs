@@ -115,7 +115,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				return false;
 
 			block.remove(i, 3 - 1);
-			instrs[i] = new Instr(DotNetUtils.createLdci4(info.array[ldci4.getLdcI4Value()]));
+			instrs[i] = new Instr(Instruction.CreateLdcI4(info.array[ldci4.getLdcI4Value()]));
 			return true;
 		}
 
@@ -140,7 +140,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				return false;
 
 			block.remove(i, 3 - 1);
-			instrs[i] = new Instr(DotNetUtils.createLdci4(info.array[ldci4.getLdcI4Value()]));
+			instrs[i] = new Instr(Instruction.CreateLdcI4(info.array[ldci4.getLdcI4Value()]));
 			return true;
 		}
 
