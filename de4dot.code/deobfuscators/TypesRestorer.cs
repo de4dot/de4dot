@@ -19,9 +19,8 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using Mono.Cecil.Metadata;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators {
@@ -29,31 +28,31 @@ namespace de4dot.code.deobfuscators {
 	// This thing requires a lot more code than I have time to do now (similar to symbol renaming)
 	// so it will be a basic implementation only.
 	abstract class TypesRestorerBase {
-		ModuleDefinition module;
-		List<MethodDefinition> allMethods;
-		Dictionary<ParameterDefinition, TypeInfo<ParameterDefinition>> argInfos = new Dictionary<ParameterDefinition, TypeInfo<ParameterDefinition>>();
-		TypeInfo<ParameterDefinition> methodReturnInfo;
-		Dictionary<FieldReferenceAndDeclaringTypeKey, TypeInfo<FieldDefinition>> fieldWrites = new Dictionary<FieldReferenceAndDeclaringTypeKey, TypeInfo<FieldDefinition>>();
+		ModuleDef module;
+		List<MethodDef> allMethods;
+		Dictionary<Parameter, TypeInfo<Parameter>> argInfos = new Dictionary<Parameter, TypeInfo<Parameter>>();
+		TypeInfo<Parameter> methodReturnInfo;
+		Dictionary<FieldReferenceAndDeclaringTypeKey, TypeInfo<FieldDef>> fieldWrites = new Dictionary<FieldReferenceAndDeclaringTypeKey, TypeInfo<FieldDef>>();
 		Dictionary<int, UpdatedMethod> updatedMethods = new Dictionary<int, UpdatedMethod>();
 		Dictionary<int, UpdatedField> updatedFields = new Dictionary<int, UpdatedField>();
 
 		class UpdatedMethod {
 			public int token;
-			public TypeReference[] newArgTypes;
-			public TypeReference newReturnType;
+			public TypeSig[] newArgTypes;
+			public TypeSig newReturnType;
 
-			public UpdatedMethod(MethodDefinition method) {
-				token = method.MetadataToken.ToInt32();
-				newArgTypes = new TypeReference[DotNetUtils.getArgsCount(method)];
+			public UpdatedMethod(MethodDef method) {
+				token = method.MDToken.ToInt32();
+				newArgTypes = new TypeSig[DotNetUtils.getArgsCount(method)];
 			}
 		}
 
 		class UpdatedField {
 			public int token;
-			public TypeReference newFieldType;
+			public TypeSig newFieldType;
 
-			public UpdatedField(FieldDefinition field) {
-				token = field.MetadataToken.ToInt32();
+			public UpdatedField(FieldDef field) {
+				token = field.MDToken.ToInt32();
 			}
 		}
 
@@ -90,7 +89,7 @@ namespace de4dot.code.deobfuscators {
 				types.Clear();
 			}
 
-			public bool updateNewType(ModuleDefinition module) {
+			public bool updateNewType(ModuleDef module) {
 				if (types.Count == 0)
 					return false;
 
@@ -114,20 +113,20 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
-		public TypesRestorerBase(ModuleDefinition module) {
+		public TypesRestorerBase(ModuleDef module) {
 			this.module = module;
 		}
 
-		UpdatedMethod getUpdatedMethod(MethodDefinition method) {
-			int token = method.MetadataToken.ToInt32();
+		UpdatedMethod getUpdatedMethod(MethodDef method) {
+			int token = method.MDToken.ToInt32();
 			UpdatedMethod updatedMethod;
 			if (updatedMethods.TryGetValue(token, out updatedMethod))
 				return updatedMethod;
 			return updatedMethods[token] = new UpdatedMethod(method);
 		}
 
-		UpdatedField getUpdatedField(FieldDefinition field) {
-			int token = field.MetadataToken.ToInt32();
+		UpdatedField getUpdatedField(FieldDef field) {
+			int token = field.MDToken.ToInt32();
 			UpdatedField updatedField;
 			if (updatedFields.TryGetValue(token, out updatedField))
 				return updatedField;
@@ -135,7 +134,7 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		public void deobfuscate() {
-			allMethods = new List<MethodDefinition>();
+			allMethods = new List<MethodDef>();
 
 			addAllMethods();
 			addAllFields();
@@ -151,11 +150,11 @@ namespace de4dot.code.deobfuscators {
 				addMethods(type.Methods);
 		}
 
-		void addMethods(IEnumerable<MethodDefinition> methods) {
+		void addMethods(IEnumerable<MethodDef> methods) {
 			allMethods.AddRange(methods);
 		}
 
-		void addMethod(MethodDefinition method) {
+		void addMethod(MethodDef method) {
 			allMethods.Add(method);
 		}
 
@@ -166,7 +165,7 @@ namespace de4dot.code.deobfuscators {
 						continue;
 
 					var key = new FieldReferenceAndDeclaringTypeKey(field);
-					fieldWrites[key] = new TypeInfo<FieldDefinition>(field);
+					fieldWrites[key] = new TypeInfo<FieldDef>(field);
 				}
 			}
 		}
@@ -190,7 +189,7 @@ namespace de4dot.code.deobfuscators {
 			fields.Sort((a, b) => Utils.compareInt32(a.token, b.token));
 			Log.indent();
 			foreach (var updatedField in fields)
-				Log.v("Field {0:X8}: type {1} ({2:X8})", updatedField.token, Utils.removeNewlines(updatedField.newFieldType.FullName), updatedField.newFieldType.MetadataToken.ToInt32());
+				Log.v("Field {0:X8}: type {1} ({2:X8})", updatedField.token, Utils.removeNewlines(updatedField.newFieldType.FullName), updatedField.newFieldType.MDToken.ToInt32());
 			Log.deIndent();
 		}
 
@@ -208,7 +207,7 @@ namespace de4dot.code.deobfuscators {
 				if (updatedMethod.newReturnType != null) {
 					Log.v("ret: {0} ({1:X8})",
 							Utils.removeNewlines(updatedMethod.newReturnType.FullName),
-							updatedMethod.newReturnType.MetadataToken.ToInt32());
+							updatedMethod.newReturnType.MDToken.ToInt32());
 				}
 				for (int i = 0; i < updatedMethod.newArgTypes.Length; i++) {
 					var updatedArg = updatedMethod.newArgTypes[i];
@@ -217,7 +216,7 @@ namespace de4dot.code.deobfuscators {
 					Log.v("arg {0}: {1} ({2:X8})",
 							i,
 							Utils.removeNewlines(updatedArg.FullName),
-							updatedArg.MetadataToken.ToInt32());
+							updatedArg.MDToken.ToInt32());
 				}
 				Log.deIndent();
 			}
@@ -227,7 +226,7 @@ namespace de4dot.code.deobfuscators {
 		bool deobfuscateMethods() {
 			bool changed = false;
 			foreach (var method in allMethods) {
-				methodReturnInfo = new TypeInfo<ParameterDefinition>(method.MethodReturnType.Parameter2);
+				methodReturnInfo = new TypeInfo<Parameter>(method.MethodReturnType.Parameter2);
 				deobfuscateMethod(method);
 
 				if (methodReturnInfo.updateNewType(module)) {
@@ -247,14 +246,14 @@ namespace de4dot.code.deobfuscators {
 			return changed;
 		}
 
-		static int sortTypeInfos(TypeInfo<ParameterDefinition> a, TypeInfo<ParameterDefinition> b) {
-			if (a.arg.Method.MetadataToken.ToInt32() < b.arg.Method.MetadataToken.ToInt32()) return -1;
-			if (a.arg.Method.MetadataToken.ToInt32() > b.arg.Method.MetadataToken.ToInt32()) return 1;
+		static int sortTypeInfos(TypeInfo<Parameter> a, TypeInfo<Parameter> b) {
+			if (a.arg.Method.MDToken.ToInt32() < b.arg.Method.MDToken.ToInt32()) return -1;
+			if (a.arg.Method.MDToken.ToInt32() > b.arg.Method.MDToken.ToInt32()) return 1;
 
 			return Utils.compareInt32(a.arg.Sequence, b.arg.Sequence);
 		}
 
-		void deobfuscateMethod(MethodDefinition method) {
+		void deobfuscateMethod(MethodDef method) {
 			if (!method.IsStatic || method.Body == null)
 				return;
 
@@ -264,7 +263,7 @@ namespace de4dot.code.deobfuscators {
 			foreach (var arg in method.Parameters) {
 				if (!isUnknownType(arg))
 					continue;
-				argInfos[arg] = new TypeInfo<ParameterDefinition>(arg);
+				argInfos[arg] = new TypeInfo<Parameter>(arg);
 			}
 			if (argInfos.Count == 0 && !fixReturnType)
 				return;
@@ -362,7 +361,7 @@ namespace de4dot.code.deobfuscators {
 				case Code.Starg_S:
 
 				case Code.Ldelema:
-				case Code.Ldelem_Any:
+				case Code.Ldelem:
 				case Code.Ldelem_I:
 				case Code.Ldelem_I1:
 				case Code.Ldelem_I2:
@@ -389,7 +388,7 @@ namespace de4dot.code.deobfuscators {
 
 				case Code.Ldobj:
 
-				case Code.Stelem_Any:
+				case Code.Stelem:
 				case Code.Stelem_I:
 				case Code.Stelem_I1:
 				case Code.Stelem_I2:
@@ -415,7 +414,7 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
-		static ParameterDefinition getParameter(IList<ParameterDefinition> parameters, Instruction instr) {
+		static Parameter getParameter(IList<Parameter> parameters, Instruction instr) {
 			switch (instr.OpCode.Code) {
 			case Code.Ldarg:
 			case Code.Ldarg_S:
@@ -430,32 +429,32 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
-		bool addMethodArgType(IGenericParameterProvider gpp, ParameterDefinition methodParam, FieldReference field) {
+		bool addMethodArgType(IGenericParameterProvider gpp, Parameter methodParam, FieldReference field) {
 			if (field == null)
 				return false;
 			return addMethodArgType(gpp, methodParam, field.FieldType);
 		}
 
-		bool addMethodArgType(IGenericParameterProvider gpp, ParameterDefinition methodParam, VariableDefinition otherLocal) {
+		bool addMethodArgType(IGenericParameterProvider gpp, Parameter methodParam, VariableDefinition otherLocal) {
 			if (otherLocal == null)
 				return false;
 			return addMethodArgType(gpp, methodParam, otherLocal.VariableType);
 		}
 
-		bool addMethodArgType(IGenericParameterProvider gpp, ParameterDefinition methodParam, ParameterDefinition otherParam) {
+		bool addMethodArgType(IGenericParameterProvider gpp, Parameter methodParam, Parameter otherParam) {
 			if (otherParam == null)
 				return false;
 			return addMethodArgType(gpp, methodParam, otherParam.ParameterType);
 		}
 
-		bool addMethodArgType(IGenericParameterProvider gpp, ParameterDefinition methodParam, TypeReference type) {
+		bool addMethodArgType(IGenericParameterProvider gpp, Parameter methodParam, TypeReference type) {
 			if (methodParam == null || type == null)
 				return false;
 
 			if (!isValidType(gpp, type))
 				return false;
 
-			TypeInfo<ParameterDefinition> info;
+			TypeInfo<Parameter> info;
 			if (!argInfos.TryGetValue(methodParam, out info))
 				return false;
 			if (info.Types.ContainsKey(new TypeReferenceKey(type)))
@@ -476,7 +475,7 @@ namespace de4dot.code.deobfuscators {
 				for (int i = 0; i < instructions.Count; i++) {
 					var instr = instructions[i];
 					TypeReference fieldType = null;
-					TypeInfo<FieldDefinition> info = null;
+					TypeInfo<FieldDef> info = null;
 					FieldReference field;
 					switch (instr.OpCode.Code) {
 					case Code.Stfld:
@@ -527,7 +526,7 @@ namespace de4dot.code.deobfuscators {
 			}
 
 			bool changed = false;
-			var removeThese = new List<FieldDefinition>();
+			var removeThese = new List<FieldDef>();
 			foreach (var info in fieldWrites.Values) {
 				if (info.updateNewType(module)) {
 					removeThese.Add(info.arg);
@@ -541,7 +540,7 @@ namespace de4dot.code.deobfuscators {
 			return changed;
 		}
 
-		TypeReference getLoadedType(IGenericParameterProvider gpp, MethodDefinition method, IList<Instruction> instructions, int instrIndex, out bool wasNewobj) {
+		TypeReference getLoadedType(IGenericParameterProvider gpp, MethodDef method, IList<Instruction> instructions, int instrIndex, out bool wasNewobj) {
 			var fieldType = MethodStack.getLoadedType(method, instructions, instrIndex, out wasNewobj);
 			if (fieldType == null || !isValidType(gpp, fieldType))
 				return null;
@@ -605,7 +604,7 @@ namespace de4dot.code.deobfuscators {
 
 		protected abstract bool isUnknownType(object o);
 
-		static TypeReference getCommonBaseClass(ModuleDefinition module, TypeReference a, TypeReference b) {
+		static TypeReference getCommonBaseClass(ModuleDef module, TypeReference a, TypeReference b) {
 			if (DotNetUtils.isDelegate(a) && DotNetUtils.derivesFromDelegate(DotNetUtils.getType(module, b)))
 				return b;
 			if (DotNetUtils.isDelegate(b) && DotNetUtils.derivesFromDelegate(DotNetUtils.getType(module, a)))
@@ -615,7 +614,7 @@ namespace de4dot.code.deobfuscators {
 	}
 
 	class TypesRestorer : TypesRestorerBase {
-		public TypesRestorer(ModuleDefinition module)
+		public TypesRestorer(ModuleDef module)
 			: base(module) {
 		}
 
@@ -630,11 +629,11 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		protected override bool isUnknownType(object o) {
-			var arg = o as ParameterDefinition;
+			var arg = o as Parameter;
 			if (arg != null)
 				return MemberReferenceHelper.isSystemObject(arg.ParameterType);
 
-			var field = o as FieldDefinition;
+			var field = o as FieldDef;
 			if (field != null)
 				return MemberReferenceHelper.isSystemObject(field.FieldType);
 

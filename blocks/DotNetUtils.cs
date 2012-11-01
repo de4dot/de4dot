@@ -228,6 +228,10 @@ namespace de4dot.blocks {
 			return method != null && method.FullName == returnType + " " + method.DeclaringType.FullName + "::" + method.Name + parameters;
 		}
 
+		public static bool isMethod(DN.IMethod method, string returnType, string parameters) {
+			return method != null && method.FullName == returnType + " " + method.DeclaringType.FullName + "::" + method.Name + parameters;
+		}
+
 		public static bool hasPinvokeMethod(TypeDefinition type, string methodName) {
 			return getPInvokeMethod(type, methodName) != null;
 		}
@@ -442,6 +446,17 @@ namespace de4dot.blocks {
 			if (method != null && method.Body != null) {
 				foreach (var instr in method.Body.Instructions) {
 					if (instr.OpCode.Code == Code.Ldstr)
+						strings.Add((string)instr.Operand);
+				}
+			}
+			return strings;
+		}
+
+		public static IList<string> getCodeStrings(DN.MethodDef method) {
+			var strings = new List<string>();
+			if (method != null && method.CilBody != null) {
+				foreach (var instr in method.CilBody.Instructions) {
+					if (instr.OpCode.Code == DNE.Code.Ldstr)
 						strings.Add((string)instr.Operand);
 				}
 			}

@@ -20,7 +20,9 @@
 using System.Collections.Generic;
 using de4dot.code.deobfuscators;
 using Mono.Cecil;
+#if PORT
 using de4dot.code.renamer;
+#endif
 
 namespace de4dot.code {
 	public interface IObfuscatedFile {
@@ -29,7 +31,9 @@ namespace de4dot.code {
 		IDeobfuscatorContext DeobfuscatorContext { get; set; }
 		string Filename { get; }
 		string NewFilename { get; }
+#if PORT
 		INameChecker NameChecker { get; }
+#endif
 		bool RenameResourcesInCode { get; }
 		bool RemoveNamespaceWithOneType { get; }
 		bool RenameResourceKeys { get; }

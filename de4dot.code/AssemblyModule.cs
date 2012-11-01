@@ -20,52 +20,47 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.MyStuff;
+using dot10.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code {
 	class AssemblyModule {
 		string filename;
-		ModuleDefinition module;
+		ModuleDefMD module;
 
 		public AssemblyModule(string filename) {
 			this.filename = Utils.getFullPath(filename);
 		}
 
-		ReaderParameters getReaderParameters() {
-			return new ReaderParameters(ReadingMode.Deferred) {
-				AssemblyResolver = AssemblyResolver.Instance
-			};
+		public ModuleDefMD load() {
+			return setModule(ModuleDefMD.Load(filename));
 		}
 
-		public ModuleDefinition load() {
-			return setModule(ModuleDefinition.ReadModule(filename, getReaderParameters()));
+		public ModuleDefMD load(byte[] fileData) {
+			return setModule(ModuleDefMD.Load(fileData));
 		}
 
-		public ModuleDefinition load(byte[] fileData) {
-			return setModule(ModuleDefinition.ReadModule(new MemoryStream(fileData), getReaderParameters()));
-		}
-
-		ModuleDefinition setModule(ModuleDefinition newModule) {
+		ModuleDefMD setModule(ModuleDefMD newModule) {
 			module = newModule;
 			AssemblyResolver.Instance.addModule(module);
-			module.FullyQualifiedName = filename;
+			module.Location = filename;
 			return module;
 		}
 
 		public void save(string newFilename, bool updateMaxStack, IWriterListener writerListener) {
-			var writerParams = new WriterParameters() {
-				UpdateMaxStack = updateMaxStack,
-				WriterListener = writerListener,
-			};
-			module.Write(newFilename, writerParams);
+			//TODO: var writerParams = new WriterParameters() {
+			//TODO: 	UpdateMaxStack = updateMaxStack,
+			//TODO: 	WriterListener = writerListener,
+			//TODO: };
+			//TODO: module.Write(newFilename, writerParams);
+			module.Write(newFilename);
 		}
 
-		public ModuleDefinition reload(byte[] newModuleData, DumpedMethods dumpedMethods) {
-			AssemblyResolver.Instance.removeModule(module);
-			DotNetUtils.typeCaches.invalidate(module);
-			return setModule(ModuleDefinition.ReadModule(new MemoryStream(newModuleData), getReaderParameters(), dumpedMethods));
+		public ModuleDefMD reload(byte[] newModuleData, DumpedMethods dumpedMethods) {
+			//TODO: AssemblyResolver.Instance.removeModule(module);
+			//TODO: DotNetUtils.typeCaches.invalidate(module);
+			//TODO: Use dumped methods
+			return setModule(ModuleDefMD.Load(newModuleData));
 		}
 
 		public override string ToString() {

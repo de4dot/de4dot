@@ -22,20 +22,21 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using Mono.MyStuff;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.code.deobfuscators;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
 using de4dot.code.AssemblyClient;
+#if PORT
 using de4dot.code.renamer;
+#endif
 using de4dot.PE;
 
 namespace de4dot.code {
 	public class ObfuscatedFile : IObfuscatedFile, IDeobfuscatedFile {
 		Options options;
-		ModuleDefinition module;
+		ModuleDefMD module;
 		IDeobfuscator deob;
 		IDeobfuscatorContext deobfuscatorContext;
 		AssemblyModule assemblyModule;
@@ -46,14 +47,14 @@ namespace de4dot.code {
 		bool userStringDecrypterMethods = false;
 
 		class SavedMethodBodies {
-			Dictionary<MethodDefinition, SavedMethodBody> savedMethodBodies = new Dictionary<MethodDefinition, SavedMethodBody>();
+			Dictionary<MethodDef, SavedMethodBody> savedMethodBodies = new Dictionary<MethodDef, SavedMethodBody>();
 
 			class SavedMethodBody {
-				MethodDefinition method;
+				MethodDef method;
 				IList<Instruction> instructions;
 				IList<ExceptionHandler> exceptionHandlers;
 
-				public SavedMethodBody(MethodDefinition method) {
+				public SavedMethodBody(MethodDef method) {
 					this.method = method;
 					DotNetUtils.copyBody(method, out instructions, out exceptionHandlers);
 				}
@@ -63,7 +64,7 @@ namespace de4dot.code {
 				}
 			}
 
-			public void save(MethodDefinition method) {
+			public void save(MethodDef method) {
 				if (isSaved(method))
 					return;
 				savedMethodBodies[method] = new SavedMethodBody(method);
@@ -75,7 +76,7 @@ namespace de4dot.code {
 				savedMethodBodies.Clear();
 			}
 
-			public bool isSaved(MethodDefinition method) {
+			public bool isSaved(MethodDef method) {
 				return savedMethodBodies.ContainsKey(method);
 			}
 		}
@@ -103,13 +104,15 @@ namespace de4dot.code {
 			get { return options.NewFilename; }
 		}
 
-		public ModuleDefinition ModuleDefinition {
+		public ModuleDefMD ModuleDefMD {
 			get { return module; }
 		}
 
+#if PORT
 		public INameChecker NameChecker {
 			get { return deob; }
 		}
+#endif
 
 		public bool RenameResourcesInCode {
 			get { return deob.TheOptions.RenameResourcesInCode; }
@@ -309,8 +312,8 @@ namespace de4dot.code {
 			assemblyModule.save(options.NewFilename, options.ControlFlowDeobfuscation, deob as IWriterListener);
 		}
 
-		IList<MethodDefinition> getAllMethods() {
-			var list = new List<MethodDefinition>();
+		IList<MethodDef> getAllMethods() {
+			var list = new List<MethodDef>();
 
 			foreach (var type in module.GetTypes()) {
 				foreach (var method in type.Methods)
@@ -546,7 +549,7 @@ namespace de4dot.code {
 				catch (Exception ex) {
 					if (!canLoadMethodBody(method)) {
 						Log.v("Invalid method body. {0:X8}", method.MetadataToken.ToInt32());
-						method.Body = new MethodBody(method);
+						method.CilBody = new MethodBody(method);
 					}
 					else {
 						Log.w("Could not deobfuscate method {0:X8}. Hello, E.T.: {1}",	// E.T. = exception type
@@ -563,9 +566,9 @@ namespace de4dot.code {
 			}
 		}
 
-		static bool canLoadMethodBody(MethodDefinition method) {
+		static bool canLoadMethodBody(MethodDef method) {
 			try {
-				var body = method.Body;
+				var body = method.CilBody;
 				return true;
 			}
 			catch {
@@ -574,13 +577,13 @@ namespace de4dot.code {
 		}
 
 #if PORT
-		void deobfuscate(MethodDefinition method, BlocksCflowDeobfuscator cflowDeobfuscator, MethodPrinter methodPrinter) {
+		void deobfuscate(MethodDef method, BlocksCflowDeobfuscator cflowDeobfuscator, MethodPrinter methodPrinter) {
 			if (!hasNonEmptyBody(method))
 				return;
 
 			var blocks = new Blocks(method);
 			int numRemovedLocals = 0;
-			int oldNumInstructions = method.Body.Instructions.Count;
+			int oldNumInstructions = method.CilBody.Instructions.Count;
 
 			deob.deobfuscateMethodBegin(blocks);
 			if (options.ControlFlowDeobfuscation) {
@@ -606,7 +609,7 @@ namespace de4dot.code {
 
 			if (numRemovedLocals > 0)
 				Log.v("Removed {0} unused local(s)", numRemovedLocals);
-			int numRemovedInstructions = oldNumInstructions - method.Body.Instructions.Count;
+			int numRemovedInstructions = oldNumInstructions - method.CilBody.Instructions.Count;
 			if (numRemovedInstructions > 0)
 				Log.v("Removed {0} dead instruction(s)", numRemovedInstructions);
 
@@ -620,8 +623,8 @@ namespace de4dot.code {
 		}
 #endif
 
-		bool hasNonEmptyBody(MethodDefinition method) {
-			return method.HasBody && method.Body.Instructions.Count > 0;
+		bool hasNonEmptyBody(MethodDef method) {
+			return method.HasBody && method.CilBody.Instructions.Count > 0;
 		}
 
 		void deobfuscateStrings(Blocks blocks) {
@@ -643,7 +646,7 @@ namespace de4dot.code {
 			}
 		}
 
-		void removeNoInliningAttribute(MethodDefinition method) {
+		void removeNoInliningAttribute(MethodDef method) {
 			method.ImplAttributes = method.ImplAttributes & ~MethodImplAttributes.NoInlining;
 			for (int i = 0; i < method.CustomAttributes.Count; i++) {
 				var cattr = method.CustomAttributes[i];
@@ -689,15 +692,15 @@ namespace de4dot.code {
 		enum SimpleDeobFlags {
 			HasDeobfuscated = 0x1,
 		}
-		Dictionary<MethodDefinition, SimpleDeobFlags> simpleDeobfuscatorFlags = new Dictionary<MethodDefinition, SimpleDeobFlags>();
-		bool check(MethodDefinition method, SimpleDeobFlags flag) {
+		Dictionary<MethodDef, SimpleDeobFlags> simpleDeobfuscatorFlags = new Dictionary<MethodDef, SimpleDeobFlags>();
+		bool check(MethodDef method, SimpleDeobFlags flag) {
 			SimpleDeobFlags oldFlags;
 			simpleDeobfuscatorFlags.TryGetValue(method, out oldFlags);
 			simpleDeobfuscatorFlags[method] = oldFlags | flag;
 			return (oldFlags & flag) == flag;
 		}
 
-		void deobfuscate(MethodDefinition method, string msg, Action<Blocks> handler) {
+		void deobfuscate(MethodDef method, string msg, Action<Blocks> handler) {
 			if (savedMethodBodies != null)
 				savedMethodBodies.save(method);
 
@@ -723,11 +726,11 @@ namespace de4dot.code {
 			Log.deIndent();
 		}
 
-		void ISimpleDeobfuscator.deobfuscate(MethodDefinition method) {
+		void ISimpleDeobfuscator.deobfuscate(MethodDef method) {
 			((ISimpleDeobfuscator)this).deobfuscate(method, false);
 		}
 
-		void ISimpleDeobfuscator.deobfuscate(MethodDefinition method, bool force) {
+		void ISimpleDeobfuscator.deobfuscate(MethodDef method, bool force) {
 			if (!force && check(method, SimpleDeobFlags.HasDeobfuscated))
 				return;
 
@@ -740,7 +743,7 @@ namespace de4dot.code {
 			});
 		}
 
-		void ISimpleDeobfuscator.decryptStrings(MethodDefinition method, IDeobfuscator theDeob) {
+		void ISimpleDeobfuscator.decryptStrings(MethodDef method, IDeobfuscator theDeob) {
 			deobfuscate(method, "Static string decryption", (blocks) => theDeob.deobfuscateStrings(blocks));
 		}
 

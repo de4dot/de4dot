@@ -23,7 +23,9 @@ using Mono.Cecil;
 using Mono.MyStuff;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
+#if PORT
 using de4dot.code.renamer;
+#endif
 using de4dot.PE;
 
 namespace de4dot.code.deobfuscators {
@@ -53,7 +55,11 @@ namespace de4dot.code.deobfuscators {
 		RenameResourceKeys = 2,
 	}
 
-	public interface IDeobfuscator : INameChecker {
+	public interface IDeobfuscator 
+#if PORT
+		: INameChecker
+#endif
+	{
 		string Type { get; }
 		string TypeLong { get; }
 		string Name { get; }

@@ -22,19 +22,19 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Security.Cryptography;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using ICSharpCode.SharpZipLib.Zip.Compression;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators {
 	static class DeobUtils {
-		public static void decryptAndAddResources(ModuleDefinition module, string encryptedName, Func<byte[]> decryptResource) {
+		public static void decryptAndAddResources(ModuleDef module, string encryptedName, Func<byte[]> decryptResource) {
 			Log.v("Decrypting resources, name: {0}", Utils.toCsharpString(encryptedName));
 			var decryptedResourceData = decryptResource();
 			if (decryptedResourceData == null)
 				throw new ApplicationException("decryptedResourceData is null");
-			var resourceModule = ModuleDefinition.ReadModule(new MemoryStream(decryptedResourceData));
+			var resourceModule = ModuleDefMD.Load(decryptedResourceData);
 
 			Log.indent();
 			foreach (var rsrc in resourceModule.Resources) {
@@ -44,27 +44,17 @@ namespace de4dot.code.deobfuscators {
 			Log.deIndent();
 		}
 
-		public static T lookup<T>(ModuleDefinition module, T def, string errorMessage) where T : MemberReference {
+		public static T lookup<T>(ModuleDefMD module, T def, string errorMessage) where T : class, ICodedToken {
 			if (def == null)
 				return null;
-			var newDef = module.LookupToken(def.MetadataToken.ToInt32()) as T;
+			var newDef = module.ResolveToken(def.MDToken.Raw) as T;
 			if (newDef == null)
 				throw new ApplicationException(errorMessage);
 			return newDef;
 		}
 
-		public static ModuleReference lookup(ModuleDefinition module, ModuleReference other, string errorMessage) {
-			if (other == null)
-				return null;
-			foreach (var modRef in module.ModuleReferences) {
-				if (modRef.MetadataToken.ToInt32() == other.MetadataToken.ToInt32())
-					return modRef;
-			}
-			throw new ApplicationException(errorMessage);
-		}
-
-		public static byte[] readModule(ModuleDefinition module) {
-			return Utils.readFile(module.FullyQualifiedName);
+		public static byte[] readModule(ModuleDef module) {
+			return Utils.readFile(module.Location);
 		}
 
 		public static bool isCode(short[] nativeCode, byte[] code) {
@@ -190,7 +180,7 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
-		public static EmbeddedResource getEmbeddedResourceFromCodeStrings(ModuleDefinition module, MethodDefinition method) {
+		public static EmbeddedResource getEmbeddedResourceFromCodeStrings(ModuleDef module, MethodDef method) {
 			foreach (var s in DotNetUtils.getCodeStrings(method)) {
 				var resource = DotNetUtils.getResource(module, s) as EmbeddedResource;
 				if (resource != null)
@@ -199,68 +189,56 @@ namespace de4dot.code.deobfuscators {
 			return null;
 		}
 
-		public static int readVariableLengthInt32(BinaryReader reader) {
-			byte b = reader.ReadByte();
-			if ((b & 0x80) == 0)
-				return b;
-			if ((b & 0x40) == 0)
-				return (((int)b & 0x3F) << 8) + reader.ReadByte();
-			return (((int)b & 0x3F) << 24) +
-					((int)reader.ReadByte() << 16) +
-					((int)reader.ReadByte() << 8) +
-					reader.ReadByte();
-		}
-
 		public static int readVariableLengthInt32(byte[] data, ref int index) {
 			byte b = data[index++];
 			if ((b & 0x80) == 0)
 				return b;
 			if ((b & 0x40) == 0)
 				return (((int)b & 0x3F) << 8) + data[index++];
-			return (((int)b & 0x3F) << 24) +
+			return (((int)b & 0x1F) << 24) +
 					((int)data[index++] << 16) +
 					((int)data[index++] << 8) +
 					data[index++];
 		}
 
-		public static bool hasInteger(MethodDefinition method, uint value) {
+		public static bool hasInteger(MethodDef method, uint value) {
 			return hasInteger(method, (int)value);
 		}
 
-		public static bool hasInteger(MethodDefinition method, int value) {
+		public static bool hasInteger(MethodDef method, int value) {
 			return indexOfLdci4Instruction(method, value) >= 0;
 		}
 
-		public static int indexOfLdci4Instruction(MethodDefinition method, int value) {
-			if (method == null || method.Body == null)
+		public static int indexOfLdci4Instruction(MethodDef method, int value) {
+			if (method == null || method.CilBody == null)
 				return -1;
-			var instrs = method.Body.Instructions;
+			var instrs = method.CilBody.Instructions;
 			for (int i = 0; i < instrs.Count; i++) {
 				var instr = instrs[i];
-				if (!DotNetUtils.isLdcI4(instr))
+				if (!instr.IsLdcI4())
 					continue;
-				if (DotNetUtils.getLdcI4Value(instr) == value)
+				if (instr.GetLdcI4Value() == value)
 					return i;
 			}
 			return -1;
 		}
 
-		public static IEnumerable<MethodDefinition> getInitCctors(ModuleDefinition module, int maxCctors) {
+		public static IEnumerable<MethodDef> getInitCctors(ModuleDef module, int maxCctors) {
 			var cctor = DotNetUtils.getModuleTypeCctor(module);
 			if (cctor != null)
 				yield return cctor;
 
-			var entryPoint = module.EntryPoint;
+			var entryPoint = module.EntryPoint as MethodDef;
 			if (entryPoint != null) {
-				cctor = DotNetUtils.getMethod(entryPoint.DeclaringType, ".cctor");
+				cctor = entryPoint.DeclaringType.FindClassConstructor();
 				if (cctor != null)
 					yield return cctor;
 			}
 
 			foreach (var type in module.GetTypes()) {
-				if (type == DotNetUtils.getModuleType(module))
+				if (type == module.GlobalType)
 					continue;
-				cctor = DotNetUtils.getMethod(type, ".cctor");
+				cctor = type.FindClassConstructor();
 				if (cctor == null)
 					continue;
 				yield return cctor;
@@ -269,14 +247,14 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
-		public static List<MethodDefinition> getAllResolveHandlers(MethodDefinition method) {
-			var list = new List<MethodDefinition>();
-			if (method == null || method.Body == null)
+		public static List<MethodDef> getAllResolveHandlers(MethodDef method) {
+			var list = new List<MethodDef>();
+			if (method == null || method.CilBody == null)
 				return list;
-			foreach (var instr in method.Body.Instructions) {
+			foreach (var instr in method.CilBody.Instructions) {
 				if (instr.OpCode.Code != Code.Ldftn && instr.OpCode.Code != Code.Ldvirtftn)
 					continue;
-				var handler = instr.Operand as MethodDefinition;
+				var handler = instr.Operand as MethodDef;
 				if (handler == null)
 					continue;
 				if (!DotNetUtils.isMethod(handler, "System.Reflection.Assembly", "(System.Object,System.ResolveEventArgs)"))
@@ -286,7 +264,7 @@ namespace de4dot.code.deobfuscators {
 			return list;
 		}
 
-		public static MethodDefinition getResolveMethod(MethodDefinition method) {
+		public static MethodDef getResolveMethod(MethodDef method) {
 			var handlers = DeobUtils.getAllResolveHandlers(method);
 			if (handlers.Count == 0)
 				return null;

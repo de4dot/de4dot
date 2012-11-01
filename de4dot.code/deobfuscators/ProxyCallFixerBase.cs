@@ -19,15 +19,15 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators {
 	abstract class ProxyCallFixerBase {
-		protected ModuleDefinition module;
-		protected List<MethodDefinition> delegateCreatorMethods = new List<MethodDefinition>();
-		protected Dictionary<TypeDefinition, bool> delegateTypesDict = new Dictionary<TypeDefinition, bool>();
+		protected ModuleDefMD module;
+		protected List<MethodDef> delegateCreatorMethods = new List<MethodDef>();
+		protected Dictionary<TypeDef, bool> delegateTypesDict = new Dictionary<TypeDef, bool>();
 		protected int errors = 0;
 
 		public int Errors {
@@ -35,10 +35,10 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		protected class DelegateInfo {
-			public MethodReference methodRef;	// Method we should call
-			public FieldDefinition field;		// Field holding the Delegate instance
+			public IMethod methodRef;	// Method we should call
+			public FieldDef field;		// Field holding the Delegate instance
 			public OpCode callOpcode;
-			public DelegateInfo(FieldDefinition field, MethodReference methodRef, OpCode callOpcode) {
+			public DelegateInfo(FieldDef field, IMethod methodRef, OpCode callOpcode) {
 				this.field = field;
 				this.methodRef = methodRef;
 				this.callOpcode = callOpcode;
@@ -47,30 +47,30 @@ namespace de4dot.code.deobfuscators {
 
 		public int RemovedDelegateCreatorCalls { get; set; }
 
-		public IEnumerable<TypeDefinition> DelegateTypes {
+		public IEnumerable<TypeDef> DelegateTypes {
 			get { return delegateTypesDict.Keys; }
 		}
 
-		public IEnumerable<TypeDefinition> DelegateCreatorTypes {
+		public IEnumerable<TypeDef> DelegateCreatorTypes {
 			get {
 				foreach (var method in delegateCreatorMethods)
 					yield return method.DeclaringType;
 			}
 		}
 
-		public virtual IEnumerable<Tuple<MethodDefinition, string>> OtherMethods {
-			get { return new List<Tuple<MethodDefinition, string>>(); }
+		public virtual IEnumerable<Tuple<MethodDef, string>> OtherMethods {
+			get { return new List<Tuple<MethodDef, string>>(); }
 		}
 
 		public bool Detected {
 			get { return delegateCreatorMethods.Count != 0; }
 		}
 
-		protected ProxyCallFixerBase(ModuleDefinition module) {
+		protected ProxyCallFixerBase(ModuleDefMD module) {
 			this.module = module;
 		}
 
-		protected ProxyCallFixerBase(ModuleDefinition module, ProxyCallFixerBase oldOne) {
+		protected ProxyCallFixerBase(ModuleDefMD module, ProxyCallFixerBase oldOne) {
 			this.module = module;
 			foreach (var method in oldOne.delegateCreatorMethods)
 				delegateCreatorMethods.Add(lookup(method, "Could not find delegate creator method"));
@@ -84,17 +84,17 @@ namespace de4dot.code.deobfuscators {
 			return new DelegateInfo(field, method, di.callOpcode);
 		}
 
-		protected T lookup<T>(T def, string errorMessage) where T : MemberReference {
+		protected T lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
 			return DeobUtils.lookup(module, def, errorMessage);
 		}
 
-		protected void setDelegateCreatorMethod(MethodDefinition delegateCreatorMethod) {
+		protected void setDelegateCreatorMethod(MethodDef delegateCreatorMethod) {
 			if (delegateCreatorMethod == null)
 				return;
 			delegateCreatorMethods.Add(delegateCreatorMethod);
 		}
 
-		protected bool isDelegateCreatorMethod(MethodDefinition method) {
+		protected bool isDelegateCreatorMethod(MethodDef method) {
 			foreach (var m in delegateCreatorMethods) {
 				if (m == method)
 					return true;
@@ -102,7 +102,7 @@ namespace de4dot.code.deobfuscators {
 			return false;
 		}
 
-		protected virtual IEnumerable<TypeDefinition> getDelegateTypes() {
+		protected virtual IEnumerable<TypeDef> getDelegateTypes() {
 			foreach (var type in module.Types) {
 				if (type.BaseType == null || type.BaseType.FullName != "System.MulticastDelegate")
 					continue;
@@ -182,11 +182,11 @@ namespace de4dot.code.deobfuscators {
 	abstract class ProxyCallFixer1 : ProxyCallFixerBase {
 		FieldDefinitionAndDeclaringTypeDict<DelegateInfo> fieldToDelegateInfo = new FieldDefinitionAndDeclaringTypeDict<DelegateInfo>();
 
-		protected ProxyCallFixer1(ModuleDefinition module)
+		protected ProxyCallFixer1(ModuleDefMD module)
 			: base(module) {
 		}
 
-		protected ProxyCallFixer1(ModuleDefinition module, ProxyCallFixer1 oldOne)
+		protected ProxyCallFixer1(ModuleDefMD module, ProxyCallFixer1 oldOne)
 			: base(module, oldOne) {
 			foreach (var key in oldOne.fieldToDelegateInfo.getKeys())
 				fieldToDelegateInfo.add(lookup(key, "Could not find field"), copy(oldOne.fieldToDelegateInfo.find(key)));
@@ -196,7 +196,7 @@ namespace de4dot.code.deobfuscators {
 			fieldToDelegateInfo.add(di.field, di);
 		}
 
-		protected DelegateInfo getDelegateInfo(FieldReference field) {
+		protected DelegateInfo getDelegateInfo(IField field) {
 			if (field == null)
 				return null;
 			return fieldToDelegateInfo.find(field);
@@ -209,8 +209,8 @@ namespace de4dot.code.deobfuscators {
 			Log.v("Finding all proxy delegates");
 			foreach (var tmp in getDelegateTypes()) {
 				var type = tmp;
-				var cctor = DotNetUtils.getMethod(type, ".cctor");
-				if (cctor == null || !cctor.HasBody)
+				var cctor = type.FindClassConstructor();
+				if (cctor == null || !cctor.HasCilBody)
 					continue;
 				if (!type.HasFields)
 					continue;
@@ -219,7 +219,7 @@ namespace de4dot.code.deobfuscators {
 				if (context == null)
 					continue;
 
-				Log.v("Found proxy delegate: {0} ({1:X8})", Utils.removeNewlines(type), type.MetadataToken.ToUInt32());
+				Log.v("Found proxy delegate: {0} ({1:X8})", Utils.removeNewlines(type), type.MDToken.ToUInt32());
 				RemovedDelegateCreatorCalls++;
 
 				Log.indent();
@@ -227,7 +227,7 @@ namespace de4dot.code.deobfuscators {
 					if (!field.IsStatic)
 						continue;
 
-					MethodReference calledMethod;
+					IMethod calledMethod;
 					OpCode callOpcode;
 					getCallInfo(context, field, out calledMethod, out callOpcode);
 
@@ -238,15 +238,15 @@ namespace de4dot.code.deobfuscators {
 								Utils.removeNewlines(field.Name),
 								callOpcode,
 								Utils.removeNewlines(calledMethod),
-								calledMethod.MetadataToken.ToUInt32());
+								calledMethod.MDToken.Raw);
 				}
 				Log.deIndent();
 				delegateTypesDict[type] = true;
 			}
 		}
 
-		protected abstract object checkCctor(ref TypeDefinition type, MethodDefinition cctor);
-		protected abstract void getCallInfo(object context, FieldDefinition field, out MethodReference calledMethod, out OpCode callOpcode);
+		protected abstract object checkCctor(ref TypeDef type, MethodDef cctor);
+		protected abstract void getCallInfo(object context, FieldDef field, out IMethod calledMethod, out OpCode callOpcode);
 
 		protected override bool deobfuscate(Blocks blocks, IList<Block> allBlocks) {
 			var removeInfos = new Dictionary<Block, List<RemoveInfo>>();
@@ -258,7 +258,7 @@ namespace de4dot.code.deobfuscators {
 					if (instr.OpCode != OpCodes.Ldsfld)
 						continue;
 
-					var di = getDelegateInfo(instr.Operand as FieldReference);
+					var di = getDelegateInfo(instr.Operand as IField);
 					if (di == null)
 						continue;
 
@@ -271,9 +271,9 @@ namespace de4dot.code.deobfuscators {
 						errors++;
 						Log.w("Could not fix proxy call. Method: {0} ({1:X8}), Proxy type: {2} ({3:X8})",
 							Utils.removeNewlines(blocks.Method),
-							blocks.Method.MetadataToken.ToInt32(),
+							blocks.Method.MDToken.ToInt32(),
 							Utils.removeNewlines(di.field.DeclaringType),
-							di.field.DeclaringType.MetadataToken.ToInt32());
+							di.field.DeclaringType.MDToken.ToInt32());
 					}
 				}
 			}
@@ -296,7 +296,7 @@ namespace de4dot.code.deobfuscators {
 				if (stack <= 0)
 					return null;
 				var instr = instrs[i];
-				DotNetUtils.updateStack(instr.Instruction, ref stack, false);
+				instr.Instruction.UpdateStack(ref stack, false);
 				if (stack < 0)
 					return null;
 
@@ -305,7 +305,7 @@ namespace de4dot.code.deobfuscators {
 						return null;
 					continue;
 				}
-				var calledMethod = instr.Operand as MethodReference;
+				var calledMethod = instr.Operand as IMethod;
 				if (calledMethod == null)
 					return null;
 				if (stack != (DotNetUtils.hasReturnValue(calledMethod) ? 1 : 0))
@@ -336,28 +336,25 @@ namespace de4dot.code.deobfuscators {
 
 		// The obfuscator could be buggy and call a proxy delegate without pushing the
 		// instance field. SA has done it, so let's fix it.
-		void fixBrokenCalls(MethodDefinition obfuscatedMethod, IList<Block> allBlocks) {
+		void fixBrokenCalls(MethodDef obfuscatedMethod, IList<Block> allBlocks) {
 			foreach (var block in allBlocks) {
 				var instrs = block.Instructions;
 				for (int i = 0; i < instrs.Count; i++) {
 					var call = instrs[i];
 					if (call.OpCode != OpCodes.Call && call.OpCode != OpCodes.Callvirt)
 						continue;
-					var methodRef = call.Operand as MethodReference;
+					var methodRef = call.Operand as IMethod;
 					if (methodRef == null || methodRef.Name != "Invoke")
 						continue;
-					var method = DotNetUtils.getMethod(module, methodRef);
-					if (method == null)
+					MethodDef method = DotNetUtils.getMethod2(module, methodRef);
+					if (method == null || method.DeclaringType == null)
 						continue;
-					var declaringType = DotNetUtils.getType(module, method.DeclaringType);
-					if (declaringType == null)
-						continue;
-					if (!delegateTypesDict.ContainsKey(declaringType))
+					if (!delegateTypesDict.ContainsKey(method.DeclaringType))
 						continue;
 
 					// Oooops!!! The obfuscator is buggy. Well, let's hope it is, or it's my code. ;)
 
-					Log.w("Holy obfuscator bugs, Batman! Found a proxy delegate call with no instance push in {0:X8}. Replacing it with a throw...", obfuscatedMethod.MetadataToken.ToInt32());
+					Log.w("Holy obfuscator bugs, Batman! Found a proxy delegate call with no instance push in {0:X8}. Replacing it with a throw...", obfuscatedMethod.MDToken.ToInt32());
 					block.insert(i, Instruction.Create(OpCodes.Ldnull));
 					block.replace(i + 1, 1, Instruction.Create(OpCodes.Throw));
 					i++;
@@ -373,11 +370,11 @@ namespace de4dot.code.deobfuscators {
 	abstract class ProxyCallFixer2 : ProxyCallFixerBase {
 		MethodDefinitionAndDeclaringTypeDict<DelegateInfo> proxyMethodToDelegateInfo = new MethodDefinitionAndDeclaringTypeDict<DelegateInfo>();
 
-		protected ProxyCallFixer2(ModuleDefinition module)
+		protected ProxyCallFixer2(ModuleDefMD module)
 			: base(module) {
 		}
 
-		protected ProxyCallFixer2(ModuleDefinition module, ProxyCallFixer2 oldOne)
+		protected ProxyCallFixer2(ModuleDefMD module, ProxyCallFixer2 oldOne)
 			: base(module, oldOne) {
 			foreach (var oldMethod in oldOne.proxyMethodToDelegateInfo.getKeys()) {
 				var oldDi = oldOne.proxyMethodToDelegateInfo.find(oldMethod);
@@ -396,8 +393,8 @@ namespace de4dot.code.deobfuscators {
 
 		protected void find2() {
 			foreach (var type in getDelegateTypes()) {
-				var cctor = DotNetUtils.getMethod(type, ".cctor");
-				if (cctor == null || !cctor.HasBody)
+				var cctor = type.FindClassConstructor();
+				if (cctor == null || !cctor.HasCilBody)
 					continue;
 				if (!type.HasFields)
 					continue;
@@ -406,17 +403,17 @@ namespace de4dot.code.deobfuscators {
 				if (context == null)
 					continue;
 
-				Log.v("Found proxy delegate: {0} ({1:X8})", Utils.removeNewlines(type), type.MetadataToken.ToUInt32());
+				Log.v("Found proxy delegate: {0} ({1:X8})", Utils.removeNewlines(type), type.MDToken.ToUInt32());
 				RemovedDelegateCreatorCalls++;
 				var fieldToMethod = getFieldToMethodDictionary(type);
 
 				Log.indent();
 				foreach (var field in type.Fields) {
-					MethodDefinition proxyMethod;
+					MethodDef proxyMethod;
 					if (!fieldToMethod.TryGetValue(field, out proxyMethod))
 						continue;
 
-					MethodReference calledMethod;
+					IMethod calledMethod;
 					OpCode callOpcode;
 					getCallInfo(context, field, out calledMethod, out callOpcode);
 
@@ -427,32 +424,32 @@ namespace de4dot.code.deobfuscators {
 								Utils.removeNewlines(field.Name),
 								callOpcode,
 								Utils.removeNewlines(calledMethod),
-								calledMethod.MetadataToken.ToUInt32());
+								calledMethod.MDToken.ToUInt32());
 				}
 				Log.deIndent();
 				delegateTypesDict[type] = true;
 			}
 		}
 
-		protected void add(MethodDefinition method, DelegateInfo di) {
+		protected void add(MethodDef method, DelegateInfo di) {
 			proxyMethodToDelegateInfo.add(method, di);
 		}
 
-		protected abstract object checkCctor(TypeDefinition type, MethodDefinition cctor);
-		protected abstract void getCallInfo(object context, FieldDefinition field, out MethodReference calledMethod, out OpCode callOpcode);
+		protected abstract object checkCctor(TypeDef type, MethodDef cctor);
+		protected abstract void getCallInfo(object context, FieldDef field, out IMethod calledMethod, out OpCode callOpcode);
 
-		Dictionary<FieldDefinition, MethodDefinition> getFieldToMethodDictionary(TypeDefinition type) {
-			var dict = new Dictionary<FieldDefinition, MethodDefinition>();
+		Dictionary<FieldDef, MethodDef> getFieldToMethodDictionary(TypeDef type) {
+			var dict = new Dictionary<FieldDef, MethodDef>();
 			foreach (var method in type.Methods) {
-				if (!method.IsStatic || !method.HasBody || method.Name == ".cctor")
+				if (!method.IsStatic || !method.HasCilBody || method.Name == ".cctor")
 					continue;
 
-				var instructions = method.Body.Instructions;
+				var instructions = method.CilBody.Instructions;
 				for (int i = 0; i < instructions.Count; i++) {
 					var instr = instructions[i];
 					if (instr.OpCode.Code != Code.Ldsfld)
 						continue;
-					var field = instr.Operand as FieldDefinition;
+					var field = instr.Operand as FieldDef;
 					if (field == null)
 						continue;
 
@@ -473,7 +470,7 @@ namespace de4dot.code.deobfuscators {
 					if (instr.OpCode != OpCodes.Call)
 						continue;
 
-					var method = instr.Operand as MethodReference;
+					var method = instr.Operand as IMethod;
 					if (method == null)
 						continue;
 					var di = proxyMethodToDelegateInfo.find(method);
@@ -493,11 +490,11 @@ namespace de4dot.code.deobfuscators {
 	//		ldsfld delegate instance
 	//		call static method
 	abstract class ProxyCallFixer3 : ProxyCallFixer1 {
-		protected ProxyCallFixer3(ModuleDefinition module)
+		protected ProxyCallFixer3(ModuleDefMD module)
 			: base(module) {
 		}
 
-		protected ProxyCallFixer3(ModuleDefinition module, ProxyCallFixer3 oldOne)
+		protected ProxyCallFixer3(ModuleDefMD module, ProxyCallFixer3 oldOne)
 			: base(module, oldOne) {
 		}
 
@@ -514,10 +511,10 @@ namespace de4dot.code.deobfuscators {
 			};
 		}
 
-		static MethodReference getCalledMethod(Instr instr) {
+		static IMethod getCalledMethod(Instr instr) {
 			if (instr.OpCode.Code != Code.Call)
 				return null;
-			return instr.Operand as MethodReference;
+			return instr.Operand as IMethod;
 		}
 	}
 }

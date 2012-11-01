@@ -25,17 +25,19 @@ using dot10.PE;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
 
-namespace de4dot.code.deobfuscators {
+namespace de4dot.code {
 	//TODO: I added this iface to Cecil but now you must add something similar to dot10
 	interface IWriterListener {
-		internal class MetadataBuilder {
-			//TODO: Dummy class. Don't use
-		}
-
 		// Called before adding resources, and after adding types, methods, etc.
 		void OnBeforeAddingResources(MetadataBuilder builder);
 	}
+	//TODO: REMOVE
+	internal class MetadataBuilder {
+		//TODO: Dummy class. Don't use
+	}
+}
 
+namespace de4dot.code.deobfuscators {
 	abstract class DeobfuscatorBase : IDeobfuscator, IWriterListener {
 		public const string DEFAULT_VALID_NAME_REGEX = @"^[a-zA-Z_<{$][a-zA-Z_0-9<>{}$.`-]*$";
 
@@ -497,8 +499,9 @@ namespace de4dot.code.deobfuscators {
 				if (typeDef == null)
 					continue;
 				for (int i = 0; i < customAttrs.Count; i++) {
-					if (MemberReferenceHelper.compareTypes(customAttrs[i].AttributeType, typeDef)) {
+					if (new SigComparer().Equals(typeDef, customAttrs[i].AttributeType)) {
 						customAttrs.RemoveAt(i);
+						i--;
 						Log.v("Removed custom attribute {0} ({1:X8}) (reason: {2})",
 									Utils.removeNewlines(typeDef),
 									typeDef.MDToken.ToUInt32(),
@@ -628,14 +631,14 @@ namespace de4dot.code.deobfuscators {
 			return DotNetUtils.getResource(module, strings);
 		}
 
-		protected CustomAttribute getAssemblyAttribute(TypeReference attr) {
-			var list = new List<CustomAttribute>(DotNetUtils.findAttributes(module.Assembly, attr));
-			return list.Count == 0 ? null : list[0];
+		protected CustomAttribute getAssemblyAttribute(IType attr) {
+			if (module.Assembly == null)
+				return null;
+			return module.Assembly.CustomAttributes.Find(attr);
 		}
 
-		protected CustomAttribute getModuleAttribute(TypeReference attr) {
-			var list = new List<CustomAttribute>(DotNetUtils.findAttributes(module, attr));
-			return list.Count == 0 ? null : list[0];
+		protected CustomAttribute getModuleAttribute(IType attr) {
+			return module.CustomAttributes.Find(attr);
 		}
 
 		protected bool hasMetadataStream(string name) {
@@ -646,7 +649,7 @@ namespace de4dot.code.deobfuscators {
 			return false;
 		}
 
-		List<T> getObjectsToRemove<T>(IList<RemoveInfo<T>> removeThese) where T : MemberReference {
+		List<T> getObjectsToRemove<T>(IList<RemoveInfo<T>> removeThese) where T : class, ICodedToken {
 			var list = new List<T>(removeThese.Count);
 			foreach (var info in removeThese) {
 				if (info.obj != null)
@@ -705,7 +708,7 @@ namespace de4dot.code.deobfuscators {
 			return name != null && checkValidName(name);
 		}
 
-		public virtual void OnBeforeAddingResources(IWriterListener.MetadataBuilder builder) {
+		public virtual void OnBeforeAddingResources(MetadataBuilder builder) {
 		}
 
 		protected void findAndRemoveInlinedMethods() {
