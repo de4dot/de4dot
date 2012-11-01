@@ -145,212 +145,31 @@ namespace de4dot.blocks {
 	public static class DotNetUtils {
 		public static readonly TypeCaches typeCaches = new TypeCaches();
 
-		public static bool isLeave(Instruction instr) {
-			return instr.OpCode == OpCodes.Leave || instr.OpCode == OpCodes.Leave_S;
-		}
-
-		public static bool isBr(Instruction instr) {
-			return instr.OpCode == OpCodes.Br || instr.OpCode == OpCodes.Br_S;
-		}
-
-		public static bool isBrfalse(Instruction instr) {
-			return instr.OpCode == OpCodes.Brfalse || instr.OpCode == OpCodes.Brfalse_S;
-		}
-
-		public static bool isBrtrue(Instruction instr) {
-			return instr.OpCode == OpCodes.Brtrue || instr.OpCode == OpCodes.Brtrue_S;
-		}
-
-		public static bool isLdcI4(Instruction instruction) {
-			return isLdcI4(instruction.OpCode.Code);
-		}
-
-		public static bool isLdcI4(Code code) {
-			switch (code) {
-			case Code.Ldc_I4_M1:
-			case Code.Ldc_I4_0:
-			case Code.Ldc_I4_1:
-			case Code.Ldc_I4_2:
-			case Code.Ldc_I4_3:
-			case Code.Ldc_I4_4:
-			case Code.Ldc_I4_5:
-			case Code.Ldc_I4_6:
-			case Code.Ldc_I4_7:
-			case Code.Ldc_I4_8:
-			case Code.Ldc_I4_S:
-			case Code.Ldc_I4:
-				return true;
-			default:
-				return false;
-			}
-		}
-
-		public static int getLdcI4Value(Instruction instruction) {
-			switch (instruction.OpCode.Code) {
-			case Code.Ldc_I4_M1:return -1;
-			case Code.Ldc_I4_0: return 0;
-			case Code.Ldc_I4_1: return 1;
-			case Code.Ldc_I4_2: return 2;
-			case Code.Ldc_I4_3: return 3;
-			case Code.Ldc_I4_4: return 4;
-			case Code.Ldc_I4_5: return 5;
-			case Code.Ldc_I4_6: return 6;
-			case Code.Ldc_I4_7: return 7;
-			case Code.Ldc_I4_8: return 8;
-			case Code.Ldc_I4_S: return (sbyte)instruction.Operand;
-			case Code.Ldc_I4:	return (int)instruction.Operand;
-			default:
-				throw new ApplicationException(string.Format("Not an ldc.i4 instruction: {0}", instruction));
-			}
-		}
-
-		// Returns true if it's one of the ldarg instructions
-		public static bool isLdarg(Instruction instr) {
-			switch (instr.OpCode.Code) {
-			case Code.Ldarg:
-			case Code.Ldarg_S:
-			case Code.Ldarg_0:
-			case Code.Ldarg_1:
-			case Code.Ldarg_2:
-			case Code.Ldarg_3:
-				return true;
-			default:
-				return false;
-			}
-		}
-
-		// Return true if it's one of the stloc instructions
-		public static bool isStloc(Instruction instr) {
-			switch (instr.OpCode.Code) {
-			case Code.Stloc:
-			case Code.Stloc_0:
-			case Code.Stloc_1:
-			case Code.Stloc_2:
-			case Code.Stloc_3:
-			case Code.Stloc_S:
-				return true;
-			default:
-				return false;
-			}
-		}
-
-		// Returns true if it's one of the ldloc instructions
-		public static bool isLdloc(Instruction instr) {
-			switch (instr.OpCode.Code) {
-			case Code.Ldloc:
-			case Code.Ldloc_0:
-			case Code.Ldloc_1:
-			case Code.Ldloc_2:
-			case Code.Ldloc_3:
-			case Code.Ldloc_S:
-				return true;
-			default:
-				return false;
-			}
-		}
-
-		// Returns the variable or null if it's not a ldloc/stloc instruction. It does not return
-		// a local variable if it's a ldloca/ldloca.s instruction.
-		public static VariableDefinition getLocalVar(IList<VariableDefinition> locals, Instruction instr) {
-			int index;
-			switch (instr.OpCode.Code) {
-			case Code.Ldloc:
-			case Code.Ldloc_S:
-			case Code.Stloc:
-			case Code.Stloc_S:
-				return (VariableDefinition)instr.Operand;
-
-			case Code.Ldloc_0:
-			case Code.Ldloc_1:
-			case Code.Ldloc_2:
-			case Code.Ldloc_3:
-				index = instr.OpCode.Code - Code.Ldloc_0;
-				break;
-
-			case Code.Stloc_0:
-			case Code.Stloc_1:
-			case Code.Stloc_2:
-			case Code.Stloc_3:
-				index = instr.OpCode.Code - Code.Stloc_0;
-				break;
-
-			default:
-				return null;
-			}
-
-			if (index < locals.Count)
-				return locals[index];
-			return null;
-		}
-
-		public static bool isConditionalBranch(Code code) {
-			switch (code) {
-			case Code.Bge:
-			case Code.Bge_S:
-			case Code.Bge_Un:
-			case Code.Bge_Un_S:
-			case Code.Blt:
-			case Code.Blt_S:
-			case Code.Blt_Un:
-			case Code.Blt_Un_S:
-			case Code.Bgt:
-			case Code.Bgt_S:
-			case Code.Bgt_Un:
-			case Code.Bgt_Un_S:
-			case Code.Ble:
-			case Code.Ble_S:
-			case Code.Ble_Un:
-			case Code.Ble_Un_S:
-			case Code.Brfalse:
-			case Code.Brfalse_S:
-			case Code.Brtrue:
-			case Code.Brtrue_S:
-			case Code.Beq:
-			case Code.Beq_S:
-			case Code.Bne_Un:
-			case Code.Bne_Un_S:
-				return true;
-
-			default:
-				return false;
-			}
-		}
-
-		public static TypeDefinition getModuleType(ModuleDefinition module) {
-			if (module.Types.Count == 0)
-				return null;
-
-			if (module.Runtime == TargetRuntime.Net_1_0 || module.Runtime == TargetRuntime.Net_1_1) {
-				if (module.Types[0].FullName == "<Module>")
-					return module.Types[0];
-				return null;
-			}
-
-			// It's always the first one, no matter what it is named.
-			return module.Types[0];
+		public static DN.TypeDef getModuleType(DN.ModuleDef module) {
+			return module.GlobalType;
 		}
 
 		public static MethodDefinition getModuleTypeCctor(ModuleDefinition module) {
-			return getMethod(getModuleType(module), ".cctor");
+			return null;
 		}
 
-		public static bool isEmpty(MethodDefinition method) {
-			if (method.Body == null)
+		public static bool isEmpty(DN.MethodDef method) {
+			if (method.CilBody == null)
 				return false;
-			foreach (var instr in method.Body.Instructions) {
+			foreach (var instr in method.CilBody.Instructions) {
 				var code = instr.OpCode.Code;
-				if (code != Code.Nop && code != Code.Ret)
+				if (code != DNE.Code.Nop && code != DNE.Code.Ret)
 					return false;
 			}
 			return true;
 		}
 
-		public static bool isEmptyObfuscated(MethodDefinition method) {
-			if (method.Body == null)
+		public static bool isEmptyObfuscated(DN.MethodDef method) {
+			if (method.CilBody == null)
 				return false;
 			int index = 0;
-			var instr = getInstruction(method.Body.Instructions, ref index);
-			if (instr == null || instr.OpCode.Code != Code.Ret)
+			var instr = getInstruction(method.CilBody.Instructions, ref index);
+			if (instr == null || instr.OpCode.Code != DNE.Code.Ret)
 				return false;
 
 			return true;
@@ -389,11 +208,14 @@ namespace de4dot.blocks {
 			}
 		}
 
-		public static bool isDelegate(TypeReference type) {
-			return type != null && (type.FullName == "System.Delegate" || type.FullName == "System.MulticastDelegate");
+		public static bool isDelegate(DN.IType type) {
+			if (type == null)
+				return false;
+			var fn = type.FullName;
+			return fn == "System.Delegate" || fn == "System.MulticastDelegate";
 		}
 
-		public static bool derivesFromDelegate(TypeDefinition type) {
+		public static bool derivesFromDelegate(DN.TypeDef type) {
 			return type != null && isDelegate(type.BaseType);
 		}
 
@@ -1099,22 +921,6 @@ namespace de4dot.blocks {
 			if (sig.HasThis && !sig.ExplicitThis)
 				count++;
 			return count;
-		}
-
-		public static Instruction createLdci4(int value) {
-			if (value == -1) return Instruction.Create(OpCodes.Ldc_I4_M1);
-			if (value == 0) return Instruction.Create(OpCodes.Ldc_I4_0);
-			if (value == 1) return Instruction.Create(OpCodes.Ldc_I4_1);
-			if (value == 2) return Instruction.Create(OpCodes.Ldc_I4_2);
-			if (value == 3) return Instruction.Create(OpCodes.Ldc_I4_3);
-			if (value == 4) return Instruction.Create(OpCodes.Ldc_I4_4);
-			if (value == 5) return Instruction.Create(OpCodes.Ldc_I4_5);
-			if (value == 6) return Instruction.Create(OpCodes.Ldc_I4_6);
-			if (value == 7) return Instruction.Create(OpCodes.Ldc_I4_7);
-			if (value == 8) return Instruction.Create(OpCodes.Ldc_I4_8);
-			if (sbyte.MinValue <= value && value <= sbyte.MaxValue)
-				return Instruction.Create(OpCodes.Ldc_I4_S, (sbyte)value);
-			return Instruction.Create(OpCodes.Ldc_I4, value);
 		}
 
 		// Doesn't fix everything (eg. T[] aren't replaced with eg. int[], but T -> int will be fixed)
