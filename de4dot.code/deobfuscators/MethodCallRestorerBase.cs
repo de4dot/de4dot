@@ -48,7 +48,7 @@ namespace de4dot.code.deobfuscators {
 				return;
 			var assemblyType = builder.type("System.Reflection", "Assembly", builder.CorLib);
 			var streamType = builder.type("System.IO", "Stream", builder.CorLib);
-			var newMethod = builder.instanceMethod("GetManifestResourceStream", assemblyType, streamType, builder.String);
+			var newMethod = builder.instanceMethod("GetManifestResourceStream", assemblyType.TypeDefOrRef, streamType, builder.String);
 			add(oldMethod, newMethod, OpCodes.Callvirt);
 		}
 
@@ -58,7 +58,7 @@ namespace de4dot.code.deobfuscators {
 			var assemblyType = builder.type("System.Reflection", "Assembly", builder.CorLib);
 			var typeType = builder.type("System", "Type", builder.CorLib);
 			var streamType = builder.type("System.IO", "Stream", builder.CorLib);
-			var newMethod = builder.instanceMethod("GetManifestResourceStream", assemblyType, streamType, typeType, builder.String);
+			var newMethod = builder.instanceMethod("GetManifestResourceStream", assemblyType.TypeDefOrRef, streamType, typeType, builder.String);
 			add(oldMethod, newMethod, OpCodes.Callvirt);
 		}
 
@@ -67,7 +67,7 @@ namespace de4dot.code.deobfuscators {
 				return;
 			var assemblyType = builder.type("System.Reflection", "Assembly", builder.CorLib);
 			var stringArrayType = builder.array(builder.String);
-			var newMethod = builder.instanceMethod("GetManifestResourceNames", assemblyType, stringArrayType);
+			var newMethod = builder.instanceMethod("GetManifestResourceNames", assemblyType.TypeDefOrRef, stringArrayType);
 			add(oldMethod, newMethod, OpCodes.Callvirt);
 		}
 
@@ -76,7 +76,7 @@ namespace de4dot.code.deobfuscators {
 				return;
 			var bitmapType = builder.type("System.Drawing", "Bitmap", "System.Drawing");
 			var typeType = builder.type("System", "Type", builder.CorLib);
-			var newMethod = builder.instanceMethod(".ctor", bitmapType, builder.Void, typeType, builder.String);
+			var newMethod = builder.instanceMethod(".ctor", bitmapType.TypeDefOrRef, builder.Void, typeType, builder.String);
 			add(oldMethod, newMethod, OpCodes.Newobj);
 		}
 
@@ -85,7 +85,7 @@ namespace de4dot.code.deobfuscators {
 				return;
 			var iconType = builder.type("System.Drawing", "Icon", "System.Drawing");
 			var typeType = builder.type("System", "Type", builder.CorLib);
-			var newMethod = builder.instanceMethod(".ctor", iconType, builder.Void, typeType, builder.String);
+			var newMethod = builder.instanceMethod(".ctor", iconType.TypeDefOrRef, builder.Void, typeType, builder.String);
 			add(oldMethod, newMethod, OpCodes.Newobj);
 		}
 

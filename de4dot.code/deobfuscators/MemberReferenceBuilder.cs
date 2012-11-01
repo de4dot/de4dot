@@ -24,7 +24,7 @@ using dot10.DotNet.MD;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators {
-	class MemberReferenceBuilder : ICorLibTypes {
+	class MemberReferenceBuilder {
 		ModuleDefMD module;
 		Dictionary<TypeSig, TypeSig> createdTypes = new Dictionary<TypeSig, TypeSig>(TypeEqualityComparer.Instance);
 
@@ -33,10 +33,6 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		public AssemblyRef CorLib {
-			get { return module.CorLibTypes.AssemblyRef; }
-		}
-
-		public AssemblyRef AssemblyRef {
 			get { return module.CorLibTypes.AssemblyRef; }
 		}
 

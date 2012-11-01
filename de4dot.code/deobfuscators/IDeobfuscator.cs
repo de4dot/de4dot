@@ -20,12 +20,12 @@
 using System;
 using System.Collections.Generic;
 using dot10.DotNet;
+using dot10.PE;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
 #if PORT
 using de4dot.code.renamer;
 #endif
-using de4dot.PE;
 
 namespace de4dot.code.deobfuscators {
 	public interface IDeobfuscatorOptions {
@@ -67,15 +67,13 @@ namespace de4dot.code.deobfuscators {
 		StringFeatures StringFeatures { get; }
 		RenamingOptions RenamingOptions { get; }
 		DecrypterType DefaultDecrypterType { get; }
-#if PORT
 		IEnumerable<IBlocksDeobfuscator> BlocksDeobfuscators { get; }
-#endif
 
 		// This is non-null only in detect() and deobfuscateBegin().
 		IDeobfuscatedFile DeobfuscatedFile { get; set; }
 
 		// Returns null or the unpacked .NET PE file
-		byte[] unpackNativeFile(PeImage peImage);
+		byte[] unpackNativeFile(PEImage peImage);
 
 		void init(ModuleDefMD module);
 

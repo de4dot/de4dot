@@ -24,6 +24,7 @@ using System.IO;
 using System.Text;
 using dot10.DotNet;
 using dot10.DotNet.Emit;
+using dot10.PE;
 using de4dot.code.deobfuscators;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
@@ -31,7 +32,6 @@ using de4dot.code.AssemblyClient;
 #if PORT
 using de4dot.code.renamer;
 #endif
-using de4dot.PE;
 
 namespace de4dot.code {
 	public class ObfuscatedFile : IObfuscatedFile, IDeobfuscatedFile {
@@ -185,7 +185,7 @@ namespace de4dot.code {
 		}
 
 		bool unpackNativeImage(IEnumerable<IDeobfuscator> deobfuscators) {
-			var peImage = new PeImage(Utils.readFile(Filename));
+			var peImage = new PEImage(Filename);
 
 			foreach (var deob in deobfuscators) {
 				byte[] unpackedData = null;
@@ -731,11 +731,9 @@ namespace de4dot.code {
 				return;
 
 			deobfuscate(method, "Deobfuscating control flow", (blocks) => {
-#if PORT
 				var cflowDeobfuscator = new BlocksCflowDeobfuscator(deob.BlocksDeobfuscators);
 				cflowDeobfuscator.init(blocks);
 				cflowDeobfuscator.deobfuscate();
-#endif
 			});
 		}
 

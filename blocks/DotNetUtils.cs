@@ -713,6 +713,13 @@ namespace de4dot.blocks {
 			return type.EType != ElementType.Void;
 		}
 
+		public static bool hasReturnValue(DN.IMethod method) {
+			if (method == null || method.MethodSig == null)
+				return false;
+			//TODO: Also remove modifiers from RetType before comparing etype
+			return method.MethodSig.RetType.ElementType != DN.ElementType.Void;
+		}
+
 		public static void updateStack(Instruction instr, ref int stack, bool methodHasReturnValue) {
 			int pushes, pops;
 			calculateStackUsage(instr, methodHasReturnValue, out pushes, out pops);
@@ -919,6 +926,12 @@ namespace de4dot.blocks {
 		}
 
 		public static ParameterDefinition getParameter(IList<ParameterDefinition> parameters, int index) {
+			if (0 <= index && index < parameters.Count)
+				return parameters[index];
+			return null;
+		}
+
+		public static DN.Parameter getParameter(IList<DN.Parameter> parameters, int index) {
 			if (0 <= index && index < parameters.Count)
 				return parameters[index];
 			return null;

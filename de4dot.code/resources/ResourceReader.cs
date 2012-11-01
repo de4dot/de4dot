@@ -22,7 +22,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
-using Mono.Cecil;
+using dot10.DotNet;
 
 namespace de4dot.code.resources {
 	[Serializable]
@@ -33,17 +33,17 @@ namespace de4dot.code.resources {
 	}
 
 	class ResourceReader {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		BinaryReader reader;
 		ResourceDataCreator resourceDataCreator;
 
-		ResourceReader(ModuleDefinition module, Stream stream) {
+		ResourceReader(ModuleDefMD module, Stream stream) {
 			this.module = module;
 			this.reader = new BinaryReader(stream);
 			this.resourceDataCreator = new ResourceDataCreator(module);
 		}
 
-		public static ResourceElementSet read(ModuleDefinition module, Stream stream) {
+		public static ResourceElementSet read(ModuleDefMD module, Stream stream) {
 			return new ResourceReader(module, stream).read();
 		}
 

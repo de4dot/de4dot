@@ -22,15 +22,16 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
-using Mono.Cecil;
+using dot10.DotNet;
+using dot10.DotNet.MD;
 
 namespace de4dot.code.resources {
 	class ResourceDataCreator {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		Dictionary<string, UserResourceType> dict = new Dictionary<string, UserResourceType>(StringComparer.Ordinal);
 		Dictionary<string, string> asmNameToAsmFullName = new Dictionary<string, string>(StringComparer.Ordinal);
 
-		public ResourceDataCreator(ModuleDefinition module) {
+		public ResourceDataCreator(ModuleDefMD module) {
 			this.module = module;
 		}
 
@@ -210,19 +211,14 @@ namespace de4dot.code.resources {
 		string tryGetRealAssemblyName(string assemblyName) {
 			var simpleName = Utils.getAssemblySimpleName(assemblyName);
 
-			foreach (var asmRef in module.AssemblyReferences) {
-				if (asmRef.Name == simpleName)
+			var name = new UTF8String(simpleName);
+			foreach (var asmRef in module.GetAssemblyRefs()) {
+				if (asmRef.Name == name)
 					return asmRef.FullName;
 			}
 
-			try {
-				return AssemblyResolver.Instance.Resolve(simpleName).FullName;
-			}
-			catch (ResolutionException) {
-			}
-			catch (AssemblyResolutionException) {
-			}
-			return null;
+			var asm = AssemblyResolver.Instance.Resolve(new AssemblyNameInfo(simpleName), module);
+			return asm == null ? null : asm.FullName;
 		}
 
 		public List<UserResourceType> getSortedTypes() {

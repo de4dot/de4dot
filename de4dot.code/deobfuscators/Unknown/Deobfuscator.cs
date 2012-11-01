@@ -86,15 +86,16 @@ namespace de4dot.code.deobfuscators.Unknown {
 
 		string scanTypes() {
 			foreach (var type in module.Types) {
-				if (type.FullName == "ConfusedByAttribute")
+				var fn = type.FullName;
+				if (fn == "ConfusedByAttribute")
 					return "Confuser";
-				if (type.FullName == "ZYXDNGuarder")
+				if (fn == "ZYXDNGuarder")
 					return "DNGuard HVM";
-				if (type.Name.Contains("();\t"))
+				if (type.Name.String.Contains("();\t"))
 					return "Manco .NET Obfuscator";
-				if (Regex.IsMatch(type.FullName, @"^EMyPID_\d+_$"))
+				if (Regex.IsMatch(fn, @"^EMyPID_\d+_$"))
 					return "BitHelmet Obfuscator";
-				if (type.FullName == "YanoAttribute")
+				if (fn == "YanoAttribute")
 					return "Yano Obfuscator";
 			}
 			return null;

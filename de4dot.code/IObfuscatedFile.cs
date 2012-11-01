@@ -19,14 +19,14 @@
 
 using System.Collections.Generic;
 using de4dot.code.deobfuscators;
-using Mono.Cecil;
+using dot10.DotNet;
 #if PORT
 using de4dot.code.renamer;
 #endif
 
 namespace de4dot.code {
 	public interface IObfuscatedFile {
-		ModuleDefinition ModuleDefinition { get; }
+		ModuleDefMD ModuleDefMD { get; }
 		IDeobfuscator Deobfuscator { get; }
 		IDeobfuscatorContext DeobfuscatorContext { get; set; }
 		string Filename { get; }
