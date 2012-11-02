@@ -24,16 +24,34 @@ using de4dot.blocks;
 
 namespace de4dot.code.renamer.asmmodules {
 	//TODO:
-	class TypeReferenceInstance {
-		public static TypeRef make(ITypeDefOrRef type, GenericInstSig git) {
-			return null;
+	class TypeRefInstantiator {
+		public static ITypeDefOrRef Create(ITypeDefOrRef type, GenericInstSig git) {
+			if (git == null)
+				return type;
+			return Create(type, git.GenericArguments);
+		}
+
+		public static ITypeDefOrRef Create(ITypeDefOrRef type, IList<TypeSig> genericArgs) {
+			if (genericArgs == null || genericArgs.Count == 0)
+				return type;
+
+			return type;//TODO:
 		}
 	}
 
 	//TODO:
-	class MethodReferenceInstance {
-		public static MemberRef make(IMethod method, GenericInstSig git) {
-			return null;
+	class MethodRefInstantiator {
+		public static IMethod Create(IMethod method, GenericInstSig git) {
+			if (git == null)
+				return method;
+			return Create(method, git.GenericArguments);
+		}
+
+		public static IMethod Create(IMethod method, IList<TypeSig> genericArgs) {
+			if (genericArgs == null || genericArgs.Count == 0)
+				return method;
+
+			return method;//TODO:
 		}
 	}
 
@@ -46,7 +64,7 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 
 		public TypeInfo(TypeInfo other, GenericInstSig git) {
-			this.typeReference = TypeReferenceInstance.make(other.typeReference, git);
+			this.typeReference = TypeRefInstantiator.Create(other.typeReference, git);
 			this.typeDef = other.typeDef;
 		}
 
@@ -107,7 +125,7 @@ namespace de4dot.code.renamer.asmmodules {
 		public void initializeFrom(MethodInstances other, GenericInstSig git) {
 			foreach (var list in other.methodInstances.Values) {
 				foreach (var methodInst in list) {
-					MemberRef newMethod = MethodReferenceInstance.make(methodInst.methodReference, git);
+					var newMethod = MethodRefInstantiator.Create(methodInst.methodReference, git);
 					add(new MethodInst(methodInst.origMethodDef, newMethod));
 				}
 			}
@@ -527,7 +545,7 @@ namespace de4dot.code.renamer.asmmodules {
 			//---	virtual functions.
 			// Done. See initializeAllInterfaces().
 
-			var methodsDict = new Dictionary<MethodReferenceKey, MMethodDef>();
+			var methodsDict = new Dictionary<IMethod, MMethodDef>(MethodEqualityComparer.DontCompareDeclaringTypes);
 
 			//--- * If this class explicitly specifies that it implements the interface (i.e., the
 			//---	interfaces that appear in this class‘ InterfaceImpl table, §22.23)
@@ -539,7 +557,7 @@ namespace de4dot.code.renamer.asmmodules {
 				foreach (var method in methods.getValues()) {
 					if (!method.isPublic() || !method.isVirtual() || !method.isNewSlot())
 						continue;
-					methodsDict[new MethodReferenceKey(method.MethodDef)] = method;
+					methodsDict[method.MethodDef] = method;
 				}
 
 				foreach (var ifaceInfo in interfaces) {
@@ -550,10 +568,9 @@ namespace de4dot.code.renamer.asmmodules {
 						var ifaceMethod = methodInst.origMethodDef;
 						if (!ifaceMethod.isVirtual())
 							continue;
-						var ifaceMethodReference = MethodReferenceInstance.make(methodInst.methodReference, ifaceInfo.typeReference.ToGenericInstSig());
+						var ifaceMethodReference = MethodRefInstantiator.Create(methodInst.methodReference, ifaceInfo.typeReference.ToGenericInstSig());
 						MMethodDef classMethod;
-						var key = new MethodReferenceKey(ifaceMethodReference);
-						if (!methodsDict.TryGetValue(key, out classMethod))
+						if (!methodsDict.TryGetValue(ifaceMethodReference, out classMethod))
 							continue;
 						interfaceMethodInfos.addMethod(ifaceInfo, ifaceMethod, classMethod);
 					}
@@ -574,7 +591,7 @@ namespace de4dot.code.renamer.asmmodules {
 					// We should allow newslot methods, despite what the official doc says.
 					if (!classMethod.origMethodDef.isPublic())
 						continue;
-					methodsDict[new MethodReferenceKey(classMethod.methodReference)] = classMethod.origMethodDef;
+					methodsDict[classMethod.methodReference] = classMethod.origMethodDef;
 					break;
 				}
 			}
@@ -585,10 +602,9 @@ namespace de4dot.code.renamer.asmmodules {
 					var ifaceMethod = methodsList[0].origMethodDef;
 					if (!ifaceMethod.isVirtual())
 						continue;
-					var ifaceMethodRef = MethodReferenceInstance.make(ifaceMethod.MethodDef, ifaceInfo.typeReference.ToGenericInstSig());
+					var ifaceMethodRef = MethodRefInstantiator.Create(ifaceMethod.MethodDef, ifaceInfo.typeReference.ToGenericInstSig());
 					MMethodDef classMethod;
-					var key = new MethodReferenceKey(ifaceMethodRef);
-					if (!methodsDict.TryGetValue(key, out classMethod))
+					if (!methodsDict.TryGetValue(ifaceMethodRef, out classMethod))
 						continue;
 					interfaceMethodInfos.addMethodIfEmpty(ifaceInfo, ifaceMethod, classMethod);
 				}

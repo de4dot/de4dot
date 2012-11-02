@@ -123,7 +123,7 @@ namespace de4dot.blocks {
 			return new ScopeAndTokenKey(fieldDef);
 		}
 
-		protected abstract IFieldReferenceKey getReferenceKey(IField fieldRef);
+		internal abstract IFieldReferenceKey getReferenceKey(IField fieldRef);
 
 		public TValue find(IField fieldRef) {
 			TValue value;
@@ -160,7 +160,7 @@ namespace de4dot.blocks {
 
 		// Order: public, family, assembly, private
 		static int[] accessibilityOrder = new int[8] {
-			60,		// CompilerControlled
+			60,		// PrivateScope
 			50,		// Private
 			40,		// FamANDAssem
 			30,		// Assembly
@@ -182,13 +182,13 @@ namespace de4dot.blocks {
 	}
 
 	public class FieldDefinitionDict<TValue> : FieldDefinitionDictBase<TValue> {
-		protected override IFieldReferenceKey getReferenceKey(IField fieldRef) {
+		internal override IFieldReferenceKey getReferenceKey(IField fieldRef) {
 			return new FieldReferenceKey(fieldRef);
 		}
 	}
 
 	public class FieldDefinitionAndDeclaringTypeDict<TValue> : FieldDefinitionDictBase<TValue> {
-		protected override IFieldReferenceKey getReferenceKey(IField fieldRef) {
+		internal override IFieldReferenceKey getReferenceKey(IField fieldRef) {
 			return new FieldReferenceAndDeclaringTypeKey(fieldRef);
 		}
 	}
@@ -215,7 +215,7 @@ namespace de4dot.blocks {
 			return new ScopeAndTokenKey(methodDef);
 		}
 
-		protected abstract IMethodReferenceKey getReferenceKey(IMethod methodRef);
+		internal abstract IMethodReferenceKey getReferenceKey(IMethod methodRef);
 
 		public TValue find(IMethod methodRef) {
 			TValue value;
@@ -252,7 +252,7 @@ namespace de4dot.blocks {
 
 		// Order: public, family, assembly, private
 		static int[] accessibilityOrder = new int[8] {
-			60,		// CompilerControlled
+			60,		// PrivateScope
 			50,		// Private
 			40,		// FamANDAssem
 			30,		// Assembly
@@ -274,13 +274,13 @@ namespace de4dot.blocks {
 	}
 
 	public class MethodDefinitionDict<TValue> : MethodDefinitionDictBase<TValue> {
-		protected override IMethodReferenceKey getReferenceKey(IMethod methodRef) {
+		internal override IMethodReferenceKey getReferenceKey(IMethod methodRef) {
 			return new MethodReferenceKey(methodRef);
 		}
 	}
 
 	public class MethodDefinitionAndDeclaringTypeDict<TValue> : MethodDefinitionDictBase<TValue> {
-		protected override IMethodReferenceKey getReferenceKey(IMethod methodRef) {
+		internal override IMethodReferenceKey getReferenceKey(IMethod methodRef) {
 			return new MethodReferenceAndDeclaringTypeKey(methodRef);
 		}
 	}
@@ -306,7 +306,7 @@ namespace de4dot.blocks {
 			return new ScopeAndTokenKey(eventReference);
 		}
 
-		protected abstract IEventReferenceKey getReferenceKey(EventDef eventRef);
+		internal abstract IEventReferenceKey getReferenceKey(EventDef eventRef);
 
 		public TValue find(EventDef eventRef) {
 			TValue value;
@@ -340,13 +340,13 @@ namespace de4dot.blocks {
 	}
 
 	public class EventDefinitionDict<TValue> : EventDefinitionDictBase<TValue> {
-		protected override IEventReferenceKey getReferenceKey(EventDef eventRef) {
+		internal override IEventReferenceKey getReferenceKey(EventDef eventRef) {
 			return new EventReferenceKey(eventRef);
 		}
 	}
 
 	public class EventDefinitionAndDeclaringTypeDict<TValue> : EventDefinitionDictBase<TValue> {
-		protected override IEventReferenceKey getReferenceKey(EventDef eventRef) {
+		internal override IEventReferenceKey getReferenceKey(EventDef eventRef) {
 			return new EventReferenceAndDeclaringTypeKey(eventRef);
 		}
 	}
@@ -372,7 +372,7 @@ namespace de4dot.blocks {
 			return new ScopeAndTokenKey(propertyReference);
 		}
 
-		protected abstract IPropertyReferenceKey getReferenceKey(PropertyDef propertyReference);
+		internal abstract IPropertyReferenceKey getReferenceKey(PropertyDef propertyReference);
 
 		public TValue find(PropertyDef propRef) {
 			TValue value;
@@ -406,18 +406,18 @@ namespace de4dot.blocks {
 	}
 
 	public class PropertyDefinitionDict<TValue> : PropertyDefinitionDictBase<TValue> {
-		protected override IPropertyReferenceKey getReferenceKey(PropertyDef propRef) {
+		internal override IPropertyReferenceKey getReferenceKey(PropertyDef propRef) {
 			return new PropertyReferenceKey(propRef);
 		}
 	}
 
 	public class PropertyDefinitionAndDeclaringTypeDict<TValue> : PropertyDefinitionDictBase<TValue> {
-		protected override IPropertyReferenceKey getReferenceKey(PropertyDef propRef) {
+		internal override IPropertyReferenceKey getReferenceKey(PropertyDef propRef) {
 			return new PropertyReferenceAndDeclaringTypeKey(propRef);
 		}
 	}
 
-	public class ScopeAndTokenKey {
+	sealed class ScopeAndTokenKey {
 		readonly IScope scope;
 		readonly uint token;
 
@@ -502,23 +502,23 @@ namespace de4dot.blocks {
 		}
 	}
 
-	public interface IFieldReferenceKey {
+	interface IFieldReferenceKey {
 		IField FieldReference { get; }
 	}
 
-	public interface IMethodReferenceKey {
+	interface IMethodReferenceKey {
 		IMethod MethodReference { get; }
 	}
 
-	public interface IEventReferenceKey {
+	interface IEventReferenceKey {
 		EventDef EventDef { get; }
 	}
 
-	public interface IPropertyReferenceKey {
+	interface IPropertyReferenceKey {
 		PropertyDef PropertyDef { get; }
 	}
 
-	public class FieldReferenceKey : IFieldReferenceKey {
+	sealed class FieldReferenceKey : IFieldReferenceKey {
 		readonly IField fieldRef;
 
 		public IField FieldReference {
@@ -545,7 +545,7 @@ namespace de4dot.blocks {
 		}
 	}
 
-	public class MethodReferenceKey : IMethodReferenceKey {
+	sealed class MethodReferenceKey : IMethodReferenceKey {
 		readonly IMethod methodRef;
 
 		public IMethod MethodReference {
@@ -572,7 +572,7 @@ namespace de4dot.blocks {
 		}
 	}
 
-	public class FieldReferenceAndDeclaringTypeKey : IFieldReferenceKey {
+	sealed class FieldReferenceAndDeclaringTypeKey : IFieldReferenceKey {
 		readonly IField fieldRef;
 
 		public IField FieldReference {
@@ -599,7 +599,7 @@ namespace de4dot.blocks {
 		}
 	}
 
-	public class MethodReferenceAndDeclaringTypeKey : IMethodReferenceKey {
+	sealed class MethodReferenceAndDeclaringTypeKey : IMethodReferenceKey {
 		readonly IMethod methodRef;
 
 		public IMethod MethodReference {
@@ -626,7 +626,7 @@ namespace de4dot.blocks {
 		}
 	}
 
-	public class EventReferenceKey : IEventReferenceKey {
+	sealed class EventReferenceKey : IEventReferenceKey {
 		readonly EventDef eventRef;
 
 		public EventDef EventDef {
@@ -653,7 +653,7 @@ namespace de4dot.blocks {
 		}
 	}
 
-	public class EventReferenceAndDeclaringTypeKey : IEventReferenceKey {
+	sealed class EventReferenceAndDeclaringTypeKey : IEventReferenceKey {
 		readonly EventDef eventRef;
 
 		public EventDef EventDef {
@@ -680,7 +680,7 @@ namespace de4dot.blocks {
 		}
 	}
 
-	public class PropertyReferenceKey : IPropertyReferenceKey {
+	sealed class PropertyReferenceKey : IPropertyReferenceKey {
 		readonly PropertyDef propRef;
 
 		public PropertyDef PropertyDef {
@@ -707,7 +707,7 @@ namespace de4dot.blocks {
 		}
 	}
 
-	public class PropertyReferenceAndDeclaringTypeKey : IPropertyReferenceKey {
+	sealed class PropertyReferenceAndDeclaringTypeKey : IPropertyReferenceKey {
 		readonly PropertyDef propRef;
 
 		public PropertyDef PropertyDef {

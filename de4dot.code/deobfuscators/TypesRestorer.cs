@@ -32,7 +32,7 @@ namespace de4dot.code.deobfuscators {
 		List<MethodDef> allMethods;
 		Dictionary<Parameter, TypeInfo<Parameter>> argInfos = new Dictionary<Parameter, TypeInfo<Parameter>>();
 		TypeInfo<Parameter> methodReturnInfo;
-		Dictionary<FieldReferenceAndDeclaringTypeKey, TypeInfo<FieldDef>> fieldWrites = new Dictionary<FieldReferenceAndDeclaringTypeKey, TypeInfo<FieldDef>>();
+		Dictionary<IField, TypeInfo<FieldDef>> fieldWrites = new Dictionary<IField, TypeInfo<FieldDef>>(FieldEqualityComparer.CompareDeclaringTypes);
 		Dictionary<int, UpdatedMethod> updatedMethods = new Dictionary<int, UpdatedMethod>();
 		Dictionary<int, UpdatedField> updatedFields = new Dictionary<int, UpdatedField>();
 
@@ -164,8 +164,7 @@ namespace de4dot.code.deobfuscators {
 					if (!isUnknownType(field))
 						continue;
 
-					var key = new FieldReferenceAndDeclaringTypeKey(field);
-					fieldWrites[key] = new TypeInfo<FieldDef>(field);
+					fieldWrites[field] = new TypeInfo<FieldDef>(field);
 				}
 			}
 		}
@@ -487,7 +486,7 @@ namespace de4dot.code.deobfuscators {
 						field = instr.Operand as IField;
 						if (field == null)
 							continue;
-						if (!fieldWrites.TryGetValue(new FieldReferenceAndDeclaringTypeKey(field), out info))
+						if (!fieldWrites.TryGetValue(field, out info))
 							continue;
 						bool wasNewobj;
 						fieldType = getLoadedType(info.arg.DeclaringType, method, instructions, i, out wasNewobj);
@@ -516,7 +515,7 @@ namespace de4dot.code.deobfuscators {
 							field = pushInstr.Operand as IField;
 							if (field == null)
 								continue;
-							if (!fieldWrites.TryGetValue(new FieldReferenceAndDeclaringTypeKey(field), out info))
+							if (!fieldWrites.TryGetValue(field, out info))
 								continue;
 							fieldType = calledMethodArgs[calledMethodArgs.Count - 1 - j];
 							if (!isValidType(info.arg.DeclaringType, fieldType))
@@ -542,7 +541,7 @@ namespace de4dot.code.deobfuscators {
 				}
 			}
 			foreach (var field in removeThese)
-				fieldWrites.Remove(new FieldReferenceAndDeclaringTypeKey(field));
+				fieldWrites.Remove(field);
 			return changed;
 		}
 
