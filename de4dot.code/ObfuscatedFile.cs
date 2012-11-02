@@ -165,8 +165,8 @@ namespace de4dot.code {
 
 		public void load(IEnumerable<IDeobfuscator> deobfuscators) {
 			loadModule(deobfuscators);
-			AssemblyResolver.Instance.addSearchDirectory(Utils.getDirName(Filename));
-			AssemblyResolver.Instance.addSearchDirectory(Utils.getDirName(NewFilename));
+			TheAssemblyResolver.Instance.addSearchDirectory(Utils.getDirName(Filename));
+			TheAssemblyResolver.Instance.addSearchDirectory(Utils.getDirName(NewFilename));
 			detectObfuscator(deobfuscators);
 			if (deob == null)
 				throw new ApplicationException("Could not detect obfuscator!");

@@ -162,13 +162,13 @@ namespace de4dot.code {
 				return Utils.toCsharpString((string)instr.Operand);
 			else if (instr.Operand is Parameter) {
 				var arg = (Parameter)instr.Operand;
-				var s = instr.GetOperandString();
+				var s = InstructionPrinter.GetOperandString(instr);
 				if (s != "")
 					return s;
 				return string.Format("<arg_{0}>", arg.Index);
 			}
 			else
-				return instr.GetOperandString();
+				return InstructionPrinter.GetOperandString(instr);
 		}
 
 		void printExInfo(ExInfo exInfo) {

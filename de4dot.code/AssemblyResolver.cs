@@ -20,8 +20,8 @@
 using dot10.DotNet;
 
 namespace de4dot.code {
-	public class AssemblyResolver : dot10.DotNet.AssemblyResolver {
-		public static readonly AssemblyResolver Instance = new AssemblyResolver();
+	public class TheAssemblyResolver : dot10.DotNet.AssemblyResolver {
+		public static readonly TheAssemblyResolver Instance = new TheAssemblyResolver();
 
 		public void addSearchDirectory(string dir) {
 			if (!PostSearchPaths.Contains(dir))

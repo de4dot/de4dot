@@ -19,9 +19,11 @@
 
 using System;
 using System.Collections.Generic;
+#if PORT
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Metadata;
+#endif
 
 //TODO: Remove these
 using DN = dot10.DotNet;
@@ -38,6 +40,7 @@ namespace de4dot.blocks {
 		Zune,
 	}
 
+#if PORT
 	class TypeCache {
 		ModuleDefinition module;
 		de4dot.blocks.OLD_REMOVE.TypeDefinitionDict<TypeDefinition> typeRefToDef = new de4dot.blocks.OLD_REMOVE.TypeDefinitionDict<TypeDefinition>();
@@ -56,7 +59,9 @@ namespace de4dot.blocks {
 			return typeRefToDef.find(typeReference);
 		}
 	}
+#endif
 
+#if PORT
 	public class TypeCaches {
 		Dictionary<ModuleDefinition, TypeCache> typeCaches = new Dictionary<ModuleDefinition, TypeCache>();
 
@@ -82,7 +87,9 @@ namespace de4dot.blocks {
 			return typeCache.lookup(typeReference);
 		}
 	}
+#endif
 
+#if PORT
 	public class CallCounter {
 		Dictionary<de4dot.blocks.OLD_REMOVE.MethodReferenceAndDeclaringTypeKey, int> calls = new Dictionary<de4dot.blocks.OLD_REMOVE.MethodReferenceAndDeclaringTypeKey, int>();
 
@@ -111,7 +118,9 @@ namespace de4dot.blocks {
 			return method;
 		}
 	}
+#endif
 
+#if PORT
 	public class MethodCalls {
 		Dictionary<string, int> methodCalls = new Dictionary<string, int>(StringComparer.Ordinal);
 
@@ -142,9 +151,12 @@ namespace de4dot.blocks {
 			return count(methodFullName) != 0;
 		}
 	}
+#endif
 
 	public static class DotNetUtils {
+#if PORT
 		public static readonly TypeCaches typeCaches = new TypeCaches();
+#endif
 
 		public static DN.TypeDef getModuleType(DN.ModuleDef module) {
 			return module.GlobalType;
@@ -176,6 +188,7 @@ namespace de4dot.blocks {
 			return true;
 		}
 
+#if PORT
 		public static FieldDefinition findFieldType(TypeDefinition typeDefinition, string typeName, bool isStatic) {
 			if (typeDefinition == null)
 				return null;
@@ -208,6 +221,7 @@ namespace de4dot.blocks {
 			next: ;
 			}
 		}
+#endif
 
 		public static bool isDelegate(DN.IType type) {
 			if (type == null)
@@ -220,6 +234,7 @@ namespace de4dot.blocks {
 			return type != null && isDelegate(type.BaseType);
 		}
 
+#if PORT
 		public static bool isSameAssembly(TypeReference type, string assembly) {
 			return MemberReferenceHelper.getCanonicalizedScopeName(type.Scope) == assembly.ToLowerInvariant();
 		}
@@ -227,11 +242,13 @@ namespace de4dot.blocks {
 		public static bool isMethod(MethodReference method, string returnType, string parameters) {
 			return method != null && method.FullName == returnType + " " + method.DeclaringType.FullName + "::" + method.Name + parameters;
 		}
+#endif
 
 		public static bool isMethod(DN.IMethod method, string returnType, string parameters) {
 			return method != null && method.FullName == returnType + " " + method.DeclaringType.FullName + "::" + method.Name + parameters;
 		}
 
+#if PORT
 		public static bool hasPinvokeMethod(TypeDefinition type, string methodName) {
 			return getPInvokeMethod(type, methodName) != null;
 		}
@@ -319,6 +336,7 @@ namespace de4dot.blocks {
 			}
 			return null;
 		}
+#endif
 
 		public static DN.MethodDef getMethod2(DN.ModuleDef module, DN.IMethod method) {
 			if (method == null)
@@ -354,6 +372,7 @@ namespace de4dot.blocks {
 			return type.FindMethod(methodRef.Name, methodRef.MethodSig);
 		}
 
+#if PORT
 		public static IEnumerable<MethodDefinition> getNormalMethods(TypeDefinition type) {
 			foreach (var method in type.Methods) {
 				if (method.HasPInvokeInfo)
@@ -451,6 +470,7 @@ namespace de4dot.blocks {
 			}
 			return strings;
 		}
+#endif
 
 		public static IList<string> getCodeStrings(DN.MethodDef method) {
 			var strings = new List<string>();
@@ -493,6 +513,7 @@ namespace de4dot.blocks {
 			return s.Substring(0, index);
 		}
 
+#if PORT
 		// Copies most things but not everything
 		public static MethodDefinition clone(MethodDefinition method) {
 			var newMethod = new MethodDefinition(method.Name, method.Attributes, method.MethodReturnType.ReturnType);
@@ -511,12 +532,14 @@ namespace de4dot.blocks {
 			copyBodyFromTo(method, newMethod);
 			return newMethod;
 		}
+#endif
 
 		// Copies most things but not everything
 		public static DN.MethodDef clone(DN.MethodDef method) {
 			return null;	//TODO:
 		}
 
+#if PORT
 		public static Instruction clone(Instruction instr) {
 			return new Instruction {
 				Offset = instr.Offset,
@@ -573,7 +596,57 @@ namespace de4dot.blocks {
 				return null;
 			return instructions[instructionToIndex[instruction]];
 		}
+#endif
 
+		public static void copyBody(DN.MethodDef method, out IList<DNE.Instruction> instructions, out IList<DNE.ExceptionHandler> exceptionHandlers) {
+			if (method == null || !method.HasCilBody) {
+				instructions = new List<DNE.Instruction>();
+				exceptionHandlers = new List<DNE.ExceptionHandler>();
+				return;
+			}
+
+			var oldInstrs = method.CilBody.Instructions;
+			var oldExHandlers = method.CilBody.ExceptionHandlers;
+			instructions = new List<DNE.Instruction>(oldInstrs.Count);
+			exceptionHandlers = new List<DNE.ExceptionHandler>(oldExHandlers.Count);
+			var oldToIndex = Utils.createObjectToIndexDictionary(oldInstrs);
+
+			foreach (var oldInstr in oldInstrs)
+				instructions.Add(oldInstr.Clone());
+
+			foreach (var newInstr in instructions) {
+				var operand = newInstr.Operand;
+				if (operand is DNE.Instruction)
+					newInstr.Operand = instructions[oldToIndex[(DNE.Instruction)operand]];
+				else if (operand is IList<DNE.Instruction>) {
+					var oldArray = (IList<DNE.Instruction>)operand;
+					var newArray = new DNE.Instruction[oldArray.Count];
+					for (int i = 0; i < oldArray.Count; i++)
+						newArray[i] = instructions[oldToIndex[oldArray[i]]];
+					newInstr.Operand = newArray;
+				}
+			}
+
+			foreach (var oldEx in oldExHandlers) {
+				var newEx = new DNE.ExceptionHandler(oldEx.HandlerType) {
+					TryStart = getInstruction(instructions, oldToIndex, oldEx.TryStart),
+					TryEnd = getInstruction(instructions, oldToIndex, oldEx.TryEnd),
+					FilterStart = getInstruction(instructions, oldToIndex, oldEx.FilterStart),
+					HandlerStart = getInstruction(instructions, oldToIndex, oldEx.HandlerStart),
+					HandlerEnd = getInstruction(instructions, oldToIndex, oldEx.HandlerEnd),
+					CatchType = oldEx.CatchType,
+				};
+				exceptionHandlers.Add(newEx);
+			}
+		}
+
+		static DNE.Instruction getInstruction(IList<DNE.Instruction> instructions, IDictionary<DNE.Instruction, int> instructionToIndex, DNE.Instruction instruction) {
+			if (instruction == null)
+				return null;
+			return instructions[instructionToIndex[instruction]];
+		}
+
+#if PORT
 		public static void restoreBody(MethodDefinition method, IEnumerable<Instruction> instructions, IEnumerable<ExceptionHandler> exceptionHandlers) {
 			if (method == null || !method.HasBody)
 				return;
@@ -588,7 +661,7 @@ namespace de4dot.blocks {
 			foreach (var eh in exceptionHandlers)
 				bodyExceptionHandlers.Add(eh);
 		}
-
+#endif
 
 		public static void restoreBody(DN.MethodDef method, IEnumerable<DNE.Instruction> instructions, IEnumerable<DNE.ExceptionHandler> exceptionHandlers) {
 			if (method == null || method.CilBody == null)
@@ -605,6 +678,7 @@ namespace de4dot.blocks {
 				bodyExceptionHandlers.Add(eh);
 		}
 
+#if PORT
 		public static void copyBodyFromTo(MethodDefinition fromMethod, MethodDefinition toMethod) {
 			if (fromMethod == toMethod)
 				return;
@@ -712,6 +786,7 @@ namespace de4dot.blocks {
 				type = ((TypeSpecification)type).ElementType;
 			return type.EType != ElementType.Void;
 		}
+#endif
 
 		public static bool hasReturnValue(DN.IMethod method) {
 			if (method == null || method.MethodSig == null)
@@ -720,6 +795,7 @@ namespace de4dot.blocks {
 			return method.MethodSig.RetType.ElementType != DN.ElementType.Void;
 		}
 
+#if PORT
 		public static void updateStack(Instruction instr, ref int stack, bool methodHasReturnValue) {
 			int pushes, pops;
 			calculateStackUsage(instr, methodHasReturnValue, out pushes, out pops);
@@ -930,6 +1006,7 @@ namespace de4dot.blocks {
 				return parameters[index];
 			return null;
 		}
+#endif
 
 		public static DN.Parameter getParameter(IList<DN.Parameter> parameters, int index) {
 			if (0 <= index && index < parameters.Count)
@@ -937,6 +1014,13 @@ namespace de4dot.blocks {
 			return null;
 		}
 
+		public static DN.TypeSig getArg(IList<DN.TypeSig> args, int index) {
+			if (0 <= index && index < args.Count)
+				return args[index];
+			return null;
+		}
+
+#if PORT
 		public static List<TypeReference> getArgs(MethodReference method) {
 			var args = new List<TypeReference>(method.Parameters.Count + 1);
 			if (method.HasImplicitThis)
@@ -945,6 +1029,7 @@ namespace de4dot.blocks {
 				args.Add(arg.ParameterType);
 			return args;
 		}
+#endif
 
 		public static List<DN.TypeSig> getArgs(DN.IMethod method) {
 			var sig = method.MethodSig;
@@ -956,6 +1041,7 @@ namespace de4dot.blocks {
 			return args;
 		}
 
+#if PORT
 		public static TypeReference getArgType(MethodReference method, Instruction instr) {
 			return getArgType(getArgs(method), instr);
 		}
@@ -976,6 +1062,7 @@ namespace de4dot.blocks {
 				count++;
 			return count;
 		}
+#endif
 
 		public static int getArgsCount(DN.IMethod method) {
 			var sig = method.MethodSig;
@@ -987,6 +1074,7 @@ namespace de4dot.blocks {
 			return count;
 		}
 
+#if PORT
 		// Doesn't fix everything (eg. T[] aren't replaced with eg. int[], but T -> int will be fixed)
 		public static IList<TypeReference> replaceGenericParameters(GenericInstanceType typeOwner, GenericInstanceMethod methodOwner, IList<TypeReference> types) {
 			//TODO: You should use MemberRefInstance.cs
@@ -1027,6 +1115,7 @@ namespace de4dot.blocks {
 			}
 			return null;
 		}
+#endif
 
 		public static DNE.Instruction getInstruction(IList<DNE.Instruction> instructions, ref int index) {
 			for (int i = 0; i < 10; i++) {
@@ -1047,6 +1136,7 @@ namespace de4dot.blocks {
 			return null;
 		}
 
+#if PORT
 		public static PropertyDefinition createPropertyDefinition(string name, TypeReference propType, MethodDefinition getter, MethodDefinition setter) {
 			return new PropertyDefinition(name, PropertyAttributes.None, propType) {
 				MetadataToken = nextPropertyToken(),
@@ -1115,6 +1205,7 @@ namespace de4dot.blocks {
 			typeRef.IsValueType = isValueType;
 			return typeRef;
 		}
+#endif
 
 		public static DN.TypeDefOrRefSig findOrCreateTypeReference(DN.ModuleDef module, DN.AssemblyRef asmRef, string ns, string name, bool isValueType) {
 			var typeRef = module.UpdateRowId(new DN.TypeRefUser(module, ns, name, asmRef));
@@ -1124,6 +1215,7 @@ namespace de4dot.blocks {
 				return new DN.ClassSig(typeRef);
 		}
 
+#if PORT
 		public static FrameworkType getFrameworkType(ModuleDefinition module) {
 			foreach (var modRef in module.AssemblyReferences) {
 				if (modRef.Name != "mscorlib")
@@ -1244,5 +1336,6 @@ namespace de4dot.blocks {
 			module.ModuleReferences.Add(newModRef);
 			return newModRef;
 		}
+#endif
 	}
 }

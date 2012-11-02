@@ -332,10 +332,6 @@
       <Project>{045B96F2-AF80-4C4C-8D27-E38635AC705E}</Project>
       <Name>blocks</Name>
     </ProjectReference>
-    <ProjectReference Include="..\cecil\Mono.Cecil.csproj">
-      <Project>{D68133BD-1E63-496E-9EDE-4FBDBF77B486}</Project>
-      <Name>Mono.Cecil</Name>
-    </ProjectReference>
     <ProjectReference Include="..\de4dot.mdecrypt\de4dot.mdecrypt.csproj">
       <Project>{5C93C5E2-196F-4877-BF65-96FEBFCEFCA1}</Project>
       <Name>de4dot.mdecrypt</Name>

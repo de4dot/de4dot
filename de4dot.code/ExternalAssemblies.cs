@@ -43,9 +43,9 @@ namespace de4dot.code {
 		public void unload(string asmFullName) {
 			foreach (var module in asmDef.Modules) {
 				//TODO: DotNetUtils.typeCaches.invalidate(module);
-				AssemblyResolver.Instance.removeModule(module);
+				TheAssemblyResolver.Instance.removeModule(module);
 			}
-			AssemblyResolver.Instance.removeModule(asmFullName);
+			TheAssemblyResolver.Instance.removeModule(asmFullName);
 		}
 	}
 
@@ -62,7 +62,7 @@ namespace de4dot.code {
 			if (assemblies.TryGetValue(asmFullName, out asm))
 				return asm;
 
-			var asmDef = AssemblyResolver.Instance.Resolve(type.DefinitionAssembly, type.OwnerModule);
+			var asmDef = TheAssemblyResolver.Instance.Resolve(type.DefinitionAssembly, type.OwnerModule);
 			if (asmDef == null) {
 				if (!failedLoads.ContainsKey(asmFullName))
 					Log.w("Could not load assembly {0}", asmFullName);

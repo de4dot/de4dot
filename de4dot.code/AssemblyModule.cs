@@ -42,7 +42,7 @@ namespace de4dot.code {
 
 		ModuleDefMD setModule(ModuleDefMD newModule) {
 			module = newModule;
-			AssemblyResolver.Instance.addModule(module);
+			TheAssemblyResolver.Instance.addModule(module);
 			module.Location = filename;
 			return module;
 		}

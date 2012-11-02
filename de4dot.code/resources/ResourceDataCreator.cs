@@ -217,7 +217,7 @@ namespace de4dot.code.resources {
 					return asmRef.FullName;
 			}
 
-			var asm = AssemblyResolver.Instance.Resolve(new AssemblyNameInfo(simpleName), module);
+			var asm = TheAssemblyResolver.Instance.Resolve(new AssemblyNameInfo(simpleName), module);
 			return asm == null ? null : asm.FullName;
 		}
 

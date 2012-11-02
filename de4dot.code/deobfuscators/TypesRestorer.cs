@@ -292,7 +292,7 @@ namespace de4dot.code.deobfuscators {
 					var calledMethod = instr.Operand as IMethod;
 					if (calledMethod == null)
 						break;
-					var calledMethodParams = DotNetUtils.getParameters(calledMethod);
+					var calledMethodParams = DotNetUtils.getArgs(calledMethod);
 					for (int j = 0; j < pushedArgs.NumValidArgs; j++) {
 						int calledMethodParamIndex = calledMethodParams.Count - j - 1;
 						var ldInstr = pushedArgs.getEnd(j);
@@ -303,7 +303,7 @@ namespace de4dot.code.deobfuscators {
 						case Code.Ldarg_1:
 						case Code.Ldarg_2:
 						case Code.Ldarg_3:
-							addMethodArgType(method, getParameter(methodParams, ldInstr), DotNetUtils.getParameter(calledMethodParams, calledMethodParamIndex));
+							addMethodArgType(method, getParameter(methodParams, ldInstr), DotNetUtils.getArg(calledMethodParams, calledMethodParamIndex));
 							break;
 
 						default:
@@ -505,7 +505,9 @@ namespace de4dot.code.deobfuscators {
 						if (calledMethod == null)
 							continue;
 						IList<TypeSig> calledMethodArgs = DotNetUtils.getArgs(calledMethod);
+#if PORT
 						calledMethodArgs = DotNetUtils.replaceGenericParameters(calledMethod.DeclaringType as GenericInstanceType, calledMethod as GenericInstanceMethod, calledMethodArgs);
+#endif
 						for (int j = 0; j < pushedArgs.NumValidArgs; j++) {
 							var pushInstr = pushedArgs.getEnd(j);
 							if (pushInstr.OpCode.Code != Code.Ldfld && pushInstr.OpCode.Code != Code.Ldsfld)

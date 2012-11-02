@@ -17,6 +17,7 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#if PORT
 using System;
 using System.Collections.Generic;
 using Mono.Cecil;
@@ -858,3 +859,4 @@ namespace de4dot.blocks {
 		}
 	}
 }
+#endif

@@ -20,10 +20,12 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 using de4dot.code;
+#if PORT
 using de4dot.code.renamer;
+#endif
 using de4dot.code.deobfuscators;
 using de4dot.code.AssemblyClient;
 
@@ -76,14 +78,16 @@ namespace de4dot.cui {
 				deobfuscateAll();
 		}
 
-		static void removeModule(ModuleDefinition module) {
-			AssemblyResolver.Instance.removeModule(module);
+		static void removeModule(ModuleDef module) {
+			TheAssemblyResolver.Instance.removeModule(module);
+#if PORT
 			DotNetUtils.typeCaches.invalidate(module);
+#endif
 		}
 
 		void detectObfuscators() {
 			foreach (var file in loadAllFiles(true)) {
-				removeModule(file.ModuleDefinition);
+				removeModule(file.ModuleDefMD);
 				deobfuscatorContext.clear();
 			}
 		}
@@ -98,8 +102,8 @@ namespace de4dot.cui {
 					rename(new List<IObfuscatedFile> { file });
 					file.save();
 
-					removeModule(file.ModuleDefinition);
-					AssemblyResolver.Instance.clearAll();
+					removeModule(file.ModuleDefMD);
+					TheAssemblyResolver.Instance.clearAll();
 					deobfuscatorContext.clear();
 				}
 				catch (Exception ex) {
@@ -211,7 +215,7 @@ namespace de4dot.cui {
 				var deob = file.Deobfuscator;
 				if (skipUnknownObfuscator && deob.Type == "un") {
 					Log.v("Skipping unknown obfuscator: {0}", file.Filename);
-					removeModule(file.ModuleDefinition);
+					removeModule(file.ModuleDefMD);
 					return false;
 				}
 				else {
@@ -245,7 +249,7 @@ namespace de4dot.cui {
 
 			IEnumerable<string> recursiveAdd(SearchDir searchDir, IEnumerable<FileSystemInfo> fileSystemInfos) {
 				foreach (var fsi in fileSystemInfos) {
-					if ((int)(fsi.Attributes & FileAttributes.Directory) != 0) {
+					if ((int)(fsi.Attributes & System.IO.FileAttributes.Directory) != 0) {
 						foreach (var filename in doDirectoryInfo(searchDir, (DirectoryInfo)fsi))
 							yield return filename;
 					}
@@ -355,11 +359,13 @@ namespace de4dot.cui {
 		void rename(IEnumerable<IObfuscatedFile> theFiles) {
 			if (!options.RenameSymbols)
 				return;
+#if PORT
 			var renamer = new Renamer(deobfuscatorContext, theFiles) {
 				RestorePropertiesFromNames = options.RestorePropsEvents,
 				RestoreEventsFromNames = options.RestorePropsEvents,
 			};
 			renamer.rename();
+#endif
 		}
 	}
 }
