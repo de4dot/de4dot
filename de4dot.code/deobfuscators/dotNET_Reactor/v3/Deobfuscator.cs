@@ -21,8 +21,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using Mono.MyStuff;
 using de4dot.blocks;
 using de4dot.PE;
@@ -280,7 +280,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			startedDeobfuscating = true;
 		}
 
-		void removeInitCall(MethodDefinition initMethod) {
+		void removeInitCall(MethodDef initMethod) {
 			addCctorInitCallToBeRemoved(initMethod);
 			addCtorInitCallToBeRemoved(initMethod);
 		}
@@ -336,7 +336,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 		public override IEnumerable<int> getStringDecrypterMethods() {
 			var list = new List<int>();
 			foreach (var method in decrypterType.StringDecrypters)
-				list.Add(method.MetadataToken.ToInt32());
+				list.Add(method.MDToken.ToInt32());
 			return list;
 		}
 	}

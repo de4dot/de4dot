@@ -18,7 +18,7 @@
 */
 
 using System;
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
@@ -32,11 +32,11 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			get { return encryptedResource.Method != null; }
 		}
 
-		public TypeDefinition DecrypterType {
+		public TypeDef DecrypterType {
 			get { return encryptedResource.Type; }
 		}
 
-		public MethodDefinition Method {
+		public MethodDef Method {
 			get { return encryptedResource.Method; }
 		}
 

@@ -18,12 +18,12 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
+using dot10.DotNet;
 
 namespace de4dot.code.deobfuscators.CodeVeil {
 	class InvalidMethodsFinder {
-		public static List<MethodDefinition> findAll(ModuleDefinition module) {
-			var list = new List<MethodDefinition>();
+		public static List<MethodDef> findAll(ModuleDefinition module) {
+			var list = new List<MethodDef>();
 			foreach (var type in module.GetTypes()) {
 				foreach (var method in type.Methods) {
 					if (isInvalidMethod(method))
@@ -33,14 +33,14 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return list;
 		}
 
-		public static bool isInvalidMethod(MethodDefinition method) {
+		public static bool isInvalidMethod(MethodDef method) {
 			if (method == null)
 				return false;
 			if (method.IsStatic)
 				return false;
 			if (method.Parameters.Count != 0)
 				return false;
-			var retType = method.MethodReturnType.ReturnType as GenericParameter;
+			var retType = method.MethodReturnType.ReturnType as GenericParam;
 			if (retType == null)
 				return false;
 

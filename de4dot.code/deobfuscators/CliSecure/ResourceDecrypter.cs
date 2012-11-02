@@ -20,25 +20,25 @@
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CliSecure {
 	class ResourceDecrypter {
 		ModuleDefinition module;
-		TypeDefinition rsrcType;
-		MethodDefinition rsrcRrrMethod;
-		MethodDefinition rsrcResolveMethod;
+		TypeDef rsrcType;
+		MethodDef rsrcRrrMethod;
+		MethodDef rsrcResolveMethod;
 
 		public bool Detected {
 			get { return rsrcType != null; }
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return rsrcType; }
 		}
 
-		public MethodDefinition RsrcRrrMethod {
+		public MethodDef RsrcRrrMethod {
 			get { return rsrcRrrMethod; }
 		}
 

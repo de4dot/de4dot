@@ -17,8 +17,8 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
@@ -26,11 +26,11 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 	// its methods is the original metadata token, which will be different when we save the file.
 	class MetadataTokenObfuscator {
 		ModuleDefinition module;
-		TypeDefinition type;
-		MethodDefinition typeMethod;
-		MethodDefinition fieldMethod;
+		TypeDef type;
+		MethodDef typeMethod;
+		MethodDef fieldMethod;
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return type; }
 		}
 
@@ -49,7 +49,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				if (type.HasProperties || type.HasEvents)
 					continue;
 
-				MethodDefinition fieldMethod = null, typeMethod = null;
+				MethodDef fieldMethod = null, typeMethod = null;
 				foreach (var method in type.Methods) {
 					if (method.Parameters.Count != 1)
 						continue;

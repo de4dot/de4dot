@@ -18,8 +18,8 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using Mono.Cecil.Metadata;
 using de4dot.blocks;
 
@@ -27,12 +27,12 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 	// Detects the type CV adds to the assembly that gets called from <Module>::.cctor.
 	class MainType {
 		ModuleDefinition module;
-		TypeDefinition theType;
-		MethodDefinition initMethod;
-		MethodDefinition tamperCheckMethod;
+		TypeDef theType;
+		MethodDef initMethod;
+		MethodDef tamperCheckMethod;
 		ObfuscatorVersion obfuscatorVersion = ObfuscatorVersion.Unknown;
 		List<int> rvas = new List<int>();	// _stub and _executive
-		List<MethodDefinition> otherInitMethods = new List<MethodDefinition>();
+		List<MethodDef> otherInitMethods = new List<MethodDef>();
 
 		public bool Detected {
 			get { return theType != null; }
@@ -42,19 +42,19 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			get { return obfuscatorVersion; }
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return theType; }
 		}
 
-		public MethodDefinition InitMethod {
+		public MethodDef InitMethod {
 			get { return initMethod; }
 		}
 
-		public List<MethodDefinition> OtherInitMethods {
+		public List<MethodDef> OtherInitMethods {
 			get { return otherInitMethods; }
 		}
 
-		public MethodDefinition TamperCheckMethod {
+		public MethodDef TamperCheckMethod {
 			get { return tamperCheckMethod; }
 		}
 
@@ -99,7 +99,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				var call = instrs[i + 2];
 				if (call.OpCode.Code != Code.Call)
 					continue;
-				var initMethodTmp = call.Operand as MethodDefinition;
+				var initMethodTmp = call.Operand as MethodDef;
 				ObfuscatorVersion obfuscatorVersionTmp;
 				if (!checkInitMethod(initMethodTmp, out obfuscatorVersionTmp))
 					continue;
@@ -118,7 +118,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			"System.Collections.Generic.List`1<System.Delegate>",
 			"System.Runtime.InteropServices.GCHandle",
 		};
-		bool checkInitMethod(MethodDefinition initMethod, out ObfuscatorVersion obfuscatorVersionTmp) {
+		bool checkInitMethod(MethodDef initMethod, out ObfuscatorVersion obfuscatorVersionTmp) {
 			obfuscatorVersionTmp = ObfuscatorVersion.Unknown;
 
 			if (initMethod == null)
@@ -146,7 +146,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return true;
 		}
 
-		static bool hasCodeString(MethodDefinition method, string str) {
+		static bool hasCodeString(MethodDef method, string str) {
 			foreach (var s in DotNetUtils.getCodeStrings(method)) {
 				if (s == str)
 					return true;
@@ -154,7 +154,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return false;
 		}
 
-		bool checkMethodsType(TypeDefinition type) {
+		bool checkMethodsType(TypeDef type) {
 			rvas = new List<int>();
 
 			var fields = getRvaFields(type);
@@ -166,8 +166,8 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return true;
 		}
 
-		static List<FieldDefinition> getRvaFields(TypeDefinition type) {
-			var fields = new List<FieldDefinition>();
+		static List<FieldDef> getRvaFields(TypeDef type) {
+			var fields = new List<FieldDef>();
 			foreach (var field in type.Fields) {
 				if (field.FieldType.EType != ElementType.U1 && field.FieldType.EType != ElementType.U4)
 					continue;
@@ -187,7 +187,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			otherInitMethods = findOtherInitMethods();
 		}
 
-		MethodDefinition findTamperCheckMethod() {
+		MethodDef findTamperCheckMethod() {
 			foreach (var method in theType.Methods) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
@@ -200,8 +200,8 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return null;
 		}
 
-		List<MethodDefinition> findOtherInitMethods() {
-			var list = new List<MethodDefinition>();
+		List<MethodDef> findOtherInitMethods() {
+			var list = new List<MethodDef>();
 			foreach (var method in theType.Methods) {
 				if (!method.IsStatic)
 					continue;
@@ -215,7 +215,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return list;
 		}
 
-		public MethodDefinition getInitStringDecrypterMethod(MethodDefinition stringDecrypterInitMethod) {
+		public MethodDef getInitStringDecrypterMethod(MethodDef stringDecrypterInitMethod) {
 			if (stringDecrypterInitMethod == null)
 				return null;
 			if (theType == null)
@@ -230,7 +230,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return null;
 		}
 
-		bool callsMethod(MethodDefinition methodToCheck, MethodDefinition calledMethod) {
+		bool callsMethod(MethodDef methodToCheck, MethodDef calledMethod) {
 			foreach (var method in DotNetUtils.getCalledMethods(module, methodToCheck)) {
 				if (method == calledMethod)
 					return true;

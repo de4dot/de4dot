@@ -19,8 +19,8 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 using de4dot.code.renamer.asmmodules;
 
@@ -77,7 +77,7 @@ namespace de4dot.code.renamer {
 					TypeInfo typeInfo;
 					if (!oldNameToTypeInfo.TryGetValue(codeString, out typeInfo))
 						continue;
-					var newName = typeInfo.type.TypeDefinition.FullName;
+					var newName = typeInfo.type.TypeDef.FullName;
 
 					bool renameCodeString = module.ObfuscatedFile.RenameResourcesInCode ||
 											isCallingResourceManagerCtor(instrs, i, typeInfo);
@@ -98,7 +98,7 @@ namespace de4dot.code.renamer {
 				var ldtoken = instrs[index++];
 				if (ldtoken.OpCode.Code != Code.Ldtoken)
 					return false;
-				if (!MemberReferenceHelper.compareTypes(typeInfo.type.TypeDefinition, ldtoken.Operand as TypeReference))
+				if (!MemberReferenceHelper.compareTypes(typeInfo.type.TypeDef, ldtoken.Operand as TypeReference))
 					return false;
 
 				if (!checkCalledMethod(instrs[index++], "System.Type", "(System.RuntimeTypeHandle)"))
@@ -151,7 +151,7 @@ namespace de4dot.code.renamer {
 					continue;
 				if (newNames.ContainsKey(resource))
 					continue;
-				var newTypeName = info.type.TypeDefinition.FullName;
+				var newTypeName = info.type.TypeDef.FullName;
 				var newName = newTypeName + resource.Name.Substring(oldFullName.Length);
 				newNames[resource] = new RenameInfo(resource, info, newName);
 

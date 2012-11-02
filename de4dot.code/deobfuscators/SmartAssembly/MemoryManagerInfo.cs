@@ -17,24 +17,24 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.SmartAssembly {
 	class MemoryManagerInfo {
 		ModuleDefinition module;
-		TypeDefinition memoryManagerType;
-		MethodDefinition attachAppMethod;
+		TypeDef memoryManagerType;
+		MethodDef attachAppMethod;
 
 		public bool Detected {
 			get { return memoryManagerType != null; }
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return memoryManagerType; }
 		}
 
-		public MethodDefinition CctorInitMethod {
+		public MethodDef CctorInitMethod {
 			get { return attachAppMethod; }
 		}
 
@@ -50,7 +50,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return false;
 		}
 
-		bool checkCalledMethods(MethodDefinition checkMethod) {
+		bool checkCalledMethods(MethodDef checkMethod) {
 			if (checkMethod == null)
 				return false;
 			foreach (var method in DotNetUtils.getCalledMethods(module, checkMethod)) {
@@ -68,7 +68,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return false;
 		}
 
-		bool checkMemoryManagerType(TypeDefinition type, MethodDefinition method) {
+		bool checkMemoryManagerType(TypeDef type, MethodDef method) {
 			// Only two fields: itself and a long
 			int fields = 0;
 			foreach (var field in type.Fields) {

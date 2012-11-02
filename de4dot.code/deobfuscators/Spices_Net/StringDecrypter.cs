@@ -20,16 +20,16 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using Mono.Cecil.Metadata;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Spices_Net {
 	class StringDecrypter {
 		ModuleDefinition module;
-		TypeDefinition decrypterType;
-		FieldDefinition encryptedDataField;
+		TypeDef decrypterType;
+		FieldDef encryptedDataField;
 		StringDataFlags stringDataFlags;
 		MethodDefinitionAndDeclaringTypeDict<DecrypterInfo> methodToInfo = new MethodDefinitionAndDeclaringTypeDict<DecrypterInfo>();
 		byte[] decryptedData;
@@ -45,22 +45,22 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 		}
 
 		public class DecrypterInfo {
-			public MethodDefinition method;
+			public MethodDef method;
 			public int offset;
 			public int length;
 
-			public DecrypterInfo(MethodDefinition method, int offset, int length) {
+			public DecrypterInfo(MethodDef method, int offset, int length) {
 				this.method = method;
 				this.offset = offset;
 				this.length = length;
 			}
 		}
 
-		public TypeDefinition EncryptedStringsType {
+		public TypeDef EncryptedStringsType {
 			get {
 				if (encryptedDataField == null)
 					return null;
-				var type = encryptedDataField.FieldType as TypeDefinition;
+				var type = encryptedDataField.FieldType as TypeDef;
 				if (type == null || type.Fields.Count != 1 || type.Fields[0] != encryptedDataField)
 					return null;
 				if (type.HasMethods || type.HasEvents || type.HasProperties || type.HasNestedTypes)
@@ -72,7 +72,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			}
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return decrypterType; }
 		}
 
@@ -106,7 +106,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 				if (cctor == null)
 					continue;
 
-				FieldDefinition encryptedDataFieldTmp;
+				FieldDef encryptedDataFieldTmp;
 				StringDataFlags stringDataFlagsTmp;
 				if (!checkCctor(cctor, out encryptedDataFieldTmp, out stringDataFlagsTmp))
 					continue;
@@ -121,7 +121,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			}
 		}
 
-		static bool hasInstanceMethods(TypeDefinition type) {
+		static bool hasInstanceMethods(TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic)
 					return true;
@@ -131,7 +131,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			return false;
 		}
 
-		bool checkCctor(MethodDefinition cctor, out FieldDefinition compressedDataField, out StringDataFlags flags) {
+		bool checkCctor(MethodDef cctor, out FieldDef compressedDataField, out StringDataFlags flags) {
 			flags = 0;
 			var instructions = cctor.Body.Instructions;
 			for (int i = 0; i < instructions.Count; i++) {
@@ -147,13 +147,13 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 				if (newarr.Operand.ToString() != "System.Byte")
 					continue;
 
-				var field = instrs[2].Operand as FieldDefinition;
+				var field = instrs[2].Operand as FieldDef;
 				if (field == null || field.InitialValue == null || field.InitialValue.Length == 0)
 					continue;
 
 				int index = i + 1 + instrs.Count;
 				if (index < instructions.Count && instructions[index].OpCode.Code == Code.Call)
-					flags = getStringDataFlags(instructions[index].Operand as MethodDefinition);
+					flags = getStringDataFlags(instructions[index].Operand as MethodDef);
 
 				compressedDataField = field;
 				return true;
@@ -163,7 +163,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			return false;
 		}
 
-		StringDataFlags getStringDataFlags(MethodDefinition method) {
+		StringDataFlags getStringDataFlags(MethodDef method) {
 			if (method == null || method.Body == null)
 				return 0;
 			if (method.Parameters.Count != 1)
@@ -187,11 +187,11 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			return flags;
 		}
 
-		bool check3DesCreator(MethodDefinition method) {
+		bool check3DesCreator(MethodDef method) {
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Call)
 					continue;
-				var calledMethod = instr.Operand as MethodDefinition;
+				var calledMethod = instr.Operand as MethodDef;
 				if (calledMethod == null)
 					continue;
 				if (calledMethod.MethodReturnType.ReturnType.EType == ElementType.Void)
@@ -206,7 +206,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			return false;
 		}
 
-		bool get3DesKeyIv(MethodDefinition method, ref byte[] key, ref byte[] iv) {
+		bool get3DesKeyIv(MethodDef method, ref byte[] key, ref byte[] iv) {
 			if (!new LocalTypes(method).exists("System.Security.Cryptography.TripleDESCryptoServiceProvider"))
 				return false;
 
@@ -223,11 +223,11 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			return true;
 		}
 
-		static bool callsDecompressor(MethodDefinition method) {
+		static bool callsDecompressor(MethodDef method) {
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Call)
 					continue;
-				var called = instr.Operand as MethodDefinition;
+				var called = instr.Operand as MethodDef;
 				if (called == null)
 					continue;
 				if (called.MethodReturnType.ReturnType.EType != ElementType.I4)
@@ -249,7 +249,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			return false;
 		}
 
-		static bool hasInstruction(MethodDefinition method, Code code) {
+		static bool hasInstruction(MethodDef method, Code code) {
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code == code)
 					return true;
@@ -265,7 +265,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			return type != null && (type.EType == ElementType.Object || type.EType == ElementType.String);
 		}
 
-		bool initializeDecrypterInfos(TypeDefinition type) {
+		bool initializeDecrypterInfos(TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
@@ -284,7 +284,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			return methodToInfo.Count != 0;
 		}
 
-		DecrypterInfo createInfo(MethodDefinition method) {
+		DecrypterInfo createInfo(MethodDef method) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 1; i++) {
 				var ldci4_1 = instrs[i];
@@ -334,7 +334,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			encryptedDataField.FieldType = module.TypeSystem.Byte;
 		}
 
-		public string decrypt(MethodDefinition method) {
+		public string decrypt(MethodDef method) {
 			var info = methodToInfo.find(method);
 			return Encoding.Unicode.GetString(decryptedData, info.offset, info.length);
 		}

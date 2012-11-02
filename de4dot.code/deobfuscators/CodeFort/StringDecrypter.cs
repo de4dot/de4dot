@@ -18,24 +18,24 @@
 */
 
 using System.Text;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CodeFort {
 	class StringDecrypter {
 		ModuleDefinition module;
-		MethodDefinition decryptMethod;
+		MethodDef decryptMethod;
 
 		public bool Detected {
 			get { return decryptMethod != null; }
 		}
 
-		public MethodDefinition Method {
+		public MethodDef Method {
 			get { return decryptMethod; }
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return decryptMethod == null ? null : decryptMethod.DeclaringType; }
 		}
 
@@ -53,14 +53,14 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			}
 		}
 
-		static MethodDefinition checkType(TypeDefinition type) {
+		static MethodDef checkType(TypeDef type) {
 			if (type.HasFields)
 				return null;
 			return checkMethods(type);
 		}
 
-		static MethodDefinition checkMethods(TypeDefinition type) {
-			MethodDefinition decryptMethod = null;
+		static MethodDef checkMethods(TypeDef type) {
+			MethodDef decryptMethod = null;
 			foreach (var method in type.Methods) {
 				if (method.Name == ".cctor")
 					continue;
@@ -76,7 +76,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			return decryptMethod;
 		}
 
-		static bool hasDouble(MethodDefinition method, double value) {
+		static bool hasDouble(MethodDef method, double value) {
 			if (method == null || method.Body == null)
 				return false;
 			foreach (var instr in method.Body.Instructions) {

@@ -20,21 +20,21 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CryptoObfuscator {
 	class ConstantsDecrypter {
 		ModuleDefinition module;
-		TypeDefinition decrypterType;
-		MethodDefinition methodI4;
-		MethodDefinition methodI8;
-		MethodDefinition methodR4;
-		MethodDefinition methodR8;
+		TypeDef decrypterType;
+		MethodDef methodI4;
+		MethodDef methodI8;
+		MethodDef methodR4;
+		MethodDef methodR8;
 		EmbeddedResource encryptedResource;
 		byte[] constantsData;
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return decrypterType; }
 		}
 
@@ -42,19 +42,19 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			get { return encryptedResource; }
 		}
 
-		public MethodDefinition Int32Decrypter {
+		public MethodDef Int32Decrypter {
 			get { return methodI4; }
 		}
 
-		public MethodDefinition Int64Decrypter {
+		public MethodDef Int64Decrypter {
 			get { return methodI8; }
 		}
 
-		public MethodDefinition SingleDecrypter {
+		public MethodDef SingleDecrypter {
 			get { return methodR4; }
 		}
 
-		public MethodDefinition DoubleDecrypter {
+		public MethodDef DoubleDecrypter {
 			get { return methodR8; }
 		}
 
@@ -79,7 +79,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		static readonly string[] requiredTypes = new string[] {
 			"System.Byte[]",
 		};
-		bool checkType(TypeDefinition type) {
+		bool checkType(TypeDef type) {
 			if (type.Methods.Count != 7)
 				return false;
 			if (type.Fields.Count < 1 || type.Fields.Count > 2)
@@ -92,7 +92,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return true;
 		}
 
-		bool checkMethods(TypeDefinition type) {
+		bool checkMethods(TypeDef type) {
 			methodI4 = DotNetUtils.getMethod(type, "System.Int32", "(System.Int32)");
 			methodI8 = DotNetUtils.getMethod(type, "System.Int64", "(System.Int32)");
 			methodR4 = DotNetUtils.getMethod(type, "System.Single", "(System.Int32)");

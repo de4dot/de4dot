@@ -17,14 +17,14 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.Cecil;
+using dot10.DotNet;
 
 namespace de4dot.code.renamer.asmmodules {
-	class ParamDef {
-		public ParameterDefinition ParameterDefinition { get; set; }
+	class MParamDef {
+		public Parameter ParameterDefinition { get; set; }
 		public int Index { get; private set; }
 
-		public ParamDef(ParameterDefinition parameterDefinition, int index) {
+		public MParamDef(Parameter parameterDefinition, int index) {
 			this.ParameterDefinition = parameterDefinition;
 			Index = index;
 		}

@@ -20,8 +20,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Babel_NET {
@@ -29,8 +29,8 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		ModuleDefinition module;
 		ResourceDecrypter resourceDecrypter;
 		ISimpleDeobfuscator simpleDeobfuscator;
-		TypeDefinition resolverType;
-		MethodDefinition registerMethod;
+		TypeDef resolverType;
+		MethodDef registerMethod;
 		EmbeddedResource encryptedResource;
 		bool hasXorKeys;
 		int xorKey1, xorKey2;
@@ -39,11 +39,11 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			get { return resolverType != null; }
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return resolverType; }
 		}
 
-		public MethodDefinition InitMethod {
+		public MethodDef InitMethod {
 			get { return registerMethod; }
 		}
 
@@ -66,7 +66,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				if (!new FieldTypes(type).all(requiredTypes))
 					continue;
 
-				MethodDefinition regMethod, handler;
+				MethodDef regMethod, handler;
 				if (!BabelUtils.findRegisterMethod(type, out regMethod, out handler))
 					continue;
 
@@ -87,7 +87,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			}
 		}
 
-		static MethodDefinition findDecryptMethod(TypeDefinition type) {
+		static MethodDef findDecryptMethod(TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (!DotNetUtils.isMethod(method, "System.Reflection.Assembly", "(System.IO.Stream)"))
 					continue;
@@ -96,7 +96,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return null;
 		}
 
-		void initXorKeys(MethodDefinition method) {
+		void initXorKeys(MethodDef method) {
 			simpleDeobfuscator.deobfuscate(method);
 			var ints = new List<int>();
 			var instrs = method.Body.Instructions;

@@ -22,15 +22,15 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Security.Cryptography;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CryptoObfuscator {
 	class ResourceDecrypter {
 		const int BUFLEN = 0x8000;
 		ModuleDefinition module;
-		TypeDefinition resourceDecrypterType;
+		TypeDef resourceDecrypterType;
 		byte[] buffer1 = new byte[BUFLEN];
 		byte[] buffer2 = new byte[BUFLEN];
 		byte desEncryptedFlag;
@@ -97,7 +97,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return false;
 		}
 
-		bool checkCctor(MethodDefinition cctor) {
+		bool checkCctor(MethodDef cctor) {
 			if (cctor.Body == null)
 				return false;
 			int stsfldCount = 0;
@@ -182,7 +182,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			bitwiseNotEncryptedFlag = 4;
 		}
 
-		static bool checkFlipBits(MethodDefinition method) {
+		static bool checkFlipBits(MethodDef method) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 1; i++) {
 				var ldloc = instrs[i];
@@ -202,7 +202,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return false;
 		}
 
-		bool updateFlags(MethodDefinition method, ISimpleDeobfuscator simpleDeobfuscator) {
+		bool updateFlags(MethodDef method, ISimpleDeobfuscator simpleDeobfuscator) {
 			if (method == null || method.Body == null)
 				return false;
 
@@ -266,7 +266,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return false;
 		}
 
-		static int getHeaderSkipBytes(MethodDefinition method) {
+		static int getHeaderSkipBytes(MethodDef method) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 1; i++) {
 				var ldci4 = instrs[i];
@@ -291,11 +291,11 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return false;
 		}
 
-		MethodDefinition getDecrypterMethod() {
+		MethodDef getDecrypterMethod() {
 			return getDecrypterMethod(resourceDecrypterType);
 		}
 
-		static MethodDefinition getDecrypterMethod(TypeDefinition type) {
+		static MethodDef getDecrypterMethod(TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (DotNetUtils.isMethod(method, "System.Byte[]", "(System.IO.Stream)"))
 					return method;

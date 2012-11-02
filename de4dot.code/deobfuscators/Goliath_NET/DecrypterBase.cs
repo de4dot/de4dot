@@ -20,25 +20,25 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Goliath_NET {
 	abstract class DecrypterBase {
 		protected ModuleDefinition module;
 		EmbeddedResource encryptedResource;
-		TypeDefinition decrypterType;
-		TypeDefinition delegateType;
-		TypeDefinition delegateInitType;
+		TypeDef decrypterType;
+		TypeDef delegateType;
+		TypeDef delegateInitType;
 		protected BinaryReader decryptedReader;
 		MethodDefinitionAndDeclaringTypeDict<Info> decrypterMethods = new MethodDefinitionAndDeclaringTypeDict<Info>();
 
 		protected class Info {
-			public MethodDefinition method;
+			public MethodDef method;
 			public int offset;
 			public bool referenced = false;
-			public Info(MethodDefinition method, int offset) {
+			public Info(MethodDef method, int offset) {
 				this.method = method;
 				this.offset = offset;
 			}
@@ -52,21 +52,21 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			get { return encryptedResource; }
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return decrypterType; }
 		}
 
-		public TypeDefinition DelegateInitType {
+		public TypeDef DelegateInitType {
 			get { return delegateInitType ?? findDelegateInitType();}
 		}
 
-		public TypeDefinition DelegateType {
+		public TypeDef DelegateType {
 			get { return delegateType; }
 		}
 
-		public IEnumerable<TypeDefinition> DecrypterTypes {
+		public IEnumerable<TypeDef> DecrypterTypes {
 			get {
-				var types = new TypeDefinitionDict<TypeDefinition>();
+				var types = new TypeDefinitionDict<TypeDef>();
 				foreach (var info in decrypterMethods.getValues()) {
 					if (info.referenced)
 						types.add(info.method.DeclaringType, info.method.DeclaringType);
@@ -79,7 +79,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			this.module = module;
 		}
 
-		protected Info getInfo(MethodDefinition method) {
+		protected Info getInfo(MethodDef method) {
 			var info = decrypterMethods.find(method);
 			if (info == null)
 				return null;
@@ -110,7 +110,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			}
 		}
 
-		protected abstract bool checkDecrypterType(TypeDefinition type);
+		protected abstract bool checkDecrypterType(TypeDef type);
 
 		void splitTypeName(string fullName, out string ns, out string name) {
 			int index = fullName.LastIndexOf('.');
@@ -171,13 +171,13 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			}
 		}
 
-		Info getDecrypterInfo(MethodDefinition method, FieldDefinition delegateField) {
+		Info getDecrypterInfo(MethodDef method, FieldDef delegateField) {
 			try {
 				int index = 0;
 				var instrs = method.Body.Instructions;
 				if (instrs[index].OpCode.Code != Code.Ldsfld)
 					return null;
-				var field = instrs[index++].Operand as FieldDefinition;
+				var field = instrs[index++].Operand as FieldDef;
 				if (field != delegateField)
 					return null;
 
@@ -204,12 +204,12 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			}
 		}
 
-		bool checkCctor(MethodDefinition cctor) {
+		bool checkCctor(MethodDef cctor) {
 			var ldtokenType = getLdtokenType(cctor);
 			if (!MemberReferenceHelper.compareTypes(ldtokenType, cctor.DeclaringType))
 				return false;
 
-			MethodDefinition initMethod = null;
+			MethodDef initMethod = null;
 			foreach (var method in DotNetUtils.getCalledMethods(module, cctor)) {
 				if (DotNetUtils.isMethod(method, "System.Void", "(System.Type)")) {
 					initMethod = method;
@@ -222,7 +222,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			return true;
 		}
 
-		static TypeReference getLdtokenType(MethodDefinition method) {
+		static TypeReference getLdtokenType(MethodDef method) {
 			if (method == null || method.Body == null)
 				return null;
 			foreach (var instr in method.Body.Instructions) {
@@ -233,7 +233,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			return null;
 		}
 
-		bool checkDelegateType(TypeDefinition type) {
+		bool checkDelegateType(TypeDef type) {
 			if (!DotNetUtils.derivesFromDelegate(type))
 				return false;
 			var invoke = DotNetUtils.getMethod(type, "Invoke");
@@ -242,7 +242,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			return checkDelegateInvokeMethod(invoke);
 		}
 
-		protected abstract bool checkDelegateInvokeMethod(MethodDefinition invokeMethod);
+		protected abstract bool checkDelegateInvokeMethod(MethodDef invokeMethod);
 
 		byte[] decrypt(byte[] encryptedData) {
 			const int KEY_LEN = 0x100;
@@ -265,7 +265,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			return decryptedData;
 		}
 
-		TypeDefinition findDelegateInitType() {
+		TypeDef findDelegateInitType() {
 			if (delegateType == null)
 				return null;
 
@@ -290,8 +290,8 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			return null;
 		}
 
-		public IEnumerable<MethodDefinition> getMethods() {
-			var list = new List<MethodDefinition>(decrypterMethods.Count);
+		public IEnumerable<MethodDef> getMethods() {
+			var list = new List<MethodDef>(decrypterMethods.Count);
 			foreach (var info in decrypterMethods.getValues())
 				list.Add(info.method);
 			return list;

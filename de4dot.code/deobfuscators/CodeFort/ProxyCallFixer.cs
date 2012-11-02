@@ -19,17 +19,17 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CodeFort {
 	class ProxyCallFixer : ProxyCallFixer3 {
 		IList<MemberReference> memberReferences;
 		MethodDefinitionAndDeclaringTypeDict<bool> proxyTargetMethods = new MethodDefinitionAndDeclaringTypeDict<bool>();
-		TypeDefinition proxyMethodsType;
+		TypeDef proxyMethodsType;
 
-		public TypeDefinition ProxyMethodsType {
+		public TypeDef ProxyMethodsType {
 			get { return proxyMethodsType; }
 		}
 
@@ -52,7 +52,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			}
 		}
 
-		static MethodDefinition checkType(TypeDefinition type) {
+		static MethodDef checkType(TypeDef type) {
 			if (type.Fields.Count != 1)
 				return null;
 			if (type.Fields[0].FieldType.FullName != "System.Reflection.Module")
@@ -60,11 +60,11 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			return checkMethods(type);
 		}
 
-		static MethodDefinition checkMethods(TypeDefinition type) {
+		static MethodDef checkMethods(TypeDef type) {
 			if (type.Methods.Count != 3)
 				return null;
 
-			MethodDefinition creatorMethod = null;
+			MethodDef creatorMethod = null;
 			foreach (var method in type.Methods) {
 				if (method.Name == ".cctor")
 					continue;
@@ -80,7 +80,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			return creatorMethod;
 		}
 
-		protected override object checkCctor(ref TypeDefinition type, MethodDefinition cctor) {
+		protected override object checkCctor(ref TypeDef type, MethodDef cctor) {
 			var instrs = cctor.Body.Instructions;
 			if (instrs.Count != 3)
 				return null;
@@ -90,15 +90,15 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			var call = instrs[1];
 			if (call.OpCode.Code != Code.Call)
 				return null;
-			if (!isDelegateCreatorMethod(call.Operand as MethodDefinition))
+			if (!isDelegateCreatorMethod(call.Operand as MethodDef))
 				return null;
 			int rid = DotNetUtils.getLdcI4Value(ldci4);
-			if (cctor.DeclaringType.MetadataToken.RID != rid)
+			if (cctor.DeclaringType.MDToken.RID != rid)
 				throw new ApplicationException("Invalid rid");
 			return rid;
 		}
 
-		protected override void getCallInfo(object context, FieldDefinition field, out MethodReference calledMethod, out OpCode callOpcode) {
+		protected override void getCallInfo(object context, FieldDef field, out MethodReference calledMethod, out OpCode callOpcode) {
 			if (memberReferences == null)
 				memberReferences = new List<MemberReference>(module.GetMemberReferences());
 

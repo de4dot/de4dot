@@ -24,7 +24,7 @@ using de4dot.code.renamer.asmmodules;
 namespace de4dot.code.renamer {
 	class DerivedFrom {
 		Dictionary<string, bool> classNames = new Dictionary<string, bool>(StringComparer.Ordinal);
-		Dictionary<TypeDef, bool> results = new Dictionary<TypeDef, bool>();
+		Dictionary<MTypeDef, bool> results = new Dictionary<MTypeDef, bool>();
 
 		public DerivedFrom(string className) {
 			addName(className);
@@ -39,16 +39,16 @@ namespace de4dot.code.renamer {
 			classNames[className] = true;
 		}
 
-		public bool check(TypeDef type) {
+		public bool check(MTypeDef type) {
 			if (results.ContainsKey(type))
 				return results[type];
 
 			bool val;
-			if (classNames.ContainsKey(type.TypeDefinition.FullName))
+			if (classNames.ContainsKey(type.TypeDef.FullName))
 				val = true;
 			else if (type.baseType == null) {
-				if (type.TypeDefinition.BaseType != null)
-					val = classNames.ContainsKey(type.TypeDefinition.BaseType.FullName);
+				if (type.TypeDef.BaseType != null)
+					val = classNames.ContainsKey(type.TypeDef.BaseType.FullName);
 				else
 					val = false;
 			}

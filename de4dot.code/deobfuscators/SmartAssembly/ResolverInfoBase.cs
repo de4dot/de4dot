@@ -18,8 +18,8 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.SmartAssembly {
@@ -27,14 +27,14 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 		protected ModuleDefinition module;
 		ISimpleDeobfuscator simpleDeobfuscator;
 		IDeobfuscator deob;
-		TypeDefinition resolverType;
-		MethodDefinition callResolverMethod;
+		TypeDef resolverType;
+		MethodDef callResolverMethod;
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return resolverType; }
 		}
 
-		public TypeDefinition CallResolverType {
+		public TypeDef CallResolverType {
 			get {
 				if (callResolverMethod == null)
 					return null;
@@ -44,7 +44,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			}
 		}
 
-		public MethodDefinition CallResolverMethod {
+		public MethodDef CallResolverMethod {
 			get { return callResolverMethod; }
 		}
 
@@ -66,7 +66,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return false;
 		}
 
-		bool findTypes(MethodDefinition initMethod) {
+		bool findTypes(MethodDef initMethod) {
 			if (initMethod == null)
 				return false;
 			foreach (var method in DotNetUtils.getCalledMethods(module, initMethod)) {
@@ -81,7 +81,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return false;
 		}
 
-		bool checkAttachAppMethod(MethodDefinition attachAppMethod) {
+		bool checkAttachAppMethod(MethodDef attachAppMethod) {
 			callResolverMethod = null;
 			if (!attachAppMethod.HasBody)
 				return false;
@@ -120,7 +120,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return false;
 		}
 
-		static bool hasLdftn(MethodDefinition method) {
+		static bool hasLdftn(MethodDef method) {
 			if (method == null || method.Body == null)
 				return false;
 			foreach (var instr in method.Body.Instructions) {
@@ -130,7 +130,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return false;
 		}
 
-		bool checkResolverInitMethod(MethodDefinition initMethod) {
+		bool checkResolverInitMethod(MethodDef initMethod) {
 			resolverType = null;
 			if (!initMethod.HasBody)
 				return false;
@@ -152,12 +152,12 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return false;
 		}
 
-		void deobfuscate(MethodDefinition method) {
+		void deobfuscate(MethodDef method) {
 			simpleDeobfuscator.deobfuscate(method);
 			simpleDeobfuscator.decryptStrings(method, deob);
 		}
 
-		TypeDefinition getResolverType(MethodDefinition resolveHandler) {
+		TypeDef getResolverType(MethodDef resolveHandler) {
 			if (resolveHandler.Body == null)
 				return null;
 			foreach (var instr in resolveHandler.Body.Instructions) {
@@ -178,10 +178,10 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return null;
 		}
 
-		protected abstract bool checkResolverType(TypeDefinition type);
-		protected abstract bool checkHandlerMethod(MethodDefinition handler);
+		protected abstract bool checkResolverType(TypeDef type);
+		protected abstract bool checkHandlerMethod(MethodDef handler);
 
-		IEnumerable<MethodDefinition> getResolverHandlers(MethodDefinition method) {
+		IEnumerable<MethodDef> getResolverHandlers(MethodDef method) {
 			int numHandlers = 0;
 			var instructions = method.Body.Instructions;
 			for (int i = 0; i < instructions.Count; i++) {
@@ -215,7 +215,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				yield return method;
 		}
 
-		static bool hasOnlyThisMethod(TypeDefinition type, MethodDefinition method) {
+		static bool hasOnlyThisMethod(TypeDef type, MethodDef method) {
 			if (type == null || method == null)
 				return false;
 			foreach (var m in type.Methods) {

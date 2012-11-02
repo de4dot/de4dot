@@ -19,8 +19,8 @@
 
 using System;
 using System.IO;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 
 namespace de4dot.code.deobfuscators.Babel_NET {
 	class MethodBodyReader : MethodBodyReaderBase {

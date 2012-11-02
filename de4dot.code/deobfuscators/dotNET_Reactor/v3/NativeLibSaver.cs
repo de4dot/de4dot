@@ -18,22 +18,22 @@
 */
 
 using System;
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 	// Finds the type that saves the native lib (if in resources) to disk
 	class NativeLibSaver {
 		ModuleDefinition module;
-		TypeDefinition nativeLibCallerType;
-		MethodDefinition initMethod;
+		TypeDef nativeLibCallerType;
+		MethodDef initMethod;
 		Resource nativeFileResource;
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return nativeLibCallerType; }
 		}
 
-		public MethodDefinition InitMethod {
+		public MethodDef InitMethod {
 			get { return initMethod; }
 		}
 

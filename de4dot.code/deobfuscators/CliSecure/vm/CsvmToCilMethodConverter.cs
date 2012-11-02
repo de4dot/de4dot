@@ -20,8 +20,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using Mono.Cecil.Metadata;
 using de4dot.blocks;
 
@@ -38,7 +38,7 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 			this.opCodeDetector = opCodeDetector;
 		}
 
-		public void convert(MethodDefinition cilMethod, CsvmMethodData csvmMethod) {
+		public void convert(MethodDef cilMethod, CsvmMethodData csvmMethod) {
 			var newInstructions = readInstructions(cilMethod, csvmMethod);
 			var newLocals = readLocals(cilMethod, csvmMethod);
 			var newExceptions = readExceptions(cilMethod, csvmMethod, newInstructions);
@@ -50,7 +50,7 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 			DotNetUtils.restoreBody(cilMethod, newInstructions, newExceptions);
 
 			if (!operandRestorer.restore(cilMethod))
-				Log.w("Failed to restore one or more instruction operands in CSVM method {0:X8}", cilMethod.MetadataToken.ToInt32());
+				Log.w("Failed to restore one or more instruction operands in CSVM method {0:X8}", cilMethod.MDToken.ToInt32());
 			restoreConstrainedPrefix(cilMethod);
 		}
 
@@ -129,7 +129,7 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 			instr.Operand = operand;
 		}
 
-		void fixArgs(IList<Instruction> instrs, MethodDefinition method) {
+		void fixArgs(IList<Instruction> instrs, MethodDef method) {
 			foreach (var instr in instrs) {
 				var op = instr.Operand as ArgOperand;
 				if (op == null)
@@ -206,7 +206,7 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 			}
 		}
 
-		List<Instruction> readInstructions(MethodDefinition cilMethod, CsvmMethodData csvmMethod) {
+		List<Instruction> readInstructions(MethodDef cilMethod, CsvmMethodData csvmMethod) {
 			var reader = new BinaryReader(new MemoryStream(csvmMethod.Instructions));
 			var instrs = new List<Instruction>();
 			int offset = 0;
@@ -230,7 +230,7 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 			return instr.OpCode.Size + (op.targetDisplacements.Length + 1) * 4;
 		}
 
-		List<VariableDefinition> readLocals(MethodDefinition cilMethod, CsvmMethodData csvmMethod) {
+		List<VariableDefinition> readLocals(MethodDef cilMethod, CsvmMethodData csvmMethod) {
 			var locals = new List<VariableDefinition>();
 			var reader = new BinaryReader(new MemoryStream(csvmMethod.Locals));
 
@@ -303,7 +303,7 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 			}
 		}
 
-		List<ExceptionHandler> readExceptions(MethodDefinition cilMethod, CsvmMethodData csvmMethod, List<Instruction> cilInstructions) {
+		List<ExceptionHandler> readExceptions(MethodDef cilMethod, CsvmMethodData csvmMethod, List<Instruction> cilInstructions) {
 			var reader = new BinaryReader(new MemoryStream(csvmMethod.Exceptions));
 			var ehs = new List<ExceptionHandler>();
 
@@ -408,7 +408,7 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 			return memberRef;
 		}
 
-		static void restoreConstrainedPrefix(MethodDefinition method) {
+		static void restoreConstrainedPrefix(MethodDef method) {
 			if (method == null || method.Body == null)
 				return;
 

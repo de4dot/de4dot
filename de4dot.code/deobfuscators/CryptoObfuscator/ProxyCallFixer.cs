@@ -19,13 +19,13 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CryptoObfuscator {
 	class ProxyCallFixer : ProxyCallFixer2 {
-		Dictionary<MethodDefinition, ProxyCreatorType> methodToType = new Dictionary<MethodDefinition, ProxyCreatorType>();
+		Dictionary<MethodDef, ProxyCreatorType> methodToType = new Dictionary<MethodDef, ProxyCreatorType>();
 
 		public ProxyCallFixer(ModuleDefinition module)
 			: base(module) {
@@ -51,7 +51,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			}
 		}
 
-		protected override object checkCctor(TypeDefinition type, MethodDefinition cctor) {
+		protected override object checkCctor(TypeDef type, MethodDef cctor) {
 			var instructions = cctor.Body.Instructions;
 			for (int i = 0; i < instructions.Count; i++) {
 				var instrs = DotNetUtils.getInstructions(instructions, i, OpCodes.Ldc_I4, OpCodes.Ldc_I4, OpCodes.Ldc_I4, OpCodes.Call);
@@ -61,7 +61,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				int typeToken = (int)instrs[0].Operand;
 				int methodToken = (int)instrs[1].Operand;
 				int declaringTypeToken = (int)instrs[2].Operand;
-				var createMethod = instrs[3].Operand as MethodDefinition;
+				var createMethod = instrs[3].Operand as MethodDef;
 
 				ProxyCreatorType proxyCreatorType;
 				if (!methodToType.TryGetValue(createMethod, out proxyCreatorType))
@@ -73,7 +73,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return null;
 		}
 
-		protected override void getCallInfo(object context, FieldDefinition field, out MethodReference calledMethod, out OpCode callOpcode) {
+		protected override void getCallInfo(object context, FieldDef field, out MethodReference calledMethod, out OpCode callOpcode) {
 			var ctx = (Context)context;
 
 			switch (ctx.proxyCreatorType) {
@@ -107,13 +107,13 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			}
 		}
 
-		MethodDefinition getProxyCreateMethod(TypeDefinition type) {
+		MethodDef getProxyCreateMethod(TypeDef type) {
 			if (DotNetUtils.findFieldType(type, "System.ModuleHandle", true) == null)
 				return null;
 			if (type.Fields.Count < 1 || type.Fields.Count > 12)
 				return null;
 
-			MethodDefinition createMethod = null;
+			MethodDef createMethod = null;
 			foreach (var m in type.Methods) {
 				if (m.Name == ".ctor" || m.Name == ".cctor")
 					continue;
@@ -131,7 +131,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return createMethod;
 		}
 
-		ProxyCreatorType getProxyCreatorType(TypeDefinition type, MethodDefinition createMethod) {
+		ProxyCreatorType getProxyCreatorType(TypeDef type, MethodDef createMethod) {
 			int numCalls = 0, numCallvirts = 0, numNewobjs = 0;
 			foreach (var instr in createMethod.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Ldsfld)

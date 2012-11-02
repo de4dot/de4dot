@@ -23,8 +23,8 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CodeFort {
@@ -32,8 +32,8 @@ namespace de4dot.code.deobfuscators.CodeFort {
 		ModuleDefinition module;
 		EmbeddedResource assemblyEncryptedResource;
 		PasswordInfo embedPassword;
-		MethodDefinition embedInitMethod;
-		MethodDefinition embedResolverMethod;
+		MethodDef embedInitMethod;
+		MethodDef embedResolverMethod;
 
 		public class AssemblyInfo {
 			public readonly byte[] data;
@@ -67,11 +67,11 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			get { return EncryptedDetected || MainAssemblyHasAssemblyResolver; }
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return embedInitMethod != null ? embedInitMethod.DeclaringType : null; }
 		}
 
-		public MethodDefinition InitMethod {
+		public MethodDef InitMethod {
 			get { return embedInitMethod; }
 		}
 
@@ -118,10 +118,10 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			return true;
 		}
 
-		MethodDefinition checkCalledMethods(MethodDefinition method) {
+		MethodDef checkCalledMethods(MethodDef method) {
 			int calls = 0;
-			TypeDefinition type = null;
-			MethodDefinition initMethod = null;
+			TypeDef type = null;
+			MethodDef initMethod = null;
 			foreach (var calledMethod in DotNetUtils.getCalledMethods(module, method)) {
 				calls++;
 				if (type != null && calledMethod.DeclaringType != type)
@@ -144,7 +144,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 				findEmbedded(module.EntryPoint);
 		}
 
-		bool findEmbedded(MethodDefinition method) {
+		bool findEmbedded(MethodDef method) {
 			if (method == null || method.Body == null)
 				return false;
 			foreach (var calledMethod in DotNetUtils.getCalledMethods(module, method)) {
@@ -162,7 +162,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			return false;
 		}
 
-		MethodDefinition checkInitMethod(MethodDefinition method) {
+		MethodDef checkInitMethod(MethodDef method) {
 			if (method == null || !method.IsStatic || method.Body == null)
 				return null;
 			if (!DotNetUtils.isMethod(method, "System.Void", "()"))
@@ -175,7 +175,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			return resolver;
 		}
 
-		bool checkType(TypeDefinition type) {
+		bool checkType(TypeDef type) {
 			if (DotNetUtils.getMethod(type, "System.Byte[]", "(System.Byte[],System.String,System.String,System.Int32,System.String,System.Int32)") == null)
 				return false;
 			if (DotNetUtils.getMethod(type, "System.String", "(System.String)") == null)
@@ -246,7 +246,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			return infos;
 		}
 
-		static PasswordInfo getEmbedPassword(MethodDefinition method) {
+		static PasswordInfo getEmbedPassword(MethodDef method) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 3; i++) {
 				int index = i;

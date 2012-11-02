@@ -18,8 +18,8 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using Mono.Cecil.Metadata;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
@@ -30,7 +30,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		List<ParameterDefinition> parameters;
 		ParameterDefinition arg1, arg2;
 		Value returnValue;
-		MethodDefinition methodToInline;
+		MethodDef methodToInline;
 		CachedCflowDeobfuscator cflowDeobfuscator;
 
 		public DsMethodCallInliner(CachedCflowDeobfuscator cflowDeobfuscator) {
@@ -51,7 +51,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		}
 
 		bool inlineMethod(Instruction callInstr, int instrIndex) {
-			var method = callInstr.Operand as MethodDefinition;
+			var method = callInstr.Operand as MethodDef;
 			if (method == null)
 				return false;
 			if (!canInline(method))
@@ -70,7 +70,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return true;
 		}
 
-		bool inlineMethod(MethodDefinition methodToInline, int instrIndex, int const1, int const2) {
+		bool inlineMethod(MethodDef methodToInline, int instrIndex, int const1, int const2) {
 			this.methodToInline = methodToInline = cflowDeobfuscator.deobfuscate(methodToInline);
 
 			parameters = DotNetUtils.getParameters(methodToInline);
@@ -294,7 +294,7 @@ done:
 			return instructionEmulator.stackSize() == 0;
 		}
 
-		public static bool canInline(MethodDefinition method) {
+		public static bool canInline(MethodDef method) {
 			if (method == null || method.Body == null)
 				return false;
 			if (method.Attributes != (MethodAttributes.Assembly | MethodAttributes.Static))
@@ -322,7 +322,7 @@ done:
 			return etype == ElementType.Char || etype == ElementType.I2 || etype == ElementType.I4;
 		}
 
-		protected override bool isReturn(MethodDefinition methodToInline, int instrIndex) {
+		protected override bool isReturn(MethodDef methodToInline, int instrIndex) {
 			int oldIndex = instrIndex;
 			if (base.isReturn(methodToInline, oldIndex))
 				return true;

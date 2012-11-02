@@ -18,7 +18,7 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.renamer {
@@ -107,7 +107,7 @@ namespace de4dot.code.renamer {
 	}
 
 	interface ITypeNameCreator {
-		string create(TypeDefinition typeDefinition, string newBaseTypeName);
+		string create(TypeDef typeDefinition, string newBaseTypeName);
 	}
 
 	class NameInfos {
@@ -172,12 +172,12 @@ namespace de4dot.code.renamer {
 			return new NameCreator(prefix);
 		}
 
-		public string create(TypeDefinition typeDefinition, string newBaseTypeName) {
+		public string create(TypeDef typeDefinition, string newBaseTypeName) {
 			var nameCreator = getNameCreator(typeDefinition, newBaseTypeName);
 			return existingNames.getName(typeDefinition.Name, nameCreator);
 		}
 
-		NameCreator getNameCreator(TypeDefinition typeDefinition, string newBaseTypeName) {
+		NameCreator getNameCreator(TypeDef typeDefinition, string newBaseTypeName) {
 			var nameCreator = createUnknownTypeName;
 			if (typeDefinition.IsEnum)
 				nameCreator = createEnumName;

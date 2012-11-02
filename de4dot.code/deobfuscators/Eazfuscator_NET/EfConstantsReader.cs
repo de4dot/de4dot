@@ -17,13 +17,13 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.Cecil;
+using dot10.DotNet;
 using Mono.Cecil.Metadata;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 	class EfConstantsReader : ConstantsReader {
-		public EfConstantsReader(MethodDefinition method)
+		public EfConstantsReader(MethodDef method)
 			: base(method) {
 			initialize();
 		}

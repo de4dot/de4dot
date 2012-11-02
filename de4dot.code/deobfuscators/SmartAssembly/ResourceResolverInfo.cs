@@ -17,8 +17,8 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.SmartAssembly {
@@ -35,11 +35,11 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			this.assemblyResolverInfo = assemblyResolverInfo;
 		}
 
-		protected override bool checkResolverType(TypeDefinition type) {
+		protected override bool checkResolverType(TypeDef type) {
 			return DotNetUtils.findFieldType(type, "System.Reflection.Assembly", true) != null;
 		}
 
-		protected override bool checkHandlerMethod(MethodDefinition method) {
+		protected override bool checkHandlerMethod(MethodDef method) {
 			if (!method.IsStatic || !method.HasBody)
 				return false;
 

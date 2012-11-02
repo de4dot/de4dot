@@ -18,7 +18,7 @@
 */
 
 using System;
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Goliath_NET {
@@ -31,15 +31,15 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			"System.Byte[]",
 			"System.Collections.Generic.Dictionary`2<System.Int32,System.Object>",
 		};
-		protected override bool checkDecrypterType(TypeDefinition type) {
+		protected override bool checkDecrypterType(TypeDef type) {
 			return new FieldTypes(type).exactly(requiredFields);
 		}
 
-		protected override bool checkDelegateInvokeMethod(MethodDefinition invokeMethod) {
+		protected override bool checkDelegateInvokeMethod(MethodDef invokeMethod) {
 			return DotNetUtils.isMethod(invokeMethod, "System.Object", "(System.Int32)");
 		}
 
-		public int decrypt(MethodDefinition method) {
+		public int decrypt(MethodDef method) {
 			var info = getInfo(method);
 			decryptedReader.BaseStream.Position = info.offset;
 			int len = decryptedReader.ReadInt32();

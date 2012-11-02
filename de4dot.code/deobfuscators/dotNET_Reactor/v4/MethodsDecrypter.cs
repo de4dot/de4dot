@@ -20,8 +20,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using Mono.MyStuff;
 using de4dot.blocks;
 using de4dot.PE;
@@ -31,7 +31,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		ModuleDefinition module;
 		EncryptedResource encryptedResource;
 		Dictionary<uint, byte[]> tokenToNativeMethod = new Dictionary<uint, byte[]>();
-		Dictionary<MethodDefinition, byte[]> methodToNativeMethod = new Dictionary<MethodDefinition, byte[]>();
+		Dictionary<MethodDef, byte[]> methodToNativeMethod = new Dictionary<MethodDef, byte[]>();
 		int totalEncryptedNativeMethods = 0;
 		long xorKey;
 
@@ -43,11 +43,11 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			get { return methodToNativeMethod.Count > 0; }
 		}
 
-		public TypeDefinition DecrypterType {
+		public TypeDef DecrypterType {
 			get { return encryptedResource.Type; }
 		}
 
-		public MethodDefinition Method {
+		public MethodDef Method {
 			get { return encryptedResource.Method; }
 		}
 
@@ -101,7 +101,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				}
 			}
 
-			encryptedResource.Method = (MethodDefinition)callCounter.most();
+			encryptedResource.Method = (MethodDef)callCounter.most();
 		}
 
 		void xorEncrypt(byte[] data) {
@@ -288,7 +288,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		public void reloaded() {
 			foreach (var pair in tokenToNativeMethod) {
 				int token = (int)pair.Key;
-				var method = module.LookupToken(token) as MethodDefinition;
+				var method = module.LookupToken(token) as MethodDef;
 				if (method == null)
 					throw new ApplicationException(string.Format("Could not find method {0:X8}", token));
 				methodToNativeMethod[method] = pair.Value;
@@ -318,13 +318,13 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 					continue;	// method.DeclaringType was removed
 				var code = pair.Value;
 
-				uint codeRva = builder.GetMethodBodyRva((int)method.MetadataToken.RID - 1);
+				uint codeRva = builder.GetMethodBodyRva((int)method.MDToken.RID - 1);
 				if ((codeWriter.ReadByteAtRva(codeRva) & 3) == 2)
 					codeRva++;
 				else
 					codeRva += 4 * (uint)(codeWriter.ReadByteAtRva(codeRva + 1) >> 4);
 
-				Log.v("Native method {0:X8}, code RVA {1:X8}", method.MetadataToken.ToInt32(), codeRva);
+				Log.v("Native method {0:X8}, code RVA {1:X8}", method.MDToken.ToInt32(), codeRva);
 
 				writer.Write(codeRva);
 				writer.Write(0x70000000 + index++);
@@ -340,7 +340,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			encryptedResource.updateResource(encryptedResource.encrypt(encryptedData));
 		}
 
-		public static MethodDefinition findDnrCompileMethod(TypeDefinition type) {
+		public static MethodDef findDnrCompileMethod(TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic || method.Body == null)
 					continue;

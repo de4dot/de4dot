@@ -19,33 +19,33 @@
 
 using System;
 using System.IO;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CodeVeil {
 	class StringDecrypter {
 		ModuleDefinition module;
 		MainType mainType;
-		TypeDefinition decrypterType;
-		FieldDefinition stringDataField;
-		MethodDefinition initMethod;
-		MethodDefinition decrypterMethod;
+		TypeDef decrypterType;
+		FieldDef stringDataField;
+		MethodDef initMethod;
+		MethodDef decrypterMethod;
 		string[] decryptedStrings;
 
 		public bool Detected {
 			get { return decrypterType != null; }
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return decrypterType; }
 		}
 
-		public MethodDefinition InitMethod {
+		public MethodDef InitMethod {
 			get { return initMethod; }
 		}
 
-		public MethodDefinition DecryptMethod {
+		public MethodDef DecryptMethod {
 			get { return decrypterMethod; }
 		}
 
@@ -79,7 +79,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			findV5(cctor);
 		}
 
-		bool find(MethodDefinition method) {
+		bool find(MethodDef method) {
 			if (method == null || method.Body == null || !method.IsStatic)
 				return false;
 
@@ -88,7 +88,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				var call = instrs[i];
 				if (call.OpCode.Code != Code.Call)
 					continue;
-				var initMethodTmp = call.Operand as MethodDefinition;
+				var initMethodTmp = call.Operand as MethodDef;
 				if (initMethodTmp == null || initMethodTmp.Body == null || !initMethodTmp.IsStatic)
 					continue;
 				if (!DotNetUtils.isMethod(initMethodTmp, "System.Void", "()"))
@@ -105,7 +105,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		}
 
 		// The main decrypter type calls the string decrypter init method inside its init method
-		void findV5(MethodDefinition method) {
+		void findV5(MethodDef method) {
 			if (!mainType.Detected)
 				return;
 			foreach (var calledMethod in DotNetUtils.getCalledMethods(module, mainType.InitMethod)) {
@@ -114,7 +114,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			}
 		}
 
-		bool checkType(TypeDefinition type) {
+		bool checkType(TypeDef type) {
 			if (!type.HasNestedTypes)
 				return false;
 
@@ -134,8 +134,8 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return true;
 		}
 
-		static MethodDefinition getDecrypterMethod(TypeDefinition type) {
-			MethodDefinition foundMethod = null;
+		static MethodDef getDecrypterMethod(TypeDef type) {
+			MethodDef foundMethod = null;
 			foreach (var method in type.Methods) {
 				if (method.Body == null || !method.IsStatic)
 					continue;
@@ -155,11 +155,11 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			"System.String[]",
 			"System.UInt32[]",
 		};
-		FieldDefinition checkFields(TypeDefinition type) {
+		FieldDef checkFields(TypeDef type) {
 			if (!new FieldTypes(type).all(requiredFields))
 				return null;
 
-			FieldDefinition stringData = null;
+			FieldDef stringData = null;
 			foreach (var field in type.Fields) {
 				if (field.RVA != 0) {
 					if (stringData != null)
@@ -193,7 +193,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			stringDataField.InitialValue = new byte[1];
 		}
 
-		static uint[] getKey(MethodDefinition method) {
+		static uint[] getKey(MethodDef method) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 1; i++) {
 				var ldci4 = instrs[i];

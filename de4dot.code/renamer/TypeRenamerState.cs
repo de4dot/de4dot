@@ -19,7 +19,7 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
+using dot10.DotNet;
 
 namespace de4dot.code.renamer {
 	class TypeRenamerState {
@@ -45,7 +45,7 @@ namespace de4dot.code.renamer {
 			return existingNames.getName(oldName, new NameCreator2(newName));
 		}
 
-		public string createNamespace(TypeDefinition type, string ns) {
+		public string createNamespace(TypeDef type, string ns) {
 			string newName;
 
 			string asmFullName;

@@ -17,14 +17,14 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Skater_NET {
 	class EnumClassFinder {
 		ModuleDefinition module;
-		FieldDefinition enumField;
+		FieldDef enumField;
 
 		public EnumClassFinder(ModuleDefinition module) {
 			this.module = module;

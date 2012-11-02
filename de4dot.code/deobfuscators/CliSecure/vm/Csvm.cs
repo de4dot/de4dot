@@ -20,7 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CliSecure.vm {
@@ -98,17 +98,17 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 			var converter = new CsvmToCilMethodConverter(deobfuscatorContext, module, opcodeDetector);
 			var methodPrinter = new MethodPrinter();
 			foreach (var csvmMethod in csvmMethods) {
-				var cilMethod = module.LookupToken(csvmMethod.Token) as MethodDefinition;
+				var cilMethod = module.LookupToken(csvmMethod.Token) as MethodDef;
 				if (cilMethod == null)
 					throw new ApplicationException(string.Format("Could not find method {0:X8}", csvmMethod.Token));
 				converter.convert(cilMethod, csvmMethod);
-				Log.v("Restored method {0:X8}", cilMethod.MetadataToken.ToInt32());
+				Log.v("Restored method {0:X8}", cilMethod.MDToken.ToInt32());
 				printMethod(methodPrinter, cilMethod);
 			}
 			Log.deIndent();
 		}
 
-		static void printMethod(MethodPrinter methodPrinter, MethodDefinition method) {
+		static void printMethod(MethodPrinter methodPrinter, MethodDef method) {
 			const Log.LogLevel dumpLogLevel = Log.LogLevel.verbose;
 			if (!Log.isAtLeast(dumpLogLevel))
 				return;

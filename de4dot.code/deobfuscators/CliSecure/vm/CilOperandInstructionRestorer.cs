@@ -17,8 +17,8 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using Mono.Cecil.Metadata;
 using de4dot.blocks;
 
@@ -28,9 +28,9 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 	//	ldobj
 	//	stobj
 	class CilOperandInstructionRestorer {
-		MethodDefinition method;
+		MethodDef method;
 
-		public bool restore(MethodDefinition method) {
+		public bool restore(MethodDef method) {
 			this.method = method;
 			bool atLeastOneFailed = false;
 
@@ -99,13 +99,13 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 				case CecilType.ArrayType:
 				case CecilType.GenericInstanceType:
 				case CecilType.PointerType:
-				case CecilType.TypeDefinition:
+				case CecilType.TypeDef:
 				case CecilType.TypeReference:
 				case CecilType.FunctionPointerType:
 					break;
 
-				case CecilType.GenericParameter:
-					var gp = (GenericParameter)type;
+				case CecilType.GenericParam:
+					var gp = (GenericParam)type;
 					if (method.DeclaringType != gp.Owner && method != gp.Owner)
 						return false;
 					break;

@@ -19,7 +19,7 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
+using dot10.DotNet;
 using Mono.MyStuff;
 using de4dot.blocks;
 using de4dot.PE;
@@ -78,7 +78,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 		Options options;
 		string obfuscatorName = DeobfuscatorInfo.THE_NAME;
 
-		List<TypeDefinition> cliSecureAttributes = new List<TypeDefinition>();
+		List<TypeDef> cliSecureAttributes = new List<TypeDef>();
 		ProxyCallFixer proxyCallFixer;
 		CliSecureRtType cliSecureRtType;
 		StringDecrypter stringDecrypter;
@@ -233,8 +233,8 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			return newOne;
 		}
 
-		static List<TypeDefinition> lookup(ModuleDefinition module, List<TypeDefinition> types, string errorMsg) {
-			var list = new List<TypeDefinition>(types.Count);
+		static List<TypeDef> lookup(ModuleDefinition module, List<TypeDef> types, string errorMsg) {
+			var list = new List<TypeDef>(types.Count);
 			foreach (var type in types)
 				list.Add(DeobUtils.lookup(module, type, errorMsg));
 			return list;
@@ -320,7 +320,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 		public override IEnumerable<int> getStringDecrypterMethods() {
 			var list = new List<int>();
 			if (stringDecrypter.Method != null)
-				list.Add(stringDecrypter.Method.MetadataToken.ToInt32());
+				list.Add(stringDecrypter.Method.MDToken.ToInt32());
 			return list;
 		}
 

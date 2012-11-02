@@ -17,25 +17,25 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CryptoObfuscator {
 	class TamperDetection {
 		ModuleDefinition module;
-		TypeDefinition tamperType;
-		MethodDefinition tamperMethod;
+		TypeDef tamperType;
+		MethodDef tamperMethod;
 		FrameworkType frameworkType;
 
 		public bool Detected {
 			get { return tamperMethod != null; }
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return tamperType; }
 		}
 
-		public MethodDefinition Method {
+		public MethodDef Method {
 			get { return tamperMethod; }
 		}
 
@@ -51,7 +51,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				return;
 		}
 
-		bool find(MethodDefinition methodToCheck) {
+		bool find(MethodDef methodToCheck) {
 			if (methodToCheck == null)
 				return false;
 
@@ -79,7 +79,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return false;
 		}
 
-		bool findDesktop(MethodDefinition method) {
+		bool findDesktop(MethodDef method) {
 			var type = method.DeclaringType;
 
 			if (!method.IsStatic || !DotNetUtils.isMethod(method, "System.Void", "()"))
@@ -107,7 +107,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			"System.Reflection.AssemblyName",
 			"System.String",
 		};
-		bool findSilverlight(MethodDefinition method) {
+		bool findSilverlight(MethodDef method) {
 			if (!new LocalTypes(method).exactly(requiredLocals_sl))
 				return false;
 			if (!DotNetUtils.callsMethod(method, "System.Int32 System.String::get_Length()"))
@@ -136,7 +136,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			"System.Int32",
 			"System.String",
 		};
-		bool findCompactFramework(MethodDefinition method) {
+		bool findCompactFramework(MethodDef method) {
 			if (!new LocalTypes(method).exactly(requiredLocals_cf))
 				return false;
 			if (!DotNetUtils.callsMethod(method, "System.Int32 System.String::get_Length()"))

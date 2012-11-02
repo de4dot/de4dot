@@ -20,8 +20,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using Mono.Cecil.Metadata;
 using de4dot.blocks;
 
@@ -29,7 +29,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 	class MethodReader : MethodBodyReaderBase {
 		ModuleDefinition module;
 		MethodFlags flags;
-		TypeDefinition delegateType;
+		TypeDef delegateType;
 
 		[Flags]
 		enum MethodFlags {
@@ -39,7 +39,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			HasExceptionHandlers = 8,
 		}
 
-		public TypeDefinition DelegateType {
+		public TypeDef DelegateType {
 			get { return delegateType; }
 		}
 
@@ -67,7 +67,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 
 		public void read() {
 			flags = (MethodFlags)reader.ReadByte();
-			delegateType = resolve<TypeDefinition>(readTypeToken());
+			delegateType = resolve<TypeDef>(readTypeToken());
 			if (!DotNetUtils.derivesFromDelegate(delegateType))
 				throw new ApplicationException("Invalid delegate type");
 			if (HasLocals)

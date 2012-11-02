@@ -21,8 +21,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using de4dot.blocks;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using Mono.Cecil.Metadata;
 
 namespace de4dot.code.deobfuscators.CliSecure.vm {
@@ -439,7 +439,7 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 			return isEmptyMethod(info.ReadMethod) && isEmptyMethod(info.ExecuteMethod);
 		}
 
-		static bool isEmptyMethod(MethodDefinition method) {
+		static bool isEmptyMethod(MethodDef method) {
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code == Code.Ret)
 					return true;

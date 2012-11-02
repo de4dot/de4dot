@@ -21,7 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
-using Mono.Cecil;
+using dot10.DotNet;
 using Mono.MyStuff;
 using de4dot.PE;
 using de4dot.blocks;
@@ -168,8 +168,8 @@ namespace de4dot.code.deobfuscators.MPRESS {
 			return Version.Unknown;
 		}
 
-		static bool checkMethods(TypeDefinition type, MethodInfo[] requiredMethods) {
-			var methods = new List<MethodDefinition>(type.Methods);
+		static bool checkMethods(TypeDef type, MethodInfo[] requiredMethods) {
+			var methods = new List<MethodDef>(type.Methods);
 			foreach (var info in requiredMethods) {
 				if (!checkMethod(methods, info))
 					return false;
@@ -177,7 +177,7 @@ namespace de4dot.code.deobfuscators.MPRESS {
 			return methods.Count == 0;
 		}
 
-		static bool checkMethod(List<MethodDefinition> methods, MethodInfo info) {
+		static bool checkMethod(List<MethodDef> methods, MethodInfo info) {
 			foreach (var method in methods) {
 				if (info.name != null && info.name != method.Name)
 					continue;

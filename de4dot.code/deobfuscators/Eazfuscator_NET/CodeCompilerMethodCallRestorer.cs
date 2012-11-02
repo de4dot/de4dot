@@ -17,7 +17,7 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.Cecil;
+using dot10.DotNet;
 
 namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 	class CodeCompilerMethodCallRestorer : MethodCallRestorerBase {
@@ -63,55 +63,55 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			: base(module) {
 		}
 
-		public void add_CodeDomProvider_CompileAssemblyFromDom(MethodDefinition oldMethod) {
+		public void add_CodeDomProvider_CompileAssemblyFromDom(MethodDef oldMethod) {
 			if (oldMethod == null)
 				return;
 			add(oldMethod, builder.instanceMethod("CompileAssemblyFromDom", CodeDomProvider, CompilerResults, CompilerParameters, CodeCompileUnitArray));
 		}
 
-		public void add_CodeDomProvider_CompileAssemblyFromFile(MethodDefinition oldMethod) {
+		public void add_CodeDomProvider_CompileAssemblyFromFile(MethodDef oldMethod) {
 			if (oldMethod == null)
 				return;
 			add(oldMethod, builder.instanceMethod("CompileAssemblyFromFile", CodeDomProvider, CompilerResults, CompilerParameters, StringArray));
 		}
 
-		public void add_CodeDomProvider_CompileAssemblyFromSource(MethodDefinition oldMethod) {
+		public void add_CodeDomProvider_CompileAssemblyFromSource(MethodDef oldMethod) {
 			if (oldMethod == null)
 				return;
 			add(oldMethod, builder.instanceMethod("CompileAssemblyFromSource", CodeDomProvider, CompilerResults, CompilerParameters, StringArray));
 		}
 
-		public void add_ICodeCompiler_CompileAssemblyFromDom(MethodDefinition oldMethod) {
+		public void add_ICodeCompiler_CompileAssemblyFromDom(MethodDef oldMethod) {
 			if (oldMethod == null)
 				return;
 			add(oldMethod, builder.instanceMethod("CompileAssemblyFromDom", ICodeCompiler, CompilerResults, CompilerParameters, CodeCompileUnit));
 		}
 
-		public void add_ICodeCompiler_CompileAssemblyFromDomBatch(MethodDefinition oldMethod) {
+		public void add_ICodeCompiler_CompileAssemblyFromDomBatch(MethodDef oldMethod) {
 			if (oldMethod == null)
 				return;
 			add(oldMethod, builder.instanceMethod("CompileAssemblyFromDomBatch", ICodeCompiler, CompilerResults, CompilerParameters, CodeCompileUnitArray));
 		}
 
-		public void add_ICodeCompiler_CompileAssemblyFromFile(MethodDefinition oldMethod) {
+		public void add_ICodeCompiler_CompileAssemblyFromFile(MethodDef oldMethod) {
 			if (oldMethod == null)
 				return;
 			add(oldMethod, builder.instanceMethod("CompileAssemblyFromFile", ICodeCompiler, CompilerResults, CompilerParameters, builder.String));
 		}
 
-		public void add_ICodeCompiler_CompileAssemblyFromFileBatch(MethodDefinition oldMethod) {
+		public void add_ICodeCompiler_CompileAssemblyFromFileBatch(MethodDef oldMethod) {
 			if (oldMethod == null)
 				return;
 			add(oldMethod, builder.instanceMethod("CompileAssemblyFromFileBatch", ICodeCompiler, CompilerResults, CompilerParameters, StringArray));
 		}
 
-		public void add_ICodeCompiler_CompileAssemblyFromSource(MethodDefinition oldMethod) {
+		public void add_ICodeCompiler_CompileAssemblyFromSource(MethodDef oldMethod) {
 			if (oldMethod == null)
 				return;
 			add(oldMethod, builder.instanceMethod("CompileAssemblyFromSource", ICodeCompiler, CompilerResults, CompilerParameters, builder.String));
 		}
 
-		public void add_ICodeCompiler_CompileAssemblyFromSourceBatch(MethodDefinition oldMethod) {
+		public void add_ICodeCompiler_CompileAssemblyFromSourceBatch(MethodDef oldMethod) {
 			if (oldMethod == null)
 				return;
 			add(oldMethod, builder.instanceMethod("CompileAssemblyFromSourceBatch", ICodeCompiler, CompilerResults, CompilerParameters, StringArray));

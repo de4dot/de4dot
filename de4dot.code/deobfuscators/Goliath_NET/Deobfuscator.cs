@@ -18,7 +18,7 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Goliath_NET {
@@ -162,7 +162,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			}
 		}
 
-		void initializeVersion(TypeDefinition attr) {
+		void initializeVersion(TypeDef attr) {
 			var s = DotNetUtils.getCustomArgAsString(getAssemblyAttribute(attr), 0);
 			if (s == null)
 				return;
@@ -274,7 +274,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 		public override IEnumerable<int> getStringDecrypterMethods() {
 			var list = new List<int>();
 			foreach (var method in stringDecrypter.getMethods())
-				list.Add(method.MetadataToken.ToInt32());
+				list.Add(method.MDToken.ToInt32());
 			return list;
 		}
 	}

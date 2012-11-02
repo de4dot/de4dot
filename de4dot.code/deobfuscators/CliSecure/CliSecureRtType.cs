@@ -20,41 +20,41 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.CliSecure {
 	class CliSecureRtType {
 		ModuleDefinition module;
-		TypeDefinition cliSecureRtType;
-		MethodDefinition postInitializeMethod;
-		MethodDefinition initializeMethod;
-		MethodDefinition stringDecrypterMethod;
-		MethodDefinition loadMethod;
+		TypeDef cliSecureRtType;
+		MethodDef postInitializeMethod;
+		MethodDef initializeMethod;
+		MethodDef stringDecrypterMethod;
+		MethodDef loadMethod;
 		bool foundSig;
 
 		public bool Detected {
 			get { return foundSig || cliSecureRtType != null; }
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return cliSecureRtType; }
 		}
 
-		public MethodDefinition StringDecrypterMethod {
+		public MethodDef StringDecrypterMethod {
 			get { return stringDecrypterMethod; }
 		}
 
-		public MethodDefinition PostInitializeMethod {
+		public MethodDef PostInitializeMethod {
 			get { return postInitializeMethod; }
 		}
 
-		public MethodDefinition InitializeMethod {
+		public MethodDef InitializeMethod {
 			get { return initializeMethod; }
 		}
 
-		public MethodDefinition LoadMethod {
+		public MethodDef LoadMethod {
 			get { return loadMethod; }
 		}
 
@@ -165,7 +165,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			return false;
 		}
 
-		static MethodDefinition findStringDecrypterMethod(TypeDefinition type) {
+		static MethodDef findStringDecrypterMethod(TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (method.Body == null || !method.IsStatic)
 					continue;
@@ -178,7 +178,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			return null;
 		}
 
-		static MethodDefinition findMethod(TypeDefinition type, string returnType, string name, string parameters) {
+		static MethodDef findMethod(TypeDef type, string returnType, string name, string parameters) {
 			var methodName = returnType + " " + type.FullName + "::" + name + parameters;
 			foreach (var method in type.Methods) {
 				if (method.Body == null || !method.IsStatic)
@@ -192,7 +192,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			return null;
 		}
 
-		static bool hasInitializeMethod(TypeDefinition type, string name) {
+		static bool hasInitializeMethod(TypeDef type, string name) {
 			var method = DotNetUtils.getPInvokeMethod(type, name);
 			if (method == null)
 				return false;
@@ -239,7 +239,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			}
 		}
 
-		static bool isOldStringDecrypterMethod(MethodDefinition method) {
+		static bool isOldStringDecrypterMethod(MethodDef method) {
 			if (method == null || method.Body == null || !method.IsStatic)
 				return false;
 			if (!DotNetUtils.isMethod(method, "System.String", "(System.String)"))

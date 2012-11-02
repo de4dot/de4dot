@@ -18,7 +18,7 @@
 */
 
 using System;
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Babel_NET {
@@ -35,7 +35,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 		public TypeReference convert(TypeReference a) {
 			var newOne = update(a);
-			if (!(a is GenericParameter) && !MemberReferenceHelper.compareTypes(newOne, a))
+			if (!(a is GenericParam) && !MemberReferenceHelper.compareTypes(newOne, a))
 				throw new ApplicationException("Could not convert type reference");
 			return newOne;
 		}
@@ -46,7 +46,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 			var newTypeRef = new TypeReference(a.Namespace, a.Name, Module, memberReferenceConverter.convert(a.Scope), a.IsValueType);
 			foreach (var gp in a.GenericParameters)
-				newTypeRef.GenericParameters.Add(new GenericParameter(gp.Name, newTypeRef));
+				newTypeRef.GenericParameters.Add(new GenericParam(gp.Name, newTypeRef));
 			newTypeRef.DeclaringType = update(a.DeclaringType);
 			newTypeRef.UpdateElementType();
 			return newTypeRef;
@@ -84,7 +84,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		}
 
 		public MethodReference convert(MethodReference methodRef) {
-			if (methodRef.GetType() != typeof(MethodReference) && methodRef.GetType() != typeof(MethodDefinition))
+			if (methodRef.GetType() != typeof(MethodReference) && methodRef.GetType() != typeof(MethodDef))
 				throw new ApplicationException("Invalid method reference type");
 			if (isInOurModule(methodRef))
 				return tryGetMethodDefinition(methodRef);
@@ -93,7 +93,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		}
 
 		public MethodReference copy(MethodReference methodRef) {
-			if (methodRef.GetType() != typeof(MethodReference) && methodRef.GetType() != typeof(MethodDefinition))
+			if (methodRef.GetType() != typeof(MethodReference) && methodRef.GetType() != typeof(MethodDef))
 				throw new ApplicationException("Invalid method reference type");
 
 			var newMethodRef = new MethodReference(methodRef.Name, convert(methodRef.MethodReturnType.ReturnType), convert(methodRef.DeclaringType));
@@ -103,7 +103,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			foreach (var param in methodRef.Parameters)
 				newMethodRef.Parameters.Add(new ParameterDefinition(param.Name, param.Attributes, convert(param.ParameterType)));
 			foreach (var gp in methodRef.GenericParameters)
-				newMethodRef.GenericParameters.Add(new GenericParameter(gp.Name, newMethodRef));
+				newMethodRef.GenericParameters.Add(new GenericParam(gp.Name, newMethodRef));
 			return newMethodRef;
 		}
 
@@ -139,7 +139,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		}
 
 		public FieldReference tryGetFieldDefinition(FieldReference fieldRef) {
-			var fieldDef = fieldRef as FieldDefinition;
+			var fieldDef = fieldRef as FieldDef;
 			if (fieldDef != null)
 				return fieldDef;
 
@@ -150,7 +150,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		}
 
 		public MethodReference tryGetMethodDefinition(MethodReference methodRef) {
-			var methodDef = methodRef as MethodDefinition;
+			var methodDef = methodRef as MethodDef;
 			if (methodDef != null)
 				return methodDef;
 

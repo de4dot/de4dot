@@ -22,8 +22,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 using de4dot.code.resources;
 
@@ -78,7 +78,7 @@ namespace de4dot.code.renamer {
 			return null;
 		}
 
-		static string getResourceName(TypeDefinition type) {
+		static string getResourceName(TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (method.Body == null)
 					continue;
@@ -121,7 +121,7 @@ namespace de4dot.code.renamer {
 			}
 		}
 
-		void rename(TypeDefinition type, EmbeddedResource resource) {
+		void rename(TypeDef type, EmbeddedResource resource) {
 			newNames.Clear();
 			var resourceSet = ResourceReader.read(module, resource.GetResourceStream());
 			var renamed = new List<RenameInfo>();
@@ -149,7 +149,7 @@ namespace de4dot.code.renamer {
 			module.Resources[resourceIndex] = newResource;
 		}
 
-		void rename(TypeDefinition type, List<RenameInfo> renamed) {
+		void rename(TypeDef type, List<RenameInfo> renamed) {
 			var nameToInfo = new Dictionary<string, RenameInfo>(StringComparer.Ordinal);
 			foreach (var info in renamed)
 				nameToInfo[info.element.Name] = info;

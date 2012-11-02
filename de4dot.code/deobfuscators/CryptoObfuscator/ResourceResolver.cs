@@ -19,16 +19,16 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CryptoObfuscator {
 	class ResourceResolver {
 		ModuleDefinition module;
 		ResourceDecrypter resourceDecrypter;
-		TypeDefinition resolverType;
-		MethodDefinition resolverMethod;
+		TypeDef resolverType;
+		MethodDef resolverMethod;
 		ResolverVersion resolverVersion = ResolverVersion.V1;
 		bool mergedIt = false;
 
@@ -38,11 +38,11 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			V2,
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return resolverType; }
 		}
 
-		public MethodDefinition Method {
+		public MethodDef Method {
 			get { return resolverMethod; }
 		}
 
@@ -99,7 +99,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return names;
 		}
 
-		bool checkType(MethodDefinition initMethod) {
+		bool checkType(MethodDef initMethod) {
 			if (!initMethod.HasBody)
 				return false;
 			if (DotNetUtils.findFieldType(initMethod.DeclaringType, "System.Reflection.Assembly", true) == null)
@@ -116,7 +116,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return true;
 		}
 
-		ResolverVersion checkSetupMethod(MethodDefinition setupMethod) {
+		ResolverVersion checkSetupMethod(MethodDef setupMethod) {
 			var instructions = setupMethod.Body.Instructions;
 			int foundCount = 0;
 			for (int i = 0; i < instructions.Count; i++) {

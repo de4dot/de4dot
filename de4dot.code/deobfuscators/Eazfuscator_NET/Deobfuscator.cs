@@ -18,7 +18,7 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Eazfuscator_NET {
@@ -167,7 +167,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		public override IEnumerable<int> getStringDecrypterMethods() {
 			var list = new List<int>();
 			if (stringDecrypter.Method != null)
-				list.Add(stringDecrypter.Method.MetadataToken.ToInt32());
+				list.Add(stringDecrypter.Method.MDToken.ToInt32());
 			return list;
 		}
 	}

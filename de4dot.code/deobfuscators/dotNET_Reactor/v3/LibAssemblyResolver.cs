@@ -18,22 +18,22 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 	// Find the assembly resolver that's used in lib mode (3.8+)
 	class LibAssemblyResolver {
 		ModuleDefinition module;
-		MethodDefinition initMethod;
+		MethodDef initMethod;
 		List<EmbeddedResource> resources = new List<EmbeddedResource>();
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return initMethod == null ? null : initMethod.DeclaringType; }
 		}
 
-		public MethodDefinition InitMethod {
+		public MethodDef InitMethod {
 			get { return initMethod; }
 		}
 
@@ -52,7 +52,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 				return;
 		}
 
-		bool checkInitMethod(MethodDefinition checkMethod, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
+		bool checkInitMethod(MethodDef checkMethod, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
 			var requiredFields = new string[] {
 				"System.Collections.Hashtable",
 				"System.Boolean",
@@ -94,7 +94,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			return false;
 		}
 
-		string getResourcePrefix(MethodDefinition handler) {
+		string getResourcePrefix(MethodDef handler) {
 			foreach (var s in DotNetUtils.getCodeStrings(handler)) {
 				var resource = DotNetUtils.getResource(module, s + "00000") as EmbeddedResource;
 				if (resource != null)

@@ -18,8 +18,8 @@
 */
 
 using System;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using Mono.MyStuff;
 using de4dot.PE;
 using de4dot.blocks;
@@ -51,7 +51,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			}
 		}
 
-		bool checkCctor(MethodDefinition method) {
+		bool checkCctor(MethodDef method) {
 			if (method == null || method.Body == null)
 				return false;
 

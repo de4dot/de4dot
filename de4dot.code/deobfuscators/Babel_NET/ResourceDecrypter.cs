@@ -20,8 +20,8 @@
 using System;
 using System.IO;
 using ICSharpCode.SharpZipLib.Zip.Compression;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Babel_NET {
@@ -42,7 +42,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 	class ResourceDecrypter {
 		ModuleDefinition module;
 		ISimpleDeobfuscator simpleDeobfuscator;
-		MethodDefinition decryptMethod;
+		MethodDef decryptMethod;
 		IDecrypter decrypter;
 
 		public ResourceDecrypter(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator) {
@@ -155,7 +155,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			ModuleDefinition module;
 			Inflater inflater;
 
-			public Decrypter3(ModuleDefinition module, MethodDefinition decryptMethod) {
+			public Decrypter3(ModuleDefinition module, MethodDef decryptMethod) {
 				this.module = module;
 				this.inflater = InflaterCreator.create(decryptMethod, true);
 			}
@@ -208,7 +208,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			}
 		}
 
-		public MethodDefinition DecryptMethod {
+		public MethodDef DecryptMethod {
 			set {
 				if (value == null)
 					return;
@@ -221,14 +221,14 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			}
 		}
 
-		public static MethodDefinition findDecrypterMethod(MethodDefinition method) {
+		public static MethodDef findDecrypterMethod(MethodDef method) {
 			if (method == null || method.Body == null)
 				return null;
 
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Call)
 					continue;
-				var calledMethod = instr.Operand as MethodDefinition;
+				var calledMethod = instr.Operand as MethodDef;
 				if (calledMethod == null || !calledMethod.IsStatic || calledMethod.Body == null)
 					continue;
 				if (!DotNetUtils.isMethod(calledMethod, "System.IO.MemoryStream", "(System.IO.Stream)"))

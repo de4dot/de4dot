@@ -19,7 +19,7 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Eazfuscator_NET {
@@ -38,8 +38,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			if (decryptStringType == null || decryptStringMethod == null)
 				return null;
 
-			var otherMethods = new List<MethodDefinition>();
-			MethodDefinition cctor = null;
+			var otherMethods = new List<MethodDef>();
+			MethodDef cctor = null;
 			foreach (var method in decryptStringType.Methods) {
 				if (method == decryptStringMethod)
 					continue;
@@ -671,7 +671,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return null;
 		}
 
-		TypeDefinition getNestedType(int n) {
+		TypeDef getNestedType(int n) {
 			var type = stringDecrypter.Type;
 
 			int fieldIndex;
@@ -684,7 +684,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 
 			if (fieldIndex >= type.Fields.Count)
 				return null;
-			var nestedType = type.Fields[fieldIndex].FieldType as TypeDefinition;
+			var nestedType = type.Fields[fieldIndex].FieldType as TypeDef;
 			if (nestedType == null || type.NestedTypes.IndexOf(nestedType) < 0)
 				return null;
 

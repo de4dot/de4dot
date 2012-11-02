@@ -19,24 +19,24 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CliSecure.vm {
 	class UnknownHandlerInfo {
-		TypeDefinition type;
+		TypeDef type;
 		CsvmInfo csvmInfo;
 		FieldsInfo fieldsInfo;
-		MethodDefinition readMethod, executeMethod;
+		MethodDef readMethod, executeMethod;
 		int numStaticMethods, numInstanceMethods, numVirtualMethods, numCtors;
 		int executeMethodThrows, executeMethodPops;
 
-		public MethodDefinition ReadMethod {
+		public MethodDef ReadMethod {
 			get { return readMethod; }
 		}
 
-		public MethodDefinition ExecuteMethod {
+		public MethodDef ExecuteMethod {
 			get { return executeMethod; }
 		}
 
@@ -64,7 +64,7 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 			get { return numCtors; }
 		}
 
-		public UnknownHandlerInfo(TypeDefinition type, CsvmInfo csvmInfo) {
+		public UnknownHandlerInfo(TypeDef type, CsvmInfo csvmInfo) {
 			this.type = type;
 			this.csvmInfo = csvmInfo;
 			fieldsInfo = new FieldsInfo(getFields(type));
@@ -74,11 +74,11 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 			executeMethodPops = countPops(executeMethod);
 		}
 
-		static internal IEnumerable<FieldDefinition> getFields(TypeDefinition type) {
-			var typeFields = new FieldDefinitionAndDeclaringTypeDict<FieldDefinition>();
+		static internal IEnumerable<FieldDef> getFields(TypeDef type) {
+			var typeFields = new FieldDefinitionAndDeclaringTypeDict<FieldDef>();
 			foreach (var field in type.Fields)
 				typeFields.add(field, field);
-			var realFields = new Dictionary<FieldDefinition, bool>();
+			var realFields = new Dictionary<FieldDef, bool>();
 			foreach (var method in type.Methods) {
 				if (method.Body == null)
 					continue;
@@ -132,7 +132,7 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 				throw new ApplicationException("Could not find execute method");
 		}
 
-		static int countThrows(MethodDefinition method) {
+		static int countThrows(MethodDef method) {
 			int count = 0;
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code == Code.Throw)
@@ -141,7 +141,7 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 			return count;
 		}
 
-		int countPops(MethodDefinition method) {
+		int countPops(MethodDef method) {
 			int count = 0;
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt)

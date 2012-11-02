@@ -20,23 +20,23 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 	class DecrypterType {
 		ModuleDefinition module;
 		ISimpleDeobfuscator simpleDeobfuscator;
-		TypeDefinition type;
-		MethodDefinition int64Method;
+		TypeDef type;
+		MethodDef int64Method;
 		bool initialized;
 		ulong l1;
 		int i1, i2, i3;
 		int m1_i1, m2_i1, m2_i2, m3_i1;
-		MethodDefinition[] efConstMethods;
+		MethodDef[] efConstMethods;
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return type; }
 			set {
 				if (type == null)
@@ -80,7 +80,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			if (type == null)
 				return false;
 
-			efConstMethods = new MethodDefinition[6];
+			efConstMethods = new MethodDef[6];
 
 			efConstMethods[0] = findEfConstMethodCall(int64Method);
 			efConstMethods[5] = findEfConstMethodCall(efConstMethods[0]);
@@ -105,7 +105,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return true;
 		}
 
-		static int getNumberOfTypeofs(MethodDefinition method) {
+		static int getNumberOfTypeofs(MethodDef method) {
 			if (method == null)
 				return 0;
 			int count = 0;
@@ -116,21 +116,21 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return count;
 		}
 
-		MethodDefinition findEfConstMethodCall(MethodDefinition method) {
+		MethodDef findEfConstMethodCall(MethodDef method) {
 			var list = findEfConstMethodCalls(method);
 			if (list == null || list.Count != 1)
 				return null;
 			return list[0];
 		}
 
-		List<MethodDefinition> findEfConstMethodCalls(MethodDefinition method) {
+		List<MethodDef> findEfConstMethodCalls(MethodDef method) {
 			if (method == null)
 				return null;
-			var list = new List<MethodDefinition>();
+			var list = new List<MethodDef>();
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Call)
 					continue;
-				var calledMethod = instr.Operand as MethodDefinition;
+				var calledMethod = instr.Operand as MethodDef;
 				if (calledMethod == null || !calledMethod.IsStatic || calledMethod.Body == null)
 					continue;
 				if (!DotNetUtils.isMethod(calledMethod, "System.Int32", "()"))
@@ -143,7 +143,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return list;
 		}
 
-		MethodDefinition findInt64Method() {
+		MethodDef findInt64Method() {
 			if (type == null)
 				return null;
 			foreach (var method in type.Methods) {
@@ -160,7 +160,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return null;
 		}
 
-		bool findInt64(MethodDefinition method) {
+		bool findInt64(MethodDef method) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 1; i++) {
 				var ldci8 = instrs[i];
@@ -212,8 +212,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return false;
 		}
 
-		static List<MethodDefinition> getBinaryIntMethods(TypeDefinition type) {
-			var list = new List<MethodDefinition>();
+		static List<MethodDef> getBinaryIntMethods(TypeDef type) {
+			var list = new List<MethodDef>();
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
@@ -225,7 +225,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return list;
 		}
 
-		bool findMethod1Int(IEnumerable<MethodDefinition> methods) {
+		bool findMethod1Int(IEnumerable<MethodDef> methods) {
 			foreach (var method in methods) {
 				if (countInstructions(method, Code.Ldarg_0) != 1)
 					continue;
@@ -239,7 +239,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return false;
 		}
 
-		bool findMethod2Int(IEnumerable<MethodDefinition> methods) {
+		bool findMethod2Int(IEnumerable<MethodDef> methods) {
 			foreach (var method in methods) {
 				var constants = getConstants(method);
 				if (constants.Count != 2)
@@ -252,7 +252,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return false;
 		}
 
-		bool findMethod3Int(IEnumerable<MethodDefinition> methods) {
+		bool findMethod3Int(IEnumerable<MethodDef> methods) {
 			foreach (var method in methods) {
 				if (countInstructions(method, Code.Ldarg_0) != 2)
 					continue;
@@ -266,7 +266,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return false;
 		}
 
-		static int countInstructions(MethodDefinition method, Code code) {
+		static int countInstructions(MethodDef method, Code code) {
 			int count = 0;
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code == code)
@@ -275,7 +275,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return count;
 		}
 
-		static List<int> getConstants(MethodDefinition method) {
+		static List<int> getConstants(MethodDef method) {
 			var list = new List<int>();
 
 			if (method == null)
@@ -309,27 +309,27 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		}
 
 		int constMethod1() {
-			return binOp3(binOp2(efConstMethods[1].DeclaringType.MetadataToken.ToInt32(), binOp3(efConstMethods[0].DeclaringType.MetadataToken.ToInt32(), efConstMethods[4].DeclaringType.MetadataToken.ToInt32())), constMethod6());
+			return binOp3(binOp2(efConstMethods[1].DeclaringType.MDToken.ToInt32(), binOp3(efConstMethods[0].DeclaringType.MDToken.ToInt32(), efConstMethods[4].DeclaringType.MDToken.ToInt32())), constMethod6());
 		}
 
 		int constMethod2() {
-			return binOp1(efConstMethods[2].DeclaringType.MetadataToken.ToInt32(), efConstMethods[3].DeclaringType.MetadataToken.ToInt32() ^ binOp2(efConstMethods[1].DeclaringType.MetadataToken.ToInt32(), binOp3(efConstMethods[5].DeclaringType.MetadataToken.ToInt32(), constMethod4())));
+			return binOp1(efConstMethods[2].DeclaringType.MDToken.ToInt32(), efConstMethods[3].DeclaringType.MDToken.ToInt32() ^ binOp2(efConstMethods[1].DeclaringType.MDToken.ToInt32(), binOp3(efConstMethods[5].DeclaringType.MDToken.ToInt32(), constMethod4())));
 		}
 
 		int constMethod3() {
-			return binOp3(binOp1(constMethod2() ^ i1, efConstMethods[3].DeclaringType.MetadataToken.ToInt32()), binOp2(efConstMethods[0].DeclaringType.MetadataToken.ToInt32() ^ efConstMethods[5].DeclaringType.MetadataToken.ToInt32(), i2));
+			return binOp3(binOp1(constMethod2() ^ i1, efConstMethods[3].DeclaringType.MDToken.ToInt32()), binOp2(efConstMethods[0].DeclaringType.MDToken.ToInt32() ^ efConstMethods[5].DeclaringType.MDToken.ToInt32(), i2));
 		}
 
 		int constMethod4() {
-			return binOp3(efConstMethods[3].DeclaringType.MetadataToken.ToInt32(), binOp1(efConstMethods[0].DeclaringType.MetadataToken.ToInt32(), binOp2(efConstMethods[1].DeclaringType.MetadataToken.ToInt32(), binOp3(efConstMethods[2].DeclaringType.MetadataToken.ToInt32(), binOp1(efConstMethods[4].DeclaringType.MetadataToken.ToInt32(), efConstMethods[5].DeclaringType.MetadataToken.ToInt32())))));
+			return binOp3(efConstMethods[3].DeclaringType.MDToken.ToInt32(), binOp1(efConstMethods[0].DeclaringType.MDToken.ToInt32(), binOp2(efConstMethods[1].DeclaringType.MDToken.ToInt32(), binOp3(efConstMethods[2].DeclaringType.MDToken.ToInt32(), binOp1(efConstMethods[4].DeclaringType.MDToken.ToInt32(), efConstMethods[5].DeclaringType.MDToken.ToInt32())))));
 		}
 
 		int constMethod5() {
-			return binOp2(binOp2(constMethod3(), binOp1(efConstMethods[4].DeclaringType.MetadataToken.ToInt32(), constMethod2())), efConstMethods[5].DeclaringType.MetadataToken.ToInt32());
+			return binOp2(binOp2(constMethod3(), binOp1(efConstMethods[4].DeclaringType.MDToken.ToInt32(), constMethod2())), efConstMethods[5].DeclaringType.MDToken.ToInt32());
 		}
 
 		int constMethod6() {
-			return binOp1(efConstMethods[5].DeclaringType.MetadataToken.ToInt32(), binOp3(binOp2(efConstMethods[4].DeclaringType.MetadataToken.ToInt32(), efConstMethods[0].DeclaringType.MetadataToken.ToInt32()), binOp3(efConstMethods[2].DeclaringType.MetadataToken.ToInt32() ^ i3, constMethod5())));
+			return binOp1(efConstMethods[5].DeclaringType.MDToken.ToInt32(), binOp3(binOp2(efConstMethods[4].DeclaringType.MDToken.ToInt32(), efConstMethods[0].DeclaringType.MDToken.ToInt32()), binOp3(efConstMethods[2].DeclaringType.MDToken.ToInt32() ^ i3, constMethod5())));
 		}
 
 		public ulong getMagic() {
@@ -343,13 +343,13 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				bytes.AddRange(Encoding.Unicode.GetBytes(module.Assembly.Name.Name));
 			}
 			int cm1 = constMethod1();
-			bytes.Add((byte)(type.MetadataToken.ToInt32() >> 24));
+			bytes.Add((byte)(type.MDToken.ToInt32() >> 24));
 			bytes.Add((byte)(cm1 >> 16));
-			bytes.Add((byte)(type.MetadataToken.ToInt32() >> 8));
+			bytes.Add((byte)(type.MDToken.ToInt32() >> 8));
 			bytes.Add((byte)cm1);
-			bytes.Add((byte)(type.MetadataToken.ToInt32() >> 16));
+			bytes.Add((byte)(type.MDToken.ToInt32() >> 16));
 			bytes.Add((byte)(cm1 >> 8));
-			bytes.Add((byte)type.MetadataToken.ToInt32());
+			bytes.Add((byte)type.MDToken.ToInt32());
 			bytes.Add((byte)(cm1 >> 24));
 
 			ulong magic = 0;

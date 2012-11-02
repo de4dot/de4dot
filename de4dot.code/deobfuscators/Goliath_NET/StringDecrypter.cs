@@ -19,16 +19,16 @@
 
 using System;
 using System.Text;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Goliath_NET {
 	class StringDecrypter : DecrypterBase {
 		TypeReference delegateReturnType;
-		FieldDefinition stringStructField;
+		FieldDef stringStructField;
 
-		public TypeDefinition StringStruct {
+		public TypeDef StringStruct {
 			get { return Detected && stringStructField != null ? stringStructField.DeclaringType : null; }
 		}
 
@@ -40,7 +40,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 				"System.Byte[]",
 				"System.Collections.Generic.Dictionary`2<System.Int32,System.String>",
 		};
-		protected override bool checkDecrypterType(TypeDefinition type) {
+		protected override bool checkDecrypterType(TypeDef type) {
 			var fields = type.Fields;
 			if (fields.Count != 2)
 				return false;
@@ -80,11 +80,11 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			return true;
 		}
 
-		protected override bool checkDelegateInvokeMethod(MethodDefinition invokeMethod) {
+		protected override bool checkDelegateInvokeMethod(MethodDef invokeMethod) {
 			return DotNetUtils.isMethod(invokeMethod, delegateReturnType.FullName, "(System.Int32)");
 		}
 
-		public string decrypt(MethodDefinition method) {
+		public string decrypt(MethodDef method) {
 			var info = getInfo(method);
 			decryptedReader.BaseStream.Position = info.offset;
 			int len = decryptedReader.ReadInt32();

@@ -18,8 +18,8 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using Mono.Cecil.Metadata;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
@@ -28,7 +28,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 	class SpicesMethodCallInliner : MethodCallInliner {
 		ModuleDefinition module;
 		TypeDefinitionDict<bool> methodsTypes = new TypeDefinitionDict<bool>();
-		MethodDefinitionAndDeclaringTypeDict<MethodDefinition> classMethods = new MethodDefinitionAndDeclaringTypeDict<MethodDefinition>();
+		MethodDefinitionAndDeclaringTypeDict<MethodDef> classMethods = new MethodDefinitionAndDeclaringTypeDict<MethodDef>();
 
 		public SpicesMethodCallInliner(ModuleDefinition module)
 			: base(false) {
@@ -45,11 +45,11 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			return newType.EType == ElementType.Object;
 		}
 
-		public bool checkCanInline(MethodDefinition method) {
+		public bool checkCanInline(MethodDef method) {
 			return methodsTypes.find(method.DeclaringType);
 		}
 
-		protected override bool canInline(MethodDefinition method) {
+		protected override bool canInline(MethodDef method) {
 			return checkCanInline(method);
 		}
 
@@ -59,9 +59,9 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 		}
 
 		void restoreMethodBodies() {
-			var methodToOrigMethods = new MethodDefinitionAndDeclaringTypeDict<List<MethodDefinition>>();
+			var methodToOrigMethods = new MethodDefinitionAndDeclaringTypeDict<List<MethodDef>>();
 			foreach (var t in module.Types) {
-				var types = new List<TypeDefinition>(TypeDefinition.GetTypes(new List<TypeDefinition> { t }));
+				var types = new List<TypeDef>(TypeDef.GetTypes(new List<TypeDef> { t }));
 				foreach (var type in types) {
 					if (methodsTypes.find(type))
 						continue;
@@ -69,7 +69,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 						if (method.Name == ".ctor" || method.Name == ".cctor")
 							continue;
 
-						MethodDefinition calledMethod;
+						MethodDef calledMethod;
 						if (!checkRestoreBody(method, out calledMethod))
 							continue;
 						if (!checkSameMethods(method, calledMethod))
@@ -81,7 +81,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 
 						var list = methodToOrigMethods.find(calledMethod);
 						if (list == null)
-							methodToOrigMethods.add(calledMethod, list = new List<MethodDefinition>());
+							methodToOrigMethods.add(calledMethod, list = new List<MethodDef>());
 						list.Add(method);
 					}
 				}
@@ -92,14 +92,14 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 				var method = list[0];
 
 				Log.v("Restored method body {0:X8} from method {1:X8}",
-							method.MetadataToken.ToInt32(),
-							calledMethod.MetadataToken.ToInt32());
+							method.MDToken.ToInt32(),
+							calledMethod.MDToken.ToInt32());
 				DotNetUtils.copyBodyFromTo(calledMethod, method);
 				classMethods.add(calledMethod, method);
 			}
 		}
 
-		bool checkRestoreBody(MethodDefinition method, out MethodDefinition calledMethod) {
+		bool checkRestoreBody(MethodDef method, out MethodDef calledMethod) {
 			calledMethod = null;
 			if (method.Body == null)
 				return false;
@@ -122,7 +122,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			return true;
 		}
 
-		bool checkRestoreBody2(MethodDefinition instanceMethod, out MethodDefinition calledMethod) {
+		bool checkRestoreBody2(MethodDef instanceMethod, out MethodDef calledMethod) {
 			calledMethod = null;
 
 			var instrs = instanceMethod.Body.Instructions;
@@ -135,7 +135,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			if (call.OpCode.Code != Code.Call)
 				return false;
 
-			calledMethod = call.Operand as MethodDefinition;
+			calledMethod = call.Operand as MethodDef;
 			if (calledMethod == null)
 				return false;
 
@@ -152,7 +152,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			}
 		}
 
-		static bool checkMethodsType(TypeDefinition type) {
+		static bool checkMethodsType(TypeDef type) {
 			if (!type.IsNested)
 				return false;
 			if ((type.Attributes & ~TypeAttributes.BeforeFieldInit) != TypeAttributes.NestedAssembly)
@@ -173,7 +173,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			return true;
 		}
 
-		static bool checkMethods(TypeDefinition type) {
+		static bool checkMethods(TypeDef type) {
 			bool foundCtor = false;
 			int numMethods = 0;
 
@@ -199,8 +199,8 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			return numMethods > 0 && foundCtor;
 		}
 
-		public List<MethodDefinition> getInlinedMethods() {
-			var list = new List<MethodDefinition>();
+		public List<MethodDef> getInlinedMethods() {
+			var list = new List<MethodDef>();
 
 			foreach (var type in methodsTypes.getKeys())
 				list.AddRange(type.Methods);
@@ -208,7 +208,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			return list;
 		}
 
-		public TypeDefinitionDict<bool> getInlinedTypes(IEnumerable<MethodDefinition> unusedMethods) {
+		public TypeDefinitionDict<bool> getInlinedTypes(IEnumerable<MethodDef> unusedMethods) {
 			var unused = new MethodDefinitionAndDeclaringTypeDict<bool>();
 			foreach (var method in unusedMethods)
 				unused.add(method, true);
@@ -221,7 +221,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			return types;
 		}
 
-		static bool checkAllMethodsUnused(MethodDefinitionAndDeclaringTypeDict<bool> unused, TypeDefinition type) {
+		static bool checkAllMethodsUnused(MethodDefinitionAndDeclaringTypeDict<bool> unused, TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (!unused.find(method))
 					return false;

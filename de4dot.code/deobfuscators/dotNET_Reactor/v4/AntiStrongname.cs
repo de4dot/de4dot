@@ -18,16 +18,16 @@
 */
 
 using System;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 	class AntiStrongName {
-		TypeDefinition decrypterType;
-		MethodDefinition antiStrongNameMethod;
+		TypeDef decrypterType;
+		MethodDef antiStrongNameMethod;
 
-		public AntiStrongName(TypeDefinition decrypterType) {
+		public AntiStrongName(TypeDef decrypterType) {
 			this.decrypterType = decrypterType;
 			find();
 		}
@@ -45,7 +45,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			}
 		}
 
-		bool checkType(TypeDefinition type) {
+		bool checkType(TypeDef type) {
 			var requiredTypes = new string[] {
 				"System.Byte[]",
 				"System.IO.MemoryStream",

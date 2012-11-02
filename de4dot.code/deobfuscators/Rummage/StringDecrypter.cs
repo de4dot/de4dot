@@ -21,25 +21,25 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Rummage {
 	class StringDecrypter {
 		ModuleDefinition module;
-		MethodDefinition stringDecrypterMethod;
+		MethodDef stringDecrypterMethod;
 		FieldDefinitionAndDeclaringTypeDict<StringInfo> stringInfos = new FieldDefinitionAndDeclaringTypeDict<StringInfo>();
 		int fileDispl;
 		uint[] key;
 		BinaryReader reader;
 
 		class StringInfo {
-			public readonly FieldDefinition field;
+			public readonly FieldDef field;
 			public readonly int stringId;
 			public string decrypted;
 
-			public StringInfo(FieldDefinition field, int stringId) {
+			public StringInfo(FieldDef field, int stringId) {
 				this.field = field;
 				this.stringId = stringId;
 			}
@@ -51,13 +51,13 @@ namespace de4dot.code.deobfuscators.Rummage {
 			}
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return stringDecrypterMethod != null ? stringDecrypterMethod.DeclaringType : null; }
 		}
 
-		public IEnumerable<TypeDefinition> OtherTypes {
+		public IEnumerable<TypeDef> OtherTypes {
 			get {
-				var list = new List<TypeDefinition>(stringInfos.Count);
+				var list = new List<TypeDef>(stringInfos.Count);
 				foreach (var info in stringInfos.getValues())
 					list.Add(info.field.DeclaringType);
 				return list;
@@ -93,7 +93,7 @@ namespace de4dot.code.deobfuscators.Rummage {
 			"System.Int32",
 			"System.IO.FileStream",
 		};
-		static MethodDefinition checkType(TypeDefinition type) {
+		static MethodDef checkType(TypeDef type) {
 			if (!new FieldTypes(type).exactly(requiredFields))
 				return null;
 			var cctor = DotNetUtils.getMethod(type, ".cctor");
@@ -105,8 +105,8 @@ namespace de4dot.code.deobfuscators.Rummage {
 			return checkMethods(type);
 		}
 
-		static MethodDefinition checkMethods(TypeDefinition type) {
-			MethodDefinition cctor = null, decrypterMethod = null;
+		static MethodDef checkMethods(TypeDef type) {
+			MethodDef cctor = null, decrypterMethod = null;
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic || method.Body == null)
 					return null;
@@ -123,7 +123,7 @@ namespace de4dot.code.deobfuscators.Rummage {
 			return decrypterMethod;
 		}
 
-		static bool getDispl(MethodDefinition method, ref int displ) {
+		static bool getDispl(MethodDef method, ref int displ) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 2; i++) {
 				var mul = instrs[i];
@@ -160,7 +160,7 @@ namespace de4dot.code.deobfuscators.Rummage {
 				key[i] = reader.ReadUInt32();
 		}
 
-		void initType(TypeDefinition type) {
+		void initType(TypeDef type) {
 			var cctor = DotNetUtils.getMethod(type, ".cctor");
 			if (cctor == null)
 				return;
@@ -171,7 +171,7 @@ namespace de4dot.code.deobfuscators.Rummage {
 			stringInfos.add(info.field, info);
 		}
 
-		StringInfo getStringInfo(MethodDefinition method) {
+		StringInfo getStringInfo(MethodDef method) {
 			if (method == null || method.Body == null)
 				return null;
 			var instrs = method.Body.Instructions;
@@ -191,7 +191,7 @@ namespace de4dot.code.deobfuscators.Rummage {
 				var stsfld = instrs[i + 2];
 				if (stsfld.OpCode.Code != Code.Stsfld)
 					continue;
-				var field = stsfld.Operand as FieldDefinition;
+				var field = stsfld.Operand as FieldDef;
 				if (field == null)
 					continue;
 

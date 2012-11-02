@@ -19,8 +19,8 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.DeepSea {
@@ -28,15 +28,15 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		protected ModuleDefinition module;
 		protected ISimpleDeobfuscator simpleDeobfuscator;
 		protected IDeobfuscator deob;
-		protected MethodDefinition initMethod;
-		protected MethodDefinition resolveHandler;
+		protected MethodDef initMethod;
+		protected MethodDef resolveHandler;
 		protected FrameworkType frameworkType;
 
-		public MethodDefinition InitMethod {
+		public MethodDef InitMethod {
 			get { return initMethod; }
 		}
 
-		public MethodDefinition HandlerMethod {
+		public MethodDef HandlerMethod {
 			get { return resolveHandler; }
 		}
 
@@ -58,7 +58,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				return;
 		}
 
-		bool checkCalledMethods(MethodDefinition checkMethod) {
+		bool checkCalledMethods(MethodDef checkMethod) {
 			if (checkMethod == null || checkMethod.Body == null)
 				return false;
 
@@ -75,7 +75,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return false;
 		}
 
-		bool checkResolverInitMethod(MethodDefinition resolverInitMethod) {
+		bool checkResolverInitMethod(MethodDef resolverInitMethod) {
 			if (resolverInitMethod == null || resolverInitMethod.Body == null)
 				return false;
 			if (resolverInitMethod.Body.ExceptionHandlers.Count != 1)
@@ -89,7 +89,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			}
 		}
 
-		bool checkResolverInitMethodDesktop(MethodDefinition resolverInitMethod) {
+		bool checkResolverInitMethodDesktop(MethodDef resolverInitMethod) {
 			simpleDeobfuscator.deobfuscate(resolverInitMethod);
 			if (!checkResolverInitMethodInternal(resolverInitMethod))
 				return false;
@@ -106,25 +106,25 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return false;
 		}
 
-		protected virtual bool checkResolverInitMethodSilverlight(MethodDefinition resolverInitMethod) {
+		protected virtual bool checkResolverInitMethodSilverlight(MethodDef resolverInitMethod) {
 			return false;
 		}
 
-		protected abstract bool checkResolverInitMethodInternal(MethodDefinition resolverInitMethod);
+		protected abstract bool checkResolverInitMethodInternal(MethodDef resolverInitMethod);
 
-		IEnumerable<MethodDefinition> getLdftnMethods(MethodDefinition method) {
-			var list = new List<MethodDefinition>();
+		IEnumerable<MethodDef> getLdftnMethods(MethodDef method) {
+			var list = new List<MethodDef>();
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Ldftn)
 					continue;
-				var loadedMethod = instr.Operand as MethodDefinition;
+				var loadedMethod = instr.Operand as MethodDef;
 				if (loadedMethod != null)
 					list.Add(loadedMethod);
 			}
 			return list;
 		}
 
-		bool checkHandlerMethodDesktop(MethodDefinition handler) {
+		bool checkHandlerMethodDesktop(MethodDef handler) {
 			if (handler == null || handler.Body == null || !handler.IsStatic)
 				return false;
 			if (!DotNetUtils.isMethod(handler, "System.Reflection.Assembly", "(System.Object,System.ResolveEventArgs)"))
@@ -132,7 +132,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return checkHandlerMethodDesktopInternal(handler);
 		}
 
-		protected abstract bool checkHandlerMethodDesktopInternal(MethodDefinition handler);
+		protected abstract bool checkHandlerMethodDesktopInternal(MethodDef handler);
 
 		// 3.0.3.41 - 3.0.4.44
 		protected static byte[] decryptResourceV3Old(EmbeddedResource resource) {

@@ -19,7 +19,7 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.renamer.asmmodules {
@@ -27,26 +27,26 @@ namespace de4dot.code.renamer.asmmodules {
 		bool initializeCalled = false;
 		IDeobfuscatorContext deobfuscatorContext;
 		List<Module> modules = new List<Module>();
-		Dictionary<ModuleDefinition, Module> modulesDict = new Dictionary<ModuleDefinition, Module>();
+		Dictionary<ModuleDef, Module> modulesDict = new Dictionary<ModuleDef, Module>();
 		AssemblyHash assemblyHash = new AssemblyHash();
 
-		List<TypeDef> allTypes = new List<TypeDef>();
-		List<TypeDef> baseTypes = new List<TypeDef>();
-		List<TypeDef> nonNestedTypes;
+		List<MTypeDef> allTypes = new List<MTypeDef>();
+		List<MTypeDef> baseTypes = new List<MTypeDef>();
+		List<MTypeDef> nonNestedTypes;
 
 		public IList<Module> TheModules {
 			get { return modules; }
 		}
 
-		public IEnumerable<TypeDef> AllTypes {
+		public IEnumerable<MTypeDef> AllTypes {
 			get { return allTypes; }
 		}
 
-		public IEnumerable<TypeDef> BaseTypes {
+		public IEnumerable<MTypeDef> BaseTypes {
 			get { return baseTypes; }
 		}
 
-		public List<TypeDef> NonNestedTypes {
+		public List<MTypeDef> NonNestedTypes {
 			get { return nonNestedTypes; }
 		}
 
@@ -62,9 +62,9 @@ namespace de4dot.code.renamer.asmmodules {
 			}
 
 			string getModuleKey(Module module) {
-				if (module.ModuleDefinition.Assembly != null)
-					return module.ModuleDefinition.Assembly.ToString();
-				return Utils.getBaseName(module.ModuleDefinition.FullyQualifiedName);
+				if (module.ModuleDef.Assembly != null)
+					return module.ModuleDef.Assembly.ToString();
+				return Utils.getBaseName(module.ModuleDef.FullyQualifiedName);
 			}
 
 			public ModuleHash lookup(string assemblyName) {
@@ -80,16 +80,16 @@ namespace de4dot.code.renamer.asmmodules {
 			Module mainModule = null;
 
 			public void add(Module module) {
-				var asm = module.ModuleDefinition.Assembly;
-				if (asm != null && ReferenceEquals(asm.MainModule, module.ModuleDefinition)) {
+				var asm = module.ModuleDef.Assembly;
+				if (asm != null && ReferenceEquals(asm.MainModule, module.ModuleDef)) {
 					if (mainModule != null) {
 						throw new UserException(string.Format(
 							"Two modules in the same assembly are main modules.\n" +
 							"Is one 32-bit and the other 64-bit?\n" +
 							"  Module1: \"{0}\"" +
 							"  Module2: \"{1}\"",
-							module.ModuleDefinition.FullyQualifiedName,
-							mainModule.ModuleDefinition.FullyQualifiedName));
+							module.ModuleDef.FullyQualifiedName,
+							mainModule.ModuleDef.FullyQualifiedName));
 					}
 					mainModule = module;
 				}
@@ -110,7 +110,7 @@ namespace de4dot.code.renamer.asmmodules {
 			IDictionary<string, Module> modulesDict = new Dictionary<string, Module>(StringComparer.Ordinal);
 
 			public void add(Module module) {
-				var moduleName = module.ModuleDefinition.Name;
+				var moduleName = module.ModuleDef.Name;
 				if (lookup(moduleName) != null)
 					throw new ApplicationException(string.Format("Module \"{0}\" was found twice", moduleName));
 				modulesDict[moduleName] = module;
@@ -140,9 +140,9 @@ namespace de4dot.code.renamer.asmmodules {
 			if (initializeCalled)
 				throw new ApplicationException("initialize() has been called");
 			Module otherModule;
-			if (modulesDict.TryGetValue(module.ModuleDefinition, out otherModule))
+			if (modulesDict.TryGetValue(module.ModuleDef, out otherModule))
 				return;
-			modulesDict[module.ModuleDefinition] = module;
+			modulesDict[module.ModuleDef] = module;
 			modules.Add(module);
 			assemblyHash.add(module);
 		}
@@ -181,22 +181,22 @@ namespace de4dot.code.renamer.asmmodules {
 			foreach (var module in modules)
 				allTypes.AddRange(module.getAllTypes());
 
-			var typeToTypeDef = new Dictionary<TypeDefinition, TypeDef>(allTypes.Count);
+			var typeToTypeDef = new Dictionary<TypeDef, MTypeDef>(allTypes.Count);
 			foreach (var typeDef in allTypes)
-				typeToTypeDef[typeDef.TypeDefinition] = typeDef;
+				typeToTypeDef[typeDef.TypeDef] = typeDef;
 
 			// Initialize Owner
 			foreach (var typeDef in allTypes) {
-				if (typeDef.TypeDefinition.DeclaringType != null)
-					typeDef.Owner = typeToTypeDef[typeDef.TypeDefinition.DeclaringType];
+				if (typeDef.TypeDef.DeclaringType != null)
+					typeDef.Owner = typeToTypeDef[typeDef.TypeDef.DeclaringType];
 			}
 
 			// Initialize baseType and derivedTypes
 			foreach (var typeDef in allTypes) {
-				var baseType = typeDef.TypeDefinition.BaseType;
+				var baseType = typeDef.TypeDef.BaseType;
 				if (baseType == null)
 					continue;
-				var baseTypeDef = resolve(baseType) ?? resolveOther(baseType);
+				var baseTypeDef = resolveType(baseType) ?? resolveOther(baseType);
 				if (baseTypeDef != null) {
 					typeDef.addBaseType(baseTypeDef, baseType);
 					baseTypeDef.derivedTypes.Add(typeDef);
@@ -205,24 +205,24 @@ namespace de4dot.code.renamer.asmmodules {
 
 			// Initialize interfaces
 			foreach (var typeDef in allTypes) {
-				if (typeDef.TypeDefinition.Interfaces == null)
+				if (typeDef.TypeDef.Interfaces == null)
 					continue;
-				foreach (var iface in typeDef.TypeDefinition.Interfaces) {
-					var ifaceTypeDef = resolve(iface) ?? resolveOther(iface);
+				foreach (var iface in typeDef.TypeDef.Interfaces) {
+					var ifaceTypeDef = resolveType(iface) ?? resolveOther(iface);
 					if (ifaceTypeDef != null)
 						typeDef.addInterface(ifaceTypeDef, iface);
 				}
 			}
 
 			// Find all non-nested types
-			var allTypesDict = new Dictionary<TypeDef, bool>();
+			var allTypesDict = new Dictionary<MTypeDef, bool>();
 			foreach (var t in allTypes)
 				allTypesDict[t] = true;
 			foreach (var t in allTypes) {
 				foreach (var t2 in t.NestedTypes)
 					allTypesDict.Remove(t2);
 			}
-			nonNestedTypes = new List<TypeDef>(allTypesDict.Keys);
+			nonNestedTypes = new List<MTypeDef>(allTypesDict.Keys);
 
 			foreach (var typeDef in allTypes) {
 				if (typeDef.baseType == null || !typeDef.baseType.typeDef.HasModule)
@@ -327,13 +327,13 @@ namespace de4dot.code.renamer.asmmodules {
 			}
 		}
 
-		AssemblyKeyDictionary<TypeDef> typeToTypeDefDict = new AssemblyKeyDictionary<TypeDef>();
-		public TypeDef resolveOther(TypeReference type) {
+		AssemblyKeyDictionary<MTypeDef> typeToTypeDefDict = new AssemblyKeyDictionary<MTypeDef>();
+		public MTypeDef resolveOther(TypeReference type) {
 			if (type == null)
 				return null;
 			type = type.GetElementType();
 
-			TypeDef typeDef;
+			MTypeDef typeDef;
 			if (typeToTypeDefDict.tryGetValue(type, out typeDef))
 				return typeDef;
 
@@ -352,17 +352,17 @@ namespace de4dot.code.renamer.asmmodules {
 			typeToTypeDefDict[type] = null;	// In case of a circular reference
 			typeToTypeDefDict[typeDefinition] = null;
 
-			typeDef = new TypeDef(typeDefinition, null, 0);
+			typeDef = new MTypeDef(typeDefinition, null, 0);
 			typeDef.addMembers();
-			foreach (var iface in typeDef.TypeDefinition.Interfaces) {
+			foreach (var iface in typeDef.TypeDef.Interfaces) {
 				var ifaceDef = resolveOther(iface);
 				if (ifaceDef == null)
 					continue;
 				typeDef.addInterface(ifaceDef, iface);
 			}
-			var baseDef = resolveOther(typeDef.TypeDefinition.BaseType);
+			var baseDef = resolveOther(typeDef.TypeDef.BaseType);
 			if (baseDef != null)
-				typeDef.addBaseType(baseDef, typeDef.TypeDefinition.BaseType);
+				typeDef.addBaseType(baseDef, typeDef.TypeDef.BaseType);
 
 			typeToTypeDefDict[type] = typeDef;
 			if (type != typeDefinition)
@@ -396,8 +396,8 @@ namespace de4dot.code.renamer.asmmodules {
 			if (scope is AssemblyNameReference)
 				return findModules((AssemblyNameReference)scope);
 
-			if (scope is ModuleDefinition) {
-				var modules = findModules((ModuleDefinition)scope);
+			if (scope is ModuleDef) {
+				var modules = findModules((ModuleDef)scope);
 				if (modules != null)
 					return modules;
 			}
@@ -432,7 +432,7 @@ namespace de4dot.code.renamer.asmmodules {
 			return null;
 		}
 
-		IEnumerable<Module> findModules(ModuleDefinition moduleDefinition) {
+		IEnumerable<Module> findModules(ModuleDef moduleDefinition) {
 			Module module;
 			if (modulesDict.TryGetValue(moduleDefinition, out module))
 				return new List<Module> { module };
@@ -443,12 +443,12 @@ namespace de4dot.code.renamer.asmmodules {
 			return typeReference is ArrayType || typeReference is PointerType || typeReference is FunctionPointerType;
 		}
 
-		public TypeDef resolve(TypeReference typeReference) {
+		public MTypeDef resolveType(TypeReference typeReference) {
 			var modules = findModules(typeReference);
 			if (modules == null)
 				return null;
 			foreach (var module in modules) {
-				var rv = module.resolve(typeReference);
+				var rv = module.resolveType(typeReference);
 				if (rv != null)
 					return rv;
 			}
@@ -456,20 +456,20 @@ namespace de4dot.code.renamer.asmmodules {
 				return null;
 			Log.e("Could not resolve TypeReference {0} ({1:X8}) (from {2} -> {3})",
 						Utils.removeNewlines(typeReference),
-						typeReference.MetadataToken.ToInt32(),
+						typeReference.MDToken.ToInt32(),
 						typeReference.Module,
 						typeReference.Scope);
 			return null;
 		}
 
-		public MethodDef resolve(MethodReference methodReference) {
+		public MMethodDef resolveMethod(MethodReference methodReference) {
 			if (methodReference.DeclaringType == null)
 				return null;
 			var modules = findModules(methodReference.DeclaringType);
 			if (modules == null)
 				return null;
 			foreach (var module in modules) {
-				var rv = module.resolve(methodReference);
+				var rv = module.resolveMethod(methodReference);
 				if (rv != null)
 					return rv;
 			}
@@ -477,20 +477,20 @@ namespace de4dot.code.renamer.asmmodules {
 				return null;
 			Log.e("Could not resolve MethodReference {0} ({1:X8}) (from {2} -> {3})",
 						Utils.removeNewlines(methodReference),
-						methodReference.MetadataToken.ToInt32(),
+						methodReference.MDToken.ToInt32(),
 						methodReference.DeclaringType.Module,
 						methodReference.DeclaringType.Scope);
 			return null;
 		}
 
-		public FieldDef resolve(FieldReference fieldReference) {
+		public MFieldDef resolveField(FieldReference fieldReference) {
 			if (fieldReference.DeclaringType == null)
 				return null;
 			var modules = findModules(fieldReference.DeclaringType);
 			if (modules == null)
 				return null;
 			foreach (var module in modules) {
-				var rv = module.resolve(fieldReference);
+				var rv = module.resolveField(fieldReference);
 				if (rv != null)
 					return rv;
 			}
@@ -498,7 +498,7 @@ namespace de4dot.code.renamer.asmmodules {
 				return null;
 			Log.e("Could not resolve FieldReference {0} ({1:X8}) (from {2} -> {3})",
 						Utils.removeNewlines(fieldReference),
-						fieldReference.MetadataToken.ToInt32(),
+						fieldReference.MDToken.ToInt32(),
 						fieldReference.DeclaringType.Module,
 						fieldReference.DeclaringType.Scope);
 			return null;

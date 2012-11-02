@@ -18,8 +18,8 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Dotfuscator {
@@ -28,9 +28,9 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 		Dictionary<MethodReference, StringDecrypterInfo> stringDecrypterMethods = new Dictionary<MethodReference, StringDecrypterInfo>();
 
 		public class StringDecrypterInfo {
-			public MethodDefinition method;
+			public MethodDef method;
 			public int magic;
-			public StringDecrypterInfo(MethodDefinition method, int magic) {
+			public StringDecrypterInfo(MethodDef method, int magic) {
 				this.method = method;
 				this.magic = magic;
 			}
@@ -40,9 +40,9 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 			get { return stringDecrypterMethods.Count > 0; }
 		}
 
-		public IEnumerable<MethodDefinition> StringDecrypters {
+		public IEnumerable<MethodDef> StringDecrypters {
 			get {
-				var list = new List<MethodDefinition>(stringDecrypterMethods.Count);
+				var list = new List<MethodDef>(stringDecrypterMethods.Count);
 				foreach (var info in stringDecrypterMethods)
 					list.Add(info.Value.method);
 				return list;
@@ -62,7 +62,7 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 				findStringDecrypterMethods(type, simpleDeobfuscator);
 		}
 
-		void findStringDecrypterMethods(TypeDefinition type, ISimpleDeobfuscator simpleDeobfuscator) {
+		void findStringDecrypterMethods(TypeDef type, ISimpleDeobfuscator simpleDeobfuscator) {
 			foreach (var method in DotNetUtils.findMethods(type.Methods, "System.String", new string[] { "System.String", "System.Int32" })) {
 				if (method.Body.HasExceptionHandlers)
 					continue;

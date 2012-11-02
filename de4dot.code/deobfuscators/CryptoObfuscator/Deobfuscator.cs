@@ -20,7 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CryptoObfuscator {
@@ -149,7 +149,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			foundObfuscatorUserString = Utils.StartsWith(module.GetUserString(0x70000001), "\u0011\"3D9B94A98B-76A8-4810-B1A0-4BE7C4F9C98D", StringComparison.Ordinal);
 		}
 
-		void initializeVersion(TypeDefinition attr) {
+		void initializeVersion(TypeDef attr) {
 			var s = DotNetUtils.getCustomArgAsString(getAssemblyAttribute(attr), 0);
 			if (s == null)
 				return;
@@ -282,7 +282,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		public override IEnumerable<int> getStringDecrypterMethods() {
 			var list = new List<int>();
 			if (stringDecrypter.Method != null)
-				list.Add(stringDecrypter.Method.MetadataToken.ToInt32());
+				list.Add(stringDecrypter.Method.MDToken.ToInt32());
 			return list;
 		}
 	}

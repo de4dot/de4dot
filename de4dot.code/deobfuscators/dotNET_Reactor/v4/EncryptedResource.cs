@@ -21,22 +21,22 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Security.Cryptography;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 	class EncryptedResource {
 		ModuleDefinition module;
-		MethodDefinition resourceDecrypterMethod;
+		MethodDef resourceDecrypterMethod;
 		EmbeddedResource encryptedDataResource;
 		byte[] key, iv;
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return resourceDecrypterMethod == null ? null : resourceDecrypterMethod.DeclaringType; }
 		}
 
-		public MethodDefinition Method {
+		public MethodDef Method {
 			get { return resourceDecrypterMethod; }
 			set { resourceDecrypterMethod = value; }
 		}
@@ -69,11 +69,11 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			return DeobUtils.lookup(module, def, errorMessage);
 		}
 
-		public bool couldBeResourceDecrypter(MethodDefinition method, IEnumerable<string> additionalTypes) {
+		public bool couldBeResourceDecrypter(MethodDef method, IEnumerable<string> additionalTypes) {
 			return couldBeResourceDecrypter(method, additionalTypes, true);
 		}
 
-		public bool couldBeResourceDecrypter(MethodDefinition method, IEnumerable<string> additionalTypes, bool checkResource) {
+		public bool couldBeResourceDecrypter(MethodDef method, IEnumerable<string> additionalTypes, bool checkResource) {
 			if (!method.IsStatic)
 				return false;
 			if (method.Body == null)
@@ -146,7 +146,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			return false;
 		}
 
-		EmbeddedResource findMethodsDecrypterResource(MethodDefinition method) {
+		EmbeddedResource findMethodsDecrypterResource(MethodDef method) {
 			foreach (var s in DotNetUtils.getCodeStrings(method)) {
 				var resource = DotNetUtils.getResource(module, s) as EmbeddedResource;
 				if (resource != null)

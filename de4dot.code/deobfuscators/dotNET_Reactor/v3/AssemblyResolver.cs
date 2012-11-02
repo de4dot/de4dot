@@ -18,7 +18,7 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
 
@@ -38,11 +38,11 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			get { return decryptMethod.Detected; }
 		}
 
-		public AssemblyResolver(TypeDefinition type, ICflowDeobfuscator cflowDeobfuscator) {
+		public AssemblyResolver(TypeDef type, ICflowDeobfuscator cflowDeobfuscator) {
 			find(type, cflowDeobfuscator);
 		}
 
-		void find(TypeDefinition type, ICflowDeobfuscator cflowDeobfuscator) {
+		void find(TypeDef type, ICflowDeobfuscator cflowDeobfuscator) {
 			var additionalTypes = new List<string> {
 				"System.IO.BinaryReader",
 				"System.IO.FileStream",

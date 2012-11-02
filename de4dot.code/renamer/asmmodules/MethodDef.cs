@@ -18,51 +18,51 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
+using dot10.DotNet;
 
 namespace de4dot.code.renamer.asmmodules {
-	class MethodDef : Ref {
-		IList<GenericParamDef> genericParams;
-		IList<ParamDef> paramDefs = new List<ParamDef>();
+	class MMethodDef : Ref {
+		IList<MGenericParamDef> genericParams;
+		IList<MParamDef> paramDefs = new List<MParamDef>();
 
-		public PropertyDef Property { get; set; }
-		public EventDef Event { get; set; }
+		public MPropertyDef Property { get; set; }
+		public MEventDef Event { get; set; }
 
-		public IList<ParamDef> ParamDefs {
+		public IList<MParamDef> ParamDefs {
 			get { return paramDefs; }
 		}
 
-		public IList<GenericParamDef> GenericParams {
+		public IList<MGenericParamDef> GenericParams {
 			get { return genericParams; }
 		}
 
-		public MethodDefinition MethodDefinition {
-			get { return (MethodDefinition)memberReference; }
+		public MethodDef MethodDef {
+			get { return (MethodDef)memberReference; }
 		}
 
-		public MethodDef(MethodDefinition methodDefinition, TypeDef owner, int index)
+		public MMethodDef(MethodDef methodDefinition, MTypeDef owner, int index)
 			: base(methodDefinition, owner, index) {
-			genericParams = GenericParamDef.createGenericParamDefList(MethodDefinition.GenericParameters);
+			genericParams = MGenericParamDef.createGenericParamDefList(MethodDef.GenericParams);
 			for (int i = 0; i < methodDefinition.Parameters.Count; i++) {
 				var param = methodDefinition.Parameters[i];
-				paramDefs.Add(new ParamDef(param, i));
+				paramDefs.Add(new MParamDef(param, i));
 			}
 		}
 
 		public bool isPublic() {
-			return MethodDefinition.IsPublic;
+			return MethodDef.IsPublic;
 		}
 
 		public bool isVirtual() {
-			return MethodDefinition.IsVirtual;
+			return MethodDef.IsVirtual;
 		}
 
 		public bool isNewSlot() {
-			return MethodDefinition.IsNewSlot;
+			return MethodDef.IsNewSlot;
 		}
 
 		public bool isStatic() {
-			return MethodDefinition.IsStatic;
+			return MethodDef.IsStatic;
 		}
 	}
 }

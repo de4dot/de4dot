@@ -19,7 +19,7 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
+using dot10.DotNet;
 using Mono.MyStuff;
 using de4dot.blocks;
 
@@ -62,7 +62,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		ProxyCallFixer proxyCallFixer;
 		StringDecrypter stringDecrypter;
 		AssemblyResolver assemblyResolver;
-		TypeDefinition killType;
+		TypeDef killType;
 		ResourceDecrypter resourceDecrypter;
 
 		internal class Options : OptionsBase {
@@ -279,7 +279,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		public override IEnumerable<int> getStringDecrypterMethods() {
 			var list = new List<int>();
 			if (stringDecrypter.DecryptMethod != null)
-				list.Add(stringDecrypter.DecryptMethod.MetadataToken.ToInt32());
+				list.Add(stringDecrypter.DecryptMethod.MDToken.ToInt32());
 			return list;
 		}
 	}

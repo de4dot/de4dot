@@ -17,25 +17,25 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Goliath_NET {
 	class StrongNameChecker {
 		ModuleDefinition module;
-		TypeDefinition strongNameType;
-		MethodDefinition strongNameCheckMethod;
+		TypeDef strongNameType;
+		MethodDef strongNameCheckMethod;
 
 		public bool Detected {
 			get { return strongNameType != null;}
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return strongNameType; }
 		}
 
-		public MethodDefinition CheckerMethod {
+		public MethodDef CheckerMethod {
 			get { return strongNameCheckMethod; }
 		}
 
@@ -65,7 +65,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			}
 		}
 
-		MethodDefinition getAntiTamperingDetectionMethod(TypeDefinition type) {
+		MethodDef getAntiTamperingDetectionMethod(TypeDef type) {
 			var requiredLocals = new string[] {
 				"System.Reflection.Assembly",
 				"System.Collections.Generic.Stack`1<System.Int32>",
@@ -85,7 +85,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			return null;
 		}
 
-		static bool hasThrow(MethodDefinition method) {
+		static bool hasThrow(MethodDef method) {
 			if (method == null || method.Body == null)
 				return false;
 			foreach (var instr in method.Body.Instructions) {

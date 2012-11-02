@@ -20,7 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
@@ -40,19 +40,19 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 
 	class AssemblyResolver {
 		ModuleDefinition module;
-		TypeDefinition assemblyResolverType;
-		MethodDefinition assemblyResolverInitMethod;
-		MethodDefinition assemblyResolverMethod;
+		TypeDef assemblyResolverType;
+		MethodDef assemblyResolverInitMethod;
+		MethodDef assemblyResolverMethod;
 
 		public bool Detected {
 			get { return assemblyResolverType != null; }
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return assemblyResolverType; }
 		}
 
-		public MethodDefinition InitMethod {
+		public MethodDef InitMethod {
 			get { return assemblyResolverInitMethod; }
 		}
 
@@ -80,7 +80,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			}
 		}
 
-		bool checkMethod(ISimpleDeobfuscator simpleDeobfuscator, MethodDefinition methodToCheck) {
+		bool checkMethod(ISimpleDeobfuscator simpleDeobfuscator, MethodDef methodToCheck) {
 			if (methodToCheck == null)
 				return false;
 
@@ -127,7 +127,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			return false;
 		}
 
-		static bool checkFields(IList<FieldDefinition> fields) {
+		static bool checkFields(IList<FieldDef> fields) {
 			if (fields.Count != 2)
 				return false;
 
@@ -137,7 +137,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				 fieldTypes.count("System.Object") == 1);
 		}
 
-		static MethodDefinition findAssemblyResolveMethod(TypeDefinition type) {
+		static MethodDef findAssemblyResolveMethod(TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (DotNetUtils.isMethod(method, "System.Reflection.Assembly", "(System.Object,System.ResolveEventArgs)"))
 					return method;

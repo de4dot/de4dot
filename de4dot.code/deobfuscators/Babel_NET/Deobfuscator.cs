@@ -19,7 +19,7 @@
 
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
 
@@ -182,7 +182,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			}
 		}
 
-		void checkVersion(TypeDefinition attr) {
+		void checkVersion(TypeDef attr) {
 			var versionField = DotNetUtils.getFieldByName(attr, "Version");
 			if (versionField != null && versionField.IsLiteral && versionField.Constant != null && versionField.Constant is string) {
 				var val = Regex.Match((string)versionField.Constant, @"^(\d+\.\d+\.\d+\.\d+)$");
@@ -296,7 +296,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		public override IEnumerable<int> getStringDecrypterMethods() {
 			var list = new List<int>();
 			if (stringDecrypter.DecryptMethod != null)
-				list.Add(stringDecrypter.DecryptMethod.MetadataToken.ToInt32());
+				list.Add(stringDecrypter.DecryptMethod.MDToken.ToInt32());
 			return list;
 		}
 	}

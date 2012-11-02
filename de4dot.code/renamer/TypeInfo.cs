@@ -20,8 +20,8 @@
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.code.renamer.asmmodules;
 using de4dot.blocks;
 
@@ -30,45 +30,45 @@ namespace de4dot.code.renamer {
 		public string oldNamespace;
 		public string newNamespace;
 		public VariableNameState variableNameState = VariableNameState.create();
-		public TypeDef type;
+		public MTypeDef type;
 		MemberInfos memberInfos;
 
 		public INameChecker NameChecker {
 			get { return type.Module.ObfuscatedFile.NameChecker; }
 		}
 
-		public TypeInfo(TypeDef typeDef, MemberInfos memberInfos)
+		public TypeInfo(MTypeDef typeDef, MemberInfos memberInfos)
 			: base(typeDef) {
 			this.type = typeDef;
 			this.memberInfos = memberInfos;
-			oldNamespace = typeDef.TypeDefinition.Namespace;
+			oldNamespace = typeDef.TypeDef.Namespace;
 		}
 
 		bool isWinFormsClass() {
 			return memberInfos.isWinFormsClass(type);
 		}
 
-		public PropertyInfo prop(PropertyDef prop) {
+		public PropertyInfo prop(MPropertyDef prop) {
 			return memberInfos.prop(prop);
 		}
 
-		public EventInfo evt(EventDef evt) {
+		public EventInfo evt(MEventDef evt) {
 			return memberInfos.evt(evt);
 		}
 
-		public FieldInfo field(FieldDef field) {
+		public FieldInfo field(MFieldDef field) {
 			return memberInfos.field(field);
 		}
 
-		public MethodInfo method(MethodDef method) {
+		public MethodInfo method(MMethodDef method) {
 			return memberInfos.method(method);
 		}
 
-		public GenericParamInfo gparam(GenericParamDef gparam) {
+		public GenericParamInfo gparam(MGenericParamDef gparam) {
 			return memberInfos.gparam(gparam);
 		}
 
-		public ParamInfo param(ParamDef param) {
+		public ParamInfo param(MParamDef param) {
 			return memberInfos.param(param);
 		}
 
@@ -82,17 +82,17 @@ namespace de4dot.code.renamer {
 		}
 
 		bool isModuleType() {
-			return type.TypeDefinition == DotNetUtils.getModuleType(type.TypeDefinition.Module);
+			return type.TypeDef == DotNetUtils.getModuleType(type.TypeDef.Module);
 		}
 
 		public void prepareRenameTypes(TypeRenamerState state) {
 			var checker = NameChecker;
 
 			if (newNamespace == null && oldNamespace != "") {
-				if (type.TypeDefinition.IsNested)
+				if (type.TypeDef.IsNested)
 					newNamespace = "";
 				else if (!checker.isValidNamespaceName(oldNamespace))
-					newNamespace = state.createNamespace(this.type.TypeDefinition, oldNamespace);
+					newNamespace = state.createNamespace(this.type.TypeDef, oldNamespace);
 			}
 
 			string origClassName = null;
@@ -114,7 +114,7 @@ namespace de4dot.code.renamer {
 					TypeInfo baseInfo = getBase();
 					if (baseInfo != null && baseInfo.renamed)
 						newBaseType = baseInfo.newName;
-					rename(nameCreator.create(type.TypeDefinition, newBaseType));
+					rename(nameCreator.create(type.TypeDef, newBaseType));
 				}
 			}
 
@@ -128,7 +128,7 @@ namespace de4dot.code.renamer {
 				mergeState(type.baseType.typeDef);
 		}
 
-		void mergeState(TypeDef other) {
+		void mergeState(MTypeDef other) {
 			if (other == null)
 				return;
 			TypeInfo otherInfo;
@@ -164,7 +164,7 @@ namespace de4dot.code.renamer {
 		void prepareRenameFields() {
 			var checker = NameChecker;
 
-			if (type.TypeDefinition.IsEnum) {
+			if (type.TypeDef.IsEnum) {
 				var instanceFields = getInstanceFields();
 				if (instanceFields.Count == 1)
 					field(instanceFields[0]).rename("value__");
@@ -175,7 +175,7 @@ namespace de4dot.code.renamer {
 					var fieldInfo = field(fieldDef);
 					if (fieldInfo.renamed)
 						continue;
-					if (!fieldDef.FieldDefinition.IsStatic || !fieldDef.FieldDefinition.IsLiteral)
+					if (!fieldDef.FieldDef.IsStatic || !fieldDef.FieldDef.IsLiteral)
 						continue;
 					if (!checker.isValidFieldName(fieldInfo.oldName))
 						fieldInfo.rename(string.Format(nameFormat, i));
@@ -187,21 +187,21 @@ namespace de4dot.code.renamer {
 				if (fieldInfo.renamed)
 					continue;
 				if (!checker.isValidFieldName(fieldInfo.oldName))
-					fieldInfo.rename(fieldInfo.suggestedName ?? variableNameState.getNewFieldName(fieldDef.FieldDefinition));
+					fieldInfo.rename(fieldInfo.suggestedName ?? variableNameState.getNewFieldName(fieldDef.FieldDef));
 			}
 		}
 
-		List<FieldDef> getInstanceFields() {
-			var fields = new List<FieldDef>();
+		List<MFieldDef> getInstanceFields() {
+			var fields = new List<MFieldDef>();
 			foreach (var fieldDef in type.AllFields) {
-				if (!fieldDef.FieldDefinition.IsStatic)
+				if (!fieldDef.FieldDef.IsStatic)
 					fields.Add(fieldDef);
 			}
 			return fields;
 		}
 
 		bool hasFlagsAttribute() {
-			foreach (var attr in type.TypeDefinition.CustomAttributes) {
+			foreach (var attr in type.TypeDef.CustomAttributes) {
 				if (attr.AttributeType.FullName == "System.FlagsAttribute")
 					return true;
 			}
@@ -216,7 +216,7 @@ namespace de4dot.code.renamer {
 			}
 		}
 
-		void prepareRenameProperty(PropertyDef propDef) {
+		void prepareRenameProperty(MPropertyDef propDef) {
 			if (propDef.isVirtual())
 				throw new ApplicationException("Can't rename virtual props here");
 			var propInfo = prop(propDef);
@@ -230,7 +230,7 @@ namespace de4dot.code.renamer {
 				if (propDef.isItemProperty())
 					propName = "Item";
 				else
-					propName = variableNameState.getNewPropertyName(propDef.PropertyDefinition);
+					propName = variableNameState.getNewPropertyName(propDef.PropertyDef);
 			}
 			variableNameState.addPropertyName(propName);
 			propInfo.rename(propName);
@@ -247,7 +247,7 @@ namespace de4dot.code.renamer {
 			}
 		}
 
-		void prepareRenameEvent(EventDef eventDef) {
+		void prepareRenameEvent(MEventDef eventDef) {
 			if (eventDef.isVirtual())
 				throw new ApplicationException("Can't rename virtual events here");
 			var eventInfo = evt(eventDef);
@@ -258,7 +258,7 @@ namespace de4dot.code.renamer {
 			if (!NameChecker.isValidEventName(eventName))
 				eventName = eventInfo.suggestedName;
 			if (!NameChecker.isValidEventName(eventName))
-				eventName = variableNameState.getNewEventName(eventDef.EventDefinition);
+				eventName = variableNameState.getNewEventName(eventDef.EventDef);
 			variableNameState.addEventName(eventName);
 			eventInfo.rename(eventName);
 
@@ -267,7 +267,7 @@ namespace de4dot.code.renamer {
 			renameSpecialMethod(eventDef.RaiseMethod, "raise_" + eventName);
 		}
 
-		void renameSpecialMethod(MethodDef methodDef, string newName) {
+		void renameSpecialMethod(MMethodDef methodDef, string newName) {
 			if (methodDef == null)
 				return;
 			if (methodDef.isVirtual())
@@ -292,7 +292,7 @@ namespace de4dot.code.renamer {
 			}
 		}
 
-		void prepareRenameMethodArgs(MethodDef methodDef) {
+		void prepareRenameMethodArgs(MMethodDef methodDef) {
 			if (methodDef.ParamDefs.Count > 0) {
 				if (isEventHandler(methodDef)) {
 					ParamInfo info;
@@ -327,14 +327,14 @@ namespace de4dot.code.renamer {
 			}
 		}
 
-		bool canRenameMethod(MethodDef methodDef) {
+		bool canRenameMethod(MMethodDef methodDef) {
 			var methodInfo = method(methodDef);
 			if (methodDef.isStatic()) {
 				if (methodInfo.oldName == ".cctor")
 					return false;
 			}
 			else if (methodDef.isVirtual()) {
-				if (DotNetUtils.derivesFromDelegate(type.TypeDefinition)) {
+				if (DotNetUtils.derivesFromDelegate(type.TypeDef)) {
 					switch (methodInfo.oldName) {
 					case "BeginInvoke":
 					case "EndInvoke":
@@ -350,7 +350,7 @@ namespace de4dot.code.renamer {
 			return true;
 		}
 
-		public void renameMethod(MethodDef methodDef, string methodName) {
+		public void renameMethod(MMethodDef methodDef, string methodName) {
 			if (!canRenameMethod(methodDef))
 				return;
 			var methodInfo = method(methodDef);
@@ -358,7 +358,7 @@ namespace de4dot.code.renamer {
 			methodInfo.rename(methodName);
 		}
 
-		void renameMethod(MethodDef methodDef) {
+		void renameMethod(MMethodDef methodDef) {
 			if (methodDef.isVirtual())
 				throw new ApplicationException("Can't rename virtual methods here");
 			if (!canRenameMethod(methodDef))
@@ -371,10 +371,10 @@ namespace de4dot.code.renamer {
 			var checker = NameChecker;
 
 			// PInvoke methods' EntryPoint is always valid. It has to, so always rename.
-			if (!NameChecker.isValidMethodName(info.oldName) || methodDef.MethodDefinition.PInvokeInfo != null) {
+			if (!NameChecker.isValidMethodName(info.oldName) || methodDef.MethodDef.PInvokeInfo != null) {
 				INameCreator nameCreator = null;
 				string newName = info.suggestedName;
-				if (methodDef.MethodDefinition.PInvokeInfo != null)
+				if (methodDef.MethodDef.PInvokeInfo != null)
 					newName = getPinvokeName(methodDef);
 				else if (methodDef.isStatic())
 					nameCreator = variableNameState.staticMethodNameCreator;
@@ -386,30 +386,30 @@ namespace de4dot.code.renamer {
 			}
 		}
 
-		string getPinvokeName(MethodDef methodDef) {
-			var entryPoint = methodDef.MethodDefinition.PInvokeInfo.EntryPoint;
+		string getPinvokeName(MMethodDef methodDef) {
+			var entryPoint = methodDef.MethodDef.PInvokeInfo.EntryPoint;
 			if (Regex.IsMatch(entryPoint, @"^#\d+$"))
-				entryPoint = DotNetUtils.getDllName(methodDef.MethodDefinition.PInvokeInfo.Module.Name) + "_" + entryPoint.Substring(1);
+				entryPoint = DotNetUtils.getDllName(methodDef.MethodDef.PInvokeInfo.Module.Name) + "_" + entryPoint.Substring(1);
 			return entryPoint;
 		}
 
-		static bool isEventHandler(MethodDef methodDef) {
-			if (methodDef.MethodDefinition.Parameters.Count != 2)
+		static bool isEventHandler(MMethodDef methodDef) {
+			if (methodDef.MethodDef.Parameters.Count != 2)
 				return false;
-			if (methodDef.MethodDefinition.MethodReturnType.ReturnType.FullName != "System.Void")
+			if (methodDef.MethodDef.MethodReturnType.ReturnType.FullName != "System.Void")
 				return false;
-			if (methodDef.MethodDefinition.Parameters[0].ParameterType.FullName != "System.Object")
+			if (methodDef.MethodDef.Parameters[0].ParameterType.FullName != "System.Object")
 				return false;
-			if (!methodDef.MethodDefinition.Parameters[1].ParameterType.FullName.Contains("EventArgs"))
+			if (!methodDef.MethodDef.Parameters[1].ParameterType.FullName.Contains("EventArgs"))
 				return false;
 			return true;
 		}
 
-		void prepareRenameGenericParams(IEnumerable<GenericParamDef> genericParams, INameChecker checker) {
+		void prepareRenameGenericParams(IEnumerable<MGenericParamDef> genericParams, INameChecker checker) {
 			prepareRenameGenericParams(genericParams, checker, null);
 		}
 
-		void prepareRenameGenericParams(IEnumerable<GenericParamDef> genericParams, INameChecker checker, IEnumerable<GenericParamDef> otherGenericParams) {
+		void prepareRenameGenericParams(IEnumerable<MGenericParamDef> genericParams, INameChecker checker, IEnumerable<MGenericParamDef> otherGenericParams) {
 			var usedNames = new Dictionary<string, bool>(StringComparer.Ordinal);
 			var nameCreator = new GenericParamNameCreator();
 
@@ -436,19 +436,19 @@ namespace de4dot.code.renamer {
 		void initializeWindowsFormsFieldsAndProps() {
 			var checker = NameChecker;
 
-			var ourFields = new FieldDefinitionAndDeclaringTypeDict<FieldDef>();
+			var ourFields = new FieldDefinitionAndDeclaringTypeDict<MFieldDef>();
 			foreach (var fieldDef in type.AllFields)
-				ourFields.add(fieldDef.FieldDefinition, fieldDef);
-			var ourMethods = new MethodDefinitionAndDeclaringTypeDict<MethodDef>();
+				ourFields.add(fieldDef.FieldDef, fieldDef);
+			var ourMethods = new MethodDefinitionAndDeclaringTypeDict<MMethodDef>();
 			foreach (var methodDef in type.AllMethods)
-				ourMethods.add(methodDef.MethodDefinition, methodDef);
+				ourMethods.add(methodDef.MethodDef, methodDef);
 
 			foreach (var methodDef in type.AllMethods) {
-				if (methodDef.MethodDefinition.Body == null)
+				if (methodDef.MethodDef.Body == null)
 					continue;
-				if (methodDef.MethodDefinition.IsStatic || methodDef.MethodDefinition.IsVirtual)
+				if (methodDef.MethodDef.IsStatic || methodDef.MethodDef.IsVirtual)
 					continue;
-				var instructions = methodDef.MethodDefinition.Body.Instructions;
+				var instructions = methodDef.MethodDef.Body.Instructions;
 				for (int i = 2; i < instructions.Count; i++) {
 					var call = instructions[i];
 					if (call.OpCode.Code != Code.Call && call.OpCode.Code != Code.Callvirt)
@@ -472,7 +472,7 @@ namespace de4dot.code.renamer {
 						var calledMethodDef = ourMethods.find(calledMethod);
 						if (calledMethodDef == null)
 							continue;
-						fieldRef = getFieldReference(calledMethodDef.MethodDefinition);
+						fieldRef = getFieldReference(calledMethodDef.MethodDef);
 
 						var propDef = calledMethodDef.Property;
 						if (propDef == null)
@@ -500,7 +500,7 @@ namespace de4dot.code.renamer {
 			}
 		}
 
-		static FieldReference getFieldReference(MethodDefinition method) {
+		static FieldReference getFieldReference(MethodDef method) {
 			if (method == null || method.Body == null)
 				return null;
 			var instructions = method.Body.Instructions;
@@ -529,12 +529,12 @@ namespace de4dot.code.renamer {
 		}
 
 		public void initializeEventHandlerNames() {
-			var ourFields = new FieldDefinitionAndDeclaringTypeDict<FieldDef>();
+			var ourFields = new FieldDefinitionAndDeclaringTypeDict<MFieldDef>();
 			foreach (var fieldDef in type.AllFields)
-				ourFields.add(fieldDef.FieldDefinition, fieldDef);
-			var ourMethods = new MethodDefinitionAndDeclaringTypeDict<MethodDef>();
+				ourFields.add(fieldDef.FieldDef, fieldDef);
+			var ourMethods = new MethodDefinitionAndDeclaringTypeDict<MMethodDef>();
 			foreach (var methodDef in type.AllMethods)
-				ourMethods.add(methodDef.MethodDefinition, methodDef);
+				ourMethods.add(methodDef.MethodDef, methodDef);
 
 			initVbEventHandlers(ourFields, ourMethods);
 			initFieldEventHandlers(ourFields, ourMethods);
@@ -543,7 +543,7 @@ namespace de4dot.code.renamer {
 
 		// VB initializes the handlers in the property setter, where it first removes the handler
 		// from the previous control, and then adds the handler to the new control.
-		void initVbEventHandlers(FieldDefinitionAndDeclaringTypeDict<FieldDef> ourFields, MethodDefinitionAndDeclaringTypeDict<MethodDef> ourMethods) {
+		void initVbEventHandlers(FieldDefinitionAndDeclaringTypeDict<MFieldDef> ourFields, MethodDefinitionAndDeclaringTypeDict<MMethodDef> ourMethods) {
 			var checker = NameChecker;
 
 			foreach (var propDef in type.AllProperties) {
@@ -552,7 +552,7 @@ namespace de4dot.code.renamer {
 					continue;
 
 				string eventName;
-				var handler = getVbHandler(setterDef.MethodDefinition, out eventName);
+				var handler = getVbHandler(setterDef.MethodDef, out eventName);
 				if (handler == null)
 					continue;
 				var handlerDef = ourMethods.find(handler);
@@ -566,7 +566,7 @@ namespace de4dot.code.renamer {
 			}
 		}
 
-		static MethodReference getVbHandler(MethodDefinition method, out string eventName) {
+		static MethodReference getVbHandler(MethodDef method, out string eventName) {
 			eventName = null;
 			if (method.Body == null)
 				return null;
@@ -657,15 +657,15 @@ namespace de4dot.code.renamer {
 			return -1;
 		}
 
-		void initFieldEventHandlers(FieldDefinitionAndDeclaringTypeDict<FieldDef> ourFields, MethodDefinitionAndDeclaringTypeDict<MethodDef> ourMethods) {
+		void initFieldEventHandlers(FieldDefinitionAndDeclaringTypeDict<MFieldDef> ourFields, MethodDefinitionAndDeclaringTypeDict<MMethodDef> ourMethods) {
 			var checker = NameChecker;
 
 			foreach (var methodDef in type.AllMethods) {
-				if (methodDef.MethodDefinition.Body == null)
+				if (methodDef.MethodDef.Body == null)
 					continue;
-				if (methodDef.MethodDefinition.IsStatic)
+				if (methodDef.MethodDef.IsStatic)
 					continue;
-				var instructions = methodDef.MethodDefinition.Body.Instructions;
+				var instructions = methodDef.MethodDef.Body.Instructions;
 				for (int i = 0; i < instructions.Count - 6; i++) {
 					// We're looking for this code pattern:
 					//	ldarg.0
@@ -736,15 +736,15 @@ namespace de4dot.code.renamer {
 			}
 		}
 
-		void initTypeEventHandlers(FieldDefinitionAndDeclaringTypeDict<FieldDef> ourFields, MethodDefinitionAndDeclaringTypeDict<MethodDef> ourMethods) {
+		void initTypeEventHandlers(FieldDefinitionAndDeclaringTypeDict<MFieldDef> ourFields, MethodDefinitionAndDeclaringTypeDict<MMethodDef> ourMethods) {
 			var checker = NameChecker;
 
 			foreach (var methodDef in type.AllMethods) {
-				if (methodDef.MethodDefinition.Body == null)
+				if (methodDef.MethodDef.Body == null)
 					continue;
-				if (methodDef.MethodDefinition.IsStatic)
+				if (methodDef.MethodDef.IsStatic)
 					continue;
-				var method = methodDef.MethodDefinition;
+				var method = methodDef.MethodDef;
 				var instructions = method.Body.Instructions;
 				for (int i = 0; i < instructions.Count - 5; i++) {
 					// ldarg.0
@@ -822,13 +822,13 @@ namespace de4dot.code.renamer {
 			return type.FullName.EndsWith("EventHandler", StringComparison.Ordinal);
 		}
 
-		string findWindowsFormsClassName(TypeDef type) {
+		string findWindowsFormsClassName(MTypeDef type) {
 			foreach (var methodDef in type.AllMethods) {
-				if (methodDef.MethodDefinition.Body == null)
+				if (methodDef.MethodDef.Body == null)
 					continue;
-				if (methodDef.MethodDefinition.IsStatic || methodDef.MethodDefinition.IsVirtual)
+				if (methodDef.MethodDef.IsStatic || methodDef.MethodDef.IsVirtual)
 					continue;
-				var instructions = methodDef.MethodDefinition.Body.Instructions;
+				var instructions = methodDef.MethodDef.Body.Instructions;
 				for (int i = 2; i < instructions.Count; i++) {
 					var call = instructions[i];
 					if (call.OpCode.Code != Code.Call && call.OpCode.Code != Code.Callvirt)
@@ -853,16 +853,16 @@ namespace de4dot.code.renamer {
 			return null;
 		}
 
-		void findInitializeComponentMethod(TypeDef type, MethodDef possibleInitMethod) {
+		void findInitializeComponentMethod(MTypeDef type, MMethodDef possibleInitMethod) {
 			foreach (var methodDef in type.AllMethods) {
-				if (methodDef.MethodDefinition.Name != ".ctor")
+				if (methodDef.MethodDef.Name != ".ctor")
 					continue;
-				if (methodDef.MethodDefinition.Body == null)
+				if (methodDef.MethodDef.Body == null)
 					continue;
-				foreach (var instr in methodDef.MethodDefinition.Body.Instructions) {
+				foreach (var instr in methodDef.MethodDef.Body.Instructions) {
 					if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt)
 						continue;
-					if (!MemberReferenceHelper.compareMethodReferenceAndDeclaringType(possibleInitMethod.MethodDefinition, instr.Operand as MethodReference))
+					if (!MemberReferenceHelper.compareMethodReferenceAndDeclaringType(possibleInitMethod.MethodDef, instr.Operand as MethodReference))
 						continue;
 
 					memberInfos.method(possibleInitMethod).suggestedName = "InitializeComponent";

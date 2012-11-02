@@ -20,8 +20,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using Mono.Collections.Generic;
 
 namespace de4dot.code.deobfuscators.Babel_NET {
@@ -49,7 +49,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			get { return new Collection<TypeReference>(GenericArguments); }
 		}
 
-		MetadataToken IMetadataTokenProvider.MetadataToken {
+		MetadataToken IMetadataTokenProvider.MDToken {
 			get { throw new NotImplementedException(); }
 			set { throw new NotImplementedException(); }
 		}

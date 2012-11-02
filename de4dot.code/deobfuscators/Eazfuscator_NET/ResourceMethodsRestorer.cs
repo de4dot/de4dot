@@ -17,15 +17,15 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 	class ResourceMethodsRestorer : MethodCallRestorerBase {
-		TypeDefinition getManifestResourceStreamType;
+		TypeDef getManifestResourceStreamType;
 		EmbeddedResource getManifestResourceStreamTypeResource;
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return getManifestResourceStreamType; }
 		}
 
@@ -69,7 +69,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			}
 		}
 
-		EmbeddedResource findGetManifestResourceStreamTypeResource(TypeDefinition type, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
+		EmbeddedResource findGetManifestResourceStreamTypeResource(TypeDef type, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
 			foreach (var method in type.Methods) {
 				if (!method.IsPrivate || !method.IsStatic || method.Body == null)
 					continue;
@@ -86,8 +86,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return null;
 		}
 
-		static MethodDefinition getTheOnlyMethod(TypeDefinition type, string returnType, string parameters) {
-			MethodDefinition foundMethod = null;
+		static MethodDef getTheOnlyMethod(TypeDef type, string returnType, string parameters) {
+			MethodDef foundMethod = null;
 
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic || method.Body == null || method.HasGenericParameters)

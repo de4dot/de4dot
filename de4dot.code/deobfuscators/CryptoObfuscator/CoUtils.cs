@@ -20,12 +20,12 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CryptoObfuscator {
 	static class CoUtils {
-		public static EmbeddedResource getResource(ModuleDefinition module, MethodDefinition method) {
+		public static EmbeddedResource getResource(ModuleDefinition module, MethodDef method) {
 			if (method == null || method.Body == null)
 				return null;
 			return getResource(module, DotNetUtils.getCodeStrings(method));

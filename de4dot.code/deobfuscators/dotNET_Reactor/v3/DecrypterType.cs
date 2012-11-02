@@ -20,7 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 using de4dot.PE;
 
@@ -28,10 +28,10 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 	// Find the type that decrypts strings and calls the native lib
 	class DecrypterType {
 		ModuleDefinition module;
-		TypeDefinition decrypterType;
-		MethodDefinition stringDecrypter1;
-		MethodDefinition stringDecrypter2;
-		List<MethodDefinition> initMethods = new List<MethodDefinition>();
+		TypeDef decrypterType;
+		MethodDef stringDecrypter1;
+		MethodDef stringDecrypter2;
+		List<MethodDef> initMethods = new List<MethodDef>();
 		List<ModuleReference> moduleReferences = new List<ModuleReference>();
 		Resource linkedResource;
 
@@ -39,7 +39,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			get { return decrypterType != null; }
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return decrypterType; }
 		}
 
@@ -47,15 +47,15 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			get { return linkedResource; }
 		}
 
-		public MethodDefinition StringDecrypter1 {
+		public MethodDef StringDecrypter1 {
 			get { return stringDecrypter1; }
 		}
 
-		public MethodDefinition StringDecrypter2 {
+		public MethodDef StringDecrypter2 {
 			get { return stringDecrypter2; }
 		}
 
-		public IEnumerable<MethodDefinition> InitMethods {
+		public IEnumerable<MethodDef> InitMethods {
 			get { return initMethods; }
 		}
 
@@ -63,9 +63,9 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			get { return moduleReferences; }
 		}
 
-		public IEnumerable<MethodDefinition> StringDecrypters {
+		public IEnumerable<MethodDef> StringDecrypters {
 			get {
-				return new List<MethodDefinition> {
+				return new List<MethodDef> {
 					stringDecrypter1,
 					stringDecrypter2,
 				};
@@ -132,7 +132,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			}
 		}
 
-		MethodDefinition getStringDecrypter(TypeDefinition type, string name) {
+		MethodDef getStringDecrypter(TypeDef type, string name) {
 			var method = DotNetUtils.getMethod(type, name);
 			if (method == null)
 				return null;

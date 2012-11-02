@@ -458,7 +458,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			var initMethod = csRtType.InitializeMethod;
 			if (initMethod == null)
 				return null;
-			uint initToken = initMethod.MetadataToken.ToUInt32();
+			uint initToken = initMethod.MDToken.ToUInt32();
 			var moduleCctorBytes = new byte[6];
 			moduleCctorBytes[0] = 0x28;	// call
 			moduleCctorBytes[1] = (byte)initToken;
@@ -542,7 +542,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 				var dm = new DumpedMethod();
 				dm.token = 0x06000001 + (uint)i;
 
-				var method = (Mono.Cecil.MethodDefinition)module.LookupToken((int)dm.token);
+				var method = (Mono.Cecil.MethodDef)module.LookupToken((int)dm.token);
 				if (method == null || method.DeclaringType == DotNetUtils.getModuleType(module))
 					continue;
 

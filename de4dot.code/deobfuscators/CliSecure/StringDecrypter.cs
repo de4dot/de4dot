@@ -19,29 +19,29 @@
 
 using System;
 using System.Text;
-using Mono.Cecil;
+using dot10.DotNet;
 
 namespace de4dot.code.deobfuscators.CliSecure {
 	class StringDecrypter {
 		ModuleDefinition module;
-		TypeDefinition stringDecrypterType;
-		MethodDefinition stringDecrypterMethod;
+		TypeDef stringDecrypterType;
+		MethodDef stringDecrypterMethod;
 		byte[] stringDecrypterKey;
 
 		public bool Detected {
 			get { return stringDecrypterMethod != null; }
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return stringDecrypterType; }
 		}
 
-		public MethodDefinition Method {
+		public MethodDef Method {
 			get { return stringDecrypterMethod; }
 			set { stringDecrypterMethod = value; }
 		}
 
-		public StringDecrypter(ModuleDefinition module, MethodDefinition stringDecrypterMethod) {
+		public StringDecrypter(ModuleDefinition module, MethodDef stringDecrypterMethod) {
 			this.module = module;
 			this.stringDecrypterMethod = stringDecrypterMethod;
 		}

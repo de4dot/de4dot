@@ -19,7 +19,7 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
+using dot10.DotNet;
 
 namespace de4dot.code.renamer {
 	abstract class TypeNames {
@@ -40,7 +40,7 @@ namespace de4dot.code.renamer {
 			string prefix = getPrefix(typeRef);
 
 			var elementType = typeRef.GetElementType();
-			if (elementType is GenericParameter)
+			if (elementType is GenericParam)
 				return genericParamNameCreator.create();
 
 			NameCreator nc;

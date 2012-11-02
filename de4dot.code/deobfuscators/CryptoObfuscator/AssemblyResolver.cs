@@ -20,15 +20,15 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CryptoObfuscator {
 	class AssemblyResolver {
 		ModuleDefinition module;
-		TypeDefinition resolverType;
-		MethodDefinition resolverMethod;
+		TypeDef resolverType;
+		MethodDef resolverMethod;
 		List<AssemblyInfo> assemblyInfos = new List<AssemblyInfo>();
 
 		public class AssemblyInfo {
@@ -54,11 +54,11 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			get { return assemblyInfos; }
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return resolverType; }
 		}
 
-		public MethodDefinition Method {
+		public MethodDef Method {
 			get { return resolverMethod; }
 		}
 
@@ -81,7 +81,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			}
 		}
 
-		bool checkType(TypeDefinition type, MethodDefinition initMethod) {
+		bool checkType(TypeDef type, MethodDef initMethod) {
 			if (DotNetUtils.findFieldType(type, "System.Collections.Hashtable", true) == null)
 				return false;
 			if (!checkInitMethod(initMethod))
@@ -102,7 +102,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return true;
 		}
 
-		bool checkInitMethod(MethodDefinition initMethod) {
+		bool checkInitMethod(MethodDef initMethod) {
 			if (!initMethod.HasBody)
 				return false;
 

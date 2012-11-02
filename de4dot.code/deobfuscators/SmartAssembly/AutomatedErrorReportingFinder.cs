@@ -19,8 +19,8 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.SmartAssembly {
@@ -45,12 +45,12 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			if (entryPoint == null)
 				enabled = true;
 			else {
-				MethodDefinition exceptionMethod;
+				MethodDef exceptionMethod;
 				enabled = checkMethod(entryPoint, out exceptionMethod);
 			}
 		}
 
-		bool checkMethod(MethodDefinition method, out MethodDefinition exceptionMethod) {
+		bool checkMethod(MethodDef method, out MethodDef exceptionMethod) {
 			exceptionMethod = null;
 
 			var body = method.Body;

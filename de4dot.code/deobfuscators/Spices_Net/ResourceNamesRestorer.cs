@@ -18,23 +18,23 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Spices_Net {
 	class ResourceNamesRestorer {
 		ModuleDefinition module;
-		TypeDefinition resourceManagerType;
-		TypeDefinition componentResourceManagerType;
+		TypeDef resourceManagerType;
+		TypeDef componentResourceManagerType;
 		MethodDefinitionAndDeclaringTypeDict<MethodReference> resourceManagerCtors = new MethodDefinitionAndDeclaringTypeDict<MethodReference>();
 		MethodDefinitionAndDeclaringTypeDict<MethodReference> componentManagerCtors = new MethodDefinitionAndDeclaringTypeDict<MethodReference>();
 
-		public TypeDefinition ResourceManagerType {
+		public TypeDef ResourceManagerType {
 			get { return resourceManagerType; }
 		}
 
-		public TypeDefinition ComponentResourceManagerType {
+		public TypeDef ComponentResourceManagerType {
 			get { return componentResourceManagerType; }
 		}
 
@@ -54,7 +54,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			initializeCtors(componentResourceManagerType, componentManagerCtors);
 		}
 
-		static void initializeCtors(TypeDefinition manager, MethodDefinitionAndDeclaringTypeDict<MethodReference> ctors) {
+		static void initializeCtors(TypeDef manager, MethodDefinitionAndDeclaringTypeDict<MethodReference> ctors) {
 			if (manager == null)
 				return;
 
@@ -70,7 +70,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			}
 		}
 
-		static bool isResourceType(TypeDefinition type, string baseTypeName) {
+		static bool isResourceType(TypeDef type, string baseTypeName) {
 			if (type.BaseType == null || type.BaseType.FullName != baseTypeName)
 				return false;
 			if (type.HasProperties || type.HasEvents || type.HasFields)

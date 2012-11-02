@@ -21,8 +21,8 @@ using System;
 using System.Collections.Generic;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 
 namespace de4dot.code.deobfuscators.DeepSea {
 	class CastDeobfuscator : IBlocksDeobfuscator {
@@ -67,7 +67,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			public override string ToString() {
 				if (type == null)
 					return string.Format("{0} - INVALID", local);
-				return string.Format("{0} - {1:X8} {2}", local, type.MetadataToken.ToInt32(), type.FullName);
+				return string.Format("{0} - {1:X8} {2}", local, type.MDToken.ToInt32(), type.FullName);
 			}
 		}
 

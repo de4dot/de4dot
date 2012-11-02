@@ -19,21 +19,21 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.SmartAssembly {
 	class TamperProtectionRemover {
 		ModuleDefinition module;
-		List<MethodDefinition> pinvokeMethods = new List<MethodDefinition>();
+		List<MethodDef> pinvokeMethods = new List<MethodDef>();
 
 		enum Type {
 			V1,
 			V2,
 		}
 
-		public IList<MethodDefinition> PinvokeMethods {
+		public IList<MethodDef> PinvokeMethods {
 			get { return pinvokeMethods; }
 		}
 
@@ -68,7 +68,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 
 		class TamperBlocks {
 			public Type type;
-			public MethodDefinition pinvokeMethod;
+			public MethodDef pinvokeMethod;
 			public BlockInfo first;
 			public BlockInfo second;
 			public BlockInfo bad;
@@ -296,7 +296,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 
 			if (tamperBlocks == null) {
 				if (isTamperProtected(allBlocks))
-					Log.w("Could not remove tamper protection code: {0} ({1:X8})", Utils.removeNewlines(blocks.Method), blocks.Method.MetadataToken.ToUInt32());
+					Log.w("Could not remove tamper protection code: {0} ({1:X8})", Utils.removeNewlines(blocks.Method), blocks.Method.MDToken.ToUInt32());
 				return false;
 			}
 

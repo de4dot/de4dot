@@ -19,8 +19,8 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Babel_NET {
@@ -54,7 +54,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			get { return true; }
 		}
 
-		protected override object checkCctor(TypeDefinition type, MethodDefinition cctor) {
+		protected override object checkCctor(TypeDef type, MethodDef cctor) {
 			var instructions = cctor.Body.Instructions;
 			for (int i = 0; i < instructions.Count; i++) {
 				TypeReference delegateType;
@@ -95,7 +95,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return null;
 		}
 
-		protected override void getCallInfo(object context, FieldDefinition field, out MethodReference calledMethod, out OpCode callOpcode) {
+		protected override void getCallInfo(object context, FieldDef field, out MethodReference calledMethod, out OpCode callOpcode) {
 			var ctx = (Context)context;
 
 			switch (ctx.proxyCreatorType) {
@@ -141,7 +141,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			}
 		}
 
-		ProxyCreatorType getProxyCreatorType(MethodDefinition methodToCheck) {
+		ProxyCreatorType getProxyCreatorType(MethodDef methodToCheck) {
 			foreach (var calledMethod in DotNetUtils.getCalledMethods(module, methodToCheck)) {
 				if (!calledMethod.IsStatic || calledMethod.Body == null)
 					continue;

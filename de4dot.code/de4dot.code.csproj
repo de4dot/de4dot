@@ -277,7 +277,7 @@
     <None Include="renamer\asmmodules\FieldDef.cs" />
     <None Include="renamer\asmmodules\GenericParamDef.cs" />
     <None Include="renamer\asmmodules\IResolver.cs" />
-    <None Include="renamer\asmmodules\MemberRefFinder.cs" />
+    <Compile Include="renamer\asmmodules\MemberRefFinder.cs" />
     <None Include="renamer\asmmodules\MethodDef.cs" />
     <None Include="renamer\asmmodules\MethodNameGroups.cs" />
     <None Include="renamer\asmmodules\Module.cs" />

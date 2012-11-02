@@ -17,12 +17,12 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.Cecil;
+using dot10.DotNet;
 
 namespace de4dot.code.renamer.asmmodules {
 	interface IResolver {
-		TypeDef resolve(TypeReference typeReference);
-		MethodDef resolve(MethodReference methodReference);
-		FieldDef resolve(FieldReference fieldReference);
+		MTypeDef resolveType(TypeRef typeReference);
+		MMethodDef resolveMethod(MemberRef methodReference);
+		MFieldDef resolveField(MemberRef fieldReference);
 	}
 }

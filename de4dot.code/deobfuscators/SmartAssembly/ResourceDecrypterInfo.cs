@@ -18,14 +18,14 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.SmartAssembly {
 	class ResourceDecrypterInfo {
 		ModuleDefinition module;
-		MethodDefinition simpleZipTypeDecryptMethod;
+		MethodDef simpleZipTypeDecryptMethod;
 
 		public byte[] DES_Key { get; private set; }
 		public byte[] DES_IV  { get; private set; }
@@ -40,19 +40,19 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			this.module = module;
 		}
 
-		public ResourceDecrypterInfo(ModuleDefinition module, MethodDefinition simpleZipTypeDecryptMethod, ISimpleDeobfuscator simpleDeobfuscator)
+		public ResourceDecrypterInfo(ModuleDefinition module, MethodDef simpleZipTypeDecryptMethod, ISimpleDeobfuscator simpleDeobfuscator)
 			: this(module) {
 			setSimpleZipType(simpleZipTypeDecryptMethod, simpleDeobfuscator);
 		}
 
-		public void setSimpleZipType(MethodDefinition method, ISimpleDeobfuscator simpleDeobfuscator) {
+		public void setSimpleZipType(MethodDef method, ISimpleDeobfuscator simpleDeobfuscator) {
 			if (simpleZipTypeDecryptMethod != null || method == null)
 				return;
 			simpleZipTypeDecryptMethod = method;
 			init(simpleDeobfuscator, method);
 		}
 
-		void init(ISimpleDeobfuscator simpleDeobfuscator, MethodDefinition method) {
+		void init(ISimpleDeobfuscator simpleDeobfuscator, MethodDef method) {
 			var desList = new List<byte[]>(2);
 			var aesList = new List<byte[]>(2);
 

@@ -19,8 +19,8 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.SmartAssembly {
@@ -51,7 +51,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			this.simpleDeobfuscator = simpleDeobfuscator;
 		}
 
-		protected override object checkCctor(ref TypeDefinition type, MethodDefinition cctor) {
+		protected override object checkCctor(ref TypeDef type, MethodDef cctor) {
 			var instrs = cctor.Body.Instructions;
 			if (instrs.Count > 10)
 				return null;
@@ -61,13 +61,13 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				return null;
 			if (!DotNetUtils.isLdcI4(instrs[0].OpCode.Code))
 				return null;
-			if (instrs[1].OpCode != OpCodes.Call || !isDelegateCreatorMethod(instrs[1].Operand as MethodDefinition))
+			if (instrs[1].OpCode != OpCodes.Call || !isDelegateCreatorMethod(instrs[1].Operand as MethodDef))
 				return null;
 			if (instrs[2].OpCode != OpCodes.Ret)
 				return null;
 
 			int delegateToken = 0x02000001 + DotNetUtils.getLdcI4Value(instrs[0]);
-			if (type.MetadataToken.ToInt32() != delegateToken) {
+			if (type.MDToken.ToInt32() != delegateToken) {
 				Log.w("Delegate token is not current type");
 				return null;
 			}
@@ -75,7 +75,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return new object();
 		}
 
-		protected override void getCallInfo(object context, FieldDefinition field, out MethodReference calledMethod, out OpCode callOpcode) {
+		protected override void getCallInfo(object context, FieldDef field, out MethodReference calledMethod, out OpCode callOpcode) {
 			callOpcode = OpCodes.Call;
 			string name = field.Name;
 
@@ -93,7 +93,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			}
 
 			if (methodIndex >= memberReferences.Count) {
-				Log.w("Ignoring invalid methodIndex: {0:X8}, field: {1:X8}", methodIndex, field.MetadataToken.ToInt32());
+				Log.w("Ignoring invalid methodIndex: {0:X8}, field: {1:X8}", methodIndex, field.MDToken.ToInt32());
 				calledMethod = null;
 				return;
 			}

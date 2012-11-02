@@ -21,8 +21,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using Mono.MyStuff;
 using de4dot.blocks;
 using de4dot.PE;
@@ -359,7 +359,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			return DeobfuscatorInfo.THE_NAME + " 4.3";
 		}
 
-		static bool findString(MethodDefinition method, string s) {
+		static bool findString(MethodDef method, string s) {
 			foreach (var cs in DotNetUtils.getCodeStrings(method)) {
 				if (cs == s)
 					return true;
@@ -504,7 +504,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			startedDeobfuscating = true;
 		}
 
-		void addEntryPointCallToBeRemoved(MethodDefinition methodToBeRemoved) {
+		void addEntryPointCallToBeRemoved(MethodDef methodToBeRemoved) {
 			var entryPoint = module.EntryPoint;
 			addCallToBeRemoved(entryPoint, methodToBeRemoved);
 			foreach (var calledMethod in DotNetUtils.getCalledMethods(module, entryPoint))
@@ -547,7 +547,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				Log.v("Removed anti strong name code");
 		}
 
-		TypeDefinition getDecrypterType() {
+		TypeDef getDecrypterType() {
 			return methodsDecrypter.DecrypterType ?? stringDecrypter.DecrypterType ?? booleanDecrypter.DecrypterType;
 		}
 
@@ -596,9 +596,9 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		public override IEnumerable<int> getStringDecrypterMethods() {
 			var list = new List<int>();
 			foreach (var info in stringDecrypter.DecrypterInfos)
-				list.Add(info.method.MetadataToken.ToInt32());
+				list.Add(info.method.MDToken.ToInt32());
 			if (stringDecrypter.OtherStringDecrypter != null)
-				list.Add(stringDecrypter.OtherStringDecrypter.MetadataToken.ToInt32());
+				list.Add(stringDecrypter.OtherStringDecrypter.MDToken.ToInt32());
 			return list;
 		}
 

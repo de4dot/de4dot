@@ -19,13 +19,13 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.MaxtoCode {
 	class MainType {
 		ModuleDefinition module;
-		TypeDefinition mcType;
+		TypeDef mcType;
 		ModuleReference mcModule1, mcModule2;
 		bool isOld;
 
@@ -33,7 +33,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			get { return isOld; }
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return mcType; }
 		}
 
@@ -48,9 +48,9 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			}
 		}
 
-		public IEnumerable<MethodDefinition> InitMethods {
+		public IEnumerable<MethodDef> InitMethods {
 			get {
-				var list = new List<MethodDefinition>();
+				var list = new List<MethodDef>();
 				if (mcType == null)
 					return list;
 				foreach (var method in mcType.Methods) {
@@ -87,7 +87,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			}
 		}
 
-		bool checkCctor(MethodDefinition cctor) {
+		bool checkCctor(MethodDef cctor) {
 			foreach (var method in DotNetUtils.getCalledMethods(module, cctor)) {
 				if (method.Name != "Startup")
 					continue;
@@ -109,7 +109,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			return false;
 		}
 
-		static bool checkType(TypeDefinition type, out ModuleReference module1, out ModuleReference module2, out bool isOld) {
+		static bool checkType(TypeDef type, out ModuleReference module1, out ModuleReference module2, out bool isOld) {
 			module1 = module2 = null;
 			isOld = false;
 
@@ -131,22 +131,22 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			return true;
 		}
 
-		static Dictionary<string, List<MethodDefinition>> getPinvokes(TypeDefinition type) {
-			var pinvokes = new Dictionary<string, List<MethodDefinition>>(StringComparer.Ordinal);
+		static Dictionary<string, List<MethodDef>> getPinvokes(TypeDef type) {
+			var pinvokes = new Dictionary<string, List<MethodDef>>(StringComparer.Ordinal);
 			foreach (var method in type.Methods) {
 				var info = method.PInvokeInfo;
 				if (info == null || info.EntryPoint == null)
 					continue;
-				List<MethodDefinition> list;
+				List<MethodDef> list;
 				if (!pinvokes.TryGetValue(info.EntryPoint, out list))
-					pinvokes[info.EntryPoint] = list = new List<MethodDefinition>();
+					pinvokes[info.EntryPoint] = list = new List<MethodDef>();
 				list.Add(method);
 			}
 			return pinvokes;
 		}
 
-		static List<MethodDefinition> getPinvokeList(Dictionary<string, List<MethodDefinition>> pinvokes, string methodName) {
-			List<MethodDefinition> list;
+		static List<MethodDef> getPinvokeList(Dictionary<string, List<MethodDef>> pinvokes, string methodName) {
+			List<MethodDef> list;
 			if (!pinvokes.TryGetValue(methodName, out list))
 				return null;
 			if (list.Count != 2)

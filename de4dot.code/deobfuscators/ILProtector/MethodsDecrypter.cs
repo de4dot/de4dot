@@ -20,8 +20,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.ILProtector {
@@ -36,7 +36,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 		EmbeddedResource methodsResource;
 		Version ilpVersion;
 		Dictionary<int, MethodInfo2> methodInfos = new Dictionary<int, MethodInfo2>();
-		List<TypeDefinition> delegateTypes = new List<TypeDefinition>();
+		List<TypeDef> delegateTypes = new List<TypeDef>();
 		int startOffset;
 		byte[] decryptionKey;
 		int decryptionKeyMod;
@@ -60,7 +60,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			get { return methodsResource; }
 		}
 
-		public IEnumerable<TypeDefinition> DelegateTypes {
+		public IEnumerable<TypeDef> DelegateTypes {
 			get { return delegateTypes; }
 		}
 
@@ -210,7 +210,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 					if (restoreMethod(method)) {
 						Log.v("Restored method {0} ({1:X8}). Instrs:{2}, Locals:{3}, Exceptions:{4}",
 							Utils.removeNewlines(method.FullName),
-							method.MetadataToken.ToInt32(),
+							method.MDToken.ToInt32(),
 							method.Body.Instructions.Count,
 							method.Body.Variables.Count,
 							method.Body.ExceptionHandlers.Count);
@@ -223,7 +223,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 		}
 
 		const int INVALID_METHOD_ID = -1;
-		bool restoreMethod(MethodDefinition method) {
+		bool restoreMethod(MethodDef method) {
 			int methodId = getMethodId(method);
 			if (methodId == INVALID_METHOD_ID)
 				return false;
@@ -240,13 +240,13 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			return true;
 		}
 
-		static void restoreMethod(MethodDefinition method, MethodReader methodReader) {
+		static void restoreMethod(MethodDef method, MethodReader methodReader) {
 			// body.MaxStackSize = <let Mono.Cecil calculate this>
 			method.Body.InitLocals = methodReader.InitLocals;
 			methodReader.restoreMethod(method);
 		}
 
-		int getMethodId(MethodDefinition method) {
+		int getMethodId(MethodDef method) {
 			if (method == null || method.Body == null)
 				return INVALID_METHOD_ID;
 
@@ -260,7 +260,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 				if (!DotNetUtils.isLdcI4(ldci4))
 					continue;
 
-				var field = ldsfld.Operand as FieldDefinition;
+				var field = ldsfld.Operand as FieldDef;
 				if (field == null || field != mainType.InvokerInstanceField)
 					continue;
 

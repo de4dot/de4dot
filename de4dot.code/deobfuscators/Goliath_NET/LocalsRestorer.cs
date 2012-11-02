@@ -18,8 +18,8 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Goliath_NET {
@@ -28,18 +28,18 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 		TypeDefinitionDict<Info> typeToInfo = new TypeDefinitionDict<Info>();
 
 		class Info {
-			public TypeDefinition type;
+			public TypeDef type;
 			public TypeReference localType;
 			public bool referenced = false;
-			public Info(TypeDefinition type, TypeReference localType) {
+			public Info(TypeDef type, TypeReference localType) {
 				this.type = type;
 				this.localType = localType;
 			}
 		}
 
-		public List<TypeDefinition> Types {
+		public List<TypeDef> Types {
 			get {
-				var list = new List<TypeDefinition>(typeToInfo.Count);
+				var list = new List<TypeDef>(typeToInfo.Count);
 				foreach (var info in typeToInfo.getValues()) {
 					if (info.referenced)
 						list.Add(info.type);
@@ -57,7 +57,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 				initialize(type);
 		}
 
-		void initialize(TypeDefinition type) {
+		void initialize(TypeDef type) {
 			if (type.HasEvents || type.HasProperties)
 				return;
 

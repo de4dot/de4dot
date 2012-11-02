@@ -20,8 +20,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CryptoObfuscator {
@@ -34,7 +34,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			this.module = module;
 		}
 
-		public void read(MethodDefinition method) {
+		public void read(MethodDef method) {
 			this.parameters = getParameters(method);
 			this.Locals = getLocals(method);
 
@@ -55,7 +55,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return DotNetUtils.getParameters(method);
 		}
 
-		static IList<VariableDefinition> getLocals(MethodDefinition method) {
+		static IList<VariableDefinition> getLocals(MethodDef method) {
 			if (method.Body == null)
 				return new List<VariableDefinition>();
 			return new List<VariableDefinition>(method.Body.Variables);
@@ -115,7 +115,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return eh;
 		}
 
-		public override void restoreMethod(MethodDefinition method) {
+		public override void restoreMethod(MethodDef method) {
 			base.restoreMethod(method);
 			method.Body.MaxStackSize = maxStackSize;
 		}

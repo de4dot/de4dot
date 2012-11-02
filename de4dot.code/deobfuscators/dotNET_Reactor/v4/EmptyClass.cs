@@ -17,20 +17,20 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 	// Detect some empty class that is called from most .ctor's
 	class EmptyClass {
 		ModuleDefinition module;
-		MethodDefinition emptyMethod;
+		MethodDef emptyMethod;
 
-		public MethodDefinition Method {
+		public MethodDef Method {
 			get { return emptyMethod; }
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return emptyMethod != null ? emptyMethod.DeclaringType : null; }
 		}
 
@@ -62,12 +62,12 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			}
 
 			int numCalls;
-			var theMethod = (MethodDefinition)callCounter.most(out numCalls);
+			var theMethod = (MethodDef)callCounter.most(out numCalls);
 			if (numCalls >= 10)
 				emptyMethod = theMethod;
 		}
 
-		bool isEmptyClass(MethodDefinition emptyMethod) {
+		bool isEmptyClass(MethodDef emptyMethod) {
 			if (!DotNetUtils.isEmptyObfuscated(emptyMethod))
 				return false;
 

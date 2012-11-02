@@ -22,8 +22,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 using de4dot.code.resources;
 
@@ -74,7 +74,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			if (!checkEntryPoint(method))
 				return;
 
-			MethodDefinition decryptAssemblyMethod;
+			MethodDef decryptAssemblyMethod;
 			var mainKey = getMainResourceKey(method, out decryptAssemblyMethod);
 			if (mainKey == null)
 				return;
@@ -100,7 +100,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			"System.AppDomain",
 			"System.DateTime",
 		};
-		bool checkEntryPoint(MethodDefinition method) {
+		bool checkEntryPoint(MethodDef method) {
 			if (method == null)
 				return false;
 			if (!new LocalTypes(method).all(requiredLocals))
@@ -112,12 +112,12 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			return true;
 		}
 
-		void deobfuscateAll(MethodDefinition method) {
+		void deobfuscateAll(MethodDef method) {
 			simpleDeobfuscator.deobfuscate(method);
 			simpleDeobfuscator.decryptStrings(method, deob);
 		}
 
-		string getMainResourceKey(MethodDefinition method, out MethodDefinition decryptAssemblyMethod) {
+		string getMainResourceKey(MethodDef method, out MethodDef decryptAssemblyMethod) {
 			foreach (var calledMethod in DotNetUtils.getCalledMethods(module, method)) {
 				if (!calledMethod.IsStatic || calledMethod.Body == null)
 					continue;
@@ -135,7 +135,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			return null;
 		}
 
-		string getMainResourceKeyInfo(MethodDefinition method, out MethodDefinition decryptAssemblyMethod) {
+		string getMainResourceKeyInfo(MethodDef method, out MethodDef decryptAssemblyMethod) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 1; i++) {
 				var ldstr = instrs[i];
@@ -144,7 +144,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 				var call = instrs[i + 1];
 				if (call.OpCode.Code != Code.Call)
 					continue;
-				var calledMethod = call.Operand as MethodDefinition;
+				var calledMethod = call.Operand as MethodDef;
 				if (calledMethod == null)
 					continue;
 
@@ -155,7 +155,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			return null;
 		}
 
-		EmbeddedResource getResource(MethodDefinition method, out ModuleDefinition theResourceModule) {
+		EmbeddedResource getResource(MethodDef method, out ModuleDefinition theResourceModule) {
 			string resourceDllFileName = null;
 			theResourceModule = module;
 			foreach (var s in DotNetUtils.getCodeStrings(method)) {
@@ -192,7 +192,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			}
 		}
 
-		bool getPassword(MethodDefinition method, out string password, out string salt) {
+		bool getPassword(MethodDef method, out string password, out string salt) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 1; i++) {
 				var ldstr1 = instrs[i];

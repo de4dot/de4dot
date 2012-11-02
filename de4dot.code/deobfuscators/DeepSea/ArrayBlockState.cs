@@ -18,8 +18,8 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using Mono.Cecil.Metadata;
 using de4dot.blocks;
 
@@ -29,11 +29,11 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		FieldDefinitionAndDeclaringTypeDict<FieldInfo> fieldToInfo = new FieldDefinitionAndDeclaringTypeDict<FieldInfo>();
 
 		public class FieldInfo {
-			public readonly FieldDefinition field;
-			public readonly FieldDefinition arrayInitField;
+			public readonly FieldDef field;
+			public readonly FieldDef arrayInitField;
 			public readonly byte[] array;
 
-			public FieldInfo(FieldDefinition field, FieldDefinition arrayInitField) {
+			public FieldInfo(FieldDef field, FieldDef arrayInitField) {
 				this.field = field;
 				this.arrayInitField = arrayInitField;
 				this.array = (byte[])arrayInitField.InitialValue.Clone();
@@ -52,14 +52,14 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			initializeArrays(simpleDeobfuscator, DotNetUtils.getModuleTypeCctor(module));
 		}
 
-		void initializeArrays(ISimpleDeobfuscator simpleDeobfuscator, MethodDefinition method) {
+		void initializeArrays(ISimpleDeobfuscator simpleDeobfuscator, MethodDef method) {
 			if (method == null || method.Body == null)
 				return;
 			while (initializeArrays2(simpleDeobfuscator, method)) {
 			}
 		}
 
-		bool initializeArrays2(ISimpleDeobfuscator simpleDeobfuscator, MethodDefinition method) {
+		bool initializeArrays2(ISimpleDeobfuscator simpleDeobfuscator, MethodDef method) {
 			bool foundField = false;
 			simpleDeobfuscator.deobfuscate(method, true);
 			var instructions = method.Body.Instructions;
@@ -76,7 +76,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				if (arrayType == null || arrayType.EType != ElementType.U1)
 					continue;
 
-				var arrayInitField = instrs[2].Operand as FieldDefinition;
+				var arrayInitField = instrs[2].Operand as FieldDef;
 				if (arrayInitField == null || arrayInitField.InitialValue == null || arrayInitField.InitialValue.Length == 0)
 					continue;
 
@@ -84,7 +84,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				if (calledMethod == null || calledMethod.FullName != "System.Void System.Runtime.CompilerServices.RuntimeHelpers::InitializeArray(System.Array,System.RuntimeFieldHandle)")
 					continue;
 
-				var targetField = instrs[4].Operand as FieldDefinition;
+				var targetField = instrs[4].Operand as FieldDef;
 				if (targetField == null)
 					continue;
 
@@ -102,8 +102,8 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return fieldToInfo.find(fieldRef);
 		}
 
-		public IEnumerable<FieldDefinition> cleanUp() {
-			var removedFields = new List<FieldDefinition>();
+		public IEnumerable<FieldDef> cleanUp() {
+			var removedFields = new List<FieldDef>();
 			var moduleCctor = DotNetUtils.getModuleTypeCctor(module);
 			if (moduleCctor == null)
 				return removedFields;

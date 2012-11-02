@@ -18,16 +18,16 @@
 */
 
 using System;
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CliSecure {
 	class StackFrameHelper {
 		ModuleDefinition module;
-		TypeDefinition stackFrameHelperType;
+		TypeDef stackFrameHelperType;
 		ExceptionLoggerRemover exceptionLoggerRemover = new ExceptionLoggerRemover();
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return stackFrameHelperType; }
 		}
 
@@ -46,7 +46,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 				if (type.Methods.Count > 3)
 					continue;
 
-				MethodDefinition errorMethod = null;
+				MethodDef errorMethod = null;
 				foreach (var method in type.Methods) {
 					if (method.IsRuntimeSpecialName && method.Name == ".ctor" && !method.HasParameters)
 						continue;	// .ctor is allowed

@@ -18,20 +18,20 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.SmartAssembly {
 	class StringsEncoderInfo {
 		// SmartAssembly.HouseOfCards.Strings, the class that creates the string decrypter
 		// delegates
-		public TypeDefinition StringsType { get; set; }
-		public TypeDefinition GetStringDelegate { get; set; }
-		public MethodDefinition CreateStringDelegateMethod { get; set; }
+		public TypeDef StringsType { get; set; }
+		public TypeDef GetStringDelegate { get; set; }
+		public MethodDef CreateStringDelegateMethod { get; set; }
 
 		// The class that decodes the strings. Called by the strings delegate or normal code.
-		public TypeDefinition StringDecrypterClass { get; set; }
+		public TypeDef StringDecrypterClass { get; set; }
 	}
 
 	class StringEncoderClassFinder {
@@ -48,7 +48,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			this.simpleDeobfuscator = simpleDeobfuscator;
 		}
 
-		TypeDefinition getType(TypeReference typeReference) {
+		TypeDef getType(TypeReference typeReference) {
 			return DotNetUtils.getType(module, typeReference);
 		}
 
@@ -84,7 +84,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			}
 		}
 
-		bool checkDelegateCreatorMethod(TypeDefinition type, MethodDefinition method) {
+		bool checkDelegateCreatorMethod(TypeDef type, MethodDef method) {
 			simpleDeobfuscator.deobfuscate(method);
 
 			var getStringDelegate = findGetStringDelegate(method);
@@ -106,7 +106,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 		}
 
 		// Finds the SmartAssembly.Delegates.GetString delegate
-		TypeDefinition findGetStringDelegate(MethodDefinition stringsCreateDelegateMethod) {
+		TypeDef findGetStringDelegate(MethodDef stringsCreateDelegateMethod) {
 			if (!stringsCreateDelegateMethod.HasBody)
 				return null;
 
@@ -132,7 +132,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 		// Finds the SmartAssembly.StringsEncoding.Strings class. This class decrypts the
 		// strings in the resources. It gets called by the SmartAssembly.Delegates.GetString
 		// delegate instances which were created by SmartAssembly.HouseOfCards.Strings.
-		TypeDefinition findStringDecrypterClass(MethodDefinition stringsCreateDelegateMethod) {
+		TypeDef findStringDecrypterClass(MethodDef stringsCreateDelegateMethod) {
 			if (!stringsCreateDelegateMethod.HasBody)
 				return null;
 
@@ -155,7 +155,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 		}
 
 		void findStringDecrypterClasses() {
-			var foundClasses = new Dictionary<TypeDefinition, bool>();
+			var foundClasses = new Dictionary<TypeDef, bool>();
 			foreach (var info in stringsEncoderInfos)
 				foundClasses[info.StringDecrypterClass] = true;
 
@@ -181,7 +181,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			"System.Byte[]",
 			"System.Int32",
 		};
-		bool couldBeStringDecrypterClass(TypeDefinition type) {
+		bool couldBeStringDecrypterClass(TypeDef type) {
 			var fields = new FieldTypes(type);
 			if (fields.exists("System.Collections.Hashtable") ||
 				fields.exists("System.Collections.Generic.Dictionary`2<System.Int32,System.String>") ||
@@ -194,7 +194,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			else
 				return false;
 
-			var methods = new List<MethodDefinition>(DotNetUtils.getNormalMethods(type));
+			var methods = new List<MethodDef>(DotNetUtils.getNormalMethods(type));
 			if (methods.Count != 1)
 				return false;
 			var method = methods[0];

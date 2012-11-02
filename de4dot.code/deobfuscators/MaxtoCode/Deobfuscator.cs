@@ -20,7 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Mono.Cecil;
+using dot10.DotNet;
 using Mono.MyStuff;
 
 namespace de4dot.code.deobfuscators.MaxtoCode {
@@ -215,7 +215,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		public override IEnumerable<int> getStringDecrypterMethods() {
 			var list = new List<int>();
 			if (stringDecrypter != null && stringDecrypter.Detected)
-				list.Add(stringDecrypter.Method.MetadataToken.ToInt32());
+				list.Add(stringDecrypter.Method.MDToken.ToInt32());
 			return list;
 		}
 	}

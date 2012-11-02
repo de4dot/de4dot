@@ -20,8 +20,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Xml;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CodeVeil {
@@ -29,12 +29,12 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		ModuleDefinition module;
 		EmbeddedResource bundleData;
 		EmbeddedResource bundleXmlFile;
-		TypeDefinition bundleType;
-		TypeDefinition assemblyManagerType;
-		TypeDefinition bundleStreamProviderIFace;
-		TypeDefinition xmlParserType;
-		TypeDefinition bundledAssemblyType;
-		TypeDefinition streamProviderType;
+		TypeDef bundleType;
+		TypeDef assemblyManagerType;
+		TypeDef bundleStreamProviderIFace;
+		TypeDef xmlParserType;
+		TypeDef bundledAssemblyType;
+		TypeDef streamProviderType;
 		List<AssemblyInfo> infos = new List<AssemblyInfo>();
 
 		public class AssemblyInfo {
@@ -66,9 +66,9 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			}
 		}
 
-		public IEnumerable<TypeDefinition> BundleTypes {
+		public IEnumerable<TypeDef> BundleTypes {
 			get {
-				var list = new List<TypeDefinition>();
+				var list = new List<TypeDef>();
 				if (!CanRemoveTypes)
 					return list;
 
@@ -167,7 +167,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return value;
 		}
 
-		TypeDefinition findBundleType() {
+		TypeDef findBundleType() {
 			foreach (var type in module.Types) {
 				if (type.Namespace != "")
 					continue;
@@ -193,7 +193,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return null;
 		}
 
-		MethodDefinition findInitMethod(TypeDefinition type) {
+		MethodDef findInitMethod(TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
@@ -208,7 +208,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return null;
 		}
 
-		MethodDefinition findGetTempFilenameMethod(TypeDefinition type) {
+		MethodDef findGetTempFilenameMethod(TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (method.IsStatic || method.Body == null)
 					continue;
@@ -234,7 +234,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				return;
 
 			foreach (var field in bundleType.Fields) {
-				var type = field.FieldType as TypeDefinition;
+				var type = field.FieldType as TypeDef;
 				if (type == null)
 					continue;
 				if (type == bundleType)
@@ -245,7 +245,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				var ctor = DotNetUtils.getMethod(type, ".ctor");
 				if (ctor == null || ctor.Parameters.Count != 2)
 					continue;
-				var iface = ctor.Parameters[1].ParameterType as TypeDefinition;
+				var iface = ctor.Parameters[1].ParameterType as TypeDef;
 				if (iface == null || !iface.IsInterface)
 					continue;
 
@@ -259,7 +259,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			if (assemblyManagerType == null)
 				return;
 			foreach (var field in assemblyManagerType.Fields) {
-				var type = field.FieldType as TypeDefinition;
+				var type = field.FieldType as TypeDef;
 				if (type == null || type.IsInterface)
 					continue;
 				var ctor = DotNetUtils.getMethod(type, ".ctor");
@@ -274,7 +274,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 					continue;
 				if (git.GenericArguments.Count != 1)
 					continue;
-				var type2 = git.GenericArguments[0] as TypeDefinition;
+				var type2 = git.GenericArguments[0] as TypeDef;
 				if (type2 == null)
 					continue;
 
@@ -293,7 +293,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			foreach (var instr in ctor.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Newobj)
 					continue;
-				var newobjCtor = instr.Operand as MethodDefinition;
+				var newobjCtor = instr.Operand as MethodDef;
 				if (newobjCtor == null)
 					continue;
 				if (newobjCtor.DeclaringType == assemblyManagerType)

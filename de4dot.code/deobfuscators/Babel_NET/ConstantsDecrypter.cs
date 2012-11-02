@@ -21,8 +21,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Babel_NET {
@@ -30,12 +30,12 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		ModuleDefinition module;
 		ResourceDecrypter resourceDecrypter;
 		InitializedDataCreator initializedDataCreator;
-		TypeDefinition decrypterType;
-		MethodDefinition int32Decrypter;
-		MethodDefinition int64Decrypter;
-		MethodDefinition singleDecrypter;
-		MethodDefinition doubleDecrypter;
-		MethodDefinition arrayDecrypter;
+		TypeDef decrypterType;
+		MethodDef int32Decrypter;
+		MethodDef int64Decrypter;
+		MethodDef singleDecrypter;
+		MethodDef doubleDecrypter;
+		MethodDef arrayDecrypter;
 		EmbeddedResource encryptedResource;
 		int[] decryptedInts;
 		long[] decryptedLongs;
@@ -54,27 +54,27 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			get { return encryptedResource; }
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return decrypterType; }
 		}
 
-		public MethodDefinition Int32Decrypter {
+		public MethodDef Int32Decrypter {
 			get { return int32Decrypter; }
 		}
 
-		public MethodDefinition Int64Decrypter {
+		public MethodDef Int64Decrypter {
 			get { return int64Decrypter; }
 		}
 
-		public MethodDefinition SingleDecrypter {
+		public MethodDef SingleDecrypter {
 			get { return singleDecrypter; }
 		}
 
-		public MethodDefinition DoubleDecrypter {
+		public MethodDef DoubleDecrypter {
 			get { return doubleDecrypter; }
 		}
 
-		public MethodDefinition ArrayDecrypter {
+		public MethodDef ArrayDecrypter {
 			get { return arrayDecrypter; }
 		}
 
@@ -99,7 +99,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			}
 		}
 
-		bool isConstantDecrypter(TypeDefinition type) {
+		bool isConstantDecrypter(TypeDef type) {
 			if (type.HasEvents)
 				return false;
 			if (type.NestedTypes.Count != 1)
@@ -131,7 +131,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			"System.Single[]",
 			"System.Double[]",
 		};
-		bool checkNestedFields(TypeDefinition nested) {
+		bool checkNestedFields(TypeDef nested) {
 			if (!new FieldTypes(nested).all(requiredTypes))
 				return false;
 			foreach (var field in nested.Fields) {
@@ -193,11 +193,11 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		}
 
 		struct ArrayInfo {
-			public FieldDefinition encryptedField;
+			public FieldDef encryptedField;
 			public ArrayType arrayType;
 			public int start, len;
 
-			public ArrayInfo(int start, int len, FieldDefinition encryptedField, ArrayType arrayType) {
+			public ArrayInfo(int start, int len, FieldDef encryptedField, ArrayType arrayType) {
 				this.start = start;
 				this.len = len;
 				this.encryptedField = encryptedField;
@@ -232,7 +232,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 					var ldtoken = instrs[index++];
 					if (ldtoken.OpCode.Code != Code.Ldtoken)
 						continue;
-					var field = ldtoken.Operand as FieldDefinition;
+					var field = ldtoken.Operand as FieldDef;
 					if (field == null)
 						continue;
 
@@ -255,7 +255,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 					if (arrayType == null)
 						continue;
 					if (arrayType.ElementType.GetPrimitiveSize() == -1) {
-						Log.w("Can't decrypt non-primitive type array in method {0}", blocks.Method.MetadataToken.ToInt32());
+						Log.w("Can't decrypt non-primitive type array in method {0}", blocks.Method.MDToken.ToInt32());
 						continue;
 					}
 

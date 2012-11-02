@@ -21,8 +21,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 // SmartAssembly can add so much junk that it's very difficult to find and remove all of it.
@@ -159,7 +159,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			}
 		}
 
-		void initializeVersion(TypeDefinition attr) {
+		void initializeVersion(TypeDef attr) {
 			var s = DotNetUtils.getCustomArgAsString(getAssemblyAttribute(attr), 0);
 			if (s == null)
 				return;
@@ -230,8 +230,8 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return -1;
 		}
 
-		TypeDefinition getTypeIdAttribute() {
-			Dictionary<TypeDefinition, bool> attrs = null;
+		TypeDef getTypeIdAttribute() {
+			Dictionary<TypeDef, bool> attrs = null;
 			int counter = 0;
 			foreach (var type in module.GetTypes()) {
 				counter++;
@@ -239,11 +239,11 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				if (cattrs.Count == 0)
 					return null;
 
-				var attrs2 = new Dictionary<TypeDefinition, bool>();
+				var attrs2 = new Dictionary<TypeDef, bool>();
 				foreach (var cattr in cattrs) {
 					if (!DotNetUtils.isMethod(cattr.Constructor, "System.Void", "(System.Int32)"))
 						continue;
-					var attrType = cattr.AttributeType as TypeDefinition;
+					var attrType = cattr.AttributeType as TypeDef;
 					if (attrType == null)
 						continue;
 					if (attrs != null && !attrs.ContainsKey(attrType))
@@ -352,7 +352,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return true;
 		}
 
-		MethodDefinition getGlobalSimpleZipTypeMethod() {
+		MethodDef getGlobalSimpleZipTypeMethod() {
 			if (assemblyResolverInfo.SimpleZipTypeMethod != null)
 				return assemblyResolverInfo.SimpleZipTypeMethod;
 			foreach (var info in stringDecrypterInfos) {
@@ -409,7 +409,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			foreach (var info in stringDecrypterInfos) {
 				if (initd.ContainsKey(info))
 					continue;
-				Log.v("String decrypter not initialized. Token {0:X8}", info.StringsEncodingClass.MetadataToken.ToInt32());
+				Log.v("String decrypter not initialized. Token {0:X8}", info.StringsEncodingClass.MDToken.ToInt32());
 			}
 		}
 
@@ -419,7 +419,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			if (decrypter.CanDecrypt) {
 				staticStringInliner.add(DotNetUtils.getMethod(info.GetStringDelegate, "Invoke"), (method, gim, args) => {
 					var fieldDefinition = DotNetUtils.getField(module, (FieldReference)args[0]);
-					return decrypter.decrypt(fieldDefinition.MetadataToken.ToInt32(), (int)args[1]);
+					return decrypter.decrypt(fieldDefinition.MDToken.ToInt32(), (int)args[1]);
 				});
 				staticStringInliner.add(info.StringDecrypterMethod, (method, gim, args) => {
 					return decrypter.decrypt(0, (int)args[0]);
@@ -448,11 +448,11 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			base.deobfuscateEnd();
 		}
 
-		TypeDefinition findBigType() {
+		TypeDef findBigType() {
 			if (approxVersion <= new Version(6, 5, 3, 53))
 				return null;
 
-			TypeDefinition bigType = null;
+			TypeDef bigType = null;
 			foreach (var type in module.Types) {
 				if (isBigType(type)) {
 					if (bigType == null || type.Methods.Count > bigType.Methods.Count)
@@ -462,7 +462,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return bigType;
 		}
 
-		bool isBigType(TypeDefinition type) {
+		bool isBigType(TypeDef type) {
 			if (type.Methods.Count < 50)
 				return false;
 			if (type.HasProperties || type.HasEvents)
@@ -541,7 +541,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 		public override IEnumerable<int> getStringDecrypterMethods() {
 			var list = new List<int>();
 			foreach (var method in staticStringInliner.Methods)
-				list.Add(method.MetadataToken.ToInt32());
+				list.Add(method.MDToken.ToInt32());
 			return list;
 		}
 	}

@@ -22,9 +22,9 @@ using System.Collections.Generic;
 
 namespace de4dot.code.renamer.asmmodules {
 	class MethodNameGroup {
-		List<MethodDef> methods = new List<MethodDef>();
+		List<MMethodDef> methods = new List<MMethodDef>();
 
-		public List<MethodDef> Methods {
+		public List<MMethodDef> Methods {
 			get { return methods; }
 		}
 
@@ -32,7 +32,7 @@ namespace de4dot.code.renamer.asmmodules {
 			get { return methods.Count; }
 		}
 
-		public void add(MethodDef method) {
+		public void add(MMethodDef method) {
 			methods.Add(method);
 		}
 
@@ -52,7 +52,7 @@ namespace de4dot.code.renamer.asmmodules {
 
 		public bool hasInterfaceMethod() {
 			foreach (var method in methods) {
-				if (method.Owner.TypeDefinition.IsInterface)
+				if (method.Owner.TypeDef.IsInterface)
 					return true;
 			}
 			return false;
@@ -102,17 +102,17 @@ namespace de4dot.code.renamer.asmmodules {
 	}
 
 	class MethodNameGroups {
-		Dictionary<MethodDef, MethodNameGroup> methodGroups = new Dictionary<MethodDef, MethodNameGroup>();
+		Dictionary<MMethodDef, MethodNameGroup> methodGroups = new Dictionary<MMethodDef, MethodNameGroup>();
 
-		public void same(MethodDef a, MethodDef b) {
+		public void same(MMethodDef a, MMethodDef b) {
 			merge(get(a), get(b));
 		}
 
-		public void add(MethodDef methodDef) {
+		public void add(MMethodDef methodDef) {
 			get(methodDef);
 		}
 
-		public MethodNameGroup get(MethodDef method) {
+		public MethodNameGroup get(MMethodDef method) {
 			if (!method.isVirtual())
 				throw new ApplicationException("Not a virtual method");
 			MethodNameGroup group;

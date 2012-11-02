@@ -58,20 +58,20 @@ namespace de4dot.code {
 			return type.ElementType;
 		}
 
-		public TypeDefinition resolve(TypeReference type) {
+		public TypeDef resolve(TypeReference type) {
 			if (type == null)
 				return null;
-			var typeDef = getNonGenericTypeReference(type) as TypeDefinition;
+			var typeDef = getNonGenericTypeReference(type) as TypeDef;
 			if (typeDef != null)
 				return typeDef;
 
 			return externalAssemblies.resolve(type);
 		}
 
-		public MethodDefinition resolve(MethodReference method) {
+		public MethodDef resolve(MethodReference method) {
 			if (method == null)
 				return null;
-			var methodDef = method as MethodDefinition;
+			var methodDef = method as MethodDef;
 			if (methodDef != null)
 				return methodDef;
 
@@ -87,10 +87,10 @@ namespace de4dot.code {
 			return null;
 		}
 
-		public FieldDefinition resolve(FieldReference field) {
+		public FieldDef resolve(FieldReference field) {
 			if (field == null)
 				return null;
-			var fieldDef = field as FieldDefinition;
+			var fieldDef = field as FieldDef;
 			if (fieldDef != null)
 				return fieldDef;
 

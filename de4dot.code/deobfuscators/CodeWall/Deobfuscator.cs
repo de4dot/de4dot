@@ -19,7 +19,7 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
+using dot10.DotNet;
 using Mono.MyStuff;
 using de4dot.blocks;
 using de4dot.PE;
@@ -263,7 +263,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 		public override IEnumerable<int> getStringDecrypterMethods() {
 			var list = new List<int>();
 			foreach (var info in stringDecrypter.Infos)
-				list.Add(info.Method.MetadataToken.ToInt32());
+				list.Add(info.Method.MDToken.ToInt32());
 			return list;
 		}
 	}

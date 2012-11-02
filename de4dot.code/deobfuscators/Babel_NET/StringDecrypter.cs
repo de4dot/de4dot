@@ -21,8 +21,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
 
@@ -31,12 +31,12 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		ModuleDefinition module;
 		ResourceDecrypter resourceDecrypter;
 		ISimpleDeobfuscator simpleDeobfuscator;
-		TypeDefinition decrypterType;
+		TypeDef decrypterType;
 		EmbeddedResource encryptedResource;
 		IDecrypterInfo decrypterInfo;
 
 		interface IDecrypterInfo {
-			MethodDefinition Decrypter { get; }
+			MethodDef Decrypter { get; }
 			bool NeedsResource { get; }
 			void initialize(ModuleDefinition module, EmbeddedResource resource);
 			string decrypt(object[] args);
@@ -44,7 +44,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 		// Babel .NET 2.x
 		class DecrypterInfoV1 : IDecrypterInfo {
-			public MethodDefinition Decrypter { get; set; }
+			public MethodDef Decrypter { get; set; }
 			public bool NeedsResource {
 				get { return false; }
 			}
@@ -67,7 +67,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		class DecrypterInfoV2 : IDecrypterInfo {
 			byte[] key;
 
-			public MethodDefinition Decrypter { get; set; }
+			public MethodDef Decrypter { get; set; }
 			public bool NeedsResource {
 				get { return true; }
 			}
@@ -97,7 +97,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			InstructionEmulator emulator = new InstructionEmulator();
 
 			public IList<Instruction> OffsetCalcInstructions { get; set; }
-			public MethodDefinition Decrypter { get; set; }
+			public MethodDef Decrypter { get; set; }
 			public bool NeedsResource {
 				get { return true; }
 			}
@@ -113,12 +113,12 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 					offsetToString[getOffset((int)reader.BaseStream.Position)] = reader.ReadString();
 			}
 
-			MethodDefinition dummyMethod;
+			MethodDef dummyMethod;
 			int getOffset(int offset) {
 				if (OffsetCalcInstructions == null || OffsetCalcInstructions.Count == 0)
 					return offset;
 				if (dummyMethod == null) {
-					dummyMethod = new MethodDefinition("", 0, new TypeReference("", "", null, null));
+					dummyMethod = new MethodDef("", 0, new TypeReference("", "", null, null));
 					dummyMethod.Body = new MethodBody(dummyMethod);
 				}
 				emulator.init(dummyMethod);
@@ -141,11 +141,11 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			get { return decrypterType != null; }
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return decrypterType; }
 		}
 
-		public MethodDefinition DecryptMethod {
+		public MethodDef DecryptMethod {
 			get { return decrypterInfo == null ? null : decrypterInfo.Decrypter; }
 		}
 
@@ -171,7 +171,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			}
 		}
 
-		IDecrypterInfo checkDecrypterType(TypeDefinition type) {
+		IDecrypterInfo checkDecrypterType(TypeDef type) {
 			if (type.HasEvents)
 				return null;
 			if (type.NestedTypes.Count > 2)
@@ -188,7 +188,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return checkDecrypterTypeBabel2x(type);
 		}
 
-		IDecrypterInfo checkDecrypterTypeBabel2x(TypeDefinition type) {
+		IDecrypterInfo checkDecrypterTypeBabel2x(TypeDef type) {
 			if (type.HasEvents || type.HasProperties || type.HasNestedTypes)
 				return null;
 			if (type.HasFields || type.Methods.Count != 1)
@@ -200,7 +200,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return new DecrypterInfoV1 { Decrypter = decrypter };
 		}
 
-		bool checkDecryptMethodBabel2x(MethodDefinition method) {
+		bool checkDecryptMethodBabel2x(MethodDef method) {
 			if (!method.IsStatic || !method.IsPublic)
 				return false;
 			if (method.Body == null)
@@ -242,7 +242,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return stringLength == 1 && stringToCharArray == 1 && stringCtor == 1;
 		}
 
-		IDecrypterInfo checkNested(TypeDefinition type, TypeDefinition nested) {
+		IDecrypterInfo checkNested(TypeDef type, TypeDef nested) {
 			if (nested.HasProperties || nested.HasEvents)
 				return null;
 
@@ -309,7 +309,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		}
 
 		class ReflectionToCecilMethodCreator {
-			MethodDefinition method;
+			MethodDef method;
 			List<Instruction> instructions = new List<Instruction>();
 			InstructionEmulator emulator;
 			int index;
@@ -330,7 +330,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				get { return instructions; }
 			}
 
-			public ReflectionToCecilMethodCreator(MethodDefinition method) {
+			public ReflectionToCecilMethodCreator(MethodDef method) {
 				this.method = method;
 				this.emulator = new InstructionEmulator(method);
 			}
@@ -466,7 +466,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			}
 		}
 
-		static List<Instruction> getOffsetCalcInstructions(MethodDefinition method) {
+		static List<Instruction> getOffsetCalcInstructions(MethodDef method) {
 			var creator = new ReflectionToCecilMethodCreator(method);
 			creator.create();
 			var instrs = creator.Instructions;
@@ -499,7 +499,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return -1;
 		}
 
-		static bool hasFieldType(IEnumerable<FieldDefinition> fields, TypeReference fieldType) {
+		static bool hasFieldType(IEnumerable<FieldDef> fields, TypeReference fieldType) {
 			foreach (var field in fields) {
 				if (MemberReferenceHelper.compareTypes(field.FieldType, fieldType))
 					return true;
@@ -507,7 +507,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return false;
 		}
 
-		static int getOffsetMagic(MethodDefinition method) {
+		static int getOffsetMagic(MethodDef method) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 4; i++) {
 				int index = i;
@@ -549,7 +549,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return 0;
 		}
 
-		bool checkFields(TypeDefinition type, string fieldType1, TypeDefinition fieldType2) {
+		bool checkFields(TypeDef type, string fieldType1, TypeDef fieldType2) {
 			if (type.Fields.Count != 2)
 				return false;
 			if (type.Fields[0].FieldType.FullName != fieldType1 &&

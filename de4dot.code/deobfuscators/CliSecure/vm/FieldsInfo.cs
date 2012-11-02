@@ -19,7 +19,7 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
+using dot10.DotNet;
 
 namespace de4dot.code.deobfuscators.CliSecure.vm {
 	class FieldsInfo {
@@ -27,13 +27,13 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 		Dictionary<string, int> fieldTypes = new Dictionary<string, int>(StringComparer.Ordinal);
 		int numEnums = 0;
 
-		public FieldsInfo(TypeDefinition type)
+		public FieldsInfo(TypeDef type)
 			: this(type.Fields) {
 		}
 
-		public FieldsInfo(IEnumerable<FieldDefinition> fields) {
+		public FieldsInfo(IEnumerable<FieldDef> fields) {
 			foreach (var field in fields) {
-				var fieldTypeDef = field.FieldType as TypeDefinition;
+				var fieldTypeDef = field.FieldType as TypeDef;
 				if (fieldTypeDef != null && fieldTypeDef.IsEnum)
 					addEnum();
 				else

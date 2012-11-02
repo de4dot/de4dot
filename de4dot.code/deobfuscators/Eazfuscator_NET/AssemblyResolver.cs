@@ -22,19 +22,19 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 	class AssemblyResolver {
 		ModuleDefinition module;
 		DecrypterType decrypterType;
-		TypeDefinition resolverType;
-		MethodDefinition initMethod;
-		MethodDefinition handlerMethod;
-		MethodDefinition decryptMethod;
-		TypeDefinition otherType;
+		TypeDef resolverType;
+		MethodDef initMethod;
+		MethodDef handlerMethod;
+		MethodDef decryptMethod;
+		TypeDef otherType;
 		List<AssemblyInfo> assemblyInfos = new List<AssemblyInfo>();
 		FrameworkType frameworkType;
 		byte[] decryptKey;
@@ -56,15 +56,15 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			}
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return resolverType; }
 		}
 
-		public TypeDefinition OtherType {
+		public TypeDef OtherType {
 			get { return otherType; }
 		}
 
-		public MethodDefinition InitMethod {
+		public MethodDef InitMethod {
 			get { return initMethod; }
 		}
 
@@ -87,7 +87,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			checkCalledMethods(DotNetUtils.getModuleTypeCctor(module));
 		}
 
-		bool checkCalledMethods(MethodDefinition method) {
+		bool checkCalledMethods(MethodDef method) {
 			if (method == null || method.Body == null)
 				return false;
 
@@ -95,7 +95,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				if (instr.OpCode.Code != Code.Call)
 					continue;
 
-				var calledMethod = instr.Operand as MethodDefinition;
+				var calledMethod = instr.Operand as MethodDef;
 				if (calledMethod == null || !calledMethod.IsStatic || calledMethod.Body == null)
 					continue;
 				if (!DotNetUtils.isMethod(calledMethod, "System.Void", "()"))
@@ -119,7 +119,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return false;
 		}
 
-		bool checkInitMethodSilverlight(MethodDefinition method) {
+		bool checkInitMethodSilverlight(MethodDef method) {
 			var type = method.DeclaringType;
 			if (type.NestedTypes.Count != 2)
 				return false;
@@ -134,11 +134,11 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return true;
 		}
 
-		static MethodDefinition getResolveMethodSilverlight(MethodDefinition initMethod) {
+		static MethodDef getResolveMethodSilverlight(MethodDef initMethod) {
 			foreach (var instr in initMethod.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Call)
 					continue;
-				var calledMethod = instr.Operand as MethodDefinition;
+				var calledMethod = instr.Operand as MethodDef;
 				if (calledMethod == null)
 					continue;
 				if (!DotNetUtils.isMethod(calledMethod, "System.Void", "()"))
@@ -153,7 +153,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return null;
 		}
 
-		bool checkInitMethod(MethodDefinition method) {
+		bool checkInitMethod(MethodDef method) {
 			var type = method.DeclaringType;
 			if (type.NestedTypes.Count < 2 || type.NestedTypes.Count > 6)
 				return false;
@@ -173,7 +173,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return true;
 		}
 
-		MethodDefinition getDecryptMethod() {
+		MethodDef getDecryptMethod() {
 			foreach (var method in resolverType.Methods) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
@@ -198,14 +198,14 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				throw new ApplicationException("Could not initialize decrypterType");
 		}
 
-		TypeDefinition getDecrypterType(MethodDefinition method) {
+		TypeDef getDecrypterType(MethodDef method) {
 			if (method == null || method.Body == null)
 				return null;
 
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Call)
 					continue;
-				var calledMethod = instr.Operand as MethodDefinition;
+				var calledMethod = instr.Operand as MethodDef;
 				if (calledMethod == null || !calledMethod.IsStatic || calledMethod.DeclaringType == resolverType)
 					continue;
 				if (!DotNetUtils.isMethod(calledMethod, "System.Void", "(System.Byte[])"))
@@ -467,8 +467,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			}
 		}
 
-		static MethodDefinition getTheOnlyMethod(TypeDefinition type, string typeName, string methodName, string returnType, string parameters) {
-			MethodDefinition foundMethod = null;
+		static MethodDef getTheOnlyMethod(TypeDef type, string typeName, string methodName, string returnType, string parameters) {
+			MethodDef foundMethod = null;
 
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic || method.Body == null || method.HasGenericParameters)

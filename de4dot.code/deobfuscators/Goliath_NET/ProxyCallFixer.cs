@@ -19,8 +19,8 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Goliath_NET {
@@ -30,9 +30,9 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 		}
 
 		class MyInfo {
-			public MethodDefinition method;
+			public MethodDef method;
 			public DelegateInfo delegateInfo;
-			public MyInfo(MethodDefinition method, DelegateInfo delegateInfo) {
+			public MyInfo(MethodDef method, DelegateInfo delegateInfo) {
 				this.method = method;
 				this.delegateInfo = delegateInfo;
 			}
@@ -56,7 +56,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 				if (infos.Count == 0)
 					continue;
 
-				Log.v("Found proxy delegate: {0} ({1:X8})", Utils.removeNewlines(type), type.MetadataToken.ToUInt32());
+				Log.v("Found proxy delegate: {0} ({1:X8})", Utils.removeNewlines(type), type.MDToken.ToUInt32());
 				RemovedDelegateCreatorCalls++;
 				Log.indent();
 				foreach (var info in infos) {
@@ -66,14 +66,14 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 								Utils.removeNewlines(di.field.Name),
 								di.callOpcode,
 								Utils.removeNewlines(di.methodRef),
-								di.methodRef.MetadataToken.ToUInt32());
+								di.methodRef.MDToken.ToUInt32());
 				}
 				Log.deIndent();
 				delegateTypesDict[type] = true;
 			}
 		}
 
-		bool checkProxyMethod(MethodDefinition method, out DelegateInfo info) {
+		bool checkProxyMethod(MethodDef method, out DelegateInfo info) {
 			info = null;
 			if (!method.IsStatic || method.Body == null)
 				return false;
@@ -86,7 +86,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 
 			if (instrs[index].OpCode.Code != Code.Ldsfld)
 				return false;
-			var field = instrs[index++].Operand as FieldDefinition;
+			var field = instrs[index++].Operand as FieldDef;
 			if (field == null || !field.IsStatic)
 				return false;
 			if (!MemberReferenceHelper.compareTypes(method.DeclaringType, field.DeclaringType))
@@ -132,11 +132,11 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			return true;
 		}
 
-		protected override object checkCctor(TypeDefinition type, MethodDefinition cctor) {
+		protected override object checkCctor(TypeDef type, MethodDef cctor) {
 			throw new System.NotImplementedException();
 		}
 
-		protected override void getCallInfo(object context, FieldDefinition field, out MethodReference calledMethod, out OpCode callOpcode) {
+		protected override void getCallInfo(object context, FieldDef field, out MethodReference calledMethod, out OpCode callOpcode) {
 			throw new System.NotImplementedException();
 		}
 	}

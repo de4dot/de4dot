@@ -23,15 +23,15 @@ using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Skater_NET {
 	class StringDecrypter {
 		ModuleDefinition module;
-		TypeDefinition decrypterType;
-		MethodDefinition decrypterCctor;
+		TypeDef decrypterType;
+		MethodDef decrypterCctor;
 		FieldDefinitionAndDeclaringTypeDict<string> fieldToDecryptedString = new FieldDefinitionAndDeclaringTypeDict<string>();
 		bool canRemoveType;
 		IDecrypter decrypter;
@@ -84,7 +84,7 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 			get { return canRemoveType; }
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return decrypterType; }
 		}
 
@@ -131,7 +131,7 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 					continue;
 				if (instrs[i + 4].OpCode.Code != Code.Stsfld)
 					continue;
-				var field = instrs[i + 4].Operand as FieldDefinition;
+				var field = instrs[i + 4].Operand as FieldDef;
 				if (field == null)
 					continue;
 				if (!MemberReferenceHelper.compareTypes(field.DeclaringType, decrypterType))
@@ -141,7 +141,7 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 			}
 		}
 
-		bool checkType(TypeDefinition type) {
+		bool checkType(TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
@@ -157,7 +157,7 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 			return false;
 		}
 
-		bool checkMethodV1(MethodDefinition method) {
+		bool checkMethodV1(MethodDef method) {
 			var salt = getSalt(method);
 			if (salt == null)
 				return false;
@@ -181,7 +181,7 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 			"System.String System.String::Concat(System.String,System.String)",
 			"System.Char Microsoft.VisualBasic.Strings::Chr(System.Int32)",
 		};
-		bool checkMethodV2(MethodDefinition method) {
+		bool checkMethodV2(MethodDef method) {
 			if (!DeobUtils.hasInteger(method, ' '))
 				return false;
 			foreach (var calledMethodName in callsMethodsV2) {
@@ -193,7 +193,7 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 			return true;
 		}
 
-		static byte[] getSalt(MethodDefinition method) {
+		static byte[] getSalt(MethodDef method) {
 			foreach (var s in DotNetUtils.getCodeStrings(method)) {
 				var saltAry = fixSalt(s);
 				if (saltAry != null)
@@ -224,7 +224,7 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 			return saltAry;
 		}
 
-		string getPassword(MethodDefinition decryptMethod) {
+		string getPassword(MethodDef decryptMethod) {
 			foreach (var method in DotNetUtils.getCalledMethods(module, decryptMethod)) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
@@ -258,7 +258,7 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 			return password;
 		}
 
-		string getPassword2(MethodDefinition method) {
+		string getPassword2(MethodDef method) {
 			string password = "";
 			foreach (var calledMethod in DotNetUtils.getCalledMethods(module, method)) {
 				var s = getPassword3(calledMethod);
@@ -270,7 +270,7 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 			return password;
 		}
 
-		string getPassword3(MethodDefinition method) {
+		string getPassword3(MethodDef method) {
 			var strings = new List<string>(DotNetUtils.getCodeStrings(method));
 			if (strings.Count != 1)
 				return null;

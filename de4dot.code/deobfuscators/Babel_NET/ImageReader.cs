@@ -22,8 +22,8 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.IO;
 using System.Text;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Babel_NET {
@@ -104,7 +104,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			initializeTypeReferences(typeReferencesOffset);
 		}
 
-		public void restore(string name, MethodDefinition method) {
+		public void restore(string name, MethodDef method) {
 			var babelMethod = getMethod(name);
 			var body = method.Body;
 
@@ -170,10 +170,10 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return memberReferenceConverter.convert(fields[0]);
 		}
 
-		static List<FieldDefinition> getFields(TypeDefinition type, string name) {
+		static List<FieldDef> getFields(TypeDef type, string name) {
 			if (type == null)
 				return null;
-			var fields = new List<FieldDefinition>();
+			var fields = new List<FieldDef>();
 			foreach (var field in type.Fields) {
 				if (field.Name == name)
 					fields.Add(field);
@@ -215,7 +215,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return methods[0];
 		}
 
-		List<MethodReference> getMethods(TypeDefinition declaringType, BabelMethodreference babelMethodRef) {
+		List<MethodReference> getMethods(TypeDef declaringType, BabelMethodreference babelMethodRef) {
 			var methods = new List<MethodReference>();
 
 			var git = babelMethodRef.DeclaringType as GenericInstanceType;
@@ -257,9 +257,9 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return true;
 		}
 
-		TypeDefinition resolve(TypeReference type) {
-			if (type is TypeDefinition)
-				return (TypeDefinition)type;
+		TypeDef resolve(TypeReference type) {
+			if (type is TypeDef)
+				return (TypeDef)type;
 
 			if (type.IsGenericInstance)
 				type = ((GenericInstanceType)type).ElementType;
@@ -400,7 +400,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		}
 
 		bool isValueType(TypeReference typeRef) {
-			var typeDef = typeRef as TypeDefinition;
+			var typeDef = typeRef as TypeDef;
 			if (typeDef != null)
 				return typeDef.IsValueType;
 

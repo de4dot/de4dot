@@ -20,8 +20,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Babel_NET {
@@ -30,9 +30,9 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		ResourceDecrypter resourceDecrypter;
 		IDeobfuscatorContext deobfuscatorContext;
 		Dictionary<string, ImageReader> imageReaders = new Dictionary<string, ImageReader>(StringComparer.Ordinal);
-		TypeDefinition methodsDecrypterCreator;
-		TypeDefinition methodsDecrypter;
-		MethodDefinition decryptExecuteMethod;
+		TypeDef methodsDecrypterCreator;
+		TypeDef methodsDecrypter;
+		MethodDef decryptExecuteMethod;
 		EmbeddedResource encryptedResource;
 
 		public bool Detected {
@@ -73,7 +73,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			}
 		}
 
-		static MethodDefinition findDecryptMethod(TypeDefinition type) {
+		static MethodDef findDecryptMethod(TypeDef type) {
 			foreach (var method in type.Methods) {
 				var decryptMethod = ResourceDecrypter.findDecrypterMethod(method);
 				if (decryptMethod != null)
@@ -82,7 +82,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return null;
 		}
 
-		TypeDefinition findMethodsDecrypterType(TypeDefinition type) {
+		TypeDef findMethodsDecrypterType(TypeDef type) {
 			foreach (var field in type.Fields) {
 				var fieldType = DotNetUtils.getType(module, field.FieldType);
 				if (fieldType == null)
@@ -124,7 +124,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		class EncryptInfo {
 			public string encryptedMethodName;
 			public string feature;
-			public MethodDefinition method;
+			public MethodDef method;
 
 			public string FullName {
 				get {
@@ -134,7 +134,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				}
 			}
 
-			public EncryptInfo(string encryptedMethodName, string feature, MethodDefinition method) {
+			public EncryptInfo(string encryptedMethodName, string feature, MethodDef method) {
 				this.encryptedMethodName = encryptedMethodName;
 				this.feature = feature;
 				this.method = method;
@@ -142,9 +142,9 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 			public override string ToString() {
 				if (feature != "")
-					return string.Format("{0}:{1} {2:X8}", feature, encryptedMethodName, method.MetadataToken.ToInt32());
+					return string.Format("{0}:{1} {2:X8}", feature, encryptedMethodName, method.MDToken.ToInt32());
 				else
-					return string.Format("{0} {1:X8}", encryptedMethodName, method.MetadataToken.ToInt32());
+					return string.Format("{0} {1:X8}", encryptedMethodName, method.MDToken.ToInt32());
 			}
 		}
 
@@ -158,7 +158,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 					numNonDecryptedMethods++;
 					continue;
 				}
-				Log.v("Decrypting method {0:X8}", info.method.MetadataToken.ToInt32());
+				Log.v("Decrypting method {0:X8}", info.method.MDToken.ToInt32());
 				imageReader.restore(info.FullName, info.method);
 			}
 			if (numNonDecryptedMethods > 0)
@@ -214,7 +214,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return infos;
 		}
 
-		bool checkEncryptedMethod(MethodDefinition method, out EncryptInfo info) {
+		bool checkEncryptedMethod(MethodDef method, out EncryptInfo info) {
 			info = null;
 			if (method.Body == null)
 				return false;
@@ -237,7 +237,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return true;
 		}
 
-		bool callsExecuteMethod(MethodDefinition method) {
+		bool callsExecuteMethod(MethodDef method) {
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt)
 					continue;

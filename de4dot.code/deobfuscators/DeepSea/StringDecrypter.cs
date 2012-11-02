@@ -20,8 +20,8 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using Mono.Cecil.Metadata;
 using de4dot.blocks;
 
@@ -40,18 +40,18 @@ namespace de4dot.code.deobfuscators.DeepSea {
 
 		interface IDecrypterInfo {
 			DecrypterVersion Version { get; }
-			MethodDefinition Method { get; }
+			MethodDef Method { get; }
 			string decrypt(object[] args);
 			void cleanup();
 		}
 
-		static short[] findKey(MethodDefinition initMethod, FieldDefinition keyField) {
+		static short[] findKey(MethodDef initMethod, FieldDef keyField) {
 			var fields = new FieldDefinitionAndDeclaringTypeDict<bool>();
 			fields.add(keyField, true);
 			return findKey(initMethod, fields);
 		}
 
-		static short[] findKey(MethodDefinition initMethod, FieldDefinitionAndDeclaringTypeDict<bool> fields) {
+		static short[] findKey(MethodDef initMethod, FieldDefinitionAndDeclaringTypeDict<bool> fields) {
 			var instrs = initMethod.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 2; i++) {
 				var ldci4 = instrs[i];
@@ -84,7 +84,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return null;
 		}
 
-		static FieldDefinition getStoreField(MethodDefinition method, int startIndex, VariableDefinition local) {
+		static FieldDef getStoreField(MethodDef method, int startIndex, VariableDefinition local) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 1; i++) {
 				var ldloc = instrs[i];
@@ -96,18 +96,18 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				var stsfld = instrs[i + 1];
 				if (stsfld.OpCode.Code != Code.Stsfld)
 					continue;
-				return stsfld.Operand as FieldDefinition;
+				return stsfld.Operand as FieldDef;
 			}
 
 			return null;
 		}
 
-		static bool findMagic(MethodDefinition method, out int magic) {
+		static bool findMagic(MethodDef method, out int magic) {
 			int arg1, arg2;
 			return findMagic(method, out arg1, out arg2, out magic);
 		}
 
-		static bool findMagic(MethodDefinition method, out int arg1, out int arg2, out int magic) {
+		static bool findMagic(MethodDef method, out int arg1, out int arg2, out int magic) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 3; i++) {
 				if ((arg1 = DotNetUtils.getArgIndex(instrs[i])) < 0)
@@ -127,7 +127,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return false;
 		}
 
-		static void removeInitializeArrayCall(MethodDefinition method, FieldDefinition field) {
+		static void removeInitializeArrayCall(MethodDef method, FieldDef field) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 1; i++) {
 				var ldtoken = instrs[i];
@@ -151,7 +151,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		}
 
 		class DecrypterInfo41 : IDecrypterInfo {
-			MethodDefinition cctor;
+			MethodDef cctor;
 			int magic;
 			int arg1, arg2;
 			FieldDefinitionAndDeclaringTypeDict<bool> fields;
@@ -164,10 +164,10 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			class ArrayInfo {
 				public int sizeInElems;
 				public TypeReference elementType;
-				public FieldDefinition initField;
-				public FieldDefinition field;
+				public FieldDef initField;
+				public FieldDef field;
 
-				public ArrayInfo(int sizeInElems, TypeReference elementType, FieldDefinition initField, FieldDefinition field) {
+				public ArrayInfo(int sizeInElems, TypeReference elementType, FieldDef initField, FieldDef field) {
 					this.sizeInElems = sizeInElems;
 					this.elementType = elementType;
 					this.initField = initField;
@@ -179,14 +179,14 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				get { return DecrypterVersion.V4_1; }
 			}
 
-			public MethodDefinition Method { get; private set; }
+			public MethodDef Method { get; private set; }
 
-			public DecrypterInfo41(MethodDefinition cctor, MethodDefinition method) {
+			public DecrypterInfo41(MethodDef cctor, MethodDef method) {
 				this.cctor = cctor;
 				Method = method;
 			}
 
-			public static bool isPossibleDecrypterMethod(MethodDefinition method) {
+			public static bool isPossibleDecrypterMethod(MethodDef method) {
 				if (!checkMethodSignature(method))
 					return false;
 				var fields = getFields(method);
@@ -196,7 +196,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				return true;
 			}
 
-			static bool checkMethodSignature(MethodDefinition method) {
+			static bool checkMethodSignature(MethodDef method) {
 				if (method.MethodReturnType.ReturnType.EType != ElementType.String)
 					return false;
 				int count = 0;
@@ -207,12 +207,12 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				return count >= 2;
 			}
 
-			static FieldDefinitionAndDeclaringTypeDict<bool> getFields(MethodDefinition method) {
+			static FieldDefinitionAndDeclaringTypeDict<bool> getFields(MethodDef method) {
 				var fields = new FieldDefinitionAndDeclaringTypeDict<bool>();
 				foreach (var instr in method.Body.Instructions) {
 					if (instr.OpCode.Code != Code.Ldsfld && instr.OpCode.Code != Code.Stsfld)
 						continue;
-					var field = instr.Operand as FieldDefinition;
+					var field = instr.Operand as FieldDef;
 					if (field == null)
 						continue;
 					if (field.DeclaringType != method.DeclaringType)
@@ -248,7 +248,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				return true;
 			}
 
-			int findKeyShift(MethodDefinition method) {
+			int findKeyShift(MethodDef method) {
 				var instrs = method.Body.Instructions;
 				for (int i = 0; i < instrs.Count - 3; i++) {
 					int index = i;
@@ -276,7 +276,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				return -1;
 			}
 
-			int findNextFieldUse(MethodDefinition method, int index) {
+			int findNextFieldUse(MethodDef method, int index) {
 				var instrs = method.Body.Instructions;
 				for (int i = index; i < instrs.Count; i++) {
 					var instr = instrs[i];
@@ -291,7 +291,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				return -1;
 			}
 
-			ArrayInfo getArrayInfo(MethodDefinition method) {
+			ArrayInfo getArrayInfo(MethodDef method) {
 				var instructions = method.Body.Instructions;
 				for (int i = 0; i < instructions.Count; i++) {
 					var ldci4_arraySizeInBytes = instructions[i];
@@ -304,8 +304,8 @@ namespace de4dot.code.deobfuscators.DeepSea {
 
 					int sizeInBytes = DotNetUtils.getLdcI4Value(ldci4_arraySizeInBytes);
 					var elementType = instrs[0].Operand as TypeReference;
-					var initField = instrs[2].Operand as FieldDefinition;
-					var field = instrs[4].Operand as FieldDefinition;
+					var initField = instrs[2].Operand as FieldDef;
+					var field = instrs[4].Operand as FieldDef;
 					if (elementType == null)
 						continue;
 					if (initField == null || initField.InitialValue == null || initField.InitialValue.Length == 0)
@@ -327,7 +327,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				return findKey(cctor);
 			}
 
-			short[] findKey(MethodDefinition initMethod) {
+			short[] findKey(MethodDef initMethod) {
 				return StringDecrypter.findKey(initMethod, fields);
 			}
 
@@ -386,27 +386,27 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		}
 
 		class DecrypterInfo40 : IDecrypterInfo {
-			MethodDefinition cctor;
+			MethodDef cctor;
 			int magic;
-			FieldDefinition cachedStringsField;
-			FieldDefinition keyField;
-			FieldDefinition encryptedStringsField;
-			FieldDefinition encryptedDataField;
+			FieldDef cachedStringsField;
+			FieldDef keyField;
+			FieldDef encryptedStringsField;
+			FieldDef encryptedDataField;
 			short[] key;
 			ushort[] encryptedData;
 
-			public MethodDefinition Method { get; private set; }
+			public MethodDef Method { get; private set; }
 
 			public DecrypterVersion Version {
 				get { return DecrypterVersion.V4_0; }
 			}
 
-			public DecrypterInfo40(MethodDefinition cctor, MethodDefinition method) {
+			public DecrypterInfo40(MethodDef cctor, MethodDef method) {
 				this.cctor = cctor;
 				this.Method = method;
 			}
 
-			public static bool isPossibleDecrypterMethod(MethodDefinition method) {
+			public static bool isPossibleDecrypterMethod(MethodDef method) {
 				if (!checkFields(method.DeclaringType.Fields))
 					return false;
 				return DotNetUtils.isMethod(method, "System.String", "(System.Int32,System.Int32)");
@@ -438,13 +438,13 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				return true;
 			}
 
-			List<FieldDefinition> findFields() {
-				var charArrayFields = new List<FieldDefinition>();
+			List<FieldDef> findFields() {
+				var charArrayFields = new List<FieldDef>();
 
 				foreach (var instr in Method.Body.Instructions) {
 					if (instr.OpCode.Code != Code.Stsfld && instr.OpCode.Code != Code.Ldsfld)
 						continue;
-					var field = instr.Operand as FieldDefinition;
+					var field = instr.Operand as FieldDef;
 					if (field == null)
 						continue;
 					if (!MemberReferenceHelper.compareTypes(Method.DeclaringType, field.DeclaringType))
@@ -472,17 +472,17 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				return charArrayFields;
 			}
 
-			static FieldDefinition findEncryptedStrings(MethodDefinition initMethod, List<FieldDefinition> ourFields, out FieldDefinition dataField) {
+			static FieldDef findEncryptedStrings(MethodDef initMethod, List<FieldDef> ourFields, out FieldDef dataField) {
 				for (int i = 0; i < initMethod.Body.Instructions.Count; i++) {
 					var instrs = DotNetUtils.getInstructions(initMethod.Body.Instructions, i, OpCodes.Ldtoken, OpCodes.Call, OpCodes.Stsfld);
 					if (instrs == null)
 						continue;
 
-					dataField = instrs[0].Operand as FieldDefinition;
+					dataField = instrs[0].Operand as FieldDef;
 					if (dataField == null || dataField.InitialValue == null || dataField.InitialValue.Length == 0)
 						continue;
 
-					var savedField = instrs[2].Operand as FieldDefinition;
+					var savedField = instrs[2].Operand as FieldDef;
 					if (savedField == null || !matches(ourFields, savedField))
 						continue;
 
@@ -493,7 +493,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				return null;
 			}
 
-			static bool matches(IEnumerable<FieldDefinition> ourFields, FieldReference field) {
+			static bool matches(IEnumerable<FieldDef> ourFields, FieldReference field) {
 				foreach (var ourField in ourFields) {
 					if (MemberReferenceHelper.compareFieldReferenceAndDeclaringType(ourField, field))
 						return true;
@@ -510,7 +510,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				return findKey(cctor);
 			}
 
-			short[] findKey(MethodDefinition initMethod) {
+			short[] findKey(MethodDef initMethod) {
 				return StringDecrypter.findKey(initMethod, keyField);
 			}
 
@@ -545,26 +545,26 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		}
 
 		class DecrypterInfo13 : IDecrypterInfo {
-			MethodDefinition cctor;
-			FieldDefinition cachedStringsField;
-			FieldDefinition keyField;
+			MethodDef cctor;
+			FieldDef cachedStringsField;
+			FieldDef keyField;
 			int magic;
 			string[] encryptedStrings;
 			short[] key;
 
-			public MethodDefinition Method { get; private set; }
+			public MethodDef Method { get; private set; }
 
 			public DecrypterVersion Version {
 				get { return DecrypterVersion.V1_3; }
 			}
 
-			public static bool isPossibleDecrypterMethod(MethodDefinition method) {
+			public static bool isPossibleDecrypterMethod(MethodDef method) {
 				if (!checkFields(method.DeclaringType.Fields))
 					return false;
 				return DotNetUtils.isMethod(method, "System.String", "(System.Int32)");
 			}
 
-			public DecrypterInfo13(MethodDefinition cctor, MethodDefinition method) {
+			public DecrypterInfo13(MethodDef cctor, MethodDef method) {
 				this.cctor = cctor;
 				this.Method = method;
 			}
@@ -602,7 +602,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				foreach (var instr in Method.Body.Instructions) {
 					if (instr.OpCode.Code != Code.Stsfld && instr.OpCode.Code != Code.Ldsfld)
 						continue;
-					var field = instr.Operand as FieldDefinition;
+					var field = instr.Operand as FieldDef;
 					if (field == null)
 						continue;
 					if (!MemberReferenceHelper.compareTypes(Method.DeclaringType, field.DeclaringType))
@@ -637,7 +637,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				return findKey(cctor);
 			}
 
-			short[] findKey(MethodDefinition initMethod) {
+			short[] findKey(MethodDef initMethod) {
 				return StringDecrypter.findKey(initMethod, keyField);
 			}
 
@@ -650,7 +650,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				return key;
 			}
 
-			static bool findMagic(MethodDefinition method, out int magic) {
+			static bool findMagic(MethodDef method, out int magic) {
 				var instrs = method.Body.Instructions;
 				for (int i = 0; i < instrs.Count - 2; i++) {
 					var ldarg = instrs[i];
@@ -668,7 +668,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				return false;
 			}
 
-			bool findEncryptedStrings(MethodDefinition method) {
+			bool findEncryptedStrings(MethodDef method) {
 				var switchInstr = getOnlySwitchInstruction(method);
 				if (switchInstr == null)
 					return false;
@@ -683,7 +683,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				return true;
 			}
 
-			static Instruction getOnlySwitchInstruction(MethodDefinition method) {
+			static Instruction getOnlySwitchInstruction(MethodDef method) {
 				Instruction switchInstr = null;
 				foreach (var instr in method.Body.Instructions) {
 					if (instr.OpCode.Code != Code.Switch)
@@ -711,9 +711,9 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			get { return version; }
 		}
 
-		public List<MethodDefinition> DecrypterMethods {
+		public List<MethodDef> DecrypterMethods {
 			get {
-				var methods = new List<MethodDefinition>(methodToInfo.Count);
+				var methods = new List<MethodDef>(methodToInfo.Count);
 				foreach (var info in methodToInfo.getValues())
 					methods.Add(info.Method);
 				return methods;
@@ -765,14 +765,14 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			}
 		}
 
-		static void deobfuscateCctor(ISimpleDeobfuscator simpleDeobfuscator, MethodDefinition cctor, ref bool deobfuscatedCctor, bool hasPublicKeyToken) {
+		static void deobfuscateCctor(ISimpleDeobfuscator simpleDeobfuscator, MethodDef cctor, ref bool deobfuscatedCctor, bool hasPublicKeyToken) {
 			if (deobfuscatedCctor || hasPublicKeyToken)
 				return;
 			simpleDeobfuscator.deobfuscate(cctor);
 			deobfuscatedCctor = true;
 		}
 
-		static bool checkFields(IEnumerable<FieldDefinition> fields) {
+		static bool checkFields(IEnumerable<FieldDef> fields) {
 			bool foundCharAry = false, foundStringAry = false;
 			foreach (var field in fields) {
 				if (foundCharAry && foundStringAry)
@@ -789,21 +789,21 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return foundCharAry && foundStringAry;
 		}
 
-		DecrypterInfo13 getInfoV13(MethodDefinition cctor, MethodDefinition method) {
+		DecrypterInfo13 getInfoV13(MethodDef cctor, MethodDef method) {
 			var info = new DecrypterInfo13(cctor, method);
 			if (!info.initialize())
 				return null;
 			return info;
 		}
 
-		DecrypterInfo40 getInfoV40(MethodDefinition cctor, MethodDefinition method) {
+		DecrypterInfo40 getInfoV40(MethodDef cctor, MethodDef method) {
 			var info = new DecrypterInfo40(cctor, method);
 			if (!info.initialize())
 				return null;
 			return info;
 		}
 
-		DecrypterInfo41 getInfoV41(MethodDefinition cctor, MethodDefinition method) {
+		DecrypterInfo41 getInfoV41(MethodDef cctor, MethodDef method) {
 			var info = new DecrypterInfo41(cctor, method);
 			if (!info.initialize())
 				return null;

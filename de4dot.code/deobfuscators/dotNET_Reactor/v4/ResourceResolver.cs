@@ -19,25 +19,25 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 	class ResourceResolver {
 		ModuleDefinition module;
 		EncryptedResource encryptedResource;
-		MethodDefinition initMethod;
+		MethodDef initMethod;
 
 		public bool Detected {
 			get { return encryptedResource.Method != null; }
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return encryptedResource.Type; }
 		}
 
-		public MethodDefinition InitMethod {
+		public MethodDef InitMethod {
 			get { return initMethod; }
 		}
 
@@ -79,7 +79,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			}
 		}
 
-		bool checkFields(IList<FieldDefinition> fields) {
+		bool checkFields(IList<FieldDef> fields) {
 			if (fields.Count != 3)
 				return false;
 
@@ -105,7 +105,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			encryptedResource.init(simpleDeobfuscator);
 		}
 
-		MethodDefinition findInitMethod(ISimpleDeobfuscator simpleDeobfuscator) {
+		MethodDef findInitMethod(ISimpleDeobfuscator simpleDeobfuscator) {
 			var ctor = DotNetUtils.getMethod(Type, ".ctor");
 			foreach (var method in Type.Methods) {
 				if (!method.IsStatic || method.Body == null)

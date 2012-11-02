@@ -19,26 +19,26 @@
 
 using System;
 using System.Text;
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CryptoObfuscator {
 	class StringDecrypter {
 		ModuleDefinition module;
 		EmbeddedResource stringResource;
-		TypeDefinition stringDecrypterType;
-		MethodDefinition stringDecrypterMethod;
+		TypeDef stringDecrypterType;
+		MethodDef stringDecrypterMethod;
 		byte[] decryptedData;
 
 		public bool Detected {
 			get { return stringDecrypterType != null; }
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return stringDecrypterType; }
 		}
 
-		public MethodDefinition Method {
+		public MethodDef Method {
 			get { return stringDecrypterMethod; }
 		}
 
@@ -51,8 +51,8 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		}
 
 		public void find() {
-			TypeDefinition type;
-			MethodDefinition method;
+			TypeDef type;
+			MethodDef method;
 			if (!findStringDecrypterType(out type, out method))
 				return;
 
@@ -98,7 +98,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return Encoding.Unicode.GetString(decryptedData, index, len);
 		}
 
-		bool findStringDecrypterType(out TypeDefinition theType, out MethodDefinition theMethod) {
+		bool findStringDecrypterType(out TypeDef theType, out MethodDef theMethod) {
 			theType = null;
 			theMethod = null;
 
@@ -114,7 +114,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				if (type.NestedTypes.Count > 0)
 					continue;
 
-				MethodDefinition method = null;
+				MethodDef method = null;
 				foreach (var m in type.Methods) {
 					if (m.Name == ".ctor" || m.Name == ".cctor")
 						continue;

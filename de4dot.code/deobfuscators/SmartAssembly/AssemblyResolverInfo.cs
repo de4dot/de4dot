@@ -20,8 +20,8 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.SmartAssembly {
@@ -71,10 +71,10 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 	}
 
 	class AssemblyResolverInfo : ResolverInfoBase {
-		MethodDefinition simpleZipTypeMethod;
+		MethodDef simpleZipTypeMethod;
 		List<EmbeddedAssemblyInfo> embeddedAssemblyInfos = new List<EmbeddedAssemblyInfo>();
 
-		public MethodDefinition SimpleZipTypeMethod {
+		public MethodDef SimpleZipTypeMethod {
 			get { return simpleZipTypeMethod; }
 		}
 
@@ -100,7 +100,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return ok;
 		}
 
-		protected override bool checkResolverType(TypeDefinition type) {
+		protected override bool checkResolverType(TypeDef type) {
 			if (DotNetUtils.findFieldType(type, "System.Collections.Hashtable", true) != null)
 				return true;
 
@@ -114,7 +114,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return true;
 		}
 
-		protected override bool checkHandlerMethod(MethodDefinition method) {
+		protected override bool checkHandlerMethod(MethodDef method) {
 			if (!method.IsStatic || !method.HasBody)
 				return false;
 
@@ -154,7 +154,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return true;
 		}
 
-		void findSimpleZipType(MethodDefinition method) {
+		void findSimpleZipType(MethodDef method) {
 			if (method == null || !method.HasBody)
 				return;
 			foreach (var call in method.Body.Instructions) {

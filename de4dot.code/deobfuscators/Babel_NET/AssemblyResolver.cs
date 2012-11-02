@@ -19,15 +19,15 @@
 
 using System;
 using System.IO;
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Babel_NET {
 	class AssemblyResolver {
 		ModuleDefinition module;
 		ResourceDecrypter resourceDecrypter;
-		TypeDefinition resolverType;
-		MethodDefinition registerMethod;
+		TypeDef resolverType;
+		MethodDef registerMethod;
 		EmbeddedResource encryptedResource;
 		EmbeddedAssemblyInfo[] embeddedAssemblyInfos = new EmbeddedAssemblyInfo[0];
 
@@ -47,11 +47,11 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			get { return resolverType != null; }
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return resolverType; }
 		}
 
-		public MethodDefinition InitMethod {
+		public MethodDef InitMethod {
 			get { return registerMethod; }
 		}
 
@@ -80,7 +80,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				if (!new FieldTypes(type).exactly(requiredTypes))
 					continue;
 
-				MethodDefinition regMethod, handler;
+				MethodDef regMethod, handler;
 				if (!BabelUtils.findRegisterMethod(type, out regMethod, out handler))
 					continue;
 
@@ -95,7 +95,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			}
 		}
 
-		static MethodDefinition findDecryptMethod(TypeDefinition type) {
+		static MethodDef findDecryptMethod(TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (!DotNetUtils.isMethod(method, "System.Void", "(System.IO.Stream)"))
 					continue;

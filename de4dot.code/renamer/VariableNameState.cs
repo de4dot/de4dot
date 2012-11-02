@@ -17,7 +17,7 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.Cecil;
+using dot10.DotNet;
 
 namespace de4dot.code.renamer {
 	class VariableNameState {
@@ -86,7 +86,7 @@ namespace de4dot.code.renamer {
 			existingEventNames.merge(other.existingEventNames);
 		}
 
-		public string getNewPropertyName(PropertyDefinition propertyDefinition) {
+		public string getNewPropertyName(PropertyDef propertyDefinition) {
 			var propType = propertyDefinition.PropertyType;
 			string newName;
 			if (isGeneric(propType))
@@ -99,7 +99,7 @@ namespace de4dot.code.renamer {
 
 		static bool isGeneric(TypeReference type) {
 			while (true) {
-				if (type is GenericParameter)
+				if (type is GenericParam)
 					return true;
 				var ts = type as TypeSpecification;
 				if (ts == null)
@@ -108,7 +108,7 @@ namespace de4dot.code.renamer {
 			}
 		}
 
-		public string getNewEventName(EventDefinition eventDefinition) {
+		public string getNewEventName(EventDef eventDefinition) {
 			string newName = eventNameCreator.create();
 			addEventName(newName);
 			return newName;
@@ -146,7 +146,7 @@ namespace de4dot.code.renamer {
 			return existingEventNames.exists(eventName);
 		}
 
-		public string getNewFieldName(FieldDefinition field) {
+		public string getNewFieldName(FieldDef field) {
 			return existingVariableNames.getName(field.Name, () => variableNameCreator.create(field.FieldType));
 		}
 
