@@ -25,10 +25,8 @@ namespace de4dot.code {
 		void setData(string name, object data);
 		object getData(string name);
 		void clearData(string name);
-#if PORT
-		TypeDef resolve(TypeRef type);
-		MethodDef resolve(IMethod method);
-		FieldDef resolve(IField field);
-#endif
+		TypeDef resolveType(ITypeDefOrRef type);
+		MethodDef resolveMethod(MemberRef method);
+		FieldDef resolveField(MemberRef field);
 	}
 }

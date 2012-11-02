@@ -401,38 +401,35 @@ namespace de4dot.code.renamer.asmmodules {
 		void add(IEnumerable<Instruction> instrs) {
 			if (instrs == null)
 				return;
-			foreach (var instr in instrs)
-				add(instr);
-		}
+			foreach (var instr in instrs) {
+				if (instr == null)
+					continue;
+				switch (instr.OpCode.OperandType) {
+				case OperandType.InlineTok:
+				case OperandType.InlineType:
+				case OperandType.InlineMethod:
+				case OperandType.InlineField:
+					push(instr.Operand);
+					break;
 
-		void add(Instruction instr) {
-			if (instr == null)
-				return;
-			switch (instr.OpCode.OperandType) {
-			case OperandType.InlineTok:
-			case OperandType.InlineType:
-			case OperandType.InlineMethod:
-			case OperandType.InlineField:
-				push(instr.Operand);
-				break;
+				case OperandType.InlineSig:
+					add(instr.Operand as CallingConventionSig);
+					break;
 
-			case OperandType.InlineSig:
-				add(instr.Operand as CallingConventionSig);
-				break;
-
-			case OperandType.InlineVar:
-			case OperandType.ShortInlineVar:
-				var local = instr.Operand as Local;
-				if (local != null) {
-					add(local);
+				case OperandType.InlineVar:
+				case OperandType.ShortInlineVar:
+					var local = instr.Operand as Local;
+					if (local != null) {
+						add(local);
+						break;
+					}
+					var arg = instr.Operand as Parameter;
+					if (arg != null) {
+						add(arg);
+						break;
+					}
 					break;
 				}
-				var arg = instr.Operand as Parameter;
-				if (arg != null) {
-					add(arg);
-					break;
-				}
-				break;
 			}
 		}
 

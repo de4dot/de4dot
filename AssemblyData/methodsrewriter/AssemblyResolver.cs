@@ -49,7 +49,7 @@ namespace AssemblyData.methodsrewriter {
 		}
 
 		TypeResolver getTypeResolver(ITypeDefOrRef typeRef) {
-			var key = typeRef.Namespace + "." + typeRef.Name;
+			var key = typeRef.Namespace + "." + typeRef.TypeName;
 			List<TypeResolver> list;
 			if (!types.TryGetValue(key, out list))
 				return null;

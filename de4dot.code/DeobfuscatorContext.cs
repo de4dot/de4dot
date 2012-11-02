@@ -48,63 +48,52 @@ namespace de4dot.code {
 			dataDict.Remove(name);
 		}
 
-#if PORT
-		static TypeReference getNonGenericTypeReference(TypeReference typeReference) {
-			if (typeReference == null)
-				return null;
-			if (!typeReference.IsGenericInstance)
-				return typeReference;
-			var type = (GenericInstanceType)typeReference;
-			return type.ElementType;
+		static ITypeDefOrRef getNonGenericTypeReference(ITypeDefOrRef typeRef) {
+			var ts = typeRef as TypeSpec;
+			if (ts == null)
+				return typeRef;
+			var gis = ts.TypeSig.RemovePinnedAndModifiers() as GenericInstSig;
+			if (gis == null || gis.GenericType == null)
+				return typeRef;
+			return gis.GenericType.TypeDefOrRef;
 		}
 
-		public TypeDef resolve(TypeReference type) {
+		public TypeDef resolveType(ITypeDefOrRef type) {
 			if (type == null)
 				return null;
-			var typeDef = getNonGenericTypeReference(type) as TypeDef;
+			type = getNonGenericTypeReference(type);
+
+			var typeDef = type as TypeDef;
 			if (typeDef != null)
 				return typeDef;
 
-			return externalAssemblies.resolve(type);
+			var tr = type as TypeRef;
+			if (tr != null)
+				return tr.Resolve();
+
+			return null;
 		}
 
-		public MethodDef resolve(MethodReference method) {
+		public MethodDef resolveMethod(MemberRef method) {
 			if (method == null)
 				return null;
-			var methodDef = method as MethodDef;
-			if (methodDef != null)
-				return methodDef;
 
-			var type = resolve(method.DeclaringType);
+			var type = resolveType(method.DeclaringType);
 			if (type == null)
 				return null;
 
-			foreach (var m in type.Methods) {
-				if (MemberReferenceHelper.compareMethodReference(method, m))
-					return m;
-			}
-
-			return null;
+			return type.Resolve(method) as MethodDef;
 		}
 
-		public FieldDef resolve(FieldReference field) {
+		public FieldDef resolveField(MemberRef field) {
 			if (field == null)
 				return null;
-			var fieldDef = field as FieldDef;
-			if (fieldDef != null)
-				return fieldDef;
 
-			var type = resolve(field.DeclaringType);
+			var type = resolveType(field.DeclaringType);
 			if (type == null)
 				return null;
 
-			foreach (var f in type.Fields) {
-				if (MemberReferenceHelper.compareFieldReference(field, f))
-					return f;
-			}
-
-			return null;
+			return type.Resolve(field) as FieldDef;
 		}
-#endif
 	}
 }
