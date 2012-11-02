@@ -134,7 +134,7 @@ namespace AssemblyData.methodsrewriter {
 				if (ex.FilterStart == instr) {
 				}
 				if (ex.HandlerStart == instr) {
-					if (ex.HandlerType == ExceptionClause.Finally)
+					if (ex.HandlerType == ExceptionHandlerType.Finally)
 						ilg.BeginFinallyBlock();
 					else
 						ilg.BeginCatchBlock(Resolver.getRtType(ex.CatchType));
@@ -317,11 +317,11 @@ namespace AssemblyData.methodsrewriter {
 				break;
 
 			case OperandType.InlineVar:
-				ilg.Emit(opcode, checked((short)((IVariable)instr.Operand).Number));
+				ilg.Emit(opcode, checked((short)((IVariable)instr.Operand).Index));
 				break;
 
 			case OperandType.ShortInlineVar:
-				ilg.Emit(opcode, checked((byte)((IVariable)instr.Operand).Number));
+				ilg.Emit(opcode, checked((byte)((IVariable)instr.Operand).Index));
 				break;
 
 			case OperandType.InlineSig:	//TODO:

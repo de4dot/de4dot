@@ -332,8 +332,8 @@ namespace AssemblyData.methodsrewriter {
 		}
 
 		static IList<TypeSig> getParameters(MethodDef method) {
-			var list = new List<TypeSig>(method.Parameters.Length + 1);
-			for (int i = 0; i < method.Parameters.Length; i++)
+			var list = new List<TypeSig>(method.Parameters.Count + 1);
+			for (int i = 0; i < method.Parameters.Count; i++)
 				list.Add(method.Parameters[i].Type);
 			return list;
 		}

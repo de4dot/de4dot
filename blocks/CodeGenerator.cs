@@ -46,10 +46,10 @@ namespace de4dot.blocks {
 			public int handlerStart;
 			public int handlerEnd;
 			public ITypeDefOrRef catchType;
-			public ExceptionClause handlerType;
+			public ExceptionHandlerType handlerType;
 			public ExceptionInfo(int tryStart, int tryEnd, int filterStart,
 				int handlerStart, int handlerEnd, ITypeDefOrRef catchType,
-				ExceptionClause handlerType) {
+				ExceptionHandlerType handlerType) {
 				if (tryStart > tryEnd || filterStart > handlerStart ||
 					tryStart < 0 || tryEnd < 0 || filterStart < 0 || handlerStart < 0 || handlerEnd < 0)
 					throw new ApplicationException("Invalid start/end/filter/handler indexes");

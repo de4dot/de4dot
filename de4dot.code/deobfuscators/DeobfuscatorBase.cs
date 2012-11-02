@@ -562,7 +562,7 @@ namespace de4dot.code.deobfuscators {
 			var body = method.CilBody;
 			if (body.InitLocals || body.MaxStack > 8)
 				return true;
-			if (body.LocalList.Length > 0)
+			if (body.LocalList.Count > 0)
 				return true;
 			if (body.ExceptionHandlers.Count > 0)
 				return true;

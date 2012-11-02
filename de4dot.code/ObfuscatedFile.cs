@@ -440,11 +440,11 @@ namespace de4dot.code {
 						continue;
 
 					if (argsStrings == null) {
-						if (method.Parameters.Length == 0)
+						if (method.Parameters.Count == 0)
 							continue;
 					}
 					else {
-						if (argsStrings.Length != method.Parameters.Length)
+						if (argsStrings.Length != method.Parameters.Count)
 							continue;
 						for (int i = 0; i < argsStrings.Length; i++) {
 							if (argsStrings[i] != method.Parameters[i].Type.FullName)

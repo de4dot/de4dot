@@ -163,7 +163,7 @@ namespace de4dot.blocks.cflow {
 		}
 
 		public Value getArg(Parameter arg) {
-			return getArg(arg.Number);
+			return getArg(arg.Index);
 		}
 
 		TypeSig getArgType(int index) {
@@ -173,11 +173,11 @@ namespace de4dot.blocks.cflow {
 		}
 
 		public void setArg(Parameter arg, Value value) {
-			setArg(arg.Number, value);
+			setArg(arg.Index, value);
 		}
 
 		public void makeArgUnknown(Parameter arg) {
-			setArg(arg, getUnknownArg(arg.Number));
+			setArg(arg, getUnknownArg(arg.Index));
 		}
 
 		void setArg(int index, Value value) {
@@ -194,15 +194,15 @@ namespace de4dot.blocks.cflow {
 		}
 
 		public Value getLocal(Local local) {
-			return getLocal(local.Number);
+			return getLocal(local.Index);
 		}
 
 		public void setLocal(Local local, Value value) {
-			setLocal(local.Number, value);
+			setLocal(local.Index, value);
 		}
 
 		public void makeLocalUnknown(Local local) {
-			setLocal(local.Number, getUnknownLocal(local.Number));
+			setLocal(local.Index, getUnknownLocal(local.Index));
 		}
 
 		void setLocal(int index, Value value) {
@@ -247,7 +247,7 @@ namespace de4dot.blocks.cflow {
 			case Code.Starg:
 			case Code.Starg_S:	emulate_Starg((Parameter)instr.Operand); break;
 			case Code.Stloc:
-			case Code.Stloc_S:	emulate_Stloc(((Local)instr.Operand).Number); break;
+			case Code.Stloc_S:	emulate_Stloc(((Local)instr.Operand).Index); break;
 			case Code.Stloc_0:	emulate_Stloc(0); break;
 			case Code.Stloc_1:	emulate_Stloc(1); break;
 			case Code.Stloc_2:	emulate_Stloc(2); break;
@@ -269,7 +269,7 @@ namespace de4dot.blocks.cflow {
 			case Code.Ldarga:
 			case Code.Ldarga_S:	emulate_Ldarga((Parameter)instr.Operand); break;
 			case Code.Ldloca:
-			case Code.Ldloca_S:	emulate_Ldloca(((Local)instr.Operand).Number); break;
+			case Code.Ldloca_S:	emulate_Ldloca(((Local)instr.Operand).Index); break;
 
 			case Code.Dup:		valueStack.copyTop(); break;
 
@@ -837,7 +837,7 @@ namespace de4dot.blocks.cflow {
 		}
 
 		void emulate_Starg(Parameter arg) {
-			setArg(arg.Number, valueStack.pop());
+			setArg(arg.Index, valueStack.pop());
 		}
 
 		void emulate_Stloc(int index) {

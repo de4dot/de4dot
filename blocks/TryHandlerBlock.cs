@@ -28,13 +28,13 @@ namespace de4dot.blocks {
 
 		// State for an ExceptionHandler instance
 		ITypeDefOrRef catchType;
-		ExceptionClause handlerType;
+		ExceptionHandlerType handlerType;
 
 		public ITypeDefOrRef CatchType {
 			get { return catchType; }
 		}
 
-		public ExceptionClause HandlerType {
+		public ExceptionHandlerType HandlerType {
 			get { return handlerType; }
 		}
 

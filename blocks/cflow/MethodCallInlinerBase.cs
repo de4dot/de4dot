@@ -165,7 +165,7 @@ namespace de4dot.blocks.cflow {
 
 				var methodArgs = methodToInline.Parameters;
 				var calledMethodArgs = DotNetUtils.getArgs(ctor);
-				if (methodArgs.Length + 1 - popLastArgs != calledMethodArgs.Count)
+				if (methodArgs.Count + 1 - popLastArgs != calledMethodArgs.Count)
 					return null;
 				for (int i = 1; i < calledMethodArgs.Count; i++) {
 					if (!isCompatibleType(i, calledMethodArgs[i], methodArgs[i - 1].Type))
@@ -199,7 +199,7 @@ namespace de4dot.blocks.cflow {
 			var methodToInlineArgs = methodToInline.Parameters;
 			var methodArgs = DotNetUtils.getArgs(method);
 			bool hasImplicitThis = method.MethodSig.ImplicitThis;
-			if (methodToInlineArgs.Length - ignoreLastMethodToInlineArgs != methodArgs.Count)
+			if (methodToInlineArgs.Count - ignoreLastMethodToInlineArgs != methodArgs.Count)
 				return false;
 			for (int i = 0; i < methodArgs.Count; i++) {
 				var methodArg = methodArgs[i];

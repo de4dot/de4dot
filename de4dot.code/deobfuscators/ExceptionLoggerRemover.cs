@@ -42,7 +42,7 @@ namespace de4dot.code.deobfuscators {
 				if (tryBlock.TryHandlerBlocks.Count != 1)
 					continue;
 				var catchBlock = tryBlock.TryHandlerBlocks[0];
-				if (catchBlock.HandlerType != ExceptionClause.Catch ||
+				if (catchBlock.HandlerType != ExceptionHandlerType.Catch ||
 					catchBlock.CatchType.FullName != "System.Exception") {
 					continue;
 				}
