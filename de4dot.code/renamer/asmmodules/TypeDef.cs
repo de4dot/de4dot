@@ -23,35 +23,185 @@ using dot10.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.renamer.asmmodules {
-	//TODO:
-	class TypeRefInstantiator {
-		public static ITypeDefOrRef Create(ITypeDefOrRef type, GenericInstSig git) {
+	struct GenericArgsSubstitutor {
+		IList<TypeSig> genericArgs;
+		bool updated;
+
+		public static ITypeDefOrRef create(ITypeDefOrRef type, GenericInstSig git) {
 			if (git == null)
 				return type;
-			return Create(type, git.GenericArguments);
+			return create(type, git.GenericArguments);
 		}
 
-		public static ITypeDefOrRef Create(ITypeDefOrRef type, IList<TypeSig> genericArgs) {
+		public static ITypeDefOrRef create(ITypeDefOrRef type, IList<TypeSig> genericArgs) {
 			if (genericArgs == null || genericArgs.Count == 0)
 				return type;
-
-			return type;//TODO:
+			var ts = type as TypeSpec;
+			if (ts == null)
+				return type;
+			var newSig = create(ts.TypeSig, genericArgs);
+			return newSig == ts.TypeSig ? type : new TypeSpecUser(newSig);
 		}
-	}
 
-	//TODO:
-	class MethodRefInstantiator {
-		public static IMethod Create(IMethod method, GenericInstSig git) {
+		public static TypeSig create(TypeSig type, IList<TypeSig> genericArgs) {
+			if (type == null || genericArgs == null || genericArgs.Count == 0)
+				return type;
+			return new GenericArgsSubstitutor(genericArgs).create(type);
+		}
+
+		public static IMethodDefOrRef create(IMethodDefOrRef method, GenericInstSig git) {
 			if (git == null)
 				return method;
-			return Create(method, git.GenericArguments);
+			return create(method, git.GenericArguments);
 		}
 
-		public static IMethod Create(IMethod method, IList<TypeSig> genericArgs) {
-			if (genericArgs == null || genericArgs.Count == 0)
+		// Creates a new method but keeps declaring type as is
+		public static IMethodDefOrRef create(IMethodDefOrRef method, IList<TypeSig> genericArgs) {
+			if (method == null || genericArgs == null || genericArgs.Count == 0)
 				return method;
 
-			return method;//TODO:
+			var sig = method.MethodSig;
+			if (sig == null)
+				return method;
+
+			var newSig = new GenericArgsSubstitutor(genericArgs).create(sig);
+			if (newSig == sig)
+				return method;
+
+			return new MemberRefUser(method.DeclaringType.OwnerModule, method.Name, newSig, method.DeclaringType);
+		}
+
+		GenericArgsSubstitutor(IList<TypeSig> genericArgs) {
+			this.genericArgs = genericArgs;
+			this.updated = false;
+		}
+
+		TypeSig create(TypeSig type) {
+			var newType = create2(type);
+			return updated ? newType : type;
+		}
+
+		TypeSig create2(TypeSig type) {
+			if (type == null)
+				return type;
+			TypeSig result;
+
+			switch (type.ElementType) {
+			case ElementType.Void:
+			case ElementType.Boolean:
+			case ElementType.Char:
+			case ElementType.I1:
+			case ElementType.U1:
+			case ElementType.I2:
+			case ElementType.U2:
+			case ElementType.I4:
+			case ElementType.U4:
+			case ElementType.I8:
+			case ElementType.U8:
+			case ElementType.R4:
+			case ElementType.R8:
+			case ElementType.String:
+			case ElementType.TypedByRef:
+			case ElementType.I:
+			case ElementType.U:
+			case ElementType.Object:
+				result = type;
+				break;
+
+			case ElementType.Ptr:
+				result = new PtrSig(create2(type.Next));
+				break;
+
+			case ElementType.ByRef:
+				result = new ByRefSig(create2(type.Next));
+				break;
+
+			case ElementType.Array:
+				var ary = (ArraySig)type;
+				result = new ArraySig(ary.Next, ary.Rank, ary.Sizes, ary.LowerBounds);
+				break;
+
+			case ElementType.SZArray:
+				result = new SZArraySig(create2(type.Next));
+				break;
+
+			case ElementType.Pinned:
+				result = new PinnedSig(create2(type.Next));
+				break;
+
+			case ElementType.ValueType:
+			case ElementType.Class:
+				result = type;
+				break;
+
+			case ElementType.Var:
+				var varSig = (GenericSig)type;
+				if (varSig.Number < (uint)genericArgs.Count) {
+					result = genericArgs[(int)varSig.Number];
+					updated = true;
+				}
+				else
+					result = type;
+				break;
+
+			case ElementType.MVar:
+				result = type;
+				break;
+
+			case ElementType.GenericInst:
+				var gis = (GenericInstSig)type;
+				var newGis = new GenericInstSig(create2(gis.GenericType) as ClassOrValueTypeSig, gis.GenericArguments.Count);
+				for (int i = 0; i < gis.GenericArguments.Count; i++)
+					newGis.GenericArguments.Add(create2(gis.GenericArguments[i]));
+				result = newGis;
+				break;
+
+			case ElementType.ValueArray:
+				result = new ValueArraySig(type.Next, ((ValueArraySig)type).Size);
+				break;
+
+			case ElementType.Module:
+				result = new ModuleSig(((ModuleSig)type).Index, type.Next);
+				break;
+
+			case ElementType.CModReqd:
+				result = new CModReqdSig(((ModifierSig)type).Modifier, type.Next);
+				break;
+
+			case ElementType.CModOpt:
+				result = new CModOptSig(((ModifierSig)type).Modifier, type.Next);
+				break;
+
+			case ElementType.FnPtr:
+				result = new FnPtrSig(create(((FnPtrSig)type).MethodSig));
+				break;
+
+			case ElementType.End:
+			case ElementType.R:
+			case ElementType.Sentinel:
+			case ElementType.Internal:
+			default:
+				result = type;
+				break;
+			}
+
+			return result;
+		}
+
+		MethodSig create(MethodSig sig) {
+			if (sig == null)
+				return sig;
+			var newSig = new MethodSig(sig.GetCallingConvention());
+			newSig.RetType = create2(sig.RetType);
+			for (int i = 0; i < sig.Params.Count; i++)
+				newSig.Params.Add(create2(sig.Params[i]));
+			newSig.GenParamCount = sig.GenParamCount;
+			if (sig.ParamsAfterSentinel != null) {
+				newSig.ParamsAfterSentinel = new List<TypeSig>();
+				for (int i = 0; i < sig.ParamsAfterSentinel.Count; i++)
+					newSig.ParamsAfterSentinel.Add(create2(sig.ParamsAfterSentinel[i]));
+			}
+			return updated ? newSig : sig;
 		}
 	}
 
@@ -64,7 +214,7 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 
 		public TypeInfo(TypeInfo other, GenericInstSig git) {
-			this.typeReference = TypeRefInstantiator.Create(other.typeReference, git);
+			this.typeReference = GenericArgsSubstitutor.create(other.typeReference, git);
 			this.typeDef = other.typeDef;
 		}
 
@@ -107,9 +257,9 @@ namespace de4dot.code.renamer.asmmodules {
 
 	class MethodInst {
 		public MMethodDef origMethodDef;
-		public IMethod methodReference;
+		public IMethodDefOrRef methodReference;
 
-		public MethodInst(MMethodDef origMethodDef, IMethod methodReference) {
+		public MethodInst(MMethodDef origMethodDef, IMethodDefOrRef methodReference) {
 			this.origMethodDef = origMethodDef;
 			this.methodReference = methodReference;
 		}
@@ -120,12 +270,12 @@ namespace de4dot.code.renamer.asmmodules {
 	}
 
 	class MethodInstances {
-		Dictionary<IMethod, List<MethodInst>> methodInstances = new Dictionary<IMethod, List<MethodInst>>(MethodEqualityComparer.DontCompareDeclaringTypes);
+		Dictionary<IMethodDefOrRef, List<MethodInst>> methodInstances = new Dictionary<IMethodDefOrRef, List<MethodInst>>(MethodEqualityComparer.DontCompareDeclaringTypes);
 
 		public void initializeFrom(MethodInstances other, GenericInstSig git) {
 			foreach (var list in other.methodInstances.Values) {
 				foreach (var methodInst in list) {
-					var newMethod = MethodRefInstantiator.Create(methodInst.methodReference, git);
+					var newMethod = GenericArgsSubstitutor.create(methodInst.methodReference, git);
 					add(new MethodInst(methodInst.origMethodDef, newMethod));
 				}
 			}
@@ -139,7 +289,7 @@ namespace de4dot.code.renamer.asmmodules {
 			list.Add(methodInst);
 		}
 
-		public List<MethodInst> lookup(IMethod methodReference) {
+		public List<MethodInst> lookup(IMethodDefOrRef methodReference) {
 			List<MethodInst> list;
 			methodInstances.TryGetValue(methodReference, out list);
 			return list;
@@ -545,7 +695,7 @@ namespace de4dot.code.renamer.asmmodules {
 			//---	virtual functions.
 			// Done. See initializeAllInterfaces().
 
-			var methodsDict = new Dictionary<IMethod, MMethodDef>(MethodEqualityComparer.DontCompareDeclaringTypes);
+			var methodsDict = new Dictionary<IMethodDefOrRef, MMethodDef>(MethodEqualityComparer.DontCompareDeclaringTypes);
 
 			//--- * If this class explicitly specifies that it implements the interface (i.e., the
 			//---	interfaces that appear in this class‘ InterfaceImpl table, §22.23)
@@ -568,7 +718,7 @@ namespace de4dot.code.renamer.asmmodules {
 						var ifaceMethod = methodInst.origMethodDef;
 						if (!ifaceMethod.isVirtual())
 							continue;
-						var ifaceMethodReference = MethodRefInstantiator.Create(methodInst.methodReference, ifaceInfo.typeReference.ToGenericInstSig());
+						var ifaceMethodReference = GenericArgsSubstitutor.create(methodInst.methodReference, ifaceInfo.typeReference.ToGenericInstSig());
 						MMethodDef classMethod;
 						if (!methodsDict.TryGetValue(ifaceMethodReference, out classMethod))
 							continue;
@@ -602,7 +752,7 @@ namespace de4dot.code.renamer.asmmodules {
 					var ifaceMethod = methodsList[0].origMethodDef;
 					if (!ifaceMethod.isVirtual())
 						continue;
-					var ifaceMethodRef = MethodRefInstantiator.Create(ifaceMethod.MethodDef, ifaceInfo.typeReference.ToGenericInstSig());
+					var ifaceMethodRef = GenericArgsSubstitutor.create(ifaceMethod.MethodDef, ifaceInfo.typeReference.ToGenericInstSig());
 					MMethodDef classMethod;
 					if (!methodsDict.TryGetValue(ifaceMethodRef, out classMethod))
 						continue;
@@ -614,11 +764,11 @@ namespace de4dot.code.renamer.asmmodules {
 			//---	explicitly specified virtual methods into the interface in preference to those
 			//---	inherited or chosen by name matching.
 			methodsDict.Clear();
-			var ifaceMethodsDict = new Dictionary<IMethod, MMethodDef>(MethodEqualityComparer.CompareDeclaringTypes);
+			var ifaceMethodsDict = new Dictionary<IMethodDefOrRef, MMethodDef>(MethodEqualityComparer.CompareDeclaringTypes);
 			foreach (var ifaceInfo in allImplementedInterfaces.Keys) {
 				var git = ifaceInfo.typeReference.ToGenericInstSig();
 				foreach (var ifaceMethod in ifaceInfo.typeDef.methods.getValues()) {
-					IMethod ifaceMethodReference = ifaceMethod.MethodDef;
+					IMethodDefOrRef ifaceMethodReference = ifaceMethod.MethodDef;
 					if (git != null)
 						ifaceMethodReference = simpleClone(ifaceMethod.MethodDef, ifaceInfo.typeReference);
 					ifaceMethodsDict[ifaceMethodReference] = ifaceMethod;
@@ -675,7 +825,7 @@ namespace de4dot.code.renamer.asmmodules {
 
 		bool hasAttribute(string name) {
 			foreach (var attr in TypeDef.CustomAttributes) {
-				if (attr.AttributeType.FullName == name)
+				if (attr.TypeFullName == name)
 					return true;
 			}
 			return false;
