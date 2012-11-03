@@ -28,19 +28,20 @@ namespace de4dot.code.renamer {
 		protected Dictionary<string, string> fullNameToShortName;
 		protected Dictionary<string, string> fullNameToShortNamePrefix;
 
-		public string create(TypeReference typeRef) {
-			if (typeRef.IsGenericInstance) {
-				var git = (GenericInstanceType)typeRef;
-				if (git.ElementType.FullName == "System.Nullable`1" &&
-					git.GenericArguments.Count == 1 && git.GenericArguments[0] != null) {
-					typeRef = git.GenericArguments[0];
+		public string create(TypeSig typeRef) {
+			typeRef = typeRef.RemovePinnedAndModifiers();
+			var gis = typeRef as GenericInstSig;
+			if (gis != null) {
+				if (gis.FullName == "System.Nullable`1" &&
+					gis.GenericArguments.Count == 1 && gis.GenericArguments[0] != null) {
+					typeRef = gis.GenericArguments[0];
 				}
 			}
 
 			string prefix = getPrefix(typeRef);
 
-			var elementType = typeRef.GetElementType();
-			if (elementType is GenericParam)
+			var elementType = typeRef.ScopeType;
+			if (isGenericParam(elementType))
 				return genericParamNameCreator.create();
 
 			NameCreator nc;
@@ -64,12 +65,20 @@ namespace de4dot.code.renamer {
 			return addTypeName(typeFullName, shortName, prefix).create();
 		}
 
-		static string getPrefix(TypeReference typeRef) {
+		bool isGenericParam(ITypeDefOrRef tdr) {
+			var ts = tdr as TypeSpec;
+			if (ts != null)
+				return false;
+			var sig = ts.TypeSig.RemovePinnedAndModifiers();
+			return sig is GenericSig;
+		}
+
+		static string getPrefix(TypeSig typeRef) {
 			string prefix = "";
-			while (typeRef is TypeSpecification) {
+			while (typeRef != null) {
 				if (typeRef.IsPointer)
 					prefix += "p";
-				typeRef = ((TypeSpecification)typeRef).ElementType;
+				typeRef = typeRef.Next;
 			}
 			return prefix;
 		}

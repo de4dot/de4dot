@@ -452,7 +452,7 @@ namespace de4dot.code.renamer.asmmodules {
 			return null;
 		}
 
-		public MMethodDef resolveMethod(MemberRef methodRef) {
+		public MMethodDef resolveMethod(IMethodDefOrRef methodRef) {
 			if (methodRef.DeclaringType == null)
 				return null;
 			var modules = findModules(methodRef.DeclaringType);

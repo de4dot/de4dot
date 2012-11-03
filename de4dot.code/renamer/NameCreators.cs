@@ -174,7 +174,7 @@ namespace de4dot.code.renamer {
 
 		public string create(TypeDef typeDefinition, string newBaseTypeName) {
 			var nameCreator = getNameCreator(typeDefinition, newBaseTypeName);
-			return existingNames.getName(typeDefinition.Name, nameCreator);
+			return existingNames.getName(typeDefinition.Name.String, nameCreator);
 		}
 
 		NameCreator getNameCreator(TypeDef typeDefinition, string newBaseTypeName) {
@@ -185,12 +185,13 @@ namespace de4dot.code.renamer {
 				nameCreator = createStructName;
 			else if (typeDefinition.IsClass) {
 				if (typeDefinition.BaseType != null) {
-					if (MemberReferenceHelper.verifyType(typeDefinition.BaseType, "mscorlib", "System.Delegate"))
+					var fn = typeDefinition.BaseType.FullName;
+					if (fn == "System.Delegate")
 						nameCreator = createDelegateName;
-					else if (MemberReferenceHelper.verifyType(typeDefinition.BaseType, "mscorlib", "System.MulticastDelegate"))
+					else if (fn == "System.MulticastDelegate")
 						nameCreator = createDelegateName;
 					else {
-						nameCreator = nameInfos.find(newBaseTypeName ?? typeDefinition.BaseType.Name);
+						nameCreator = nameInfos.find(newBaseTypeName ?? typeDefinition.BaseType.Name.String);
 						if (nameCreator == null)
 							nameCreator = createClassName;
 					}

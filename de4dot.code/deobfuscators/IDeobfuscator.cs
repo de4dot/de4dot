@@ -23,9 +23,7 @@ using dot10.DotNet;
 using dot10.PE;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
-#if PORT
 using de4dot.code.renamer;
-#endif
 
 namespace de4dot.code.deobfuscators {
 	public interface IDeobfuscatorOptions {
@@ -54,11 +52,7 @@ namespace de4dot.code.deobfuscators {
 		RenameResourceKeys = 2,
 	}
 
-	public interface IDeobfuscator 
-#if PORT
-		: INameChecker
-#endif
-	{
+	public interface IDeobfuscator : INameChecker {
 		string Type { get; }
 		string TypeLong { get; }
 		string Name { get; }

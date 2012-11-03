@@ -241,7 +241,7 @@ namespace de4dot.code.renamer.asmmodules {
 			return this.types.find(getNonGenericTypeReference(typeReference));
 		}
 
-		public MMethodDef resolveMethod(MemberRef methodRef) {
+		public MMethodDef resolveMethod(IMethodDefOrRef methodRef) {
 			var typeDef = this.types.find(getNonGenericTypeReference(methodRef.DeclaringType));
 			if (typeDef == null)
 				return null;

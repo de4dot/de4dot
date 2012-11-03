@@ -519,6 +519,10 @@ namespace de4dot.code.renamer.asmmodules {
 			return methods.find(mr);
 		}
 
+		public MMethodDef findMethod(IMethodDefOrRef md) {
+			return methods.find(md);
+		}
+
 		public MMethodDef findMethod(MethodDef md) {
 			return methods.find(md);
 		}

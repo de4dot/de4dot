@@ -87,7 +87,7 @@ namespace de4dot.code.renamer {
 		}
 
 		public string getNewPropertyName(PropertyDef propertyDefinition) {
-			var propType = propertyDefinition.PropertyType;
+			var propType = propertyDefinition.PropertySig.RetType;
 			string newName;
 			if (isGeneric(propType))
 				newName = existingPropertyNames.getName(propertyDefinition.Name, genericPropertyNameCreator);
@@ -97,15 +97,13 @@ namespace de4dot.code.renamer {
 			return newName;
 		}
 
-		static bool isGeneric(TypeReference type) {
-			while (true) {
-				if (type is GenericParam)
+		static bool isGeneric(TypeSig type) {
+			while (type != null) {
+				if (type.IsGenericParameter)
 					return true;
-				var ts = type as TypeSpecification;
-				if (ts == null)
-					return false;
-				type = ts.ElementType;
+				type = type.Next;
 			}
+			return false;
 		}
 
 		public string getNewEventName(EventDef eventDefinition) {
@@ -147,15 +145,15 @@ namespace de4dot.code.renamer {
 		}
 
 		public string getNewFieldName(FieldDef field) {
-			return existingVariableNames.getName(field.Name, () => variableNameCreator.create(field.FieldType));
+			return existingVariableNames.getName(field.Name, () => variableNameCreator.create(field.FieldSig.Type));
 		}
 
 		public string getNewFieldName(string oldName, INameCreator nameCreator) {
 			return existingVariableNames.getName(oldName, () => nameCreator.create());
 		}
 
-		public string getNewParamName(string oldName, ParameterDefinition param) {
-			return existingVariableNames.getName(oldName, () => variableNameCreator.create(param.ParameterType));
+		public string getNewParamName(string oldName, Parameter param) {
+			return existingVariableNames.getName(oldName, () => variableNameCreator.create(param.Type));
 		}
 
 		public string getNewMethodName(string oldName, INameCreator nameCreator) {

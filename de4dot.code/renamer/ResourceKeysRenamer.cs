@@ -24,6 +24,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using dot10.DotNet;
 using dot10.DotNet.Emit;
+using dot10.IO;
 using de4dot.blocks;
 using de4dot.code.resources;
 
@@ -32,11 +33,11 @@ namespace de4dot.code.renamer {
 		const int RESOURCE_KEY_MAX_LEN = 50;
 		const string DEFAULT_KEY_NAME = "Key";
 
-		ModuleDefinition module;
+		ModuleDefMD module;
 		INameChecker nameChecker;
 		Dictionary<string, bool> newNames = new Dictionary<string, bool>();
 
-		public ResourceKeysRenamer(ModuleDefinition module, INameChecker nameChecker) {
+		public ResourceKeysRenamer(ModuleDefMD module, INameChecker nameChecker) {
 			this.module = module;
 			this.nameChecker = nameChecker;
 		}
@@ -80,9 +81,9 @@ namespace de4dot.code.renamer {
 
 		static string getResourceName(TypeDef type) {
 			foreach (var method in type.Methods) {
-				if (method.Body == null)
+				if (method.CilBody == null)
 					continue;
-				var instrs = method.Body.Instructions;
+				var instrs = method.CilBody.Instructions;
 				string resourceName = null;
 				for (int i = 0; i < instrs.Count; i++) {
 					var instr = instrs[i];
@@ -92,7 +93,7 @@ namespace de4dot.code.renamer {
 					}
 
 					if (instr.OpCode.Code == Code.Newobj) {
-						var ctor = instr.Operand as MethodReference;
+						var ctor = instr.Operand as IMethod;
 						if (ctor.FullName != "System.Void System.Resources.ResourceManager::.ctor(System.String,System.Reflection.Assembly)")
 							continue;
 						if (resourceName == null) {
@@ -123,7 +124,7 @@ namespace de4dot.code.renamer {
 
 		void rename(TypeDef type, EmbeddedResource resource) {
 			newNames.Clear();
-			var resourceSet = ResourceReader.read(module, resource.GetResourceStream());
+			var resourceSet = ResourceReader.read(module, resource.Data);
 			var renamed = new List<RenameInfo>();
 			foreach (var elem in resourceSet.ResourceElements) {
 				if (nameChecker.isValidResourceKeyName(elem.Name)) {
@@ -141,8 +142,7 @@ namespace de4dot.code.renamer {
 
 			var outStream = new MemoryStream();
 			ResourceWriter.write(module, outStream, resourceSet);
-			outStream.Position = 0;
-			var newResource = new EmbeddedResource(resource.Name, resource.Attributes, outStream);
+			var newResource = new EmbeddedResource(resource.Name, outStream.ToArray(), resource.Flags);
 			int resourceIndex = module.Resources.IndexOf(resource);
 			if (resourceIndex < 0)
 				throw new ApplicationException("Could not find index of resource");
@@ -155,15 +155,15 @@ namespace de4dot.code.renamer {
 				nameToInfo[info.element.Name] = info;
 
 			foreach (var method in type.Methods) {
-				if (method.Body == null)
+				if (method.CilBody == null)
 					continue;
 
-				var instrs = method.Body.Instructions;
+				var instrs = method.CilBody.Instructions;
 				for (int i = 0; i < instrs.Count; i++) {
 					var call = instrs[i];
 					if (call.OpCode.Code != Code.Call && call.OpCode.Code != Code.Callvirt)
 						continue;
-					var calledMethod = call.Operand as MethodReference;
+					var calledMethod = call.Operand as IMethod;
 					if (calledMethod == null)
 						continue;
 

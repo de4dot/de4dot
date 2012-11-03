@@ -19,6 +19,7 @@
 
 using System;
 using System.Collections.Generic;
+using dot10.DotNet.MD;
 
 namespace de4dot.code.renamer {
 	class ExistingNames {
@@ -32,8 +33,16 @@ namespace de4dot.code.renamer {
 			return allNames.ContainsKey(name);
 		}
 
+		public string getName(UTF8String oldName, INameCreator nameCreator) {
+			return getName(UTF8String.ToSystemStringOrEmpty(oldName), nameCreator);
+		}
+
 		public string getName(string oldName, INameCreator nameCreator) {
 			return getName(oldName, () => nameCreator.create());
+		}
+
+		public string getName(UTF8String oldName, Func<string> createNewName) {
+			return getName(UTF8String.ToSystemStringOrEmpty(oldName), createNewName);
 		}
 
 		public string getName(string oldName, Func<string> createNewName) {

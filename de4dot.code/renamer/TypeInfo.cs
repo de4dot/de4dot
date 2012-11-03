@@ -41,7 +41,7 @@ namespace de4dot.code.renamer {
 			: base(typeDef) {
 			this.type = typeDef;
 			this.memberInfos = memberInfos;
-			oldNamespace = typeDef.TypeDef.Namespace;
+			oldNamespace = typeDef.TypeDef.Namespace.String;
 		}
 
 		bool isWinFormsClass() {
@@ -82,7 +82,7 @@ namespace de4dot.code.renamer {
 		}
 
 		bool isModuleType() {
-			return type.TypeDef == DotNetUtils.getModuleType(type.TypeDef.Module);
+			return type.TypeDef.IsGlobalModuleType;
 		}
 
 		public void prepareRenameTypes(TypeRenamerState state) {
@@ -371,10 +371,10 @@ namespace de4dot.code.renamer {
 			var checker = NameChecker;
 
 			// PInvoke methods' EntryPoint is always valid. It has to, so always rename.
-			if (!NameChecker.isValidMethodName(info.oldName) || methodDef.MethodDef.PInvokeInfo != null) {
+			if (!NameChecker.isValidMethodName(info.oldName) || methodDef.MethodDef.ImplMap != null) {
 				INameCreator nameCreator = null;
 				string newName = info.suggestedName;
-				if (methodDef.MethodDef.PInvokeInfo != null)
+				if (methodDef.MethodDef.ImplMap != null)
 					newName = getPinvokeName(methodDef);
 				else if (methodDef.isStatic())
 					nameCreator = variableNameState.staticMethodNameCreator;
@@ -387,20 +387,24 @@ namespace de4dot.code.renamer {
 		}
 
 		string getPinvokeName(MMethodDef methodDef) {
-			var entryPoint = methodDef.MethodDef.PInvokeInfo.EntryPoint;
+			var entryPoint = methodDef.MethodDef.ImplMap.Name.String;
 			if (Regex.IsMatch(entryPoint, @"^#\d+$"))
-				entryPoint = DotNetUtils.getDllName(methodDef.MethodDef.PInvokeInfo.Module.Name) + "_" + entryPoint.Substring(1);
+				entryPoint = DotNetUtils.getDllName(methodDef.MethodDef.ImplMap.Scope.Name.String) + "_" + entryPoint.Substring(1);
 			return entryPoint;
 		}
 
 		static bool isEventHandler(MMethodDef methodDef) {
-			if (methodDef.MethodDef.Parameters.Count != 2)
+			var md = methodDef.MethodDef;
+			if (md.Parameters.Count != 2)
 				return false;
-			if (methodDef.MethodDef.MethodReturnType.ReturnType.FullName != "System.Void")
+			var sig = md.MethodSig;
+			if (sig == null)
 				return false;
-			if (methodDef.MethodDef.Parameters[0].ParameterType.FullName != "System.Object")
+			if (sig.RetType.ElementType != ElementType.Void)
 				return false;
-			if (!methodDef.MethodDef.Parameters[1].ParameterType.FullName.Contains("EventArgs"))
+			if (md.Parameters[0].Type.ElementType != ElementType.Object)
+				return false;
+			if (!md.Parameters[1].Type.FullName.Contains("EventArgs"))
 				return false;
 			return true;
 		}
@@ -444,16 +448,16 @@ namespace de4dot.code.renamer {
 				ourMethods.add(methodDef.MethodDef, methodDef);
 
 			foreach (var methodDef in type.AllMethods) {
-				if (methodDef.MethodDef.Body == null)
+				if (methodDef.MethodDef.CilBody == null)
 					continue;
 				if (methodDef.MethodDef.IsStatic || methodDef.MethodDef.IsVirtual)
 					continue;
-				var instructions = methodDef.MethodDef.Body.Instructions;
+				var instructions = methodDef.MethodDef.CilBody.Instructions;
 				for (int i = 2; i < instructions.Count; i++) {
 					var call = instructions[i];
 					if (call.OpCode.Code != Code.Call && call.OpCode.Code != Code.Callvirt)
 						continue;
-					if (!isWindowsFormsSetNameMethod(call.Operand as MethodReference))
+					if (!isWindowsFormsSetNameMethod(call.Operand as IMethod))
 						continue;
 
 					var ldstr = instructions[i - 1];
@@ -464,9 +468,9 @@ namespace de4dot.code.renamer {
 						continue;
 
 					var instr = instructions[i - 2];
-					FieldReference fieldRef = null;
+					IField fieldRef = null;
 					if (instr.OpCode.Code == Code.Call || instr.OpCode.Code == Code.Callvirt) {
-						var calledMethod = instr.Operand as MethodReference;
+						var calledMethod = instr.Operand as IMethod;
 						if (calledMethod == null)
 							continue;
 						var calledMethodDef = ourMethods.find(calledMethod);
@@ -482,7 +486,7 @@ namespace de4dot.code.renamer {
 						fieldName = "_" + fieldName;
 					}
 					else if (instr.OpCode.Code == Code.Ldfld) {
-						fieldRef = instr.Operand as FieldReference;
+						fieldRef = instr.Operand as IField;
 					}
 
 					if (fieldRef == null)
@@ -500,13 +504,13 @@ namespace de4dot.code.renamer {
 			}
 		}
 
-		static FieldReference getFieldReference(MethodDef method) {
-			if (method == null || method.Body == null)
+		static IField getFieldReference(MethodDef method) {
+			if (method == null || method.CilBody == null)
 				return null;
-			var instructions = method.Body.Instructions;
+			var instructions = method.CilBody.Instructions;
 			int index = 0;
 			var ldarg0 = DotNetUtils.getInstruction(instructions, ref index);
-			if (ldarg0 == null || DotNetUtils.getArgIndex(ldarg0) != 0)
+			if (ldarg0 == null || ldarg0.GetParameterIndex() != 0)
 				return null;
 			var ldfld = DotNetUtils.getInstruction(instructions, ref index);
 			if (ldfld == null || ldfld.OpCode.Code != Code.Ldfld)
@@ -514,18 +518,18 @@ namespace de4dot.code.renamer {
 			var ret = DotNetUtils.getInstruction(instructions, ref index);
 			if (ret == null)
 				return null;
-			if (DotNetUtils.isStloc(ret)) {
-				var local = DotNetUtils.getLocalVar(method.Body.Variables, ret);
+			if (ret.IsStloc()) {
+				var local = ret.GetLocal(method.CilBody.LocalList);
 				ret = DotNetUtils.getInstruction(instructions, ref index);
-				if (ret == null || !DotNetUtils.isLdloc(ret))
+				if (ret == null || !ret.IsLdloc())
 					return null;
-				if (DotNetUtils.getLocalVar(method.Body.Variables, ret) != local)
+				if (ret.GetLocal(method.CilBody.LocalList) != local)
 					return null;
 				ret = DotNetUtils.getInstruction(instructions, ref index);
 			}
 			if (ret == null || ret.OpCode.Code != Code.Ret)
 				return null;
-			return ldfld.Operand as FieldReference;
+			return ldfld.Operand as IField;
 		}
 
 		public void initializeEventHandlerNames() {
@@ -566,41 +570,44 @@ namespace de4dot.code.renamer {
 			}
 		}
 
-		static MethodReference getVbHandler(MethodDef method, out string eventName) {
+		static IMethod getVbHandler(MethodDef method, out string eventName) {
 			eventName = null;
-			if (method.Body == null)
+			if (method.CilBody == null)
 				return null;
-			if (method.MethodReturnType.ReturnType.FullName != "System.Void")
+			var sig = method.MethodSig;
+			if (sig == null)
+				return null;
+			if (sig.RetType.ElementType != ElementType.Void)
 				return null;
 			if (method.Parameters.Count != 1)
 				return null;
-			if (method.Body.Variables.Count != 1)
+			if (method.CilBody.LocalList.Count != 1)
 				return null;
-			if (!isEventHandlerType(method.Body.Variables[0].VariableType))
+			if (!isEventHandlerType(method.CilBody.LocalList[0].Type))
 				return null;
 
-			var instructions = method.Body.Instructions;
+			var instructions = method.CilBody.Instructions;
 			int index = 0;
 
 			int newobjIndex = findInstruction(instructions, index, Code.Newobj);
 			if (newobjIndex == -1 || findInstruction(instructions, newobjIndex + 1, Code.Newobj) != -1)
 				return null;
-			if (!isEventHandlerCtor(instructions[newobjIndex].Operand as MethodReference))
+			if (!isEventHandlerCtor(instructions[newobjIndex].Operand as IMethod))
 				return null;
 			if (newobjIndex < 1)
 				return null;
 			var ldvirtftn = instructions[newobjIndex - 1];
 			if (ldvirtftn.OpCode.Code != Code.Ldvirtftn && ldvirtftn.OpCode.Code != Code.Ldftn)
 				return null;
-			var handlerMethod = ldvirtftn.Operand as MethodReference;
+			var handlerMethod = ldvirtftn.Operand as IMethod;
 			if (handlerMethod == null)
 				return null;
-			if (!MemberReferenceHelper.compareTypes(method.DeclaringType, handlerMethod.DeclaringType))
+			if (!new SigComparer().Equals(method.DeclaringType, handlerMethod.DeclaringType))
 				return null;
 			index = newobjIndex;
 
-			FieldReference addField, removeField;
-			MethodReference addMethod, removeMethod;
+			IField addField, removeField;
+			IMethod addMethod, removeMethod;
 			if (!findEventCall(instructions, ref index, out removeField, out removeMethod))
 				return null;
 			if (!findEventCall(instructions, ref index, out addField, out addMethod))
@@ -608,18 +615,18 @@ namespace de4dot.code.renamer {
 
 			if (findInstruction(instructions, index, Code.Callvirt) != -1)
 				return null;
-			if (!MemberReferenceHelper.compareFieldReference(addField, removeField))
+			if (!new SigComparer().Equals(addField, removeField))
 				return null;
-			if (!MemberReferenceHelper.compareTypes(method.DeclaringType, addField.DeclaringType))
+			if (!new SigComparer().Equals(method.DeclaringType, addField.DeclaringType))
 				return null;
-			if (!MemberReferenceHelper.compareTypes(addMethod.DeclaringType, removeMethod.DeclaringType))
+			if (!new SigComparer().Equals(addMethod.DeclaringType, removeMethod.DeclaringType))
 				return null;
-			if (!Utils.StartsWith(addMethod.Name, "add_", StringComparison.Ordinal))
+			if (!Utils.StartsWith(addMethod.Name.String, "add_", StringComparison.Ordinal))
 				return null;
-			if (!Utils.StartsWith(removeMethod.Name, "remove_", StringComparison.Ordinal))
+			if (!Utils.StartsWith(removeMethod.Name.String, "remove_", StringComparison.Ordinal))
 				return null;
-			eventName = addMethod.Name.Substring(4);
-			if (eventName != removeMethod.Name.Substring(7))
+			eventName = addMethod.Name.String.Substring(4);
+			if (eventName != removeMethod.Name.String.Substring(7))
 				return null;
 			if (eventName == "")
 				return null;
@@ -627,7 +634,7 @@ namespace de4dot.code.renamer {
 			return handlerMethod;
 		}
 
-		static bool findEventCall(IList<Instruction> instructions, ref int index, out FieldReference field, out MethodReference calledMethod) {
+		static bool findEventCall(IList<Instruction> instructions, ref int index, out IField field, out IMethod calledMethod) {
 			field = null;
 			calledMethod = null;
 
@@ -644,8 +651,8 @@ namespace de4dot.code.renamer {
 			if (ldfld.OpCode.Code != Code.Ldfld)
 				return false;
 
-			field = ldfld.Operand as FieldReference;
-			calledMethod = instructions[callvirt].Operand as MethodReference;
+			field = ldfld.Operand as IField;
+			calledMethod = instructions[callvirt].Operand as IMethod;
 			return field != null && calledMethod != null;
 		}
 
@@ -661,11 +668,11 @@ namespace de4dot.code.renamer {
 			var checker = NameChecker;
 
 			foreach (var methodDef in type.AllMethods) {
-				if (methodDef.MethodDef.Body == null)
+				if (methodDef.MethodDef.CilBody == null)
 					continue;
 				if (methodDef.MethodDef.IsStatic)
 					continue;
-				var instructions = methodDef.MethodDef.Body.Instructions;
+				var instructions = methodDef.MethodDef.CilBody.Instructions;
 				for (int i = 0; i < instructions.Count - 6; i++) {
 					// We're looking for this code pattern:
 					//	ldarg.0
@@ -675,36 +682,36 @@ namespace de4dot.code.renamer {
 					//	newobj event_handler_ctor
 					//	callvirt add_SomeEvent
 
-					if (DotNetUtils.getArgIndex(instructions[i]) != 0)
+					if (instructions[i].GetParameterIndex() != 0)
 						continue;
 					int index = i + 1;
 
 					var ldfld = instructions[index++];
 					if (ldfld.OpCode.Code != Code.Ldfld)
 						continue;
-					var fieldRef = ldfld.Operand as FieldReference;
+					var fieldRef = ldfld.Operand as IField;
 					if (fieldRef == null)
 						continue;
 					var fieldDef = ourFields.find(fieldRef);
 					if (fieldDef == null)
 						continue;
 
-					if (DotNetUtils.getArgIndex(instructions[index++]) != 0)
+					if (instructions[index++].GetParameterIndex() != 0)
 						continue;
 
-					MethodReference methodRef;
+					IMethod methodRef;
 					var instr = instructions[index + 1];
 					if (instr.OpCode.Code == Code.Ldvirtftn) {
 						if (!isThisOrDup(instructions[index++]))
 							continue;
 						var ldvirtftn = instructions[index++];
-						methodRef = ldvirtftn.Operand as MethodReference;
+						methodRef = ldvirtftn.Operand as IMethod;
 					}
 					else {
 						var ldftn = instructions[index++];
 						if (ldftn.OpCode.Code != Code.Ldftn)
 							continue;
-						methodRef = ldftn.Operand as MethodReference;
+						methodRef = ldftn.Operand as IMethod;
 					}
 					if (methodRef == null)
 						continue;
@@ -715,19 +722,19 @@ namespace de4dot.code.renamer {
 					var newobj = instructions[index++];
 					if (newobj.OpCode.Code != Code.Newobj)
 						continue;
-					if (!isEventHandlerCtor(newobj.Operand as MethodReference))
+					if (!isEventHandlerCtor(newobj.Operand as IMethod))
 						continue;
 
 					var call = instructions[index++];
 					if (call.OpCode.Code != Code.Call && call.OpCode.Code != Code.Callvirt)
 						continue;
-					var addHandler = call.Operand as MethodReference;
+					var addHandler = call.Operand as IMethod;
 					if (addHandler == null)
 						continue;
-					if (!Utils.StartsWith(addHandler.Name, "add_", StringComparison.Ordinal))
+					if (!Utils.StartsWith(addHandler.Name.String, "add_", StringComparison.Ordinal))
 						continue;
 
-					var eventName = addHandler.Name.Substring(4);
+					var eventName = addHandler.Name.String.Substring(4);
 					if (!checker.isValidEventName(eventName))
 						continue;
 
@@ -740,12 +747,12 @@ namespace de4dot.code.renamer {
 			var checker = NameChecker;
 
 			foreach (var methodDef in type.AllMethods) {
-				if (methodDef.MethodDef.Body == null)
+				if (methodDef.MethodDef.CilBody == null)
 					continue;
 				if (methodDef.MethodDef.IsStatic)
 					continue;
 				var method = methodDef.MethodDef;
-				var instructions = method.Body.Instructions;
+				var instructions = method.CilBody.Instructions;
 				for (int i = 0; i < instructions.Count - 5; i++) {
 					// ldarg.0
 					// ldarg.0 / dup
@@ -754,15 +761,15 @@ namespace de4dot.code.renamer {
 					// newobj event handler ctor
 					// call add_Xyz
 
-					if (DotNetUtils.getArgIndex(instructions[i]) != 0)
+					if (instructions[i].GetParameterIndex() != 0)
 						continue;
 					int index = i + 1;
 
 					if (!isThisOrDup(instructions[index++]))
 						continue;
-					MethodReference handler;
+					IMethod handler;
 					if (instructions[index].OpCode.Code == Code.Ldftn) {
-						handler = instructions[index++].Operand as MethodReference;
+						handler = instructions[index++].Operand as IMethod;
 					}
 					else {
 						if (!isThisOrDup(instructions[index++]))
@@ -770,7 +777,7 @@ namespace de4dot.code.renamer {
 						var instr = instructions[index++];
 						if (instr.OpCode.Code != Code.Ldvirtftn)
 							continue;
-						handler = instr.Operand as MethodReference;
+						handler = instr.Operand as IMethod;
 					}
 					if (handler == null)
 						continue;
@@ -781,19 +788,19 @@ namespace de4dot.code.renamer {
 					var newobj = instructions[index++];
 					if (newobj.OpCode.Code != Code.Newobj)
 						continue;
-					if (!isEventHandlerCtor(newobj.Operand as MethodReference))
+					if (!isEventHandlerCtor(newobj.Operand as IMethod))
 						continue;
 
 					var call = instructions[index++];
 					if (call.OpCode.Code != Code.Call && call.OpCode.Code != Code.Callvirt)
 						continue;
-					var addMethod = call.Operand as MethodReference;
+					var addMethod = call.Operand as IMethod;
 					if (addMethod == null)
 						continue;
-					if (!Utils.StartsWith(addMethod.Name, "add_", StringComparison.Ordinal))
+					if (!Utils.StartsWith(addMethod.Name.String, "add_", StringComparison.Ordinal))
 						continue;
 
-					var eventName = addMethod.Name.Substring(4);
+					var eventName = addMethod.Name.String.Substring(4);
 					if (!checker.isValidEventName(eventName))
 						continue;
 
@@ -803,10 +810,10 @@ namespace de4dot.code.renamer {
 		}
 
 		static bool isThisOrDup(Instruction instr) {
-			return DotNetUtils.getArgIndex(instr) == 0 || instr.OpCode.Code == Code.Dup;
+			return instr.GetParameterIndex() == 0 || instr.OpCode.Code == Code.Dup;
 		}
 
-		static bool isEventHandlerCtor(MethodReference method) {
+		static bool isEventHandlerCtor(IMethod method) {
 			if (method == null)
 				return false;
 			if (method.Name != ".ctor")
@@ -818,22 +825,22 @@ namespace de4dot.code.renamer {
 			return true;
 		}
 
-		static bool isEventHandlerType(TypeReference type) {
+		static bool isEventHandlerType(IType type) {
 			return type.FullName.EndsWith("EventHandler", StringComparison.Ordinal);
 		}
 
 		string findWindowsFormsClassName(MTypeDef type) {
 			foreach (var methodDef in type.AllMethods) {
-				if (methodDef.MethodDef.Body == null)
+				if (methodDef.MethodDef.CilBody == null)
 					continue;
 				if (methodDef.MethodDef.IsStatic || methodDef.MethodDef.IsVirtual)
 					continue;
-				var instructions = methodDef.MethodDef.Body.Instructions;
+				var instructions = methodDef.MethodDef.CilBody.Instructions;
 				for (int i = 2; i < instructions.Count; i++) {
 					var call = instructions[i];
 					if (call.OpCode.Code != Code.Call && call.OpCode.Code != Code.Callvirt)
 						continue;
-					if (!isWindowsFormsSetNameMethod(call.Operand as MethodReference))
+					if (!isWindowsFormsSetNameMethod(call.Operand as IMethod))
 						continue;
 
 					var ldstr = instructions[i - 1];
@@ -843,7 +850,7 @@ namespace de4dot.code.renamer {
 					if (className == null)
 						continue;
 
-					if (DotNetUtils.getArgIndex(instructions[i - 2]) != 0)
+					if (instructions[i - 2].GetParameterIndex() != 0)
 						continue;
 
 					findInitializeComponentMethod(type, methodDef);
@@ -857,12 +864,12 @@ namespace de4dot.code.renamer {
 			foreach (var methodDef in type.AllMethods) {
 				if (methodDef.MethodDef.Name != ".ctor")
 					continue;
-				if (methodDef.MethodDef.Body == null)
+				if (methodDef.MethodDef.CilBody == null)
 					continue;
-				foreach (var instr in methodDef.MethodDef.Body.Instructions) {
+				foreach (var instr in methodDef.MethodDef.CilBody.Instructions) {
 					if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt)
 						continue;
-					if (!MemberReferenceHelper.compareMethodReferenceAndDeclaringType(possibleInitMethod.MethodDef, instr.Operand as MethodReference))
+					if (!MethodEqualityComparer.CompareDeclaringTypes.Equals(possibleInitMethod.MethodDef, instr.Operand as IMethod))
 						continue;
 
 					memberInfos.method(possibleInitMethod).suggestedName = "InitializeComponent";
@@ -871,16 +878,19 @@ namespace de4dot.code.renamer {
 			}
 		}
 
-		static bool isWindowsFormsSetNameMethod(MethodReference method) {
+		static bool isWindowsFormsSetNameMethod(IMethod method) {
 			if (method == null)
 				return false;
-			if (method.Name != "set_Name")
+			if (method.Name.String != "set_Name")
 				return false;
-			if (method.MethodReturnType.ReturnType.FullName != "System.Void")
+			var sig = method.MethodSig;
+			if (sig == null)
 				return false;
-			if (method.Parameters.Count != 1)
+			if (sig.RetType.ElementType != ElementType.Void)
 				return false;
-			if (method.Parameters[0].ParameterType.FullName != "System.String")
+			if (sig.Params.Count != 1)
+				return false;
+			if (sig.Params[0].ElementType != ElementType.String)
 				return false;
 			return true;
 		}

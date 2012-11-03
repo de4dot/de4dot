@@ -21,11 +21,11 @@ using dot10.DotNet;
 
 namespace de4dot.code.renamer.asmmodules {
 	abstract class Ref {
-		public readonly ICodedToken memberReference;
+		public readonly IMemberRef memberReference;
 		public int Index { get; set; }
 		public MTypeDef Owner { get; set; }
 
-		protected Ref(ICodedToken memberReference, MTypeDef owner, int index) {
+		protected Ref(IMemberRef memberReference, MTypeDef owner, int index) {
 			this.memberReference = memberReference;
 			Owner = owner;
 			Index = index;

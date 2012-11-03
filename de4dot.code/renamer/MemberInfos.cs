@@ -32,8 +32,8 @@ namespace de4dot.code.renamer {
 		public MemberInfo(Ref memberRef) {
 			this.memberRef = memberRef;
 			oldFullName = memberRef.memberReference.FullName;
-			oldName = memberRef.memberReference.Name;
-			newName = memberRef.memberReference.Name;
+			oldName = memberRef.memberReference.Name.String;
+			newName = memberRef.memberReference.Name.String;
 		}
 
 		public void rename(string newTypeName) {

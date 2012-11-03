@@ -19,16 +19,9 @@
 
 using System;
 using System.Collections.Generic;
-#if PORT
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using Mono.Cecil.Metadata;
-#endif
-
-//TODO: Remove these
-using DN = dot10.DotNet;
-using DNE = dot10.DotNet.Emit;
-using DNM = dot10.DotNet.MD;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
+using dot10.DotNet.MD;
 
 namespace de4dot.blocks {
 	public enum FrameworkType {
@@ -158,31 +151,31 @@ namespace de4dot.blocks {
 		public static readonly TypeCaches typeCaches = new TypeCaches();
 #endif
 
-		public static DN.TypeDef getModuleType(DN.ModuleDef module) {
+		public static TypeDef getModuleType(ModuleDef module) {
 			return module.GlobalType;
 		}
 
-		public static DN.MethodDef getModuleTypeCctor(DN.ModuleDef module) {
+		public static MethodDef getModuleTypeCctor(ModuleDef module) {
 			return module.GlobalType.FindClassConstructor();
 		}
 
-		public static bool isEmpty(DN.MethodDef method) {
+		public static bool isEmpty(MethodDef method) {
 			if (method.CilBody == null)
 				return false;
 			foreach (var instr in method.CilBody.Instructions) {
 				var code = instr.OpCode.Code;
-				if (code != DNE.Code.Nop && code != DNE.Code.Ret)
+				if (code != Code.Nop && code != Code.Ret)
 					return false;
 			}
 			return true;
 		}
 
-		public static bool isEmptyObfuscated(DN.MethodDef method) {
+		public static bool isEmptyObfuscated(MethodDef method) {
 			if (method.CilBody == null)
 				return false;
 			int index = 0;
 			var instr = getInstruction(method.CilBody.Instructions, ref index);
-			if (instr == null || instr.OpCode.Code != DNE.Code.Ret)
+			if (instr == null || instr.OpCode.Code != Code.Ret)
 				return false;
 
 			return true;
@@ -223,14 +216,14 @@ namespace de4dot.blocks {
 		}
 #endif
 
-		public static bool isDelegate(DN.IType type) {
+		public static bool isDelegate(IType type) {
 			if (type == null)
 				return false;
 			var fn = type.FullName;
 			return fn == "System.Delegate" || fn == "System.MulticastDelegate";
 		}
 
-		public static bool derivesFromDelegate(DN.TypeDef type) {
+		public static bool derivesFromDelegate(TypeDef type) {
 			return type != null && isDelegate(type.BaseType);
 		}
 
@@ -244,8 +237,14 @@ namespace de4dot.blocks {
 		}
 #endif
 
-		public static bool isMethod(DN.IMethod method, string returnType, string parameters) {
+		public static bool isMethod(IMethod method, string returnType, string parameters) {
 			return method != null && method.FullName == returnType + " " + method.DeclaringType.FullName + "::" + method.Name + parameters;
+		}
+
+		public static string getDllName(string dll) {
+			if (dll.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
+				return dll.Substring(0, dll.Length - 4);
+			return dll;
 		}
 
 #if PORT
@@ -279,12 +278,6 @@ namespace de4dot.blocks {
 			if (method.PInvokeInfo == null || method.PInvokeInfo.EntryPoint != funcName)
 				return false;
 			return getDllName(dll).Equals(getDllName(method.PInvokeInfo.Module.Name), StringComparison.OrdinalIgnoreCase);
-		}
-
-		public static string getDllName(string dll) {
-			if (dll.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
-				return dll.Substring(0, dll.Length - 4);
-			return dll;
 		}
 
 		public static MethodDefinition getMethod(TypeDefinition type, string name) {
@@ -338,37 +331,37 @@ namespace de4dot.blocks {
 		}
 #endif
 
-		public static DN.MethodDef getMethod2(DN.ModuleDef module, DN.IMethod method) {
+		public static MethodDef getMethod2(ModuleDef module, IMethod method) {
 			if (method == null)
 				return null;
 			return getMethod(module, method, method.DeclaringType.ScopeType);
 		}
 
-		static DN.TypeDef getType(DN.ModuleDef module, DN.ITypeDefOrRef type) {
-			var td = type as DN.TypeDef;
+		static TypeDef getType(ModuleDef module, ITypeDefOrRef type) {
+			var td = type as TypeDef;
 			if (td != null)
 				return td;
 
-			var tr = type as DN.TypeRef;
+			var tr = type as TypeRef;
 			if (tr != null)
 				return tr.Resolve();
 
 			return null;
 		}
 
-		static DN.MethodDef getMethod(DN.ModuleDef module, DN.IMethod method, DN.ITypeDefOrRef declaringType) {
+		static MethodDef getMethod(ModuleDef module, IMethod method, ITypeDefOrRef declaringType) {
 			if (method == null)
 				return null;
-			if (method is DN.MethodDef)
-				return (DN.MethodDef)method;
+			if (method is MethodDef)
+				return (MethodDef)method;
 			return getMethod(getType(module, declaringType), method);
 		}
 
-		public static DN.MethodDef getMethod(DN.TypeDef type, DN.IMethod methodRef) {
+		public static MethodDef getMethod(TypeDef type, IMethod methodRef) {
 			if (type == null || methodRef == null)
 				return null;
-			if (methodRef is DN.MethodDef)
-				return (DN.MethodDef)methodRef;
+			if (methodRef is MethodDef)
+				return (MethodDef)methodRef;
 			return type.FindMethod(methodRef.Name, methodRef.MethodSig);
 		}
 
@@ -472,22 +465,22 @@ namespace de4dot.blocks {
 		}
 #endif
 
-		public static IList<string> getCodeStrings(DN.MethodDef method) {
+		public static IList<string> getCodeStrings(MethodDef method) {
 			var strings = new List<string>();
 			if (method != null && method.CilBody != null) {
 				foreach (var instr in method.CilBody.Instructions) {
-					if (instr.OpCode.Code == DNE.Code.Ldstr)
+					if (instr.OpCode.Code == Code.Ldstr)
 						strings.Add((string)instr.Operand);
 				}
 			}
 			return strings;
 		}
 
-		public static DN.Resource getResource(DN.ModuleDef module, string name) {
+		public static Resource getResource(ModuleDef module, string name) {
 			return getResource(module, new List<string> { name });
 		}
 
-		public static DN.Resource getResource(DN.ModuleDef module, IEnumerable<string> strings) {
+		public static Resource getResource(ModuleDef module, IEnumerable<string> strings) {
 			if (!module.HasResources)
 				return null;
 
@@ -496,9 +489,9 @@ namespace de4dot.blocks {
 				var resourceName = removeFromNullChar(tmp);
 				if (resourceName == null)
 					continue;
-				var name = new DNM.UTF8String(resourceName);
+				var name = new UTF8String(resourceName);
 				foreach (var resource in resources) {
-					if (DNM.UTF8String.Equals(resource.Name, name))
+					if (UTF8String.Equals(resource.Name, name))
 						return resource;
 				}
 			}
@@ -535,7 +528,7 @@ namespace de4dot.blocks {
 #endif
 
 		// Copies most things but not everything
-		public static DN.MethodDef clone(DN.MethodDef method) {
+		public static MethodDef clone(MethodDef method) {
 			return null;	//TODO:
 		}
 
@@ -598,17 +591,17 @@ namespace de4dot.blocks {
 		}
 #endif
 
-		public static void copyBody(DN.MethodDef method, out IList<DNE.Instruction> instructions, out IList<DNE.ExceptionHandler> exceptionHandlers) {
+		public static void copyBody(MethodDef method, out IList<Instruction> instructions, out IList<ExceptionHandler> exceptionHandlers) {
 			if (method == null || !method.HasCilBody) {
-				instructions = new List<DNE.Instruction>();
-				exceptionHandlers = new List<DNE.ExceptionHandler>();
+				instructions = new List<Instruction>();
+				exceptionHandlers = new List<ExceptionHandler>();
 				return;
 			}
 
 			var oldInstrs = method.CilBody.Instructions;
 			var oldExHandlers = method.CilBody.ExceptionHandlers;
-			instructions = new List<DNE.Instruction>(oldInstrs.Count);
-			exceptionHandlers = new List<DNE.ExceptionHandler>(oldExHandlers.Count);
+			instructions = new List<Instruction>(oldInstrs.Count);
+			exceptionHandlers = new List<ExceptionHandler>(oldExHandlers.Count);
 			var oldToIndex = Utils.createObjectToIndexDictionary(oldInstrs);
 
 			foreach (var oldInstr in oldInstrs)
@@ -616,11 +609,11 @@ namespace de4dot.blocks {
 
 			foreach (var newInstr in instructions) {
 				var operand = newInstr.Operand;
-				if (operand is DNE.Instruction)
-					newInstr.Operand = instructions[oldToIndex[(DNE.Instruction)operand]];
-				else if (operand is IList<DNE.Instruction>) {
-					var oldArray = (IList<DNE.Instruction>)operand;
-					var newArray = new DNE.Instruction[oldArray.Count];
+				if (operand is Instruction)
+					newInstr.Operand = instructions[oldToIndex[(Instruction)operand]];
+				else if (operand is IList<Instruction>) {
+					var oldArray = (IList<Instruction>)operand;
+					var newArray = new Instruction[oldArray.Count];
 					for (int i = 0; i < oldArray.Count; i++)
 						newArray[i] = instructions[oldToIndex[oldArray[i]]];
 					newInstr.Operand = newArray;
@@ -628,7 +621,7 @@ namespace de4dot.blocks {
 			}
 
 			foreach (var oldEx in oldExHandlers) {
-				var newEx = new DNE.ExceptionHandler(oldEx.HandlerType) {
+				var newEx = new ExceptionHandler(oldEx.HandlerType) {
 					TryStart = getInstruction(instructions, oldToIndex, oldEx.TryStart),
 					TryEnd = getInstruction(instructions, oldToIndex, oldEx.TryEnd),
 					FilterStart = getInstruction(instructions, oldToIndex, oldEx.FilterStart),
@@ -640,7 +633,7 @@ namespace de4dot.blocks {
 			}
 		}
 
-		static DNE.Instruction getInstruction(IList<DNE.Instruction> instructions, IDictionary<DNE.Instruction, int> instructionToIndex, DNE.Instruction instruction) {
+		static Instruction getInstruction(IList<Instruction> instructions, IDictionary<Instruction, int> instructionToIndex, Instruction instruction) {
 			if (instruction == null)
 				return null;
 			return instructions[instructionToIndex[instruction]];
@@ -663,7 +656,7 @@ namespace de4dot.blocks {
 		}
 #endif
 
-		public static void restoreBody(DN.MethodDef method, IEnumerable<DNE.Instruction> instructions, IEnumerable<DNE.ExceptionHandler> exceptionHandlers) {
+		public static void restoreBody(MethodDef method, IEnumerable<Instruction> instructions, IEnumerable<ExceptionHandler> exceptionHandlers) {
 			if (method == null || method.CilBody == null)
 				return;
 
@@ -788,11 +781,10 @@ namespace de4dot.blocks {
 		}
 #endif
 
-		public static bool hasReturnValue(DN.IMethod method) {
-			if (method == null || method.MethodSig == null)
+		public static bool hasReturnValue(IMethod method) {
+			if (method == null || method.MethodSig == null || method.MethodSig.RetType == null)
 				return false;
-			//TODO: Also remove modifiers from RetType before comparing etype
-			return method.MethodSig.RetType.ElementType != DN.ElementType.Void;
+			return method.MethodSig.RetType.RemovePinnedAndModifiers().ElementType != ElementType.Void;
 		}
 
 #if PORT
@@ -1008,13 +1000,13 @@ namespace de4dot.blocks {
 		}
 #endif
 
-		public static DN.Parameter getParameter(IList<DN.Parameter> parameters, int index) {
+		public static Parameter getParameter(IList<Parameter> parameters, int index) {
 			if (0 <= index && index < parameters.Count)
 				return parameters[index];
 			return null;
 		}
 
-		public static DN.TypeSig getArg(IList<DN.TypeSig> args, int index) {
+		public static TypeSig getArg(IList<TypeSig> args, int index) {
 			if (0 <= index && index < args.Count)
 				return args[index];
 			return null;
@@ -1031,11 +1023,11 @@ namespace de4dot.blocks {
 		}
 #endif
 
-		public static List<DN.TypeSig> getArgs(DN.IMethod method) {
+		public static List<TypeSig> getArgs(IMethod method) {
 			var sig = method.MethodSig;
-			var args = new List<DN.TypeSig>(sig.Params.Count + 1);
+			var args = new List<TypeSig>(sig.Params.Count + 1);
 			if (sig.ImplicitThis)
-				args.Add(DN.Extensions.ToTypeSig(method.DeclaringType));
+				args.Add(method.DeclaringType.ToTypeSig());
 			foreach (var arg in sig.Params)
 				args.Add(arg);
 			return args;
@@ -1064,7 +1056,7 @@ namespace de4dot.blocks {
 		}
 #endif
 
-		public static int getArgsCount(DN.IMethod method) {
+		public static int getArgsCount(IMethod method) {
 			var sig = method.MethodSig;
 			if (sig == null)
 				return 0;
@@ -1117,18 +1109,18 @@ namespace de4dot.blocks {
 		}
 #endif
 
-		public static DNE.Instruction getInstruction(IList<DNE.Instruction> instructions, ref int index) {
+		public static Instruction getInstruction(IList<Instruction> instructions, ref int index) {
 			for (int i = 0; i < 10; i++) {
 				if (index < 0 || index >= instructions.Count)
 					return null;
 				var instr = instructions[index++];
-				if (instr.OpCode.Code == DNE.Code.Nop)
+				if (instr.OpCode.Code == Code.Nop)
 					continue;
-				if (instr.OpCode.OpCodeType == DNE.OpCodeType.Prefix)
+				if (instr.OpCode.OpCodeType == OpCodeType.Prefix)
 					continue;
-				if (instr == null || (instr.OpCode.Code != DNE.Code.Br && instr.OpCode.Code != DNE.Code.Br_S))
+				if (instr == null || (instr.OpCode.Code != Code.Br && instr.OpCode.Code != Code.Br_S))
 					return instr;
-				instr = instr.Operand as DNE.Instruction;
+				instr = instr.Operand as Instruction;
 				if (instr == null)
 					return null;
 				index = instructions.IndexOf(instr);
@@ -1207,12 +1199,12 @@ namespace de4dot.blocks {
 		}
 #endif
 
-		public static DN.TypeDefOrRefSig findOrCreateTypeReference(DN.ModuleDef module, DN.AssemblyRef asmRef, string ns, string name, bool isValueType) {
-			var typeRef = module.UpdateRowId(new DN.TypeRefUser(module, ns, name, asmRef));
+		public static TypeDefOrRefSig findOrCreateTypeReference(ModuleDef module, AssemblyRef asmRef, string ns, string name, bool isValueType) {
+			var typeRef = module.UpdateRowId(new TypeRefUser(module, ns, name, asmRef));
 			if (isValueType)
-				return new DN.ValueTypeSig(typeRef);
+				return new ValueTypeSig(typeRef);
 			else
-				return new DN.ClassSig(typeRef);
+				return new ClassSig(typeRef);
 		}
 
 #if PORT

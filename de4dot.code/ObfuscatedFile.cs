@@ -29,9 +29,7 @@ using de4dot.code.deobfuscators;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
 using de4dot.code.AssemblyClient;
-#if PORT
 using de4dot.code.renamer;
-#endif
 
 namespace de4dot.code {
 	public class ObfuscatedFile : IObfuscatedFile, IDeobfuscatedFile {
@@ -108,11 +106,9 @@ namespace de4dot.code {
 			get { return module; }
 		}
 
-#if PORT
 		public INameChecker NameChecker {
 			get { return deob; }
 		}
-#endif
 
 		public bool RenameResourcesInCode {
 			get { return deob.TheOptions.RenameResourcesInCode; }

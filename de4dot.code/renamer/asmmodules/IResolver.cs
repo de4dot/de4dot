@@ -22,7 +22,7 @@ using dot10.DotNet;
 namespace de4dot.code.renamer.asmmodules {
 	interface IResolver {
 		MTypeDef resolveType(ITypeDefOrRef typeReference);
-		MMethodDef resolveMethod(MemberRef methodReference);
+		MMethodDef resolveMethod(IMethodDefOrRef methodReference);
 		MFieldDef resolveField(MemberRef fieldReference);
 	}
 }
