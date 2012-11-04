@@ -24,7 +24,10 @@ namespace de4dot.code.renamer.asmmodules {
 		public Parameter ParameterDefinition { get; set; }
 		public int Index { get; private set; }
 		public bool IsReturnParameter {
-			get { return Index < 0; }
+			get { return ParameterDefinition.IsReturnTypeParameter; }
+		}
+		public bool IsHiddenThisParameter {
+			get { return ParameterDefinition.IsHiddenThisParameter; }
 		}
 
 		public MParamDef(Parameter parameterDefinition, int index) {

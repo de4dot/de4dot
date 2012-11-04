@@ -295,13 +295,13 @@ namespace de4dot.code.renamer {
 		void prepareRenameMethodArgs(MMethodDef methodDef) {
 			VariableNameState newVariableNameState = null;
 			ParamInfo info;
-			if (methodDef.ParamDefs.Count > 0) {
+			if (methodDef.VisibleParameterCount > 0) {
 				if (isEventHandler(methodDef)) {
-					info = param(methodDef.ParamDefs[0]);
+					info = param(methodDef.ParamDefs[methodDef.VisibleParameterBaseIndex]);
 					if (!info.gotNewName())
 						info.newName = "sender";
 
-					info = param(methodDef.ParamDefs[1]);
+					info = param(methodDef.ParamDefs[methodDef.VisibleParameterBaseIndex + 1]);
 					if (!info.gotNewName())
 						info.newName = "e";
 				}
@@ -309,6 +309,8 @@ namespace de4dot.code.renamer {
 					newVariableNameState = variableNameState.cloneParamsOnly();
 					var checker = NameChecker;
 					foreach (var paramDef in methodDef.ParamDefs) {
+						if (paramDef.IsHiddenThisParameter)
+							continue;
 						info = param(paramDef);
 						if (info.gotNewName())
 							continue;
@@ -329,7 +331,7 @@ namespace de4dot.code.renamer {
 
 			if ((methodDef.Property != null && methodDef == methodDef.Property.SetMethod) ||
 				(methodDef.Event != null && (methodDef == methodDef.Event.AddMethod || methodDef == methodDef.Event.RemoveMethod))) {
-				if (methodDef.ParamDefs.Count > 0) {
+				if (methodDef.VisibleParameterCount > 0) {
 					var paramDef = methodDef.ParamDefs[methodDef.ParamDefs.Count - 1];
 					param(paramDef).newName = "value";
 				}
@@ -403,17 +405,14 @@ namespace de4dot.code.renamer {
 		}
 
 		static bool isEventHandler(MMethodDef methodDef) {
-			var md = methodDef.MethodDef;
-			if (md.Parameters.Count != 2)
-				return false;
-			var sig = md.MethodSig;
-			if (sig == null)
+			var sig = methodDef.MethodDef.MethodSig;
+			if (sig == null || sig.Params.Count != 2)
 				return false;
 			if (sig.RetType.ElementType != ElementType.Void)
 				return false;
-			if (md.Parameters[0].Type.ElementType != ElementType.Object)
+			if (sig.Params[0].ElementType != ElementType.Object)
 				return false;
-			if (!md.Parameters[1].Type.FullName.Contains("EventArgs"))
+			if (!sig.Params[1].FullName.Contains("EventArgs"))
 				return false;
 			return true;
 		}
@@ -588,7 +587,7 @@ namespace de4dot.code.renamer {
 				return null;
 			if (sig.RetType.ElementType != ElementType.Void)
 				return null;
-			if (method.Parameters.Count != 1)
+			if (sig.Params.Count != 1)
 				return null;
 			if (method.CilBody.LocalList.Count != 1)
 				return null;

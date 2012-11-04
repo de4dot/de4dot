@@ -53,9 +53,9 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 
 		public bool isItemProperty() {
-			if (GetMethod != null && GetMethod.ParamDefs.Count >= 1)
+			if (GetMethod != null && GetMethod.VisibleParameterCount >= 1)
 				return true;
-			if (SetMethod != null && SetMethod.ParamDefs.Count >= 2)
+			if (SetMethod != null && SetMethod.VisibleParameterCount >= 2)
 				return true;
 			return false;
 		}

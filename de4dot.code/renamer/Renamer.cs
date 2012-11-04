@@ -312,7 +312,7 @@ namespace de4dot.code.renamer {
 						if (param.IsReturnParameter)
 							Log.v("RetParam: {0} => {1}", Utils.removeNewlines(paramInfo.oldName), Utils.removeNewlines(paramInfo.newName));
 						else
-							Log.v("Param ({0}/{1}): {2} => {3}", param.Index + 1, methodDef.ParamDefs.Count, Utils.removeNewlines(paramInfo.oldName), Utils.removeNewlines(paramInfo.newName));
+							Log.v("Param ({0}/{1}): {2} => {3}", param.ParameterDefinition.MethodSigIndex + 1, methodDef.MethodDef.MethodSig.Params.Count, Utils.removeNewlines(paramInfo.oldName), Utils.removeNewlines(paramInfo.newName));
 					}
 				}
 
@@ -600,10 +600,10 @@ namespace de4dot.code.renamer {
 			if (propMethod.Property != null)
 				return null;
 
-			var method = propMethod.MethodDef;
-			if (method.Parameters.Count == 0)
+			var sig = propMethod.MethodDef.MethodSig;
+			if (sig.Params.Count == 0)
 				return null;
-			var propType = method.Parameters[method.Parameters.Count - 1].Type;
+			var propType = sig.Params[sig.Params.Count - 1];
 			var propDef = createProperty(ownerType, name, propType, null, propMethod.MethodDef);
 			if (propDef == null)
 				return null;
@@ -912,7 +912,7 @@ namespace de4dot.code.renamer {
 
 		void restoreMethodArgs(MethodNameGroups groups) {
 			foreach (var group in groups.getAllGroups()) {
-				if (group.Methods[0].ParamDefs.Count == 0)
+				if (group.Methods[0].VisibleParameterCount == 0)
 					continue;
 
 				var argNames = getValidArgNames(group);
@@ -949,7 +949,7 @@ namespace de4dot.code.renamer {
 						if (overrideDef == null)
 							continue;
 					}
-					if (overrideDef.ParamDefs.Count != method.ParamDefs.Count)
+					if (overrideDef.VisibleParameterCount != method.VisibleParameterCount)
 						continue;
 					methods.Add(overrideDef);
 				}
@@ -1373,7 +1373,7 @@ namespace de4dot.code.renamer {
 		static PropertyMethodType getPropertyMethodType(MMethodDef method) {
 			if (DotNetUtils.hasReturnValue(method.MethodDef))
 				return PropertyMethodType.Getter;
-			if (method.ParamDefs.Count > 0)
+			if (method.VisibleParameterCount > 0)
 				return PropertyMethodType.Setter;
 			return PropertyMethodType.Other;
 		}

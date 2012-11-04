@@ -67,7 +67,7 @@ namespace de4dot.code.renamer {
 
 		bool isGenericParam(ITypeDefOrRef tdr) {
 			var ts = tdr as TypeSpec;
-			if (ts != null)
+			if (ts == null)
 				return false;
 			var sig = ts.TypeSig.RemovePinnedAndModifiers();
 			return sig is GenericSig;

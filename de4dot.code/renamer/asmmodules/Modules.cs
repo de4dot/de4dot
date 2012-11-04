@@ -377,30 +377,33 @@ namespace de4dot.code.renamer.asmmodules {
 			if (scope == null)
 				return null;
 
-			if (scope.ScopeType == ScopeType.AssemblyRef)
+			var scopeType = scope.ScopeType;
+			if (scopeType == ScopeType.AssemblyRef)
 				return findModules((AssemblyRef)scope);
 
-			if (scope.ScopeType == ScopeType.ModuleDef) {
+			if (scopeType == ScopeType.ModuleDef) {
 				var modules = findModules((ModuleDef)scope);
 				if (modules != null)
 					return modules;
 			}
 
-			if (scope.ScopeType == ScopeType.ModuleRef) {
+			if (scopeType == ScopeType.ModuleRef) {
 				var moduleRef = (ModuleRef)scope;
 				if (moduleRef.Name == type.OwnerModule.Name) {
 					var modules = findModules(type.OwnerModule);
 					if (modules != null)
 						return modules;
 				}
+			}
 
+			if (scopeType == ScopeType.ModuleRef || scopeType == ScopeType.ModuleDef) {
 				var asm = type.OwnerModule.Assembly;
 				if (asm == null)
 					return null;
 				var moduleHash = assemblyHash.lookup(asm.FullName);
 				if (moduleHash == null)
 					return null;
-				var module = moduleHash.lookup(moduleRef.Name.String);
+				var module = moduleHash.lookup(scope.ScopeName);
 				if (module == null)
 					return null;
 				return new List<Module> { module };

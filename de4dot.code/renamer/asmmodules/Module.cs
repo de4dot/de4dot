@@ -225,6 +225,10 @@ namespace de4dot.code.renamer.asmmodules {
 				newTypes.add(typeDef);
 			}
 			types = newTypes;
+
+			bool old = ModuleDefMD.EnableTypeDefFindCache;
+			ModuleDefMD.EnableTypeDefFindCache = false;
+			ModuleDefMD.EnableTypeDefFindCache = old;
 		}
 
 		static ITypeDefOrRef getNonGenericTypeReference(ITypeDefOrRef typeRef) {

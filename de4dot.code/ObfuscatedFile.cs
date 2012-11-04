@@ -436,15 +436,16 @@ namespace de4dot.code {
 					if (methodName != null && methodName != method.Name)
 						continue;
 
+					var sig = method.MethodSig;
 					if (argsStrings == null) {
-						if (method.Parameters.Count == 0)
+						if (sig.Params.Count == 0)
 							continue;
 					}
 					else {
-						if (argsStrings.Length != method.Parameters.Count)
+						if (argsStrings.Length != sig.Params.Count)
 							continue;
 						for (int i = 0; i < argsStrings.Length; i++) {
-							if (argsStrings[i] != method.Parameters[i].Type.FullName)
+							if (argsStrings[i] != sig.Params[i].FullName)
 								continue;
 						}
 					}

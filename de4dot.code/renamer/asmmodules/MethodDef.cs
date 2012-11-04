@@ -25,9 +25,19 @@ namespace de4dot.code.renamer.asmmodules {
 		IList<MGenericParamDef> genericParams;
 		IList<MParamDef> paramDefs = new List<MParamDef>();
 		MParamDef returnParamDef;
+		int visibleParamCount;
+		int visibleBaseIndex;
 
 		public MPropertyDef Property { get; set; }
 		public MEventDef Event { get; set; }
+
+		public int VisibleParameterCount {
+			get { return visibleParamCount; }
+		}
+
+		public int VisibleParameterBaseIndex {
+			get { return visibleBaseIndex; }
+		}
 
 		public IList<MParamDef> ParamDefs {
 			get { return paramDefs; }
@@ -56,8 +66,11 @@ namespace de4dot.code.renamer.asmmodules {
 		public MMethodDef(MethodDef methodDefinition, MTypeDef owner, int index)
 			: base(methodDefinition, owner, index) {
 			genericParams = MGenericParamDef.createGenericParamDefList(MethodDef.GenericParams);
+			visibleBaseIndex = methodDefinition.MethodSig.HasThis ? 1 : 0;
 			for (int i = 0; i < methodDefinition.Parameters.Count; i++) {
 				var param = methodDefinition.Parameters[i];
+				if (param.IsNormalMethodParameter)
+					visibleParamCount++;
 				paramDefs.Add(new MParamDef(param, i));
 			}
 			returnParamDef = new MParamDef(methodDefinition.Parameters.ReturnParameter, -1);

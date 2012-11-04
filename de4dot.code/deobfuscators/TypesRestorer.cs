@@ -260,6 +260,8 @@ namespace de4dot.code.deobfuscators {
 
 			argInfos.Clear();
 			foreach (var arg in method.Parameters) {
+				if (arg.IsHiddenThisParameter)
+					continue;
 				if (!isUnknownType(arg))
 					continue;
 				argInfos[arg] = new TypeInfo<Parameter>(arg);
