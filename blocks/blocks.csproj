@@ -67,6 +67,7 @@
     <Compile Include="DumpedMethods.cs" />
     <Compile Include="FilterHandlerBlock.cs" />
     <Compile Include="ForwardScanOrder.cs" />
+    <Compile Include="GenericArgsSubstitutor.cs" />
     <Compile Include="HandlerBlock.cs" />
     <Compile Include="Instr.cs" />
     <Compile Include="InstructionListParser.cs" />
