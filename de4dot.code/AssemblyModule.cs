@@ -21,6 +21,7 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using dot10.DotNet;
+using dot10.DotNet.Writer;
 using de4dot.blocks;
 
 namespace de4dot.code {
@@ -43,22 +44,20 @@ namespace de4dot.code {
 		ModuleDefMD setModule(ModuleDefMD newModule) {
 			module = newModule;
 			TheAssemblyResolver.Instance.addModule(module);
+			module.EnableTypeDefFindCache = true;
 			module.Location = filename;
 			return module;
 		}
 
-		public void save(string newFilename, bool updateMaxStack, IWriterListener writerListener) {
-			//TODO: var writerParams = new WriterParameters() {
-			//TODO: 	UpdateMaxStack = updateMaxStack,
-			//TODO: 	WriterListener = writerListener,
-			//TODO: };
-			//TODO: module.Write(newFilename, writerParams);
-			module.Write(newFilename);
+		public void save(string newFilename, bool updateMaxStack, IModuleWriterListener writerListener) {
+			var writerOptions = new ModuleWriterOptions(module, writerListener);
+			if (!updateMaxStack)
+				writerOptions.MetaDataOptions.Flags |= MetaDataFlags.KeepOldMaxStack;
+			module.Write(newFilename, writerOptions);
 		}
 
 		public ModuleDefMD reload(byte[] newModuleData, DumpedMethods dumpedMethods) {
-			//TODO: AssemblyResolver.Instance.removeModule(module);
-			//TODO: DotNetUtils.typeCaches.invalidate(module);
+			TheAssemblyResolver.Instance.removeModule(module);
 			//TODO: Use dumped methods
 			return setModule(ModuleDefMD.Load(newModuleData));
 		}

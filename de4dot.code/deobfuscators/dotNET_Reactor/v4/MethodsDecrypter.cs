@@ -296,7 +296,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			tokenToNativeMethod = null;
 		}
 
-		public void encryptNativeMethods(MetadataBuilder builder) {
+		public void encryptNativeMethods(ModuleWriter moduleWriter) {
 			if (methodToNativeMethod.Count == 0)
 				return;
 
@@ -309,7 +309,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			writer.Write(methodToNativeMethod.Count);
 
 			int index = 0;
-			var codeWriter = builder.CodeWriter;
+			var codeWriter = moduleWriter.CodeWriter;
 			foreach (var pair in methodToNativeMethod) {
 				var method = pair.Key;
 				if (method.DeclaringType == null)
@@ -318,7 +318,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 					continue;	// method.DeclaringType was removed
 				var code = pair.Value;
 
-				uint codeRva = builder.GetMethodBodyRva((int)method.MDToken.RID - 1);
+				uint codeRva = moduleWriter.GetMethodBodyRva(method);
 				if ((codeWriter.ReadByteAtRva(codeRva) & 3) == 2)
 					codeRva++;
 				else

@@ -24,6 +24,7 @@ using System.IO;
 using System.Text;
 using dot10.DotNet;
 using dot10.DotNet.Emit;
+using dot10.DotNet.Writer;
 using dot10.PE;
 using de4dot.code.deobfuscators;
 using de4dot.blocks;
@@ -305,7 +306,7 @@ namespace de4dot.code {
 
 		public void save() {
 			Log.n("Saving {0}", options.NewFilename);
-			assemblyModule.save(options.NewFilename, options.ControlFlowDeobfuscation, deob as IWriterListener);
+			assemblyModule.save(options.NewFilename, options.ControlFlowDeobfuscation, deob as IModuleWriterListener);
 		}
 
 		IList<MethodDef> getAllMethods() {

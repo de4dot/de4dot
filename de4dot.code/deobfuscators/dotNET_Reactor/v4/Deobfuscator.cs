@@ -23,6 +23,7 @@ using System.IO;
 using System.Text.RegularExpressions;
 using dot10.DotNet;
 using dot10.DotNet.Emit;
+using dot10.DotNet.Writer;
 using Mono.MyStuff;
 using de4dot.blocks;
 using de4dot.PE;
@@ -606,10 +607,12 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			return list;
 		}
 
-		public override void OnBeforeAddingResources(MetadataBuilder builder) {
+		public override void OnWriterEvent(ModuleWriter writer, ModuleWriterEvent evt) {
+			if (evt != ModuleWriterEvent.EndWriteChunks)
+				return;
 			if (!options.DecryptMethods)
 				return;
-			methodsDecrypter.encryptNativeMethods(builder);
+			methodsDecrypter.encryptNativeMethods(writer);
 		}
 	}
 }

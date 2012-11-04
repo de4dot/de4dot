@@ -23,6 +23,10 @@ namespace de4dot.code {
 	public class TheAssemblyResolver : dot10.DotNet.AssemblyResolver {
 		public static readonly TheAssemblyResolver Instance = new TheAssemblyResolver();
 
+		public TheAssemblyResolver() {
+			EnableTypeDefCache = true;
+		}
+
 		public void addSearchDirectory(string dir) {
 			if (!PostSearchPaths.Contains(dir))
 				PostSearchPaths.Add(dir);

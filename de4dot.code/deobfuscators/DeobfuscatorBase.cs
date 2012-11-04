@@ -21,24 +21,13 @@ using System;
 using System.Collections.Generic;
 using dot10.DotNet;
 using dot10.DotNet.Emit;
+using dot10.DotNet.Writer;
 using dot10.PE;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
 
-namespace de4dot.code {
-	//TODO: I added this iface to Cecil but now you must add something similar to dot10
-	interface IWriterListener {
-		// Called before adding resources, and after adding types, methods, etc.
-		void OnBeforeAddingResources(MetadataBuilder builder);
-	}
-	//TODO: REMOVE
-	internal class MetadataBuilder {
-		//TODO: Dummy class. Don't use
-	}
-}
-
 namespace de4dot.code.deobfuscators {
-	abstract class DeobfuscatorBase : IDeobfuscator, IWriterListener {
+	abstract class DeobfuscatorBase : IDeobfuscator, IModuleWriterListener {
 		public const string DEFAULT_VALID_NAME_REGEX = @"^[a-zA-Z_<{$][a-zA-Z_0-9<>{}$.`-]*$";
 
 		class RemoveInfo<T> {
@@ -712,7 +701,7 @@ namespace de4dot.code.deobfuscators {
 			return name != null && checkValidName(name);
 		}
 
-		public virtual void OnBeforeAddingResources(MetadataBuilder builder) {
+		public virtual void OnWriterEvent(ModuleWriter writer, ModuleWriterEvent evt) {
 		}
 
 		protected void findAndRemoveInlinedMethods() {
