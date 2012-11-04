@@ -293,10 +293,10 @@ namespace de4dot.code.renamer {
 		}
 
 		void prepareRenameMethodArgs(MMethodDef methodDef) {
+			VariableNameState newVariableNameState = null;
+			ParamInfo info;
 			if (methodDef.ParamDefs.Count > 0) {
 				if (isEventHandler(methodDef)) {
-					ParamInfo info;
-
 					info = param(methodDef.ParamDefs[0]);
 					if (!info.gotNewName())
 						info.newName = "sender";
@@ -306,15 +306,24 @@ namespace de4dot.code.renamer {
 						info.newName = "e";
 				}
 				else {
-					var newVariableNameState = variableNameState.cloneParamsOnly();
+					newVariableNameState = variableNameState.cloneParamsOnly();
 					var checker = NameChecker;
 					foreach (var paramDef in methodDef.ParamDefs) {
-						var info = param(paramDef);
+						info = param(paramDef);
 						if (info.gotNewName())
 							continue;
 						if (!checker.isValidMethodArgName(info.oldName))
 							info.newName = newVariableNameState.getNewParamName(info.oldName, paramDef.ParameterDefinition);
 					}
+				}
+			}
+
+			info = param(methodDef.ReturnParamDef);
+			if (!info.gotNewName()) {
+				if (!NameChecker.isValidMethodReturnArgName(info.oldName)) {
+					if (newVariableNameState == null)
+						newVariableNameState = variableNameState.cloneParamsOnly();
+					info.newName = newVariableNameState.getNewParamName(info.oldName, methodDef.ReturnParamDef.ParameterDefinition);
 				}
 			}
 

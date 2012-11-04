@@ -282,7 +282,7 @@ namespace de4dot.code.renamer {
 					allMethodInfos[method] = new MethodInfo(method);
 					foreach (var gp in method.GenericParams)
 						allGenericParamInfos[gp] = new GenericParamInfo(gp);
-					foreach (var param in method.ParamDefs)
+					foreach (var param in method.AllParamDefs)
 						allParamInfos[param] = new ParamInfo(param);
 				}
 			}

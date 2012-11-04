@@ -23,6 +23,9 @@ namespace de4dot.code.renamer.asmmodules {
 	class MParamDef {
 		public Parameter ParameterDefinition { get; set; }
 		public int Index { get; private set; }
+		public bool IsReturnParameter {
+			get { return Index < 0; }
+		}
 
 		public MParamDef(Parameter parameterDefinition, int index) {
 			this.ParameterDefinition = parameterDefinition;

@@ -24,12 +24,25 @@ namespace de4dot.code.renamer.asmmodules {
 	class MMethodDef : Ref {
 		IList<MGenericParamDef> genericParams;
 		IList<MParamDef> paramDefs = new List<MParamDef>();
+		MParamDef returnParamDef;
 
 		public MPropertyDef Property { get; set; }
 		public MEventDef Event { get; set; }
 
 		public IList<MParamDef> ParamDefs {
 			get { return paramDefs; }
+		}
+
+		public IEnumerable<MParamDef> AllParamDefs {
+			get {
+				yield return returnParamDef;
+				foreach (var paramDef in paramDefs)
+					yield return paramDef;
+			}
+		}
+
+		public MParamDef ReturnParamDef {
+			get { return returnParamDef; }
 		}
 
 		public IList<MGenericParamDef> GenericParams {
@@ -47,6 +60,7 @@ namespace de4dot.code.renamer.asmmodules {
 				var param = methodDefinition.Parameters[i];
 				paramDefs.Add(new MParamDef(param, i));
 			}
+			returnParamDef = new MParamDef(methodDefinition.Parameters.ReturnParameter, -1);
 		}
 
 		public bool isPublic() {

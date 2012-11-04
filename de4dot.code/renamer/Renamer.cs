@@ -303,12 +303,16 @@ namespace de4dot.code.renamer {
 				}
 
 				if (RenameMethodArgs) {
-					foreach (var param in methodDef.ParamDefs) {
+					foreach (var param in methodDef.AllParamDefs) {
 						var paramInfo = memberInfos.param(param);
 						if (!paramInfo.gotNewName())
 							continue;
+						param.ParameterDefinition.CreateParamDef();
 						param.ParameterDefinition.Name = paramInfo.newName;
-						Log.v("Param ({0}/{1}): {2} => {3}", param.Index + 1, methodDef.ParamDefs.Count, Utils.removeNewlines(paramInfo.oldName), Utils.removeNewlines(paramInfo.newName));
+						if (param.IsReturnParameter)
+							Log.v("RetParam: {0} => {1}", Utils.removeNewlines(paramInfo.oldName), Utils.removeNewlines(paramInfo.newName));
+						else
+							Log.v("Param ({0}/{1}): {2} => {3}", param.Index + 1, methodDef.ParamDefs.Count, Utils.removeNewlines(paramInfo.oldName), Utils.removeNewlines(paramInfo.newName));
 					}
 				}
 
