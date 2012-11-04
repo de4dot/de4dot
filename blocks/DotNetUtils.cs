@@ -120,7 +120,7 @@ namespace de4dot.blocks {
 		public void addMethodCalls(MethodDefinition method) {
 			if (!method.HasBody)
 				return;
-			foreach (var instr in method.Body.Instructions) {
+			foreach (var instr in method.CilBody.Instructions) {
 				var calledMethod = instr.Operand as MethodReference;
 				if (calledMethod != null)
 					add(calledMethod);
@@ -428,7 +428,7 @@ namespace de4dot.blocks {
 		public static IEnumerable<MethodReference> getMethodCalls(MethodDefinition method) {
 			var list = new List<MethodReference>();
 			if (method.HasBody) {
-				foreach (var instr in method.Body.Instructions) {
+				foreach (var instr in method.CilBody.Instructions) {
 					var calledMethod = instr.Operand as MethodReference;
 					if (calledMethod != null)
 						list.Add(calledMethod);
@@ -444,9 +444,9 @@ namespace de4dot.blocks {
 		}
 
 		public static bool hasString(MethodDefinition method, string s) {
-			if (method == null || method.Body == null)
+			if (method == null || method.CilBody == null)
 				return false;
-			foreach (var instr in method.Body.Instructions) {
+			foreach (var instr in method.CilBody.Instructions) {
 				if (instr.OpCode.Code == Code.Ldstr && (string)instr.Operand == s)
 					return true;
 			}
@@ -455,8 +455,8 @@ namespace de4dot.blocks {
 
 		public static IList<string> getCodeStrings(MethodDefinition method) {
 			var strings = new List<string>();
-			if (method != null && method.Body != null) {
-				foreach (var instr in method.Body.Instructions) {
+			if (method != null && method.CilBody != null) {
+				foreach (var instr in method.CilBody.Instructions) {
 					if (instr.OpCode.Code == Code.Ldstr)
 						strings.Add((string)instr.Operand);
 				}
@@ -529,7 +529,19 @@ namespace de4dot.blocks {
 
 		// Copies most things but not everything
 		public static MethodDef clone(MethodDef method) {
-			return null;	//TODO:
+			var newMethod = new MethodDefUser(method.Name, method.MethodSig, method.ImplFlags, method.Flags);
+			newMethod.Rid = method.Rid;
+			newMethod.DeclaringType2 = method.DeclaringType;
+			foreach (var pd in method.ParamList)
+				newMethod.ParamList.Add(new ParamDefUser(pd.Name, pd.Sequence, pd.Flags));
+			foreach (var gp in method.GenericParams) {
+				var newGp = new GenericParamUser(gp.Number, gp.Flags, gp.Name);
+				foreach (var gpc in newGp.GenericParamConstraints)
+					newGp.GenericParamConstraints.Add(new GenericParamConstraintUser(gpc.Constraint));
+				newMethod.GenericParams.Add(newGp);
+			}
+			copyBodyFromTo(method, newMethod);
+			return method;
 		}
 
 #if PORT
@@ -549,8 +561,8 @@ namespace de4dot.blocks {
 				return;
 			}
 
-			var oldInstrs = method.Body.Instructions;
-			var oldExHandlers = method.Body.ExceptionHandlers;
+			var oldInstrs = method.CilBody.Instructions;
+			var oldExHandlers = method.CilBody.ExceptionHandlers;
 			instructions = new List<Instruction>(oldInstrs.Count);
 			exceptionHandlers = new List<ExceptionHandler>(oldExHandlers.Count);
 			var oldToIndex = Utils.createObjectToIndexDictionary(oldInstrs);
@@ -644,12 +656,12 @@ namespace de4dot.blocks {
 			if (method == null || !method.HasBody)
 				return;
 
-			var bodyInstrs = method.Body.Instructions;
+			var bodyInstrs = method.CilBody.Instructions;
 			bodyInstrs.Clear();
 			foreach (var instr in instructions)
 				bodyInstrs.Add(instr);
 
-			var bodyExceptionHandlers = method.Body.ExceptionHandlers;
+			var bodyExceptionHandlers = method.CilBody.ExceptionHandlers;
 			bodyExceptionHandlers.Clear();
 			foreach (var eh in exceptionHandlers)
 				bodyExceptionHandlers.Add(eh);
@@ -671,8 +683,7 @@ namespace de4dot.blocks {
 				bodyExceptionHandlers.Add(eh);
 		}
 
-#if PORT
-		public static void copyBodyFromTo(MethodDefinition fromMethod, MethodDefinition toMethod) {
+		public static void copyBodyFromTo(MethodDef fromMethod, MethodDef toMethod) {
 			if (fromMethod == toMethod)
 				return;
 
@@ -684,31 +695,29 @@ namespace de4dot.blocks {
 			updateInstructionOperands(fromMethod, toMethod);
 		}
 
-		static void copyLocalsFromTo(MethodDefinition fromMethod, MethodDefinition toMethod) {
-			var fromBody = fromMethod.Body;
-			var toBody = toMethod.Body;
+		static void copyLocalsFromTo(MethodDef fromMethod, MethodDef toMethod) {
+			var fromBody = fromMethod.CilBody;
+			var toBody = toMethod.CilBody;
 
-			toBody.Variables.Clear();
-			foreach (var local in fromBody.Variables)
-				toBody.Variables.Add(new VariableDefinition(local.Name, local.VariableType));
+			toBody.LocalList.Clear();
+			foreach (var local in fromBody.LocalList)
+				toBody.LocalList.Add(new Local(local.Type));
 		}
 
-		static void updateInstructionOperands(MethodDefinition fromMethod, MethodDefinition toMethod) {
-			var fromBody = fromMethod.Body;
-			var toBody = toMethod.Body;
+		static void updateInstructionOperands(MethodDef fromMethod, MethodDef toMethod) {
+			var fromBody = fromMethod.CilBody;
+			var toBody = toMethod.CilBody;
 
 			toBody.InitLocals = fromBody.InitLocals;
-			toBody.MaxStackSize = fromBody.MaxStackSize;
+			toBody.MaxStack = fromBody.MaxStack;
 
 			var newOperands = new Dictionary<object, object>();
-			var fromParams = getParameters(fromMethod);
-			var toParams = getParameters(toMethod);
-			if (fromBody.ThisParameter != null)
-				newOperands[fromBody.ThisParameter] = toBody.ThisParameter;
+			var fromParams = fromMethod.Parameters;
+			var toParams = toMethod.Parameters;
 			for (int i = 0; i < fromParams.Count; i++)
 				newOperands[fromParams[i]] = toParams[i];
-			for (int i = 0; i < fromBody.Variables.Count; i++)
-				newOperands[fromBody.Variables[i]] = toBody.Variables[i];
+			for (int i = 0; i < fromBody.LocalList.Count; i++)
+				newOperands[fromBody.LocalList[i]] = toBody.LocalList[i];
 
 			foreach (var instr in toBody.Instructions) {
 				if (instr.Operand == null)
@@ -719,6 +728,7 @@ namespace de4dot.blocks {
 			}
 		}
 
+#if PORT
 		public static IEnumerable<CustomAttribute> findAttributes(ICustomAttributeProvider custAttrProvider, TypeReference attr) {
 			var list = new List<CustomAttribute>();
 			if (custAttrProvider == null)
@@ -741,7 +751,7 @@ namespace de4dot.blocks {
 
 		public static IEnumerable<MethodDefinition> getCalledMethods(ModuleDefinition module, MethodDefinition method) {
 			if (method != null && method.HasBody) {
-				foreach (var call in method.Body.Instructions) {
+				foreach (var call in method.CilBody.Instructions) {
 					if (call.OpCode.Code != Code.Call && call.OpCode.Code != Code.Callvirt)
 						continue;
 					var methodRef = call.Operand as MethodReference;
@@ -975,8 +985,8 @@ namespace de4dot.blocks {
 			var args = new List<ParameterDefinition>(method.Parameters.Count + 1);
 			if (method.HasImplicitThis) {
 				var methodDef = method as MethodDefinition;
-				if (methodDef != null && methodDef.Body != null)
-					args.Add(methodDef.Body.ThisParameter);
+				if (methodDef != null && methodDef.CilBody != null)
+					args.Add(methodDef.CilBody.ThisParameter);
 				else
 					args.Add(new ParameterDefinition(method.DeclaringType, method));
 			}
@@ -1232,10 +1242,10 @@ namespace de4dot.blocks {
 		}
 
 		public static bool callsMethod(MethodDefinition method, string methodFullName) {
-			if (method == null || method.Body == null)
+			if (method == null || method.CilBody == null)
 				return false;
 
-			foreach (var instr in method.Body.Instructions) {
+			foreach (var instr in method.CilBody.Instructions) {
 				if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt && instr.OpCode.Code != Code.Newobj)
 					continue;
 				var calledMethod = instr.Operand as MethodReference;
@@ -1249,10 +1259,10 @@ namespace de4dot.blocks {
 		}
 
 		public static bool callsMethod(MethodDefinition method, string returnType, string parameters) {
-			if (method == null || method.Body == null)
+			if (method == null || method.CilBody == null)
 				return false;
 
-			foreach (var instr in method.Body.Instructions) {
+			foreach (var instr in method.CilBody.Instructions) {
 				if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt && instr.OpCode.Code != Code.Newobj)
 					continue;
 				if (isMethod(instr.Operand as MethodReference, returnType, parameters))
