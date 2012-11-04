@@ -33,6 +33,7 @@ namespace de4dot.cui {
 		IDeobfuscatorContext deobfuscatorContext = new DeobfuscatorContext();
 
 		public class Options {
+			public ModuleContext ModuleContext { get; set; }
 			public IList<IDeobfuscatorInfo> DeobfuscatorInfos { get; set; }
 			public IList<IObfuscatedFile> Files { get; set; }
 			public IList<SearchDir> SearchDirs { get; set; }
@@ -47,6 +48,7 @@ namespace de4dot.cui {
 			public IAssemblyClientFactory AssemblyClientFactory { get; set; }
 
 			public Options() {
+				ModuleContext = new ModuleContext(TheAssemblyResolver.Instance);
 				DeobfuscatorInfos = new List<IDeobfuscatorInfo>();
 				Files = new List<IObfuscatedFile>();
 				SearchDirs = new List<SearchDir>();
@@ -125,6 +127,7 @@ namespace de4dot.cui {
 
 		IEnumerable<IObfuscatedFile> loadAllFiles(bool onlyScan) {
 			var loader = new DotNetFileLoader(new DotNetFileLoader.Options {
+				ModuleContext = options.ModuleContext,
 				PossibleFiles  = options.Files,
 				SearchDirs = options.SearchDirs,
 				CreateDeobfuscators = () => createDeobfuscators(),
@@ -147,6 +150,7 @@ namespace de4dot.cui {
 			Dictionary<string, bool> visitedDirectory = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
 
 			public class Options {
+				public ModuleContext ModuleContext { get; set; }
 				public IEnumerable<IObfuscatedFile> PossibleFiles { get; set; }
 				public IEnumerable<SearchDir> SearchDirs { get; set; }
 				public Func<IEnumerable<IDeobfuscator>> CreateDeobfuscators { get; set; }
@@ -303,7 +307,7 @@ namespace de4dot.cui {
 						throw new UserException(string.Format("Input and output filename is the same: {0}", fileOptions.Filename));
 				}
 
-				var obfuscatedFile = new ObfuscatedFile(fileOptions, options.AssemblyClientFactory);
+				var obfuscatedFile = new ObfuscatedFile(fileOptions, options.ModuleContext, options.AssemblyClientFactory);
 				if (add(obfuscatedFile, searchDir.SkipUnknownObfuscators, false))
 					return obfuscatedFile;
 				return null;

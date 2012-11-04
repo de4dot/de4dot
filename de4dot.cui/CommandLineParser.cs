@@ -254,7 +254,7 @@ namespace de4dot.cui {
 		void addFile() {
 			if (newFileOptions == null)
 				return;
-			files.Add(new ObfuscatedFile(newFileOptions, filesOptions.AssemblyClientFactory));
+			files.Add(new ObfuscatedFile(newFileOptions, filesOptions.ModuleContext, filesOptions.AssemblyClientFactory));
 			newFileOptions = null;
 		}
 

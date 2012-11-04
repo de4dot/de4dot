@@ -28,17 +28,19 @@ namespace de4dot.code {
 	class AssemblyModule {
 		string filename;
 		ModuleDefMD module;
+		ModuleContext moduleContext;
 
-		public AssemblyModule(string filename) {
+		public AssemblyModule(string filename, ModuleContext moduleContext) {
 			this.filename = Utils.getFullPath(filename);
+			this.moduleContext = moduleContext;
 		}
 
 		public ModuleDefMD load() {
-			return setModule(ModuleDefMD.Load(filename));
+			return setModule(ModuleDefMD.Load(filename, moduleContext));
 		}
 
 		public ModuleDefMD load(byte[] fileData) {
-			return setModule(ModuleDefMD.Load(fileData));
+			return setModule(ModuleDefMD.Load(fileData, moduleContext));
 		}
 
 		ModuleDefMD setModule(ModuleDefMD newModule) {
@@ -59,7 +61,7 @@ namespace de4dot.code {
 		public ModuleDefMD reload(byte[] newModuleData, DumpedMethods dumpedMethods) {
 			TheAssemblyResolver.Instance.removeModule(module);
 			//TODO: Use dumped methods
-			return setModule(ModuleDefMD.Load(newModuleData));
+			return setModule(ModuleDefMD.Load(newModuleData, moduleContext));
 		}
 
 		public override string ToString() {

@@ -132,12 +132,12 @@ namespace de4dot.code {
 			set { deobfuscatorContext = value; }
 		}
 
-		public ObfuscatedFile(Options options, IAssemblyClientFactory assemblyClientFactory) {
+		public ObfuscatedFile(Options options, ModuleContext moduleContext, IAssemblyClientFactory assemblyClientFactory) {
 			this.assemblyClientFactory = assemblyClientFactory;
 			this.options = options;
 			userStringDecrypterMethods = options.StringDecrypterMethods.Count > 0;
 			options.Filename = Utils.getFullPath(options.Filename);
-			assemblyModule = new AssemblyModule(options.Filename);
+			assemblyModule = new AssemblyModule(options.Filename, moduleContext);
 
 			if (options.NewFilename == null)
 				options.NewFilename = getDefaultNewFilename();
