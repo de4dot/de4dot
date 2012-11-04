@@ -26,12 +26,10 @@ namespace de4dot.code {
 	// "global" data and methods that is shared between all deobfuscators that deobfuscate
 	// assemblies at the same time.
 	public class DeobfuscatorContext : IDeobfuscatorContext {
-		ExternalAssemblies externalAssemblies = new ExternalAssemblies();
 		Dictionary<string, object> dataDict = new Dictionary<string, object>(StringComparer.Ordinal);
 
 		public void clear() {
 			dataDict.Clear();
-			externalAssemblies.unloadAll();
 		}
 
 		public void setData(string name, object data) {
