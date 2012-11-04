@@ -304,9 +304,13 @@ namespace de4dot.code {
 			return detected;
 		}
 
+		bool ShouldPreserveTokens() {
+			return options.KeepObfuscatorTypes || deob.Type == "un";
+		}
+
 		public void save() {
 			Log.n("Saving {0}", options.NewFilename);
-			assemblyModule.save(options.NewFilename, options.ControlFlowDeobfuscation, deob as IModuleWriterListener);
+			assemblyModule.save(options.NewFilename, ShouldPreserveTokens(), options.ControlFlowDeobfuscation, deob as IModuleWriterListener);
 		}
 
 		IList<MethodDef> getAllMethods() {
@@ -524,7 +528,7 @@ namespace de4dot.code {
 			if (!options.ControlFlowDeobfuscation) {
 				// If it's the unknown type, we don't remove any types that could cause Mono.Cecil
 				// to throw an exception.
-				if (deob.Type == "un" || options.KeepObfuscatorTypes)
+				if (ShouldPreserveTokens())
 					return;
 			}
 
@@ -590,7 +594,10 @@ namespace de4dot.code {
 				cflowDeobfuscator.deobfuscate();
 
 			if (options.ControlFlowDeobfuscation) {
-				numRemovedLocals = blocks.optimizeLocals();
+				// Don't remove any locals if we should preserve tokens or we won't be able
+				// to always preserve StandAloneSig tokens.
+				if (!ShouldPreserveTokens())
+					numRemovedLocals = blocks.optimizeLocals();
 				blocks.repartitionBlocks();
 			}
 

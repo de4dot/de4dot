@@ -51,10 +51,12 @@ namespace de4dot.code {
 			return module;
 		}
 
-		public void save(string newFilename, bool updateMaxStack, IModuleWriterListener writerListener) {
+		public void save(string newFilename, bool preserveTokens, bool updateMaxStack, IModuleWriterListener writerListener) {
 			var writerOptions = new ModuleWriterOptions(module, writerListener);
 			if (!updateMaxStack)
 				writerOptions.MetaDataOptions.Flags |= MetaDataFlags.KeepOldMaxStack;
+			if (preserveTokens)
+				writerOptions.MetaDataOptions.Flags |= MetaDataFlags.PreserveTokens | MetaDataFlags.PreserveUSOffsets | MetaDataFlags.PreserveExtraSignatureData;
 			module.Write(newFilename, writerOptions);
 		}
 
