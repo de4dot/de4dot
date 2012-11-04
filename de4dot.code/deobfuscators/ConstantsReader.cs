@@ -52,7 +52,6 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
-#if PORT
 		class ListInstrs : IInstructions {
 			IList<Instr> instrs;
 
@@ -68,7 +67,6 @@ namespace de4dot.code.deobfuscators {
 				this.instrs = instrs;
 			}
 		}
-#endif
 
 		public bool EmulateConvInstructions {
 			get { return emulateConvInstrs; }
@@ -92,7 +90,6 @@ namespace de4dot.code.deobfuscators {
 			: this(new ListInstructions(instrs), emulateConvInstrs) {
 		}
 
-#if PORT
 		public ConstantsReader(IList<Instr> instrs)
 			: this(new ListInstrs(instrs)) {
 		}
@@ -100,19 +97,16 @@ namespace de4dot.code.deobfuscators {
 		public ConstantsReader(IList<Instr> instrs, bool emulateConvInstrs)
 			: this(new ListInstrs(instrs), emulateConvInstrs) {
 		}
-#endif
 
 		public ConstantsReader(MethodDef method)
 			: this(method.CilBody.Instructions) {
 			this.locals = method.CilBody.LocalList;
 		}
 
-#if PORT
 		public ConstantsReader(IList<Instr> instrs, IList<Local> locals)
 			: this(instrs) {
 			this.locals = locals;
 		}
-#endif
 
 		public void setConstantInt32(Local local, int value) {
 			localsValuesInt32[local] = value;

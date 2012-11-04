@@ -23,9 +23,7 @@ using System.Collections.Generic;
 using dot10.DotNet;
 using de4dot.blocks;
 using de4dot.code;
-#if PORT
 using de4dot.code.renamer;
-#endif
 using de4dot.code.deobfuscators;
 using de4dot.code.AssemblyClient;
 
@@ -359,13 +357,11 @@ namespace de4dot.cui {
 		void rename(IEnumerable<IObfuscatedFile> theFiles) {
 			if (!options.RenameSymbols)
 				return;
-#if PORT
 			var renamer = new Renamer(deobfuscatorContext, theFiles) {
 				RestorePropertiesFromNames = options.RestorePropsEvents,
 				RestoreEventsFromNames = options.RestorePropsEvents,
 			};
 			renamer.rename();
-#endif
 		}
 	}
 }
