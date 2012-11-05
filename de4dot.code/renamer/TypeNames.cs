@@ -25,11 +25,15 @@ namespace de4dot.code.renamer {
 	abstract class TypeNames {
 		protected Dictionary<string, NameCreator> typeNames = new Dictionary<string, NameCreator>(StringComparer.Ordinal);
 		protected NameCreator genericParamNameCreator = new NameCreator("gparam_");
+		protected NameCreator fnPtrNameCreator = new NameCreator("fnptr_");
+		protected NameCreator unknownNameCreator = new NameCreator("unknown_");
 		protected Dictionary<string, string> fullNameToShortName;
 		protected Dictionary<string, string> fullNameToShortNamePrefix;
 
 		public string create(TypeSig typeRef) {
 			typeRef = typeRef.RemovePinnedAndModifiers();
+			if (typeRef == null)
+				return unknownNameCreator.create();
 			var gis = typeRef as GenericInstSig;
 			if (gis != null) {
 				if (gis.FullName == "System.Nullable`1" &&
@@ -41,6 +45,8 @@ namespace de4dot.code.renamer {
 			string prefix = getPrefix(typeRef);
 
 			var elementType = typeRef.ScopeType;
+			if (elementType == null && isFnPtrSig(typeRef))
+				return fnPtrNameCreator.create();
 			if (isGenericParam(elementType))
 				return genericParamNameCreator.create();
 
@@ -63,6 +69,15 @@ namespace de4dot.code.renamer {
 			}
 
 			return addTypeName(typeFullName, shortName, prefix).create();
+		}
+
+		bool isFnPtrSig(TypeSig sig) {
+			while (sig != null) {
+				if (sig is FnPtrSig)
+					return true;
+				sig = sig.Next;
+			}
+			return false;
 		}
 
 		bool isGenericParam(ITypeDefOrRef tdr) {
@@ -106,6 +121,8 @@ namespace de4dot.code.renamer {
 					typeNames[pair.Key] = pair.Value.clone();
 			}
 			genericParamNameCreator.merge(other.genericParamNameCreator);
+			fnPtrNameCreator.merge(other.fnPtrNameCreator);
+			unknownNameCreator.merge(other.unknownNameCreator);
 			return this;
 		}
 
