@@ -55,7 +55,7 @@ namespace de4dot.code.renamer {
 			if (typeNames.TryGetValue(typeFullName, out nc))
 				return nc.create();
 
-			var fullName = elementType.FullName;
+			var fullName = elementType == null ? typeRef.FullName : elementType.FullName;
 			string shortName;
 			var dict = prefix == "" ? fullNameToShortName : fullNameToShortNamePrefix;
 			if (!dict.TryGetValue(fullName, out shortName)) {

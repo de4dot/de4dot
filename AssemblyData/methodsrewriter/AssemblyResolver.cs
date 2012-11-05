@@ -49,20 +49,23 @@ namespace AssemblyData.methodsrewriter {
 		}
 
 		TypeResolver getTypeResolver(ITypeDefOrRef typeRef) {
-			var key = typeRef.Namespace + "." + typeRef.TypeName;
+			if (typeRef == null)
+				return null;
+			var scopeType = typeRef.ScopeType;
+			var key = scopeType.Namespace + "." + scopeType.TypeName;
 			List<TypeResolver> list;
 			if (!types.TryGetValue(key, out list))
 				return null;
 
-			if (typeRef is TypeDef) {
+			if (scopeType is TypeDef) {
 				foreach (var resolver in list) {
-					if (resolver.type.MetadataToken == typeRef.MDToken.Raw)
+					if (resolver.type.MetadataToken == scopeType.MDToken.Raw)
 						return resolver;
 				}
 			}
 
 			foreach (var resolver in list) {
-				if (ResolverUtils.compareTypes(resolver.type, typeRef))
+				if (ResolverUtils.compareTypes(resolver.type, scopeType))
 					return resolver;
 			}
 

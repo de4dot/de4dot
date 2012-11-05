@@ -287,8 +287,8 @@ namespace AssemblyData.methodsrewriter {
 
 							for (int j = mparams.Count - 1; j >= 0; j--) {
 								var argType = mparams[j];
-								if (argType.ElementType == ElementType.ValueType)
-									block.insert(n++, Instruction.Create(OpCodes.Box, ((ValueTypeSig)argType).TypeDefOrRef));
+								if (argType.RemovePinnedAndModifiers().IsValueType)
+									block.insert(n++, Instruction.Create(OpCodes.Box, ((TypeDefOrRefSig)argType).TypeDefOrRef));
 								block.insert(n++, create(OpCodes.Stloc, new Operand(Operand.Type.TempObj)));
 								block.insert(n++, create(OpCodes.Ldloc, new Operand(Operand.Type.TempObjArray)));
 								block.insert(n++, Instruction.Create(OpCodes.Ldc_I4, j));
@@ -310,14 +310,14 @@ namespace AssemblyData.methodsrewriter {
 								block.insert(n++, Instruction.Create(OpCodes.Ldc_I4, j));
 								block.insert(n++, Instruction.Create(OpCodes.Ldelem_Ref));
 								var argType = mparams[j];
-								if (argType.ElementType == ElementType.ValueType)
-									block.insert(n++, Instruction.Create(OpCodes.Unbox_Any, ((ValueTypeSig)argType).TypeDefOrRef));
+								if (argType.RemovePinnedAndModifiers().IsValueType)
+									block.insert(n++, Instruction.Create(OpCodes.Unbox_Any, ((TypeDefOrRefSig)argType).TypeDefOrRef));
 								else {
 									// Don't cast it to its correct type. This will sometimes cause
 									// an exception in some EF obfuscated assembly since we'll be
 									// trying to cast a System.Reflection.AssemblyName type to some
 									// other type.
-									// block.insert(n++, Instruction.Create(OpCodes.Castclass, argType));
+									// block.insert(n++, Instruction.Create(OpCodes.Castclass, argType.ToTypeDefOrRef()));
 								}
 							}
 						}

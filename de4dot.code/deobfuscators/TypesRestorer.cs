@@ -617,7 +617,7 @@ namespace de4dot.code.deobfuscators {
 		protected override bool isValidType(IGenericParameterProvider gpp, TypeSig type) {
 			if (type == null)
 				return false;
-			if (type.ElementType == ElementType.ValueType)
+			if (type.IsValueType)
 				return false;
 			if (type.ElementType == ElementType.Object)
 				return false;

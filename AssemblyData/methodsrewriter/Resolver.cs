@@ -94,12 +94,15 @@ namespace AssemblyData.methodsrewriter {
 		public static object getRtObject(ITokenOperand memberRef) {
 			if (memberRef == null)
 				return null;
-			else if (memberRef is ITypeDefOrRef)
-				return getRtType((ITypeDefOrRef)memberRef);
-			else if (memberRef is IField)
-				return getRtField((IField)memberRef);
-			else if (memberRef is IMethod)
-				return getRtMethod((IMethod)memberRef);
+			var tdr = memberRef as ITypeDefOrRef;
+			if (tdr != null)
+				return getRtType(tdr);
+			var field = memberRef as IField;
+			if (field != null && field.FieldSig != null)
+				return getRtField(field);
+			var method = memberRef as IMethod;
+			if (method != null && method.MethodSig != null)
+				return getRtMethod(method);
 
 			throw new ApplicationException(string.Format("Unknown MemberReference: {0}", memberRef));
 		}
@@ -144,9 +147,7 @@ namespace AssemblyData.methodsrewriter {
 			var resolvedType = resolver.resolve(scopeType);
 			if (resolvedType != null)
 				return fixType(typeRef, resolvedType);
-			var tdr = typeRef as ITypeDefOrRef;
-			uint token = tdr == null ? 0 : tdr.MDToken.Raw;
-			throw new ApplicationException(string.Format("Could not resolve type {0} ({1:X8}) in assembly {2}", typeRef, token, resolver));
+			throw new ApplicationException(string.Format("Could not resolve type {0} ({1:X8}) in assembly {2}", typeRef, typeRef.MDToken.Raw, resolver));
 		}
 
 		static FieldInfo resolve(IField fieldRef) {
@@ -171,7 +172,7 @@ namespace AssemblyData.methodsrewriter {
 
 		static Type fixType(IType typeRef, Type type) {
 			var sig = typeRef as TypeSig;
-			if (sig != null) {
+			if (sig == null) {
 				var ts = typeRef as TypeSpec;
 				if (ts != null)
 					sig = ts.TypeSig;
