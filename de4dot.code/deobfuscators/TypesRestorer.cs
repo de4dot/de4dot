@@ -256,7 +256,7 @@ namespace de4dot.code.deobfuscators {
 			if (!method.IsStatic || method.CilBody == null)
 				return;
 
-			bool fixReturnType = isUnknownType(method.MethodSig.RetType);
+			bool fixReturnType = isUnknownType(method.MethodSig.GetRetType());
 
 			argInfos.Clear();
 			foreach (var arg in method.Parameters) {
@@ -433,7 +433,7 @@ namespace de4dot.code.deobfuscators {
 		bool addMethodArgType(IGenericParameterProvider gpp, Parameter methodParam, IField field) {
 			if (field == null || field.FieldSig == null)
 				return false;
-			return addMethodArgType(gpp, methodParam, field.FieldSig.Type);
+			return addMethodArgType(gpp, methodParam, field.FieldSig.GetFieldType());
 		}
 
 		bool addMethodArgType(IGenericParameterProvider gpp, Parameter methodParam, Local otherLocal) {
@@ -631,7 +631,7 @@ namespace de4dot.code.deobfuscators {
 
 			var field = o as FieldDef;
 			if (field != null)
-				return field.FieldSig != null && field.FieldSig.Type != null && field.FieldSig.Type.ElementType == ElementType.Object;
+				return field.FieldSig.GetFieldType().GetElementType() == ElementType.Object;
 
 			throw new ApplicationException(string.Format("Unknown type: {0}", o.GetType()));
 		}

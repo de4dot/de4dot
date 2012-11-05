@@ -312,7 +312,7 @@ namespace de4dot.code.renamer {
 						if (param.IsReturnParameter)
 							Log.v("RetParam: {0} => {1}", Utils.removeNewlines(paramInfo.oldName), Utils.removeNewlines(paramInfo.newName));
 						else
-							Log.v("Param ({0}/{1}): {2} => {3}", param.ParameterDefinition.MethodSigIndex + 1, methodDef.MethodDef.MethodSig.Params.Count, Utils.removeNewlines(paramInfo.oldName), Utils.removeNewlines(paramInfo.newName));
+							Log.v("Param ({0}/{1}): {2} => {3}", param.ParameterDefinition.MethodSigIndex + 1, methodDef.MethodDef.MethodSig.GetParamCount(), Utils.removeNewlines(paramInfo.oldName), Utils.removeNewlines(paramInfo.newName));
 					}
 				}
 
@@ -574,6 +574,8 @@ namespace de4dot.code.renamer {
 				return null;
 
 			var sig = propMethod.MethodDef.MethodSig;
+			if (sig == null)
+				return null;
 			var propType = sig.RetType;
 			var propDef = createProperty(ownerType, name, propType, propMethod.MethodDef, null);
 			if (propDef == null)
@@ -601,7 +603,7 @@ namespace de4dot.code.renamer {
 				return null;
 
 			var sig = propMethod.MethodDef.MethodSig;
-			if (sig.Params.Count == 0)
+			if (sig == null || sig.Params.Count == 0)
 				return null;
 			var propType = sig.Params[sig.Params.Count - 1];
 			var propDef = createProperty(ownerType, name, propType, null, propMethod.MethodDef);
@@ -1390,7 +1392,7 @@ namespace de4dot.code.renamer {
 				if (methodType == PropertyMethodType.Setter)
 					propType = propMethod.ParamDefs[propMethod.ParamDefs.Count - 1].ParameterDefinition.Type;
 				else
-					propType = propMethod.MethodDef.MethodSig.RetType;
+					propType = propMethod.MethodDef.MethodSig.GetRetType();
 				if (type == null)
 					type = propType;
 				else if (!new SigComparer().Equals(type, propType))

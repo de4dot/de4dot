@@ -373,6 +373,8 @@ namespace de4dot.code.renamer.asmmodules {
 
 		// Returns null if it's a non-loaded module/assembly
 		IEnumerable<Module> findModules(ITypeDefOrRef type) {
+			if (type == null)
+				return null;
 			var scope = type.Scope;
 			if (scope == null)
 				return null;

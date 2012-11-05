@@ -534,8 +534,8 @@ namespace de4dot.code.renamer.asmmodules {
 
 				foreach (var ifaceInfo in interfaces) {
 					foreach (var methodsList in ifaceInfo.typeDef.virtualMethodInstances.getMethods()) {
-						if (methodsList.Count != 1)	// Never happens
-							throw new ApplicationException("Interface with more than one method in the list");
+						if (methodsList.Count < 1)
+							continue;
 						var methodInst = methodsList[0];
 						var ifaceMethod = methodInst.origMethodDef;
 						if (!ifaceMethod.isVirtual())
@@ -569,8 +569,8 @@ namespace de4dot.code.renamer.asmmodules {
 			}
 			foreach (var ifaceInfo in allImplementedInterfaces.Keys) {
 				foreach (var methodsList in ifaceInfo.typeDef.virtualMethodInstances.getMethods()) {
-					if (methodsList.Count != 1)	// Never happens
-						throw new ApplicationException("Interface with more than one method in the list");
+					if (methodsList.Count < 1)
+						continue;
 					var ifaceMethod = methodsList[0].origMethodDef;
 					if (!ifaceMethod.isVirtual())
 						continue;
@@ -690,6 +690,8 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 
 		MemberRef simpleClone(MethodDef methodRef, ITypeDefOrRef declaringType) {
+			if (module == null)
+				return new MemberRefUser(null, methodRef.Name, methodRef.MethodSig, declaringType);
 			var mr = new MemberRefUser(module.ModuleDefMD, methodRef.Name, methodRef.MethodSig, declaringType);
 			return module.ModuleDefMD.UpdateRowId(mr);
 		}

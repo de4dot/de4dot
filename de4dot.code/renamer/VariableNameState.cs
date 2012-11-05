@@ -87,7 +87,7 @@ namespace de4dot.code.renamer {
 		}
 
 		public string getNewPropertyName(PropertyDef propertyDefinition) {
-			var propType = propertyDefinition.PropertySig.RetType;
+			var propType = propertyDefinition.PropertySig.GetRetType();
 			string newName;
 			if (isGeneric(propType))
 				newName = existingPropertyNames.getName(propertyDefinition.Name, genericPropertyNameCreator);
@@ -145,7 +145,7 @@ namespace de4dot.code.renamer {
 		}
 
 		public string getNewFieldName(FieldDef field) {
-			return existingVariableNames.getName(field.Name, () => variableNameCreator.create(field.FieldSig.Type));
+			return existingVariableNames.getName(field.Name, () => variableNameCreator.create(field.FieldSig.GetFieldType()));
 		}
 
 		public string getNewFieldName(string oldName, INameCreator nameCreator) {

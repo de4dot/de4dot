@@ -204,7 +204,7 @@ namespace de4dot.code.deobfuscators {
 				var calledMethod = pushInstr.Operand as IMethod;
 				if (calledMethod == null)
 					return null;
-				type = calledMethod.MethodSig.RetType;
+				type = calledMethod.MethodSig.GetRetType();
 				break;
 
 			case Code.Newarr:
@@ -270,7 +270,7 @@ namespace de4dot.code.deobfuscators {
 				var field = pushInstr.Operand as IField;
 				if (field == null || field.FieldSig == null)
 					return null;
-				type = field.FieldSig.Type;
+				type = field.FieldSig.GetFieldType();
 				break;
 
 			case Code.Ldflda:
@@ -278,7 +278,7 @@ namespace de4dot.code.deobfuscators {
 				var field2 = pushInstr.Operand as IField;
 				if (field2 == null || field2.FieldSig == null)
 					return null;
-				type = createByReferenceType(field2.FieldSig.Type);
+				type = createByReferenceType(field2.FieldSig.GetFieldType());
 				break;
 
 			case Code.Ldelema:

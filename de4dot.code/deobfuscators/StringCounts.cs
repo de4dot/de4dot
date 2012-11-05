@@ -77,8 +77,11 @@ namespace de4dot.code.deobfuscators {
 		void init(IEnumerable<FieldDef> fields) {
 			if (fields == null)
 				return;
-			foreach (var field in fields)
-				add(field.FieldSig.Type.FullName);
+			foreach (var field in fields) {
+				var type = field.FieldSig.GetFieldType();
+				if (type != null)
+					add(type.FullName);
+			}
 		}
 	}
 

@@ -435,7 +435,7 @@ namespace de4dot.code {
 				foreach (var method in type.Methods) {
 					if (!method.IsStatic)
 						continue;
-					if (method.MethodSig.RetType.ElementType != ElementType.String && method.MethodSig.RetType.ElementType != ElementType.Object)
+					if (method.MethodSig.GetRetType().GetElementType() != ElementType.String && method.MethodSig.GetRetType().GetElementType() != ElementType.Object)
 						continue;
 					if (methodName != null && methodName != method.Name)
 						continue;
@@ -664,6 +664,8 @@ namespace de4dot.code {
 		}
 
 		static bool getMethodImplOptions(CustomAttribute cattr, ref int value) {
+			if (cattr.IsRawBlob)
+				return false;
 			if (cattr.Arguments.Count != 1)
 				return false;
 			if (cattr.Arguments[0].Type.ElementType != ElementType.I2 &&

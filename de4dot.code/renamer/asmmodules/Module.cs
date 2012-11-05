@@ -155,6 +155,8 @@ namespace de4dot.code.renamer.asmmodules {
 				var typeDef = resolver.resolveType(cattr.AttributeType);
 				if (typeDef == null)
 					continue;
+				if (cattr.NamedArguments == null)
+					continue;
 
 				for (int i = 0; i < cattr.NamedArguments.Count; i++) {
 					var namedArg = cattr.NamedArguments[i];
@@ -191,7 +193,7 @@ namespace de4dot.code.renamer.asmmodules {
 				foreach (var fieldDef in typeDef.AllFields) {
 					if (fieldDef.FieldDef.Name != name)
 						continue;
-					if (new SigComparer().Equals(fieldDef.FieldDef.FieldSig.Type, fieldType))
+					if (new SigComparer().Equals(fieldDef.FieldDef.FieldSig.GetFieldType(), fieldType))
 						return fieldDef;
 				}
 
@@ -207,7 +209,7 @@ namespace de4dot.code.renamer.asmmodules {
 				foreach (var propDef in typeDef.AllProperties) {
 					if (propDef.PropertyDef.Name != name)
 						continue;
-					if (new SigComparer().Equals(propDef.PropertyDef.PropertySig.RetType, propType))
+					if (new SigComparer().Equals(propDef.PropertyDef.PropertySig.GetRetType(), propType))
 						return propDef;
 				}
 

@@ -163,6 +163,8 @@ namespace de4dot.blocks.cflow {
 		}
 
 		public Value getArg(Parameter arg) {
+			if (arg == null)
+				return new UnknownValue();
 			return getArg(arg.Index);
 		}
 
@@ -173,11 +175,13 @@ namespace de4dot.blocks.cflow {
 		}
 
 		public void setArg(Parameter arg, Value value) {
-			setArg(arg.Index, value);
+			if (arg != null)
+				setArg(arg.Index, value);
 		}
 
 		public void makeArgUnknown(Parameter arg) {
-			setArg(arg, getUnknownArg(arg.Index));
+			if (arg != null)
+				setArg(arg, getUnknownArg(arg.Index));
 		}
 
 		void setArg(int index, Value value) {
@@ -194,15 +198,19 @@ namespace de4dot.blocks.cflow {
 		}
 
 		public Value getLocal(Local local) {
+			if (local == null)
+				return new UnknownValue();
 			return getLocal(local.Index);
 		}
 
 		public void setLocal(Local local, Value value) {
-			setLocal(local.Index, value);
+			if (local != null)
+				setLocal(local.Index, value);
 		}
 
 		public void makeLocalUnknown(Local local) {
-			setLocal(local.Index, getUnknownLocal(local.Index));
+			if (local != null)
+				setLocal(local.Index, getUnknownLocal(local.Index));
 		}
 
 		void setLocal(int index, Value value) {
@@ -247,7 +255,7 @@ namespace de4dot.blocks.cflow {
 			case Code.Starg:
 			case Code.Starg_S:	emulate_Starg((Parameter)instr.Operand); break;
 			case Code.Stloc:
-			case Code.Stloc_S:	emulate_Stloc(((Local)instr.Operand).Index); break;
+			case Code.Stloc_S:	emulate_Stloc((Local)instr.Operand); break;
 			case Code.Stloc_0:	emulate_Stloc(0); break;
 			case Code.Stloc_1:	emulate_Stloc(1); break;
 			case Code.Stloc_2:	emulate_Stloc(2); break;
@@ -269,7 +277,7 @@ namespace de4dot.blocks.cflow {
 			case Code.Ldarga:
 			case Code.Ldarga_S:	emulate_Ldarga((Parameter)instr.Operand); break;
 			case Code.Ldloca:
-			case Code.Ldloca_S:	emulate_Ldloca(((Local)instr.Operand).Index); break;
+			case Code.Ldloca_S:	emulate_Ldloca((Local)instr.Operand); break;
 
 			case Code.Dup:		valueStack.copyTop(); break;
 
@@ -837,7 +845,11 @@ namespace de4dot.blocks.cflow {
 		}
 
 		void emulate_Starg(Parameter arg) {
-			setArg(arg.Index, valueStack.pop());
+			setArg(arg == null ? -1 : arg.Index, valueStack.pop());
+		}
+
+		void emulate_Stloc(Local local) {
+			emulate_Stloc(local == null ? -1 : local.Index);
 		}
 
 		void emulate_Stloc(int index) {
@@ -847,6 +859,10 @@ namespace de4dot.blocks.cflow {
 		void emulate_Ldarga(Parameter arg) {
 			valueStack.pushUnknown();
 			makeArgUnknown(arg);
+		}
+
+		void emulate_Ldloca(Local local) {
+			emulate_Ldloca(local == null ? -1 : local.Index);
 		}
 
 		void emulate_Ldloca(int index) {
@@ -867,7 +883,7 @@ namespace de4dot.blocks.cflow {
 			instr.CalculateStackUsage(out pushes, out pops);
 			valueStack.pop(pops);
 			if (pushes == 1)
-				valueStack.push(getUnknownValue(method.MethodSig.RetType));
+				valueStack.push(getUnknownValue(method.MethodSig.GetRetType()));
 			else
 				valueStack.push(pushes);
 		}
@@ -901,7 +917,7 @@ namespace de4dot.blocks.cflow {
 
 		void emulateLoadField(IField field) {
 			if (field != null)
-				valueStack.push(getUnknownValue(field.FieldSig.Type));
+				valueStack.push(getUnknownValue(field.FieldSig.GetFieldType()));
 			else
 				valueStack.pushUnknown();
 		}
