@@ -27,7 +27,7 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Rummage {
 	class StringDecrypter {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		MethodDef stringDecrypterMethod;
 		FieldDefinitionAndDeclaringTypeDict<StringInfo> stringInfos = new FieldDefinitionAndDeclaringTypeDict<StringInfo>();
 		int fileDispl;
@@ -68,7 +68,7 @@ namespace de4dot.code.deobfuscators.Rummage {
 			get { return stringDecrypterMethod != null; }
 		}
 
-		public StringDecrypter(ModuleDefinition module) {
+		public StringDecrypter(ModuleDefMD module) {
 			this.module = module;
 		}
 
@@ -96,7 +96,7 @@ namespace de4dot.code.deobfuscators.Rummage {
 		static MethodDef checkType(TypeDef type) {
 			if (!new FieldTypes(type).exactly(requiredFields))
 				return null;
-			var cctor = DotNetUtils.getMethod(type, ".cctor");
+			var cctor = type.FindClassConstructor();
 			if (cctor == null)
 				return null;
 			if (!new LocalTypes(cctor).all(requiredLocals))
@@ -131,14 +131,14 @@ namespace de4dot.code.deobfuscators.Rummage {
 					continue;
 
 				var ldci4 = instrs[i + 1];
-				if (!DotNetUtils.isLdcI4(ldci4))
+				if (!ldci4.IsLdcI4())
 					continue;
 
 				var sub = instrs[i + 2];
 				if (sub.OpCode.Code != Code.Sub)
 					continue;
 
-				displ = DotNetUtils.getLdcI4Value(ldci4);
+				displ = ldci4.GetLdcI4Value();
 				return true;
 			}
 
@@ -146,7 +146,7 @@ namespace de4dot.code.deobfuscators.Rummage {
 		}
 
 		public void initialize() {
-			reader = new BinaryReader(new FileStream(module.FullyQualifiedName, FileMode.Open, FileAccess.Read, FileShare.Read));
+			reader = new BinaryReader(new FileStream(module.Location, FileMode.Open, FileAccess.Read, FileShare.Read));
 			initKey();
 
 			foreach (var type in module.Types)
@@ -161,7 +161,7 @@ namespace de4dot.code.deobfuscators.Rummage {
 		}
 
 		void initType(TypeDef type) {
-			var cctor = DotNetUtils.getMethod(type, ".cctor");
+			var cctor = type.FindClassConstructor();
 			if (cctor == null)
 				return;
 			var info = getStringInfo(cctor);
@@ -177,15 +177,15 @@ namespace de4dot.code.deobfuscators.Rummage {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 2; i++) {
 				var ldci4 = instrs[i];
-				if (!DotNetUtils.isLdcI4(ldci4))
+				if (!ldci4.IsLdcI4())
 					continue;
-				int stringId = DotNetUtils.getLdcI4Value(ldci4);
+				int stringId = ldci4.GetLdcI4Value();
 
 				var call = instrs[i + 1];
 				if (call.OpCode.Code != Code.Call)
 					continue;
-				var calledMethod = call.Operand as MethodReference;
-				if (!MemberReferenceHelper.compareMethodReferenceAndDeclaringType(stringDecrypterMethod, calledMethod))
+				var calledMethod = call.Operand as IMethod;
+				if (!MethodEqualityComparer.CompareDeclaringTypes.Equals(stringDecrypterMethod, calledMethod))
 					continue;
 
 				var stsfld = instrs[i + 2];
@@ -210,7 +210,7 @@ namespace de4dot.code.deobfuscators.Rummage {
 					if (instr.OpCode.Code != Code.Ldsfld)
 						continue;
 
-					var field = instr.Operand as FieldReference;
+					var field = instr.Operand as IField;
 					if (field == null)
 						continue;
 					var info = stringInfos.find(field);
