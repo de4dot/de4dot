@@ -90,7 +90,7 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 		}
 
 		bool hasAssemblyReference(string name) {
-			foreach (var asmRef in module.AssemblyReferences) {
+			foreach (var asmRef in module.GetAssemblyRefs()) {
 				if (asmRef.Name == name)
 					return true;
 			}

@@ -29,7 +29,7 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Skater_NET {
 	class StringDecrypter {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		TypeDef decrypterType;
 		MethodDef decrypterCctor;
 		FieldDefinitionAndDeclaringTypeDict<string> fieldToDecryptedString = new FieldDefinitionAndDeclaringTypeDict<string>();
@@ -88,7 +88,7 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 			get { return decrypterType; }
 		}
 
-		public StringDecrypter(ModuleDefinition module) {
+		public StringDecrypter(ModuleDefMD module) {
 			this.module = module;
 		}
 
@@ -97,7 +97,7 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 				if (type.HasProperties || type.HasEvents)
 					continue;
 
-				var cctor = DotNetUtils.getMethod(type, ".cctor");
+				var cctor = type.FindClassConstructor();
 				if (cctor == null)
 					continue;
 
@@ -134,7 +134,7 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 				var field = instrs[i + 4].Operand as FieldDef;
 				if (field == null)
 					continue;
-				if (!MemberReferenceHelper.compareTypes(field.DeclaringType, decrypterType))
+				if (!new SigComparer().Equals(field.DeclaringType, decrypterType))
 					continue;
 
 				fieldToDecryptedString.add(field, decrypter.decrypt(encryptedString));
@@ -228,7 +228,7 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 			foreach (var method in DotNetUtils.getCalledMethods(module, decryptMethod)) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
-				if (!MemberReferenceHelper.compareTypes(method.DeclaringType, decryptMethod.DeclaringType))
+				if (!new SigComparer().Equals(method.DeclaringType, decryptMethod.DeclaringType))
 					continue;
 				if (!DotNetUtils.isMethod(method, "System.String", "()"))
 					continue;
@@ -291,14 +291,14 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 					if (instr.OpCode.Code == Code.Call || instr.OpCode.Code == Code.Callvirt) {
 						if (blocks.Method.DeclaringType == decrypterType)
 							continue;
-						var calledMethod = instr.Operand as MethodReference;
+						var calledMethod = instr.Operand as IMethod;
 						if (calledMethod != null && calledMethod.DeclaringType == decrypterType)
 							canRemoveType = false;
 					}
 					else if (instr.OpCode.Code == Code.Ldsfld) {
 						if (instr.OpCode.Code != Code.Ldsfld)
 							continue;
-						var field = instr.Operand as FieldReference;
+						var field = instr.Operand as IField;
 						if (field == null)
 							continue;
 						var decrypted = fieldToDecryptedString.find(field);

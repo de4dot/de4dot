@@ -231,9 +231,9 @@
     <Compile Include="deobfuscators\RandomNameChecker.cs" />
     <None Include="deobfuscators\Rummage\Deobfuscator.cs" />
     <None Include="deobfuscators\Rummage\StringDecrypter.cs" />
-    <None Include="deobfuscators\Skater_NET\Deobfuscator.cs" />
-    <None Include="deobfuscators\Skater_NET\EnumClassFinder.cs" />
-    <None Include="deobfuscators\Skater_NET\StringDecrypter.cs" />
+    <Compile Include="deobfuscators\Skater_NET\Deobfuscator.cs" />
+    <Compile Include="deobfuscators\Skater_NET\EnumClassFinder.cs" />
+    <Compile Include="deobfuscators\Skater_NET\StringDecrypter.cs" />
     <None Include="deobfuscators\SmartAssembly\AssemblyResolver.cs" />
     <None Include="deobfuscators\SmartAssembly\AssemblyResolverInfo.cs" />
     <None Include="deobfuscators\SmartAssembly\AutomatedErrorReportingFinder.cs" />

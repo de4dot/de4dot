@@ -23,10 +23,10 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Skater_NET {
 	class EnumClassFinder {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		FieldDef enumField;
 
-		public EnumClassFinder(ModuleDefinition module) {
+		public EnumClassFinder(ModuleDefMD module) {
 			this.module = module;
 			find();
 		}
@@ -43,7 +43,7 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 				if (method.Name != ".ctor")
 					continue;
 				var field = type.Fields[0];
-				var fieldType = DotNetUtils.getType(module, field.FieldType);
+				var fieldType = DotNetUtils.getType(module, field.FieldSig.GetFieldType());
 				if (fieldType == null)
 					continue;
 				if (!fieldType.IsEnum)
@@ -69,8 +69,8 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 					if (stfld.OpCode.Code != Code.Stfld)
 						continue;
 
-					var field = stfld.Operand as FieldReference;
-					if (!MemberReferenceHelper.compareFieldReferenceAndDeclaringType(enumField, field))
+					var field = stfld.Operand as IField;
+					if (!FieldEqualityComparer.CompareDeclaringTypes.Equals(enumField, field))
 						continue;
 					block.remove(i, 3);
 					i--;

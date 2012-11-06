@@ -338,16 +338,26 @@ namespace de4dot.blocks {
 			return getMethod(module, method, method.DeclaringType.ScopeType);
 		}
 
-		static TypeDef getType(ModuleDef module, ITypeDefOrRef type) {
+		public static TypeDef getType(ModuleDef module, TypeSig type) {
+			type = type.RemovePinnedAndModifiers();
+			var tdr = type as TypeDefOrRefSig;
+			if (tdr == null)
+				return null;
+			return getType(module, tdr.TypeDefOrRef);
+		}
+
+		public static TypeDef getType(ModuleDef module, ITypeDefOrRef type) {
 			var td = type as TypeDef;
-			if (td != null)
-				return td;
-
-			var tr = type as TypeRef;
-			if (tr != null)
-				return tr.Resolve();
-
-			return null;
+			if (td == null) {
+				var tr = type as TypeRef;
+				if (tr != null) {
+					var trAsm = tr.DefinitionAssembly;
+					var modAsm = module.Assembly;
+					if (trAsm != null && modAsm != null && trAsm.Name == modAsm.Name)
+						td = tr.Resolve();
+				}
+			}
+			return td != null && td.OwnerModule == module ? td : null;
 		}
 
 		static MethodDef getMethod(ModuleDef module, IMethod method, ITypeDefOrRef declaringType) {
@@ -751,13 +761,12 @@ namespace de4dot.blocks {
 			return UTF8String.ToSystemStringOrEmpty((UTF8String)carg.Value);
 		}
 
-#if PORT
-		public static IEnumerable<MethodDef> getCalledMethods(ModuleDefinition module, MethodDef method) {
+		public static IEnumerable<MethodDef> getCalledMethods(ModuleDef module, MethodDef method) {
 			if (method != null && method.HasBody) {
 				foreach (var call in method.Body.Instructions) {
 					if (call.OpCode.Code != Code.Call && call.OpCode.Code != Code.Callvirt)
 						continue;
-					var methodRef = call.Operand as MethodReference;
+					var methodRef = call.Operand as IMethod;
 					if (methodRef == null)
 						continue;
 					var type = getType(module, methodRef.DeclaringType);
@@ -768,6 +777,7 @@ namespace de4dot.blocks {
 			}
 		}
 
+#if PORT
 		public static IList<Instruction> getInstructions(IList<Instruction> instructions, int i, params OpCode[] opcodes) {
 			if (i + opcodes.Length > instructions.Count)
 				return null;
@@ -1263,7 +1273,6 @@ namespace de4dot.blocks {
 			return count;
 		}
 
-#if PORT
 		public static bool callsMethod(MethodDef method, string methodFullName) {
 			if (method == null || method.Body == null)
 				return false;
@@ -1271,7 +1280,7 @@ namespace de4dot.blocks {
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt && instr.OpCode.Code != Code.Newobj)
 					continue;
-				var calledMethod = instr.Operand as MethodReference;
+				var calledMethod = instr.Operand as IMethod;
 				if (calledMethod == null)
 					continue;
 				if (calledMethod.FullName == methodFullName)
@@ -1281,6 +1290,7 @@ namespace de4dot.blocks {
 			return false;
 		}
 
+#if PORT
 		public static bool callsMethod(MethodDef method, string returnType, string parameters) {
 			if (method == null || method.Body == null)
 				return false;
