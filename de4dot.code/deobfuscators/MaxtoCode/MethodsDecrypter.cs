@@ -482,6 +482,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 
 				var dm = new DumpedMethod();
 				dm.token = (uint)(0x06000001 + i);
+				dm.mdRVA = peImage.offsetRead(methodDefOffset + (uint)methodDef.fields[0].offset, methodDef.fields[0].size);
 				dm.mdImplFlags = peImage.offsetReadUInt16(methodDefOffset + (uint)methodDef.fields[1].offset);
 				dm.mdFlags = peImage.offsetReadUInt16(methodDefOffset + (uint)methodDef.fields[2].offset);
 				dm.mdName = peImage.offsetRead(methodDefOffset + (uint)methodDef.fields[3].offset, methodDef.fields[3].size);

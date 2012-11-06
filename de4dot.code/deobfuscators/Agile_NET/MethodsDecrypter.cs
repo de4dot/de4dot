@@ -550,6 +550,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 				if (rva == 0)
 					continue;
 				uint bodyOffset = peImage.rvaToOffset(rva);
+				dm.mdRVA = peImage.offsetRead(offset + (uint)methodDefTable.fields[0].offset, methodDefTable.fields[0].size);
 				dm.mdImplFlags = peImage.offsetReadUInt16(offset + (uint)methodDefTable.fields[1].offset);
 				dm.mdFlags = peImage.offsetReadUInt16(offset + (uint)methodDefTable.fields[2].offset);
 				dm.mdName = peImage.offsetRead(offset + (uint)methodDefTable.fields[3].offset, methodDefTable.fields[3].size);
@@ -581,6 +582,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 				var dm = new DumpedMethod();
 				dm.token = 0x06000001 + (uint)i;
 
+				dm.mdRVA = peImage.offsetRead(offset + (uint)methodDefTable.fields[0].offset, methodDefTable.fields[0].size);
 				dm.mdImplFlags = peImage.offsetReadUInt16(offset + (uint)methodDefTable.fields[1].offset);
 				dm.mdFlags = peImage.offsetReadUInt16(offset + (uint)methodDefTable.fields[2].offset);
 				dm.mdName = peImage.offsetRead(offset + (uint)methodDefTable.fields[3].offset, methodDefTable.fields[3].size);

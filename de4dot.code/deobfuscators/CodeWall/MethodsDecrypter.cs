@@ -105,6 +105,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 				else
 					decrypt(code, seed);
 
+				dm.mdRVA = peImage.offsetRead(methodDefOffset + (uint)methodDef.fields[0].offset, methodDef.fields[0].size);
 				dm.mdImplFlags = peImage.offsetReadUInt16(methodDefOffset + (uint)methodDef.fields[1].offset);
 				dm.mdFlags = peImage.offsetReadUInt16(methodDefOffset + (uint)methodDef.fields[2].offset);
 				dm.mdName = peImage.offsetRead(methodDefOffset + (uint)methodDef.fields[3].offset, methodDef.fields[3].size);

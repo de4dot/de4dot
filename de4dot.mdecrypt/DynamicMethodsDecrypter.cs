@@ -424,6 +424,7 @@ namespace de4dot.mdecrypt {
 		unsafe void updateFromMethodDefTableRow() {
 			int methodIndex = (int)(ctx.dm.token - 0x06000001);
 			byte* row = (byte*)methodDefTablePtr + methodIndex * methodDefTable.totalSize;
+			ctx.dm.mdRVA = read(row, methodDefTable.fields[0]);
 			ctx.dm.mdImplFlags = (ushort)read(row, methodDefTable.fields[1]);
 			ctx.dm.mdFlags = (ushort)read(row, methodDefTable.fields[2]);
 			ctx.dm.mdName = read(row, methodDefTable.fields[3]);
