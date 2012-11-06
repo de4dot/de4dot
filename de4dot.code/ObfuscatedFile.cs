@@ -372,11 +372,17 @@ namespace de4dot.code {
 		void reloadModule(byte[] newModuleData, DumpedMethods dumpedMethods) {
 			Log.v("Reloading decrypted assembly (original filename: {0})", Filename);
 			simpleDeobfuscatorFlags.Clear();
-			module = assemblyModule.reload(newModuleData, dumpedMethods);
+			module = assemblyModule.reload(newModuleData, createDumpedMethodsRestorer(dumpedMethods), deob as IStringDecrypter);
 			deob = deob.moduleReloaded(module);
 			initializeDeobfuscator();
 			deob.DeobfuscatedFile = this;
 			updateDynamicStringInliner();
+		}
+
+		DumpedMethodsRestorer createDumpedMethodsRestorer(DumpedMethods dumpedMethods) {
+			if (dumpedMethods == null || dumpedMethods.Count == 0)
+				return null;
+			return new DumpedMethodsRestorer(dumpedMethods);
 		}
 
 		void initAssemblyClient() {

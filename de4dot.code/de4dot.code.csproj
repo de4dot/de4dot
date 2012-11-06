@@ -266,6 +266,7 @@
     <Compile Include="IDeobfuscatorContext.cs" />
     <Compile Include="IObfuscatedFile.cs" />
     <Compile Include="Log.cs" />
+    <Compile Include="DumpedMethodsRestorer.cs" />
     <Compile Include="MethodPrinter.cs" />
     <Compile Include="MethodReturnValueInliner.cs" />
     <Compile Include="NameRegexes.cs" />

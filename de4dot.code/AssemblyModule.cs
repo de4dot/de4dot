@@ -60,10 +60,16 @@ namespace de4dot.code {
 			module.Write(newFilename, writerOptions);
 		}
 
-		public ModuleDefMD reload(byte[] newModuleData, DumpedMethods dumpedMethods) {
+		public ModuleDefMD reload(byte[] newModuleData, DumpedMethodsRestorer dumpedMethodsRestorer, IStringDecrypter stringDecrypter) {
 			TheAssemblyResolver.Instance.removeModule(module);
-			//TODO: Use dumped methods
-			return setModule(ModuleDefMD.Load(newModuleData, moduleContext));
+			var mod = ModuleDefMD.Load(newModuleData, moduleContext);
+			if (dumpedMethodsRestorer != null)
+				dumpedMethodsRestorer.Module = mod;
+			mod.StringDecrypter = stringDecrypter;
+			mod.MethodDecrypter = dumpedMethodsRestorer;
+			mod.TablesStream.ColumnReader = dumpedMethodsRestorer;
+			mod.TablesStream.MethodRowReader = dumpedMethodsRestorer;
+			return setModule(mod);
 		}
 
 		public override string ToString() {
