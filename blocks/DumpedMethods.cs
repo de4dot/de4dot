@@ -17,13 +17,12 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-//TODO: DumpedMethods and DumpedMethod should be moved to dot10
-
 using System;
 using System.Collections.Generic;
 using dot10.DotNet.MD;
+using dot10.DotNet;
 
-namespace dot10.DotNet {
+namespace de4dot.blocks {
 	public interface IStringDecrypter {
 		string decrypt(uint token);
 	}

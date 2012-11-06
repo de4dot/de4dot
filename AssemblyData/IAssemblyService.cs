@@ -18,6 +18,7 @@
 */
 
 using dot10.DotNet;
+using de4dot.blocks;
 using de4dot.mdecrypt;
 
 namespace AssemblyData {

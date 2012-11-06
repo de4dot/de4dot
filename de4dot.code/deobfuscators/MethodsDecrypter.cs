@@ -19,6 +19,7 @@
 
 using dot10.DotNet;
 using de4dot.code.AssemblyClient;
+using de4dot.blocks;
 using de4dot.mdecrypt;
 
 namespace de4dot.code.deobfuscators {

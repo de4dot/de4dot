@@ -17,11 +17,9 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-//TODO: DumpedMethods and DumpedMethod should be moved to dot10
-
 using System;
 
-namespace dot10.DotNet {
+namespace de4dot.blocks {
 	[Serializable]
 	public class DumpedMethod {
 		public ushort mhFlags;			// method header Flags
