@@ -127,6 +127,8 @@ namespace de4dot.code.renamer {
 		}
 
 		protected static string upperFirst(string s) {
+			if (string.IsNullOrEmpty(s))
+				return string.Empty;
 			return s.Substring(0, 1).ToUpperInvariant() + s.Substring(1);
 		}
 	}
