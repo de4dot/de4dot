@@ -27,6 +27,7 @@ namespace de4dot.blocks {
 		public uint mhCodeSize;			// method header CodeSize
 		public uint mhLocalVarSigTok;	// method header LocalVarSigTok
 
+		public uint mdRVA;				// methodDef RVA
 		public ushort mdImplFlags;		// methodDef ImplFlags
 		public ushort mdFlags;			// methodDef Flags
 		public uint mdName;				// methodDef Name (index into #String)
