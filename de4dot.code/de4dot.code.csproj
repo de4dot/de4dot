@@ -261,8 +261,8 @@
     <Compile Include="deobfuscators\UnpackedFile.cs" />
     <Compile Include="deobfuscators\UnusedMethodsFinder.cs" />
     <Compile Include="deobfuscators\ValueInlinerBase.cs" />
-    <None Include="deobfuscators\Xenocode\Deobfuscator.cs" />
-    <None Include="deobfuscators\Xenocode\StringDecrypter.cs" />
+    <Compile Include="deobfuscators\Xenocode\Deobfuscator.cs" />
+    <Compile Include="deobfuscators\Xenocode\StringDecrypter.cs" />
     <Compile Include="IDeobfuscatorContext.cs" />
     <Compile Include="IObfuscatedFile.cs" />
     <Compile Include="Log.cs" />

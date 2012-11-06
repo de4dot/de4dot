@@ -24,7 +24,7 @@ using de4dot.blocks;
 namespace de4dot.code.deobfuscators.Xenocode {
 	class StringDecrypter {
 		const int STRING_DECRYPTER_KEY_CONST = 1789;
-		ModuleDefinition module;
+		ModuleDefMD module;
 		TypeDef stringDecrypterType;
 		MethodDef stringDecrypterMethod;
 
@@ -40,7 +40,7 @@ namespace de4dot.code.deobfuscators.Xenocode {
 			get { return stringDecrypterMethod; }
 		}
 
-		public StringDecrypter(ModuleDefinition module) {
+		public StringDecrypter(ModuleDefMD module) {
 			this.module = module;
 		}
 
@@ -64,12 +64,12 @@ namespace de4dot.code.deobfuscators.Xenocode {
 					method = null;
 					break;
 				}
-				if (method == null || method.Body == null)
+				if (method == null || method.CilBody == null)
 					continue;
 
 				bool foundConstant = false;
-				foreach (var instr in method.Body.Instructions) {
-					if (DotNetUtils.isLdcI4(instr) && DotNetUtils.getLdcI4Value(instr) == STRING_DECRYPTER_KEY_CONST) {
+				foreach (var instr in method.CilBody.Instructions) {
+					if (instr.IsLdcI4() && instr.GetLdcI4Value() == STRING_DECRYPTER_KEY_CONST) {
 						foundConstant = true;
 						break;
 					}
