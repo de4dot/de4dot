@@ -21,7 +21,7 @@ using System;
 using dot10.DotNet;
 using de4dot.blocks;
 
-namespace de4dot.code.deobfuscators.CliSecure {
+namespace de4dot.code.deobfuscators.Agile_NET {
 	class StackFrameHelper {
 		ModuleDefinition module;
 		TypeDef stackFrameHelperType;

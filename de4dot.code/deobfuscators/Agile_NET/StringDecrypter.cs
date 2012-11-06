@@ -21,7 +21,7 @@ using System;
 using System.Text;
 using dot10.DotNet;
 
-namespace de4dot.code.deobfuscators.CliSecure {
+namespace de4dot.code.deobfuscators.Agile_NET {
 	class StringDecrypter {
 		ModuleDefinition module;
 		TypeDef stringDecrypterType;

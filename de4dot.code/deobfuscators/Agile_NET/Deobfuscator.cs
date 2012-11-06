@@ -24,7 +24,7 @@ using Mono.MyStuff;
 using de4dot.blocks;
 using de4dot.PE;
 
-namespace de4dot.code.deobfuscators.CliSecure {
+namespace de4dot.code.deobfuscators.Agile_NET {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "CliSecure";
 		public const string THE_TYPE = "cs";

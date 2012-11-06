@@ -17,18 +17,37 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using System;
+namespace de4dot.code.deobfuscators.Agile_NET {
+	class CsBlowfish : Blowfish {
+		public CsBlowfish() {
+		}
 
-namespace de4dot.code.deobfuscators.CliSecure.vm {
-	class CsvmMethodData {
-		public Guid Guid { get; set; }
-		public int Token { get; set; }
-		public byte[] Locals { get; set; }
-		public byte[] Instructions { get; set; }
-		public byte[] Exceptions { get; set; }
+		public CsBlowfish(byte[] key)
+			: base(key) {
+		}
 
-		public override string ToString() {
-			return string.Format("{0:X8} - {1}", Token, Guid);
+		protected override void encrypt(ref uint rxl, ref uint rxr) {
+			uint xl = rxl, xr = rxr;
+			for (int i = 0; i < 16; i++) {
+				xl ^= P[i];
+				uint t = xl;
+				xl = (xl >> 24) ^ xr;
+				xr = t;
+			}
+			rxr = xl ^ P[16];
+			rxl = xr ^ P[17];
+		}
+
+		protected override void decrypt(ref uint rxl, ref uint rxr) {
+			uint xl = rxl, xr = rxr;
+			for (int i = 17; i >= 2; i--) {
+				xl ^= P[i];
+				uint t = xl;
+				xl = (xl >> 24) ^ xr;
+				xr = t;
+			}
+			rxr = xl ^ P[1];
+			rxl = xr ^ P[0];
 		}
 	}
 }

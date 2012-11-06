@@ -25,7 +25,7 @@ using dot10.DotNet.Emit;
 using Mono.Cecil.Metadata;
 using de4dot.blocks;
 
-namespace de4dot.code.deobfuscators.CliSecure.vm {
+namespace de4dot.code.deobfuscators.Agile_NET.vm {
 	class CsvmToCilMethodConverter {
 		IDeobfuscatorContext deobfuscatorContext;
 		ModuleDefinition module;

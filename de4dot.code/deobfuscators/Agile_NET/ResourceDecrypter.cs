@@ -23,7 +23,7 @@ using System.Text;
 using dot10.DotNet;
 using de4dot.blocks;
 
-namespace de4dot.code.deobfuscators.CliSecure {
+namespace de4dot.code.deobfuscators.Agile_NET {
 	class ResourceDecrypter {
 		ModuleDefinition module;
 		TypeDef rsrcType;

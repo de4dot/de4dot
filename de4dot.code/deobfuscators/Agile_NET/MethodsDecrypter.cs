@@ -24,7 +24,7 @@ using Mono.MyStuff;
 using de4dot.PE;
 using de4dot.blocks;
 
-namespace de4dot.code.deobfuscators.CliSecure {
+namespace de4dot.code.deobfuscators.Agile_NET {
 	class CodeHeader {
 		public byte[] signature;
 		public byte[] decryptionKey;

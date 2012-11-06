@@ -23,7 +23,7 @@ using dot10.DotNet;
 using dot10.DotNet.Emit;
 using de4dot.blocks;
 
-namespace de4dot.code.deobfuscators.CliSecure {
+namespace de4dot.code.deobfuscators.Agile_NET {
 	class ProxyCallFixer : ProxyCallFixer1 {
 		IList<MemberReference> memberReferences;
 
