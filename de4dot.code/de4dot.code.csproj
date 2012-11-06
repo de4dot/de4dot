@@ -151,8 +151,8 @@
     <Compile Include="deobfuscators\DeobfuscatorBase.cs" />
     <Compile Include="deobfuscators\DeobfuscatorInfoBase.cs" />
     <Compile Include="deobfuscators\DeobUtils.cs" />
-    <None Include="deobfuscators\Dotfuscator\Deobfuscator.cs" />
-    <None Include="deobfuscators\Dotfuscator\StringDecrypter.cs" />
+    <Compile Include="deobfuscators\Dotfuscator\Deobfuscator.cs" />
+    <Compile Include="deobfuscators\Dotfuscator\StringDecrypter.cs" />
     <None Include="deobfuscators\dotNET_Reactor\v3\AntiStrongName.cs" />
     <None Include="deobfuscators\dotNET_Reactor\v3\ApplicationModeDecrypter.cs" />
     <None Include="deobfuscators\dotNET_Reactor\v3\ApplicationModeUnpacker.cs" />

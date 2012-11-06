@@ -24,8 +24,8 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Dotfuscator {
 	class StringDecrypter {
-		ModuleDefinition module;
-		Dictionary<MethodReference, StringDecrypterInfo> stringDecrypterMethods = new Dictionary<MethodReference, StringDecrypterInfo>();
+		ModuleDefMD module;
+		MethodDefinitionAndDeclaringTypeDict<StringDecrypterInfo> stringDecrypterMethods = new MethodDefinitionAndDeclaringTypeDict<StringDecrypterInfo>();
 
 		public class StringDecrypterInfo {
 			public MethodDef method;
@@ -43,17 +43,17 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 		public IEnumerable<MethodDef> StringDecrypters {
 			get {
 				var list = new List<MethodDef>(stringDecrypterMethods.Count);
-				foreach (var info in stringDecrypterMethods)
-					list.Add(info.Value.method);
+				foreach (var info in stringDecrypterMethods.getValues())
+					list.Add(info.method);
 				return list;
 			}
 		}
 
 		public IEnumerable<StringDecrypterInfo> StringDecrypterInfos {
-			get { return stringDecrypterMethods.Values; }
+			get { return stringDecrypterMethods.getValues(); }
 		}
 
-		public StringDecrypter(ModuleDefinition module) {
+		public StringDecrypter(ModuleDefMD module) {
 			this.module = module;
 		}
 
@@ -67,33 +67,32 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 				if (method.Body.HasExceptionHandlers)
 					continue;
 
-				var methodCalls = DotNetUtils.getMethodCallCounts(method);
-				if (methodCalls.count("System.Char[] System.String::ToCharArray()") != 1)
+				if (DotNetUtils.getMethodCalls(method, "System.Char[] System.String::ToCharArray()") != 1)
 					continue;
-				if (methodCalls.count("System.String System.String::Intern(System.String)") != 1)
+				if (DotNetUtils.getMethodCalls(method, "System.String System.String::Intern(System.String)") != 1)
 					continue;
 
 				simpleDeobfuscator.deobfuscate(method);
 				var instructions = method.Body.Instructions;
 				for (int i = 0; i <= instructions.Count - 3; i++) {
 					var ldci4 = method.Body.Instructions[i];
-					if (!DotNetUtils.isLdcI4(ldci4))
+					if (!ldci4.IsLdcI4())
 						continue;
 					if (instructions[i + 1].OpCode.Code != Code.Ldarg_1)
 						continue;
 					if (instructions[i + 2].OpCode.Code != Code.Add)
 						continue;
 
-					var info = new StringDecrypterInfo(method, DotNetUtils.getLdcI4Value(ldci4));
-					stringDecrypterMethods[info.method] = info;
+					var info = new StringDecrypterInfo(method, ldci4.GetLdcI4Value());
+					stringDecrypterMethods.add(info.method, info);
 					Log.v("Found string decrypter method: {0}, magic: 0x{1:X8}", Utils.removeNewlines(info.method), info.magic);
 					break;
 				}
 			}
 		}
 
-		public string decrypt(MethodReference method, string encrypted, int value) {
-			var info = stringDecrypterMethods[method];
+		public string decrypt(IMethod method, string encrypted, int value) {
+			var info = stringDecrypterMethods.findAny(method);
 			char[] chars = encrypted.ToCharArray();
 			byte key = (byte)(info.magic + value);
 			for (int i = 0; i < chars.Length; i++) {
