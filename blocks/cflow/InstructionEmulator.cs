@@ -48,7 +48,7 @@ namespace de4dot.blocks.cflow {
 
 		public void init(MethodDef method) {
 			this.parameterDefs = method.Parameters;
-			this.localDefs = method.CilBody.LocalList;
+			this.localDefs = method.Body.LocalList;
 			valueStack.init();
 			protectedStackValues.Clear();
 

@@ -62,7 +62,7 @@ namespace de4dot.blocks.cflow {
 
 			if (!canInline(methodToInline))
 				return false;
-			var body = methodToInline.CilBody;
+			var body = methodToInline.Body;
 			if (body == null)
 				return false;
 

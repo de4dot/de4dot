@@ -40,9 +40,9 @@ namespace de4dot.code.deobfuscators {
 						continue;
 					if (method.Name == ".cctor")
 						continue;
-					if (method.CilBody == null)
+					if (method.Body == null)
 						continue;
-					var instrs = method.CilBody.Instructions;
+					var instrs = method.Body.Instructions;
 					if (instrs.Count < 2)
 						continue;
 
@@ -100,7 +100,7 @@ namespace de4dot.code.deobfuscators {
 		static bool isCallMethod(MethodDef method) {
 			int loadIndex = 0;
 			int methodArgsCount = DotNetUtils.getArgsCount(method);
-			var instrs = method.CilBody.Instructions;
+			var instrs = method.Body.Instructions;
 			int i = 0;
 			for (; i < instrs.Count && i < methodArgsCount; i++) {
 				var instr = instrs[i];

@@ -253,7 +253,7 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		void deobfuscateMethod(MethodDef method) {
-			if (!method.IsStatic || method.CilBody == null)
+			if (!method.IsStatic || method.Body == null)
 				return;
 
 			bool fixReturnType = isUnknownType(method.MethodSig.GetRetType());
@@ -271,7 +271,7 @@ namespace de4dot.code.deobfuscators {
 
 			var methodParams = method.Parameters;
 			PushedArgs pushedArgs;
-			var instructions = method.CilBody.Instructions;
+			var instructions = method.Body.Instructions;
 			for (int i = 0; i < instructions.Count; i++) {
 				var instr = instructions[i];
 				switch (instr.OpCode.Code) {
@@ -329,7 +329,7 @@ namespace de4dot.code.deobfuscators {
 					pushedArgs = MethodStack.getPushedArgInstructions(instructions, i);
 					if (pushedArgs.NumValidArgs < 1)
 						break;
-					addMethodArgType(method, getParameter(methodParams, pushedArgs.getEnd(0)), instr.GetLocal(method.CilBody.LocalList));
+					addMethodArgType(method, getParameter(methodParams, pushedArgs.getEnd(0)), instr.GetLocal(method.Body.LocalList));
 					break;
 
 				case Code.Stsfld:
@@ -474,9 +474,9 @@ namespace de4dot.code.deobfuscators {
 				info.clear();
 
 			foreach (var method in allMethods) {
-				if (method.CilBody == null)
+				if (method.Body == null)
 					continue;
-				var instructions = method.CilBody.Instructions;
+				var instructions = method.Body.Instructions;
 				for (int i = 0; i < instructions.Count; i++) {
 					var instr = instructions[i];
 					TypeSig fieldType = null;

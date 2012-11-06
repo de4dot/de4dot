@@ -210,7 +210,7 @@ namespace de4dot.code.deobfuscators {
 			foreach (var tmp in getDelegateTypes()) {
 				var type = tmp;
 				var cctor = type.FindClassConstructor();
-				if (cctor == null || !cctor.HasCilBody)
+				if (cctor == null || !cctor.HasBody)
 					continue;
 				if (!type.HasFields)
 					continue;
@@ -394,7 +394,7 @@ namespace de4dot.code.deobfuscators {
 		protected void find2() {
 			foreach (var type in getDelegateTypes()) {
 				var cctor = type.FindClassConstructor();
-				if (cctor == null || !cctor.HasCilBody)
+				if (cctor == null || !cctor.HasBody)
 					continue;
 				if (!type.HasFields)
 					continue;
@@ -441,10 +441,10 @@ namespace de4dot.code.deobfuscators {
 		Dictionary<FieldDef, MethodDef> getFieldToMethodDictionary(TypeDef type) {
 			var dict = new Dictionary<FieldDef, MethodDef>();
 			foreach (var method in type.Methods) {
-				if (!method.IsStatic || !method.HasCilBody || method.Name == ".cctor")
+				if (!method.IsStatic || !method.HasBody || method.Name == ".cctor")
 					continue;
 
-				var instructions = method.CilBody.Instructions;
+				var instructions = method.Body.Instructions;
 				for (int i = 0; i < instructions.Count; i++) {
 					var instr = instructions[i];
 					if (instr.OpCode.Code != Code.Ldsfld)

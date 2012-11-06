@@ -160,9 +160,9 @@ namespace de4dot.blocks {
 		}
 
 		public static bool isEmpty(MethodDef method) {
-			if (method.CilBody == null)
+			if (method.Body == null)
 				return false;
-			foreach (var instr in method.CilBody.Instructions) {
+			foreach (var instr in method.Body.Instructions) {
 				var code = instr.OpCode.Code;
 				if (code != Code.Nop && code != Code.Ret)
 					return false;
@@ -171,10 +171,10 @@ namespace de4dot.blocks {
 		}
 
 		public static bool isEmptyObfuscated(MethodDef method) {
-			if (method.CilBody == null)
+			if (method.Body == null)
 				return false;
 			int index = 0;
-			var instr = getInstruction(method.CilBody.Instructions, ref index);
+			var instr = getInstruction(method.Body.Instructions, ref index);
 			if (instr == null || instr.OpCode.Code != Code.Ret)
 				return false;
 
@@ -467,8 +467,8 @@ namespace de4dot.blocks {
 
 		public static IList<string> getCodeStrings(MethodDef method) {
 			var strings = new List<string>();
-			if (method != null && method.CilBody != null) {
-				foreach (var instr in method.CilBody.Instructions) {
+			if (method != null && method.Body != null) {
+				foreach (var instr in method.Body.Instructions) {
 					if (instr.OpCode.Code == Code.Ldstr)
 						strings.Add((string)instr.Operand);
 				}
@@ -604,14 +604,14 @@ namespace de4dot.blocks {
 #endif
 
 		public static void copyBody(MethodDef method, out IList<Instruction> instructions, out IList<ExceptionHandler> exceptionHandlers) {
-			if (method == null || !method.HasCilBody) {
+			if (method == null || !method.HasBody) {
 				instructions = new List<Instruction>();
 				exceptionHandlers = new List<ExceptionHandler>();
 				return;
 			}
 
-			var oldInstrs = method.CilBody.Instructions;
-			var oldExHandlers = method.CilBody.ExceptionHandlers;
+			var oldInstrs = method.Body.Instructions;
+			var oldExHandlers = method.Body.ExceptionHandlers;
 			instructions = new List<Instruction>(oldInstrs.Count);
 			exceptionHandlers = new List<ExceptionHandler>(oldExHandlers.Count);
 			var oldToIndex = Utils.createObjectToIndexDictionary(oldInstrs);
@@ -669,15 +669,15 @@ namespace de4dot.blocks {
 #endif
 
 		public static void restoreBody(MethodDef method, IEnumerable<Instruction> instructions, IEnumerable<ExceptionHandler> exceptionHandlers) {
-			if (method == null || method.CilBody == null)
+			if (method == null || method.Body == null)
 				return;
 
-			var bodyInstrs = method.CilBody.Instructions;
+			var bodyInstrs = method.Body.Instructions;
 			bodyInstrs.Clear();
 			foreach (var instr in instructions)
 				bodyInstrs.Add(instr);
 
-			var bodyExceptionHandlers = method.CilBody.ExceptionHandlers;
+			var bodyExceptionHandlers = method.Body.ExceptionHandlers;
 			bodyExceptionHandlers.Clear();
 			foreach (var eh in exceptionHandlers)
 				bodyExceptionHandlers.Add(eh);
@@ -696,8 +696,8 @@ namespace de4dot.blocks {
 		}
 
 		static void copyLocalsFromTo(MethodDef fromMethod, MethodDef toMethod) {
-			var fromBody = fromMethod.CilBody;
-			var toBody = toMethod.CilBody;
+			var fromBody = fromMethod.Body;
+			var toBody = toMethod.Body;
 
 			toBody.LocalList.Clear();
 			foreach (var local in fromBody.LocalList)
@@ -705,8 +705,8 @@ namespace de4dot.blocks {
 		}
 
 		static void updateInstructionOperands(MethodDef fromMethod, MethodDef toMethod) {
-			var fromBody = fromMethod.CilBody;
-			var toBody = toMethod.CilBody;
+			var fromBody = fromMethod.Body;
+			var toBody = toMethod.Body;
 
 			toBody.InitLocals = fromBody.InitLocals;
 			toBody.MaxStack = fromBody.MaxStack;

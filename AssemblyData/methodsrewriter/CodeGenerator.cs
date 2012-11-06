@@ -178,7 +178,7 @@ namespace AssemblyData.methodsrewriter {
 
 		void initLocals() {
 			locals = new List<LocalBuilder>();
-			foreach (var local in methodInfo.methodDef.CilBody.LocalList)
+			foreach (var local in methodInfo.methodDef.Body.LocalList)
 				locals.Add(ilg.DeclareLocal(Resolver.getRtType(local.Type), local.Type.IsPinned));
 			tempObjLocal = ilg.DeclareLocal(typeof(object));
 			tempObjArrayLocal = ilg.DeclareLocal(typeof(object[]));

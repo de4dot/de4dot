@@ -456,11 +456,11 @@ namespace de4dot.code.renamer {
 				ourMethods.add(methodDef.MethodDef, methodDef);
 
 			foreach (var methodDef in type.AllMethods) {
-				if (methodDef.MethodDef.CilBody == null)
+				if (methodDef.MethodDef.Body == null)
 					continue;
 				if (methodDef.MethodDef.IsStatic || methodDef.MethodDef.IsVirtual)
 					continue;
-				var instructions = methodDef.MethodDef.CilBody.Instructions;
+				var instructions = methodDef.MethodDef.Body.Instructions;
 				for (int i = 2; i < instructions.Count; i++) {
 					var call = instructions[i];
 					if (call.OpCode.Code != Code.Call && call.OpCode.Code != Code.Callvirt)
@@ -513,9 +513,9 @@ namespace de4dot.code.renamer {
 		}
 
 		static IField getFieldReference(MethodDef method) {
-			if (method == null || method.CilBody == null)
+			if (method == null || method.Body == null)
 				return null;
-			var instructions = method.CilBody.Instructions;
+			var instructions = method.Body.Instructions;
 			int index = 0;
 			var ldarg0 = DotNetUtils.getInstruction(instructions, ref index);
 			if (ldarg0 == null || ldarg0.GetParameterIndex() != 0)
@@ -527,11 +527,11 @@ namespace de4dot.code.renamer {
 			if (ret == null)
 				return null;
 			if (ret.IsStloc()) {
-				var local = ret.GetLocal(method.CilBody.LocalList);
+				var local = ret.GetLocal(method.Body.LocalList);
 				ret = DotNetUtils.getInstruction(instructions, ref index);
 				if (ret == null || !ret.IsLdloc())
 					return null;
-				if (ret.GetLocal(method.CilBody.LocalList) != local)
+				if (ret.GetLocal(method.Body.LocalList) != local)
 					return null;
 				ret = DotNetUtils.getInstruction(instructions, ref index);
 			}
@@ -580,7 +580,7 @@ namespace de4dot.code.renamer {
 
 		static IMethod getVbHandler(MethodDef method, out string eventName) {
 			eventName = null;
-			if (method.CilBody == null)
+			if (method.Body == null)
 				return null;
 			var sig = method.MethodSig;
 			if (sig == null)
@@ -589,12 +589,12 @@ namespace de4dot.code.renamer {
 				return null;
 			if (sig.Params.Count != 1)
 				return null;
-			if (method.CilBody.LocalList.Count != 1)
+			if (method.Body.LocalList.Count != 1)
 				return null;
-			if (!isEventHandlerType(method.CilBody.LocalList[0].Type))
+			if (!isEventHandlerType(method.Body.LocalList[0].Type))
 				return null;
 
-			var instructions = method.CilBody.Instructions;
+			var instructions = method.Body.Instructions;
 			int index = 0;
 
 			int newobjIndex = findInstruction(instructions, index, Code.Newobj);
@@ -676,11 +676,11 @@ namespace de4dot.code.renamer {
 			var checker = NameChecker;
 
 			foreach (var methodDef in type.AllMethods) {
-				if (methodDef.MethodDef.CilBody == null)
+				if (methodDef.MethodDef.Body == null)
 					continue;
 				if (methodDef.MethodDef.IsStatic)
 					continue;
-				var instructions = methodDef.MethodDef.CilBody.Instructions;
+				var instructions = methodDef.MethodDef.Body.Instructions;
 				for (int i = 0; i < instructions.Count - 6; i++) {
 					// We're looking for this code pattern:
 					//	ldarg.0
@@ -755,12 +755,12 @@ namespace de4dot.code.renamer {
 			var checker = NameChecker;
 
 			foreach (var methodDef in type.AllMethods) {
-				if (methodDef.MethodDef.CilBody == null)
+				if (methodDef.MethodDef.Body == null)
 					continue;
 				if (methodDef.MethodDef.IsStatic)
 					continue;
 				var method = methodDef.MethodDef;
-				var instructions = method.CilBody.Instructions;
+				var instructions = method.Body.Instructions;
 				for (int i = 0; i < instructions.Count - 5; i++) {
 					// ldarg.0
 					// ldarg.0 / dup
@@ -839,11 +839,11 @@ namespace de4dot.code.renamer {
 
 		string findWindowsFormsClassName(MTypeDef type) {
 			foreach (var methodDef in type.AllMethods) {
-				if (methodDef.MethodDef.CilBody == null)
+				if (methodDef.MethodDef.Body == null)
 					continue;
 				if (methodDef.MethodDef.IsStatic || methodDef.MethodDef.IsVirtual)
 					continue;
-				var instructions = methodDef.MethodDef.CilBody.Instructions;
+				var instructions = methodDef.MethodDef.Body.Instructions;
 				for (int i = 2; i < instructions.Count; i++) {
 					var call = instructions[i];
 					if (call.OpCode.Code != Code.Call && call.OpCode.Code != Code.Callvirt)
@@ -872,9 +872,9 @@ namespace de4dot.code.renamer {
 			foreach (var methodDef in type.AllMethods) {
 				if (methodDef.MethodDef.Name != ".ctor")
 					continue;
-				if (methodDef.MethodDef.CilBody == null)
+				if (methodDef.MethodDef.Body == null)
 					continue;
-				foreach (var instr in methodDef.MethodDef.CilBody.Instructions) {
+				foreach (var instr in methodDef.MethodDef.Body.Instructions) {
 					if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt)
 						continue;
 					if (!MethodEqualityComparer.CompareDeclaringTypes.Equals(possibleInitMethod.MethodDef, instr.Operand as IMethod))

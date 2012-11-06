@@ -131,7 +131,7 @@ namespace de4dot.blocks.cflow {
 				if (instr.GetParameterIndex() != loadIndex)
 					return null;
 				loadIndex++;
-				instr = DotNetUtils.getInstruction(methodToInline.CilBody.Instructions, ref instrIndex);
+				instr = DotNetUtils.getInstruction(methodToInline.Body.Instructions, ref instrIndex);
 			}
 			if (instr == null || loadIndex != methodArgsCount - popLastArgs)
 				return null;
@@ -187,7 +187,7 @@ namespace de4dot.blocks.cflow {
 		}
 
 		protected virtual bool isReturn(MethodDef methodToInline, int instrIndex) {
-			var instr = DotNetUtils.getInstruction(methodToInline.CilBody.Instructions, ref instrIndex);
+			var instr = DotNetUtils.getInstruction(methodToInline.Body.Instructions, ref instrIndex);
 			return instr != null && instr.OpCode.Code == Code.Ret;
 		}
 

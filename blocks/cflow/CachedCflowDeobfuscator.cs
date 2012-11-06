@@ -48,7 +48,7 @@ namespace de4dot.blocks.cflow {
 			if (deobfuscated.TryGetValue(method, out deobfuscatedMethod))
 				return deobfuscatedMethod;
 
-			if (method.CilBody == null || method.CilBody.Instructions.Count == 0) {
+			if (method.Body == null || method.Body.Instructions.Count == 0) {
 				deobfuscated[method] = method;
 				return method;
 			}

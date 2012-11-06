@@ -31,7 +31,7 @@ namespace de4dot.code.deobfuscators {
 
 		public static List<byte[]> getArrays(MethodDef method, IType arrayElementType) {
 			var arrays = new List<byte[]>();
-			var instrs = method.CilBody.Instructions;
+			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count; i++) {
 				IType type;
 				var ary = getArray(instrs, ref i, out type);
@@ -135,7 +135,7 @@ namespace de4dot.code.deobfuscators {
 			var theArray = new UnknownValue();
 			emulator.push(theArray);
 
-			var instructions = method.CilBody.Instructions;
+			var instructions = method.Body.Instructions;
 			int i;
 			for (i = newarrIndex + 1; i < instructions.Count; i++) {
 				var instr = instructions[i];
@@ -194,7 +194,7 @@ done:
 		}
 
 		public static bool findNewarr(MethodDef method, ref int i, out int size) {
-			var instructions = method.CilBody.Instructions;
+			var instructions = method.Body.Instructions;
 			for (; i < instructions.Count; i++) {
 				var instr = instructions[i];
 				if (instr.OpCode.Code != Code.Newarr || i < 1)

@@ -210,9 +210,9 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		public static int indexOfLdci4Instruction(MethodDef method, int value) {
-			if (method == null || method.CilBody == null)
+			if (method == null || method.Body == null)
 				return -1;
-			var instrs = method.CilBody.Instructions;
+			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count; i++) {
 				var instr = instrs[i];
 				if (!instr.IsLdcI4())
@@ -249,9 +249,9 @@ namespace de4dot.code.deobfuscators {
 
 		public static List<MethodDef> getAllResolveHandlers(MethodDef method) {
 			var list = new List<MethodDef>();
-			if (method == null || method.CilBody == null)
+			if (method == null || method.Body == null)
 				return list;
-			foreach (var instr in method.CilBody.Instructions) {
+			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Ldftn && instr.OpCode.Code != Code.Ldvirtftn)
 					continue;
 				var handler = instr.Operand as MethodDef;

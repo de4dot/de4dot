@@ -246,7 +246,7 @@ namespace de4dot.code.deobfuscators {
 			case Code.Ldloc_1:
 			case Code.Ldloc_2:
 			case Code.Ldloc_3:
-				local = pushInstr.GetLocal(method.CilBody.LocalList);
+				local = pushInstr.GetLocal(method.Body.LocalList);
 				if (local == null)
 					return null;
 				type = local.Type.RemovePinned();

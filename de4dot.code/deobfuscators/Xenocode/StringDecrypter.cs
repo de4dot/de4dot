@@ -64,11 +64,11 @@ namespace de4dot.code.deobfuscators.Xenocode {
 					method = null;
 					break;
 				}
-				if (method == null || method.CilBody == null)
+				if (method == null || method.Body == null)
 					continue;
 
 				bool foundConstant = false;
-				foreach (var instr in method.CilBody.Instructions) {
+				foreach (var instr in method.Body.Instructions) {
 					if (instr.IsLdcI4() && instr.GetLdcI4Value() == STRING_DECRYPTER_KEY_CONST) {
 						foundConstant = true;
 						break;

@@ -549,7 +549,7 @@ namespace de4dot.code {
 				catch (Exception ex) {
 					if (!canLoadMethodBody(method)) {
 						Log.v("Invalid method body. {0:X8}", method.MDToken.ToInt32());
-						method.CilBody = new CilBody();
+						method.Body = new CilBody();
 					}
 					else {
 						Log.w("Could not deobfuscate method {0:X8}. Hello, E.T.: {1}",	// E.T. = exception type
@@ -568,7 +568,7 @@ namespace de4dot.code {
 
 		static bool canLoadMethodBody(MethodDef method) {
 			try {
-				var body = method.CilBody;
+				var body = method.Body;
 				return true;
 			}
 			catch {
@@ -582,7 +582,7 @@ namespace de4dot.code {
 
 			var blocks = new Blocks(method);
 			int numRemovedLocals = 0;
-			int oldNumInstructions = method.CilBody.Instructions.Count;
+			int oldNumInstructions = method.Body.Instructions.Count;
 
 			deob.deobfuscateMethodBegin(blocks);
 			if (options.ControlFlowDeobfuscation) {
@@ -611,7 +611,7 @@ namespace de4dot.code {
 
 			if (numRemovedLocals > 0)
 				Log.v("Removed {0} unused local(s)", numRemovedLocals);
-			int numRemovedInstructions = oldNumInstructions - method.CilBody.Instructions.Count;
+			int numRemovedInstructions = oldNumInstructions - method.Body.Instructions.Count;
 			if (numRemovedInstructions > 0)
 				Log.v("Removed {0} dead instruction(s)", numRemovedInstructions);
 
@@ -625,7 +625,7 @@ namespace de4dot.code {
 		}
 
 		bool hasNonEmptyBody(MethodDef method) {
-			return method.HasCilBody && method.CilBody.Instructions.Count > 0;
+			return method.HasBody && method.Body.Instructions.Count > 0;
 		}
 
 		void deobfuscateStrings(Blocks blocks) {

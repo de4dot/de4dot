@@ -218,7 +218,7 @@ namespace de4dot.code {
 
 		bool getLocalVariableValue(Local variable, out object value) {
 			if (variableValues == null)
-				variableValues = new VariableValues(theMethod.CilBody.LocalList, allBlocks);
+				variableValues = new VariableValues(theMethod.Body.LocalList, allBlocks);
 			var val = variableValues.getValue(variable);
 			if (!val.isValid()) {
 				value = null;
@@ -342,7 +342,7 @@ namespace de4dot.code {
 				case Code.Ldloc_1:
 				case Code.Ldloc_2:
 				case Code.Ldloc_3:
-					getLocalVariableValue(instr.Instruction.GetLocal(theMethod.CilBody.LocalList), out arg);
+					getLocalVariableValue(instr.Instruction.GetLocal(theMethod.Body.LocalList), out arg);
 					break;
 
 				case Code.Ldfld:

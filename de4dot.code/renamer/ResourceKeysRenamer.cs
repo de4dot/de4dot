@@ -81,9 +81,9 @@ namespace de4dot.code.renamer {
 
 		static string getResourceName(TypeDef type) {
 			foreach (var method in type.Methods) {
-				if (method.CilBody == null)
+				if (method.Body == null)
 					continue;
-				var instrs = method.CilBody.Instructions;
+				var instrs = method.Body.Instructions;
 				string resourceName = null;
 				for (int i = 0; i < instrs.Count; i++) {
 					var instr = instrs[i];
@@ -155,10 +155,10 @@ namespace de4dot.code.renamer {
 				nameToInfo[info.element.Name] = info;
 
 			foreach (var method in type.Methods) {
-				if (method.CilBody == null)
+				if (method.Body == null)
 					continue;
 
-				var instrs = method.CilBody.Instructions;
+				var instrs = method.Body.Instructions;
 				for (int i = 0; i < instrs.Count; i++) {
 					var call = instrs[i];
 					if (call.OpCode.Code != Code.Call && call.OpCode.Code != Code.Callvirt)

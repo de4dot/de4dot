@@ -60,9 +60,9 @@ namespace de4dot.code.renamer {
 				oldNameToTypeInfo[info.oldFullName] = info;
 
 			foreach (var method in module.getAllMethods()) {
-				if (!method.HasCilBody)
+				if (!method.HasBody)
 					continue;
-				var instrs = method.CilBody.Instructions;
+				var instrs = method.Body.Instructions;
 				for (int i = 0; i < instrs.Count; i++) {
 					var instr = instrs[i];
 					if (instr.OpCode != OpCodes.Ldstr)

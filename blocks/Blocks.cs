@@ -46,7 +46,7 @@ namespace de4dot.blocks {
 		}
 
 		public void updateBlocks() {
-			var body = method.CilBody;
+			var body = method.Body;
 			locals = body.LocalList;
 			methodBlocks = new InstructionListParser(body.Instructions, body.ExceptionHandlers).parse();
 		}

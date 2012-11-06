@@ -58,14 +58,14 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		void check(MethodDef method) {
-			if (method.CilBody == null)
+			if (method.Body == null)
 				return;
 			if (possiblyUnusedMethods.ContainsKey(method))
 				return;
 			if (removedMethods.exists(method))
 				return;
 
-			foreach (var instr in method.CilBody.Instructions) {
+			foreach (var instr in method.Body.Instructions) {
 				switch (instr.OpCode.Code) {
 				case Code.Call:
 				case Code.Calli:

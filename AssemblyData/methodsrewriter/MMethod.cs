@@ -30,7 +30,7 @@ namespace AssemblyData.methodsrewriter {
 		}
 
 		public bool hasInstructions() {
-			return methodDef.CilBody != null && methodDef.CilBody.Instructions.Count != 0;
+			return methodDef.Body != null && methodDef.Body.Instructions.Count != 0;
 		}
 
 		public override string ToString() {

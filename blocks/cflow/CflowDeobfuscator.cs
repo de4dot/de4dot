@@ -40,7 +40,7 @@ namespace de4dot.blocks.cflow {
 		}
 
 		static bool hasNonEmptyBody(MethodDef method) {
-			return method.CilBody != null && method.CilBody.Instructions.Count > 0;
+			return method.Body != null && method.Body.Instructions.Count > 0;
 		}
 
 		void deobfuscate(MethodDef method, Action<Blocks> handler) {

@@ -540,15 +540,15 @@ namespace de4dot.code.deobfuscators {
 			foreach (var type in module.GetTypes()) {
 				foreach (var method in type.Methods) {
 					if (isFatHeader(method))
-						method.CilBody.InitLocals = true;
+						method.Body.InitLocals = true;
 				}
 			}
 		}
 
 		static bool isFatHeader(MethodDef method) {
-			if (method == null || method.CilBody == null)
+			if (method == null || method.Body == null)
 				return false;
-			var body = method.CilBody;
+			var body = method.Body;
 			if (body.InitLocals || body.MaxStack > 8)
 				return true;
 			if (body.LocalList.Count > 0)
@@ -562,10 +562,10 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		static int getCodeSize(MethodDef method) {
-			if (method == null || method.CilBody == null)
+			if (method == null || method.Body == null)
 				return 0;
 			int size = 0;
-			foreach (var instr in method.CilBody.Instructions)
+			foreach (var instr in method.Body.Instructions)
 				size += instr.GetSize();
 			return size;
 		}
@@ -575,10 +575,10 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		protected void findPossibleNamesToRemove(MethodDef method) {
-			if (method == null || !method.HasCilBody)
+			if (method == null || !method.HasBody)
 				return;
 
-			foreach (var instr in method.CilBody.Instructions) {
+			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode == OpCodes.Ldstr)
 					namesToPossiblyRemove.Add((string)instr.Operand);
 			}
@@ -730,14 +730,14 @@ namespace de4dot.code.deobfuscators {
 
 			foreach (var type in module.GetTypes()) {
 				foreach (var method in type.Methods) {
-					if (method.CilBody == null)
+					if (method.Body == null)
 						continue;
 					if (decrypterMethods.exists(method))
 						break;	// decrypter type / nested type method
 					if (removedMethods.exists(method))
 						continue;
 
-					foreach (var instr in method.CilBody.Instructions) {
+					foreach (var instr in method.Body.Instructions) {
 						switch (instr.OpCode.Code) {
 						case Code.Call:
 						case Code.Callvirt:
