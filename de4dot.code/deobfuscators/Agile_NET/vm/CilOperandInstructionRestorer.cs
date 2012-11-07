@@ -19,7 +19,6 @@
 
 using dot10.DotNet;
 using dot10.DotNet.Emit;
-using Mono.Cecil.Metadata;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Agile_NET.vm {
@@ -43,13 +42,13 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 				if (instr.Operand != null)
 					continue;
 
-				TypeReference operandType = null;
+				TypeSig operandType = null;
 				switch (instr.OpCode.Code) {
 				case Code.Ldelema:
-					var arrayType = MethodStack.getLoadedType(method, instrs, i, 1) as ArrayType;
+					var arrayType = MethodStack.getLoadedType(method, instrs, i, 1) as SZArraySig;
 					if (arrayType == null)
 						break;
-					operandType = arrayType.ElementType;
+					operandType = arrayType.Next;
 					break;
 
 				case Code.Ldobj:
@@ -70,58 +69,58 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 					continue;
 				}
 
-				instr.Operand = operandType;
+				instr.Operand = operandType.ToTypeDefOrRef();
 			}
 
 			return !atLeastOneFailed;
 		}
 
-		static TypeReference getPtrElementType(TypeReference type) {
+		static TypeSig getPtrElementType(TypeSig type) {
 			if (type == null)
 				return null;
-			var pt = type as PointerType;
-			if (pt != null)
-				return pt.ElementType;
-			var bt = type as ByReferenceType;
-			if (bt != null)
-				return bt.ElementType;
+			if (type.IsPointer || type.IsByRef)
+				return type.Next;
 			return null;
 		}
 
-		bool isValidType(TypeReference type) {
+		bool isValidType(TypeSig type) {
+			type = type.RemovePinnedAndModifiers();
 			if (type == null)
 				return false;
-			if (type.EType == ElementType.Void)
+			if (type.ElementType == ElementType.Void)
 				return false;
 
 			while (type != null) {
-				switch (MemberReferenceHelper.getMemberReferenceType(type)) {
-				case CecilType.ArrayType:
-				case CecilType.GenericInstanceType:
-				case CecilType.PointerType:
-				case CecilType.TypeDef:
-				case CecilType.TypeReference:
-				case CecilType.FunctionPointerType:
+				switch (type.ElementType) {
+				case ElementType.SZArray:
+				case ElementType.Array:
+				case ElementType.GenericInst:
+				case ElementType.Ptr:
+				case ElementType.Class:
+				case ElementType.ValueType:
+				case ElementType.FnPtr:
 					break;
 
-				case CecilType.GenericParam:
-					var gp = (GenericParam)type;
-					if (method.DeclaringType != gp.Owner && method != gp.Owner)
+				case ElementType.MVar:
+					var gmvar = (GenericMVar)type;
+					if (gmvar.Number >= method.MethodSig.GetGenParamCount())
 						return false;
 					break;
 
-				case CecilType.ByReferenceType:
-				case CecilType.OptionalModifierType:
-				case CecilType.PinnedType:
-				case CecilType.RequiredModifierType:
-				case CecilType.SentinelType:
+				case ElementType.Var:
+					var gvar = (GenericVar)type;
+					var dt = method.DeclaringType;
+					if (dt == null || gvar.Number >= dt.GenericParams.Count)
+						return false;
+					break;
+
+				case ElementType.ByRef:
 				default:
 					return false;
 				}
-
-				if (!(type is TypeSpecification))
+				if (type.Next == null)
 					break;
-				type = ((TypeSpecification)type).ElementType;
+				type = type.Next;
 			}
 
 			return type != null;

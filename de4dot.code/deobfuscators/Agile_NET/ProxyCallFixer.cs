@@ -25,13 +25,11 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Agile_NET {
 	class ProxyCallFixer : ProxyCallFixer1 {
-		IList<MemberReference> memberReferences;
-
-		public ProxyCallFixer(ModuleDefinition module)
+		public ProxyCallFixer(ModuleDefMD module)
 			: base(module) {
 		}
 
-		public ProxyCallFixer(ModuleDefinition module, ProxyCallFixer oldOne)
+		public ProxyCallFixer(ModuleDefMD module, ProxyCallFixer oldOne)
 			: base(module) {
 			foreach (var method in oldOne.delegateCreatorMethods)
 				setDelegateCreatorMethod(lookup(method, "Could not find delegate creator method"));
@@ -53,14 +51,14 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			var instrs = cctor.Body.Instructions;
 			if (instrs.Count != 3)
 				return null;
-			if (!DotNetUtils.isLdcI4(instrs[0].OpCode.Code))
+			if (!instrs[0].IsLdcI4())
 				return null;
 			if (instrs[1].OpCode != OpCodes.Call || !isDelegateCreatorMethod(instrs[1].Operand as MethodDef))
 				return null;
 			if (instrs[2].OpCode != OpCodes.Ret)
 				return null;
 
-			int delegateToken = 0x02000001 + DotNetUtils.getLdcI4Value(instrs[0]);
+			int delegateToken = 0x02000001 + instrs[0].GetLdcI4Value();
 			if (type.MDToken.ToInt32() != delegateToken) {
 				Log.w("Delegate token is not current type");
 				return null;
@@ -69,11 +67,8 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			return new object();
 		}
 
-		protected override void getCallInfo(object context, FieldDef field, out MethodReference calledMethod, out OpCode callOpcode) {
-			if (memberReferences == null)
-				memberReferences = new List<MemberReference>(module.GetMemberReferences());
-
-			var name = field.Name;
+		protected override void getCallInfo(object context, FieldDef field, out IMethod calledMethod, out OpCode callOpcode) {
+			var name = field.Name.String;
 			callOpcode = OpCodes.Call;
 			if (name.EndsWith("%", StringComparison.Ordinal)) {
 				callOpcode = OpCodes.Callvirt;
@@ -81,9 +76,10 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			}
 			byte[] value = Convert.FromBase64String(name);
 			int methodIndex = BitConverter.ToInt32(value, 0);	// 0-based memberRef index
-			if (methodIndex >= memberReferences.Count)
-				throw new ApplicationException(string.Format("methodIndex ({0}) >= memberReferences.Count ({1})", methodIndex, memberReferences.Count));
-			calledMethod = memberReferences[methodIndex] as MethodReference;
+			var mr = module.ResolveMemberRef((uint)methodIndex + 1);
+			if (mr == null || !mr.IsMethodRef)
+				throw new ApplicationException(string.Format("Invalid MemberRef index: {0}", methodIndex));
+			calledMethod = mr;
 		}
 	}
 }

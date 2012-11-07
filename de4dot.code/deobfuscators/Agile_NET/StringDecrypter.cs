@@ -23,7 +23,7 @@ using dot10.DotNet;
 
 namespace de4dot.code.deobfuscators.Agile_NET {
 	class StringDecrypter {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		TypeDef stringDecrypterType;
 		MethodDef stringDecrypterMethod;
 		byte[] stringDecrypterKey;
@@ -41,19 +41,19 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			set { stringDecrypterMethod = value; }
 		}
 
-		public StringDecrypter(ModuleDefinition module, MethodDef stringDecrypterMethod) {
+		public StringDecrypter(ModuleDefMD module, MethodDef stringDecrypterMethod) {
 			this.module = module;
 			this.stringDecrypterMethod = stringDecrypterMethod;
 		}
 
-		public StringDecrypter(ModuleDefinition module, StringDecrypter oldOne) {
+		public StringDecrypter(ModuleDefMD module, StringDecrypter oldOne) {
 			this.module = module;
 			stringDecrypterType = lookup(oldOne.stringDecrypterType, "Could not find stringDecrypterType");
 			stringDecrypterMethod = lookup(oldOne.stringDecrypterMethod, "Could not find stringDecrypterMethod");
 			stringDecrypterKey = oldOne.stringDecrypterKey;
 		}
 
-		T lookup<T>(T def, string errorMessage) where T : MemberReference {
+		T lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
 			return DeobUtils.lookup(module, def, errorMessage);
 		}
 

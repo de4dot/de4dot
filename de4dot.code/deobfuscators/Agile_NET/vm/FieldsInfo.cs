@@ -33,11 +33,11 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 
 		public FieldsInfo(IEnumerable<FieldDef> fields) {
 			foreach (var field in fields) {
-				var fieldTypeDef = field.FieldType as TypeDef;
+				var fieldTypeDef = field.FieldSig.GetFieldType().TryGetTypeDef();
 				if (fieldTypeDef != null && fieldTypeDef.IsEnum)
 					addEnum();
 				else
-					add(field.FieldType);
+					add(field.FieldSig.GetFieldType());
 			}
 		}
 
@@ -50,8 +50,8 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			}
 		}
 
-		void add(TypeReference type) {
-			add(type.FullName);
+		void add(TypeSig type) {
+			add(type.GetFullName());
 		}
 
 		void add(string typeFullName) {

@@ -26,7 +26,7 @@ using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.Agile_NET {
 	class CliSecureRtType {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		TypeDef cliSecureRtType;
 		MethodDef postInitializeMethod;
 		MethodDef initializeMethod;
@@ -58,27 +58,11 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			get { return loadMethod; }
 		}
 
-		public IEnumerable<ModuleReference> DecryptModuleReferences {
-			get {
-				var list = new List<ModuleReference>();
-				addModuleReference(list, "_Initialize");
-				addModuleReference(list, "_Initialize64");
-				return list;
-			}
-		}
-
-		void addModuleReference(List<ModuleReference> list, string methodName) {
-			var method = DotNetUtils.getPInvokeMethod(cliSecureRtType, methodName);
-			if (method == null)
-				return;
-			list.Add(method.PInvokeInfo.Module);
-		}
-
-		public CliSecureRtType(ModuleDefinition module) {
+		public CliSecureRtType(ModuleDefMD module) {
 			this.module = module;
 		}
 
-		public CliSecureRtType(ModuleDefinition module, CliSecureRtType oldOne) {
+		public CliSecureRtType(ModuleDefMD module, CliSecureRtType oldOne) {
 			this.module = module;
 			cliSecureRtType = lookup(oldOne.cliSecureRtType, "Could not find CliSecureRt type");
 			postInitializeMethod = lookup(oldOne.postInitializeMethod, "Could not find postInitializeMethod method");
@@ -88,7 +72,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			foundSig = oldOne.foundSig;
 		}
 
-		T lookup<T>(T def, string errorMessage) where T : MemberReference {
+		T lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
 			return DeobUtils.lookup(module, def, errorMessage);
 		}
 
@@ -147,13 +131,13 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			foreach (var type in module.Types) {
 				if (type.Fields.Count != 1)
 					continue;
-				if (type.Fields[0].FieldType.FullName != "System.Byte[]")
+				if (type.Fields[0].FieldSig.GetFieldType().GetFullName() != "System.Byte[]")
 					continue;
 				if (type.Methods.Count != 2)
 					continue;
-				if (DotNetUtils.getMethod(type, ".cctor") == null)
+				if (type.FindClassConstructor() == null)
 					continue;
-				var cs = DotNetUtils.getMethod(type, "cs");
+				var cs = type.FindMethod("cs");
 				if (cs == null)
 					continue;
 
@@ -196,12 +180,13 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			var method = DotNetUtils.getPInvokeMethod(type, name);
 			if (method == null)
 				return false;
-			if (method.Parameters.Count != 1)
+			var sig = method.MethodSig;
+			if (sig.Params.Count != 1)
 				return false;
-			if (method.Parameters[0].ParameterType.FullName != "System.IntPtr")
+			if (sig.Params[0].GetElementType() != ElementType.I)
 				return false;
-			var retType = method.MethodReturnType.ReturnType.FullName;
-			if (retType != "System.Void" && retType != "System.Int32")
+			var retType = sig.RetType.GetElementType();
+			if (retType != ElementType.Void && retType != ElementType.I4)
 				return false;
 			return true;
 		}
@@ -209,7 +194,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 		bool findNativeCode(byte[] moduleBytes) {
 			var stream = moduleBytes != null ?
 				(Stream)new MemoryStream(moduleBytes) :
-				(Stream)new FileStream(module.FullyQualifiedName, FileMode.Open, FileAccess.Read, FileShare.Read);
+				(Stream)new FileStream(module.Location, FileMode.Open, FileAccess.Read, FileShare.Read);
 			using (stream) {
 				var peImage = new PeImage(stream);
 				return foundSig = MethodsDecrypter.detect(peImage);

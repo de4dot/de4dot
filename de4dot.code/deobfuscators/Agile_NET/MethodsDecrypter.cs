@@ -20,7 +20,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Mono.MyStuff;
+using dot10.DotNet;
+using dot10.DotNet.MD;
 using de4dot.PE;
 using de4dot.blocks;
 
@@ -62,7 +63,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 		}
 
 		PeImage peImage;
-		Mono.Cecil.ModuleDefinition module;
+		ModuleDefMD module;
 		CliSecureRtType csRtType;
 		CodeHeader codeHeader = new CodeHeader();
 		IDecrypter decrypter;
@@ -155,7 +156,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 
 			public Decrypter5(PeImage peImage, CodeHeader codeHeader, uint codeHeaderSize)
 				: base(peImage, codeHeader) {
-					this.codeHeaderSize = codeHeaderSize;
+				this.codeHeaderSize = codeHeaderSize;
 			}
 
 			public override MethodBodyHeader decrypt(MethodInfo methodInfo, out byte[] code, out byte[] extraSections) {
@@ -434,7 +435,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			Error,
 		}
 
-		public bool decrypt(PeImage peImage, Mono.Cecil.ModuleDefinition module, CliSecureRtType csRtType, ref DumpedMethods dumpedMethods) {
+		public bool decrypt(PeImage peImage, ModuleDefMD module, CliSecureRtType csRtType, ref DumpedMethods dumpedMethods) {
 			this.peImage = peImage;
 			this.csRtType = csRtType;
 			this.module = module;
@@ -446,7 +447,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			case DecryptResult.Error:
 				Log.w("Using dynamic method decryption");
 				byte[] moduleCctorBytes = getModuleCctorBytes(csRtType);
-				dumpedMethods = de4dot.code.deobfuscators.MethodsDecrypter.decrypt(module.FullyQualifiedName, moduleCctorBytes);
+				dumpedMethods = de4dot.code.deobfuscators.MethodsDecrypter.decrypt(module.Location, moduleCctorBytes);
 				return true;
 
 			default:
@@ -542,7 +543,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 				var dm = new DumpedMethod();
 				dm.token = 0x06000001 + (uint)i;
 
-				var method = (Mono.Cecil.MethodDef)module.LookupToken((int)dm.token);
+				var method = (MethodDef)module.ResolveMethod(MDToken.ToRID(dm.token));
 				if (method == null || method.DeclaringType == DotNetUtils.getModuleType(module))
 					continue;
 

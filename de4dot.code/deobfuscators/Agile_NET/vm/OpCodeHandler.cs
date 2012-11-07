@@ -23,7 +23,6 @@ using System.IO;
 using de4dot.blocks;
 using dot10.DotNet;
 using dot10.DotNet.Emit;
-using Mono.Cecil.Metadata;
 
 namespace de4dot.code.deobfuscators.Agile_NET.vm {
 	partial class OpCodeHandler {
@@ -248,7 +247,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			new InstructionInfo2 { First = false, Second = true, Value = 12, OpCode = OpCodes.Stelem_R4 },
 			new InstructionInfo2 { First = false, Second = true, Value = 13, OpCode = OpCodes.Stelem_R8 },
 			new InstructionInfo2 { First = false, Second = true, Value = 28, OpCode = OpCodes.Stelem_Ref },
-			new InstructionInfo2 { First = false, Second = false, Value = 0, OpCode = OpCodes.Stelem_Any },
+			new InstructionInfo2 { First = false, Second = false, Value = 0, OpCode = OpCodes.Stelem },
 
 			new InstructionInfo2 { First = true, Second = true, Value = 24, OpCode = OpCodes.Ldelem_I },
 			new InstructionInfo2 { First = true, Second = true, Value = 4, OpCode = OpCodes.Ldelem_I1 },
@@ -261,7 +260,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			new InstructionInfo2 { First = true, Second = true, Value = 12, OpCode = OpCodes.Ldelem_R4 },
 			new InstructionInfo2 { First = true, Second = true, Value = 13, OpCode = OpCodes.Ldelem_R8 },
 			new InstructionInfo2 { First = true, Second = true, Value = 28, OpCode = OpCodes.Ldelem_Ref },
-			new InstructionInfo2 { First = true, Second = false, Value = 0, OpCode = OpCodes.Ldelem_Any },
+			new InstructionInfo2 { First = true, Second = false, Value = 0, OpCode = OpCodes.Ldelem },
 		};
 		static Instruction ldelem_read(BinaryReader reader) {
 			Instruction instr = null;
@@ -463,7 +462,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 		}
 
 		static bool rethrow_check(UnknownHandlerInfo info) {
-			return info.ExecuteMethod.Body.Variables.Count == 0;
+			return info.ExecuteMethod.Body.LocalList.Count == 0;
 		}
 
 		static Instruction rethrow_read(BinaryReader reader) {

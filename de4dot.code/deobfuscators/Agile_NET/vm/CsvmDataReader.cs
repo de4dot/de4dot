@@ -20,15 +20,16 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using dot10.IO;
 using dot10.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Agile_NET.vm {
 	class CsvmDataReader {
-		BinaryReader reader;
+		IBinaryReader reader;
 
-		public CsvmDataReader(Stream stream) {
-			reader = new BinaryReader(stream);
+		public CsvmDataReader(IBinaryReader reader) {
+			this.reader = reader;
 		}
 
 		public List<CsvmMethodData> read() {

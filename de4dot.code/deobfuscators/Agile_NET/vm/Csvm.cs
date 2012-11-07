@@ -26,9 +26,9 @@ using de4dot.blocks;
 namespace de4dot.code.deobfuscators.Agile_NET.vm {
 	class Csvm {
 		IDeobfuscatorContext deobfuscatorContext;
-		ModuleDefinition module;
+		ModuleDefMD module;
 		EmbeddedResource resource;
-		AssemblyNameReference vmAssemblyReference;
+		AssemblyRef vmAssemblyReference;
 
 		public bool Detected {
 			get { return resource != null && vmAssemblyReference != null; }
@@ -38,22 +38,22 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			get { return Detected ? resource : null; }
 		}
 
-		public AssemblyNameReference VmAssemblyReference {
+		public AssemblyRef VmAssemblyReference {
 			get { return Detected ? vmAssemblyReference : null; }
 		}
 
-		public Csvm(IDeobfuscatorContext deobfuscatorContext, ModuleDefinition module) {
+		public Csvm(IDeobfuscatorContext deobfuscatorContext, ModuleDefMD module) {
 			this.deobfuscatorContext = deobfuscatorContext;
 			this.module = module;
 		}
 
-		public Csvm(IDeobfuscatorContext deobfuscatorContext, ModuleDefinition module, Csvm oldOne) {
+		public Csvm(IDeobfuscatorContext deobfuscatorContext, ModuleDefMD module, Csvm oldOne) {
 			this.deobfuscatorContext = deobfuscatorContext;
 			this.module = module;
 			if (oldOne.resource != null)
 				this.resource = (EmbeddedResource)module.Resources[oldOne.module.Resources.IndexOf(oldOne.resource)];
 			if (oldOne.vmAssemblyReference != null)
-				this.vmAssemblyReference = module.AssemblyReferences[oldOne.module.AssemblyReferences.IndexOf(oldOne.vmAssemblyReference)];
+				this.vmAssemblyReference = module.ResolveAssemblyRef(oldOne.vmAssemblyReference.Rid);
 		}
 
 		public void find() {
@@ -61,13 +61,12 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			vmAssemblyReference = findVmAssemblyReference();
 		}
 
-		AssemblyNameReference findVmAssemblyReference() {
-			foreach (var memberRef in module.GetMemberReferences()) {
-				var method = memberRef as MethodReference;
-				if (method == null)
+		AssemblyRef findVmAssemblyReference() {
+			foreach (var memberRef in module.GetMemberRefs()) {
+				if (!memberRef.IsMethodRef)
 					continue;
-				if (method.FullName == "System.Object VMRuntime.Libraries.CSVMRuntime::RunMethod(System.String,System.Object[])")
-					return method.DeclaringType.Scope as AssemblyNameReference;
+				if (memberRef.FullName == "System.Object VMRuntime.Libraries.CSVMRuntime::RunMethod(System.String,System.Object[])")
+					return memberRef.DeclaringType.Scope as AssemblyRef;
 			}
 			return null;
 		}
@@ -94,11 +93,11 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			Log.indent();
 
 			var opcodeDetector = getVmOpCodeHandlerDetector();
-			var csvmMethods = new CsvmDataReader(resource.GetResourceStream()).read();
+			var csvmMethods = new CsvmDataReader(resource.Data).read();
 			var converter = new CsvmToCilMethodConverter(deobfuscatorContext, module, opcodeDetector);
 			var methodPrinter = new MethodPrinter();
 			foreach (var csvmMethod in csvmMethods) {
-				var cilMethod = module.LookupToken(csvmMethod.Token) as MethodDef;
+				var cilMethod = module.ResolveToken(csvmMethod.Token) as MethodDef;
 				if (cilMethod == null)
 					throw new ApplicationException(string.Format("Could not find method {0:X8}", csvmMethod.Token));
 				converter.convert(cilMethod, csvmMethod);
@@ -117,8 +116,8 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 
 			Log.v("Locals:");
 			Log.indent();
-			for (int i = 0; i < method.Body.Variables.Count; i++)
-				Log.v("#{0}: {1}", i, method.Body.Variables[i].VariableType);
+			for (int i = 0; i < method.Body.LocalList.Count; i++)
+				Log.v("#{0}: {1}", i, method.Body.LocalList[i].Type);
 			Log.deIndent();
 
 			Log.v("Code:");
@@ -131,7 +130,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 
 		VmOpCodeHandlerDetector getVmOpCodeHandlerDetector() {
 			var vmFilename = vmAssemblyReference.Name + ".dll";
-			var vmModulePath = Path.Combine(Path.GetDirectoryName(module.FullyQualifiedName), vmFilename);
+			var vmModulePath = Path.Combine(Path.GetDirectoryName(module.Location), vmFilename);
 			Log.v("CSVM filename: {0}", vmFilename);
 
 			var dataKey = "cs cached VmOpCodeHandlerDetector";
@@ -141,7 +140,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			VmOpCodeHandlerDetector detector;
 			if (dict.TryGetValue(vmModulePath, out detector))
 				return detector;
-			dict[vmModulePath] = detector = new VmOpCodeHandlerDetector(ModuleDefinition.ReadModule(vmModulePath));
+			dict[vmModulePath] = detector = new VmOpCodeHandlerDetector(ModuleDefMD.Load(vmModulePath));
 
 			detector.findHandlers();
 			Log.v("CSVM opcodes:");

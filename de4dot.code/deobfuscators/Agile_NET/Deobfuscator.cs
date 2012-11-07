@@ -19,8 +19,9 @@
 
 using System;
 using System.Collections.Generic;
+using dot10.PE;
 using dot10.DotNet;
-using Mono.MyStuff;
+using dot10.DotNet.MD;
 using de4dot.blocks;
 using de4dot.PE;
 
@@ -112,16 +113,17 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			this.options = options;
 		}
 
-		public override void init(ModuleDefinition module) {
+		public override void init(ModuleDefMD module) {
 			base.init(module);
 		}
 
-		public override byte[] unpackNativeFile(PeImage peImage) {
+		public override byte[] unpackNativeFile(PEImage peImage) {
 			return unpackNativeFile1(peImage) ?? unpackNativeFile2(peImage);
 		}
 
 		// Old CS versions
-		byte[] unpackNativeFile1(PeImage peImage) {
+		byte[] unpackNativeFile1(PEImage peImage) {
+#if PORT
 			const int dataDirNum = 6;	// debug dir
 			const int dotNetDirNum = 14;
 
@@ -139,10 +141,14 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			writeUInt32(fileData, dataDir + 4, 0);
 			ModuleBytes = fileData;
 			return fileData;
+#else
+			return null;
+#endif
 		}
 
 		// CS 1.x
-		byte[] unpackNativeFile2(PeImage peImage) {
+		byte[] unpackNativeFile2(PEImage peImage) {
+#if PORT
 			var dir = peImage.Resources.getRoot();
 			if ((dir = dir.getDirectory("ASSEMBLY")) == null)
 				return null;
@@ -153,6 +159,9 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 				return null;
 
 			return ModuleBytes = peImage.readBytes(data.RVA, (int)data.Size);
+#else
+			return null;
+#endif
 		}
 
 		static void writeUInt32(byte[] data, int offset, uint value) {
@@ -221,7 +230,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			return true;
 		}
 
-		public override IDeobfuscator moduleReloaded(ModuleDefinition module) {
+		public override IDeobfuscator moduleReloaded(ModuleDefMD module) {
 			var newOne = new Deobfuscator(options);
 			newOne.setModule(module);
 			newOne.cliSecureAttributes = lookup(module, cliSecureAttributes, "Could not find CliSecure attribute");
@@ -233,7 +242,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			return newOne;
 		}
 
-		static List<TypeDef> lookup(ModuleDefinition module, List<TypeDef> types, string errorMsg) {
+		static List<TypeDef> lookup(ModuleDefMD module, List<TypeDef> types, string errorMsg) {
 			var list = new List<TypeDef>(types.Count);
 			foreach (var type in types)
 				list.Add(DeobUtils.lookup(module, type, errorMsg));
@@ -274,7 +283,6 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 
 			if (options.RestoreVmCode) {
 				csvm.restore();
-				addAssemblyReferenceToBeRemoved(csvm.VmAssemblyReference, "CSVM assembly reference");
 				addResourceToBeRemoved(csvm.Resource, "CSVM data resource");
 			}
 		}
@@ -308,11 +316,9 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			}
 			if (options.DecryptMethods) {
 				addResources("Obfuscator protection files");
-				addModuleReferencesToBeRemoved(cliSecureRtType.DecryptModuleReferences, "Obfuscator protection files");
-				addModuleReferences("Obfuscator protection files");
 			}
 
-			module.Attributes |= ModuleAttributes.ILOnly;
+			module.Cor20HeaderFlags |= ComImageFlags.ILOnly;
 
 			base.deobfuscateEnd();
 		}

@@ -83,7 +83,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 				if (method.Body == null)
 					continue;
 				foreach (var instr in method.Body.Instructions) {
-					var fieldRef = instr.Operand as FieldReference;
+					var fieldRef = instr.Operand as IField;
 					if (fieldRef == null)
 						continue;
 					var field = typeFields.find(fieldRef);
@@ -119,7 +119,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 						throw new ApplicationException("Found another read method");
 					readMethod = method;
 				}
-				else if (!DotNetUtils.hasReturnValue(method) && method.Parameters.Count == 1) {
+				else if (!DotNetUtils.hasReturnValue(method) && method.MethodSig.GetParamCount() == 1) {
 					if (executeMethod != null)
 						throw new ApplicationException("Found another execute method");
 					executeMethod = method;
@@ -146,8 +146,8 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt)
 					continue;
-				var calledMethod = instr.Operand as MethodReference;
-				if (!MemberReferenceHelper.compareMethodReferenceAndDeclaringType(calledMethod, csvmInfo.PopMethod))
+				var calledMethod = instr.Operand as IMethod;
+				if (!MethodEqualityComparer.CompareDeclaringTypes.Equals(calledMethod, csvmInfo.PopMethod))
 					continue;
 
 				count++;

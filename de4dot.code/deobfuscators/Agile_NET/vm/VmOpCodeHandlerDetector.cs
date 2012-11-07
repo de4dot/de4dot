@@ -44,14 +44,14 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 	}
 
 	class VmOpCodeHandlerDetector {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		List<OpCodeHandler> opCodeHandlers;
 
 		public List<OpCodeHandler> Handlers {
 			get { return opCodeHandlers; }
 		}
 
-		public VmOpCodeHandlerDetector(ModuleDefinition module) {
+		public VmOpCodeHandlerDetector(ModuleDefMD module) {
 			this.module = module;
 		}
 
@@ -88,10 +88,10 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			int enumTypes = 0;
 			int objectTypes = 0;
 			foreach (var field in type.Fields) {
-				var fieldType = field.FieldType as TypeDef;
+				var fieldType = field.FieldSig.GetFieldType().TryGetTypeDef();
 				if (fieldType != null && fieldType.IsEnum)
 					enumTypes++;
-				if (field.FieldType.FullName == "System.Object")
+				if (field.FieldSig.GetFieldType().GetElementType() == ElementType.Object)
 					objectTypes++;
 			}
 			if (enumTypes != 1 || objectTypes != 1)
@@ -109,7 +109,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 		}
 
 		bool isStackType(TypeDef type, TypeDef stackValueType) {
-			if (type.Interfaces.Count != 2)
+			if (type.InterfaceImpls.Count != 2)
 				return false;
 			if (!implementsInterface(type, "System.Collections.ICollection"))
 				return false;
@@ -124,11 +124,14 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			foreach (var field in type.Fields) {
 				if (field.IsLiteral)
 					continue;
-				if (field.FieldType is ArrayType && ((ArrayType)field.FieldType).ElementType == stackValueType)
+				var fieldType = field.FieldSig.GetFieldType();
+				if (fieldType == null)
+					continue;
+				if (fieldType.IsSZArray && fieldType.Next.TryGetTypeDef() == stackValueType)
 					stackValueTypes++;
-				if (field.FieldType.FullName == "System.Int32")
+				if (fieldType.ElementType == ElementType.I4)
 					int32Types++;
-				if (field.FieldType.FullName == "System.Object")
+				if (fieldType.ElementType == ElementType.Object)
 					objectTypes++;
 			}
 			if (stackValueTypes != 2 || int32Types != 2 || objectTypes != 1)
@@ -138,8 +141,8 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 		}
 
 		static bool implementsInterface(TypeDef type, string ifaceName) {
-			foreach (var iface in type.Interfaces) {
-				if (iface.FullName == ifaceName)
+			foreach (var iface in type.InterfaceImpls) {
+				if (iface.Interface.FullName == ifaceName)
 					return true;
 			}
 			return false;
@@ -147,7 +150,8 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 
 		void initStackTypeMethods(CsvmInfo csvmInfo) {
 			foreach (var method in csvmInfo.Stack.Methods) {
-				if (method.Parameters.Count == 0 && method.MethodReturnType.ReturnType == csvmInfo.StackValue) {
+				var sig = method.MethodSig;
+				if (sig != null && sig.Params.Count == 0 && sig.RetType.TryGetTypeDef() == csvmInfo.StackValue) {
 					if (hasAdd(method))
 						csvmInfo.PopMethod = method;
 					else
@@ -172,7 +176,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			};
 			var cflowDeobfuscator = new CflowDeobfuscator();
 			foreach (var type in module.Types) {
-				var cctor = DotNetUtils.getMethod(type, ".cctor");
+				var cctor = type.FindClassConstructor();
 				if (cctor == null)
 					continue;
 				requiredFields[0] = type.FullName;

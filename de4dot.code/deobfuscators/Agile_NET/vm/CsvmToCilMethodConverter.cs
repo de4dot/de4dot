@@ -22,17 +22,16 @@ using System.Collections.Generic;
 using System.IO;
 using dot10.DotNet;
 using dot10.DotNet.Emit;
-using Mono.Cecil.Metadata;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Agile_NET.vm {
 	class CsvmToCilMethodConverter {
 		IDeobfuscatorContext deobfuscatorContext;
-		ModuleDefinition module;
+		ModuleDefMD module;
 		VmOpCodeHandlerDetector opCodeDetector;
 		CilOperandInstructionRestorer operandRestorer = new CilOperandInstructionRestorer();
 
-		public CsvmToCilMethodConverter(IDeobfuscatorContext deobfuscatorContext, ModuleDefinition module, VmOpCodeHandlerDetector opCodeDetector) {
+		public CsvmToCilMethodConverter(IDeobfuscatorContext deobfuscatorContext, ModuleDefMD module, VmOpCodeHandlerDetector opCodeDetector) {
 			this.deobfuscatorContext = deobfuscatorContext;
 			this.module = module;
 			this.opCodeDetector = opCodeDetector;
@@ -44,7 +43,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			var newExceptions = readExceptions(cilMethod, csvmMethod, newInstructions);
 
 			fixInstructionOperands(newInstructions);
-			fixLocals(newInstructions, cilMethod.Body.Variables);
+			fixLocals(newInstructions, cilMethod.Body.LocalList);
 			fixArgs(newInstructions, cilMethod);
 
 			DotNetUtils.restoreBody(cilMethod, newInstructions, newExceptions);
@@ -54,7 +53,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			restoreConstrainedPrefix(cilMethod);
 		}
 
-		void fixLocals(IList<Instruction> instrs, IList<VariableDefinition> locals) {
+		void fixLocals(IList<Instruction> instrs, IList<Local> locals) {
 			foreach (var instr in instrs) {
 				var op = instr.Operand as LocalOperand;
 				if (op == null)
@@ -64,7 +63,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			}
 		}
 
-		static void updateLocalInstruction(Instruction instr, VariableDefinition local, int index) {
+		static void updateLocalInstruction(Instruction instr, Local local, int index) {
 			object operand = null;
 			OpCode opcode;
 
@@ -135,19 +134,11 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 				if (op == null)
 					continue;
 
-				int argIndex = op.arg;
-				if (method.HasImplicitThis)
-					argIndex--;
-				ParameterDefinition arg;
-				if (argIndex == -1)
-					arg = method.Body.ThisParameter;
-				else
-					arg = method.Parameters[argIndex];
-				updateArgInstruction(instr, arg, op.arg);
+				updateArgInstruction(instr, method.Parameters[op.arg], op.arg);
 			}
 		}
 
-		static void updateArgInstruction(Instruction instr, ParameterDefinition arg, int index) {
+		static void updateArgInstruction(Instruction instr, Parameter arg, int index) {
 			switch (instr.OpCode.Code) {
 			case Code.Ldarg:
 			case Code.Ldarg_S:
@@ -209,12 +200,12 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 		List<Instruction> readInstructions(MethodDef cilMethod, CsvmMethodData csvmMethod) {
 			var reader = new BinaryReader(new MemoryStream(csvmMethod.Instructions));
 			var instrs = new List<Instruction>();
-			int offset = 0;
+			uint offset = 0;
 			while (reader.BaseStream.Position < reader.BaseStream.Length) {
 				int vmOpCode = reader.ReadUInt16();
 				var instr = opCodeDetector.Handlers[vmOpCode].Read(reader);
 				instr.Offset = offset;
-				offset += getInstructionSize(instr);
+				offset += (uint)getInstructionSize(instr);
 				instrs.Add(instr);
 			}
 			return instrs;
@@ -230,8 +221,8 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			return instr.OpCode.Size + (op.targetDisplacements.Length + 1) * 4;
 		}
 
-		List<VariableDefinition> readLocals(MethodDef cilMethod, CsvmMethodData csvmMethod) {
-			var locals = new List<VariableDefinition>();
+		List<Local> readLocals(MethodDef cilMethod, CsvmMethodData csvmMethod) {
+			var locals = new List<Local>();
 			var reader = new BinaryReader(new MemoryStream(csvmMethod.Locals));
 
 			if (csvmMethod.Locals.Length == 0)
@@ -243,63 +234,58 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 				throw new ApplicationException("Invalid number of locals");
 
 			for (int i = 0; i < numLocals; i++)
-				locals.Add(new VariableDefinition(readTypeReference(reader)));
+				locals.Add(new Local(readTypeReference(reader)));
 
 			return locals;
 		}
 
-		TypeReference readTypeReference(BinaryReader reader) {
+		TypeSig readTypeReference(BinaryReader reader) {
 			var etype = (ElementType)reader.ReadInt32();
 			switch (etype) {
-			case ElementType.Void: return module.TypeSystem.Void;
-			case ElementType.Boolean: return module.TypeSystem.Boolean;
-			case ElementType.Char: return module.TypeSystem.Char;
-			case ElementType.I1: return module.TypeSystem.SByte;
-			case ElementType.U1: return module.TypeSystem.Byte;
-			case ElementType.I2: return module.TypeSystem.Int16;
-			case ElementType.U2: return module.TypeSystem.UInt16;
-			case ElementType.I4: return module.TypeSystem.Int32;
-			case ElementType.U4: return module.TypeSystem.UInt32;
-			case ElementType.I8: return module.TypeSystem.Int64;
-			case ElementType.U8: return module.TypeSystem.UInt64;
-			case ElementType.R4: return module.TypeSystem.Single;
-			case ElementType.R8: return module.TypeSystem.Double;
-			case ElementType.String: return module.TypeSystem.String;
-			case ElementType.TypedByRef: return module.TypeSystem.TypedReference;
-			case ElementType.I: return module.TypeSystem.IntPtr;
-			case ElementType.U: return module.TypeSystem.UIntPtr;
-			case ElementType.Object: return module.TypeSystem.Object;
+			case ElementType.Void: return module.CorLibTypes.Void;
+			case ElementType.Boolean: return module.CorLibTypes.Boolean;
+			case ElementType.Char: return module.CorLibTypes.Char;
+			case ElementType.I1: return module.CorLibTypes.SByte;
+			case ElementType.U1: return module.CorLibTypes.Byte;
+			case ElementType.I2: return module.CorLibTypes.Int16;
+			case ElementType.U2: return module.CorLibTypes.UInt16;
+			case ElementType.I4: return module.CorLibTypes.Int32;
+			case ElementType.U4: return module.CorLibTypes.UInt32;
+			case ElementType.I8: return module.CorLibTypes.Int64;
+			case ElementType.U8: return module.CorLibTypes.UInt64;
+			case ElementType.R4: return module.CorLibTypes.Single;
+			case ElementType.R8: return module.CorLibTypes.Double;
+			case ElementType.String: return module.CorLibTypes.String;
+			case ElementType.TypedByRef: return module.CorLibTypes.TypedReference;
+			case ElementType.I: return module.CorLibTypes.IntPtr;
+			case ElementType.U: return module.CorLibTypes.UIntPtr;
+			case ElementType.Object: return module.CorLibTypes.Object;
 
 			case ElementType.ValueType:
 			case ElementType.Var:
 			case ElementType.MVar:
-				return (TypeReference)module.LookupToken(reader.ReadInt32());
+				return (module.ResolveToken(reader.ReadUInt32()) as ITypeDefOrRef).ToTypeSig();
 
 			case ElementType.GenericInst:
 				etype = (ElementType)reader.ReadInt32();
 				if (etype == ElementType.ValueType)
-					return (TypeReference)module.LookupToken(reader.ReadInt32());
+					return (module.ResolveToken(reader.ReadUInt32()) as ITypeDefOrRef).ToTypeSig();
 				// ElementType.Class
-				return module.TypeSystem.Object;
+				return module.CorLibTypes.Object;
 
 			case ElementType.Ptr:
 			case ElementType.Class:
 			case ElementType.Array:
 			case ElementType.FnPtr:
-			case ElementType.SzArray:
+			case ElementType.SZArray:
 			case ElementType.ByRef:
-			case ElementType.CModReqD:
+			case ElementType.CModReqd:
 			case ElementType.CModOpt:
 			case ElementType.Internal:
-			case ElementType.Modifier:
 			case ElementType.Sentinel:
 			case ElementType.Pinned:
-			case ElementType.Type:
-			case ElementType.Boxed:
-			case ElementType.Enum:
-			case ElementType.None:
 			default:
-				return module.TypeSystem.Object;
+				return module.CorLibTypes.Object;
 			}
 		}
 
@@ -321,7 +307,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 				eh.HandlerStart = getInstruction(cilInstructions, reader.ReadInt32());
 				eh.HandlerEnd = getInstructionEnd(cilInstructions, reader.ReadInt32());
 				if (eh.HandlerType == ExceptionHandlerType.Catch)
-					eh.CatchType = (TypeReference)module.LookupToken(reader.ReadInt32());
+					eh.CatchType = module.ResolveToken(reader.ReadUInt32()) as ITypeDefOrRef;
 				else if (eh.HandlerType == ExceptionHandlerType.Filter)
 					eh.FilterStart = getInstruction(cilInstructions, reader.ReadInt32());
 
@@ -387,9 +373,9 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			throw new ApplicationException(string.Format("Unknown operand type: {0}", vmOperand.GetType()));
 		}
 
-		FieldReference fixLoadStoreFieldInstruction(Instruction instr, int token, OpCode staticInstr, OpCode instanceInstr) {
-			var fieldRef = (FieldReference)module.LookupToken(token);
-			var field = deobfuscatorContext.resolve(fieldRef);
+		IField fixLoadStoreFieldInstruction(Instruction instr, int token, OpCode staticInstr, OpCode instanceInstr) {
+			var fieldRef = module.ResolveToken(token) as IField;
+			var field = deobfuscatorContext.resolveField(fieldRef);
 			bool isStatic;
 			if (field == null) {
 				Log.w("Could not resolve field {0:X8}. Assuming it's not static.", token);
@@ -401,8 +387,8 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			return fieldRef;
 		}
 
-		MemberReference getMemberReference(int token) {
-			var memberRef = module.LookupToken(token) as MemberReference;
+		ITokenOperand getMemberReference(int token) {
+			var memberRef = module.ResolveToken(token) as ITokenOperand;
 			if (memberRef == null)
 				throw new ApplicationException(string.Format("Could not find member ref: {0:X8}", token));
 			return memberRef;
@@ -418,15 +404,18 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 				if (instr.OpCode.Code != Code.Callvirt)
 					continue;
 
-				var calledMethod = instr.Operand as MethodReference;
-				if (calledMethod == null || !calledMethod.HasThis)
+				var calledMethod = instr.Operand as IMethod;
+				if (calledMethod == null)
 					continue;
-				var thisType = MethodStack.getLoadedType(method, instrs, i, calledMethod.Parameters.Count) as ByReferenceType;
+				var sig = calledMethod.MethodSig;
+				if (sig == null || !sig.HasThis)
+					continue;
+				var thisType = MethodStack.getLoadedType(method, instrs, i, sig.Params.Count) as ByRefSig;
 				if (thisType == null)
 					continue;
 				if (hasPrefix(instrs, i, Code.Constrained))
 					continue;
-				instrs.Insert(i, Instruction.Create(OpCodes.Constrained, thisType.ElementType));
+				instrs.Insert(i, Instruction.Create(OpCodes.Constrained, thisType.Next.ToTypeDefOrRef()));
 				i++;
 			}
 		}

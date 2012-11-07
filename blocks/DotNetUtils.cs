@@ -202,7 +202,7 @@ namespace de4dot.blocks {
 				var sig = method.MethodSig;
 				if (sig == null || !method.HasBody || !sig.IsDefault)
 					continue;
-				if (method.IsStatic != isStatic || method.Parameters.Count != argsTypes.Length)
+				if (method.IsStatic != isStatic || sig.Params.Count != argsTypes.Length)
 					continue;
 				if (sig.GenParamCount > 0)
 					continue;
@@ -248,23 +248,24 @@ namespace de4dot.blocks {
 			return dll;
 		}
 
-#if PORT
-		public static bool hasPinvokeMethod(TypeDefinition type, string methodName) {
+		public static bool hasPinvokeMethod(TypeDef type, string methodName) {
 			return getPInvokeMethod(type, methodName) != null;
 		}
 
-		public static MethodDef getPInvokeMethod(TypeDefinition type, string methodName) {
+		public static MethodDef getPInvokeMethod(TypeDef type, string methodName) {
 			if (type == null)
 				return null;
+			var mname = new UTF8String(methodName);
 			foreach (var method in type.Methods) {
-				if (method.PInvokeInfo == null)
+				if (method.ImplMap == null)
 					continue;
-				if (method.PInvokeInfo.EntryPoint == methodName)
+				if (UTF8String.Equals(method.ImplMap.Name, mname))
 					return method;
 			}
 			return null;
 		}
 
+#if PORT
 		public static MethodDef getPInvokeMethod(TypeDefinition type, string dll, string funcName) {
 			foreach (var method in type.Methods) {
 				if (isPinvokeMethod(method, dll, funcName))
