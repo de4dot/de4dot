@@ -22,7 +22,6 @@ using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
 using dot10.DotNet;
-using Mono.MyStuff;
 using de4dot.PE;
 using de4dot.blocks;
 
@@ -140,7 +139,7 @@ namespace de4dot.code.deobfuscators.MPRESS {
 			new MethodInfo("System.Int32", "(System.String[])"),
 		};
 		Version detectVersion() {
-			var ep = module.EntryPoint;
+			var ep = module.EntryPoint as MethodDef;
 			if (ep == null || ep.Body == null)
 				return Version.Unknown;
 			var type = ep.DeclaringType;
@@ -232,7 +231,7 @@ namespace de4dot.code.deobfuscators.MPRESS {
 			return true;
 		}
 
-		public override IDeobfuscator moduleReloaded(ModuleDefinition module) {
+		public override IDeobfuscator moduleReloaded(ModuleDefMD module) {
 			var newOne = new Deobfuscator(options);
 			newOne.setModule(module);
 			return newOne;

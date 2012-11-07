@@ -322,15 +322,15 @@ namespace de4dot.blocks {
 				return (MethodDef)method;
 			return getMethod(getType(module, declaringType), method);
 		}
+#endif
 
-		public static MethodDef getMethod(TypeDefinition type, string returnType, string parameters) {
+		public static MethodDef getMethod(TypeDef type, string returnType, string parameters) {
 			foreach (var method in type.Methods) {
 				if (isMethod(method, returnType, parameters))
 					return method;
 			}
 			return null;
 		}
-#endif
 
 		public static MethodDef getMethod2(ModuleDef module, IMethod method) {
 			if (method == null)

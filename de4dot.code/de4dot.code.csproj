@@ -223,8 +223,8 @@
     <Compile Include="deobfuscators\MethodCollection.cs" />
     <Compile Include="deobfuscators\MethodsDecrypter.cs" />
     <Compile Include="deobfuscators\MethodStack.cs" />
-    <None Include="deobfuscators\MPRESS\Deobfuscator.cs" />
-    <None Include="deobfuscators\MPRESS\Lzmat.cs" />
+    <Compile Include="deobfuscators\MPRESS\Deobfuscator.cs" />
+    <Compile Include="deobfuscators\MPRESS\Lzmat.cs" />
     <Compile Include="deobfuscators\Operations.cs" />
     <Compile Include="deobfuscators\ProxyCallFixerBase.cs" />
     <Compile Include="deobfuscators\QuickLZ.cs" />
