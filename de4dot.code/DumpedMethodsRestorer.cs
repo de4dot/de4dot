@@ -37,8 +37,12 @@ namespace de4dot.code {
 			this.dumpedMethods = dumpedMethods;
 		}
 
-		public virtual RawMethodRow ReadRow(uint rid) {
-			var dm = dumpedMethods.get(0x06000000 | rid);
+		DumpedMethod getDumpedMethod(uint rid) {
+			return dumpedMethods.get(0x06000000 | rid);
+		}
+
+		public RawMethodRow ReadRow(uint rid) {
+			var dm = getDumpedMethod(rid);
 			if (dm == null)
 				return null;
 			return new RawMethodRow(dm.mdRVA, dm.mdImplFlags, dm.mdFlags, dm.mdName, dm.mdSignature, dm.mdParamList);
@@ -58,11 +62,11 @@ namespace de4dot.code {
 		}
 
 		public bool HasMethodBody(uint rid) {
-			return dumpedMethods.get(0x06000000 | rid) != null;
+			return getDumpedMethod(rid) != null;
 		}
 
 		public MethodBody GetMethodBody(uint rid, RVA rva, IList<Parameter> parameters) {
-			var dm = dumpedMethods.get(0x06000000 | rid);
+			var dm = getDumpedMethod(rid);
 			if (dm == null)
 				return null;
 			return MethodBodyReader.Create(module, dm.code, dm.extraSections, parameters, dm.mhFlags, dm.mhMaxStack, dm.mhCodeSize, dm.mhLocalVarSigTok);
