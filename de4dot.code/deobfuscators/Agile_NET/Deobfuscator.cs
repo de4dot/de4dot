@@ -27,8 +27,8 @@ using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.Agile_NET {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
-		public const string THE_NAME = "CliSecure";
-		public const string THE_TYPE = "cs";
+		public const string THE_NAME = "Agile.NET";
+		public const string THE_TYPE = "an";
 		const string DEFAULT_REGEX = @"[a-zA-Z_0-9>}$]$";
 		BoolOption decryptMethods;
 		BoolOption decryptResources;
