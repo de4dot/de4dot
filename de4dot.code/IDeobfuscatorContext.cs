@@ -26,7 +26,7 @@ namespace de4dot.code {
 		object getData(string name);
 		void clearData(string name);
 		TypeDef resolveType(ITypeDefOrRef type);
-		MethodDef resolveMethod(MemberRef method);
-		FieldDef resolveField(MemberRef field);
+		MethodDef resolveMethod(IMethod method);
+		FieldDef resolveField(IField field);
 	}
 }

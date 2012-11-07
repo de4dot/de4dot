@@ -72,26 +72,42 @@ namespace de4dot.code {
 			return null;
 		}
 
-		public MethodDef resolveMethod(MemberRef method) {
+		public MethodDef resolveMethod(IMethod method) {
 			if (method == null)
 				return null;
 
-			var type = resolveType(method.DeclaringType);
+			var md = method as MethodDef;
+			if (md != null)
+				return md;
+
+			var mr = method as MemberRef;
+			if (mr == null || !mr.IsMethodRef)
+				return null;
+
+			var type = resolveType(mr.DeclaringType);
 			if (type == null)
 				return null;
 
-			return type.Resolve(method) as MethodDef;
+			return type.Resolve(mr) as MethodDef;
 		}
 
-		public FieldDef resolveField(MemberRef field) {
+		public FieldDef resolveField(IField field) {
 			if (field == null)
 				return null;
 
-			var type = resolveType(field.DeclaringType);
+			var fd = field as FieldDef;
+			if (fd != null)
+				return fd;
+
+			var mr = field as MemberRef;
+			if (mr == null || !mr.IsFieldRef)
+				return null;
+
+			var type = resolveType(mr.DeclaringType);
 			if (type == null)
 				return null;
 
-			return type.Resolve(field) as FieldDef;
+			return type.Resolve(mr) as FieldDef;
 		}
 	}
 }
