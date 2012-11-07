@@ -76,7 +76,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			this.mcModule2 = DeobUtils.lookup(module, oldOne.mcModule2, "Could not find MC runtime module ref #2");
 		}
 
-		T lookup<T>(T def, string errorMessage) where T : MemberReference {
+		T lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
 			return DeobUtils.lookup(module, def, errorMessage);
 		}
 

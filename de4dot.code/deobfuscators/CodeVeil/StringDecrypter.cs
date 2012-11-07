@@ -63,7 +63,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			this.decrypterMethod = lookup(oldOne.decrypterMethod, "Could not find string decrypter method");
 		}
 
-		T lookup<T>(T def, string errorMessage) where T : MemberReference {
+		T lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
 			return DeobUtils.lookup(module, def, errorMessage);
 		}
 

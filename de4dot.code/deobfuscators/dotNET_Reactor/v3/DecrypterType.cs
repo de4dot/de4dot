@@ -86,7 +86,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			updateModuleReferences();
 		}
 
-		T lookup<T>(T def, string errorMessage) where T : MemberReference {
+		T lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
 			return DeobUtils.lookup(module, def, errorMessage);
 		}
 

@@ -77,7 +77,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				otherInitMethods.Add(lookup(otherInitMethod, "Could not find otherInitMethod"));
 		}
 
-		T lookup<T>(T def, string errorMessage) where T : MemberReference {
+		T lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
 			return DeobUtils.lookup(module, def, errorMessage);
 		}
 

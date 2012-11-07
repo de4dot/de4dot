@@ -56,7 +56,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				switch (instr.OpCode.Code) {
 				case Code.Starg:
 				case Code.Starg_S:
-				case Code.Stelem_Any:
+				case Code.Stelem:
 				case Code.Stelem_I:
 				case Code.Stelem_I1:
 				case Code.Stelem_I2:

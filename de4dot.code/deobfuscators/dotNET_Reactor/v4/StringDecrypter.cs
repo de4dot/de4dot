@@ -90,7 +90,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			otherStringDecrypter = lookup(oldOne.otherStringDecrypter, "Could not find string decrypter method");
 		}
 
-		T lookup<T>(T def, string errorMessage) where T : MemberReference {
+		T lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
 			return DeobUtils.lookup(module, def, errorMessage);
 		}
 
