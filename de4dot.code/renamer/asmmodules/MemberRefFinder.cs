@@ -153,7 +153,7 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 
 		void add(ModuleDef mod) {
-			push(mod.EntryPoint);
+			push(mod.ManagedEntryPoint);
 			add(mod.CustomAttributes);
 			add(mod.Types);
 			add(mod.ExportedTypes);

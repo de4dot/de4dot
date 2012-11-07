@@ -228,7 +228,7 @@ namespace de4dot.code.deobfuscators {
 			if (cctor != null)
 				yield return cctor;
 
-			var entryPoint = module.EntryPoint as MethodDef;
+			var entryPoint = module.EntryPoint;
 			if (entryPoint != null) {
 				cctor = entryPoint.DeclaringType.FindClassConstructor();
 				if (cctor != null)

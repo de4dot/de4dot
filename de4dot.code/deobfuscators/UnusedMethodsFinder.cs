@@ -33,7 +33,7 @@ namespace de4dot.code.deobfuscators {
 			this.module = module;
 			this.removedMethods = removedMethods;
 			foreach (var method in possiblyUnusedMethods) {
-				if (method != module.EntryPoint && !removedMethods.exists(method))
+				if (method != module.ManagedEntryPoint && !removedMethods.exists(method))
 					this.possiblyUnusedMethods[method] = true;
 			}
 		}

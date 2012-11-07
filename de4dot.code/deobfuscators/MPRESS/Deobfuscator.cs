@@ -139,7 +139,7 @@ namespace de4dot.code.deobfuscators.MPRESS {
 			new MethodInfo("System.Int32", "(System.String[])"),
 		};
 		Version detectVersion() {
-			var ep = module.EntryPoint as MethodDef;
+			var ep = module.EntryPoint;
 			if (ep == null || ep.Body == null)
 				return Version.Unknown;
 			var type = ep.DeclaringType;

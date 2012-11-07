@@ -1574,7 +1574,7 @@ namespace de4dot.code.renamer {
 
 		void prepareRenameEntryPoints() {
 			foreach (var module in modules.TheModules) {
-				var entryPoint = module.ModuleDefMD.EntryPoint as MethodDef;
+				var entryPoint = module.ModuleDefMD.EntryPoint;
 				if (entryPoint == null)
 					continue;
 				var methodDef = modules.resolveMethod(entryPoint);
