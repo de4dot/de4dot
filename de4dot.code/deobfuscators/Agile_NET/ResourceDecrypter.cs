@@ -107,7 +107,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 		byte[] decryptResource(EmbeddedResource resource) {
 			using (var reader = resource.Data) {
 				var key = reader.ReadString();
-				var data = reader.ReadBytes((int)(reader.Length - reader.Position));
+				var data = reader.ReadRemainingBytes();
 				var cryptoTransform = new DESCryptoServiceProvider {
 					Key = Encoding.ASCII.GetBytes(key),
 					IV = Encoding.ASCII.GetBytes(key),
