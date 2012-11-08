@@ -23,6 +23,7 @@ using dot10.DotNet;
 namespace de4dot.blocks {
 	public struct GenericArgsSubstitutor {
 		IList<TypeSig> genericArgs;
+		IList<TypeSig> genericMethodArgs;
 		bool updated;
 
 		public static ITypeDefOrRef create(ITypeDefOrRef type, GenericInstSig git) {
@@ -117,16 +118,26 @@ namespace de4dot.blocks {
 			return create(method, git.GenericArguments);
 		}
 
-		// Creates a new method but keeps declaring type as is
 		public static IMethodDefOrRef create(IMethodDefOrRef method, IList<TypeSig> genericArgs) {
-			if (method == null || genericArgs == null || genericArgs.Count == 0)
+			return create(method, genericArgs, null);
+		}
+
+		public static IMethodDefOrRef create(IMethodDefOrRef method, GenericInstSig git, IList<TypeSig> genericMethodArgs) {
+			return create(method, git == null ? null : git.GenericArguments, genericMethodArgs);
+		}
+
+		// Creates a new method but keeps declaring type as is
+		public static IMethodDefOrRef create(IMethodDefOrRef method, IList<TypeSig> genericArgs, IList<TypeSig> genericMethodArgs) {
+			if (method == null)
+				return method;
+			if ((genericArgs == null || genericArgs.Count == 0) && (genericMethodArgs == null || genericMethodArgs.Count == 0))
 				return method;
 
 			var sig = method.MethodSig;
 			if (sig == null)
 				return method;
 
-			var newSig = new GenericArgsSubstitutor(genericArgs).create(sig);
+			var newSig = new GenericArgsSubstitutor(genericArgs, genericMethodArgs).create(sig);
 			if (newSig == sig)
 				return method;
 
@@ -135,6 +146,13 @@ namespace de4dot.blocks {
 
 		GenericArgsSubstitutor(IList<TypeSig> genericArgs) {
 			this.genericArgs = genericArgs;
+			this.genericMethodArgs = null;
+			this.updated = false;
+		}
+
+		GenericArgsSubstitutor(IList<TypeSig> genericArgs, IList<TypeSig> genericMethodArgs) {
+			this.genericArgs = genericArgs;
+			this.genericMethodArgs = genericMethodArgs;
 			this.updated = false;
 		}
 
@@ -148,6 +166,7 @@ namespace de4dot.blocks {
 				return type;
 			TypeSig result;
 
+			GenericSig varSig;
 			switch (type.ElementType) {
 			case ElementType.Void:
 			case ElementType.Boolean:
@@ -197,8 +216,8 @@ namespace de4dot.blocks {
 				break;
 
 			case ElementType.Var:
-				var varSig = (GenericSig)type;
-				if (varSig.Number < (uint)genericArgs.Count) {
+				varSig = (GenericSig)type;
+				if (genericArgs != null && varSig.Number < (uint)genericArgs.Count) {
 					result = genericArgs[(int)varSig.Number];
 					updated = true;
 				}
@@ -207,7 +226,13 @@ namespace de4dot.blocks {
 				break;
 
 			case ElementType.MVar:
-				result = type;
+				varSig = (GenericSig)type;
+				if (genericMethodArgs != null && varSig.Number < (uint)genericMethodArgs.Count) {
+					result = genericMethodArgs[(int)varSig.Number];
+					updated = true;
+				}
+				else
+					result = type;
 				break;
 
 			case ElementType.GenericInst:
