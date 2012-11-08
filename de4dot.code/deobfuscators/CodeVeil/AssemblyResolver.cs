@@ -128,7 +128,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			var data = bundleData.Data.ReadAllBytes();
 
 			var doc = new XmlDocument();
-			doc.Load(XmlReader.Create(new MemoryStream(bundleXmlFile.Data.ReadAllBytes())));
+			doc.Load(XmlReader.Create(bundleXmlFile.Data.CreateStream()));
 			var manifest = doc.DocumentElement;
 			if (manifest.Name.ToLowerInvariant() != "manifest") {
 				Log.w("Could not find Manifest element");
