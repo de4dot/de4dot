@@ -175,24 +175,10 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		AssemblyRef findAssemblyReference(string asmSimpleName) {
-			AssemblyRef asmRef = null;
-			foreach (var asmRef2 in findAssemblyReferences(asmSimpleName)) {
-				if (asmRef == null || asmRef.Version == null || (asmRef2.Version != null && asmRef2.Version > asmRef.Version))
-					asmRef = asmRef2;
-			}
+			var asmRef = module.GetAssemblyRef(asmSimpleName);
 			if (asmRef == null)
 				throw new ApplicationException(string.Format("Could not find assembly {0} in assembly references", asmSimpleName));
 			return asmRef;
-		}
-
-		List<AssemblyRef> findAssemblyReferences(string asmSimpleName) {
-			var asmRefs = new List<AssemblyRef>();
-			var name = new UTF8String(asmSimpleName);
-			foreach (var asmRef in module.GetAssemblyRefs()) {
-				if (UTF8String.Equals(asmRef.Name, name))
-					asmRefs.Add(asmRef);
-			}
-			return asmRefs;
 		}
 	}
 }

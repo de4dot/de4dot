@@ -211,11 +211,9 @@ namespace de4dot.code.resources {
 		string tryGetRealAssemblyName(string assemblyName) {
 			var simpleName = Utils.getAssemblySimpleName(assemblyName);
 
-			var name = new UTF8String(simpleName);
-			foreach (var asmRef in module.GetAssemblyRefs()) {
-				if (asmRef.Name == name)
-					return asmRef.FullName;
-			}
+			var asmRef = module.GetAssemblyRef(simpleName);
+			if (asmRef != null)
+				return asmRef.FullName;
 
 			var asm = TheAssemblyResolver.Instance.Resolve(new AssemblyNameInfo(simpleName), module);
 			return asm == null ? null : asm.FullName;

@@ -138,13 +138,7 @@ namespace de4dot.code.resources {
 		}
 
 		string getMscorlibFullname() {
-			AssemblyRef mscorlibRef = null;
-			foreach (var asmRef in module.GetAssemblyRefs()) {
-				if (asmRef.Name != "mscorlib")
-					continue;
-				if (mscorlibRef == null || mscorlibRef.Version == null || (asmRef.Version != null && asmRef.Version >= mscorlibRef.Version))
-					mscorlibRef = asmRef;
-			}
+			var mscorlibRef = module.GetAssemblyRef("mscorlib");
 			if (mscorlibRef != null)
 				return mscorlibRef.FullName;
 
