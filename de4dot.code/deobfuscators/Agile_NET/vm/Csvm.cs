@@ -63,7 +63,14 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 
 		AssemblyRef findVmAssemblyReference() {
 			foreach (var memberRef in module.GetMemberRefs()) {
-				if (!memberRef.IsMethodRef)
+				var sig = memberRef.MethodSig;
+				if (sig == null)
+					continue;
+				if (sig.RetType.GetElementType() != ElementType.Object)
+					continue;
+				if (sig.Params.Count != 2)
+					continue;
+				if (memberRef.Name != "RunMethod")
 					continue;
 				if (memberRef.FullName == "System.Object VMRuntime.Libraries.CSVMRuntime::RunMethod(System.String,System.Object[])")
 					return memberRef.DeclaringType.Scope as AssemblyRef;
