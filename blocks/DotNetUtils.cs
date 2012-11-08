@@ -265,8 +265,7 @@ namespace de4dot.blocks {
 			return null;
 		}
 
-#if PORT
-		public static MethodDef getPInvokeMethod(TypeDefinition type, string dll, string funcName) {
+		public static MethodDef getPInvokeMethod(TypeDef type, string dll, string funcName) {
 			foreach (var method in type.Methods) {
 				if (isPinvokeMethod(method, dll, funcName))
 					return method;
@@ -277,11 +276,12 @@ namespace de4dot.blocks {
 		public static bool isPinvokeMethod(MethodDef method, string dll, string funcName) {
 			if (method == null)
 				return false;
-			if (method.PInvokeInfo == null || method.PInvokeInfo.EntryPoint != funcName)
+			if (method.ImplMap == null || method.ImplMap.Name.String != funcName)
 				return false;
-			return getDllName(dll).Equals(getDllName(method.PInvokeInfo.Module.Name), StringComparison.OrdinalIgnoreCase);
+			return getDllName(dll).Equals(getDllName(method.ImplMap.Scope.Name.String), StringComparison.OrdinalIgnoreCase);
 		}
 
+#if PORT
 		public static MethodDef getMethod(TypeDefinition type, string name) {
 			if (type == null)
 				return null;
@@ -418,17 +418,17 @@ namespace de4dot.blocks {
 			return type.FindField(fieldReference.Name, fieldReference.FieldSig);
 		}
 
-#if PORT
-		public static FieldDefinition getField(TypeDefinition type, string typeFullName) {
+		public static FieldDef getField(TypeDef type, string typeFullName) {
 			if (type == null)
 				return null;
 			foreach (var field in type.Fields) {
-				if (field.FieldType.FullName == typeFullName)
+				if (field.FieldSig.GetFieldType().GetFullName() == typeFullName)
 					return field;
 			}
 			return null;
 		}
 
+#if PORT
 		public static FieldDefinition getFieldByName(TypeDefinition type, string name) {
 			if (type == null)
 				return null;

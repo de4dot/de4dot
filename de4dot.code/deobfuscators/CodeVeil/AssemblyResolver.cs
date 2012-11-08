@@ -20,13 +20,14 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Xml;
+using dot10.IO;
 using dot10.DotNet;
 using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CodeVeil {
 	class AssemblyResolver {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		EmbeddedResource bundleData;
 		EmbeddedResource bundleXmlFile;
 		TypeDef bundleType;
@@ -95,7 +96,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			get { return bundleXmlFile; }
 		}
 
-		public AssemblyResolver(ModuleDefinition module) {
+		public AssemblyResolver(ModuleDefMD module) {
 			this.module = module;
 		}
 
@@ -124,10 +125,10 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		}
 
 		void findEmbeddedAssemblies() {
-			var data = bundleData.GetResourceData();
+			var data = bundleData.Data.ReadAllBytes();
 
 			var doc = new XmlDocument();
-			doc.Load(XmlReader.Create(bundleXmlFile.GetResourceStream()));
+			doc.Load(XmlReader.Create(new MemoryStream(bundleXmlFile.Data.ReadAllBytes())));
 			var manifest = doc.DocumentElement;
 			if (manifest.Name.ToLowerInvariant() != "manifest") {
 				Log.w("Could not find Manifest element");
@@ -150,7 +151,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				}
 
 				var assemblyData = DeobUtils.inflate(data, offset, data.Length - offset, true);
-				var mod = ModuleDefinition.ReadModule(new MemoryStream(assemblyData));
+				var mod = ModuleDefMD.Load(assemblyData);
 				infos.Add(new AssemblyInfo(mod.Assembly.FullName, DeobUtils.getExtension(mod.Kind), assemblyData));
 			}
 		}
@@ -174,7 +175,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				if (type.Fields.Count != 2)
 					continue;
 
-				var ctor = DotNetUtils.getMethod(type, ".ctor");
+				var ctor = type.FindMethod(".ctor");
 				if (ctor == null || !ctor.IsPrivate)
 					continue;
 				if (!DotNetUtils.isMethod(ctor, "System.Void", "(System.Reflection.Assembly)"))
@@ -234,7 +235,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				return;
 
 			foreach (var field in bundleType.Fields) {
-				var type = field.FieldType as TypeDef;
+				var type = field.FieldSig.GetFieldType().TryGetTypeDef();
 				if (type == null)
 					continue;
 				if (type == bundleType)
@@ -242,10 +243,13 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				if (type.Fields.Count != 2)
 					continue;
 
-				var ctor = DotNetUtils.getMethod(type, ".ctor");
-				if (ctor == null || ctor.Parameters.Count != 2)
+				var ctor = type.FindMethod(".ctor");
+				if (ctor == null)
 					continue;
-				var iface = ctor.Parameters[1].ParameterType as TypeDef;
+				var sig = ctor.MethodSig;
+				if (sig == null || sig.Params.Count != 2)
+					continue;
+				var iface = sig.Params[1].TryGetTypeDef();
 				if (iface == null || !iface.IsInterface)
 					continue;
 
@@ -259,22 +263,22 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			if (assemblyManagerType == null)
 				return;
 			foreach (var field in assemblyManagerType.Fields) {
-				var type = field.FieldType as TypeDef;
+				var type = field.FieldSig.GetFieldType().TryGetTypeDef();
 				if (type == null || type.IsInterface)
 					continue;
-				var ctor = DotNetUtils.getMethod(type, ".ctor");
+				var ctor = type.FindMethod(".ctor");
 				if (!DotNetUtils.isMethod(ctor, "System.Void", "()"))
 					continue;
 				if (type.Fields.Count != 1)
 					continue;
-				var git = type.Fields[0].FieldType as GenericInstanceType;
+				var git = type.Fields[0].FieldSig.GetFieldType().ToGenericInstSig();
 				if (git == null)
 					continue;
-				if (git.ElementType.FullName != "System.Collections.Generic.List`1")
+				if (git.GenericType.FullName != "System.Collections.Generic.List`1")
 					continue;
 				if (git.GenericArguments.Count != 1)
 					continue;
-				var type2 = git.GenericArguments[0] as TypeDef;
+				var type2 = git.GenericArguments[0].TryGetTypeDef();
 				if (type2 == null)
 					continue;
 
@@ -287,7 +291,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		void findStreamProviderType() {
 			if (bundleType == null)
 				return;
-			var ctor = DotNetUtils.getMethod(bundleType, ".ctor");
+			var ctor = bundleType.FindMethod(".ctor");
 			if (!DotNetUtils.isMethod(ctor, "System.Void", "(System.Reflection.Assembly)"))
 				return;
 			foreach (var instr in ctor.Body.Instructions) {
@@ -301,9 +305,9 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				if (!DotNetUtils.isMethod(newobjCtor, "System.Void", "(System.Reflection.Assembly,System.String)"))
 					continue;
 				var type = newobjCtor.DeclaringType;
-				if (type.Interfaces.Count != 1)
+				if (type.InterfaceImpls.Count != 1)
 					continue;
-				if (type.Interfaces[0] != bundleStreamProviderIFace)
+				if (type.InterfaceImpls[0].Interface != bundleStreamProviderIFace)
 					continue;
 
 				streamProviderType = type;

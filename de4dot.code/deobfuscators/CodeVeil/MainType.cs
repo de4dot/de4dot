@@ -20,18 +20,17 @@
 using System.Collections.Generic;
 using dot10.DotNet;
 using dot10.DotNet.Emit;
-using Mono.Cecil.Metadata;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CodeVeil {
 	// Detects the type CV adds to the assembly that gets called from <Module>::.cctor.
 	class MainType {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		TypeDef theType;
 		MethodDef initMethod;
 		MethodDef tamperCheckMethod;
 		ObfuscatorVersion obfuscatorVersion = ObfuscatorVersion.Unknown;
-		List<int> rvas = new List<int>();	// _stub and _executive
+		List<uint> rvas = new List<uint>();	// _stub and _executive
 		List<MethodDef> otherInitMethods = new List<MethodDef>();
 
 		public bool Detected {
@@ -58,15 +57,15 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			get { return tamperCheckMethod; }
 		}
 
-		public List<int> Rvas {
+		public List<uint> Rvas {
 			get { return rvas; }
 		}
 
-		public MainType(ModuleDefinition module) {
+		public MainType(ModuleDefMD module) {
 			this.module = module;
 		}
 
-		public MainType(ModuleDefinition module, MainType oldOne) {
+		public MainType(ModuleDefMD module, MainType oldOne) {
 			this.module = module;
 			this.theType = lookup(oldOne.theType, "Could not find main type");
 			this.initMethod = lookup(oldOne.initMethod, "Could not find main type init method");
@@ -89,11 +88,11 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			var instrs = cctor.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 2; i++) {
 				var ldci4_1 = instrs[i];
-				if (!DotNetUtils.isLdcI4(ldci4_1))
+				if (!ldci4_1.IsLdcI4())
 					continue;
 
 				var ldci4_2 = instrs[i + 1];
-				if (!DotNetUtils.isLdcI4(ldci4_2))
+				if (!ldci4_2.IsLdcI4())
 					continue;
 
 				var call = instrs[i + 2];
@@ -155,21 +154,22 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		}
 
 		bool checkMethodsType(TypeDef type) {
-			rvas = new List<int>();
+			rvas = new List<uint>();
 
 			var fields = getRvaFields(type);
 			if (fields.Count < 2)	// RVAs for executive and stub are always present if encrypted methods
 				return true;
 
 			foreach (var field in fields)
-				rvas.Add(field.RVA);
+				rvas.Add((uint)field.RVA);
 			return true;
 		}
 
 		static List<FieldDef> getRvaFields(TypeDef type) {
 			var fields = new List<FieldDef>();
 			foreach (var field in type.Fields) {
-				if (field.FieldType.EType != ElementType.U1 && field.FieldType.EType != ElementType.U4)
+				var etype = field.FieldSig.GetFieldType().GetElementType();
+				if (etype != ElementType.U1 && etype != ElementType.U4)
 					continue;
 				if (field.RVA == 0)
 					continue;

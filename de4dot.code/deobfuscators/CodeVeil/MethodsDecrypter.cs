@@ -22,8 +22,6 @@ using System.Collections.Generic;
 using System.IO;
 using dot10.DotNet;
 using dot10.DotNet.Emit;
-using Mono.Cecil.Metadata;
-using Mono.MyStuff;
 using de4dot.blocks;
 using de4dot.PE;
 
@@ -226,7 +224,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 					return null;
 
 				// rva is 0 when the assembly has been embedded
-				int rva = BitConverter.ToInt32(fileData, offset + RVA_EXECUTIVE_OFFSET);
+				uint rva = BitConverter.ToUInt32(fileData, offset + RVA_EXECUTIVE_OFFSET);
 				if (rva != 0 && mainType.Rvas.IndexOf(rva) < 0)
 					continue;
 

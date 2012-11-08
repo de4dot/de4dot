@@ -20,7 +20,6 @@
 using System;
 using System.Collections.Generic;
 using dot10.DotNet;
-using Mono.MyStuff;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CodeVeil {
@@ -161,7 +160,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return true;
 		}
 
-		public override IDeobfuscator moduleReloaded(ModuleDefinition module) {
+		public override IDeobfuscator moduleReloaded(ModuleDefMD module) {
 			var newOne = new Deobfuscator(options);
 			newOne.setModule(module);
 			newOne.mainType = new MainType(module, mainType);

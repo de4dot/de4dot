@@ -20,16 +20,16 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using dot10.IO;
 using dot10.DotNet;
 using dot10.DotNet.Emit;
-using Mono.Cecil.Metadata;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CodeVeil {
 	class ProxyCallFixer : ProxyCallFixer1 {
 		MainType mainType;
 		Info info = new Info();
-		BinaryReader reader;
+		IBinaryReader reader;
 
 		class Info {
 			public TypeDef proxyType;
@@ -73,12 +73,12 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			get { return info.methodInfoType; }
 		}
 
-		public ProxyCallFixer(ModuleDefinition module, MainType mainType)
+		public ProxyCallFixer(ModuleDefMD module, MainType mainType)
 			: base(module) {
 			this.mainType = mainType;
 		}
 
-		public ProxyCallFixer(ModuleDefinition module, MainType mainType, ProxyCallFixer oldOne)
+		public ProxyCallFixer(ModuleDefMD module, MainType mainType, ProxyCallFixer oldOne)
 			: base(module, oldOne) {
 			this.mainType = mainType;
 			info.proxyType = lookup(oldOne.info.proxyType, "Could not find proxyType");
@@ -93,7 +93,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			var instrs = cctor.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 1; i++) {
 				var ldci4 = instrs[i];
-				if (!DotNetUtils.isLdcI4(ldci4))
+				if (!ldci4.IsLdcI4())
 					continue;
 
 				var call = instrs[i + 1];
@@ -102,24 +102,24 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				if (call.Operand != info.initMethod)
 					continue;
 
-				int offset = DotNetUtils.getLdcI4Value(ldci4);
-				reader.BaseStream.Position = offset;
-				int rid = DeobUtils.readVariableLengthInt32(reader);
-				if (rid != type.MDToken.RID)
+				int offset = ldci4.GetLdcI4Value();
+				reader.Position = offset;
+				uint rid = reader.ReadCompressedUInt32();
+				if (rid != type.Rid)
 					throw new ApplicationException("Invalid RID");
 				return string.Empty;	// It's non-null
 			}
 			return null;
 		}
 
-		protected override void getCallInfo(object context, FieldDef field, out MethodReference calledMethod, out OpCode callOpcode) {
+		protected override void getCallInfo(object context, FieldDef field, out IMethod calledMethod, out OpCode callOpcode) {
 			byte flags = reader.ReadByte();
 
-			int methodToken = 0x06000000 + ((flags & 0x3F) << 24) + DeobUtils.readVariableLengthInt32(reader);
-			int genericTypeToken = (flags & 0x40) == 0 ? -1 : 0x1B000000 + DeobUtils.readVariableLengthInt32(reader);
+			int methodToken = 0x06000000 + ((flags & 0x3F) << 24) + (int)reader.ReadCompressedUInt32();
+			int genericTypeToken = (flags & 0x40) == 0 ? -1 : 0x1B000000 + (int)reader.ReadCompressedUInt32();
 			callOpcode = (flags & 0x80) != 0 ? OpCodes.Callvirt : OpCodes.Call;
 
-			calledMethod = module.LookupToken(methodToken) as MethodReference;
+			calledMethod = module.ResolveToken(methodToken) as IMethod;
 			if (calledMethod == null)
 				throw new ApplicationException("Could not find method");
 			if (genericTypeToken != -1 && calledMethod.DeclaringType.MDToken.ToInt32() != genericTypeToken)
@@ -140,7 +140,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 
 		bool initializeInfo(Info infoTmp, TypeDef type) {
 			foreach (var dtype in type.NestedTypes) {
-				var cctor = DotNetUtils.getMethod(dtype, ".cctor");
+				var cctor = dtype.FindMethod(".cctor");
 				if (cctor == null)
 					continue;
 				if (!initProxyType(infoTmp, cctor))
@@ -186,7 +186,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			if (fields.Count != 1)
 				return false;
 			var field = fields[0];
-			var fieldType = DotNetUtils.getType(module, field.FieldType);
+			var fieldType = DotNetUtils.getType(module, field.FieldSig.GetFieldType());
 			if (type.NestedTypes.IndexOf(fieldType) < 0)
 				return false;
 			if (field.InitialValue == null || field.InitialValue.Length == 0)
@@ -218,8 +218,8 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			findOtherTypes();
 
 			var decompressed = DeobUtils.inflate(info.dataField.InitialValue, true);
-			reader = new BinaryReader(new MemoryStream(decompressed));
-			info.dataField.FieldType = module.TypeSystem.Byte;
+			reader = MemoryImageStream.Create(decompressed);
+			info.dataField.FieldSig.Type = module.CorLibTypes.Byte;
 			info.dataField.InitialValue = new byte[1];
 		}
 
@@ -228,14 +228,15 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				return;
 
 			foreach (var method in info.proxyType.Methods) {
-				if (method.Parameters.Count != 4)
+				var sig = method.MethodSig;
+				if (sig == null || sig.Params.Count != 4)
 					continue;
 
-				if (method.Parameters[2].ParameterType.FullName != "System.Type[]")
+				if (sig.Params[2].GetFullName() != "System.Type[]")
 					continue;
-				var methodType = method.Parameters[0].ParameterType as TypeDef;
-				var fieldType = method.Parameters[1].ParameterType as TypeDef;
-				var ilgType = method.Parameters[3].ParameterType as TypeDef;
+				var methodType = sig.Params[0].TryGetTypeDef();
+				var fieldType = sig.Params[1].TryGetTypeDef();
+				var ilgType = sig.Params[3].TryGetTypeDef();
 				if (!checkMethodType(methodType))
 					continue;
 				if (!checkFieldType(fieldType))
@@ -250,7 +251,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		}
 
 		bool checkMethodType(TypeDef type) {
-			if (type == null || type.BaseType == null || type.BaseType.EType != ElementType.Object)
+			if (type == null || type.BaseType == null || type.BaseType.FullName != "System.Object")
 				return false;
 			if (type.Fields.Count != 1)
 				return false;
@@ -261,7 +262,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		}
 
 		bool checkFieldType(TypeDef type) {
-			if (type == null || type.BaseType == null || type.BaseType.EType != ElementType.Object)
+			if (type == null || type.BaseType == null || type.BaseType.FullName != "System.Object")
 				return false;
 			if (DotNetUtils.getField(type, "System.Reflection.FieldInfo") == null)
 				return false;
@@ -270,7 +271,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		}
 
 		bool checkIlGeneratorType(TypeDef type) {
-			if (type == null || type.BaseType == null || type.BaseType.EType != ElementType.Object)
+			if (type == null || type.BaseType == null || type.BaseType.FullName != "System.Object")
 				return false;
 			if (type.Fields.Count != 1)
 				return false;

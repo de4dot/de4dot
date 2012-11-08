@@ -20,12 +20,11 @@
 using System.Collections.Generic;
 using dot10.DotNet;
 using dot10.DotNet.Emit;
-using Mono.Cecil.Metadata;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CodeVeil {
 	class TamperDetection {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		MainType mainType;
 		TypeDef tamperDetectionType;
 		List<MethodDef> tamperDetectionMethods = new List<MethodDef>();
@@ -38,7 +37,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			get { return tamperDetectionMethods; }
 		}
 
-		public TamperDetection(ModuleDefinition module, MainType mainType) {
+		public TamperDetection(ModuleDefMD module, MainType mainType) {
 			this.module = module;
 			this.mainType = mainType;
 		}
@@ -57,7 +56,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			foreach (var type in module.Types) {
 				if (!type.HasNestedTypes)
 					continue;
-				if ((type.Attributes & ~TypeAttributes.Sealed) != 0)
+				if ((type.Flags & ~TypeAttributes.Sealed) != 0)
 					continue;
 
 				if (!checkTamperDetectionClasses(type.NestedTypes))
@@ -91,9 +90,9 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		}
 
 		bool isTamperDetectionClass(TypeDef type) {
-			if (type.BaseType == null || type.BaseType.EType != ElementType.Object)
+			if (type.BaseType == null || type.BaseType.FullName != "System.Object")
 				return false;
-			if ((type.Attributes & ~TypeAttributes.Sealed) != TypeAttributes.NestedAssembly)
+			if ((type.Flags & ~TypeAttributes.Sealed) != TypeAttributes.NestedAssembly)
 				return false;
 
 			MethodDef cctor = null, initMethod = null;

@@ -19,13 +19,14 @@
 
 using System;
 using System.IO;
+using dot10.IO;
 using dot10.DotNet;
 using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CodeVeil {
 	class StringDecrypter {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		MainType mainType;
 		TypeDef decrypterType;
 		FieldDef stringDataField;
@@ -49,12 +50,12 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			get { return decrypterMethod; }
 		}
 
-		public StringDecrypter(ModuleDefinition module, MainType mainType) {
+		public StringDecrypter(ModuleDefMD module, MainType mainType) {
 			this.module = module;
 			this.mainType = mainType;
 		}
 
-		public StringDecrypter(ModuleDefinition module, MainType mainType, StringDecrypter oldOne) {
+		public StringDecrypter(ModuleDefMD module, MainType mainType, StringDecrypter oldOne) {
 			this.module = module;
 			this.mainType = mainType;
 			this.decrypterType = lookup(oldOne.decrypterType, "Could not find string decrypter type");
@@ -121,7 +122,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			var stringDataFieldTmp = checkFields(type);
 			if (stringDataFieldTmp == null)
 				return false;
-			var fieldType = DotNetUtils.getType(module, stringDataFieldTmp.FieldType);
+			var fieldType = DotNetUtils.getType(module, stringDataFieldTmp.FieldSig.GetFieldType());
 			if (fieldType == null || type.NestedTypes.IndexOf(fieldType) < 0)
 				return false;
 
@@ -189,7 +190,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 
 			decryptStrings(key);
 
-			stringDataField.FieldType = module.TypeSystem.Byte;
+			stringDataField.FieldSig.Type = module.CorLibTypes.Byte;
 			stringDataField.InitialValue = new byte[1];
 		}
 
@@ -197,9 +198,9 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 1; i++) {
 				var ldci4 = instrs[i];
-				if (!DotNetUtils.isLdcI4(ldci4))
+				if (!ldci4.IsLdcI4())
 					continue;
-				if (DotNetUtils.getLdcI4Value(ldci4) != 4)
+				if (ldci4.GetLdcI4Value() != 4)
 					continue;
 
 				if (instrs[i + 1].OpCode.Code != Code.Newarr)
@@ -225,16 +226,16 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			Buffer.BlockCopy(encryptedData, 0, decryptedData, 0, data.Length);
 
 			var inflated = DeobUtils.inflate(decryptedData, 0, decryptedData.Length, true);
-			var reader = new BinaryReader(new MemoryStream(inflated));
-			int deflatedLength = DeobUtils.readVariableLengthInt32(reader);
-			int numStrings = DeobUtils.readVariableLengthInt32(reader);
+			var reader = MemoryImageStream.Create(inflated);
+			int deflatedLength = (int)reader.ReadCompressedUInt32();
+			int numStrings = (int)reader.ReadCompressedUInt32();
 			decryptedStrings = new string[numStrings];
 			var offsets = new int[numStrings];
 			for (int i = 0; i < numStrings; i++)
-				offsets[i] = DeobUtils.readVariableLengthInt32(reader);
-			int startOffset = (int)reader.BaseStream.Position;
+				offsets[i] = (int)reader.ReadCompressedUInt32();
+			int startOffset = (int)reader.Position;
 			for (int i = 0; i < numStrings; i++) {
-				reader.BaseStream.Position = startOffset + offsets[i];
+				reader.Position = startOffset + offsets[i];
 				decryptedStrings[i] = reader.ReadString();
 			}
 		}
