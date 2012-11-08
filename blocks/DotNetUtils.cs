@@ -552,8 +552,9 @@ namespace de4dot.blocks {
 					newGp.GenericParamConstraints.Add(new GenericParamConstraintUser(gpc.Constraint));
 				newMethod.GenericParams.Add(newGp);
 			}
+			newMethod.Body = new CilBody();
 			copyBodyFromTo(method, newMethod);
-			return method;
+			return newMethod;
 		}
 
 #if PORT
@@ -1303,7 +1304,6 @@ namespace de4dot.blocks {
 			return false;
 		}
 
-#if PORT
 		public static IList<Instruction> getArgPushes(IList<Instruction> instrs, int index) {
 			return getArgPushes(instrs, ref index);
 		}
@@ -1313,7 +1313,7 @@ namespace de4dot.blocks {
 				return null;
 			var startInstr = instrs[index];
 			int pushes, pops;
-			calculateStackUsage(startInstr, false, out pushes, out pops);
+			startInstr.CalculateStackUsage(false, out pushes, out pops);
 
 			index--;
 			int numArgs = pops;
@@ -1321,7 +1321,7 @@ namespace de4dot.blocks {
 			int stackSize = numArgs;
 			while (index >= 0 && args.Count != numArgs) {
 				var instr = instrs[index--];
-				calculateStackUsage(instr, false, out pushes, out pops);
+				instr.CalculateStackUsage(false, out pushes, out pops);
 				if (instr.OpCode.Code == Code.Dup) {
 					args.Add(instr);
 					stackSize--;
@@ -1349,6 +1349,7 @@ namespace de4dot.blocks {
 			return args;
 		}
 
+#if PORT
 		public static AssemblyNameReference addAssemblyReference(ModuleDefinition module, AssemblyNameReference asmRef) {
 			foreach (var modAsmRef in module.AssemblyReferences) {
 				if (modAsmRef.FullName == asmRef.FullName)

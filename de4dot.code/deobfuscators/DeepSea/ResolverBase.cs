@@ -25,7 +25,7 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.DeepSea {
 	abstract class ResolverBase {
-		protected ModuleDefinition module;
+		protected ModuleDefMD module;
 		protected ISimpleDeobfuscator simpleDeobfuscator;
 		protected IDeobfuscator deob;
 		protected MethodDef initMethod;
@@ -44,7 +44,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			get { return initMethod != null; }
 		}
 
-		public ResolverBase(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
+		public ResolverBase(ModuleDefMD module, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
 			this.module = module;
 			this.frameworkType = DotNetUtils.getFrameworkType(module);
 			this.simpleDeobfuscator = simpleDeobfuscator;

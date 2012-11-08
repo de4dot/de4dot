@@ -27,14 +27,14 @@ using dot10.DotNet.Emit;
 namespace de4dot.code.deobfuscators.DeepSea {
 	class CastDeobfuscator : IBlocksDeobfuscator {
 		Blocks blocks;
-		Dictionary<VariableDefinition, LocalInfo> localInfos = new Dictionary<VariableDefinition, LocalInfo>();
+		Dictionary<Local, LocalInfo> localInfos = new Dictionary<Local, LocalInfo>();
 
 		class LocalInfo {
-			public readonly VariableDefinition local;
-			TypeReference type;
+			public readonly Local local;
+			ITypeDefOrRef type;
 			bool isValid;
 
-			public TypeReference CastType {
+			public ITypeDefOrRef CastType {
 				get { return type; }
 				set {
 					if (!isValid)
@@ -45,7 +45,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 						return;
 					}
 
-					if (type != null && !MemberReferenceHelper.compareTypes(type, value)) {
+					if (type != null && !new SigComparer().Equals(type, value)) {
 						invalid();
 						return;
 					}
@@ -54,7 +54,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				}
 			}
 
-			public LocalInfo(VariableDefinition local) {
+			public LocalInfo(Local local) {
 				this.local = local;
 				this.isValid = true;
 			}
@@ -92,13 +92,13 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				for (int i = 0; i < instrs.Count - 1; i++) {
 					var instr = instrs[i];
 					if (instr.OpCode.Code == Code.Ldloca || instr.OpCode.Code == Code.Ldloca_S) {
-						var local = instr.Operand as VariableDefinition;
+						var local = instr.Operand as Local;
 						if (local == null)
 							continue;
 						localInfos[local].invalid();
 					}
 					else if (instr.isLdloc()) {
-						var local = DotNetUtils.getLocalVar(blocks.Locals, instr.Instruction);
+						var local = instr.Instruction.GetLocal(blocks.Locals);
 						if (local == null)
 							continue;
 						var localInfo = localInfos[local];
@@ -120,7 +120,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			foreach (var info in localInfos.Values) {
 				if (info.CastType == null)
 					continue;
-				info.local.VariableType = info.CastType;
+				info.local.Type = info.CastType.ToTypeSig();
 			}
 
 			if (changed) {
@@ -137,18 +137,18 @@ namespace de4dot.code.deobfuscators.DeepSea {
 						}
 
 						if (instr.isLdarg())
-							addCast(block, castIndex, i + 1, DotNetUtils.getArgType(blocks.Method, instr.Instruction));
+							addCast(block, castIndex, i + 1, instr.Instruction.GetArgumentType(blocks.Method.MethodSig, blocks.Method.DeclaringType));
 						else if (instr.OpCode.Code == Code.Ldfld || instr.OpCode.Code == Code.Ldsfld) {
-							var field = instr.Operand as FieldReference;
+							var field = instr.Operand as IField;
 							if (field == null)
 								continue;
-							addCast(block, castIndex, i + 1, field.FieldType);
+							addCast(block, castIndex, i + 1, field.FieldSig.GetFieldType());
 						}
 						else if (instr.OpCode.Code == Code.Call || instr.OpCode.Code == Code.Callvirt) {
-							var calledMethod = instr.Operand as MethodReference;
+							var calledMethod = instr.Operand as IMethod;
 							if (calledMethod == null || !DotNetUtils.hasReturnValue(calledMethod))
 								continue;
-							addCast(block, castIndex, i + 1, calledMethod.MethodReturnType.ReturnType);
+							addCast(block, castIndex, i + 1, calledMethod.MethodSig.GetRetType());
 						}
 					}
 				}
@@ -157,7 +157,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return changed;
 		}
 
-		bool addCast(Block block, int castIndex, int index, TypeReference type) {
+		bool addCast(Block block, int castIndex, int index, TypeSig type) {
 			if (type == null)
 				return false;
 			if (castIndex >= block.Instructions.Count || index >= block.Instructions.Count)
@@ -165,14 +165,14 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			var stloc = block.Instructions[index];
 			if (!stloc.isStloc())
 				return false;
-			var local = DotNetUtils.getLocalVar(blocks.Locals, stloc.Instruction);
+			var local = stloc.Instruction.GetLocal(blocks.Locals);
 			if (local == null)
 				return false;
 			var localInfo = localInfos[local];
 			if (localInfo.CastType == null)
 				return false;
 
-			if (!MemberReferenceHelper.compareTypes(localInfo.CastType, type))
+			if (!new SigComparer().Equals(localInfo.CastType, type))
 				block.insert(castIndex, new Instruction(OpCodes.Castclass, localInfo.CastType));
 			return true;
 		}
@@ -190,7 +190,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 					var ldloc = instrs[i];
 					if (!ldloc.isLdloc())
 						continue;
-					var local = DotNetUtils.getLocalVar(blocks.Locals, ldloc.Instruction);
+					var local = ldloc.Instruction.GetLocal(blocks.Locals);
 					if (local == null)
 						continue;
 					var localInfo = localInfos[local];
@@ -204,10 +204,10 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return instr.OpCode.Code == Code.Castclass || instr.OpCode.Code == Code.Isinst;
 		}
 
-		static TypeReference getCastType(Instr instr) {
+		static ITypeDefOrRef getCastType(Instr instr) {
 			if (!isCast(instr))
 				return null;
-			return instr.Operand as TypeReference;
+			return instr.Operand as ITypeDefOrRef;
 		}
 	}
 }

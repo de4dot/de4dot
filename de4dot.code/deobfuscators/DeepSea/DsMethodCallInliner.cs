@@ -20,15 +20,14 @@
 using System.Collections.Generic;
 using dot10.DotNet;
 using dot10.DotNet.Emit;
-using Mono.Cecil.Metadata;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
 
 namespace de4dot.code.deobfuscators.DeepSea {
 	class DsMethodCallInliner : MethodCallInlinerBase {
 		InstructionEmulator instructionEmulator = new InstructionEmulator();
-		List<ParameterDefinition> parameters;
-		ParameterDefinition arg1, arg2;
+		IList<Parameter> parameters;
+		Parameter arg1, arg2;
 		Value returnValue;
 		MethodDef methodToInline;
 		CachedCflowDeobfuscator cflowDeobfuscator;
@@ -73,14 +72,16 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		bool inlineMethod(MethodDef methodToInline, int instrIndex, int const1, int const2) {
 			this.methodToInline = methodToInline = cflowDeobfuscator.deobfuscate(methodToInline);
 
-			parameters = DotNetUtils.getParameters(methodToInline);
+			parameters = methodToInline.Parameters;
 			arg1 = parameters[parameters.Count - 2];
 			arg2 = parameters[parameters.Count - 1];
 			returnValue = null;
 
 			instructionEmulator.init(methodToInline);
 			foreach (var arg in parameters) {
-				if (arg.ParameterType.EType >= ElementType.Boolean && arg.ParameterType.EType <= ElementType.U4)
+				if (!arg.IsNormalMethodParameter)
+					continue;
+				if (arg.Type.ElementType >= ElementType.Boolean && arg.Type.ElementType <= ElementType.U4)
 					instructionEmulator.setArg(arg, new Int32Value(0));
 			}
 			instructionEmulator.setArg(arg1, new Int32Value(const1));
@@ -157,7 +158,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				case Code.Ldarg_1:
 				case Code.Ldarg_2:
 				case Code.Ldarg_3:
-					var arg = DotNetUtils.getParameter(parameters, instr);
+					var arg = instr.GetParameter(parameters);
 					if (arg != arg1 && arg != arg2) {
 						if (!allowUnknownArgs)
 							goto done;
@@ -269,7 +270,7 @@ done:
 
 		bool emulateToReturn(int index, Instruction lastInstr) {
 			int pushes, pops;
-			DotNetUtils.calculateStackUsage(lastInstr, false, out pushes, out pops);
+			lastInstr.CalculateStackUsage(false, out pushes, out pops);
 			for (int i = 0; i < pops; i++)
 				instructionEmulator.pop();
 
@@ -297,22 +298,22 @@ done:
 		public static bool canInline(MethodDef method) {
 			if (method == null || method.Body == null)
 				return false;
-			if (method.Attributes != (MethodAttributes.Assembly | MethodAttributes.Static))
+			if (method.Flags != (MethodAttributes.Assembly | MethodAttributes.Static))
 				return false;
-			if (method.GenericParameters.Count > 0)
+			if (method.GenericParams.Count > 0)
 				return false;
 			if (method.Body.ExceptionHandlers.Count > 0)
 				return false;
 
-			var parameters = method.Parameters;
+			var parameters = method.MethodSig.GetParams();
 			int paramCount = parameters.Count;
 			if (paramCount < 2)
 				return false;
 			var param1 = parameters[paramCount - 1];
 			var param2 = parameters[paramCount - 2];
-			if (!isIntType(param1.ParameterType.EType))
+			if (!isIntType(param1.ElementType))
 				return false;
-			if (!isIntType(param2.ParameterType.EType))
+			if (!isIntType(param2.ElementType))
 				return false;
 
 			return true;

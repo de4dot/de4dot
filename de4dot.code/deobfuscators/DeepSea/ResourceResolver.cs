@@ -83,7 +83,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			get { return data30 != null ? data30.resource : null; }
 		}
 
-		public ResourceResolver(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob)
+		public ResourceResolver(ModuleDefMD module, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob)
 			: base(module, simpleDeobfuscator, deob) {
 		}
 
@@ -145,7 +145,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				magicArgIndex = getMagicArgIndex41Trial(info.handler);
 				data41.isTrial = true;
 			}
-			var asmVer = module.Assembly.Name.Version;
+			var asmVer = module.Assembly.Version;
 			if (magicArgIndex < 0 || magicArgIndex >= info.args.Count)
 				return false;
 			var val = info.args[magicArgIndex];
@@ -165,16 +165,16 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				if (add.OpCode.Code != Code.Add)
 					continue;
 				var ldarg = instrs[i + 1];
-				if (!DotNetUtils.isLdarg(ldarg))
+				if (!ldarg.IsLdarg())
 					continue;
 				var sub = instrs[i + 2];
 				if (sub.OpCode.Code != Code.Sub)
 					continue;
 				var ldci4 = instrs[i + 3];
-				if (!DotNetUtils.isLdcI4(ldci4) || DotNetUtils.getLdcI4Value(ldci4) != 0xFF)
+				if (!ldci4.IsLdcI4() || ldci4.GetLdcI4Value() != 0xFF)
 					continue;
 
-				return DotNetUtils.getArgIndex(ldarg);
+				return ldarg.GetParameterIndex();
 			}
 			return -1;
 		}
@@ -183,14 +183,14 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 2; i++) {
 				var ldarg = instrs[i];
-				if (!DotNetUtils.isLdarg(ldarg))
+				if (!ldarg.IsLdarg())
 					continue;
-				if (!DotNetUtils.isLdcI4(instrs[i + 1]))
+				if (!instrs[i + 1].IsLdcI4())
 					continue;
 				if (instrs[i + 2].OpCode.Code != Code.Shr)
 					continue;
 
-				return DotNetUtils.getArgIndex(ldarg);
+				return ldarg.GetParameterIndex();
 			}
 			return -1;
 		}
@@ -255,21 +255,21 @@ namespace de4dot.code.deobfuscators.DeepSea {
 					continue;
 
 				var ldci4_len = instrs[index++];
-				if (!DotNetUtils.isLdcI4(ldci4_len))
+				if (!ldci4_len.IsLdcI4())
 					continue;
-				if (DotNetUtils.getLdcI4Value(ldci4_len) != field.InitialValue.Length)
+				if (ldci4_len.GetLdcI4Value() != field.InitialValue.Length)
 					continue;
 
 				if (instrs[index++].OpCode.Code != Code.Ldstr)
 					continue;
 
 				var ldci4_magic = instrs[index++];
-				if (!DotNetUtils.isLdcI4(ldci4_magic))
+				if (!ldci4_magic.IsLdcI4())
 					continue;
-				data40.magic = DotNetUtils.getLdcI4Value(ldci4_magic);
+				data40.magic = ldci4_magic.GetLdcI4Value();
 
 				var call = instrs[index++];
-				if (call.OpCode.Code == Code.Tail)
+				if (call.OpCode.Code == Code.Tailcall)
 					call = instrs[index++];
 				if (call.OpCode.Code != Code.Call)
 					continue;
@@ -322,7 +322,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				if (data30.resource == null)
 					return false;
 
-				DeobUtils.decryptAndAddResources(module, data30.resource.Name, () => decryptResourceV3(data30.resource));
+				DeobUtils.decryptAndAddResources(module, data30.resource.Name.String, () => decryptResourceV3(data30.resource));
 				rsrc = data30.resource;
 				return true;
 
@@ -341,10 +341,10 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			if (resourceField == null)
 				return false;
 
-			string name = string.Format("Embedded data field {0:X8} RVA {1:X8}", resourceField.MDToken.ToInt32(), resourceField.RVA);
+			string name = string.Format("Embedded data field {0:X8} RVA {1:X8}", resourceField.MDToken.ToInt32(), (uint)resourceField.RVA);
 			DeobUtils.decryptAndAddResources(module, name, () => decryptResourceV4(resourceField.InitialValue, magic));
 			resourceField.InitialValue = new byte[1];
-			resourceField.FieldType = module.TypeSystem.Byte;
+			resourceField.FieldSig.Type = module.CorLibTypes.Byte;
 			return true;
 		}
 	}
