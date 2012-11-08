@@ -132,7 +132,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			this.options = options;
 		}
 
-		public override void init(ModuleDefinition module) {
+		public override void init(ModuleDefMD module) {
 			base.init(module);
 		}
 
@@ -183,9 +183,9 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		}
 
 		void checkVersion(TypeDef attr) {
-			var versionField = DotNetUtils.getFieldByName(attr, "Version");
-			if (versionField != null && versionField.IsLiteral && versionField.Constant != null && versionField.Constant is string) {
-				var val = Regex.Match((string)versionField.Constant, @"^(\d+\.\d+\.\d+\.\d+)$");
+			var versionField = attr.FindField("Version");
+			if (versionField != null && versionField.IsLiteral && versionField.Constant != null && versionField.Constant.Value is string) {
+				var val = Regex.Match((string)versionField.Constant.Value, @"^(\d+\.\d+\.\d+\.\d+)$");
 				if (val.Groups.Count < 2)
 					return;
 				obfuscatorName = string.Format("{0} {1}", DeobfuscatorInfo.THE_NAME, val.Groups[1].ToString());

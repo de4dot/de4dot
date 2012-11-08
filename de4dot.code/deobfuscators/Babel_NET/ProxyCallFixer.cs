@@ -27,7 +27,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 	class ProxyCallFixer : ProxyCallFixer2 {
 		MethodDefinitionAndDeclaringTypeDict<ProxyCreatorType> methodToType = new MethodDefinitionAndDeclaringTypeDict<ProxyCreatorType>();
 
-		public ProxyCallFixer(ModuleDefinition module)
+		public ProxyCallFixer(ModuleDefMD module)
 			: base(module) {
 		}
 
@@ -38,11 +38,11 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		}
 
 		class Context {
-			public TypeReference delegateType;
+			public ITypeDefOrRef delegateType;
 			public int methodToken;
 			public int declaringTypeToken;
 			public ProxyCreatorType proxyCreatorType;
-			public Context(TypeReference delegateType, int methodToken, int declaringTypeToken, ProxyCreatorType proxyCreatorType) {
+			public Context(ITypeDefOrRef delegateType, int methodToken, int declaringTypeToken, ProxyCreatorType proxyCreatorType) {
 				this.delegateType = delegateType;
 				this.methodToken = methodToken;
 				this.declaringTypeToken = declaringTypeToken;
@@ -57,24 +57,24 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		protected override object checkCctor(TypeDef type, MethodDef cctor) {
 			var instructions = cctor.Body.Instructions;
 			for (int i = 0; i < instructions.Count; i++) {
-				TypeReference delegateType;
-				FieldReference delegateField;
-				MethodReference createMethod;
+				ITypeDefOrRef delegateType;
+				IField delegateField;
+				IMethod createMethod;
 				int methodToken, declaringTypeToken;
 				var instrs = DotNetUtils.getInstructions(instructions, i, OpCodes.Ldtoken, OpCodes.Ldc_I4, OpCodes.Ldc_I4, OpCodes.Ldtoken, OpCodes.Call);
 				if (instrs != null) {
-					delegateType = instrs[0].Operand as TypeReference;
-					methodToken = DotNetUtils.getLdcI4Value(instrs[1]);
-					declaringTypeToken = DotNetUtils.getLdcI4Value(instrs[2]);
-					delegateField = instrs[3].Operand as FieldReference;
-					createMethod = instrs[4].Operand as MethodReference;
+					delegateType = instrs[0].Operand as ITypeDefOrRef;
+					methodToken = instrs[1].GetLdcI4Value();
+					declaringTypeToken = instrs[2].GetLdcI4Value();
+					delegateField = instrs[3].Operand as IField;
+					createMethod = instrs[4].Operand as IMethod;
 				}
 				else if ((instrs = DotNetUtils.getInstructions(instructions, i, OpCodes.Ldtoken, OpCodes.Ldc_I4, OpCodes.Ldtoken, OpCodes.Call)) != null) {
-					delegateType = instrs[0].Operand as TypeReference;
-					methodToken = DotNetUtils.getLdcI4Value(instrs[1]);
+					delegateType = instrs[0].Operand as ITypeDefOrRef;
+					methodToken = instrs[1].GetLdcI4Value();
 					declaringTypeToken = -1;
-					delegateField = instrs[2].Operand as FieldReference;
-					createMethod = instrs[3].Operand as MethodReference;
+					delegateField = instrs[2].Operand as IField;
+					createMethod = instrs[3].Operand as IMethod;
 				}
 				else
 					continue;
@@ -95,7 +95,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return null;
 		}
 
-		protected override void getCallInfo(object context, FieldDef field, out MethodReference calledMethod, out OpCode callOpcode) {
+		protected override void getCallInfo(object context, FieldDef field, out IMethod calledMethod, out OpCode callOpcode) {
 			var ctx = (Context)context;
 
 			switch (ctx.proxyCreatorType) {
@@ -109,7 +109,10 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				throw new ApplicationException(string.Format("Invalid proxy creator type: {0}", ctx.proxyCreatorType));
 			}
 
-			calledMethod = module.LookupToken(ctx.methodToken) as MethodReference;
+			var method = module.ResolveToken(ctx.methodToken) as IMethod;
+			if (method.MethodSig == null)
+				method = null;
+			calledMethod = method;
 		}
 
 		public void findDelegateCreator() {
@@ -145,7 +148,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			foreach (var calledMethod in DotNetUtils.getCalledMethods(module, methodToCheck)) {
 				if (!calledMethod.IsStatic || calledMethod.Body == null)
 					continue;
-				if (!MemberReferenceHelper.compareTypes(methodToCheck.DeclaringType, calledMethod.DeclaringType))
+				if (!new SigComparer().Equals(methodToCheck.DeclaringType, calledMethod.DeclaringType))
 					continue;
 				if (DotNetUtils.isMethod(calledMethod, "System.Void", "(System.Reflection.FieldInfo,System.Type,System.Reflection.MethodInfo)"))
 					return ProxyCreatorType.CallOrCallvirt;

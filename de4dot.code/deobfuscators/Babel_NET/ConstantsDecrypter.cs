@@ -21,13 +21,14 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
+using dot10.IO;
 using dot10.DotNet;
 using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Babel_NET {
 	class ConstantsDecrypter {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		ResourceDecrypter resourceDecrypter;
 		InitializedDataCreator initializedDataCreator;
 		TypeDef decrypterType;
@@ -78,7 +79,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			get { return arrayDecrypter; }
 		}
 
-		public ConstantsDecrypter(ModuleDefinition module, ResourceDecrypter resourceDecrypter, InitializedDataCreator initializedDataCreator) {
+		public ConstantsDecrypter(ModuleDefMD module, ResourceDecrypter resourceDecrypter, InitializedDataCreator initializedDataCreator) {
 			this.module = module;
 			this.resourceDecrypter = resourceDecrypter;
 			this.initializedDataCreator = initializedDataCreator;
@@ -109,7 +110,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			if (!checkNestedFields(nested))
 				return false;
 
-			resourceDecrypter.DecryptMethod = ResourceDecrypter.findDecrypterMethod(DotNetUtils.getMethod(nested, ".ctor"));
+			resourceDecrypter.DecryptMethod = ResourceDecrypter.findDecrypterMethod(nested.FindMethod(".ctor"));
 
 			if (DotNetUtils.getMethod(type, "System.Int32", "(System.Int32)") == null)
 				return false;
@@ -135,7 +136,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			if (!new FieldTypes(nested).all(requiredTypes))
 				return false;
 			foreach (var field in nested.Fields) {
-				if (MemberReferenceHelper.compareTypes(nested, field.FieldType))
+				if (new SigComparer().Equals(nested, field.FieldSig.GetFieldType()))
 					return true;
 			}
 			return false;
@@ -151,7 +152,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				return;
 			}
 
-			var decrypted = resourceDecrypter.decrypt(encryptedResource.GetResourceData());
+			var decrypted = resourceDecrypter.decrypt(encryptedResource.Data.ReadAllBytes());
 			var reader = new BinaryReader(new MemoryStream(decrypted));
 			int count;
 
@@ -194,10 +195,10 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 		struct ArrayInfo {
 			public FieldDef encryptedField;
-			public ArrayType arrayType;
+			public SZArraySig arrayType;
 			public int start, len;
 
-			public ArrayInfo(int start, int len, FieldDef encryptedField, ArrayType arrayType) {
+			public ArrayInfo(int start, int len, FieldDef encryptedField, SZArraySig arrayType) {
 				this.start = start;
 				this.len = len;
 				this.encryptedField = encryptedField;
@@ -239,23 +240,23 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 					var call1 = instrs[index++];
 					if (call1.OpCode.Code != Code.Call && call1.OpCode.Code != Code.Callvirt)
 						continue;
-					if (!DotNetUtils.isMethod(call1.Operand as MethodReference, "System.Void", "(System.Array,System.RuntimeFieldHandle)"))
+					if (!DotNetUtils.isMethod(call1.Operand as IMethod, "System.Void", "(System.Array,System.RuntimeFieldHandle)"))
 						continue;
 
 					var call2 = instrs[index++];
 					if (call2.OpCode.Code != Code.Call && call2.OpCode.Code != Code.Callvirt)
 						continue;
-					if (!MemberReferenceHelper.compareMethodReferenceAndDeclaringType(call2.Operand as MethodReference, arrayDecrypter))
+					if (!MethodEqualityComparer.CompareDeclaringTypes.Equals(call2.Operand as IMethod, arrayDecrypter))
 						continue;
 
 					var castclass = instrs[index++];
 					if (castclass.OpCode.Code != Code.Castclass)
 						continue;
-					var arrayType = castclass.Operand as ArrayType;
+					var arrayType = (castclass.Operand as ITypeDefOrRef).ToSZArraySig();
 					if (arrayType == null)
 						continue;
-					if (arrayType.ElementType.GetPrimitiveSize() == -1) {
-						Log.w("Can't decrypt non-primitive type array in method {0}", blocks.Method.MDToken.ToInt32());
+					if (arrayType.Next.ElementType.GetPrimitiveSize() == -1) {
+						Log.w("Can't decrypt non-primitive type array in method {0:X8}", blocks.Method.MDToken.ToInt32());
 						continue;
 					}
 
@@ -264,11 +265,11 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 				infos.Reverse();
 				foreach (var info in infos) {
-					var elemSize = info.arrayType.ElementType.GetPrimitiveSize();
+					var elemSize = info.arrayType.Next.ElementType.GetPrimitiveSize();
 					var decrypted = decryptArray(info.encryptedField.InitialValue, elemSize);
 
-					initializedDataCreator.addInitializeArrayCode(block, info.start, info.len, info.arrayType.ElementType, decrypted);
-					Log.v("Decrypted {0} array: {1} elements", info.arrayType.ElementType.ToString(), decrypted.Length / elemSize);
+					initializedDataCreator.addInitializeArrayCode(block, info.start, info.len, info.arrayType.Next.ToTypeDefOrRef(), decrypted);
+					Log.v("Decrypted {0} array: {1} elements", info.arrayType.Next.ToString(), decrypted.Length / elemSize);
 				}
 			}
 		}

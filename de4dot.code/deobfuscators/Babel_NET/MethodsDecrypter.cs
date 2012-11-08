@@ -20,13 +20,14 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using dot10.IO;
 using dot10.DotNet;
 using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Babel_NET {
 	class MethodsDecrypter {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		ResourceDecrypter resourceDecrypter;
 		IDeobfuscatorContext deobfuscatorContext;
 		Dictionary<string, ImageReader> imageReaders = new Dictionary<string, ImageReader>(StringComparer.Ordinal);
@@ -39,7 +40,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			get { return methodsDecrypterCreator != null; }
 		}
 
-		public MethodsDecrypter(ModuleDefinition module, ResourceDecrypter resourceDecrypter, IDeobfuscatorContext deobfuscatorContext) {
+		public MethodsDecrypter(ModuleDefMD module, ResourceDecrypter resourceDecrypter, IDeobfuscatorContext deobfuscatorContext) {
 			this.module = module;
 			this.resourceDecrypter = resourceDecrypter;
 			this.deobfuscatorContext = deobfuscatorContext;
@@ -54,7 +55,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				var fieldTypes = new FieldTypes(type);
 				if (!fieldTypes.all(requiredFields))
 					continue;
-				if (DotNetUtils.getMethod(type, "Finalize") == null)
+				if (type.FindMethod("Finalize") == null)
 					continue;
 				var executeMethod = DotNetUtils.getMethod(type, "System.Object", "(System.String,System.Object[])");
 				if (executeMethod == null || !executeMethod.IsStatic || executeMethod.Body == null)
@@ -84,10 +85,10 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 		TypeDef findMethodsDecrypterType(TypeDef type) {
 			foreach (var field in type.Fields) {
-				var fieldType = DotNetUtils.getType(module, field.FieldType);
+				var fieldType = DotNetUtils.getType(module, field.FieldSig.GetFieldType());
 				if (fieldType == null)
 					continue;
-				if (DotNetUtils.getMethod(fieldType, "Finalize") == null)
+				if (fieldType.FindMethod("Finalize") == null)
 					continue;
 				if (!new FieldTypes(fieldType).exists("System.Collections.Hashtable"))
 					continue;
@@ -106,7 +107,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 			encryptedResource = BabelUtils.findEmbeddedResource(module, methodsDecrypter, simpleDeobfuscator, deob);
 			if (encryptedResource != null)
-				addImageReader("", resourceDecrypter.decrypt(encryptedResource.GetResourceData()));
+				addImageReader("", resourceDecrypter.decrypt(encryptedResource.Data.ReadAllBytes()));
 		}
 
 		ImageReader addImageReader(string name, byte[] data) {
@@ -178,7 +179,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				return null;
 
 			try {
-				var encrypted = File.ReadAllBytes(getFile(Path.GetDirectoryName(module.FullyQualifiedName), feature));
+				var encrypted = File.ReadAllBytes(getFile(Path.GetDirectoryName(module.Location), feature));
 				var decrypted = resourceDecrypter.decrypt(encrypted);
 				return addImageReader(feature, decrypted);
 			}
@@ -241,7 +242,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt)
 					continue;
-				if (MemberReferenceHelper.compareMethodReferenceAndDeclaringType(decryptExecuteMethod, instr.Operand as MethodReference))
+				if (MethodEqualityComparer.CompareDeclaringTypes.Equals(decryptExecuteMethod, instr.Operand as IMethod))
 					return true;
 			}
 			return false;

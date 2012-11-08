@@ -26,10 +26,10 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Babel_NET {
 	class ResourceDecrypterCreator {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		ISimpleDeobfuscator simpleDeobfuscator;
 
-		public ResourceDecrypterCreator(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator) {
+		public ResourceDecrypterCreator(ModuleDefMD module, ISimpleDeobfuscator simpleDeobfuscator) {
 			this.module = module;
 			this.simpleDeobfuscator = simpleDeobfuscator;
 		}
@@ -40,12 +40,12 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 	}
 
 	class ResourceDecrypter {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		ISimpleDeobfuscator simpleDeobfuscator;
 		MethodDef decryptMethod;
 		IDecrypter decrypter;
 
-		public ResourceDecrypter(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator) {
+		public ResourceDecrypter(ModuleDefMD module, ISimpleDeobfuscator simpleDeobfuscator) {
 			this.module = module;
 			this.simpleDeobfuscator = simpleDeobfuscator;
 		}
@@ -56,9 +56,9 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 		// v3.0
 		class Decrypter1 : IDecrypter {
-			ModuleDefinition module;
+			ModuleDefMD module;
 
-			public Decrypter1(ModuleDefinition module) {
+			public Decrypter1(ModuleDefMD module) {
 				this.module = module;
 			}
 
@@ -82,7 +82,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 					key = reader.ReadBytes(reader.ReadByte());
 				else {
 					key = new byte[reader.ReadByte()];
-					Array.Copy(module.Assembly.Name.PublicKey, 0, key, 0, key.Length);
+					Array.Copy(module.Assembly.PublicKey.Data, 0, key, 0, key.Length);
 				}
 
 				reader.ReadBytes(reader.ReadInt32());	// hash
@@ -92,9 +92,9 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 		// v3.5+
 		class Decrypter2 : IDecrypter {
-			ModuleDefinition module;
+			ModuleDefMD module;
 
-			public Decrypter2(ModuleDefinition module) {
+			public Decrypter2(ModuleDefMD module) {
 				this.module = module;
 			}
 
@@ -143,7 +143,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 					key = reader.ReadBytes(reader.ReadByte());
 				else {
 					key = new byte[reader.ReadByte()];
-					Array.Copy(module.Assembly.Name.PublicKey, 12, key, 0, key.Length);
+					Array.Copy(module.Assembly.PublicKey.Data, 12, key, 0, key.Length);
 					key[5] |= 0x80;
 				}
 				return isCompressed;
@@ -152,10 +152,10 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 		// v5.0+ retail
 		class Decrypter3 : IDecrypter {
-			ModuleDefinition module;
+			ModuleDefMD module;
 			Inflater inflater;
 
-			public Decrypter3(ModuleDefinition module, MethodDef decryptMethod) {
+			public Decrypter3(ModuleDefMD module, MethodDef decryptMethod) {
 				this.module = module;
 				this.inflater = InflaterCreator.create(decryptMethod, true);
 			}
@@ -201,7 +201,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 					key = reader.ReadBytes(reader.ReadByte());
 				else {
 					key = new byte[reader.ReadByte()];
-					Array.Copy(module.Assembly.Name.PublicKey, 12, key, 0, key.Length);
+					Array.Copy(module.Assembly.PublicKey.Data, 12, key, 0, key.Length);
 					key[5] |= 0x80;
 				}
 				return isCompressed;

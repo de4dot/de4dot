@@ -62,7 +62,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 				var type = calledMethod.DeclaringType;
 				foreach (var nested in type.NestedTypes) {
-					if (DeobUtils.hasInteger(DotNetUtils.getMethod(nested, ".ctor"), 0x8001))
+					if (DeobUtils.hasInteger(nested.FindMethod(".ctor"), 0x8001))
 						return type;
 				}
 			}
@@ -98,7 +98,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 3; i++) {
 				var ldci4_1 = instrs[i];
-				if (!DotNetUtils.isLdcI4(ldci4_1) || DotNetUtils.getLdcI4Value(ldci4_1) != 16)
+				if (!ldci4_1.IsLdcI4() || ldci4_1.GetLdcI4Value() != 16)
 					continue;
 
 				var callvirt = instrs[i + 1];
@@ -106,13 +106,13 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 					continue;
 
 				var ldci4_2 = instrs[i + 2];
-				if (!DotNetUtils.isLdcI4(ldci4_2))
+				if (!ldci4_2.IsLdcI4())
 					continue;
 
 				if (instrs[i + 3].OpCode.Code != Code.Xor)
 					continue;
 
-				return DotNetUtils.getLdcI4Value(ldci4_2);
+				return ldci4_2.GetLdcI4Value();
 			}
 
 			return null;

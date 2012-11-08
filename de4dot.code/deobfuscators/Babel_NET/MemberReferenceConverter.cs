@@ -22,123 +22,57 @@ using dot10.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Babel_NET {
-	class TypeReferenceConverter : TypeReferenceUpdaterBase  {
-		MemberReferenceConverter memberReferenceConverter;
-
-		ModuleDefinition Module {
-			get { return memberReferenceConverter.Module; }
-		}
-
-		public TypeReferenceConverter(MemberReferenceConverter memberReferenceConverter) {
-			this.memberReferenceConverter = memberReferenceConverter;
-		}
-
-		public TypeReference convert(TypeReference a) {
-			var newOne = update(a);
-			if (!(a is GenericParam) && !MemberReferenceHelper.compareTypes(newOne, a))
-				throw new ApplicationException("Could not convert type reference");
-			return newOne;
-		}
-
-		protected override TypeReference updateTypeReference(TypeReference a) {
-			if (a.Module == Module)
-				return a;
-
-			var newTypeRef = new TypeReference(a.Namespace, a.Name, Module, memberReferenceConverter.convert(a.Scope), a.IsValueType);
-			foreach (var gp in a.GenericParameters)
-				newTypeRef.GenericParameters.Add(new GenericParam(gp.Name, newTypeRef));
-			newTypeRef.DeclaringType = update(a.DeclaringType);
-			newTypeRef.UpdateElementType();
-			return newTypeRef;
-		}
-	}
-
 	// Converts type references/definitions in one module to this module
 	class MemberReferenceConverter {
-		ModuleDefinition module;
+		ModuleDefMD module;
 
-		public ModuleDefinition Module {
+		public ModuleDefMD Module {
 			get { return module; }
 		}
 
-		public MemberReferenceConverter(ModuleDefinition module) {
+		public MemberReferenceConverter(ModuleDefMD module) {
 			this.module = module;
 		}
 
-		bool isInOurModule(MemberReference memberRef) {
-			return memberRef.Module == module;
+		bool isInOurModule(IMemberRef memberRef) {
+			return memberRef.OwnerModule == module;
 		}
 
-		public TypeReference convert(TypeReference typeRef) {
-			if (typeRef == null)
-				return null;
-			typeRef = new TypeReferenceConverter(this).convert(typeRef);
-			return tryGetTypeDefinition(typeRef);
+		Importer createImporter() {
+			return new Importer(module, ImporterOptions.TryToUseTypeDefs);
 		}
 
-		public FieldReference convert(FieldReference fieldRef) {
+		public TypeSig convert(TypeRef typeRef) {
+			return createImporter().Import(typeRef).ToTypeSig();
+		}
+
+		ITypeDefOrRef convert(ITypeDefOrRef tdr) {
+			return (ITypeDefOrRef)createImporter().Import(tdr);
+		}
+
+		TypeSig convert2(TypeSig ts) {
+			return createImporter().Import(ts);
+		}
+
+		public TypeSig convert(TypeSig ts) {
+			return createImporter().Import(ts);
+		}
+
+		public IField convert(IField fieldRef) {
 			if (isInOurModule(fieldRef))
 				return tryGetFieldDefinition(fieldRef);
-
-			return new FieldReference(fieldRef.Name, convert(fieldRef.FieldType), convert(fieldRef.DeclaringType));
+			return createImporter().Import(fieldRef);
 		}
 
-		public MethodReference convert(MethodReference methodRef) {
-			if (methodRef.GetType() != typeof(MethodReference) && methodRef.GetType() != typeof(MethodDef))
+		public IMethodDefOrRef convert(IMethod methodRef) {
+			if (!(methodRef is MemberRef || methodRef is MethodDef) || methodRef.MethodSig == null)
 				throw new ApplicationException("Invalid method reference type");
 			if (isInOurModule(methodRef))
-				return tryGetMethodDefinition(methodRef);
-
-			return copy(methodRef);
+				return (IMethodDefOrRef)tryGetMethodDefinition(methodRef);
+			return (IMethodDefOrRef)createImporter().Import(methodRef);
 		}
 
-		public MethodReference copy(MethodReference methodRef) {
-			if (methodRef.GetType() != typeof(MethodReference) && methodRef.GetType() != typeof(MethodDef))
-				throw new ApplicationException("Invalid method reference type");
-
-			var newMethodRef = new MethodReference(methodRef.Name, convert(methodRef.MethodReturnType.ReturnType), convert(methodRef.DeclaringType));
-			newMethodRef.HasThis = methodRef.HasThis;
-			newMethodRef.ExplicitThis = methodRef.ExplicitThis;
-			newMethodRef.CallingConvention = methodRef.CallingConvention;
-			foreach (var param in methodRef.Parameters)
-				newMethodRef.Parameters.Add(new ParameterDefinition(param.Name, param.Attributes, convert(param.ParameterType)));
-			foreach (var gp in methodRef.GenericParameters)
-				newMethodRef.GenericParameters.Add(new GenericParam(gp.Name, newMethodRef));
-			return newMethodRef;
-		}
-
-		public IMetadataScope convert(IMetadataScope scope) {
-			switch (scope.MetadataScopeType) {
-			case MetadataScopeType.AssemblyNameReference:
-				return convert((AssemblyNameReference)scope);
-
-			case MetadataScopeType.ModuleDefinition:
-				var mod = (ModuleDefinition)scope;
-				if (mod.Assembly != null)
-					return convert((AssemblyNameReference)mod.Assembly.Name);
-				return convert((ModuleReference)scope);
-
-			case MetadataScopeType.ModuleReference:
-				return convert((ModuleReference)scope);
-
-			default:
-				throw new ApplicationException("Unknown MetadataScopeType");
-			}
-		}
-
-		public AssemblyNameReference convert(AssemblyNameReference asmRef) {
-			return DotNetUtils.addAssemblyReference(module, asmRef);
-		}
-
-		public ModuleReference convert(ModuleReference modRef) {
-			return DotNetUtils.addModuleReference(module, modRef);
-		}
-
-		public TypeReference tryGetTypeDefinition(TypeReference typeRef) {
-			return DotNetUtils.getType(module, typeRef) ?? typeRef;
-		}
-
-		public FieldReference tryGetFieldDefinition(FieldReference fieldRef) {
+		public IField tryGetFieldDefinition(IField fieldRef) {
 			var fieldDef = fieldRef as FieldDef;
 			if (fieldDef != null)
 				return fieldDef;
@@ -149,7 +83,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return DotNetUtils.getField(declaringType, fieldRef);
 		}
 
-		public MethodReference tryGetMethodDefinition(MethodReference methodRef) {
+		public IMethod tryGetMethodDefinition(IMethod methodRef) {
 			var methodDef = methodRef as MethodDef;
 			if (methodDef != null)
 				return methodDef;

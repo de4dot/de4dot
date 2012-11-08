@@ -404,19 +404,17 @@ namespace de4dot.blocks {
 				return (FieldDefinition)field;
 			return getField(getType(module, field.DeclaringType), field);
 		}
+#endif
 
-		public static FieldDefinition getField(TypeDefinition type, FieldReference fieldReference) {
+		public static FieldDef getField(TypeDef type, IField fieldReference) {
 			if (type == null || fieldReference == null)
 				return null;
-			if (fieldReference is FieldDefinition)
-				return (FieldDefinition)fieldReference;
-			foreach (var field in type.Fields) {
-				if (MemberReferenceHelper.compareFieldReference(field, fieldReference))
-					return field;
-			}
-			return null;
+			if (fieldReference is FieldDef)
+				return (FieldDef)fieldReference;
+			return type.FindField(fieldReference.Name, fieldReference.FieldSig);
 		}
 
+#if PORT
 		public static FieldDefinition getField(TypeDefinition type, string typeFullName) {
 			if (type == null)
 				return null;
@@ -778,7 +776,6 @@ namespace de4dot.blocks {
 			}
 		}
 
-#if PORT
 		public static IList<Instruction> getInstructions(IList<Instruction> instructions, int i, params OpCode[] opcodes) {
 			if (i + opcodes.Length > instructions.Count)
 				return null;
@@ -797,6 +794,7 @@ namespace de4dot.blocks {
 			return list;
 		}
 
+#if PORT
 		public static bool hasReturnValue(IMethodSignature method) {
 			var type = method.MethodReturnType.ReturnType;
 			while (type.IsOptionalModifier || type.IsRequiredModifier)

@@ -35,7 +35,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			branchEmulator = new BranchEmulator(emulator, this);
 		}
 
-		public static List<MethodDef> find(ModuleDefinition module, IEnumerable<MethodDef> notInlinedMethods) {
+		public static List<MethodDef> find(ModuleDefMD module, IEnumerable<MethodDef> notInlinedMethods) {
 			var notInlinedMethodsDict = new Dictionary<MethodDef, bool>();
 			foreach (var method in notInlinedMethods)
 				notInlinedMethodsDict[method] = true;
@@ -88,7 +88,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				return false;
 			if (!method.IsAssembly)
 				return false;
-			if (method.GenericParameters.Count > 0)
+			if (method.MethodSig.GetGenParamCount() > 0)
 				return false;
 
 			return method.IsStatic;
@@ -233,8 +233,8 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			}
 		}
 
-		protected override bool isCompatibleType(int paramIndex, TypeReference origType, TypeReference newType) {
-			if (MemberReferenceHelper.compareTypes(origType, newType))
+		protected override bool isCompatibleType(int paramIndex, IType origType, IType newType) {
+			if (new SigComparer().Equals(origType, newType))
 				return true;
 			if (newType.IsValueType || origType.IsValueType)
 				return false;

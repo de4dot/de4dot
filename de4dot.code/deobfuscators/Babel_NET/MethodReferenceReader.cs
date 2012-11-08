@@ -20,17 +20,17 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using dot10.IO;
 using dot10.DotNet;
 using dot10.DotNet.Emit;
-using Mono.Collections.Generic;
 
 namespace de4dot.code.deobfuscators.Babel_NET {
-	class BabelMethodreference : IGenericInstance {
+	class BabelMethodreference {
 		public string Name { get; set; }
-		public TypeReference DeclaringType { get; set; }
-		public TypeReference ReturnType { get; set; }
-		public ParameterDefinition[] Parameters { get; set; }
-		public TypeReference[] GenericArguments { get; set; }
+		public TypeSig DeclaringType { get; set; }
+		public TypeSig ReturnType { get; set; }
+		public Parameter[] Parameters { get; set; }
+		public TypeSig[] GenericArguments { get; set; }
 		public int Flags { get; set; }
 
 		public bool HasThis {
@@ -40,27 +40,14 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		public bool IsGenericMethod {
 			get { return (Flags & 2) != 0; }
 		}
-
-		bool IGenericInstance.HasGenericArguments {
-			get { return IsGenericMethod; }
-		}
-
-		Collection<TypeReference> IGenericInstance.GenericArguments {
-			get { return new Collection<TypeReference>(GenericArguments); }
-		}
-
-		MetadataToken IMetadataTokenProvider.MDToken {
-			get { throw new NotImplementedException(); }
-			set { throw new NotImplementedException(); }
-		}
 	}
 
 	class BabelMethodDefinition : BabelMethodreference {
-		ParameterDefinition thisParameter;
+		Parameter thisParameter;
 
 		public int Flags2 { get; set; }
-		public short MaxStack { get; set; }
-		public IList<VariableDefinition> Locals { get; set; }
+		public ushort MaxStack { get; set; }
+		public IList<Local> Locals { get; set; }
 		public IList<Instruction> Instructions { get; set; }
 		public IList<ExceptionHandler> ExceptionHandlers { get; set; }
 
@@ -80,13 +67,13 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			get { return (Flags2 & 0x80) != 0; }
 		}
 
-		public ParameterDefinition ThisParameter {
+		public Parameter ThisParameter {
 			get {
 				if (!HasThis)
 					return null;
 				if (thisParameter != null)
 					return thisParameter;
-				return thisParameter = new ParameterDefinition(DeclaringType);
+				return thisParameter = new Parameter(0, Parameter.HIDDEN_THIS_METHOD_SIG_INDEX, DeclaringType);
 			}
 		}
 
@@ -98,10 +85,10 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			ExceptionHandlers = mbr.ExceptionHandlers;
 		}
 
-		public ParameterDefinition[] getRealParameters() {
+		public IList<Parameter> getRealParameters() {
 			if (ThisParameter == null)
 				return Parameters;
-			var parameters = new ParameterDefinition[Parameters.Length + 1];
+			var parameters = new Parameter[Parameters.Length + 1];
 			parameters[0] = ThisParameter;
 			Array.Copy(Parameters, 0, parameters, 1, Parameters.Length);
 			return parameters;
@@ -110,14 +97,14 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 	class MethodReferenceReader {
 		ImageReader imageReader;
-		BinaryReader reader;
+		IBinaryReader reader;
 		BabelMethodreference bmr;
 
-		public MethodReferenceReader(ImageReader imageReader, BinaryReader reader)
+		public MethodReferenceReader(ImageReader imageReader, IBinaryReader reader)
 			: this(imageReader, reader, new BabelMethodreference()) {
 		}
 
-		public MethodReferenceReader(ImageReader imageReader, BinaryReader reader, BabelMethodreference bmr) {
+		public MethodReferenceReader(ImageReader imageReader, IBinaryReader reader, BabelMethodreference bmr) {
 			this.imageReader = imageReader;
 			this.reader = reader;
 			this.bmr = bmr;
@@ -125,23 +112,24 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 		public BabelMethodreference read() {
 			bmr.Name = imageReader.readString();
-			bmr.DeclaringType = imageReader.readTypeReference();
-			bmr.ReturnType = imageReader.readTypeReference();
-			bmr.Parameters = readParameters();
+			bmr.DeclaringType = imageReader.readTypeSig();
+			bmr.ReturnType = imageReader.readTypeSig();
+			var argTypes = imageReader.readTypeSigs();
 			bmr.Flags = reader.ReadByte();
 			if (bmr.IsGenericMethod)
-				bmr.GenericArguments = imageReader.readTypeReferences();
+				bmr.GenericArguments = imageReader.readTypeSigs();
 			else
-				bmr.GenericArguments = new TypeReference[0];
+				bmr.GenericArguments = new TypeSig[0];
+			bmr.Parameters = readParameters(argTypes, bmr.HasThis);
 			return bmr;
 		}
 
-		ParameterDefinition[] readParameters() {
-			var typeReferences = imageReader.readTypeReferences();
-			var parameters = new ParameterDefinition[typeReferences.Length];
-			for (int i = 0; i < parameters.Length; i++)
-				parameters[i] = new ParameterDefinition(typeReferences[i]);
-			return parameters;
+		Parameter[] readParameters(IList<TypeSig> argTypes, bool hasThis) {
+			var ps = new Parameter[argTypes.Count];
+			int bi = hasThis ? 1 : 0;
+			for (int i = 0; i < ps.Length; i++)
+				ps[i] = new Parameter(bi + i, i, argTypes[i]);
+			return ps;
 		}
 	}
 
@@ -150,7 +138,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		MethodBodyReader methodBodyReader;
 		BabelMethodDefinition bmd;
 
-		public MethodDefinitionReader(ImageReader imageReader, BinaryReader reader) {
+		public MethodDefinitionReader(ImageReader imageReader, IBinaryReader reader) {
 			this.bmd = new BabelMethodDefinition();
 			this.methodReferenceReader = new MethodReferenceReader(imageReader, reader, bmd);
 			this.methodBodyReader = new MethodBodyReader(imageReader, reader);

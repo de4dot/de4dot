@@ -19,12 +19,13 @@
 
 using System;
 using System.IO;
+using dot10.IO;
 using dot10.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Babel_NET {
 	class AssemblyResolver {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		ResourceDecrypter resourceDecrypter;
 		TypeDef resolverType;
 		MethodDef registerMethod;
@@ -63,7 +64,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			get { return embeddedAssemblyInfos; }
 		}
 
-		public AssemblyResolver(ModuleDefinition module, ResourceDecrypter resourceDecrypter) {
+		public AssemblyResolver(ModuleDefMD module, ResourceDecrypter resourceDecrypter) {
 			this.module = module;
 			this.resourceDecrypter = resourceDecrypter;
 		}
@@ -114,14 +115,14 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				return;
 			}
 
-			var decrypted = resourceDecrypter.decrypt(encryptedResource.GetResourceData());
+			var decrypted = resourceDecrypter.decrypt(encryptedResource.Data.ReadAllBytes());
 			var reader = new BinaryReader(new MemoryStream(decrypted));
 			int numAssemblies = reader.ReadInt32();
 			embeddedAssemblyInfos = new EmbeddedAssemblyInfo[numAssemblies];
 			for (int i = 0; i < numAssemblies; i++) {
 				string name = reader.ReadString();
 				var data = reader.ReadBytes(reader.ReadInt32());
-				var mod = ModuleDefinition.ReadModule(new MemoryStream(data));
+				var mod = ModuleDefMD.Load(data);
 				embeddedAssemblyInfos[i] = new EmbeddedAssemblyInfo(name, DeobUtils.getExtension(mod.Kind), data);
 			}
 		}
