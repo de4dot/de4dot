@@ -22,7 +22,7 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CryptoObfuscator {
 	class AntiDebugger {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		ISimpleDeobfuscator simpleDeobfuscator;
 		IDeobfuscator deob;
 		TypeDef antiDebuggerType;
@@ -36,7 +36,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			get { return antiDebuggerMethod; }
 		}
 
-		public AntiDebugger(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
+		public AntiDebugger(ModuleDefMD module, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
 			this.module = module;
 			this.simpleDeobfuscator = simpleDeobfuscator;
 			this.deob = deob;

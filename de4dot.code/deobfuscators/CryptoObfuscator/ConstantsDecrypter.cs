@@ -20,12 +20,13 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using dot10.IO;
 using dot10.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CryptoObfuscator {
 	class ConstantsDecrypter {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		TypeDef decrypterType;
 		MethodDef methodI4;
 		MethodDef methodI8;
@@ -62,7 +63,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			get { return decrypterType != null; }
 		}
 
-		public ConstantsDecrypter(ModuleDefinition module) {
+		public ConstantsDecrypter(ModuleDefMD module) {
 			this.module = module;
 		}
 
@@ -106,8 +107,8 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			if (decrypterType == null)
 				return;
 
-			encryptedResource = CoUtils.getResource(module, DotNetUtils.getCodeStrings(DotNetUtils.getMethod(decrypterType, ".cctor")));
-			constantsData = resourceDecrypter.decrypt(encryptedResource.GetResourceStream());
+			encryptedResource = CoUtils.getResource(module, DotNetUtils.getCodeStrings(decrypterType.FindClassConstructor()));
+			constantsData = resourceDecrypter.decrypt(encryptedResource.Data.CreateStream());
 		}
 
 		public int decryptInt32(int index) {

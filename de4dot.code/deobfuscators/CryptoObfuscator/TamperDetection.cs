@@ -22,7 +22,7 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CryptoObfuscator {
 	class TamperDetection {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		TypeDef tamperType;
 		MethodDef tamperMethod;
 		FrameworkType frameworkType;
@@ -39,7 +39,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			get { return tamperMethod; }
 		}
 
-		public TamperDetection(ModuleDefinition module) {
+		public TamperDetection(ModuleDefMD module) {
 			this.module = module;
 			frameworkType = DotNetUtils.getFrameworkType(module);
 		}

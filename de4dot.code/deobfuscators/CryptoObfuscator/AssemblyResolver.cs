@@ -26,7 +26,7 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CryptoObfuscator {
 	class AssemblyResolver {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		TypeDef resolverType;
 		MethodDef resolverMethod;
 		List<AssemblyInfo> assemblyInfos = new List<AssemblyInfo>();
@@ -62,7 +62,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			get { return resolverMethod; }
 		}
 
-		public AssemblyResolver(ModuleDefinition module) {
+		public AssemblyResolver(ModuleDefMD module) {
 			this.module = module;
 		}
 
@@ -112,15 +112,15 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				if (instrs == null)
 					continue;
 
-				MethodReference methodRef;
+				IMethod methodRef;
 				var ldftn = instrs[1];
 				var newobj = instrs[2];
 
-				methodRef = ldftn.Operand as MethodReference;
-				if (methodRef == null || !MemberReferenceHelper.compareTypes(initMethod.DeclaringType, methodRef.DeclaringType))
+				methodRef = ldftn.Operand as IMethod;
+				if (methodRef == null || !new SigComparer().Equals(initMethod.DeclaringType, methodRef.DeclaringType))
 					continue;
 
-				methodRef = newobj.Operand as MethodReference;
+				methodRef = newobj.Operand as IMethod;
 				if (methodRef == null || methodRef.FullName != "System.Void System.ResolveEventHandler::.ctor(System.Object,System.IntPtr)")
 					continue;
 

@@ -19,13 +19,14 @@
 
 using System;
 using System.Collections.Generic;
+using dot10.IO;
 using dot10.DotNet;
 using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CryptoObfuscator {
 	class ResourceResolver {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		ResourceDecrypter resourceDecrypter;
 		TypeDef resolverType;
 		MethodDef resolverMethod;
@@ -46,7 +47,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			get { return resolverMethod; }
 		}
 
-		public ResourceResolver(ModuleDefinition module, ResourceDecrypter resourceDecrypter) {
+		public ResourceResolver(ModuleDefMD module, ResourceDecrypter resourceDecrypter) {
 			this.module = module;
 			this.resourceDecrypter = resourceDecrypter;
 		}
@@ -74,7 +75,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			if (resource == null)
 				return null;
 
-			DeobUtils.decryptAndAddResources(module, resource.Name, () => resourceDecrypter.decrypt(resource.GetResourceStream()));
+			DeobUtils.decryptAndAddResources(module, resource.Name.String, () => resourceDecrypter.decrypt(resource.Data.CreateStream()));
 			mergedIt = true;
 			return resource;
 		}
@@ -84,12 +85,12 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 
 			switch (resolverVersion) {
 			case ResolverVersion.V1:
-				names.Add(module.Assembly.Name.Name);
+				names.Add(module.Assembly.Name.String);
 				break;
 
 			case ResolverVersion.V2:
-				names.Add(string.Format("{0}{0}{0}", module.Assembly.Name.Name));
-				names.Add(string.Format("{0}&", module.Assembly.Name.Name));
+				names.Add(string.Format("{0}{0}{0}", module.Assembly.Name.String));
+				names.Add(string.Format("{0}&", module.Assembly.Name.String));
 				break;
 
 			default:
@@ -107,7 +108,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 
 			resolverVersion = checkSetupMethod(initMethod);
 			if (resolverVersion == ResolverVersion.None)
-				resolverVersion = checkSetupMethod(DotNetUtils.getMethod(initMethod.DeclaringType, ".cctor"));
+				resolverVersion = checkSetupMethod(initMethod.DeclaringType.FindClassConstructor());
 			if (resolverVersion == ResolverVersion.None)
 				return false;
 
@@ -124,15 +125,15 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				if (instrs == null)
 					continue;
 
-				MethodReference methodRef;
+				IMethod methodRef;
 				var ldftn = instrs[1];
 				var newobj = instrs[2];
 
-				methodRef = ldftn.Operand as MethodReference;
-				if (methodRef == null || !MemberReferenceHelper.compareTypes(setupMethod.DeclaringType, methodRef.DeclaringType))
+				methodRef = ldftn.Operand as IMethod;
+				if (methodRef == null || !new SigComparer().Equals(setupMethod.DeclaringType, methodRef.DeclaringType))
 					continue;
 
-				methodRef = newobj.Operand as MethodReference;
+				methodRef = newobj.Operand as IMethod;
 				if (methodRef == null || methodRef.FullName != "System.Void System.ResolveEventHandler::.ctor(System.Object,System.IntPtr)")
 					continue;
 

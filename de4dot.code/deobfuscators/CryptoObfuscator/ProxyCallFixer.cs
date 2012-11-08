@@ -27,7 +27,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 	class ProxyCallFixer : ProxyCallFixer2 {
 		Dictionary<MethodDef, ProxyCreatorType> methodToType = new Dictionary<MethodDef, ProxyCreatorType>();
 
-		public ProxyCallFixer(ModuleDefinition module)
+		public ProxyCallFixer(ModuleDefMD module)
 			: base(module) {
 		}
 
@@ -39,11 +39,11 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		}
 
 		class Context {
-			public int typeToken;
-			public int methodToken;
-			public int declaringTypeToken;
+			public uint typeToken;
+			public uint methodToken;
+			public uint declaringTypeToken;
 			public ProxyCreatorType proxyCreatorType;
-			public Context(int typeToken, int methodToken, int declaringTypeToken, ProxyCreatorType proxyCreatorType) {
+			public Context(uint typeToken, uint methodToken, uint declaringTypeToken, ProxyCreatorType proxyCreatorType) {
 				this.typeToken = typeToken;
 				this.methodToken = methodToken;
 				this.declaringTypeToken = declaringTypeToken;
@@ -58,9 +58,9 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				if (instrs == null)
 					continue;
 
-				int typeToken = (int)instrs[0].Operand;
-				int methodToken = (int)instrs[1].Operand;
-				int declaringTypeToken = (int)instrs[2].Operand;
+				uint typeToken = (uint)(int)instrs[0].Operand;
+				uint methodToken = (uint)(int)instrs[1].Operand;
+				uint declaringTypeToken = (uint)(int)instrs[2].Operand;
 				var createMethod = instrs[3].Operand as MethodDef;
 
 				ProxyCreatorType proxyCreatorType;
@@ -73,12 +73,12 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return null;
 		}
 
-		protected override void getCallInfo(object context, FieldDef field, out MethodReference calledMethod, out OpCode callOpcode) {
+		protected override void getCallInfo(object context, FieldDef field, out IMethod calledMethod, out OpCode callOpcode) {
 			var ctx = (Context)context;
 
 			switch (ctx.proxyCreatorType) {
 			case ProxyCreatorType.CallOrCallvirt:
-				callOpcode = field.IsFamilyOrAssembly ? OpCodes.Callvirt : OpCodes.Call;
+				callOpcode = field.IsFamORAssem ? OpCodes.Callvirt : OpCodes.Call;
 				break;
 			case ProxyCreatorType.CallCtor:
 				callOpcode = OpCodes.Call;
@@ -90,7 +90,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				throw new ApplicationException(string.Format("Invalid proxy creator type: {0}", ctx.proxyCreatorType));
 			}
 
-			calledMethod = module.LookupToken(ctx.methodToken) as MethodReference;
+			calledMethod = module.ResolveToken(ctx.methodToken) as IMethod;
 		}
 
 		public void findDelegateCreator() {
@@ -136,7 +136,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			foreach (var instr in createMethod.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Ldsfld)
 					continue;
-				var field = instr.Operand as FieldReference;
+				var field = instr.Operand as IField;
 				if (field == null)
 					continue;
 				switch (field.FullName) {

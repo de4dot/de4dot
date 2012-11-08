@@ -19,14 +19,14 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
+using dot10.IO;
 using dot10.DotNet;
 using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CryptoObfuscator {
 	class MethodsDecrypter {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		TypeDef decrypterType;
 		MethodDef decryptMethod;
 		MethodDef decrypterCctor;
@@ -49,7 +49,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			get { return decrypterType != null; }
 		}
 
-		public MethodsDecrypter(ModuleDefinition module) {
+		public MethodsDecrypter(ModuleDefMD module) {
 			this.module = module;
 		}
 
@@ -73,7 +73,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			if (!new FieldTypes(type).all(requiredFields))
 				return false;
 
-			var cctor = DotNetUtils.getMethod(type, ".cctor");
+			var cctor = type.FindClassConstructor();
 			if (cctor == null)
 				return false;
 			var decryptMethodTmp = findDecryptMethod(type);
@@ -120,23 +120,23 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			if (resource == null)
 				return;
 			var decrypted = resourceDecrypter.decrypt(resource.GetResourceStream());
-			var reader = new BinaryReader(new MemoryStream(decrypted));
+			var reader = MemoryImageStream.Create(decrypted);
 			int numEncrypted = reader.ReadInt32();
 			Log.v("Restoring {0} encrypted methods", numEncrypted);
 			Log.indent();
 			for (int i = 0; i < numEncrypted; i++) {
 				int delegateTypeToken = reader.ReadInt32();
 				uint codeOffset = reader.ReadUInt32();
-				var origOffset = reader.BaseStream.Position;
-				reader.BaseStream.Position = codeOffset;
+				var origOffset = reader.Position;
+				reader.Position = codeOffset;
 				decrypt(reader, delegateTypeToken);
-				reader.BaseStream.Position = origOffset;
+				reader.Position = origOffset;
 			}
 			Log.deIndent();
 		}
 
-		void decrypt(BinaryReader reader, int delegateTypeToken) {
-			var delegateType = module.LookupToken(delegateTypeToken) as TypeDef;
+		void decrypt(IBinaryReader reader, int delegateTypeToken) {
+			var delegateType = module.ResolveToken(delegateTypeToken) as TypeDef;
 			if (delegateType == null)
 				throw new ApplicationException("Couldn't find delegate type");
 
@@ -145,21 +145,21 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				throw new ApplicationException("Could not find encrypted method tokens");
 			if (delToken != delegateTypeToken)
 				throw new ApplicationException("Invalid delegate type token");
-			var encType = module.LookupToken(encDeclToken) as TypeReference;
+			var encType = module.ResolveToken(encDeclToken) as ITypeDefOrRef;
 			if (encType == null)
 				throw new ApplicationException("Invalid declaring type token");
-			var encMethod = module.LookupToken(encMethToken) as MethodDef;
+			var encMethod = module.ResolveToken(encMethToken) as MethodDef;
 			if (encMethod == null)
 				throw new ApplicationException("Invalid encrypted method token");
 
 			var bodyReader = new MethodBodyReader(module, reader);
 			bodyReader.read(encMethod);
-			bodyReader.restoreMethod(encMethod);
+			bodyReader.RestoreMethod(encMethod);
 			Log.v("Restored method {0} ({1:X8}). Instrs:{2}, Locals:{3}, Exceptions:{4}",
 					Utils.removeNewlines(encMethod.FullName),
 					encMethod.MDToken.ToInt32(),
 					encMethod.Body.Instructions.Count,
-					encMethod.Body.Variables.Count,
+					encMethod.Body.LocalList.Count,
 					encMethod.Body.ExceptionHandlers.Count);
 			delegateTypes.Add(delegateType);
 		}
@@ -169,20 +169,20 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			encMethodToken = 0;
 			encDeclaringTypeToken = 0;
 
-			var cctor = DotNetUtils.getMethod(delegateType, ".cctor");
+			var cctor = delegateType.FindClassConstructor();
 			if (cctor == null)
 				return false;
 
 			var instrs = cctor.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 3; i++) {
 				var ldci4_1 = instrs[i];
-				if (!DotNetUtils.isLdcI4(ldci4_1))
+				if (!ldci4_1.IsLdcI4())
 					continue;
 				var ldci4_2 = instrs[i + 1];
-				if (!DotNetUtils.isLdcI4(ldci4_2))
+				if (!ldci4_2.IsLdcI4())
 					continue;
 				var ldci4_3 = instrs[i + 2];
-				if (!DotNetUtils.isLdcI4(ldci4_3))
+				if (!ldci4_3.IsLdcI4())
 					continue;
 				var call = instrs[i + 3];
 				if (call.OpCode.Code != Code.Call)
@@ -193,9 +193,9 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				if (calledMethod != decryptMethod)
 					continue;
 
-				delegateToken = DotNetUtils.getLdcI4Value(ldci4_1);
-				encMethodToken = DotNetUtils.getLdcI4Value(ldci4_2);
-				encDeclaringTypeToken = DotNetUtils.getLdcI4Value(ldci4_3);
+				delegateToken = ldci4_1.GetLdcI4Value();
+				encMethodToken = ldci4_2.GetLdcI4Value();
+				encDeclaringTypeToken = ldci4_3.GetLdcI4Value();
 				return true;
 			}
 

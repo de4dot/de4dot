@@ -105,7 +105,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			StringFeatures = StringFeatures.AllowStaticDecryption | StringFeatures.AllowDynamicDecryption;
 		}
 
-		public override void init(ModuleDefinition module) {
+		public override void init(ModuleDefMD module) {
 			base.init(module);
 		}
 
@@ -146,7 +146,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			tamperDetection.find();
 			constantsDecrypter = new ConstantsDecrypter(module);
 			constantsDecrypter.find();
-			foundObfuscatorUserString = Utils.StartsWith(module.GetUserString(0x70000001), "\u0011\"3D9B94A98B-76A8-4810-B1A0-4BE7C4F9C98D", StringComparison.Ordinal);
+			foundObfuscatorUserString = Utils.StartsWith(module.ReadUserString(0x70000001), "\u0011\"3D9B94A98B-76A8-4810-B1A0-4BE7C4F9C98D", StringComparison.Ordinal);
 		}
 
 		void initializeVersion(TypeDef attr) {
@@ -166,9 +166,9 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			foreach (var type in module.Types) {
 				if (type.Namespace != "A")
 					continue;
-				if (Regex.IsMatch(type.Name, "^c[0-9a-f]{32}$"))
+				if (Regex.IsMatch(type.Name.String, "^c[0-9a-f]{32}$"))
 					return true;
-				else if (Regex.IsMatch(type.Name, "^A[A-Z]*$")) {
+				else if (Regex.IsMatch(type.Name.String, "^A[A-Z]*$")) {
 					if (++matched >= 10)
 						return true;
 				}

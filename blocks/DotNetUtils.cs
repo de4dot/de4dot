@@ -181,17 +181,15 @@ namespace de4dot.blocks {
 			return true;
 		}
 
-#if PORT
-		public static FieldDefinition findFieldType(TypeDefinition typeDefinition, string typeName, bool isStatic) {
+		public static FieldDef findFieldType(TypeDef typeDefinition, string typeName, bool isStatic) {
 			if (typeDefinition == null)
 				return null;
 			foreach (var field in typeDefinition.Fields) {
-				if (field.FieldType.FullName == typeName && field.IsStatic == isStatic)
+				if (field.IsStatic == isStatic && field.FieldSig.GetFieldType().GetFullName() == typeName)
 					return field;
 			}
 			return null;
 		}
-#endif
 
 		public static IEnumerable<MethodDef> findMethods(IEnumerable<MethodDef> methods, string returnType, string[] argsTypes) {
 			return findMethods(methods, returnType, argsTypes, true);
@@ -1233,14 +1231,13 @@ namespace de4dot.blocks {
 				return new ClassSig(typeRef);
 		}
 
-#if PORT
-		public static FrameworkType getFrameworkType(ModuleDefinition module) {
-			foreach (var modRef in module.AssemblyReferences) {
+		public static FrameworkType getFrameworkType(ModuleDefMD module) {
+			foreach (var modRef in module.GetAssemblyRefs()) {
 				if (modRef.Name != "mscorlib")
 					continue;
-				if (modRef.PublicKeyToken == null || modRef.PublicKeyToken.Length == 0)
+				if (PublicKeyBase.IsNullOrEmpty2(modRef.PublicKeyOrToken))
 					continue;
-				switch (BitConverter.ToString(modRef.PublicKeyToken).Replace("-", "").ToLowerInvariant()) {
+				switch (BitConverter.ToString(modRef.PublicKeyOrToken.Data).Replace("-", "").ToLowerInvariant()) {
 				case "b77a5c561934e089":
 					return FrameworkType.Desktop;
 				case "7cec85d7bea7798e":
@@ -1256,7 +1253,6 @@ namespace de4dot.blocks {
 
 			return FrameworkType.Unknown;
 		}
-#endif
 
 		public static int getMethodCalls(MethodDef method, string methodFullName) {
 			if (method == null || method.Body == null)
@@ -1293,7 +1289,6 @@ namespace de4dot.blocks {
 			return false;
 		}
 
-#if PORT
 		public static bool callsMethod(MethodDef method, string returnType, string parameters) {
 			if (method == null || method.Body == null)
 				return false;
@@ -1301,13 +1296,14 @@ namespace de4dot.blocks {
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt && instr.OpCode.Code != Code.Newobj)
 					continue;
-				if (isMethod(instr.Operand as MethodReference, returnType, parameters))
+				if (isMethod(instr.Operand as IMethod, returnType, parameters))
 					return true;
 			}
 
 			return false;
 		}
 
+#if PORT
 		public static IList<Instruction> getArgPushes(IList<Instruction> instrs, int index) {
 			return getArgPushes(instrs, ref index);
 		}

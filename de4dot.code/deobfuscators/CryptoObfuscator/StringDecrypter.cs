@@ -24,7 +24,7 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CryptoObfuscator {
 	class StringDecrypter {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		EmbeddedResource stringResource;
 		TypeDef stringDecrypterType;
 		MethodDef stringDecrypterMethod;
@@ -46,7 +46,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			get { return stringResource; }
 		}
 
-		public StringDecrypter(ModuleDefinition module) {
+		public StringDecrypter(ModuleDefMD module) {
 			this.module = module;
 		}
 
@@ -74,9 +74,9 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		}
 
 		string getResourceName() {
-			var defaultName = module.Assembly.Name.Name + module.Assembly.Name.Name;
+			var defaultName = module.Assembly.Name.String + module.Assembly.Name.String;
 
-			var cctor = DotNetUtils.getMethod(stringDecrypterType, ".cctor");
+			var cctor = stringDecrypterType.FindClassConstructor();
 			if (cctor == null)
 				return defaultName;
 

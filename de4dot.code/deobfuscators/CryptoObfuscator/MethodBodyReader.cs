@@ -19,27 +19,28 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
+using dot10.IO;
 using dot10.DotNet;
+using dot10.DotNet.MD;
 using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CryptoObfuscator {
 	class MethodBodyReader : MethodBodyReaderBase {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		ushort maxStackSize;
 
-		public MethodBodyReader(ModuleDefinition module, BinaryReader reader)
+		public MethodBodyReader(ModuleDefMD module, IBinaryReader reader)
 			: base(reader) {
 			this.module = module;
 		}
 
 		public void read(MethodDef method) {
-			this.parameters = getParameters(method);
-			this.Locals = getLocals(method);
+			this.parameters = method.Parameters;
+			this.locals = getLocals(method);
 
 			maxStackSize = (ushort)reader.ReadInt32();
-			readInstructionsNumBytes(reader.ReadUInt32());
+			ReadInstructionsNumBytes(reader.ReadUInt32());
 			readExceptionHandlers();
 		}
 
@@ -51,73 +52,76 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			readExceptionHandlers((totalSize - 4) / 24);
 		}
 
-		static IList<ParameterDefinition> getParameters(MethodReference method) {
-			return DotNetUtils.getParameters(method);
-		}
-
-		static IList<VariableDefinition> getLocals(MethodDef method) {
+		static IList<Local> getLocals(MethodDef method) {
 			if (method.Body == null)
-				return new List<VariableDefinition>();
-			return new List<VariableDefinition>(method.Body.Variables);
+				return new List<Local>();
+			return method.Body.LocalList;
 		}
 
-		protected override FieldReference readInlineField(Instruction instr) {
-			return (FieldReference)module.LookupToken(reader.ReadInt32());
+		protected override IField ReadInlineField(Instruction instr) {
+			return module.ResolveToken(reader.ReadUInt32()) as IField;
 		}
 
-		protected override MethodReference readInlineMethod(Instruction instr) {
-			return (MethodReference)module.LookupToken(reader.ReadInt32());
+		protected override IMethod ReadInlineMethod(Instruction instr) {
+			return module.ResolveToken(reader.ReadUInt32()) as IMethod;
 		}
 
-		protected override CallSite readInlineSig(Instruction instr) {
-			return module.ReadCallSite(new MetadataToken(reader.ReadUInt32()));
+		protected override MethodSig ReadInlineSig(Instruction instr) {
+			var sas = module.ResolveStandAloneSig(MDToken.ToRID(reader.ReadUInt32()));
+			return sas == null ? null : sas.MethodSig;
 		}
 
-		protected override string readInlineString(Instruction instr) {
-			return module.GetUserString(reader.ReadUInt32());
+		protected override string ReadInlineString(Instruction instr) {
+			return module.ReadUserString(reader.ReadUInt32());
 		}
 
-		protected override MemberReference readInlineTok(Instruction instr) {
-			return (MemberReference)module.LookupToken(reader.ReadInt32());
+		protected override ITokenOperand ReadInlineTok(Instruction instr) {
+			return module.ResolveToken(reader.ReadUInt32()) as ITokenOperand;
 		}
 
-		protected override TypeReference readInlineType(Instruction instr) {
-			return (TypeReference)module.LookupToken(reader.ReadInt32());
+		protected override ITypeDefOrRef ReadInlineType(Instruction instr) {
+			return module.ResolveToken(reader.ReadUInt32()) as ITypeDefOrRef;
 		}
 
-		protected override ExceptionHandler readExceptionHandler() {
-			var eh = new ExceptionHandler((ExceptionHandlerType)reader.ReadInt32());
+		void readExceptionHandlers(int numExceptionHandlers) {
+			exceptionHandlers = new ExceptionHandler[numExceptionHandlers];
+			for (int i = 0; i < exceptionHandlers.Count; i++)
+				exceptionHandlers[i] = readExceptionHandler();
+		}
 
-			int tryOffset = reader.ReadInt32();
-			eh.TryStart = getInstruction(tryOffset);
-			eh.TryEnd = getInstructionOrNull(tryOffset + reader.ReadInt32());
+		ExceptionHandler readExceptionHandler() {
+			var eh = new ExceptionHandler((ExceptionHandlerType)reader.ReadUInt32());
 
-			int handlerOffset = reader.ReadInt32();
-			eh.HandlerStart = getInstruction(handlerOffset);
-			eh.HandlerEnd = getInstructionOrNull(handlerOffset + reader.ReadInt32());
+			uint tryOffset = reader.ReadUInt32();
+			eh.TryStart = GetInstructionThrow(tryOffset);
+			eh.TryEnd = GetInstruction(tryOffset + reader.ReadUInt32());
+
+			uint handlerOffset = reader.ReadUInt32();
+			eh.HandlerStart = GetInstructionThrow(handlerOffset);
+			eh.HandlerEnd = GetInstruction(handlerOffset + reader.ReadUInt32());
 
 			switch (eh.HandlerType) {
 			case ExceptionHandlerType.Catch:
-				eh.CatchType = (TypeReference)module.LookupToken(reader.ReadInt32());
+				eh.CatchType = module.ResolveToken(reader.ReadUInt32()) as ITypeDefOrRef;
 				break;
 
 			case ExceptionHandlerType.Filter:
-				eh.FilterStart = getInstruction(reader.ReadInt32());
+				eh.FilterStart = GetInstructionThrow(reader.ReadUInt32());
 				break;
 
 			case ExceptionHandlerType.Finally:
 			case ExceptionHandlerType.Fault:
 			default:
-				reader.ReadInt32();
+				reader.ReadUInt32();
 				break;
 			}
 
 			return eh;
 		}
 
-		public override void restoreMethod(MethodDef method) {
-			base.restoreMethod(method);
-			method.Body.MaxStackSize = maxStackSize;
+		public new void RestoreMethod(MethodDef method) {
+			base.RestoreMethod(method);
+			method.Body.MaxStack = maxStackSize;
 		}
 	}
 }
