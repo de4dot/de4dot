@@ -20,7 +20,6 @@
 using System;
 using dot10.DotNet;
 using dot10.DotNet.Emit;
-using Mono.MyStuff;
 using de4dot.PE;
 using de4dot.blocks;
 
@@ -29,18 +28,14 @@ namespace de4dot.code.deobfuscators.CodeWall {
 		static readonly byte[] newCodeHeader = new byte[6] { 0x2B, 4, 0, 0, 0, 0 };
 		static readonly byte[] decryptKey = new byte[10] { 0x8D, 0xB5, 0x2C, 0x3A, 0x1F, 0xC7, 0x31, 0xC3, 0xCD, 0x47 };
 
-		ModuleDefinition module;
-		MethodReference initMethod;
+		ModuleDefMD module;
+		IMethod initMethod;
 
 		public bool Detected {
 			get { return initMethod != null; }
 		}
 
-		public AssemblyNameReference AssemblyNameReference {
-			get { return initMethod == null ? null : (AssemblyNameReference)initMethod.DeclaringType.Scope; }
-		}
-
-		public MethodsDecrypter(ModuleDefinition module) {
+		public MethodsDecrypter(ModuleDefMD module) {
 			this.module = module;
 		}
 
@@ -58,7 +53,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Call)
 					continue;
-				var calledMethod = instr.Operand as MethodReference;
+				var calledMethod = instr.Operand as IMethod;
 				if (calledMethod == null)
 					continue;
 				if (calledMethod.DeclaringType.Scope == module)
@@ -147,8 +142,8 @@ namespace de4dot.code.deobfuscators.CodeWall {
 					var instr = instrs[i];
 					if (instr.OpCode.Code != Code.Call)
 						continue;
-					var calledMethod = instr.Operand as MethodReference;
-					if (!MemberReferenceHelper.compareMethodReferenceAndDeclaringType(calledMethod, initMethod))
+					var calledMethod = instr.Operand as IMethod;
+					if (!MethodEqualityComparer.CompareDeclaringTypes.Equals(calledMethod, initMethod))
 						continue;
 					block.remove(i, 1);
 					i--;

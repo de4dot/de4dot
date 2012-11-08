@@ -20,7 +20,6 @@
 using System;
 using System.Collections.Generic;
 using dot10.DotNet;
-using Mono.MyStuff;
 using de4dot.blocks;
 using de4dot.PE;
 
@@ -194,7 +193,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			return asmInfo.data;
 		}
 
-		public override IDeobfuscator moduleReloaded(ModuleDefinition module) {
+		public override IDeobfuscator moduleReloaded(ModuleDefMD module) {
 			var newOne = new Deobfuscator(options);
 			newOne.setModule(module);
 			newOne.methodsDecrypter = new MethodsDecrypter(module);
@@ -209,7 +208,6 @@ namespace de4dot.code.deobfuscators.CodeWall {
 
 		public override void deobfuscateBegin() {
 			base.deobfuscateBegin();
-			addAssemblyReferenceToBeRemoved(methodsDecrypter.AssemblyNameReference, "Obfuscator decrypter DLL reference");
 
 			initializeStringDecrypter();
 			initializeAssemblyDecrypter();

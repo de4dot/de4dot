@@ -21,13 +21,14 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using dot10.IO;
 using dot10.DotNet;
 using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CodeWall {
 	class StringDecrypter {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		MethodDefinitionAndDeclaringTypeDict<StringEncrypterInfo> stringEncrypterInfos = new MethodDefinitionAndDeclaringTypeDict<StringEncrypterInfo>();
 		Version version;
 
@@ -52,7 +53,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			public int Magic1 { get; set; }
 			public int Magic2 { get; set; }
 			public int Magic3 { get; set; }
-			public BinaryReader Reader { get; set; }
+			public IBinaryReader Reader { get; set; }
 
 			public StringEncrypterInfo(MethodDef method) {
 				this.method = method;
@@ -61,7 +62,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			public string decrypt(int magic1, int magic2, int magic3) {
 				int dataLen = magic3 ^ Magic3;
 				var key = getKey(magic1 ^ Magic1, dataLen);
-				Reader.BaseStream.Position = getDataOffset(magic2);
+				Reader.Position = getDataOffset(magic2);
 				var data = Reader.ReadBytes(dataLen);
 				for (int i = 0; i < dataLen; i++)
 					data[i] ^= key[i];
@@ -84,12 +85,10 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			}
 
 			byte[] getPublicKeyToken() {
-				var module = method.Module;
-				if (module.Assembly == null || module.Assembly.Name.PublicKeyToken == null)
+				var module = method.OwnerModule;
+				if (module.Assembly == null || PublicKeyBase.IsNullOrEmpty2(module.Assembly.PublicKey))
 					return null;
-				if (module.Assembly.Name.PublicKeyToken.Length != 8)
-					return null;
-				return module.Assembly.Name.PublicKeyToken;
+				return module.Assembly.PublicKeyToken.Data;
 			}
 
 			public override string ToString() {
@@ -118,7 +117,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			}
 		}
 
-		public StringDecrypter(ModuleDefinition module) {
+		public StringDecrypter(ModuleDefMD module) {
 			this.module = module;
 		}
 
@@ -255,7 +254,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 				info.Magic1 = findMagic1(info.Method);
 				info.Magic2 = findMagic2(info.Method);
 				info.Magic3 = findMagic3(info.Method);
-				info.Reader = new BinaryReader(info.Resource.GetResourceStream());
+				info.Reader = info.Resource.Data;
 			}
 		}
 
@@ -267,14 +266,14 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 2; i++) {
 				var ldarg = instrs[i];
-				if (!DotNetUtils.isLdarg(ldarg) || DotNetUtils.getArgIndex(ldarg) != 0)
+				if (!ldarg.IsLdarg() || ldarg.GetParameterIndex() != 0)
 					continue;
 				var ldci4 = instrs[i + 1];
-				if (!DotNetUtils.isLdcI4(ldci4))
+				if (!ldci4.IsLdcI4())
 					continue;
 				if (instrs[i + 2].OpCode.Code != Code.Xor)
 					continue;
-				return DotNetUtils.getLdcI4Value(ldci4);
+				return ldci4.GetLdcI4Value();
 			}
 			throw new ApplicationException("Could not find magic1");
 		}
@@ -283,14 +282,14 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 2; i++) {
 				var ldloc = instrs[i];
-				if (!DotNetUtils.isLdloc(ldloc))
+				if (!ldloc.IsLdloc())
 					continue;
 				var ldci4 = instrs[i + 1];
-				if (!DotNetUtils.isLdcI4(ldci4))
+				if (!ldci4.IsLdcI4())
 					continue;
 				if (instrs[i + 2].OpCode.Code != Code.Xor)
 					continue;
-				return DotNetUtils.getLdcI4Value(ldci4);
+				return ldci4.GetLdcI4Value();
 			}
 			throw new ApplicationException("Could not find magic2");
 		}
@@ -299,14 +298,14 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 2; i++) {
 				var ldarg = instrs[i];
-				if (!DotNetUtils.isLdarg(ldarg) || DotNetUtils.getArgIndex(ldarg) != 2)
+				if (!ldarg.IsLdarg() || ldarg.GetParameterIndex() != 2)
 					continue;
 				var ldci4 = instrs[i + 1];
-				if (!DotNetUtils.isLdcI4(ldci4))
+				if (!ldci4.IsLdcI4())
 					continue;
 				if (instrs[i + 2].OpCode.Code != Code.Xor)
 					continue;
-				return DotNetUtils.getLdcI4Value(ldci4);
+				return ldci4.GetLdcI4Value();
 			}
 			throw new ApplicationException("Could not find magic3");
 		}
