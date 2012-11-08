@@ -34,7 +34,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			return proxyCallFixer.isProxyTargetMethod(method);
 		}
 
-		protected override bool isCompatibleType(int paramIndex, TypeReference origType, TypeReference newType) {
+		protected override bool isCompatibleType(int paramIndex, IType origType, IType newType) {
 			return true;
 		}
 	}

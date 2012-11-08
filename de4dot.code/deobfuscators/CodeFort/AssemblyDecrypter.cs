@@ -23,13 +23,14 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+using dot10.IO;
 using dot10.DotNet;
 using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CodeFort {
 	class AssemblyDecrypter {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		EmbeddedResource assemblyEncryptedResource;
 		PasswordInfo embedPassword;
 		MethodDef embedInitMethod;
@@ -75,11 +76,11 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			get { return embedInitMethod; }
 		}
 
-		public AssemblyDecrypter(ModuleDefinition module) {
+		public AssemblyDecrypter(ModuleDefMD module) {
 			this.module = module;
 		}
 
-		public AssemblyDecrypter(ModuleDefinition module, AssemblyDecrypter oldOne) {
+		public AssemblyDecrypter(ModuleDefMD module, AssemblyDecrypter oldOne) {
 			this.module = module;
 			this.embedPassword = oldOne.embedPassword;
 		}
@@ -192,7 +193,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			if (assemblyEncryptedResource == null)
 				return null;
 
-			var reader = new BinaryReader(assemblyEncryptedResource.GetResourceStream());
+			var reader = new BinaryReader(new MemoryStream(assemblyEncryptedResource.Data.ReadAllBytes()));
 			var encryptedData = DeobUtils.gunzip(reader.BaseStream, reader.ReadInt32());
 			reader = new BinaryReader(new MemoryStream(encryptedData));
 			var serializedData = reader.ReadBytes(reader.ReadInt32());
@@ -235,12 +236,12 @@ namespace de4dot.code.deobfuscators.CodeFort {
 				var resource = rsrc as EmbeddedResource;
 				if (resource == null)
 					continue;
-				if (!Regex.IsMatch(resource.Name, "^cfd_([0-9a-f]{2})+_$"))
+				if (!Regex.IsMatch(resource.Name.String, "^cfd_([0-9a-f]{2})+_$"))
 					continue;
 
-				var asmData = decrypt(embedPassword, gunzip(resource.GetResourceData()));
-				var mod = ModuleDefinition.ReadModule(new MemoryStream(asmData));
-				infos.Add(new AssemblyInfo(asmData, resource, mod.Assembly.FullName, mod.Assembly.Name.Name, DeobUtils.getExtension(mod.Kind)));
+				var asmData = decrypt(embedPassword, gunzip(resource.Data.ReadAllBytes()));
+				var mod = ModuleDefMD.Load(asmData);
+				infos.Add(new AssemblyInfo(asmData, resource, mod.Assembly.FullName, mod.Assembly.Name.String, DeobUtils.getExtension(mod.Kind)));
 			}
 
 			return infos;
@@ -262,7 +263,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 				var salt = getString(ldstr2, instrs, ref index);
 
 				var ldci4 = instrs[index++];
-				if (!DotNetUtils.isLdcI4(ldci4))
+				if (!ldci4.IsLdcI4())
 					continue;
 
 				var ldstr3 = instrs[index++];
@@ -284,10 +285,10 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			if (call.OpCode.Code != Code.Call && call.OpCode.Code != Code.Callvirt)
 				return s;
 			index++;
-			var calledMethod = call.Operand as MethodReference;
-			if (calledMethod.Name == "ToUpper")
+			var calledMethod = call.Operand as IMethod;
+			if (calledMethod.Name.String == "ToUpper")
 				return s.ToUpper();
-			if (calledMethod.Name == "ToLower")
+			if (calledMethod.Name.String == "ToLower")
 				return s.ToLower();
 			throw new ApplicationException(string.Format("Unknown method {0}", calledMethod));
 		}

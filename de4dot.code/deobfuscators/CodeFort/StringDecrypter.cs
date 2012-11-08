@@ -24,7 +24,7 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CodeFort {
 	class StringDecrypter {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		MethodDef decryptMethod;
 
 		public bool Detected {
@@ -39,7 +39,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			get { return decryptMethod == null ? null : decryptMethod.DeclaringType; }
 		}
 
-		public StringDecrypter(ModuleDefinition module) {
+		public StringDecrypter(ModuleDefMD module) {
 			this.module = module;
 		}
 

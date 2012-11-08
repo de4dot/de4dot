@@ -20,7 +20,6 @@
 using System;
 using System.Collections.Generic;
 using dot10.DotNet;
-using Mono.MyStuff;
 using de4dot.blocks;
 using de4dot.PE;
 
@@ -115,7 +114,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			return newFileData != null;
 		}
 
-		public override IDeobfuscator moduleReloaded(ModuleDefinition module) {
+		public override IDeobfuscator moduleReloaded(ModuleDefMD module) {
 			var newOne = new Deobfuscator(options);
 			newOne.setModule(module);
 			newOne.proxyCallFixer = new ProxyCallFixer(module);

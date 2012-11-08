@@ -309,21 +309,25 @@ namespace de4dot.blocks {
 				return null;
 			return getMethod(module, method, method.DeclaringType);
 		}
+#endif
 
-		public static MethodDef getMethod2(ModuleDefinition module, MethodReference method) {
+		public static MethodDef getMethod2(ModuleDefMD module, IMethod method) {
 			if (method == null)
 				return null;
-			return getMethod(module, method, method.DeclaringType.GetElementType());
+			if (method is MethodDef)
+				return (MethodDef)method;
+			var git = method.DeclaringType.ToGenericInstSig();
+			var dt = git == null ? method.DeclaringType : git.GenericType.TypeDefOrRef;
+			return getMethod(module, method, dt);
 		}
 
-		static MethodDef getMethod(ModuleDefinition module, MethodReference method, TypeReference declaringType) {
+		static MethodDef getMethod(ModuleDefMD module, IMethod method, ITypeDefOrRef declaringType) {
 			if (method == null)
 				return null;
 			if (method is MethodDef)
 				return (MethodDef)method;
 			return getMethod(getType(module, declaringType), method);
 		}
-#endif
 
 		public static MethodDef getMethod(TypeDef type, string returnType, string parameters) {
 			foreach (var method in type.Methods) {
