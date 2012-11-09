@@ -118,12 +118,12 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			base.init(module);
 		}
 
-		public override byte[] unpackNativeFile(PEImage peImage) {
+		public override byte[] unpackNativeFile(IPEImage peImage) {
 			return unpackNativeFile1(peImage) ?? unpackNativeFile2(peImage);
 		}
 
 		// Old CS versions
-		byte[] unpackNativeFile1(PEImage peImage) {
+		byte[] unpackNativeFile1(IPEImage peImage) {
 			const int dataDirNum = 6;	// debug dir
 			const int dotNetDirNum = 14;
 
@@ -146,7 +146,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 		}
 
 		// CS 1.x
-		byte[] unpackNativeFile2(PEImage peImage) {
+		byte[] unpackNativeFile2(IPEImage peImage) {
 			var resources = peImage.Win32Resources;
 			if (resources == null)
 				return null;

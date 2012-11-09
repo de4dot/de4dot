@@ -67,7 +67,7 @@ namespace de4dot.code.deobfuscators {
 		IDeobfuscatedFile DeobfuscatedFile { get; set; }
 
 		// Returns null or the unpacked .NET PE file
-		byte[] unpackNativeFile(PEImage peImage);
+		byte[] unpackNativeFile(IPEImage peImage);
 
 		void init(ModuleDefMD module);
 

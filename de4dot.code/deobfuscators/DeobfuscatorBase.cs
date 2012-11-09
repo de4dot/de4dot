@@ -112,7 +112,7 @@ namespace de4dot.code.deobfuscators {
 			DefaultDecrypterType = DecrypterType.Static;
 		}
 
-		public virtual byte[] unpackNativeFile(PEImage peImage) {
+		public virtual byte[] unpackNativeFile(IPEImage peImage) {
 			return null;
 		}
 
