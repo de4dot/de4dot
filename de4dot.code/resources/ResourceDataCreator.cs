@@ -23,7 +23,6 @@ using System.IO;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 using dot10.DotNet;
-using dot10.DotNet.MD;
 
 namespace de4dot.code.resources {
 	class ResourceDataCreator {

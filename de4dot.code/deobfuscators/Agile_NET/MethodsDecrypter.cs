@@ -21,7 +21,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using dot10.DotNet;
-using dot10.DotNet.MD;
 using de4dot.PE;
 using de4dot.blocks;
 
