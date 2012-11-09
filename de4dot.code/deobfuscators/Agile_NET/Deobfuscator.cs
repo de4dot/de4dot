@@ -22,7 +22,6 @@ using System.Collections.Generic;
 using dot10.IO;
 using dot10.PE;
 using dot10.DotNet;
-using dot10.DotNet.MD;
 using de4dot.blocks;
 using de4dot.PE;
 
@@ -316,7 +315,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 				addResources("Obfuscator protection files");
 			}
 
-			module.Cor20HeaderFlags |= ComImageFlags.ILOnly;
+			module.IsILOnly = true;
 
 			base.deobfuscateEnd();
 		}

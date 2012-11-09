@@ -21,7 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using dot10.DotNet.MD;
+using dot10.DotNet;
 using dot10.IO;
 
 namespace de4dot.code {

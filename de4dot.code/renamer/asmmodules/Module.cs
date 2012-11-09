@@ -20,7 +20,6 @@
 using System;
 using System.Collections.Generic;
 using dot10.DotNet;
-using dot10.DotNet.MD;
 using de4dot.blocks;
 
 namespace de4dot.code.renamer.asmmodules {

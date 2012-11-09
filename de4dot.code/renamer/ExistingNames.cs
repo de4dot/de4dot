@@ -19,7 +19,7 @@
 
 using System;
 using System.Collections.Generic;
-using dot10.DotNet.MD;
+using dot10.DotNet;
 
 namespace de4dot.code.renamer {
 	class ExistingNames {

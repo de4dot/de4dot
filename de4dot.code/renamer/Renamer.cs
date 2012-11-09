@@ -22,7 +22,6 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using dot10.DotNet;
 using dot10.DotNet.Emit;
-using dot10.DotNet.MD;
 using de4dot.code.renamer.asmmodules;
 using de4dot.blocks;
 

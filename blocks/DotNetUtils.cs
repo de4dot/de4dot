@@ -21,7 +21,6 @@ using System;
 using System.Collections.Generic;
 using dot10.DotNet;
 using dot10.DotNet.Emit;
-using dot10.DotNet.MD;
 
 namespace de4dot.blocks {
 	public enum FrameworkType {
