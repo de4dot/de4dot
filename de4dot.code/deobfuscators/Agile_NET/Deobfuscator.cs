@@ -19,6 +19,7 @@
 
 using System;
 using System.Collections.Generic;
+using dot10.IO;
 using dot10.PE;
 using dot10.DotNet;
 using dot10.DotNet.MD;
@@ -123,45 +124,42 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 
 		// Old CS versions
 		byte[] unpackNativeFile1(PEImage peImage) {
-#if PORT
 			const int dataDirNum = 6;	// debug dir
 			const int dotNetDirNum = 14;
 
-			if (peImage.OptionalHeader.dataDirectories[dataDirNum].virtualAddress == 0)
+			var optHeader = peImage.ImageNTHeaders.OptionalHeader;
+			if (optHeader.DataDirectories[dataDirNum].VirtualAddress == 0)
 				return null;
-			if (peImage.OptionalHeader.dataDirectories[dataDirNum].size != 0x48)
+			if (optHeader.DataDirectories[dataDirNum].Size != 0x48)
 				return null;
 
-			var fileData = peImage.readAllBytes();
-			int dataDir = (int)peImage.OptionalHeader.offsetOfDataDirectory(dataDirNum);
-			int dotNetDir = (int)peImage.OptionalHeader.offsetOfDataDirectory(dotNetDirNum);
+			var fileData = peImage.GetImageAsByteArray();
+			long dataDirBaseOffset = (long)optHeader.DataDirectories[0].StartOffset;
+			int dataDir = (int)dataDirBaseOffset + dataDirNum * 8;
+			int dotNetDir = (int)dataDirBaseOffset + dotNetDirNum * 8;
 			writeUInt32(fileData, dotNetDir, BitConverter.ToUInt32(fileData, dataDir));
 			writeUInt32(fileData, dotNetDir + 4, BitConverter.ToUInt32(fileData, dataDir + 4));
 			writeUInt32(fileData, dataDir, 0);
 			writeUInt32(fileData, dataDir + 4, 0);
 			ModuleBytes = fileData;
 			return fileData;
-#else
-			return null;
-#endif
 		}
 
 		// CS 1.x
 		byte[] unpackNativeFile2(PEImage peImage) {
-#if PORT
-			var dir = peImage.Resources.getRoot();
-			if ((dir = dir.getDirectory("ASSEMBLY")) == null)
+			var resources = peImage.Win32Resources;
+			if (resources == null)
 				return null;
-			if ((dir = dir.getDirectory(101)) == null)
+			var dir = resources.Root;
+			if ((dir = dir.FindDirectory("ASSEMBLY")) == null)
 				return null;
-			var data = dir.getData(0);
+			if ((dir = dir.FindDirectory(101)) == null)
+				return null;
+			var data = dir.FindData(0);
 			if (data == null)
 				return null;
 
-			return ModuleBytes = peImage.readBytes(data.RVA, (int)data.Size);
-#else
-			return null;
-#endif
+			return ModuleBytes = data.Data.ReadAllBytes();
 		}
 
 		static void writeUInt32(byte[] data, int offset, uint value) {
