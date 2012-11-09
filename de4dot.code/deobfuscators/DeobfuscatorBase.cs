@@ -89,6 +89,10 @@ namespace de4dot.code.deobfuscators {
 			get { return false; }
 		}
 
+		protected bool CanRemoveTypes {
+			get { return !Operations.KeepObfuscatorTypes && !KeepTypes; }
+		}
+
 		protected bool CanRemoveStringDecrypterType {
 			get { return Operations.DecryptStrings != OpDecryptString.None && staticStringInliner.InlinedAllCalls; }
 		}
@@ -161,7 +165,7 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		public virtual void deobfuscateEnd() {
-			if (!Operations.KeepObfuscatorTypes && !KeepTypes) {
+			if (CanRemoveTypes) {
 				removeTypesWithInvalidBaseTypes();
 
 				deleteEmptyCctors();
