@@ -538,23 +538,29 @@ namespace de4dot.code {
 					return;
 			}
 
-			Logger.v("Deobfuscating methods");
+			bool isVerbose = !Logger.Instance.IgnoresEvent(LoggerEvent.Verbose);
+			bool isVV = !Logger.Instance.IgnoresEvent(LoggerEvent.VeryVerbose);
+			if (isVerbose)
+				Logger.v("Deobfuscating methods");
 			var methodPrinter = new MethodPrinter();
 			var cflowDeobfuscator = new BlocksCflowDeobfuscator(deob.BlocksDeobfuscators);
 			foreach (var method in getAllMethods()) {
-				Logger.v("Deobfuscating {0} ({1:X8})", Utils.removeNewlines(method), method.MDToken.ToUInt32());
-				Logger.Instance.indent();
+				if (isVerbose) {
+					Logger.v("Deobfuscating {0} ({1:X8})", Utils.removeNewlines(method), method.MDToken.ToUInt32());
+					Logger.Instance.indent();
+				}
 
 				int oldIndentLevel = Logger.Instance.IndentLevel;
 				try {
-					deobfuscate(method, cflowDeobfuscator, methodPrinter);
+					deobfuscate(method, cflowDeobfuscator, methodPrinter, isVerbose, isVV);
 				}
 				catch (ApplicationException) {
 					throw;
 				}
 				catch (Exception ex) {
 					if (!canLoadMethodBody(method)) {
-						Logger.v("Invalid method body. {0:X8}", method.MDToken.ToInt32());
+						if (isVerbose)
+							Logger.v("Invalid method body. {0:X8}", method.MDToken.ToInt32());
 						method.Body = new CilBody();
 					}
 					else {
@@ -568,7 +574,8 @@ namespace de4dot.code {
 				}
 				removeNoInliningAttribute(method);
 
-				Logger.Instance.deIndent();
+				if (isVerbose)
+					Logger.Instance.deIndent();
 			}
 		}
 
@@ -582,7 +589,7 @@ namespace de4dot.code {
 			}
 		}
 
-		void deobfuscate(MethodDef method, BlocksCflowDeobfuscator cflowDeobfuscator, MethodPrinter methodPrinter) {
+		void deobfuscate(MethodDef method, BlocksCflowDeobfuscator cflowDeobfuscator, MethodPrinter methodPrinter, bool isVerbose, bool isVV) {
 			if (!hasNonEmptyBody(method))
 				return;
 
@@ -615,17 +622,16 @@ namespace de4dot.code {
 			blocks.getCode(out allInstructions, out allExceptionHandlers);
 			DotNetUtils.restoreBody(method, allInstructions, allExceptionHandlers);
 
-			if (numRemovedLocals > 0)
+			if (isVerbose && numRemovedLocals > 0)
 				Logger.v("Removed {0} unused local(s)", numRemovedLocals);
 			int numRemovedInstructions = oldNumInstructions - method.Body.Instructions.Count;
-			if (numRemovedInstructions > 0)
+			if (isVerbose && numRemovedInstructions > 0)
 				Logger.v("Removed {0} dead instruction(s)", numRemovedInstructions);
 
-			const LoggerEvent dumpLogLevel = LoggerEvent.VeryVerbose;
-			if (!Logger.Instance.IgnoresEvent(dumpLogLevel)) {
-				Logger.log(dumpLogLevel, "Deobfuscated code:");
+			if (isVV) {
+				Logger.log(LoggerEvent.VeryVerbose, "Deobfuscated code:");
 				Logger.Instance.indent();
-				methodPrinter.print(dumpLogLevel, allInstructions, allExceptionHandlers);
+				methodPrinter.print(LoggerEvent.VeryVerbose, allInstructions, allExceptionHandlers);
 				Logger.Instance.deIndent();
 			}
 		}
