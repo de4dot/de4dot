@@ -185,7 +185,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				Method = method;
 			}
 
-			public static bool isPossibleDecrypterMethod(MethodDef method) {
+			public static bool isPossibleDecrypterMethod(MethodDef method, bool firstTime) {
 				if (!checkMethodSignature(method))
 					return false;
 				var fields = getFields(method);
@@ -405,8 +405,8 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				this.Method = method;
 			}
 
-			public static bool isPossibleDecrypterMethod(MethodDef method) {
-				if (!checkFields(method.DeclaringType.Fields))
+			public static bool isPossibleDecrypterMethod(MethodDef method, bool firstTime) {
+				if (!firstTime || !checkFields(method.DeclaringType.Fields))
 					return false;
 				return DotNetUtils.isMethod(method, "System.String", "(System.Int32,System.Int32)");
 			}
@@ -557,8 +557,8 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				get { return DecrypterVersion.V1_3; }
 			}
 
-			public static bool isPossibleDecrypterMethod(MethodDef method) {
-				if (!checkFields(method.DeclaringType.Fields))
+			public static bool isPossibleDecrypterMethod(MethodDef method, bool firstTime) {
+				if (!firstTime || !checkFields(method.DeclaringType.Fields))
 					return false;
 				return DotNetUtils.isMethod(method, "System.String", "(System.Int32)");
 			}
@@ -735,27 +735,29 @@ namespace de4dot.code.deobfuscators.DeepSea {
 					continue;
 
 				bool deobfuscatedCctor = false;
+				bool firstTime = true;
 				foreach (var method in type.Methods) {
 					if (!method.IsStatic || method.Body == null)
 						continue;
 
 					IDecrypterInfo info = null;
 
-					if (DecrypterInfo13.isPossibleDecrypterMethod(method)) {
+					if (DecrypterInfo13.isPossibleDecrypterMethod(method, firstTime)) {
 						deobfuscateCctor(simpleDeobfuscator, cctor, ref deobfuscatedCctor, hasPublicKeyToken);
 						simpleDeobfuscator.deobfuscate(method);
 						info = getInfoV13(cctor, method);
 					}
-					else if (DecrypterInfo40.isPossibleDecrypterMethod(method)) {
+					else if (DecrypterInfo40.isPossibleDecrypterMethod(method, firstTime)) {
 						deobfuscateCctor(simpleDeobfuscator, cctor, ref deobfuscatedCctor, hasPublicKeyToken);
 						simpleDeobfuscator.deobfuscate(method);
 						info = getInfoV40(cctor, method);
 					}
-					else if (DecrypterInfo41.isPossibleDecrypterMethod(method)) {
+					else if (DecrypterInfo41.isPossibleDecrypterMethod(method, firstTime)) {
 						deobfuscateCctor(simpleDeobfuscator, cctor, ref deobfuscatedCctor, hasPublicKeyToken);
 						simpleDeobfuscator.deobfuscate(method);
 						info = getInfoV41(cctor, method);
 					}
+					firstTime = false;
 
 					if (info == null)
 						continue;
