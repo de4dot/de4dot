@@ -105,17 +105,17 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 		}
 
 		byte[] decryptResource(EmbeddedResource resource) {
-			using (var reader = resource.Data) {
-				var key = reader.ReadString();
-				var data = reader.ReadRemainingBytes();
-				var cryptoTransform = new DESCryptoServiceProvider {
-					Key = Encoding.ASCII.GetBytes(key),
-					IV = Encoding.ASCII.GetBytes(key),
-				}.CreateDecryptor();
-				var memStream = new MemoryStream(data);
-				using (var reader2 = new BinaryReader(new CryptoStream(memStream, cryptoTransform, CryptoStreamMode.Read))) {
-					return reader2.ReadBytes((int)memStream.Length);
-				}
+			var reader = resource.Data;
+			reader.Position = 0;
+			var key = reader.ReadString();
+			var data = reader.ReadRemainingBytes();
+			var cryptoTransform = new DESCryptoServiceProvider {
+				Key = Encoding.ASCII.GetBytes(key),
+				IV = Encoding.ASCII.GetBytes(key),
+			}.CreateDecryptor();
+			var memStream = new MemoryStream(data);
+			using (var reader2 = new BinaryReader(new CryptoStream(memStream, cryptoTransform, CryptoStreamMode.Read))) {
+				return reader2.ReadBytes((int)memStream.Length);
 			}
 		}
 	}
