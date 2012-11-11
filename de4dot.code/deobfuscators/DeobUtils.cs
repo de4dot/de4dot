@@ -30,18 +30,18 @@ using de4dot.blocks;
 namespace de4dot.code.deobfuscators {
 	static class DeobUtils {
 		public static void decryptAndAddResources(ModuleDef module, string encryptedName, Func<byte[]> decryptResource) {
-			Log.v("Decrypting resources, name: {0}", Utils.toCsharpString(encryptedName));
+			Logger.v("Decrypting resources, name: {0}", Utils.toCsharpString(encryptedName));
 			var decryptedResourceData = decryptResource();
 			if (decryptedResourceData == null)
 				throw new ApplicationException("decryptedResourceData is null");
 			var resourceModule = ModuleDefMD.Load(decryptedResourceData);
 
-			Log.indent();
+			Logger.Instance.indent();
 			foreach (var rsrc in resourceModule.Resources) {
-				Log.v("Adding decrypted resource {0}", Utils.toCsharpString(rsrc.Name));
+				Logger.v("Adding decrypted resource {0}", Utils.toCsharpString(rsrc.Name));
 				module.Resources.Add(rsrc);
 			}
-			Log.deIndent();
+			Logger.Instance.deIndent();
 		}
 
 		public static T lookup<T>(ModuleDefMD module, T def, string errorMessage) where T : class, ICodedToken {

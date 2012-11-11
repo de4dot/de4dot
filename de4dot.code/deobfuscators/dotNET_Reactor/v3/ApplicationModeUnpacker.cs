@@ -102,7 +102,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 				return data;
 
 			if (shouldUnpack)
-				Log.w("Could not unpack the file");
+				Logger.w("Could not unpack the file");
 			return null;
 		}
 

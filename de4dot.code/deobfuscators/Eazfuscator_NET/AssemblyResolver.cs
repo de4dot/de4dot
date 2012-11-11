@@ -364,7 +364,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			}
 			catch {
 			}
-			Log.w("Could not load assembly from decrypted resource {0}", Utils.toCsharpString(info.ResourceName));
+			Logger.w("Could not load assembly from decrypted resource {0}", Utils.toCsharpString(info.ResourceName));
 			int index = info.Filename.LastIndexOf('.');
 			if (index < 0) {
 				info.SimpleName = info.Filename;

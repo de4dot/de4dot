@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using dot10.DotNet;
 using de4dot.code;
 using de4dot.code.deobfuscators;
 
@@ -67,14 +68,17 @@ namespace de4dot.cui {
 		public static int main(string[] args) {
 			int exitCode = 0;
 
+			const string showAllMessagesEnvName = "SHOWALLMESSAGES";
 			try {
 				if (Console.OutputEncoding.IsSingleByte)
 					Console.OutputEncoding = new UTF8Encoding(false);
 
-				Log.n("");
-				Log.n("de4dot v{0} Copyright (C) 2011-2012 de4dot@gmail.com", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
-				Log.n("Latest version and source code: https://github.com/0xd4d/de4dot");
-				Log.n("");
+				Logger.Instance.CanIgnoreMessages = !hasEnv(showAllMessagesEnvName);
+
+				Logger.n("");
+				Logger.n("de4dot v{0} Copyright (C) 2011-2012 de4dot@gmail.com", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
+				Logger.n("Latest version and source code: https://github.com/0xd4d/de4dot");
+				Logger.n("");
 
 				var options = new FilesDeobfuscator.Options();
 				parseCommandLine(args, options);
@@ -84,24 +88,29 @@ namespace de4dot.cui {
 				exitCode = ex.code;
 			}
 			catch (UserException ex) {
-				Log.e("ERROR: {0}", ex.Message);
+				Logger.Instance.Log(false, null, LoggerEvent.Error, "ERROR: {0}", ex.Message);
 				exitCode = 1;
 			}
 			catch (Exception ex) {
 				if (printFullStackTrace()) {
 					printStackTrace(ex);
-					Log.e("\nTry the latest version before reporting this problem!");
-					Log.e("Send bug reports to de4dot@gmail.com or go to https://github.com/0xd4d/de4dot/issues");
+					Logger.Instance.Log(false, null, LoggerEvent.Error, "\nTry the latest version before reporting this problem!");
+					Logger.Instance.Log(false, null, LoggerEvent.Error, "Send bug reports to de4dot@gmail.com or go to https://github.com/0xd4d/de4dot/issues");
 				}
 				else {
-					Log.e("\n\n");
-					Log.e("Hmmmm... something didn't work. Try the latest version.");
-					Log.e("    EX: {0} : message: {1}", ex.GetType(), ex.Message);
-					Log.e("If it's a supported obfuscator, it could be a bug or a new obfuscator version.");
-					Log.e("If it's an unsupported obfuscator, make sure the methods are decrypted!");
-					Log.e("Send bug reports to de4dot@gmail.com or go to https://github.com/0xd4d/de4dot/issues");
+					Logger.Instance.Log(false, null, LoggerEvent.Error, "\n\n");
+					Logger.Instance.Log(false, null, LoggerEvent.Error, "Hmmmm... something didn't work. Try the latest version.");
+					Logger.Instance.Log(false, null, LoggerEvent.Error, "    EX: {0} : message: {1}", ex.GetType(), ex.Message);
+					Logger.Instance.Log(false, null, LoggerEvent.Error, "If it's a supported obfuscator, it could be a bug or a new obfuscator version.");
+					Logger.Instance.Log(false, null, LoggerEvent.Error, "If it's an unsupported obfuscator, make sure the methods are decrypted!");
+					Logger.Instance.Log(false, null, LoggerEvent.Error, "Send bug reports to de4dot@gmail.com or go to https://github.com/0xd4d/de4dot/issues");
 				}
 				exitCode = 1;
+			}
+
+			if (Logger.Instance.NumIgnoredMessages > 0) {
+				Logger.n("Ignored {0} warnings/errors", Logger.Instance.NumIgnoredMessages);
+				Logger.n("Set environment variable {0}=1 to see all messages", showAllMessagesEnvName);
 			}
 
 			if (isN00bUser()) {
@@ -117,7 +126,7 @@ namespace de4dot.cui {
 		}
 
 		static bool printFullStackTrace() {
-			if (Log.isAtLeast(Log.LogLevel.verbose))
+			if (!Logger.Instance.IgnoresEvent(LoggerEvent.Verbose))
 				return true;
 			if (hasEnv("STACKTRACE"))
 				return true;
@@ -143,31 +152,31 @@ namespace de4dot.cui {
 		}
 
 		public static void printStackTrace(Exception ex) {
-			printStackTrace(ex, Log.LogLevel.error);
+			printStackTrace(ex, LoggerEvent.Error);
 		}
 
-		public static void printStackTrace(Exception ex, Log.LogLevel logLevel) {
+		public static void printStackTrace(Exception ex, LoggerEvent loggerEvent) {
 			var line = new string('-', 78);
-			Log.log(logLevel, "\n\n");
-			Log.log(logLevel, line);
-			Log.log(logLevel, "Stack trace:\n{0}", ex.StackTrace);
-			Log.log(logLevel, "\n\nERROR: Caught an exception:\n");
-			Log.log(logLevel, line);
-			Log.log(logLevel, "Message:");
-			Log.log(logLevel, "  {0}", ex.Message);
-			Log.log(logLevel, "Type:");
-			Log.log(logLevel, "  {0}", ex.GetType());
-			Log.log(logLevel, line);
+			Logger.Instance.Log(false, null, loggerEvent, "\n\n");
+			Logger.Instance.Log(false, null, loggerEvent, line);
+			Logger.Instance.Log(false, null, loggerEvent, "Stack trace:\n{0}", ex.StackTrace);
+			Logger.Instance.Log(false, null, loggerEvent, "\n\nERROR: Caught an exception:\n");
+			Logger.Instance.Log(false, null, loggerEvent, line);
+			Logger.Instance.Log(false, null, loggerEvent, "Message:");
+			Logger.Instance.Log(false, null, loggerEvent, "  {0}", ex.Message);
+			Logger.Instance.Log(false, null, loggerEvent, "Type:");
+			Logger.Instance.Log(false, null, loggerEvent, "  {0}", ex.GetType());
+			Logger.Instance.Log(false, null, loggerEvent, line);
 		}
 
 		static void parseCommandLine(string[] args, FilesDeobfuscator.Options options) {
 			new CommandLineParser(deobfuscatorInfos, options).parse(args);
 
-			Log.vv("Args:");
-			Log.indent();
+			Logger.vv("Args:");
+			Logger.Instance.indent();
 			foreach (var arg in args)
-				Log.vv("{0}", Utils.toCsharpString(arg));
-			Log.deIndent();
+				Logger.vv("{0}", Utils.toCsharpString(arg));
+			Logger.Instance.deIndent();
 		}
 	}
 }

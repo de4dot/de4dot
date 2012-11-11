@@ -328,7 +328,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 
 			byte allFlags = (byte)(desEncryptedFlag | deflatedFlag | bitwiseNotEncryptedFlag);
 			if ((flags & ~allFlags) != 0)
-				Log.w("Found unknown resource encryption flags: 0x{0:X2}", flags);
+				Logger.w("Found unknown resource encryption flags: 0x{0:X2}", flags);
 
 			if ((flags & desEncryptedFlag) != 0) {
 				var memStream = new MemoryStream((int)resourceStream.Length);

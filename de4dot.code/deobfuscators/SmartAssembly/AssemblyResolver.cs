@@ -45,7 +45,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			var returned = new Dictionary<Resource, bool>();
 			foreach (var info in assemblyResolverInfo.EmbeddedAssemblyInfos) {
 				if (info.resource == null) {
-					Log.w("Could not find embedded resource {0}", Utils.toCsharpString(info.resourceName));
+					Logger.w("Could not find embedded resource {0}", Utils.toCsharpString(info.resourceName));
 					continue;
 				}
 				if (returned.ContainsKey(info.resource))

@@ -131,7 +131,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			doc.Load(XmlReader.Create(bundleXmlFile.Data.CreateStream()));
 			var manifest = doc.DocumentElement;
 			if (manifest.Name.ToLowerInvariant() != "manifest") {
-				Log.w("Could not find Manifest element");
+				Logger.w("Could not find Manifest element");
 				return;
 			}
 			foreach (var tmp in manifest.ChildNodes) {
@@ -140,13 +140,13 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 					continue;
 
 				if (assemblyElem.Name.ToLowerInvariant() != "assembly") {
-					Log.w("Unknown element: {0}", assemblyElem.Name);
+					Logger.w("Unknown element: {0}", assemblyElem.Name);
 					continue;
 				}
 
 				int offset = getAttributeValueInt32(assemblyElem, "offset");
 				if (offset < 0) {
-					Log.w("Could not find offset attribute");
+					Logger.w("Could not find offset attribute");
 					continue;
 				}
 

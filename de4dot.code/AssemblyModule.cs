@@ -57,6 +57,7 @@ namespace de4dot.code {
 				writerOptions.MetaDataOptions.Flags |= MetaDataFlags.KeepOldMaxStack;
 			if (preserveTokens)
 				writerOptions.MetaDataOptions.Flags |= MetaDataFlags.PreserveTokens | MetaDataFlags.PreserveUSOffsets | MetaDataFlags.PreserveExtraSignatureData;
+			writerOptions.Logger = Logger.Instance;
 			module.Write(newFilename, writerOptions);
 		}
 

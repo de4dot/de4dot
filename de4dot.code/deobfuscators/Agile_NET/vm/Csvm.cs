@@ -86,18 +86,18 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			if (!Detected)
 				return;
 
-			int oldIndent = Log.indentLevel;
+			int oldIndent = Logger.Instance.IndentLevel;
 			try {
 				restore2();
 			}
 			finally {
-				Log.indentLevel = oldIndent;
+				Logger.Instance.IndentLevel = oldIndent;
 			}
 		}
 
 		void restore2() {
-			Log.v("Restoring CSVM methods");
-			Log.indent();
+			Logger.v("Restoring CSVM methods");
+			Logger.Instance.indent();
 
 			var opcodeDetector = getVmOpCodeHandlerDetector();
 			var csvmMethods = new CsvmDataReader(resource.Data).read();
@@ -108,37 +108,37 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 				if (cilMethod == null)
 					throw new ApplicationException(string.Format("Could not find method {0:X8}", csvmMethod.Token));
 				converter.convert(cilMethod, csvmMethod);
-				Log.v("Restored method {0:X8}", cilMethod.MDToken.ToInt32());
+				Logger.v("Restored method {0:X8}", cilMethod.MDToken.ToInt32());
 				printMethod(methodPrinter, cilMethod);
 			}
-			Log.deIndent();
+			Logger.Instance.deIndent();
 		}
 
 		static void printMethod(MethodPrinter methodPrinter, MethodDef method) {
-			const Log.LogLevel dumpLogLevel = Log.LogLevel.verbose;
-			if (!Log.isAtLeast(dumpLogLevel))
+			const LoggerEvent dumpLogLevel = LoggerEvent.Verbose;
+			if (Logger.Instance.IgnoresEvent(dumpLogLevel))
 				return;
 
-			Log.indent();
+			Logger.Instance.indent();
 
-			Log.v("Locals:");
-			Log.indent();
+			Logger.v("Locals:");
+			Logger.Instance.indent();
 			for (int i = 0; i < method.Body.LocalList.Count; i++)
-				Log.v("#{0}: {1}", i, method.Body.LocalList[i].Type);
-			Log.deIndent();
+				Logger.v("#{0}: {1}", i, method.Body.LocalList[i].Type);
+			Logger.Instance.deIndent();
 
-			Log.v("Code:");
-			Log.indent();
+			Logger.v("Code:");
+			Logger.Instance.indent();
 			methodPrinter.print(dumpLogLevel, method.Body.Instructions, method.Body.ExceptionHandlers);
-			Log.deIndent();
+			Logger.Instance.deIndent();
 
-			Log.deIndent();
+			Logger.Instance.deIndent();
 		}
 
 		VmOpCodeHandlerDetector getVmOpCodeHandlerDetector() {
 			var vmFilename = vmAssemblyReference.Name + ".dll";
 			var vmModulePath = Path.Combine(Path.GetDirectoryName(module.Location), vmFilename);
-			Log.v("CSVM filename: {0}", vmFilename);
+			Logger.v("CSVM filename: {0}", vmFilename);
 
 			var dataKey = "cs cached VmOpCodeHandlerDetector";
 			var dict = (Dictionary<string, VmOpCodeHandlerDetector>)deobfuscatorContext.getData(dataKey);
@@ -150,11 +150,11 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			dict[vmModulePath] = detector = new VmOpCodeHandlerDetector(ModuleDefMD.Load(vmModulePath));
 
 			detector.findHandlers();
-			Log.v("CSVM opcodes:");
-			Log.indent();
+			Logger.v("CSVM opcodes:");
+			Logger.Instance.indent();
 			for (int i = 0; i < detector.Handlers.Count; i++)
-				Log.v("{0:X4}: {1}", i, detector.Handlers[i].Name);
-			Log.deIndent();
+				Logger.v("{0:X4}: {1}", i, detector.Handlers[i].Name);
+			Logger.Instance.deIndent();
 
 			return detector;
 		}

@@ -296,7 +296,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 
 			if (tamperBlocks == null) {
 				if (isTamperProtected(allBlocks))
-					Log.w("Could not remove tamper protection code: {0} ({1:X8})", Utils.removeNewlines(blocks.Method), blocks.Method.MDToken.ToUInt32());
+					Logger.w("Could not remove tamper protection code: {0} ({1:X8})", Utils.removeNewlines(blocks.Method), blocks.Method.MDToken.ToUInt32());
 				return false;
 			}
 

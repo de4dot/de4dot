@@ -308,7 +308,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				data30 = new Data30();
 				data30.resource = DeobUtils.getEmbeddedResourceFromCodeStrings(module, resolveHandler);
 				if (data30.resource == null) {
-					Log.w("Could not find resource of encrypted resources");
+					Logger.w("Could not find resource of encrypted resources");
 					return;
 				}
 			}

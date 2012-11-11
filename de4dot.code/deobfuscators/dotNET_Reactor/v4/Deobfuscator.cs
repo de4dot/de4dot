@@ -549,7 +549,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			if (!options.RemoveAntiStrongName)
 				return;
 			if (antiStrongname.remove(blocks))
-				Log.v("Removed anti strong name code");
+				Logger.v("Removed anti strong name code");
 		}
 
 		TypeDef getDecrypterType() {
@@ -587,7 +587,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			if (canRemoveDecrypterType)
 				addTypeToBeRemoved(decrypterType, "Decrypter type");
 			else
-				Log.v("Could not remove decrypter type");
+				Logger.v("Could not remove decrypter type");
 
 			base.deobfuscateEnd();
 		}

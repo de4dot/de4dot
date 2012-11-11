@@ -84,7 +84,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			if (!encryptedResource.FoundResource)
 				return;
 
-			Log.v("Adding boolean decrypter. Resource: {0}", Utils.toCsharpString(encryptedResource.Resource.Name));
+			Logger.v("Adding boolean decrypter. Resource: {0}", Utils.toCsharpString(encryptedResource.Resource.Name));
 			decryptedData = encryptedResource.decrypt();
 		}
 

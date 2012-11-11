@@ -91,7 +91,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 				var list = methodToOrigMethods.find(calledMethod);
 				var method = list[0];
 
-				Log.v("Restored method body {0:X8} from method {1:X8}",
+				Logger.v("Restored method body {0:X8} from method {1:X8}",
 							method.MDToken.ToInt32(),
 							calledMethod.MDToken.ToInt32());
 				DotNetUtils.copyBodyFromTo(calledMethod, method);

@@ -232,7 +232,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 				localsRestorer.deobfuscate(blocks);
 			if (options.RemoveAntiStrongName) {
 				if (strongNameChecker.deobfuscate(blocks))
-					Log.v("Removed strong name checker code");
+					Logger.v("Removed strong name checker code");
 			}
 			logicalExpressionFixer.deobfuscate(blocks);
 			base.deobfuscateMethodEnd(blocks);

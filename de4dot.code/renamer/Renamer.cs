@@ -75,7 +75,7 @@ namespace de4dot.code.renamer {
 		public void rename() {
 			if (modules.Empty)
 				return;
-			Log.n("Renaming all obfuscated symbols");
+			Logger.n("Renaming all obfuscated symbols");
 
 			modules.initialize();
 			renameResourceKeys();
@@ -113,7 +113,7 @@ namespace de4dot.code.renamer {
 						var overrideMethod = overrides[i].MethodDeclaration;
 						if (method.MethodDef.Name != overrideMethod.Name)
 							continue;
-						Log.v("Removed useless override from method {0} ({1:X8}), override: {2:X8}",
+						Logger.v("Removed useless override from method {0} ({1:X8}), override: {2:X8}",
 									Utils.removeNewlines(method.MethodDef),
 									method.MethodDef.MDToken.ToInt32(),
 									overrideMethod.MDToken.ToInt32());
@@ -125,7 +125,7 @@ namespace de4dot.code.renamer {
 		}
 
 		void renameTypeDefinitions() {
-			Log.v("Renaming obfuscated type definitions");
+			Logger.v("Renaming obfuscated type definitions");
 
 			foreach (var module in modules.TheModules) {
 				if (module.ObfuscatedFile.RemoveNamespaceWithOneType)
@@ -164,43 +164,43 @@ namespace de4dot.code.renamer {
 				if (list.Count != maxClasses)
 					continue;
 				var ns = list[0].TypeDef.Namespace;
-				Log.v("Removing namespace: {0}", Utils.removeNewlines(ns));
+				Logger.v("Removing namespace: {0}", Utils.removeNewlines(ns));
 				foreach (var type in list)
 					memberInfos.type(type).newNamespace = "";
 			}
 		}
 
 		void renameTypeDefinitions(IEnumerable<MTypeDef> typeDefs) {
-			Log.indent();
+			Logger.Instance.indent();
 			foreach (var typeDef in typeDefs) {
 				rename(typeDef);
 				renameTypeDefinitions(typeDef.NestedTypes);
 			}
-			Log.deIndent();
+			Logger.Instance.deIndent();
 		}
 
 		void rename(MTypeDef type) {
 			var typeDefinition = type.TypeDef;
 			var info = memberInfos.type(type);
 
-			Log.v("Type: {0} ({1:X8})", Utils.removeNewlines(typeDefinition.FullName), typeDefinition.MDToken.ToUInt32());
-			Log.indent();
+			Logger.v("Type: {0} ({1:X8})", Utils.removeNewlines(typeDefinition.FullName), typeDefinition.MDToken.ToUInt32());
+			Logger.Instance.indent();
 
 			renameGenericParams(type.GenericParams);
 
 			if (RenameTypes && info.gotNewName()) {
 				var old = typeDefinition.Name;
 				typeDefinition.Name = new UTF8String(info.newName);
-				Log.v("Name: {0} => {1}", Utils.removeNewlines(old), Utils.removeNewlines(typeDefinition.Name));
+				Logger.v("Name: {0} => {1}", Utils.removeNewlines(old), Utils.removeNewlines(typeDefinition.Name));
 			}
 
 			if (RenameNamespaces && info.newNamespace != null) {
 				var old = typeDefinition.Namespace;
 				typeDefinition.Namespace = new UTF8String(info.newNamespace);
-				Log.v("Namespace: {0} => {1}", Utils.removeNewlines(old), Utils.removeNewlines(typeDefinition.Namespace));
+				Logger.v("Namespace: {0} => {1}", Utils.removeNewlines(old), Utils.removeNewlines(typeDefinition.Namespace));
 			}
 
-			Log.deIndent();
+			Logger.Instance.deIndent();
 		}
 
 		void renameGenericParams(IEnumerable<MGenericParamDef> genericParams) {
@@ -211,34 +211,34 @@ namespace de4dot.code.renamer {
 				if (!info.gotNewName())
 					continue;
 				param.GenericParam.Name = new UTF8String(info.newName);
-				Log.v("GenParam: {0} => {1}", Utils.removeNewlines(info.oldFullName), Utils.removeNewlines(param.GenericParam.FullName));
+				Logger.v("GenParam: {0} => {1}", Utils.removeNewlines(info.oldFullName), Utils.removeNewlines(param.GenericParam.FullName));
 			}
 		}
 
 		void renameMemberDefinitions() {
-			Log.v("Renaming member definitions #2");
+			Logger.v("Renaming member definitions #2");
 
 			var allTypes = new List<MTypeDef>(modules.AllTypes);
 			allTypes.Sort((a, b) => a.Index.CompareTo(b.Index));
 
-			Log.indent();
+			Logger.Instance.indent();
 			foreach (var typeDef in allTypes)
 				renameMembers(typeDef);
-			Log.deIndent();
+			Logger.Instance.deIndent();
 		}
 
 		void renameMembers(MTypeDef type) {
 			var info = memberInfos.type(type);
 
-			Log.v("Type: {0}", Utils.removeNewlines(info.type.TypeDef.FullName));
-			Log.indent();
+			Logger.v("Type: {0}", Utils.removeNewlines(info.type.TypeDef.FullName));
+			Logger.Instance.indent();
 
 			renameFields(info);
 			renameProperties(info);
 			renameEvents(info);
 			renameMethods(info);
 
-			Log.deIndent();
+			Logger.Instance.deIndent();
 		}
 
 		void renameFields(TypeInfo info) {
@@ -249,7 +249,7 @@ namespace de4dot.code.renamer {
 				if (!fieldInfo.gotNewName())
 					continue;
 				fieldDef.FieldDef.Name = new UTF8String(fieldInfo.newName);
-				Log.v("Field: {0} ({1:X8}) => {2}",
+				Logger.v("Field: {0} ({1:X8}) => {2}",
 							Utils.removeNewlines(fieldInfo.oldFullName),
 							fieldDef.FieldDef.MDToken.ToUInt32(),
 							Utils.removeNewlines(fieldDef.FieldDef.FullName));
@@ -264,7 +264,7 @@ namespace de4dot.code.renamer {
 				if (!propInfo.gotNewName())
 					continue;
 				propDef.PropertyDef.Name = new UTF8String(propInfo.newName);
-				Log.v("Property: {0} ({1:X8}) => {2}",
+				Logger.v("Property: {0} ({1:X8}) => {2}",
 							Utils.removeNewlines(propInfo.oldFullName),
 							propDef.PropertyDef.MDToken.ToUInt32(),
 							Utils.removeNewlines(propDef.PropertyDef.FullName));
@@ -279,7 +279,7 @@ namespace de4dot.code.renamer {
 				if (!eventInfo.gotNewName())
 					continue;
 				eventDef.EventDef.Name = new UTF8String(eventInfo.newName);
-				Log.v("Event: {0} ({1:X8}) => {2}",
+				Logger.v("Event: {0} ({1:X8}) => {2}",
 							Utils.removeNewlines(eventInfo.oldFullName),
 							eventDef.EventDef.MDToken.ToUInt32(),
 							Utils.removeNewlines(eventDef.EventDef.FullName));
@@ -291,14 +291,14 @@ namespace de4dot.code.renamer {
 				return;
 			foreach (var methodDef in info.type.AllMethodsSorted) {
 				var methodInfo = memberInfos.method(methodDef);
-				Log.v("Method {0} ({1:X8})", Utils.removeNewlines(methodInfo.oldFullName), methodDef.MethodDef.MDToken.ToUInt32());
-				Log.indent();
+				Logger.v("Method {0} ({1:X8})", Utils.removeNewlines(methodInfo.oldFullName), methodDef.MethodDef.MDToken.ToUInt32());
+				Logger.Instance.indent();
 
 				renameGenericParams(methodDef.GenericParams);
 
 				if (RenameMethods && methodInfo.gotNewName()) {
 					methodDef.MethodDef.Name = new UTF8String(methodInfo.newName);
-					Log.v("Name: {0} => {1}", Utils.removeNewlines(methodInfo.oldFullName), Utils.removeNewlines(methodDef.MethodDef.FullName));
+					Logger.v("Name: {0} => {1}", Utils.removeNewlines(methodInfo.oldFullName), Utils.removeNewlines(methodDef.MethodDef.FullName));
 				}
 
 				if (RenameMethodArgs) {
@@ -309,22 +309,22 @@ namespace de4dot.code.renamer {
 						param.ParameterDefinition.CreateParamDef();
 						param.ParameterDefinition.Name = paramInfo.newName;
 						if (param.IsReturnParameter)
-							Log.v("RetParam: {0} => {1}", Utils.removeNewlines(paramInfo.oldName), Utils.removeNewlines(paramInfo.newName));
+							Logger.v("RetParam: {0} => {1}", Utils.removeNewlines(paramInfo.oldName), Utils.removeNewlines(paramInfo.newName));
 						else
-							Log.v("Param ({0}/{1}): {2} => {3}", param.ParameterDefinition.MethodSigIndex + 1, methodDef.MethodDef.MethodSig.GetParamCount(), Utils.removeNewlines(paramInfo.oldName), Utils.removeNewlines(paramInfo.newName));
+							Logger.v("Param ({0}/{1}): {2} => {3}", param.ParameterDefinition.MethodSigIndex + 1, methodDef.MethodDef.MethodSig.GetParamCount(), Utils.removeNewlines(paramInfo.oldName), Utils.removeNewlines(paramInfo.newName));
 					}
 				}
 
-				Log.deIndent();
+				Logger.Instance.deIndent();
 			}
 		}
 
 		void renameMemberReferences() {
-			Log.v("Renaming references to other definitions");
+			Logger.v("Renaming references to other definitions");
 			foreach (var module in modules.TheModules) {
 				if (modules.TheModules.Count > 1)
-					Log.v("Renaming references to other definitions ({0})", module.Filename);
-				Log.indent();
+					Logger.v("Renaming references to other definitions ({0})", module.Filename);
+				Logger.Instance.indent();
 				foreach (var refToDef in module.MethodRefsToRename)
 					refToDef.reference.Name = refToDef.definition.Name;
 				foreach (var refToDef in module.FieldRefsToRename)
@@ -333,18 +333,18 @@ namespace de4dot.code.renamer {
 					info.cattr.NamedArguments[info.index].Name = info.reference.Name;
 				foreach (var info in module.CustomAttributePropertyReferences)
 					info.cattr.NamedArguments[info.index].Name = info.reference.Name;
-				Log.deIndent();
+				Logger.Instance.deIndent();
 			}
 		}
 
 		void renameResources() {
-			Log.v("Renaming resources");
+			Logger.v("Renaming resources");
 			foreach (var module in modules.TheModules) {
 				if (modules.TheModules.Count > 1)
-					Log.v("Renaming resources ({0})", module.Filename);
-				Log.indent();
+					Logger.v("Renaming resources ({0})", module.Filename);
+				Logger.Instance.indent();
 				renameResources(module);
-				Log.deIndent();
+				Logger.Instance.deIndent();
 			}
 		}
 
@@ -387,17 +387,17 @@ namespace de4dot.code.renamer {
 		}
 
 		void renameTypeReferences() {
-			Log.v("Renaming references to type definitions");
+			Logger.v("Renaming references to type definitions");
 			var theModules = modules.TheModules;
 			foreach (var module in theModules) {
 				if (theModules.Count > 1)
-					Log.v("Renaming references to type definitions ({0})", module.Filename);
-				Log.indent();
+					Logger.v("Renaming references to type definitions ({0})", module.Filename);
+				Logger.Instance.indent();
 				foreach (var refToDef in module.TypeRefsToRename) {
 					refToDef.reference.Name = refToDef.definition.Name;
 					refToDef.reference.Namespace = refToDef.definition.Namespace;
 				}
-				Log.deIndent();
+				Logger.Instance.deIndent();
 			}
 		}
 
@@ -581,7 +581,7 @@ namespace de4dot.code.renamer {
 				return null;
 			if (propDef.GetMethod != null)
 				return null;
-			Log.v("Restoring property getter {0} ({1:X8}), Property: {2} ({3:X8})",
+			Logger.v("Restoring property getter {0} ({1:X8}), Property: {2} ({3:X8})",
 						Utils.removeNewlines(propMethod),
 						propMethod.MethodDef.MDToken.ToInt32(),
 						Utils.removeNewlines(propDef.PropertyDef),
@@ -610,7 +610,7 @@ namespace de4dot.code.renamer {
 				return null;
 			if (propDef.SetMethod != null)
 				return null;
-			Log.v("Restoring property setter {0} ({1:X8}), Property: {2} ({3:X8})",
+			Logger.v("Restoring property setter {0} ({1:X8}), Property: {2} ({3:X8})",
 						Utils.removeNewlines(propMethod),
 						propMethod.MethodDef.MDToken.ToInt32(),
 						Utils.removeNewlines(propDef.PropertyDef),
@@ -636,7 +636,7 @@ namespace de4dot.code.renamer {
 
 			propDef = ownerType.create(newProp);
 			memberInfos.add(propDef);
-			Log.v("Restoring property: {0}", Utils.removeNewlines(newProp));
+			Logger.v("Restoring property: {0}", Utils.removeNewlines(newProp));
 			return propDef;
 		}
 
@@ -805,7 +805,7 @@ namespace de4dot.code.renamer {
 				return null;
 			if (eventDef.AddMethod != null)
 				return null;
-			Log.v("Restoring event adder {0} ({1:X8}), Event: {2} ({3:X8})",
+			Logger.v("Restoring event adder {0} ({1:X8}), Event: {2} ({3:X8})",
 						Utils.removeNewlines(eventMethod),
 						eventMethod.MethodDef.MDToken.ToInt32(),
 						Utils.removeNewlines(eventDef.EventDef),
@@ -831,7 +831,7 @@ namespace de4dot.code.renamer {
 				return null;
 			if (eventDef.RemoveMethod != null)
 				return null;
-			Log.v("Restoring event remover {0} ({1:X8}), Event: {2} ({3:X8})",
+			Logger.v("Restoring event remover {0} ({1:X8}), Event: {2} ({3:X8})",
 						Utils.removeNewlines(eventMethod),
 						eventMethod.MethodDef.MDToken.ToInt32(),
 						Utils.removeNewlines(eventDef.EventDef),
@@ -861,12 +861,12 @@ namespace de4dot.code.renamer {
 
 			eventDef = ownerType.create(newEvent);
 			memberInfos.add(eventDef);
-			Log.v("Restoring event: {0}", Utils.removeNewlines(newEvent));
+			Logger.v("Restoring event: {0}", Utils.removeNewlines(newEvent));
 			return eventDef;
 		}
 
 		void prepareRenameMemberDefinitions(MethodNameGroups groups) {
-			Log.v("Renaming member definitions #1");
+			Logger.v("Renaming member definitions #1");
 
 			prepareRenameEntryPoints();
 
@@ -1578,7 +1578,7 @@ namespace de4dot.code.renamer {
 					continue;
 				var methodDef = modules.resolveMethod(entryPoint);
 				if (methodDef == null) {
-					Log.w(string.Format("Could not find entry point. Module: {0}, Method: {1}", module.ModuleDefMD.Location, Utils.removeNewlines(entryPoint)));
+					Logger.w(string.Format("Could not find entry point. Module: {0}, Method: {1}", module.ModuleDefMD.Location, Utils.removeNewlines(entryPoint)));
 					continue;
 				}
 				if (!methodDef.isStatic())

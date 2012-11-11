@@ -146,7 +146,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				return Encoding.GetEncoding(cp);
 			}
 			catch {
-				Log.w("Invalid code page {0}!", cp);
+				Logger.w("Invalid code page {0}!", cp);
 				return Encoding.Default;
 			}
 		}

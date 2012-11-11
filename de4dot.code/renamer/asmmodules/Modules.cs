@@ -155,25 +155,25 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 
 		void findAllMemberReferences() {
-			Log.v("Finding all MemberReferences");
+			Logger.v("Finding all MemberReferences");
 			int index = 0;
 			foreach (var module in modules) {
 				if (modules.Count > 1)
-					Log.v("Finding all MemberReferences ({0})", module.Filename);
-				Log.indent();
+					Logger.v("Finding all MemberReferences ({0})", module.Filename);
+				Logger.Instance.indent();
 				module.findAllMemberReferences(ref index);
-				Log.deIndent();
+				Logger.Instance.deIndent();
 			}
 		}
 
 		void resolveAllRefs() {
-			Log.v("Resolving references");
+			Logger.v("Resolving references");
 			foreach (var module in modules) {
 				if (modules.Count > 1)
-					Log.v("Resolving references ({0})", module.Filename);
-				Log.indent();
+					Logger.v("Resolving references ({0})", module.Filename);
+				Logger.Instance.indent();
 				module.resolveAllRefs(this);
-				Log.deIndent();
+				Logger.Instance.deIndent();
 			}
 		}
 
@@ -449,7 +449,7 @@ namespace de4dot.code.renamer.asmmodules {
 			}
 			if (isAutoCreatedType(typeRef))
 				return null;
-			Log.e("Could not resolve TypeReference {0} ({1:X8}) (from {2} -> {3})",
+			Logger.e("Could not resolve TypeReference {0} ({1:X8}) (from {2} -> {3})",
 						Utils.removeNewlines(typeRef),
 						typeRef.MDToken.ToInt32(),
 						typeRef.OwnerModule,
@@ -470,7 +470,7 @@ namespace de4dot.code.renamer.asmmodules {
 			}
 			if (isAutoCreatedType(methodRef.DeclaringType))
 				return null;
-			Log.e("Could not resolve MethodReference {0} ({1:X8}) (from {2} -> {3})",
+			Logger.e("Could not resolve MethodReference {0} ({1:X8}) (from {2} -> {3})",
 						Utils.removeNewlines(methodRef),
 						methodRef.MDToken.ToInt32(),
 						methodRef.DeclaringType.OwnerModule,
@@ -491,7 +491,7 @@ namespace de4dot.code.renamer.asmmodules {
 			}
 			if (isAutoCreatedType(fieldReference.DeclaringType))
 				return null;
-			Log.e("Could not resolve FieldReference {0} ({1:X8}) (from {2} -> {3})",
+			Logger.e("Could not resolve FieldReference {0} ({1:X8}) (from {2} -> {3})",
 						Utils.removeNewlines(fieldReference),
 						fieldReference.MDToken.ToInt32(),
 						fieldReference.DeclaringType.OwnerModule,

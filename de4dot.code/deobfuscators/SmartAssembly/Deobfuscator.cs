@@ -409,12 +409,12 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			foreach (var info in stringDecrypterInfos) {
 				if (initd.ContainsKey(info))
 					continue;
-				Log.v("String decrypter not initialized. Token {0:X8}", info.StringsEncodingClass.MDToken.ToInt32());
+				Logger.v("String decrypter not initialized. Token {0:X8}", info.StringsEncodingClass.MDToken.ToInt32());
 			}
 		}
 
 		void initStringDecrypter(StringDecrypterInfo info) {
-			Log.v("Adding string decrypter. Resource: {0}", Utils.toCsharpString(info.StringsResource.Name));
+			Logger.v("Adding string decrypter. Resource: {0}", Utils.toCsharpString(info.StringsResource.Name));
 			var decrypter = new StringDecrypter(info);
 			if (decrypter.CanDecrypt) {
 				staticStringInliner.add(DotNetUtils.getMethod(info.GetStringDelegate, "Invoke"), (method, gim, args) => {
@@ -489,14 +489,14 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			if (!options.RemoveAutomatedErrorReporting)
 				return;
 			if (automatedErrorReportingFinder.remove(blocks))
-				Log.v("Removed Automated Error Reporting code");
+				Logger.v("Removed Automated Error Reporting code");
 		}
 
 		void removeTamperProtection(Blocks blocks) {
 			if (!options.RemoveTamperProtection)
 				return;
 			if (tamperProtectionRemover.remove(blocks))
-				Log.v("Removed Tamper Protection code");
+				Logger.v("Removed Tamper Protection code");
 		}
 
 		void removeMemoryManagerStuff() {

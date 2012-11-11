@@ -113,7 +113,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		ImageReader addImageReader(string name, byte[] data) {
 			var imageReader = new ImageReader(deobfuscatorContext, module, data);
 			if (!imageReader.initialize()) {
-				Log.w("Could not read encrypted methods");
+				Logger.w("Could not read encrypted methods");
 				return null;
 			}
 			if (imageReaders.ContainsKey(name))
@@ -159,11 +159,11 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 					numNonDecryptedMethods++;
 					continue;
 				}
-				Log.v("Decrypting method {0:X8}", info.method.MDToken.ToInt32());
+				Logger.v("Decrypting method {0:X8}", info.method.MDToken.ToInt32());
 				imageReader.restore(info.FullName, info.method);
 			}
 			if (numNonDecryptedMethods > 0)
-				Log.w("{0}/{1} methods not decrypted", numNonDecryptedMethods, totalEncryptedMethods);
+				Logger.w("{0}/{1} methods not decrypted", numNonDecryptedMethods, totalEncryptedMethods);
 		}
 
 		ImageReader getImageReader(string feature) {

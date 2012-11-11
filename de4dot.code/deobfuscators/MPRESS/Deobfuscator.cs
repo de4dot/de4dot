@@ -251,7 +251,7 @@ namespace de4dot.code.deobfuscators.MPRESS {
 									BitConverter.ToInt16(hash, 6),
 									hash[8], hash[9], hash[10], hash[11],
 									hash[12], hash[13], hash[14], hash[15]);
-				Log.v("Updating MVID: {0}", guid.ToString("B"));
+				Logger.v("Updating MVID: {0}", guid.ToString("B"));
 				module.Mvid = guid;
 			}
 		}

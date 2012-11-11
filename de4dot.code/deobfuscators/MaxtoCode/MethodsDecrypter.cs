@@ -106,7 +106,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 						return info.Version;
 				}
 
-				Log.w("Could not detect MC version. Magic2: {0:X8} {1:X8}", m2lo, m2hi);
+				Logger.w("Could not detect MC version. Magic2: {0:X8} {1:X8}", m2lo, m2hi);
 				return EncryptionVersion.Unknown;
 			}
 
@@ -531,10 +531,10 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				return;
 			if (resourceRva != peImage.Cor20Header.resources.virtualAddress ||
 				resourceSize != peImage.Cor20Header.resources.size) {
-				Log.w("Invalid resource RVA and size found");
+				Logger.w("Invalid resource RVA and size found");
 			}
 
-			Log.v("Decrypting resources @ RVA {0:X8}, {1} bytes", resourceRva, resourceSize);
+			Logger.v("Decrypting resources @ RVA {0:X8}, {1} bytes", resourceRva, resourceSize);
 
 			int resourceOffset = (int)peImage.rvaToOffset(resourceRva);
 			for (int i = 0; i < resourceSize; i++)
@@ -555,11 +555,11 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			if (usHeap == null ||
 				peImage.rvaToOffset(usHeapRva) != usHeap.fileOffset ||
 				usHeapSize != usHeap.Length) {
-				Log.w("Invalid #US heap RVA and size found");
+				Logger.w("Invalid #US heap RVA and size found");
 			}
 
-			Log.v("Decrypting strings @ RVA {0:X8}, {1} bytes", usHeapRva, usHeapSize);
-			Log.indent();
+			Logger.v("Decrypting strings @ RVA {0:X8}, {1} bytes", usHeapRva, usHeapSize);
+			Logger.Instance.indent();
 
 			int mcKeyOffset = 0;
 			int usHeapOffset = (int)peImage.rvaToOffset(usHeapRva);
@@ -582,16 +582,16 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				}
 
 				try {
-					Log.v("Decrypted string: {0}", Utils.toCsharpString(Encoding.Unicode.GetString(fileData, usHeapOffsetString, stringDataLength - 1)));
+					Logger.v("Decrypted string: {0}", Utils.toCsharpString(Encoding.Unicode.GetString(fileData, usHeapOffsetString, stringDataLength - 1)));
 				}
 				catch {
-					Log.v("Could not decrypt string at offset {0:X8}", usHeapOffsetOrig);
+					Logger.v("Could not decrypt string at offset {0:X8}", usHeapOffsetOrig);
 				}
 
 				usHeapOffset++;
 			}
 
-			Log.deIndent();
+			Logger.Instance.deIndent();
 		}
 
 		byte rolb(byte b, int n) {

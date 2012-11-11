@@ -159,7 +159,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			encryptedResource.init(simpleDeobfuscator);
 			if (!encryptedResource.FoundResource)
 				return;
-			Log.v("Adding string decrypter. Resource: {0}", Utils.toCsharpString(encryptedResource.Resource.Name));
+			Logger.v("Adding string decrypter. Resource: {0}", Utils.toCsharpString(encryptedResource.Resource.Name));
 			decryptedData = encryptedResource.decrypt();
 		}
 

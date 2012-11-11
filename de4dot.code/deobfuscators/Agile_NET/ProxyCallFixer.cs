@@ -60,7 +60,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 
 			int delegateToken = 0x02000001 + instrs[0].GetLdcI4Value();
 			if (type.MDToken.ToInt32() != delegateToken) {
-				Log.w("Delegate token is not current type");
+				Logger.w("Delegate token is not current type");
 				return null;
 			}
 

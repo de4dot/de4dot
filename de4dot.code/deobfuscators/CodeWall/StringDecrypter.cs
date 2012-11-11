@@ -248,7 +248,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 				simpleDeobfuscator.deobfuscate(info.Method);
 				info.Resource = findResource(info.Method);
 				if (info.Resource == null) {
-					Log.w("Could not find encrypted strings resource (Method {0:X8})", info.Method.MDToken.ToInt32());
+					Logger.w("Could not find encrypted strings resource (Method {0:X8})", info.Method.MDToken.ToInt32());
 					continue;
 				}
 				info.Magic1 = findMagic1(info.Method);

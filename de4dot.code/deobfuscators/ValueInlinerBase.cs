@@ -99,7 +99,7 @@ namespace de4dot.code.deobfuscators {
 
 				block.replace(callResult.callStartIndex, num, Instruction.CreateLdcI4((bool)callResult.returnValue ? 1 : 0));
 				removeUnboxInstruction(block, callResult.callStartIndex + 1, "System.Boolean");
-				Log.v("Decrypted boolean: {0}", callResult.returnValue);
+				Logger.v("Decrypted boolean: {0}", callResult.returnValue);
 			}
 		}
 	}
@@ -112,7 +112,7 @@ namespace de4dot.code.deobfuscators {
 
 				block.replace(callResult.callStartIndex, num, Instruction.CreateLdcI4((int)callResult.returnValue));
 				removeUnboxInstruction(block, callResult.callStartIndex + 1, "System.Int32");
-				Log.v("Decrypted int32: {0}", callResult.returnValue);
+				Logger.v("Decrypted int32: {0}", callResult.returnValue);
 			}
 		}
 	}
@@ -125,7 +125,7 @@ namespace de4dot.code.deobfuscators {
 
 				block.replace(callResult.callStartIndex, num, Instruction.Create(OpCodes.Ldc_I8, (long)callResult.returnValue));
 				removeUnboxInstruction(block, callResult.callStartIndex + 1, "System.Int64");
-				Log.v("Decrypted int64: {0}", callResult.returnValue);
+				Logger.v("Decrypted int64: {0}", callResult.returnValue);
 			}
 		}
 	}
@@ -138,7 +138,7 @@ namespace de4dot.code.deobfuscators {
 
 				block.replace(callResult.callStartIndex, num, Instruction.Create(OpCodes.Ldc_R4, (float)callResult.returnValue));
 				removeUnboxInstruction(block, callResult.callStartIndex + 1, "System.Single");
-				Log.v("Decrypted single: {0}", callResult.returnValue);
+				Logger.v("Decrypted single: {0}", callResult.returnValue);
 			}
 		}
 	}
@@ -151,7 +151,7 @@ namespace de4dot.code.deobfuscators {
 
 				block.replace(callResult.callStartIndex, num, Instruction.Create(OpCodes.Ldc_R8, (double)callResult.returnValue));
 				removeUnboxInstruction(block, callResult.callStartIndex + 1, "System.Double");
-				Log.v("Decrypted double: {0}", callResult.returnValue);
+				Logger.v("Decrypted double: {0}", callResult.returnValue);
 			}
 		}
 	}

@@ -68,7 +68,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			stringResource = DotNetUtils.getResource(module, resourceName) as EmbeddedResource;
 			if (stringResource == null)
 				return;
-			Log.v("Adding string decrypter. Resource: {0}", Utils.toCsharpString(stringResource.Name));
+			Logger.v("Adding string decrypter. Resource: {0}", Utils.toCsharpString(stringResource.Name));
 
 			decryptedData = resourceDecrypter.decrypt(stringResource.GetResourceStream());
 		}

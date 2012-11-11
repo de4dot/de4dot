@@ -145,11 +145,11 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				list.Add(info);
 			}
 
-			Log.v("Found embedded assemblies:");
-			Log.indent();
+			Logger.v("Found embedded assemblies:");
+			Logger.Instance.indent();
 			foreach (var info in list)
-				Log.v("{0}", info.assemblyName);
-			Log.deIndent();
+				Logger.v("{0}", info.assemblyName);
+			Logger.Instance.deIndent();
 
 			return true;
 		}

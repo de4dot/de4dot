@@ -206,7 +206,7 @@ namespace de4dot.code.deobfuscators {
 			if (delegateCreatorMethods.Count == 0)
 				return;
 
-			Log.v("Finding all proxy delegates");
+			Logger.v("Finding all proxy delegates");
 			foreach (var tmp in getDelegateTypes()) {
 				var type = tmp;
 				var cctor = type.FindClassConstructor();
@@ -219,10 +219,10 @@ namespace de4dot.code.deobfuscators {
 				if (context == null)
 					continue;
 
-				Log.v("Found proxy delegate: {0} ({1:X8})", Utils.removeNewlines(type), type.MDToken.ToUInt32());
+				Logger.v("Found proxy delegate: {0} ({1:X8})", Utils.removeNewlines(type), type.MDToken.ToUInt32());
 				RemovedDelegateCreatorCalls++;
 
-				Log.indent();
+				Logger.Instance.indent();
 				foreach (var field in type.Fields) {
 					if (!field.IsStatic)
 						continue;
@@ -234,13 +234,13 @@ namespace de4dot.code.deobfuscators {
 					if (calledMethod == null)
 						continue;
 					addDelegateInfo(new DelegateInfo(field, calledMethod, callOpcode));
-					Log.v("Field: {0}, Opcode: {1}, Method: {2} ({3:X8})",
+					Logger.v("Field: {0}, Opcode: {1}, Method: {2} ({3:X8})",
 								Utils.removeNewlines(field.Name),
 								callOpcode,
 								Utils.removeNewlines(calledMethod),
 								calledMethod.MDToken.Raw);
 				}
-				Log.deIndent();
+				Logger.Instance.deIndent();
 				delegateTypesDict[type] = true;
 			}
 		}
@@ -269,7 +269,7 @@ namespace de4dot.code.deobfuscators {
 					}
 					else {
 						errors++;
-						Log.w("Could not fix proxy call. Method: {0} ({1:X8}), Proxy type: {2} ({3:X8})",
+						Logger.w("Could not fix proxy call. Method: {0} ({1:X8}), Proxy type: {2} ({3:X8})",
 							Utils.removeNewlines(blocks.Method),
 							blocks.Method.MDToken.ToInt32(),
 							Utils.removeNewlines(di.field.DeclaringType),
@@ -354,7 +354,7 @@ namespace de4dot.code.deobfuscators {
 
 					// Oooops!!! The obfuscator is buggy. Well, let's hope it is, or it's my code. ;)
 
-					Log.w("Holy obfuscator bugs, Batman! Found a proxy delegate call with no instance push in {0:X8}. Replacing it with a throw...", obfuscatedMethod.MDToken.ToInt32());
+					Logger.w("Holy obfuscator bugs, Batman! Found a proxy delegate call with no instance push in {0:X8}. Replacing it with a throw...", obfuscatedMethod.MDToken.ToInt32());
 					block.insert(i, Instruction.Create(OpCodes.Ldnull));
 					block.replace(i + 1, 1, Instruction.Create(OpCodes.Throw));
 					i++;
@@ -387,7 +387,7 @@ namespace de4dot.code.deobfuscators {
 			if (delegateCreatorMethods.Count == 0)
 				return;
 
-			Log.v("Finding all proxy delegates");
+			Logger.v("Finding all proxy delegates");
 			find2();
 		}
 
@@ -403,11 +403,11 @@ namespace de4dot.code.deobfuscators {
 				if (context == null)
 					continue;
 
-				Log.v("Found proxy delegate: {0} ({1:X8})", Utils.removeNewlines(type), type.MDToken.ToUInt32());
+				Logger.v("Found proxy delegate: {0} ({1:X8})", Utils.removeNewlines(type), type.MDToken.ToUInt32());
 				RemovedDelegateCreatorCalls++;
 				var fieldToMethod = getFieldToMethodDictionary(type);
 
-				Log.indent();
+				Logger.Instance.indent();
 				foreach (var field in type.Fields) {
 					MethodDef proxyMethod;
 					if (!fieldToMethod.TryGetValue(field, out proxyMethod))
@@ -420,13 +420,13 @@ namespace de4dot.code.deobfuscators {
 					if (calledMethod == null)
 						continue;
 					add(proxyMethod, new DelegateInfo(field, calledMethod, callOpcode));
-					Log.v("Field: {0}, Opcode: {1}, Method: {2} ({3:X8})",
+					Logger.v("Field: {0}, Opcode: {1}, Method: {2} ({3:X8})",
 								Utils.removeNewlines(field.Name),
 								callOpcode,
 								Utils.removeNewlines(calledMethod),
 								calledMethod.MDToken.ToUInt32());
 				}
-				Log.deIndent();
+				Logger.Instance.deIndent();
 				delegateTypesDict[type] = true;
 			}
 		}

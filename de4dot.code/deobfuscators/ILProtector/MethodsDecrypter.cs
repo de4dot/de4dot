@@ -200,15 +200,15 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			if (methodInfos.Count == 0)
 				return;
 
-			Log.v("Restoring {0} methods", methodInfos.Count);
-			Log.indent();
+			Logger.v("Restoring {0} methods", methodInfos.Count);
+			Logger.Instance.indent();
 			foreach (var type in module.GetTypes()) {
 				foreach (var method in type.Methods) {
 					if (method.Body == null)
 						continue;
 
 					if (restoreMethod(method)) {
-						Log.v("Restored method {0} ({1:X8}). Instrs:{2}, Locals:{3}, Exceptions:{4}",
+						Logger.v("Restored method {0} ({1:X8}). Instrs:{2}, Locals:{3}, Exceptions:{4}",
 							Utils.removeNewlines(method.FullName),
 							method.MDToken.ToInt32(),
 							method.Body.Instructions.Count,
@@ -217,9 +217,9 @@ namespace de4dot.code.deobfuscators.ILProtector {
 					}
 				}
 			}
-			Log.deIndent();
+			Logger.Instance.deIndent();
 			if (methodInfos.Count != 0)
-				Log.w("{0} methods weren't restored", methodInfos.Count);
+				Logger.w("{0} methods weren't restored", methodInfos.Count);
 		}
 
 		const int INVALID_METHOD_ID = -1;

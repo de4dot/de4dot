@@ -625,7 +625,7 @@ namespace de4dot.code.renamer.asmmodules {
 					if (!TypeDef.IsImport &&
 						!hasAttribute("System.Runtime.InteropServices.ComImportAttribute") &&
 						!hasAttribute("System.Runtime.InteropServices.TypeLibTypeAttribute")) {
-						Log.w("Could not find interface method {0} ({1:X8}). Type: {2} ({3:X8})",
+						Logger.w("Could not find interface method {0} ({1:X8}). Type: {2} ({3:X8})",
 								Utils.removeNewlines(pair.Key.methodDef.MethodDef),
 								pair.Key.methodDef.MethodDef.MDToken.ToInt32(),
 								Utils.removeNewlines(TypeDef),

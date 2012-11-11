@@ -157,7 +157,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 				return patch2(peImage);
 			}
 			catch {
-				Log.w("Could not patch the file");
+				Logger.w("Could not patch the file");
 				return false;
 			}
 		}

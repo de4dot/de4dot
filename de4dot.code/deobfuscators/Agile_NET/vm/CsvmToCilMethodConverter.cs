@@ -49,7 +49,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			DotNetUtils.restoreBody(cilMethod, newInstructions, newExceptions);
 
 			if (!operandRestorer.restore(cilMethod))
-				Log.w("Failed to restore one or more instruction operands in CSVM method {0:X8}", cilMethod.MDToken.ToInt32());
+				Logger.w("Failed to restore one or more instruction operands in CSVM method {0:X8}", cilMethod.MDToken.ToInt32());
 			restoreConstrainedPrefix(cilMethod);
 		}
 
@@ -378,7 +378,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			var field = deobfuscatorContext.resolveField(fieldRef);
 			bool isStatic;
 			if (field == null) {
-				Log.w("Could not resolve field {0:X8}. Assuming it's not static.", token);
+				Logger.w("Could not resolve field {0:X8}. Assuming it's not static.", token);
 				isStatic = false;
 			}
 			else

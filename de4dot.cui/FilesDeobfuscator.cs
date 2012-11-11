@@ -91,7 +91,7 @@ namespace de4dot.cui {
 
 		void deobfuscateOneAtATime() {
 			foreach (var file in loadAllFiles()) {
-				int oldIndentLevel = Log.indentLevel;
+				int oldIndentLevel = Logger.Instance.IndentLevel;
 				try {
 					file.deobfuscateBegin();
 					file.deobfuscate();
@@ -104,12 +104,12 @@ namespace de4dot.cui {
 					deobfuscatorContext.clear();
 				}
 				catch (Exception ex) {
-					Log.w("Could not deobfuscate {0}. Use -v to see stack trace", file.Filename);
-					Program.printStackTrace(ex, Log.LogLevel.verbose);
+					Logger.Instance.Log(false, null, LoggerEvent.Warning, "Could not deobfuscate {0}. Use -v to see stack trace", file.Filename);
+					Program.printStackTrace(ex, LoggerEvent.Verbose);
 				}
 				finally {
 					file.deobfuscateCleanUp();
-					Log.indentLevel = oldIndentLevel;
+					Logger.Instance.IndentLevel = oldIndentLevel;
 				}
 			}
 		}
@@ -182,12 +182,12 @@ namespace de4dot.cui {
 			bool add(IObfuscatedFile file, bool skipUnknownObfuscator, bool isFromPossibleFiles) {
 				var key = Utils.getFullPath(file.Filename);
 				if (allFiles.ContainsKey(key)) {
-					Log.w("Ingoring duplicate file: {0}", file.Filename);
+					Logger.Instance.Log(false, null, LoggerEvent.Warning, "Ingoring duplicate file: {0}", file.Filename);
 					return false;
 				}
 				allFiles[key] = true;
 
-				int oldIndentLevel = Log.indentLevel;
+				int oldIndentLevel = Logger.Instance.IndentLevel;
 				try {
 					file.DeobfuscatorContext = options.DeobfuscatorContext;
 					file.load(options.CreateDeobfuscators());
@@ -197,28 +197,28 @@ namespace de4dot.cui {
 				}
 				catch (BadImageFormatException) {
 					if (isFromPossibleFiles)
-						Log.w("The file isn't a .NET PE file: {0}", file.Filename);
+						Logger.Instance.Log(false, null, LoggerEvent.Warning, "The file isn't a .NET PE file: {0}", file.Filename);
 					return false;	// Not a .NET file
 				}
 				catch (EndOfStreamException) {
 					return false;
 				}
 				catch (Exception ex) {
-					Log.w("Could not load file ({0}): {1}", ex.GetType(), file.Filename);
+					Logger.Instance.Log(false, null, LoggerEvent.Warning, "Could not load file ({0}): {1}", ex.GetType(), file.Filename);
 					return false;
 				}
 				finally {
-					Log.indentLevel = oldIndentLevel;
+					Logger.Instance.IndentLevel = oldIndentLevel;
 				}
 
 				var deob = file.Deobfuscator;
 				if (skipUnknownObfuscator && deob.Type == "un") {
-					Log.v("Skipping unknown obfuscator: {0}", file.Filename);
+					Logger.v("Skipping unknown obfuscator: {0}", file.Filename);
 					removeModule(file.ModuleDefMD);
 					return false;
 				}
 				else {
-					Log.n("Detected {0} ({1})", deob.Name, file.Filename);
+					Logger.n("Detected {0} ({1})", deob.Name, file.Filename);
 					if (options.CreateDestinationDir)
 						createDirectories(Path.GetDirectoryName(file.NewFilename));
 					return true;

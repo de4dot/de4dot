@@ -219,7 +219,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			var peImage = new PeImage(fileData);
 
 			if (!new MethodsDecrypter().decrypt(peImage, module, cliSecureRtType, ref dumpedMethods)) {
-				Log.v("Methods aren't encrypted or invalid signature");
+				Logger.v("Methods aren't encrypted or invalid signature");
 				return false;
 			}
 
@@ -331,7 +331,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			if (!options.RemoveStackFrameHelper)
 				return;
 			if (stackFrameHelper.ExceptionLoggerRemover.remove(blocks))
-				Log.v("Removed StackFrameHelper code");
+				Logger.v("Removed StackFrameHelper code");
 		}
 	}
 }

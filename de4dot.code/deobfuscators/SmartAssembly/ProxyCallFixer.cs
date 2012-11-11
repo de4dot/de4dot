@@ -68,7 +68,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 
 			int delegateToken = 0x02000001 + DotNetUtils.getLdcI4Value(instrs[0]);
 			if (type.MDToken.ToInt32() != delegateToken) {
-				Log.w("Delegate token is not current type");
+				Logger.w("Delegate token is not current type");
 				return null;
 			}
 
@@ -93,7 +93,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			}
 
 			if (methodIndex >= memberReferences.Count) {
-				Log.w("Ignoring invalid methodIndex: {0:X8}, field: {1:X8}", methodIndex, field.MDToken.ToInt32());
+				Logger.w("Ignoring invalid methodIndex: {0:X8}, field: {1:X8}", methodIndex, field.MDToken.ToInt32());
 				calledMethod = null;
 				return;
 			}

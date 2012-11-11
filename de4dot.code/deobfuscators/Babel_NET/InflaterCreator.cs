@@ -46,7 +46,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 		static Inflater createNormal(bool noHeader, string errorMessage) {
 			if (errorMessage != null)
-				Log.w("{0}", errorMessage);
+				Logger.w("{0}", errorMessage);
 			return new Inflater(noHeader);
 		}
 

@@ -40,7 +40,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 
 				var arrayData = (byte[])callResult.returnValue;
 				initializedDataCreator.addInitializeArrayCode(block, callResult.callStartIndex, num, module.TypeSystem.Byte, arrayData);
-				Log.v("Decrypted array: {0} bytes", arrayData.Length);
+				Logger.v("Decrypted array: {0} bytes", arrayData.Length);
 			}
 		}
 	}

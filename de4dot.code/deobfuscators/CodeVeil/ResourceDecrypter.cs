@@ -323,7 +323,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				if (decrypted == null)
 					continue;
 
-				Log.v("Decrypted resource {0}", Utils.toCsharpString(resource.Name));
+				Logger.v("Decrypted resource {0}", Utils.toCsharpString(resource.Name));
 				module.Resources[i] = new EmbeddedResource(resource.Name, decrypted, resource.Flags);
 			}
 		}
@@ -343,7 +343,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				return null;
 			}
 			catch (Exception ex) {
-				Log.w("Got an exception when decrypting resources: {0} - {1}", ex.GetType(), ex.Message);
+				Logger.w("Got an exception when decrypting resources: {0} - {1}", ex.GetType(), ex.Message);
 				return null;
 			}
 		}

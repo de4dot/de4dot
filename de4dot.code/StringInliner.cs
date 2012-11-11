@@ -57,7 +57,7 @@ namespace de4dot.code {
 					}
 				}
 
-				Log.v("Decrypted string: {0}", Utils.toCsharpString(decryptedString));
+				Logger.v("Decrypted string: {0}", Utils.toCsharpString(decryptedString));
 			}
 		}
 	}

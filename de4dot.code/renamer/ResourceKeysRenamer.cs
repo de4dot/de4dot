@@ -43,23 +43,23 @@ namespace de4dot.code.renamer {
 		}
 
 		public void rename() {
-			Log.v("Renaming resource keys ({0})", module);
-			Log.indent();
+			Logger.v("Renaming resource keys ({0})", module);
+			Logger.Instance.indent();
 			foreach (var type in module.GetTypes()) {
 				string resourceName = getResourceName(type);
 				if (resourceName == null)
 					continue;
 				var resource = getResource(resourceName);
 				if (resource == null) {
-					Log.w("Could not find resource {0}", Utils.removeNewlines(resourceName));
+					Logger.w("Could not find resource {0}", Utils.removeNewlines(resourceName));
 					continue;
 				}
-				Log.v("Resource: {0}", Utils.toCsharpString(resource.Name));
-				Log.indent();
+				Logger.v("Resource: {0}", Utils.toCsharpString(resource.Name));
+				Logger.Instance.indent();
 				rename(type, resource);
-				Log.deIndent();
+				Logger.Instance.deIndent();
 			}
-			Log.deIndent();
+			Logger.Instance.deIndent();
 		}
 
 		EmbeddedResource getResource(string resourceName) {
@@ -97,7 +97,7 @@ namespace de4dot.code.renamer {
 						if (ctor.FullName != "System.Void System.Resources.ResourceManager::.ctor(System.String,System.Reflection.Assembly)")
 							continue;
 						if (resourceName == null) {
-							Log.w("Could not find resource name");
+							Logger.w("Could not find resource name");
 							continue;
 						}
 
@@ -190,7 +190,7 @@ namespace de4dot.code.renamer {
 					if (ldstrIndex >= 0)
 						ldstr = instrs[ldstrIndex];
 					if (ldstr == null || (name = ldstr.Operand as string) == null) {
-						Log.w("Could not find string argument to method {0}", calledMethod);
+						Logger.w("Could not find string argument to method {0}", calledMethod);
 						continue;
 					}
 
@@ -199,7 +199,7 @@ namespace de4dot.code.renamer {
 						continue;	// should not be renamed
 
 					ldstr.Operand = info.newName;
-					Log.v("Renamed resource key {0} => {1}", Utils.toCsharpString(info.element.Name), Utils.toCsharpString(info.newName));
+					Logger.v("Renamed resource key {0} => {1}", Utils.toCsharpString(info.element.Name), Utils.toCsharpString(info.newName));
 					info.element.Name = info.newName;
 					info.foundInCode = true;
 				}
@@ -207,7 +207,7 @@ namespace de4dot.code.renamer {
 
 			foreach (var info in renamed) {
 				if (!info.foundInCode)
-					Log.w("Could not find resource key {0} in code", Utils.removeNewlines(info.element.Name));
+					Logger.w("Could not find resource key {0} in code", Utils.removeNewlines(info.element.Name));
 			}
 		}
 

@@ -63,7 +63,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				return false;
 
 			resourceInfo = info;
-			Log.v("Found embedded assemblies resource {0}", Utils.toCsharpString(info.resourceName));
+			Logger.v("Found embedded assemblies resource {0}", Utils.toCsharpString(info.resourceName));
 			return true;
 		}
 	}

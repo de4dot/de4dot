@@ -85,7 +85,7 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 
 					var info = new StringDecrypterInfo(method, ldci4.GetLdcI4Value());
 					stringDecrypterMethods.add(info.method, info);
-					Log.v("Found string decrypter method: {0}, magic: 0x{1:X8}", Utils.removeNewlines(info.method), info.magic);
+					Logger.v("Found string decrypter method: {0}, magic: 0x{1:X8}", Utils.removeNewlines(info.method), info.magic);
 					break;
 				}
 			}

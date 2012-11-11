@@ -177,7 +177,7 @@ namespace de4dot.code {
 			catch (BadImageFormatException) {
 				if (!unpackNativeImage(deobfuscators))
 					throw new BadImageFormatException();
-				Log.v("Unpacked native file");
+				Logger.v("Unpacked native file");
 			}
 		}
 
@@ -198,7 +198,7 @@ namespace de4dot.code {
 					module = assemblyModule.load(unpackedData);
 				}
 				catch {
-					Log.w("Could not load unpacked data. Deobfuscator: {0}", deob.TypeLong);
+					Logger.w("Could not load unpacked data. Deobfuscator: {0}", deob.TypeLong);
 					continue;
 				}
 				this.deob = deob;
@@ -283,7 +283,7 @@ namespace de4dot.code {
 				catch {
 					val = deob.Type == "un" ? 1 : 0;
 				}
-				Log.v("{0,3}: {1}", val, deob.TypeLong);
+				Logger.v("{0,3}: {1}", val, deob.TypeLong);
 				if (val > 0 && deob.Type != "un")
 					allDetected.Add(deob);
 				if (val > detectVal) {
@@ -294,11 +294,11 @@ namespace de4dot.code {
 			this.deob = null;
 
 			if (allDetected.Count > 1) {
-				Log.n("More than one obfuscator detected:");
-				Log.indent();
+				Logger.n("More than one obfuscator detected:");
+				Logger.Instance.indent();
 				foreach (var deob in allDetected)
-					Log.n("{0} (use: -p {1})", deob.Name, deob.Type);
-				Log.deIndent();
+					Logger.n("{0} (use: -p {1})", deob.Name, deob.Type);
+				Logger.Instance.deIndent();
 			}
 
 			return detected;
@@ -309,7 +309,7 @@ namespace de4dot.code {
 		}
 
 		public void save() {
-			Log.n("Saving {0}", options.NewFilename);
+			Logger.n("Saving {0}", options.NewFilename);
 			assemblyModule.save(options.NewFilename, ShouldPreserveTokens(), options.ControlFlowDeobfuscation, deob as IModuleWriterListener);
 		}
 
@@ -353,7 +353,7 @@ namespace de4dot.code {
 		}
 
 		public void deobfuscate() {
-			Log.n("Cleaning {0}", options.Filename);
+			Logger.n("Cleaning {0}", options.Filename);
 			initAssemblyClient();
 
 			for (int i = 0; ; i++) {
@@ -370,7 +370,7 @@ namespace de4dot.code {
 		}
 
 		void reloadModule(byte[] newModuleData, DumpedMethods dumpedMethods) {
-			Log.v("Reloading decrypted assembly (original filename: {0})", Filename);
+			Logger.v("Reloading decrypted assembly (original filename: {0})", Filename);
 			simpleDeobfuscatorFlags.Clear();
 			module = assemblyModule.reload(newModuleData, createDumpedMethodsRestorer(dumpedMethods), deob as IStringDecrypter);
 			deob = deob.moduleReloaded(module);
@@ -460,7 +460,7 @@ namespace de4dot.code {
 						}
 					}
 
-					Log.v("Adding string decrypter; token: {0:X8}, method: {1}", method.MDToken.ToInt32(), Utils.removeNewlines(method.FullName));
+					Logger.v("Adding string decrypter; token: {0:X8}, method: {1}", method.MDToken.ToInt32(), Utils.removeNewlines(method.FullName));
 					tokens.Add(method.MDToken.ToInt32());
 				}
 			}
@@ -538,14 +538,14 @@ namespace de4dot.code {
 					return;
 			}
 
-			Log.v("Deobfuscating methods");
+			Logger.v("Deobfuscating methods");
 			var methodPrinter = new MethodPrinter();
 			var cflowDeobfuscator = new BlocksCflowDeobfuscator(deob.BlocksDeobfuscators);
 			foreach (var method in getAllMethods()) {
-				Log.v("Deobfuscating {0} ({1:X8})", Utils.removeNewlines(method), method.MDToken.ToUInt32());
-				Log.indent();
+				Logger.v("Deobfuscating {0} ({1:X8})", Utils.removeNewlines(method), method.MDToken.ToUInt32());
+				Logger.Instance.indent();
 
-				int oldIndentLevel = Log.indentLevel;
+				int oldIndentLevel = Logger.Instance.IndentLevel;
 				try {
 					deobfuscate(method, cflowDeobfuscator, methodPrinter);
 				}
@@ -554,21 +554,21 @@ namespace de4dot.code {
 				}
 				catch (Exception ex) {
 					if (!canLoadMethodBody(method)) {
-						Log.v("Invalid method body. {0:X8}", method.MDToken.ToInt32());
+						Logger.v("Invalid method body. {0:X8}", method.MDToken.ToInt32());
 						method.Body = new CilBody();
 					}
 					else {
-						Log.w("Could not deobfuscate method {0:X8}. Hello, E.T.: {1}",	// E.T. = exception type
+						Logger.w("Could not deobfuscate method {0:X8}. Hello, E.T.: {1}",	// E.T. = exception type
 								method.MDToken.ToInt32(),
 								ex.GetType());
 					}
 				}
 				finally {
-					Log.indentLevel = oldIndentLevel;
+					Logger.Instance.IndentLevel = oldIndentLevel;
 				}
 				removeNoInliningAttribute(method);
 
-				Log.deIndent();
+				Logger.Instance.deIndent();
 			}
 		}
 
@@ -616,17 +616,17 @@ namespace de4dot.code {
 			DotNetUtils.restoreBody(method, allInstructions, allExceptionHandlers);
 
 			if (numRemovedLocals > 0)
-				Log.v("Removed {0} unused local(s)", numRemovedLocals);
+				Logger.v("Removed {0} unused local(s)", numRemovedLocals);
 			int numRemovedInstructions = oldNumInstructions - method.Body.Instructions.Count;
 			if (numRemovedInstructions > 0)
-				Log.v("Removed {0} dead instruction(s)", numRemovedInstructions);
+				Logger.v("Removed {0} dead instruction(s)", numRemovedInstructions);
 
-			const Log.LogLevel dumpLogLevel = Log.LogLevel.veryverbose;
-			if (Log.isAtLeast(dumpLogLevel)) {
-				Log.log(dumpLogLevel, "Deobfuscated code:");
-				Log.indent();
+			const LoggerEvent dumpLogLevel = LoggerEvent.VeryVerbose;
+			if (!Logger.Instance.IgnoresEvent(dumpLogLevel)) {
+				Logger.log(dumpLogLevel, "Deobfuscated code:");
+				Logger.Instance.indent();
 				methodPrinter.print(dumpLogLevel, allInstructions, allExceptionHandlers);
-				Log.deIndent();
+				Logger.Instance.deIndent();
 			}
 		}
 
@@ -713,8 +713,8 @@ namespace de4dot.code {
 			if (savedMethodBodies != null)
 				savedMethodBodies.save(method);
 
-			Log.v("{0}: {1} ({2:X8})", msg, Utils.removeNewlines(method), method.MDToken.ToUInt32());
-			Log.indent();
+			Logger.v("{0}: {1} ({2:X8})", msg, Utils.removeNewlines(method), method.MDToken.ToUInt32());
+			Logger.Instance.indent();
 
 			if (hasNonEmptyBody(method)) {
 				try {
@@ -728,11 +728,11 @@ namespace de4dot.code {
 					DotNetUtils.restoreBody(method, allInstructions, allExceptionHandlers);
 				}
 				catch {
-					Log.v("Could not deobfuscate {0:X8}", method.MDToken.ToInt32());
+					Logger.v("Could not deobfuscate {0:X8}", method.MDToken.ToInt32());
 				}
 			}
 
-			Log.deIndent();
+			Logger.Instance.deIndent();
 		}
 
 		void ISimpleDeobfuscator.deobfuscate(MethodDef method) {
@@ -759,7 +759,7 @@ namespace de4dot.code {
 				extension = ".dll";
 			var baseDir = Utils.getDirName(options.NewFilename);
 			var newName = Path.Combine(baseDir, assemblyName + extension);
-			Log.n("Creating file {0}", newName);
+			Logger.n("Creating file {0}", newName);
 			using (var writer = new BinaryWriter(new FileStream(newName, FileMode.Create))) {
 				writer.Write(data);
 			}

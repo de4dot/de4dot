@@ -189,7 +189,7 @@ namespace de4dot.code.deobfuscators {
 			foreach (var type in module.GetTypes()) {
 				if (!isTypeWithInvalidBaseType(moduleType, type))
 					continue;
-				Log.v("Adding System.Object as base type: {0} ({1:X8})",
+				Logger.v("Adding System.Object as base type: {0} ({1:X8})",
 							Utils.removeNewlines(type),
 							type.MDToken.ToInt32());
 				type.BaseType = module.CorLibTypes.Object.TypeDefOrRef;
@@ -298,7 +298,7 @@ namespace de4dot.code.deobfuscators {
 							continue;
 
 						if (info.find(destMethod)) {
-							Log.v("Removed call to {0}", Utils.removeNewlines(destMethod));
+							Logger.v("Removed call to {0}", Utils.removeNewlines(destMethod));
 							instrsToDelete.Add(i);
 						}
 					}
@@ -385,27 +385,27 @@ namespace de4dot.code.deobfuscators {
 			if (emptyCctorsToRemove.Count == 0)
 				return;
 
-			Log.v("Removing empty .cctor methods");
-			Log.indent();
+			Logger.v("Removing empty .cctor methods");
+			Logger.Instance.indent();
 			foreach (var cctor in emptyCctorsToRemove) {
 				var type = cctor.DeclaringType;
 				if (type == null)
 					continue;
 				if (type.Methods.Remove(cctor))
-					Log.v("{0:X8}, type: {1} ({2:X8})",
+					Logger.v("{0:X8}, type: {1} ({2:X8})",
 								cctor.MDToken.ToUInt32(),
 								Utils.removeNewlines(type),
 								type.MDToken.ToUInt32());
 			}
-			Log.deIndent();
+			Logger.Instance.deIndent();
 		}
 
 		void deleteMethods() {
 			if (methodsToRemove.Count == 0)
 				return;
 
-			Log.v("Removing methods");
-			Log.indent();
+			Logger.v("Removing methods");
+			Logger.Instance.indent();
 			foreach (var info in methodsToRemove) {
 				var method = info.obj;
 				if (method == null)
@@ -414,21 +414,21 @@ namespace de4dot.code.deobfuscators {
 				if (type == null)
 					continue;
 				if (type.Methods.Remove(method))
-					Log.v("Removed method {0} ({1:X8}) (Type: {2}) (reason: {3})",
+					Logger.v("Removed method {0} ({1:X8}) (Type: {2}) (reason: {3})",
 								Utils.removeNewlines(method),
 								method.MDToken.ToUInt32(),
 								Utils.removeNewlines(type),
 								info.reason);
 			}
-			Log.deIndent();
+			Logger.Instance.deIndent();
 		}
 
 		void deleteFields() {
 			if (fieldsToRemove.Count == 0)
 				return;
 
-			Log.v("Removing fields");
-			Log.indent();
+			Logger.v("Removing fields");
+			Logger.Instance.indent();
 			foreach (var info in fieldsToRemove) {
 				var field = info.obj;
 				if (field == null)
@@ -437,13 +437,13 @@ namespace de4dot.code.deobfuscators {
 				if (type == null)
 					continue;
 				if (type.Fields.Remove(field))
-					Log.v("Removed field {0} ({1:X8}) (Type: {2}) (reason: {3})",
+					Logger.v("Removed field {0} ({1:X8}) (Type: {2}) (reason: {3})",
 								Utils.removeNewlines(field),
 								field.MDToken.ToUInt32(),
 								Utils.removeNewlines(type),
 								info.reason);
 			}
-			Log.deIndent();
+			Logger.Instance.deIndent();
 		}
 
 		void deleteTypes() {
@@ -451,8 +451,8 @@ namespace de4dot.code.deobfuscators {
 			if (types == null || typesToRemove.Count == 0)
 				return;
 
-			Log.v("Removing types");
-			Log.indent();
+			Logger.v("Removing types");
+			Logger.Instance.indent();
 			var moduleType = DotNetUtils.getModuleType(module);
 			foreach (var info in typesToRemove) {
 				var typeDef = info.obj;
@@ -464,24 +464,24 @@ namespace de4dot.code.deobfuscators {
 				else
 					removed = types.Remove(typeDef);
 				if (removed)
-					Log.v("Removed type {0} ({1:X8}) (reason: {2})",
+					Logger.v("Removed type {0} ({1:X8}) (reason: {2})",
 								Utils.removeNewlines(typeDef),
 								typeDef.MDToken.ToUInt32(),
 								info.reason);
 			}
-			Log.deIndent();
+			Logger.Instance.deIndent();
 		}
 
 		void deleteCustomAttributes() {
 			if (attrsToRemove.Count == 0)
 				return;
 
-			Log.v("Removing custom attributes");
-			Log.indent();
+			Logger.v("Removing custom attributes");
+			Logger.Instance.indent();
 			deleteCustomAttributes(module.CustomAttributes);
 			if (module.Assembly != null)
 				deleteCustomAttributes(module.Assembly.CustomAttributes);
-			Log.deIndent();
+			Logger.Instance.deIndent();
 		}
 
 		void deleteCustomAttributes(IList<CustomAttribute> customAttrs) {
@@ -495,7 +495,7 @@ namespace de4dot.code.deobfuscators {
 					if (new SigComparer().Equals(typeDef, customAttrs[i].AttributeType)) {
 						customAttrs.RemoveAt(i);
 						i--;
-						Log.v("Removed custom attribute {0} ({1:X8}) (reason: {2})",
+						Logger.v("Removed custom attribute {0} ({1:X8}) (reason: {2})",
 									Utils.removeNewlines(typeDef),
 									typeDef.MDToken.ToUInt32(),
 									info.reason);
@@ -506,19 +506,19 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		void deleteOtherAttributes() {
-			Log.v("Removing other attributes");
-			Log.indent();
+			Logger.v("Removing other attributes");
+			Logger.Instance.indent();
 			deleteOtherAttributes(module.CustomAttributes);
 			if (module.Assembly != null)
 				deleteOtherAttributes(module.Assembly.CustomAttributes);
-			Log.deIndent();
+			Logger.Instance.deIndent();
 		}
 
 		void deleteOtherAttributes(IList<CustomAttribute> customAttributes) {
 			for (int i = customAttributes.Count - 1; i >= 0; i--) {
 				var attr = customAttributes[i].TypeFullName;
 				if (attr == "System.Runtime.CompilerServices.SuppressIldasmAttribute") {
-					Log.v("Removed attribute {0}", Utils.removeNewlines(attr));
+					Logger.v("Removed attribute {0}", Utils.removeNewlines(attr));
 					customAttributes.RemoveAt(i);
 				}
 			}
@@ -528,16 +528,16 @@ namespace de4dot.code.deobfuscators {
 			if (!module.HasResources || resourcesToRemove.Count == 0)
 				return;
 
-			Log.v("Removing resources");
-			Log.indent();
+			Logger.v("Removing resources");
+			Logger.Instance.indent();
 			foreach (var info in resourcesToRemove) {
 				var resource = info.obj;
 				if (resource == null)
 					continue;
 				if (module.Resources.Remove(resource))
-					Log.v("Removed resource {0} (reason: {1})", Utils.toCsharpString(resource.Name), info.reason);
+					Logger.v("Removed resource {0} (reason: {1})", Utils.toCsharpString(resource.Name), info.reason);
 			}
-			Log.deIndent();
+			Logger.Instance.deIndent();
 		}
 
 		protected void setInitLocals() {
@@ -608,7 +608,7 @@ namespace de4dot.code.deobfuscators {
 
 		protected bool removeProxyDelegates(ProxyCallFixerBase proxyCallFixer, bool removeCreators) {
 			if (proxyCallFixer.Errors != 0) {
-				Log.v("Not removing proxy delegates and creator type since errors were detected.");
+				Logger.v("Not removing proxy delegates and creator type since errors were detected.");
 				return false;
 			}
 			addTypesToBeRemoved(proxyCallFixer.DelegateTypes, "Proxy delegate type");

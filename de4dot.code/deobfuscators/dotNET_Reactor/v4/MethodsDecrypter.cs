@@ -198,7 +198,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 
 					int methodIndex;
 					if (!rvaToIndex.TryGetValue(rva, out methodIndex)) {
-						Log.w("Could not find method having code RVA {0:X8}", rva);
+						Logger.w("Could not find method having code RVA {0:X8}", rva);
 						continue;
 					}
 					uint methodToken = 0x06000001 + (uint)methodIndex;
@@ -301,7 +301,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			if (methodToNativeMethod.Count == 0)
 				return;
 
-			Log.v("Encrypting native methods");
+			Logger.v("Encrypting native methods");
 
 			var stream = new MemoryStream();
 			var writer = new BinaryWriter(stream);
@@ -325,7 +325,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				else
 					codeRva += 4 * (uint)(codeWriter.ReadByteAtRva(codeRva + 1) >> 4);
 
-				Log.v("Native method {0:X8}, code RVA {1:X8}", method.MDToken.ToInt32(), codeRva);
+				Logger.v("Native method {0:X8}, code RVA {1:X8}", method.MDToken.ToInt32(), codeRva);
 
 				writer.Write(codeRva);
 				writer.Write(0x70000000 + index++);
@@ -334,7 +334,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			}
 
 			if (index != 0)
-				Log.n("Re-encrypted {0}/{1} native methods", index, totalEncryptedNativeMethods);
+				Logger.n("Re-encrypted {0}/{1} native methods", index, totalEncryptedNativeMethods);
 
 			var encryptedData = stream.ToArray();
 			xorEncrypt(encryptedData);

@@ -162,7 +162,7 @@ namespace de4dot.code.renamer.asmmodules {
 					if (namedArg.IsField) {
 						var fieldDef = findField(typeDef, namedArg.Name, namedArg.Type);
 						if (fieldDef == null) {
-							Log.w("Could not find field {0} in attribute {1} ({2:X8})",
+							Logger.w("Could not find field {0} in attribute {1} ({2:X8})",
 									Utils.toCsharpString(namedArg.Name),
 									Utils.toCsharpString(typeDef.TypeDef.Name),
 									typeDef.TypeDef.MDToken.ToInt32());
@@ -174,7 +174,7 @@ namespace de4dot.code.renamer.asmmodules {
 					else {
 						var propDef = findProperty(typeDef, namedArg.Name, namedArg.Type);
 						if (propDef == null) {
-							Log.w("Could not find property {0} in attribute {1} ({2:X8})",
+							Logger.w("Could not find property {0} in attribute {1} ({2:X8})",
 									Utils.toCsharpString(namedArg.Name),
 									Utils.toCsharpString(typeDef.TypeDef.Name),
 									typeDef.TypeDef.MDToken.ToInt32());

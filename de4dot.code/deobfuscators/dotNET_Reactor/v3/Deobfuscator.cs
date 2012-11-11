@@ -312,7 +312,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 		public override void deobfuscateMethodEnd(Blocks blocks) {
 			if (options.RemoveAntiStrongName) {
 				if (antiStrongName.remove(blocks))
-					Log.v("Removed Anti Strong Name code");
+					Logger.v("Removed Anti Strong Name code");
 			}
 			base.deobfuscateMethodEnd(blocks);
 		}

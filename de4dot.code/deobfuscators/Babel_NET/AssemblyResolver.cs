@@ -111,7 +111,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 			encryptedResource = BabelUtils.findEmbeddedResource(module, resolverType, simpleDeobfuscator, deob);
 			if (encryptedResource == null) {
-				Log.w("Could not find embedded assemblies resource");
+				Logger.w("Could not find embedded assemblies resource");
 				return;
 			}
 

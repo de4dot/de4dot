@@ -122,8 +122,8 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			var decrypted = resourceDecrypter.decrypt(resource.GetResourceStream());
 			var reader = MemoryImageStream.Create(decrypted);
 			int numEncrypted = reader.ReadInt32();
-			Log.v("Restoring {0} encrypted methods", numEncrypted);
-			Log.indent();
+			Logger.v("Restoring {0} encrypted methods", numEncrypted);
+			Logger.Instance.indent();
 			for (int i = 0; i < numEncrypted; i++) {
 				int delegateTypeToken = reader.ReadInt32();
 				uint codeOffset = reader.ReadUInt32();
@@ -132,7 +132,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				decrypt(reader, delegateTypeToken);
 				reader.Position = origOffset;
 			}
-			Log.deIndent();
+			Logger.Instance.deIndent();
 		}
 
 		void decrypt(IBinaryReader reader, int delegateTypeToken) {
@@ -155,7 +155,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			var bodyReader = new MethodBodyReader(module, reader);
 			bodyReader.read(encMethod);
 			bodyReader.RestoreMethod(encMethod);
-			Log.v("Restored method {0} ({1:X8}). Instrs:{2}, Locals:{3}, Exceptions:{4}",
+			Logger.v("Restored method {0} ({1:X8}). Instrs:{2}, Locals:{3}, Exceptions:{4}",
 					Utils.removeNewlines(encMethod.FullName),
 					encMethod.MDToken.ToInt32(),
 					encMethod.Body.Instructions.Count,

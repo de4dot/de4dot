@@ -184,12 +184,12 @@ namespace de4dot.code.deobfuscators {
 			if (fields.Count == 0)
 				return;
 
-			Log.v("Changing field types to real type");
+			Logger.v("Changing field types to real type");
 			fields.Sort((a, b) => a.token.CompareTo(b.token));
-			Log.indent();
+			Logger.Instance.indent();
 			foreach (var updatedField in fields)
-				Log.v("Field {0:X8}: type {1} ({2:X8})", updatedField.token, Utils.removeNewlines(updatedField.newFieldType.FullName), updatedField.newFieldType.MDToken.ToInt32());
-			Log.deIndent();
+				Logger.v("Field {0:X8}: type {1} ({2:X8})", updatedField.token, Utils.removeNewlines(updatedField.newFieldType.FullName), updatedField.newFieldType.MDToken.ToInt32());
+			Logger.Instance.deIndent();
 		}
 
 		void restoreMethodTypes() {
@@ -197,14 +197,14 @@ namespace de4dot.code.deobfuscators {
 			if (methods.Count == 0)
 				return;
 
-			Log.v("Changing method args and return types to real type");
+			Logger.v("Changing method args and return types to real type");
 			methods.Sort((a, b) => a.token.CompareTo(b.token));
-			Log.indent();
+			Logger.Instance.indent();
 			foreach (var updatedMethod in methods) {
-				Log.v("Method {0:X8}", updatedMethod.token);
-				Log.indent();
+				Logger.v("Method {0:X8}", updatedMethod.token);
+				Logger.Instance.indent();
 				if (updatedMethod.newReturnType != null) {
-					Log.v("ret: {0} ({1:X8})",
+					Logger.v("ret: {0} ({1:X8})",
 							Utils.removeNewlines(updatedMethod.newReturnType.FullName),
 							updatedMethod.newReturnType.MDToken.ToInt32());
 				}
@@ -212,14 +212,14 @@ namespace de4dot.code.deobfuscators {
 					var updatedArg = updatedMethod.newArgTypes[i];
 					if (updatedArg == null)
 						continue;
-					Log.v("arg {0}: {1} ({2:X8})",
+					Logger.v("arg {0}: {1} ({2:X8})",
 							i,
 							Utils.removeNewlines(updatedArg.FullName),
 							updatedArg.MDToken.ToInt32());
 				}
-				Log.deIndent();
+				Logger.Instance.deIndent();
 			}
-			Log.deIndent();
+			Logger.Instance.deIndent();
 		}
 
 		bool deobfuscateMethods() {

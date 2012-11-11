@@ -20,6 +20,7 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using dot10.DotNet;
 using de4dot.code;
 using de4dot.code.deobfuscators;
 using de4dot.code.AssemblyClient;
@@ -144,10 +145,10 @@ namespace de4dot.cui {
 				filesOptions.OneFileAtATime = true;
 			}));
 			miscOptions.Add(new NoArgOption("v", null, "Verbose", () => {
-				Log.logLevel = Log.LogLevel.verbose;
+				Logger.Instance.MaxLoggerEvent = LoggerEvent.Verbose;
 			}));
 			miscOptions.Add(new NoArgOption("vv", null, "Very verbose", () => {
-				Log.logLevel = Log.LogLevel.veryverbose;
+				Logger.Instance.MaxLoggerEvent = LoggerEvent.VeryVerbose;
 			}));
 			miscOptions.Add(new NoArgOption("h", "help", "Show this help message", () => {
 				usage();
@@ -275,7 +276,7 @@ namespace de4dot.cui {
 
 		void exitError(string msg) {
 			usage();
-			Log.e("\n\nERROR: {0}\n", msg);
+			Logger.Instance.Log(false, null, LoggerEvent.Error, "\n\nERROR: {0}\n", msg);
 			exit(2);
 		}
 
@@ -285,35 +286,35 @@ namespace de4dot.cui {
 
 		void usage() {
 			string progName = getProgramBaseName();
-			Log.n("Some of the advanced options may be incompatible, causing a nice exception.");
-			Log.n("With great power comes great responsibility.");
-			Log.n("");
-			Log.n("{0} <options> <file options>", progName);
-			Log.n("Options:");
+			Logger.n("Some of the advanced options may be incompatible, causing a nice exception.");
+			Logger.n("With great power comes great responsibility.");
+			Logger.n("");
+			Logger.n("{0} <options> <file options>", progName);
+			Logger.n("Options:");
 			foreach (var option in miscOptions)
 				printOption(option);
-			Log.n("");
-			Log.n("File options:");
+			Logger.n("");
+			Logger.n("File options:");
 			foreach (var option in fileOptions)
 				printOption(option);
-			Log.n("");
-			Log.n("Deobfuscator options:");
+			Logger.n("");
+			Logger.n("Deobfuscator options:");
 			foreach (var info in deobfuscatorInfos) {
-				Log.n("Type {0} ({1})", info.Type, info.Name);
+				Logger.n("Type {0} ({1})", info.Type, info.Name);
 				foreach (var option in info.getOptions())
 					printOption(option);
-				Log.n("");
+				Logger.n("");
 			}
 			printInfos("String decrypter types", stringDecrypterTypes);
-			Log.n("");
-			Log.n("Multiple regexes can be used if separated by '{0}'.", NameRegexes.regexSeparatorChar);
-			Log.n("Use '{0}' if you want to invert the regex. Example: {0}^[a-z\\d]{{1,2}}${1}{0}^[A-Z]_\\d+${1}^[\\w.]+$", NameRegex.invertChar, NameRegexes.regexSeparatorChar);
-			Log.n("");
-			Log.n("Examples:");
-			Log.n("{0} -r c:\\my\\files -ro c:\\my\\output", progName);
-			Log.n("{0} file1 file2 file3", progName);
-			Log.n("{0} file1 -f file2 -o file2.out -f file3 -o file3.out", progName);
-			Log.n("{0} file1 --strtyp delegate --strtok 06000123", progName);
+			Logger.n("");
+			Logger.n("Multiple regexes can be used if separated by '{0}'.", NameRegexes.regexSeparatorChar);
+			Logger.n("Use '{0}' if you want to invert the regex. Example: {0}^[a-z\\d]{{1,2}}${1}{0}^[A-Z]_\\d+${1}^[\\w.]+$", NameRegex.invertChar, NameRegexes.regexSeparatorChar);
+			Logger.n("");
+			Logger.n("Examples:");
+			Logger.n("{0} -r c:\\my\\files -ro c:\\my\\output", progName);
+			Logger.n("{0} file1 file2 file3", progName);
+			Logger.n("{0} file1 -f file2 -o file2.out -f file3 -o file3.out", progName);
+			Logger.n("{0} file1 --strtyp delegate --strtok 06000123", progName);
 		}
 
 		string getProgramBaseName() {
@@ -321,7 +322,7 @@ namespace de4dot.cui {
 		}
 
 		void printInfos(string desc, Infos infos) {
-			Log.n("{0}", desc);
+			Logger.n("{0}", desc);
 			foreach (var info in infos.getInfos())
 				printOptionAndExplanation(info.name, info.desc);
 		}
@@ -342,11 +343,11 @@ namespace de4dot.cui {
 			const string prefix = "  ";
 			string left = string.Format(string.Format("{{0,-{0}}}", maxCols), option);
 			if (option.Length > maxCols) {
-				Log.n("{0}{1}", prefix, left);
-				Log.n("{0}{1} {2}", prefix, new string(' ', maxCols), explanation);
+				Logger.n("{0}{1}", prefix, left);
+				Logger.n("{0}{1} {2}", prefix, new string(' ', maxCols), explanation);
 			}
 			else
-				Log.n("{0}{1} {2}", prefix, left, explanation);
+				Logger.n("{0}{1} {2}", prefix, left, explanation);
 		}
 
 		string getOptionAndArgName(Option option, string optionName) {

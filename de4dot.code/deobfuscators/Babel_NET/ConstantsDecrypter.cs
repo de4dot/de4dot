@@ -148,7 +148,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 			encryptedResource = BabelUtils.findEmbeddedResource(module, decrypterType, simpleDeobfuscator, deob);
 			if (encryptedResource == null) {
-				Log.w("Could not find encrypted constants resource");
+				Logger.w("Could not find encrypted constants resource");
 				return;
 			}
 
@@ -256,7 +256,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 					if (arrayType == null)
 						continue;
 					if (arrayType.Next.ElementType.GetPrimitiveSize() == -1) {
-						Log.w("Can't decrypt non-primitive type array in method {0:X8}", blocks.Method.MDToken.ToInt32());
+						Logger.w("Can't decrypt non-primitive type array in method {0:X8}", blocks.Method.MDToken.ToInt32());
 						continue;
 					}
 
@@ -269,7 +269,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 					var decrypted = decryptArray(info.encryptedField.InitialValue, elemSize);
 
 					initializedDataCreator.addInitializeArrayCode(block, info.start, info.len, info.arrayType.Next.ToTypeDefOrRef(), decrypted);
-					Log.v("Decrypted {0} array: {1} elements", info.arrayType.Next.ToString(), decrypted.Length / elemSize);
+					Logger.v("Decrypted {0} array: {1} elements", info.arrayType.Next.ToString(), decrypted.Length / elemSize);
 				}
 			}
 		}

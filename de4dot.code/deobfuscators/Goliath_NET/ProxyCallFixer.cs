@@ -39,7 +39,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 		}
 
 		public new void find() {
-			Log.v("Finding all proxy delegates");
+			Logger.v("Finding all proxy delegates");
 			var infos = new List<MyInfo>();
 			foreach (var type in module.GetTypes()) {
 				if (type.BaseType == null || type.BaseType.FullName != "System.MulticastDelegate")
@@ -56,19 +56,19 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 				if (infos.Count == 0)
 					continue;
 
-				Log.v("Found proxy delegate: {0} ({1:X8})", Utils.removeNewlines(type), type.MDToken.ToUInt32());
+				Logger.v("Found proxy delegate: {0} ({1:X8})", Utils.removeNewlines(type), type.MDToken.ToUInt32());
 				RemovedDelegateCreatorCalls++;
-				Log.indent();
+				Logger.Instance.indent();
 				foreach (var info in infos) {
 					var di = info.delegateInfo;
 					add(info.method, di);
-					Log.v("Field: {0}, Opcode: {1}, Method: {2} ({3:X8})",
+					Logger.v("Field: {0}, Opcode: {1}, Method: {2} ({3:X8})",
 								Utils.removeNewlines(di.field.Name),
 								di.callOpcode,
 								Utils.removeNewlines(di.methodRef),
 								di.methodRef.MDToken.ToUInt32());
 				}
-				Log.deIndent();
+				Logger.Instance.deIndent();
 				delegateTypesDict[type] = true;
 			}
 		}
