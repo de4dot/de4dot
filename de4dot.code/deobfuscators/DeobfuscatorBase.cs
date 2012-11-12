@@ -705,7 +705,7 @@ namespace de4dot.code.deobfuscators {
 			return name != null && checkValidName(name);
 		}
 
-		public virtual void OnWriterEvent(ModuleWriter writer, ModuleWriterEvent evt) {
+		public virtual void OnWriterEvent(ModuleWriterBase writer, ModuleWriterEvent evt) {
 		}
 
 		protected void findAndRemoveInlinedMethods() {
