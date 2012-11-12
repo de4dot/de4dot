@@ -146,15 +146,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 
 		// CS 1.x
 		byte[] unpackNativeFile2(IPEImage peImage) {
-			var resources = peImage.Win32Resources;
-			if (resources == null)
-				return null;
-			var dir = resources.Root;
-			if ((dir = dir.FindDirectory("ASSEMBLY")) == null)
-				return null;
-			if ((dir = dir.FindDirectory(101)) == null)
-				return null;
-			var data = dir.FindData(0);
+			var data = peImage.FindWin32ResourceData("ASSEMBLY", 101, 0);
 			if (data == null)
 				return null;
 
