@@ -72,6 +72,8 @@ namespace de4dot.code {
 				var writerOptions = new NativeModuleWriterOptions(module, writerListener);
 				writerOptions.MetaDataOptions.Flags |= mdFlags;
 				writerOptions.Logger = Logger.Instance;
+				writerOptions.KeepExtraPEData = true;
+				writerOptions.KeepWin32Resources = true;
 				module.NativeWrite(newFilename, writerOptions);
 			}
 		}
