@@ -55,8 +55,12 @@ namespace de4dot.code {
 			MetaDataFlags mdFlags = 0;
 			if (!updateMaxStack)
 				mdFlags |= MetaDataFlags.KeepOldMaxStack;
-			if (preserveTokens)
-				mdFlags |= MetaDataFlags.PreserveTokens | MetaDataFlags.PreserveUSOffsets | MetaDataFlags.PreserveExtraSignatureData;
+			if (preserveTokens) {
+				mdFlags |= MetaDataFlags.PreserveTokens |
+						MetaDataFlags.PreserveUSOffsets |
+						MetaDataFlags.PreserveBlobOffsets |
+						MetaDataFlags.PreserveExtraSignatureData;
+			}
 
 			if (module.IsILOnly) {
 				var writerOptions = new ModuleWriterOptions(module, writerListener);
