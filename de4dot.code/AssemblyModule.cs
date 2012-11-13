@@ -52,13 +52,24 @@ namespace de4dot.code {
 		}
 
 		public void save(string newFilename, bool preserveTokens, bool updateMaxStack, IModuleWriterListener writerListener) {
-			var writerOptions = new ModuleWriterOptions(module, writerListener);
+			MetaDataFlags mdFlags = 0;
 			if (!updateMaxStack)
-				writerOptions.MetaDataOptions.Flags |= MetaDataFlags.KeepOldMaxStack;
+				mdFlags |= MetaDataFlags.KeepOldMaxStack;
 			if (preserveTokens)
-				writerOptions.MetaDataOptions.Flags |= MetaDataFlags.PreserveTokens | MetaDataFlags.PreserveUSOffsets | MetaDataFlags.PreserveExtraSignatureData;
-			writerOptions.Logger = Logger.Instance;
-			module.Write(newFilename, writerOptions);
+				mdFlags |= MetaDataFlags.PreserveTokens | MetaDataFlags.PreserveUSOffsets | MetaDataFlags.PreserveExtraSignatureData;
+
+			if (module.IsILOnly) {
+				var writerOptions = new ModuleWriterOptions(module, writerListener);
+				writerOptions.MetaDataOptions.Flags |= mdFlags;
+				writerOptions.Logger = Logger.Instance;
+				module.Write(newFilename, writerOptions);
+			}
+			else {
+				var writerOptions = new NativeModuleWriterOptions(module, writerListener);
+				writerOptions.MetaDataOptions.Flags |= mdFlags;
+				writerOptions.Logger = Logger.Instance;
+				module.NativeWrite(newFilename, writerOptions);
+			}
 		}
 
 		public ModuleDefMD reload(byte[] newModuleData, DumpedMethodsRestorer dumpedMethodsRestorer, IStringDecrypter stringDecrypter) {
