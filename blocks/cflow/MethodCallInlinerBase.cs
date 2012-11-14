@@ -229,7 +229,12 @@ namespace de4dot.blocks.cflow {
 		}
 
 		protected static bool isValueType(IType type) {
-			return type != null && type.IsValueType;
+			if (type == null)
+				return false;
+			var ts = type as TypeSig;
+			if (ts == null)
+				return type.IsValueType;
+			return ts.IsValueType && ts.ElementType != ElementType.Void;
 		}
 	}
 }

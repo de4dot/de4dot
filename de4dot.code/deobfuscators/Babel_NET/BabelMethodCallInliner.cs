@@ -236,7 +236,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		protected override bool isCompatibleType(int paramIndex, IType origType, IType newType) {
 			if (new SigComparer().Equals(origType, newType))
 				return true;
-			if (newType.IsValueType || origType.IsValueType)
+			if (isValueType(newType) || isValueType(origType))
 				return false;
 			return newType.FullName == "System.Object";
 		}
