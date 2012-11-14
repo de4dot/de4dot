@@ -123,11 +123,36 @@ namespace de4dot.blocks {
 
 			int newIndex = -1;
 			var newLocals = new List<Local>(usedLocals.Count);
+			var newLocalsDict = new Dictionary<Local, bool>(usedLocals.Count);
 			foreach (var local in usedLocals.Keys) {
 				newIndex++;
 				newLocals.Add(local);
+				newLocalsDict[local] = true;
 				foreach (var info in usedLocals[local])
 					info.block.Instructions[info.index] = new Instr(optimizeLocalInstr(info.block.Instructions[info.index], local, (uint)newIndex));
+			}
+
+			// We can't remove all locals. Locals that reference another assembly will
+			// cause the CLR to load that assembly before the method is executed if it
+			// hasn't been loaded yet. This is a side effect the program may depend on.
+			// At least one program has this dependency and will crash if we remove the
+			// unused local. This took a while to figure out...
+			var keptAssemblies = new Dictionary<string, bool>(StringComparer.Ordinal);
+			foreach (var local in locals) {
+				if (newLocalsDict.ContainsKey(local))
+					continue;
+				var defAsm = local.Type.DefinitionAssembly;
+				if (defAsm == null)
+					continue;	// eg. fnptr
+				if (defAsm == method.DeclaringType.OwnerModule.Assembly)
+					continue;	// this assembly is always loaded
+				if (defAsm.IsCorLib())
+					continue;	// mscorlib is always loaded
+				var asmName = defAsm.FullName;
+				if (keptAssemblies.ContainsKey(asmName))
+					continue;
+				keptAssemblies[asmName] = true;
+				newLocals.Add(local);
 			}
 
 			int numRemoved = locals.Count - newLocals.Count;
