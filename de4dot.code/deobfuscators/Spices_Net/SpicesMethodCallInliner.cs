@@ -35,7 +35,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 		}
 
 		protected override bool isCompatibleType(int paramIndex, IType origType, IType newType) {
-			if (new SigComparer().Equals(origType, newType))
+			if (new SigComparer(SigComparerOptions.IgnoreModifiers).Equals(origType, newType))
 				return true;
 			if (paramIndex == -1) {
 				if (isValueType(newType) || isValueType(origType))

@@ -114,7 +114,7 @@ namespace de4dot.blocks.cflow {
 		}
 
 		protected override bool isCompatibleType(int paramIndex, IType origType, IType newType) {
-			if (new SigComparer().Equals(origType, newType))
+			if (new SigComparer(SigComparerOptions.IgnoreModifiers).Equals(origType, newType))
 				return true;
 			if (isValueType(newType) || isValueType(origType))
 				return false;
