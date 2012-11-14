@@ -250,11 +250,11 @@
     <None Include="deobfuscators\SmartAssembly\StringDecrypterInfo.cs" />
     <None Include="deobfuscators\SmartAssembly\StringEncoderClassFinder.cs" />
     <None Include="deobfuscators\SmartAssembly\TamperProtectionRemover.cs" />
-    <None Include="deobfuscators\Spices_Net\Deobfuscator.cs" />
-    <None Include="deobfuscators\Spices_Net\QclzDecompressor.cs" />
-    <None Include="deobfuscators\Spices_Net\ResourceNamesRestorer.cs" />
-    <None Include="deobfuscators\Spices_Net\SpicesMethodCallInliner.cs" />
-    <None Include="deobfuscators\Spices_Net\StringDecrypter.cs" />
+    <Compile Include="deobfuscators\Spices_Net\Deobfuscator.cs" />
+    <Compile Include="deobfuscators\Spices_Net\QclzDecompressor.cs" />
+    <Compile Include="deobfuscators\Spices_Net\ResourceNamesRestorer.cs" />
+    <Compile Include="deobfuscators\Spices_Net\SpicesMethodCallInliner.cs" />
+    <Compile Include="deobfuscators\Spices_Net\StringDecrypter.cs" />
     <Compile Include="deobfuscators\StringCounts.cs" />
     <Compile Include="deobfuscators\TypesRestorer.cs" />
     <Compile Include="deobfuscators\Unknown\Deobfuscator.cs" />

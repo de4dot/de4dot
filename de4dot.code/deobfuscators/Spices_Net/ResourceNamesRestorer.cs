@@ -24,11 +24,11 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Spices_Net {
 	class ResourceNamesRestorer {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		TypeDef resourceManagerType;
 		TypeDef componentResourceManagerType;
-		MethodDefinitionAndDeclaringTypeDict<MethodReference> resourceManagerCtors = new MethodDefinitionAndDeclaringTypeDict<MethodReference>();
-		MethodDefinitionAndDeclaringTypeDict<MethodReference> componentManagerCtors = new MethodDefinitionAndDeclaringTypeDict<MethodReference>();
+		MethodDefinitionAndDeclaringTypeDict<IMethod> resourceManagerCtors = new MethodDefinitionAndDeclaringTypeDict<IMethod>();
+		MethodDefinitionAndDeclaringTypeDict<IMethod> componentManagerCtors = new MethodDefinitionAndDeclaringTypeDict<IMethod>();
 
 		public TypeDef ResourceManagerType {
 			get { return resourceManagerType; }
@@ -38,7 +38,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			get { return componentResourceManagerType; }
 		}
 
-		public ResourceNamesRestorer(ModuleDefinition module) {
+		public ResourceNamesRestorer(ModuleDefMD module) {
 			this.module = module;
 		}
 
@@ -54,7 +54,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			initializeCtors(componentResourceManagerType, componentManagerCtors);
 		}
 
-		static void initializeCtors(TypeDef manager, MethodDefinitionAndDeclaringTypeDict<MethodReference> ctors) {
+		void initializeCtors(TypeDef manager, MethodDefinitionAndDeclaringTypeDict<IMethod> ctors) {
 			if (manager == null)
 				return;
 
@@ -62,10 +62,8 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 				if (ctor.Name != ".ctor")
 					continue;
 
-				var newCtor = new MethodReference(ctor.Name, ctor.MethodReturnType.ReturnType, manager.BaseType);
-				newCtor.HasThis = true;
-				foreach (var param in ctor.Parameters)
-					newCtor.Parameters.Add(new ParameterDefinition(param.ParameterType));
+				var newCtor = new MemberRefUser(module, ctor.Name, ctor.MethodSig.Clone(), manager.BaseType);
+				module.UpdateRowId(newCtor);
 				ctors.add(ctor, newCtor);
 			}
 		}
@@ -75,9 +73,9 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 				return false;
 			if (type.HasProperties || type.HasEvents || type.HasFields)
 				return false;
-			if (type.Interfaces.Count > 0)
+			if (type.InterfaceImpls.Count > 0)
 				return false;
-			var method = DotNetUtils.getMethod(type, "GetResourceFileName");
+			var method = type.FindMethod("GetResourceFileName");
 			if (!DotNetUtils.isMethod(method, "System.String", "(System.Globalization.CultureInfo)"))
 				return false;
 
@@ -90,7 +88,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 
 			var numToResource = new Dictionary<uint, Resource>(module.Resources.Count);
 			foreach (var resource in module.Resources) {
-				var name = resource.Name;
+				var name = resource.Name.String;
 				int index = name.LastIndexOf('.');
 				string ext;
 				if (index < 0)
@@ -106,12 +104,12 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			foreach (var type in module.GetTypes()) {
 				rename(numToResource, "", type.FullName);
 				rename(numToResource, "", type.FullName + ".g");
-				rename(numToResource, type.Namespace, type.Name);
-				rename(numToResource, type.Namespace, type.Name + ".g");
+				rename(numToResource, type.Namespace.String, type.Name.String);
+				rename(numToResource, type.Namespace.String, type.Name.String + ".g");
 			}
 
 			if (module.Assembly != null)
-				rename(numToResource, "", module.Assembly.Name.Name + ".g");
+				rename(numToResource, "", module.Assembly.Name.String + ".g");
 		}
 
 		static void rename(Dictionary<uint, Resource> numToResource, string ns, string name) {
@@ -121,14 +119,14 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			if (!numToResource.TryGetValue(hash, out resource))
 				return;
 
-			int index = resource.Name.LastIndexOf('.');
+			int index = resource.Name.String.LastIndexOf('.');
 			string resourceNamespace, newName;
 			if (index < 0) {
 				resourceNamespace = "";
 				newName = resourceName;
 			}
 			else {
-				resourceNamespace = resource.Name.Substring(0, index);
+				resourceNamespace = resource.Name.String.Substring(0, index);
 				newName = resourceNamespace + "." + resourceName;
 			}
 			if (resourceNamespace != ns)
@@ -137,7 +135,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			Logger.v("Restoring resource name: '{0}' => '{1}'",
 								Utils.removeNewlines(resource.Name),
 								Utils.removeNewlines(newName));
-			resource.Name = newName;
+			resource.Name = new UTF8String(newName);
 			numToResource.Remove(hash);
 		}
 
@@ -153,13 +151,16 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 		}
 
 		public void deobfuscate(Blocks blocks) {
+			if (resourceManagerType == null && componentResourceManagerType == null)
+				return;
+
 			foreach (var block in blocks.MethodBlocks.getAllBlocks()) {
 				var instrs = block.Instructions;
 				for (int i = 0; i < instrs.Count; i++) {
 					var instr = instrs[i];
 					if (instr.OpCode.Code != Code.Newobj)
 						continue;
-					var ctor = instr.Operand as MethodReference;
+					var ctor = instr.Operand as IMethod;
 					if (ctor == null)
 						continue;
 					var newCtor = resourceManagerCtors.find(ctor);

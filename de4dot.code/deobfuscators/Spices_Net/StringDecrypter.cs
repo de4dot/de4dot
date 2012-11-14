@@ -22,12 +22,11 @@ using System.Collections.Generic;
 using System.Text;
 using dot10.DotNet;
 using dot10.DotNet.Emit;
-using Mono.Cecil.Metadata;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Spices_Net {
 	class StringDecrypter {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		TypeDef decrypterType;
 		FieldDef encryptedDataField;
 		StringDataFlags stringDataFlags;
@@ -60,12 +59,12 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			get {
 				if (encryptedDataField == null)
 					return null;
-				var type = encryptedDataField.FieldType as TypeDef;
+				var type = encryptedDataField.FieldSig.GetFieldType().TryGetTypeDef();
 				if (type == null || type.Fields.Count != 1 || type.Fields[0] != encryptedDataField)
 					return null;
 				if (type.HasMethods || type.HasEvents || type.HasProperties || type.HasNestedTypes)
 					return null;
-				if (type.Interfaces.Count > 0)
+				if (type.InterfaceImpls.Count > 0)
 					return null;
 
 				return type;
@@ -84,7 +83,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			get { return methodToInfo.getValues(); }
 		}
 
-		public StringDecrypter(ModuleDefinition module) {
+		public StringDecrypter(ModuleDefMD module) {
 			this.module = module;
 		}
 
@@ -96,13 +95,13 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 					continue;
 				if (type.Fields.Count != 2)
 					continue;
-				if ((type.Attributes & ~TypeAttributes.Sealed) != 0)
+				if ((type.Flags & ~TypeAttributes.Sealed) != 0)
 					continue;
 				if (type.BaseType == null || type.BaseType.FullName != "System.Object")
 					continue;
 				if (hasInstanceMethods(type))
 					continue;
-				var cctor = DotNetUtils.getMethod(type, ".cctor");
+				var cctor = type.FindClassConstructor();
 				if (cctor == null)
 					continue;
 
@@ -125,7 +124,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic)
 					return true;
-				if (method.PInvokeInfo != null)
+				if (method.ImplMap != null)
 					return true;
 			}
 			return false;
@@ -136,7 +135,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			var instructions = cctor.Body.Instructions;
 			for (int i = 0; i < instructions.Count; i++) {
 				var ldci4 = instructions[i];
-				if (!DotNetUtils.isLdcI4(ldci4))
+				if (!ldci4.IsLdcI4())
 					continue;
 
 				var instrs = DotNetUtils.getInstructions(instructions, i + 1, OpCodes.Newarr, OpCodes.Dup, OpCodes.Ldtoken, OpCodes.Call);
@@ -166,11 +165,12 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 		StringDataFlags getStringDataFlags(MethodDef method) {
 			if (method == null || method.Body == null)
 				return 0;
-			if (method.Parameters.Count != 1)
+			var sig = method.MethodSig;
+			if (sig == null || sig.Params.Count != 1)
 				return 0;
-			if (!checkClass(method.Parameters[0].ParameterType, "System.Byte[]"))
+			if (!checkClass(sig.Params[0], "System.Byte[]"))
 				return 0;
-			if (!checkClass(method.MethodReturnType.ReturnType, "System.Byte[]"))
+			if (!checkClass(sig.RetType, "System.Byte[]"))
 				return 0;
 
 			StringDataFlags flags = 0;
@@ -194,9 +194,10 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 				var calledMethod = instr.Operand as MethodDef;
 				if (calledMethod == null)
 					continue;
-				if (calledMethod.MethodReturnType.ReturnType.EType == ElementType.Void)
+				var sig = calledMethod.MethodSig;
+				if (sig == null || sig.RetType.GetElementType() == ElementType.Void)
 					continue;
-				if (calledMethod.Parameters.Count != 0)
+				if (sig.Params.Count != 0)
 					continue;
 				if (!get3DesKeyIv(calledMethod, ref key, ref iv))
 					continue;
@@ -211,13 +212,15 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 				return false;
 
 			var instrs = method.Body.Instructions;
-			var arrays = ArrayFinder.getArrays(method, module.TypeSystem.Byte);
+			var arrays = ArrayFinder.getArrays(method, module.CorLibTypes.Byte);
 			if (arrays.Count != 1 && arrays.Count != 2)
 				return false;
 
 			key = arrays[0];
-			if (arrays.Count == 1)
-				iv = module.Assembly.Name.PublicKeyToken;
+			if (arrays.Count == 1) {
+				var pkt = PublicKeyBase.ToPublicKeyToken(module.Assembly.PublicKey);
+				iv = pkt == null ? null : pkt.Data;
+			}
 			else
 				iv = arrays[1];
 			return true;
@@ -230,18 +233,21 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 				var called = instr.Operand as MethodDef;
 				if (called == null)
 					continue;
-				if (called.MethodReturnType.ReturnType.EType != ElementType.I4)
+				var sig = called.MethodSig;
+				if (sig == null)
 					continue;
-				var parameters = called.Parameters;
+				if (sig.RetType.GetElementType() != ElementType.I4)
+					continue;
+				var parameters = sig.Params;
 				if (parameters.Count != 4)
 					continue;
-				if (!checkClass(parameters[0].ParameterType, "System.Byte[]"))
+				if (!checkClass(parameters[0], "System.Byte[]"))
 					continue;
-				if (parameters[1].ParameterType.EType != ElementType.I4)
+				if (parameters[1].GetElementType() != ElementType.I4)
 					continue;
-				if (!checkClass(parameters[2].ParameterType, "System.Byte[]"))
+				if (!checkClass(parameters[2], "System.Byte[]"))
 					continue;
-				if (parameters[3].ParameterType.EType != ElementType.I4)
+				if (parameters[3].GetElementType() != ElementType.I4)
 					continue;
 
 				return true;
@@ -257,21 +263,24 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			return false;
 		}
 
-		static bool checkClass(TypeReference type, string fullName) {
-			return type != null && (type.EType == ElementType.Object || type.FullName == fullName);
+		static bool checkClass(TypeSig type, string fullName) {
+			return type != null && (type.ElementType == ElementType.Object || type.FullName == fullName);
 		}
 
-		static bool isStringType(TypeReference type) {
-			return type != null && (type.EType == ElementType.Object || type.EType == ElementType.String);
+		static bool isStringType(TypeSig type) {
+			return type != null && (type.ElementType == ElementType.Object || type.ElementType == ElementType.String);
 		}
 
 		bool initializeDecrypterInfos(TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
-				if (method.Parameters.Count != 0)
+				var sig = method.MethodSig;
+				if (sig == null)
 					continue;
-				if (!isStringType(method.MethodReturnType.ReturnType))
+				if (sig.Params.Count != 0)
+					continue;
+				if (!isStringType(sig.RetType))
 					continue;
 
 				var info = createInfo(method);
@@ -289,11 +298,11 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			for (int i = 0; i < instrs.Count - 1; i++) {
 				var ldci4_1 = instrs[i];
 				var ldci4_2 = instrs[i + 1];
-				if (!DotNetUtils.isLdcI4(ldci4_1) || !DotNetUtils.isLdcI4(ldci4_2))
+				if (!ldci4_1.IsLdcI4() || !ldci4_2.IsLdcI4())
 					continue;
 
-				int offset = DotNetUtils.getLdcI4Value(ldci4_1);
-				int length = DotNetUtils.getLdcI4Value(ldci4_2);
+				int offset = ldci4_1.GetLdcI4Value();
+				int length = ldci4_2.GetLdcI4Value();
 				return new DecrypterInfo(method, offset, length);
 			}
 
@@ -313,7 +322,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			}
 
 			if ((stringDataFlags & StringDataFlags.Encrypted2) != 0) {
-				var k = module.Assembly.Name.PublicKey;
+				var k = module.Assembly.PublicKey.Data;
 				int mask = (byte)(~k.Length);
 				for (int i = 0; i < decryptedData.Length; i++)
 					decryptedData[i] ^= k[i & mask];
@@ -331,7 +340,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 				return;
 
 			encryptedDataField.InitialValue = new byte[1];
-			encryptedDataField.FieldType = module.TypeSystem.Byte;
+			encryptedDataField.FieldSig.Type = module.CorLibTypes.Byte;
 		}
 
 		public string decrypt(MethodDef method) {
