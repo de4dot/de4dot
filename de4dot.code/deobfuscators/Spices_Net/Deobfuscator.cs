@@ -143,6 +143,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 				switch (type.FullName) {
 				case "NineRays.Decompiler.NotDecompile":
 				case "NineRays.Obfuscator.Evaluation":
+				case "NineRays.Obfuscator.SoftwareWatermarkAttribute":
 					addAttributeToBeRemoved(type, "Obfuscator attribute");
 					foundSpicesAttribute = true;
 					break;
