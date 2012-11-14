@@ -56,7 +56,7 @@ namespace de4dot.code {
 			if (!updateMaxStack)
 				mdFlags |= MetaDataFlags.KeepOldMaxStack;
 			if (preserveTokens) {
-				mdFlags |= MetaDataFlags.PreserveTokens |
+				mdFlags |= MetaDataFlags.PreserveRids |
 						MetaDataFlags.PreserveUSOffsets |
 						MetaDataFlags.PreserveBlobOffsets |
 						MetaDataFlags.PreserveExtraSignatureData;
