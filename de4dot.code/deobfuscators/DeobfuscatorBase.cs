@@ -763,6 +763,22 @@ namespace de4dot.code.deobfuscators {
 			return false;
 		}
 
+		protected bool hasNativeMethods() {
+			if (module.VTableFixups != null)
+				return true;
+			foreach (var type in module.GetTypes()) {
+				foreach (var method in type.Methods) {
+					var mb = method.MethodBody;
+					if (mb == null)
+						continue;
+					if (mb is CilBody)
+						continue;
+					return true;
+				}
+			}
+			return false;
+		}
+
 		protected static int toInt32(bool b) {
 			return b ? 1 : 0;
 		}

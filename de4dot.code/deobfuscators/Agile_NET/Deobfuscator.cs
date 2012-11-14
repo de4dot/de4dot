@@ -307,9 +307,12 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 				addResources("Obfuscator protection files");
 			}
 
-			module.IsILOnly = true;
-
 			base.deobfuscateEnd();
+
+			// Call hasNativeMethods() after all types/methods/etc have been removed since
+			// some of the removed methods could be native methods
+			if (!module.IsILOnly && !hasNativeMethods())
+				module.IsILOnly = true;
 		}
 
 		public override IEnumerable<int> getStringDecrypterMethods() {
