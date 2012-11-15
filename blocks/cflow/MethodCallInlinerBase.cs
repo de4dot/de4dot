@@ -29,6 +29,7 @@ namespace de4dot.blocks.cflow {
 		protected Blocks blocks;
 		protected Block block;
 		int iteration;
+		AccessChecker accessChecker;
 
 		public bool ExecuteOnNoChange { get; set; }
 
@@ -150,6 +151,9 @@ namespace de4dot.blocks.cflow {
 				if (!checkSameMethods(calledMethod, methodToInline, popLastArgs))
 					return null;
 
+				if (!hasAccessTo(instr.Operand))
+					return null;
+
 				return new InstructionPatcher(patchIndex, instrIndex, callInstr);
 			}
 			else if (instr.OpCode.Code == Code.Newobj) {
@@ -172,6 +176,9 @@ namespace de4dot.blocks.cflow {
 						return null;
 				}
 
+				if (!hasAccessTo(instr.Operand))
+					return null;
+
 				return new InstructionPatcher(patchIndex, instrIndex, newobjInstr);
 			}
 			else if (instr.OpCode.Code == Code.Ldfld || instr.OpCode.Code == Code.Ldflda ||
@@ -180,10 +187,24 @@ namespace de4dot.blocks.cflow {
 				if (methodArgsCount != 1)
 					return null;
 
+				if (!hasAccessTo(instr.Operand))
+					return null;
+
 				return new InstructionPatcher(patchIndex, instrIndex, ldInstr);
 			}
 
 			return null;
+		}
+
+		bool hasAccessTo(object operand) {
+			if (operand == null)
+				return false;
+			accessChecker.UserType = blocks.Method.DeclaringType;
+			return accessChecker.CanAccess(operand) ?? getDefaultAccessResult();
+		}
+
+		protected virtual bool getDefaultAccessResult() {
+			return true;
 		}
 
 		protected virtual bool isReturn(MethodDef methodToInline, int instrIndex) {
