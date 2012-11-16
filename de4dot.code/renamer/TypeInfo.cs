@@ -382,16 +382,19 @@ namespace de4dot.code.renamer {
 			var checker = NameChecker;
 
 			// PInvoke methods' EntryPoint is always valid. It has to, so always rename.
-			if (!NameChecker.isValidMethodName(info.oldName) || methodDef.MethodDef.ImplMap != null) {
+			bool isValidName = NameChecker.isValidMethodName(info.oldName);
+			bool isExternPInvoke = methodDef.MethodDef.ImplMap != null && methodDef.MethodDef.RVA == 0;
+			if (!isValidName || isExternPInvoke) {
 				INameCreator nameCreator = null;
 				string newName = info.suggestedName;
-				if (methodDef.MethodDef.ImplMap != null)
-					newName = getPinvokeName(methodDef);
+				string newName2;
+				if (methodDef.MethodDef.ImplMap != null && !string.IsNullOrEmpty(newName2 = getPinvokeName(methodDef)))
+					newName = newName2;
 				else if (methodDef.isStatic())
 					nameCreator = variableNameState.staticMethodNameCreator;
 				else
 					nameCreator = variableNameState.instanceMethodNameCreator;
-				if (newName != null)
+				if (!string.IsNullOrEmpty(newName))
 					nameCreator = new NameCreator2(newName);
 				renameMethod(methodDef, variableNameState.getNewMethodName(info.oldName, nameCreator));
 			}
