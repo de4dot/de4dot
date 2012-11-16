@@ -110,7 +110,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 				case ElementType.Var:
 					var gvar = (GenericVar)type;
 					var dt = method.DeclaringType;
-					if (dt == null || gvar.Number >= dt.GenericParams.Count)
+					if (dt == null || gvar.Number >= dt.GenericParameters.Count)
 						return false;
 					break;
 

@@ -97,7 +97,7 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 				if (type.HasProperties || type.HasEvents)
 					continue;
 
-				var cctor = type.FindClassConstructor();
+				var cctor = type.FindStaticConstructor();
 				if (cctor == null)
 					continue;
 

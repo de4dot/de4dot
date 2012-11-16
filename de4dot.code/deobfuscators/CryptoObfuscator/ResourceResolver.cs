@@ -108,7 +108,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 
 			resolverVersion = checkSetupMethod(initMethod);
 			if (resolverVersion == ResolverVersion.None)
-				resolverVersion = checkSetupMethod(initMethod.DeclaringType.FindClassConstructor());
+				resolverVersion = checkSetupMethod(initMethod.DeclaringType.FindStaticConstructor());
 			if (resolverVersion == ResolverVersion.None)
 				return false;
 

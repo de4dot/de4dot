@@ -85,7 +85,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			}
 
 			byte[] getPublicKeyToken() {
-				var module = method.OwnerModule;
+				var module = method.Module;
 				if (module.Assembly == null || PublicKeyBase.IsNullOrEmpty2(module.Assembly.PublicKey))
 					return null;
 				return module.Assembly.PublicKeyToken.Data;

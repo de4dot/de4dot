@@ -135,7 +135,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 					continue;
 				if (type.Methods.Count != 2)
 					continue;
-				if (type.FindClassConstructor() == null)
+				if (type.FindStaticConstructor() == null)
 					continue;
 				var cs = type.FindMethod("cs");
 				if (cs == null)

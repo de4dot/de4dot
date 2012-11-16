@@ -318,9 +318,9 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			}
 
 			short[] findKey() {
-				if (cctor.OwnerModule.Assembly == null)
+				if (cctor.Module.Assembly == null)
 					return null;
-				var pkt = cctor.OwnerModule.Assembly.PublicKeyToken;
+				var pkt = cctor.Module.Assembly.PublicKeyToken;
 				if (!PublicKeyBase.IsNullOrEmpty2(pkt))
 					return getPublicKeyTokenKey(pkt.Data);
 				return findKey(cctor);
@@ -379,7 +379,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 
 			public void cleanup() {
 				arrayInfo.initField.InitialValue = new byte[1];
-				arrayInfo.initField.FieldSig.Type = arrayInfo.initField.OwnerModule.CorLibTypes.Byte;
+				arrayInfo.initField.FieldSig.Type = arrayInfo.initField.Module.CorLibTypes.Byte;
 				removeInitializeArrayCall(cctor, arrayInfo.initField);
 			}
 		}
@@ -501,9 +501,9 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			}
 
 			short[] findKey() {
-				if (cctor.OwnerModule.Assembly == null)
+				if (cctor.Module.Assembly == null)
 					return null;
-				var pkt = cctor.OwnerModule.Assembly.PublicKeyToken;
+				var pkt = cctor.Module.Assembly.PublicKeyToken;
 				if (!PublicKeyBase.IsNullOrEmpty2(pkt))
 					return getPublicKeyTokenKey(pkt.Data);
 				return findKey(cctor);
@@ -538,7 +538,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 
 			public void cleanup() {
 				encryptedDataField.InitialValue = new byte[1];
-				encryptedDataField.FieldSig.Type = encryptedDataField.OwnerModule.CorLibTypes.Byte;
+				encryptedDataField.FieldSig.Type = encryptedDataField.Module.CorLibTypes.Byte;
 				removeInitializeArrayCall(cctor, encryptedDataField);
 			}
 		}
@@ -628,9 +628,9 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			}
 
 			short[] findKey() {
-				if (cctor.OwnerModule.Assembly == null)
+				if (cctor.Module.Assembly == null)
 					return null;
-				var pkt = cctor.OwnerModule.Assembly.PublicKeyToken;
+				var pkt = cctor.Module.Assembly.PublicKeyToken;
 				if (!PublicKeyBase.IsNullOrEmpty2(pkt))
 					return getPublicKeyTokenKey(pkt.Data);
 				return findKey(cctor);
@@ -730,7 +730,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			var pkt = module.Assembly.PublicKeyToken;
 			bool hasPublicKeyToken = !PublicKeyBase.IsNullOrEmpty2(pkt);
 			foreach (var type in module.GetTypes()) {
-				var cctor = type.FindClassConstructor();
+				var cctor = type.FindStaticConstructor();
 				if (cctor == null)
 					continue;
 

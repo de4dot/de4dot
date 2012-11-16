@@ -96,7 +96,7 @@ namespace de4dot.code.deobfuscators.Rummage {
 		static MethodDef checkType(TypeDef type) {
 			if (!new FieldTypes(type).exactly(requiredFields))
 				return null;
-			var cctor = type.FindClassConstructor();
+			var cctor = type.FindStaticConstructor();
 			if (cctor == null)
 				return null;
 			if (!new LocalTypes(cctor).all(requiredLocals))
@@ -161,7 +161,7 @@ namespace de4dot.code.deobfuscators.Rummage {
 		}
 
 		void initType(TypeDef type) {
-			var cctor = type.FindClassConstructor();
+			var cctor = type.FindStaticConstructor();
 			if (cctor == null)
 				return;
 			var info = getStringInfo(cctor);

@@ -49,17 +49,17 @@ namespace de4dot.code.renamer {
 			string newName;
 
 			string asmFullName;
-			if (type.OwnerModule.Assembly != null)
-				asmFullName = type.OwnerModule.Assembly.FullName;
+			if (type.Module.Assembly != null)
+				asmFullName = type.Module.Assembly.FullName;
 			else
 				asmFullName = "<no assembly>";
 
 			// Make sure that two namespaces with the same names in different modules aren't renamed
 			// to the same name.
 			var key = string.Format(" [{0}] [{1}] [{2}] [{3}] ",
-						type.OwnerModule.Location,
+						type.Module.Location,
 						asmFullName,
-						type.OwnerModule.Name,
+						type.Module.Name,
 						ns);
 			if (namespaceToNewName.TryGetValue(key, out newName))
 				return newName;

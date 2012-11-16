@@ -109,7 +109,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 		}
 
 		bool isStackType(TypeDef type, TypeDef stackValueType) {
-			if (type.InterfaceImpls.Count != 2)
+			if (type.Interfaces.Count != 2)
 				return false;
 			if (!implementsInterface(type, "System.Collections.ICollection"))
 				return false;
@@ -141,7 +141,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 		}
 
 		static bool implementsInterface(TypeDef type, string ifaceName) {
-			foreach (var iface in type.InterfaceImpls) {
+			foreach (var iface in type.Interfaces) {
 				if (iface.Interface.FullName == ifaceName)
 					return true;
 			}
@@ -176,7 +176,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			};
 			var cflowDeobfuscator = new CflowDeobfuscator();
 			foreach (var type in module.Types) {
-				var cctor = type.FindClassConstructor();
+				var cctor = type.FindStaticConstructor();
 				if (cctor == null)
 					continue;
 				requiredFields[0] = type.FullName;

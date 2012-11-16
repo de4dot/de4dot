@@ -212,7 +212,7 @@ namespace de4dot.code.deobfuscators {
 				foreach (var field in type.Fields) {
 					if (field.IsStatic)
 						continue;
-					field.IsRTSpecialName = true;
+					field.IsRuntimeSpecialName = true;
 					field.IsSpecialName = true;
 				}
 			}
@@ -377,7 +377,7 @@ namespace de4dot.code.deobfuscators {
 		void deleteEmptyCctors() {
 			var emptyCctorsToRemove = new List<MethodDef>();
 			foreach (var type in module.GetTypes()) {
-				var cctor = type.FindClassConstructor();
+				var cctor = type.FindStaticConstructor();
 				if (cctor != null && DotNetUtils.isEmpty(cctor))
 					emptyCctorsToRemove.Add(cctor);
 			}

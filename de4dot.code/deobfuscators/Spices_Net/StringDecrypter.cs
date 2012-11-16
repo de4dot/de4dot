@@ -64,7 +64,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 					return null;
 				if (type.HasMethods || type.HasEvents || type.HasProperties || type.HasNestedTypes)
 					return null;
-				if (type.InterfaceImpls.Count > 0)
+				if (type.Interfaces.Count > 0)
 					return null;
 
 				return type;
@@ -95,13 +95,13 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 					continue;
 				if (type.Fields.Count != 2)
 					continue;
-				if ((type.Flags & ~TypeAttributes.Sealed) != 0)
+				if ((type.Attributes & ~TypeAttributes.Sealed) != 0)
 					continue;
 				if (type.BaseType == null || type.BaseType.FullName != "System.Object")
 					continue;
 				if (hasInstanceMethods(type))
 					continue;
-				var cctor = type.FindClassConstructor();
+				var cctor = type.FindStaticConstructor();
 				if (cctor == null)
 					continue;
 

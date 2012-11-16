@@ -113,7 +113,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 				return false;
 			if (!calledMethod.IsStatic)
 				return false;
-			if (calledMethod.GenericParams.Count > 0)
+			if (calledMethod.GenericParameters.Count > 0)
 				return false;
 			if (calledMethod.Body == null || calledMethod.Body.Instructions.Count == 0)
 				return false;
@@ -154,17 +154,17 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 		static bool checkMethodsType(TypeDef type) {
 			if (!type.IsNested)
 				return false;
-			if ((type.Flags & ~TypeAttributes.BeforeFieldInit) != TypeAttributes.NestedAssembly)
+			if ((type.Attributes & ~TypeAttributes.BeforeFieldInit) != TypeAttributes.NestedAssembly)
 				return false;
 			if (type.HasProperties || type.HasEvents || type.HasFields || type.HasNestedTypes)
 				return false;
-			if (type.GenericParams.Count > 0)
+			if (type.GenericParameters.Count > 0)
 				return false;
 			if (type.IsValueType || type.IsInterface)
 				return false;
 			if (type.BaseType == null || type.BaseType.FullName != "System.Object")
 				return false;
-			if (type.InterfaceImpls.Count > 0)
+			if (type.Interfaces.Count > 0)
 				return false;
 			if (!checkMethods(type))
 				return false;
@@ -185,11 +185,11 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 					foundCtor = true;
 					continue;
 				}
-				if (method.Flags != (MethodAttributes.Assembly | MethodAttributes.Static | MethodAttributes.HideBySig))
+				if (method.Attributes != (MethodAttributes.Assembly | MethodAttributes.Static | MethodAttributes.HideBySig))
 					return false;
 				if (method.ImplMap != null)
 					return false;
-				if (method.GenericParams.Count > 0)
+				if (method.GenericParameters.Count > 0)
 					return false;
 
 				numMethods++;

@@ -78,7 +78,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 
 			switch (ctx.proxyCreatorType) {
 			case ProxyCreatorType.CallOrCallvirt:
-				callOpcode = field.IsFamORAssem ? OpCodes.Callvirt : OpCodes.Call;
+				callOpcode = field.IsFamilyOrAssembly ? OpCodes.Callvirt : OpCodes.Call;
 				break;
 			case ProxyCreatorType.CallCtor:
 				callOpcode = OpCodes.Call;

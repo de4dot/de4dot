@@ -298,7 +298,7 @@ namespace de4dot.code.renamer.asmmodules {
 		public MTypeDef(TypeDef typeDefinition, Module module, int index)
 			: base(typeDefinition, null, index) {
 			this.module = module;
-			genericParams = MGenericParamDef.createGenericParamDefList(TypeDef.GenericParams);
+			genericParams = MGenericParamDef.createGenericParamDefList(TypeDef.GenericParameters);
 		}
 
 		public void addInterface(MTypeDef ifaceDef, ITypeDefOrRef iface) {
@@ -663,7 +663,7 @@ namespace de4dot.code.renamer.asmmodules {
 			return resolvedAllInterfacesResult.Value;
 		}
 		bool resolvedAllInterfacesInternal() {
-			if (TypeDef.InterfaceImpls.Count != interfaces.Count)
+			if (TypeDef.Interfaces.Count != interfaces.Count)
 				return false;
 			foreach (var ifaceInfo in interfaces) {
 				if (!ifaceInfo.typeDef.resolvedAllInterfaces())

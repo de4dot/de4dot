@@ -161,7 +161,7 @@ namespace de4dot.code.deobfuscators {
 
 			TypeSig type;
 			Local local;
-			var corLibTypes = method.DeclaringType.OwnerModule.CorLibTypes;
+			var corLibTypes = method.DeclaringType.Module.CorLibTypes;
 			switch (pushInstr.OpCode.Code) {
 			case Code.Ldstr:
 				type = corLibTypes.String;

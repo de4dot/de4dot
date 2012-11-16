@@ -205,7 +205,7 @@ namespace de4dot.code.renamer.asmmodules {
 
 			// Initialize interfaces
 			foreach (var typeDef in allTypes) {
-				foreach (var iface in typeDef.TypeDef.InterfaceImpls) {
+				foreach (var iface in typeDef.TypeDef.Interfaces) {
 					var ifaceTypeDef = resolveType(iface.Interface) ?? resolveOther(iface.Interface);
 					if (ifaceTypeDef != null)
 						typeDef.addInterface(ifaceTypeDef, iface.Interface);
@@ -336,7 +336,7 @@ namespace de4dot.code.renamer.asmmodules {
 
 			typeDef = new MTypeDef(typeDefinition, null, 0);
 			typeDef.addMembers();
-			foreach (var iface in typeDef.TypeDef.InterfaceImpls) {
+			foreach (var iface in typeDef.TypeDef.Interfaces) {
 				var ifaceDef = resolveOther(iface.Interface);
 				if (ifaceDef == null)
 					continue;
@@ -391,15 +391,15 @@ namespace de4dot.code.renamer.asmmodules {
 
 			if (scopeType == ScopeType.ModuleRef) {
 				var moduleRef = (ModuleRef)scope;
-				if (moduleRef.Name == type.OwnerModule.Name) {
-					var modules = findModules(type.OwnerModule);
+				if (moduleRef.Name == type.Module.Name) {
+					var modules = findModules(type.Module);
 					if (modules != null)
 						return modules;
 				}
 			}
 
 			if (scopeType == ScopeType.ModuleRef || scopeType == ScopeType.ModuleDef) {
-				var asm = type.OwnerModule.Assembly;
+				var asm = type.Module.Assembly;
 				if (asm == null)
 					return null;
 				var moduleHash = assemblyHash.lookup(asm.FullName);
@@ -452,7 +452,7 @@ namespace de4dot.code.renamer.asmmodules {
 			Logger.e("Could not resolve TypeReference {0} ({1:X8}) (from {2} -> {3})",
 						Utils.removeNewlines(typeRef),
 						typeRef.MDToken.ToInt32(),
-						typeRef.OwnerModule,
+						typeRef.Module,
 						typeRef.Scope);
 			return null;
 		}
@@ -473,7 +473,7 @@ namespace de4dot.code.renamer.asmmodules {
 			Logger.e("Could not resolve MethodReference {0} ({1:X8}) (from {2} -> {3})",
 						Utils.removeNewlines(methodRef),
 						methodRef.MDToken.ToInt32(),
-						methodRef.DeclaringType.OwnerModule,
+						methodRef.DeclaringType.Module,
 						methodRef.DeclaringType.Scope);
 			return null;
 		}
@@ -494,7 +494,7 @@ namespace de4dot.code.renamer.asmmodules {
 			Logger.e("Could not resolve FieldReference {0} ({1:X8}) (from {2} -> {3})",
 						Utils.removeNewlines(fieldReference),
 						fieldReference.MDToken.ToInt32(),
-						fieldReference.DeclaringType.OwnerModule,
+						fieldReference.DeclaringType.Module,
 						fieldReference.DeclaringType.Scope);
 			return null;
 		}

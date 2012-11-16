@@ -79,7 +79,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 					var fieldsDict = new FieldDefinitionAndDeclaringTypeDict<FieldDef>();
 					typeToFieldsDict.add(ownerType, fieldsDict);
 					foreach (var structField in structType.Fields) {
-						var newField = module.UpdateRowId(new FieldDefUser(structField.Name, structField.FieldSig.Clone(), structField.Flags));
+						var newField = module.UpdateRowId(new FieldDefUser(structField.Name, structField.FieldSig.Clone(), structField.Attributes));
 						ownerType.Fields.Add(newField);
 						fieldsDict.add(structField, newField);
 					}
@@ -97,11 +97,11 @@ namespace de4dot.code.deobfuscators.DeepSea {
 						continue;
 					if (!checkBaseType(fieldType))
 						continue;
-					if ((fieldType.Flags & ~TypeAttributes.Sealed) != TypeAttributes.NestedAssembly)
+					if ((fieldType.Attributes & ~TypeAttributes.Sealed) != TypeAttributes.NestedAssembly)
 						continue;
 					if (fieldType.NestedTypes.Count > 0)
 						continue;
-					if (fieldType.GenericParams.Count > 0)
+					if (fieldType.GenericParameters.Count > 0)
 						continue;
 					if (fieldType.Fields.Count == 0)
 						continue;
@@ -146,7 +146,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		IEnumerable<FieldDef> getPossibleFields(TypeDef type) {
 			var typeToFields = new TypeDefinitionDict<List<FieldDef>>();
 			foreach (var field in type.Fields) {
-				if (field.Flags != FieldAttributes.Private)
+				if (field.Attributes != FieldAttributes.Private)
 					continue;
 				var fieldType = DotNetUtils.getType(module, field.FieldSig.GetFieldType());
 				if (fieldType == null)
@@ -187,7 +187,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 					continue;
 				if (!method.IsStatic)
 					return true;
-				if (method.GenericParams.Count > 0)
+				if (method.GenericParameters.Count > 0)
 					return true;
 				if (method.Body == null)
 					return true;

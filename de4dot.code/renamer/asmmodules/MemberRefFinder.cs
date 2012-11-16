@@ -244,8 +244,8 @@ namespace de4dot.code.renamer.asmmodules {
 			if (ca == null || customAttributes.ContainsKey(ca))
 				return;
 			customAttributes[ca] = true;
-			push(ca.Ctor);
-			add(ca.Arguments);
+			push(ca.Constructor);
+			add(ca.ConstructorArguments);
 			add(ca.NamedArguments);
 		}
 
@@ -298,10 +298,10 @@ namespace de4dot.code.renamer.asmmodules {
 		void add(EventDef ed) {
 			if (ed == null || eventDefs.ContainsKey(ed))
 				return;
-			if (ed.DeclaringType != null && ed.DeclaringType.OwnerModule != validModule)
+			if (ed.DeclaringType != null && ed.DeclaringType.Module != validModule)
 				return;
 			eventDefs[ed] = true;
-			push(ed.Type);
+			push(ed.EventType);
 			add(ed.CustomAttributes);
 			add(ed.AddMethod);
 			add(ed.InvokeMethod);
@@ -320,7 +320,7 @@ namespace de4dot.code.renamer.asmmodules {
 		void add(FieldDef fd) {
 			if (fd == null || fieldDefs.ContainsKey(fd))
 				return;
-			if (fd.DeclaringType != null && fd.DeclaringType.OwnerModule != validModule)
+			if (fd.DeclaringType != null && fd.DeclaringType.Module != validModule)
 				return;
 			fieldDefs[fd] = true;
 			add(fd.CustomAttributes);
@@ -363,7 +363,7 @@ namespace de4dot.code.renamer.asmmodules {
 		void add(MemberRef mr) {
 			if (mr == null || memberRefs.ContainsKey(mr))
 				return;
-			if (mr.OwnerModule != validModule)
+			if (mr.Module != validModule)
 				return;
 			memberRefs[mr] = true;
 			push(mr.Class);
@@ -381,12 +381,12 @@ namespace de4dot.code.renamer.asmmodules {
 		void add(MethodDef md) {
 			if (md == null || methodDefs.ContainsKey(md))
 				return;
-			if (md.DeclaringType != null && md.DeclaringType.OwnerModule != validModule)
+			if (md.DeclaringType != null && md.DeclaringType.Module != validModule)
 				return;
 			methodDefs[md] = true;
 			add(md.Signature);
 			add(md.ParamList);
-			add(md.GenericParams);
+			add(md.GenericParameters);
 			add(md.DeclSecurities);
 			add(md.MethodBody);
 			add(md.CustomAttributes);
@@ -507,7 +507,7 @@ namespace de4dot.code.renamer.asmmodules {
 		void add(MethodSpec ms) {
 			if (ms == null || methodSpecs.ContainsKey(ms))
 				return;
-			if (ms.Method != null && ms.Method.DeclaringType != null && ms.Method.DeclaringType.OwnerModule != validModule)
+			if (ms.Method != null && ms.Method.DeclaringType != null && ms.Method.DeclaringType.Module != validModule)
 				return;
 			methodSpecs[ms] = true;
 			push(ms.Method);
@@ -525,7 +525,7 @@ namespace de4dot.code.renamer.asmmodules {
 		void add(PropertyDef pd) {
 			if (pd == null || propertyDefs.ContainsKey(pd))
 				return;
-			if (pd.DeclaringType != null && pd.DeclaringType.OwnerModule != validModule)
+			if (pd.DeclaringType != null && pd.DeclaringType.Module != validModule)
 				return;
 			propertyDefs[pd] = true;
 			add(pd.Type);
@@ -546,14 +546,14 @@ namespace de4dot.code.renamer.asmmodules {
 		void add(TypeDef td) {
 			if (td == null || typeDefs.ContainsKey(td))
 				return;
-			if (td.OwnerModule != validModule)
+			if (td.Module != validModule)
 				return;
 			typeDefs[td] = true;
 			push(td.BaseType);
 			add(td.Fields);
 			add(td.Methods);
-			add(td.GenericParams);
-			add(td.InterfaceImpls);
+			add(td.GenericParameters);
+			add(td.Interfaces);
 			add(td.DeclSecurities);
 			add(td.DeclaringType);
 			add(td.Events);
@@ -579,7 +579,7 @@ namespace de4dot.code.renamer.asmmodules {
 		void add(TypeRef tr) {
 			if (tr == null || typeRefs.ContainsKey(tr))
 				return;
-			if (tr.OwnerModule != validModule)
+			if (tr.Module != validModule)
 				return;
 			typeRefs[tr] = true;
 			push(tr.ResolutionScope);
@@ -596,7 +596,7 @@ namespace de4dot.code.renamer.asmmodules {
 		void add(TypeSig ts) {
 			if (ts == null || typeSigs.ContainsKey(ts))
 				return;
-			if (ts.OwnerModule != validModule)
+			if (ts.Module != validModule)
 				return;
 			typeSigs[ts] = true;
 
@@ -664,7 +664,7 @@ namespace de4dot.code.renamer.asmmodules {
 		void add(TypeSpec ts) {
 			if (ts == null || typeSpecs.ContainsKey(ts))
 				return;
-			if (ts.OwnerModule != validModule)
+			if (ts.Module != validModule)
 				return;
 			typeSpecs[ts] = true;
 			add(ts.TypeSig);
@@ -681,7 +681,7 @@ namespace de4dot.code.renamer.asmmodules {
 		void add(ExportedType et) {
 			if (et == null || exportedTypes.ContainsKey(et))
 				return;
-			if (et.OwnerModule != validModule)
+			if (et.Module != validModule)
 				return;
 			exportedTypes[et] = true;
 			add(et.CustomAttributes);

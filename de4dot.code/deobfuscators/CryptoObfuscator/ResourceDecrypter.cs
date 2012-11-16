@@ -84,7 +84,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				if (!new FieldTypes(type).exactly(requiredTypes))
 					continue;
 
-				var cctor = type.FindClassConstructor();
+				var cctor = type.FindStaticConstructor();
 				if (cctor == null)
 					continue;
 

@@ -107,7 +107,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			if (decrypterType == null)
 				return;
 
-			encryptedResource = CoUtils.getResource(module, DotNetUtils.getCodeStrings(decrypterType.FindClassConstructor()));
+			encryptedResource = CoUtils.getResource(module, DotNetUtils.getCodeStrings(decrypterType.FindStaticConstructor()));
 			constantsData = resourceDecrypter.decrypt(encryptedResource.Data.CreateStream());
 		}
 

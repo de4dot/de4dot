@@ -67,7 +67,7 @@ namespace de4dot.code.deobfuscators {
 				return;
 
 			ourType = new TypeDefUser("", string.Format("<PrivateImplementationDetails>{0}", getModuleId()), module.CorLibTypes.Object.TypeDefOrRef);
-			ourType.Flags = TypeAttributes.NotPublic | TypeAttributes.AutoLayout |
+			ourType.Attributes = TypeAttributes.NotPublic | TypeAttributes.AutoLayout |
 							TypeAttributes.Class | TypeAttributes.AnsiClass;
 			module.UpdateRowId(ourType);
 			module.Types.Add(ourType);
@@ -99,7 +99,7 @@ namespace de4dot.code.deobfuscators {
 				valueType = DotNetUtils.findOrCreateTypeReference(module, module.CorLibTypes.AssemblyRef, "System", "ValueType", false);
 			arrayType = new TypeDefUser("", string.Format("__StaticArrayInitTypeSize={0}", size), valueType.TypeDefOrRef);
 			module.UpdateRowId(arrayType);
-			arrayType.Flags = TypeAttributes.NestedPrivate | TypeAttributes.ExplicitLayout |
+			arrayType.Attributes = TypeAttributes.NestedPrivate | TypeAttributes.ExplicitLayout |
 							TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.AnsiClass;
 			ourType.NestedTypes.Add(arrayType);
 			sizeToArrayType[size] = arrayType;

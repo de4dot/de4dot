@@ -403,7 +403,7 @@ namespace de4dot.code.renamer {
 		string getPinvokeName(MMethodDef methodDef) {
 			var entryPoint = methodDef.MethodDef.ImplMap.Name.String;
 			if (Regex.IsMatch(entryPoint, @"^#\d+$"))
-				entryPoint = DotNetUtils.getDllName(methodDef.MethodDef.ImplMap.Scope.Name.String) + "_" + entryPoint.Substring(1);
+				entryPoint = DotNetUtils.getDllName(methodDef.MethodDef.ImplMap.Module.Name.String) + "_" + entryPoint.Substring(1);
 			return entryPoint;
 		}
 

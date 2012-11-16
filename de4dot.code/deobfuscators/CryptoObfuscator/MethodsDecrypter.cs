@@ -73,7 +73,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			if (!new FieldTypes(type).all(requiredFields))
 				return false;
 
-			var cctor = type.FindClassConstructor();
+			var cctor = type.FindStaticConstructor();
 			if (cctor == null)
 				return false;
 			var decryptMethodTmp = findDecryptMethod(type);
@@ -169,7 +169,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			encMethodToken = 0;
 			encDeclaringTypeToken = 0;
 
-			var cctor = delegateType.FindClassConstructor();
+			var cctor = delegateType.FindStaticConstructor();
 			if (cctor == null)
 				return false;
 

@@ -144,7 +144,7 @@ namespace de4dot.blocks {
 				var defAsm = local.Type.DefinitionAssembly;
 				if (defAsm == null)
 					continue;	// eg. fnptr
-				if (defAsm == method.DeclaringType.OwnerModule.Assembly)
+				if (defAsm == method.DeclaringType.Module.Assembly)
 					continue;	// this assembly is always loaded
 				if (defAsm.IsCorLib())
 					continue;	// mscorlib is always loaded

@@ -90,7 +90,7 @@ namespace de4dot.blocks {
 			30,		// NestedFamORAssem
 		};
 		static int getAccessibilityOrder(TypeDef typeDef) {
-			return accessibilityOrder[(int)typeDef.Flags & 7];
+			return accessibilityOrder[(int)typeDef.Attributes & 7];
 		}
 
 		public void onTypesRenamed() {
@@ -170,7 +170,7 @@ namespace de4dot.blocks {
 			70,		// <reserved>
 		};
 		static int getAccessibilityOrder(FieldDef fieldDefinition) {
-			return accessibilityOrder[(int)fieldDefinition.Flags & 7];
+			return accessibilityOrder[(int)fieldDefinition.Attributes & 7];
 		}
 
 		public void onTypesRenamed() {
@@ -262,7 +262,7 @@ namespace de4dot.blocks {
 			70,		// <reserved>
 		};
 		static int getAccessibilityOrder(MethodDef methodDefinition) {
-			return accessibilityOrder[(int)methodDefinition.Flags & 7];
+			return accessibilityOrder[(int)methodDefinition.Attributes & 7];
 		}
 
 		public void onTypesRenamed() {
@@ -422,23 +422,23 @@ namespace de4dot.blocks {
 		readonly uint token;
 
 		public ScopeAndTokenKey(TypeDef type)
-			: this(type.OwnerModule, type.MDToken.Raw) {
+			: this(type.Module, type.MDToken.Raw) {
 		}
 
 		public ScopeAndTokenKey(FieldDef field)
-			: this(field.DeclaringType == null ? null : field.DeclaringType.OwnerModule, field.MDToken.Raw) {
+			: this(field.DeclaringType == null ? null : field.DeclaringType.Module, field.MDToken.Raw) {
 		}
 
 		public ScopeAndTokenKey(MethodDef method)
-			: this(method.DeclaringType == null ? null : method.DeclaringType.OwnerModule, method.MDToken.Raw) {
+			: this(method.DeclaringType == null ? null : method.DeclaringType.Module, method.MDToken.Raw) {
 		}
 
 		public ScopeAndTokenKey(PropertyDef prop)
-			: this(prop.DeclaringType == null ? null : prop.DeclaringType.OwnerModule, prop.MDToken.Raw) {
+			: this(prop.DeclaringType == null ? null : prop.DeclaringType.Module, prop.MDToken.Raw) {
 		}
 
 		public ScopeAndTokenKey(EventDef evt)
-			: this(evt.DeclaringType == null ? null : evt.DeclaringType.OwnerModule, evt.MDToken.Raw) {
+			: this(evt.DeclaringType == null ? null : evt.DeclaringType.Module, evt.MDToken.Raw) {
 		}
 
 		public ScopeAndTokenKey(IScope scope, uint token) {

@@ -305,9 +305,9 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				if (!DotNetUtils.isMethod(newobjCtor, "System.Void", "(System.Reflection.Assembly,System.String)"))
 					continue;
 				var type = newobjCtor.DeclaringType;
-				if (type.InterfaceImpls.Count != 1)
+				if (type.Interfaces.Count != 1)
 					continue;
-				if (type.InterfaceImpls[0].Interface != bundleStreamProviderIFace)
+				if (type.Interfaces[0].Interface != bundleStreamProviderIFace)
 					continue;
 
 				streamProviderType = type;

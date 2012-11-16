@@ -155,7 +155,7 @@ namespace de4dot.blocks {
 		}
 
 		public static MethodDef getModuleTypeCctor(ModuleDef module) {
-			return module.GlobalType.FindClassConstructor();
+			return module.GlobalType.FindStaticConstructor();
 		}
 
 		public static bool isEmpty(MethodDef method) {
@@ -275,7 +275,7 @@ namespace de4dot.blocks {
 				return false;
 			if (method.ImplMap == null || method.ImplMap.Name.String != funcName)
 				return false;
-			return getDllName(dll).Equals(getDllName(method.ImplMap.Scope.Name.String), StringComparison.OrdinalIgnoreCase);
+			return getDllName(dll).Equals(getDllName(method.ImplMap.Module.Name.String), StringComparison.OrdinalIgnoreCase);
 		}
 
 #if PORT
@@ -359,7 +359,7 @@ namespace de4dot.blocks {
 						td = tr.Resolve();
 				}
 			}
-			return td != null && td.OwnerModule == module ? td : null;
+			return td != null && td.Module == module ? td : null;
 		}
 
 		static MethodDef getMethod(ModuleDef module, IMethod method, ITypeDefOrRef declaringType) {
@@ -540,16 +540,16 @@ namespace de4dot.blocks {
 
 		// Copies most things but not everything
 		public static MethodDef clone(MethodDef method) {
-			var newMethod = new MethodDefUser(method.Name, method.MethodSig, method.ImplFlags, method.Flags);
+			var newMethod = new MethodDefUser(method.Name, method.MethodSig, method.ImplAttributes, method.Attributes);
 			newMethod.Rid = method.Rid;
 			newMethod.DeclaringType2 = method.DeclaringType;
 			foreach (var pd in method.ParamList)
-				newMethod.ParamList.Add(new ParamDefUser(pd.Name, pd.Sequence, pd.Flags));
-			foreach (var gp in method.GenericParams) {
+				newMethod.ParamList.Add(new ParamDefUser(pd.Name, pd.Sequence, pd.Attributes));
+			foreach (var gp in method.GenericParameters) {
 				var newGp = new GenericParamUser(gp.Number, gp.Flags, gp.Name);
 				foreach (var gpc in newGp.GenericParamConstraints)
 					newGp.GenericParamConstraints.Add(new GenericParamConstraintUser(gpc.Constraint));
-				newMethod.GenericParams.Add(newGp);
+				newMethod.GenericParameters.Add(newGp);
 			}
 			newMethod.Body = new CilBody();
 			copyBodyFromTo(method, newMethod);
@@ -754,9 +754,9 @@ namespace de4dot.blocks {
 #endif
 
 		public static string getCustomArgAsString(CustomAttribute cattr, int arg) {
-			if (cattr == null || arg >= cattr.Arguments.Count)
+			if (cattr == null || arg >= cattr.ConstructorArguments.Count)
 				return null;
-			var carg = cattr.Arguments[arg];
+			var carg = cattr.ConstructorArguments[arg];
 			if (carg.Type.GetElementType() != ElementType.String)
 				return null;
 			return UTF8String.ToSystemStringOrEmpty((UTF8String)carg.Value);

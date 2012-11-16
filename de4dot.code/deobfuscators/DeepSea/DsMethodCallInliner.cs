@@ -298,9 +298,9 @@ done:
 		public static bool canInline(MethodDef method) {
 			if (method == null || method.Body == null)
 				return false;
-			if (method.Flags != (MethodAttributes.Assembly | MethodAttributes.Static))
+			if (method.Attributes != (MethodAttributes.Assembly | MethodAttributes.Static))
 				return false;
-			if (method.GenericParams.Count > 0)
+			if (method.GenericParameters.Count > 0)
 				return false;
 			if (method.Body.ExceptionHandlers.Count > 0)
 				return false;

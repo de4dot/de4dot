@@ -35,7 +35,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		}
 
 		bool isInOurModule(IMemberRef memberRef) {
-			return memberRef.OwnerModule == module;
+			return memberRef.Module == module;
 		}
 
 		Importer createImporter() {

@@ -281,7 +281,7 @@ namespace AssemblyData.methodsrewriter {
 						var mparams = getParameters(method.methodDef);
 						if (mparams.Count > 0) {
 							block.insert(n++, Instruction.Create(OpCodes.Ldc_I4, mparams.Count));
-							var objectType = method.methodDef.DeclaringType.OwnerModule.CorLibTypes.Object;
+							var objectType = method.methodDef.DeclaringType.Module.CorLibTypes.Object;
 							block.insert(n++, Instruction.Create(OpCodes.Newarr, objectType));
 							block.insert(n++, create(OpCodes.Stloc, new Operand(Operand.Type.TempObjArray)));
 

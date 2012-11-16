@@ -56,7 +56,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			foreach (var type in module.Types) {
 				if (!type.HasNestedTypes)
 					continue;
-				if ((type.Flags & ~TypeAttributes.Sealed) != 0)
+				if ((type.Attributes & ~TypeAttributes.Sealed) != 0)
 					continue;
 
 				if (!checkTamperDetectionClasses(type.NestedTypes))
@@ -92,7 +92,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		bool isTamperDetectionClass(TypeDef type) {
 			if (type.BaseType == null || type.BaseType.FullName != "System.Object")
 				return false;
-			if ((type.Flags & ~TypeAttributes.Sealed) != TypeAttributes.NestedAssembly)
+			if ((type.Attributes & ~TypeAttributes.Sealed) != TypeAttributes.NestedAssembly)
 				return false;
 
 			MethodDef cctor = null, initMethod = null;

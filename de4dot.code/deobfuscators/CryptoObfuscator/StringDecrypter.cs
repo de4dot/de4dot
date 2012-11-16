@@ -76,7 +76,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		string getResourceName() {
 			var defaultName = module.Assembly.Name.String + module.Assembly.Name.String;
 
-			var cctor = stringDecrypterType.FindClassConstructor();
+			var cctor = stringDecrypterType.FindStaticConstructor();
 			if (cctor == null)
 				return defaultName;
 

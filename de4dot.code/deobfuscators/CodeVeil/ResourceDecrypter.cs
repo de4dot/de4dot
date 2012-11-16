@@ -183,7 +183,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		}
 
 		static bool hasInterface(TypeDef type, string interfaceFullName) {
-			foreach (var iface in type.InterfaceImpls) {
+			foreach (var iface in type.Interfaces) {
 				if (iface.Interface.FullName == interfaceFullName)
 					return true;
 			}
@@ -324,7 +324,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 					continue;
 
 				Logger.v("Decrypted resource {0}", Utils.toCsharpString(resource.Name));
-				module.Resources[i] = new EmbeddedResource(resource.Name, decrypted, resource.Flags);
+				module.Resources[i] = new EmbeddedResource(resource.Name, decrypted, resource.Attributes);
 			}
 		}
 

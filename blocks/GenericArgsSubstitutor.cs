@@ -60,8 +60,8 @@ namespace de4dot.blocks {
 			var newSig = create(field.FieldSig, genericArgs);
 			if (newSig == field.FieldSig)
 				return field;
-			var ownerModule = field.DeclaringType != null ? field.DeclaringType.OwnerModule : null;
-			return new MemberRefUser(ownerModule, field.Name, newSig, field.DeclaringType);
+			var module = field.DeclaringType != null ? field.DeclaringType.Module : null;
+			return new MemberRefUser(module, field.Name, newSig, field.DeclaringType);
 		}
 
 		public static FieldSig create(FieldSig sig, GenericInstSig git) {
@@ -141,7 +141,7 @@ namespace de4dot.blocks {
 			if (newSig == sig)
 				return method;
 
-			return new MemberRefUser(method.DeclaringType.OwnerModule, method.Name, newSig, method.DeclaringType);
+			return new MemberRefUser(method.DeclaringType.Module, method.Name, newSig, method.DeclaringType);
 		}
 
 		GenericArgsSubstitutor(IList<TypeSig> genericArgs) {

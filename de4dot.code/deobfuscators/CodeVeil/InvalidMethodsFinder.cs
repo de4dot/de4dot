@@ -46,7 +46,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			if (retType.IsMethodVar)
 				return retType.Number >= sig.GenParamCount;
 			var dt = method.DeclaringType;
-			return dt == null || retType.Number >= dt.GenericParams.Count;
+			return dt == null || retType.Number >= dt.GenericParameters.Count;
 		}
 	}
 }

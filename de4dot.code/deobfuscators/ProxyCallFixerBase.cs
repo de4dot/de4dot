@@ -209,7 +209,7 @@ namespace de4dot.code.deobfuscators {
 			Logger.v("Finding all proxy delegates");
 			foreach (var tmp in getDelegateTypes()) {
 				var type = tmp;
-				var cctor = type.FindClassConstructor();
+				var cctor = type.FindStaticConstructor();
 				if (cctor == null || !cctor.HasBody)
 					continue;
 				if (!type.HasFields)
@@ -393,7 +393,7 @@ namespace de4dot.code.deobfuscators {
 
 		protected void find2() {
 			foreach (var type in getDelegateTypes()) {
-				var cctor = type.FindClassConstructor();
+				var cctor = type.FindStaticConstructor();
 				if (cctor == null || !cctor.HasBody)
 					continue;
 				if (!type.HasFields)

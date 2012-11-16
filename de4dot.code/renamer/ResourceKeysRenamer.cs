@@ -142,7 +142,7 @@ namespace de4dot.code.renamer {
 
 			var outStream = new MemoryStream();
 			ResourceWriter.write(module, outStream, resourceSet);
-			var newResource = new EmbeddedResource(resource.Name, outStream.ToArray(), resource.Flags);
+			var newResource = new EmbeddedResource(resource.Name, outStream.ToArray(), resource.Attributes);
 			int resourceIndex = module.Resources.IndexOf(resource);
 			if (resourceIndex < 0)
 				throw new ApplicationException("Could not find index of resource");

@@ -678,13 +678,13 @@ namespace de4dot.code {
 		static bool getMethodImplOptions(CustomAttribute cattr, ref int value) {
 			if (cattr.IsRawBlob)
 				return false;
-			if (cattr.Arguments.Count != 1)
+			if (cattr.ConstructorArguments.Count != 1)
 				return false;
-			if (cattr.Arguments[0].Type.ElementType != ElementType.I2 &&
-				cattr.Arguments[0].Type.FullName != "System.Runtime.CompilerServices.MethodImplOptions")
+			if (cattr.ConstructorArguments[0].Type.ElementType != ElementType.I2 &&
+				cattr.ConstructorArguments[0].Type.FullName != "System.Runtime.CompilerServices.MethodImplOptions")
 				return false;
 
-			var arg = cattr.Arguments[0].Value;
+			var arg = cattr.ConstructorArguments[0].Value;
 			if (arg is short) {
 				value = (short)arg;
 				return true;

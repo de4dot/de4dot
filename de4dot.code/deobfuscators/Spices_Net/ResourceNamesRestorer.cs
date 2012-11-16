@@ -73,7 +73,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 				return false;
 			if (type.HasProperties || type.HasEvents || type.HasFields)
 				return false;
-			if (type.InterfaceImpls.Count > 0)
+			if (type.Interfaces.Count > 0)
 				return false;
 			var method = type.FindMethod("GetResourceFileName");
 			if (!DotNetUtils.isMethod(method, "System.String", "(System.Globalization.CultureInfo)"))

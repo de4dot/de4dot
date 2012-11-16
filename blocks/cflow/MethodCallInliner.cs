@@ -41,7 +41,7 @@ namespace de4dot.blocks.cflow {
 		}
 
 		protected virtual bool canInline(MethodDef method) {
-			if (method.GenericParams.Count > 0)
+			if (method.GenericParameters.Count > 0)
 				return false;
 			if (method == blocks.Method)
 				return false;

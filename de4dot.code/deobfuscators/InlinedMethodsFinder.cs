@@ -36,7 +36,7 @@ namespace de4dot.code.deobfuscators {
 						continue;
 					if (!method.IsAssembly && !method.IsPrivateScope && !method.IsPrivate)
 						continue;
-					if (method.GenericParams.Count > 0)
+					if (method.GenericParameters.Count > 0)
 						continue;
 					if (method.Name == ".cctor")
 						continue;

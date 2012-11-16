@@ -243,7 +243,7 @@ namespace de4dot.code.deobfuscators {
 
 			var entryPoint = module.EntryPoint;
 			if (entryPoint != null) {
-				cctor = entryPoint.DeclaringType.FindClassConstructor();
+				cctor = entryPoint.DeclaringType.FindStaticConstructor();
 				if (cctor != null)
 					yield return cctor;
 			}
@@ -251,7 +251,7 @@ namespace de4dot.code.deobfuscators {
 			foreach (var type in module.GetTypes()) {
 				if (type == module.GlobalType)
 					continue;
-				cctor = type.FindClassConstructor();
+				cctor = type.FindStaticConstructor();
 				if (cctor == null)
 					continue;
 				yield return cctor;
