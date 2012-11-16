@@ -159,6 +159,16 @@ namespace de4dot.code.renamer.asmmodules {
 			add(mod.ExportedTypes);
 			if (mod.IsManifestModule)
 				add(mod.Assembly);
+			add(mod.VTableFixups);
+		}
+
+		void add(VTableFixups fixups) {
+			if (fixups == null)
+				return;
+			foreach (var fixup in fixups) {
+				foreach (var method in fixup)
+					push(method);
+			}
 		}
 
 		void add(AssemblyDef asm) {
