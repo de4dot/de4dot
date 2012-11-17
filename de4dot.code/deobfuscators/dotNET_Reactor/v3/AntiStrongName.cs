@@ -120,7 +120,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 		static bool checkCall(Instr instr, string methodFullname) {
 			if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt)
 				return false;
-			var calledMethod = instr.Operand as MethodReference;
+			var calledMethod = instr.Operand as IMethod;
 			if (calledMethod == null)
 				return false;
 			return calledMethod.ToString() == methodFullname;
@@ -129,13 +129,13 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 		static bool checkCall(Instr instr, string returnType, string parameters) {
 			if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt)
 				return false;
-			var calledMethod = instr.Operand as MethodReference;
+			var calledMethod = instr.Operand as IMethod;
 			if (calledMethod == null)
 				return false;
 			return DotNetUtils.isMethod(calledMethod, returnType, parameters);
 		}
 
-		static bool checkLdloc(IList<VariableDefinition> locals, Instr instr, VariableDefinition local) {
+		static bool checkLdloc(IList<Local> locals, Instr instr, Local local) {
 			if (!instr.isLdloc())
 				return false;
 			if (Instr.getLocalVar(locals, instr) != local)
@@ -143,7 +143,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			return true;
 		}
 
-		static bool checkStloc(IList<VariableDefinition> locals, Instr instr, VariableDefinition local) {
+		static bool checkStloc(IList<Local> locals, Instr instr, Local local) {
 			if (!instr.isStloc())
 				return false;
 			if (Instr.getLocalVar(locals, instr) != local)

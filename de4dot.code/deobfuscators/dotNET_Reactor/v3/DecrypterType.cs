@@ -27,12 +27,12 @@ using de4dot.PE;
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 	// Find the type that decrypts strings and calls the native lib
 	class DecrypterType {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		TypeDef decrypterType;
 		MethodDef stringDecrypter1;
 		MethodDef stringDecrypter2;
 		List<MethodDef> initMethods = new List<MethodDef>();
-		List<ModuleReference> moduleReferences = new List<ModuleReference>();
+		List<ModuleRef> moduleReferences = new List<ModuleRef>();
 		Resource linkedResource;
 
 		public bool Detected {
@@ -59,10 +59,6 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			get { return initMethods; }
 		}
 
-		public List<ModuleReference> ModuleReferences {
-			get { return moduleReferences; }
-		}
-
 		public IEnumerable<MethodDef> StringDecrypters {
 			get {
 				return new List<MethodDef> {
@@ -72,11 +68,11 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			}
 		}
 
-		public DecrypterType(ModuleDefinition module) {
+		public DecrypterType(ModuleDefMD module) {
 			this.module = module;
 		}
 
-		public DecrypterType(ModuleDefinition module, DecrypterType oldOne) {
+		public DecrypterType(ModuleDefMD module, DecrypterType oldOne) {
 			this.module = module;
 			this.decrypterType = lookup(oldOne.decrypterType, "Could not find decrypterType");
 			this.stringDecrypter1 = lookup(oldOne.stringDecrypter1, "Could not find stringDecrypter1");
@@ -109,11 +105,11 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 
 		void updateModuleReferences() {
 			foreach (var method in decrypterType.Methods) {
-				if (method.PInvokeInfo != null) {
-					switch (method.PInvokeInfo.EntryPoint) {
+				if (method.ImplMap != null) {
+					switch (method.ImplMap.Name.String) {
 					case "nr_nli":
 					case "nr_startup":
-						moduleReferences.Add(method.PInvokeInfo.Module);
+						moduleReferences.Add(method.ImplMap.Module);
 						break;
 					}
 				}
@@ -123,7 +119,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 
 		void updateLinkedResource() {
 			foreach (var modref in moduleReferences) {
-				var resource = DotNetUtils.getResource(module, modref.Name) as LinkedResource;
+				var resource = DotNetUtils.getResource(module, modref.Name.String) as LinkedResource;
 				if (resource == null)
 					continue;
 
@@ -133,7 +129,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 		}
 
 		MethodDef getStringDecrypter(TypeDef type, string name) {
-			var method = DotNetUtils.getMethod(type, name);
+			var method = type.FindMethod(name);
 			if (method == null)
 				return null;
 			if (!DotNetUtils.isMethod(method, "System.String", "(System.String)"))
@@ -152,9 +148,10 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			return Encoding.Unicode.GetString(Convert.FromBase64String(s));
 		}
 
-		public bool patch(PeImage peImage) {
+		public bool patch(byte[] peData) {
 			try {
-				return patch2(peImage);
+				using (var peImage = new MyPEImage(peData))
+					return patch2(peImage);
 			}
 			catch {
 				Logger.w("Could not patch the file");
@@ -162,9 +159,9 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			}
 		}
 
-		bool patch2(PeImage peImage) {
-			uint numPatches = peImage.offsetReadUInt32(peImage.ImageLength - 4);
-			uint offset = checked(peImage.ImageLength - 4 - numPatches * 8);
+		bool patch2(MyPEImage peImage) {
+			uint numPatches = peImage.offsetReadUInt32(peImage.Length - 4);
+			uint offset = checked(peImage.Length - 4 - numPatches * 8);
 
 			bool startedPatchingBadData = false;
 			for (uint i = 0; i < numPatches; i++, offset += 8) {

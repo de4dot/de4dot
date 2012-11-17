@@ -22,10 +22,137 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
+using dot10.IO;
+using dot10.PE;
 using dot10.DotNet;
-using de4dot.PE;
+using dot10.DotNet.MD;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
+	sealed class MyPEImage : IDisposable {
+		IPEImage peImage;
+		byte[] peImageData;
+		IImageStream peStream;
+		DotNetFile dnFile;
+		ImageSectionHeader dotNetSection;
+		bool ownPeImage;
+
+		public IPEImage PEImage {
+			get { return peImage; }
+		}
+
+		public uint Length {
+			get { return (uint)peStream.Length; }
+		}
+
+		public MyPEImage(IPEImage peImage) {
+			initialize(peImage);
+		}
+
+		public MyPEImage(byte[] peImageData) {
+			this.ownPeImage = true;
+			this.peImageData = peImageData;
+			initialize(new PEImage(peImageData));
+		}
+
+		void initialize(IPEImage peImage) {
+			this.peImage = peImage;
+			this.peStream = peImage.CreateFullStream();
+
+			//TODO: Only init this if they use the .NET MD
+			var dotNetDir = peImage.ImageNTHeaders.OptionalHeader.DataDirectories[14];
+			if (dotNetDir.VirtualAddress != 0 && dotNetDir.Size >= 0x48) {
+				dnFile = DotNetFile.Load(peImage, false);
+				dotNetSection = findSection(dotNetDir.VirtualAddress);
+			}
+		}
+
+		ImageSectionHeader findSection(RVA rva) {
+			foreach (var section in peImage.ImageSectionHeaders) {
+				if (section.VirtualAddress <= rva && rva < section.VirtualAddress + Math.Max(section.VirtualSize, section.SizeOfRawData))
+					return section;
+			}
+			return null;
+		}
+
+		static bool isInside(ImageSectionHeader section, uint offset, uint length) {
+			return offset >= section.PointerToRawData && offset + length <= section.PointerToRawData + section.SizeOfRawData;
+		}
+
+		public void offsetWriteUInt32(uint offset, uint val) {
+			peImageData[offset + 0] = (byte)val;
+			peImageData[offset + 1] = (byte)(val >> 8);
+			peImageData[offset + 2] = (byte)(val >> 16);
+			peImageData[offset + 3] = (byte)(val >> 24);
+		}
+
+		public void offsetWriteUInt16(uint offset, ushort val) {
+			peImageData[offset + 0] = (byte)val;
+			peImageData[offset + 1] = (byte)(val >> 8);
+		}
+
+		public uint offsetReadUInt32(uint offset) {
+			peStream.Position = offset;
+			return peStream.ReadUInt32();
+		}
+
+		public ushort offsetReadUInt16(uint offset) {
+			peStream.Position = offset;
+			return peStream.ReadUInt16();
+		}
+
+		public byte[] offsetReadBytes(uint offset, int size) {
+			peStream.Position = offset;
+			return peStream.ReadBytes(size);
+		}
+
+		public void offsetWrite(uint offset, byte[] data) {
+			Array.Copy(data, 0, peImageData, offset, data.Length);
+		}
+
+		bool intersect(uint offset1, uint length1, uint offset2, uint length2) {
+			return !(offset1 + length1 <= offset2 || offset2 + length2 <= offset1);
+		}
+
+		bool intersect(uint offset, uint length, IFileSection location) {
+			return intersect(offset, length, (uint)location.StartOffset, (uint)(location.EndOffset - location.StartOffset));
+		}
+
+		public bool dotNetSafeWriteOffset(uint offset, byte[] data) {
+			if (dnFile != null) {
+				uint length = (uint)data.Length;
+
+				if (!isInside(dotNetSection, offset, length))
+					return false;
+				if (intersect(offset, length, dnFile.MetaData.ImageCor20Header))
+					return false;
+				if (intersect(offset, length, (uint)dnFile.MetaData.TablesStream.FileOffset, dnFile.MetaData.TablesStream.HeaderLength))
+					return false;
+			}
+
+			offsetWrite(offset, data);
+			return true;
+		}
+
+		public bool dotNetSafeWrite(uint rva, byte[] data) {
+			return dotNetSafeWriteOffset((uint)peImage.ToFileOffset((RVA)rva), data);
+		}
+
+		public void Dispose() {
+			if (ownPeImage) {
+				if (dnFile != null)
+					dnFile.Dispose();
+				if (peImage != null)
+					peImage.Dispose();
+			}
+			if (peStream != null)
+				peStream.Dispose();
+
+			dnFile = null;
+			peImage = null;
+			peStream = null;
+		}
+	}
+
 	class IniFile {
 		Dictionary<string, string> nameToValue = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
@@ -77,7 +204,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			0x73, 0x33, 0x6E, 0x6D, 0x34, 0x32, 0x64, 0x35,
 		};
 
-		PeImage peImage;
+		IPEImage peImage;
 		List<UnpackedFile> satelliteAssemblies = new List<UnpackedFile>();
 		uint[] sizes;
 		string[] filenames;
@@ -87,29 +214,35 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			get { return satelliteAssemblies; }
 		}
 
-		public ApplicationModeUnpacker(PeImage peImage) {
+		public ApplicationModeUnpacker(IPEImage peImage) {
 			this.peImage = peImage;
 		}
 
 		public byte[] unpack() {
 			byte[] data = null;
+			MyPEImage myPeImage = null;
 			try {
-				data = unpack2();
+				myPeImage = new MyPEImage(peImage);
+				data = unpack2(myPeImage);
 			}
 			catch {
+			}
+			finally {
+				if (myPeImage != null)
+					myPeImage.Dispose();
 			}
 			if (data != null)
 				return data;
 
 			if (shouldUnpack)
-				Logger.w("Could not unpack the file");
+				Logger.w("Could not unpack file: {0}", peImage.FileName ?? "(unknown filename)");
 			return null;
 		}
 
-		byte[] unpack2() {
+		byte[] unpack2(MyPEImage peImage) {
 			shouldUnpack = false;
-			uint headerOffset = peImage.ImageLength - 12;
-			uint offsetEncryptedAssembly = checkOffset(peImage.offsetReadUInt32(headerOffset));
+			uint headerOffset = (uint)peImage.Length - 12;
+			uint offsetEncryptedAssembly = checkOffset(peImage, peImage.offsetReadUInt32(headerOffset));
 			uint ezencryptionLibLength = peImage.offsetReadUInt32(headerOffset + 4);
 			uint iniFileLength = peImage.offsetReadUInt32(headerOffset + 8);
 
@@ -135,30 +268,31 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 				return null;
 
 			byte[] ezencryptionLibData = decompress1(peImage.offsetReadBytes(ezencryptionLibOffset, (int)ezencryptionLibLength));
-			var ezencryptionLibModule = ModuleDefinition.ReadModule(new MemoryStream(ezencryptionLibData));
+			var ezencryptionLibModule = ModuleDefMD.Load(ezencryptionLibData);
 			var decrypter = new ApplicationModeDecrypter(ezencryptionLibModule);
 			if (!decrypter.Detected)
 				return null;
 
-			var mainAssembly = unpackEmbeddedFile(0, decrypter);
+			var mainAssembly = unpackEmbeddedFile(peImage, 0, decrypter);
 			decrypter.MemoryPatcher.patch(mainAssembly.data);
 			for (int i = 1; i < filenames.Length; i++)
-				satelliteAssemblies.Add(unpackEmbeddedFile(i, decrypter));
+				satelliteAssemblies.Add(unpackEmbeddedFile(peImage, i, decrypter));
 
 			clearDllBit(mainAssembly.data);
 			return mainAssembly.data;
 		}
 
 		static void clearDllBit(byte[] peImageData) {
-			var mainPeImage = new PeImage(peImageData);
-			uint characteristicsOffset = mainPeImage.FileHeaderOffset + 18;
-			ushort characteristics = mainPeImage.offsetReadUInt16(characteristicsOffset);
-			characteristics &= 0xDFFF;
-			characteristics |= 2;
-			mainPeImage.offsetWriteUInt16(characteristicsOffset, characteristics);
+			using (var mainPeImage = new MyPEImage(peImageData)) {
+				uint characteristicsOffset = (uint)mainPeImage.PEImage.ImageNTHeaders.FileHeader.StartOffset + 18;
+				ushort characteristics = mainPeImage.offsetReadUInt16(characteristicsOffset);
+				characteristics &= 0xDFFF;
+				characteristics |= 2;
+				mainPeImage.offsetWriteUInt16(characteristicsOffset, characteristics);
+			}
 		}
 
-		UnpackedFile unpackEmbeddedFile(int index, ApplicationModeDecrypter decrypter) {
+		UnpackedFile unpackEmbeddedFile(MyPEImage peImage, int index, ApplicationModeDecrypter decrypter) {
 			uint offset = 0;
 			for (int i = 0; i < index + 1; i++)
 				offset += sizes[i];
@@ -178,8 +312,8 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			return list.ToArray();
 		}
 
-		uint checkOffset(uint offset) {
-			if (offset >= peImage.ImageLength)
+		uint checkOffset(MyPEImage peImage, uint offset) {
+			if (offset >= peImage.Length)
 				throw new Exception();
 			return offset;
 		}

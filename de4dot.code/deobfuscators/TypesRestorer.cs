@@ -633,6 +633,10 @@ namespace de4dot.code.deobfuscators {
 			if (field != null)
 				return field.FieldSig.GetFieldType().GetElementType() == ElementType.Object;
 
+			var sig = o as TypeSig;
+			if (sig != null)
+				return sig.ElementType == ElementType.Object;
+
 			throw new ApplicationException(string.Format("Unknown type: {0}", o.GetType()));
 		}
 	}

@@ -198,7 +198,7 @@ namespace de4dot.code {
 					module = assemblyModule.load(unpackedData);
 				}
 				catch {
-					Logger.w("Could not load unpacked data. Deobfuscator: {0}", deob.TypeLong);
+					Logger.w("Could not load unpacked data. File: {0}, deobfuscator: {0}", peImage.FileName ?? "(unknown filename)", deob.TypeLong);
 					continue;
 				}
 				this.deob = deob;

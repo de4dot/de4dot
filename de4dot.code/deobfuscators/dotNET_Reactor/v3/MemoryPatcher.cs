@@ -135,10 +135,11 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 		}
 
 		public void patch(byte[] peImageData) {
-			var peImage = new PeImage(peImageData);
-			foreach (var info in patchInfos) {
-				for (int i = 0; i < info.offsets.Length; i++)
-					peImage.dotNetSafeWriteOffset((uint)info.offsets[i], BitConverter.GetBytes(info.values[i]));
+			using (var peImage = new MyPEImage(peImageData)) {
+				foreach (var info in patchInfos) {
+					for (int i = 0; i < info.offsets.Length; i++)
+						peImage.dotNetSafeWriteOffset((uint)info.offsets[i], BitConverter.GetBytes(info.values[i]));
+				}
 			}
 		}
 	}

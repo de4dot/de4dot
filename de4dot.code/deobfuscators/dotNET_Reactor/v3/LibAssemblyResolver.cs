@@ -25,7 +25,7 @@ using de4dot.blocks;
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 	// Find the assembly resolver that's used in lib mode (3.8+)
 	class LibAssemblyResolver {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		MethodDef initMethod;
 		List<EmbeddedResource> resources = new List<EmbeddedResource>();
 
@@ -41,7 +41,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			get { return resources; }
 		}
 
-		public LibAssemblyResolver(ModuleDefinition module) {
+		public LibAssemblyResolver(ModuleDefMD module) {
 			this.module = module;
 		}
 
@@ -69,7 +69,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 				var type = method.DeclaringType;
 				if (!new FieldTypes(type).exactly(requiredFields))
 					continue;
-				var ctor = DotNetUtils.getMethod(type, ".ctor");
+				var ctor = type.FindMethod(".ctor");
 				if (ctor == null)
 					continue;
 				var handler = DeobUtils.getResolveMethod(ctor);

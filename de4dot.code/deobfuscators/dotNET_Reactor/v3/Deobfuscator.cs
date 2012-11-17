@@ -21,11 +21,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
+using dot10.IO;
+using dot10.PE;
 using dot10.DotNet;
 using dot10.DotNet.Emit;
-using Mono.MyStuff;
 using de4dot.blocks;
-using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
@@ -125,7 +125,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 				this.RenamingOptions &= ~RenamingOptions.RemoveNamespaceIfOneType;
 		}
 
-		public override byte[] unpackNativeFile(PeImage peImage) {
+		public override byte[] unpackNativeFile(IPEImage peImage) {
 			var unpacker = new ApplicationModeUnpacker(peImage);
 			var data = unpacker.unpack();
 			if (data == null)
@@ -146,15 +146,14 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 				return false;
 
 			var fileData = ModuleBytes ?? DeobUtils.readModule(module);
-			var peImage = new PeImage(fileData);
-			if (!decrypterType.patch(peImage))
+			if (!decrypterType.patch(fileData))
 				return false;
 
 			newFileData = fileData;
 			return true;
 		}
 
-		public override IDeobfuscator moduleReloaded(ModuleDefinition module) {
+		public override IDeobfuscator moduleReloaded(ModuleDefMD module) {
 			var newOne = new Deobfuscator(options);
 			newOne.setModule(module);
 			newOne.decrypterType = new DecrypterType(module, decrypterType);
@@ -162,7 +161,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			return newOne;
 		}
 
-		public override void init(ModuleDefinition module) {
+		public override void init(ModuleDefMD module) {
 			base.init(module);
 		}
 
@@ -298,7 +297,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 
 		void dumpResourceFiles() {
 			foreach (var resource in libAssemblyResolver.Resources) {
-				var mod = ModuleDefinition.ReadModule(resource.GetResourceStream());
+				var mod = ModuleDefMD.Load(resource.Data.ReadAllBytes());
 				addResourceToBeRemoved(resource, string.Format("Embedded assembly: {0}", mod.Assembly.FullName));
 				DeobfuscatedFile.createAssemblyFile(resource.GetResourceData(),
 							Utils.getAssemblySimpleName(mod.Assembly.FullName),
@@ -324,7 +323,6 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 
 			if (canRemoveDecrypterType && !isTypeCalled(decrypterType.Type)) {
 				addTypeToBeRemoved(decrypterType.Type, "Decrypter type");
-				addModuleReferencesToBeRemoved(decrypterType.ModuleReferences, "Native lib module reference");
 				addResourceToBeRemoved(decrypterType.LinkedResource, "Native lib linked resource");
 			}
 
