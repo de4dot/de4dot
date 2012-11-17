@@ -25,7 +25,7 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 	class ResourceResolver {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		EncryptedResource encryptedResource;
 		MethodDef initMethod;
 
@@ -45,12 +45,12 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			get { return encryptedResource.FoundResource; }
 		}
 
-		public ResourceResolver(ModuleDefinition module) {
+		public ResourceResolver(ModuleDefMD module) {
 			this.module = module;
 			this.encryptedResource = new EncryptedResource(module);
 		}
 
-		public ResourceResolver(ModuleDefinition module, ResourceResolver oldOne) {
+		public ResourceResolver(ModuleDefMD module, ResourceResolver oldOne) {
 			this.module = module;
 			this.encryptedResource = new EncryptedResource(module, oldOne.encryptedResource);
 		}
@@ -106,31 +106,31 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		}
 
 		MethodDef findInitMethod(ISimpleDeobfuscator simpleDeobfuscator) {
-			var ctor = DotNetUtils.getMethod(Type, ".ctor");
+			var ctor = Type.FindMethod(".ctor");
 			foreach (var method in Type.Methods) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
 				if (!DotNetUtils.isMethod(method, "System.Void", "()"))
 					continue;
-				if (method.Body.Variables.Count > 1)
+				if (method.Body.LocalList.Count > 1)
 					continue;
 
 				simpleDeobfuscator.deobfuscate(method);
 				bool stsfldUsed = false, newobjUsed = false;
 				foreach (var instr in method.Body.Instructions) {
 					if (instr.OpCode.Code == Code.Stsfld) {
-						var field = instr.Operand as FieldReference;
-						if (field == null || field.FieldType.FullName != "System.Boolean")
+						var field = instr.Operand as IField;
+						if (field == null || field.FieldSig.GetFieldType().GetElementType() != ElementType.Boolean)
 							continue;
-						if (!MemberReferenceHelper.compareTypes(Type, field.DeclaringType))
+						if (!new SigComparer().Equals(Type, field.DeclaringType))
 							continue;
 						stsfldUsed = true;
 					}
 					else if (instr.OpCode.Code == Code.Newobj) {
-						var calledCtor = instr.Operand as MethodReference;
+						var calledCtor = instr.Operand as IMethod;
 						if (calledCtor == null)
 							continue;
-						if (!MemberReferenceHelper.compareMethodReferenceAndDeclaringType(calledCtor, ctor))
+						if (!MethodEqualityComparer.CompareDeclaringTypes.Equals(calledCtor, ctor))
 							continue;
 						newobjUsed = true;
 					}
@@ -146,7 +146,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		public EmbeddedResource mergeResources() {
 			if (encryptedResource.Resource == null)
 				return null;
-			DeobUtils.decryptAndAddResources(module, encryptedResource.Resource.Name, () => {
+			DeobUtils.decryptAndAddResources(module, encryptedResource.Resource.Name.String, () => {
 				return QuickLZ.decompress(encryptedResource.decrypt());
 			});
 			return encryptedResource.Resource;

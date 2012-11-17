@@ -25,7 +25,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 	class ProxyCallFixer : ProxyCallFixer3 {
 		ISimpleDeobfuscator simpleDeobfuscator;
 
-		public ProxyCallFixer(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator)
+		public ProxyCallFixer(ModuleDefMD module, ISimpleDeobfuscator simpleDeobfuscator)
 			: base(module) {
 			this.simpleDeobfuscator = simpleDeobfuscator;
 		}
@@ -47,7 +47,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		static MethodDef checkType(TypeDef type) {
 			if (!new FieldTypes(type).exactly(requiredFields))
 				return null;
-			if (DotNetUtils.getMethod(type, ".cctor") == null)
+			if (type.FindStaticConstructor() == null)
 				return null;
 
 			return checkMethods(type);
@@ -85,7 +85,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 1; i++) {
 				var ldci4 = instrs[i];
-				if (!DotNetUtils.isLdcI4(ldci4))
+				if (!ldci4.IsLdcI4())
 					continue;
 
 				var call = instrs[i + 1];
@@ -95,13 +95,13 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				if (calledMethod == null || !isDelegateCreatorMethod(calledMethod))
 					continue;
 
-				return module.LookupToken(0x02000000 + DotNetUtils.getLdcI4Value(ldci4)) as TypeDef;
+				return module.ResolveToken(0x02000000 + ldci4.GetLdcI4Value()) as TypeDef;
 			}
 			return null;
 		}
 
-		protected override void getCallInfo(object context, FieldDef field, out MethodReference calledMethod, out OpCode callOpcode) {
-			calledMethod = module.LookupToken(0x06000000 + field.MDToken.ToInt32()) as MethodReference;
+		protected override void getCallInfo(object context, FieldDef field, out IMethod calledMethod, out OpCode callOpcode) {
+			calledMethod = module.ResolveToken(0x06000000 + field.MDToken.ToInt32()) as IMethod;
 			callOpcode = OpCodes.Call;
 		}
 	}

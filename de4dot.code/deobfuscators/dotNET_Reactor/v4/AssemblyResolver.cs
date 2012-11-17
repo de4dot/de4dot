@@ -19,8 +19,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using dot10.DotNet;
+using dot10.IO;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
@@ -39,7 +39,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 	}
 
 	class AssemblyResolver {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		TypeDef assemblyResolverType;
 		MethodDef assemblyResolverInitMethod;
 		MethodDef assemblyResolverMethod;
@@ -56,11 +56,11 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			get { return assemblyResolverInitMethod; }
 		}
 
-		public AssemblyResolver(ModuleDefinition module) {
+		public AssemblyResolver(ModuleDefMD module) {
 			this.module = module;
 		}
 
-		public AssemblyResolver(ModuleDefinition module, AssemblyResolver oldOne) {
+		public AssemblyResolver(ModuleDefMD module, AssemblyResolver oldOne) {
 			this.module = module;
 			this.assemblyResolverType = lookup(oldOne.assemblyResolverType, "Could not find assembly resolver type");
 			this.assemblyResolverMethod = lookup(oldOne.assemblyResolverMethod, "Could not find assembly resolver method");
@@ -75,7 +75,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			if (checkMethod(simpleDeobfuscator, module.EntryPoint))
 				return;
 			if (module.EntryPoint != null) {
-				if (checkMethod(simpleDeobfuscator, DotNetUtils.getMethod(module.EntryPoint.DeclaringType, ".cctor")))
+				if (checkMethod(simpleDeobfuscator, module.EntryPoint.DeclaringType.FindStaticConstructor()))
 					return;
 			}
 		}
@@ -181,7 +181,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				var resource = rsrc as EmbeddedResource;
 				if (resource == null)
 					continue;
-				if (!Utils.StartsWith(resource.Name, prefix, StringComparison.Ordinal))
+				if (!Utils.StartsWith(resource.Name.String, prefix, StringComparison.Ordinal))
 					continue;
 
 				result.Add(resource);
@@ -193,8 +193,8 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		static int unknownNameCounter = 0;
 		static string getAssemblyName(EmbeddedResource resource) {
 			try {
-				var resourceModule = ModuleDefinition.ReadModule(new MemoryStream(resource.GetResourceData()));
-				return resourceModule.Assembly.Name.FullName;
+				var resourceModule = ModuleDefMD.Load(resource.Data.ReadAllBytes());
+				return resourceModule.Assembly.FullName;
 			}
 			catch {
 				return string.Format("unknown_name_{0}", unknownNameCounter++);

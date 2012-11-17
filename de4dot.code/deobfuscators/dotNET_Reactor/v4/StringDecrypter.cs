@@ -27,7 +27,7 @@ using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 	class StringDecrypter {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		EncryptedResource encryptedResource;
 		List<DecrypterInfo> decrypterInfos = new List<DecrypterInfo>();
 		MethodDef otherStringDecrypter;
@@ -74,12 +74,12 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			get { return otherStringDecrypter; }
 		}
 
-		public StringDecrypter(ModuleDefinition module) {
+		public StringDecrypter(ModuleDefMD module) {
 			this.module = module;
 			this.encryptedResource = new EncryptedResource(module);
 		}
 
-		public StringDecrypter(ModuleDefinition module, StringDecrypter oldOne) {
+		public StringDecrypter(ModuleDefMD module, StringDecrypter oldOne) {
 			this.module = module;
 			this.stringDecrypterVersion = oldOne.stringDecrypterVersion;
 			this.encryptedResource = new EncryptedResource(module, oldOne.encryptedResource);
@@ -137,12 +137,15 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic || !method.HasBody)
 					continue;
-				if (method.MethodReturnType.ReturnType.FullName != "System.String")
+				var sig = method.MethodSig;
+				if (sig == null)
 					continue;
-				if (method.Parameters.Count != 1)
+				if (sig.RetType.GetElementType() != ElementType.String)
 					continue;
-				if (method.Parameters[0].ParameterType.FullName != "System.Object" &&
-					method.Parameters[0].ParameterType.FullName != "System.String")
+				if (sig.Params.Count != 1)
+					continue;
+				if (sig.Params[0].GetElementType() != ElementType.Object &&
+					sig.Params[0].GetElementType() != ElementType.String)
 					continue;
 
 				otherStringDecrypter = method;
@@ -176,7 +179,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			foreach (var calledMethod in DotNetUtils.getCalledMethods(module, method)) {
 				if (calledMethod.DeclaringType != method.DeclaringType)
 					continue;
-				if (calledMethod.MethodReturnType.ReturnType.FullName != "System.Byte[]")
+				if (calledMethod.MethodSig.GetRetType().GetFullName() != "System.Byte[]")
 					continue;
 				var localTypes = new LocalTypes(calledMethod);
 				if (!localTypes.all(requiredTypes))

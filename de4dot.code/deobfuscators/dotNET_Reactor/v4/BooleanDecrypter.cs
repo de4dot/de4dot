@@ -23,7 +23,7 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 	class BooleanDecrypter {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		EncryptedResource encryptedResource;
 		byte[] fileData;
 		byte[] decryptedData;
@@ -44,12 +44,12 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			get { return encryptedResource.Resource; }
 		}
 
-		public BooleanDecrypter(ModuleDefinition module) {
+		public BooleanDecrypter(ModuleDefMD module) {
 			this.module = module;
 			this.encryptedResource = new EncryptedResource(module);
 		}
 
-		public BooleanDecrypter(ModuleDefinition module, BooleanDecrypter oldOne) {
+		public BooleanDecrypter(ModuleDefMD module, BooleanDecrypter oldOne) {
 			this.module = module;
 			this.encryptedResource = new EncryptedResource(module, oldOne.encryptedResource);
 		}

@@ -23,7 +23,7 @@ using de4dot.blocks;
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 	// Detect some empty class that is called from most .ctor's
 	class EmptyClass {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		MethodDef emptyMethod;
 
 		public MethodDef Method {
@@ -34,7 +34,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			get { return emptyMethod != null ? emptyMethod.DeclaringType : null; }
 		}
 
-		public EmptyClass(ModuleDefinition module) {
+		public EmptyClass(ModuleDefMD module) {
 			this.module = module;
 			init();
 		}

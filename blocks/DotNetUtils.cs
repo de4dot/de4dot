@@ -81,36 +81,33 @@ namespace de4dot.blocks {
 	}
 #endif
 
-#if PORT
 	public class CallCounter {
-		Dictionary<de4dot.blocks.OLD_REMOVE.MethodReferenceAndDeclaringTypeKey, int> calls = new Dictionary<de4dot.blocks.OLD_REMOVE.MethodReferenceAndDeclaringTypeKey, int>();
+		Dictionary<IMethod, int> calls = new Dictionary<IMethod, int>(MethodEqualityComparer.CompareDeclaringTypes);
 
-		public void add(MethodReference calledMethod) {
+		public void add(IMethod calledMethod) {
 			int count;
-			var key = new de4dot.blocks.OLD_REMOVE.MethodReferenceAndDeclaringTypeKey(calledMethod);
-			calls.TryGetValue(key, out count);
-			calls[key] = count + 1;
+			calls.TryGetValue(calledMethod, out count);
+			calls[calledMethod] = count + 1;
 		}
 
-		public MethodReference most() {
+		public IMethod most() {
 			int numCalls;
 			return most(out numCalls);
 		}
 
-		public MethodReference most(out int numCalls) {
-			MethodReference method = null;
+		public IMethod most(out int numCalls) {
+			IMethod method = null;
 			int callCount = 0;
 			foreach (var key in calls.Keys) {
 				if (calls[key] > callCount) {
 					callCount = calls[key];
-					method = key.MethodReference;
+					method = key;
 				}
 			}
 			numCalls = callCount;
 			return method;
 		}
 	}
-#endif
 
 #if PORT
 	public class MethodCalls {
@@ -300,13 +297,13 @@ namespace de4dot.blocks {
 			}
 			return null;
 		}
+#endif
 
-		public static MethodDef getMethod(ModuleDefinition module, MethodReference method) {
+		public static MethodDef getMethod(ModuleDefMD module, IMethod method) {
 			if (method == null)
 				return null;
 			return getMethod(module, method, method.DeclaringType);
 		}
-#endif
 
 		public static MethodDef getMethod2(ModuleDefMD module, IMethod method) {
 			if (method == null)
@@ -1090,29 +1087,22 @@ namespace de4dot.blocks {
 			return count;
 		}
 
-#if PORT
-		// Doesn't fix everything (eg. T[] aren't replaced with eg. int[], but T -> int will be fixed)
-		public static IList<TypeReference> replaceGenericParameters(GenericInstanceType typeOwner, GenericInstanceMethod methodOwner, IList<TypeReference> types) {
-			//TODO: You should use MemberRefInstance.cs
+		public static IList<TypeSig> replaceGenericParameters(GenericInstSig typeOwner, MethodSpec methodOwner, IList<TypeSig> types) {
+			if (typeOwner == null && methodOwner == null)
+				return types;
 			for (int i = 0; i < types.Count; i++)
 				types[i] = getGenericArgument(typeOwner, methodOwner, types[i]);
 			return types;
 		}
 
-		public static TypeReference getGenericArgument(GenericInstanceType typeOwner, GenericInstanceMethod methodOwner, TypeReference type) {
-			var gp = type as GenericParameter;
-			if (gp == null)
-				return type;
-
-			if (typeOwner != null && MemberReferenceHelper.compareTypes(typeOwner.ElementType, gp.Owner as TypeReference))
-				return typeOwner.GenericArguments[gp.Position];
-
-			if (methodOwner != null && MemberReferenceHelper.compareMethodReferenceAndDeclaringType(methodOwner.ElementMethod, gp.Owner as MethodReference))
-				return methodOwner.GenericArguments[gp.Position];
-
-			return type;
+		public static TypeSig getGenericArgument(GenericInstSig typeOwner, MethodSpec methodOwner, TypeSig type) {
+			var typeArgs = typeOwner == null ? null : typeOwner.GenericArguments;
+			var genMethodArgs = methodOwner == null || methodOwner.GenericInstMethodSig == null ?
+						null : methodOwner.GenericInstMethodSig.GenericArguments;
+			return GenericArgsSubstitutor.create(type, typeArgs, genMethodArgs);
 		}
 
+#if PORT
 		public static Instruction getInstruction(IList<Instruction> instructions, ref int index) {
 			for (int i = 0; i < 10; i++) {
 				if (index < 0 || index >= instructions.Count)

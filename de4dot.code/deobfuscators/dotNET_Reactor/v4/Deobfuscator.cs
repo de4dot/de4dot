@@ -21,10 +21,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
+using dot10.PE;
 using dot10.DotNet;
 using dot10.DotNet.Emit;
 using dot10.DotNet.Writer;
-using Mono.MyStuff;
 using de4dot.blocks;
 using de4dot.PE;
 
@@ -158,7 +158,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				this.RenamingOptions &= ~RenamingOptions.RemoveNamespaceIfOneType;
 		}
 
-		public override byte[] unpackNativeFile(PeImage peImage) {
+		public override byte[] unpackNativeFile(IPEImage peImage) {
 			var data = new NativeImageUnpacker(peImage).unpack();
 			if (data == null)
 				return null;
@@ -168,7 +168,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			return data;
 		}
 
-		public override void init(ModuleDefinition module) {
+		public override void init(ModuleDefMD module) {
 			base.init(module);
 		}
 
@@ -386,7 +386,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				return false;
 
 			if (options.DumpNativeMethods) {
-				using (var fileStream = new FileStream(module.FullyQualifiedName + ".native", FileMode.Create, FileAccess.Write, FileShare.Read)) {
+				using (var fileStream = new FileStream(module.Location + ".native", FileMode.Create, FileAccess.Write, FileShare.Read)) {
 					var sortedTokens = new List<uint>(tokenToNativeCode.Keys);
 					sortedTokens.Sort();
 					var writer = new BinaryWriter(fileStream);
@@ -404,7 +404,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			return true;
 		}
 
-		public override IDeobfuscator moduleReloaded(ModuleDefinition module) {
+		public override IDeobfuscator moduleReloaded(ModuleDefMD module) {
 			var newOne = new Deobfuscator(options);
 			newOne.setModule(module);
 			newOne.fileData = fileData;
@@ -567,7 +567,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 					var instr = instructions[i];
 					if (instr.OpCode.Code != Code.Ldtoken)
 						continue;
-					if (!MemberReferenceHelper.compareTypes(type, instr.Operand as TypeReference))
+					if (!new SigComparer().Equals(type, instr.Operand as ITypeDefOrRef))
 						continue;
 					instructions[i] = new Instr(Instruction.Create(OpCodes.Ldtoken, blocks.Method.DeclaringType));
 				}
@@ -607,12 +607,14 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			return list;
 		}
 
-		public override void OnWriterEvent(ModuleWriter writer, ModuleWriterEvent evt) {
+		public override void OnWriterEvent(ModuleWriterBase writer, ModuleWriterEvent evt) {
 			if (evt != ModuleWriterEvent.EndWriteChunks)
 				return;
 			if (!options.DecryptMethods)
 				return;
+#if PORT
 			methodsDecrypter.encryptNativeMethods(writer);
+#endif
 		}
 	}
 }

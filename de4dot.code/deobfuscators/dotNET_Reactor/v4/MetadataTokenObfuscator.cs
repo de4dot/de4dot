@@ -25,7 +25,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 	// Find the class that returns a RuntimeTypeHandle/RuntimeFieldHandle. The value passed to
 	// its methods is the original metadata token, which will be different when we save the file.
 	class MetadataTokenObfuscator {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		TypeDef type;
 		MethodDef typeMethod;
 		MethodDef fieldMethod;
@@ -34,7 +34,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			get { return type; }
 		}
 
-		public MetadataTokenObfuscator(ModuleDefinition module) {
+		public MetadataTokenObfuscator(ModuleDefMD module) {
 			this.module = module;
 			find();
 		}
@@ -51,13 +51,14 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 
 				MethodDef fieldMethod = null, typeMethod = null;
 				foreach (var method in type.Methods) {
-					if (method.Parameters.Count != 1)
+					var sig = method.MethodSig;
+					if (sig == null || sig.Params.Count != 1)
 						continue;
-					if (method.Parameters[0].ParameterType.FullName != "System.Int32")
+					if (sig.Params[0].GetElementType() != ElementType.I4)
 						continue;
-					if (method.MethodReturnType.ReturnType.FullName == "System.RuntimeTypeHandle")
+					if (sig.RetType.GetFullName() == "System.RuntimeTypeHandle")
 						typeMethod = method;
-					else if (method.MethodReturnType.ReturnType.FullName == "System.RuntimeFieldHandle")
+					else if (sig.RetType.GetFullName() == "System.RuntimeFieldHandle")
 						fieldMethod = method;
 				}
 
@@ -84,10 +85,10 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 					var call = instrs[i + 1];
 					if (call.OpCode.Code != Code.Call)
 						continue;
-					var method = call.Operand as MethodReference;
+					var method = call.Operand as IMethod;
 					if (method == null)
 						continue;
-					if (!MemberReferenceHelper.compareTypes(type, method.DeclaringType))
+					if (!new SigComparer().Equals(type, method.DeclaringType))
 						continue;
 					var methodDef = DotNetUtils.getMethod(module, method);
 					if (methodDef == null)
@@ -95,9 +96,9 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 					if (methodDef != typeMethod && methodDef != fieldMethod)
 						continue;
 
-					int token = (int)instrs[i].Operand;
+					uint token = (uint)(int)instrs[i].Operand;
 					instrs[i] = new Instr(Instruction.Create(OpCodes.Nop));
-					instrs[i + 1] = new Instr(new Instruction(OpCodes.Ldtoken, module.LookupToken(token) as MemberReference));
+					instrs[i + 1] = new Instr(new Instruction(OpCodes.Ldtoken, module.ResolveToken(token) as IMethod));
 				}
 			}
 		}

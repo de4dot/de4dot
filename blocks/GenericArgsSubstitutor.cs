@@ -48,6 +48,13 @@ namespace de4dot.blocks {
 			return new GenericArgsSubstitutor(genericArgs).create(type);
 		}
 
+		public static TypeSig create(TypeSig type, IList<TypeSig> genericArgs, IList<TypeSig> genericMethodArgs) {
+			if (type == null || ((genericArgs == null || genericArgs.Count == 0) &&
+				(genericMethodArgs == null || genericMethodArgs.Count == 0)))
+				return type;
+			return new GenericArgsSubstitutor(genericArgs, genericMethodArgs).create(type);
+		}
+
 		public static IField create(IField field, GenericInstSig git) {
 			if (git == null)
 				return field;

@@ -20,31 +20,26 @@
 using System;
 using System.IO;
 using ICSharpCode.SharpZipLib.Zip.Compression;
-using de4dot.PE;
+using dot10.PE;
+using dot10.IO;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 	class NativeImageUnpacker {
-		PeImage peImage;
+		MyPEImage peImage;
 		bool isNet1x;
 
-		public NativeImageUnpacker(PeImage peImage) {
-			this.peImage = peImage;
+		public NativeImageUnpacker(IPEImage peImage) {
+			this.peImage = new MyPEImage(peImage);
 		}
 
 		public byte[] unpack() {
-			var resources = peImage.Resources;
-			var dir = resources.getRoot();
-			if ((dir = dir.getDirectory(10)) == null)
+			if (peImage.PEImage.Win32Resources == null)
 				return null;
-			if ((dir = dir.getDirectory("__")) == null)
-				return null;
-			var dataEntry = dir.getData(0);
+			var dataEntry = peImage.PEImage.Win32Resources.Find(10, "__", 0);
 			if (dataEntry == null)
 				return null;
 
-			var encryptedData = peImage.readBytes(dataEntry.RVA, (int)dataEntry.Size);
-			if (encryptedData.Length != dataEntry.Size)
-				return null;
+			var encryptedData = dataEntry.Data.ReadAllBytes();
 
 			var keyData = getKeyData();
 			if (keyData == null)

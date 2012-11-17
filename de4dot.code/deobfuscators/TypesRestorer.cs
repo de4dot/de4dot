@@ -505,10 +505,15 @@ namespace de4dot.code.deobfuscators {
 						var calledMethod = instr.Operand as IMethod;
 						if (calledMethod == null)
 							continue;
-						IList<TypeSig> calledMethodArgs = DotNetUtils.getArgs(calledMethod);
-#if PORT
-						calledMethodArgs = DotNetUtils.replaceGenericParameters(calledMethod.DeclaringType as GenericInstanceType, calledMethod as GenericInstanceMethod, calledMethodArgs);
-#endif
+						var calledMethodDefOrRef = calledMethod as IMethodDefOrRef;
+						var calledMethodSpec = calledMethod as MethodSpec;
+						if (calledMethodSpec != null)
+							calledMethodDefOrRef = calledMethodSpec.Method;
+						if (calledMethodDefOrRef == null)
+							continue;
+
+						IList<TypeSig> calledMethodArgs = DotNetUtils.getArgs(calledMethodDefOrRef);
+						calledMethodArgs = DotNetUtils.replaceGenericParameters(calledMethodDefOrRef.DeclaringType.ToGenericInstSig(), calledMethodSpec, calledMethodArgs);
 						for (int j = 0; j < pushedArgs.NumValidArgs; j++) {
 							var pushInstr = pushedArgs.getEnd(j);
 							if (pushInstr.OpCode.Code != Code.Ldfld && pushInstr.OpCode.Code != Code.Ldsfld)
@@ -592,6 +597,8 @@ namespace de4dot.code.deobfuscators {
 					return false;
 				}
 
+				if (type.Next == null)
+					break;
 				type = type.Next;
 			}
 

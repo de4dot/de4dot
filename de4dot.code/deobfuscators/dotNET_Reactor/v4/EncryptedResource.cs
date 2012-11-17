@@ -27,7 +27,7 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 	class EncryptedResource {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		MethodDef resourceDecrypterMethod;
 		EmbeddedResource encryptedDataResource;
 		byte[] key, iv;
@@ -49,15 +49,15 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			get { return encryptedDataResource != null; }
 		}
 
-		public EncryptedResource(ModuleDefinition module) {
+		public EncryptedResource(ModuleDefMD module) {
 			this.module = module;
 		}
 
-		public EncryptedResource(ModuleDefinition module, EncryptedResource oldOne) {
+		public EncryptedResource(ModuleDefMD module, EncryptedResource oldOne) {
 			this.module = module;
 			resourceDecrypterMethod = lookup(oldOne.resourceDecrypterMethod, "Could not find resource decrypter method");
 			if (oldOne.encryptedDataResource != null)
-				encryptedDataResource = DotNetUtils.getResource(module, oldOne.encryptedDataResource.Name) as EmbeddedResource;
+				encryptedDataResource = DotNetUtils.getResource(module, oldOne.encryptedDataResource.Name.String) as EmbeddedResource;
 			key = oldOne.key;
 			iv = oldOne.iv;
 
@@ -117,10 +117,10 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			if (iv == null)
 				throw new ApplicationException("Could not find resource decrypter IV");
 			if (usesPublicKeyToken()) {
-				var publicKeyToken = module.Assembly.Name.PublicKeyToken;
-				if (publicKeyToken != null && publicKeyToken.Length > 0) {
+				var publicKeyToken = module.Assembly.PublicKeyToken;
+				if (publicKeyToken != null && publicKeyToken.Data.Length > 0) {
 					for (int i = 0; i < 8; i++)
-						iv[i * 2 + 1] = publicKeyToken[i];
+						iv[i * 2 + 1] = publicKeyToken.Data[i];
 				}
 			}
 		}
@@ -133,9 +133,9 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 					pktIndex = 0;
 					continue;
 				}
-				if (!DotNetUtils.isLdcI4(instr))
+				if (!instr.IsLdcI4())
 					continue;
-				int val = DotNetUtils.getLdcI4Value(instr);
+				int val = instr.GetLdcI4Value();
 				if (val != pktIndexes[pktIndex++]) {
 					pktIndex = 0;
 					continue;
@@ -176,7 +176,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		public void updateResource(byte[] encryptedData) {
 			for (int i = 0; i < module.Resources.Count; i++) {
 				if (module.Resources[i] == encryptedDataResource) {
-					encryptedDataResource = new EmbeddedResource(encryptedDataResource.Name, encryptedDataResource.Attributes, encryptedData);
+					encryptedDataResource = new EmbeddedResource(encryptedDataResource.Name, encryptedData, encryptedDataResource.Attributes);
 					module.Resources[i] = encryptedDataResource;
 					return;
 				}
