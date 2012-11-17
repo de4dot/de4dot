@@ -221,6 +221,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			reader = MemoryImageStream.Create(decompressed);
 			info.dataField.FieldSig.Type = module.CorLibTypes.Byte;
 			info.dataField.InitialValue = new byte[1];
+			info.dataField.RVA = 0;
 		}
 
 		void findOtherTypes() {

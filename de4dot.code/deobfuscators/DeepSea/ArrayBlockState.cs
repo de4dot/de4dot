@@ -118,6 +118,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				}
 				fieldInfo.arrayInitField.InitialValue = new byte[1];
 				fieldInfo.arrayInitField.FieldSig.Type = module.CorLibTypes.Byte;
+				fieldInfo.arrayInitField.RVA = 0;
 			}
 
 			IList<Instruction> allInstructions;

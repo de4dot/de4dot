@@ -380,6 +380,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			public void cleanup() {
 				arrayInfo.initField.InitialValue = new byte[1];
 				arrayInfo.initField.FieldSig.Type = arrayInfo.initField.Module.CorLibTypes.Byte;
+				arrayInfo.initField.RVA = 0;
 				removeInitializeArrayCall(cctor, arrayInfo.initField);
 			}
 		}
@@ -539,6 +540,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			public void cleanup() {
 				encryptedDataField.InitialValue = new byte[1];
 				encryptedDataField.FieldSig.Type = encryptedDataField.Module.CorLibTypes.Byte;
+				encryptedDataField.RVA = 0;
 				removeInitializeArrayCall(cctor, encryptedDataField);
 			}
 		}

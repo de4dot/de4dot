@@ -341,6 +341,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 
 			encryptedDataField.InitialValue = new byte[1];
 			encryptedDataField.FieldSig.Type = module.CorLibTypes.Byte;
+			encryptedDataField.RVA = 0;
 		}
 
 		public string decrypt(MethodDef method) {

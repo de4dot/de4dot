@@ -497,6 +497,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				infos.Add(getAssemblyInfo(decrypted, null));
 				fieldInfo.field.InitialValue = new byte[1];
 				fieldInfo.field.FieldSig.Type = module.CorLibTypes.Byte;
+				fieldInfo.field.RVA = 0;
 			}
 
 			return infos;

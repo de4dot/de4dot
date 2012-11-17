@@ -345,6 +345,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			DeobUtils.decryptAndAddResources(module, name, () => decryptResourceV4(resourceField.InitialValue, magic));
 			resourceField.InitialValue = new byte[1];
 			resourceField.FieldSig.Type = module.CorLibTypes.Byte;
+			resourceField.RVA = 0;
 			return true;
 		}
 	}

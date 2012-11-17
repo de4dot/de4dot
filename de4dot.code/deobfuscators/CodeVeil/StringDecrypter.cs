@@ -192,6 +192,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 
 			stringDataField.FieldSig.Type = module.CorLibTypes.Byte;
 			stringDataField.InitialValue = new byte[1];
+			stringDataField.RVA = 0;
 		}
 
 		static uint[] getKey(MethodDef method) {
