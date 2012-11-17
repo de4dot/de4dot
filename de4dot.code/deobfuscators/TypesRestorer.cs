@@ -431,7 +431,7 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		bool addMethodArgType(IGenericParameterProvider gpp, Parameter methodParam, IField field) {
-			if (field == null || field.FieldSig == null)
+			if (field == null)
 				return false;
 			return addMethodArgType(gpp, methodParam, field.FieldSig.GetFieldType());
 		}
@@ -579,6 +579,24 @@ namespace de4dot.code.deobfuscators {
 				case ElementType.Ptr:
 				case ElementType.Class:
 				case ElementType.ValueType:
+				case ElementType.Void:
+				case ElementType.Boolean:
+				case ElementType.Char:
+				case ElementType.I1:
+				case ElementType.U1:
+				case ElementType.I2:
+				case ElementType.U2:
+				case ElementType.I4:
+				case ElementType.U4:
+				case ElementType.I8:
+				case ElementType.U8:
+				case ElementType.R4:
+				case ElementType.R8:
+				case ElementType.TypedByRef:
+				case ElementType.I:
+				case ElementType.U:
+				case ElementType.String:
+				case ElementType.Object:
 					break;
 
 				case ElementType.Var:
@@ -593,6 +611,11 @@ namespace de4dot.code.deobfuscators {
 				case ElementType.CModReqd:
 				case ElementType.Pinned:
 				case ElementType.Sentinel:
+				case ElementType.ValueArray:
+				case ElementType.R:
+				case ElementType.End:
+				case ElementType.Internal:
+				case ElementType.Module:
 				default:
 					return false;
 				}
@@ -634,7 +657,7 @@ namespace de4dot.code.deobfuscators {
 		protected override bool isUnknownType(object o) {
 			var arg = o as Parameter;
 			if (arg != null)
-				return arg.Type != null && arg.Type.ElementType == ElementType.Object;
+				return arg.Type.GetElementType() == ElementType.Object;
 
 			var field = o as FieldDef;
 			if (field != null)
