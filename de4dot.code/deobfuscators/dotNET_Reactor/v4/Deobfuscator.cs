@@ -608,13 +608,22 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		}
 
 		public override void OnWriterEvent(ModuleWriterBase writer, ModuleWriterEvent evt) {
-			if (evt != ModuleWriterEvent.EndWriteChunks)
-				return;
 			if (!options.DecryptMethods)
 				return;
-#if PORT
-			methodsDecrypter.encryptNativeMethods(writer);
-#endif
+			switch (evt) {
+			case ModuleWriterEvent.Begin:
+				// The decrypter assumes RVAs are unique so don't share any method bodies
+				writer.TheOptions.ShareMethodBodies = false;
+				break;
+
+			case ModuleWriterEvent.MDBeginAddResources:
+				methodsDecrypter.prepareEncryptNativeMethods(writer);
+				break;
+
+			case ModuleWriterEvent.BeginWriteChunks:
+				methodsDecrypter.encryptNativeMethods(writer);
+				break;
+			}
 		}
 	}
 }

@@ -20,7 +20,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using dot10.IO;
 using dot10.DotNet;
+using dot10.DotNet.MD;
 using dot10.DotNet.Emit;
 using dot10.DotNet.Writer;
 using de4dot.blocks;
@@ -32,6 +34,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		EncryptedResource encryptedResource;
 		Dictionary<uint, byte[]> tokenToNativeMethod = new Dictionary<uint, byte[]>();
 		Dictionary<MethodDef, byte[]> methodToNativeMethod = new Dictionary<MethodDef, byte[]>();
+		List<MethodDef> validNativeMethods;
 		int totalEncryptedNativeMethods = 0;
 		long xorKey;
 
@@ -243,18 +246,15 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 					dm.mdSignature = peImage.offsetRead(offset + (uint)methodDef.fields[4].offset, methodDef.fields[4].size);
 					dm.mdParamList = peImage.offsetRead(offset + (uint)methodDef.fields[5].offset, methodDef.fields[5].size);
 
-					if ((peImage.readByte(rva) & 3) == 2) {
-						dm.mhFlags = 2;
-						dm.mhMaxStack = 8;
-						dm.mhCodeSize = (uint)dm.code.Length;
-						dm.mhLocalVarSigTok = 0;
-					}
-					else {
-						dm.mhFlags = peImage.readUInt16(rva);
-						dm.mhMaxStack = peImage.readUInt16(rva + 2);
-						dm.mhCodeSize = (uint)dm.code.Length;
-						dm.mhLocalVarSigTok = peImage.readUInt32(rva + 8);
-					}
+					var codeReader = peImage.Reader;
+					codeReader.BaseStream.Position = peImage.rvaToOffset(rva);
+					byte[] code, extraSections;
+					var mb = MethodBodyParser.parseMethodBody(codeReader, out code, out extraSections);
+					dm.mhFlags = mb.flags;
+					dm.mhMaxStack = mb.maxStack;
+					dm.mhCodeSize = (uint)dm.code.Length;
+					dm.mhLocalVarSigTok = mb.localVarSigTok;
+					dm.extraSections = extraSections;
 
 					dumpedMethods.add(dm);
 				}
@@ -296,9 +296,29 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			tokenToNativeMethod = null;
 		}
 
-#if PORT
-		public void encryptNativeMethods(ModuleWriterBase moduleWriter) {
+		public void prepareEncryptNativeMethods(ModuleWriterBase moduleWriter) {
 			if (methodToNativeMethod.Count == 0)
+				return;
+
+			validNativeMethods = new List<MethodDef>(methodToNativeMethod.Count);
+			int len = 12;
+			foreach (var kv in methodToNativeMethod) {
+				if (kv.Key.DeclaringType == null)
+					continue;	// Method was removed
+				if (kv.Key.DeclaringType.Module != module)
+					continue;	// method.DeclaringType was removed
+				validNativeMethods.Add(kv.Key);
+				len += 3 * 4 + kv.Value.Length;
+			}
+			if (validNativeMethods.Count == 0)
+				return;
+
+			len = (len & ~15) + 16;
+			encryptedResource.Resource.Data = MemoryImageStream.Create(new byte[len]);
+		}
+
+		public void encryptNativeMethods(ModuleWriterBase moduleWriter) {
+			if (validNativeMethods == null || validNativeMethods.Count == 0)
 				return;
 
 			Logger.v("Encrypting native methods");
@@ -307,25 +327,25 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			var writer = new BinaryWriter(stream);
 			writer.Write((uint)0);	// patch count
 			writer.Write((uint)0);	// mode
-			writer.Write(methodToNativeMethod.Count);
+			writer.Write(validNativeMethods.Count);
 
 			int index = 0;
-			var codeWriter = moduleWriter.CodeWriter;
-			foreach (var pair in methodToNativeMethod) {
-				var method = pair.Key;
-				if (method.DeclaringType == null)
-					continue;	// Method was removed
-				if (method.DeclaringType.Module == null)
-					continue;	// method.DeclaringType was removed
-				var code = pair.Value;
+			foreach (var method in validNativeMethods) {
+				var code = methodToNativeMethod[method];
 
-				uint codeRva = moduleWriter.GetMethodBodyRva(method);
-				if ((codeWriter.ReadByteAtRva(codeRva) & 3) == 2)
+				var mb = moduleWriter.MetaData.GetMethodBody(method);
+				if (mb == null) {
+					Logger.e("Could not find method body for method {0} ({1:X8})", method, method.MDToken.Raw);
+					continue;
+				}
+
+				uint codeRva = (uint)mb.RVA;
+				if (mb.IsTiny)
 					codeRva++;
 				else
-					codeRva += 4 * (uint)(codeWriter.ReadByteAtRva(codeRva + 1) >> 4);
+					codeRva += (uint)(4 * (mb.Code[1] >> 4));
 
-				Logger.v("Native method {0:X8}, code RVA {1:X8}", method.MDToken.ToInt32(), codeRva);
+				Logger.v("Native method {0:X8}, code RVA {1:X8}", new MDToken(Table.Method, moduleWriter.MetaData.GetRid(method)).Raw, codeRva);
 
 				writer.Write(codeRva);
 				writer.Write(0x70000000 + index++);
@@ -336,11 +356,17 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			if (index != 0)
 				Logger.n("Re-encrypted {0}/{1} native methods", index, totalEncryptedNativeMethods);
 
-			var encryptedData = stream.ToArray();
-			xorEncrypt(encryptedData);
-			encryptedResource.updateResource(encryptedResource.encrypt(encryptedData));
+			var resourceChunk = moduleWriter.MetaData.GetChunk(encryptedResource.Resource);
+			var resourceData = resourceChunk.Data;
+
+			var encrypted = stream.ToArray();
+			xorEncrypt(encrypted);
+
+			encrypted = encryptedResource.encrypt(encrypted);
+			if (encrypted.Length != resourceData.Length)
+				Logger.e("Encrypted native methods array is not same size as original array");
+			Array.Copy(encrypted, resourceData, resourceData.Length);
 		}
-#endif
 
 		public static MethodDef findDnrCompileMethod(TypeDef type) {
 			foreach (var method in type.Methods) {

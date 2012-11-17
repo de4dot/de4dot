@@ -98,7 +98,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 
 					uint token = (uint)(int)instrs[i].Operand;
 					instrs[i] = new Instr(Instruction.Create(OpCodes.Nop));
-					instrs[i + 1] = new Instr(new Instruction(OpCodes.Ldtoken, module.ResolveToken(token) as IMethod));
+					instrs[i + 1] = new Instr(new Instruction(OpCodes.Ldtoken, module.ResolveToken(token) as ITokenOperand));
 				}
 			}
 		}

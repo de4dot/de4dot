@@ -172,16 +172,5 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				}
 			}
 		}
-
-		public void updateResource(byte[] encryptedData) {
-			for (int i = 0; i < module.Resources.Count; i++) {
-				if (module.Resources[i] == encryptedDataResource) {
-					encryptedDataResource = new EmbeddedResource(encryptedDataResource.Name, encryptedData, encryptedDataResource.Attributes);
-					module.Resources[i] = encryptedDataResource;
-					return;
-				}
-			}
-			throw new ApplicationException("Could not find encrypted resource");
-		}
 	}
 }
