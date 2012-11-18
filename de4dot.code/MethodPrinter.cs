@@ -19,13 +19,13 @@
 
 using System.Collections.Generic;
 using System.Text;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code {
 	class MethodPrinter {
-		Log.LogLevel logLevel;
+		LoggerEvent loggerEvent;
 		IList<Instruction> allInstructions;
 		IList<ExceptionHandler> allExceptionHandlers;
 		Dictionary<Instruction, bool> targets = new Dictionary<Instruction, bool>();
@@ -41,9 +41,9 @@ namespace de4dot.code {
 		Dictionary<Instruction, ExInfo> exInfos = new Dictionary<Instruction, ExInfo>();
 		ExInfo lastExInfo;
 
-		public void print(Log.LogLevel logLevel, IList<Instruction> allInstructions, IList<ExceptionHandler> allExceptionHandlers) {
+		public void print(LoggerEvent loggerEvent, IList<Instruction> allInstructions, IList<ExceptionHandler> allExceptionHandlers) {
 			try {
-				this.logLevel = logLevel;
+				this.loggerEvent = loggerEvent;
 				this.allInstructions = allInstructions;
 				this.allExceptionHandlers = allExceptionHandlers;
 				lastExInfo = new ExInfo();
@@ -83,7 +83,7 @@ namespace de4dot.code {
 			}
 
 			var sortedTargets = new List<Instruction>(targets.Keys);
-			sortedTargets.Sort((a, b) => Utils.compareInt32(a.Offset, b.Offset));
+			sortedTargets.Sort((a, b) => a.Offset.CompareTo(b.Offset));
 			for (int i = 0; i < sortedTargets.Count; i++)
 				labels[sortedTargets[i]] = string.Format("label_{0}", i);
 		}
@@ -121,28 +121,28 @@ namespace de4dot.code {
 			initTargets();
 			initExHandlers();
 
-			Log.indent();
+			Logger.Instance.indent();
 			foreach (var instr in allInstructions) {
 				if (targets.ContainsKey(instr)) {
-					Log.deIndent();
-					Log.log(logLevel, "{0}:", getLabel(instr));
-					Log.indent();
+					Logger.Instance.deIndent();
+					Logger.log(loggerEvent, "{0}:", getLabel(instr));
+					Logger.Instance.indent();
 				}
 				ExInfo exInfo;
 				if (exInfos.TryGetValue(instr, out exInfo))
 					printExInfo(exInfo);
-				var instrString = instr.GetOpCodeString();
+				var instrString = instr.OpCode.Name;
 				var operandString = getOperandString(instr);
-				var memberReference = instr.Operand as MemberReference;
+				var memberReference = instr.Operand as ITokenOperand;
 				if (operandString == "")
-					Log.log(logLevel, "{0}", instrString);
+					Logger.log(loggerEvent, "{0}", instrString);
 				else if (memberReference != null)
-					Log.log(logLevel, "{0,-9} {1} // {2:X8}", instrString, Utils.removeNewlines(operandString), memberReference.MetadataToken.ToUInt32());
+					Logger.log(loggerEvent, "{0,-9} {1} // {2:X8}", instrString, Utils.removeNewlines(operandString), memberReference.MDToken.ToUInt32());
 				else
-					Log.log(logLevel, "{0,-9} {1}", instrString, Utils.removeNewlines(operandString));
+					Logger.log(loggerEvent, "{0,-9} {1}", instrString, Utils.removeNewlines(operandString));
 			}
 			printExInfo(lastExInfo);
-			Log.deIndent();
+			Logger.Instance.deIndent();
 		}
 
 		string getOperandString(Instruction instr) {
@@ -160,30 +160,30 @@ namespace de4dot.code {
 			}
 			else if (instr.Operand is string)
 				return Utils.toCsharpString((string)instr.Operand);
-			else if (instr.Operand is ParameterDefinition) {
-				var arg = (ParameterDefinition)instr.Operand;
-				var s = instr.GetOperandString();
+			else if (instr.Operand is Parameter) {
+				var arg = (Parameter)instr.Operand;
+				var s = InstructionPrinter.GetOperandString(instr);
 				if (s != "")
 					return s;
-				return string.Format("<arg_{0}>", DotNetUtils.getArgIndex(arg));
+				return string.Format("<arg_{0}>", arg.Index);
 			}
 			else
-				return instr.GetOperandString();
+				return InstructionPrinter.GetOperandString(instr);
 		}
 
 		void printExInfo(ExInfo exInfo) {
-			Log.deIndent();
+			Logger.Instance.deIndent();
 			foreach (var ex in exInfo.tryStarts)
-				Log.log(logLevel, "// try start: {0}", getExceptionString(ex));
+				Logger.log(loggerEvent, "// try start: {0}", getExceptionString(ex));
 			foreach (var ex in exInfo.tryEnds)
-				Log.log(logLevel, "// try end: {0}", getExceptionString(ex));
+				Logger.log(loggerEvent, "// try end: {0}", getExceptionString(ex));
 			foreach (var ex in exInfo.filterStarts)
-				Log.log(logLevel, "// filter start: {0}", getExceptionString(ex));
+				Logger.log(loggerEvent, "// filter start: {0}", getExceptionString(ex));
 			foreach (var ex in exInfo.handlerStarts)
-				Log.log(logLevel, "// handler start: {0}", getExceptionString(ex));
+				Logger.log(loggerEvent, "// handler start: {0}", getExceptionString(ex));
 			foreach (var ex in exInfo.handlerEnds)
-				Log.log(logLevel, "// handler end: {0}", getExceptionString(ex));
-			Log.indent();
+				Logger.log(loggerEvent, "// handler end: {0}", getExceptionString(ex));
+			Logger.Instance.indent();
 		}
 
 		string getExceptionString(ExceptionHandler ex) {

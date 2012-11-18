@@ -18,29 +18,29 @@
 */
 
 using System.Text;
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Xenocode {
 	class StringDecrypter {
 		const int STRING_DECRYPTER_KEY_CONST = 1789;
-		ModuleDefinition module;
-		TypeDefinition stringDecrypterType;
-		MethodDefinition stringDecrypterMethod;
+		ModuleDefMD module;
+		TypeDef stringDecrypterType;
+		MethodDef stringDecrypterMethod;
 
 		public bool Detected {
 			get { return stringDecrypterMethod != null; }
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return stringDecrypterType; }
 		}
 
-		public MethodDefinition Method {
+		public MethodDef Method {
 			get { return stringDecrypterMethod; }
 		}
 
-		public StringDecrypter(ModuleDefinition module) {
+		public StringDecrypter(ModuleDefMD module) {
 			this.module = module;
 		}
 
@@ -53,7 +53,7 @@ namespace de4dot.code.deobfuscators.Xenocode {
 				if (type.HasProperties || type.HasEvents)
 					continue;
 
-				MethodDefinition method = null;
+				MethodDef method = null;
 				foreach (var m in type.Methods) {
 					if (m.Name == ".ctor" || m.Name == ".cctor")
 						continue;
@@ -69,7 +69,7 @@ namespace de4dot.code.deobfuscators.Xenocode {
 
 				bool foundConstant = false;
 				foreach (var instr in method.Body.Instructions) {
-					if (DotNetUtils.isLdcI4(instr) && DotNetUtils.getLdcI4Value(instr) == STRING_DECRYPTER_KEY_CONST) {
+					if (instr.IsLdcI4() && instr.GetLdcI4Value() == STRING_DECRYPTER_KEY_CONST) {
 						foundConstant = true;
 						break;
 					}

@@ -19,8 +19,8 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 
 namespace de4dot.blocks {
 	class CodeGenerator {
@@ -45,10 +45,10 @@ namespace de4dot.blocks {
 			public int filterStart;
 			public int handlerStart;
 			public int handlerEnd;
-			public TypeReference catchType;
+			public ITypeDefOrRef catchType;
 			public ExceptionHandlerType handlerType;
 			public ExceptionInfo(int tryStart, int tryEnd, int filterStart,
-				int handlerStart, int handlerEnd, TypeReference catchType,
+				int handlerStart, int handlerEnd, ITypeDefOrRef catchType,
 				ExceptionHandlerType handlerType) {
 				if (tryStart > tryEnd || filterStart > handlerStart ||
 					tryStart < 0 || tryEnd < 0 || filterStart < 0 || handlerStart < 0 || handlerEnd < 0)
@@ -99,10 +99,10 @@ namespace de4dot.blocks {
 		}
 
 		void recalculateInstructionOffsets(IList<Instruction> allInstructions) {
-			int offset = 0;
+			uint offset = 0;
 			foreach (var instr in allInstructions) {
 				instr.Offset = offset;
-				offset += instr.GetSize();
+				offset += (uint)instr.GetSize();
 			}
 		}
 
@@ -137,7 +137,7 @@ namespace de4dot.blocks {
 				if (getShortBranch(instruction, out opcode)) {
 					const int instrSize = 5;	// It's a long branch instruction
 					var target = (Instruction)instruction.Operand;
-					int distance = target == null ? int.MaxValue : target.Offset - (instruction.Offset + instrSize);
+					int distance = target == null ? int.MaxValue : (int)(target.Offset - (instruction.Offset + instrSize));
 					if (-0x80 <= distance && distance <= 0x7F) {
 						instruction.OpCode = opcode;
 						changed = true;

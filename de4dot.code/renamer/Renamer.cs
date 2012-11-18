@@ -20,8 +20,8 @@
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.code.renamer.asmmodules;
 using de4dot.blocks;
 
@@ -44,6 +44,7 @@ namespace de4dot.code.renamer {
 		MemberInfos memberInfos = new MemberInfos();
 		DerivedFrom isDelegateClass;
 		MergeStateHelper mergeStateHelper;
+		bool isVerbose;
 
 		static string[] delegateClasses = new string[] {
 			"System.Delegate",
@@ -75,7 +76,8 @@ namespace de4dot.code.renamer {
 		public void rename() {
 			if (modules.Empty)
 				return;
-			Log.n("Renaming all obfuscated symbols");
+			isVerbose = !Logger.Instance.IgnoresEvent(LoggerEvent.Verbose);
+			Logger.n("Renaming all obfuscated symbols");
 
 			modules.initialize();
 			renameResourceKeys();
@@ -97,7 +99,7 @@ namespace de4dot.code.renamer {
 			foreach (var module in modules.TheModules) {
 				if (!module.ObfuscatedFile.RenameResourceKeys)
 					continue;
-				new ResourceKeysRenamer(module.ModuleDefinition, module.ObfuscatedFile.NameChecker).rename();
+				new ResourceKeysRenamer(module.ModuleDefMD, module.ObfuscatedFile.NameChecker).rename();
 			}
 		}
 
@@ -108,15 +110,16 @@ namespace de4dot.code.renamer {
 						continue;
 					if (!method.isPublic())
 						continue;
-					var overrides = method.MethodDefinition.Overrides;
+					var overrides = method.MethodDef.Overrides;
 					for (int i = 0; i < overrides.Count; i++) {
-						var overrideMethod = overrides[i];
-						if (method.MethodDefinition.Name != overrideMethod.Name)
+						var overrideMethod = overrides[i].MethodDeclaration;
+						if (method.MethodDef.Name != overrideMethod.Name)
 							continue;
-						Log.v("Removed useless override from method {0} ({1:X8}), override: {2:X8}",
-									Utils.removeNewlines(method.MethodDefinition),
-									method.MethodDefinition.MetadataToken.ToInt32(),
-									overrideMethod.MetadataToken.ToInt32());
+						if (isVerbose)
+							Logger.v("Removed useless override from method {0} ({1:X8}), override: {2:X8}",
+									Utils.removeNewlines(method.MethodDef),
+									method.MethodDef.MDToken.ToInt32(),
+									overrideMethod.MDToken.ToInt32());
 						overrides.RemoveAt(i);
 						i--;
 					}
@@ -125,7 +128,8 @@ namespace de4dot.code.renamer {
 		}
 
 		void renameTypeDefinitions() {
-			Log.v("Renaming obfuscated type definitions");
+			if (isVerbose)
+				Logger.v("Renaming obfuscated type definitions");
 
 			foreach (var module in modules.TheModules) {
 				if (module.ObfuscatedFile.RemoveNamespaceWithOneType)
@@ -141,104 +145,110 @@ namespace de4dot.code.renamer {
 		}
 
 		void removeOneClassNamespaces(Module module) {
-			var nsToTypes = new Dictionary<string, List<TypeDef>>(StringComparer.Ordinal);
+			var nsToTypes = new Dictionary<string, List<MTypeDef>>(StringComparer.Ordinal);
 
 			foreach (var typeDef in module.getAllTypes()) {
-				List<TypeDef> list;
-				var ns = typeDef.TypeDefinition.Namespace;
+				List<MTypeDef> list;
+				var ns = typeDef.TypeDef.Namespace.String;
 				if (string.IsNullOrEmpty(ns))
 					continue;
 				if (module.ObfuscatedFile.NameChecker.isValidNamespaceName(ns))
 					continue;
 				if (!nsToTypes.TryGetValue(ns, out list))
-					nsToTypes[ns] = list = new List<TypeDef>();
+					nsToTypes[ns] = list = new List<MTypeDef>();
 				list.Add(typeDef);
 			}
 
-			var sortedNamespaces = new List<List<TypeDef>>(nsToTypes.Values);
+			var sortedNamespaces = new List<List<MTypeDef>>(nsToTypes.Values);
 			sortedNamespaces.Sort((a, b) => {
-				return string.CompareOrdinal(a[0].TypeDefinition.Namespace, b[0].TypeDefinition.Namespace);
+				return UTF8String.CompareTo(a[0].TypeDef.Namespace, b[0].TypeDef.Namespace);
 			});
 			foreach (var list in sortedNamespaces) {
 				const int maxClasses = 1;
 				if (list.Count != maxClasses)
 					continue;
-				var ns = list[0].TypeDefinition.Namespace;
-				Log.v("Removing namespace: {0}", Utils.removeNewlines(ns));
+				if (isVerbose)
+					Logger.v("Removing namespace: {0}", Utils.removeNewlines(list[0].TypeDef.Namespace));
 				foreach (var type in list)
 					memberInfos.type(type).newNamespace = "";
 			}
 		}
 
-		void renameTypeDefinitions(IEnumerable<TypeDef> typeDefs) {
-			Log.indent();
+		void renameTypeDefinitions(IEnumerable<MTypeDef> typeDefs) {
+			Logger.Instance.indent();
 			foreach (var typeDef in typeDefs) {
 				rename(typeDef);
 				renameTypeDefinitions(typeDef.NestedTypes);
 			}
-			Log.deIndent();
+			Logger.Instance.deIndent();
 		}
 
-		void rename(TypeDef type) {
-			var typeDefinition = type.TypeDefinition;
+		void rename(MTypeDef type) {
+			var typeDefinition = type.TypeDef;
 			var info = memberInfos.type(type);
 
-			Log.v("Type: {0} ({1:X8})", Utils.removeNewlines(typeDefinition.FullName), typeDefinition.MetadataToken.ToUInt32());
-			Log.indent();
+			if (isVerbose)
+				Logger.v("Type: {0} ({1:X8})", Utils.removeNewlines(typeDefinition.FullName), typeDefinition.MDToken.ToUInt32());
+			Logger.Instance.indent();
 
 			renameGenericParams(type.GenericParams);
 
 			if (RenameTypes && info.gotNewName()) {
 				var old = typeDefinition.Name;
-				typeDefinition.Name = info.newName;
-				Log.v("Name: {0} => {1}", Utils.removeNewlines(old), Utils.removeNewlines(typeDefinition.Name));
+				typeDefinition.Name = new UTF8String(info.newName);
+				if (isVerbose)
+					Logger.v("Name: {0} => {1}", Utils.removeNewlines(old), Utils.removeNewlines(typeDefinition.Name));
 			}
 
 			if (RenameNamespaces && info.newNamespace != null) {
 				var old = typeDefinition.Namespace;
-				typeDefinition.Namespace = info.newNamespace;
-				Log.v("Namespace: {0} => {1}", Utils.removeNewlines(old), Utils.removeNewlines(typeDefinition.Namespace));
+				typeDefinition.Namespace = new UTF8String(info.newNamespace);
+				if (isVerbose)
+					Logger.v("Namespace: {0} => {1}", Utils.removeNewlines(old), Utils.removeNewlines(typeDefinition.Namespace));
 			}
 
-			Log.deIndent();
+			Logger.Instance.deIndent();
 		}
 
-		void renameGenericParams(IEnumerable<GenericParamDef> genericParams) {
+		void renameGenericParams(IEnumerable<MGenericParamDef> genericParams) {
 			if (!RenameGenericParams)
 				return;
 			foreach (var param in genericParams) {
 				var info = memberInfos.gparam(param);
 				if (!info.gotNewName())
 					continue;
-				param.GenericParameter.Name = info.newName;
-				Log.v("GenParam: {0} => {1}", Utils.removeNewlines(info.oldFullName), Utils.removeNewlines(param.GenericParameter.FullName));
+				param.GenericParam.Name = new UTF8String(info.newName);
+				if (isVerbose)
+					Logger.v("GenParam: {0} => {1}", Utils.removeNewlines(info.oldFullName), Utils.removeNewlines(param.GenericParam.FullName));
 			}
 		}
 
 		void renameMemberDefinitions() {
-			Log.v("Renaming member definitions #2");
+			if (isVerbose)
+				Logger.v("Renaming member definitions #2");
 
-			var allTypes = new List<TypeDef>(modules.AllTypes);
-			allTypes.Sort((a, b) => Utils.compareInt32(a.Index, b.Index));
+			var allTypes = new List<MTypeDef>(modules.AllTypes);
+			allTypes.Sort((a, b) => a.Index.CompareTo(b.Index));
 
-			Log.indent();
+			Logger.Instance.indent();
 			foreach (var typeDef in allTypes)
 				renameMembers(typeDef);
-			Log.deIndent();
+			Logger.Instance.deIndent();
 		}
 
-		void renameMembers(TypeDef type) {
+		void renameMembers(MTypeDef type) {
 			var info = memberInfos.type(type);
 
-			Log.v("Type: {0}", Utils.removeNewlines(info.type.TypeDefinition.FullName));
-			Log.indent();
+			if (isVerbose)
+				Logger.v("Type: {0}", Utils.removeNewlines(info.type.TypeDef.FullName));
+			Logger.Instance.indent();
 
 			renameFields(info);
 			renameProperties(info);
 			renameEvents(info);
 			renameMethods(info);
 
-			Log.deIndent();
+			Logger.Instance.deIndent();
 		}
 
 		void renameFields(TypeInfo info) {
@@ -248,11 +258,12 @@ namespace de4dot.code.renamer {
 				var fieldInfo = memberInfos.field(fieldDef);
 				if (!fieldInfo.gotNewName())
 					continue;
-				fieldDef.FieldDefinition.Name = fieldInfo.newName;
-				Log.v("Field: {0} ({1:X8}) => {2}",
+				fieldDef.FieldDef.Name = new UTF8String(fieldInfo.newName);
+				if (isVerbose)
+					Logger.v("Field: {0} ({1:X8}) => {2}",
 							Utils.removeNewlines(fieldInfo.oldFullName),
-							fieldDef.FieldDefinition.MetadataToken.ToUInt32(),
-							Utils.removeNewlines(fieldDef.FieldDefinition.FullName));
+							fieldDef.FieldDef.MDToken.ToUInt32(),
+							Utils.removeNewlines(fieldDef.FieldDef.FullName));
 			}
 		}
 
@@ -263,11 +274,12 @@ namespace de4dot.code.renamer {
 				var propInfo = memberInfos.prop(propDef);
 				if (!propInfo.gotNewName())
 					continue;
-				propDef.PropertyDefinition.Name = propInfo.newName;
-				Log.v("Property: {0} ({1:X8}) => {2}",
+				propDef.PropertyDef.Name = new UTF8String(propInfo.newName);
+				if (isVerbose)
+					Logger.v("Property: {0} ({1:X8}) => {2}",
 							Utils.removeNewlines(propInfo.oldFullName),
-							propDef.PropertyDefinition.MetadataToken.ToUInt32(),
-							Utils.removeNewlines(propDef.PropertyDefinition.FullName));
+							propDef.PropertyDef.MDToken.ToUInt32(),
+							Utils.removeNewlines(propDef.PropertyDef.FullName));
 			}
 		}
 
@@ -278,11 +290,12 @@ namespace de4dot.code.renamer {
 				var eventInfo = memberInfos.evt(eventDef);
 				if (!eventInfo.gotNewName())
 					continue;
-				eventDef.EventDefinition.Name = eventInfo.newName;
-				Log.v("Event: {0} ({1:X8}) => {2}",
+				eventDef.EventDef.Name = new UTF8String(eventInfo.newName);
+				if (isVerbose)
+					Logger.v("Event: {0} ({1:X8}) => {2}",
 							Utils.removeNewlines(eventInfo.oldFullName),
-							eventDef.EventDefinition.MetadataToken.ToUInt32(),
-							Utils.removeNewlines(eventDef.EventDefinition.FullName));
+							eventDef.EventDef.MDToken.ToUInt32(),
+							Utils.removeNewlines(eventDef.EventDef.FullName));
 			}
 		}
 
@@ -291,60 +304,66 @@ namespace de4dot.code.renamer {
 				return;
 			foreach (var methodDef in info.type.AllMethodsSorted) {
 				var methodInfo = memberInfos.method(methodDef);
-				Log.v("Method {0} ({1:X8})", Utils.removeNewlines(methodInfo.oldFullName), methodDef.MethodDefinition.MetadataToken.ToUInt32());
-				Log.indent();
+				if (isVerbose)
+					Logger.v("Method {0} ({1:X8})", Utils.removeNewlines(methodInfo.oldFullName), methodDef.MethodDef.MDToken.ToUInt32());
+				Logger.Instance.indent();
 
 				renameGenericParams(methodDef.GenericParams);
 
 				if (RenameMethods && methodInfo.gotNewName()) {
-					methodDef.MethodDefinition.Name = methodInfo.newName;
-					Log.v("Name: {0} => {1}", Utils.removeNewlines(methodInfo.oldFullName), Utils.removeNewlines(methodDef.MethodDefinition.FullName));
+					methodDef.MethodDef.Name = new UTF8String(methodInfo.newName);
+					if (isVerbose)
+						Logger.v("Name: {0} => {1}", Utils.removeNewlines(methodInfo.oldFullName), Utils.removeNewlines(methodDef.MethodDef.FullName));
 				}
 
 				if (RenameMethodArgs) {
-					foreach (var param in methodDef.ParamDefs) {
+					foreach (var param in methodDef.AllParamDefs) {
 						var paramInfo = memberInfos.param(param);
 						if (!paramInfo.gotNewName())
 							continue;
+						param.ParameterDefinition.CreateParamDef();
 						param.ParameterDefinition.Name = paramInfo.newName;
-						Log.v("Param ({0}/{1}): {2} => {3}", param.Index + 1, methodDef.ParamDefs.Count, Utils.removeNewlines(paramInfo.oldName), Utils.removeNewlines(paramInfo.newName));
+						if (isVerbose) {
+							if (param.IsReturnParameter)
+								Logger.v("RetParam: {0} => {1}", Utils.removeNewlines(paramInfo.oldName), Utils.removeNewlines(paramInfo.newName));
+							else
+								Logger.v("Param ({0}/{1}): {2} => {3}", param.ParameterDefinition.MethodSigIndex + 1, methodDef.MethodDef.MethodSig.GetParamCount(), Utils.removeNewlines(paramInfo.oldName), Utils.removeNewlines(paramInfo.newName));
+						}
 					}
 				}
 
-				Log.deIndent();
+				Logger.Instance.deIndent();
 			}
 		}
 
 		void renameMemberReferences() {
-			Log.v("Renaming references to other definitions");
+			if (isVerbose)
+				Logger.v("Renaming references to other definitions");
 			foreach (var module in modules.TheModules) {
-				if (modules.TheModules.Count > 1)
-					Log.v("Renaming references to other definitions ({0})", module.Filename);
-				Log.indent();
+				if (modules.TheModules.Count > 1 && isVerbose)
+					Logger.v("Renaming references to other definitions ({0})", module.Filename);
+				Logger.Instance.indent();
 				foreach (var refToDef in module.MethodRefsToRename)
 					refToDef.reference.Name = refToDef.definition.Name;
 				foreach (var refToDef in module.FieldRefsToRename)
 					refToDef.reference.Name = refToDef.definition.Name;
-				foreach (var info in module.CustomAttributeFieldReferences) {
-					var field = info.cattr.Fields[info.index];
-					info.cattr.Fields[info.index] = new CustomAttributeNamedArgument(info.reference.Name, field.Argument);
-				}
-				foreach (var info in module.CustomAttributePropertyReferences) {
-					var prop = info.cattr.Properties[info.index];
-					info.cattr.Properties[info.index] = new CustomAttributeNamedArgument(info.reference.Name, prop.Argument);
-				}
-				Log.deIndent();
+				foreach (var info in module.CustomAttributeFieldReferences)
+					info.cattr.NamedArguments[info.index].Name = info.reference.Name;
+				foreach (var info in module.CustomAttributePropertyReferences)
+					info.cattr.NamedArguments[info.index].Name = info.reference.Name;
+				Logger.Instance.deIndent();
 			}
 		}
 
 		void renameResources() {
-			Log.v("Renaming resources");
+			if (isVerbose)
+				Logger.v("Renaming resources");
 			foreach (var module in modules.TheModules) {
-				if (modules.TheModules.Count > 1)
-					Log.v("Renaming resources ({0})", module.Filename);
-				Log.indent();
+				if (modules.TheModules.Count > 1 && isVerbose)
+					Logger.v("Renaming resources ({0})", module.Filename);
+				Logger.Instance.indent();
 				renameResources(module);
-				Log.deIndent();
+				Logger.Instance.deIndent();
 			}
 		}
 
@@ -352,7 +371,7 @@ namespace de4dot.code.renamer {
 			var renamedTypes = new List<TypeInfo>();
 			foreach (var type in module.getAllTypes()) {
 				var info = memberInfos.type(type);
-				if (info.oldFullName != info.type.TypeDefinition.FullName)
+				if (info.oldFullName != info.type.TypeDef.FullName)
 					renamedTypes.Add(info);
 			}
 			if (renamedTypes.Count == 0)
@@ -369,7 +388,7 @@ namespace de4dot.code.renamer {
 				fixClsTypeNames(null, type);
 		}
 
-		void fixClsTypeNames(TypeDef nesting, TypeDef nested) {
+		void fixClsTypeNames(MTypeDef nesting, MTypeDef nested) {
 			int nestingCount = nesting == null ? 0 : nesting.GenericParams.Count;
 			int arity = nested.GenericParams.Count - nestingCount;
 			var nestedInfo = memberInfos.type(nested);
@@ -379,7 +398,7 @@ namespace de4dot.code.renamer {
 				fixClsTypeNames(nested, nestedType);
 		}
 
-		void prepareRenameTypes(IEnumerable<TypeDef> types, TypeRenamerState state) {
+		void prepareRenameTypes(IEnumerable<MTypeDef> types, TypeRenamerState state) {
 			foreach (var typeDef in types) {
 				memberInfos.type(typeDef).prepareRenameTypes(state);
 				prepareRenameTypes(typeDef.derivedTypes, state);
@@ -387,17 +406,18 @@ namespace de4dot.code.renamer {
 		}
 
 		void renameTypeReferences() {
-			Log.v("Renaming references to type definitions");
+			if (isVerbose)
+				Logger.v("Renaming references to type definitions");
 			var theModules = modules.TheModules;
 			foreach (var module in theModules) {
-				if (theModules.Count > 1)
-					Log.v("Renaming references to type definitions ({0})", module.Filename);
-				Log.indent();
+				if (theModules.Count > 1 && isVerbose)
+					Logger.v("Renaming references to type definitions ({0})", module.Filename);
+				Logger.Instance.indent();
 				foreach (var refToDef in module.TypeRefsToRename) {
 					refToDef.reference.Name = refToDef.definition.Name;
 					refToDef.reference.Namespace = refToDef.definition.Namespace;
 				}
-				Log.deIndent();
+				Logger.Instance.deIndent();
 			}
 		}
 
@@ -415,7 +435,7 @@ namespace de4dot.code.renamer {
 			if (!this.RenameProperties)
 				return;
 			foreach (var group in allGroups) {
-				PropertyDef prop = null;
+				MPropertyDef prop = null;
 				foreach (var method in group.Methods) {
 					if (method.Property == null)
 						continue;
@@ -431,7 +451,7 @@ namespace de4dot.code.renamer {
 						continue;
 					if (method.Property == null)
 						continue;
-					memberInfos.prop(method.Property).rename(prop.PropertyDefinition.Name);
+					memberInfos.prop(method.Property).rename(prop.PropertyDef.Name.String);
 				}
 			}
 		}
@@ -440,7 +460,7 @@ namespace de4dot.code.renamer {
 			if (!this.RenameEvents)
 				return;
 			foreach (var group in allGroups) {
-				EventDef evt = null;
+				MEventDef evt = null;
 				foreach (var method in group.Methods) {
 					if (method.Event == null)
 						continue;
@@ -456,7 +476,7 @@ namespace de4dot.code.renamer {
 						continue;
 					if (method.Event == null)
 						continue;
-					memberInfos.evt(method.Event).rename(evt.EventDefinition.Name);
+					memberInfos.evt(method.Event).rename(evt.EventDef.Name.String);
 				}
 			}
 		}
@@ -476,7 +496,7 @@ namespace de4dot.code.renamer {
 			var propMethod = group.Methods[0];
 			if (propMethod.Property != null)
 				return;
-			if (propMethod.MethodDefinition.Overrides.Count == 0)
+			if (propMethod.MethodDef.Overrides.Count == 0)
 				return;
 
 			var theProperty = getOverriddenProperty(propMethod);
@@ -490,12 +510,12 @@ namespace de4dot.code.renamer {
 			if (group.Methods.Count <= 1 || !group.hasProperty())
 				return;
 
-			PropertyDef prop = null;
-			List<MethodDef> missingProps = null;
+			MPropertyDef prop = null;
+			List<MMethodDef> missingProps = null;
 			foreach (var method in group.Methods) {
 				if (method.Property == null) {
 					if (missingProps == null)
-						missingProps = new List<MethodDef>();
+						missingProps = new List<MMethodDef>();
 					missingProps.Add(method);
 				}
 				else if (prop == null || !method.Owner.HasModule)
@@ -510,12 +530,12 @@ namespace de4dot.code.renamer {
 				createProperty(prop, method, "");
 		}
 
-		void createProperty(PropertyDef propDef, MethodDef methodDef, string overridePrefix) {
+		void createProperty(MPropertyDef propDef, MMethodDef methodDef, string overridePrefix) {
 			if (!methodDef.Owner.HasModule)
 				return;
 
-			var newPropertyName = overridePrefix + propDef.PropertyDefinition.Name;
-			if (!DotNetUtils.hasReturnValue(methodDef.MethodDefinition))
+			var newPropertyName = overridePrefix + propDef.PropertyDef.Name;
+			if (!DotNetUtils.hasReturnValue(methodDef.MethodDef))
 				createPropertySetter(newPropertyName, methodDef);
 			else
 				createPropertyGetter(newPropertyName, methodDef);
@@ -527,7 +547,7 @@ namespace de4dot.code.renamer {
 
 			foreach (var group in allGroups) {
 				var groupMethod = group.Methods[0];
-				var methodName = groupMethod.MethodDefinition.Name;
+				var methodName = groupMethod.MethodDef.Name.String;
 				bool onlyRenamableMethods = !group.hasNonRenamableMethod();
 
 				if (Utils.StartsWith(methodName, "get_", StringComparison.Ordinal)) {
@@ -554,7 +574,7 @@ namespace de4dot.code.renamer {
 						continue;	// Virtual methods are in allGroups, so already fixed above
 					if (method.Property != null)
 						continue;
-					var methodName = method.MethodDefinition.Name;
+					var methodName = method.MethodDef.Name.String;
 					if (Utils.StartsWith(methodName, "get_", StringComparison.Ordinal))
 						createPropertyGetter(methodName.Substring(4), method);
 					else if (Utils.StartsWith(methodName, "set_", StringComparison.Ordinal))
@@ -563,7 +583,7 @@ namespace de4dot.code.renamer {
 			}
 		}
 
-		PropertyDef createPropertyGetter(string name, MethodDef propMethod) {
+		MPropertyDef createPropertyGetter(string name, MMethodDef propMethod) {
 			if (string.IsNullOrEmpty(name))
 				return null;
 			var ownerType = propMethod.Owner;
@@ -572,25 +592,28 @@ namespace de4dot.code.renamer {
 			if (propMethod.Property != null)
 				return null;
 
-			var method = propMethod.MethodDefinition;
-			var propType = method.MethodReturnType.ReturnType;
-			var propDef = createProperty(ownerType, name, propType, propMethod.MethodDefinition, null);
+			var sig = propMethod.MethodDef.MethodSig;
+			if (sig == null)
+				return null;
+			var propType = sig.RetType;
+			var propDef = createProperty(ownerType, name, propType, propMethod.MethodDef, null);
 			if (propDef == null)
 				return null;
 			if (propDef.GetMethod != null)
 				return null;
-			Log.v("Restoring property getter {0} ({1:X8}), Property: {2} ({3:X8})",
+			if (isVerbose)
+				Logger.v("Restoring property getter {0} ({1:X8}), Property: {2} ({3:X8})",
 						Utils.removeNewlines(propMethod),
-						propMethod.MethodDefinition.MetadataToken.ToInt32(),
-						Utils.removeNewlines(propDef.PropertyDefinition),
-						propDef.PropertyDefinition.MetadataToken.ToInt32());
-			propDef.PropertyDefinition.GetMethod = propMethod.MethodDefinition;
+						propMethod.MethodDef.MDToken.ToInt32(),
+						Utils.removeNewlines(propDef.PropertyDef),
+						propDef.PropertyDef.MDToken.ToInt32());
+			propDef.PropertyDef.GetMethod = propMethod.MethodDef;
 			propDef.GetMethod = propMethod;
 			propMethod.Property = propDef;
 			return propDef;
 		}
 
-		PropertyDef createPropertySetter(string name, MethodDef propMethod) {
+		MPropertyDef createPropertySetter(string name, MMethodDef propMethod) {
 			if (string.IsNullOrEmpty(name))
 				return null;
 			var ownerType = propMethod.Owner;
@@ -599,38 +622,64 @@ namespace de4dot.code.renamer {
 			if (propMethod.Property != null)
 				return null;
 
-			var method = propMethod.MethodDefinition;
-			if (method.Parameters.Count == 0)
+			var sig = propMethod.MethodDef.MethodSig;
+			if (sig == null || sig.Params.Count == 0)
 				return null;
-			var propType = method.Parameters[method.Parameters.Count - 1].ParameterType;
-			var propDef = createProperty(ownerType, name, propType, null, propMethod.MethodDefinition);
+			var propType = sig.Params[sig.Params.Count - 1];
+			var propDef = createProperty(ownerType, name, propType, null, propMethod.MethodDef);
 			if (propDef == null)
 				return null;
 			if (propDef.SetMethod != null)
 				return null;
-			Log.v("Restoring property setter {0} ({1:X8}), Property: {2} ({3:X8})",
+			if (isVerbose)
+				Logger.v("Restoring property setter {0} ({1:X8}), Property: {2} ({3:X8})",
 						Utils.removeNewlines(propMethod),
-						propMethod.MethodDefinition.MetadataToken.ToInt32(),
-						Utils.removeNewlines(propDef.PropertyDefinition),
-						propDef.PropertyDefinition.MetadataToken.ToInt32());
-			propDef.PropertyDefinition.SetMethod = propMethod.MethodDefinition;
+						propMethod.MethodDef.MDToken.ToInt32(),
+						Utils.removeNewlines(propDef.PropertyDef),
+						propDef.PropertyDef.MDToken.ToInt32());
+			propDef.PropertyDef.SetMethod = propMethod.MethodDef;
 			propDef.SetMethod = propMethod;
 			propMethod.Property = propDef;
 			return propDef;
 		}
 
-		PropertyDef createProperty(TypeDef ownerType, string name, TypeReference propType, MethodDefinition getter, MethodDefinition setter) {
-			if (string.IsNullOrEmpty(name) || propType.FullName == "System.Void")
+		MPropertyDef createProperty(MTypeDef ownerType, string name, TypeSig propType, MethodDef getter, MethodDef setter) {
+			if (string.IsNullOrEmpty(name) || propType.ElementType == ElementType.Void)
 				return null;
-			var newProp = DotNetUtils.createPropertyDefinition(name, propType, getter, setter);
+			var newSig = createPropertySig(getter, propType, true) ?? createPropertySig(setter, propType, false);
+			if (newSig == null)
+				return null;
+			var newProp = ownerType.Module.ModuleDefMD.UpdateRowId(new PropertyDefUser(name, newSig, 0));
+			newProp.GetMethod = getter;
+			newProp.SetMethod = setter;
 			var propDef = ownerType.findAny(newProp);
 			if (propDef != null)
 				return propDef;
 
 			propDef = ownerType.create(newProp);
 			memberInfos.add(propDef);
-			Log.v("Restoring property: {0}", Utils.removeNewlines(newProp));
+			if (isVerbose)
+				Logger.v("Restoring property: {0}", Utils.removeNewlines(newProp));
 			return propDef;
+		}
+
+		static PropertySig createPropertySig(MethodDef method, TypeSig propType, bool isGetter) {
+			if (method == null)
+				return null;
+			var sig = method.MethodSig;
+			if (sig == null)
+				return null;
+
+			var newSig = new PropertySig(sig.HasThis, propType);
+			newSig.GenParamCount = sig.GenParamCount;
+
+			int count = sig.Params.Count;
+			if (!isGetter)
+				count--;
+			for (int i = 0; i < count; i++)
+				newSig.Params.Add(sig.Params[i]);
+
+			return newSig;
 		}
 
 		void restoreVirtualEvents(IEnumerable<MethodNameGroup> allGroups) {
@@ -656,10 +705,10 @@ namespace de4dot.code.renamer {
 			var eventMethod = group.Methods[0];
 			if (eventMethod.Event != null)
 				return;
-			if (eventMethod.MethodDefinition.Overrides.Count == 0)
+			if (eventMethod.MethodDef.Overrides.Count == 0)
 				return;
 
-			MethodDef overriddenMethod;
+			MMethodDef overriddenMethod;
 			var theEvent = getOverriddenEvent(eventMethod, out overriddenMethod);
 			if (theEvent == null)
 				return;
@@ -672,12 +721,12 @@ namespace de4dot.code.renamer {
 				return;
 
 			EventMethodType methodType = EventMethodType.None;
-			EventDef evt = null;
-			List<MethodDef> missingEvents = null;
+			MEventDef evt = null;
+			List<MMethodDef> missingEvents = null;
 			foreach (var method in group.Methods) {
 				if (method.Event == null) {
 					if (missingEvents == null)
-						missingEvents = new List<MethodDef>();
+						missingEvents = new List<MMethodDef>();
 					missingEvents.Add(method);
 				}
 				else if (evt == null || !method.Owner.HasModule) {
@@ -694,11 +743,11 @@ namespace de4dot.code.renamer {
 				createEvent(evt, method, methodType, "");
 		}
 
-		void createEvent(EventDef eventDef, MethodDef methodDef, EventMethodType methodType, string overridePrefix) {
+		void createEvent(MEventDef eventDef, MMethodDef methodDef, EventMethodType methodType, string overridePrefix) {
 			if (!methodDef.Owner.HasModule)
 				return;
 
-			var newEventName = overridePrefix + eventDef.EventDefinition.Name;
+			var newEventName = overridePrefix + eventDef.EventDef.Name;
 			switch (methodType) {
 			case EventMethodType.Adder:
 				createEventAdder(newEventName, methodDef);
@@ -709,7 +758,7 @@ namespace de4dot.code.renamer {
 			}
 		}
 
-		static EventMethodType getEventMethodType(MethodDef method) {
+		static EventMethodType getEventMethodType(MMethodDef method) {
 			var evt = method.Event;
 			if (evt == null)
 				return EventMethodType.None;
@@ -728,7 +777,7 @@ namespace de4dot.code.renamer {
 
 			foreach (var group in allGroups) {
 				var groupMethod = group.Methods[0];
-				var methodName = groupMethod.MethodDefinition.Name;
+				var methodName = groupMethod.MethodDef.Name.String;
 				bool onlyRenamableMethods = !group.hasNonRenamableMethod();
 
 				if (Utils.StartsWith(methodName, "add_", StringComparison.Ordinal)) {
@@ -755,7 +804,7 @@ namespace de4dot.code.renamer {
 						continue;	// Virtual methods are in allGroups, so already fixed above
 					if (method.Event != null)
 						continue;
-					var methodName = method.MethodDefinition.Name;
+					var methodName = method.MethodDef.Name.String;
 					if (Utils.StartsWith(methodName, "add_", StringComparison.Ordinal))
 						createEventAdder(methodName.Substring(4), method);
 					else if (Utils.StartsWith(methodName, "remove_", StringComparison.Ordinal))
@@ -764,7 +813,7 @@ namespace de4dot.code.renamer {
 			}
 		}
 
-		EventDef createEventAdder(string name, MethodDef eventMethod) {
+		MEventDef createEventAdder(string name, MMethodDef eventMethod) {
 			if (string.IsNullOrEmpty(name))
 				return null;
 			var ownerType = eventMethod.Owner;
@@ -773,24 +822,25 @@ namespace de4dot.code.renamer {
 			if (eventMethod.Event != null)
 				return null;
 
-			var method = eventMethod.MethodDefinition;
+			var method = eventMethod.MethodDef;
 			var eventDef = createEvent(ownerType, name, getEventType(method));
 			if (eventDef == null)
 				return null;
 			if (eventDef.AddMethod != null)
 				return null;
-			Log.v("Restoring event adder {0} ({1:X8}), Event: {2} ({3:X8})",
+			if (isVerbose)
+				Logger.v("Restoring event adder {0} ({1:X8}), Event: {2} ({3:X8})",
 						Utils.removeNewlines(eventMethod),
-						eventMethod.MethodDefinition.MetadataToken.ToInt32(),
-						Utils.removeNewlines(eventDef.EventDefinition),
-						eventDef.EventDefinition.MetadataToken.ToInt32());
-			eventDef.EventDefinition.AddMethod = eventMethod.MethodDefinition;
+						eventMethod.MethodDef.MDToken.ToInt32(),
+						Utils.removeNewlines(eventDef.EventDef),
+						eventDef.EventDef.MDToken.ToInt32());
+			eventDef.EventDef.AddMethod = eventMethod.MethodDef;
 			eventDef.AddMethod = eventMethod;
 			eventMethod.Event = eventDef;
 			return eventDef;
 		}
 
-		EventDef createEventRemover(string name, MethodDef eventMethod) {
+		MEventDef createEventRemover(string name, MMethodDef eventMethod) {
 			if (string.IsNullOrEmpty(name))
 				return null;
 			var ownerType = eventMethod.Owner;
@@ -799,47 +849,51 @@ namespace de4dot.code.renamer {
 			if (eventMethod.Event != null)
 				return null;
 
-			var method = eventMethod.MethodDefinition;
+			var method = eventMethod.MethodDef;
 			var eventDef = createEvent(ownerType, name, getEventType(method));
 			if (eventDef == null)
 				return null;
 			if (eventDef.RemoveMethod != null)
 				return null;
-			Log.v("Restoring event remover {0} ({1:X8}), Event: {2} ({3:X8})",
+			if (isVerbose)
+				Logger.v("Restoring event remover {0} ({1:X8}), Event: {2} ({3:X8})",
 						Utils.removeNewlines(eventMethod),
-						eventMethod.MethodDefinition.MetadataToken.ToInt32(),
-						Utils.removeNewlines(eventDef.EventDefinition),
-						eventDef.EventDefinition.MetadataToken.ToInt32());
-			eventDef.EventDefinition.RemoveMethod = eventMethod.MethodDefinition;
+						eventMethod.MethodDef.MDToken.ToInt32(),
+						Utils.removeNewlines(eventDef.EventDef),
+						eventDef.EventDef.MDToken.ToInt32());
+			eventDef.EventDef.RemoveMethod = eventMethod.MethodDef;
 			eventDef.RemoveMethod = eventMethod;
 			eventMethod.Event = eventDef;
 			return eventDef;
 		}
 
-		TypeReference getEventType(MethodReference method) {
+		TypeSig getEventType(IMethod method) {
 			if (DotNetUtils.hasReturnValue(method))
 				return null;
-			if (method.Parameters.Count != 1)
+			var sig = method.MethodSig;
+			if (sig == null || sig.Params.Count != 1)
 				return null;
-			return method.Parameters[0].ParameterType;
+			return sig.Params[0];
 		}
 
-		EventDef createEvent(TypeDef ownerType, string name, TypeReference eventType) {
-			if (string.IsNullOrEmpty(name) || eventType == null || eventType.FullName == "System.Void")
+		MEventDef createEvent(MTypeDef ownerType, string name, TypeSig eventType) {
+			if (string.IsNullOrEmpty(name) || eventType == null || eventType.ElementType == ElementType.Void)
 				return null;
-			var newEvent = DotNetUtils.createEventDefinition(name, eventType);
+			var newEvent = ownerType.Module.ModuleDefMD.UpdateRowId(new EventDefUser(name, eventType.ToTypeDefOrRef(), 0));
 			var eventDef = ownerType.findAny(newEvent);
 			if (eventDef != null)
 				return eventDef;
 
 			eventDef = ownerType.create(newEvent);
 			memberInfos.add(eventDef);
-			Log.v("Restoring event: {0}", Utils.removeNewlines(newEvent));
+			if (isVerbose)
+				Logger.v("Restoring event: {0}", Utils.removeNewlines(newEvent));
 			return eventDef;
 		}
 
 		void prepareRenameMemberDefinitions(MethodNameGroups groups) {
-			Log.v("Renaming member definitions #1");
+			if (isVerbose)
+				Logger.v("Renaming member definitions #1");
 
 			prepareRenameEntryPoints();
 
@@ -886,7 +940,7 @@ namespace de4dot.code.renamer {
 
 		void restoreMethodArgs(MethodNameGroups groups) {
 			foreach (var group in groups.getAllGroups()) {
-				if (group.Methods[0].ParamDefs.Count == 0)
+				if (group.Methods[0].VisibleParameterCount == 0)
 					continue;
 
 				var argNames = getValidArgNames(group);
@@ -910,19 +964,20 @@ namespace de4dot.code.renamer {
 		}
 
 		string[] getValidArgNames(MethodNameGroup group) {
-			var methods = new List<MethodDef>(group.Methods);
+			var methods = new List<MMethodDef>(group.Methods);
 			foreach (var method in group.Methods) {
-				foreach (var overrideRef in method.MethodDefinition.Overrides) {
-					var overrideDef = modules.resolve(overrideRef);
+				foreach (var ovrd in method.MethodDef.Overrides) {
+					var overrideRef = ovrd.MethodDeclaration;
+					var overrideDef = modules.resolveMethod(overrideRef);
 					if (overrideDef == null) {
-						var typeDef = modules.resolve(overrideRef.DeclaringType) ?? modules.resolveOther(overrideRef.DeclaringType);
+						var typeDef = modules.resolveType(overrideRef.DeclaringType) ?? modules.resolveOther(overrideRef.DeclaringType);
 						if (typeDef == null)
 							continue;
-						overrideDef = typeDef.find(overrideRef);
+						overrideDef = typeDef.findMethod(overrideRef);
 						if (overrideDef == null)
 							continue;
 					}
-					if (overrideDef.ParamDefs.Count != method.ParamDefs.Count)
+					if (overrideDef.VisibleParameterCount != method.VisibleParameterCount)
 						continue;
 					methods.Add(overrideDef);
 				}
@@ -941,12 +996,12 @@ namespace de4dot.code.renamer {
 		}
 
 		class PrepareHelper {
-			Dictionary<TypeDef, bool> prepareMethodCalled = new Dictionary<TypeDef, bool>();
+			Dictionary<MTypeDef, bool> prepareMethodCalled = new Dictionary<MTypeDef, bool>();
 			MemberInfos memberInfos;
 			Action<TypeInfo> func;
-			IEnumerable<TypeDef> allTypes;
+			IEnumerable<MTypeDef> allTypes;
 
-			public PrepareHelper(MemberInfos memberInfos, IEnumerable<TypeDef> allTypes) {
+			public PrepareHelper(MemberInfos memberInfos, IEnumerable<MTypeDef> allTypes) {
 				this.memberInfos = memberInfos;
 				this.allTypes = allTypes;
 			}
@@ -958,7 +1013,7 @@ namespace de4dot.code.renamer {
 					prepare(typeDef);
 			}
 
-			void prepare(TypeDef type) {
+			void prepare(MTypeDef type) {
 				if (prepareMethodCalled.ContainsKey(type))
 					return;
 				prepareMethodCalled[type] = true;
@@ -976,19 +1031,19 @@ namespace de4dot.code.renamer {
 
 		static List<MethodNameGroup> getSorted(MethodNameGroups groups) {
 			var allGroups = new List<MethodNameGroup>(groups.getAllGroups());
-			allGroups.Sort((a, b) => Utils.compareInt32(b.Count, a.Count));
+			allGroups.Sort((a, b) => b.Count.CompareTo(a.Count));
 			return allGroups;
 		}
 
 		class GroupHelper {
 			MemberInfos memberInfos;
-			Dictionary<TypeDef, bool> visited = new Dictionary<TypeDef, bool>();
-			Dictionary<MethodDef, MethodNameGroup> methodToGroup;
+			Dictionary<MTypeDef, bool> visited = new Dictionary<MTypeDef, bool>();
+			Dictionary<MMethodDef, MethodNameGroup> methodToGroup;
 			List<MethodNameGroup> groups = new List<MethodNameGroup>();
-			IEnumerable<TypeDef> allTypes;
+			IEnumerable<MTypeDef> allTypes;
 			Action<MethodNameGroup> func;
 
-			public GroupHelper(MemberInfos memberInfos, IEnumerable<TypeDef> allTypes) {
+			public GroupHelper(MemberInfos memberInfos, IEnumerable<MTypeDef> allTypes) {
 				this.memberInfos = memberInfos;
 				this.allTypes = allTypes;
 			}
@@ -1001,7 +1056,7 @@ namespace de4dot.code.renamer {
 				this.func = func;
 				visited.Clear();
 
-				methodToGroup = new Dictionary<MethodDef, MethodNameGroup>();
+				methodToGroup = new Dictionary<MMethodDef, MethodNameGroup>();
 				foreach (var group in groups) {
 					foreach (var method in group.Methods)
 						methodToGroup[method] = group;
@@ -1011,7 +1066,7 @@ namespace de4dot.code.renamer {
 					visit(type);
 			}
 
-			void visit(TypeDef type) {
+			void visit(MTypeDef type) {
 				if (visited.ContainsKey(type))
 					return;
 				visited[type] = true;
@@ -1037,17 +1092,17 @@ namespace de4dot.code.renamer {
 		}
 
 		static readonly Regex removeGenericsArityRegex = new Regex(@"`[0-9]+");
-		static string getOverridePrefix(MethodNameGroup group, MethodDef method) {
-			if (method == null || method.MethodDefinition.Overrides.Count == 0)
+		static string getOverridePrefix(MethodNameGroup group, MMethodDef method) {
+			if (method == null || method.MethodDef.Overrides.Count == 0)
 				return "";
 			if (group.Methods.Count > 1) {
 				// Don't use an override prefix if the group has an iface method.
 				foreach (var m in group.Methods) {
-					if (m.Owner.TypeDefinition.IsInterface)
+					if (m.Owner.TypeDef.IsInterface)
 						return "";
 				}
 			}
-			var overrideMethod = method.MethodDefinition.Overrides[0];
+			var overrideMethod = method.MethodDef.Overrides[0].MethodDeclaration;
 			var name = overrideMethod.DeclaringType.FullName.Replace('/', '.');
 			name = removeGenericsArityRegex.Replace(name, "");
 			return name + ".";
@@ -1108,7 +1163,7 @@ namespace de4dot.code.renamer {
 					if (memberInfos.tryGetEvent(overriddenEventDef, out info))
 						oldEventName = getRealName(info.newName);
 					else
-						oldEventName = getRealName(overriddenEventDef.EventDefinition.Name);
+						oldEventName = getRealName(overriddenEventDef.EventDef.Name.String);
 				}
 			}
 
@@ -1134,14 +1189,14 @@ namespace de4dot.code.renamer {
 			return newEventName;
 		}
 
-		EventDef getOverriddenEvent(MethodDef overrideMethod) {
-			MethodDef overriddenMethod;
+		MEventDef getOverriddenEvent(MMethodDef overrideMethod) {
+			MMethodDef overriddenMethod;
 			return getOverriddenEvent(overrideMethod, out overriddenMethod);
 		}
 
-		EventDef getOverriddenEvent(MethodDef overrideMethod, out MethodDef overriddenMethod) {
-			var theMethod = overrideMethod.MethodDefinition.Overrides[0];
-			overriddenMethod = modules.resolve(theMethod);
+		MEventDef getOverriddenEvent(MMethodDef overrideMethod, out MMethodDef overriddenMethod) {
+			var theMethod = overrideMethod.MethodDef.Overrides[0].MethodDeclaration;
+			overriddenMethod = modules.resolveMethod(theMethod);
 			if (overriddenMethod != null)
 				return overriddenMethod.Event;
 
@@ -1151,14 +1206,14 @@ namespace de4dot.code.renamer {
 			var extTypeDef = modules.resolveOther(extType);
 			if (extTypeDef == null)
 				return null;
-			overriddenMethod = extTypeDef.find(theMethod);
+			overriddenMethod = extTypeDef.findMethod(theMethod);
 			if (overriddenMethod != null)
 				return overriddenMethod.Event;
 
 			return null;
 		}
 
-		MethodDef getEventMethod(MethodNameGroup group) {
+		MMethodDef getEventMethod(MethodNameGroup group) {
 			foreach (var method in group.Methods) {
 				if (method.Event != null)
 					return method;
@@ -1218,7 +1273,7 @@ namespace de4dot.code.renamer {
 					if (memberInfos.tryGetProperty(overriddenPropDef, out info))
 						oldPropName = getRealName(info.newName);
 					else
-						oldPropName = getRealName(overriddenPropDef.PropertyDefinition.Name);
+						oldPropName = getRealName(overriddenPropDef.PropertyDef.Name.String);
 				}
 			}
 
@@ -1260,9 +1315,9 @@ namespace de4dot.code.renamer {
 			return false;
 		}
 
-		PropertyDef getOverriddenProperty(MethodDef overrideMethod) {
-			var theMethod = overrideMethod.MethodDefinition.Overrides[0];
-			var overriddenMethod = modules.resolve(theMethod);
+		MPropertyDef getOverriddenProperty(MMethodDef overrideMethod) {
+			var theMethod = overrideMethod.MethodDef.Overrides[0].MethodDeclaration;
+			var overriddenMethod = modules.resolveMethod(theMethod);
 			if (overriddenMethod != null)
 				return overriddenMethod.Property;
 
@@ -1272,14 +1327,14 @@ namespace de4dot.code.renamer {
 			var extTypeDef = modules.resolveOther(extType);
 			if (extTypeDef == null)
 				return null;
-			var theMethodDef = extTypeDef.find(theMethod);
+			var theMethodDef = extTypeDef.findMethod(theMethod);
 			if (theMethodDef != null)
 				return theMethodDef.Property;
 
 			return null;
 		}
 
-		MethodDef getPropertyMethod(MethodNameGroup group) {
+		MMethodDef getPropertyMethod(MethodNameGroup group) {
 			foreach (var method in group.Methods) {
 				if (method.Property != null)
 					return method;
@@ -1305,13 +1360,13 @@ namespace de4dot.code.renamer {
 			if (propType == null)
 				return defaultVal;
 
-			var elementType = propType.GetElementType();
-			if (propType is GenericInstanceType || elementType is GenericParameter)
+			var elementType = propType.ScopeType.ToTypeSig(false).RemovePinnedAndModifiers();
+			if (propType is GenericInstSig || elementType is GenericSig)
 				return defaultVal;
 
 			var prefix = getPrefix(propType);
 
-			string name = elementType.Name;
+			string name = elementType.TypeName;
 			int i;
 			if ((i = name.IndexOf('`')) >= 0)
 				name = name.Substring(0, i);
@@ -1327,10 +1382,11 @@ namespace de4dot.code.renamer {
 			return s.Substring(0, 1).ToUpperInvariant() + s.Substring(1);
 		}
 
-		static string getPrefix(TypeReference typeRef) {
+		static string getPrefix(TypeSig typeRef) {
 			string prefix = "";
-			while (typeRef is PointerType) {
-				typeRef = ((PointerType)typeRef).ElementType;
+			typeRef = typeRef.RemovePinnedAndModifiers();
+			while (typeRef is PtrSig) {
+				typeRef = typeRef.Next;
 				prefix += "p";
 			}
 			return prefix;
@@ -1342,38 +1398,38 @@ namespace de4dot.code.renamer {
 			Setter,
 		}
 
-		static PropertyMethodType getPropertyMethodType(MethodDef method) {
-			if (DotNetUtils.hasReturnValue(method.MethodDefinition))
+		static PropertyMethodType getPropertyMethodType(MMethodDef method) {
+			if (DotNetUtils.hasReturnValue(method.MethodDef))
 				return PropertyMethodType.Getter;
-			if (method.ParamDefs.Count > 0)
+			if (method.VisibleParameterCount > 0)
 				return PropertyMethodType.Setter;
 			return PropertyMethodType.Other;
 		}
 
 		// Returns property type, or null if not all methods have the same type
-		TypeReference getPropertyType(MethodNameGroup group) {
+		TypeSig getPropertyType(MethodNameGroup group) {
 			var methodType = getPropertyMethodType(group.Methods[0]);
 			if (methodType == PropertyMethodType.Other)
 				return null;
 
-			TypeReference type = null;
+			TypeSig type = null;
 			foreach (var propMethod in group.Methods) {
-				TypeReference propType;
+				TypeSig propType;
 				if (methodType == PropertyMethodType.Setter)
-					propType = propMethod.ParamDefs[propMethod.ParamDefs.Count - 1].ParameterDefinition.ParameterType;
+					propType = propMethod.ParamDefs[propMethod.ParamDefs.Count - 1].ParameterDefinition.Type;
 				else
-					propType = propMethod.MethodDefinition.MethodReturnType.ReturnType;
+					propType = propMethod.MethodDef.MethodSig.GetRetType();
 				if (type == null)
 					type = propType;
-				else if (!MemberReferenceHelper.compareTypes(type, propType))
+				else if (!new SigComparer().Equals(type, propType))
 					return null;
 			}
 			return type;
 		}
 
-		MethodDef getOverrideMethod(MethodNameGroup group) {
+		MMethodDef getOverrideMethod(MethodNameGroup group) {
 			foreach (var method in group.Methods) {
-				if (method.MethodDefinition.Overrides.Count > 0)
+				if (method.MethodDef.Overrides.Count > 0)
 					return method;
 			}
 			return null;
@@ -1384,7 +1440,7 @@ namespace de4dot.code.renamer {
 				return;
 
 			if (hasDelegateOwner(group)) {
-				switch (group.Methods[0].MethodDefinition.Name) {
+				switch (group.Methods[0].MethodDef.Name.String) {
 				case "Invoke":
 				case "BeginInvoke":
 				case "EndInvoke":
@@ -1404,7 +1460,7 @@ namespace de4dot.code.renamer {
 				var overrideInfo = memberInfos.method(overrideMethod);
 				var overriddenMethod = getOverriddenMethod(overrideMethod);
 				if (overriddenMethod == null)
-					newMethodName = getRealName(overrideMethod.MethodDefinition.Overrides[0].Name);
+					newMethodName = getRealName(overrideMethod.MethodDef.Overrides[0].MethodDeclaration.Name.String);
 				else
 					newMethodName = getRealName(memberInfos.method(overriddenMethod).newName);
 			}
@@ -1432,7 +1488,7 @@ namespace de4dot.code.renamer {
 		class MergeStateHelper {
 			MemberInfos memberInfos;
 			MergeStateFlags flags;
-			Dictionary<TypeDef, bool> visited = new Dictionary<TypeDef, bool>();
+			Dictionary<MTypeDef, bool> visited = new Dictionary<MTypeDef, bool>();
 
 			public MergeStateHelper(MemberInfos memberInfos) {
 				this.memberInfos = memberInfos;
@@ -1445,7 +1501,7 @@ namespace de4dot.code.renamer {
 					merge(method.Owner);
 			}
 
-			void merge(TypeDef type) {
+			void merge(MTypeDef type) {
 				if (visited.ContainsKey(type))
 					return;
 				visited[type] = true;
@@ -1465,7 +1521,7 @@ namespace de4dot.code.renamer {
 					merge(info, ifaceInfo.typeDef);
 			}
 
-			void merge(TypeInfo info, TypeDef other) {
+			void merge(TypeInfo info, MTypeDef other) {
 				TypeInfo otherInfo;
 				if (!memberInfos.tryGetType(other, out otherInfo))
 					return;
@@ -1479,8 +1535,8 @@ namespace de4dot.code.renamer {
 			}
 		}
 
-		MethodDef getOverriddenMethod(MethodDef overrideMethod) {
-			return modules.resolve(overrideMethod.MethodDefinition.Overrides[0]);
+		MMethodDef getOverriddenMethod(MMethodDef overrideMethod) {
+			return modules.resolveMethod(overrideMethod.MethodDef.Overrides[0].MethodDeclaration);
 		}
 
 		string getSuggestedMethodName(MethodNameGroup group) {
@@ -1544,12 +1600,12 @@ namespace de4dot.code.renamer {
 
 		void prepareRenameEntryPoints() {
 			foreach (var module in modules.TheModules) {
-				var entryPoint = module.ModuleDefinition.EntryPoint;
+				var entryPoint = module.ModuleDefMD.EntryPoint;
 				if (entryPoint == null)
 					continue;
-				var methodDef = modules.resolve(entryPoint);
+				var methodDef = modules.resolveMethod(entryPoint);
 				if (methodDef == null) {
-					Log.w(string.Format("Could not find entry point. Module: {0}, Method: {1}", module.ModuleDefinition.FullyQualifiedName, Utils.removeNewlines(entryPoint)));
+					Logger.w(string.Format("Could not find entry point. Module: {0}, Method: {1}", module.ModuleDefMD.Location, Utils.removeNewlines(entryPoint)));
 					continue;
 				}
 				if (!methodDef.isStatic())
@@ -1557,7 +1613,7 @@ namespace de4dot.code.renamer {
 				memberInfos.method(methodDef).suggestedName = "Main";
 				if (methodDef.ParamDefs.Count == 1) {
 					var paramDef = methodDef.ParamDefs[0];
-					var type = paramDef.ParameterDefinition.ParameterType;
+					var type = paramDef.ParameterDefinition.Type;
 					if (type.FullName == "System.String[]")
 						memberInfos.param(paramDef).newName = "args";
 				}

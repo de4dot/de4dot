@@ -20,17 +20,18 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.IO;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Babel_NET {
 	class ResourceResolver {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		ResourceDecrypter resourceDecrypter;
 		ISimpleDeobfuscator simpleDeobfuscator;
-		TypeDefinition resolverType;
-		MethodDefinition registerMethod;
+		TypeDef resolverType;
+		MethodDef registerMethod;
 		EmbeddedResource encryptedResource;
 		bool hasXorKeys;
 		int xorKey1, xorKey2;
@@ -39,15 +40,15 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			get { return resolverType != null; }
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return resolverType; }
 		}
 
-		public MethodDefinition InitMethod {
+		public MethodDef InitMethod {
 			get { return registerMethod; }
 		}
 
-		public ResourceResolver(ModuleDefinition module, ResourceDecrypter resourceDecrypter, ISimpleDeobfuscator simpleDeobfuscator) {
+		public ResourceResolver(ModuleDefMD module, ResourceDecrypter resourceDecrypter, ISimpleDeobfuscator simpleDeobfuscator) {
 			this.module = module;
 			this.resourceDecrypter = resourceDecrypter;
 			this.simpleDeobfuscator = simpleDeobfuscator;
@@ -66,7 +67,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				if (!new FieldTypes(type).all(requiredTypes))
 					continue;
 
-				MethodDefinition regMethod, handler;
+				MethodDef regMethod, handler;
 				if (!BabelUtils.findRegisterMethod(type, out regMethod, out handler))
 					continue;
 
@@ -87,7 +88,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			}
 		}
 
-		static MethodDefinition findDecryptMethod(TypeDefinition type) {
+		static MethodDef findDecryptMethod(TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (!DotNetUtils.isMethod(method, "System.Reflection.Assembly", "(System.IO.Stream)"))
 					continue;
@@ -96,7 +97,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return null;
 		}
 
-		void initXorKeys(MethodDefinition method) {
+		void initXorKeys(MethodDef method) {
 			simpleDeobfuscator.deobfuscate(method);
 			var ints = new List<int>();
 			var instrs = method.Body.Instructions;
@@ -104,20 +105,20 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				var callvirt = instrs[i];
 				if (callvirt.OpCode.Code != Code.Callvirt)
 					continue;
-				var calledMethod = callvirt.Operand as MethodReference;
+				var calledMethod = callvirt.Operand as IMethod;
 				if (calledMethod == null)
 					continue;
 				if (calledMethod.FullName != "System.Int32 System.IO.BinaryReader::ReadInt32()")
 					continue;
 
 				var ldci4 = instrs[i + 1];
-				if (!DotNetUtils.isLdcI4(ldci4))
+				if (!ldci4.IsLdcI4())
 					continue;
 
 				if (instrs[i + 2].OpCode.Code != Code.Xor)
 					continue;
 
-				ints.Add(DotNetUtils.getLdcI4Value(ldci4));
+				ints.Add(ldci4.GetLdcI4Value());
 			}
 
 			if (ints.Count == 2) {
@@ -130,14 +131,14 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		public EmbeddedResource mergeResources() {
 			if (encryptedResource == null)
 				return null;
-			DeobUtils.decryptAndAddResources(module, encryptedResource.Name, () => decryptResourceAssembly());
+			DeobUtils.decryptAndAddResources(module, encryptedResource.Name.String, () => decryptResourceAssembly());
 			var result = encryptedResource;
 			encryptedResource = null;
 			return result;
 		}
 
 		byte[] decryptResourceAssembly() {
-			var decrypted = resourceDecrypter.decrypt(encryptedResource.GetResourceData());
+			var decrypted = resourceDecrypter.decrypt(encryptedResource.Data.ReadAllBytes());
 			var reader = new BinaryReader(new MemoryStream(decrypted));
 
 			int numResources = reader.ReadInt32() ^ xorKey1;

@@ -18,17 +18,17 @@
 */
 
 using ICSharpCode.SharpZipLib.Zip.Compression;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Babel_NET {
 	class InflaterCreator {
-		public static Inflater create(MethodDefinition method, bool noHeader) {
+		public static Inflater create(MethodDef method, bool noHeader) {
 			return create(findInflaterType(method), noHeader);
 		}
 
-		public static Inflater create(TypeDefinition inflaterType, bool noHeader) {
+		public static Inflater create(TypeDef inflaterType, bool noHeader) {
 			if (inflaterType == null)
 				return createNormal(noHeader);
 			var initHeaderMethod = findInitHeaderMethod(inflaterType);
@@ -46,23 +46,23 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 		static Inflater createNormal(bool noHeader, string errorMessage) {
 			if (errorMessage != null)
-				Log.w("{0}", errorMessage);
+				Logger.w("{0}", errorMessage);
 			return new Inflater(noHeader);
 		}
 
-		static TypeDefinition findInflaterType(MethodDefinition method) {
+		static TypeDef findInflaterType(MethodDef method) {
 			if (method == null || method.Body == null)
 				return null;
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Call)
 					continue;
-				var calledMethod = instr.Operand as MethodDefinition;
+				var calledMethod = instr.Operand as MethodDef;
 				if (calledMethod == null || !calledMethod.IsStatic)
 					continue;
 
 				var type = calledMethod.DeclaringType;
 				foreach (var nested in type.NestedTypes) {
-					if (DeobUtils.hasInteger(DotNetUtils.getMethod(nested, ".ctor"), 0x8001))
+					if (DeobUtils.hasInteger(nested.FindMethod(".ctor"), 0x8001))
 						return type;
 				}
 			}
@@ -70,7 +70,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return null;
 		}
 
-		static MethodDefinition findInitHeaderMethod(TypeDefinition inflaterType) {
+		static MethodDef findInitHeaderMethod(TypeDef inflaterType) {
 			foreach (var nested in inflaterType.NestedTypes) {
 				var method = findInitHeaderMethod2(nested);
 				if (method != null)
@@ -79,7 +79,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return null;
 		}
 
-		static MethodDefinition findInitHeaderMethod2(TypeDefinition nested) {
+		static MethodDef findInitHeaderMethod2(TypeDef nested) {
 			foreach (var method in nested.Methods) {
 				if (method.IsStatic || method.Body == null)
 					continue;
@@ -92,13 +92,13 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return null;
 		}
 
-		static int? getMagic(MethodDefinition method) {
+		static int? getMagic(MethodDef method) {
 			if (method == null || method.Body == null)
 				return null;
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 3; i++) {
 				var ldci4_1 = instrs[i];
-				if (!DotNetUtils.isLdcI4(ldci4_1) || DotNetUtils.getLdcI4Value(ldci4_1) != 16)
+				if (!ldci4_1.IsLdcI4() || ldci4_1.GetLdcI4Value() != 16)
 					continue;
 
 				var callvirt = instrs[i + 1];
@@ -106,13 +106,13 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 					continue;
 
 				var ldci4_2 = instrs[i + 2];
-				if (!DotNetUtils.isLdcI4(ldci4_2))
+				if (!ldci4_2.IsLdcI4())
 					continue;
 
 				if (instrs[i + 3].OpCode.Code != Code.Xor)
 					continue;
 
-				return DotNetUtils.getLdcI4Value(ldci4_2);
+				return ldci4_2.GetLdcI4Value();
 			}
 
 			return null;

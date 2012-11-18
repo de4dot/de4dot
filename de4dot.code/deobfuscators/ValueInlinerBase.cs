@@ -19,19 +19,19 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators {
 	abstract class ValueInlinerBase<TValue> : MethodReturnValueInliner {
-		MethodDefinitionAndDeclaringTypeDict<Func<MethodDefinition, GenericInstanceMethod, object[], object>> decrypterMethods = new MethodDefinitionAndDeclaringTypeDict<Func<MethodDefinition, GenericInstanceMethod, object[], object>>();
+		MethodDefinitionAndDeclaringTypeDict<Func<MethodDef, MethodSpec, object[], object>> decrypterMethods = new MethodDefinitionAndDeclaringTypeDict<Func<MethodDef, MethodSpec, object[], object>>();
 		bool removeUnbox = false;
 
 		class MyCallResult : CallResult {
-			public MethodReference methodReference;
-			public GenericInstanceMethod gim;
-			public MyCallResult(Block block, int callEndIndex, MethodReference method, GenericInstanceMethod gim)
+			public IMethod methodReference;
+			public MethodSpec gim;
+			public MyCallResult(Block block, int callEndIndex, IMethod method, MethodSpec gim)
 				: base(block, callEndIndex) {
 				this.methodReference = method;
 				this.gim = gim;
@@ -47,15 +47,15 @@ namespace de4dot.code.deobfuscators {
 			get { return decrypterMethods.Count != 0; }
 		}
 
-		public IEnumerable<MethodDefinition> Methods {
+		public IEnumerable<MethodDef> Methods {
 			get { return decrypterMethods.getKeys(); }
 		}
 
-		public void add(MethodDefinition method, Func<MethodDefinition, GenericInstanceMethod, object[], object> handler) {
+		public void add(MethodDef method, Func<MethodDef, MethodSpec, object[], object> handler) {
 			if (method == null)
 				return;
 			if (decrypterMethods.find(method) != null)
-				throw new ApplicationException(string.Format("Handler for method {0:X8} has already been added", method.MetadataToken.ToInt32()));
+				throw new ApplicationException(string.Format("Handler for method {0:X8} has already been added", method.MDToken.ToInt32()));
 			if (method != null)
 				decrypterMethods.add(method, handler);
 		}
@@ -64,11 +64,11 @@ namespace de4dot.code.deobfuscators {
 			foreach (var tmp in callResults) {
 				var callResult = (MyCallResult)tmp;
 				var handler = decrypterMethods.find(callResult.methodReference);
-				callResult.returnValue = handler((MethodDefinition)callResult.methodReference, callResult.gim, callResult.args);
+				callResult.returnValue = handler((MethodDef)callResult.methodReference, callResult.gim, callResult.args);
 			}
 		}
 
-		protected override CallResult createCallResult(MethodReference method, GenericInstanceMethod gim, Block block, int callInstrIndex) {
+		protected override CallResult createCallResult(IMethod method, MethodSpec gim, Block block, int callInstrIndex) {
 			if (decrypterMethods.find(method) == null)
 				return null;
 			return new MyCallResult(block, callInstrIndex, method, gim);
@@ -83,7 +83,7 @@ namespace de4dot.code.deobfuscators {
 			var unbox = instrs[index];
 			if (unbox.OpCode.Code != Code.Unbox_Any)
 				return false;
-			var type = unbox.Operand as TypeReference;
+			var type = unbox.Operand as ITypeDefOrRef;
 			if (type == null || type.FullName != unboxType)
 				return false;
 			block.remove(index, 1);
@@ -97,9 +97,9 @@ namespace de4dot.code.deobfuscators {
 				var block = callResult.block;
 				int num = callResult.callEndIndex - callResult.callStartIndex + 1;
 
-				block.replace(callResult.callStartIndex, num, DotNetUtils.createLdci4((bool)callResult.returnValue ? 1 : 0));
+				block.replace(callResult.callStartIndex, num, Instruction.CreateLdcI4((bool)callResult.returnValue ? 1 : 0));
 				removeUnboxInstruction(block, callResult.callStartIndex + 1, "System.Boolean");
-				Log.v("Decrypted boolean: {0}", callResult.returnValue);
+				Logger.v("Decrypted boolean: {0}", callResult.returnValue);
 			}
 		}
 	}
@@ -110,9 +110,9 @@ namespace de4dot.code.deobfuscators {
 				var block = callResult.block;
 				int num = callResult.callEndIndex - callResult.callStartIndex + 1;
 
-				block.replace(callResult.callStartIndex, num, DotNetUtils.createLdci4((int)callResult.returnValue));
+				block.replace(callResult.callStartIndex, num, Instruction.CreateLdcI4((int)callResult.returnValue));
 				removeUnboxInstruction(block, callResult.callStartIndex + 1, "System.Int32");
-				Log.v("Decrypted int32: {0}", callResult.returnValue);
+				Logger.v("Decrypted int32: {0}", callResult.returnValue);
 			}
 		}
 	}
@@ -125,7 +125,7 @@ namespace de4dot.code.deobfuscators {
 
 				block.replace(callResult.callStartIndex, num, Instruction.Create(OpCodes.Ldc_I8, (long)callResult.returnValue));
 				removeUnboxInstruction(block, callResult.callStartIndex + 1, "System.Int64");
-				Log.v("Decrypted int64: {0}", callResult.returnValue);
+				Logger.v("Decrypted int64: {0}", callResult.returnValue);
 			}
 		}
 	}
@@ -138,7 +138,7 @@ namespace de4dot.code.deobfuscators {
 
 				block.replace(callResult.callStartIndex, num, Instruction.Create(OpCodes.Ldc_R4, (float)callResult.returnValue));
 				removeUnboxInstruction(block, callResult.callStartIndex + 1, "System.Single");
-				Log.v("Decrypted single: {0}", callResult.returnValue);
+				Logger.v("Decrypted single: {0}", callResult.returnValue);
 			}
 		}
 	}
@@ -151,7 +151,7 @@ namespace de4dot.code.deobfuscators {
 
 				block.replace(callResult.callStartIndex, num, Instruction.Create(OpCodes.Ldc_R8, (double)callResult.returnValue));
 				removeUnboxInstruction(block, callResult.callStartIndex + 1, "System.Double");
-				Log.v("Decrypted double: {0}", callResult.returnValue);
+				Logger.v("Decrypted double: {0}", callResult.returnValue);
 			}
 		}
 	}

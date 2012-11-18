@@ -21,9 +21,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using Mono.MyStuff;
+using dot10.PE;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
+using dot10.DotNet.Writer;
 using de4dot.blocks;
 using de4dot.PE;
 
@@ -157,7 +158,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				this.RenamingOptions &= ~RenamingOptions.RemoveNamespaceIfOneType;
 		}
 
-		public override byte[] unpackNativeFile(PeImage peImage) {
+		public override byte[] unpackNativeFile(IPEImage peImage) {
 			var data = new NativeImageUnpacker(peImage).unpack();
 			if (data == null)
 				return null;
@@ -167,7 +168,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			return data;
 		}
 
-		public override void init(ModuleDefinition module) {
+		public override void init(ModuleDefMD module) {
 			base.init(module);
 		}
 
@@ -221,6 +222,10 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 
 		public override bool isValidMethodArgName(string name) {
 			return name != null && checkValidName(name, isRandomNameMembers);
+		}
+
+		public override bool isValidMethodReturnArgName(string name) {
+			return string.IsNullOrEmpty(name) || checkValidName(name, isRandomNameMembers);
 		}
 
 		public override bool isValidResourceKeyName(string name) {
@@ -359,7 +364,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			return DeobfuscatorInfo.THE_NAME + " 4.3";
 		}
 
-		static bool findString(MethodDefinition method, string s) {
+		static bool findString(MethodDef method, string s) {
 			foreach (var cs in DotNetUtils.getCodeStrings(method)) {
 				if (cs == s)
 					return true;
@@ -381,7 +386,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				return false;
 
 			if (options.DumpNativeMethods) {
-				using (var fileStream = new FileStream(module.FullyQualifiedName + ".native", FileMode.Create, FileAccess.Write, FileShare.Read)) {
+				using (var fileStream = new FileStream(module.Location + ".native", FileMode.Create, FileAccess.Write, FileShare.Read)) {
 					var sortedTokens = new List<uint>(tokenToNativeCode.Keys);
 					sortedTokens.Sort();
 					var writer = new BinaryWriter(fileStream);
@@ -399,7 +404,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			return true;
 		}
 
-		public override IDeobfuscator moduleReloaded(ModuleDefinition module) {
+		public override IDeobfuscator moduleReloaded(ModuleDefMD module) {
 			var newOne = new Deobfuscator(options);
 			newOne.setModule(module);
 			newOne.fileData = fileData;
@@ -504,7 +509,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			startedDeobfuscating = true;
 		}
 
-		void addEntryPointCallToBeRemoved(MethodDefinition methodToBeRemoved) {
+		void addEntryPointCallToBeRemoved(MethodDef methodToBeRemoved) {
 			var entryPoint = module.EntryPoint;
 			addCallToBeRemoved(entryPoint, methodToBeRemoved);
 			foreach (var calledMethod in DotNetUtils.getCalledMethods(module, entryPoint))
@@ -544,10 +549,10 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			if (!options.RemoveAntiStrongName)
 				return;
 			if (antiStrongname.remove(blocks))
-				Log.v("Removed anti strong name code");
+				Logger.v("Removed anti strong name code");
 		}
 
-		TypeDefinition getDecrypterType() {
+		TypeDef getDecrypterType() {
 			return methodsDecrypter.DecrypterType ?? stringDecrypter.DecrypterType ?? booleanDecrypter.DecrypterType;
 		}
 
@@ -562,7 +567,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 					var instr = instructions[i];
 					if (instr.OpCode.Code != Code.Ldtoken)
 						continue;
-					if (!MemberReferenceHelper.compareTypes(type, instr.Operand as TypeReference))
+					if (!new SigComparer().Equals(type, instr.Operand as ITypeDefOrRef))
 						continue;
 					instructions[i] = new Instr(Instruction.Create(OpCodes.Ldtoken, blocks.Method.DeclaringType));
 				}
@@ -582,7 +587,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			if (canRemoveDecrypterType)
 				addTypeToBeRemoved(decrypterType, "Decrypter type");
 			else
-				Log.v("Could not remove decrypter type");
+				Logger.v("Could not remove decrypter type");
 
 			base.deobfuscateEnd();
 		}
@@ -596,16 +601,29 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		public override IEnumerable<int> getStringDecrypterMethods() {
 			var list = new List<int>();
 			foreach (var info in stringDecrypter.DecrypterInfos)
-				list.Add(info.method.MetadataToken.ToInt32());
+				list.Add(info.method.MDToken.ToInt32());
 			if (stringDecrypter.OtherStringDecrypter != null)
-				list.Add(stringDecrypter.OtherStringDecrypter.MetadataToken.ToInt32());
+				list.Add(stringDecrypter.OtherStringDecrypter.MDToken.ToInt32());
 			return list;
 		}
 
-		public override void OnBeforeAddingResources(MetadataBuilder builder) {
+		public override void OnWriterEvent(ModuleWriterBase writer, ModuleWriterEvent evt) {
 			if (!options.DecryptMethods)
 				return;
-			methodsDecrypter.encryptNativeMethods(builder);
+			switch (evt) {
+			case ModuleWriterEvent.Begin:
+				// The decrypter assumes RVAs are unique so don't share any method bodies
+				writer.TheOptions.ShareMethodBodies = false;
+				break;
+
+			case ModuleWriterEvent.MDBeginAddResources:
+				methodsDecrypter.prepareEncryptNativeMethods(writer);
+				break;
+
+			case ModuleWriterEvent.BeginWriteChunks:
+				methodsDecrypter.encryptNativeMethods(writer);
+				break;
+			}
 		}
 	}
 }

@@ -19,8 +19,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
-using Mono.Cecil;
+using dot10.DotNet;
+using dot10.IO;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
@@ -39,35 +39,35 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 	}
 
 	class AssemblyResolver {
-		ModuleDefinition module;
-		TypeDefinition assemblyResolverType;
-		MethodDefinition assemblyResolverInitMethod;
-		MethodDefinition assemblyResolverMethod;
+		ModuleDefMD module;
+		TypeDef assemblyResolverType;
+		MethodDef assemblyResolverInitMethod;
+		MethodDef assemblyResolverMethod;
 
 		public bool Detected {
 			get { return assemblyResolverType != null; }
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return assemblyResolverType; }
 		}
 
-		public MethodDefinition InitMethod {
+		public MethodDef InitMethod {
 			get { return assemblyResolverInitMethod; }
 		}
 
-		public AssemblyResolver(ModuleDefinition module) {
+		public AssemblyResolver(ModuleDefMD module) {
 			this.module = module;
 		}
 
-		public AssemblyResolver(ModuleDefinition module, AssemblyResolver oldOne) {
+		public AssemblyResolver(ModuleDefMD module, AssemblyResolver oldOne) {
 			this.module = module;
 			this.assemblyResolverType = lookup(oldOne.assemblyResolverType, "Could not find assembly resolver type");
 			this.assemblyResolverMethod = lookup(oldOne.assemblyResolverMethod, "Could not find assembly resolver method");
 			this.assemblyResolverInitMethod = lookup(oldOne.assemblyResolverInitMethod, "Could not find assembly resolver init method");
 		}
 
-		T lookup<T>(T def, string errorMessage) where T : MemberReference {
+		T lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
 			return DeobUtils.lookup(module, def, errorMessage);
 		}
 
@@ -75,12 +75,12 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			if (checkMethod(simpleDeobfuscator, module.EntryPoint))
 				return;
 			if (module.EntryPoint != null) {
-				if (checkMethod(simpleDeobfuscator, DotNetUtils.getMethod(module.EntryPoint.DeclaringType, ".cctor")))
+				if (checkMethod(simpleDeobfuscator, module.EntryPoint.DeclaringType.FindStaticConstructor()))
 					return;
 			}
 		}
 
-		bool checkMethod(ISimpleDeobfuscator simpleDeobfuscator, MethodDefinition methodToCheck) {
+		bool checkMethod(ISimpleDeobfuscator simpleDeobfuscator, MethodDef methodToCheck) {
 			if (methodToCheck == null)
 				return false;
 
@@ -127,7 +127,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			return false;
 		}
 
-		static bool checkFields(IList<FieldDefinition> fields) {
+		static bool checkFields(IList<FieldDef> fields) {
 			if (fields.Count != 2)
 				return false;
 
@@ -137,7 +137,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				 fieldTypes.count("System.Object") == 1);
 		}
 
-		static MethodDefinition findAssemblyResolveMethod(TypeDefinition type) {
+		static MethodDef findAssemblyResolveMethod(TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (DotNetUtils.isMethod(method, "System.Reflection.Assembly", "(System.Object,System.ResolveEventArgs)"))
 					return method;
@@ -181,7 +181,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				var resource = rsrc as EmbeddedResource;
 				if (resource == null)
 					continue;
-				if (!Utils.StartsWith(resource.Name, prefix, StringComparison.Ordinal))
+				if (!Utils.StartsWith(resource.Name.String, prefix, StringComparison.Ordinal))
 					continue;
 
 				result.Add(resource);
@@ -193,8 +193,8 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		static int unknownNameCounter = 0;
 		static string getAssemblyName(EmbeddedResource resource) {
 			try {
-				var resourceModule = ModuleDefinition.ReadModule(new MemoryStream(resource.GetResourceData()));
-				return resourceModule.Assembly.Name.FullName;
+				var resourceModule = ModuleDefMD.Load(resource.Data.ReadAllBytes());
+				return resourceModule.Assembly.FullName;
 			}
 			catch {
 				return string.Format("unknown_name_{0}", unknownNameCounter++);

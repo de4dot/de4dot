@@ -19,26 +19,26 @@
 
 using System;
 using System.Text;
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CryptoObfuscator {
 	class StringDecrypter {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		EmbeddedResource stringResource;
-		TypeDefinition stringDecrypterType;
-		MethodDefinition stringDecrypterMethod;
+		TypeDef stringDecrypterType;
+		MethodDef stringDecrypterMethod;
 		byte[] decryptedData;
 
 		public bool Detected {
 			get { return stringDecrypterType != null; }
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return stringDecrypterType; }
 		}
 
-		public MethodDefinition Method {
+		public MethodDef Method {
 			get { return stringDecrypterMethod; }
 		}
 
@@ -46,13 +46,13 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			get { return stringResource; }
 		}
 
-		public StringDecrypter(ModuleDefinition module) {
+		public StringDecrypter(ModuleDefMD module) {
 			this.module = module;
 		}
 
 		public void find() {
-			TypeDefinition type;
-			MethodDefinition method;
+			TypeDef type;
+			MethodDef method;
 			if (!findStringDecrypterType(out type, out method))
 				return;
 
@@ -68,15 +68,15 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			stringResource = DotNetUtils.getResource(module, resourceName) as EmbeddedResource;
 			if (stringResource == null)
 				return;
-			Log.v("Adding string decrypter. Resource: {0}", Utils.toCsharpString(stringResource.Name));
+			Logger.v("Adding string decrypter. Resource: {0}", Utils.toCsharpString(stringResource.Name));
 
 			decryptedData = resourceDecrypter.decrypt(stringResource.GetResourceStream());
 		}
 
 		string getResourceName() {
-			var defaultName = module.Assembly.Name.Name + module.Assembly.Name.Name;
+			var defaultName = module.Assembly.Name.String + module.Assembly.Name.String;
 
-			var cctor = DotNetUtils.getMethod(stringDecrypterType, ".cctor");
+			var cctor = stringDecrypterType.FindStaticConstructor();
 			if (cctor == null)
 				return defaultName;
 
@@ -98,7 +98,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return Encoding.Unicode.GetString(decryptedData, index, len);
 		}
 
-		bool findStringDecrypterType(out TypeDefinition theType, out MethodDefinition theMethod) {
+		bool findStringDecrypterType(out TypeDef theType, out MethodDef theMethod) {
 			theType = null;
 			theMethod = null;
 
@@ -114,7 +114,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				if (type.NestedTypes.Count > 0)
 					continue;
 
-				MethodDefinition method = null;
+				MethodDef method = null;
 				foreach (var m in type.Methods) {
 					if (m.Name == ".ctor" || m.Name == ".cctor")
 						continue;

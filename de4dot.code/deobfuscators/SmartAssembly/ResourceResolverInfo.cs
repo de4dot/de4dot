@@ -17,8 +17,8 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.SmartAssembly {
@@ -30,16 +30,16 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			get { return resourceInfo; }
 		}
 
-		public ResourceResolverInfo(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob, AssemblyResolverInfo assemblyResolverInfo)
+		public ResourceResolverInfo(ModuleDefMD module, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob, AssemblyResolverInfo assemblyResolverInfo)
 			: base(module, simpleDeobfuscator, deob) {
 			this.assemblyResolverInfo = assemblyResolverInfo;
 		}
 
-		protected override bool checkResolverType(TypeDefinition type) {
+		protected override bool checkResolverType(TypeDef type) {
 			return DotNetUtils.findFieldType(type, "System.Reflection.Assembly", true) != null;
 		}
 
-		protected override bool checkHandlerMethod(MethodDefinition method) {
+		protected override bool checkHandlerMethod(MethodDef method) {
 			if (!method.IsStatic || !method.HasBody)
 				return false;
 
@@ -51,7 +51,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 					continue;
 
 				var s = instrs[0].Operand as string;
-				var calledMethod = instrs[1].Operand as MethodReference;
+				var calledMethod = instrs[1].Operand as IMethod;
 				if (s == null || calledMethod == null)
 					continue;
 
@@ -63,7 +63,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				return false;
 
 			resourceInfo = info;
-			Log.v("Found embedded assemblies resource {0}", Utils.toCsharpString(info.resourceName));
+			Logger.v("Found embedded assemblies resource {0}", Utils.toCsharpString(info.resourceName));
 			return true;
 		}
 	}

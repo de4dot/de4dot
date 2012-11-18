@@ -18,8 +18,8 @@
 */
 
 using System;
-using Mono.Cecil.Cil;
 using System.Collections.Generic;
+using dot10.DotNet.Emit;
 
 namespace de4dot.blocks {
 	public class Instr {
@@ -44,8 +44,8 @@ namespace de4dot.blocks {
 
 		// Returns the variable or null if it's not a ldloc/stloc instruction. It does not return
 		// a local variable if it's a ldloca/ldloca.s instruction.
-		public static VariableDefinition getLocalVar(IList<VariableDefinition> locals, Instr instr) {
-			return DotNetUtils.getLocalVar(locals, instr.Instruction);
+		public static Local getLocalVar(IList<Local> locals, Instr instr) {
+			return instr.Instruction.GetLocal(locals);
 		}
 
 		static public bool isFallThrough(OpCode opCode) {
@@ -104,23 +104,23 @@ namespace de4dot.blocks {
 		}
 
 		public bool isLdcI4() {
-			return DotNetUtils.isLdcI4(OpCode.Code);
+			return instruction.IsLdcI4();
 		}
 
 		public int getLdcI4Value() {
-			return DotNetUtils.getLdcI4Value(instruction);
+			return instruction.GetLdcI4Value();
 		}
 
 		public bool isLdarg() {
-			return DotNetUtils.isLdarg(instruction);
+			return instruction.IsLdarg();
 		}
 
 		public bool isStloc() {
-			return DotNetUtils.isStloc(instruction);
+			return instruction.IsStloc();
 		}
 
 		public bool isLdloc() {
-			return DotNetUtils.isLdloc(instruction);
+			return instruction.IsLdloc();
 		}
 
 		public bool isNop() {
@@ -132,23 +132,23 @@ namespace de4dot.blocks {
 		}
 
 		public bool isLeave() {
-			return DotNetUtils.isLeave(instruction);
+			return instruction.IsLeave();
 		}
 
 		public bool isBr() {
-			return DotNetUtils.isBr(instruction);
+			return instruction.IsBr();
 		}
 
 		public bool isBrfalse() {
-			return DotNetUtils.isBrfalse(instruction);
+			return instruction.IsBrfalse();
 		}
 
 		public bool isBrtrue() {
-			return DotNetUtils.isBrtrue(instruction);
+			return instruction.IsBrtrue();
 		}
 
 		public bool isConditionalBranch() {
-			return DotNetUtils.isConditionalBranch(OpCode.Code);
+			return instruction.IsConditionalBranch();
 		}
 
 		public bool getFlippedBranchOpCode(out OpCode opcode) {

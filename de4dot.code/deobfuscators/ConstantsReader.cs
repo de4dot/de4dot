@@ -18,18 +18,17 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using Mono.Cecil.Metadata;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators {
 	class ConstantsReader {
 		protected IInstructions instructions;
-		protected IList<VariableDefinition> locals;
-		protected Dictionary<VariableDefinition, int> localsValuesInt32 = new Dictionary<VariableDefinition, int>();
-		protected Dictionary<VariableDefinition, long> localsValuesInt64 = new Dictionary<VariableDefinition, long>();
-		protected Dictionary<VariableDefinition, double> localsValuesDouble = new Dictionary<VariableDefinition, double>();
+		protected IList<Local> locals;
+		protected Dictionary<Local, int> localsValuesInt32 = new Dictionary<Local, int>();
+		protected Dictionary<Local, long> localsValuesInt64 = new Dictionary<Local, long>();
+		protected Dictionary<Local, double> localsValuesDouble = new Dictionary<Local, double>();
 		bool emulateConvInstrs;
 
 		public interface IInstructions {
@@ -99,33 +98,33 @@ namespace de4dot.code.deobfuscators {
 			: this(new ListInstrs(instrs), emulateConvInstrs) {
 		}
 
-		public ConstantsReader(MethodDefinition method)
+		public ConstantsReader(MethodDef method)
 			: this(method.Body.Instructions) {
-			this.locals = method.Body.Variables;
+			this.locals = method.Body.LocalList;
 		}
 
-		public ConstantsReader(IList<Instr> instrs, IList<VariableDefinition> locals)
+		public ConstantsReader(IList<Instr> instrs, IList<Local> locals)
 			: this(instrs) {
 			this.locals = locals;
 		}
 
-		public void setConstantInt32(VariableDefinition local, int value) {
+		public void setConstantInt32(Local local, int value) {
 			localsValuesInt32[local] = value;
 		}
 
-		public void setConstantInt32(VariableDefinition local, uint value) {
+		public void setConstantInt32(Local local, uint value) {
 			setConstantInt32(local, (int)value);
 		}
 
-		public void setConstantInt64(VariableDefinition local, long value) {
+		public void setConstantInt64(Local local, long value) {
 			localsValuesInt64[local] = value;
 		}
 
-		public void setConstantInt64(VariableDefinition local, ulong value) {
+		public void setConstantInt64(Local local, ulong value) {
 			setConstantInt64(local, (long)value);
 		}
 
-		public void setConstantDouble(VariableDefinition local, double value) {
+		public void setConstantDouble(Local local, double value) {
 			localsValuesDouble[local] = value;
 		}
 
@@ -143,13 +142,13 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		public bool isLoadConstantInt32(Instruction instr) {
-			if (DotNetUtils.isLdcI4(instr))
+			if (instr.IsLdcI4())
 				return true;
-			if (DotNetUtils.isLdloc(instr)) {
+			if (instr.IsLdloc()) {
 				int tmp;
 				return getLocalConstantInt32(instr, out tmp);
 			}
-			if (DotNetUtils.isLdarg(instr)) {
+			if (instr.IsLdarg()) {
 				int tmp;
 				return getArgConstantInt32(instr, out tmp);
 			}
@@ -159,11 +158,11 @@ namespace de4dot.code.deobfuscators {
 		public bool isLoadConstantInt64(Instruction instr) {
 			if (instr.OpCode.Code == Code.Ldc_I8)
 				return true;
-			if (DotNetUtils.isLdloc(instr)) {
+			if (instr.IsLdloc()) {
 				long tmp;
 				return getLocalConstantInt64(instr, out tmp);
 			}
-			if (DotNetUtils.isLdarg(instr)) {
+			if (instr.IsLdarg()) {
 				long tmp;
 				return getArgConstantInt64(instr, out tmp);
 			}
@@ -173,11 +172,11 @@ namespace de4dot.code.deobfuscators {
 		public bool isLoadConstantDouble(Instruction instr) {
 			if (instr.OpCode.Code == Code.Ldc_R8)
 				return true;
-			if (DotNetUtils.isLdloc(instr)) {
+			if (instr.IsLdloc()) {
 				double tmp;
 				return getLocalConstantDouble(instr, out tmp);
 			}
-			if (DotNetUtils.isLdarg(instr)) {
+			if (instr.IsLdarg()) {
 				double tmp;
 				return getArgConstantDouble(instr, out tmp);
 			}
@@ -309,7 +308,7 @@ namespace de4dot.code.deobfuscators {
 				case Code.Ldc_I4_7:
 				case Code.Ldc_I4_8:
 				case Code.Ldc_I4_M1:
-					stack.Push(new ConstantInfo<int>(index, DotNetUtils.getLdcI4Value(instr)));
+					stack.Push(new ConstantInfo<int>(index, instr.GetLdcI4Value()));
 					break;
 
 				case Code.Add:
@@ -698,10 +697,10 @@ done:
 			value = 0;
 			if (locals == null)
 				return false;
-			var local = DotNetUtils.getLocalVar(locals, instr);
+			var local = instr.GetLocal(locals);
 			if (local == null)
 				return false;
-			if (local.VariableType.EType != ElementType.I4 && local.VariableType.EType != ElementType.U4)
+			if (local.Type.ElementType != ElementType.I4 && local.Type.ElementType != ElementType.U4)
 				return false;
 			return localsValuesInt32.TryGetValue(local, out value);
 		}
@@ -715,10 +714,10 @@ done:
 			value = 0;
 			if (locals == null)
 				return false;
-			var local = DotNetUtils.getLocalVar(locals, instr);
+			var local = instr.GetLocal(locals);
 			if (local == null)
 				return false;
-			if (local.VariableType.EType != ElementType.I8 && local.VariableType.EType != ElementType.U8)
+			if (local.Type.ElementType != ElementType.I8 && local.Type.ElementType != ElementType.U8)
 				return false;
 			return localsValuesInt64.TryGetValue(local, out value);
 		}
@@ -732,10 +731,10 @@ done:
 			value = 0;
 			if (locals == null)
 				return false;
-			var local = DotNetUtils.getLocalVar(locals, instr);
+			var local = instr.GetLocal(locals);
 			if (local == null)
 				return false;
-			if (local.VariableType.EType != ElementType.R8)
+			if (local.Type.ElementType != ElementType.R8)
 				return false;
 			return localsValuesDouble.TryGetValue(local, out value);
 		}

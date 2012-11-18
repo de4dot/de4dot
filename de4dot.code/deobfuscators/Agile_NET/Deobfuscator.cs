@@ -19,15 +19,16 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.MyStuff;
+using dot10.IO;
+using dot10.PE;
+using dot10.DotNet;
 using de4dot.blocks;
 using de4dot.PE;
 
-namespace de4dot.code.deobfuscators.CliSecure {
+namespace de4dot.code.deobfuscators.Agile_NET {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
-		public const string THE_NAME = "CliSecure";
-		public const string THE_TYPE = "cs";
+		public const string THE_NAME = "Agile.NET";
+		public const string THE_TYPE = "an";
 		const string DEFAULT_REGEX = @"[a-zA-Z_0-9>}$]$";
 		BoolOption decryptMethods;
 		BoolOption decryptResources;
@@ -78,7 +79,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 		Options options;
 		string obfuscatorName = DeobfuscatorInfo.THE_NAME;
 
-		List<TypeDefinition> cliSecureAttributes = new List<TypeDefinition>();
+		List<TypeDef> cliSecureAttributes = new List<TypeDef>();
 		ProxyCallFixer proxyCallFixer;
 		CliSecureRtType cliSecureRtType;
 		StringDecrypter stringDecrypter;
@@ -112,27 +113,29 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			this.options = options;
 		}
 
-		public override void init(ModuleDefinition module) {
+		public override void init(ModuleDefMD module) {
 			base.init(module);
 		}
 
-		public override byte[] unpackNativeFile(PeImage peImage) {
+		public override byte[] unpackNativeFile(IPEImage peImage) {
 			return unpackNativeFile1(peImage) ?? unpackNativeFile2(peImage);
 		}
 
 		// Old CS versions
-		byte[] unpackNativeFile1(PeImage peImage) {
+		byte[] unpackNativeFile1(IPEImage peImage) {
 			const int dataDirNum = 6;	// debug dir
 			const int dotNetDirNum = 14;
 
-			if (peImage.OptionalHeader.dataDirectories[dataDirNum].virtualAddress == 0)
+			var optHeader = peImage.ImageNTHeaders.OptionalHeader;
+			if (optHeader.DataDirectories[dataDirNum].VirtualAddress == 0)
 				return null;
-			if (peImage.OptionalHeader.dataDirectories[dataDirNum].size != 0x48)
+			if (optHeader.DataDirectories[dataDirNum].Size != 0x48)
 				return null;
 
-			var fileData = peImage.readAllBytes();
-			int dataDir = (int)peImage.OptionalHeader.offsetOfDataDirectory(dataDirNum);
-			int dotNetDir = (int)peImage.OptionalHeader.offsetOfDataDirectory(dotNetDirNum);
+			var fileData = peImage.GetImageAsByteArray();
+			long dataDirBaseOffset = (long)optHeader.DataDirectories[0].StartOffset;
+			int dataDir = (int)dataDirBaseOffset + dataDirNum * 8;
+			int dotNetDir = (int)dataDirBaseOffset + dotNetDirNum * 8;
 			writeUInt32(fileData, dotNetDir, BitConverter.ToUInt32(fileData, dataDir));
 			writeUInt32(fileData, dotNetDir + 4, BitConverter.ToUInt32(fileData, dataDir + 4));
 			writeUInt32(fileData, dataDir, 0);
@@ -142,17 +145,12 @@ namespace de4dot.code.deobfuscators.CliSecure {
 		}
 
 		// CS 1.x
-		byte[] unpackNativeFile2(PeImage peImage) {
-			var dir = peImage.Resources.getRoot();
-			if ((dir = dir.getDirectory("ASSEMBLY")) == null)
-				return null;
-			if ((dir = dir.getDirectory(101)) == null)
-				return null;
-			var data = dir.getData(0);
+		byte[] unpackNativeFile2(IPEImage peImage) {
+			var data = peImage.FindWin32ResourceData("ASSEMBLY", 101, 0);
 			if (data == null)
 				return null;
 
-			return ModuleBytes = peImage.readBytes(data.RVA, (int)data.Size);
+			return ModuleBytes = data.Data.ReadAllBytes();
 		}
 
 		static void writeUInt32(byte[] data, int offset, uint value) {
@@ -213,7 +211,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			var peImage = new PeImage(fileData);
 
 			if (!new MethodsDecrypter().decrypt(peImage, module, cliSecureRtType, ref dumpedMethods)) {
-				Log.v("Methods aren't encrypted or invalid signature");
+				Logger.v("Methods aren't encrypted or invalid signature");
 				return false;
 			}
 
@@ -221,7 +219,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			return true;
 		}
 
-		public override IDeobfuscator moduleReloaded(ModuleDefinition module) {
+		public override IDeobfuscator moduleReloaded(ModuleDefMD module) {
 			var newOne = new Deobfuscator(options);
 			newOne.setModule(module);
 			newOne.cliSecureAttributes = lookup(module, cliSecureAttributes, "Could not find CliSecure attribute");
@@ -233,8 +231,8 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			return newOne;
 		}
 
-		static List<TypeDefinition> lookup(ModuleDefinition module, List<TypeDefinition> types, string errorMsg) {
-			var list = new List<TypeDefinition>(types.Count);
+		static List<TypeDef> lookup(ModuleDefMD module, List<TypeDef> types, string errorMsg) {
+			var list = new List<TypeDef>(types.Count);
 			foreach (var type in types)
 				list.Add(DeobUtils.lookup(module, type, errorMsg));
 			return list;
@@ -274,7 +272,6 @@ namespace de4dot.code.deobfuscators.CliSecure {
 
 			if (options.RestoreVmCode) {
 				csvm.restore();
-				addAssemblyReferenceToBeRemoved(csvm.VmAssemblyReference, "CSVM assembly reference");
 				addResourceToBeRemoved(csvm.Resource, "CSVM data resource");
 			}
 		}
@@ -308,19 +305,20 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			}
 			if (options.DecryptMethods) {
 				addResources("Obfuscator protection files");
-				addModuleReferencesToBeRemoved(cliSecureRtType.DecryptModuleReferences, "Obfuscator protection files");
-				addModuleReferences("Obfuscator protection files");
 			}
 
-			module.Attributes |= ModuleAttributes.ILOnly;
-
 			base.deobfuscateEnd();
+
+			// Call hasNativeMethods() after all types/methods/etc have been removed since
+			// some of the removed methods could be native methods
+			if (!module.IsILOnly && !hasNativeMethods())
+				module.IsILOnly = true;
 		}
 
 		public override IEnumerable<int> getStringDecrypterMethods() {
 			var list = new List<int>();
 			if (stringDecrypter.Method != null)
-				list.Add(stringDecrypter.Method.MetadataToken.ToInt32());
+				list.Add(stringDecrypter.Method.MDToken.ToInt32());
 			return list;
 		}
 
@@ -328,7 +326,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			if (!options.RemoveStackFrameHelper)
 				return;
 			if (stackFrameHelper.ExceptionLoggerRemover.remove(blocks))
-				Log.v("Removed StackFrameHelper code");
+				Logger.v("Removed StackFrameHelper code");
 		}
 	}
 }

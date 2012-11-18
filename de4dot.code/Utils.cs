@@ -21,6 +21,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using dot10.DotNet;
+using dot10.IO;
 
 namespace de4dot.code {
 	// These are in .NET 3.5 and later...
@@ -59,6 +61,10 @@ namespace de4dot.code {
 			foreach (var val in values)
 				dict[val] = true;
 			return dict.Keys;
+		}
+
+		public static string toCsharpString(UTF8String s) {
+			return toCsharpString(UTF8String.ToSystemStringOrEmpty(s));
 		}
 
 		public static string toCsharpString(string s) {
@@ -209,12 +215,6 @@ namespace de4dot.code {
 			return true;
 		}
 
-		public static int compareInt32(int a, int b) {
-			if (a < b) return -1;
-			if (a > b) return 1;
-			return 0;
-		}
-
 		public static byte[] readFile(string filename) {
 			// If the file is on the network, and we read more than 2MB, we'll read from the wrong
 			// offset in the file! Tested: VMware 8, Win7 x64.
@@ -231,23 +231,6 @@ namespace de4dot.code {
 
 				return fileData;
 			}
-		}
-
-		public static uint readEncodedUInt32(BinaryReader reader) {
-			uint val = 0;
-			int bits = 0;
-			for (int i = 0; i < 5; i++) {
-				byte b = reader.ReadByte();
-				val |= (uint)(b & 0x7F) << bits;
-				if ((b & 0x80) == 0)
-					return val;
-				bits += 7;
-			}
-			throw new ApplicationException("Invalid encoded int32");
-		}
-
-		public static int readEncodedInt32(BinaryReader reader) {
-			return (int)readEncodedUInt32(reader);
 		}
 	}
 }

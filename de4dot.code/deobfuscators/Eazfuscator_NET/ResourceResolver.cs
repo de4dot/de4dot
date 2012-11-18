@@ -20,24 +20,24 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 	class ResourceResolver {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		AssemblyResolver assemblyResolver;
-		TypeDefinition resolverType;
-		MethodDefinition initMethod;
-		MethodDefinition handlerMethod;
+		TypeDef resolverType;
+		MethodDef initMethod;
+		MethodDef handlerMethod;
 		List<string> resourceInfos = new List<string>();
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return resolverType; }
 		}
 
-		public MethodDefinition InitMethod {
+		public MethodDef InitMethod {
 			get { return initMethod; }
 		}
 
@@ -45,7 +45,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			get { return resolverType != null; }
 		}
 
-		public ResourceResolver(ModuleDefinition module, AssemblyResolver assemblyResolver) {
+		public ResourceResolver(ModuleDefMD module, AssemblyResolver assemblyResolver) {
 			this.module = module;
 			this.assemblyResolver = assemblyResolver;
 		}
@@ -56,14 +56,14 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			checkCalledMethods(DotNetUtils.getModuleTypeCctor(module));
 		}
 
-		bool checkCalledMethods(MethodDefinition method) {
+		bool checkCalledMethods(MethodDef method) {
 			if (method == null || method.Body == null)
 				return false;
 
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Call)
 					continue;
-				if (!checkInitMethod(instr.Operand as MethodDefinition))
+				if (!checkInitMethod(instr.Operand as MethodDef))
 					continue;
 
 				return true;
@@ -72,7 +72,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return false;
 		}
 
-		bool checkInitMethod(MethodDefinition method) {
+		bool checkInitMethod(MethodDef method) {
 			if (method == null || !method.IsStatic || method.Body == null)
 				return false;
 			if (!DotNetUtils.isMethod(method, "System.Void", "()"))
@@ -121,7 +121,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return false;
 		}
 
-		bool initializeInfos(MethodDefinition method) {
+		bool initializeInfos(MethodDef method) {
 			foreach (var s in DotNetUtils.getCodeStrings(method)) {
 				if (string.IsNullOrEmpty(s))
 					continue;

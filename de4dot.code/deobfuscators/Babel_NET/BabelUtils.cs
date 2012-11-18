@@ -19,24 +19,24 @@
 
 using System.Collections.Generic;
 using System.Text;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Babel_NET {
 	static class BabelUtils {
-		public static EmbeddedResource findEmbeddedResource(ModuleDefinition module, TypeDefinition decrypterType) {
+		public static EmbeddedResource findEmbeddedResource(ModuleDefMD module, TypeDef decrypterType) {
 			return findEmbeddedResource(module, decrypterType, (method) => { });
 		}
 
-		public static EmbeddedResource findEmbeddedResource(ModuleDefinition module, TypeDefinition decrypterType, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
+		public static EmbeddedResource findEmbeddedResource(ModuleDefMD module, TypeDef decrypterType, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
 			return findEmbeddedResource(module, decrypterType, (method) => {
 				simpleDeobfuscator.deobfuscate(method);
 				simpleDeobfuscator.decryptStrings(method, deob);
 			});
 		}
 
-		public static EmbeddedResource findEmbeddedResource(ModuleDefinition module, TypeDefinition decrypterType, Action<MethodDefinition> fixMethod) {
+		public static EmbeddedResource findEmbeddedResource(ModuleDefMD module, TypeDef decrypterType, Action<MethodDef> fixMethod) {
 			foreach (var method in decrypterType.Methods) {
 				if (!DotNetUtils.isMethod(method, "System.String", "()"))
 					continue;
@@ -50,7 +50,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return null;
 		}
 
-		static EmbeddedResource findEmbeddedResource1(ModuleDefinition module, MethodDefinition method) {
+		static EmbeddedResource findEmbeddedResource1(ModuleDefMD module, MethodDef method) {
 			foreach (var s in DotNetUtils.getCodeStrings(method)) {
 				var resource = DotNetUtils.getResource(module, s) as EmbeddedResource;
 				if (resource != null)
@@ -59,7 +59,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return null;
 		}
 
-		static EmbeddedResource findEmbeddedResource2(ModuleDefinition module, MethodDefinition method) {
+		static EmbeddedResource findEmbeddedResource2(ModuleDefMD module, MethodDef method) {
 			var strings = new List<string>(DotNetUtils.getCodeStrings(method));
 			if (strings.Count != 1)
 				return null;
@@ -75,7 +75,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return DotNetUtils.getResource(module, sb.ToString()) as EmbeddedResource;
 		}
 
-		static bool getXorKey2(MethodDefinition method, out int xorKey) {
+		static bool getXorKey2(MethodDef method, out int xorKey) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 2; i++) {
 				var ldelem = instrs[i];
@@ -83,13 +83,13 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 					continue;
 
 				var ldci4 = instrs[i + 1];
-				if (!DotNetUtils.isLdcI4(ldci4))
+				if (!ldci4.IsLdcI4())
 					continue;
 
 				if (instrs[i + 2].OpCode.Code != Code.Xor)
 					continue;
 
-				xorKey = DotNetUtils.getLdcI4Value(ldci4);
+				xorKey = ldci4.GetLdcI4Value();
 				return true;
 			}
 
@@ -97,7 +97,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return false;
 		}
 
-		public static bool findRegisterMethod(TypeDefinition type, out MethodDefinition regMethod, out MethodDefinition handler) {
+		public static bool findRegisterMethod(TypeDef type, out MethodDef regMethod, out MethodDef handler) {
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
@@ -107,12 +107,12 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				foreach (var instr in method.Body.Instructions) {
 					if (instr.OpCode.Code != Code.Ldftn)
 						continue;
-					var handlerRef = instr.Operand as MethodReference;
+					var handlerRef = instr.Operand as IMethod;
 					if (handlerRef == null)
 						continue;
 					if (!DotNetUtils.isMethod(handlerRef, "System.Reflection.Assembly", "(System.Object,System.ResolveEventArgs)"))
 						continue;
-					if (!MemberReferenceHelper.compareTypes(type, handlerRef.DeclaringType))
+					if (!new SigComparer().Equals(type, handlerRef.DeclaringType))
 						continue;
 					handler = DotNetUtils.getMethod(type, handlerRef);
 					if (handler == null)

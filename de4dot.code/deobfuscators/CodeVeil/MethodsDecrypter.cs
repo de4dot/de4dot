@@ -20,10 +20,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using Mono.Cecil.Metadata;
-using Mono.MyStuff;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 using de4dot.PE;
 
@@ -162,6 +160,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 
 				var dm = new DumpedMethod();
 				dm.token = (uint)(0x06000001 + i);
+				dm.mdRVA = peImage.offsetRead(methodDefOffset + (uint)methodDef.fields[0].offset, methodDef.fields[0].size);
 				dm.mdImplFlags = peImage.offsetReadUInt16(methodDefOffset + (uint)methodDef.fields[1].offset);
 				dm.mdFlags = peImage.offsetReadUInt16(methodDefOffset + (uint)methodDef.fields[2].offset);
 				dm.mdName = peImage.offsetRead(methodDefOffset + (uint)methodDef.fields[3].offset, methodDef.fields[3].size);
@@ -225,7 +224,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 					return null;
 
 				// rva is 0 when the assembly has been embedded
-				int rva = BitConverter.ToInt32(fileData, offset + RVA_EXECUTIVE_OFFSET);
+				uint rva = BitConverter.ToUInt32(fileData, offset + RVA_EXECUTIVE_OFFSET);
 				if (rva != 0 && mainType.Rvas.IndexOf(rva) < 0)
 					continue;
 

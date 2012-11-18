@@ -19,25 +19,25 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.SmartAssembly {
 	class TamperProtectionRemover {
-		ModuleDefinition module;
-		List<MethodDefinition> pinvokeMethods = new List<MethodDefinition>();
+		ModuleDefMD module;
+		List<MethodDef> pinvokeMethods = new List<MethodDef>();
 
 		enum Type {
 			V1,
 			V2,
 		}
 
-		public IList<MethodDefinition> PinvokeMethods {
+		public IList<MethodDef> PinvokeMethods {
 			get { return pinvokeMethods; }
 		}
 
-		public TamperProtectionRemover(ModuleDefinition module) {
+		public TamperProtectionRemover(ModuleDefMD module) {
 			this.module = module;
 		}
 
@@ -68,7 +68,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 
 		class TamperBlocks {
 			public Type type;
-			public MethodDefinition pinvokeMethod;
+			public MethodDef pinvokeMethod;
 			public BlockInfo first;
 			public BlockInfo second;
 			public BlockInfo bad;
@@ -89,7 +89,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return tamperBlocks;
 		}
 
-		bool findFirstBlocks(TamperBlocks tamperBlocks, IList<Block> allBlocks, IList<VariableDefinition> locals) {
+		bool findFirstBlocks(TamperBlocks tamperBlocks, IList<Block> allBlocks, IList<Local> locals) {
 			foreach (var b in allBlocks) {
 				try {
 					if (findFirstBlocks(b, tamperBlocks, allBlocks, locals))
@@ -103,14 +103,14 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return false;
 		}
 
-		static int findCallMethod(Block block, int index, bool keepLooking, Func<MethodReference, bool> func) {
+		static int findCallMethod(Block block, int index, bool keepLooking, Func<IMethod, bool> func) {
 			var instrs = block.Instructions;
 			for (int i = index; i < instrs.Count; i++) {
 				var instr = instrs[i];
 				if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt)
 					continue;
 
-				var calledMethod = instr.Operand as MethodReference;
+				var calledMethod = instr.Operand as IMethod;
 				if (calledMethod != null && func(calledMethod))
 					return i;
 				if (!keepLooking)
@@ -119,7 +119,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return -1;
 		}
 
-		bool findFirstBlocks(Block block, TamperBlocks tamperBlocks, IList<Block> allBlocks, IList<VariableDefinition> locals) {
+		bool findFirstBlocks(Block block, TamperBlocks tamperBlocks, IList<Block> allBlocks, IList<Local> locals) {
 			if (!block.LastInstr.isBrfalse())
 				return false;
 
@@ -146,7 +146,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			var instrs = block.Instructions;
 			int end = instrs.Count - 1;
 			Instr instr;
-			MethodReference method;
+			IMethod method;
 			tamperBlocks.type = Type.V1;
 
 			int index = 0;
@@ -223,8 +223,8 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			instr = instrs[end++];
 			if (instr.OpCode != OpCodes.Callvirt)
 				return false;
-			method = (MethodReference)instr.Operand;
-			if (method.ToString() != "System.String System.Reflection.Assembly::get_FullName()")
+			method = instr.Operand as IMethod;
+			if (method == null || method.ToString() != "System.String System.Reflection.Assembly::get_FullName()")
 				return false;
 
 			instr = instrs[end++];
@@ -234,8 +234,8 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			instr = instrs[end++];
 			if (instr.OpCode != OpCodes.Callvirt)
 				return false;
-			method = (MethodReference)instr.Operand;
-			if (method.ToString() != "System.Boolean System.String::EndsWith(System.String)")
+			method = instr.Operand as IMethod;
+			if (method == null || method.ToString() != "System.Boolean System.String::EndsWith(System.String)")
 				return false;
 
 			instr = instrs[end++];
@@ -274,8 +274,8 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			instr = instrs[end++];
 			if (instr.OpCode != OpCodes.Newobj)
 				return null;
-			var method = (MethodReference)instr.Operand;
-			if (method.ToString() != "System.Void System.Security.SecurityException::.ctor(System.String)")
+			var method = instr.Operand as IMethod;
+			if (method == null || method.ToString() != "System.Void System.Security.SecurityException::.ctor(System.String)")
 				return null;
 
 			instr = instrs[end++];
@@ -296,7 +296,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 
 			if (tamperBlocks == null) {
 				if (isTamperProtected(allBlocks))
-					Log.w("Could not remove tamper protection code: {0} ({1:X8})", Utils.removeNewlines(blocks.Method), blocks.Method.MetadataToken.ToUInt32());
+					Logger.w("Could not remove tamper protection code: {0} ({1:X8})", Utils.removeNewlines(blocks.Method), blocks.Method.MDToken.ToUInt32());
 				return false;
 			}
 

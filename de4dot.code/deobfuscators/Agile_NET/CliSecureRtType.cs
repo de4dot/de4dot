@@ -20,65 +20,49 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 using de4dot.PE;
 
-namespace de4dot.code.deobfuscators.CliSecure {
+namespace de4dot.code.deobfuscators.Agile_NET {
 	class CliSecureRtType {
-		ModuleDefinition module;
-		TypeDefinition cliSecureRtType;
-		MethodDefinition postInitializeMethod;
-		MethodDefinition initializeMethod;
-		MethodDefinition stringDecrypterMethod;
-		MethodDefinition loadMethod;
+		ModuleDefMD module;
+		TypeDef cliSecureRtType;
+		MethodDef postInitializeMethod;
+		MethodDef initializeMethod;
+		MethodDef stringDecrypterMethod;
+		MethodDef loadMethod;
 		bool foundSig;
 
 		public bool Detected {
 			get { return foundSig || cliSecureRtType != null; }
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return cliSecureRtType; }
 		}
 
-		public MethodDefinition StringDecrypterMethod {
+		public MethodDef StringDecrypterMethod {
 			get { return stringDecrypterMethod; }
 		}
 
-		public MethodDefinition PostInitializeMethod {
+		public MethodDef PostInitializeMethod {
 			get { return postInitializeMethod; }
 		}
 
-		public MethodDefinition InitializeMethod {
+		public MethodDef InitializeMethod {
 			get { return initializeMethod; }
 		}
 
-		public MethodDefinition LoadMethod {
+		public MethodDef LoadMethod {
 			get { return loadMethod; }
 		}
 
-		public IEnumerable<ModuleReference> DecryptModuleReferences {
-			get {
-				var list = new List<ModuleReference>();
-				addModuleReference(list, "_Initialize");
-				addModuleReference(list, "_Initialize64");
-				return list;
-			}
-		}
-
-		void addModuleReference(List<ModuleReference> list, string methodName) {
-			var method = DotNetUtils.getPInvokeMethod(cliSecureRtType, methodName);
-			if (method == null)
-				return;
-			list.Add(method.PInvokeInfo.Module);
-		}
-
-		public CliSecureRtType(ModuleDefinition module) {
+		public CliSecureRtType(ModuleDefMD module) {
 			this.module = module;
 		}
 
-		public CliSecureRtType(ModuleDefinition module, CliSecureRtType oldOne) {
+		public CliSecureRtType(ModuleDefMD module, CliSecureRtType oldOne) {
 			this.module = module;
 			cliSecureRtType = lookup(oldOne.cliSecureRtType, "Could not find CliSecureRt type");
 			postInitializeMethod = lookup(oldOne.postInitializeMethod, "Could not find postInitializeMethod method");
@@ -88,7 +72,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			foundSig = oldOne.foundSig;
 		}
 
-		T lookup<T>(T def, string errorMessage) where T : MemberReference {
+		T lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
 			return DeobUtils.lookup(module, def, errorMessage);
 		}
 
@@ -147,13 +131,13 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			foreach (var type in module.Types) {
 				if (type.Fields.Count != 1)
 					continue;
-				if (type.Fields[0].FieldType.FullName != "System.Byte[]")
+				if (type.Fields[0].FieldSig.GetFieldType().GetFullName() != "System.Byte[]")
 					continue;
 				if (type.Methods.Count != 2)
 					continue;
-				if (DotNetUtils.getMethod(type, ".cctor") == null)
+				if (type.FindStaticConstructor() == null)
 					continue;
-				var cs = DotNetUtils.getMethod(type, "cs");
+				var cs = type.FindMethod("cs");
 				if (cs == null)
 					continue;
 
@@ -165,7 +149,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			return false;
 		}
 
-		static MethodDefinition findStringDecrypterMethod(TypeDefinition type) {
+		static MethodDef findStringDecrypterMethod(TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (method.Body == null || !method.IsStatic)
 					continue;
@@ -178,7 +162,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			return null;
 		}
 
-		static MethodDefinition findMethod(TypeDefinition type, string returnType, string name, string parameters) {
+		static MethodDef findMethod(TypeDef type, string returnType, string name, string parameters) {
 			var methodName = returnType + " " + type.FullName + "::" + name + parameters;
 			foreach (var method in type.Methods) {
 				if (method.Body == null || !method.IsStatic)
@@ -192,16 +176,17 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			return null;
 		}
 
-		static bool hasInitializeMethod(TypeDefinition type, string name) {
+		static bool hasInitializeMethod(TypeDef type, string name) {
 			var method = DotNetUtils.getPInvokeMethod(type, name);
 			if (method == null)
 				return false;
-			if (method.Parameters.Count != 1)
+			var sig = method.MethodSig;
+			if (sig.Params.Count != 1)
 				return false;
-			if (method.Parameters[0].ParameterType.FullName != "System.IntPtr")
+			if (sig.Params[0].GetElementType() != ElementType.I)
 				return false;
-			var retType = method.MethodReturnType.ReturnType.FullName;
-			if (retType != "System.Void" && retType != "System.Int32")
+			var retType = sig.RetType.GetElementType();
+			if (retType != ElementType.Void && retType != ElementType.I4)
 				return false;
 			return true;
 		}
@@ -209,7 +194,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 		bool findNativeCode(byte[] moduleBytes) {
 			var stream = moduleBytes != null ?
 				(Stream)new MemoryStream(moduleBytes) :
-				(Stream)new FileStream(module.FullyQualifiedName, FileMode.Open, FileAccess.Read, FileShare.Read);
+				(Stream)new FileStream(module.Location, FileMode.Open, FileAccess.Read, FileShare.Read);
 			using (stream) {
 				var peImage = new PeImage(stream);
 				return foundSig = MethodsDecrypter.detect(peImage);
@@ -239,7 +224,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			}
 		}
 
-		static bool isOldStringDecrypterMethod(MethodDefinition method) {
+		static bool isOldStringDecrypterMethod(MethodDef method) {
 			if (method == null || method.Body == null || !method.IsStatic)
 				return false;
 			if (!DotNetUtils.isMethod(method, "System.String", "(System.String)"))

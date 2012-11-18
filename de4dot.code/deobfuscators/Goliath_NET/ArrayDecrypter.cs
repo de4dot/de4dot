@@ -18,12 +18,12 @@
 */
 
 using System;
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Goliath_NET {
 	class ArrayDecrypter : DecrypterBase {
-		public ArrayDecrypter(ModuleDefinition module)
+		public ArrayDecrypter(ModuleDefMD module)
 			: base(module) {
 		}
 
@@ -31,15 +31,15 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			"System.Byte[]",
 			"System.Collections.Generic.Dictionary`2<System.Int32,System.Byte[]>",
 		};
-		protected override bool checkDecrypterType(TypeDefinition type) {
+		protected override bool checkDecrypterType(TypeDef type) {
 			return new FieldTypes(type).exactly(requiredFields);
 		}
 
-		protected override bool checkDelegateInvokeMethod(MethodDefinition invokeMethod) {
+		protected override bool checkDelegateInvokeMethod(MethodDef invokeMethod) {
 			return DotNetUtils.isMethod(invokeMethod, "System.Byte[]", "(System.Int32)");
 		}
 
-		public byte[] decrypt(MethodDefinition method) {
+		public byte[] decrypt(MethodDef method) {
 			var info = getInfo(method);
 			decryptedReader.BaseStream.Position = info.offset;
 			return decryptedReader.ReadBytes(decryptedReader.ReadInt32());

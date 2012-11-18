@@ -17,15 +17,15 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.Cecil;
+using dot10.DotNet;
 
 namespace de4dot.code.renamer.asmmodules {
-	class FieldDef : Ref {
-		public FieldDefinition FieldDefinition {
-			get { return (FieldDefinition)memberReference; }
+	class MFieldDef : Ref {
+		public FieldDef FieldDef {
+			get { return (FieldDef)memberReference; }
 		}
 
-		public FieldDef(FieldDefinition fieldDefinition, TypeDef owner, int index)
+		public MFieldDef(FieldDef fieldDefinition, MTypeDef owner, int index)
 			: base(fieldDefinition, owner, index) {
 		}
 	}

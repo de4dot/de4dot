@@ -19,11 +19,11 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
+using dot10.DotNet;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 	class DecryptMethod {
-		MethodDefinition decryptionMethod;
+		MethodDef decryptionMethod;
 		byte[] key;
 		byte[] iv;
 
@@ -39,7 +39,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			get { return decryptionMethod != null; }
 		}
 
-		public static bool couldBeDecryptMethod(MethodDefinition method, IEnumerable<string> additionalTypes) {
+		public static bool couldBeDecryptMethod(MethodDef method, IEnumerable<string> additionalTypes) {
 			if (method.Body == null)
 				return false;
 
@@ -60,7 +60,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			return true;
 		}
 
-		public bool getKey(MethodDefinition method) {
+		public bool getKey(MethodDef method) {
 			var tmpKey = ArrayFinder.getInitializedByteArray(method, 32);
 			if (tmpKey == null)
 				return false;

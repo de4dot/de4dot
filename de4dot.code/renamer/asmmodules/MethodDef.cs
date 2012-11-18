@@ -18,51 +18,78 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
+using dot10.DotNet;
 
 namespace de4dot.code.renamer.asmmodules {
-	class MethodDef : Ref {
-		IList<GenericParamDef> genericParams;
-		IList<ParamDef> paramDefs = new List<ParamDef>();
+	class MMethodDef : Ref {
+		IList<MGenericParamDef> genericParams;
+		IList<MParamDef> paramDefs = new List<MParamDef>();
+		MParamDef returnParamDef;
+		int visibleParamCount;
+		int visibleBaseIndex;
 
-		public PropertyDef Property { get; set; }
-		public EventDef Event { get; set; }
+		public MPropertyDef Property { get; set; }
+		public MEventDef Event { get; set; }
 
-		public IList<ParamDef> ParamDefs {
+		public int VisibleParameterCount {
+			get { return visibleParamCount; }
+		}
+
+		public int VisibleParameterBaseIndex {
+			get { return visibleBaseIndex; }
+		}
+
+		public IList<MParamDef> ParamDefs {
 			get { return paramDefs; }
 		}
 
-		public IList<GenericParamDef> GenericParams {
-			get { return genericParams; }
-		}
-
-		public MethodDefinition MethodDefinition {
-			get { return (MethodDefinition)memberReference; }
-		}
-
-		public MethodDef(MethodDefinition methodDefinition, TypeDef owner, int index)
-			: base(methodDefinition, owner, index) {
-			genericParams = GenericParamDef.createGenericParamDefList(MethodDefinition.GenericParameters);
-			for (int i = 0; i < methodDefinition.Parameters.Count; i++) {
-				var param = methodDefinition.Parameters[i];
-				paramDefs.Add(new ParamDef(param, i));
+		public IEnumerable<MParamDef> AllParamDefs {
+			get {
+				yield return returnParamDef;
+				foreach (var paramDef in paramDefs)
+					yield return paramDef;
 			}
 		}
 
+		public MParamDef ReturnParamDef {
+			get { return returnParamDef; }
+		}
+
+		public IList<MGenericParamDef> GenericParams {
+			get { return genericParams; }
+		}
+
+		public MethodDef MethodDef {
+			get { return (MethodDef)memberReference; }
+		}
+
+		public MMethodDef(MethodDef methodDefinition, MTypeDef owner, int index)
+			: base(methodDefinition, owner, index) {
+			genericParams = MGenericParamDef.createGenericParamDefList(MethodDef.GenericParameters);
+			visibleBaseIndex = methodDefinition.MethodSig != null && methodDefinition.MethodSig.HasThis ? 1 : 0;
+			for (int i = 0; i < methodDefinition.Parameters.Count; i++) {
+				var param = methodDefinition.Parameters[i];
+				if (param.IsNormalMethodParameter)
+					visibleParamCount++;
+				paramDefs.Add(new MParamDef(param, i));
+			}
+			returnParamDef = new MParamDef(methodDefinition.Parameters.ReturnParameter, -1);
+		}
+
 		public bool isPublic() {
-			return MethodDefinition.IsPublic;
+			return MethodDef.IsPublic;
 		}
 
 		public bool isVirtual() {
-			return MethodDefinition.IsVirtual;
+			return MethodDef.IsVirtual;
 		}
 
 		public bool isNewSlot() {
-			return MethodDefinition.IsNewSlot;
+			return MethodDef.IsNewSlot;
 		}
 
 		public bool isStatic() {
-			return MethodDefinition.IsStatic;
+			return MethodDef.IsStatic;
 		}
 	}
 }

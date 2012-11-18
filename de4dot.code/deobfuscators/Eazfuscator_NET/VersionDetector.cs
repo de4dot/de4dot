@@ -19,7 +19,7 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Eazfuscator_NET {
@@ -27,7 +27,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		StringDecrypter stringDecrypter;
 		FrameworkType frameworkType;
 
-		public VersionDetector(ModuleDefinition module, StringDecrypter stringDecrypter) {
+		public VersionDetector(ModuleDefMD module, StringDecrypter stringDecrypter) {
 			this.stringDecrypter = stringDecrypter;
 			this.frameworkType = DotNetUtils.getFrameworkType(module);
 		}
@@ -38,8 +38,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			if (decryptStringType == null || decryptStringMethod == null)
 				return null;
 
-			var otherMethods = new List<MethodDefinition>();
-			MethodDefinition cctor = null;
+			var otherMethods = new List<MethodDef>();
+			MethodDef cctor = null;
 			foreach (var method in decryptStringType.Methods) {
 				if (method == decryptStringMethod)
 					continue;
@@ -52,7 +52,6 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				return null;
 
 			bool hasConstantM2 = DeobUtils.hasInteger(decryptStringMethod, -2);
-			var frameworkType = DotNetUtils.getFrameworkType(decryptStringType.Module);
 
 			/////////////////////////////////////////////////////////////////
 			/////////////////////////////////////////////////////////////////
@@ -77,11 +76,11 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			if (otherMethods.Count == 0 &&
 				decryptStringType.NestedTypes.Count == 0 &&
 				!hasConstantM2 &&
-				!decryptStringMethod.NoInlining &&
+				!decryptStringMethod.IsNoInlining &&
 				decryptStringMethod.IsPublic &&
 				decryptStringMethod.IsSynchronized &&
-				decryptStringMethod.Body.MaxStackSize >= 35 &&
-				decryptStringMethod.Body.MaxStackSize <= 50 &&
+				decryptStringMethod.Body.MaxStack >= 35 &&
+				decryptStringMethod.Body.MaxStack <= 50 &&
 				decryptStringMethod.Body.ExceptionHandlers.Count == 0 &&
 				new LocalTypes(decryptStringMethod).exactly(locals11) &&
 				checkTypeFields(fields11)) {
@@ -113,11 +112,11 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			if (otherMethods.Count == 0 &&
 				decryptStringType.NestedTypes.Count == 0 &&
 				!hasConstantM2 &&
-				!decryptStringMethod.NoInlining &&
+				!decryptStringMethod.IsNoInlining &&
 				decryptStringMethod.IsPublic &&
 				decryptStringMethod.IsSynchronized &&
-				decryptStringMethod.Body.MaxStackSize >= 35 &&
-				decryptStringMethod.Body.MaxStackSize <= 50 &&
+				decryptStringMethod.Body.MaxStack >= 35 &&
+				decryptStringMethod.Body.MaxStack <= 50 &&
 				decryptStringMethod.Body.ExceptionHandlers.Count == 0 &&
 				new LocalTypes(decryptStringMethod).exactly(locals13) &&
 				checkTypeFields(fields13)) {
@@ -149,11 +148,11 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			if (otherMethods.Count == 0 &&
 				decryptStringType.NestedTypes.Count == 0 &&
 				!hasConstantM2 &&
-				!decryptStringMethod.NoInlining &&
+				!decryptStringMethod.IsNoInlining &&
 				decryptStringMethod.IsPublic &&
 				decryptStringMethod.IsSynchronized &&
-				decryptStringMethod.Body.MaxStackSize >= 150 &&
-				decryptStringMethod.Body.MaxStackSize <= 200 &&
+				decryptStringMethod.Body.MaxStack >= 150 &&
+				decryptStringMethod.Body.MaxStack <= 200 &&
 				decryptStringMethod.Body.ExceptionHandlers.Count == 0 &&
 				new LocalTypes(decryptStringMethod).exactly(locals14) &&
 				checkTypeFields(fields14)) {
@@ -186,11 +185,11 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			if (otherMethods.Count == 0 &&
 				decryptStringType.NestedTypes.Count == 0 &&
 				!hasConstantM2 &&
-				!decryptStringMethod.NoInlining &&
+				!decryptStringMethod.IsNoInlining &&
 				decryptStringMethod.IsPublic &&
 				decryptStringMethod.IsSynchronized &&
-				decryptStringMethod.Body.MaxStackSize >= 1 &&
-				decryptStringMethod.Body.MaxStackSize <= 8 &&
+				decryptStringMethod.Body.MaxStack >= 1 &&
+				decryptStringMethod.Body.MaxStack <= 8 &&
 				decryptStringMethod.Body.ExceptionHandlers.Count == 0 &&
 				new LocalTypes(decryptStringMethod).exactly(locals24) &&
 				checkTypeFields(fields24)) {
@@ -224,11 +223,11 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			if (otherMethods.Count == 0 &&
 				decryptStringType.NestedTypes.Count == 0 &&
 				!hasConstantM2 &&
-				!decryptStringMethod.NoInlining &&
+				!decryptStringMethod.IsNoInlining &&
 				decryptStringMethod.IsPublic &&
 				!decryptStringMethod.IsSynchronized &&
-				decryptStringMethod.Body.MaxStackSize >= 1 &&
-				decryptStringMethod.Body.MaxStackSize <= 8 &&
+				decryptStringMethod.Body.MaxStack >= 1 &&
+				decryptStringMethod.Body.MaxStack <= 8 &&
 				decryptStringMethod.Body.ExceptionHandlers.Count == 1 &&
 				new LocalTypes(decryptStringMethod).exactly(locals26) &&
 				checkTypeFields(fields26)) {
@@ -262,11 +261,11 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			if (otherMethods.Count == 0 &&
 				decryptStringType.NestedTypes.Count == 0 &&
 				!hasConstantM2 &&
-				decryptStringMethod.NoInlining &&
+				decryptStringMethod.IsNoInlining &&
 				decryptStringMethod.IsPublic &&
 				!decryptStringMethod.IsSynchronized &&
-				decryptStringMethod.Body.MaxStackSize >= 1 &&
-				decryptStringMethod.Body.MaxStackSize <= 8 &&
+				decryptStringMethod.Body.MaxStack >= 1 &&
+				decryptStringMethod.Body.MaxStack <= 8 &&
 				decryptStringMethod.Body.ExceptionHandlers.Count == 1 &&
 				new LocalTypes(decryptStringMethod).exactly(locals27) &&
 				checkTypeFields(fields27)) {
@@ -301,11 +300,11 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			if (otherMethods.Count == 0 &&
 				decryptStringType.NestedTypes.Count == 0 &&
 				!hasConstantM2 &&
-				decryptStringMethod.NoInlining &&
+				decryptStringMethod.IsNoInlining &&
 				decryptStringMethod.IsAssembly &&
 				!decryptStringMethod.IsSynchronized &&
-				decryptStringMethod.Body.MaxStackSize >= 1 &&
-				decryptStringMethod.Body.MaxStackSize <= 8 &&
+				decryptStringMethod.Body.MaxStack >= 1 &&
+				decryptStringMethod.Body.MaxStack <= 8 &&
 				decryptStringMethod.Body.ExceptionHandlers.Count == 1 &&
 				new LocalTypes(decryptStringMethod).exactly(locals28) &&
 				checkTypeFields(fields28)) {
@@ -344,11 +343,11 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			if (otherMethods.Count == 0 &&
 				decryptStringType.NestedTypes.Count == 0 &&
 				!hasConstantM2 &&
-				decryptStringMethod.NoInlining &&
+				decryptStringMethod.IsNoInlining &&
 				decryptStringMethod.IsAssembly &&
 				!decryptStringMethod.IsSynchronized &&
-				decryptStringMethod.Body.MaxStackSize >= 1 &&
-				decryptStringMethod.Body.MaxStackSize <= 8 &&
+				decryptStringMethod.Body.MaxStack >= 1 &&
+				decryptStringMethod.Body.MaxStack <= 8 &&
 				(decryptStringMethod.Body.ExceptionHandlers.Count == 1 || decryptStringMethod.Body.ExceptionHandlers.Count == 2) &&
 				new LocalTypes(decryptStringMethod).exactly(locals29) &&
 				checkTypeFields(fields29)) {
@@ -394,11 +393,11 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				otherMethods[0].IsStatic &&
 				new LocalTypes(otherMethods[0]).exactly(olocals30) &&
 				!hasConstantM2 &&
-				decryptStringMethod.NoInlining &&
+				decryptStringMethod.IsNoInlining &&
 				decryptStringMethod.IsAssembly &&
 				!decryptStringMethod.IsSynchronized &&
-				decryptStringMethod.Body.MaxStackSize >= 1 &&
-				decryptStringMethod.Body.MaxStackSize <= 8 &&
+				decryptStringMethod.Body.MaxStack >= 1 &&
+				decryptStringMethod.Body.MaxStack <= 8 &&
 				(decryptStringMethod.Body.ExceptionHandlers.Count == 1 || decryptStringMethod.Body.ExceptionHandlers.Count == 2) &&
 				new LocalTypes(decryptStringMethod).exactly(locals30) &&
 				checkTypeFields(fields30)) {
@@ -444,11 +443,11 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				otherMethods[0].IsStatic &&
 				new LocalTypes(otherMethods[0]).exactly(olocals31) &&
 				hasConstantM2 &&
-				decryptStringMethod.NoInlining &&
+				decryptStringMethod.IsNoInlining &&
 				decryptStringMethod.IsAssembly &&
 				!decryptStringMethod.IsSynchronized &&
-				decryptStringMethod.Body.MaxStackSize >= 1 &&
-				decryptStringMethod.Body.MaxStackSize <= 8 &&
+				decryptStringMethod.Body.MaxStack >= 1 &&
+				decryptStringMethod.Body.MaxStack <= 8 &&
 				(decryptStringMethod.Body.ExceptionHandlers.Count == 1 || decryptStringMethod.Body.ExceptionHandlers.Count == 2) &&
 				new LocalTypes(decryptStringMethod).exactly(locals31) &&
 				checkTypeFields(fields31)) {
@@ -496,11 +495,11 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				otherMethods[0].IsStatic &&
 				new LocalTypes(otherMethods[0]).exactly(olocals32) &&
 				hasConstantM2 &&
-				decryptStringMethod.NoInlining &&
+				decryptStringMethod.IsNoInlining &&
 				decryptStringMethod.IsAssembly &&
 				!decryptStringMethod.IsSynchronized &&
-				decryptStringMethod.Body.MaxStackSize >= 1 &&
-				decryptStringMethod.Body.MaxStackSize <= 8 &&
+				decryptStringMethod.Body.MaxStack >= 1 &&
+				decryptStringMethod.Body.MaxStack <= 8 &&
 				(decryptStringMethod.Body.ExceptionHandlers.Count == 1 || decryptStringMethod.Body.ExceptionHandlers.Count == 2) &&
 				new LocalTypes(decryptStringMethod).exactly(locals32) &&
 				checkTypeFields(fields32)) {
@@ -551,11 +550,11 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					otherMethods[0].IsStatic &&
 					new LocalTypes(otherMethods[0]).exactly(olocals33) &&
 					hasConstantM2 &&
-					decryptStringMethod.NoInlining &&
+					decryptStringMethod.IsNoInlining &&
 					decryptStringMethod.IsAssembly &&
 					!decryptStringMethod.IsSynchronized &&
-					decryptStringMethod.Body.MaxStackSize >= 1 &&
-					decryptStringMethod.Body.MaxStackSize <= 8 &&
+					decryptStringMethod.Body.MaxStack >= 1 &&
+					decryptStringMethod.Body.MaxStack <= 8 &&
 					(decryptStringMethod.Body.ExceptionHandlers.Count == 1 || decryptStringMethod.Body.ExceptionHandlers.Count == 2) &&
 					new LocalTypes(decryptStringMethod).exactly(locals33) &&
 					checkTypeFields(fields33)) {
@@ -606,11 +605,11 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					otherMethods[0].IsPrivate &&
 					otherMethods[0].IsStatic &&
 					new LocalTypes(otherMethods[0]).exactly(olocals33) &&
-					decryptStringMethod.NoInlining &&
+					decryptStringMethod.IsNoInlining &&
 					decryptStringMethod.IsAssembly &&
 					!decryptStringMethod.IsSynchronized &&
-					decryptStringMethod.Body.MaxStackSize >= 1 &&
-					decryptStringMethod.Body.MaxStackSize <= 8 &&
+					decryptStringMethod.Body.MaxStack >= 1 &&
+					decryptStringMethod.Body.MaxStack <= 8 &&
 					(decryptStringMethod.Body.ExceptionHandlers.Count == 1 || decryptStringMethod.Body.ExceptionHandlers.Count == 2) &&
 					new LocalTypes(decryptStringMethod).exactly(locals33) &&
 					checkTypeFields(fields33)) {
@@ -656,11 +655,11 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					otherMethods[0].IsPrivate &&
 					otherMethods[0].IsStatic &&
 					new LocalTypes(otherMethods[0]).exactly(olocals33_149) &&
-					decryptStringMethod.NoInlining &&
+					decryptStringMethod.IsNoInlining &&
 					decryptStringMethod.IsAssembly &&
 					!decryptStringMethod.IsSynchronized &&
-					decryptStringMethod.Body.MaxStackSize >= 1 &&
-					decryptStringMethod.Body.MaxStackSize <= 8 &&
+					decryptStringMethod.Body.MaxStack >= 1 &&
+					decryptStringMethod.Body.MaxStack <= 8 &&
 					(decryptStringMethod.Body.ExceptionHandlers.Count == 1 || decryptStringMethod.Body.ExceptionHandlers.Count == 2) &&
 					new LocalTypes(decryptStringMethod).exactly(locals33_149) &&
 					checkTypeFields(fields33_149)) {
@@ -671,7 +670,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return null;
 		}
 
-		TypeDefinition getNestedType(int n) {
+		TypeDef getNestedType(int n) {
 			var type = stringDecrypter.Type;
 
 			int fieldIndex;
@@ -684,7 +683,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 
 			if (fieldIndex >= type.Fields.Count)
 				return null;
-			var nestedType = type.Fields[fieldIndex].FieldType as TypeDefinition;
+			var nestedType = type.Fields[fieldIndex].FieldType.TryGetTypeDef();
 			if (nestedType == null || type.NestedTypes.IndexOf(nestedType) < 0)
 				return null;
 

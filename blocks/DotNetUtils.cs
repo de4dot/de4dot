@@ -19,9 +19,8 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using Mono.Cecil.Metadata;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 
 namespace de4dot.blocks {
 	public enum FrameworkType {
@@ -33,9 +32,10 @@ namespace de4dot.blocks {
 		Zune,
 	}
 
+#if PORT
 	class TypeCache {
 		ModuleDefinition module;
-		TypeDefinitionDict<TypeDefinition> typeRefToDef = new TypeDefinitionDict<TypeDefinition>();
+		de4dot.blocks.OLD_REMOVE.TypeDefinitionDict<TypeDefinition> typeRefToDef = new de4dot.blocks.OLD_REMOVE.TypeDefinitionDict<TypeDefinition>();
 
 		public TypeCache(ModuleDefinition module) {
 			this.module = module;
@@ -51,7 +51,9 @@ namespace de4dot.blocks {
 			return typeRefToDef.find(typeReference);
 		}
 	}
+#endif
 
+#if PORT
 	public class TypeCaches {
 		Dictionary<ModuleDefinition, TypeCache> typeCaches = new Dictionary<ModuleDefinition, TypeCache>();
 
@@ -77,29 +79,29 @@ namespace de4dot.blocks {
 			return typeCache.lookup(typeReference);
 		}
 	}
+#endif
 
 	public class CallCounter {
-		Dictionary<MethodReferenceAndDeclaringTypeKey, int> calls = new Dictionary<MethodReferenceAndDeclaringTypeKey, int>();
+		Dictionary<IMethod, int> calls = new Dictionary<IMethod, int>(MethodEqualityComparer.CompareDeclaringTypes);
 
-		public void add(MethodReference calledMethod) {
+		public void add(IMethod calledMethod) {
 			int count;
-			var key = new MethodReferenceAndDeclaringTypeKey(calledMethod);
-			calls.TryGetValue(key, out count);
-			calls[key] = count + 1;
+			calls.TryGetValue(calledMethod, out count);
+			calls[calledMethod] = count + 1;
 		}
 
-		public MethodReference most() {
+		public IMethod most() {
 			int numCalls;
 			return most(out numCalls);
 		}
 
-		public MethodReference most(out int numCalls) {
-			MethodReference method = null;
+		public IMethod most(out int numCalls) {
+			IMethod method = null;
 			int callCount = 0;
 			foreach (var key in calls.Keys) {
 				if (calls[key] > callCount) {
 					callCount = calls[key];
-					method = key.MethodReference;
+					method = key;
 				}
 			}
 			numCalls = callCount;
@@ -107,10 +109,11 @@ namespace de4dot.blocks {
 		}
 	}
 
+#if PORT
 	public class MethodCalls {
 		Dictionary<string, int> methodCalls = new Dictionary<string, int>(StringComparer.Ordinal);
 
-		public void addMethodCalls(MethodDefinition method) {
+		public void addMethodCalls(MethodDef method) {
 			if (!method.HasBody)
 				return;
 			foreach (var instr in method.Body.Instructions) {
@@ -137,200 +140,22 @@ namespace de4dot.blocks {
 			return count(methodFullName) != 0;
 		}
 	}
+#endif
 
 	public static class DotNetUtils {
+#if PORT
 		public static readonly TypeCaches typeCaches = new TypeCaches();
+#endif
 
-		public static bool isLeave(Instruction instr) {
-			return instr.OpCode == OpCodes.Leave || instr.OpCode == OpCodes.Leave_S;
+		public static TypeDef getModuleType(ModuleDef module) {
+			return module.GlobalType;
 		}
 
-		public static bool isBr(Instruction instr) {
-			return instr.OpCode == OpCodes.Br || instr.OpCode == OpCodes.Br_S;
+		public static MethodDef getModuleTypeCctor(ModuleDef module) {
+			return module.GlobalType.FindStaticConstructor();
 		}
 
-		public static bool isBrfalse(Instruction instr) {
-			return instr.OpCode == OpCodes.Brfalse || instr.OpCode == OpCodes.Brfalse_S;
-		}
-
-		public static bool isBrtrue(Instruction instr) {
-			return instr.OpCode == OpCodes.Brtrue || instr.OpCode == OpCodes.Brtrue_S;
-		}
-
-		public static bool isLdcI4(Instruction instruction) {
-			return isLdcI4(instruction.OpCode.Code);
-		}
-
-		public static bool isLdcI4(Code code) {
-			switch (code) {
-			case Code.Ldc_I4_M1:
-			case Code.Ldc_I4_0:
-			case Code.Ldc_I4_1:
-			case Code.Ldc_I4_2:
-			case Code.Ldc_I4_3:
-			case Code.Ldc_I4_4:
-			case Code.Ldc_I4_5:
-			case Code.Ldc_I4_6:
-			case Code.Ldc_I4_7:
-			case Code.Ldc_I4_8:
-			case Code.Ldc_I4_S:
-			case Code.Ldc_I4:
-				return true;
-			default:
-				return false;
-			}
-		}
-
-		public static int getLdcI4Value(Instruction instruction) {
-			switch (instruction.OpCode.Code) {
-			case Code.Ldc_I4_M1:return -1;
-			case Code.Ldc_I4_0: return 0;
-			case Code.Ldc_I4_1: return 1;
-			case Code.Ldc_I4_2: return 2;
-			case Code.Ldc_I4_3: return 3;
-			case Code.Ldc_I4_4: return 4;
-			case Code.Ldc_I4_5: return 5;
-			case Code.Ldc_I4_6: return 6;
-			case Code.Ldc_I4_7: return 7;
-			case Code.Ldc_I4_8: return 8;
-			case Code.Ldc_I4_S: return (sbyte)instruction.Operand;
-			case Code.Ldc_I4:	return (int)instruction.Operand;
-			default:
-				throw new ApplicationException(string.Format("Not an ldc.i4 instruction: {0}", instruction));
-			}
-		}
-
-		// Returns true if it's one of the ldarg instructions
-		public static bool isLdarg(Instruction instr) {
-			switch (instr.OpCode.Code) {
-			case Code.Ldarg:
-			case Code.Ldarg_S:
-			case Code.Ldarg_0:
-			case Code.Ldarg_1:
-			case Code.Ldarg_2:
-			case Code.Ldarg_3:
-				return true;
-			default:
-				return false;
-			}
-		}
-
-		// Return true if it's one of the stloc instructions
-		public static bool isStloc(Instruction instr) {
-			switch (instr.OpCode.Code) {
-			case Code.Stloc:
-			case Code.Stloc_0:
-			case Code.Stloc_1:
-			case Code.Stloc_2:
-			case Code.Stloc_3:
-			case Code.Stloc_S:
-				return true;
-			default:
-				return false;
-			}
-		}
-
-		// Returns true if it's one of the ldloc instructions
-		public static bool isLdloc(Instruction instr) {
-			switch (instr.OpCode.Code) {
-			case Code.Ldloc:
-			case Code.Ldloc_0:
-			case Code.Ldloc_1:
-			case Code.Ldloc_2:
-			case Code.Ldloc_3:
-			case Code.Ldloc_S:
-				return true;
-			default:
-				return false;
-			}
-		}
-
-		// Returns the variable or null if it's not a ldloc/stloc instruction. It does not return
-		// a local variable if it's a ldloca/ldloca.s instruction.
-		public static VariableDefinition getLocalVar(IList<VariableDefinition> locals, Instruction instr) {
-			int index;
-			switch (instr.OpCode.Code) {
-			case Code.Ldloc:
-			case Code.Ldloc_S:
-			case Code.Stloc:
-			case Code.Stloc_S:
-				return (VariableDefinition)instr.Operand;
-
-			case Code.Ldloc_0:
-			case Code.Ldloc_1:
-			case Code.Ldloc_2:
-			case Code.Ldloc_3:
-				index = instr.OpCode.Code - Code.Ldloc_0;
-				break;
-
-			case Code.Stloc_0:
-			case Code.Stloc_1:
-			case Code.Stloc_2:
-			case Code.Stloc_3:
-				index = instr.OpCode.Code - Code.Stloc_0;
-				break;
-
-			default:
-				return null;
-			}
-
-			if (index < locals.Count)
-				return locals[index];
-			return null;
-		}
-
-		public static bool isConditionalBranch(Code code) {
-			switch (code) {
-			case Code.Bge:
-			case Code.Bge_S:
-			case Code.Bge_Un:
-			case Code.Bge_Un_S:
-			case Code.Blt:
-			case Code.Blt_S:
-			case Code.Blt_Un:
-			case Code.Blt_Un_S:
-			case Code.Bgt:
-			case Code.Bgt_S:
-			case Code.Bgt_Un:
-			case Code.Bgt_Un_S:
-			case Code.Ble:
-			case Code.Ble_S:
-			case Code.Ble_Un:
-			case Code.Ble_Un_S:
-			case Code.Brfalse:
-			case Code.Brfalse_S:
-			case Code.Brtrue:
-			case Code.Brtrue_S:
-			case Code.Beq:
-			case Code.Beq_S:
-			case Code.Bne_Un:
-			case Code.Bne_Un_S:
-				return true;
-
-			default:
-				return false;
-			}
-		}
-
-		public static TypeDefinition getModuleType(ModuleDefinition module) {
-			if (module.Types.Count == 0)
-				return null;
-
-			if (module.Runtime == TargetRuntime.Net_1_0 || module.Runtime == TargetRuntime.Net_1_1) {
-				if (module.Types[0].FullName == "<Module>")
-					return module.Types[0];
-				return null;
-			}
-
-			// It's always the first one, no matter what it is named.
-			return module.Types[0];
-		}
-
-		public static MethodDefinition getModuleTypeCctor(ModuleDefinition module) {
-			return getMethod(getModuleType(module), ".cctor");
-		}
-
-		public static bool isEmpty(MethodDefinition method) {
+		public static bool isEmpty(MethodDef method) {
 			if (method.Body == null)
 				return false;
 			foreach (var instr in method.Body.Instructions) {
@@ -341,7 +166,7 @@ namespace de4dot.blocks {
 			return true;
 		}
 
-		public static bool isEmptyObfuscated(MethodDefinition method) {
+		public static bool isEmptyObfuscated(MethodDef method) {
 			if (method.Body == null)
 				return false;
 			int index = 0;
@@ -352,32 +177,33 @@ namespace de4dot.blocks {
 			return true;
 		}
 
-		public static FieldDefinition findFieldType(TypeDefinition typeDefinition, string typeName, bool isStatic) {
+		public static FieldDef findFieldType(TypeDef typeDefinition, string typeName, bool isStatic) {
 			if (typeDefinition == null)
 				return null;
 			foreach (var field in typeDefinition.Fields) {
-				if (field.FieldType.FullName == typeName && field.IsStatic == isStatic)
+				if (field.IsStatic == isStatic && field.FieldSig.GetFieldType().GetFullName() == typeName)
 					return field;
 			}
 			return null;
 		}
 
-		public static IEnumerable<MethodDefinition> findMethods(IEnumerable<MethodDefinition> methods, string returnType, string[] argsTypes) {
+		public static IEnumerable<MethodDef> findMethods(IEnumerable<MethodDef> methods, string returnType, string[] argsTypes) {
 			return findMethods(methods, returnType, argsTypes, true);
 		}
 
-		public static IEnumerable<MethodDefinition> findMethods(IEnumerable<MethodDefinition> methods, string returnType, string[] argsTypes, bool isStatic) {
+		public static IEnumerable<MethodDef> findMethods(IEnumerable<MethodDef> methods, string returnType, string[] argsTypes, bool isStatic) {
 			foreach (var method in methods) {
-				if (!method.HasBody || method.CallingConvention != MethodCallingConvention.Default)
+				var sig = method.MethodSig;
+				if (sig == null || !method.HasBody || !sig.IsDefault)
 					continue;
-				if (method.IsStatic != isStatic || method.Parameters.Count != argsTypes.Length)
+				if (method.IsStatic != isStatic || sig.Params.Count != argsTypes.Length)
 					continue;
-				if (method.GenericParameters.Count > 0)
+				if (sig.GenParamCount > 0)
 					continue;
-				if (method.MethodReturnType.ReturnType.FullName != returnType)
+				if (sig.RetType.GetFullName() != returnType)
 					continue;
 				for (int i = 0; i < argsTypes.Length; i++) {
-					if (method.Parameters[i].ParameterType.FullName != argsTypes[i])
+					if (sig.Params[i].GetFullName() != argsTypes[i])
 						goto next;
 				}
 				yield return method;
@@ -385,14 +211,18 @@ namespace de4dot.blocks {
 			}
 		}
 
-		public static bool isDelegate(TypeReference type) {
-			return type != null && (type.FullName == "System.Delegate" || type.FullName == "System.MulticastDelegate");
+		public static bool isDelegate(IType type) {
+			if (type == null)
+				return false;
+			var fn = type.FullName;
+			return fn == "System.Delegate" || fn == "System.MulticastDelegate";
 		}
 
-		public static bool derivesFromDelegate(TypeDefinition type) {
+		public static bool derivesFromDelegate(TypeDef type) {
 			return type != null && isDelegate(type.BaseType);
 		}
 
+#if PORT
 		public static bool isSameAssembly(TypeReference type, string assembly) {
 			return MemberReferenceHelper.getCanonicalizedScopeName(type.Scope) == assembly.ToLowerInvariant();
 		}
@@ -400,37 +230,10 @@ namespace de4dot.blocks {
 		public static bool isMethod(MethodReference method, string returnType, string parameters) {
 			return method != null && method.FullName == returnType + " " + method.DeclaringType.FullName + "::" + method.Name + parameters;
 		}
+#endif
 
-		public static bool hasPinvokeMethod(TypeDefinition type, string methodName) {
-			return getPInvokeMethod(type, methodName) != null;
-		}
-
-		public static MethodDefinition getPInvokeMethod(TypeDefinition type, string methodName) {
-			if (type == null)
-				return null;
-			foreach (var method in type.Methods) {
-				if (method.PInvokeInfo == null)
-					continue;
-				if (method.PInvokeInfo.EntryPoint == methodName)
-					return method;
-			}
-			return null;
-		}
-
-		public static MethodDefinition getPInvokeMethod(TypeDefinition type, string dll, string funcName) {
-			foreach (var method in type.Methods) {
-				if (isPinvokeMethod(method, dll, funcName))
-					return method;
-			}
-			return null;
-		}
-
-		public static bool isPinvokeMethod(MethodDefinition method, string dll, string funcName) {
-			if (method == null)
-				return false;
-			if (method.PInvokeInfo == null || method.PInvokeInfo.EntryPoint != funcName)
-				return false;
-			return getDllName(dll).Equals(getDllName(method.PInvokeInfo.Module.Name), StringComparison.OrdinalIgnoreCase);
+		public static bool isMethod(IMethod method, string returnType, string parameters) {
+			return method != null && method.FullName == returnType + " " + method.DeclaringType.FullName + "::" + method.Name + parameters;
 		}
 
 		public static string getDllName(string dll) {
@@ -439,7 +242,41 @@ namespace de4dot.blocks {
 			return dll;
 		}
 
-		public static MethodDefinition getMethod(TypeDefinition type, string name) {
+		public static bool hasPinvokeMethod(TypeDef type, string methodName) {
+			return getPInvokeMethod(type, methodName) != null;
+		}
+
+		public static MethodDef getPInvokeMethod(TypeDef type, string methodName) {
+			if (type == null)
+				return null;
+			var mname = new UTF8String(methodName);
+			foreach (var method in type.Methods) {
+				if (method.ImplMap == null)
+					continue;
+				if (UTF8String.Equals(method.ImplMap.Name, mname))
+					return method;
+			}
+			return null;
+		}
+
+		public static MethodDef getPInvokeMethod(TypeDef type, string dll, string funcName) {
+			foreach (var method in type.Methods) {
+				if (isPinvokeMethod(method, dll, funcName))
+					return method;
+			}
+			return null;
+		}
+
+		public static bool isPinvokeMethod(MethodDef method, string dll, string funcName) {
+			if (method == null)
+				return false;
+			if (method.ImplMap == null || method.ImplMap.Name.String != funcName)
+				return false;
+			return getDllName(dll).Equals(getDllName(method.ImplMap.Module.Name.String), StringComparison.OrdinalIgnoreCase);
+		}
+
+#if PORT
+		public static MethodDef getMethod(TypeDefinition type, string name) {
 			if (type == null)
 				return null;
 			foreach (var method in type.Methods) {
@@ -449,39 +286,44 @@ namespace de4dot.blocks {
 			return null;
 		}
 
-		public static MethodDefinition getMethod(TypeDefinition type, MethodReference methodReference) {
+		public static MethodDef getMethod(TypeDefinition type, MethodReference methodReference) {
 			if (type == null || methodReference == null)
 				return null;
-			if (methodReference is MethodDefinition)
-				return (MethodDefinition)methodReference;
+			if (methodReference is MethodDef)
+				return (MethodDef)methodReference;
 			foreach (var method in type.Methods) {
 				if (MemberReferenceHelper.compareMethodReference(method, methodReference))
 					return method;
 			}
 			return null;
 		}
+#endif
 
-		public static MethodDefinition getMethod(ModuleDefinition module, MethodReference method) {
+		public static MethodDef getMethod(ModuleDefMD module, IMethod method) {
 			if (method == null)
 				return null;
 			return getMethod(module, method, method.DeclaringType);
 		}
 
-		public static MethodDefinition getMethod2(ModuleDefinition module, MethodReference method) {
+		public static MethodDef getMethod2(ModuleDefMD module, IMethod method) {
 			if (method == null)
 				return null;
-			return getMethod(module, method, method.DeclaringType.GetElementType());
+			if (method is MethodDef)
+				return (MethodDef)method;
+			var git = method.DeclaringType.ToGenericInstSig();
+			var dt = git == null ? method.DeclaringType : git.GenericType.TypeDefOrRef;
+			return getMethod(module, method, dt);
 		}
 
-		static MethodDefinition getMethod(ModuleDefinition module, MethodReference method, TypeReference declaringType) {
+		static MethodDef getMethod(ModuleDefMD module, IMethod method, ITypeDefOrRef declaringType) {
 			if (method == null)
 				return null;
-			if (method is MethodDefinition)
-				return (MethodDefinition)method;
+			if (method is MethodDef)
+				return (MethodDef)method;
 			return getMethod(getType(module, declaringType), method);
 		}
 
-		public static MethodDefinition getMethod(TypeDefinition type, string returnType, string parameters) {
+		public static MethodDef getMethod(TypeDef type, string returnType, string parameters) {
 			foreach (var method in type.Methods) {
 				if (isMethod(method, returnType, parameters))
 					return method;
@@ -489,17 +331,62 @@ namespace de4dot.blocks {
 			return null;
 		}
 
-		public static IEnumerable<MethodDefinition> getNormalMethods(TypeDefinition type) {
+		public static MethodDef getMethod2(ModuleDef module, IMethod method) {
+			if (method == null)
+				return null;
+			return getMethod(module, method, method.DeclaringType.ScopeType);
+		}
+
+		public static TypeDef getType(ModuleDef module, TypeSig type) {
+			type = type.RemovePinnedAndModifiers();
+			var tdr = type as TypeDefOrRefSig;
+			if (tdr == null)
+				return null;
+			return getType(module, tdr.TypeDefOrRef);
+		}
+
+		public static TypeDef getType(ModuleDef module, ITypeDefOrRef type) {
+			var td = type as TypeDef;
+			if (td == null) {
+				var tr = type as TypeRef;
+				if (tr != null) {
+					var trAsm = tr.DefinitionAssembly;
+					var modAsm = module.Assembly;
+					if (trAsm != null && modAsm != null && trAsm.Name == modAsm.Name)
+						td = tr.Resolve();
+				}
+			}
+			return td != null && td.Module == module ? td : null;
+		}
+
+		static MethodDef getMethod(ModuleDef module, IMethod method, ITypeDefOrRef declaringType) {
+			if (method == null)
+				return null;
+			if (method is MethodDef)
+				return (MethodDef)method;
+			return getMethod(getType(module, declaringType), method);
+		}
+
+		public static MethodDef getMethod(TypeDef type, IMethod methodRef) {
+			if (type == null || methodRef == null)
+				return null;
+			if (methodRef is MethodDef)
+				return (MethodDef)methodRef;
+			return type.FindMethod(methodRef.Name, methodRef.MethodSig);
+		}
+
+		public static IEnumerable<MethodDef> getNormalMethods(TypeDef type) {
 			foreach (var method in type.Methods) {
-				if (method.HasPInvokeInfo)
+				if (method.HasImplMap)
 					continue;
-				if (method.Name == ".ctor" || method.Name == ".cctor")
+				if (method.IsConstructor)
 					continue;
 
 				yield return method;
 			}
 		}
 
+#if PORT
 		public static TypeDefinition getType(ModuleDefinition module, TypeReference typeReference) {
 			if (typeReference == null)
 				return null;
@@ -507,37 +394,35 @@ namespace de4dot.blocks {
 				return (TypeDefinition)typeReference;
 			return typeCaches.lookup(module, typeReference);
 		}
+#endif
 
-		public static FieldDefinition getField(ModuleDefinition module, FieldReference field) {
+		public static FieldDef getField(ModuleDef module, IField field) {
 			if (field == null)
 				return null;
-			if (field is FieldDefinition)
-				return (FieldDefinition)field;
+			if (field is FieldDef)
+				return (FieldDef)field;
 			return getField(getType(module, field.DeclaringType), field);
 		}
 
-		public static FieldDefinition getField(TypeDefinition type, FieldReference fieldReference) {
+		public static FieldDef getField(TypeDef type, IField fieldReference) {
 			if (type == null || fieldReference == null)
 				return null;
-			if (fieldReference is FieldDefinition)
-				return (FieldDefinition)fieldReference;
-			foreach (var field in type.Fields) {
-				if (MemberReferenceHelper.compareFieldReference(field, fieldReference))
-					return field;
-			}
-			return null;
+			if (fieldReference is FieldDef)
+				return (FieldDef)fieldReference;
+			return type.FindField(fieldReference.Name, fieldReference.FieldSig);
 		}
 
-		public static FieldDefinition getField(TypeDefinition type, string typeFullName) {
+		public static FieldDef getField(TypeDef type, string typeFullName) {
 			if (type == null)
 				return null;
 			foreach (var field in type.Fields) {
-				if (field.FieldType.FullName == typeFullName)
+				if (field.FieldSig.GetFieldType().GetFullName() == typeFullName)
 					return field;
 			}
 			return null;
 		}
 
+#if PORT
 		public static FieldDefinition getFieldByName(TypeDefinition type, string name) {
 			if (type == null)
 				return null;
@@ -547,12 +432,13 @@ namespace de4dot.blocks {
 			}
 			return null;
 		}
+#endif
 
-		public static IEnumerable<MethodReference> getMethodCalls(MethodDefinition method) {
-			var list = new List<MethodReference>();
+		public static IEnumerable<IMethod> getMethodCalls(MethodDef method) {
+			var list = new List<IMethod>();
 			if (method.HasBody) {
 				foreach (var instr in method.Body.Instructions) {
-					var calledMethod = instr.Operand as MethodReference;
+					var calledMethod = instr.Operand as IMethod;
 					if (calledMethod != null)
 						list.Add(calledMethod);
 				}
@@ -560,13 +446,14 @@ namespace de4dot.blocks {
 			return list;
 		}
 
-		public static MethodCalls getMethodCallCounts(MethodDefinition method) {
+#if PORT
+		public static MethodCalls getMethodCallCounts(MethodDef method) {
 			var methodCalls = new MethodCalls();
 			methodCalls.addMethodCalls(method);
 			return methodCalls;
 		}
 
-		public static bool hasString(MethodDefinition method, string s) {
+		public static bool hasString(MethodDef method, string s) {
 			if (method == null || method.Body == null)
 				return false;
 			foreach (var instr in method.Body.Instructions) {
@@ -576,7 +463,19 @@ namespace de4dot.blocks {
 			return false;
 		}
 
-		public static IList<string> getCodeStrings(MethodDefinition method) {
+		public static IList<string> getCodeStrings(MethodDef method) {
+			var strings = new List<string>();
+			if (method != null && method.Body != null) {
+				foreach (var instr in method.Body.Instructions) {
+					if (instr.OpCode.Code == Code.Ldstr)
+						strings.Add((string)instr.Operand);
+				}
+			}
+			return strings;
+		}
+#endif
+
+		public static IList<string> getCodeStrings(MethodDef method) {
 			var strings = new List<string>();
 			if (method != null && method.Body != null) {
 				foreach (var instr in method.Body.Instructions) {
@@ -587,11 +486,11 @@ namespace de4dot.blocks {
 			return strings;
 		}
 
-		public static Resource getResource(ModuleDefinition module, string name) {
+		public static Resource getResource(ModuleDef module, string name) {
 			return getResource(module, new List<string> { name });
 		}
 
-		public static Resource getResource(ModuleDefinition module, IEnumerable<string> strings) {
+		public static Resource getResource(ModuleDef module, IEnumerable<string> strings) {
 			if (!module.HasResources)
 				return null;
 
@@ -600,8 +499,9 @@ namespace de4dot.blocks {
 				var resourceName = removeFromNullChar(tmp);
 				if (resourceName == null)
 					continue;
+				var name = new UTF8String(resourceName);
 				foreach (var resource in resources) {
-					if (resource.Name == resourceName)
+					if (UTF8String.Equals(resource.Name, name))
 						return resource;
 				}
 			}
@@ -616,9 +516,10 @@ namespace de4dot.blocks {
 			return s.Substring(0, index);
 		}
 
+#if PORT
 		// Copies most things but not everything
-		public static MethodDefinition clone(MethodDefinition method) {
-			var newMethod = new MethodDefinition(method.Name, method.Attributes, method.MethodReturnType.ReturnType);
+		public static MethodDef clone(MethodDef method) {
+			var newMethod = new MethodDef(method.Name, method.Attributes, method.MethodReturnType.ReturnType);
 			newMethod.MetadataToken = method.MetadataToken;
 			newMethod.Attributes = method.Attributes;
 			newMethod.ImplAttributes = method.ImplAttributes;
@@ -634,7 +535,27 @@ namespace de4dot.blocks {
 			copyBodyFromTo(method, newMethod);
 			return newMethod;
 		}
+#endif
 
+		// Copies most things but not everything
+		public static MethodDef clone(MethodDef method) {
+			var newMethod = new MethodDefUser(method.Name, method.MethodSig, method.ImplAttributes, method.Attributes);
+			newMethod.Rid = method.Rid;
+			newMethod.DeclaringType2 = method.DeclaringType;
+			foreach (var pd in method.ParamList)
+				newMethod.ParamList.Add(new ParamDefUser(pd.Name, pd.Sequence, pd.Attributes));
+			foreach (var gp in method.GenericParameters) {
+				var newGp = new GenericParamUser(gp.Number, gp.Flags, gp.Name);
+				foreach (var gpc in newGp.GenericParamConstraints)
+					newGp.GenericParamConstraints.Add(new GenericParamConstraintUser(gpc.Constraint));
+				newMethod.GenericParameters.Add(newGp);
+			}
+			newMethod.Body = new CilBody();
+			copyBodyFromTo(method, newMethod);
+			return newMethod;
+		}
+
+#if PORT
 		public static Instruction clone(Instruction instr) {
 			return new Instruction {
 				Offset = instr.Offset,
@@ -644,7 +565,7 @@ namespace de4dot.blocks {
 			};
 		}
 
-		public static void copyBody(MethodDefinition method, out IList<Instruction> instructions, out IList<ExceptionHandler> exceptionHandlers) {
+		public static void copyBody(MethodDef method, out IList<Instruction> instructions, out IList<ExceptionHandler> exceptionHandlers) {
 			if (method == null || !method.HasBody) {
 				instructions = new List<Instruction>();
 				exceptionHandlers = new List<ExceptionHandler>();
@@ -691,8 +612,58 @@ namespace de4dot.blocks {
 				return null;
 			return instructions[instructionToIndex[instruction]];
 		}
+#endif
 
-		public static void restoreBody(MethodDefinition method, IEnumerable<Instruction> instructions, IEnumerable<ExceptionHandler> exceptionHandlers) {
+		public static void copyBody(MethodDef method, out IList<Instruction> instructions, out IList<ExceptionHandler> exceptionHandlers) {
+			if (method == null || !method.HasBody) {
+				instructions = new List<Instruction>();
+				exceptionHandlers = new List<ExceptionHandler>();
+				return;
+			}
+
+			var oldInstrs = method.Body.Instructions;
+			var oldExHandlers = method.Body.ExceptionHandlers;
+			instructions = new List<Instruction>(oldInstrs.Count);
+			exceptionHandlers = new List<ExceptionHandler>(oldExHandlers.Count);
+			var oldToIndex = Utils.createObjectToIndexDictionary(oldInstrs);
+
+			foreach (var oldInstr in oldInstrs)
+				instructions.Add(oldInstr.Clone());
+
+			foreach (var newInstr in instructions) {
+				var operand = newInstr.Operand;
+				if (operand is Instruction)
+					newInstr.Operand = instructions[oldToIndex[(Instruction)operand]];
+				else if (operand is IList<Instruction>) {
+					var oldArray = (IList<Instruction>)operand;
+					var newArray = new Instruction[oldArray.Count];
+					for (int i = 0; i < oldArray.Count; i++)
+						newArray[i] = instructions[oldToIndex[oldArray[i]]];
+					newInstr.Operand = newArray;
+				}
+			}
+
+			foreach (var oldEx in oldExHandlers) {
+				var newEx = new ExceptionHandler(oldEx.HandlerType) {
+					TryStart = getInstruction(instructions, oldToIndex, oldEx.TryStart),
+					TryEnd = getInstruction(instructions, oldToIndex, oldEx.TryEnd),
+					FilterStart = getInstruction(instructions, oldToIndex, oldEx.FilterStart),
+					HandlerStart = getInstruction(instructions, oldToIndex, oldEx.HandlerStart),
+					HandlerEnd = getInstruction(instructions, oldToIndex, oldEx.HandlerEnd),
+					CatchType = oldEx.CatchType,
+				};
+				exceptionHandlers.Add(newEx);
+			}
+		}
+
+		static Instruction getInstruction(IList<Instruction> instructions, IDictionary<Instruction, int> instructionToIndex, Instruction instruction) {
+			if (instruction == null)
+				return null;
+			return instructions[instructionToIndex[instruction]];
+		}
+
+#if PORT
+		public static void restoreBody(MethodDef method, IEnumerable<Instruction> instructions, IEnumerable<ExceptionHandler> exceptionHandlers) {
 			if (method == null || !method.HasBody)
 				return;
 
@@ -706,8 +677,24 @@ namespace de4dot.blocks {
 			foreach (var eh in exceptionHandlers)
 				bodyExceptionHandlers.Add(eh);
 		}
+#endif
 
-		public static void copyBodyFromTo(MethodDefinition fromMethod, MethodDefinition toMethod) {
+		public static void restoreBody(MethodDef method, IEnumerable<Instruction> instructions, IEnumerable<ExceptionHandler> exceptionHandlers) {
+			if (method == null || method.Body == null)
+				return;
+
+			var bodyInstrs = method.Body.Instructions;
+			bodyInstrs.Clear();
+			foreach (var instr in instructions)
+				bodyInstrs.Add(instr);
+
+			var bodyExceptionHandlers = method.Body.ExceptionHandlers;
+			bodyExceptionHandlers.Clear();
+			foreach (var eh in exceptionHandlers)
+				bodyExceptionHandlers.Add(eh);
+		}
+
+		public static void copyBodyFromTo(MethodDef fromMethod, MethodDef toMethod) {
 			if (fromMethod == toMethod)
 				return;
 
@@ -719,31 +706,29 @@ namespace de4dot.blocks {
 			updateInstructionOperands(fromMethod, toMethod);
 		}
 
-		static void copyLocalsFromTo(MethodDefinition fromMethod, MethodDefinition toMethod) {
+		static void copyLocalsFromTo(MethodDef fromMethod, MethodDef toMethod) {
 			var fromBody = fromMethod.Body;
 			var toBody = toMethod.Body;
 
-			toBody.Variables.Clear();
-			foreach (var local in fromBody.Variables)
-				toBody.Variables.Add(new VariableDefinition(local.Name, local.VariableType));
+			toBody.LocalList.Clear();
+			foreach (var local in fromBody.LocalList)
+				toBody.LocalList.Add(new Local(local.Type));
 		}
 
-		static void updateInstructionOperands(MethodDefinition fromMethod, MethodDefinition toMethod) {
+		static void updateInstructionOperands(MethodDef fromMethod, MethodDef toMethod) {
 			var fromBody = fromMethod.Body;
 			var toBody = toMethod.Body;
 
 			toBody.InitLocals = fromBody.InitLocals;
-			toBody.MaxStackSize = fromBody.MaxStackSize;
+			toBody.MaxStack = fromBody.MaxStack;
 
 			var newOperands = new Dictionary<object, object>();
-			var fromParams = getParameters(fromMethod);
-			var toParams = getParameters(toMethod);
-			if (fromBody.ThisParameter != null)
-				newOperands[fromBody.ThisParameter] = toBody.ThisParameter;
+			var fromParams = fromMethod.Parameters;
+			var toParams = toMethod.Parameters;
 			for (int i = 0; i < fromParams.Count; i++)
 				newOperands[fromParams[i]] = toParams[i];
-			for (int i = 0; i < fromBody.Variables.Count; i++)
-				newOperands[fromBody.Variables[i]] = toBody.Variables[i];
+			for (int i = 0; i < fromBody.LocalList.Count; i++)
+				newOperands[fromBody.LocalList[i]] = toBody.LocalList[i];
 
 			foreach (var instr in toBody.Instructions) {
 				if (instr.Operand == null)
@@ -754,6 +739,7 @@ namespace de4dot.blocks {
 			}
 		}
 
+#if PORT
 		public static IEnumerable<CustomAttribute> findAttributes(ICustomAttributeProvider custAttrProvider, TypeReference attr) {
 			var list = new List<CustomAttribute>();
 			if (custAttrProvider == null)
@@ -764,22 +750,23 @@ namespace de4dot.blocks {
 			}
 			return list;
 		}
+#endif
 
 		public static string getCustomArgAsString(CustomAttribute cattr, int arg) {
 			if (cattr == null || arg >= cattr.ConstructorArguments.Count)
 				return null;
 			var carg = cattr.ConstructorArguments[arg];
-			if (carg.Type.FullName != "System.String")
+			if (carg.Type.GetElementType() != ElementType.String)
 				return null;
-			return (string)carg.Value;
+			return UTF8String.ToSystemStringOrEmpty((UTF8String)carg.Value);
 		}
 
-		public static IEnumerable<MethodDefinition> getCalledMethods(ModuleDefinition module, MethodDefinition method) {
+		public static IEnumerable<MethodDef> getCalledMethods(ModuleDef module, MethodDef method) {
 			if (method != null && method.HasBody) {
 				foreach (var call in method.Body.Instructions) {
 					if (call.OpCode.Code != Code.Call && call.OpCode.Code != Code.Callvirt)
 						continue;
-					var methodRef = call.Operand as MethodReference;
+					var methodRef = call.Operand as IMethod;
 					if (methodRef == null)
 						continue;
 					var type = getType(module, methodRef.DeclaringType);
@@ -808,13 +795,22 @@ namespace de4dot.blocks {
 			return list;
 		}
 
+#if PORT
 		public static bool hasReturnValue(IMethodSignature method) {
 			var type = method.MethodReturnType.ReturnType;
 			while (type.IsOptionalModifier || type.IsRequiredModifier)
 				type = ((TypeSpecification)type).ElementType;
 			return type.EType != ElementType.Void;
 		}
+#endif
 
+		public static bool hasReturnValue(IMethod method) {
+			if (method == null || method.MethodSig == null || method.MethodSig.RetType == null)
+				return false;
+			return method.MethodSig.RetType.RemovePinnedAndModifiers().ElementType != ElementType.Void;
+		}
+
+#if PORT
 		public static void updateStack(Instruction instr, ref int stack, bool methodHasReturnValue) {
 			int pushes, pops;
 			calculateStackUsage(instr, methodHasReturnValue, out pushes, out pops);
@@ -1001,7 +997,7 @@ namespace de4dot.blocks {
 		public static List<ParameterDefinition> getParameters(MethodReference method) {
 			var args = new List<ParameterDefinition>(method.Parameters.Count + 1);
 			if (method.HasImplicitThis) {
-				var methodDef = method as MethodDefinition;
+				var methodDef = method as MethodDef;
 				if (methodDef != null && methodDef.Body != null)
 					args.Add(methodDef.Body.ThisParameter);
 				else
@@ -1025,7 +1021,21 @@ namespace de4dot.blocks {
 				return parameters[index];
 			return null;
 		}
+#endif
 
+		public static Parameter getParameter(IList<Parameter> parameters, int index) {
+			if (0 <= index && index < parameters.Count)
+				return parameters[index];
+			return null;
+		}
+
+		public static TypeSig getArg(IList<TypeSig> args, int index) {
+			if (0 <= index && index < args.Count)
+				return args[index];
+			return null;
+		}
+
+#if PORT
 		public static List<TypeReference> getArgs(MethodReference method) {
 			var args = new List<TypeReference>(method.Parameters.Count + 1);
 			if (method.HasImplicitThis)
@@ -1034,7 +1044,19 @@ namespace de4dot.blocks {
 				args.Add(arg.ParameterType);
 			return args;
 		}
+#endif
 
+		public static List<TypeSig> getArgs(IMethod method) {
+			var sig = method.MethodSig;
+			var args = new List<TypeSig>(sig.Params.Count + 1);
+			if (sig.ImplicitThis)
+				args.Add(method.DeclaringType.ToTypeSig());
+			foreach (var arg in sig.Params)
+				args.Add(arg);
+			return args;
+		}
+
+#if PORT
 		public static TypeReference getArgType(MethodReference method, Instruction instr) {
 			return getArgType(getArgs(method), instr);
 		}
@@ -1055,44 +1077,53 @@ namespace de4dot.blocks {
 				count++;
 			return count;
 		}
+#endif
 
-		public static Instruction createLdci4(int value) {
-			if (value == -1) return Instruction.Create(OpCodes.Ldc_I4_M1);
-			if (value == 0) return Instruction.Create(OpCodes.Ldc_I4_0);
-			if (value == 1) return Instruction.Create(OpCodes.Ldc_I4_1);
-			if (value == 2) return Instruction.Create(OpCodes.Ldc_I4_2);
-			if (value == 3) return Instruction.Create(OpCodes.Ldc_I4_3);
-			if (value == 4) return Instruction.Create(OpCodes.Ldc_I4_4);
-			if (value == 5) return Instruction.Create(OpCodes.Ldc_I4_5);
-			if (value == 6) return Instruction.Create(OpCodes.Ldc_I4_6);
-			if (value == 7) return Instruction.Create(OpCodes.Ldc_I4_7);
-			if (value == 8) return Instruction.Create(OpCodes.Ldc_I4_8);
-			if (sbyte.MinValue <= value && value <= sbyte.MaxValue)
-				return Instruction.Create(OpCodes.Ldc_I4_S, (sbyte)value);
-			return Instruction.Create(OpCodes.Ldc_I4, value);
+		public static int getArgsCount(IMethod method) {
+			var sig = method.MethodSig;
+			if (sig == null)
+				return 0;
+			int count = sig.Params.Count;
+			if (sig.ImplicitThis)
+				count++;
+			return count;
 		}
 
-		// Doesn't fix everything (eg. T[] aren't replaced with eg. int[], but T -> int will be fixed)
-		public static IList<TypeReference> replaceGenericParameters(GenericInstanceType typeOwner, GenericInstanceMethod methodOwner, IList<TypeReference> types) {
-			//TODO: You should use MemberRefInstance.cs
+		public static IList<TypeSig> replaceGenericParameters(GenericInstSig typeOwner, MethodSpec methodOwner, IList<TypeSig> types) {
+			if (typeOwner == null && methodOwner == null)
+				return types;
 			for (int i = 0; i < types.Count; i++)
 				types[i] = getGenericArgument(typeOwner, methodOwner, types[i]);
 			return types;
 		}
 
-		public static TypeReference getGenericArgument(GenericInstanceType typeOwner, GenericInstanceMethod methodOwner, TypeReference type) {
-			var gp = type as GenericParameter;
-			if (gp == null)
-				return type;
-
-			if (typeOwner != null && MemberReferenceHelper.compareTypes(typeOwner.ElementType, gp.Owner as TypeReference))
-				return typeOwner.GenericArguments[gp.Position];
-
-			if (methodOwner != null && MemberReferenceHelper.compareMethodReferenceAndDeclaringType(methodOwner.ElementMethod, gp.Owner as MethodReference))
-				return methodOwner.GenericArguments[gp.Position];
-
-			return type;
+		public static TypeSig getGenericArgument(GenericInstSig typeOwner, MethodSpec methodOwner, TypeSig type) {
+			var typeArgs = typeOwner == null ? null : typeOwner.GenericArguments;
+			var genMethodArgs = methodOwner == null || methodOwner.GenericInstMethodSig == null ?
+						null : methodOwner.GenericInstMethodSig.GenericArguments;
+			return GenericArgsSubstitutor.create(type, typeArgs, genMethodArgs);
 		}
+
+#if PORT
+		public static Instruction getInstruction(IList<Instruction> instructions, ref int index) {
+			for (int i = 0; i < 10; i++) {
+				if (index < 0 || index >= instructions.Count)
+					return null;
+				var instr = instructions[index++];
+				if (instr.OpCode.Code == Code.Nop)
+					continue;
+				if (instr.OpCode.OpCodeType == OpCodeType.Prefix)
+					continue;
+				if (instr == null || (instr.OpCode.Code != Code.Br && instr.OpCode.Code != Code.Br_S))
+					return instr;
+				instr = instr.Operand as Instruction;
+				if (instr == null)
+					return null;
+				index = instructions.IndexOf(instr);
+			}
+			return null;
+		}
+#endif
 
 		public static Instruction getInstruction(IList<Instruction> instructions, ref int index) {
 			for (int i = 0; i < 10; i++) {
@@ -1113,7 +1144,8 @@ namespace de4dot.blocks {
 			return null;
 		}
 
-		public static PropertyDefinition createPropertyDefinition(string name, TypeReference propType, MethodDefinition getter, MethodDefinition setter) {
+#if PORT
+		public static PropertyDefinition createPropertyDefinition(string name, TypeReference propType, MethodDef getter, MethodDef setter) {
 			return new PropertyDefinition(name, PropertyAttributes.None, propType) {
 				MetadataToken = nextPropertyToken(),
 				GetMethod = getter,
@@ -1181,14 +1213,23 @@ namespace de4dot.blocks {
 			typeRef.IsValueType = isValueType;
 			return typeRef;
 		}
+#endif
 
-		public static FrameworkType getFrameworkType(ModuleDefinition module) {
-			foreach (var modRef in module.AssemblyReferences) {
+		public static TypeDefOrRefSig findOrCreateTypeReference(ModuleDef module, AssemblyRef asmRef, string ns, string name, bool isValueType) {
+			var typeRef = module.UpdateRowId(new TypeRefUser(module, ns, name, asmRef));
+			if (isValueType)
+				return new ValueTypeSig(typeRef);
+			else
+				return new ClassSig(typeRef);
+		}
+
+		public static FrameworkType getFrameworkType(ModuleDefMD module) {
+			foreach (var modRef in module.GetAssemblyRefs()) {
 				if (modRef.Name != "mscorlib")
 					continue;
-				if (modRef.PublicKeyToken == null || modRef.PublicKeyToken.Length == 0)
+				if (PublicKeyBase.IsNullOrEmpty2(modRef.PublicKeyOrToken))
 					continue;
-				switch (BitConverter.ToString(modRef.PublicKeyToken).Replace("-", "").ToLowerInvariant()) {
+				switch (BitConverter.ToString(modRef.PublicKeyOrToken.Data).Replace("-", "").ToLowerInvariant()) {
 				case "b77a5c561934e089":
 					return FrameworkType.Desktop;
 				case "7cec85d7bea7798e":
@@ -1205,14 +1246,32 @@ namespace de4dot.blocks {
 			return FrameworkType.Unknown;
 		}
 
-		public static bool callsMethod(MethodDefinition method, string methodFullName) {
+		public static int getMethodCalls(MethodDef method, string methodFullName) {
+			if (method == null || method.Body == null)
+				return 0;
+
+			int count = 0;
+			foreach (var instr in method.Body.Instructions) {
+				if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt && instr.OpCode.Code != Code.Newobj)
+					continue;
+				var calledMethod = instr.Operand as IMethod;
+				if (calledMethod == null)
+					continue;
+				if (calledMethod.FullName == methodFullName)
+					count++;
+			}
+
+			return count;
+		}
+
+		public static bool callsMethod(MethodDef method, string methodFullName) {
 			if (method == null || method.Body == null)
 				return false;
 
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt && instr.OpCode.Code != Code.Newobj)
 					continue;
-				var calledMethod = instr.Operand as MethodReference;
+				var calledMethod = instr.Operand as IMethod;
 				if (calledMethod == null)
 					continue;
 				if (calledMethod.FullName == methodFullName)
@@ -1222,14 +1281,14 @@ namespace de4dot.blocks {
 			return false;
 		}
 
-		public static bool callsMethod(MethodDefinition method, string returnType, string parameters) {
+		public static bool callsMethod(MethodDef method, string returnType, string parameters) {
 			if (method == null || method.Body == null)
 				return false;
 
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt && instr.OpCode.Code != Code.Newobj)
 					continue;
-				if (isMethod(instr.Operand as MethodReference, returnType, parameters))
+				if (isMethod(instr.Operand as IMethod, returnType, parameters))
 					return true;
 			}
 
@@ -1245,7 +1304,7 @@ namespace de4dot.blocks {
 				return null;
 			var startInstr = instrs[index];
 			int pushes, pops;
-			calculateStackUsage(startInstr, false, out pushes, out pops);
+			startInstr.CalculateStackUsage(false, out pushes, out pops);
 
 			index--;
 			int numArgs = pops;
@@ -1253,7 +1312,7 @@ namespace de4dot.blocks {
 			int stackSize = numArgs;
 			while (index >= 0 && args.Count != numArgs) {
 				var instr = instrs[index--];
-				calculateStackUsage(instr, false, out pushes, out pops);
+				instr.CalculateStackUsage(false, out pushes, out pops);
 				if (instr.OpCode.Code == Code.Dup) {
 					args.Add(instr);
 					stackSize--;
@@ -1281,6 +1340,7 @@ namespace de4dot.blocks {
 			return args;
 		}
 
+#if PORT
 		public static AssemblyNameReference addAssemblyReference(ModuleDefinition module, AssemblyNameReference asmRef) {
 			foreach (var modAsmRef in module.AssemblyReferences) {
 				if (modAsmRef.FullName == asmRef.FullName)
@@ -1302,5 +1362,6 @@ namespace de4dot.blocks {
 			module.ModuleReferences.Add(newModRef);
 			return newModRef;
 		}
+#endif
 	}
 }

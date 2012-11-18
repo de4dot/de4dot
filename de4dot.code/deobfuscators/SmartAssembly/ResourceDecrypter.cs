@@ -20,7 +20,7 @@
 using System;
 using System.IO;
 using System.Security.Cryptography;
-using Mono.Cecil;
+using dot10.DotNet;
 using ICSharpCode.SharpZipLib.Zip.Compression;
 
 namespace de4dot.code.deobfuscators.SmartAssembly {

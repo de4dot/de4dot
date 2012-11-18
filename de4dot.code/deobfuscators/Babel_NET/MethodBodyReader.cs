@@ -18,75 +18,83 @@
 */
 
 using System;
+using System.Collections.Generic;
 using System.IO;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.IO;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 
 namespace de4dot.code.deobfuscators.Babel_NET {
 	class MethodBodyReader : MethodBodyReaderBase {
 		ImageReader imageReader;
 		public int Flags2 { get; set; }
-		public short MaxStack { get; set; }
+		public ushort MaxStack { get; set; }
 
-		public MethodBodyReader(ImageReader imageReader, BinaryReader reader)
+		public MethodBodyReader(ImageReader imageReader, IBinaryReader reader)
 			: base(reader) {
 			this.imageReader = imageReader;
 		}
 
-		public void read(ParameterDefinition[] parameters) {
+		public void read(IList<Parameter> parameters) {
 			this.parameters = parameters;
 			Flags2 = reader.ReadInt16();
-			MaxStack = reader.ReadInt16();
-			setLocals(imageReader.readTypeReferences());
-			readInstructions(imageReader.readVariableLengthInt32());
+			MaxStack = reader.ReadUInt16();
+			SetLocals(imageReader.readTypeSigs());
+			ReadInstructions(imageReader.readVariableLengthInt32());
 			readExceptionHandlers(imageReader.readVariableLengthInt32());
 		}
 
-		protected override FieldReference readInlineField(Instruction instr) {
+		protected override IField ReadInlineField(Instruction instr) {
 			return imageReader.readFieldReference();
 		}
 
-		protected override MethodReference readInlineMethod(Instruction instr) {
+		protected override IMethod ReadInlineMethod(Instruction instr) {
 			return imageReader.readMethodReference();
 		}
 
-		protected override CallSite readInlineSig(Instruction instr) {
+		protected override MethodSig ReadInlineSig(Instruction instr) {
 			return imageReader.readCallSite();
 		}
 
-		protected override string readInlineString(Instruction instr) {
+		protected override string ReadInlineString(Instruction instr) {
 			return imageReader.readString();
 		}
 
-		protected override MemberReference readInlineTok(Instruction instr) {
+		protected override ITokenOperand ReadInlineTok(Instruction instr) {
 			switch (reader.ReadByte()) {
-			case 0: return imageReader.readTypeReference();
+			case 0: return imageReader.readTypeSig().ToTypeDefOrRef();
 			case 1: return imageReader.readFieldReference();
 			case 2: return imageReader.readMethodReference();
 			default: throw new ApplicationException("Unknown token type");
 			}
 		}
 
-		protected override TypeReference readInlineType(Instruction instr) {
-			return imageReader.readTypeReference();
+		protected override ITypeDefOrRef ReadInlineType(Instruction instr) {
+			return imageReader.readTypeSig().ToTypeDefOrRef();
 		}
 
-		protected override ExceptionHandler readExceptionHandler() {
+		void readExceptionHandlers(int numExceptionHandlers) {
+			exceptionHandlers = new List<ExceptionHandler>(numExceptionHandlers);
+			for (int i = 0; i < numExceptionHandlers; i++)
+				Add(readExceptionHandler());
+		}
+
+		ExceptionHandler readExceptionHandler() {
 			var ehType = (ExceptionHandlerType)reader.ReadByte();
-			int tryOffset = imageReader.readVariableLengthInt32();
-			int tryLength = imageReader.readVariableLengthInt32();
-			int handlerOffset = imageReader.readVariableLengthInt32();
-			int handlerLength = imageReader.readVariableLengthInt32();
-			var catchType = imageReader.readTypeReference();
-			int filterOffset = imageReader.readVariableLengthInt32();
+			uint tryOffset = imageReader.readVariableLengthUInt32();
+			uint tryLength = imageReader.readVariableLengthUInt32();
+			uint handlerOffset = imageReader.readVariableLengthUInt32();
+			uint handlerLength = imageReader.readVariableLengthUInt32();
+			var catchType = imageReader.readTypeSig().ToTypeDefOrRef();
+			uint filterOffset = imageReader.readVariableLengthUInt32();
 
 			var eh = new ExceptionHandler(ehType);
-			eh.TryStart = getInstruction(tryOffset);
-			eh.TryEnd = getInstructionOrNull(tryOffset + tryLength);
+			eh.TryStart = GetInstructionThrow(tryOffset);
+			eh.TryEnd = GetInstruction(tryOffset + tryLength);
 			if (ehType == ExceptionHandlerType.Filter)
-				eh.FilterStart = getInstruction(filterOffset);
-			eh.HandlerStart = getInstruction(handlerOffset);
-			eh.HandlerEnd = getInstructionOrNull(handlerOffset + handlerLength);
+				eh.FilterStart = GetInstructionThrow(filterOffset);
+			eh.HandlerStart = GetInstructionThrow(handlerOffset);
+			eh.HandlerEnd = GetInstruction(handlerOffset + handlerLength);
 			eh.CatchType = catchType;
 			return eh;
 		}

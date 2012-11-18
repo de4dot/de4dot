@@ -22,13 +22,13 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Reflection.Emit;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet.Emit;
+using dot10.DotNet;
 using de4dot.blocks;
 
-using OpCode = Mono.Cecil.Cil.OpCode;
-using OpCodes = Mono.Cecil.Cil.OpCodes;
-using OperandType = Mono.Cecil.Cil.OperandType;
+using OpCode = dot10.DotNet.Emit.OpCode;
+using OpCodes = dot10.DotNet.Emit.OpCodes;
+using OperandType = dot10.DotNet.Emit.OperandType;
 using ROpCode = System.Reflection.Emit.OpCode;
 using ROpCodes = System.Reflection.Emit.OpCodes;
 
@@ -94,7 +94,7 @@ namespace AssemblyData.methodsrewriter {
 
 			var dm = new DynamicMethod(methodName, methodReturnType, methodParameters, methodInfo.methodBase.Module, true);
 			var lastInstr = allInstructions[allInstructions.Count - 1];
-			ilg = dm.GetILGenerator(lastInstr.Offset + lastInstr.GetSize());
+			ilg = dm.GetILGenerator((int)lastInstr.Offset + lastInstr.GetSize());
 
 			initInstrToIndex();
 			initLocals();
@@ -178,8 +178,8 @@ namespace AssemblyData.methodsrewriter {
 
 		void initLocals() {
 			locals = new List<LocalBuilder>();
-			foreach (var local in methodInfo.methodDefinition.Body.Variables)
-				locals.Add(ilg.DeclareLocal(Resolver.getRtType(local.VariableType), local.IsPinned));
+			foreach (var local in methodInfo.methodDef.Body.LocalList)
+				locals.Add(ilg.DeclareLocal(Resolver.getRtType(local.Type), local.Type.RemoveModifiers().IsPinned));
 			tempObjLocal = ilg.DeclareLocal(typeof(object));
 			tempObjArrayLocal = ilg.DeclareLocal(typeof(object[]));
 		}
@@ -256,14 +256,6 @@ namespace AssemblyData.methodsrewriter {
 			return labels;
 		}
 
-		int getArgIndex(ParameterDefinition arg) {
-			return arg.Sequence;
-		}
-
-		int getLocalIndex(VariableDefinition local) {
-			return local.Index;
-		}
-
 		void writeInstr(Instruction instr) {
 			var opcode = convertOpCode(instr.OpCode);
 			switch (instr.OpCode.OperandType) {
@@ -311,7 +303,7 @@ namespace AssemblyData.methodsrewriter {
 			case OperandType.InlineType:
 			case OperandType.InlineMethod:
 			case OperandType.InlineField:
-				var obj = Resolver.getRtObject((MemberReference)instr.Operand);
+				var obj = Resolver.getRtObject((ITokenOperand)instr.Operand);
 				if (obj is ConstructorInfo)
 					ilg.Emit(opcode, (ConstructorInfo)obj);
 				else if (obj is MethodInfo)
@@ -324,20 +316,12 @@ namespace AssemblyData.methodsrewriter {
 					throw new ApplicationException(string.Format("Unknown type: {0}", (obj == null ? obj : obj.GetType())));
 				break;
 
-			case OperandType.InlineArg:
-				ilg.Emit(opcode, checked((short)getArgIndex((ParameterDefinition)instr.Operand)));
-				break;
-
-			case OperandType.ShortInlineArg:
-				ilg.Emit(opcode, checked((byte)getArgIndex((ParameterDefinition)instr.Operand)));
-				break;
-
 			case OperandType.InlineVar:
-				ilg.Emit(opcode, checked((short)getLocalIndex((VariableDefinition)instr.Operand)));
+				ilg.Emit(opcode, checked((short)((IVariable)instr.Operand).Index));
 				break;
 
 			case OperandType.ShortInlineVar:
-				ilg.Emit(opcode, checked((byte)getLocalIndex((VariableDefinition)instr.Operand)));
+				ilg.Emit(opcode, checked((byte)((IVariable)instr.Operand).Index));
 				break;
 
 			case OperandType.InlineSig:	//TODO:

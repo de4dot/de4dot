@@ -18,21 +18,20 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using Mono.Cecil.Metadata;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CodeVeil {
 	// Detects the type CV adds to the assembly that gets called from <Module>::.cctor.
 	class MainType {
-		ModuleDefinition module;
-		TypeDefinition theType;
-		MethodDefinition initMethod;
-		MethodDefinition tamperCheckMethod;
+		ModuleDefMD module;
+		TypeDef theType;
+		MethodDef initMethod;
+		MethodDef tamperCheckMethod;
 		ObfuscatorVersion obfuscatorVersion = ObfuscatorVersion.Unknown;
-		List<int> rvas = new List<int>();	// _stub and _executive
-		List<MethodDefinition> otherInitMethods = new List<MethodDefinition>();
+		List<uint> rvas = new List<uint>();	// _stub and _executive
+		List<MethodDef> otherInitMethods = new List<MethodDef>();
 
 		public bool Detected {
 			get { return theType != null; }
@@ -42,31 +41,31 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			get { return obfuscatorVersion; }
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return theType; }
 		}
 
-		public MethodDefinition InitMethod {
+		public MethodDef InitMethod {
 			get { return initMethod; }
 		}
 
-		public List<MethodDefinition> OtherInitMethods {
+		public List<MethodDef> OtherInitMethods {
 			get { return otherInitMethods; }
 		}
 
-		public MethodDefinition TamperCheckMethod {
+		public MethodDef TamperCheckMethod {
 			get { return tamperCheckMethod; }
 		}
 
-		public List<int> Rvas {
+		public List<uint> Rvas {
 			get { return rvas; }
 		}
 
-		public MainType(ModuleDefinition module) {
+		public MainType(ModuleDefMD module) {
 			this.module = module;
 		}
 
-		public MainType(ModuleDefinition module, MainType oldOne) {
+		public MainType(ModuleDefMD module, MainType oldOne) {
 			this.module = module;
 			this.theType = lookup(oldOne.theType, "Could not find main type");
 			this.initMethod = lookup(oldOne.initMethod, "Could not find main type init method");
@@ -77,7 +76,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				otherInitMethods.Add(lookup(otherInitMethod, "Could not find otherInitMethod"));
 		}
 
-		T lookup<T>(T def, string errorMessage) where T : MemberReference {
+		T lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
 			return DeobUtils.lookup(module, def, errorMessage);
 		}
 
@@ -89,17 +88,17 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			var instrs = cctor.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 2; i++) {
 				var ldci4_1 = instrs[i];
-				if (!DotNetUtils.isLdcI4(ldci4_1))
+				if (!ldci4_1.IsLdcI4())
 					continue;
 
 				var ldci4_2 = instrs[i + 1];
-				if (!DotNetUtils.isLdcI4(ldci4_2))
+				if (!ldci4_2.IsLdcI4())
 					continue;
 
 				var call = instrs[i + 2];
 				if (call.OpCode.Code != Code.Call)
 					continue;
-				var initMethodTmp = call.Operand as MethodDefinition;
+				var initMethodTmp = call.Operand as MethodDef;
 				ObfuscatorVersion obfuscatorVersionTmp;
 				if (!checkInitMethod(initMethodTmp, out obfuscatorVersionTmp))
 					continue;
@@ -118,7 +117,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			"System.Collections.Generic.List`1<System.Delegate>",
 			"System.Runtime.InteropServices.GCHandle",
 		};
-		bool checkInitMethod(MethodDefinition initMethod, out ObfuscatorVersion obfuscatorVersionTmp) {
+		bool checkInitMethod(MethodDef initMethod, out ObfuscatorVersion obfuscatorVersionTmp) {
 			obfuscatorVersionTmp = ObfuscatorVersion.Unknown;
 
 			if (initMethod == null)
@@ -146,7 +145,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return true;
 		}
 
-		static bool hasCodeString(MethodDefinition method, string str) {
+		static bool hasCodeString(MethodDef method, string str) {
 			foreach (var s in DotNetUtils.getCodeStrings(method)) {
 				if (s == str)
 					return true;
@@ -154,22 +153,23 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return false;
 		}
 
-		bool checkMethodsType(TypeDefinition type) {
-			rvas = new List<int>();
+		bool checkMethodsType(TypeDef type) {
+			rvas = new List<uint>();
 
 			var fields = getRvaFields(type);
 			if (fields.Count < 2)	// RVAs for executive and stub are always present if encrypted methods
 				return true;
 
 			foreach (var field in fields)
-				rvas.Add(field.RVA);
+				rvas.Add((uint)field.RVA);
 			return true;
 		}
 
-		static List<FieldDefinition> getRvaFields(TypeDefinition type) {
-			var fields = new List<FieldDefinition>();
+		static List<FieldDef> getRvaFields(TypeDef type) {
+			var fields = new List<FieldDef>();
 			foreach (var field in type.Fields) {
-				if (field.FieldType.EType != ElementType.U1 && field.FieldType.EType != ElementType.U4)
+				var etype = field.FieldSig.GetFieldType().GetElementType();
+				if (etype != ElementType.U1 && etype != ElementType.U4)
 					continue;
 				if (field.RVA == 0)
 					continue;
@@ -187,7 +187,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			otherInitMethods = findOtherInitMethods();
 		}
 
-		MethodDefinition findTamperCheckMethod() {
+		MethodDef findTamperCheckMethod() {
 			foreach (var method in theType.Methods) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
@@ -200,8 +200,8 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return null;
 		}
 
-		List<MethodDefinition> findOtherInitMethods() {
-			var list = new List<MethodDefinition>();
+		List<MethodDef> findOtherInitMethods() {
+			var list = new List<MethodDef>();
 			foreach (var method in theType.Methods) {
 				if (!method.IsStatic)
 					continue;
@@ -215,7 +215,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return list;
 		}
 
-		public MethodDefinition getInitStringDecrypterMethod(MethodDefinition stringDecrypterInitMethod) {
+		public MethodDef getInitStringDecrypterMethod(MethodDef stringDecrypterInitMethod) {
 			if (stringDecrypterInitMethod == null)
 				return null;
 			if (theType == null)
@@ -230,7 +230,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return null;
 		}
 
-		bool callsMethod(MethodDefinition methodToCheck, MethodDefinition calledMethod) {
+		bool callsMethod(MethodDef methodToCheck, MethodDef calledMethod) {
 			foreach (var method in DotNetUtils.getCalledMethods(module, methodToCheck)) {
 				if (method == calledMethod)
 					return true;

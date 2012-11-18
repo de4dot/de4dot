@@ -19,28 +19,35 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
+using dot10.DotNet;
 
 namespace de4dot.code.renamer {
 	abstract class TypeNames {
 		protected Dictionary<string, NameCreator> typeNames = new Dictionary<string, NameCreator>(StringComparer.Ordinal);
 		protected NameCreator genericParamNameCreator = new NameCreator("gparam_");
+		protected NameCreator fnPtrNameCreator = new NameCreator("fnptr_");
+		protected NameCreator unknownNameCreator = new NameCreator("unknown_");
 		protected Dictionary<string, string> fullNameToShortName;
 		protected Dictionary<string, string> fullNameToShortNamePrefix;
 
-		public string create(TypeReference typeRef) {
-			if (typeRef.IsGenericInstance) {
-				var git = (GenericInstanceType)typeRef;
-				if (git.ElementType.FullName == "System.Nullable`1" &&
-					git.GenericArguments.Count == 1 && git.GenericArguments[0] != null) {
-					typeRef = git.GenericArguments[0];
+		public string create(TypeSig typeRef) {
+			typeRef = typeRef.RemovePinnedAndModifiers();
+			if (typeRef == null)
+				return unknownNameCreator.create();
+			var gis = typeRef as GenericInstSig;
+			if (gis != null) {
+				if (gis.FullName == "System.Nullable`1" &&
+					gis.GenericArguments.Count == 1 && gis.GenericArguments[0] != null) {
+					typeRef = gis.GenericArguments[0];
 				}
 			}
 
 			string prefix = getPrefix(typeRef);
 
-			var elementType = typeRef.GetElementType();
-			if (elementType is GenericParameter)
+			var elementType = typeRef.ScopeType;
+			if (elementType == null && isFnPtrSig(typeRef))
+				return fnPtrNameCreator.create();
+			if (isGenericParam(elementType))
 				return genericParamNameCreator.create();
 
 			NameCreator nc;
@@ -48,7 +55,7 @@ namespace de4dot.code.renamer {
 			if (typeNames.TryGetValue(typeFullName, out nc))
 				return nc.create();
 
-			var fullName = elementType.FullName;
+			var fullName = elementType == null ? typeRef.FullName : elementType.FullName;
 			string shortName;
 			var dict = prefix == "" ? fullNameToShortName : fullNameToShortNamePrefix;
 			if (!dict.TryGetValue(fullName, out shortName)) {
@@ -64,12 +71,29 @@ namespace de4dot.code.renamer {
 			return addTypeName(typeFullName, shortName, prefix).create();
 		}
 
-		static string getPrefix(TypeReference typeRef) {
+		bool isFnPtrSig(TypeSig sig) {
+			while (sig != null) {
+				if (sig is FnPtrSig)
+					return true;
+				sig = sig.Next;
+			}
+			return false;
+		}
+
+		bool isGenericParam(ITypeDefOrRef tdr) {
+			var ts = tdr as TypeSpec;
+			if (ts == null)
+				return false;
+			var sig = ts.TypeSig.RemovePinnedAndModifiers();
+			return sig is GenericSig;
+		}
+
+		static string getPrefix(TypeSig typeRef) {
 			string prefix = "";
-			while (typeRef is TypeSpecification) {
+			while (typeRef != null) {
 				if (typeRef.IsPointer)
 					prefix += "p";
-				typeRef = ((TypeSpecification)typeRef).ElementType;
+				typeRef = typeRef.Next;
 			}
 			return prefix;
 		}
@@ -97,10 +121,14 @@ namespace de4dot.code.renamer {
 					typeNames[pair.Key] = pair.Value.clone();
 			}
 			genericParamNameCreator.merge(other.genericParamNameCreator);
+			fnPtrNameCreator.merge(other.fnPtrNameCreator);
+			unknownNameCreator.merge(other.unknownNameCreator);
 			return this;
 		}
 
 		protected static string upperFirst(string s) {
+			if (string.IsNullOrEmpty(s))
+				return string.Empty;
 			return s.Substring(0, 1).ToUpperInvariant() + s.Substring(1);
 		}
 	}

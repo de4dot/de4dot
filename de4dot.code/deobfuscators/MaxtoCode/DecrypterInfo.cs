@@ -21,7 +21,7 @@ using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.MaxtoCode {
 	class DecrypterInfo {
-		public readonly MainType mainType;
+		public MainType mainType;
 		public readonly PeImage peImage;
 		public readonly PeHeader peHeader;
 		public readonly McKey mcKey;

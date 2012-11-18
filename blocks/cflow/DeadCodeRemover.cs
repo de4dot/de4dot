@@ -18,7 +18,7 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil.Cil;
+using dot10.DotNet.Emit;
 
 namespace de4dot.blocks.cflow {
 	// Removes dead code that is the result of one of our optimizations, or created by the
@@ -185,7 +185,7 @@ namespace de4dot.blocks.cflow {
 				case Code.Ldc_I8:
 				case Code.Ldc_R4:
 				case Code.Ldc_R8:
-				case Code.Ldelem_Any:
+				case Code.Ldelem:
 				case Code.Ldelem_I:
 				case Code.Ldelem_I1:
 				case Code.Ldelem_I2:
@@ -237,7 +237,6 @@ namespace de4dot.blocks.cflow {
 				case Code.Mul_Ovf_Un:
 				case Code.Neg:
 				case Code.Newarr:
-				case Code.No:
 				case Code.Nop:
 				case Code.Not:
 				case Code.Or:
@@ -257,7 +256,7 @@ namespace de4dot.blocks.cflow {
 				case Code.Sub_Ovf:
 				case Code.Sub_Ovf_Un:
 				case Code.Switch:
-				case Code.Tail:
+				case Code.Tailcall:
 				case Code.Throw:
 				case Code.Unaligned:
 				case Code.Unbox:
@@ -276,7 +275,7 @@ namespace de4dot.blocks.cflow {
 				case Code.Newobj:
 				case Code.Starg:
 				case Code.Starg_S:
-				case Code.Stelem_Any:
+				case Code.Stelem:
 				case Code.Stelem_I:
 				case Code.Stelem_I1:
 				case Code.Stelem_I2:
@@ -380,7 +379,7 @@ namespace de4dot.blocks.cflow {
 		}
 
 		static void calculateStackUsage(Instruction instr, bool methodHasReturnValue, out int pushes, out int pops) {
-			DotNetUtils.calculateStackUsage(instr, false, out pushes, out pops);
+			instr.CalculateStackUsage(false, out pushes, out pops);
 		}
 	}
 }

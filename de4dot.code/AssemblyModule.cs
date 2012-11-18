@@ -20,52 +20,74 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.MyStuff;
+using dot10.DotNet;
+using dot10.DotNet.Writer;
 using de4dot.blocks;
 
 namespace de4dot.code {
 	class AssemblyModule {
 		string filename;
-		ModuleDefinition module;
+		ModuleDefMD module;
+		ModuleContext moduleContext;
 
-		public AssemblyModule(string filename) {
+		public AssemblyModule(string filename, ModuleContext moduleContext) {
 			this.filename = Utils.getFullPath(filename);
+			this.moduleContext = moduleContext;
 		}
 
-		ReaderParameters getReaderParameters() {
-			return new ReaderParameters(ReadingMode.Deferred) {
-				AssemblyResolver = AssemblyResolver.Instance
-			};
+		public ModuleDefMD load() {
+			return setModule(ModuleDefMD.Load(filename, moduleContext));
 		}
 
-		public ModuleDefinition load() {
-			return setModule(ModuleDefinition.ReadModule(filename, getReaderParameters()));
+		public ModuleDefMD load(byte[] fileData) {
+			return setModule(ModuleDefMD.Load(fileData, moduleContext));
 		}
 
-		public ModuleDefinition load(byte[] fileData) {
-			return setModule(ModuleDefinition.ReadModule(new MemoryStream(fileData), getReaderParameters()));
-		}
-
-		ModuleDefinition setModule(ModuleDefinition newModule) {
+		ModuleDefMD setModule(ModuleDefMD newModule) {
 			module = newModule;
-			AssemblyResolver.Instance.addModule(module);
-			module.FullyQualifiedName = filename;
+			TheAssemblyResolver.Instance.addModule(module);
+			module.EnableTypeDefFindCache = true;
+			module.Location = filename;
 			return module;
 		}
 
-		public void save(string newFilename, bool updateMaxStack, IWriterListener writerListener) {
-			var writerParams = new WriterParameters() {
-				UpdateMaxStack = updateMaxStack,
-				WriterListener = writerListener,
-			};
-			module.Write(newFilename, writerParams);
+		public void save(string newFilename, bool preserveTokens, bool updateMaxStack, IModuleWriterListener writerListener) {
+			MetaDataFlags mdFlags = 0;
+			if (!updateMaxStack)
+				mdFlags |= MetaDataFlags.KeepOldMaxStack;
+			if (preserveTokens) {
+				mdFlags |= MetaDataFlags.PreserveRids |
+						MetaDataFlags.PreserveUSOffsets |
+						MetaDataFlags.PreserveBlobOffsets |
+						MetaDataFlags.PreserveExtraSignatureData;
+			}
+
+			if (module.IsILOnly) {
+				var writerOptions = new ModuleWriterOptions(module, writerListener);
+				writerOptions.MetaDataOptions.Flags |= mdFlags;
+				writerOptions.Logger = Logger.Instance;
+				module.Write(newFilename, writerOptions);
+			}
+			else {
+				var writerOptions = new NativeModuleWriterOptions(module, writerListener);
+				writerOptions.MetaDataOptions.Flags |= mdFlags;
+				writerOptions.Logger = Logger.Instance;
+				writerOptions.KeepExtraPEData = true;
+				writerOptions.KeepWin32Resources = true;
+				module.NativeWrite(newFilename, writerOptions);
+			}
 		}
 
-		public ModuleDefinition reload(byte[] newModuleData, DumpedMethods dumpedMethods) {
-			AssemblyResolver.Instance.removeModule(module);
-			DotNetUtils.typeCaches.invalidate(module);
-			return setModule(ModuleDefinition.ReadModule(new MemoryStream(newModuleData), getReaderParameters(), dumpedMethods));
+		public ModuleDefMD reload(byte[] newModuleData, DumpedMethodsRestorer dumpedMethodsRestorer, IStringDecrypter stringDecrypter) {
+			TheAssemblyResolver.Instance.removeModule(module);
+			var mod = ModuleDefMD.Load(newModuleData, moduleContext);
+			if (dumpedMethodsRestorer != null)
+				dumpedMethodsRestorer.Module = mod;
+			mod.StringDecrypter = stringDecrypter;
+			mod.MethodDecrypter = dumpedMethodsRestorer;
+			mod.TablesStream.ColumnReader = dumpedMethodsRestorer;
+			mod.TablesStream.MethodRowReader = dumpedMethodsRestorer;
+			return setModule(mod);
 		}
 
 		public override string ToString() {

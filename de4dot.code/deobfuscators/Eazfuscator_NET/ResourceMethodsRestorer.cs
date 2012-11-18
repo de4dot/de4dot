@@ -17,15 +17,15 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 	class ResourceMethodsRestorer : MethodCallRestorerBase {
-		TypeDefinition getManifestResourceStreamType;
+		TypeDef getManifestResourceStreamType;
 		EmbeddedResource getManifestResourceStreamTypeResource;
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return getManifestResourceStreamType; }
 		}
 
@@ -33,7 +33,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			get { return getManifestResourceStreamTypeResource; }
 		}
 
-		public ResourceMethodsRestorer(ModuleDefinition module)
+		public ResourceMethodsRestorer(ModuleDefMD module)
 			: base(module) {
 		}
 
@@ -45,7 +45,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					continue;
 				if (DotNetUtils.getField(type, "System.Reflection.Assembly") == null)
 					continue;
-				if (DotNetUtils.getMethod(type, ".cctor") == null)
+				if (type.FindStaticConstructor() == null)
 					continue;
 
 				var getStream2 = getTheOnlyMethod(type, "System.IO.Stream", "(System.Reflection.Assembly,System.Type,System.String)");
@@ -69,7 +69,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			}
 		}
 
-		EmbeddedResource findGetManifestResourceStreamTypeResource(TypeDefinition type, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
+		EmbeddedResource findGetManifestResourceStreamTypeResource(TypeDef type, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
 			foreach (var method in type.Methods) {
 				if (!method.IsPrivate || !method.IsStatic || method.Body == null)
 					continue;
@@ -86,8 +86,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return null;
 		}
 
-		static MethodDefinition getTheOnlyMethod(TypeDefinition type, string returnType, string parameters) {
-			MethodDefinition foundMethod = null;
+		static MethodDef getTheOnlyMethod(TypeDef type, string returnType, string parameters) {
+			MethodDef foundMethod = null;
 
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic || method.Body == null || method.HasGenericParameters)

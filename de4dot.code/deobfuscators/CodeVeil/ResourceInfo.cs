@@ -18,7 +18,7 @@
 */
 
 using System;
-using System.IO;
+using dot10.IO;
 
 namespace de4dot.code.deobfuscators.CodeVeil {
 	class ResourceInfo {
@@ -26,7 +26,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		public byte flags;
 		public int offset;
 		public int length;
-		public BinaryReader dataReader;
+		public IBinaryReader dataReader;
 		public ResourceInfo(string name, byte flags, int offset, int length) {
 			this.name = name;
 			this.flags = flags;

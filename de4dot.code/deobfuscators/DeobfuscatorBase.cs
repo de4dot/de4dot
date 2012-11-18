@@ -19,15 +19,15 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using Mono.MyStuff;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
+using dot10.DotNet.Writer;
+using dot10.PE;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
-using de4dot.PE;
 
 namespace de4dot.code.deobfuscators {
-	abstract class DeobfuscatorBase : IDeobfuscator, IWriterListener {
+	abstract class DeobfuscatorBase : IDeobfuscator, IModuleWriterListener {
 		public const string DEFAULT_VALID_NAME_REGEX = @"^[a-zA-Z_<{$][a-zA-Z_0-9<>{}$.`-]*$";
 
 		class RemoveInfo<T> {
@@ -40,15 +40,13 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		OptionsBase optionsBase;
-		protected ModuleDefinition module;
+		protected ModuleDefMD module;
 		protected StaticStringInliner staticStringInliner = new StaticStringInliner();
-		IList<RemoveInfo<TypeDefinition>> typesToRemove = new List<RemoveInfo<TypeDefinition>>();
-		IList<RemoveInfo<MethodDefinition>> methodsToRemove = new List<RemoveInfo<MethodDefinition>>();
-		IList<RemoveInfo<FieldDefinition>> fieldsToRemove = new List<RemoveInfo<FieldDefinition>>();
-		IList<RemoveInfo<TypeDefinition>> attrsToRemove = new List<RemoveInfo<TypeDefinition>>();
+		IList<RemoveInfo<TypeDef>> typesToRemove = new List<RemoveInfo<TypeDef>>();
+		IList<RemoveInfo<MethodDef>> methodsToRemove = new List<RemoveInfo<MethodDef>>();
+		IList<RemoveInfo<FieldDef>> fieldsToRemove = new List<RemoveInfo<FieldDef>>();
+		IList<RemoveInfo<TypeDef>> attrsToRemove = new List<RemoveInfo<TypeDef>>();
 		IList<RemoveInfo<Resource>> resourcesToRemove = new List<RemoveInfo<Resource>>();
-		IList<RemoveInfo<ModuleReference>> modrefsToRemove = new List<RemoveInfo<ModuleReference>>();
-		IList<RemoveInfo<AssemblyNameReference>> asmrefsToRemove = new List<RemoveInfo<AssemblyNameReference>>();
 		List<string> namesToPossiblyRemove = new List<string>();
 		MethodCallRemover methodCallRemover = new MethodCallRemover();
 		byte[] moduleBytes;
@@ -91,6 +89,10 @@ namespace de4dot.code.deobfuscators {
 			get { return false; }
 		}
 
+		protected bool CanRemoveTypes {
+			get { return !Operations.KeepObfuscatorTypes && !KeepTypes; }
+		}
+
 		protected bool CanRemoveStringDecrypterType {
 			get { return Operations.DecryptStrings != OpDecryptString.None && staticStringInliner.InlinedAllCalls; }
 		}
@@ -110,15 +112,15 @@ namespace de4dot.code.deobfuscators {
 			DefaultDecrypterType = DecrypterType.Static;
 		}
 
-		public virtual byte[] unpackNativeFile(PeImage peImage) {
+		public virtual byte[] unpackNativeFile(IPEImage peImage) {
 			return null;
 		}
 
-		public virtual void init(ModuleDefinition module) {
+		public virtual void init(ModuleDefMD module) {
 			setModule(module);
 		}
 
-		protected void setModule(ModuleDefinition module) {
+		protected void setModule(ModuleDefMD module) {
 			this.module = module;
 			initializedDataCreator = new InitializedDataCreator(module);
 		}
@@ -139,7 +141,7 @@ namespace de4dot.code.deobfuscators {
 			return false;
 		}
 
-		public virtual IDeobfuscator moduleReloaded(ModuleDefinition module) {
+		public virtual IDeobfuscator moduleReloaded(ModuleDefMD module) {
 			throw new ApplicationException("moduleReloaded() must be overridden by the deobfuscator");
 		}
 
@@ -163,7 +165,7 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		public virtual void deobfuscateEnd() {
-			if (!Operations.KeepObfuscatorTypes && !KeepTypes) {
+			if (CanRemoveTypes) {
 				removeTypesWithInvalidBaseTypes();
 
 				deleteEmptyCctors();
@@ -171,21 +173,14 @@ namespace de4dot.code.deobfuscators {
 				deleteFields();
 				deleteCustomAttributes();
 				deleteOtherAttributes();
-
-				// Delete types after removing methods, fields, and attributes. The reason is
-				// that the Scope property will be null if we remove a type. Comparing a
-				// typeref with a typedef will then fail.
 				deleteTypes();
-
 				deleteDllResources();
-				deleteModuleReferences();
-				deleteAssemblyReferences();
 			}
 
 			restoreBaseType();
 		}
 
-		static bool isTypeWithInvalidBaseType(TypeDefinition moduleType, TypeDefinition type) {
+		static bool isTypeWithInvalidBaseType(TypeDef moduleType, TypeDef type) {
 			return type.BaseType == null && !type.IsInterface && type != moduleType;
 		}
 
@@ -194,10 +189,10 @@ namespace de4dot.code.deobfuscators {
 			foreach (var type in module.GetTypes()) {
 				if (!isTypeWithInvalidBaseType(moduleType, type))
 					continue;
-				Log.v("Adding System.Object as base type: {0} ({1:X8})",
+				Logger.v("Adding System.Object as base type: {0} ({1:X8})",
 							Utils.removeNewlines(type),
-							type.MetadataToken.ToInt32());
-				type.BaseType = module.TypeSystem.Object;
+							type.MDToken.ToInt32());
+				type.BaseType = module.CorLibTypes.Object.TypeDefOrRef;
 			}
 		}
 
@@ -237,14 +232,15 @@ namespace de4dot.code.deobfuscators {
 			Dictionary<string, MethodDefinitionAndDeclaringTypeDict<bool>> methodNameInfos = new Dictionary<string, MethodDefinitionAndDeclaringTypeDict<bool>>();
 			MethodDefinitionAndDeclaringTypeDict<MethodDefinitionAndDeclaringTypeDict<bool>> methodRefInfos = new MethodDefinitionAndDeclaringTypeDict<MethodDefinitionAndDeclaringTypeDict<bool>>();
 
-			void checkMethod(MethodReference methodToBeRemoved) {
-				if (methodToBeRemoved.Parameters.Count != 0)
+			void checkMethod(IMethod methodToBeRemoved) {
+				var sig = methodToBeRemoved.MethodSig;
+				if (sig.Params.Count != 0)
 					throw new ApplicationException(string.Format("Method takes params: {0}", methodToBeRemoved));
-				if (DotNetUtils.hasReturnValue(methodToBeRemoved))
+				if (sig.RetType.ElementType != ElementType.Void)
 					throw new ApplicationException(string.Format("Method has a return value: {0}", methodToBeRemoved));
 			}
 
-			public void add(string method, MethodDefinition methodToBeRemoved) {
+			public void add(string method, MethodDef methodToBeRemoved) {
 				if (methodToBeRemoved == null)
 					return;
 				checkMethod(methodToBeRemoved);
@@ -255,7 +251,7 @@ namespace de4dot.code.deobfuscators {
 				dict.add(methodToBeRemoved, true);
 			}
 
-			public void add(MethodDefinition method, MethodDefinition methodToBeRemoved) {
+			public void add(MethodDef method, MethodDef methodToBeRemoved) {
 				if (method == null || methodToBeRemoved == null)
 					return;
 				checkMethod(methodToBeRemoved);
@@ -269,7 +265,7 @@ namespace de4dot.code.deobfuscators {
 			public void removeAll(Blocks blocks) {
 				var allBlocks = blocks.MethodBlocks.getAllBlocks();
 
-				removeAll(allBlocks, blocks, blocks.Method.Name);
+				removeAll(allBlocks, blocks, blocks.Method.Name.String);
 				removeAll(allBlocks, blocks, blocks.Method);
 			}
 
@@ -281,7 +277,7 @@ namespace de4dot.code.deobfuscators {
 				removeCalls(allBlocks, blocks, info);
 			}
 
-			void removeAll(IList<Block> allBlocks, Blocks blocks, MethodDefinition method) {
+			void removeAll(IList<Block> allBlocks, Blocks blocks, MethodDef method) {
 				var info = methodRefInfos.find(method);
 				if (info == null)
 					return;
@@ -297,12 +293,12 @@ namespace de4dot.code.deobfuscators {
 						var instr = block.Instructions[i];
 						if (instr.OpCode != OpCodes.Call)
 							continue;
-						var destMethod = instr.Operand as MethodReference;
+						var destMethod = instr.Operand as IMethod;
 						if (destMethod == null)
 							continue;
 
 						if (info.find(destMethod)) {
-							Log.v("Removed call to {0}", Utils.removeNewlines(destMethod));
+							Logger.v("Removed call to {0}", Utils.removeNewlines(destMethod));
 							instrsToDelete.Add(i);
 						}
 					}
@@ -311,19 +307,19 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
-		public void addCctorInitCallToBeRemoved(MethodDefinition methodToBeRemoved) {
+		public void addCctorInitCallToBeRemoved(MethodDef methodToBeRemoved) {
 			methodCallRemover.add(".cctor", methodToBeRemoved);
 		}
 
-		public void addModuleCctorInitCallToBeRemoved(MethodDefinition methodToBeRemoved) {
+		public void addModuleCctorInitCallToBeRemoved(MethodDef methodToBeRemoved) {
 			methodCallRemover.add(DotNetUtils.getModuleTypeCctor(module), methodToBeRemoved);
 		}
 
-		public void addCtorInitCallToBeRemoved(MethodDefinition methodToBeRemoved) {
+		public void addCtorInitCallToBeRemoved(MethodDef methodToBeRemoved) {
 			methodCallRemover.add(".ctor", methodToBeRemoved);
 		}
 
-		public void addCallToBeRemoved(MethodDefinition method, MethodDefinition methodToBeRemoved) {
+		public void addCallToBeRemoved(MethodDef method, MethodDef methodToBeRemoved) {
 			methodCallRemover.add(method, methodToBeRemoved);
 		}
 
@@ -331,46 +327,46 @@ namespace de4dot.code.deobfuscators {
 			methodCallRemover.removeAll(blocks);
 		}
 
-		protected void addMethodsToBeRemoved(IEnumerable<MethodDefinition> methods, string reason) {
+		protected void addMethodsToBeRemoved(IEnumerable<MethodDef> methods, string reason) {
 			foreach (var method in methods)
 				addMethodToBeRemoved(method, reason);
 		}
 
-		protected void addMethodToBeRemoved(MethodDefinition method, string reason) {
+		protected void addMethodToBeRemoved(MethodDef method, string reason) {
 			if (method != null)
-				methodsToRemove.Add(new RemoveInfo<MethodDefinition>(method, reason));
+				methodsToRemove.Add(new RemoveInfo<MethodDef>(method, reason));
 		}
 
-		protected void addFieldsToBeRemoved(IEnumerable<FieldDefinition> fields, string reason) {
+		protected void addFieldsToBeRemoved(IEnumerable<FieldDef> fields, string reason) {
 			foreach (var field in fields)
 				addFieldToBeRemoved(field, reason);
 		}
 
-		protected void addFieldToBeRemoved(FieldDefinition field, string reason) {
+		protected void addFieldToBeRemoved(FieldDef field, string reason) {
 			if (field != null)
-				fieldsToRemove.Add(new RemoveInfo<FieldDefinition>(field, reason));
+				fieldsToRemove.Add(new RemoveInfo<FieldDef>(field, reason));
 		}
 
-		protected void addAttributesToBeRemoved(IEnumerable<TypeDefinition> attrs, string reason) {
+		protected void addAttributesToBeRemoved(IEnumerable<TypeDef> attrs, string reason) {
 			foreach (var attr in attrs)
 				addAttributeToBeRemoved(attr, reason);
 		}
 
-		protected void addAttributeToBeRemoved(TypeDefinition attr, string reason) {
+		protected void addAttributeToBeRemoved(TypeDef attr, string reason) {
 			if (attr == null)
 				return;
 			addTypeToBeRemoved(attr, reason);
-			attrsToRemove.Add(new RemoveInfo<TypeDefinition>(attr, reason));
+			attrsToRemove.Add(new RemoveInfo<TypeDef>(attr, reason));
 		}
 
-		protected void addTypesToBeRemoved(IEnumerable<TypeDefinition> types, string reason) {
+		protected void addTypesToBeRemoved(IEnumerable<TypeDef> types, string reason) {
 			foreach (var type in types)
 				addTypeToBeRemoved(type, reason);
 		}
 
-		protected void addTypeToBeRemoved(TypeDefinition type, string reason) {
+		protected void addTypeToBeRemoved(TypeDef type, string reason) {
 			if (type != null)
-				typesToRemove.Add(new RemoveInfo<TypeDefinition>(type, reason));
+				typesToRemove.Add(new RemoveInfo<TypeDef>(type, reason));
 		}
 
 		protected void addResourceToBeRemoved(Resource resource, string reason) {
@@ -378,25 +374,10 @@ namespace de4dot.code.deobfuscators {
 				resourcesToRemove.Add(new RemoveInfo<Resource>(resource, reason));
 		}
 
-		protected void addModuleReferencesToBeRemoved(IEnumerable<ModuleReference> modrefs, string reason) {
-			foreach (var modref in modrefs)
-				addModuleReferenceToBeRemoved(modref, reason);
-		}
-
-		protected void addModuleReferenceToBeRemoved(ModuleReference modref, string reason) {
-			if (modref != null)
-				modrefsToRemove.Add(new RemoveInfo<ModuleReference>(modref, reason));
-		}
-
-		protected void addAssemblyReferenceToBeRemoved(AssemblyNameReference asmRef, string reason) {
-			if (asmRef != null)
-				asmrefsToRemove.Add(new RemoveInfo<AssemblyNameReference>(asmRef, reason));
-		}
-
 		void deleteEmptyCctors() {
-			var emptyCctorsToRemove = new List<MethodDefinition>();
+			var emptyCctorsToRemove = new List<MethodDef>();
 			foreach (var type in module.GetTypes()) {
-				var cctor = DotNetUtils.getMethod(type, ".cctor");
+				var cctor = type.FindStaticConstructor();
 				if (cctor != null && DotNetUtils.isEmpty(cctor))
 					emptyCctorsToRemove.Add(cctor);
 			}
@@ -404,27 +385,27 @@ namespace de4dot.code.deobfuscators {
 			if (emptyCctorsToRemove.Count == 0)
 				return;
 
-			Log.v("Removing empty .cctor methods");
-			Log.indent();
+			Logger.v("Removing empty .cctor methods");
+			Logger.Instance.indent();
 			foreach (var cctor in emptyCctorsToRemove) {
 				var type = cctor.DeclaringType;
 				if (type == null)
 					continue;
 				if (type.Methods.Remove(cctor))
-					Log.v("{0:X8}, type: {1} ({2:X8})",
-								cctor.MetadataToken.ToUInt32(),
+					Logger.v("{0:X8}, type: {1} ({2:X8})",
+								cctor.MDToken.ToUInt32(),
 								Utils.removeNewlines(type),
-								type.MetadataToken.ToUInt32());
+								type.MDToken.ToUInt32());
 			}
-			Log.deIndent();
+			Logger.Instance.deIndent();
 		}
 
 		void deleteMethods() {
 			if (methodsToRemove.Count == 0)
 				return;
 
-			Log.v("Removing methods");
-			Log.indent();
+			Logger.v("Removing methods");
+			Logger.Instance.indent();
 			foreach (var info in methodsToRemove) {
 				var method = info.obj;
 				if (method == null)
@@ -433,21 +414,21 @@ namespace de4dot.code.deobfuscators {
 				if (type == null)
 					continue;
 				if (type.Methods.Remove(method))
-					Log.v("Removed method {0} ({1:X8}) (Type: {2}) (reason: {3})",
+					Logger.v("Removed method {0} ({1:X8}) (Type: {2}) (reason: {3})",
 								Utils.removeNewlines(method),
-								method.MetadataToken.ToUInt32(),
+								method.MDToken.ToUInt32(),
 								Utils.removeNewlines(type),
 								info.reason);
 			}
-			Log.deIndent();
+			Logger.Instance.deIndent();
 		}
 
 		void deleteFields() {
 			if (fieldsToRemove.Count == 0)
 				return;
 
-			Log.v("Removing fields");
-			Log.indent();
+			Logger.v("Removing fields");
+			Logger.Instance.indent();
 			foreach (var info in fieldsToRemove) {
 				var field = info.obj;
 				if (field == null)
@@ -456,13 +437,13 @@ namespace de4dot.code.deobfuscators {
 				if (type == null)
 					continue;
 				if (type.Fields.Remove(field))
-					Log.v("Removed field {0} ({1:X8}) (Type: {2}) (reason: {3})",
+					Logger.v("Removed field {0} ({1:X8}) (Type: {2}) (reason: {3})",
 								Utils.removeNewlines(field),
-								field.MetadataToken.ToUInt32(),
+								field.MDToken.ToUInt32(),
 								Utils.removeNewlines(type),
 								info.reason);
 			}
-			Log.deIndent();
+			Logger.Instance.deIndent();
 		}
 
 		void deleteTypes() {
@@ -470,37 +451,37 @@ namespace de4dot.code.deobfuscators {
 			if (types == null || typesToRemove.Count == 0)
 				return;
 
-			Log.v("Removing types");
-			Log.indent();
+			Logger.v("Removing types");
+			Logger.Instance.indent();
 			var moduleType = DotNetUtils.getModuleType(module);
 			foreach (var info in typesToRemove) {
 				var typeDef = info.obj;
 				if (typeDef == null || typeDef == moduleType)
 					continue;
 				bool removed;
-				if (typeDef.IsNested)
+				if (typeDef.DeclaringType != null)
 					removed = typeDef.DeclaringType.NestedTypes.Remove(typeDef);
 				else
 					removed = types.Remove(typeDef);
 				if (removed)
-					Log.v("Removed type {0} ({1:X8}) (reason: {2})",
+					Logger.v("Removed type {0} ({1:X8}) (reason: {2})",
 								Utils.removeNewlines(typeDef),
-								typeDef.MetadataToken.ToUInt32(),
+								typeDef.MDToken.ToUInt32(),
 								info.reason);
 			}
-			Log.deIndent();
+			Logger.Instance.deIndent();
 		}
 
 		void deleteCustomAttributes() {
 			if (attrsToRemove.Count == 0)
 				return;
 
-			Log.v("Removing custom attributes");
-			Log.indent();
+			Logger.v("Removing custom attributes");
+			Logger.Instance.indent();
 			deleteCustomAttributes(module.CustomAttributes);
 			if (module.Assembly != null)
 				deleteCustomAttributes(module.Assembly.CustomAttributes);
-			Log.deIndent();
+			Logger.Instance.deIndent();
 		}
 
 		void deleteCustomAttributes(IList<CustomAttribute> customAttrs) {
@@ -511,11 +492,12 @@ namespace de4dot.code.deobfuscators {
 				if (typeDef == null)
 					continue;
 				for (int i = 0; i < customAttrs.Count; i++) {
-					if (MemberReferenceHelper.compareTypes(customAttrs[i].AttributeType, typeDef)) {
+					if (new SigComparer().Equals(typeDef, customAttrs[i].AttributeType)) {
 						customAttrs.RemoveAt(i);
-						Log.v("Removed custom attribute {0} ({1:X8}) (reason: {2})",
+						i--;
+						Logger.v("Removed custom attribute {0} ({1:X8}) (reason: {2})",
 									Utils.removeNewlines(typeDef),
-									typeDef.MetadataToken.ToUInt32(),
+									typeDef.MDToken.ToUInt32(),
 									info.reason);
 						break;
 					}
@@ -524,19 +506,19 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		void deleteOtherAttributes() {
-			Log.v("Removing other attributes");
-			Log.indent();
+			Logger.v("Removing other attributes");
+			Logger.Instance.indent();
 			deleteOtherAttributes(module.CustomAttributes);
 			if (module.Assembly != null)
 				deleteOtherAttributes(module.Assembly.CustomAttributes);
-			Log.deIndent();
+			Logger.Instance.deIndent();
 		}
 
 		void deleteOtherAttributes(IList<CustomAttribute> customAttributes) {
 			for (int i = customAttributes.Count - 1; i >= 0; i--) {
-				var attr = customAttributes[i].AttributeType;
-				if (attr.FullName == "System.Runtime.CompilerServices.SuppressIldasmAttribute") {
-					Log.v("Removed attribute {0}", Utils.removeNewlines(attr.FullName));
+				var attr = customAttributes[i].TypeFullName;
+				if (attr == "System.Runtime.CompilerServices.SuppressIldasmAttribute") {
+					Logger.v("Removed attribute {0}", Utils.removeNewlines(attr));
 					customAttributes.RemoveAt(i);
 				}
 			}
@@ -546,48 +528,16 @@ namespace de4dot.code.deobfuscators {
 			if (!module.HasResources || resourcesToRemove.Count == 0)
 				return;
 
-			Log.v("Removing resources");
-			Log.indent();
+			Logger.v("Removing resources");
+			Logger.Instance.indent();
 			foreach (var info in resourcesToRemove) {
 				var resource = info.obj;
 				if (resource == null)
 					continue;
 				if (module.Resources.Remove(resource))
-					Log.v("Removed resource {0} (reason: {1})", Utils.toCsharpString(resource.Name), info.reason);
+					Logger.v("Removed resource {0} (reason: {1})", Utils.toCsharpString(resource.Name), info.reason);
 			}
-			Log.deIndent();
-		}
-
-		void deleteModuleReferences() {
-			if (!module.HasModuleReferences || modrefsToRemove.Count == 0)
-				return;
-
-			Log.v("Removing module references");
-			Log.indent();
-			foreach (var info in modrefsToRemove) {
-				var modref = info.obj;
-				if (modref == null)
-					continue;
-				if (module.ModuleReferences.Remove(modref))
-					Log.v("Removed module reference {0} (reason: {1})", modref, info.reason);
-			}
-			Log.deIndent();
-		}
-
-		void deleteAssemblyReferences() {
-			if (!module.HasAssemblyReferences || asmrefsToRemove.Count == 0)
-				return;
-
-			Log.v("Removing assembly references");
-			Log.indent();
-			foreach (var info in asmrefsToRemove) {
-				var asmRef = info.obj;
-				if (asmRef == null)
-					continue;
-				if (module.AssemblyReferences.Remove(asmRef))
-					Log.v("Removed assembly reference {0} (reason: {1})", asmRef, info.reason);
-			}
-			Log.deIndent();
+			Logger.Instance.deIndent();
 		}
 
 		protected void setInitLocals() {
@@ -599,13 +549,13 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
-		static bool isFatHeader(MethodDefinition method) {
+		static bool isFatHeader(MethodDef method) {
 			if (method == null || method.Body == null)
 				return false;
 			var body = method.Body;
-			if (body.InitLocals || body.MaxStackSize > 8)
+			if (body.InitLocals || body.MaxStack > 8)
 				return true;
-			if (body.Variables.Count > 0)
+			if (body.LocalList.Count > 0)
 				return true;
 			if (body.ExceptionHandlers.Count > 0)
 				return true;
@@ -615,7 +565,7 @@ namespace de4dot.code.deobfuscators {
 			return false;
 		}
 
-		static int getCodeSize(MethodDefinition method) {
+		static int getCodeSize(MethodDef method) {
 			if (method == null || method.Body == null)
 				return 0;
 			int size = 0;
@@ -628,7 +578,7 @@ namespace de4dot.code.deobfuscators {
 			return Name;
 		}
 
-		protected void findPossibleNamesToRemove(MethodDefinition method) {
+		protected void findPossibleNamesToRemove(MethodDef method) {
 			if (method == null || !method.HasBody)
 				return;
 
@@ -652,25 +602,13 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
-		protected void addModuleReferences(string reason) {
-			if (!module.HasModuleReferences)
-				return;
-
-			foreach (var name in namesToPossiblyRemove) {
-				foreach (var moduleRef in module.ModuleReferences) {
-					if (Utils.StartsWith(moduleRef.Name, name, StringComparison.OrdinalIgnoreCase))
-						addModuleReferenceToBeRemoved(moduleRef, reason);
-				}
-			}
-		}
-
 		protected bool removeProxyDelegates(ProxyCallFixerBase proxyCallFixer) {
 			return removeProxyDelegates(proxyCallFixer, true);
 		}
 
 		protected bool removeProxyDelegates(ProxyCallFixerBase proxyCallFixer, bool removeCreators) {
 			if (proxyCallFixer.Errors != 0) {
-				Log.v("Not removing proxy delegates and creator type since errors were detected.");
+				Logger.v("Not removing proxy delegates and creator type since errors were detected.");
 				return false;
 			}
 			addTypesToBeRemoved(proxyCallFixer.DelegateTypes, "Proxy delegate type");
@@ -686,25 +624,25 @@ namespace de4dot.code.deobfuscators {
 			return DotNetUtils.getResource(module, strings);
 		}
 
-		protected CustomAttribute getAssemblyAttribute(TypeReference attr) {
-			var list = new List<CustomAttribute>(DotNetUtils.findAttributes(module.Assembly, attr));
-			return list.Count == 0 ? null : list[0];
+		protected CustomAttribute getAssemblyAttribute(IType attr) {
+			if (module.Assembly == null)
+				return null;
+			return module.Assembly.CustomAttributes.Find(attr);
 		}
 
-		protected CustomAttribute getModuleAttribute(TypeReference attr) {
-			var list = new List<CustomAttribute>(DotNetUtils.findAttributes(module, attr));
-			return list.Count == 0 ? null : list[0];
+		protected CustomAttribute getModuleAttribute(IType attr) {
+			return module.CustomAttributes.Find(attr);
 		}
 
 		protected bool hasMetadataStream(string name) {
-			foreach (var stream in module.MetadataStreams) {
+			foreach (var stream in module.MetaData.AllStreams) {
 				if (stream.Name == name)
 					return true;
 			}
 			return false;
 		}
 
-		List<T> getObjectsToRemove<T>(IList<RemoveInfo<T>> removeThese) where T : MemberReference {
+		List<T> getObjectsToRemove<T>(IList<RemoveInfo<T>> removeThese) where T : class, ICodedToken {
 			var list = new List<T>(removeThese.Count);
 			foreach (var info in removeThese) {
 				if (info.obj != null)
@@ -713,11 +651,11 @@ namespace de4dot.code.deobfuscators {
 			return list;
 		}
 
-		protected List<TypeDefinition> getTypesToRemove() {
+		protected List<TypeDef> getTypesToRemove() {
 			return getObjectsToRemove(typesToRemove);
 		}
 
-		protected List<MethodDefinition> getMethodsToRemove() {
+		protected List<MethodDef> getMethodsToRemove() {
 			return getObjectsToRemove(methodsToRemove);
 		}
 
@@ -759,18 +697,22 @@ namespace de4dot.code.deobfuscators {
 			return name != null && checkValidName(name);
 		}
 
+		public virtual bool isValidMethodReturnArgName(string name) {
+			return string.IsNullOrEmpty(name) || checkValidName(name);
+		}
+
 		public virtual bool isValidResourceKeyName(string name) {
 			return name != null && checkValidName(name);
 		}
 
-		public virtual void OnBeforeAddingResources(MetadataBuilder builder) {
+		public virtual void OnWriterEvent(ModuleWriterBase writer, ModuleWriterEvent evt) {
 		}
 
 		protected void findAndRemoveInlinedMethods() {
 			removeInlinedMethods(InlinedMethodsFinder.find(module));
 		}
 
-		protected void removeInlinedMethods(List<MethodDefinition> inlinedMethods) {
+		protected void removeInlinedMethods(List<MethodDef> inlinedMethods) {
 			addMethodsToBeRemoved(new UnusedMethodsFinder(module, inlinedMethods, getRemovedMethods()).find(), "Inlined method");
 		}
 
@@ -781,7 +723,7 @@ namespace de4dot.code.deobfuscators {
 			return removedMethods;
 		}
 
-		protected bool isTypeCalled(TypeDefinition decrypterType) {
+		protected bool isTypeCalled(TypeDef decrypterType) {
 			if (decrypterType == null)
 				return false;
 
@@ -804,7 +746,7 @@ namespace de4dot.code.deobfuscators {
 						case Code.Call:
 						case Code.Callvirt:
 						case Code.Newobj:
-							var calledMethod = instr.Operand as MethodReference;
+							var calledMethod = instr.Operand as IMethod;
 							if (calledMethod == null)
 								break;
 							if (decrypterMethods.exists(calledMethod))
@@ -821,7 +763,23 @@ namespace de4dot.code.deobfuscators {
 			return false;
 		}
 
-		public static int toInt32(bool b) {
+		protected bool hasNativeMethods() {
+			if (module.VTableFixups != null)
+				return true;
+			foreach (var type in module.GetTypes()) {
+				foreach (var method in type.Methods) {
+					var mb = method.MethodBody;
+					if (mb == null)
+						continue;
+					if (mb is CilBody)
+						continue;
+					return true;
+				}
+			}
+			return false;
+		}
+
+		protected static int toInt32(bool b) {
 			return b ? 1 : 0;
 		}
 	}

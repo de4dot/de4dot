@@ -18,7 +18,7 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
 
@@ -143,6 +143,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 				switch (type.FullName) {
 				case "NineRays.Decompiler.NotDecompile":
 				case "NineRays.Obfuscator.Evaluation":
+				case "NineRays.Obfuscator.SoftwareWatermarkAttribute":
 					addAttributeToBeRemoved(type, "Obfuscator attribute");
 					foundSpicesAttribute = true;
 					break;
@@ -213,7 +214,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 		public override IEnumerable<int> getStringDecrypterMethods() {
 			var list = new List<int>();
 			foreach (var info in stringDecrypter.DecrypterInfos)
-				list.Add(info.method.MetadataToken.ToInt32());
+				list.Add(info.method.MDToken.ToInt32());
 			return list;
 		}
 	}

@@ -21,10 +21,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using dot10.IO;
 
 namespace de4dot.code.deobfuscators.CodeVeil {
 	class ResourceReader {
-		BinaryReader reader;
+		IBinaryReader reader;
 		string resourceReader;
 		string resourceSet;
 
@@ -36,12 +37,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			get { return resourceSet; }
 		}
 
-		public ResourceReader(Stream stream) {
-			stream.Position = 0;
-			reader = new BinaryReader(stream);
-		}
-
-		public ResourceReader(BinaryReader reader) {
+		public ResourceReader(IBinaryReader reader) {
 			this.reader = reader;
 		}
 
@@ -93,13 +89,13 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				DeobUtils.xxteaDecrypt(encryptedData, key);
 				byte[] decryptedData = new byte[encryptedData.Length * 4];
 				Buffer.BlockCopy(encryptedData, 0, decryptedData, 0, decryptedData.Length);
-				dataReader = new BinaryReader(new MemoryStream(decryptedData));
+				dataReader = MemoryImageStream.Create(decryptedData);
 			}
 
 			if (inflateData) {
-				var data = dataReader.ReadBytes((int)(dataReader.BaseStream.Length - dataReader.BaseStream.Position));
+				var data = dataReader.ReadRemainingBytes();
 				data = DeobUtils.inflate(data, true);
-				dataReader = new BinaryReader(new MemoryStream(data));
+				dataReader = MemoryImageStream.Create(data);
 			}
 
 			foreach (var info in infos)
@@ -108,7 +104,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return infos;
 		}
 
-		static string readResourceName(BinaryReader reader, bool encrypted) {
+		static string readResourceName(IBinaryReader reader, bool encrypted) {
 			if (!encrypted)
 				return reader.ReadString();
 

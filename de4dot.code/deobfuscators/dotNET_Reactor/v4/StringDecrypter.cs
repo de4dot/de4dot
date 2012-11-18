@@ -20,17 +20,17 @@
 using System;
 using System.Text;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 	class StringDecrypter {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		EncryptedResource encryptedResource;
 		List<DecrypterInfo> decrypterInfos = new List<DecrypterInfo>();
-		MethodDefinition otherStringDecrypter;
+		MethodDef otherStringDecrypter;
 		byte[] decryptedData;
 		PeImage peImage;
 		byte[] fileData;
@@ -43,11 +43,11 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		}
 
 		public class DecrypterInfo {
-			public MethodDefinition method;
+			public MethodDef method;
 			public byte[] key;
 			public byte[] iv;
 
-			public DecrypterInfo(MethodDefinition method, byte[] key, byte[] iv) {
+			public DecrypterInfo(MethodDef method, byte[] key, byte[] iv) {
 				this.method = method;
 				this.key = key;
 				this.iv = iv;
@@ -58,7 +58,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			get { return encryptedResource.Method != null; }
 		}
 
-		public TypeDefinition DecrypterType {
+		public TypeDef DecrypterType {
 			get { return encryptedResource.Type; }
 		}
 
@@ -70,16 +70,16 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			get { return decrypterInfos; }
 		}
 
-		public MethodDefinition OtherStringDecrypter {
+		public MethodDef OtherStringDecrypter {
 			get { return otherStringDecrypter; }
 		}
 
-		public StringDecrypter(ModuleDefinition module) {
+		public StringDecrypter(ModuleDefMD module) {
 			this.module = module;
 			this.encryptedResource = new EncryptedResource(module);
 		}
 
-		public StringDecrypter(ModuleDefinition module, StringDecrypter oldOne) {
+		public StringDecrypter(ModuleDefMD module, StringDecrypter oldOne) {
 			this.module = module;
 			this.stringDecrypterVersion = oldOne.stringDecrypterVersion;
 			this.encryptedResource = new EncryptedResource(module, oldOne.encryptedResource);
@@ -90,7 +90,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			otherStringDecrypter = lookup(oldOne.otherStringDecrypter, "Could not find string decrypter method");
 		}
 
-		T lookup<T>(T def, string errorMessage) where T : MemberReference {
+		T lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
 			return DeobUtils.lookup(module, def, errorMessage);
 		}
 
@@ -133,16 +133,19 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				findOtherStringDecrypter(decrypterInfos[0].method.DeclaringType);
 		}
 
-		void findOtherStringDecrypter(TypeDefinition type) {
+		void findOtherStringDecrypter(TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic || !method.HasBody)
 					continue;
-				if (method.MethodReturnType.ReturnType.FullName != "System.String")
+				var sig = method.MethodSig;
+				if (sig == null)
 					continue;
-				if (method.Parameters.Count != 1)
+				if (sig.RetType.GetElementType() != ElementType.String)
 					continue;
-				if (method.Parameters[0].ParameterType.FullName != "System.Object" &&
-					method.Parameters[0].ParameterType.FullName != "System.String")
+				if (sig.Params.Count != 1)
+					continue;
+				if (sig.Params[0].GetElementType() != ElementType.Object &&
+					sig.Params[0].GetElementType() != ElementType.String)
 					continue;
 
 				otherStringDecrypter = method;
@@ -159,11 +162,11 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			encryptedResource.init(simpleDeobfuscator);
 			if (!encryptedResource.FoundResource)
 				return;
-			Log.v("Adding string decrypter. Resource: {0}", Utils.toCsharpString(encryptedResource.Resource.Name));
+			Logger.v("Adding string decrypter. Resource: {0}", Utils.toCsharpString(encryptedResource.Resource.Name));
 			decryptedData = encryptedResource.decrypt();
 		}
 
-		void findKeyIv(MethodDefinition method, out byte[] key, out byte[] iv) {
+		void findKeyIv(MethodDef method, out byte[] key, out byte[] iv) {
 			key = null;
 			iv = null;
 
@@ -176,7 +179,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			foreach (var calledMethod in DotNetUtils.getCalledMethods(module, method)) {
 				if (calledMethod.DeclaringType != method.DeclaringType)
 					continue;
-				if (calledMethod.MethodReturnType.ReturnType.FullName != "System.Byte[]")
+				if (calledMethod.MethodSig.GetRetType().GetFullName() != "System.Byte[]")
 					continue;
 				var localTypes = new LocalTypes(calledMethod);
 				if (!localTypes.all(requiredTypes))
@@ -188,7 +191,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 					var instr = instructions[i];
 					if (instr.OpCode.Code != Code.Ldtoken)
 						continue;
-					var field = instr.Operand as FieldDefinition;
+					var field = instr.Operand as FieldDef;
 					if (field == null)
 						continue;
 					if (field.InitialValue == null)
@@ -208,7 +211,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			}
 		}
 
-		void initializeStringDecrypterVersion(MethodDefinition method) {
+		void initializeStringDecrypterVersion(MethodDef method) {
 			var localTypes = new LocalTypes(method);
 			if (localTypes.exists("System.IntPtr"))
 				stringDecrypterVersion = StringDecrypterVersion.VER_38;
@@ -216,7 +219,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				stringDecrypterVersion = StringDecrypterVersion.VER_37;
 		}
 
-		DecrypterInfo getDecrypterInfo(MethodDefinition method) {
+		DecrypterInfo getDecrypterInfo(MethodDef method) {
 			foreach (var info in decrypterInfos) {
 				if (info.method == method)
 					return info;
@@ -224,7 +227,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			throw new ApplicationException("Invalid string decrypter method");
 		}
 
-		public string decrypt(MethodDefinition method, int offset) {
+		public string decrypt(MethodDef method, int offset) {
 			var info = getDecrypterInfo(method);
 
 			if (info.key == null) {

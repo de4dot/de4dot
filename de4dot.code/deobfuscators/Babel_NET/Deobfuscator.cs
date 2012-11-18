@@ -19,7 +19,7 @@
 
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
 
@@ -132,7 +132,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			this.options = options;
 		}
 
-		public override void init(ModuleDefinition module) {
+		public override void init(ModuleDefMD module) {
 			base.init(module);
 		}
 
@@ -182,10 +182,10 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			}
 		}
 
-		void checkVersion(TypeDefinition attr) {
-			var versionField = DotNetUtils.getFieldByName(attr, "Version");
-			if (versionField != null && versionField.IsLiteral && versionField.Constant != null && versionField.Constant is string) {
-				var val = Regex.Match((string)versionField.Constant, @"^(\d+\.\d+\.\d+\.\d+)$");
+		void checkVersion(TypeDef attr) {
+			var versionField = attr.FindField("Version");
+			if (versionField != null && versionField.IsLiteral && versionField.Constant != null && versionField.Constant.Value is string) {
+				var val = Regex.Match((string)versionField.Constant.Value, @"^(\d+\.\d+\.\d+\.\d+)$");
 				if (val.Groups.Count < 2)
 					return;
 				obfuscatorName = string.Format("{0} {1}", DeobfuscatorInfo.THE_NAME, val.Groups[1].ToString());
@@ -206,7 +206,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 			if (Operations.DecryptStrings != OpDecryptString.None) {
 				if (stringDecrypter.Resource != null)
-					Log.v("Adding string decrypter. Resource: {0}", Utils.toCsharpString(stringDecrypter.Resource.Name));
+					Logger.v("Adding string decrypter. Resource: {0}", Utils.toCsharpString(stringDecrypter.Resource.Name));
 				staticStringInliner.add(stringDecrypter.DecryptMethod, (method, gim, args) => {
 					return stringDecrypter.decrypt(args);
 				});
@@ -296,7 +296,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		public override IEnumerable<int> getStringDecrypterMethods() {
 			var list = new List<int>();
 			if (stringDecrypter.DecryptMethod != null)
-				list.Add(stringDecrypter.DecryptMethod.MetadataToken.ToInt32());
+				list.Add(stringDecrypter.DecryptMethod.MDToken.ToInt32());
 			return list;
 		}
 	}

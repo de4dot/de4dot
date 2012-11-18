@@ -19,12 +19,12 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
 
-namespace de4dot.code.deobfuscators.CliSecure.vm {
+namespace de4dot.code.deobfuscators.Agile_NET.vm {
 	class OpCodeHandlerSigInfo {
 		public object[] RequiredFieldTypes { get; set; }
 		public string[] ExecuteMethodLocals { get; set; }
@@ -37,21 +37,21 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 	}
 
 	class CsvmInfo {
-		public TypeDefinition StackValue { get; set; }
-		public TypeDefinition Stack { get; set; }
-		public MethodDefinition PopMethod { get; set; }
-		public MethodDefinition PeekMethod { get; set; }
+		public TypeDef StackValue { get; set; }
+		public TypeDef Stack { get; set; }
+		public MethodDef PopMethod { get; set; }
+		public MethodDef PeekMethod { get; set; }
 	}
 
 	class VmOpCodeHandlerDetector {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		List<OpCodeHandler> opCodeHandlers;
 
 		public List<OpCodeHandler> Handlers {
 			get { return opCodeHandlers; }
 		}
 
-		public VmOpCodeHandlerDetector(ModuleDefinition module) {
+		public VmOpCodeHandlerDetector(ModuleDefMD module) {
 			this.module = module;
 		}
 
@@ -73,7 +73,7 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 			return csvmInfo;
 		}
 
-		TypeDefinition findStackValueType() {
+		TypeDef findStackValueType() {
 			foreach (var type in module.Types) {
 				if (isStackType(type))
 					return type;
@@ -81,17 +81,17 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 			return null;
 		}
 
-		static bool isStackType(TypeDefinition type) {
+		static bool isStackType(TypeDef type) {
 			if (type.Fields.Count != 2)
 				return false;
 
 			int enumTypes = 0;
 			int objectTypes = 0;
 			foreach (var field in type.Fields) {
-				var fieldType = field.FieldType as TypeDefinition;
+				var fieldType = field.FieldSig.GetFieldType().TryGetTypeDef();
 				if (fieldType != null && fieldType.IsEnum)
 					enumTypes++;
-				if (field.FieldType.FullName == "System.Object")
+				if (field.FieldSig.GetFieldType().GetElementType() == ElementType.Object)
 					objectTypes++;
 			}
 			if (enumTypes != 1 || objectTypes != 1)
@@ -100,7 +100,7 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 			return true;
 		}
 
-		TypeDefinition findStackType(TypeDefinition stackValueType) {
+		TypeDef findStackType(TypeDef stackValueType) {
 			foreach (var type in module.Types) {
 				if (isStackType(type, stackValueType))
 					return type;
@@ -108,7 +108,7 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 			return null;
 		}
 
-		bool isStackType(TypeDefinition type, TypeDefinition stackValueType) {
+		bool isStackType(TypeDef type, TypeDef stackValueType) {
 			if (type.Interfaces.Count != 2)
 				return false;
 			if (!implementsInterface(type, "System.Collections.ICollection"))
@@ -124,11 +124,14 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 			foreach (var field in type.Fields) {
 				if (field.IsLiteral)
 					continue;
-				if (field.FieldType is ArrayType && ((ArrayType)field.FieldType).ElementType == stackValueType)
+				var fieldType = field.FieldSig.GetFieldType();
+				if (fieldType == null)
+					continue;
+				if (fieldType.IsSZArray && fieldType.Next.TryGetTypeDef() == stackValueType)
 					stackValueTypes++;
-				if (field.FieldType.FullName == "System.Int32")
+				if (fieldType.ElementType == ElementType.I4)
 					int32Types++;
-				if (field.FieldType.FullName == "System.Object")
+				if (fieldType.ElementType == ElementType.Object)
 					objectTypes++;
 			}
 			if (stackValueTypes != 2 || int32Types != 2 || objectTypes != 1)
@@ -137,9 +140,9 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 			return true;
 		}
 
-		static bool implementsInterface(TypeDefinition type, string ifaceName) {
+		static bool implementsInterface(TypeDef type, string ifaceName) {
 			foreach (var iface in type.Interfaces) {
-				if (iface.FullName == ifaceName)
+				if (iface.Interface.FullName == ifaceName)
 					return true;
 			}
 			return false;
@@ -147,7 +150,8 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 
 		void initStackTypeMethods(CsvmInfo csvmInfo) {
 			foreach (var method in csvmInfo.Stack.Methods) {
-				if (method.Parameters.Count == 0 && method.MethodReturnType.ReturnType == csvmInfo.StackValue) {
+				var sig = method.MethodSig;
+				if (sig != null && sig.Params.Count == 0 && sig.RetType.TryGetTypeDef() == csvmInfo.StackValue) {
 					if (hasAdd(method))
 						csvmInfo.PopMethod = method;
 					else
@@ -156,7 +160,7 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 			}
 		}
 
-		static bool hasAdd(MethodDefinition method) {
+		static bool hasAdd(MethodDef method) {
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code == Code.Add)
 					return true;
@@ -164,7 +168,7 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 			return false;
 		}
 
-		List<TypeDefinition> findVmHandlerTypes() {
+		List<TypeDef> findVmHandlerTypes() {
 			var requiredFields = new string[] {
 				null,
 				"System.Collections.Generic.Dictionary`2<System.UInt16,System.Type>",
@@ -172,7 +176,7 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 			};
 			var cflowDeobfuscator = new CflowDeobfuscator();
 			foreach (var type in module.Types) {
-				var cctor = DotNetUtils.getMethod(type, ".cctor");
+				var cctor = type.FindStaticConstructor();
 				if (cctor == null)
 					continue;
 				requiredFields[0] = type.FullName;
@@ -190,13 +194,13 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 			return null;
 		}
 
-		static List<TypeDefinition> findVmHandlerTypes(MethodDefinition method) {
-			var list = new List<TypeDefinition>();
+		static List<TypeDef> findVmHandlerTypes(MethodDef method) {
+			var list = new List<TypeDef>();
 
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Ldtoken)
 					continue;
-				var type = instr.Operand as TypeDefinition;
+				var type = instr.Operand as TypeDef;
 				if (type == null)
 					continue;
 
@@ -206,7 +210,7 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 			return list;
 		}
 
-		void detectHandlers(List<TypeDefinition> handlerTypes, CsvmInfo csvmInfo) {
+		void detectHandlers(List<TypeDef> handlerTypes, CsvmInfo csvmInfo) {
 			opCodeHandlers = new List<OpCodeHandler>();
 			var detected = new List<OpCodeHandler>();
 

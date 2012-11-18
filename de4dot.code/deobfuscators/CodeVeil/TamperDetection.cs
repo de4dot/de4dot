@@ -18,27 +18,26 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using Mono.Cecil.Metadata;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CodeVeil {
 	class TamperDetection {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		MainType mainType;
-		TypeDefinition tamperDetectionType;
-		List<MethodDefinition> tamperDetectionMethods = new List<MethodDefinition>();
+		TypeDef tamperDetectionType;
+		List<MethodDef> tamperDetectionMethods = new List<MethodDef>();
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return tamperDetectionType; }
 		}
 
-		public List<MethodDefinition> Methods {
+		public List<MethodDef> Methods {
 			get { return tamperDetectionMethods; }
 		}
 
-		public TamperDetection(ModuleDefinition module, MainType mainType) {
+		public TamperDetection(ModuleDefMD module, MainType mainType) {
 			this.module = module;
 			this.mainType = mainType;
 		}
@@ -82,7 +81,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			}
 		}
 
-		bool checkTamperDetectionClasses(IEnumerable<TypeDefinition> types) {
+		bool checkTamperDetectionClasses(IEnumerable<TypeDef> types) {
 			foreach (var type in types) {
 				if (!isTamperDetectionClass(type))
 					return false;
@@ -90,13 +89,13 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return true;
 		}
 
-		bool isTamperDetectionClass(TypeDefinition type) {
-			if (type.BaseType == null || type.BaseType.EType != ElementType.Object)
+		bool isTamperDetectionClass(TypeDef type) {
+			if (type.BaseType == null || type.BaseType.FullName != "System.Object")
 				return false;
 			if ((type.Attributes & ~TypeAttributes.Sealed) != TypeAttributes.NestedAssembly)
 				return false;
 
-			MethodDefinition cctor = null, initMethod = null;
+			MethodDef cctor = null, initMethod = null;
 			foreach (var method in type.Methods) {
 				if (InvalidMethodsFinder.isInvalidMethod(method))
 					continue;
@@ -116,7 +115,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return true;
 		}
 
-		bool callsMainTypeTamperCheckMethod(MethodDefinition method) {
+		bool callsMainTypeTamperCheckMethod(MethodDef method) {
 			foreach (var calledMethod in DotNetUtils.getCalledMethods(module, method)) {
 				if (calledMethod == mainType.TamperCheckMethod)
 					return true;
@@ -142,7 +141,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		}
 
 		static bool checkInvokeCall(Instruction instr, string returnType, string parameters) {
-			var method = instr.Operand as MethodDefinition;
+			var method = instr.Operand as MethodDef;
 			if (method == null)
 				return false;
 			if (method.Name != "Invoke")

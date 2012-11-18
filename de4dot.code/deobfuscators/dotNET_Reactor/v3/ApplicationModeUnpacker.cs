@@ -22,8 +22,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
-using Mono.Cecil;
-using de4dot.PE;
+using dot10.IO;
+using dot10.PE;
+using dot10.DotNet;
+using dot10.DotNet.MD;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 	class IniFile {
@@ -77,7 +79,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			0x73, 0x33, 0x6E, 0x6D, 0x34, 0x32, 0x64, 0x35,
 		};
 
-		PeImage peImage;
+		IPEImage peImage;
 		List<UnpackedFile> satelliteAssemblies = new List<UnpackedFile>();
 		uint[] sizes;
 		string[] filenames;
@@ -87,29 +89,35 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			get { return satelliteAssemblies; }
 		}
 
-		public ApplicationModeUnpacker(PeImage peImage) {
+		public ApplicationModeUnpacker(IPEImage peImage) {
 			this.peImage = peImage;
 		}
 
 		public byte[] unpack() {
 			byte[] data = null;
+			MyPEImage myPeImage = null;
 			try {
-				data = unpack2();
+				myPeImage = new MyPEImage(peImage);
+				data = unpack2(myPeImage);
 			}
 			catch {
+			}
+			finally {
+				if (myPeImage != null)
+					myPeImage.Dispose();
 			}
 			if (data != null)
 				return data;
 
 			if (shouldUnpack)
-				Log.w("Could not unpack the file");
+				Logger.w("Could not unpack file: {0}", peImage.FileName ?? "(unknown filename)");
 			return null;
 		}
 
-		byte[] unpack2() {
+		byte[] unpack2(MyPEImage peImage) {
 			shouldUnpack = false;
-			uint headerOffset = peImage.ImageLength - 12;
-			uint offsetEncryptedAssembly = checkOffset(peImage.offsetReadUInt32(headerOffset));
+			uint headerOffset = (uint)peImage.Length - 12;
+			uint offsetEncryptedAssembly = checkOffset(peImage, peImage.offsetReadUInt32(headerOffset));
 			uint ezencryptionLibLength = peImage.offsetReadUInt32(headerOffset + 4);
 			uint iniFileLength = peImage.offsetReadUInt32(headerOffset + 8);
 
@@ -135,30 +143,31 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 				return null;
 
 			byte[] ezencryptionLibData = decompress1(peImage.offsetReadBytes(ezencryptionLibOffset, (int)ezencryptionLibLength));
-			var ezencryptionLibModule = ModuleDefinition.ReadModule(new MemoryStream(ezencryptionLibData));
+			var ezencryptionLibModule = ModuleDefMD.Load(ezencryptionLibData);
 			var decrypter = new ApplicationModeDecrypter(ezencryptionLibModule);
 			if (!decrypter.Detected)
 				return null;
 
-			var mainAssembly = unpackEmbeddedFile(0, decrypter);
+			var mainAssembly = unpackEmbeddedFile(peImage, 0, decrypter);
 			decrypter.MemoryPatcher.patch(mainAssembly.data);
 			for (int i = 1; i < filenames.Length; i++)
-				satelliteAssemblies.Add(unpackEmbeddedFile(i, decrypter));
+				satelliteAssemblies.Add(unpackEmbeddedFile(peImage, i, decrypter));
 
 			clearDllBit(mainAssembly.data);
 			return mainAssembly.data;
 		}
 
 		static void clearDllBit(byte[] peImageData) {
-			var mainPeImage = new PeImage(peImageData);
-			uint characteristicsOffset = mainPeImage.FileHeaderOffset + 18;
-			ushort characteristics = mainPeImage.offsetReadUInt16(characteristicsOffset);
-			characteristics &= 0xDFFF;
-			characteristics |= 2;
-			mainPeImage.offsetWriteUInt16(characteristicsOffset, characteristics);
+			using (var mainPeImage = new MyPEImage(peImageData)) {
+				uint characteristicsOffset = (uint)mainPeImage.PEImage.ImageNTHeaders.FileHeader.StartOffset + 18;
+				ushort characteristics = mainPeImage.offsetReadUInt16(characteristicsOffset);
+				characteristics &= 0xDFFF;
+				characteristics |= 2;
+				mainPeImage.offsetWriteUInt16(characteristicsOffset, characteristics);
+			}
 		}
 
-		UnpackedFile unpackEmbeddedFile(int index, ApplicationModeDecrypter decrypter) {
+		UnpackedFile unpackEmbeddedFile(MyPEImage peImage, int index, ApplicationModeDecrypter decrypter) {
 			uint offset = 0;
 			for (int i = 0; i < index + 1; i++)
 				offset += sizes[i];
@@ -178,8 +187,8 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			return list.ToArray();
 		}
 
-		uint checkOffset(uint offset) {
-			if (offset >= peImage.ImageLength)
+		uint checkOffset(MyPEImage peImage, uint offset) {
+			if (offset >= peImage.Length)
 				throw new Exception();
 			return offset;
 		}

@@ -18,31 +18,31 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
+using dot10.DotNet;
 
 namespace de4dot.code.renamer.asmmodules {
-	class EventDef : Ref {
-		public MethodDef AddMethod { get; set; }
-		public MethodDef RemoveMethod { get; set; }
-		public MethodDef RaiseMethod { get; set; }
+	class MEventDef : Ref {
+		public MMethodDef AddMethod { get; set; }
+		public MMethodDef RemoveMethod { get; set; }
+		public MMethodDef RaiseMethod { get; set; }
 
-		public EventDefinition EventDefinition {
-			get { return (EventDefinition)memberReference; }
+		public EventDef EventDef {
+			get { return (EventDef)memberReference; }
 		}
 
-		public EventDef(EventDefinition eventDefinition, TypeDef owner, int index)
+		public MEventDef(EventDef eventDefinition, MTypeDef owner, int index)
 			: base(eventDefinition, owner, index) {
 		}
 
-		public IEnumerable<MethodDefinition> methodDefinitions() {
-			if (EventDefinition.AddMethod != null)
-				yield return EventDefinition.AddMethod;
-			if (EventDefinition.RemoveMethod != null)
-				yield return EventDefinition.RemoveMethod;
-			if (EventDefinition.InvokeMethod != null)
-				yield return EventDefinition.InvokeMethod;
-			if (EventDefinition.OtherMethods != null) {
-				foreach (var m in EventDefinition.OtherMethods)
+		public IEnumerable<MethodDef> methodDefinitions() {
+			if (EventDef.AddMethod != null)
+				yield return EventDef.AddMethod;
+			if (EventDef.RemoveMethod != null)
+				yield return EventDef.RemoveMethod;
+			if (EventDef.InvokeMethod != null)
+				yield return EventDef.InvokeMethod;
+			if (EventDef.OtherMethods != null) {
+				foreach (var m in EventDef.OtherMethods)
 					yield return m;
 			}
 		}

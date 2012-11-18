@@ -19,19 +19,17 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code {
 	// "global" data and methods that is shared between all deobfuscators that deobfuscate
 	// assemblies at the same time.
 	public class DeobfuscatorContext : IDeobfuscatorContext {
-		ExternalAssemblies externalAssemblies = new ExternalAssemblies();
 		Dictionary<string, object> dataDict = new Dictionary<string, object>(StringComparer.Ordinal);
 
 		public void clear() {
 			dataDict.Clear();
-			externalAssemblies.unloadAll();
 		}
 
 		public void setData(string name, object data) {
@@ -48,61 +46,68 @@ namespace de4dot.code {
 			dataDict.Remove(name);
 		}
 
-		static TypeReference getNonGenericTypeReference(TypeReference typeReference) {
-			if (typeReference == null)
-				return null;
-			if (!typeReference.IsGenericInstance)
-				return typeReference;
-			var type = (GenericInstanceType)typeReference;
-			return type.ElementType;
+		static ITypeDefOrRef getNonGenericTypeReference(ITypeDefOrRef typeRef) {
+			var ts = typeRef as TypeSpec;
+			if (ts == null)
+				return typeRef;
+			var gis = ts.ToGenericInstSig();
+			if (gis == null || gis.GenericType == null)
+				return typeRef;
+			return gis.GenericType.TypeDefOrRef;
 		}
 
-		public TypeDefinition resolve(TypeReference type) {
+		public TypeDef resolveType(ITypeDefOrRef type) {
 			if (type == null)
 				return null;
-			var typeDef = getNonGenericTypeReference(type) as TypeDefinition;
+			type = getNonGenericTypeReference(type);
+
+			var typeDef = type as TypeDef;
 			if (typeDef != null)
 				return typeDef;
 
-			return externalAssemblies.resolve(type);
+			var tr = type as TypeRef;
+			if (tr != null)
+				return tr.Resolve();
+
+			return null;
 		}
 
-		public MethodDefinition resolve(MethodReference method) {
+		public MethodDef resolveMethod(IMethod method) {
 			if (method == null)
 				return null;
-			var methodDef = method as MethodDefinition;
-			if (methodDef != null)
-				return methodDef;
 
-			var type = resolve(method.DeclaringType);
+			var md = method as MethodDef;
+			if (md != null)
+				return md;
+
+			var mr = method as MemberRef;
+			if (mr == null || !mr.IsMethodRef)
+				return null;
+
+			var type = resolveType(mr.DeclaringType);
 			if (type == null)
 				return null;
 
-			foreach (var m in type.Methods) {
-				if (MemberReferenceHelper.compareMethodReference(method, m))
-					return m;
-			}
-
-			return null;
+			return type.Resolve(mr) as MethodDef;
 		}
 
-		public FieldDefinition resolve(FieldReference field) {
+		public FieldDef resolveField(IField field) {
 			if (field == null)
 				return null;
-			var fieldDef = field as FieldDefinition;
-			if (fieldDef != null)
-				return fieldDef;
 
-			var type = resolve(field.DeclaringType);
+			var fd = field as FieldDef;
+			if (fd != null)
+				return fd;
+
+			var mr = field as MemberRef;
+			if (mr == null || !mr.IsFieldRef)
+				return null;
+
+			var type = resolveType(mr.DeclaringType);
 			if (type == null)
 				return null;
 
-			foreach (var f in type.Fields) {
-				if (MemberReferenceHelper.compareFieldReference(field, f))
-					return f;
-			}
-
-			return null;
+			return type.Resolve(mr) as FieldDef;
 		}
 	}
 }

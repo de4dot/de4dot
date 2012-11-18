@@ -17,7 +17,7 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.Cecil;
+using dot10.DotNet;
 
 namespace de4dot.code {
 	public interface IDeobfuscatorContext {
@@ -25,8 +25,8 @@ namespace de4dot.code {
 		void setData(string name, object data);
 		object getData(string name);
 		void clearData(string name);
-		TypeDefinition resolve(TypeReference type);
-		MethodDefinition resolve(MethodReference method);
-		FieldDefinition resolve(FieldReference field);
+		TypeDef resolveType(ITypeDefOrRef type);
+		MethodDef resolveMethod(IMethod method);
+		FieldDef resolveField(IField field);
 	}
 }

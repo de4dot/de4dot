@@ -19,29 +19,26 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using Mono.Cecil.Metadata;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 
 namespace de4dot.blocks.cflow {
 	public class InstructionEmulator {
 		ValueStack valueStack = new ValueStack();
 		Dictionary<Value, bool> protectedStackValues = new Dictionary<Value, bool>();
-		IList<ParameterDefinition> parameterDefinitions;
-		IList<VariableDefinition> variableDefinitions;
+		IList<Parameter> parameterDefs;
+		IList<Local> localDefs;
 		List<Value> args = new List<Value>();
 		List<Value> locals = new List<Value>();
-		int argBase;
 
-		MethodDefinition prev_method;
+		MethodDef prev_method;
 		List<Value> cached_args = new List<Value>();
 		List<Value> cached_locals = new List<Value>();
-		int cached_argBase;
 
 		public InstructionEmulator() {
 		}
 
-		public InstructionEmulator(MethodDefinition method) {
+		public InstructionEmulator(MethodDef method) {
 			init(method);
 		}
 
@@ -49,9 +46,9 @@ namespace de4dot.blocks.cflow {
 			init(blocks.Method);
 		}
 
-		public void init(MethodDefinition method) {
-			this.parameterDefinitions = method.Parameters;
-			this.variableDefinitions = method.Body.Variables;
+		public void init(MethodDef method) {
+			this.parameterDefs = method.Parameters;
+			this.localDefs = method.Body.LocalList;
 			valueStack.init();
 			protectedStackValues.Clear();
 
@@ -59,20 +56,14 @@ namespace de4dot.blocks.cflow {
 				prev_method = method;
 
 				cached_args.Clear();
-				cached_argBase = 0;
-				if (method.HasImplicitThis) {
-					cached_argBase = 1;
-					cached_args.Add(new UnknownValue());
-				}
-				for (int i = 0; i < parameterDefinitions.Count; i++)
-					cached_args.Add(getUnknownValue(parameterDefinitions[i].ParameterType));
+				for (int i = 0; i < parameterDefs.Count; i++)
+					cached_args.Add(getUnknownValue(parameterDefs[i].Type));
 
 				cached_locals.Clear();
-				for (int i = 0; i < variableDefinitions.Count; i++)
-					cached_locals.Add(getUnknownValue(variableDefinitions[i].VariableType));
+				for (int i = 0; i < localDefs.Count; i++)
+					cached_locals.Add(getUnknownValue(localDefs[i].Type));
 			}
 
-			argBase = cached_argBase;
 			args.Clear();
 			args.AddRange(cached_args);
 			locals.Clear();
@@ -83,10 +74,14 @@ namespace de4dot.blocks.cflow {
 			protectedStackValues[value] = true;
 		}
 
-		static Value getUnknownValue(TypeReference typeReference) {
-			if (typeReference == null)
+		static Value getUnknownValue(ITypeDefOrRef type) {
+			return getUnknownValue(type.ToTypeSig(false));
+		}
+
+		static Value getUnknownValue(TypeSig type) {
+			if (type == null)
 				return new UnknownValue();
-			switch (typeReference.EType) {
+			switch (type.ElementType) {
 			case ElementType.Boolean: return Int32Value.createUnknownBool();
 			case ElementType.I1: return Int32Value.createUnknown();
 			case ElementType.U1: return Int32Value.createUnknownUInt8();
@@ -100,13 +95,13 @@ namespace de4dot.blocks.cflow {
 			return new UnknownValue();
 		}
 
-		Value truncateValue(Value value, TypeReference typeReference) {
-			if (typeReference == null)
+		Value truncateValue(Value value, TypeSig type) {
+			if (type == null)
 				return value;
 			if (protectedStackValues.ContainsKey(value))
 				return value;
 
-			switch (typeReference.EType) {
+			switch (type.ElementType) {
 			case ElementType.Boolean:
 				if (value.isInt32())
 					return ((Int32Value)value).toBoolean();
@@ -167,27 +162,26 @@ namespace de4dot.blocks.cflow {
 			return getValue(args, i);
 		}
 
-		int index(ParameterDefinition arg) {
-			return arg.Sequence;
+		public Value getArg(Parameter arg) {
+			if (arg == null)
+				return new UnknownValue();
+			return getArg(arg.Index);
 		}
 
-		public Value getArg(ParameterDefinition arg) {
-			return getArg(index(arg));
-		}
-
-		TypeReference getArgType(int index) {
-			index -= argBase;
-			if (0 <= index && index < parameterDefinitions.Count)
-				return parameterDefinitions[index].ParameterType;
+		TypeSig getArgType(int index) {
+			if (0 <= index && index < parameterDefs.Count)
+				return parameterDefs[index].Type;
 			return null;
 		}
 
-		public void setArg(ParameterDefinition arg, Value value) {
-			setArg(index(arg), value);
+		public void setArg(Parameter arg, Value value) {
+			if (arg != null)
+				setArg(arg.Index, value);
 		}
 
-		public void makeArgUnknown(ParameterDefinition arg) {
-			setArg(arg, getUnknownArg(index(arg)));
+		public void makeArgUnknown(Parameter arg) {
+			if (arg != null)
+				setArg(arg, getUnknownArg(arg.Index));
 		}
 
 		void setArg(int index, Value value) {
@@ -203,26 +197,30 @@ namespace de4dot.blocks.cflow {
 			return getValue(locals, i);
 		}
 
-		public Value getLocal(VariableDefinition local) {
+		public Value getLocal(Local local) {
+			if (local == null)
+				return new UnknownValue();
 			return getLocal(local.Index);
 		}
 
-		public void setLocal(VariableDefinition local, Value value) {
-			setLocal(local.Index, value);
+		public void setLocal(Local local, Value value) {
+			if (local != null)
+				setLocal(local.Index, value);
 		}
 
-		public void makeLocalUnknown(VariableDefinition local) {
-			setLocal(local.Index, getUnknownLocal(local.Index));
+		public void makeLocalUnknown(Local local) {
+			if (local != null)
+				setLocal(local.Index, getUnknownLocal(local.Index));
 		}
 
 		void setLocal(int index, Value value) {
 			if (0 <= index && index < locals.Count)
-				locals[index] = truncateValue(value, variableDefinitions[index].VariableType);
+				locals[index] = truncateValue(value, localDefs[index].Type);
 		}
 
 		Value getUnknownLocal(int index) {
-			if (0 <= index && index < variableDefinitions.Count)
-				return getUnknownValue(variableDefinitions[index].VariableType);
+			if (0 <= index && index < localDefs.Count)
+				return getUnknownValue(localDefs[index].Type);
 			return new UnknownValue();
 		}
 
@@ -255,31 +253,31 @@ namespace de4dot.blocks.cflow {
 		public void emulate(Instruction instr) {
 			switch (instr.OpCode.Code) {
 			case Code.Starg:
-			case Code.Starg_S:	emulate_Starg((ParameterDefinition)instr.Operand); break;
+			case Code.Starg_S:	emulate_Starg((Parameter)instr.Operand); break;
 			case Code.Stloc:
-			case Code.Stloc_S:	emulate_Stloc(((VariableDefinition)instr.Operand).Index); break;
+			case Code.Stloc_S:	emulate_Stloc((Local)instr.Operand); break;
 			case Code.Stloc_0:	emulate_Stloc(0); break;
 			case Code.Stloc_1:	emulate_Stloc(1); break;
 			case Code.Stloc_2:	emulate_Stloc(2); break;
 			case Code.Stloc_3:	emulate_Stloc(3); break;
 
 			case Code.Ldarg:
-			case Code.Ldarg_S:	valueStack.push(getArg((ParameterDefinition)instr.Operand)); break;
+			case Code.Ldarg_S:	valueStack.push(getArg((Parameter)instr.Operand)); break;
 			case Code.Ldarg_0:	valueStack.push(getArg(0)); break;
 			case Code.Ldarg_1:	valueStack.push(getArg(1)); break;
 			case Code.Ldarg_2:	valueStack.push(getArg(2)); break;
 			case Code.Ldarg_3:	valueStack.push(getArg(3)); break;
 			case Code.Ldloc:
-			case Code.Ldloc_S:	valueStack.push(getLocal((VariableDefinition)instr.Operand)); break;
+			case Code.Ldloc_S:	valueStack.push(getLocal((Local)instr.Operand)); break;
 			case Code.Ldloc_0:	valueStack.push(getLocal(0)); break;
 			case Code.Ldloc_1:	valueStack.push(getLocal(1)); break;
 			case Code.Ldloc_2:	valueStack.push(getLocal(2)); break;
 			case Code.Ldloc_3:	valueStack.push(getLocal(3)); break;
 
 			case Code.Ldarga:
-			case Code.Ldarga_S:	emulate_Ldarga((ParameterDefinition)instr.Operand); break;
+			case Code.Ldarga_S:	emulate_Ldarga((Parameter)instr.Operand); break;
 			case Code.Ldloca:
-			case Code.Ldloca_S:	emulate_Ldloca(((VariableDefinition)instr.Operand).Index); break;
+			case Code.Ldloca_S:	emulate_Ldloca((Local)instr.Operand); break;
 
 			case Code.Dup:		valueStack.copyTop(); break;
 
@@ -369,7 +367,7 @@ namespace de4dot.blocks.cflow {
 			case Code.Ldelem_U1: valueStack.pop(2); valueStack.push(Int32Value.createUnknownUInt8()); break;
 			case Code.Ldelem_U2: valueStack.pop(2); valueStack.push(Int32Value.createUnknownUInt16()); break;
 			case Code.Ldelem_U4: valueStack.pop(2); valueStack.push(Int32Value.createUnknown()); break;
-			case Code.Ldelem_Any:valueStack.pop(2); valueStack.push(getUnknownValue(instr.Operand as TypeReference)); break;
+			case Code.Ldelem:	 valueStack.pop(2); valueStack.push(getUnknownValue(instr.Operand as ITypeDefOrRef)); break;
 
 			case Code.Ldind_I1:	valueStack.pop(); valueStack.push(Int32Value.createUnknown()); break;
 			case Code.Ldind_I2:	valueStack.pop(); valueStack.push(Int32Value.createUnknown()); break;
@@ -457,7 +455,6 @@ namespace de4dot.blocks.cflow {
 			case Code.Mkrefany:
 			case Code.Newarr:
 			case Code.Newobj:
-			case Code.No:
 			case Code.Nop:
 			case Code.Pop:
 			case Code.Readonly:
@@ -465,7 +462,7 @@ namespace de4dot.blocks.cflow {
 			case Code.Refanyval:
 			case Code.Ret:
 			case Code.Rethrow:
-			case Code.Stelem_Any:
+			case Code.Stelem:
 			case Code.Stelem_I:
 			case Code.Stelem_I1:
 			case Code.Stelem_I2:
@@ -486,7 +483,7 @@ namespace de4dot.blocks.cflow {
 			case Code.Stobj:
 			case Code.Stsfld:
 			case Code.Switch:
-			case Code.Tail:
+			case Code.Tailcall:
 			case Code.Throw:
 			case Code.Unaligned:
 			case Code.Volatile:
@@ -498,7 +495,7 @@ namespace de4dot.blocks.cflow {
 
 		void updateStack(Instruction instr) {
 			int pushes, pops;
-			DotNetUtils.calculateStackUsage(instr, false, out pushes, out pops);
+			instr.CalculateStackUsage(out pushes, out pops);
 			if (pops == -1)
 				valueStack.clear();
 			else {
@@ -847,17 +844,25 @@ namespace de4dot.blocks.cflow {
 				valueStack.pushUnknown();
 		}
 
-		void emulate_Starg(ParameterDefinition arg) {
-			setArg(index(arg), valueStack.pop());
+		void emulate_Starg(Parameter arg) {
+			setArg(arg == null ? -1 : arg.Index, valueStack.pop());
+		}
+
+		void emulate_Stloc(Local local) {
+			emulate_Stloc(local == null ? -1 : local.Index);
 		}
 
 		void emulate_Stloc(int index) {
 			setLocal(index, valueStack.pop());
 		}
 
-		void emulate_Ldarga(ParameterDefinition arg) {
+		void emulate_Ldarga(Parameter arg) {
 			valueStack.pushUnknown();
 			makeArgUnknown(arg);
+		}
+
+		void emulate_Ldloca(Local local) {
+			emulate_Ldloca(local == null ? -1 : local.Index);
 		}
 
 		void emulate_Ldloca(int index) {
@@ -866,19 +871,19 @@ namespace de4dot.blocks.cflow {
 		}
 
 		void emulate_Call(Instruction instr) {
-			emulate_Call(instr, (MethodReference)instr.Operand);
+			emulate_Call(instr, (IMethod)instr.Operand);
 		}
 
 		void emulate_Callvirt(Instruction instr) {
-			emulate_Call(instr, (MethodReference)instr.Operand);
+			emulate_Call(instr, (IMethod)instr.Operand);
 		}
 
-		void emulate_Call(Instruction instr, MethodReference method) {
+		void emulate_Call(Instruction instr, IMethod method) {
 			int pushes, pops;
-			DotNetUtils.calculateStackUsage(instr, false, out pushes, out pops);
+			instr.CalculateStackUsage(out pushes, out pops);
 			valueStack.pop(pops);
 			if (pushes == 1)
-				valueStack.push(getUnknownValue(method.MethodReturnType.ReturnType));
+				valueStack.push(getUnknownValue(method.MethodSig.GetRetType()));
 			else
 				valueStack.push(pushes);
 		}
@@ -903,16 +908,16 @@ namespace de4dot.blocks.cflow {
 
 		void emulate_Ldfld(Instruction instr) {
 			var val1 = valueStack.pop();
-			emulateLoadField(instr.Operand as FieldReference);
+			emulateLoadField(instr.Operand as IField);
 		}
 
 		void emulate_Ldsfld(Instruction instr) {
-			emulateLoadField(instr.Operand as FieldReference);
+			emulateLoadField(instr.Operand as IField);
 		}
 
-		void emulateLoadField(FieldReference fieldReference) {
-			if (fieldReference != null)
-				valueStack.push(getUnknownValue(fieldReference.FieldType));
+		void emulateLoadField(IField field) {
+			if (field != null)
+				valueStack.push(getUnknownValue(field.FieldSig.GetFieldType()));
 			else
 				valueStack.pushUnknown();
 		}

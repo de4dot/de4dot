@@ -18,8 +18,8 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
 
@@ -35,12 +35,12 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			branchEmulator = new BranchEmulator(emulator, this);
 		}
 
-		public static List<MethodDefinition> find(ModuleDefinition module, IEnumerable<MethodDefinition> notInlinedMethods) {
-			var notInlinedMethodsDict = new Dictionary<MethodDefinition, bool>();
+		public static List<MethodDef> find(ModuleDefMD module, IEnumerable<MethodDef> notInlinedMethods) {
+			var notInlinedMethodsDict = new Dictionary<MethodDef, bool>();
 			foreach (var method in notInlinedMethods)
 				notInlinedMethodsDict[method] = true;
 
-			var inlinedMethods = new List<MethodDefinition>();
+			var inlinedMethods = new List<MethodDef>();
 
 			foreach (var type in module.GetTypes()) {
 				foreach (var method in type.Methods) {
@@ -83,23 +83,23 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return changed;
 		}
 
-		static bool canInline(MethodDefinition method) {
+		static bool canInline(MethodDef method) {
 			if (!DotNetUtils.isMethod(method, "System.Int32", "(System.Int32)"))
 				return false;
 			if (!method.IsAssembly)
 				return false;
-			if (method.GenericParameters.Count > 0)
+			if (method.MethodSig.GetGenParamCount() > 0)
 				return false;
 
 			return method.IsStatic;
 		}
 
-		bool canInline2(MethodDefinition method) {
+		bool canInline2(MethodDef method) {
 			return canInline(method) && method != blocks.Method;
 		}
 
 		bool inlineMethod(Instruction callInstr, int instrIndex) {
-			var methodToInline = callInstr.Operand as MethodDefinition;
+			var methodToInline = callInstr.Operand as MethodDef;
 			if (methodToInline == null)
 				return false;
 
@@ -120,11 +120,11 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				return false;
 
 			block.Instructions[instrIndex - 1] = new Instr(Instruction.Create(OpCodes.Nop));
-			block.Instructions[instrIndex] = new Instr(DotNetUtils.createLdci4(newValue));
+			block.Instructions[instrIndex] = new Instr(Instruction.CreateLdcI4(newValue));
 			return true;
 		}
 
-		bool getNewValue(MethodDefinition method, int arg, out int newValue) {
+		bool getNewValue(MethodDef method, int arg, out int newValue) {
 			newValue = 0;
 			emulator.init(method);
 			emulator.setArg(method.Parameters[0], new Int32Value(arg));
@@ -233,10 +233,10 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			}
 		}
 
-		protected override bool isCompatibleType(int paramIndex, TypeReference origType, TypeReference newType) {
-			if (MemberReferenceHelper.compareTypes(origType, newType))
+		protected override bool isCompatibleType(int paramIndex, IType origType, IType newType) {
+			if (new SigComparer(SigComparerOptions.IgnoreModifiers).Equals(origType, newType))
 				return true;
-			if (newType.IsValueType || origType.IsValueType)
+			if (isValueType(newType) || isValueType(origType))
 				return false;
 			return newType.FullName == "System.Object";
 		}

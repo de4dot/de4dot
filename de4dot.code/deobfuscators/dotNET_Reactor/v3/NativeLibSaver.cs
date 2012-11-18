@@ -18,22 +18,22 @@
 */
 
 using System;
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 	// Finds the type that saves the native lib (if in resources) to disk
 	class NativeLibSaver {
-		ModuleDefinition module;
-		TypeDefinition nativeLibCallerType;
-		MethodDefinition initMethod;
+		ModuleDefMD module;
+		TypeDef nativeLibCallerType;
+		MethodDef initMethod;
 		Resource nativeFileResource;
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return nativeLibCallerType; }
 		}
 
-		public MethodDefinition InitMethod {
+		public MethodDef InitMethod {
 			get { return initMethod; }
 		}
 
@@ -45,22 +45,22 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			get { return nativeLibCallerType != null; }
 		}
 
-		public NativeLibSaver(ModuleDefinition module) {
+		public NativeLibSaver(ModuleDefMD module) {
 			this.module = module;
 		}
 
-		public NativeLibSaver(ModuleDefinition module, NativeLibSaver oldOne) {
+		public NativeLibSaver(ModuleDefMD module, NativeLibSaver oldOne) {
 			this.module = module;
 			this.nativeLibCallerType = lookup(oldOne.nativeLibCallerType, "Could not find nativeLibCallerType");
 			this.initMethod = lookup(oldOne.initMethod, "Could not find initMethod");
 			if (oldOne.nativeFileResource != null) {
-				this.nativeFileResource = DotNetUtils.getResource(module, oldOne.nativeFileResource.Name);
+				this.nativeFileResource = DotNetUtils.getResource(module, oldOne.nativeFileResource.Name.String);
 				if (this.nativeFileResource == null)
 					throw new ApplicationException("Could not find nativeFileResource");
 			}
 		}
 
-		T lookup<T>(T def, string errorMessage) where T : MemberReference {
+		T lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
 			return DeobUtils.lookup(module, def, errorMessage);
 		}
 

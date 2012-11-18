@@ -17,6 +17,8 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#if PORT
+
 // Create a new type, method, etc, where all generic parameters have been replaced with the
 // corresponding generic argument.
 
@@ -226,3 +228,4 @@ namespace de4dot.blocks {
 		}
 	}
 }
+#endif

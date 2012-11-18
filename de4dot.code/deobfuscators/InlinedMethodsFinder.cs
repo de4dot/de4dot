@@ -18,23 +18,23 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators {
 	static class InlinedMethodsFinder {
-		public static List<MethodDefinition> find(ModuleDefinition module) {
+		public static List<MethodDef> find(ModuleDef module) {
 			// Not all garbage methods are inlined, possibly because we remove some code that calls
 			// the garbage method before the methods inliner has a chance to inline it. Try to find
 			// all garbage methods and other code will figure out if there are any calls left.
 
-			var inlinedMethods = new List<MethodDefinition>();
+			var inlinedMethods = new List<MethodDef>();
 			foreach (var type in module.GetTypes()) {
 				foreach (var method in type.Methods) {
 					if (!method.IsStatic)
 						continue;
-					if (!method.IsAssembly && !method.IsCompilerControlled && !method.IsPrivate)
+					if (!method.IsAssembly && !method.IsPrivateScope && !method.IsPrivate)
 						continue;
 					if (method.GenericParameters.Count > 0)
 						continue;
@@ -97,7 +97,7 @@ namespace de4dot.code.deobfuscators {
 			return inlinedMethods;
 		}
 
-		static bool isCallMethod(MethodDefinition method) {
+		static bool isCallMethod(MethodDef method) {
 			int loadIndex = 0;
 			int methodArgsCount = DotNetUtils.getArgsCount(method);
 			var instrs = method.Body.Instructions;
@@ -113,7 +113,7 @@ namespace de4dot.code.deobfuscators {
 				case Code.Ldarg_3:
 				case Code.Ldarga:
 				case Code.Ldarga_S:
-					if (DotNetUtils.getArgIndex(instr) != loadIndex)
+					if (instr.GetParameterIndex() != loadIndex)
 						return false;
 					loadIndex++;
 					continue;

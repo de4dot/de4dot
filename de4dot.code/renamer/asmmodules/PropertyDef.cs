@@ -18,28 +18,28 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
+using dot10.DotNet;
 
 namespace de4dot.code.renamer.asmmodules {
-	class PropertyDef : Ref {
-		public MethodDef GetMethod { get; set; }
-		public MethodDef SetMethod { get; set; }
+	class MPropertyDef : Ref {
+		public MMethodDef GetMethod { get; set; }
+		public MMethodDef SetMethod { get; set; }
 
-		public PropertyDefinition PropertyDefinition {
-			get { return (PropertyDefinition)memberReference; }
+		public PropertyDef PropertyDef {
+			get { return (PropertyDef)memberReference; }
 		}
 
-		public PropertyDef(PropertyDefinition propertyDefinition, TypeDef owner, int index)
+		public MPropertyDef(PropertyDef propertyDefinition, MTypeDef owner, int index)
 			: base(propertyDefinition, owner, index) {
 		}
 
-		public IEnumerable<MethodDefinition> methodDefinitions() {
-			if (PropertyDefinition.GetMethod != null)
-				yield return PropertyDefinition.GetMethod;
-			if (PropertyDefinition.SetMethod != null)
-				yield return PropertyDefinition.SetMethod;
-			if (PropertyDefinition.OtherMethods != null) {
-				foreach (var m in PropertyDefinition.OtherMethods)
+		public IEnumerable<MethodDef> methodDefinitions() {
+			if (PropertyDef.GetMethod != null)
+				yield return PropertyDef.GetMethod;
+			if (PropertyDef.SetMethod != null)
+				yield return PropertyDef.SetMethod;
+			if (PropertyDef.OtherMethods != null) {
+				foreach (var m in PropertyDef.OtherMethods)
 					yield return m;
 			}
 		}
@@ -53,9 +53,9 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 
 		public bool isItemProperty() {
-			if (GetMethod != null && GetMethod.ParamDefs.Count >= 1)
+			if (GetMethod != null && GetMethod.VisibleParameterCount >= 1)
 				return true;
-			if (SetMethod != null && SetMethod.ParamDefs.Count >= 2)
+			if (SetMethod != null && SetMethod.VisibleParameterCount >= 2)
 				return true;
 			return false;
 		}

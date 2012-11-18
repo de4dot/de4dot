@@ -18,13 +18,13 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 	static class EfUtils {
-		public static int findOpCodeIndex(MethodDefinition method, int index, Code code) {
+		public static int findOpCodeIndex(MethodDef method, int index, Code code) {
 			for (; index < method.Body.Instructions.Count; index++) {
 				var instr = method.Body.Instructions[index];
 				if (instr.OpCode.Code != code)
@@ -35,7 +35,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return -1;
 		}
 
-		public static int findOpCodeIndex(MethodDefinition method, int index, Code code, string operandString) {
+		public static int findOpCodeIndex(MethodDef method, int index, Code code, string operandString) {
 			while (index < method.Body.Instructions.Count) {
 				index = findOpCodeIndex(method, index, code);
 				if (index < 0)
@@ -49,14 +49,14 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return -1;
 		}
 
-		public static Instruction getNextStore(MethodDefinition method, ref int index) {
+		public static Instruction getNextStore(MethodDef method, ref int index) {
 			for (; index < method.Body.Instructions.Count; index++) {
 				var instr = method.Body.Instructions[index];
 
 				switch (instr.OpCode.Code) {
 				case Code.Starg:
 				case Code.Starg_S:
-				case Code.Stelem_Any:
+				case Code.Stelem:
 				case Code.Stelem_I:
 				case Code.Stelem_I1:
 				case Code.Stelem_I2:

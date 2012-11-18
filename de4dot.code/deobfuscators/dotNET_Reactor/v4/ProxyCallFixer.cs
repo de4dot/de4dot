@@ -17,15 +17,15 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 	class ProxyCallFixer : ProxyCallFixer3 {
 		ISimpleDeobfuscator simpleDeobfuscator;
 
-		public ProxyCallFixer(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator)
+		public ProxyCallFixer(ModuleDefMD module, ISimpleDeobfuscator simpleDeobfuscator)
 			: base(module) {
 			this.simpleDeobfuscator = simpleDeobfuscator;
 		}
@@ -44,17 +44,17 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		static readonly string[] requiredFields = new string[] {
 			"System.Reflection.Module",
 		};
-		static MethodDefinition checkType(TypeDefinition type) {
+		static MethodDef checkType(TypeDef type) {
 			if (!new FieldTypes(type).exactly(requiredFields))
 				return null;
-			if (DotNetUtils.getMethod(type, ".cctor") == null)
+			if (type.FindStaticConstructor() == null)
 				return null;
 
 			return checkMethods(type);
 		}
 
-		static MethodDefinition checkMethods(TypeDefinition type) {
-			MethodDefinition creatorMethod = null;
+		static MethodDef checkMethods(TypeDef type) {
+			MethodDef creatorMethod = null;
 			foreach (var method in type.Methods) {
 				if (method.Body == null)
 					return null;
@@ -71,7 +71,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			return creatorMethod;
 		}
 
-		protected override object checkCctor(ref TypeDefinition type, MethodDefinition cctor) {
+		protected override object checkCctor(ref TypeDef type, MethodDef cctor) {
 			simpleDeobfuscator.deobfuscate(cctor);
 			var realType = getDelegateType(cctor);
 			if (realType == null)
@@ -81,27 +81,27 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			return this;
 		}
 
-		TypeDefinition getDelegateType(MethodDefinition method) {
+		TypeDef getDelegateType(MethodDef method) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 1; i++) {
 				var ldci4 = instrs[i];
-				if (!DotNetUtils.isLdcI4(ldci4))
+				if (!ldci4.IsLdcI4())
 					continue;
 
 				var call = instrs[i + 1];
 				if (call.OpCode.Code != Code.Call)
 					continue;
-				var calledMethod = call.Operand as MethodDefinition;
+				var calledMethod = call.Operand as MethodDef;
 				if (calledMethod == null || !isDelegateCreatorMethod(calledMethod))
 					continue;
 
-				return module.LookupToken(0x02000000 + DotNetUtils.getLdcI4Value(ldci4)) as TypeDefinition;
+				return module.ResolveToken(0x02000000 + ldci4.GetLdcI4Value()) as TypeDef;
 			}
 			return null;
 		}
 
-		protected override void getCallInfo(object context, FieldDefinition field, out MethodReference calledMethod, out OpCode callOpcode) {
-			calledMethod = module.LookupToken(0x06000000 + field.MetadataToken.ToInt32()) as MethodReference;
+		protected override void getCallInfo(object context, FieldDef field, out IMethod calledMethod, out OpCode callOpcode) {
+			calledMethod = module.ResolveToken(0x06000000 + field.MDToken.ToInt32()) as IMethod;
 			callOpcode = OpCodes.Call;
 		}
 	}

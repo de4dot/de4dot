@@ -18,65 +18,64 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
 using de4dot.blocks;
 
 namespace de4dot.code.renamer.asmmodules {
 	static class DictHelper {
 		public static IEnumerable<T> getSorted<T>(IEnumerable<T> values) where T : Ref {
 			var list = new List<T>(values);
-			list.Sort((a, b) => Utils.compareInt32(a.Index, b.Index));
+			list.Sort((a, b) => a.Index.CompareTo(b.Index));
 			return list;
 		}
 	}
 
-	class TypeDefDict : TypeDefinitionDict<TypeDef> {
-		public IEnumerable<TypeDef> getSorted() {
+	class TypeDefDict : TypeDefinitionDict<MTypeDef> {
+		public IEnumerable<MTypeDef> getSorted() {
 			return DictHelper.getSorted(getValues());
 		}
 
-		public void add(TypeDef typeDef) {
-			add(typeDef.TypeDefinition, typeDef);
+		public void add(MTypeDef typeDef) {
+			add(typeDef.TypeDef, typeDef);
 		}
 	}
 
-	class FieldDefDict : FieldDefinitionDict<FieldDef> {
-		public IEnumerable<FieldDef> getSorted() {
+	class FieldDefDict : FieldDefinitionDict<MFieldDef> {
+		public IEnumerable<MFieldDef> getSorted() {
 			return DictHelper.getSorted(getValues());
 		}
 
-		public void add(FieldDef fieldDef) {
-			add(fieldDef.FieldDefinition, fieldDef);
+		public void add(MFieldDef fieldDef) {
+			add(fieldDef.FieldDef, fieldDef);
 		}
 	}
 
-	class MethodDefDict : MethodDefinitionDict<MethodDef> {
-		public IEnumerable<MethodDef> getSorted() {
+	class MethodDefDict : MethodDefinitionDict<MMethodDef> {
+		public IEnumerable<MMethodDef> getSorted() {
 			return DictHelper.getSorted(getValues());
 		}
 
-		public void add(MethodDef methodDef) {
-			add(methodDef.MethodDefinition, methodDef);
+		public void add(MMethodDef methodDef) {
+			add(methodDef.MethodDef, methodDef);
 		}
 	}
 
-	class PropertyDefDict : PropertyDefinitionDict<PropertyDef> {
-		public IEnumerable<PropertyDef> getSorted() {
+	class PropertyDefDict : PropertyDefinitionDict<MPropertyDef> {
+		public IEnumerable<MPropertyDef> getSorted() {
 			return DictHelper.getSorted(getValues());
 		}
 
-		public void add(PropertyDef propDef) {
-			add(propDef.PropertyDefinition, propDef);
+		public void add(MPropertyDef propDef) {
+			add(propDef.PropertyDef, propDef);
 		}
 	}
 
-	class EventDefDict : EventDefinitionDict<EventDef> {
-		public IEnumerable<EventDef> getSorted() {
+	class EventDefDict : EventDefinitionDict<MEventDef> {
+		public IEnumerable<MEventDef> getSorted() {
 			return DictHelper.getSorted(getValues());
 		}
 
-		public void add(EventDef eventDef) {
-			add(eventDef.EventDefinition, eventDef);
+		public void add(MEventDef eventDef) {
+			add(eventDef.EventDef, eventDef);
 		}
 	}
 }

@@ -19,16 +19,17 @@
 
 using System;
 using System.IO;
-using Mono.Cecil;
+using dot10.IO;
+using dot10.DotNet;
 using de4dot.code.resources;
 
 namespace de4dot.code.deobfuscators.CodeVeil {
 	class ResourceConverter {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		ResourceInfo[] infos;
 		ResourceDataCreator dataCreator;
 
-		public ResourceConverter(ModuleDefinition module, ResourceInfo[] infos) {
+		public ResourceConverter(ModuleDefMD module, ResourceInfo[] infos) {
 			this.module = module;
 			this.dataCreator = new ResourceDataCreator(module);
 			this.infos = infos;
@@ -46,7 +47,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 
 		ResourceElement convert(ResourceInfo info) {
 			var reader = info.dataReader;
-			reader.BaseStream.Position = info.offset;
+			reader.Position = info.offset;
 
 			IResourceData resourceData;
 			int type = (info.flags & 0x7F);

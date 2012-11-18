@@ -19,20 +19,20 @@
 
 using System;
 using System.Text;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Goliath_NET {
 	class StringDecrypter : DecrypterBase {
-		TypeReference delegateReturnType;
-		FieldDefinition stringStructField;
+		IType delegateReturnType;
+		FieldDef stringStructField;
 
-		public TypeDefinition StringStruct {
+		public TypeDef StringStruct {
 			get { return Detected && stringStructField != null ? stringStructField.DeclaringType : null; }
 		}
 
-		public StringDecrypter(ModuleDefinition module)
+		public StringDecrypter(ModuleDefMD module)
 			: base(module) {
 		}
 
@@ -40,7 +40,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 				"System.Byte[]",
 				"System.Collections.Generic.Dictionary`2<System.Int32,System.String>",
 		};
-		protected override bool checkDecrypterType(TypeDefinition type) {
+		protected override bool checkDecrypterType(TypeDef type) {
 			var fields = type.Fields;
 			if (fields.Count != 2)
 				return false;
@@ -48,10 +48,10 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			if (fields[0].FieldType.FullName != "System.Byte[]")
 				return false;
 
-			var dict = fields[1].FieldType as GenericInstanceType;
+			var dict = fields[1].FieldType.ToGenericInstSig();
 			if (dict == null || dict.GenericArguments.Count != 2)
 				return false;
-			if (dict.ElementType.FullName != "System.Collections.Generic.Dictionary`2")
+			if (dict.GenericType.GetFullName() != "System.Collections.Generic.Dictionary`2")
 				return false;
 
 			if (dict.GenericArguments[0].FullName != "System.Int32")
@@ -80,11 +80,11 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			return true;
 		}
 
-		protected override bool checkDelegateInvokeMethod(MethodDefinition invokeMethod) {
+		protected override bool checkDelegateInvokeMethod(MethodDef invokeMethod) {
 			return DotNetUtils.isMethod(invokeMethod, delegateReturnType.FullName, "(System.Int32)");
 		}
 
-		public string decrypt(MethodDefinition method) {
+		public string decrypt(MethodDef method) {
 			var info = getInfo(method);
 			decryptedReader.BaseStream.Position = info.offset;
 			int len = decryptedReader.ReadInt32();
@@ -106,7 +106,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 					var ldfld = instrs[i + 1];
 					if (ldfld.OpCode.Code != Code.Ldfld)
 						continue;
-					if (!MemberReferenceHelper.compareFieldReferenceAndDeclaringType(stringStructField, ldfld.Operand as FieldReference))
+					if (!FieldEqualityComparer.CompareDeclaringTypes.Equals(stringStructField, ldfld.Operand as IField))
 						continue;
 					block.remove(i + 1, 1);
 				}

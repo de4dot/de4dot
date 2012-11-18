@@ -19,16 +19,24 @@
 
 using System;
 
-namespace de4dot.code.deobfuscators.CliSecure.vm {
-	class CsvmMethodData {
-		public Guid Guid { get; set; }
-		public int Token { get; set; }
-		public byte[] Locals { get; set; }
-		public byte[] Instructions { get; set; }
-		public byte[] Exceptions { get; set; }
+namespace de4dot.blocks {
+	[Serializable]
+	public class DumpedMethod {
+		public ushort mhFlags;			// method header Flags
+		public ushort mhMaxStack;		// method header MaxStack
+		public uint mhCodeSize;			// method header CodeSize
+		public uint mhLocalVarSigTok;	// method header LocalVarSigTok
 
-		public override string ToString() {
-			return string.Format("{0:X8} - {1}", Token, Guid);
-		}
+		public uint mdRVA;				// methodDef RVA
+		public ushort mdImplFlags;		// methodDef ImplFlags
+		public ushort mdFlags;			// methodDef Flags
+		public uint mdName;				// methodDef Name (index into #String)
+		public uint mdSignature;		// methodDef Signature (index into #Blob)
+		public uint mdParamList;		// methodDef ParamList (index into Param table)
+
+		public uint token;				// metadata token
+
+		public byte[] code;
+		public byte[] extraSections;
 	}
 }

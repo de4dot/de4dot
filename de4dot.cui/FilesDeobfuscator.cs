@@ -20,7 +20,7 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 using de4dot.code;
 using de4dot.code.renamer;
@@ -33,6 +33,7 @@ namespace de4dot.cui {
 		IDeobfuscatorContext deobfuscatorContext = new DeobfuscatorContext();
 
 		public class Options {
+			public ModuleContext ModuleContext { get; set; }
 			public IList<IDeobfuscatorInfo> DeobfuscatorInfos { get; set; }
 			public IList<IObfuscatedFile> Files { get; set; }
 			public IList<SearchDir> SearchDirs { get; set; }
@@ -47,6 +48,7 @@ namespace de4dot.cui {
 			public IAssemblyClientFactory AssemblyClientFactory { get; set; }
 
 			public Options() {
+				ModuleContext = new ModuleContext(TheAssemblyResolver.Instance);
 				DeobfuscatorInfos = new List<IDeobfuscatorInfo>();
 				Files = new List<IObfuscatedFile>();
 				SearchDirs = new List<SearchDir>();
@@ -76,21 +78,21 @@ namespace de4dot.cui {
 				deobfuscateAll();
 		}
 
-		static void removeModule(ModuleDefinition module) {
-			AssemblyResolver.Instance.removeModule(module);
-			DotNetUtils.typeCaches.invalidate(module);
+		static void removeModule(ModuleDef module) {
+			TheAssemblyResolver.Instance.removeModule(module);
 		}
 
 		void detectObfuscators() {
 			foreach (var file in loadAllFiles(true)) {
-				removeModule(file.ModuleDefinition);
+				removeModule(file.ModuleDefMD);
+				file.Dispose();
 				deobfuscatorContext.clear();
 			}
 		}
 
 		void deobfuscateOneAtATime() {
 			foreach (var file in loadAllFiles()) {
-				int oldIndentLevel = Log.indentLevel;
+				int oldIndentLevel = Logger.Instance.IndentLevel;
 				try {
 					file.deobfuscateBegin();
 					file.deobfuscate();
@@ -98,26 +100,34 @@ namespace de4dot.cui {
 					rename(new List<IObfuscatedFile> { file });
 					file.save();
 
-					removeModule(file.ModuleDefinition);
-					AssemblyResolver.Instance.clearAll();
+					removeModule(file.ModuleDefMD);
+					TheAssemblyResolver.Instance.clearAll();
 					deobfuscatorContext.clear();
 				}
 				catch (Exception ex) {
-					Log.w("Could not deobfuscate {0}. Use -v to see stack trace", file.Filename);
-					Program.printStackTrace(ex, Log.LogLevel.verbose);
+					Logger.Instance.Log(false, null, LoggerEvent.Warning, "Could not deobfuscate {0}. Use -v to see stack trace", file.Filename);
+					Program.printStackTrace(ex, LoggerEvent.Verbose);
 				}
 				finally {
-					file.deobfuscateCleanUp();
-					Log.indentLevel = oldIndentLevel;
+					file.Dispose();
+					Logger.Instance.IndentLevel = oldIndentLevel;
 				}
 			}
 		}
 
 		void deobfuscateAll() {
 			var allFiles = new List<IObfuscatedFile>(loadAllFiles());
-			deobfuscateAllFiles(allFiles);
-			rename(allFiles);
-			saveAllFiles(allFiles);
+			try {
+				deobfuscateAllFiles(allFiles);
+				rename(allFiles);
+				saveAllFiles(allFiles);
+			}
+			finally {
+				foreach (var file in allFiles) {
+					if (file != null)
+						file.Dispose();
+				}
+			}
 		}
 
 		IEnumerable<IObfuscatedFile> loadAllFiles() {
@@ -126,6 +136,7 @@ namespace de4dot.cui {
 
 		IEnumerable<IObfuscatedFile> loadAllFiles(bool onlyScan) {
 			var loader = new DotNetFileLoader(new DotNetFileLoader.Options {
+				ModuleContext = options.ModuleContext,
 				PossibleFiles  = options.Files,
 				SearchDirs = options.SearchDirs,
 				CreateDeobfuscators = () => createDeobfuscators(),
@@ -148,6 +159,7 @@ namespace de4dot.cui {
 			Dictionary<string, bool> visitedDirectory = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
 
 			public class Options {
+				public ModuleContext ModuleContext { get; set; }
 				public IEnumerable<IObfuscatedFile> PossibleFiles { get; set; }
 				public IEnumerable<SearchDir> SearchDirs { get; set; }
 				public Func<IEnumerable<IDeobfuscator>> CreateDeobfuscators { get; set; }
@@ -179,12 +191,12 @@ namespace de4dot.cui {
 			bool add(IObfuscatedFile file, bool skipUnknownObfuscator, bool isFromPossibleFiles) {
 				var key = Utils.getFullPath(file.Filename);
 				if (allFiles.ContainsKey(key)) {
-					Log.w("Ingoring duplicate file: {0}", file.Filename);
+					Logger.Instance.Log(false, null, LoggerEvent.Warning, "Ingoring duplicate file: {0}", file.Filename);
 					return false;
 				}
 				allFiles[key] = true;
 
-				int oldIndentLevel = Log.indentLevel;
+				int oldIndentLevel = Logger.Instance.IndentLevel;
 				try {
 					file.DeobfuscatorContext = options.DeobfuscatorContext;
 					file.load(options.CreateDeobfuscators());
@@ -194,28 +206,28 @@ namespace de4dot.cui {
 				}
 				catch (BadImageFormatException) {
 					if (isFromPossibleFiles)
-						Log.w("The file isn't a .NET PE file: {0}", file.Filename);
+						Logger.Instance.Log(false, null, LoggerEvent.Warning, "The file isn't a .NET PE file: {0}", file.Filename);
 					return false;	// Not a .NET file
 				}
 				catch (EndOfStreamException) {
 					return false;
 				}
 				catch (Exception ex) {
-					Log.w("Could not load file ({0}): {1}", ex.GetType(), file.Filename);
+					Logger.Instance.Log(false, null, LoggerEvent.Warning, "Could not load file ({0}): {1}", ex.GetType(), file.Filename);
 					return false;
 				}
 				finally {
-					Log.indentLevel = oldIndentLevel;
+					Logger.Instance.IndentLevel = oldIndentLevel;
 				}
 
 				var deob = file.Deobfuscator;
 				if (skipUnknownObfuscator && deob.Type == "un") {
-					Log.v("Skipping unknown obfuscator: {0}", file.Filename);
-					removeModule(file.ModuleDefinition);
+					Logger.v("Skipping unknown obfuscator: {0}", file.Filename);
+					removeModule(file.ModuleDefMD);
 					return false;
 				}
 				else {
-					Log.n("Detected {0} ({1})", deob.Name, file.Filename);
+					Logger.n("Detected {0} ({1})", deob.Name, file.Filename);
 					if (options.CreateDestinationDir)
 						createDirectories(Path.GetDirectoryName(file.NewFilename));
 					return true;
@@ -245,7 +257,7 @@ namespace de4dot.cui {
 
 			IEnumerable<string> recursiveAdd(SearchDir searchDir, IEnumerable<FileSystemInfo> fileSystemInfos) {
 				foreach (var fsi in fileSystemInfos) {
-					if ((int)(fsi.Attributes & FileAttributes.Directory) != 0) {
+					if ((int)(fsi.Attributes & System.IO.FileAttributes.Directory) != 0) {
 						foreach (var filename in doDirectoryInfo(searchDir, (DirectoryInfo)fsi))
 							yield return filename;
 					}
@@ -304,9 +316,10 @@ namespace de4dot.cui {
 						throw new UserException(string.Format("Input and output filename is the same: {0}", fileOptions.Filename));
 				}
 
-				var obfuscatedFile = new ObfuscatedFile(fileOptions, options.AssemblyClientFactory);
+				var obfuscatedFile = new ObfuscatedFile(fileOptions, options.ModuleContext, options.AssemblyClientFactory);
 				if (add(obfuscatedFile, searchDir.SkipUnknownObfuscators, false))
 					return obfuscatedFile;
+				obfuscatedFile.Dispose();
 				return null;
 			}
 

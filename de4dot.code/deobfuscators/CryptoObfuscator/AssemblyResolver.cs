@@ -20,15 +20,15 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CryptoObfuscator {
 	class AssemblyResolver {
-		ModuleDefinition module;
-		TypeDefinition resolverType;
-		MethodDefinition resolverMethod;
+		ModuleDefMD module;
+		TypeDef resolverType;
+		MethodDef resolverMethod;
 		List<AssemblyInfo> assemblyInfos = new List<AssemblyInfo>();
 
 		public class AssemblyInfo {
@@ -54,15 +54,15 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			get { return assemblyInfos; }
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return resolverType; }
 		}
 
-		public MethodDefinition Method {
+		public MethodDef Method {
 			get { return resolverMethod; }
 		}
 
-		public AssemblyResolver(ModuleDefinition module) {
+		public AssemblyResolver(ModuleDefMD module) {
 			this.module = module;
 		}
 
@@ -81,7 +81,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			}
 		}
 
-		bool checkType(TypeDefinition type, MethodDefinition initMethod) {
+		bool checkType(TypeDef type, MethodDef initMethod) {
 			if (DotNetUtils.findFieldType(type, "System.Collections.Hashtable", true) == null)
 				return false;
 			if (!checkInitMethod(initMethod))
@@ -102,7 +102,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return true;
 		}
 
-		bool checkInitMethod(MethodDefinition initMethod) {
+		bool checkInitMethod(MethodDef initMethod) {
 			if (!initMethod.HasBody)
 				return false;
 
@@ -112,15 +112,15 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				if (instrs == null)
 					continue;
 
-				MethodReference methodRef;
+				IMethod methodRef;
 				var ldftn = instrs[1];
 				var newobj = instrs[2];
 
-				methodRef = ldftn.Operand as MethodReference;
-				if (methodRef == null || !MemberReferenceHelper.compareTypes(initMethod.DeclaringType, methodRef.DeclaringType))
+				methodRef = ldftn.Operand as IMethod;
+				if (methodRef == null || !new SigComparer().Equals(initMethod.DeclaringType, methodRef.DeclaringType))
 					continue;
 
-				methodRef = newobj.Operand as MethodReference;
+				methodRef = newobj.Operand as IMethod;
 				if (methodRef == null || methodRef.FullName != "System.Void System.ResolveEventHandler::.ctor(System.Object,System.IntPtr)")
 					continue;
 

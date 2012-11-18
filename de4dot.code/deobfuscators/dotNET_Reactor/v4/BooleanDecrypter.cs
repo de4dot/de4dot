@@ -18,12 +18,12 @@
 */
 
 using System;
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 	class BooleanDecrypter {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		EncryptedResource encryptedResource;
 		byte[] fileData;
 		byte[] decryptedData;
@@ -32,11 +32,11 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			get { return encryptedResource.Method != null; }
 		}
 
-		public TypeDefinition DecrypterType {
+		public TypeDef DecrypterType {
 			get { return encryptedResource.Type; }
 		}
 
-		public MethodDefinition Method {
+		public MethodDef Method {
 			get { return encryptedResource.Method; }
 		}
 
@@ -44,12 +44,12 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			get { return encryptedResource.Resource; }
 		}
 
-		public BooleanDecrypter(ModuleDefinition module) {
+		public BooleanDecrypter(ModuleDefMD module) {
 			this.module = module;
 			this.encryptedResource = new EncryptedResource(module);
 		}
 
-		public BooleanDecrypter(ModuleDefinition module, BooleanDecrypter oldOne) {
+		public BooleanDecrypter(ModuleDefMD module, BooleanDecrypter oldOne) {
 			this.module = module;
 			this.encryptedResource = new EncryptedResource(module, oldOne.encryptedResource);
 		}
@@ -84,7 +84,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			if (!encryptedResource.FoundResource)
 				return;
 
-			Log.v("Adding boolean decrypter. Resource: {0}", Utils.toCsharpString(encryptedResource.Resource.Name));
+			Logger.v("Adding boolean decrypter. Resource: {0}", Utils.toCsharpString(encryptedResource.Resource.Name));
 			decryptedData = encryptedResource.decrypt();
 		}
 

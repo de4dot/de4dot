@@ -20,40 +20,41 @@
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
-using Mono.Cecil;
+using dot10.IO;
+using dot10.DotNet;
 using de4dot.blocks;
 
-namespace de4dot.code.deobfuscators.CliSecure {
+namespace de4dot.code.deobfuscators.Agile_NET {
 	class ResourceDecrypter {
-		ModuleDefinition module;
-		TypeDefinition rsrcType;
-		MethodDefinition rsrcRrrMethod;
-		MethodDefinition rsrcResolveMethod;
+		ModuleDefMD module;
+		TypeDef rsrcType;
+		MethodDef rsrcRrrMethod;
+		MethodDef rsrcResolveMethod;
 
 		public bool Detected {
 			get { return rsrcType != null; }
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return rsrcType; }
 		}
 
-		public MethodDefinition RsrcRrrMethod {
+		public MethodDef RsrcRrrMethod {
 			get { return rsrcRrrMethod; }
 		}
 
-		public ResourceDecrypter(ModuleDefinition module) {
+		public ResourceDecrypter(ModuleDefMD module) {
 			this.module = module;
 		}
 
-		public ResourceDecrypter(ModuleDefinition module, ResourceDecrypter oldOne) {
+		public ResourceDecrypter(ModuleDefMD module, ResourceDecrypter oldOne) {
 			this.module = module;
 			rsrcType = lookup(oldOne.rsrcType, "Could not find rsrcType");
 			rsrcRrrMethod = lookup(oldOne.rsrcRrrMethod, "Could not find rsrcRrrMethod");
 			rsrcResolveMethod = lookup(oldOne.rsrcResolveMethod, "Could not find rsrcResolveMethod");
 		}
 
-		T lookup<T>(T def, string errorMessage) where T : MemberReference {
+		T lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
 			return DeobUtils.lookup(module, def, errorMessage);
 		}
 
@@ -99,24 +100,22 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			var resource = DotNetUtils.getResource(module, DotNetUtils.getCodeStrings(rsrcResolveMethod)) as EmbeddedResource;
 			if (resource == null)
 				return null;
-			DeobUtils.decryptAndAddResources(module, resource.Name, () => decryptResource(resource));
+			DeobUtils.decryptAndAddResources(module, resource.Name.String, () => decryptResource(resource));
 			return resource;
 		}
 
 		byte[] decryptResource(EmbeddedResource resource) {
-			using (var rsrcStream = resource.GetResourceStream()) {
-				using (var reader = new BinaryReader(rsrcStream)) {
-					var key = reader.ReadString();
-					var data = reader.ReadBytes((int)(rsrcStream.Length - rsrcStream.Position));
-					var cryptoTransform = new DESCryptoServiceProvider {
-						Key = Encoding.ASCII.GetBytes(key),
-						IV = Encoding.ASCII.GetBytes(key),
-					}.CreateDecryptor();
-					var memStream = new MemoryStream(data);
-					using (var reader2 = new BinaryReader(new CryptoStream(memStream, cryptoTransform, CryptoStreamMode.Read))) {
-						return reader2.ReadBytes((int)memStream.Length);
-					}
-				}
+			var reader = resource.Data;
+			reader.Position = 0;
+			var key = reader.ReadString();
+			var data = reader.ReadRemainingBytes();
+			var cryptoTransform = new DESCryptoServiceProvider {
+				Key = Encoding.ASCII.GetBytes(key),
+				IV = Encoding.ASCII.GetBytes(key),
+			}.CreateDecryptor();
+			var memStream = new MemoryStream(data);
+			using (var reader2 = new BinaryReader(new CryptoStream(memStream, cryptoTransform, CryptoStreamMode.Read))) {
+				return reader2.ReadBytes((int)memStream.Length);
 			}
 		}
 	}

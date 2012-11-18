@@ -18,26 +18,26 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.ILProtector {
 	class MainType {
-		ModuleDefinition module;
-		List<MethodDefinition> protectMethods;
-		TypeDefinition invokerDelegate;
-		FieldDefinition invokerInstanceField;
+		ModuleDefMD module;
+		List<MethodDef> protectMethods;
+		TypeDef invokerDelegate;
+		FieldDef invokerInstanceField;
 
-		public IEnumerable<MethodDefinition> ProtectMethods {
+		public IEnumerable<MethodDef> ProtectMethods {
 			get { return protectMethods; }
 		}
 
-		public TypeDefinition InvokerDelegate {
+		public TypeDef InvokerDelegate {
 			get { return invokerDelegate; }
 		}
 
-		public FieldDefinition InvokerInstanceField {
+		public FieldDef InvokerInstanceField {
 			get { return invokerInstanceField; }
 		}
 
@@ -45,7 +45,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			get { return protectMethods != null; }
 		}
 
-		public MainType(ModuleDefinition module) {
+		public MainType(ModuleDefMD module) {
 			this.module = module;
 		}
 
@@ -58,7 +58,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			"System.IntPtr",
 			"System.Object[]",
 		};
-		bool checkMethod(MethodDefinition cctor) {
+		bool checkMethod(MethodDef cctor) {
 			if (cctor == null || cctor.Body == null)
 				return false;
 			if (!new LocalTypes(cctor).exactly(ilpLocals))
@@ -74,7 +74,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 				return false;
 
 			var theField = type.Fields[0];
-			var theDelegate = theField.FieldType as TypeDefinition;
+			var theDelegate = theField.FieldType.TryGetTypeDef();
 			if (theDelegate == null || !DotNetUtils.derivesFromDelegate(theDelegate))
 				return false;
 
@@ -84,10 +84,10 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			return true;
 		}
 
-		static List<MethodDefinition> getPinvokeMethods(TypeDefinition type, string name) {
-			var list = new List<MethodDefinition>();
+		static List<MethodDef> getPinvokeMethods(TypeDef type, string name) {
+			var list = new List<MethodDef>();
 			foreach (var method in type.Methods) {
-				if (method.PInvokeInfo != null && method.PInvokeInfo.EntryPoint == name)
+				if (method.ImplMap != null && method.ImplMap.Name == name)
 					list.Add(method);
 			}
 			return list;
@@ -97,7 +97,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			var cctor = DotNetUtils.getModuleTypeCctor(module);
 			if (cctor != null) {
 				cctor.Body.InitLocals = false;
-				cctor.Body.Variables.Clear();
+				cctor.Body.LocalList.Clear();
 				cctor.Body.Instructions.Clear();
 				cctor.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
 				cctor.Body.ExceptionHandlers.Clear();

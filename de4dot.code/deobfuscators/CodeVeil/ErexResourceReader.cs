@@ -19,14 +19,15 @@
 
 using System;
 using System.IO;
+using dot10.IO;
 
 namespace de4dot.code.deobfuscators.CodeVeil {
 	class ErexResourceReader {
-		BinaryReader reader;
+		IBinaryReader reader;
 		uint[] key;
 
-		public ErexResourceReader(Stream stream) {
-			reader = new BinaryReader(stream);
+		public ErexResourceReader(IBinaryReader reader) {
+			this.reader = reader;
 		}
 
 		public byte[] decrypt() {
@@ -47,10 +48,10 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				readKey();
 
 			if (isDeflated)
-				reader = new BinaryReader(inflate(length));
+				reader = inflate(length);
 
 			if (isEncrypted)
-				reader = new BinaryReader(decrypt(length));
+				reader = decrypt(length);
 
 			return reader.ReadBytes(length);
 		}
@@ -61,17 +62,17 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				key[i] = reader.ReadUInt32();
 		}
 
-		Stream inflate(int length) {
-			var data = reader.ReadBytes((int)(reader.BaseStream.Length - reader.BaseStream.Position));
-			return new MemoryStream(DeobUtils.inflate(data, true));
+		IBinaryReader inflate(int length) {
+			var data = reader.ReadRemainingBytes();
+			return MemoryImageStream.Create(DeobUtils.inflate(data, true));
 		}
 
-		Stream decrypt(int length) {
+		IBinaryReader decrypt(int length) {
 			var block = new uint[4];
 			var decrypted = new byte[16];
 
 			var outStream = new MemoryStream(length);
-			while (reader.BaseStream.Position < reader.BaseStream.Length) {
+			while (reader.Position < reader.Length) {
 				block[0] = reader.ReadUInt32();
 				block[1] = reader.ReadUInt32();
 				block[2] = reader.ReadUInt32();
@@ -81,8 +82,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				outStream.Write(decrypted, 0, decrypted.Length);
 			}
 
-			outStream.Position = 0;
-			return outStream;
+			return MemoryImageStream.Create(outStream.ToArray());
 		}
 	}
 }

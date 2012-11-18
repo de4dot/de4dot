@@ -22,14 +22,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 using de4dot.code.resources;
 
 namespace de4dot.code.deobfuscators.CodeWall {
 	class AssemblyDecrypter {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		ISimpleDeobfuscator simpleDeobfuscator;
 		IDeobfuscator deob;
 		List<AssemblyInfo> assemblyInfos = new List<AssemblyInfo>();
@@ -37,7 +37,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 		string resourcePassword;
 		string resourceSalt;
 		EmbeddedResource assemblyResource;
-		ModuleDefinition resourceModule;
+		ModuleDefMD resourceModule;
 
 		public class AssemblyInfo {
 			public readonly byte[] data;
@@ -63,7 +63,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			get { return assemblyInfos; }
 		}
 
-		public AssemblyDecrypter(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
+		public AssemblyDecrypter(ModuleDefMD module, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
 			this.module = module;
 			this.simpleDeobfuscator = simpleDeobfuscator;
 			this.deob = deob;
@@ -74,13 +74,13 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			if (!checkEntryPoint(method))
 				return;
 
-			MethodDefinition decryptAssemblyMethod;
+			MethodDef decryptAssemblyMethod;
 			var mainKey = getMainResourceKey(method, out decryptAssemblyMethod);
 			if (mainKey == null)
 				return;
 
 			deobfuscateAll(decryptAssemblyMethod);
-			ModuleDefinition theResourceModule;
+			ModuleDefMD theResourceModule;
 			var resource = getResource(decryptAssemblyMethod, out theResourceModule);
 			if (resource == null)
 				return;
@@ -100,7 +100,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			"System.AppDomain",
 			"System.DateTime",
 		};
-		bool checkEntryPoint(MethodDefinition method) {
+		bool checkEntryPoint(MethodDef method) {
 			if (method == null)
 				return false;
 			if (!new LocalTypes(method).all(requiredLocals))
@@ -112,12 +112,12 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			return true;
 		}
 
-		void deobfuscateAll(MethodDefinition method) {
+		void deobfuscateAll(MethodDef method) {
 			simpleDeobfuscator.deobfuscate(method);
 			simpleDeobfuscator.decryptStrings(method, deob);
 		}
 
-		string getMainResourceKey(MethodDefinition method, out MethodDefinition decryptAssemblyMethod) {
+		string getMainResourceKey(MethodDef method, out MethodDef decryptAssemblyMethod) {
 			foreach (var calledMethod in DotNetUtils.getCalledMethods(module, method)) {
 				if (!calledMethod.IsStatic || calledMethod.Body == null)
 					continue;
@@ -135,7 +135,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			return null;
 		}
 
-		string getMainResourceKeyInfo(MethodDefinition method, out MethodDefinition decryptAssemblyMethod) {
+		string getMainResourceKeyInfo(MethodDef method, out MethodDef decryptAssemblyMethod) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 1; i++) {
 				var ldstr = instrs[i];
@@ -144,7 +144,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 				var call = instrs[i + 1];
 				if (call.OpCode.Code != Code.Call)
 					continue;
-				var calledMethod = call.Operand as MethodDefinition;
+				var calledMethod = call.Operand as MethodDef;
 				if (calledMethod == null)
 					continue;
 
@@ -155,7 +155,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			return null;
 		}
 
-		EmbeddedResource getResource(MethodDefinition method, out ModuleDefinition theResourceModule) {
+		EmbeddedResource getResource(MethodDef method, out ModuleDefMD theResourceModule) {
 			string resourceDllFileName = null;
 			theResourceModule = module;
 			foreach (var s in DotNetUtils.getCodeStrings(method)) {
@@ -182,17 +182,17 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			return null;
 		}
 
-		ModuleDefinition getResourceModule(string name) {
+		ModuleDefMD getResourceModule(string name) {
 			try {
-				var resourceDllFileName = Path.Combine(Path.GetDirectoryName(module.FullyQualifiedName), name.Substring(1));
-				return ModuleDefinition.ReadModule(resourceDllFileName);
+				var resourceDllFileName = Path.Combine(Path.GetDirectoryName(module.Location), name.Substring(1));
+				return ModuleDefMD.Load(resourceDllFileName);
 			}
 			catch {
 				return null;
 			}
 		}
 
-		bool getPassword(MethodDefinition method, out string password, out string salt) {
+		bool getPassword(MethodDef method, out string password, out string salt) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 1; i++) {
 				var ldstr1 = instrs[i];
@@ -217,15 +217,15 @@ namespace de4dot.code.deobfuscators.CodeWall {
 		void decryptAllAssemblies() {
 			if (assemblyResource == null)
 				return;
-			var resourceSet = ResourceReader.read(resourceModule, assemblyResource.GetResourceStream());
+			var resourceSet = ResourceReader.read(resourceModule, assemblyResource.Data);
 			foreach (var resourceElement in resourceSet.ResourceElements) {
 				if (resourceElement.ResourceData.Code != ResourceTypeCode.ByteArray)
 					throw new ApplicationException("Invalid resource");
 				var resourceData = (BuiltInResourceData)resourceElement.ResourceData;
 				var assemblyData = decrypt((byte[])resourceData.Data);
-				var theModule = ModuleDefinition.ReadModule(new MemoryStream(assemblyData));
+				var theModule = ModuleDefMD.Load(assemblyData);
 				bool isMain = resourceElement.Name == entryPointAssemblyKey;
-				assemblyInfos.Add(new AssemblyInfo(assemblyData, DeobUtils.getExtension(theModule.Kind), theModule.Assembly.FullName, theModule.Assembly.Name.Name, isMain));
+				assemblyInfos.Add(new AssemblyInfo(assemblyData, DeobUtils.getExtension(theModule.Kind), theModule.Assembly.FullName, theModule.Assembly.Name.String, isMain));
 			}
 		}
 

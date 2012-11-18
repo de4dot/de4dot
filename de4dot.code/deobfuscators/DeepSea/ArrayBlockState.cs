@@ -18,22 +18,21 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using Mono.Cecil.Metadata;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.DeepSea {
 	class ArrayBlockState {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		FieldDefinitionAndDeclaringTypeDict<FieldInfo> fieldToInfo = new FieldDefinitionAndDeclaringTypeDict<FieldInfo>();
 
 		public class FieldInfo {
-			public readonly FieldDefinition field;
-			public readonly FieldDefinition arrayInitField;
+			public readonly FieldDef field;
+			public readonly FieldDef arrayInitField;
 			public readonly byte[] array;
 
-			public FieldInfo(FieldDefinition field, FieldDefinition arrayInitField) {
+			public FieldInfo(FieldDef field, FieldDef arrayInitField) {
 				this.field = field;
 				this.arrayInitField = arrayInitField;
 				this.array = (byte[])arrayInitField.InitialValue.Clone();
@@ -44,7 +43,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			get { return fieldToInfo.Count != 0; }
 		}
 
-		public ArrayBlockState(ModuleDefinition module) {
+		public ArrayBlockState(ModuleDefMD module) {
 			this.module = module;
 		}
 
@@ -52,39 +51,39 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			initializeArrays(simpleDeobfuscator, DotNetUtils.getModuleTypeCctor(module));
 		}
 
-		void initializeArrays(ISimpleDeobfuscator simpleDeobfuscator, MethodDefinition method) {
+		void initializeArrays(ISimpleDeobfuscator simpleDeobfuscator, MethodDef method) {
 			if (method == null || method.Body == null)
 				return;
 			while (initializeArrays2(simpleDeobfuscator, method)) {
 			}
 		}
 
-		bool initializeArrays2(ISimpleDeobfuscator simpleDeobfuscator, MethodDefinition method) {
+		bool initializeArrays2(ISimpleDeobfuscator simpleDeobfuscator, MethodDef method) {
 			bool foundField = false;
 			simpleDeobfuscator.deobfuscate(method, true);
 			var instructions = method.Body.Instructions;
 			for (int i = 0; i < instructions.Count; i++) {
 				var ldci4 = instructions[i];
-				if (!DotNetUtils.isLdcI4(ldci4))
+				if (!ldci4.IsLdcI4())
 					continue;
 				i++;
 				var instrs = DotNetUtils.getInstructions(instructions, i, OpCodes.Newarr, OpCodes.Dup, OpCodes.Ldtoken, OpCodes.Call, OpCodes.Stsfld);
 				if (instrs == null)
 					continue;
 
-				var arrayType = instrs[0].Operand as TypeReference;
-				if (arrayType == null || arrayType.EType != ElementType.U1)
+				var arrayType = instrs[0].Operand as ITypeDefOrRef;
+				if (arrayType == null || (arrayType.FullName != "System.Byte" && !arrayType.DefinitionAssembly.IsCorLib()))
 					continue;
 
-				var arrayInitField = instrs[2].Operand as FieldDefinition;
+				var arrayInitField = instrs[2].Operand as FieldDef;
 				if (arrayInitField == null || arrayInitField.InitialValue == null || arrayInitField.InitialValue.Length == 0)
 					continue;
 
-				var calledMethod = instrs[3].Operand as MethodReference;
+				var calledMethod = instrs[3].Operand as IMethod;
 				if (calledMethod == null || calledMethod.FullName != "System.Void System.Runtime.CompilerServices.RuntimeHelpers::InitializeArray(System.Array,System.RuntimeFieldHandle)")
 					continue;
 
-				var targetField = instrs[4].Operand as FieldDefinition;
+				var targetField = instrs[4].Operand as FieldDef;
 				if (targetField == null)
 					continue;
 
@@ -96,14 +95,14 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return foundField;
 		}
 
-		public FieldInfo getFieldInfo(FieldReference fieldRef) {
+		public FieldInfo getFieldInfo(IField fieldRef) {
 			if (fieldRef == null)
 				return null;
 			return fieldToInfo.find(fieldRef);
 		}
 
-		public IEnumerable<FieldDefinition> cleanUp() {
-			var removedFields = new List<FieldDefinition>();
+		public IEnumerable<FieldDef> cleanUp() {
+			var removedFields = new List<FieldDef>();
 			var moduleCctor = DotNetUtils.getModuleTypeCctor(module);
 			if (moduleCctor == null)
 				return removedFields;
@@ -118,7 +117,8 @@ namespace de4dot.code.deobfuscators.DeepSea {
 					removedFields.Add(fieldInfo.arrayInitField);
 				}
 				fieldInfo.arrayInitField.InitialValue = new byte[1];
-				fieldInfo.arrayInitField.FieldType = module.TypeSystem.Byte;
+				fieldInfo.arrayInitField.FieldSig.Type = module.CorLibTypes.Byte;
+				fieldInfo.arrayInitField.RVA = 0;
 			}
 
 			IList<Instruction> allInstructions;
@@ -148,7 +148,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 					var call = instrs[i + 4];
 					if (call.OpCode.Code != Code.Call)
 						continue;
-					var calledMethod = call.Operand as MethodReference;
+					var calledMethod = call.Operand as IMethod;
 					if (calledMethod == null || calledMethod.FullName != "System.Void System.Runtime.CompilerServices.RuntimeHelpers::InitializeArray(System.Array,System.RuntimeFieldHandle)")
 						continue;
 					var stsfld = instrs[i + 5];
@@ -174,7 +174,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 						continue;
 
 					foreach (var instr in method.Body.Instructions) {
-						var field = instr.Operand as FieldReference;
+						var field = instr.Operand as IField;
 						if (field == null)
 							continue;
 						var fieldInfo = fieldToInfo.find(field);

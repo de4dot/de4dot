@@ -20,26 +20,27 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.IO;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Babel_NET {
 	class MethodsDecrypter {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		ResourceDecrypter resourceDecrypter;
 		IDeobfuscatorContext deobfuscatorContext;
 		Dictionary<string, ImageReader> imageReaders = new Dictionary<string, ImageReader>(StringComparer.Ordinal);
-		TypeDefinition methodsDecrypterCreator;
-		TypeDefinition methodsDecrypter;
-		MethodDefinition decryptExecuteMethod;
+		TypeDef methodsDecrypterCreator;
+		TypeDef methodsDecrypter;
+		MethodDef decryptExecuteMethod;
 		EmbeddedResource encryptedResource;
 
 		public bool Detected {
 			get { return methodsDecrypterCreator != null; }
 		}
 
-		public MethodsDecrypter(ModuleDefinition module, ResourceDecrypter resourceDecrypter, IDeobfuscatorContext deobfuscatorContext) {
+		public MethodsDecrypter(ModuleDefMD module, ResourceDecrypter resourceDecrypter, IDeobfuscatorContext deobfuscatorContext) {
 			this.module = module;
 			this.resourceDecrypter = resourceDecrypter;
 			this.deobfuscatorContext = deobfuscatorContext;
@@ -54,7 +55,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				var fieldTypes = new FieldTypes(type);
 				if (!fieldTypes.all(requiredFields))
 					continue;
-				if (DotNetUtils.getMethod(type, "Finalize") == null)
+				if (type.FindMethod("Finalize") == null)
 					continue;
 				var executeMethod = DotNetUtils.getMethod(type, "System.Object", "(System.String,System.Object[])");
 				if (executeMethod == null || !executeMethod.IsStatic || executeMethod.Body == null)
@@ -73,7 +74,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			}
 		}
 
-		static MethodDefinition findDecryptMethod(TypeDefinition type) {
+		static MethodDef findDecryptMethod(TypeDef type) {
 			foreach (var method in type.Methods) {
 				var decryptMethod = ResourceDecrypter.findDecrypterMethod(method);
 				if (decryptMethod != null)
@@ -82,12 +83,12 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return null;
 		}
 
-		TypeDefinition findMethodsDecrypterType(TypeDefinition type) {
+		TypeDef findMethodsDecrypterType(TypeDef type) {
 			foreach (var field in type.Fields) {
-				var fieldType = DotNetUtils.getType(module, field.FieldType);
+				var fieldType = DotNetUtils.getType(module, field.FieldSig.GetFieldType());
 				if (fieldType == null)
 					continue;
-				if (DotNetUtils.getMethod(fieldType, "Finalize") == null)
+				if (fieldType.FindMethod("Finalize") == null)
 					continue;
 				if (!new FieldTypes(fieldType).exists("System.Collections.Hashtable"))
 					continue;
@@ -106,13 +107,13 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 			encryptedResource = BabelUtils.findEmbeddedResource(module, methodsDecrypter, simpleDeobfuscator, deob);
 			if (encryptedResource != null)
-				addImageReader("", resourceDecrypter.decrypt(encryptedResource.GetResourceData()));
+				addImageReader("", resourceDecrypter.decrypt(encryptedResource.Data.ReadAllBytes()));
 		}
 
 		ImageReader addImageReader(string name, byte[] data) {
 			var imageReader = new ImageReader(deobfuscatorContext, module, data);
 			if (!imageReader.initialize()) {
-				Log.w("Could not read encrypted methods");
+				Logger.w("Could not read encrypted methods");
 				return null;
 			}
 			if (imageReaders.ContainsKey(name))
@@ -124,7 +125,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		class EncryptInfo {
 			public string encryptedMethodName;
 			public string feature;
-			public MethodDefinition method;
+			public MethodDef method;
 
 			public string FullName {
 				get {
@@ -134,7 +135,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				}
 			}
 
-			public EncryptInfo(string encryptedMethodName, string feature, MethodDefinition method) {
+			public EncryptInfo(string encryptedMethodName, string feature, MethodDef method) {
 				this.encryptedMethodName = encryptedMethodName;
 				this.feature = feature;
 				this.method = method;
@@ -142,9 +143,9 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 			public override string ToString() {
 				if (feature != "")
-					return string.Format("{0}:{1} {2:X8}", feature, encryptedMethodName, method.MetadataToken.ToInt32());
+					return string.Format("{0}:{1} {2:X8}", feature, encryptedMethodName, method.MDToken.ToInt32());
 				else
-					return string.Format("{0} {1:X8}", encryptedMethodName, method.MetadataToken.ToInt32());
+					return string.Format("{0} {1:X8}", encryptedMethodName, method.MDToken.ToInt32());
 			}
 		}
 
@@ -158,11 +159,11 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 					numNonDecryptedMethods++;
 					continue;
 				}
-				Log.v("Decrypting method {0:X8}", info.method.MetadataToken.ToInt32());
+				Logger.v("Decrypting method {0:X8}", info.method.MDToken.ToInt32());
 				imageReader.restore(info.FullName, info.method);
 			}
 			if (numNonDecryptedMethods > 0)
-				Log.w("{0}/{1} methods not decrypted", numNonDecryptedMethods, totalEncryptedMethods);
+				Logger.w("{0}/{1} methods not decrypted", numNonDecryptedMethods, totalEncryptedMethods);
 		}
 
 		ImageReader getImageReader(string feature) {
@@ -178,7 +179,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				return null;
 
 			try {
-				var encrypted = File.ReadAllBytes(getFile(Path.GetDirectoryName(module.FullyQualifiedName), feature));
+				var encrypted = File.ReadAllBytes(getFile(Path.GetDirectoryName(module.Location), feature));
 				var decrypted = resourceDecrypter.decrypt(encrypted);
 				return addImageReader(feature, decrypted);
 			}
@@ -214,7 +215,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return infos;
 		}
 
-		bool checkEncryptedMethod(MethodDefinition method, out EncryptInfo info) {
+		bool checkEncryptedMethod(MethodDef method, out EncryptInfo info) {
 			info = null;
 			if (method.Body == null)
 				return false;
@@ -237,11 +238,11 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return true;
 		}
 
-		bool callsExecuteMethod(MethodDefinition method) {
+		bool callsExecuteMethod(MethodDef method) {
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt)
 					continue;
-				if (MemberReferenceHelper.compareMethodReferenceAndDeclaringType(decryptExecuteMethod, instr.Operand as MethodReference))
+				if (MethodEqualityComparer.CompareDeclaringTypes.Equals(decryptExecuteMethod, instr.Operand as IMethod))
 					return true;
 			}
 			return false;

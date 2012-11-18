@@ -19,25 +19,25 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
+using dot10.DotNet;
 
-namespace de4dot.code.deobfuscators.CliSecure.vm {
+namespace de4dot.code.deobfuscators.Agile_NET.vm {
 	class FieldsInfo {
 		public static readonly object EnumType = new object();
 		Dictionary<string, int> fieldTypes = new Dictionary<string, int>(StringComparer.Ordinal);
 		int numEnums = 0;
 
-		public FieldsInfo(TypeDefinition type)
+		public FieldsInfo(TypeDef type)
 			: this(type.Fields) {
 		}
 
-		public FieldsInfo(IEnumerable<FieldDefinition> fields) {
+		public FieldsInfo(IEnumerable<FieldDef> fields) {
 			foreach (var field in fields) {
-				var fieldTypeDef = field.FieldType as TypeDefinition;
+				var fieldTypeDef = field.FieldSig.GetFieldType().TryGetTypeDef();
 				if (fieldTypeDef != null && fieldTypeDef.IsEnum)
 					addEnum();
 				else
-					add(field.FieldType);
+					add(field.FieldSig.GetFieldType());
 			}
 		}
 
@@ -50,8 +50,8 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 			}
 		}
 
-		void add(TypeReference type) {
-			add(type.FullName);
+		void add(TypeSig type) {
+			add(type.GetFullName());
 		}
 
 		void add(string typeFullName) {

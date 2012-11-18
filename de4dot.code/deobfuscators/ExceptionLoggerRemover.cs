@@ -18,8 +18,8 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators {
@@ -28,7 +28,7 @@ namespace de4dot.code.deobfuscators {
 
 		public int NumRemovedExceptionLoggers { get; set; }
 
-		public void add(MethodDefinition exceptionLogger) {
+		public void add(MethodDef exceptionLogger) {
 			exceptionLoggerMethods.add(exceptionLogger, true);
 		}
 
@@ -74,7 +74,7 @@ namespace de4dot.code.deobfuscators {
 				}
 				if (failed || calls != 1 || callInstr.OpCode.Code != Code.Call)
 					continue;
-				var calledMethod = callInstr.Operand as MethodReference;
+				var calledMethod = callInstr.Operand as IMethod;
 				if (calledMethod == null)
 					continue;
 				if (!isExceptionLogger(calledMethod))
@@ -86,7 +86,7 @@ namespace de4dot.code.deobfuscators {
 			return false;
 		}
 
-		protected virtual bool isExceptionLogger(MethodReference method) {
+		protected virtual bool isExceptionLogger(IMethod method) {
 			return exceptionLoggerMethods.find(method);
 		}
 

@@ -22,7 +22,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
-using Mono.Cecil;
+using dot10.DotNet;
+using dot10.IO;
 
 namespace de4dot.code.resources {
 	[Serializable]
@@ -32,19 +33,19 @@ namespace de4dot.code.resources {
 		}
 	}
 
-	class ResourceReader {
-		ModuleDefinition module;
-		BinaryReader reader;
+	struct ResourceReader {
+		ModuleDefMD module;
+		IBinaryReader reader;
 		ResourceDataCreator resourceDataCreator;
 
-		ResourceReader(ModuleDefinition module, Stream stream) {
+		ResourceReader(ModuleDefMD module, IBinaryReader reader) {
 			this.module = module;
-			this.reader = new BinaryReader(stream);
+			this.reader = reader;
 			this.resourceDataCreator = new ResourceDataCreator(module);
 		}
 
-		public static ResourceElementSet read(ModuleDefinition module, Stream stream) {
-			return new ResourceReader(module, stream).read();
+		public static ResourceElementSet read(ModuleDefMD module, IBinaryReader reader) {
+			return new ResourceReader(module, reader).read();
 		}
 
 		ResourceElementSet read() {
@@ -68,7 +69,7 @@ namespace de4dot.code.resources {
 			var userTypes = new List<UserResourceType>();
 			for (int i = 0; i < numUserTypes; i++)
 				userTypes.Add(new UserResourceType(reader.ReadString(), ResourceTypeCode.UserTypes + i));
-			reader.BaseStream.Position = (reader.BaseStream.Position + 7) & ~7;
+			reader.Position = (reader.Position + 7) & ~7;
 
 			var hashes = new int[numResources];
 			for (int i = 0; i < numResources; i++)
@@ -77,27 +78,26 @@ namespace de4dot.code.resources {
 			for (int i = 0; i < numResources; i++)
 				offsets[i] = reader.ReadInt32();
 
-			long baseOffset = reader.BaseStream.Position;
+			long baseOffset = reader.Position;
 			long dataBaseOffset = reader.ReadInt32();
-			long nameBaseOffset = reader.BaseStream.Position;
-			long end = reader.BaseStream.Length;
+			long nameBaseOffset = reader.Position;
+			long end = reader.Length;
 
 			var infos = new List<ResourceInfo>(numResources);
 
-			var nameReader = new BinaryReader(reader.BaseStream, Encoding.Unicode);
 			for (int i = 0; i < numResources; i++) {
-				nameReader.BaseStream.Position = nameBaseOffset + offsets[i];
-				var name = nameReader.ReadString();
-				long offset = dataBaseOffset + nameReader.ReadInt32();
+				reader.Position = nameBaseOffset + offsets[i];
+				var name = reader.ReadString(Encoding.Unicode);
+				long offset = dataBaseOffset + reader.ReadInt32();
 				infos.Add(new ResourceInfo(name, offset));
 			}
 
-			infos.Sort(sortResourceInfo);
+			infos.Sort((a, b) => a.offset.CompareTo(b.offset));
 			for (int i = 0; i < infos.Count; i++) {
 				var info = infos[i];
 				var element = new ResourceElement();
 				element.Name = info.name;
-				reader.BaseStream.Position = info.offset;
+				reader.Position = info.offset;
 				long nextDataOffset = i == infos.Count - 1 ? end : infos[i + 1].offset;
 				int size = (int)(nextDataOffset - info.offset);
 				element.ResourceData = readResourceData(userTypes, size);
@@ -106,10 +106,6 @@ namespace de4dot.code.resources {
 			}
 
 			return resources;
-		}
-
-		static int sortResourceInfo(ResourceInfo a, ResourceInfo b) {
-			return Utils.compareInt32((int)a.offset, (int)b.offset);
 		}
 
 		class ResourceInfo {
@@ -153,9 +149,9 @@ namespace de4dot.code.resources {
 			}
 		}
 
-		static uint readUInt32(BinaryReader reader) {
+		static uint readUInt32(IBinaryReader reader) {
 			try {
-				return Utils.readEncodedUInt32(reader);
+				return reader.Read7BitEncodedUInt32();
 			}
 			catch {
 				throw new ResourceReaderException("Invalid encoded int32");

@@ -18,26 +18,26 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
 
 namespace de4dot.code.deobfuscators {
 	static class ArrayFinder {
-		public static List<byte[]> getArrays(MethodDefinition method) {
+		public static List<byte[]> getArrays(MethodDef method) {
 			return getArrays(method, null);
 		}
 
-		public static List<byte[]> getArrays(MethodDefinition method, TypeReference arrayElemntType) {
+		public static List<byte[]> getArrays(MethodDef method, IType arrayElementType) {
 			var arrays = new List<byte[]>();
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count; i++) {
-				TypeReference type;
+				IType type;
 				var ary = getArray(instrs, ref i, out type);
 				if (ary == null)
 					break;
-				if (arrayElemntType != null && !MemberReferenceHelper.compareTypes(type, arrayElemntType))
+				if (arrayElementType != null && !new SigComparer().Equals(type, arrayElementType))
 					continue;
 
 				arrays.Add(ary);
@@ -45,7 +45,7 @@ namespace de4dot.code.deobfuscators {
 			return arrays;
 		}
 
-		public static byte[] getArray(IList<Instruction> instrs, ref int index, out TypeReference type) {
+		public static byte[] getArray(IList<Instruction> instrs, ref int index, out IType type) {
 			for (int i = index; i < instrs.Count - 2; i++) {
 				var newarr = instrs[i++];
 				if (newarr.OpCode.Code != Code.Newarr)
@@ -57,12 +57,12 @@ namespace de4dot.code.deobfuscators {
 				var ldtoken = instrs[i++];
 				if (ldtoken.OpCode.Code != Code.Ldtoken)
 					continue;
-				var field = ldtoken.Operand as FieldDefinition;
+				var field = ldtoken.Operand as FieldDef;
 				if (field == null || field.InitialValue == null)
 					continue;
 
 				index = i - 3;
-				type = newarr.Operand as TypeReference;
+				type = newarr.Operand as IType;
 				return field.InitialValue;
 			}
 
@@ -71,14 +71,14 @@ namespace de4dot.code.deobfuscators {
 			return null;
 		}
 
-		public static byte[] getInitializedByteArray(MethodDefinition method, int arraySize) {
+		public static byte[] getInitializedByteArray(MethodDef method, int arraySize) {
 			int newarrIndex = findNewarr(method, arraySize);
 			if (newarrIndex < 0)
 				return null;
 			return getInitializedByteArray(arraySize, method, ref newarrIndex);
 		}
 
-		public static byte[] getInitializedByteArray(int arraySize, MethodDefinition method, ref int newarrIndex) {
+		public static byte[] getInitializedByteArray(int arraySize, MethodDef method, ref int newarrIndex) {
 			var resultValueArray = getInitializedArray(arraySize, method, ref newarrIndex, Code.Stelem_I1);
 
 			var resultArray = new byte[resultValueArray.Length];
@@ -91,7 +91,7 @@ namespace de4dot.code.deobfuscators {
 			return resultArray;
 		}
 
-		public static short[] getInitializedInt16Array(int arraySize, MethodDefinition method, ref int newarrIndex) {
+		public static short[] getInitializedInt16Array(int arraySize, MethodDef method, ref int newarrIndex) {
 			var resultValueArray = getInitializedArray(arraySize, method, ref newarrIndex, Code.Stelem_I2);
 
 			var resultArray = new short[resultValueArray.Length];
@@ -104,7 +104,7 @@ namespace de4dot.code.deobfuscators {
 			return resultArray;
 		}
 
-		public static int[] getInitializedInt32Array(int arraySize, MethodDefinition method, ref int newarrIndex) {
+		public static int[] getInitializedInt32Array(int arraySize, MethodDef method, ref int newarrIndex) {
 			var resultValueArray = getInitializedArray(arraySize, method, ref newarrIndex, Code.Stelem_I4);
 
 			var resultArray = new int[resultValueArray.Length];
@@ -117,7 +117,7 @@ namespace de4dot.code.deobfuscators {
 			return resultArray;
 		}
 
-		public static uint[] getInitializedUInt32Array(int arraySize, MethodDefinition method, ref int newarrIndex) {
+		public static uint[] getInitializedUInt32Array(int arraySize, MethodDef method, ref int newarrIndex) {
 			var resultArray = getInitializedInt32Array(arraySize, method, ref newarrIndex);
 			if (resultArray == null)
 				return null;
@@ -128,7 +128,7 @@ namespace de4dot.code.deobfuscators {
 			return ary;
 		}
 
-		public static Value[] getInitializedArray(int arraySize, MethodDefinition method, ref int newarrIndex, Code stelemOpCode) {
+		public static Value[] getInitializedArray(int arraySize, MethodDef method, ref int newarrIndex, Code stelemOpCode) {
 			var resultValueArray = new Value[arraySize];
 
 			var emulator = new InstructionEmulator(method);
@@ -183,7 +183,7 @@ done:
 			return resultValueArray;
 		}
 
-		static int findNewarr(MethodDefinition method, int arraySize) {
+		static int findNewarr(MethodDef method, int arraySize) {
 			for (int i = 0; ; i++) {
 				int size;
 				if (!findNewarr(method, ref i, out size))
@@ -193,17 +193,17 @@ done:
 			}
 		}
 
-		public static bool findNewarr(MethodDefinition method, ref int i, out int size) {
+		public static bool findNewarr(MethodDef method, ref int i, out int size) {
 			var instructions = method.Body.Instructions;
 			for (; i < instructions.Count; i++) {
 				var instr = instructions[i];
 				if (instr.OpCode.Code != Code.Newarr || i < 1)
 					continue;
 				var ldci4 = instructions[i - 1];
-				if (!DotNetUtils.isLdcI4(ldci4))
+				if (!ldci4.IsLdcI4())
 					continue;
 
-				size = DotNetUtils.getLdcI4Value(ldci4);
+				size = ldci4.GetLdcI4Value();
 				return true;
 			}
 

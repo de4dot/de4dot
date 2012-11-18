@@ -22,8 +22,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
+using dot10.IO;
 using de4dot.blocks;
 using de4dot.code.resources;
 
@@ -32,33 +33,33 @@ namespace de4dot.code.renamer {
 		const int RESOURCE_KEY_MAX_LEN = 50;
 		const string DEFAULT_KEY_NAME = "Key";
 
-		ModuleDefinition module;
+		ModuleDefMD module;
 		INameChecker nameChecker;
 		Dictionary<string, bool> newNames = new Dictionary<string, bool>();
 
-		public ResourceKeysRenamer(ModuleDefinition module, INameChecker nameChecker) {
+		public ResourceKeysRenamer(ModuleDefMD module, INameChecker nameChecker) {
 			this.module = module;
 			this.nameChecker = nameChecker;
 		}
 
 		public void rename() {
-			Log.v("Renaming resource keys ({0})", module);
-			Log.indent();
+			Logger.v("Renaming resource keys ({0})", module);
+			Logger.Instance.indent();
 			foreach (var type in module.GetTypes()) {
 				string resourceName = getResourceName(type);
 				if (resourceName == null)
 					continue;
 				var resource = getResource(resourceName);
 				if (resource == null) {
-					Log.w("Could not find resource {0}", Utils.removeNewlines(resourceName));
+					Logger.w("Could not find resource {0}", Utils.removeNewlines(resourceName));
 					continue;
 				}
-				Log.v("Resource: {0}", Utils.toCsharpString(resource.Name));
-				Log.indent();
+				Logger.v("Resource: {0}", Utils.toCsharpString(resource.Name));
+				Logger.Instance.indent();
 				rename(type, resource);
-				Log.deIndent();
+				Logger.Instance.deIndent();
 			}
-			Log.deIndent();
+			Logger.Instance.deIndent();
 		}
 
 		EmbeddedResource getResource(string resourceName) {
@@ -78,7 +79,7 @@ namespace de4dot.code.renamer {
 			return null;
 		}
 
-		static string getResourceName(TypeDefinition type) {
+		static string getResourceName(TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (method.Body == null)
 					continue;
@@ -92,11 +93,11 @@ namespace de4dot.code.renamer {
 					}
 
 					if (instr.OpCode.Code == Code.Newobj) {
-						var ctor = instr.Operand as MethodReference;
+						var ctor = instr.Operand as IMethod;
 						if (ctor.FullName != "System.Void System.Resources.ResourceManager::.ctor(System.String,System.Reflection.Assembly)")
 							continue;
 						if (resourceName == null) {
-							Log.w("Could not find resource name");
+							Logger.w("Could not find resource name");
 							continue;
 						}
 
@@ -121,9 +122,9 @@ namespace de4dot.code.renamer {
 			}
 		}
 
-		void rename(TypeDefinition type, EmbeddedResource resource) {
+		void rename(TypeDef type, EmbeddedResource resource) {
 			newNames.Clear();
-			var resourceSet = ResourceReader.read(module, resource.GetResourceStream());
+			var resourceSet = ResourceReader.read(module, resource.Data);
 			var renamed = new List<RenameInfo>();
 			foreach (var elem in resourceSet.ResourceElements) {
 				if (nameChecker.isValidResourceKeyName(elem.Name)) {
@@ -141,15 +142,14 @@ namespace de4dot.code.renamer {
 
 			var outStream = new MemoryStream();
 			ResourceWriter.write(module, outStream, resourceSet);
-			outStream.Position = 0;
-			var newResource = new EmbeddedResource(resource.Name, resource.Attributes, outStream);
+			var newResource = new EmbeddedResource(resource.Name, outStream.ToArray(), resource.Attributes);
 			int resourceIndex = module.Resources.IndexOf(resource);
 			if (resourceIndex < 0)
 				throw new ApplicationException("Could not find index of resource");
 			module.Resources[resourceIndex] = newResource;
 		}
 
-		void rename(TypeDefinition type, List<RenameInfo> renamed) {
+		void rename(TypeDef type, List<RenameInfo> renamed) {
 			var nameToInfo = new Dictionary<string, RenameInfo>(StringComparer.Ordinal);
 			foreach (var info in renamed)
 				nameToInfo[info.element.Name] = info;
@@ -163,7 +163,7 @@ namespace de4dot.code.renamer {
 					var call = instrs[i];
 					if (call.OpCode.Code != Code.Call && call.OpCode.Code != Code.Callvirt)
 						continue;
-					var calledMethod = call.Operand as MethodReference;
+					var calledMethod = call.Operand as IMethod;
 					if (calledMethod == null)
 						continue;
 
@@ -190,7 +190,7 @@ namespace de4dot.code.renamer {
 					if (ldstrIndex >= 0)
 						ldstr = instrs[ldstrIndex];
 					if (ldstr == null || (name = ldstr.Operand as string) == null) {
-						Log.w("Could not find string argument to method {0}", calledMethod);
+						Logger.w("Could not find string argument to method {0}", calledMethod);
 						continue;
 					}
 
@@ -199,7 +199,7 @@ namespace de4dot.code.renamer {
 						continue;	// should not be renamed
 
 					ldstr.Operand = info.newName;
-					Log.v("Renamed resource key {0} => {1}", Utils.toCsharpString(info.element.Name), Utils.toCsharpString(info.newName));
+					Logger.v("Renamed resource key {0} => {1}", Utils.toCsharpString(info.element.Name), Utils.toCsharpString(info.newName));
 					info.element.Name = info.newName;
 					info.foundInCode = true;
 				}
@@ -207,7 +207,7 @@ namespace de4dot.code.renamer {
 
 			foreach (var info in renamed) {
 				if (!info.foundInCode)
-					Log.w("Could not find resource key {0} in code", Utils.removeNewlines(info.element.Name));
+					Logger.w("Could not find resource key {0} in code", Utils.removeNewlines(info.element.Name));
 			}
 		}
 

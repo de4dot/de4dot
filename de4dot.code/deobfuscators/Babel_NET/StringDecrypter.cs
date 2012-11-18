@@ -21,35 +21,36 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.IO;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
 
 namespace de4dot.code.deobfuscators.Babel_NET {
 	class StringDecrypter {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		ResourceDecrypter resourceDecrypter;
 		ISimpleDeobfuscator simpleDeobfuscator;
-		TypeDefinition decrypterType;
+		TypeDef decrypterType;
 		EmbeddedResource encryptedResource;
 		IDecrypterInfo decrypterInfo;
 
 		interface IDecrypterInfo {
-			MethodDefinition Decrypter { get; }
+			MethodDef Decrypter { get; }
 			bool NeedsResource { get; }
-			void initialize(ModuleDefinition module, EmbeddedResource resource);
+			void initialize(ModuleDefMD module, EmbeddedResource resource);
 			string decrypt(object[] args);
 		}
 
 		// Babel .NET 2.x
 		class DecrypterInfoV1 : IDecrypterInfo {
-			public MethodDefinition Decrypter { get; set; }
+			public MethodDef Decrypter { get; set; }
 			public bool NeedsResource {
 				get { return false; }
 			}
 
-			public void initialize(ModuleDefinition module, EmbeddedResource resource) {
+			public void initialize(ModuleDefMD module, EmbeddedResource resource) {
 			}
 
 			public string decrypt(object[] args) {
@@ -67,13 +68,13 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		class DecrypterInfoV2 : IDecrypterInfo {
 			byte[] key;
 
-			public MethodDefinition Decrypter { get; set; }
+			public MethodDef Decrypter { get; set; }
 			public bool NeedsResource {
 				get { return true; }
 			}
 
-			public void initialize(ModuleDefinition module, EmbeddedResource resource) {
-				key = resource.GetResourceData();
+			public void initialize(ModuleDefMD module, EmbeddedResource resource) {
+				key = resource.Data.ReadAllBytes();
 				if (key.Length != 0x100)
 					throw new ApplicationException(string.Format("Unknown key length: {0}", key.Length));
 			}
@@ -97,7 +98,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			InstructionEmulator emulator = new InstructionEmulator();
 
 			public IList<Instruction> OffsetCalcInstructions { get; set; }
-			public MethodDefinition Decrypter { get; set; }
+			public MethodDef Decrypter { get; set; }
 			public bool NeedsResource {
 				get { return true; }
 			}
@@ -106,20 +107,20 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				this.resourceDecrypter = resourceDecrypter;
 			}
 
-			public void initialize(ModuleDefinition module, EmbeddedResource resource) {
-				var decrypted = resourceDecrypter.decrypt(resource.GetResourceData());
+			public void initialize(ModuleDefMD module, EmbeddedResource resource) {
+				var decrypted = resourceDecrypter.decrypt(resource.Data.ReadAllBytes());
 				var reader = new BinaryReader(new MemoryStream(decrypted));
 				while (reader.BaseStream.Position < reader.BaseStream.Length)
 					offsetToString[getOffset((int)reader.BaseStream.Position)] = reader.ReadString();
 			}
 
-			MethodDefinition dummyMethod;
+			MethodDef dummyMethod;
 			int getOffset(int offset) {
 				if (OffsetCalcInstructions == null || OffsetCalcInstructions.Count == 0)
 					return offset;
 				if (dummyMethod == null) {
-					dummyMethod = new MethodDefinition("", 0, new TypeReference("", "", null, null));
-					dummyMethod.Body = new MethodBody(dummyMethod);
+					dummyMethod = new MethodDefUser();
+					dummyMethod.Body = new CilBody();
 				}
 				emulator.init(dummyMethod);
 				emulator.push(new Int32Value(offset));
@@ -141,11 +142,11 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			get { return decrypterType != null; }
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return decrypterType; }
 		}
 
-		public MethodDefinition DecryptMethod {
+		public MethodDef DecryptMethod {
 			get { return decrypterInfo == null ? null : decrypterInfo.Decrypter; }
 		}
 
@@ -153,7 +154,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			get { return encryptedResource; }
 		}
 
-		public StringDecrypter(ModuleDefinition module, ResourceDecrypter resourceDecrypter) {
+		public StringDecrypter(ModuleDefMD module, ResourceDecrypter resourceDecrypter) {
 			this.module = module;
 			this.resourceDecrypter = resourceDecrypter;
 		}
@@ -171,7 +172,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			}
 		}
 
-		IDecrypterInfo checkDecrypterType(TypeDefinition type) {
+		IDecrypterInfo checkDecrypterType(TypeDef type) {
 			if (type.HasEvents)
 				return null;
 			if (type.NestedTypes.Count > 2)
@@ -188,7 +189,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return checkDecrypterTypeBabel2x(type);
 		}
 
-		IDecrypterInfo checkDecrypterTypeBabel2x(TypeDefinition type) {
+		IDecrypterInfo checkDecrypterTypeBabel2x(TypeDef type) {
 			if (type.HasEvents || type.HasProperties || type.HasNestedTypes)
 				return null;
 			if (type.HasFields || type.Methods.Count != 1)
@@ -200,7 +201,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return new DecrypterInfoV1 { Decrypter = decrypter };
 		}
 
-		bool checkDecryptMethodBabel2x(MethodDefinition method) {
+		bool checkDecryptMethodBabel2x(MethodDef method) {
 			if (!method.IsStatic || !method.IsPublic)
 				return false;
 			if (method.Body == null)
@@ -212,7 +213,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 			int stringLength = 0, stringToCharArray = 0, stringCtor = 0;
 			foreach (var instr in method.Body.Instructions) {
-				var calledMethod = instr.Operand as MethodReference;
+				var calledMethod = instr.Operand as IMethod;
 				if (calledMethod == null)
 					continue;
 
@@ -242,11 +243,11 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return stringLength == 1 && stringToCharArray == 1 && stringCtor == 1;
 		}
 
-		IDecrypterInfo checkNested(TypeDefinition type, TypeDefinition nested) {
+		IDecrypterInfo checkNested(TypeDef type, TypeDef nested) {
 			if (nested.HasProperties || nested.HasEvents)
 				return null;
 
-			if (DotNetUtils.getMethod(nested, ".ctor") == null)
+			if (nested.FindMethod(".ctor") == null)
 				return null;
 
 			if (nested.Fields.Count == 1 || nested.Fields.Count == 3) {
@@ -259,7 +260,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				if (decrypterBuilderMethod == null)
 					return null;
 
-				resourceDecrypter.DecryptMethod = ResourceDecrypter.findDecrypterMethod(DotNetUtils.getMethod(nested, ".ctor"));
+				resourceDecrypter.DecryptMethod = ResourceDecrypter.findDecrypterMethod(nested.FindMethod(".ctor"));
 
 				var nestedDecrypter = DotNetUtils.getMethod(nested, "System.String", "(System.Int32)");
 				if (nestedDecrypter == null || nestedDecrypter.IsStatic)
@@ -286,7 +287,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 					if (decrypter == null || !decrypter.IsStatic)
 						return null;
 
-					resourceDecrypter.DecryptMethod = ResourceDecrypter.findDecrypterMethod(DotNetUtils.getMethod(nested, ".ctor"));
+					resourceDecrypter.DecryptMethod = ResourceDecrypter.findDecrypterMethod(nested.FindMethod(".ctor"));
 
 					return new DecrypterInfoV3(resourceDecrypter) { Decrypter = decrypter };
 				}
@@ -309,7 +310,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		}
 
 		class ReflectionToCecilMethodCreator {
-			MethodDefinition method;
+			MethodDef method;
 			List<Instruction> instructions = new List<Instruction>();
 			InstructionEmulator emulator;
 			int index;
@@ -330,7 +331,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				get { return instructions; }
 			}
 
-			public ReflectionToCecilMethodCreator(MethodDefinition method) {
+			public ReflectionToCecilMethodCreator(MethodDef method) {
 				this.method = method;
 				this.emulator = new InstructionEmulator(method);
 			}
@@ -346,7 +347,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 						return true;
 
 					case Code.Newarr:
-						var arrayType = (TypeReference)instr.Operand;
+						var arrayType = (ITypeDefOrRef)instr.Operand;
 						int arrayCount = ((Int32Value)emulator.pop()).value;
 						if (arrayType.FullName == "System.Char")
 							emulator.push(new UserValue(new char[arrayCount]));
@@ -396,7 +397,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 						break;
 
 					case Code.Ldsfld:
-						emulator.push(new UserValue((FieldReference)instr.Operand));
+						emulator.push(new UserValue((IField)instr.Operand));
 						break;
 
 					default:
@@ -409,30 +410,32 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			}
 
 			bool doCall(Instruction instr) {
-				var calledMethod = (MethodReference)instr.Operand;
-				if (calledMethod.FullName == "System.Byte[] System.Convert::FromBase64String(System.String)") {
+				var calledMethod = (IMethod)instr.Operand;
+				var sig = calledMethod.MethodSig;
+				var fn = calledMethod.FullName;
+				if (fn == "System.Byte[] System.Convert::FromBase64String(System.String)") {
 					emulator.push(new UserValue(Convert.FromBase64String(((StringValue)emulator.pop()).value)));
 					return true;
 				}
-				else if (calledMethod.FullName == "System.String System.Text.Encoding::GetString(System.Byte[])") {
+				else if (fn == "System.String System.Text.Encoding::GetString(System.Byte[])") {
 					emulator.push(new StringValue(Encoding.UTF8.GetString((byte[])((UserValue)emulator.pop()).obj)));
 					return true;
 				}
-				else if (calledMethod.FullName == "System.Int32 System.Int32::Parse(System.String)") {
+				else if (fn == "System.Int32 System.Int32::Parse(System.String)") {
 					emulator.push(new Int32Value(int.Parse(((StringValue)emulator.pop()).value)));
 					return true;
 				}
-				else if (calledMethod.FullName == "System.String[] System.String::Split(System.Char[])") {
+				else if (fn == "System.String[] System.String::Split(System.Char[])") {
 					var ary = (char[])((UserValue)emulator.pop()).obj;
 					var s = ((StringValue)emulator.pop()).value;
 					emulator.push(new UserValue(s.Split(ary)));
 					return true;
 				}
-				else if (calledMethod.HasThis && calledMethod.DeclaringType.FullName == "System.Reflection.Emit.ILGenerator" && calledMethod.Name == "Emit") {
+				else if (sig != null && sig.HasThis && calledMethod.DeclaringType.FullName == "System.Reflection.Emit.ILGenerator" && calledMethod.Name == "Emit") {
 					Value operand = null;
-					if (calledMethod.Parameters.Count == 2)
+					if (calledMethod.MethodSig.GetParamCount() == 2)
 						operand = emulator.pop();
-					var opcode = reflectionToCecilOpCode((FieldReference)((UserValue)emulator.pop()).obj);
+					var opcode = reflectionToOpCode((IField)((UserValue)emulator.pop()).obj);
 					emulator.pop();	// the this ptr
 					addInstruction(new Instruction {
 						OpCode = opcode,
@@ -458,15 +461,15 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				instructions.Add(instr);
 			}
 
-			static OpCode reflectionToCecilOpCode(FieldReference reflectionField) {
-				var field = typeof(OpCodes).GetField(reflectionField.Name);
+			static OpCode reflectionToOpCode(IField reflectionField) {
+				var field = typeof(OpCodes).GetField(reflectionField.Name.String);
 				if (field == null || field.FieldType != typeof(OpCode))
 					return null;
 				return (OpCode)field.GetValue(null);
 			}
 		}
 
-		static List<Instruction> getOffsetCalcInstructions(MethodDefinition method) {
+		static List<Instruction> getOffsetCalcInstructions(MethodDef method) {
 			var creator = new ReflectionToCecilMethodCreator(method);
 			creator.create();
 			var instrs = creator.Instructions;
@@ -499,15 +502,15 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return -1;
 		}
 
-		static bool hasFieldType(IEnumerable<FieldDefinition> fields, TypeReference fieldType) {
+		static bool hasFieldType(IEnumerable<FieldDef> fields, TypeDef fieldType) {
 			foreach (var field in fields) {
-				if (MemberReferenceHelper.compareTypes(field.FieldType, fieldType))
+				if (new SigComparer().Equals(field.FieldSig.GetFieldType(), fieldType))
 					return true;
 			}
 			return false;
 		}
 
-		static int getOffsetMagic(MethodDefinition method) {
+		static int getOffsetMagic(MethodDef method) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 4; i++) {
 				int index = i;
@@ -517,46 +520,46 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 					continue;
 
 				var ldci4 = instrs[index++];
-				if (!DotNetUtils.isLdcI4(ldci4))
+				if (!ldci4.IsLdcI4())
 					continue;
 
 				var callvirt = instrs[index++];
 				if (callvirt.OpCode.Code != Code.Callvirt)
 					continue;
-				var calledMethod = callvirt.Operand as MethodReference;
+				var calledMethod = callvirt.Operand as IMethod;
 				if (calledMethod == null)
 					continue;
 				if (calledMethod.FullName != "System.Void System.Reflection.Emit.ILGenerator::Emit(System.Reflection.Emit.OpCode,System.Int32)")
 					continue;
 
-				if (!DotNetUtils.isLdloc(instrs[index++]))
+				if (!instrs[index++].IsLdloc())
 					continue;
 
 				var ldsfld2 = instrs[index++];
 				if (ldsfld2.OpCode.Code != Code.Ldsfld)
 					continue;
-				var field = ldsfld2.Operand as FieldReference;
+				var field = ldsfld2.Operand as IField;
 				if (field == null)
 					continue;
 				if (field.FullName != "System.Reflection.Emit.OpCode System.Reflection.Emit.OpCodes::Xor")
 					continue;
 
 				// Here if Babel.NET 5.5
-				return DotNetUtils.getLdcI4Value(ldci4);
+				return ldci4.GetLdcI4Value();
 			}
 
 			// Here if Babel.NET <= 5.0
 			return 0;
 		}
 
-		bool checkFields(TypeDefinition type, string fieldType1, TypeDefinition fieldType2) {
+		bool checkFields(TypeDef type, string fieldType1, TypeDef fieldType2) {
 			if (type.Fields.Count != 2)
 				return false;
-			if (type.Fields[0].FieldType.FullName != fieldType1 &&
-				type.Fields[1].FieldType.FullName != fieldType1)
+			if (type.Fields[0].FieldSig.GetFieldType().GetFullName() != fieldType1 &&
+				type.Fields[1].FieldSig.GetFieldType().GetFullName() != fieldType1)
 				return false;
-			if (!MemberReferenceHelper.compareTypes(type.Fields[0].FieldType, fieldType2) &&
-				!MemberReferenceHelper.compareTypes(type.Fields[1].FieldType, fieldType2))
+			if (!new SigComparer().Equals(type.Fields[0].FieldSig.GetFieldType(), fieldType2) &&
+				!new SigComparer().Equals(type.Fields[1].FieldSig.GetFieldType(), fieldType2))
 				return false;
 			return true;
 		}

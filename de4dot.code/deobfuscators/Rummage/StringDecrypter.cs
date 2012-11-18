@@ -21,25 +21,25 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Rummage {
 	class StringDecrypter {
-		ModuleDefinition module;
-		MethodDefinition stringDecrypterMethod;
+		ModuleDefMD module;
+		MethodDef stringDecrypterMethod;
 		FieldDefinitionAndDeclaringTypeDict<StringInfo> stringInfos = new FieldDefinitionAndDeclaringTypeDict<StringInfo>();
 		int fileDispl;
 		uint[] key;
 		BinaryReader reader;
 
 		class StringInfo {
-			public readonly FieldDefinition field;
+			public readonly FieldDef field;
 			public readonly int stringId;
 			public string decrypted;
 
-			public StringInfo(FieldDefinition field, int stringId) {
+			public StringInfo(FieldDef field, int stringId) {
 				this.field = field;
 				this.stringId = stringId;
 			}
@@ -51,13 +51,13 @@ namespace de4dot.code.deobfuscators.Rummage {
 			}
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return stringDecrypterMethod != null ? stringDecrypterMethod.DeclaringType : null; }
 		}
 
-		public IEnumerable<TypeDefinition> OtherTypes {
+		public IEnumerable<TypeDef> OtherTypes {
 			get {
-				var list = new List<TypeDefinition>(stringInfos.Count);
+				var list = new List<TypeDef>(stringInfos.Count);
 				foreach (var info in stringInfos.getValues())
 					list.Add(info.field.DeclaringType);
 				return list;
@@ -68,7 +68,7 @@ namespace de4dot.code.deobfuscators.Rummage {
 			get { return stringDecrypterMethod != null; }
 		}
 
-		public StringDecrypter(ModuleDefinition module) {
+		public StringDecrypter(ModuleDefMD module) {
 			this.module = module;
 		}
 
@@ -93,10 +93,10 @@ namespace de4dot.code.deobfuscators.Rummage {
 			"System.Int32",
 			"System.IO.FileStream",
 		};
-		static MethodDefinition checkType(TypeDefinition type) {
+		static MethodDef checkType(TypeDef type) {
 			if (!new FieldTypes(type).exactly(requiredFields))
 				return null;
-			var cctor = DotNetUtils.getMethod(type, ".cctor");
+			var cctor = type.FindStaticConstructor();
 			if (cctor == null)
 				return null;
 			if (!new LocalTypes(cctor).all(requiredLocals))
@@ -105,8 +105,8 @@ namespace de4dot.code.deobfuscators.Rummage {
 			return checkMethods(type);
 		}
 
-		static MethodDefinition checkMethods(TypeDefinition type) {
-			MethodDefinition cctor = null, decrypterMethod = null;
+		static MethodDef checkMethods(TypeDef type) {
+			MethodDef cctor = null, decrypterMethod = null;
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic || method.Body == null)
 					return null;
@@ -123,7 +123,7 @@ namespace de4dot.code.deobfuscators.Rummage {
 			return decrypterMethod;
 		}
 
-		static bool getDispl(MethodDefinition method, ref int displ) {
+		static bool getDispl(MethodDef method, ref int displ) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 2; i++) {
 				var mul = instrs[i];
@@ -131,14 +131,14 @@ namespace de4dot.code.deobfuscators.Rummage {
 					continue;
 
 				var ldci4 = instrs[i + 1];
-				if (!DotNetUtils.isLdcI4(ldci4))
+				if (!ldci4.IsLdcI4())
 					continue;
 
 				var sub = instrs[i + 2];
 				if (sub.OpCode.Code != Code.Sub)
 					continue;
 
-				displ = DotNetUtils.getLdcI4Value(ldci4);
+				displ = ldci4.GetLdcI4Value();
 				return true;
 			}
 
@@ -146,7 +146,7 @@ namespace de4dot.code.deobfuscators.Rummage {
 		}
 
 		public void initialize() {
-			reader = new BinaryReader(new FileStream(module.FullyQualifiedName, FileMode.Open, FileAccess.Read, FileShare.Read));
+			reader = new BinaryReader(new FileStream(module.Location, FileMode.Open, FileAccess.Read, FileShare.Read));
 			initKey();
 
 			foreach (var type in module.Types)
@@ -160,8 +160,8 @@ namespace de4dot.code.deobfuscators.Rummage {
 				key[i] = reader.ReadUInt32();
 		}
 
-		void initType(TypeDefinition type) {
-			var cctor = DotNetUtils.getMethod(type, ".cctor");
+		void initType(TypeDef type) {
+			var cctor = type.FindStaticConstructor();
 			if (cctor == null)
 				return;
 			var info = getStringInfo(cctor);
@@ -171,27 +171,27 @@ namespace de4dot.code.deobfuscators.Rummage {
 			stringInfos.add(info.field, info);
 		}
 
-		StringInfo getStringInfo(MethodDefinition method) {
+		StringInfo getStringInfo(MethodDef method) {
 			if (method == null || method.Body == null)
 				return null;
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 2; i++) {
 				var ldci4 = instrs[i];
-				if (!DotNetUtils.isLdcI4(ldci4))
+				if (!ldci4.IsLdcI4())
 					continue;
-				int stringId = DotNetUtils.getLdcI4Value(ldci4);
+				int stringId = ldci4.GetLdcI4Value();
 
 				var call = instrs[i + 1];
 				if (call.OpCode.Code != Code.Call)
 					continue;
-				var calledMethod = call.Operand as MethodReference;
-				if (!MemberReferenceHelper.compareMethodReferenceAndDeclaringType(stringDecrypterMethod, calledMethod))
+				var calledMethod = call.Operand as IMethod;
+				if (!MethodEqualityComparer.CompareDeclaringTypes.Equals(stringDecrypterMethod, calledMethod))
 					continue;
 
 				var stsfld = instrs[i + 2];
 				if (stsfld.OpCode.Code != Code.Stsfld)
 					continue;
-				var field = stsfld.Operand as FieldDefinition;
+				var field = stsfld.Operand as FieldDef;
 				if (field == null)
 					continue;
 
@@ -210,7 +210,7 @@ namespace de4dot.code.deobfuscators.Rummage {
 					if (instr.OpCode.Code != Code.Ldsfld)
 						continue;
 
-					var field = instr.Operand as FieldReference;
+					var field = instr.Operand as IField;
 					if (field == null)
 						continue;
 					var info = stringInfos.find(field);
@@ -219,7 +219,7 @@ namespace de4dot.code.deobfuscators.Rummage {
 					var decrypted = decrypt(info);
 
 					instrs[i] = new Instr(Instruction.Create(OpCodes.Ldstr, decrypted));
-					Log.v("Decrypted string: {0}", Utils.toCsharpString(decrypted));
+					Logger.v("Decrypted string: {0}", Utils.toCsharpString(decrypted));
 				}
 			}
 		}

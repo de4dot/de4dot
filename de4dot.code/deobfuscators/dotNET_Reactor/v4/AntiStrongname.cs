@@ -18,16 +18,16 @@
 */
 
 using System;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 	class AntiStrongName {
-		TypeDefinition decrypterType;
-		MethodDefinition antiStrongNameMethod;
+		TypeDef decrypterType;
+		MethodDef antiStrongNameMethod;
 
-		public AntiStrongName(TypeDefinition decrypterType) {
+		public AntiStrongName(TypeDef decrypterType) {
 			this.decrypterType = decrypterType;
 			find();
 		}
@@ -45,7 +45,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			}
 		}
 
-		bool checkType(TypeDefinition type) {
+		bool checkType(TypeDef type) {
 			var requiredTypes = new string[] {
 				"System.Byte[]",
 				"System.IO.MemoryStream",
@@ -57,13 +57,14 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
-				if (method.Parameters.Count != 2)
+				var sig = method.MethodSig;
+				if (sig == null || sig.Params.Count != 2)
 					continue;
-				if (!checkType(method.MethodReturnType.ReturnType.FullName, "System.String"))
+				if (!checkType(sig.RetType, ElementType.String))
 					continue;
-				if (!checkType(method.Parameters[0].ParameterType.FullName, "System.String"))
+				if (!checkType(sig.Params[0], ElementType.String))
 					continue;
-				if (!checkType(method.Parameters[1].ParameterType.FullName, "System.String"))
+				if (!checkType(sig.Params[1], ElementType.String))
 					continue;
 
 				var localTypes = new LocalTypes(method);
@@ -77,8 +78,8 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			return false;
 		}
 
-		static bool checkType(string type, string expectedType) {
-			return type == "System.Object" || type == expectedType;
+		static bool checkType(TypeSig type, ElementType expectedType) {
+			return type != null && (type.ElementType == ElementType.Object || type.ElementType == expectedType);
 		}
 
 		public bool remove(Blocks blocks) {
@@ -129,7 +130,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				int i = instructions.Count - NUM_INSTRS;
 				if (instructions[i].OpCode.Code != Code.Ldtoken)
 					continue;
-				if (!(instructions[i].Operand is TypeReference))
+				if (!(instructions[i].Operand is ITypeDefOrRef))
 					continue;
 				if (!checkCall(instructions[i + 1], "System.Type System.Type::GetTypeFromHandle(System.RuntimeTypeHandle)"))
 					continue;
@@ -163,19 +164,19 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		static bool checkCall(Instr instr, string methodFullName) {
 			if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt)
 				return false;
-			var calledMethod = instr.Operand as MethodReference;
+			var calledMethod = instr.Operand as IMethod;
 			if (calledMethod == null)
 				return false;
 			return calledMethod.FullName == methodFullName;
 		}
 
-		static bool checkCall(Instr instr, MethodReference expectedMethod) {
+		static bool checkCall(Instr instr, IMethod expectedMethod) {
 			if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt)
 				return false;
-			var calledMethod = instr.Operand as MethodReference;
+			var calledMethod = instr.Operand as IMethod;
 			if (calledMethod == null)
 				return false;
-			return MemberReferenceHelper.compareMethodReferenceAndDeclaringType(calledMethod, expectedMethod);
+			return MethodEqualityComparer.CompareDeclaringTypes.Equals(calledMethod, expectedMethod);
 		}
 	}
 }

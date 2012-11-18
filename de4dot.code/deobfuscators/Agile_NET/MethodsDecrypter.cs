@@ -20,11 +20,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Mono.MyStuff;
+using dot10.DotNet;
 using de4dot.PE;
 using de4dot.blocks;
 
-namespace de4dot.code.deobfuscators.CliSecure {
+namespace de4dot.code.deobfuscators.Agile_NET {
 	class CodeHeader {
 		public byte[] signature;
 		public byte[] decryptionKey;
@@ -62,7 +62,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 		}
 
 		PeImage peImage;
-		Mono.Cecil.ModuleDefinition module;
+		ModuleDefMD module;
 		CliSecureRtType csRtType;
 		CodeHeader codeHeader = new CodeHeader();
 		IDecrypter decrypter;
@@ -155,7 +155,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 
 			public Decrypter5(PeImage peImage, CodeHeader codeHeader, uint codeHeaderSize)
 				: base(peImage, codeHeader) {
-					this.codeHeaderSize = codeHeaderSize;
+				this.codeHeaderSize = codeHeaderSize;
 			}
 
 			public override MethodBodyHeader decrypt(MethodInfo methodInfo, out byte[] code, out byte[] extraSections) {
@@ -434,7 +434,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			Error,
 		}
 
-		public bool decrypt(PeImage peImage, Mono.Cecil.ModuleDefinition module, CliSecureRtType csRtType, ref DumpedMethods dumpedMethods) {
+		public bool decrypt(PeImage peImage, ModuleDefMD module, CliSecureRtType csRtType, ref DumpedMethods dumpedMethods) {
 			this.peImage = peImage;
 			this.csRtType = csRtType;
 			this.module = module;
@@ -444,9 +444,9 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			case DecryptResult.NotEncrypted: return false;
 
 			case DecryptResult.Error:
-				Log.w("Using dynamic method decryption");
+				Logger.w("Using dynamic method decryption");
 				byte[] moduleCctorBytes = getModuleCctorBytes(csRtType);
-				dumpedMethods = de4dot.code.deobfuscators.MethodsDecrypter.decrypt(module.FullyQualifiedName, moduleCctorBytes);
+				dumpedMethods = de4dot.code.deobfuscators.MethodsDecrypter.decrypt(module.Location, moduleCctorBytes);
 				return true;
 
 			default:
@@ -458,7 +458,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			var initMethod = csRtType.InitializeMethod;
 			if (initMethod == null)
 				return null;
-			uint initToken = initMethod.MetadataToken.ToUInt32();
+			uint initToken = initMethod.MDToken.ToUInt32();
 			var moduleCctorBytes = new byte[6];
 			moduleCctorBytes[0] = 0x28;	// call
 			moduleCctorBytes[1] = (byte)initToken;
@@ -542,7 +542,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 				var dm = new DumpedMethod();
 				dm.token = 0x06000001 + (uint)i;
 
-				var method = (Mono.Cecil.MethodDefinition)module.LookupToken((int)dm.token);
+				var method = (MethodDef)module.ResolveMethod(MDToken.ToRID(dm.token));
 				if (method == null || method.DeclaringType == DotNetUtils.getModuleType(module))
 					continue;
 
@@ -550,6 +550,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 				if (rva == 0)
 					continue;
 				uint bodyOffset = peImage.rvaToOffset(rva);
+				dm.mdRVA = peImage.offsetRead(offset + (uint)methodDefTable.fields[0].offset, methodDefTable.fields[0].size);
 				dm.mdImplFlags = peImage.offsetReadUInt16(offset + (uint)methodDefTable.fields[1].offset);
 				dm.mdFlags = peImage.offsetReadUInt16(offset + (uint)methodDefTable.fields[2].offset);
 				dm.mdName = peImage.offsetRead(offset + (uint)methodDefTable.fields[3].offset, methodDefTable.fields[3].size);
@@ -581,6 +582,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 				var dm = new DumpedMethod();
 				dm.token = 0x06000001 + (uint)i;
 
+				dm.mdRVA = peImage.offsetRead(offset + (uint)methodDefTable.fields[0].offset, methodDefTable.fields[0].size);
 				dm.mdImplFlags = peImage.offsetReadUInt16(offset + (uint)methodDefTable.fields[1].offset);
 				dm.mdFlags = peImage.offsetReadUInt16(offset + (uint)methodDefTable.fields[2].offset);
 				dm.mdName = peImage.offsetRead(offset + (uint)methodDefTable.fields[3].offset, methodDefTable.fields[3].size);

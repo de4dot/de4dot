@@ -21,12 +21,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
-
-// SmartAssembly can add so much junk that it's very difficult to find and remove all of it.
-// I remove some safe types that are almost guaranteed not to have any references in the code.
 
 namespace de4dot.code.deobfuscators.SmartAssembly {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
@@ -123,7 +120,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			StringFeatures = StringFeatures.AllowStaticDecryption;
 		}
 
-		public override void init(ModuleDefinition module) {
+		public override void init(ModuleDefMD module) {
 			base.init(module);
 		}
 
@@ -159,7 +156,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			}
 		}
 
-		void initializeVersion(TypeDefinition attr) {
+		void initializeVersion(TypeDef attr) {
 			var s = DotNetUtils.getCustomArgAsString(getAssemblyAttribute(attr), 0);
 			if (s == null)
 				return;
@@ -230,8 +227,8 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return -1;
 		}
 
-		TypeDefinition getTypeIdAttribute() {
-			Dictionary<TypeDefinition, bool> attrs = null;
+		TypeDef getTypeIdAttribute() {
+			Dictionary<TypeDef, bool> attrs = null;
 			int counter = 0;
 			foreach (var type in module.GetTypes()) {
 				counter++;
@@ -239,11 +236,11 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				if (cattrs.Count == 0)
 					return null;
 
-				var attrs2 = new Dictionary<TypeDefinition, bool>();
+				var attrs2 = new Dictionary<TypeDef, bool>();
 				foreach (var cattr in cattrs) {
-					if (!DotNetUtils.isMethod(cattr.Constructor, "System.Void", "(System.Int32)"))
+					if (!DotNetUtils.isMethod(cattr.Constructor as IMethod, "System.Void", "(System.Int32)"))
 						continue;
-					var attrType = cattr.AttributeType as TypeDefinition;
+					var attrType = cattr.AttributeType as TypeDef;
 					if (attrType == null)
 						continue;
 					if (attrs != null && !attrs.ContainsKey(attrType))
@@ -275,7 +272,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			foreach (var type in module.Types) {
 				if (type == moduleType)
 					continue;
-				var ns = type.Namespace;
+				var ns = type.Namespace.String;
 				if (!namespaces.ContainsKey(ns))
 					namespaces[ns] = 0;
 				if (type.Name != "" || type.IsPublic || type.HasFields || type.HasMethods || type.HasProperties || type.HasEvents)
@@ -352,7 +349,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return true;
 		}
 
-		MethodDefinition getGlobalSimpleZipTypeMethod() {
+		MethodDef getGlobalSimpleZipTypeMethod() {
 			if (assemblyResolverInfo.SimpleZipTypeMethod != null)
 				return assemblyResolverInfo.SimpleZipTypeMethod;
 			foreach (var info in stringDecrypterInfos) {
@@ -409,17 +406,18 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			foreach (var info in stringDecrypterInfos) {
 				if (initd.ContainsKey(info))
 					continue;
-				Log.v("String decrypter not initialized. Token {0:X8}", info.StringsEncodingClass.MetadataToken.ToInt32());
+				Logger.v("String decrypter not initialized. Token {0:X8}", info.StringsEncodingClass.MDToken.ToInt32());
 			}
 		}
 
 		void initStringDecrypter(StringDecrypterInfo info) {
-			Log.v("Adding string decrypter. Resource: {0}", Utils.toCsharpString(info.StringsResource.Name));
+			Logger.v("Adding string decrypter. Resource: {0}", Utils.toCsharpString(info.StringsResource.Name));
 			var decrypter = new StringDecrypter(info);
 			if (decrypter.CanDecrypt) {
-				staticStringInliner.add(DotNetUtils.getMethod(info.GetStringDelegate, "Invoke"), (method, gim, args) => {
-					var fieldDefinition = DotNetUtils.getField(module, (FieldReference)args[0]);
-					return decrypter.decrypt(fieldDefinition.MetadataToken.ToInt32(), (int)args[1]);
+				var invokeMethod = info.GetStringDelegate == null ? null : info.GetStringDelegate.FindMethod("Invoke");
+				staticStringInliner.add(invokeMethod, (method, gim, args) => {
+					var fieldDefinition = DotNetUtils.getField(module, (IField)args[0]);
+					return decrypter.decrypt(fieldDefinition.MDToken.ToInt32(), (int)args[1]);
 				});
 				staticStringInliner.add(info.StringDecrypterMethod, (method, gim, args) => {
 					return decrypter.decrypt(0, (int)args[0]);
@@ -448,11 +446,11 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			base.deobfuscateEnd();
 		}
 
-		TypeDefinition findBigType() {
+		TypeDef findBigType() {
 			if (approxVersion <= new Version(6, 5, 3, 53))
 				return null;
 
-			TypeDefinition bigType = null;
+			TypeDef bigType = null;
 			foreach (var type in module.Types) {
 				if (isBigType(type)) {
 					if (bigType == null || type.Methods.Count > bigType.Methods.Count)
@@ -462,7 +460,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return bigType;
 		}
 
-		bool isBigType(TypeDefinition type) {
+		bool isBigType(TypeDef type) {
 			if (type.Methods.Count < 50)
 				return false;
 			if (type.HasProperties || type.HasEvents)
@@ -489,14 +487,14 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			if (!options.RemoveAutomatedErrorReporting)
 				return;
 			if (automatedErrorReportingFinder.remove(blocks))
-				Log.v("Removed Automated Error Reporting code");
+				Logger.v("Removed Automated Error Reporting code");
 		}
 
 		void removeTamperProtection(Blocks blocks) {
 			if (!options.RemoveTamperProtection)
 				return;
 			if (tamperProtectionRemover.remove(blocks))
-				Log.v("Removed Tamper Protection code");
+				Logger.v("Removed Tamper Protection code");
 		}
 
 		void removeMemoryManagerStuff() {
@@ -541,7 +539,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 		public override IEnumerable<int> getStringDecrypterMethods() {
 			var list = new List<int>();
 			foreach (var method in staticStringInliner.Methods)
-				list.Add(method.MetadataToken.ToInt32());
+				list.Add(method.MDToken.ToInt32());
 			return list;
 		}
 	}

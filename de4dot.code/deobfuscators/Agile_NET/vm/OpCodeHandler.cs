@@ -21,11 +21,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using de4dot.blocks;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using Mono.Cecil.Metadata;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 
-namespace de4dot.code.deobfuscators.CliSecure.vm {
+namespace de4dot.code.deobfuscators.Agile_NET.vm {
 	partial class OpCodeHandler {
 		public string Name { get; set; }
 		public OpCodeHandlerSigInfo OpCodeHandlerSigInfo { get; set; }
@@ -248,7 +247,7 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 			new InstructionInfo2 { First = false, Second = true, Value = 12, OpCode = OpCodes.Stelem_R4 },
 			new InstructionInfo2 { First = false, Second = true, Value = 13, OpCode = OpCodes.Stelem_R8 },
 			new InstructionInfo2 { First = false, Second = true, Value = 28, OpCode = OpCodes.Stelem_Ref },
-			new InstructionInfo2 { First = false, Second = false, Value = 0, OpCode = OpCodes.Stelem_Any },
+			new InstructionInfo2 { First = false, Second = false, Value = 0, OpCode = OpCodes.Stelem },
 
 			new InstructionInfo2 { First = true, Second = true, Value = 24, OpCode = OpCodes.Ldelem_I },
 			new InstructionInfo2 { First = true, Second = true, Value = 4, OpCode = OpCodes.Ldelem_I1 },
@@ -261,7 +260,7 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 			new InstructionInfo2 { First = true, Second = true, Value = 12, OpCode = OpCodes.Ldelem_R4 },
 			new InstructionInfo2 { First = true, Second = true, Value = 13, OpCode = OpCodes.Ldelem_R8 },
 			new InstructionInfo2 { First = true, Second = true, Value = 28, OpCode = OpCodes.Ldelem_Ref },
-			new InstructionInfo2 { First = true, Second = false, Value = 0, OpCode = OpCodes.Ldelem_Any },
+			new InstructionInfo2 { First = true, Second = false, Value = 0, OpCode = OpCodes.Ldelem },
 		};
 		static Instruction ldelem_read(BinaryReader reader) {
 			Instruction instr = null;
@@ -392,7 +391,7 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 
 		static Instruction ldc_read(BinaryReader reader) {
 			switch ((ElementType)reader.ReadByte()) {
-			case ElementType.I4: return DotNetUtils.createLdci4(reader.ReadInt32());
+			case ElementType.I4: return Instruction.CreateLdcI4(reader.ReadInt32());
 			case ElementType.I8: return Instruction.Create(OpCodes.Ldc_I8, reader.ReadInt64());
 			case ElementType.R4: return Instruction.Create(OpCodes.Ldc_R4, reader.ReadSingle());
 			case ElementType.R8: return Instruction.Create(OpCodes.Ldc_R8, reader.ReadDouble());
@@ -439,7 +438,7 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 			return isEmptyMethod(info.ReadMethod) && isEmptyMethod(info.ExecuteMethod);
 		}
 
-		static bool isEmptyMethod(MethodDefinition method) {
+		static bool isEmptyMethod(MethodDef method) {
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code == Code.Ret)
 					return true;
@@ -463,7 +462,7 @@ namespace de4dot.code.deobfuscators.CliSecure.vm {
 		}
 
 		static bool rethrow_check(UnknownHandlerInfo info) {
-			return info.ExecuteMethod.Body.Variables.Count == 0;
+			return info.ExecuteMethod.Body.LocalList.Count == 0;
 		}
 
 		static Instruction rethrow_read(BinaryReader reader) {

@@ -18,8 +18,8 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 
 namespace de4dot.blocks.cflow {
 	public class CflowDeobfuscator : ICflowDeobfuscator {
@@ -32,18 +32,18 @@ namespace de4dot.blocks.cflow {
 			cflowDeobfuscator.add(blocksDeobfuscator);
 		}
 
-		public void deobfuscate(MethodDefinition method) {
+		public void deobfuscate(MethodDef method) {
 			deobfuscate(method, (blocks) => {
 				cflowDeobfuscator.init(blocks);
 				cflowDeobfuscator.deobfuscate();
 			});
 		}
 
-		static bool hasNonEmptyBody(MethodDefinition method) {
+		static bool hasNonEmptyBody(MethodDef method) {
 			return method.Body != null && method.Body.Instructions.Count > 0;
 		}
 
-		void deobfuscate(MethodDefinition method, Action<Blocks> handler) {
+		void deobfuscate(MethodDef method, Action<Blocks> handler) {
 			if (hasNonEmptyBody(method)) {
 				var blocks = new Blocks(method);
 

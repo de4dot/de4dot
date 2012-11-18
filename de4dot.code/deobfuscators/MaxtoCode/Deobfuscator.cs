@@ -20,8 +20,8 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Mono.Cecil;
-using Mono.MyStuff;
+using dot10.DotNet;
+using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.MaxtoCode {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
@@ -115,11 +115,12 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			return true;
 		}
 
-		public override IDeobfuscator moduleReloaded(ModuleDefinition module) {
+		public override IDeobfuscator moduleReloaded(ModuleDefMD module) {
 			var newOne = new Deobfuscator(options);
 			newOne.setModule(module);
 			newOne.mainType = new MainType(module, mainType);
 			newOne.decrypterInfo = decrypterInfo;
+			newOne.decrypterInfo.mainType = newOne.mainType;
 			return newOne;
 		}
 
@@ -137,7 +138,6 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			foreach (var method in mainType.InitMethods)
 				addCctorInitCallToBeRemoved(method);
 			addTypeToBeRemoved(mainType.Type, "Obfuscator type");
-			addModuleReferencesToBeRemoved(mainType.ModuleReferences, "MC runtime module reference");
 			removeDuplicateEmbeddedResources();
 		}
 
@@ -146,7 +146,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				return Encoding.GetEncoding(cp);
 			}
 			catch {
-				Log.w("Invalid code page {0}!", cp);
+				Logger.w("Invalid code page {0}!", cp);
 				return Encoding.Default;
 			}
 		}
@@ -159,18 +159,22 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			}
 
 			public override int GetHashCode() {
-				return resource._GetHashCode();
+				int hash = 0;
+				hash ^= (int)resource.Data.Position;
+				hash ^= (int)resource.Data.Length;
+				return hash;
 			}
 
 			public override bool Equals(object obj) {
 				var other = obj as ResourceKey;
 				if (other == null)
 					return false;
-				return resource._Equals(other.resource);
+				return resource.Data.FileOffset == other.resource.Data.FileOffset &&
+					resource.Data.Length == other.resource.Data.Length;
 			}
 
 			public override string ToString() {
-				return resource.Name;
+				return resource.Name.String;
 			}
 		}
 
@@ -180,7 +184,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				var rsrc = tmp as EmbeddedResource;
 				if (rsrc == null)
 					continue;
-				if (rsrc.Offset == null)
+				if (rsrc.Data.FileOffset == 0)
 					continue;
 				List<EmbeddedResource> list;
 				var key = new ResourceKey(rsrc);
@@ -195,7 +199,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 
 				EmbeddedResource resourceToKeep = null;
 				foreach (var rsrc in list) {
-					if (string.IsNullOrEmpty(rsrc.Name))
+					if (UTF8String.IsNullOrEmpty(rsrc.Name))
 						continue;
 
 					resourceToKeep = rsrc;
@@ -215,7 +219,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		public override IEnumerable<int> getStringDecrypterMethods() {
 			var list = new List<int>();
 			if (stringDecrypter != null && stringDecrypter.Detected)
-				list.Add(stringDecrypter.Method.MetadataToken.ToInt32());
+				list.Add(stringDecrypter.Method.MDToken.ToInt32());
 			return list;
 		}
 	}

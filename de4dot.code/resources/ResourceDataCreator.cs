@@ -22,15 +22,15 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
-using Mono.Cecil;
+using dot10.DotNet;
 
 namespace de4dot.code.resources {
 	class ResourceDataCreator {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		Dictionary<string, UserResourceType> dict = new Dictionary<string, UserResourceType>(StringComparer.Ordinal);
 		Dictionary<string, string> asmNameToAsmFullName = new Dictionary<string, string>(StringComparer.Ordinal);
 
-		public ResourceDataCreator(ModuleDefinition module) {
+		public ResourceDataCreator(ModuleDefMD module) {
 			this.module = module;
 		}
 
@@ -210,24 +210,17 @@ namespace de4dot.code.resources {
 		string tryGetRealAssemblyName(string assemblyName) {
 			var simpleName = Utils.getAssemblySimpleName(assemblyName);
 
-			foreach (var asmRef in module.AssemblyReferences) {
-				if (asmRef.Name == simpleName)
-					return asmRef.FullName;
-			}
+			var asmRef = module.GetAssemblyRef(simpleName);
+			if (asmRef != null)
+				return asmRef.FullName;
 
-			try {
-				return AssemblyResolver.Instance.Resolve(simpleName).FullName;
-			}
-			catch (ResolutionException) {
-			}
-			catch (AssemblyResolutionException) {
-			}
-			return null;
+			var asm = TheAssemblyResolver.Instance.Resolve(new AssemblyNameInfo(simpleName), module);
+			return asm == null ? null : asm.FullName;
 		}
 
 		public List<UserResourceType> getSortedTypes() {
 			var list = new List<UserResourceType>(dict.Values);
-			list.Sort((a, b) => Utils.compareInt32((int)a.Code, (int)b.Code));
+			list.Sort((a, b) => ((int)a.Code).CompareTo((int)b.Code));
 			return list;
 		}
 	}

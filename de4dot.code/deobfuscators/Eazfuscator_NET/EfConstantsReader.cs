@@ -17,13 +17,12 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.Cecil;
-using Mono.Cecil.Metadata;
+using dot10.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 	class EfConstantsReader : ConstantsReader {
-		public EfConstantsReader(MethodDefinition method)
+		public EfConstantsReader(MethodDef method)
 			: base(method) {
 			initialize();
 		}
@@ -38,10 +37,10 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				if (!getInt32(ref index, out value))
 					break;
 				var stloc = instructions[index];
-				if (!DotNetUtils.isStloc(stloc))
+				if (!stloc.IsStloc())
 					break;
-				var local = DotNetUtils.getLocalVar(locals, stloc);
-				if (local == null || local.VariableType.EType != ElementType.I4)
+				var local = stloc.GetLocal(locals);
+				if (local == null || local.Type.GetElementType() != ElementType.I4)
 					break;
 				localsValuesInt32[local] = value;
 				index++;

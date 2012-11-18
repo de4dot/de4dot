@@ -18,27 +18,27 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators {
 	class UnusedMethodsFinder {
-		ModuleDefinition module;
+		ModuleDef module;
 		MethodCollection removedMethods;
-		Dictionary<MethodDefinition, bool> possiblyUnusedMethods = new Dictionary<MethodDefinition, bool>();
-		Stack<MethodDefinition> notUnusedStack = new Stack<MethodDefinition>();
+		Dictionary<MethodDef, bool> possiblyUnusedMethods = new Dictionary<MethodDef, bool>();
+		Stack<MethodDef> notUnusedStack = new Stack<MethodDef>();
 
-		public UnusedMethodsFinder(ModuleDefinition module, IEnumerable<MethodDefinition> possiblyUnusedMethods, MethodCollection removedMethods) {
+		public UnusedMethodsFinder(ModuleDef module, IEnumerable<MethodDef> possiblyUnusedMethods, MethodCollection removedMethods) {
 			this.module = module;
 			this.removedMethods = removedMethods;
 			foreach (var method in possiblyUnusedMethods) {
-				if (method != module.EntryPoint && !removedMethods.exists(method))
+				if (method != module.ManagedEntryPoint && !removedMethods.exists(method))
 					this.possiblyUnusedMethods[method] = true;
 			}
 		}
 
-		public IEnumerable<MethodDefinition> find() {
+		public IEnumerable<MethodDef> find() {
 			if (possiblyUnusedMethods.Count == 0)
 				return possiblyUnusedMethods.Keys;
 
@@ -57,7 +57,7 @@ namespace de4dot.code.deobfuscators {
 			return possiblyUnusedMethods.Keys;
 		}
 
-		void check(MethodDefinition method) {
+		void check(MethodDef method) {
 			if (method.Body == null)
 				return;
 			if (possiblyUnusedMethods.ContainsKey(method))
@@ -79,7 +79,7 @@ namespace de4dot.code.deobfuscators {
 					continue;
 				}
 
-				var calledMethod = DotNetUtils.getMethod2(module, instr.Operand as MethodReference);
+				var calledMethod = DotNetUtils.getMethod2(module, instr.Operand as IMethod);
 				if (calledMethod == null)
 					continue;
 				if (possiblyUnusedMethods.ContainsKey(calledMethod))

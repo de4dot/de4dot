@@ -19,8 +19,7 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.MyStuff;
+using dot10.DotNet;
 using de4dot.blocks;
 using de4dot.PE;
 
@@ -115,7 +114,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			return newFileData != null;
 		}
 
-		public override IDeobfuscator moduleReloaded(ModuleDefinition module) {
+		public override IDeobfuscator moduleReloaded(ModuleDefMD module) {
 			var newOne = new Deobfuscator(options);
 			newOne.setModule(module);
 			newOne.proxyCallFixer = new ProxyCallFixer(module);
@@ -173,7 +172,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 		public override IEnumerable<int> getStringDecrypterMethods() {
 			var list = new List<int>();
 			if (stringDecrypter.Method != null)
-				list.Add(stringDecrypter.Method.MetadataToken.ToInt32());
+				list.Add(stringDecrypter.Method.MDToken.ToInt32());
 			return list;
 		}
 	}

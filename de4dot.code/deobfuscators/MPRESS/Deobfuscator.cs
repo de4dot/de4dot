@@ -21,8 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
-using Mono.Cecil;
-using Mono.MyStuff;
+using dot10.DotNet;
 using de4dot.PE;
 using de4dot.blocks;
 
@@ -168,8 +167,8 @@ namespace de4dot.code.deobfuscators.MPRESS {
 			return Version.Unknown;
 		}
 
-		static bool checkMethods(TypeDefinition type, MethodInfo[] requiredMethods) {
-			var methods = new List<MethodDefinition>(type.Methods);
+		static bool checkMethods(TypeDef type, MethodInfo[] requiredMethods) {
+			var methods = new List<MethodDef>(type.Methods);
 			foreach (var info in requiredMethods) {
 				if (!checkMethod(methods, info))
 					return false;
@@ -177,7 +176,7 @@ namespace de4dot.code.deobfuscators.MPRESS {
 			return methods.Count == 0;
 		}
 
-		static bool checkMethod(List<MethodDefinition> methods, MethodInfo info) {
+		static bool checkMethod(List<MethodDef> methods, MethodInfo info) {
 			foreach (var method in methods) {
 				if (info.name != null && info.name != method.Name)
 					continue;
@@ -232,7 +231,7 @@ namespace de4dot.code.deobfuscators.MPRESS {
 			return true;
 		}
 
-		public override IDeobfuscator moduleReloaded(ModuleDefinition module) {
+		public override IDeobfuscator moduleReloaded(ModuleDefMD module) {
 			var newOne = new Deobfuscator(options);
 			newOne.setModule(module);
 			return newOne;
@@ -252,7 +251,7 @@ namespace de4dot.code.deobfuscators.MPRESS {
 									BitConverter.ToInt16(hash, 6),
 									hash[8], hash[9], hash[10], hash[11],
 									hash[12], hash[13], hash[14], hash[15]);
-				Log.v("Updating MVID: {0}", guid.ToString("B"));
+				Logger.v("Updating MVID: {0}", guid.ToString("B"));
 				module.Mvid = guid;
 			}
 		}

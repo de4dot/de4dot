@@ -19,8 +19,8 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 
 namespace de4dot.code.deobfuscators {
 	class StringCounts {
@@ -66,37 +66,40 @@ namespace de4dot.code.deobfuscators {
 	}
 
 	class FieldTypes : StringCounts {
-		public FieldTypes(TypeDefinition type) {
+		public FieldTypes(TypeDef type) {
 			init(type.Fields);
 		}
 
-		public FieldTypes(IEnumerable<FieldDefinition> fields) {
+		public FieldTypes(IEnumerable<FieldDef> fields) {
 			init(fields);
 		}
 
-		void init(IEnumerable<FieldDefinition> fields) {
+		void init(IEnumerable<FieldDef> fields) {
 			if (fields == null)
 				return;
-			foreach (var field in fields)
-				add(field.FieldType.FullName);
+			foreach (var field in fields) {
+				var type = field.FieldSig.GetFieldType();
+				if (type != null)
+					add(type.FullName);
+			}
 		}
 	}
 
 	class LocalTypes : StringCounts {
-		public LocalTypes(MethodDefinition method) {
+		public LocalTypes(MethodDef method) {
 			if (method != null && method.Body != null)
-				init(method.Body.Variables);
+				init(method.Body.LocalList);
 		}
 
-		public LocalTypes(IEnumerable<VariableDefinition> locals) {
+		public LocalTypes(IEnumerable<Local> locals) {
 			init(locals);
 		}
 
-		void init(IEnumerable<VariableDefinition> locals) {
+		void init(IEnumerable<Local> locals) {
 			if (locals == null)
 				return;
 			foreach (var local in locals)
-				add(local.VariableType.FullName);
+				add(local.Type.FullName);
 		}
 	}
 }

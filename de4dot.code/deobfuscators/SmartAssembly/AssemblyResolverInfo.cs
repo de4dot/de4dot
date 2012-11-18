@@ -20,8 +20,8 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.SmartAssembly {
@@ -38,7 +38,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return assemblyName ?? base.ToString();
 		}
 
-		public static EmbeddedAssemblyInfo create(ModuleDefinition module, string encName, string rsrcName) {
+		public static EmbeddedAssemblyInfo create(ModuleDefMD module, string encName, string rsrcName) {
 			var info = new EmbeddedAssemblyInfo();
 
 			try {
@@ -71,10 +71,10 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 	}
 
 	class AssemblyResolverInfo : ResolverInfoBase {
-		MethodDefinition simpleZipTypeMethod;
+		MethodDef simpleZipTypeMethod;
 		List<EmbeddedAssemblyInfo> embeddedAssemblyInfos = new List<EmbeddedAssemblyInfo>();
 
-		public MethodDefinition SimpleZipTypeMethod {
+		public MethodDef SimpleZipTypeMethod {
 			get { return simpleZipTypeMethod; }
 		}
 
@@ -82,7 +82,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			get { return embeddedAssemblyInfos; }
 		}
 
-		public AssemblyResolverInfo(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob)
+		public AssemblyResolverInfo(ModuleDefMD module, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob)
 			: base(module, simpleDeobfuscator, deob) {
 		}
 
@@ -100,7 +100,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return ok;
 		}
 
-		protected override bool checkResolverType(TypeDefinition type) {
+		protected override bool checkResolverType(TypeDef type) {
 			if (DotNetUtils.findFieldType(type, "System.Collections.Hashtable", true) != null)
 				return true;
 
@@ -114,7 +114,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return true;
 		}
 
-		protected override bool checkHandlerMethod(MethodDefinition method) {
+		protected override bool checkHandlerMethod(MethodDef method) {
 			if (!method.IsStatic || !method.HasBody)
 				return false;
 
@@ -145,22 +145,22 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				list.Add(info);
 			}
 
-			Log.v("Found embedded assemblies:");
-			Log.indent();
+			Logger.v("Found embedded assemblies:");
+			Logger.Instance.indent();
 			foreach (var info in list)
-				Log.v("{0}", info.assemblyName);
-			Log.deIndent();
+				Logger.v("{0}", info.assemblyName);
+			Logger.Instance.deIndent();
 
 			return true;
 		}
 
-		void findSimpleZipType(MethodDefinition method) {
+		void findSimpleZipType(MethodDef method) {
 			if (method == null || !method.HasBody)
 				return;
 			foreach (var call in method.Body.Instructions) {
 				if (call.OpCode.Code != Code.Call)
 					continue;
-				var calledMethod = call.Operand as MethodReference;
+				var calledMethod = call.Operand as IMethod;
 				if (calledMethod == null)
 					continue;
 				if (!SimpleZipInfo.isSimpleZipDecryptMethod_QuickCheck(module, calledMethod, out simpleZipTypeMethod))

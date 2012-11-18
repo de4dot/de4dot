@@ -19,8 +19,6 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
 
 namespace de4dot.blocks {
 	// This class makes sure that each block that is entered with a non-empty stack has at
@@ -52,7 +50,7 @@ namespace de4dot.blocks {
 
 				int stack = stackStart;
 				foreach (var instr in block.Instructions)
-					DotNetUtils.updateStack(instr.Instruction, ref stack, false);
+					instr.Instruction.UpdateStack(ref stack, false);
 				stackEnd = stack;
 			}
 		}

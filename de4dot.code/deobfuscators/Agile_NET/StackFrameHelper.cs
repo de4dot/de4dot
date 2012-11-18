@@ -18,16 +18,16 @@
 */
 
 using System;
-using Mono.Cecil;
+using dot10.DotNet;
 using de4dot.blocks;
 
-namespace de4dot.code.deobfuscators.CliSecure {
+namespace de4dot.code.deobfuscators.Agile_NET {
 	class StackFrameHelper {
-		ModuleDefinition module;
-		TypeDefinition stackFrameHelperType;
+		ModuleDefMD module;
+		TypeDef stackFrameHelperType;
 		ExceptionLoggerRemover exceptionLoggerRemover = new ExceptionLoggerRemover();
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return stackFrameHelperType; }
 		}
 
@@ -35,7 +35,7 @@ namespace de4dot.code.deobfuscators.CliSecure {
 			get { return exceptionLoggerRemover; }
 		}
 
-		public StackFrameHelper(ModuleDefinition module) {
+		public StackFrameHelper(ModuleDefMD module) {
 			this.module = module;
 		}
 
@@ -46,19 +46,18 @@ namespace de4dot.code.deobfuscators.CliSecure {
 				if (type.Methods.Count > 3)
 					continue;
 
-				MethodDefinition errorMethod = null;
+				MethodDef errorMethod = null;
 				foreach (var method in type.Methods) {
-					if (method.IsRuntimeSpecialName && method.Name == ".ctor" && !method.HasParameters)
+					if (method.Name == ".ctor")
 						continue;	// .ctor is allowed
-					if (method.IsRuntimeSpecialName && method.Name == ".cctor" && !method.HasParameters)
+					if (method.Name == ".cctor")
 						continue;	// .cctor is allowed
-					if (method.IsStatic && method.CallingConvention == MethodCallingConvention.Default &&
-						method.ExplicitThis == false && method.HasThis == false &&
-						method.HasBody && method.IsManaged && method.IsIL && method.HasParameters &&
-						method.Parameters.Count == 2 && !method.HasGenericParameters &&
+					var sig = method.MethodSig;
+					if (sig != null && method.IsStatic && method.HasBody &&
+						sig.Params.Count == 2 && !method.HasGenericParameters &&
 						!DotNetUtils.hasReturnValue(method) &&
-						method.Parameters[0].ParameterType.FullName == "System.Exception" &&
-						method.Parameters[1].ParameterType.FullName == "System.Object[]") {
+						sig.Params[0].GetFullName() == "System.Exception" &&
+						sig.Params[1].GetFullName() == "System.Object[]") {
 						errorMethod = method;
 					}
 					else

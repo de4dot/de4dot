@@ -25,21 +25,21 @@ using System.Reflection.Emit;
 using System.Text;
 
 namespace de4dot.code.deobfuscators.CodeFort {
-	interface IType {
+	interface ICFType {
 		Type get(SerializedTypes serializedTypes);
 	}
 
 	static class ITypeCreator {
-		public static IType create(string name) {
+		public static ICFType create(string name) {
 			return new StringType(name);
 		}
 
-		public static IType create(Type type) {
+		public static ICFType create(Type type) {
 			return new ExistingType(type);
 		}
 	}
 
-	class StringType : IType {
+	class StringType : ICFType {
 		readonly string name;
 
 		public StringType(string name) {
@@ -55,7 +55,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 		}
 	}
 
-	class ExistingType : IType {
+	class ExistingType : ICFType {
 		readonly Type type;
 
 		public ExistingType(Type type) {
@@ -71,19 +71,19 @@ namespace de4dot.code.deobfuscators.CodeFort {
 		}
 	}
 
-	class GenericType : IType {
-		IType type;
-		IType[] genericArgs;
+	class GenericType : ICFType {
+		ICFType type;
+		ICFType[] genericArgs;
 
-		public GenericType(string type, IType[] genericArgs)
+		public GenericType(string type, ICFType[] genericArgs)
 			: this(ITypeCreator.create(type), genericArgs) {
 		}
 
-		public GenericType(Type type, IType[] genericArgs)
+		public GenericType(Type type, ICFType[] genericArgs)
 			: this(ITypeCreator.create(type), genericArgs) {
 		}
 
-		public GenericType(IType type, IType[] genericArgs) {
+		public GenericType(ICFType type, ICFType[] genericArgs) {
 			this.type = type;
 			this.genericArgs = genericArgs;
 		}
@@ -129,8 +129,8 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			: this(ITypeCreator.create(type)) {
 		}
 
-		public ListType(IType type)
-			: base(typeof(List<>), new IType[] { type }) {
+		public ListType(ICFType type)
+			: base(typeof(List<>), new ICFType[] { type }) {
 		}
 	}
 
@@ -153,7 +153,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 	}
 
 	class TypeInfo : TypeInfoBase {
-		public readonly IType baseType;
+		public readonly ICFType baseType;
 		public readonly TypeFieldInfo[] fieldInfos;
 
 		public TypeInfo(string name, string dcName, TypeFieldInfo[] fieldInfos)
@@ -164,11 +164,11 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			: this(ITypeCreator.create(typeof(object)), name, dcNamespace, dcName, fieldInfos) {
 		}
 
-		public TypeInfo(IType baseType, string name, string dcName, TypeFieldInfo[] fieldInfos)
+		public TypeInfo(ICFType baseType, string name, string dcName, TypeFieldInfo[] fieldInfos)
 			: this(baseType, name, "", dcName, fieldInfos) {
 		}
 
-		public TypeInfo(IType baseType, string name, string dcNamespace, string dcName, TypeFieldInfo[] fieldInfos)
+		public TypeInfo(ICFType baseType, string name, string dcNamespace, string dcName, TypeFieldInfo[] fieldInfos)
 			: base(name, dcNamespace, dcName) {
 			this.baseType = baseType;
 			this.fieldInfos = fieldInfos;
@@ -176,7 +176,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 	}
 
 	class TypeFieldInfo {
-		public readonly IType type;
+		public readonly ICFType type;
 		public readonly string name;
 		public readonly string dmName;
 
@@ -188,7 +188,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			: this(ITypeCreator.create(type), name, dmName) {
 		}
 
-		public TypeFieldInfo(IType type, string name, string dmName) {
+		public TypeFieldInfo(ICFType type, string name, string dmName) {
 			this.type = type;
 			this.name = name;
 			this.dmName = dmName;
