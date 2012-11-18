@@ -171,6 +171,7 @@ namespace de4dot.code {
 		}
 
 		void loadModule(IEnumerable<IDeobfuscator> deobfuscators) {
+			ModuleDefMD oldModule = module;
 			try {
 				module = assemblyModule.load();
 			}
@@ -178,6 +179,10 @@ namespace de4dot.code {
 				if (!unpackNativeImage(deobfuscators))
 					throw new BadImageFormatException();
 				Logger.v("Unpacked native file");
+			}
+			finally {
+				if (oldModule != null)
+					oldModule.Dispose();
 			}
 		}
 
@@ -194,12 +199,17 @@ namespace de4dot.code {
 				if (unpackedData == null)
 					continue;
 
+				var oldModule = module;
 				try {
 					module = assemblyModule.load(unpackedData);
 				}
 				catch {
 					Logger.w("Could not load unpacked data. File: {0}, deobfuscator: {0}", peImage.FileName ?? "(unknown filename)", deob.TypeLong);
 					continue;
+				}
+				finally {
+					if (oldModule != null)
+						oldModule.Dispose();
 				}
 				this.deob = deob;
 				return true;
@@ -372,8 +382,10 @@ namespace de4dot.code {
 		void reloadModule(byte[] newModuleData, DumpedMethods dumpedMethods) {
 			Logger.v("Reloading decrypted assembly (original filename: {0})", Filename);
 			simpleDeobfuscatorFlags.Clear();
-			module = assemblyModule.reload(newModuleData, createDumpedMethodsRestorer(dumpedMethods), deob as IStringDecrypter);
-			deob = deob.moduleReloaded(module);
+			using (var oldModule = module) {
+				module = assemblyModule.reload(newModuleData, createDumpedMethodsRestorer(dumpedMethods), deob as IStringDecrypter);
+				deob = deob.moduleReloaded(module);
+			}
 			initializeDeobfuscator();
 			deob.DeobfuscatedFile = this;
 			updateDynamicStringInliner();
