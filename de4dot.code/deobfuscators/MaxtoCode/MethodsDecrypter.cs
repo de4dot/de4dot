@@ -21,8 +21,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Mono.MyStuff;
 using de4dot.PE;
+using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.MaxtoCode {
 	// Decrypts methods, resources and strings (#US heap)

@@ -52,8 +52,8 @@ namespace de4dot.cui {
 				new de4dot.code.deobfuscators.Goliath_NET.DeobfuscatorInfo(),
 #if PORT
 				new de4dot.code.deobfuscators.ILProtector.DeobfuscatorInfo(),
-				new de4dot.code.deobfuscators.MaxtoCode.DeobfuscatorInfo(),
 #endif
+				new de4dot.code.deobfuscators.MaxtoCode.DeobfuscatorInfo(),
 				new de4dot.code.deobfuscators.MPRESS.DeobfuscatorInfo(),
 				new de4dot.code.deobfuscators.Rummage.DeobfuscatorInfo(),
 				new de4dot.code.deobfuscators.Skater_NET.DeobfuscatorInfo(),

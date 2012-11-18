@@ -24,9 +24,8 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.MaxtoCode {
 	class MainType {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		TypeDef mcType;
-		ModuleReference mcModule1, mcModule2;
 		bool isOld;
 
 		public bool IsOld {
@@ -35,17 +34,6 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 
 		public TypeDef Type {
 			get { return mcType; }
-		}
-
-		public IEnumerable<ModuleReference> ModuleReferences {
-			get {
-				var list = new List<ModuleReference>();
-				if (mcModule1 != null)
-					list.Add(mcModule1);
-				if (mcModule2 != null)
-					list.Add(mcModule2);
-				return list;
-			}
 		}
 
 		public IEnumerable<MethodDef> InitMethods {
@@ -65,15 +53,13 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			get { return mcType != null; }
 		}
 
-		public MainType(ModuleDefinition module) {
+		public MainType(ModuleDefMD module) {
 			this.module = module;
 		}
 
-		public MainType(ModuleDefinition module, MainType oldOne) {
+		public MainType(ModuleDefMD module, MainType oldOne) {
 			this.module = module;
 			this.mcType = lookup(oldOne.mcType, "Could not find main type");
-			this.mcModule1 = DeobUtils.lookup(module, oldOne.mcModule1, "Could not find MC runtime module ref #1");
-			this.mcModule2 = DeobUtils.lookup(module, oldOne.mcModule2, "Could not find MC runtime module ref #2");
 		}
 
 		T lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
@@ -94,14 +80,12 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				if (!DotNetUtils.isMethod(method, "System.Void", "()"))
 					continue;
 
-				ModuleReference module1, module2;
+				ModuleRef module1, module2;
 				bool isOldTmp;
 				if (!checkType(method.DeclaringType, out module1, out module2, out isOldTmp))
 					continue;
 
 				mcType = method.DeclaringType;
-				mcModule1 = module1;
-				mcModule2 = module2;
 				isOld = isOldTmp;
 				return true;
 			}
@@ -109,11 +93,11 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			return false;
 		}
 
-		static bool checkType(TypeDef type, out ModuleReference module1, out ModuleReference module2, out bool isOld) {
+		static bool checkType(TypeDef type, out ModuleRef module1, out ModuleRef module2, out bool isOld) {
 			module1 = module2 = null;
 			isOld = false;
 
-			if (DotNetUtils.getMethod(type, "Startup") == null)
+			if (type.FindMethod("Startup") == null)
 				return false;
 
 			var pinvokes = getPinvokes(type);
@@ -126,20 +110,20 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			// Newer versions (3.4+ ???) also have GetModuleBase()
 			isOld = getPinvokeList(pinvokes, "GetModuleBase") == null;
 
-			module1 = pinvokeList[0].PInvokeInfo.Module;
-			module2 = pinvokeList[1].PInvokeInfo.Module;
+			module1 = pinvokeList[0].ImplMap.Module;
+			module2 = pinvokeList[1].ImplMap.Module;
 			return true;
 		}
 
 		static Dictionary<string, List<MethodDef>> getPinvokes(TypeDef type) {
 			var pinvokes = new Dictionary<string, List<MethodDef>>(StringComparer.Ordinal);
 			foreach (var method in type.Methods) {
-				var info = method.PInvokeInfo;
-				if (info == null || info.EntryPoint == null)
+				var info = method.ImplMap;
+				if (info == null || UTF8String.IsNullOrEmpty(info.Name))
 					continue;
 				List<MethodDef> list;
-				if (!pinvokes.TryGetValue(info.EntryPoint, out list))
-					pinvokes[info.EntryPoint] = list = new List<MethodDef>();
+				if (!pinvokes.TryGetValue(info.Name.String, out list))
+					pinvokes[info.Name.String] = list = new List<MethodDef>();
 				list.Add(method);
 			}
 			return pinvokes;
