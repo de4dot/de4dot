@@ -17,25 +17,25 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 
 namespace de4dot.code.deobfuscators.Confuser {
 	static class ConstantsDecrypterUtils {
-		public static FieldDefinition findDictField(MethodDefinition method, TypeDefinition declaringType) {
+		public static FieldDef findDictField(MethodDef method, TypeDef declaringType) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 1; i++) {
 				var newobj = instrs[i];
 				if (newobj.OpCode.Code != Code.Newobj)
 					continue;
-				var ctor = newobj.Operand as MethodReference;
+				var ctor = newobj.Operand as IMethod;
 				if (ctor == null || ctor.FullName != "System.Void System.Collections.Generic.Dictionary`2<System.UInt32,System.Object>::.ctor()")
 					continue;
 
 				var stsfld = instrs[i + 1];
 				if (stsfld.OpCode.Code != Code.Stsfld)
 					continue;
-				var field = stsfld.Operand as FieldDefinition;
+				var field = stsfld.Operand as FieldDef;
 				if (field == null || field.DeclaringType != declaringType)
 					continue;
 				if (field.FieldType.FullName != "System.Collections.Generic.Dictionary`2<System.UInt32,System.Object>")
@@ -46,20 +46,20 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return null;
 		}
 
-		public static FieldDefinition findDataField(MethodDefinition method, TypeDefinition declaringType) {
+		public static FieldDef findDataField(MethodDef method, TypeDef declaringType) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 1; i++) {
 				var callvirt = instrs[i];
 				if (callvirt.OpCode.Code != Code.Callvirt)
 					continue;
-				var calledMethod = callvirt.Operand as MethodReference;
+				var calledMethod = callvirt.Operand as IMethod;
 				if (calledMethod == null || calledMethod.FullName != "System.Byte[] System.IO.MemoryStream::ToArray()")
 					continue;
 
 				var stsfld = instrs[i + 1];
 				if (stsfld.OpCode.Code != Code.Stsfld)
 					continue;
-				var field = stsfld.Operand as FieldDefinition;
+				var field = stsfld.Operand as FieldDef;
 				if (field == null || field.DeclaringType != declaringType)
 					continue;
 				if (field.FieldType.FullName != "System.Byte[]")
@@ -70,28 +70,28 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return null;
 		}
 
-		public static FieldDefinition findStreamField(MethodDefinition method, TypeDefinition declaringType) {
+		public static FieldDef findStreamField(MethodDef method, TypeDef declaringType) {
 			return findStreamField(method, declaringType, "System.IO.Stream");
 		}
 
-		public static FieldDefinition findMemoryStreamField(MethodDefinition method, TypeDefinition declaringType) {
+		public static FieldDef findMemoryStreamField(MethodDef method, TypeDef declaringType) {
 			return findStreamField(method, declaringType, "System.IO.MemoryStream");
 		}
 
-		public static FieldDefinition findStreamField(MethodDefinition method, TypeDefinition declaringType, string fieldTypeName) {
+		public static FieldDef findStreamField(MethodDef method, TypeDef declaringType, string fieldTypeName) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 1; i++) {
 				var newobj = instrs[i];
 				if (newobj.OpCode.Code != Code.Newobj)
 					continue;
-				var ctor = newobj.Operand as MethodReference;
+				var ctor = newobj.Operand as IMethod;
 				if (ctor == null || ctor.FullName != "System.Void System.IO.MemoryStream::.ctor()")
 					continue;
 
 				var stsfld = instrs[i + 1];
 				if (stsfld.OpCode.Code != Code.Stsfld)
 					continue;
-				var field = stsfld.Operand as FieldDefinition;
+				var field = stsfld.Operand as FieldDef;
 				if (field == null || field.DeclaringType != declaringType)
 					continue;
 				if (field.FieldType.FullName != fieldTypeName)

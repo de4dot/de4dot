@@ -19,8 +19,8 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.MyStuff;
+using dot10.DotNet;
+using dot10.IO;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
 using de4dot.PE;
@@ -66,7 +66,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 	}
 
-	class Deobfuscator : DeobfuscatorBase {
+	class Deobfuscator : DeobfuscatorBase, IStringDecrypter {
 		Options options;
 		string obfuscatorName = DeobfuscatorInfo.THE_NAME;
 		Version approxVersion;
@@ -240,9 +240,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 				int minRev, maxRev;
 				if (versionProvider.getRevisionRange(out minRev, out maxRev)) {
 					if (maxRev == int.MaxValue)
-						Log.v("r{0}-latest : {1}", minRev, versionProvider.GetType().Name);
+						Logger.v("r{0}-latest : {1}", minRev, versionProvider.GetType().Name);
 					else
-						Log.v("r{0}-r{1} : {2}", minRev, maxRev, versionProvider.GetType().Name);
+						Logger.v("r{0}-r{1} : {2}", minRev, maxRev, versionProvider.GetType().Name);
 					vd.addRevs(minRev, maxRev);
 				}
 			}
@@ -317,16 +317,15 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		public override IDeobfuscator moduleReloaded(ModuleDefinition module) {
+		public override IDeobfuscator moduleReloaded(ModuleDefMD module) {
 			if (module.Assembly != null)
 				realAssemblyInfo = null;
 			if (realAssemblyInfo != null) {
-				module.Assembly = realAssemblyInfo.realAssembly;
-				module.Assembly.MainModule = module;
+				realAssemblyInfo.realAssembly.Modules.Insert(0, module);
 				if (realAssemblyInfo.entryPointToken != 0)
-					module.EntryPoint = (MethodDefinition)module.LookupToken((int)realAssemblyInfo.entryPointToken);
+					module.EntryPoint = module.ResolveToken((int)realAssemblyInfo.entryPointToken) as MethodDef;
 				module.Kind = realAssemblyInfo.kind;
-				module.Name = realAssemblyInfo.moduleName;
+				module.Name = new UTF8String(realAssemblyInfo.moduleName);
 			}
 
 			var newOne = new Deobfuscator(options);
@@ -363,7 +362,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		public override void deobfuscateBegin() {
 			base.deobfuscateBegin();
 
-			Log.v("Detected {0}", obfuscatorName);
+			Logger.v("Detected {0}", obfuscatorName);
 
 			initializeConstantsDecrypterV18();
 			initializeConstantsDecrypterV17();
@@ -396,7 +395,6 @@ namespace de4dot.code.deobfuscators.Confuser {
 				proxyCallFixer.find();
 
 			removeInvalidResources();
-			removeInvalidAssemblyReferences();
 			dumpEmbeddedAssemblies();
 
 			startedDeobfuscating = true;
@@ -405,12 +403,12 @@ namespace de4dot.code.deobfuscators.Confuser {
 		void dumpEmbeddedAssemblies() {
 			if (mainAsmInfo != null) {
 				var asm = module.Assembly;
-				var name = asm == null ? module.Name : asm.Name.Name;
+				var name = (asm == null ? module.Name : asm.Name).String;
 				DeobfuscatedFile.createAssemblyFile(mainAsmInfo.data, name + "_real", mainAsmInfo.extension);
 				addResourceToBeRemoved(mainAsmInfo.resource, string.Format("Embedded assembly: {0}", mainAsmInfo.asmFullName));
 			}
 			foreach (var info in embeddedAssemblyInfos) {
-				if (module.Assembly == null || info.asmFullName != module.Assembly.Name.FullName)
+				if (module.Assembly == null || info.asmFullName != module.Assembly.FullName)
 					DeobfuscatedFile.createAssemblyFile(info.data, info.asmSimpleName, info.extension);
 				addResourceToBeRemoved(info.resource, string.Format("Embedded assembly: {0}", info.asmFullName));
 			}
@@ -425,28 +423,6 @@ namespace de4dot.code.deobfuscators.Confuser {
 				if (resource.Offset != 0xFFFFFFFF)
 					continue;
 				addResourceToBeRemoved(resource, "Invalid resource");
-			}
-		}
-
-		void removeInvalidAssemblyReferences() {
-			// Confuser 1.7 r73764 adds an invalid assembly reference:
-			//	version: 0.0.0.0
-			//	attrs: SideBySideCompatible
-			//	key: 0 (cecil sets pkt to zero length array)
-			//	name: 0xFFFF
-			//	culture: 0
-			//	hash: 0xFFFF
-			foreach (var asmRef in module.AssemblyReferences) {
-				if (asmRef.Attributes != AssemblyAttributes.SideBySideCompatible)
-					continue;
-				if (asmRef.Version != null && asmRef.Version != new Version(0, 0, 0, 0))
-					continue;
-				if (asmRef.PublicKeyToken == null || asmRef.PublicKeyToken.Length != 0)
-					continue;
-				if (asmRef.Culture.Length != 0)
-					continue;
-
-				addAssemblyReferenceToBeRemoved(asmRef, "Invalid assembly reference");
 			}
 		}
 
@@ -552,7 +528,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			}
 		}
 
-		void setConfuserVersion(TypeDefinition type) {
+		void setConfuserVersion(TypeDef type) {
 			var s = DotNetUtils.getCustomArgAsString(getModuleAttribute(type) ?? getAssemblyAttribute(type), 0);
 			if (s == null)
 				return;
@@ -595,7 +571,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				}
 			}
 
-			module.Attributes |= ModuleAttributes.ILOnly;
+			module.IsILOnly = true;
 
 			base.deobfuscateEnd();
 		}
@@ -603,20 +579,26 @@ namespace de4dot.code.deobfuscators.Confuser {
 		public override IEnumerable<int> getStringDecrypterMethods() {
 			var list = new List<int>();
 			if (stringDecrypter != null && stringDecrypter.Method != null)
-				list.Add(stringDecrypter.Method.MetadataToken.ToInt32());
+				list.Add(stringDecrypter.Method.MDToken.ToInt32());
 			if (constantsDecrypterV15 != null) {
 				foreach (var info in constantsDecrypterV15.DecrypterInfos)
-					list.Add(info.decryptMethod.MetadataToken.ToInt32());
+					list.Add(info.decryptMethod.MDToken.ToInt32());
 			}
 			if (constantsDecrypterV17 != null) {
 				foreach (var info in constantsDecrypterV17.DecrypterInfos)
-					list.Add(info.decryptMethod.MetadataToken.ToInt32());
+					list.Add(info.decryptMethod.MDToken.ToInt32());
 			}
 			if (constantsDecrypterV18 != null) {
 				foreach (var info in constantsDecrypterV18.Decrypters)
-					list.Add(info.method.MetadataToken.ToInt32());
+					list.Add(info.method.MDToken.ToInt32());
 			}
 			return list;
+		}
+
+		string IStringDecrypter.ReadUserString(uint token) {
+			if (jitMethodsDecrypter == null)
+				return null;
+			return ((IStringDecrypter)jitMethodsDecrypter).ReadUserString(token);
 		}
 	}
 }

@@ -20,24 +20,23 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using Mono.Cecil.Metadata;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 using SevenZip.Compression.LZMA;
 
 namespace de4dot.code.deobfuscators.Confuser {
 	class RealAssemblyInfo {
-		public AssemblyDefinition realAssembly;
+		public AssemblyDef realAssembly;
 		public uint entryPointToken;
 		public ModuleKind kind;
 		public string moduleName;
 
-		public RealAssemblyInfo(AssemblyDefinition realAssembly, uint entryPointToken, ModuleKind kind) {
+		public RealAssemblyInfo(AssemblyDef realAssembly, uint entryPointToken, ModuleKind kind) {
 			this.realAssembly = realAssembly;
 			this.entryPointToken = entryPointToken;
 			this.kind = kind;
-			this.moduleName = realAssembly.Name.Name + DeobUtils.getExtension(kind);
+			this.moduleName = realAssembly.Name.String + DeobUtils.getExtension(kind);
 		}
 	}
 
@@ -65,12 +64,12 @@ namespace de4dot.code.deobfuscators.Confuser {
 	}
 
 	class Unpacker : IVersionProvider {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		EmbeddedResource mainAsmResource;
 		uint key0, key1;
 		uint entryPointToken;
 		ConfuserVersion version = ConfuserVersion.Unknown;
-		MethodDefinition asmResolverMethod;
+		MethodDef asmResolverMethod;
 
 		enum ConfuserVersion {
 			Unknown,
@@ -93,7 +92,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			get { return mainAsmResource != null; }
 		}
 
-		public Unpacker(ModuleDefinition module, Unpacker other) {
+		public Unpacker(ModuleDefMD module, Unpacker other) {
 			this.module = module;
 			if (other != null)
 				this.version = other.version;
@@ -118,7 +117,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				return;
 
 			bool use7zip = type.NestedTypes.Count == 6;
-			MethodDefinition decyptMethod;
+			MethodDef decyptMethod;
 			if (use7zip)
 				decyptMethod = findDecryptMethod_7zip(type);
 			else
@@ -139,7 +138,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			else
 				theVersion = ConfuserVersion.v14_r58564;
 
-			var cctor = DotNetUtils.getMethod(type, ".cctor");
+			var cctor = type.FindStaticConstructor();
 			if (cctor == null)
 				return;
 
@@ -202,7 +201,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			version = theVersion;
 		}
 
-		bool findEntryPointToken(ISimpleDeobfuscator simpleDeobfuscator, MethodDefinition cctor, MethodDefinition entryPoint, out uint token) {
+		bool findEntryPointToken(ISimpleDeobfuscator simpleDeobfuscator, MethodDef cctor, MethodDef entryPoint, out uint token) {
 			token = 0;
 			ulong @base;
 			if (!findBase(cctor, out @base))
@@ -234,7 +233,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return m;
 		}
 
-		static bool findMod(MethodDefinition method, out ulong mod) {
+		static bool findMod(MethodDef method, out ulong mod) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 1; i++) {
 				var ldci8 = instrs[i];
@@ -244,7 +243,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				var call = instrs[i + 1];
 				if (call.OpCode.Code != Code.Call)
 					continue;
-				var calledMethod = call.Operand as MethodReference;
+				var calledMethod = call.Operand as IMethod;
 				if (calledMethod == null)
 					continue;
 				if (!DotNetUtils.isMethod(calledMethod, "System.UInt64", "(System.UInt64,System.UInt64,System.UInt64)"))
@@ -257,7 +256,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		static bool findBase(MethodDefinition method, out ulong @base) {
+		static bool findBase(MethodDef method, out ulong @base) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 2; i++) {
 				var ldci8 = instrs[i];
@@ -266,10 +265,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 				var stsfld = instrs[i + 1];
 				if (stsfld.OpCode.Code != Code.Stsfld)
 					continue;
-				var field = stsfld.Operand as FieldDefinition;
+				var field = stsfld.Operand as FieldDef;
 				if (field == null || field.DeclaringType != method.DeclaringType)
 					continue;
-				if (field.FieldType.EType != ElementType.U8)
+				if (field.FieldType.GetElementType() != ElementType.U8)
 					continue;
 
 				@base = (ulong)(long)ldci8.Operand;
@@ -279,19 +278,19 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		static bool isDecryptMethod_v17_r73404(MethodDefinition method) {
+		static bool isDecryptMethod_v17_r73404(MethodDef method) {
 			var instrs = method.Body.Instructions;
 			if (instrs.Count < 4)
 				return false;
-			if (!DotNetUtils.isLdarg(instrs[0]))
+			if (!instrs[0].IsLdarg())
 				return false;
 			if (!isCallorNewobj(instrs[1]) && !isCallorNewobj(instrs[2]))
 				return false;
 			var stloc = instrs[3];
-			if (!DotNetUtils.isStloc(stloc))
+			if (!stloc.IsStloc())
 				return false;
-			var local = DotNetUtils.getLocalVar(method.Body.Variables, stloc);
-			if (local == null || local.VariableType.FullName != "System.IO.BinaryReader")
+			var local = stloc.GetLocal(method.Body.LocalList);
+			if (local == null || local.Type.FullName != "System.IO.BinaryReader")
 				return false;
 
 			return true;
@@ -301,7 +300,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return instr.OpCode.Code == Code.Call || instr.OpCode.Code == Code.Newobj;
 		}
 
-		static MethodDefinition findAssemblyResolverMethod(TypeDefinition type) {
+		static MethodDef findAssemblyResolverMethod(TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
@@ -313,68 +312,68 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return null;
 		}
 
-		static bool findKey0_v14_r58564(MethodDefinition method, out uint key) {
+		static bool findKey0_v14_r58564(MethodDef method, out uint key) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 2; i++) {
 				if (instrs[i].OpCode.Code != Code.Xor)
 					continue;
 				var ldci4 = instrs[i + 1];
-				if (!DotNetUtils.isLdcI4(ldci4))
+				if (!ldci4.IsLdcI4())
 					continue;
 				if (instrs[i + 2].OpCode.Code != Code.Xor)
 					continue;
 
-				key = (uint)DotNetUtils.getLdcI4Value(ldci4);
+				key = (uint)ldci4.GetLdcI4Value();
 				return true;
 			}
 			key = 0;
 			return false;
 		}
 
-		static bool findKey0_v14_r58852(MethodDefinition method, out uint key) {
+		static bool findKey0_v14_r58852(MethodDef method, out uint key) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 3; i++) {
 				var ldci4_1 = instrs[i];
-				if (!DotNetUtils.isLdcI4(ldci4_1))
+				if (!ldci4_1.IsLdcI4())
 					continue;
-				if (!DotNetUtils.isStloc(instrs[i + 1]))
+				if (!instrs[i + 1].IsStloc())
 					continue;
 				var ldci4_2 = instrs[i + 2];
-				if (!DotNetUtils.isLdcI4(ldci4_2) && DotNetUtils.getLdcI4Value(ldci4_2) != 0)
+				if (!ldci4_2.IsLdcI4() && ldci4_2.GetLdcI4Value() != 0)
 					continue;
-				if (!DotNetUtils.isStloc(instrs[i + 3]))
+				if (!instrs[i + 3].IsStloc())
 					continue;
 
-				key = (uint)DotNetUtils.getLdcI4Value(ldci4_1);
+				key = (uint)ldci4_1.GetLdcI4Value();
 				return true;
 			}
 			key = 0;
 			return false;
 		}
 
-		static bool findKey1(MethodDefinition method, out uint key) {
+		static bool findKey1(MethodDef method, out uint key) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 4; i++) {
 				if (instrs[i].OpCode.Code != Code.Ldelem_U1)
 					continue;
 				var ldci4 = instrs[i + 1];
-				if (!DotNetUtils.isLdcI4(ldci4))
+				if (!ldci4.IsLdcI4())
 					continue;
 				if (instrs[i + 2].OpCode.Code != Code.Xor)
 					continue;
-				if (!DotNetUtils.isLdloc(instrs[i + 3]))
+				if (!instrs[i + 3].IsLdloc())
 					continue;
 				if (instrs[i + 4].OpCode.Code != Code.Xor)
 					continue;
 
-				key = (uint)DotNetUtils.getLdcI4Value(ldci4);
+				key = (uint)ldci4.GetLdcI4Value();
 				return true;
 			}
 			key = 0;
 			return false;
 		}
 
-		EmbeddedResource findResource(MethodDefinition method) {
+		EmbeddedResource findResource(MethodDef method) {
 			return DotNetUtils.getResource(module, DotNetUtils.getCodeStrings(method)) as EmbeddedResource;
 		}
 
@@ -382,7 +381,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			"System.Byte[]",
 			"System.IO.Compression.DeflateStream",
 		};
-		static MethodDefinition findDecryptMethod_inflate(TypeDefinition type) {
+		static MethodDef findDecryptMethod_inflate(TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
@@ -403,7 +402,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			"System.Security.Cryptography.CryptoStream",
 			"System.Security.Cryptography.RijndaelManaged",
 		};
-		static MethodDefinition findDecryptMethod_7zip(TypeDefinition type) {
+		static MethodDef findDecryptMethod_7zip(TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
@@ -427,12 +426,12 @@ namespace de4dot.code.deobfuscators.Confuser {
 				info.extension = DeobUtils.getExtension(module.Kind);
 				info.kind = module.Kind;
 
-				var realAsm = new AssemblyDefinition { Name = asm.Name };
+				var realAsm = module.UpdateRowId(new AssemblyDefUser(asm.Name, new Version(0, 0, 0, 0)));
 				info.realAssemblyInfo = new RealAssemblyInfo(realAsm, entryPointToken, info.kind);
 				if (module.Name != "Stub.exe")
-					info.realAssemblyInfo.moduleName = module.Name;
-				info.asmFullName = realAsm.Name.FullName;
-				info.asmSimpleName = realAsm.Name.Name;
+					info.realAssemblyInfo.moduleName = module.Name.String;
+				info.asmFullName = realAsm.FullName;
+				info.asmSimpleName = realAsm.Name.String;
 			}
 
 			return info;
@@ -454,8 +453,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		static EmbeddedAssemblyInfo createEmbeddedAssemblyInfo(EmbeddedResource resource, byte[] data) {
-			var mod = ModuleDefinition.ReadModule(new MemoryStream(data));
-			var asmFullName = mod.Assembly != null ? mod.Assembly.Name.FullName : mod.Name;
+			var mod = ModuleDefMD.Load(data);
+			var asmFullName = mod.Assembly != null ? mod.Assembly.FullName : mod.Name.String;
 			return new EmbeddedAssemblyInfo(resource, data, asmFullName, mod.Kind);
 		}
 

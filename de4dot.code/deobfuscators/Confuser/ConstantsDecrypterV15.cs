@@ -19,9 +19,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.IO;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Confuser {
@@ -51,7 +51,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			get { return theDecrypterInfo != null; }
 		}
 
-		public ConstantsDecrypterV15(ModuleDefinition module, byte[] fileData, ISimpleDeobfuscator simpleDeobfuscator)
+		public ConstantsDecrypterV15(ModuleDefMD module, byte[] fileData, ISimpleDeobfuscator simpleDeobfuscator)
 			: base(module, fileData, simpleDeobfuscator) {
 		}
 
@@ -164,9 +164,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return true;
 		}
 
-		protected override byte[] decryptData(DecrypterInfo info, MethodDefinition caller, object[] args, out byte typeCode) {
-			uint offs = info.calcHash(caller.MetadataToken.ToUInt32()) ^ (uint)args[0];
-			reader.BaseStream.Position = offs;
+		protected override byte[] decryptData(DecrypterInfo info, MethodDef caller, object[] args, out byte typeCode) {
+			uint offs = info.calcHash(caller.MDToken.ToUInt32()) ^ (uint)args[0];
+			reader.Position = offs;
 			typeCode = reader.ReadByte();
 			if (typeCode != info.int32Type && typeCode != info.int64Type &&
 				typeCode != info.singleType && typeCode != info.doubleType &&
@@ -211,7 +211,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			if (endIndex < 0)
 				throw new ApplicationException("Could not find start/endIndex");
 
-			var dataReader = new BinaryReader(new MemoryStream(encrypted));
+			var dataReader = MemoryImageStream.Create(encrypted);
 			var decrypted = new byte[dataReader.ReadInt32()];
 			var constReader = new Arg64ConstantsReader(instrs, false);
 			ConfuserUtils.decryptCompressedInt32Data(constReader, startIndex, endIndex, dataReader, decrypted);

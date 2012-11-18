@@ -19,9 +19,8 @@
 
 using System;
 using System.IO;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using Mono.MyStuff;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 using de4dot.PE;
 
@@ -44,17 +43,17 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v19_r75725,
 		}
 
-		public MemoryMethodsDecrypter(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator)
+		public MemoryMethodsDecrypter(ModuleDefMD module, ISimpleDeobfuscator simpleDeobfuscator)
 			: base(module, simpleDeobfuscator) {
 		}
 
-		public MemoryMethodsDecrypter(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator, MemoryMethodsDecrypter other)
+		public MemoryMethodsDecrypter(ModuleDefMD module, ISimpleDeobfuscator simpleDeobfuscator, MemoryMethodsDecrypter other)
 			: base(module, simpleDeobfuscator, other) {
 			if (other != null)
 				this.version = other.version;
 		}
 
-		protected override bool checkType(TypeDefinition type, MethodDefinition initMethod) {
+		protected override bool checkType(TypeDef type, MethodDef initMethod) {
 			if (type == null)
 				return false;
 			if (type.Methods.Count != 3)
@@ -195,7 +194,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return true;
 		}
 
-		static bool findKey4(MethodDefinition method, out uint key) {
+		static bool findKey4(MethodDef method, out uint key) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count; i++) {
 				i = findCallvirtReadUInt32(instrs, i);
@@ -209,20 +208,20 @@ namespace de4dot.code.deobfuscators.Confuser {
 					break;
 
 				var ldci4 = instrs[i + 1];
-				if (!DotNetUtils.isLdcI4(ldci4))
+				if (!ldci4.IsLdcI4())
 					continue;
 				if (instrs[i + 2].OpCode.Code != Code.Xor)
 					continue;
 				var stloc = instrs[i + 3];
-				if (!DotNetUtils.isStloc(stloc))
+				if (!stloc.IsStloc())
 					continue;
 				var ldloc = instrs[i + 4];
-				if (!DotNetUtils.isLdloc(ldloc))
+				if (!ldloc.IsLdloc())
 					continue;
-				if (DotNetUtils.getLocalVar(method.Body.Variables, ldloc) != DotNetUtils.getLocalVar(method.Body.Variables, stloc))
+				if (ldloc.GetLocal(method.Body.LocalList) != stloc.GetLocal(method.Body.LocalList))
 					continue;
 
-				key = (uint)DotNetUtils.getLdcI4Value(ldci4);
+				key = (uint)ldci4.GetLdcI4Value();
 				return true;
 			}
 
@@ -230,7 +229,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		static bool findKey5(MethodDefinition method, out uint key) {
+		static bool findKey5(MethodDef method, out uint key) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count; i++) {
 				i = findCallvirtReadUInt32(instrs, i);
@@ -243,22 +242,22 @@ namespace de4dot.code.deobfuscators.Confuser {
 					continue;
 
 				var ldci4 = instrs[i + 1];
-				if (!DotNetUtils.isLdcI4(ldci4))
+				if (!ldci4.IsLdcI4())
 					continue;
 				if (instrs[i + 2].OpCode.Code != Code.Xor)
 					continue;
 				var stloc = instrs[i + 3];
-				if (!DotNetUtils.isStloc(stloc))
+				if (!stloc.IsStloc())
 					continue;
 				var ldloc = instrs[i + 4];
-				if (!DotNetUtils.isLdloc(ldloc))
+				if (!ldloc.IsLdloc())
 					continue;
-				if (DotNetUtils.getLocalVar(method.Body.Variables, ldloc) == DotNetUtils.getLocalVar(method.Body.Variables, stloc))
+				if (ldloc.GetLocal(method.Body.LocalList) == stloc.GetLocal(method.Body.LocalList))
 					continue;
-				if (!DotNetUtils.isLdloc(instrs[i + 5]))
+				if (!instrs[i + 5].IsLdloc())
 					continue;
 
-				key = (uint)DotNetUtils.getLdcI4Value(ldci4);
+				key = (uint)ldci4.GetLdcI4Value();
 				return true;
 			}
 

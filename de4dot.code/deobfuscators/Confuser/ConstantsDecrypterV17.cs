@@ -20,14 +20,14 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Confuser {
 	// From v1.7 r74708 to v1.8 r75349
 	class ConstantsDecrypterV17 : ConstantsDecrypterBase {
-		MethodDefinition initMethod;
+		MethodDef initMethod;
 		ConfuserVersion version = ConfuserVersion.Unknown;
 		string resourceName;
 		int keyArraySize = 8;
@@ -57,7 +57,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			public readonly ConfuserVersion version = ConfuserVersion.Unknown;
 			public uint key4, key5;
 
-			public DecrypterInfoV17(ConfuserVersion version, MethodDefinition decryptMethod) {
+			public DecrypterInfoV17(ConfuserVersion version, MethodDef decryptMethod) {
 				this.version = version;
 				this.decryptMethod = decryptMethod;
 			}
@@ -77,33 +77,33 @@ namespace de4dot.code.deobfuscators.Confuser {
 				return true;
 			}
 
-			static bool findKey1_v17(MethodDefinition method, out uint key) {
+			static bool findKey1_v17(MethodDef method, out uint key) {
 				var instrs = method.Body.Instructions;
 				for (int i = 0; i < instrs.Count - 4; i++) {
 					var stloc = instrs[i];
-					if (!DotNetUtils.isStloc(stloc))
+					if (!stloc.IsStloc())
 						continue;
 					var ldci4 = instrs[i + 1];
-					if (!DotNetUtils.isLdcI4(ldci4))
+					if (!ldci4.IsLdcI4())
 						continue;
 					var ldcloc = instrs[i + 2];
-					if (!DotNetUtils.isLdloc(ldcloc))
+					if (!ldcloc.IsLdloc())
 						continue;
-					if (DotNetUtils.getLocalVar(method.Body.Variables, stloc) != DotNetUtils.getLocalVar(method.Body.Variables, ldcloc))
+					if (stloc.GetLocal(method.Body.LocalList) != ldcloc.GetLocal(method.Body.LocalList))
 						continue;
 					if (instrs[i + 3].OpCode.Code != Code.Xor)
 						continue;
-					if (!DotNetUtils.isStloc(instrs[i + 4]))
+					if (!instrs[i + 4].IsStloc())
 						continue;
 
-					key = (uint)DotNetUtils.getLdcI4Value(ldci4);
+					key = (uint)ldci4.GetLdcI4Value();
 					return true;
 				}
 				key = 0;
 				return false;
 			}
 
-			bool findKey4(MethodDefinition method, out uint key) {
+			bool findKey4(MethodDef method, out uint key) {
 				switch (version) {
 				case ConfuserVersion.v17_r74708_normal:
 				case ConfuserVersion.v17_r74788_normal:
@@ -127,31 +127,31 @@ namespace de4dot.code.deobfuscators.Confuser {
 				}
 			}
 
-			static bool findKey4_normal(MethodDefinition method, out uint key) {
+			static bool findKey4_normal(MethodDef method, out uint key) {
 				var instrs = method.Body.Instructions;
 				for (int i = 0; i < instrs.Count - 5; i++) {
-					if (!DotNetUtils.isLdloc(instrs[i]))
+					if (!instrs[i].IsLdloc())
 						continue;
-					if (!DotNetUtils.isLdloc(instrs[i + 1]))
+					if (!instrs[i + 1].IsLdloc())
 						continue;
 					if (instrs[i + 2].OpCode.Code != Code.Add)
 						continue;
 					var ldci4 = instrs[i + 3];
-					if (!DotNetUtils.isLdcI4(ldci4))
+					if (!ldci4.IsLdcI4())
 						continue;
 					if (instrs[i + 4].OpCode.Code != Code.Mul)
 						continue;
-					if (!DotNetUtils.isStloc(instrs[i + 5]))
+					if (!instrs[i + 5].IsStloc())
 						continue;
 
-					key = (uint)DotNetUtils.getLdcI4Value(ldci4);
+					key = (uint)ldci4.GetLdcI4Value();
 					return true;
 				}
 				key = 0;
 				return false;
 			}
 
-			static bool findKey4_other(MethodDefinition method, out uint key) {
+			static bool findKey4_other(MethodDef method, out uint key) {
 				var instrs = method.Body.Instructions;
 				for (int i = 0; i < instrs.Count; i++) {
 					int index = ConfuserUtils.findCallMethod(instrs, i, Code.Callvirt, "System.Int32 System.IO.BinaryReader::ReadInt32()");
@@ -160,17 +160,17 @@ namespace de4dot.code.deobfuscators.Confuser {
 					if (index + 1 >= instrs.Count)
 						break;
 					var ldci4 = instrs[index + 1];
-					if (!DotNetUtils.isLdcI4(ldci4))
+					if (!ldci4.IsLdcI4())
 						continue;
 
-					key = (uint)DotNetUtils.getLdcI4Value(ldci4);
+					key = (uint)ldci4.GetLdcI4Value();
 					return true;
 				}
 				key = 0;
 				return false;
 			}
 
-			bool findKey5(MethodDefinition method, out uint key) {
+			bool findKey5(MethodDef method, out uint key) {
 				switch (version) {
 				case ConfuserVersion.v17_r74788_normal:
 				case ConfuserVersion.v17_r74788_dynamic:
@@ -191,7 +191,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				}
 			}
 
-			static bool findKey5_v17_r74788(MethodDefinition method, out uint key) {
+			static bool findKey5_v17_r74788(MethodDef method, out uint key) {
 				var instrs = method.Body.Instructions;
 				for (int i = 0; i < instrs.Count; i++) {
 					i = ConfuserUtils.findCallMethod(instrs, i, Code.Callvirt, "System.Reflection.Module System.Reflection.Assembly::GetModule(System.String)");
@@ -200,10 +200,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 					if (i + 1 >= instrs.Count)
 						break;
 					var ldci4 = instrs[i + 1];
-					if (!DotNetUtils.isLdcI4(ldci4))
+					if (!ldci4.IsLdcI4())
 						continue;
 
-					key = (uint)DotNetUtils.getLdcI4Value(ldci4);
+					key = (uint)ldci4.GetLdcI4Value();
 					return true;
 				}
 				key = 0;
@@ -215,7 +215,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			get { return initMethod != null; }
 		}
 
-		public ConstantsDecrypterV17(ModuleDefinition module, byte[] fileData, ISimpleDeobfuscator simpleDeobfuscator)
+		public ConstantsDecrypterV17(ModuleDefMD module, byte[] fileData, ISimpleDeobfuscator simpleDeobfuscator)
 			: base(module, fileData, simpleDeobfuscator) {
 		}
 
@@ -264,7 +264,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			initMethod = cctor;
 		}
 
-		void initVersion(MethodDefinition method, ConfuserVersion normal, ConfuserVersion dynamic, ConfuserVersion native) {
+		void initVersion(MethodDef method, ConfuserVersion normal, ConfuserVersion dynamic, ConfuserVersion native) {
 			if (DeobUtils.hasInteger(method, 0x100) &&
 				DeobUtils.hasInteger(method, 0x10000) &&
 				DeobUtils.hasInteger(method, 0xFFFF))
@@ -275,7 +275,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				version = native;
 		}
 
-		MethodDefinition getDecryptMethod() {
+		MethodDef getDecryptMethod() {
 			foreach (var type in module.Types) {
 				if (type.Attributes != (TypeAttributes.Abstract | TypeAttributes.Sealed))
 					continue;
@@ -291,10 +291,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return null;
 		}
 
-		protected override byte[] decryptData(DecrypterInfo info2, MethodDefinition caller, object[] args, out byte typeCode) {
+		protected override byte[] decryptData(DecrypterInfo info2, MethodDef caller, object[] args, out byte typeCode) {
 			var info = (DecrypterInfoV17)info2;
-			uint offs = info.calcHash(info2.decryptMethod.MetadataToken.ToUInt32() ^ (info2.decryptMethod.DeclaringType.MetadataToken.ToUInt32() * (uint)args[0])) ^ (uint)args[1];
-			reader.BaseStream.Position = offs;
+			uint offs = info.calcHash(info2.decryptMethod.MDToken.ToUInt32() ^ (info2.decryptMethod.DeclaringType.MDToken.ToUInt32() * (uint)args[0])) ^ (uint)args[1];
+			reader.Position = offs;
 			typeCode = reader.ReadByte();
 			if (typeCode != info.int32Type && typeCode != info.int64Type &&
 				typeCode != info.singleType && typeCode != info.doubleType &&
@@ -352,7 +352,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		byte[] getKey_v17_r74788(DecrypterInfoV17 info) {
-			var key = module.GetSignatureBlob(info.decryptMethod.MetadataToken.ToUInt32() ^ info.key5);
+			var key = module.ReadBlob(info.decryptMethod.MDToken.ToUInt32() ^ info.key5);
 			if (key.Length != keyArraySize)
 				throw new ApplicationException("Invalid key size");
 			return key;
@@ -388,7 +388,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			}
 		}
 
-		static bool checkMethods(IEnumerable<MethodDefinition> methods) {
+		static bool checkMethods(IEnumerable<MethodDef> methods) {
 			int numMethods = 0;
 			foreach (var method in methods) {
 				if (method.Name == ".ctor" || method.Name == ".cctor")
@@ -403,7 +403,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return numMethods > 0;
 		}
 
-		static string getResourceName(MethodDefinition method) {
+		static string getResourceName(MethodDef method) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count; i++) {
 				i = ConfuserUtils.findCallMethod(instrs, i, Code.Call, "System.Byte[] System.BitConverter::GetBytes(System.Int32)");
@@ -412,29 +412,29 @@ namespace de4dot.code.deobfuscators.Confuser {
 				if (i == 0)
 					continue;
 				var ldci4 = instrs[i - 1];
-				if (!DotNetUtils.isLdcI4(ldci4))
+				if (!ldci4.IsLdcI4())
 					continue;
-				return Encoding.UTF8.GetString(BitConverter.GetBytes(DotNetUtils.getLdcI4Value(ldci4)));
+				return Encoding.UTF8.GetString(BitConverter.GetBytes(ldci4.GetLdcI4Value()));
 			}
 			return null;
 		}
 
-		static int getKeyArraySize(MethodDefinition method) {
+		static int getKeyArraySize(MethodDef method) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 4; i++) {
-				if (!DotNetUtils.isLdloc(instrs[i]))
+				if (!instrs[i].IsLdloc())
 					continue;
-				if (!DotNetUtils.isLdloc(instrs[i + 1]))
+				if (!instrs[i + 1].IsLdloc())
 					continue;
 				var ldci4 = instrs[i + 2];
-				if (!DotNetUtils.isLdcI4(ldci4))
+				if (!ldci4.IsLdcI4())
 					continue;
 				if (instrs[i + 3].OpCode.Code != Code.Rem)
 					continue;
 				if (instrs[i + 4].OpCode.Code != Code.Ldelem_U1)
 					continue;
 
-				return DotNetUtils.getLdcI4Value(ldci4);
+				return ldci4.GetLdcI4Value();
 			}
 			return -1;
 		}

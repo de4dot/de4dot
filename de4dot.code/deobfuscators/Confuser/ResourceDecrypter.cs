@@ -20,18 +20,18 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Confuser {
 	class ResourceDecrypter : IVersionProvider {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		ISimpleDeobfuscator simpleDeobfuscator;
-		MethodDefinition handler;
-		MethodDefinition installMethod;
+		MethodDef handler;
+		MethodDef installMethod;
 		EmbeddedResource resource;
-		Dictionary<FieldDefinition, bool> fields = new Dictionary<FieldDefinition, bool>();
+		Dictionary<FieldDef, bool> fields = new Dictionary<FieldDef, bool>();
 		byte key0, key1;
 		ConfuserVersion version = ConfuserVersion.Unknown;
 
@@ -44,11 +44,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v18_r75369,
 		}
 
-		public IEnumerable<FieldDefinition> Fields {
+		public IEnumerable<FieldDef> Fields {
 			get { return fields.Keys; }
 		}
 
-		public MethodDefinition Handler {
+		public MethodDef Handler {
 			get { return handler; }
 		}
 
@@ -56,7 +56,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			get { return handler != null; }
 		}
 
-		public ResourceDecrypter(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator) {
+		public ResourceDecrypter(ModuleDefMD module, ISimpleDeobfuscator simpleDeobfuscator) {
 			this.module = module;
 			this.simpleDeobfuscator = simpleDeobfuscator;
 		}
@@ -66,7 +66,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				return;
 		}
 
-		bool checkMethod(MethodDefinition method) {
+		bool checkMethod(MethodDef method) {
 			if (method == null || method.Body == null)
 				return false;
 			if (!DotNetUtils.callsMethod(method, "System.Void System.AppDomain::add_ResourceResolve(System.ResolveEventHandler)"))
@@ -116,13 +116,13 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return true;
 		}
 
-		static MethodDefinition getHandler(MethodDefinition method) {
+		static MethodDef getHandler(MethodDef method) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 2; i++) {
 				var ldftn = instrs[i];
 				if (ldftn.OpCode.Code != Code.Ldftn)
 					continue;
-				var handler = ldftn.Operand as MethodDefinition;
+				var handler = ldftn.Operand as MethodDef;
 				if (handler == null)
 					continue;
 
@@ -133,7 +133,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				var callvirt = instrs[i + 2];
 				if (callvirt.OpCode.Code != Code.Callvirt)
 					continue;
-				var calledMethod = callvirt.Operand as MethodReference;
+				var calledMethod = callvirt.Operand as IMethod;
 				if (calledMethod == null)
 					continue;
 				if (calledMethod.FullName != "System.Void System.AppDomain::add_ResourceResolve(System.ResolveEventHandler)")
@@ -144,7 +144,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return null;
 		}
 
-		int addFields(IEnumerable<FieldDefinition> moreFields) {
+		int addFields(IEnumerable<FieldDef> moreFields) {
 			int count = 0;
 			foreach (var field in moreFields) {
 				if (addField(field))
@@ -153,7 +153,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return count;
 		}
 
-		bool addField(FieldDefinition field) {
+		bool addField(FieldDef field) {
 			if (field == null)
 				return false;
 			if (fields.ContainsKey(field))
@@ -162,21 +162,21 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return true;
 		}
 
-		static IEnumerable<FieldDefinition> findFields(MethodDefinition method, TypeDefinition declaringType) {
-			var fields = new List<FieldDefinition>();
+		static IEnumerable<FieldDef> findFields(MethodDef method, TypeDef declaringType) {
+			var fields = new List<FieldDef>();
 			foreach (var instr in method.Body.Instructions) {
-				var field = instr.Operand as FieldDefinition;
+				var field = instr.Operand as FieldDef;
 				if (field != null && field.DeclaringType == declaringType)
 					fields.Add(field);
 			}
 			return fields;
 		}
 
-		EmbeddedResource findResource(MethodDefinition method) {
+		EmbeddedResource findResource(MethodDef method) {
 			return DotNetUtils.getResource(module, DotNetUtils.getCodeStrings(method)) as EmbeddedResource;
 		}
 
-		static bool findKey0_v18_r75367(MethodDefinition method, out byte key0) {
+		static bool findKey0_v18_r75367(MethodDef method, out byte key0) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count; i++) {
 				i = ConfuserUtils.findCallMethod(instrs, i, Code.Callvirt, "System.Int32 System.IO.Stream::Read(System.Byte[],System.Int32,System.Int32)");
@@ -188,12 +188,12 @@ namespace de4dot.code.deobfuscators.Confuser {
 				if (instrs[i + 1].OpCode.Code != Code.Pop)
 					continue;
 				var ldci4 = instrs[i + 2];
-				if (!DotNetUtils.isLdcI4(ldci4))
+				if (!ldci4.IsLdcI4())
 					continue;
-				if (!DotNetUtils.isStloc(instrs[i + 3]))
+				if (!instrs[i + 3].IsStloc())
 					continue;
 
-				key0 = (byte)DotNetUtils.getLdcI4Value(ldci4);
+				key0 = (byte)ldci4.GetLdcI4Value();
 				return true;
 			}
 
@@ -201,7 +201,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		static bool findKey0_v18_r75369(MethodDefinition method, out byte key0) {
+		static bool findKey0_v18_r75369(MethodDef method, out byte key0) {
 			var instrs = method.Body.Instructions;
 			for (int index = 0; index < instrs.Count; index++) {
 				index = ConfuserUtils.findCallMethod(instrs, index, Code.Callvirt, "System.Int32 System.IO.Stream::Read(System.Byte[],System.Int32,System.Int32)");
@@ -215,14 +215,14 @@ namespace de4dot.code.deobfuscators.Confuser {
 				if (instrs[index++].OpCode.Code != Code.Pop)
 					continue;
 				var ldci4 = instrs[index++];
-				if (!DotNetUtils.isLdcI4(ldci4))
+				if (!ldci4.IsLdcI4())
 					continue;
 				if (instrs[index++].OpCode.Code != Code.Conv_U1)
 					continue;
-				if (!DotNetUtils.isStloc(instrs[index++]))
+				if (!instrs[index++].IsStloc())
 					continue;
 
-				key0 = (byte)DotNetUtils.getLdcI4Value(ldci4);
+				key0 = (byte)ldci4.GetLdcI4Value();
 				return true;
 			}
 
@@ -230,24 +230,24 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		static bool findKey1_v18_r75369(MethodDefinition method, out byte key1) {
+		static bool findKey1_v18_r75369(MethodDef method, out byte key1) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 4; i++) {
 				int index = i;
-				if (!DotNetUtils.isLdloc(instrs[index++]))
+				if (!instrs[index++].IsLdloc())
 					continue;
 				var ldci4_1 = instrs[index++];
-				if (!DotNetUtils.isLdcI4(ldci4_1))
+				if (!ldci4_1.IsLdcI4())
 					continue;
 				if (instrs[index++].OpCode.Code != Code.Mul)
 					continue;
 				var ldci4_2 = instrs[index++];
-				if (!DotNetUtils.isLdcI4(ldci4_2) || DotNetUtils.getLdcI4Value(ldci4_2) != 0x100)
+				if (!ldci4_2.IsLdcI4() || ldci4_2.GetLdcI4Value() != 0x100)
 					continue;
 				if (instrs[index++].OpCode.Code != Code.Rem)
 					continue;
 
-				key1 = (byte)DotNetUtils.getLdcI4Value(ldci4_1);
+				key1 = (byte)ldci4_1.GetLdcI4Value();
 				return true;
 			}
 
@@ -255,26 +255,26 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		static bool findKey0Key1_v14_r55802(MethodDefinition method, out byte key0, out byte key1) {
+		static bool findKey0Key1_v14_r55802(MethodDef method, out byte key0, out byte key1) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 5; i++) {
-				if (!DotNetUtils.isLdcI4(instrs[i]))
+				if (!instrs[i].IsLdcI4())
 					continue;
 				if (instrs[i + 1].OpCode.Code != Code.Add)
 					continue;
 				if (instrs[i + 2].OpCode.Code != Code.Ldelem_U1)
 					continue;
 				var ldci4_1 = instrs[i + 3];
-				if (!DotNetUtils.isLdcI4(ldci4_1))
+				if (!ldci4_1.IsLdcI4())
 					continue;
 				if (instrs[i + 4].OpCode.Code != Code.Xor)
 					continue;
 				var ldci4_2 = instrs[i + 5];
-				if (!DotNetUtils.isLdcI4(ldci4_2))
+				if (!ldci4_2.IsLdcI4())
 					continue;
 
-				key0 = (byte)DotNetUtils.getLdcI4Value(ldci4_1);
-				key1 = (byte)DotNetUtils.getLdcI4Value(ldci4_2);
+				key0 = (byte)ldci4_1.GetLdcI4Value();
+				key1 = (byte)ldci4_2.GetLdcI4Value();
 				return true;
 			}
 			key0 = 0;
@@ -282,7 +282,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		static bool findKey0_v17_r73404(MethodDefinition method, out byte key) {
+		static bool findKey0_v17_r73404(MethodDef method, out byte key) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 3; i++) {
 				int index = ConfuserUtils.findCallMethod(instrs, i, Code.Callvirt, "System.Byte[] System.IO.BinaryReader::ReadBytes(System.Int32)");
@@ -291,36 +291,36 @@ namespace de4dot.code.deobfuscators.Confuser {
 				if (index + 3 >= instrs.Count)
 					break;
 
-				if (!DotNetUtils.isStloc(instrs[index + 1]))
+				if (!instrs[index + 1].IsStloc())
 					continue;
 				var ldci4 = instrs[index + 2];
-				if (!DotNetUtils.isLdcI4(ldci4))
+				if (!ldci4.IsLdcI4())
 					continue;
-				if (!DotNetUtils.isStloc(instrs[index + 3]))
+				if (!instrs[index + 3].IsStloc())
 					continue;
 
-				key = (byte)DotNetUtils.getLdcI4Value(ldci4);
+				key = (byte)ldci4.GetLdcI4Value();
 				return true;
 			}
 			key = 0;
 			return false;
 		}
 
-		static bool findKey1_v17_r73404(MethodDefinition method, out byte key) {
+		static bool findKey1_v17_r73404(MethodDef method, out byte key) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 3; i++) {
 				var ldci4_1 = instrs[i];
-				if (!DotNetUtils.isLdcI4(ldci4_1))
+				if (!ldci4_1.IsLdcI4())
 					continue;
 				if (instrs[i + 1].OpCode.Code != Code.Mul)
 					continue;
 				var ldci4_2 = instrs[i + 2];
-				if (!DotNetUtils.isLdcI4(ldci4_2) || DotNetUtils.getLdcI4Value(ldci4_2) != 0x100)
+				if (!ldci4_2.IsLdcI4() || ldci4_2.GetLdcI4Value() != 0x100)
 					continue;
 				if (instrs[i + 3].OpCode.Code != Code.Rem)
 					continue;
 
-				key = (byte)DotNetUtils.getLdcI4Value(ldci4_1);
+				key = (byte)ldci4_1.GetLdcI4Value();
 				return true;
 			}
 			key = 0;
@@ -330,7 +330,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		public EmbeddedResource mergeResources() {
 			if (resource == null)
 				return null;
-			DeobUtils.decryptAndAddResources(module, resource.Name, () => decryptResource());
+			DeobUtils.decryptAndAddResources(module, resource.Name.String, () => decryptResource());
 			var tmpResource = resource;
 			resource = null;
 			return tmpResource;

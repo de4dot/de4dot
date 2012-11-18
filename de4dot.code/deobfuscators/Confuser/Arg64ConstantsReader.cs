@@ -18,7 +18,7 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil.Cil;
+using dot10.DotNet.Emit;
 
 namespace de4dot.code.deobfuscators.Confuser {
 	class Arg64ConstantsReader : ConstantsReader {

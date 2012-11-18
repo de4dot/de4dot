@@ -18,7 +18,7 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil.Cil;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
 
@@ -38,7 +38,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 					int val;
 					if (!constantsReader.getInt32(ref index, out val))
 						continue;
-					newInstr = DotNetUtils.createLdci4(val);
+					newInstr = Instruction.CreateLdcI4(val);
 				}
 				else if (constantsReader.isLoadConstantInt64(instr.Instruction)) {
 					index = i;
@@ -73,22 +73,22 @@ namespace de4dot.code.deobfuscators.Confuser {
 					ulong valu64 = instr.OpCode.Code == Code.Ldc_R4 ? (ulong)(float)instr.Operand : (ulong)(double)instr.Operand;
 					switch (conv.OpCode.Code) {
 					case Code.Conv_I1:
-						newInstr = DotNetUtils.createLdci4(instr.OpCode.Code == Code.Ldc_R4 ? (sbyte)(float)instr.Operand : (sbyte)(double)instr.Operand);
+						newInstr = Instruction.CreateLdcI4(instr.OpCode.Code == Code.Ldc_R4 ? (sbyte)(float)instr.Operand : (sbyte)(double)instr.Operand);
 						break;
 					case Code.Conv_U1:
-						newInstr = DotNetUtils.createLdci4(instr.OpCode.Code == Code.Ldc_R4 ? (byte)(float)instr.Operand : (byte)(double)instr.Operand);
+						newInstr = Instruction.CreateLdcI4(instr.OpCode.Code == Code.Ldc_R4 ? (byte)(float)instr.Operand : (byte)(double)instr.Operand);
 						break;
 					case Code.Conv_I2:
-						newInstr = DotNetUtils.createLdci4(instr.OpCode.Code == Code.Ldc_R4 ? (short)(float)instr.Operand : (short)(double)instr.Operand);
+						newInstr = Instruction.CreateLdcI4(instr.OpCode.Code == Code.Ldc_R4 ? (short)(float)instr.Operand : (short)(double)instr.Operand);
 						break;
 					case Code.Conv_U2:
-						newInstr = DotNetUtils.createLdci4(instr.OpCode.Code == Code.Ldc_R4 ? (ushort)(float)instr.Operand : (ushort)(double)instr.Operand);
+						newInstr = Instruction.CreateLdcI4(instr.OpCode.Code == Code.Ldc_R4 ? (ushort)(float)instr.Operand : (ushort)(double)instr.Operand);
 						break;
 					case Code.Conv_I4:
-						newInstr = DotNetUtils.createLdci4(instr.OpCode.Code == Code.Ldc_R4 ? (int)(float)instr.Operand : (int)(double)instr.Operand);
+						newInstr = Instruction.CreateLdcI4(instr.OpCode.Code == Code.Ldc_R4 ? (int)(float)instr.Operand : (int)(double)instr.Operand);
 						break;
 					case Code.Conv_U4:
-						newInstr = DotNetUtils.createLdci4(instr.OpCode.Code == Code.Ldc_R4 ? (int)(uint)(float)instr.Operand : (int)(uint)(double)instr.Operand);
+						newInstr = Instruction.CreateLdcI4(instr.OpCode.Code == Code.Ldc_R4 ? (int)(uint)(float)instr.Operand : (int)(uint)(double)instr.Operand);
 						break;
 					case Code.Conv_I8:
 						newInstr = Instruction.Create(OpCodes.Ldc_I8, instr.OpCode.Code == Code.Ldc_R4 ? (long)(float)instr.Operand : (long)(double)instr.Operand);

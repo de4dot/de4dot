@@ -18,14 +18,14 @@
 */
 
 using System;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Confuser {
 	class AntiDumping : IVersionProvider {
-		ModuleDefinition module;
-		MethodDefinition initMethod;
+		ModuleDefMD module;
+		MethodDef initMethod;
 		ConfuserVersion version = ConfuserVersion.Unknown;
 
 		enum ConfuserVersion {
@@ -39,11 +39,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v19_r76186,
 		}
 
-		public MethodDefinition InitMethod {
+		public MethodDef InitMethod {
 			get { return initMethod; }
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return initMethod != null ? initMethod.DeclaringType : null; }
 		}
 
@@ -51,7 +51,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			get { return initMethod != null; }
 		}
 
-		public AntiDumping(ModuleDefinition module) {
+		public AntiDumping(ModuleDefMD module) {
 			this.module = module;
 		}
 
@@ -60,14 +60,14 @@ namespace de4dot.code.deobfuscators.Confuser {
 				return;
 		}
 
-		bool checkMethod(ISimpleDeobfuscator simpleDeobfuscator, MethodDefinition method) {
+		bool checkMethod(ISimpleDeobfuscator simpleDeobfuscator, MethodDef method) {
 			if (method == null || method.Body == null)
 				return false;
 
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Call)
 					continue;
-				var calledMethod = instr.Operand as MethodDefinition;
+				var calledMethod = instr.Operand as MethodDef;
 				if (calledMethod == null)
 					continue;
 				if (calledMethod == null || !calledMethod.IsStatic)
@@ -87,12 +87,12 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		bool checkType(TypeDefinition type, MethodDefinition initMethod) {
+		bool checkType(TypeDef type, MethodDef initMethod) {
 			return checkType_v14_r58564(type, initMethod) ||
 				checkType_v14_r58852(type, initMethod);
 		}
 
-		bool checkType_v14_r58564(TypeDefinition type, MethodDefinition initMethod) {
+		bool checkType_v14_r58564(TypeDef type, MethodDef initMethod) {
 			var virtualProtect = DotNetUtils.getPInvokeMethod(type, "VirtualProtect");
 			if (virtualProtect == null)
 				return false;
@@ -111,7 +111,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return true;
 		}
 
-		bool checkType_v14_r58852(TypeDefinition type, MethodDefinition initMethod) {
+		bool checkType_v14_r58852(TypeDef type, MethodDef initMethod) {
 			var virtualProtect = DotNetUtils.getPInvokeMethod(type, "VirtualProtect");
 			if (virtualProtect == null)
 				return false;
@@ -156,40 +156,40 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return true;
 		}
 
-		static bool isRev75725(MethodDefinition method) {
+		static bool isRev75725(MethodDef method) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 9; i++) {
-				if (!DotNetUtils.isLdcI4(instrs[i]) || DotNetUtils.getLdcI4Value(instrs[i]) != 8)
+				if (!instrs[i].IsLdcI4() || instrs[i].GetLdcI4Value() != 8)
 					continue;
-				if (!DotNetUtils.isLdcI4(instrs[i + 1]) || DotNetUtils.getLdcI4Value(instrs[i + 1]) != 64)
+				if (!instrs[i + 1].IsLdcI4() || instrs[i + 1].GetLdcI4Value() != 64)
 					continue;
 				if (instrs[i + 2].OpCode.Code != Code.Ldloca && instrs[i + 2].OpCode.Code != Code.Ldloca_S)
 					continue;
 				var call = instrs[i + 3];
 				if (call.OpCode.Code != Code.Call)
 					continue;
-				var calledMethod = call.Operand as MethodDefinition;
-				if (calledMethod == null || calledMethod.PInvokeInfo == null || calledMethod.PInvokeInfo.EntryPoint != "VirtualProtect")
+				var calledMethod = call.Operand as MethodDef;
+				if (calledMethod == null || calledMethod.ImplMap == null || calledMethod.ImplMap.Name != "VirtualProtect")
 					continue;
 				if (instrs[i + 4].OpCode.Code != Code.Pop)
 					continue;
 
 				var ldloc = instrs[i + 5];
-				if (!DotNetUtils.isLdloc(ldloc))
+				if (!ldloc.IsLdloc())
 					continue;
-				var local = DotNetUtils.getLocalVar(method.Body.Variables, ldloc);
+				var local = ldloc.GetLocal(method.Body.LocalList);
 				if (local == null)
 					continue;
 
-				if (!DotNetUtils.isLdcI4(instrs[i + 6]) || DotNetUtils.getLdcI4Value(instrs[i + 6]) != 0)
+				if (!instrs[i + 6].IsLdcI4() || instrs[i + 6].GetLdcI4Value() != 0)
 					continue;
 				if (instrs[i + 7].OpCode.Code != Code.Stind_I4)
 					continue;
 
 				ldloc = instrs[i + 8];
-				if (!DotNetUtils.isLdloc(ldloc) || local != DotNetUtils.getLocalVar(method.Body.Variables, ldloc))
+				if (!ldloc.IsLdloc() || local != ldloc.GetLocal(method.Body.LocalList))
 					continue;
-				if (!DotNetUtils.isLdcI4(instrs[i + 9]) || DotNetUtils.getLdcI4Value(instrs[i + 9]) != 4)
+				if (!instrs[i + 9].IsLdcI4() || instrs[i + 9].GetLdcI4Value() != 4)
 					continue;
 
 				return true;

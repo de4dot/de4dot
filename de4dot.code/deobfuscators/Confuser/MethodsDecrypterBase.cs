@@ -21,26 +21,26 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.Confuser {
 	abstract class MethodsDecrypterBase : IVersionProvider {
-		protected ModuleDefinition module;
+		protected ModuleDefMD module;
 		protected ISimpleDeobfuscator simpleDeobfuscator;
-		protected MethodDefinition initMethod;
-		protected MethodDefinition decryptMethod;
+		protected MethodDef initMethod;
+		protected MethodDef decryptMethod;
 		protected ulong lkey0;
 		protected uint key0, key1, key2, key3, key4, key5, key6;
 		protected byte[] methodsData;
 
-		public MethodDefinition InitMethod {
+		public MethodDef InitMethod {
 			get { return initMethod; }
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return initMethod != null ? initMethod.DeclaringType : null; }
 		}
 
@@ -48,19 +48,19 @@ namespace de4dot.code.deobfuscators.Confuser {
 			get { return initMethod != null; }
 		}
 
-		protected MethodsDecrypterBase(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator) {
+		protected MethodsDecrypterBase(ModuleDefMD module, ISimpleDeobfuscator simpleDeobfuscator) {
 			this.module = module;
 			this.simpleDeobfuscator = simpleDeobfuscator;
 		}
 
-		protected MethodsDecrypterBase(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator, MethodsDecrypterBase other) {
+		protected MethodsDecrypterBase(ModuleDefMD module, ISimpleDeobfuscator simpleDeobfuscator, MethodsDecrypterBase other) {
 			this.module = module;
 			this.simpleDeobfuscator = simpleDeobfuscator;
 			if (other != null)
 				this.initMethod = lookup(other.initMethod, "Could not find initMethod");
 		}
 
-		T lookup<T>(T def, string errorMessage) where T : MemberReference {
+		T lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
 			return DeobUtils.lookup(module, def, errorMessage);
 		}
 
@@ -70,13 +70,13 @@ namespace de4dot.code.deobfuscators.Confuser {
 			find(DotNetUtils.getModuleTypeCctor(module));
 		}
 
-		bool find(MethodDefinition method) {
+		bool find(MethodDef method) {
 			if (method == null || method.Body == null)
 				return false;
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Call)
 					continue;
-				var calledMethod = instr.Operand as MethodDefinition;
+				var calledMethod = instr.Operand as MethodDef;
 				try {
 					// If the body is encrypted, this could throw
 					if (calledMethod == null || calledMethod.Body == null)
@@ -96,9 +96,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		protected abstract bool checkType(TypeDefinition type, MethodDefinition initMethod);
+		protected abstract bool checkType(TypeDef type, MethodDef initMethod);
 
-		protected static MethodDefinition findDecryptMethod(TypeDefinition type) {
+		protected static MethodDef findDecryptMethod(TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
@@ -110,7 +110,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return null;
 		}
 
-		protected static bool findLKey0(MethodDefinition method, out ulong key) {
+		protected static bool findLKey0(MethodDef method, out ulong key) {
 			var instrs = method.Body.Instructions;
 			for (int index = 0; index < instrs.Count; index++) {
 				index = findCallvirtReadUInt64(instrs, index);
@@ -130,7 +130,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		protected static bool findKey0_v16_r71742(MethodDefinition method, out uint key) {
+		protected static bool findKey0_v16_r71742(MethodDef method, out uint key) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i + 5 < instrs.Count; i++) {
 				i = findCallvirtReadUInt32(instrs, i);
@@ -139,21 +139,21 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 				int index = i + 1;
 				var ldci4_1 = instrs[index++];
-				if (!DotNetUtils.isLdcI4(ldci4_1))
+				if (!ldci4_1.IsLdcI4())
 					continue;
 				if (instrs[index++].OpCode.Code != Code.Xor)
 					continue;
-				if (!DotNetUtils.isStloc(instrs[index++]))
+				if (!instrs[index++].IsStloc())
 					continue;
-				if (!DotNetUtils.isLdloc(instrs[index++]))
+				if (!instrs[index++].IsLdloc())
 					continue;
 				var ldci4_2 = instrs[index++];
-				if (!DotNetUtils.isLdcI4(ldci4_2))
+				if (!ldci4_2.IsLdcI4())
 					continue;
-				if (DotNetUtils.getLdcI4Value(ldci4_1) != DotNetUtils.getLdcI4Value(ldci4_2))
+				if (ldci4_1.GetLdcI4Value() != ldci4_2.GetLdcI4Value())
 					continue;
 
-				key = (uint)DotNetUtils.getLdcI4Value(ldci4_1);
+				key = (uint)ldci4_1.GetLdcI4Value();
 				return true;
 			}
 
@@ -161,7 +161,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		protected static bool findKey0_v14_r58564(MethodDefinition method, out uint key) {
+		protected static bool findKey0_v14_r58564(MethodDef method, out uint key) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i + 5 < instrs.Count; i++) {
 				i = ConfuserUtils.findCallMethod(instrs, i, Code.Callvirt, "System.Int32 System.IO.BinaryReader::ReadInt32()");
@@ -170,21 +170,21 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 				int index = i + 1;
 				var ldci4_1 = instrs[index++];
-				if (!DotNetUtils.isLdcI4(ldci4_1))
+				if (!ldci4_1.IsLdcI4())
 					continue;
 				if (instrs[index++].OpCode.Code != Code.Xor)
 					continue;
-				if (!DotNetUtils.isStloc(instrs[index++]))
+				if (!instrs[index++].IsStloc())
 					continue;
-				if (!DotNetUtils.isLdloc(instrs[index++]))
+				if (!instrs[index++].IsLdloc())
 					continue;
 				var ldci4_2 = instrs[index++];
-				if (!DotNetUtils.isLdcI4(ldci4_2))
+				if (!ldci4_2.IsLdcI4())
 					continue;
-				if (DotNetUtils.getLdcI4Value(ldci4_2) != 0 && DotNetUtils.getLdcI4Value(ldci4_1) != DotNetUtils.getLdcI4Value(ldci4_2))
+				if (ldci4_2.GetLdcI4Value() != 0 && ldci4_1.GetLdcI4Value() != ldci4_2.GetLdcI4Value())
 					continue;
 
-				key = (uint)DotNetUtils.getLdcI4Value(ldci4_1);
+				key = (uint)ldci4_1.GetLdcI4Value();
 				return true;
 			}
 
@@ -192,7 +192,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		protected static bool findKey1(MethodDefinition method, out uint key) {
+		protected static bool findKey1(MethodDef method, out uint key) {
 			var instrs = method.Body.Instructions;
 			for (int index = 0; index < instrs.Count; index++) {
 				index = findCallvirtReadUInt32(instrs, index);
@@ -212,13 +212,13 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 				if (i + 1 >= instrs.Count)
 					continue;
-				if (!DotNetUtils.isLdloc(instrs[i]))
+				if (!instrs[i].IsLdloc())
 					continue;
 				var ldci4 = instrs[i + 1];
-				if (!DotNetUtils.isLdcI4(ldci4))
+				if (!ldci4.IsLdcI4())
 					continue;
 
-				key = (uint)DotNetUtils.getLdcI4Value(ldci4);
+				key = (uint)ldci4.GetLdcI4Value();
 				return true;
 			}
 
@@ -230,18 +230,18 @@ namespace de4dot.code.deobfuscators.Confuser {
 			if (index + 2 >= instrs.Count)
 				return false;
 
-			if (!DotNetUtils.isLdloc(instrs[index]))
+			if (!instrs[index].IsLdloc())
 				return false;
 			if (!ConfuserUtils.isCallMethod(instrs[index + 1], Code.Callvirt, "System.UInt32 System.IO.BinaryReader::ReadUInt32()"))
 				return false;
-			if (!DotNetUtils.isStloc(instrs[index + 2]) && instrs[index + 2].OpCode.Code != Code.Pop)
+			if (!instrs[index + 2].IsStloc() && instrs[index + 2].OpCode.Code != Code.Pop)
 				return false;
 
 			index += 3;
 			return true;
 		}
 
-		protected static bool findKey2Key3(MethodDefinition method, out uint key2, out uint key3) {
+		protected static bool findKey2Key3(MethodDef method, out uint key2, out uint key3) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count; i++) {
 				int index = i;
@@ -263,46 +263,46 @@ namespace de4dot.code.deobfuscators.Confuser {
 			if (index + 6 >= instrs.Count)
 				return false;
 			int i = index;
-			if (!DotNetUtils.isLdloc(instrs[i++]))
+			if (!instrs[i++].IsLdloc())
 				return false;
-			if (!DotNetUtils.isLdloc(instrs[i++]))
+			if (!instrs[i++].IsLdloc())
 				return false;
 			if (!ConfuserUtils.isCallMethod(instrs[i++], Code.Callvirt, "System.Int32 System.IO.BinaryReader::ReadInt32()"))
 				return false;
 			var ldci4 = instrs[i++];
-			if (!DotNetUtils.isLdcI4(ldci4))
+			if (!ldci4.IsLdcI4())
 				return false;
 			if (instrs[i++].OpCode.Code != Code.Xor)
 				return false;
 			if (!ConfuserUtils.isCallMethod(instrs[i++], Code.Callvirt, "System.Byte[] System.IO.BinaryReader::ReadBytes(System.Int32)"))
 				return false;
-			if (!DotNetUtils.isStloc(instrs[i++]))
+			if (!instrs[i++].IsStloc())
 				return false;
 
-			key = (uint)DotNetUtils.getLdcI4Value(ldci4);
+			key = (uint)ldci4.GetLdcI4Value();
 			index = i;
 			return true;
 		}
 
-		protected static bool findKey6(MethodDefinition method, out uint key) {
+		protected static bool findKey6(MethodDef method, out uint key) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i + 4 < instrs.Count; i++) {
 				int index = i;
-				if (!DotNetUtils.isLdloc(instrs[index++]))
+				if (!instrs[index++].IsLdloc())
 					continue;
 				if (instrs[index++].OpCode.Code != Code.Sub)
 					continue;
 				if (instrs[index++].OpCode.Code != Code.Ldelem_U1)
 					continue;
 				var ldci4 = instrs[index++];
-				if (!DotNetUtils.isLdcI4(ldci4))
+				if (!ldci4.IsLdcI4())
 					continue;
 				if (instrs[index++].OpCode.Code != Code.Xor)
 					continue;
 				if (instrs[index++].OpCode.Code != Code.Conv_U1)
 					continue;
 
-				key = (uint)DotNetUtils.getLdcI4Value(ldci4);
+				key = (uint)ldci4.GetLdcI4Value();
 				return true;
 			}
 

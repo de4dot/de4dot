@@ -18,14 +18,14 @@
 */
 
 using System;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Confuser {
 	class AntiDebugger : IVersionProvider {
-		ModuleDefinition module;
-		MethodDefinition initMethod;
+		ModuleDefMD module;
+		MethodDef initMethod;
 		ConfuserVersion version = ConfuserVersion.Unknown;
 
 		enum ConfuserVersion {
@@ -42,11 +42,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v19_r76119_safe,
 		}
 
-		public MethodDefinition InitMethod {
+		public MethodDef InitMethod {
 			get { return initMethod; }
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return initMethod != null ? initMethod.DeclaringType : null; }
 		}
 
@@ -54,7 +54,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			get { return initMethod != null; }
 		}
 
-		public AntiDebugger(ModuleDefinition module) {
+		public AntiDebugger(ModuleDefMD module) {
 			this.module = module;
 		}
 
@@ -63,14 +63,14 @@ namespace de4dot.code.deobfuscators.Confuser {
 				return;
 		}
 
-		bool checkMethod(MethodDefinition method) {
+		bool checkMethod(MethodDef method) {
 			if (method == null || method.Body == null)
 				return false;
 
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Call)
 					continue;
-				var calledMethod = instr.Operand as MethodDefinition;
+				var calledMethod = instr.Operand as MethodDef;
 				if (calledMethod == null || !calledMethod.IsStatic)
 					continue;
 				if (!DotNetUtils.isMethod(calledMethod, "System.Void", "()"))
@@ -88,7 +88,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		static bool checkProfilerStrings1(MethodDefinition method) {
+		static bool checkProfilerStrings1(MethodDef method) {
 			if (!DotNetUtils.hasString(method, "COR_ENABLE_PROFILING"))
 				return false;
 			if (!DotNetUtils.hasString(method, "COR_PROFILER"))
@@ -97,7 +97,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return true;
 		}
 
-		static bool checkProfilerStrings2(MethodDefinition method) {
+		static bool checkProfilerStrings2(MethodDef method) {
 			if (!DotNetUtils.hasString(method, "COR_"))
 				return false;
 			if (!DotNetUtils.hasString(method, "ENABLE_PROFILING"))
@@ -108,7 +108,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return true;
 		}
 
-		static MethodDefinition getAntiDebugMethod(TypeDefinition type, MethodDefinition initMethod) {
+		static MethodDef getAntiDebugMethod(TypeDef type, MethodDef initMethod) {
 			foreach (var method in type.Methods) {
 				if (method.Body == null || method == initMethod)
 					continue;
@@ -124,7 +124,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return null;
 		}
 
-		bool checkMethod_normal(TypeDefinition type, MethodDefinition initMethod) {
+		bool checkMethod_normal(TypeDef type, MethodDef initMethod) {
 			var ntQueryInformationProcess = DotNetUtils.getPInvokeMethod(type, "ntdll", "NtQueryInformationProcess");
 			if (ntQueryInformationProcess == null)
 				return false;
@@ -184,7 +184,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return true;
 		}
 
-		bool checkMethod_safe(TypeDefinition type, MethodDefinition initMethod) {
+		bool checkMethod_safe(TypeDef type, MethodDef initMethod) {
 			if (type == DotNetUtils.getModuleType(module)) {
 				if (!DotNetUtils.hasString(initMethod, "Debugger detected (Managed)"))
 					return false;

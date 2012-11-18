@@ -19,9 +19,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dot10.IO;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Confuser {
@@ -49,19 +49,19 @@ namespace de4dot.code.deobfuscators.Confuser {
 		public static bool isCallMethod(Instruction instr, Code callCode, string methodFullName) {
 			if (instr.OpCode.Code != callCode)
 				return false;
-			var calledMethod = instr.Operand as MethodReference;
+			var calledMethod = instr.Operand as IMethod;
 			return calledMethod != null && calledMethod.FullName == methodFullName;
 		}
 
-		public static bool removeResourceHookCode(Blocks blocks, MethodDefinition handler) {
+		public static bool removeResourceHookCode(Blocks blocks, MethodDef handler) {
 			return removeResolveHandlerCode(blocks, handler, "System.Void System.AppDomain::add_ResourceResolve(System.ResolveEventHandler)");
 		}
 
-		public static bool removeAssemblyHookCode(Blocks blocks, MethodDefinition handler) {
+		public static bool removeAssemblyHookCode(Blocks blocks, MethodDef handler) {
 			return removeResolveHandlerCode(blocks, handler, "System.Void System.AppDomain::add_AssemblyResolve(System.ResolveEventHandler)");
 		}
 
-		static bool removeResolveHandlerCode(Blocks blocks, MethodDefinition handler, string installHandlerMethod) {
+		static bool removeResolveHandlerCode(Blocks blocks, MethodDef handler, string installHandlerMethod) {
 			bool modified = false;
 			foreach (var block in blocks.MethodBlocks.getAllBlocks()) {
 				var instrs = block.Instructions;
@@ -69,7 +69,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 					var call = instrs[i];
 					if (call.OpCode.Code != Code.Call)
 						continue;
-					var calledMethod = call.Operand as MethodReference;
+					var calledMethod = call.Operand as IMethod;
 					if (calledMethod == null || calledMethod.FullName != "System.AppDomain System.AppDomain::get_CurrentDomain()")
 						continue;
 
@@ -85,14 +85,14 @@ namespace de4dot.code.deobfuscators.Confuser {
 					var newobj = instrs[i + 3];
 					if (newobj.OpCode.Code != Code.Newobj)
 						continue;
-					var ctor = newobj.Operand as MethodReference;
+					var ctor = newobj.Operand as IMethod;
 					if (ctor == null || ctor.FullName != "System.Void System.ResolveEventHandler::.ctor(System.Object,System.IntPtr)")
 						continue;
 
 					var callvirt = instrs[i + 4];
 					if (callvirt.OpCode.Code != Code.Callvirt)
 						continue;
-					calledMethod = callvirt.Operand as MethodReference;
+					calledMethod = callvirt.Operand as IMethod;
 					if (calledMethod == null || calledMethod.FullName != installHandlerMethod)
 						continue;
 
@@ -103,9 +103,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return modified;
 		}
 
-		public static byte[] decryptCompressedInt32Data(Arg64ConstantsReader constReader, int exprStart, int exprEnd, BinaryReader reader, byte[] decrypted) {
+		public static byte[] decryptCompressedInt32Data(Arg64ConstantsReader constReader, int exprStart, int exprEnd, IBinaryReader reader, byte[] decrypted) {
 			for (int i = 0; i < decrypted.Length; i++) {
-				constReader.Arg = Utils.readEncodedInt32(reader);
+				constReader.Arg = reader.Read7BitEncodedInt32();
 				int index = exprStart;
 				long result;
 				if (!constReader.getInt64(ref index, out result) || index != exprEnd)
@@ -133,21 +133,21 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return decrypted;
 		}
 
-		public static int countCalls(MethodDefinition method, string methodFullName) {
+		public static int countCalls(MethodDef method, string methodFullName) {
 			if (method == null || method.Body == null)
 				return 0;
 			int count = 0;
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt && instr.OpCode.Code != Code.Newobj)
 					continue;
-				var calledMethod = instr.Operand as MethodReference;
+				var calledMethod = instr.Operand as IMethod;
 				if (calledMethod != null && calledMethod.FullName == methodFullName)
 					count++;
 			}
 			return count;
 		}
 
-		public static int countCalls(MethodDefinition method, MethodDefinition calledMethod) {
+		public static int countCalls(MethodDef method, MethodDef calledMethod) {
 			if (method == null || method.Body == null)
 				return 0;
 			int count = 0;
@@ -160,7 +160,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return count;
 		}
 
-		public static int countOpCode(MethodDefinition method, Code code) {
+		public static int countOpCode(MethodDef method, Code code) {
 			if (method == null || method.Body == null)
 				return 0;
 

@@ -452,6 +452,7 @@ namespace de4dot.blocks {
 			methodCalls.addMethodCalls(method);
 			return methodCalls;
 		}
+#endif
 
 		public static bool hasString(MethodDef method, string s) {
 			if (method == null || method.Body == null)
@@ -463,6 +464,7 @@ namespace de4dot.blocks {
 			return false;
 		}
 
+#if PORT
 		public static IList<string> getCodeStrings(MethodDef method) {
 			var strings = new List<string>();
 			if (method != null && method.Body != null) {

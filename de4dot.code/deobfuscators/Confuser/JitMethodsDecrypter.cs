@@ -21,17 +21,16 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using Mono.Cecil.Metadata;
-using Mono.MyStuff;
+using dot10.IO;
+using dot10.DotNet;
+using dot10.DotNet.Emit;
 using de4dot.blocks;
 using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.Confuser {
 	class JitMethodsDecrypter : MethodsDecrypterBase, IStringDecrypter {
-		MethodDefinition compileMethod;
-		MethodDefinition hookConstructStr;
+		MethodDef compileMethod;
+		MethodDef hookConstructStr;
 		MethodDataIndexes methodDataIndexes;
 		ConfuserVersion version = ConfuserVersion.Unknown;
 
@@ -57,17 +56,17 @@ namespace de4dot.code.deobfuscators.Confuser {
 			public int options;
 		}
 
-		public JitMethodsDecrypter(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator)
+		public JitMethodsDecrypter(ModuleDefMD module, ISimpleDeobfuscator simpleDeobfuscator)
 			: base(module, simpleDeobfuscator) {
 		}
 
-		public JitMethodsDecrypter(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator, JitMethodsDecrypter other)
+		public JitMethodsDecrypter(ModuleDefMD module, ISimpleDeobfuscator simpleDeobfuscator, JitMethodsDecrypter other)
 			: base(module, simpleDeobfuscator, other) {
 			if (other != null)
 				this.version = other.version;
 		}
 
-		protected override bool checkType(TypeDefinition type, MethodDefinition initMethod) {
+		protected override bool checkType(TypeDef type, MethodDef initMethod) {
 			if (type == null)
 				return false;
 
@@ -132,32 +131,33 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return true;
 		}
 
-		static int countInt32s(MethodDefinition method, int val) {
+		static int countInt32s(MethodDef method, int val) {
 			int count = 0;
 			foreach (var instr in method.Body.Instructions) {
-				if (!DotNetUtils.isLdcI4(instr))
+				if (!instr.IsLdcI4())
 					continue;
-				if (DotNetUtils.getLdcI4Value(instr) == val)
+				if (instr.GetLdcI4Value() == val)
 					count++;
 			}
 			return count;
 		}
 
-		static MethodDefinition findCompileMethod(TypeDefinition type) {
+		static MethodDef findCompileMethod(TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
-				if (method.Parameters.Count != 6)
+				var sig = method.MethodSig;
+				if (sig == null || sig.Params.Count != 6)
 					continue;
-				if (method.MethodReturnType.ReturnType.EType != ElementType.U4)
+				if (sig.RetType.GetElementType() != ElementType.U4)
 					continue;
-				if (method.Parameters[0].ParameterType.EType != ElementType.I)
+				if (sig.Params[0].GetElementType() != ElementType.I)
 					continue;
-				if (method.Parameters[3].ParameterType.EType != ElementType.U4)
+				if (sig.Params[3].GetElementType() != ElementType.U4)
 					continue;
-				if (method.Parameters[4].ParameterType.FullName != "System.Byte**")
+				if (sig.Params[4].GetFullName() != "System.Byte**")
 					continue;
-				if (method.Parameters[5].ParameterType.FullName != "System.UInt32*")
+				if (sig.Params[5].GetFullName() != "System.UInt32*")
 					continue;
 
 				return method;
@@ -165,22 +165,23 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return null;
 		}
 
-		static MethodDefinition findHookConstructStr(TypeDefinition type) {
+		static MethodDef findHookConstructStr(TypeDef type) {
 			foreach (var nested in type.NestedTypes) {
 				if (nested.Fields.Count != 8 && nested.Fields.Count != 10)
 					continue;
 				foreach (var method in nested.Methods) {
 					if (method.IsStatic || method.Body == null)
 						continue;
-					if (method.Parameters.Count != 4)
+					var sig = method.MethodSig;
+					if (sig == null || sig.Params.Count != 4)
 						continue;
-					if (method.Parameters[0].ParameterType.EType != ElementType.I)
+					if (sig.Params[0].GetElementType() != ElementType.I)
 						continue;
-					if (method.Parameters[1].ParameterType.EType != ElementType.I)
+					if (sig.Params[1].GetElementType() != ElementType.I)
 						continue;
-					if (method.Parameters[2].ParameterType.EType != ElementType.U4)
+					if (sig.Params[2].GetElementType() != ElementType.U4)
 						continue;
-					if (method.Parameters[3].ParameterType.EType != ElementType.I && method.Parameters[3].ParameterType.FullName != "System.IntPtr&")
+					if (sig.Params[3].GetElementType() != ElementType.I && sig.Params[3].GetFullName() != "System.IntPtr&")
 						continue;
 
 					return method;
@@ -258,7 +259,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return true;
 		}
 
-		static bool findKey4(MethodDefinition method, out uint key) {
+		static bool findKey4(MethodDef method, out uint key) {
 			var instrs = method.Body.Instructions;
 			for (int index = 0; index < instrs.Count; index++) {
 				index = ConfuserUtils.findCallMethod(instrs, index, Code.Call, "System.Void System.Runtime.InteropServices.Marshal::Copy(System.Byte[],System.Int32,System.IntPtr,System.Int32)");
@@ -266,13 +267,13 @@ namespace de4dot.code.deobfuscators.Confuser {
 					break;
 				if (index + 2 >= instrs.Count)
 					continue;
-				if (!DotNetUtils.isLdloc(instrs[index + 1]))
+				if (!instrs[index + 1].IsLdloc())
 					continue;
 				var ldci4 = instrs[index + 2];
-				if (!DotNetUtils.isLdcI4(ldci4))
+				if (!ldci4.IsLdcI4())
 					continue;
 
-				key = (uint)DotNetUtils.getLdcI4Value(ldci4);
+				key = (uint)ldci4.GetLdcI4Value();
 				return true;
 			}
 
@@ -280,24 +281,24 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		static bool findKey5(MethodDefinition method, out uint key) {
+		static bool findKey5(MethodDef method, out uint key) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i + 4 < instrs.Count; i++) {
 				int index = i;
 				var ldci4_8 = instrs[index++];
-				if (!DotNetUtils.isLdcI4(ldci4_8) || DotNetUtils.getLdcI4Value(ldci4_8) != 8)
+				if (!ldci4_8.IsLdcI4() || ldci4_8.GetLdcI4Value() != 8)
 					continue;
 				if (instrs[index++].OpCode.Code != Code.Shl)
 					continue;
 				if (instrs[index++].OpCode.Code != Code.Or)
 					continue;
 				var ldci4 = instrs[index++];
-				if (!DotNetUtils.isLdcI4(ldci4))
+				if (!ldci4.IsLdcI4())
 					continue;
 				if (instrs[index++].OpCode.Code != Code.Xor)
 					continue;
 
-				key = (uint)DotNetUtils.getLdcI4Value(ldci4);
+				key = (uint)ldci4.GetLdcI4Value();
 				return true;
 			}
 
@@ -305,7 +306,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		bool initializeMethodDataIndexes(MethodDefinition compileMethod) {
+		bool initializeMethodDataIndexes(MethodDef compileMethod) {
 			switch (version) {
 			case ConfuserVersion.v17_r73404: return true;
 			case ConfuserVersion.v17_r73430: return true;
@@ -321,7 +322,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			}
 		}
 
-		bool initializeMethodDataIndexes_v17_r73477(MethodDefinition method) {
+		bool initializeMethodDataIndexes_v17_r73477(MethodDef method) {
 			simpleDeobfuscator.deobfuscate(method);
 			var methodDataType = findFirstThreeIndexes(method, out methodDataIndexes.maxStack, out methodDataIndexes.ehs, out methodDataIndexes.options);
 			if (methodDataType == null)
@@ -336,7 +337,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return true;
 		}
 
-		static TypeDefinition findFirstThreeIndexes(MethodDefinition method, out int maxStackIndex, out int ehsIndex, out int optionsIndex) {
+		static TypeDef findFirstThreeIndexes(MethodDef method, out int maxStackIndex, out int ehsIndex, out int optionsIndex) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count; i++) {
 				int index1 = findLdfldStind(instrs, i, false, true);
@@ -352,9 +353,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 				if (index3 < 0)
 					continue;
 
-				var field1 = instrs[index1].Operand as FieldDefinition;
-				var field2 = instrs[index2].Operand as FieldDefinition;
-				var field3 = instrs[index3].Operand as FieldDefinition;
+				var field1 = instrs[index1].Operand as FieldDef;
+				var field2 = instrs[index2].Operand as FieldDef;
+				var field3 = instrs[index3].Operand as FieldDef;
 				if (field1 == null || field2 == null || field3 == null)
 					continue;
 				if (field1.DeclaringType != field2.DeclaringType || field1.DeclaringType != field3.DeclaringType)
@@ -372,20 +373,20 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return null;
 		}
 
-		static bool findLocalVarSigTokIndex(MethodDefinition method, TypeDefinition methodDataType, out int localVarSigTokIndex) {
+		static bool findLocalVarSigTokIndex(MethodDef method, TypeDef methodDataType, out int localVarSigTokIndex) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 1; i++) {
 				var ldfld = instrs[i];
 				if (ldfld.OpCode.Code != Code.Ldfld)
 					continue;
-				var field = ldfld.Operand as FieldDefinition;
+				var field = ldfld.Operand as FieldDef;
 				if (field == null || field.DeclaringType != methodDataType)
 					continue;
 
 				var call = instrs[i + 1];
 				if (call.OpCode.Code != Code.Call)
 					continue;
-				var calledMethod = call.Operand as MethodDefinition;
+				var calledMethod = call.Operand as MethodDef;
 				if (calledMethod == null || !calledMethod.IsStatic || calledMethod.DeclaringType != method.DeclaringType)
 					continue;
 
@@ -397,13 +398,13 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		static bool findCodeSizeIndex(MethodDefinition method, TypeDefinition methodDataType, out int codeSizeIndex) {
+		static bool findCodeSizeIndex(MethodDef method, TypeDef methodDataType, out int codeSizeIndex) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 1; i++) {
 				var ldfld = instrs[i];
 				if (ldfld.OpCode.Code != Code.Ldfld)
 					continue;
-				var field = ldfld.Operand as FieldDefinition;
+				var field = ldfld.Operand as FieldDef;
 				if (field == null || field.DeclaringType != methodDataType)
 					continue;
 
@@ -418,7 +419,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		static int getInstanceFieldIndex(FieldDefinition field) {
+		static int getInstanceFieldIndex(FieldDef field) {
 			int i = 0;
 			foreach (var f in field.DeclaringType.Fields) {
 				if (f.IsStatic)
@@ -616,7 +617,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		DumpedMethods decrypt(PeImage peImage, byte[] fileData, DecryptMethodData decrypter) {
-			var dumpedMethods = new DumpedMethods { StringDecrypter = this };
+			var dumpedMethods = new DumpedMethods();
 
 			var metadataTables = peImage.Cor20Header.createMetadataTables();
 			var methodDef = metadataTables.getMetadataType(MetadataIndex.iMethodDef);
@@ -724,19 +725,20 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return data;
 		}
 
-		string IStringDecrypter.decrypt(uint token) {
+		string IStringDecrypter.ReadUserString(uint token) {
 			if ((token & 0xFF800000) != 0x70800000)
 				return null;
-			var reader = new BinaryReader(new MemoryStream(methodsData));
-			reader.BaseStream.Position = (token & ~0xFF800000) + 2;
-			int len = reader.ReadInt32();
-			if ((len & 1) != 1)
-				throw new ApplicationException("Invalid string len");
-			int chars = len / 2;
-			var sb = new StringBuilder(chars);
-			for (int i = 0; i < chars; i++)
-				sb.Append((char)(reader.ReadUInt16() ^ key5));
-			return sb.ToString();
+			using (var reader = MemoryImageStream.Create(methodsData)) {
+				reader.Position = (token & ~0xFF800000) + 2;
+				int len = reader.ReadInt32();
+				if ((len & 1) != 1)
+					throw new ApplicationException("Invalid string len");
+				int chars = len / 2;
+				var sb = new StringBuilder(chars);
+				for (int i = 0; i < chars; i++)
+					sb.Append((char)(reader.ReadUInt16() ^ key5));
+				return sb.ToString();
+			}
 		}
 
 		public override bool getRevisionRange(out int minRev, out int maxRev) {
