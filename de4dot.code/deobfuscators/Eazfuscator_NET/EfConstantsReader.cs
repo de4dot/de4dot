@@ -18,7 +18,6 @@
 */
 
 using dot10.DotNet;
-using Mono.Cecil.Metadata;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Eazfuscator_NET {
@@ -38,10 +37,10 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				if (!getInt32(ref index, out value))
 					break;
 				var stloc = instructions[index];
-				if (!DotNetUtils.isStloc(stloc))
+				if (!stloc.IsStloc())
 					break;
-				var local = DotNetUtils.getLocalVar(locals, stloc);
-				if (local == null || local.VariableType.EType != ElementType.I4)
+				var local = stloc.GetLocal(locals);
+				if (local == null || local.Type.GetElementType() != ElementType.I4)
 					break;
 				localsValuesInt32[local] = value;
 				index++;

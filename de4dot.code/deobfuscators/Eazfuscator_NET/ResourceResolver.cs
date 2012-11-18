@@ -26,7 +26,7 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 	class ResourceResolver {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		AssemblyResolver assemblyResolver;
 		TypeDef resolverType;
 		MethodDef initMethod;
@@ -45,7 +45,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			get { return resolverType != null; }
 		}
 
-		public ResourceResolver(ModuleDefinition module, AssemblyResolver assemblyResolver) {
+		public ResourceResolver(ModuleDefMD module, AssemblyResolver assemblyResolver) {
 			this.module = module;
 			this.assemblyResolver = assemblyResolver;
 		}

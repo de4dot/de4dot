@@ -33,7 +33,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			get { return getManifestResourceStreamTypeResource; }
 		}
 
-		public ResourceMethodsRestorer(ModuleDefinition module)
+		public ResourceMethodsRestorer(ModuleDefMD module)
 			: base(module) {
 		}
 
@@ -45,7 +45,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					continue;
 				if (DotNetUtils.getField(type, "System.Reflection.Assembly") == null)
 					continue;
-				if (DotNetUtils.getMethod(type, ".cctor") == null)
+				if (type.FindStaticConstructor() == null)
 					continue;
 
 				var getStream2 = getTheOnlyMethod(type, "System.IO.Stream", "(System.Reflection.Assembly,System.Type,System.String)");

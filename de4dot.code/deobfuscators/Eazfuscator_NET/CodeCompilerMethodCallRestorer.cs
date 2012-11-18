@@ -21,45 +21,45 @@ using dot10.DotNet;
 
 namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 	class CodeCompilerMethodCallRestorer : MethodCallRestorerBase {
-		TypeReference CodeDomProvider {
+		ITypeDefOrRef CodeDomProvider {
 			get {
-				return builder.type("System.CodeDom.Compiler", "CodeDomProvider", "System");
+				return builder.type("System.CodeDom.Compiler", "CodeDomProvider", "System").ToTypeDefOrRef();
 			}
 		}
 
-		TypeReference ICodeCompiler {
+		ITypeDefOrRef ICodeCompiler {
 			get {
-				return builder.type("System.CodeDom.Compiler", "ICodeCompiler", "System");
+				return builder.type("System.CodeDom.Compiler", "ICodeCompiler", "System").ToTypeDefOrRef();
 			}
 		}
 
-		TypeReference CompilerResults {
+		TypeSig CompilerResults {
 			get {
 				return builder.type("System.CodeDom.Compiler", "CompilerResults", "System");
 			}
 		}
 
-		TypeReference CompilerParameters {
+		TypeSig CompilerParameters {
 			get {
 				return builder.type("System.CodeDom.Compiler", "CompilerParameters", "System");
 			}
 		}
 
-		TypeReference CodeCompileUnit {
+		TypeSig CodeCompileUnit {
 			get {
 				return builder.type("System.CodeDom", "CodeCompileUnit", "System");
 			}
 		}
 
-		TypeReference CodeCompileUnitArray {
+		TypeSig CodeCompileUnitArray {
 			get { return builder.array(CodeCompileUnit); }
 		}
 
-		TypeReference StringArray {
+		TypeSig StringArray {
 			get { return builder.array(builder.String); }
 		}
 
-		public CodeCompilerMethodCallRestorer(ModuleDefinition module)
+		public CodeCompilerMethodCallRestorer(ModuleDefMD module)
 			: base(module) {
 		}
 

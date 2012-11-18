@@ -26,7 +26,7 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 	class DecrypterType {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		ISimpleDeobfuscator simpleDeobfuscator;
 		TypeDef type;
 		MethodDef int64Method;
@@ -50,7 +50,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			get { return type != null; }
 		}
 
-		public DecrypterType(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator) {
+		public DecrypterType(ModuleDefMD module, ISimpleDeobfuscator simpleDeobfuscator) {
 			this.module = module;
 			this.simpleDeobfuscator = simpleDeobfuscator;
 		}
@@ -338,9 +338,9 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 
 			var bytes = new List<byte>();
 			if (module.Assembly != null) {
-				if (module.Assembly.Name.PublicKeyToken != null)
-					bytes.AddRange(module.Assembly.Name.PublicKeyToken);
-				bytes.AddRange(Encoding.Unicode.GetBytes(module.Assembly.Name.Name));
+				if (!PublicKeyBase.IsNullOrEmpty2(module.Assembly.PublicKey))
+					bytes.AddRange(module.Assembly.PublicKeyToken.Data);
+				bytes.AddRange(Encoding.Unicode.GetBytes(module.Assembly.Name.String));
 			}
 			int cm1 = constMethod1();
 			bytes.Add((byte)(type.MDToken.ToInt32() >> 24));

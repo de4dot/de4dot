@@ -28,7 +28,7 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 	class AssemblyResolver {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		DecrypterType decrypterType;
 		TypeDef resolverType;
 		MethodDef initMethod;
@@ -76,7 +76,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			get { return resolverType != null; }
 		}
 
-		public AssemblyResolver(ModuleDefinition module, DecrypterType decrypterType) {
+		public AssemblyResolver(ModuleDefMD module, DecrypterType decrypterType) {
 			this.module = module;
 			this.frameworkType = DotNetUtils.getFrameworkType(module);
 			this.decrypterType = decrypterType;
@@ -356,9 +356,9 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 
 		static void initializeNameAndExtension(AssemblyInfo info) {
 			try {
-				var mod = ModuleDefinition.ReadModule(new MemoryStream(info.Data));
+				var mod = ModuleDefMD.Load(info.Data);
 				info.AssemblyFullName = mod.Assembly.FullName;
-				info.SimpleName = mod.Assembly.Name.Name;
+				info.SimpleName = mod.Assembly.Name.String;
 				info.Extension = DeobUtils.getExtension(mod.Kind);
 				return;
 			}

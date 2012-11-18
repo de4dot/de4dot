@@ -23,12 +23,11 @@ using System.IO;
 using System.Text;
 using dot10.DotNet;
 using dot10.DotNet.Emit;
-using Mono.Cecil.Metadata;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 	class StringDecrypter {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		TypeDef stringType;
 		MethodDef stringMethod;
 		TypeDef dataDecrypterType;
@@ -102,7 +101,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			get { return stringType != null; }
 		}
 
-		public StringDecrypter(ModuleDefinition module, DecrypterType decrypterType) {
+		public StringDecrypter(ModuleDefMD module, DecrypterType decrypterType) {
 			this.module = module;
 			this.decrypterType = decrypterType;
 		}
@@ -110,7 +109,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		static bool checkIfV32OrLater(TypeDef type) {
 			int numInts = 0;
 			foreach (var field in type.Fields) {
-				if (field.FieldType.EType == ElementType.I4)
+				if (field.FieldSig.GetFieldType().GetElementType() == ElementType.I4)
 					numInts++;
 			}
 			return numInts >= 2;
@@ -161,7 +160,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		};
 		static StreamHelperType findStreamHelperType(TypeDef type) {
 			foreach (var field in type.Fields) {
-				var nested = field.FieldType as TypeDef;
+				var nested = field.FieldSig.GetFieldType().TryGetTypeDef();
 				if (nested == null)
 					continue;
 				if (nested.DeclaringType != type)
@@ -197,7 +196,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode != OpCodes.Callvirt)
 					continue;
-				var calledMethod = instr.Operand as MethodReference;
+				var calledMethod = instr.Operand as IMethod;
 				if (calledMethod != null && calledMethod.FullName == "System.IO.Stream System.Reflection.Assembly::GetManifestResourceStream(System.String)")
 					return true;
 			}
@@ -248,7 +247,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				if (!findInts(out initializedAll))
 					return false;
 
-				var cctor = DotNetUtils.getMethod(stringType, ".cctor");
+				var cctor = stringType.FindStaticConstructor();
 				if (!initializedAll && cctor != null) {
 					simpleDeobfuscator.deobfuscate(cctor);
 					if (!findIntsCctor(cctor))
@@ -292,10 +291,10 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		}
 
 		class FlagsInfo {
-			public VariableDefinition Local { get; set; }
+			public Local Local { get; set; }
 			public uint Value { get; set; }
 			public int Offset { get; set; }
-			public FlagsInfo(VariableDefinition local, uint value, int offset) {
+			public FlagsInfo(Local local, uint value, int offset) {
 				Local = local;
 				Value = value;
 				Offset = offset;
@@ -307,7 +306,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			if (flags == null)
 				return false;
 
-			flags.Sort((a, b) => Utils.compareInt32(a.Offset, b.Offset));
+			flags.Sort((a, b) => a.Offset.CompareTo(b.Offset));
 
 			rldFlag = flags[0].Value;
 			bytesFlag = flags[1].Value;
@@ -344,13 +343,13 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return null;
 		}
 
-		static int getFlagsOffset(MethodDef method, int index, VariableDefinition local) {
+		static int getFlagsOffset(MethodDef method, int index, Local local) {
 			var instrs = method.Body.Instructions;
 			for (; index < instrs.Count; index++) {
 				var ldloc = instrs[index];
-				if (!DotNetUtils.isLdloc(ldloc))
+				if (!ldloc.IsLdloc())
 					continue;
-				if (DotNetUtils.getLocalVar(method.Body.Variables, ldloc) != local)
+				if (ldloc.GetLocal(method.Body.LocalList) != local)
 					continue;
 
 				return index;
@@ -358,7 +357,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return -1;
 		}
 
-		static VariableDefinition getFlagsLocal(MethodDef method, int index) {
+		static Local getFlagsLocal(MethodDef method, int index) {
 			var instrs = method.Body.Instructions;
 			if (index + 5 >= instrs.Count)
 				return null;
@@ -373,9 +372,9 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			if (instrs[index++].OpCode.Code != Code.Ceq)
 				return null;
 			var stloc = instrs[index++];
-			if (!DotNetUtils.isStloc(stloc))
+			if (!stloc.IsStloc())
 				return null;
-			return DotNetUtils.getLocalVar(method.Body.Variables, stloc);
+			return stloc.GetLocal(method.Body.LocalList);
 		}
 
 		void initialize() {
@@ -415,10 +414,10 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 
 				var bytes = reader.ReadBytes(flags & 0x1FFFFFFF);
 				decrypt1(bytes, tmpKey);
-				var pkt = module.Assembly.Name.PublicKeyToken;
-				if (usePublicKeyToken && pkt != null && pkt.Length != 0) {
+				var pkt = PublicKeyBase.ToPublicKeyToken(module.Assembly.PublicKey);
+				if (usePublicKeyToken && !PublicKeyBase.IsNullOrEmpty2(pkt)) {
 					for (int i = 0; i < bytes.Length; i++)
-						bytes[i] ^= (byte)((pkt[i & 7] >> 5) + (pkt[i & 7] << 3));
+						bytes[i] ^= (byte)((pkt.Data[i & 7] >> 5) + (pkt.Data[i & 7] << 3));
 				}
 
 				if ((flags & rldFlag) != 0)
@@ -605,9 +604,9 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				int tmp;
 				if (!stringMethodConsts.getNextInt32(ref i, out tmp))
 					continue;
-				if ((instrs[i - 1].OpCode.Code == Code.Xor && DotNetUtils.isStloc(instrs[i])) ||
-					(instrs[i].OpCode.Code == Code.Xor && DotNetUtils.isStloc(instrs[i + 1])) ||
-					DotNetUtils.isLdloc(instrs[i])) {
+				if ((instrs[i - 1].OpCode.Code == Code.Xor && instrs[i].IsStloc()) ||
+					(instrs[i].OpCode.Code == Code.Xor && instrs[i + 1].IsStloc()) ||
+					instrs[i].IsLdloc()) {
 					i2 ^= tmp;
 					returnValue = true;
 				}
@@ -637,10 +636,10 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				var instr = instrs[i + 2];
 				if (instr.OpCode.Code == Code.Ldsfld) {
 					var loadField = instr.Operand as FieldDef;
-					if (loadField == null || loadField.FieldType.EType != ElementType.I4)
+					if (loadField == null || loadField.FieldType.GetElementType() != ElementType.I4)
 						continue;
 				}
-				else if (DotNetUtils.isLdcI4(instr)) {
+				else if (instr.IsLdcI4()) {
 					initializedAll = true;
 				}
 				else
@@ -674,7 +673,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				int tmp4;
 				if (!constantsReader.getNextInt32(ref index, out tmp4))
 					break;
-				if (index < instrs.Count && DotNetUtils.isLdloc(instrs[index]))
+				if (index < instrs.Count && instrs[index].IsLdloc())
 					tmp3 = tmp4;
 			}
 
@@ -715,7 +714,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					continue;
 
 				var ldci4 = instrs[i + 1];
-				if (!DotNetUtils.isLdcI4(ldci4))
+				if (!ldci4.IsLdcI4())
 					continue;
 
 				int index = i + 1;
@@ -755,7 +754,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				if (instrs[index++].OpCode.Code != Code.Xor)
 					continue;
 
-				if (!DotNetUtils.isLdloc(instrs[index++]))
+				if (!instrs[index++].IsLdloc())
 					continue;
 
 				if (instrs[index++].OpCode.Code != Code.Xor)
@@ -811,9 +810,9 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				if (index <= 0)
 					continue;
 				var ldci4 = stringMethod.Body.Instructions[index - 1];
-				if (!DotNetUtils.isLdcI4(ldci4))
+				if (!ldci4.IsLdcI4())
 					continue;
-				if (DotNetUtils.getLdcI4Value(ldci4) != 4)
+				if (ldci4.GetLdcI4Value() != 4)
 					continue;
 				if (!stringMethodConsts.getNextInt32(ref index, out i5))
 					return false;
@@ -848,7 +847,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				if (!findCallvirt(method, ref index))
 					return false;
 
-				var calledMethod = method.Body.Instructions[index].Operand as MethodReference;
+				var calledMethod = method.Body.Instructions[index].Operand as IMethod;
 				if (calledMethod == null)
 					continue;
 				if (calledMethod.ToString() != methodFullName)

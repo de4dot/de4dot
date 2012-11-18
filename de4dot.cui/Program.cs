@@ -48,8 +48,8 @@ namespace de4dot.cui {
 				new de4dot.code.deobfuscators.Dotfuscator.DeobfuscatorInfo(),
 				new de4dot.code.deobfuscators.dotNET_Reactor.v3.DeobfuscatorInfo(),
 				new de4dot.code.deobfuscators.dotNET_Reactor.v4.DeobfuscatorInfo(),
-#if PORT
 				new de4dot.code.deobfuscators.Eazfuscator_NET.DeobfuscatorInfo(),
+#if PORT
 				new de4dot.code.deobfuscators.Goliath_NET.DeobfuscatorInfo(),
 				new de4dot.code.deobfuscators.ILProtector.DeobfuscatorInfo(),
 				new de4dot.code.deobfuscators.MaxtoCode.DeobfuscatorInfo(),
