@@ -201,10 +201,10 @@
     <Compile Include="deobfuscators\IDeobfuscatedFile.cs" />
     <Compile Include="deobfuscators\IDeobfuscator.cs" />
     <Compile Include="deobfuscators\IDeobfuscatorInfo.cs" />
-    <None Include="deobfuscators\ILProtector\Deobfuscator.cs" />
-    <None Include="deobfuscators\ILProtector\MainType.cs" />
-    <None Include="deobfuscators\ILProtector\MethodReader.cs" />
-    <None Include="deobfuscators\ILProtector\MethodsDecrypter.cs" />
+    <Compile Include="deobfuscators\ILProtector\Deobfuscator.cs" />
+    <Compile Include="deobfuscators\ILProtector\MainType.cs" />
+    <Compile Include="deobfuscators\ILProtector\MethodReader.cs" />
+    <Compile Include="deobfuscators\ILProtector\MethodsDecrypter.cs" />
     <Compile Include="deobfuscators\InitializedDataCreator.cs" />
     <Compile Include="deobfuscators\InlinedMethodsFinder.cs" />
     <Compile Include="deobfuscators\ISimpleDeobfuscator.cs" />

@@ -108,7 +108,6 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			addFieldToBeRemoved(mainType.InvokerInstanceField, "Invoker delegate instance field");
 			foreach (var pm in mainType.ProtectMethods) {
 				addMethodToBeRemoved(pm, "Obfuscator 'Protect' init method");
-				addModuleReferenceToBeRemoved(pm.PInvokeInfo.Module, "Obfuscator native protection file");
 			}
 			mainType.cleanUp();
 		}
