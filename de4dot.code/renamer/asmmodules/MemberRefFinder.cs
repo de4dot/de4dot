@@ -633,6 +633,7 @@ namespace de4dot.code.renamer.asmmodules {
 
 				case ElementType.GenericInst:
 					var gis = (GenericInstSig)ts;
+					add(gis.GenericType);
 					add(gis.GenericArguments);
 					break;
 

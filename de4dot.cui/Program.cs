@@ -49,8 +49,8 @@ namespace de4dot.cui {
 				new de4dot.code.deobfuscators.dotNET_Reactor.v3.DeobfuscatorInfo(),
 				new de4dot.code.deobfuscators.dotNET_Reactor.v4.DeobfuscatorInfo(),
 				new de4dot.code.deobfuscators.Eazfuscator_NET.DeobfuscatorInfo(),
-#if PORT
 				new de4dot.code.deobfuscators.Goliath_NET.DeobfuscatorInfo(),
+#if PORT
 				new de4dot.code.deobfuscators.ILProtector.DeobfuscatorInfo(),
 				new de4dot.code.deobfuscators.MaxtoCode.DeobfuscatorInfo(),
 #endif
@@ -110,7 +110,7 @@ namespace de4dot.cui {
 
 			if (Logger.Instance.NumIgnoredMessages > 0) {
 				Logger.n("Ignored {0} warnings/errors", Logger.Instance.NumIgnoredMessages);
-				Logger.n("Set environment variable {0}=1 to see all messages", showAllMessagesEnvName);
+				Logger.n("Use -v/-vv option or set environment variable {0}=1 to see all messages", showAllMessagesEnvName);
 			}
 
 			if (isN00bUser()) {

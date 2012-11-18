@@ -25,14 +25,14 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Goliath_NET {
 	class StringDecrypter : DecrypterBase {
-		TypeReference delegateReturnType;
+		IType delegateReturnType;
 		FieldDef stringStructField;
 
 		public TypeDef StringStruct {
 			get { return Detected && stringStructField != null ? stringStructField.DeclaringType : null; }
 		}
 
-		public StringDecrypter(ModuleDefinition module)
+		public StringDecrypter(ModuleDefMD module)
 			: base(module) {
 		}
 
@@ -48,10 +48,10 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			if (fields[0].FieldType.FullName != "System.Byte[]")
 				return false;
 
-			var dict = fields[1].FieldType as GenericInstanceType;
+			var dict = fields[1].FieldType.ToGenericInstSig();
 			if (dict == null || dict.GenericArguments.Count != 2)
 				return false;
-			if (dict.ElementType.FullName != "System.Collections.Generic.Dictionary`2")
+			if (dict.GenericType.GetFullName() != "System.Collections.Generic.Dictionary`2")
 				return false;
 
 			if (dict.GenericArguments[0].FullName != "System.Int32")
@@ -106,7 +106,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 					var ldfld = instrs[i + 1];
 					if (ldfld.OpCode.Code != Code.Ldfld)
 						continue;
-					if (!MemberReferenceHelper.compareFieldReferenceAndDeclaringType(stringStructField, ldfld.Operand as FieldReference))
+					if (!FieldEqualityComparer.CompareDeclaringTypes.Equals(stringStructField, ldfld.Operand as IField))
 						continue;
 					block.remove(i + 1, 1);
 				}

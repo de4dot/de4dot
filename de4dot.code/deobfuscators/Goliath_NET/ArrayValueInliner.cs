@@ -26,9 +26,9 @@ using de4dot.blocks;
 namespace de4dot.code.deobfuscators.Goliath_NET {
 	class ArrayValueInliner : ValueInlinerBase<byte[]> {
 		InitializedDataCreator initializedDataCreator;
-		ModuleDefinition module;
+		ModuleDefMD module;
 
-		public ArrayValueInliner(ModuleDefinition module, InitializedDataCreator initializedDataCreator) {
+		public ArrayValueInliner(ModuleDefMD module, InitializedDataCreator initializedDataCreator) {
 			this.module = module;
 			this.initializedDataCreator = initializedDataCreator;
 		}
@@ -39,7 +39,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 				int num = callResult.callEndIndex - callResult.callStartIndex + 1;
 
 				var arrayData = (byte[])callResult.returnValue;
-				initializedDataCreator.addInitializeArrayCode(block, callResult.callStartIndex, num, module.TypeSystem.Byte, arrayData);
+				initializedDataCreator.addInitializeArrayCode(block, callResult.callStartIndex, num, module.CorLibTypes.Byte.TypeDefOrRef, arrayData);
 				Logger.v("Decrypted array: {0} bytes", arrayData.Length);
 			}
 		}

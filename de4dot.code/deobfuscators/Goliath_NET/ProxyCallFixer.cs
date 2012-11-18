@@ -25,7 +25,7 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Goliath_NET {
 	class ProxyCallFixer : ProxyCallFixer2 {
-		public ProxyCallFixer(ModuleDefinition module)
+		public ProxyCallFixer(ModuleDefMD module)
 			: base(module) {
 		}
 
@@ -89,33 +89,36 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			var field = instrs[index++].Operand as FieldDef;
 			if (field == null || !field.IsStatic)
 				return false;
-			if (!MemberReferenceHelper.compareTypes(method.DeclaringType, field.DeclaringType))
+			if (!new SigComparer().Equals(method.DeclaringType, field.DeclaringType))
 				return false;
 
-			if (!DotNetUtils.isBrtrue(instrs[index++]))
+			if (!instrs[index++].IsBrtrue())
 				return false;
 			if (instrs[index++].OpCode.Code != Code.Ldnull)
 				return false;
 			if (instrs[index].OpCode.Code != Code.Ldftn)
 				return false;
-			var calledMethod = instrs[index++].Operand as MethodReference;
+			var calledMethod = instrs[index++].Operand as IMethod;
 			if (calledMethod == null)
 				return false;
 			if (instrs[index++].OpCode.Code != Code.Newobj)
 				return false;
 			if (instrs[index].OpCode.Code != Code.Stsfld)
 				return false;
-			if (!MemberReferenceHelper.compareFieldReference(field, instrs[index++].Operand as FieldReference))
+			if (!new SigComparer().Equals(field, instrs[index++].Operand as IField))
 				return false;
 			if (instrs[index].OpCode.Code != Code.Ldsfld)
 				return false;
-			if (!MemberReferenceHelper.compareFieldReference(field, instrs[index++].Operand as FieldReference))
+			if (!new SigComparer().Equals(field, instrs[index++].Operand as IField))
 				return false;
 
-			for (int i = 0; i < method.Parameters.Count; i++) {
+			var sig = method.MethodSig;
+			if (sig == null)
+				return false;
+			for (int i = 0; i < sig.Params.Count; i++) {
 				if (index >= instrs.Count)
 					return false;
-				if (DotNetUtils.getArgIndex(instrs[index++]) != i)
+				if (instrs[index++].GetParameterIndex() != i)
 					return false;
 			}
 
@@ -136,7 +139,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			throw new System.NotImplementedException();
 		}
 
-		protected override void getCallInfo(object context, FieldDef field, out MethodReference calledMethod, out OpCode callOpcode) {
+		protected override void getCallInfo(object context, FieldDef field, out IMethod calledMethod, out OpCode callOpcode) {
 			throw new System.NotImplementedException();
 		}
 	}

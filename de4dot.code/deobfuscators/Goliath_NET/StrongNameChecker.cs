@@ -23,7 +23,7 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Goliath_NET {
 	class StrongNameChecker {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		TypeDef strongNameType;
 		MethodDef strongNameCheckMethod;
 
@@ -39,7 +39,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			get { return strongNameCheckMethod; }
 		}
 
-		public StrongNameChecker(ModuleDefinition module) {
+		public StrongNameChecker(ModuleDefMD module) {
 			this.module = module;
 		}
 
@@ -108,13 +108,13 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 					var call1 = instrs[i + 1];
 					if (call1.OpCode.Code != Code.Call && call1.OpCode.Code != Code.Callvirt)
 						continue;
-					if (!DotNetUtils.isMethod(call1.Operand as MethodReference, "System.Type", "(System.RuntimeTypeHandle)"))
+					if (!DotNetUtils.isMethod(call1.Operand as IMethod, "System.Type", "(System.RuntimeTypeHandle)"))
 						continue;
 
 					var call2 = instrs[i + 2];
 					if (call2.OpCode.Code != Code.Call && call2.OpCode.Code != Code.Callvirt)
 						continue;
-					if (!MemberReferenceHelper.compareMethodReferenceAndDeclaringType(call2.Operand as MethodReference, strongNameCheckMethod))
+					if (!MethodEqualityComparer.CompareDeclaringTypes.Equals(call2.Operand as IMethod, strongNameCheckMethod))
 						continue;
 
 					block.remove(i, 3);

@@ -168,7 +168,8 @@ namespace de4dot.code.deobfuscators {
 					else
 						removeIndexes.Add(info.Index);
 				}
-				block.remove(removeIndexes);
+				if (removeIndexes.Count > 0)
+					block.remove(removeIndexes);
 			}
 
 			return removeInfos.Count > 0;

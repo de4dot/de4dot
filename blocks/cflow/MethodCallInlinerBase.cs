@@ -169,10 +169,10 @@ namespace de4dot.blocks.cflow {
 
 				var methodArgs = methodToInline.Parameters;
 				var calledMethodArgs = DotNetUtils.getArgs(ctor);
-				if (methodArgs.Count - popLastArgs != calledMethodArgs.Count)
+				if (methodArgs.Count + 1 - popLastArgs != calledMethodArgs.Count)
 					return null;
 				for (int i = 1; i < calledMethodArgs.Count; i++) {
-					if (!isCompatibleType(i, calledMethodArgs[i], methodArgs[i].Type))
+					if (!isCompatibleType(i, calledMethodArgs[i], methodArgs[i - 1].Type))
 						return null;
 				}
 

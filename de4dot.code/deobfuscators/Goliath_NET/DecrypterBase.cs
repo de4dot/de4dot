@@ -26,7 +26,7 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Goliath_NET {
 	abstract class DecrypterBase {
-		protected ModuleDefinition module;
+		protected ModuleDefMD module;
 		EmbeddedResource encryptedResource;
 		TypeDef decrypterType;
 		TypeDef delegateType;
@@ -75,7 +75,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			}
 		}
 
-		public DecrypterBase(ModuleDefinition module) {
+		public DecrypterBase(ModuleDefMD module) {
 			this.module = module;
 		}
 
@@ -93,12 +93,11 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 				var resource = tmp as EmbeddedResource;
 				if (resource == null)
 					continue;
-				if (!resource.Name.EndsWith(".resources", StringComparison.Ordinal))
+				if (!resource.Name.String.EndsWith(".resources", StringComparison.Ordinal))
 					continue;
 				string ns, name;
-				splitTypeName(resource.Name.Substring(0, resource.Name.Length - 10), out ns, out name);
-				var typeRef = new TypeReference(ns, name, module, module);
-				var type = DotNetUtils.getType(module, typeRef);
+				splitTypeName(resource.Name.String.Substring(0, resource.Name.String.Length - 10), out ns, out name);
+				var type = new TypeRefUser(module, ns, name, module).Resolve();
 				if (type == null)
 					continue;
 				if (!checkDecrypterType(type))
@@ -132,7 +131,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 
 			delegateType = null;
 			foreach (var type in module.GetTypes()) {
-				var cctor = DotNetUtils.getMethod(type, ".cctor");
+				var cctor = type.FindStaticConstructor();
 				if (cctor == null)
 					continue;
 
@@ -158,9 +157,10 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 						continue;
 					if (!method.IsStatic || method.Body == null)
 						continue;
-					if (method.Parameters.Count != 0)
+					var sig = method.MethodSig;
+					if (sig == null || sig.Params.Count != 0)
 						continue;
-					if (method.MethodReturnType.ReturnType.FullName == "System.Void")
+					if (sig.RetType.GetElementType() == ElementType.Void)
 						continue;
 					var info = getDecrypterInfo(method, field);
 					if (info == null)
@@ -181,13 +181,13 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 				if (field != delegateField)
 					return null;
 
-				if (!DotNetUtils.isLdcI4(instrs[index]))
+				if (!instrs[index].IsLdcI4())
 					return null;
-				int offset = DotNetUtils.getLdcI4Value(instrs[index++]);
+				int offset = instrs[index++].GetLdcI4Value();
 
 				if (instrs[index].OpCode.Code != Code.Call && instrs[index].OpCode.Code != Code.Callvirt)
 					return null;
-				var calledMethod = instrs[index++].Operand as MethodReference;
+				var calledMethod = instrs[index++].Operand as IMethod;
 				if (calledMethod.Name != "Invoke")
 					return null;
 
@@ -206,7 +206,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 
 		bool checkCctor(MethodDef cctor) {
 			var ldtokenType = getLdtokenType(cctor);
-			if (!MemberReferenceHelper.compareTypes(ldtokenType, cctor.DeclaringType))
+			if (!new SigComparer().Equals(ldtokenType, cctor.DeclaringType))
 				return false;
 
 			MethodDef initMethod = null;
@@ -222,13 +222,13 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			return true;
 		}
 
-		static TypeReference getLdtokenType(MethodDef method) {
+		static ITypeDefOrRef getLdtokenType(MethodDef method) {
 			if (method == null || method.Body == null)
 				return null;
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Ldtoken)
 					continue;
-				return instr.Operand as TypeReference;
+				return instr.Operand as ITypeDefOrRef;
 			}
 			return null;
 		}
@@ -236,7 +236,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 		bool checkDelegateType(TypeDef type) {
 			if (!DotNetUtils.derivesFromDelegate(type))
 				return false;
-			var invoke = DotNetUtils.getMethod(type, "Invoke");
+			var invoke = type.FindMethod("Invoke");
 			if (invoke == null)
 				return false;
 			return checkDelegateInvokeMethod(invoke);
@@ -249,7 +249,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			if (encryptedData.Length < KEY_LEN)
 				throw new ApplicationException("Invalid encrypted data length");
 			var decryptedData = new byte[encryptedData.Length - KEY_LEN];
-			var pkt = module.Assembly.Name.PublicKeyToken;
+			var pkt = PublicKey.GetRawData(PublicKeyBase.ToPublicKeyToken(module.Assembly.PublicKey));
 			if (pkt == null || pkt.Length == 0)
 				pkt = new byte[8];
 
@@ -279,7 +279,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 					var ldtokenType = getLdtokenType(method);
 					if (ldtokenType == null)
 						continue;
-					if (!MemberReferenceHelper.compareTypes(ldtokenType, delegateType))
+					if (!new SigComparer().Equals(ldtokenType, delegateType))
 						continue;
 
 					delegateInitType = type;

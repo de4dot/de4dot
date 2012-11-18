@@ -24,14 +24,14 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Goliath_NET {
 	class LocalsRestorer {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		TypeDefinitionDict<Info> typeToInfo = new TypeDefinitionDict<Info>();
 
 		class Info {
 			public TypeDef type;
-			public TypeReference localType;
+			public TypeSig localType;
 			public bool referenced = false;
-			public Info(TypeDef type, TypeReference localType) {
+			public Info(TypeDef type, TypeSig localType) {
 				this.type = type;
 				this.localType = localType;
 			}
@@ -48,7 +48,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			}
 		}
 
-		public LocalsRestorer(ModuleDefinition module) {
+		public LocalsRestorer(ModuleDefMD module) {
 			this.module = module;
 		}
 
@@ -68,16 +68,17 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			var ctor = type.Methods[0];
 			if (ctor.Name != ".ctor" || ctor.Body == null || ctor.IsStatic)
 				return;
-			if (ctor.Parameters.Count != 1)
+			var sig = ctor.MethodSig;
+			if (sig == null || sig.Params.Count != 1)
 				return;
-			var ctorParam = ctor.Parameters[0];
+			var ctorParam = sig.Params[0];
 
 			if (type.Fields.Count != 1)
 				return;
 			var typeField = type.Fields[0];
 			if (typeField.IsStatic)
 				return;
-			if (!MemberReferenceHelper.compareTypes(ctorParam.ParameterType, typeField.FieldType))
+			if (!new SigComparer().Equals(ctorParam, typeField.FieldType))
 				return;
 
 			typeToInfo.add(ctor.DeclaringType, new Info(ctor.DeclaringType, typeField.FieldType));
@@ -91,13 +92,13 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 				for (int i = 0; i < instrs.Count; i++) {
 					var instr = instrs[i];
 					int indexToRemove;
-					TypeReference type;
-					VariableDefinition local = null;
+					ITypeDefOrRef type;
+					Local local = null;
 
 					if (instr.OpCode.Code == Code.Newobj) {
 						if (i + 1 >= instrs.Count)
 							continue;
-						var ctor = instr.Operand as MethodReference;
+						var ctor = instr.Operand as IMethod;
 						if (ctor == null || ctor.DeclaringType == null)
 							continue;
 						if (ctor.Name != ".ctor")
@@ -119,7 +120,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 						if (!ldloc.isLdloc())
 							continue;
 
-						var field = instr.Operand as FieldReference;
+						var field = instr.Operand as IField;
 						if (field == null || field.DeclaringType == null)
 							continue;
 
@@ -139,9 +140,10 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 					info.referenced = true;
 					instrsToRemove.Add(indexToRemove);
 					if (local != null)
-						local.VariableType = info.localType;
+						local.Type = info.localType;
 				}
-				block.remove(instrsToRemove);
+				if (instrsToRemove.Count > 0)
+					block.remove(instrsToRemove);
 			}
 		}
 	}

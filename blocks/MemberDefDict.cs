@@ -26,7 +26,7 @@ namespace de4dot.blocks {
 		Dictionary<ScopeAndTokenKey, TValue> tokenToValue = new Dictionary<ScopeAndTokenKey, TValue>();
 		Dictionary<ScopeAndTokenKey, TypeDef> tokenToKey = new Dictionary<ScopeAndTokenKey, TypeDef>();
 		Dictionary<IType, TValue> refToValue = new Dictionary<IType, TValue>(TypeEqualityComparer.Instance);
-		Dictionary<IType, TypeDef> refToKey = new Dictionary<IType, TypeDef>();
+		Dictionary<IType, TypeDef> refToKey = new Dictionary<IType, TypeDef>(TypeEqualityComparer.Instance);
 
 		public int Count {
 			get { return tokenToValue.Count; }

@@ -146,9 +146,11 @@ namespace de4dot.cui {
 			}));
 			miscOptions.Add(new NoArgOption("v", null, "Verbose", () => {
 				Logger.Instance.MaxLoggerEvent = LoggerEvent.Verbose;
+				Logger.Instance.CanIgnoreMessages = false;
 			}));
 			miscOptions.Add(new NoArgOption("vv", null, "Very verbose", () => {
 				Logger.Instance.MaxLoggerEvent = LoggerEvent.VeryVerbose;
+				Logger.Instance.CanIgnoreMessages = false;
 			}));
 			miscOptions.Add(new NoArgOption("h", "help", "Show this help message", () => {
 				usage();

@@ -23,7 +23,7 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Goliath_NET {
 	class IntegerDecrypter : DecrypterBase {
-		public IntegerDecrypter(ModuleDefinition module)
+		public IntegerDecrypter(ModuleDefMD module)
 			: base(module) {
 		}
 
