@@ -278,7 +278,7 @@ namespace de4dot.cui {
 
 		void exitError(string msg) {
 			usage();
-			Logger.Instance.Log(false, null, LoggerEvent.Error, "\n\nERROR: {0}\n", msg);
+			Logger.Instance.LogErrorDontIgnore("\n\nERROR: {0}\n", msg);
 			exit(2);
 		}
 

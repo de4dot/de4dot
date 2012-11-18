@@ -88,22 +88,22 @@ namespace de4dot.cui {
 				exitCode = ex.code;
 			}
 			catch (UserException ex) {
-				Logger.Instance.Log(false, null, LoggerEvent.Error, "ERROR: {0}", ex.Message);
+				Logger.Instance.LogErrorDontIgnore("ERROR: {0}", ex.Message);
 				exitCode = 1;
 			}
 			catch (Exception ex) {
 				if (printFullStackTrace()) {
 					printStackTrace(ex);
-					Logger.Instance.Log(false, null, LoggerEvent.Error, "\nTry the latest version before reporting this problem!");
-					Logger.Instance.Log(false, null, LoggerEvent.Error, "Send bug reports to de4dot@gmail.com or go to https://github.com/0xd4d/de4dot/issues");
+					Logger.Instance.LogErrorDontIgnore("\nTry the latest version before reporting this problem!");
+					Logger.Instance.LogErrorDontIgnore("Send bug reports to de4dot@gmail.com or go to https://github.com/0xd4d/de4dot/issues");
 				}
 				else {
-					Logger.Instance.Log(false, null, LoggerEvent.Error, "\n\n");
-					Logger.Instance.Log(false, null, LoggerEvent.Error, "Hmmmm... something didn't work. Try the latest version.");
-					Logger.Instance.Log(false, null, LoggerEvent.Error, "    EX: {0} : message: {1}", ex.GetType(), ex.Message);
-					Logger.Instance.Log(false, null, LoggerEvent.Error, "If it's a supported obfuscator, it could be a bug or a new obfuscator version.");
-					Logger.Instance.Log(false, null, LoggerEvent.Error, "If it's an unsupported obfuscator, make sure the methods are decrypted!");
-					Logger.Instance.Log(false, null, LoggerEvent.Error, "Send bug reports to de4dot@gmail.com or go to https://github.com/0xd4d/de4dot/issues");
+					Logger.Instance.LogErrorDontIgnore("\n\n");
+					Logger.Instance.LogErrorDontIgnore("Hmmmm... something didn't work. Try the latest version.");
+					Logger.Instance.LogErrorDontIgnore("    EX: {0} : message: {1}", ex.GetType(), ex.Message);
+					Logger.Instance.LogErrorDontIgnore("If it's a supported obfuscator, it could be a bug or a new obfuscator version.");
+					Logger.Instance.LogErrorDontIgnore("If it's an unsupported obfuscator, make sure the methods are decrypted!");
+					Logger.Instance.LogErrorDontIgnore("Send bug reports to de4dot@gmail.com or go to https://github.com/0xd4d/de4dot/issues");
 				}
 				exitCode = 1;
 			}

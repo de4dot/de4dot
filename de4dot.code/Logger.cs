@@ -86,6 +86,10 @@ namespace de4dot.code {
 			Log(true, sender, loggerEvent, format, args);
 		}
 
+		public void LogErrorDontIgnore(string format, params object[] args) {
+			Log(false, null, LoggerEvent.Error, format, args);
+		}
+
 		public void Log(bool canIgnore, object sender, LoggerEvent loggerEvent, string format, params object[] args) {
 			if (IgnoresEvent(loggerEvent))
 				return;
