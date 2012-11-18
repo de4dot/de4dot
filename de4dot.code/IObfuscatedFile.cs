@@ -17,13 +17,14 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Collections.Generic;
 using de4dot.code.deobfuscators;
 using dot10.DotNet;
 using de4dot.code.renamer;
 
 namespace de4dot.code {
-	public interface IObfuscatedFile {
+	public interface IObfuscatedFile : IDisposable {
 		ModuleDefMD ModuleDefMD { get; }
 		IDeobfuscator Deobfuscator { get; }
 		IDeobfuscatorContext DeobfuscatorContext { get; set; }

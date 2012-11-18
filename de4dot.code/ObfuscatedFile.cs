@@ -778,5 +778,13 @@ namespace de4dot.code {
 		void IDeobfuscatedFile.setDeobfuscator(IDeobfuscator deob) {
 			this.deob = deob;
 		}
+
+		public void Dispose() {
+			deobfuscateCleanUp();
+			if (module != null)
+				module.Dispose();
+			module = null;
+			deob = null;
+		}
 	}
 }

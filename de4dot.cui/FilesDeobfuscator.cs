@@ -85,6 +85,7 @@ namespace de4dot.cui {
 		void detectObfuscators() {
 			foreach (var file in loadAllFiles(true)) {
 				removeModule(file.ModuleDefMD);
+				file.Dispose();
 				deobfuscatorContext.clear();
 			}
 		}
@@ -108,7 +109,7 @@ namespace de4dot.cui {
 					Program.printStackTrace(ex, LoggerEvent.Verbose);
 				}
 				finally {
-					file.deobfuscateCleanUp();
+					file.Dispose();
 					Logger.Instance.IndentLevel = oldIndentLevel;
 				}
 			}
@@ -116,9 +117,17 @@ namespace de4dot.cui {
 
 		void deobfuscateAll() {
 			var allFiles = new List<IObfuscatedFile>(loadAllFiles());
-			deobfuscateAllFiles(allFiles);
-			rename(allFiles);
-			saveAllFiles(allFiles);
+			try {
+				deobfuscateAllFiles(allFiles);
+				rename(allFiles);
+				saveAllFiles(allFiles);
+			}
+			finally {
+				foreach (var file in allFiles) {
+					if (file != null)
+						file.Dispose();
+				}
+			}
 		}
 
 		IEnumerable<IObfuscatedFile> loadAllFiles() {
@@ -310,6 +319,7 @@ namespace de4dot.cui {
 				var obfuscatedFile = new ObfuscatedFile(fileOptions, options.ModuleContext, options.AssemblyClientFactory);
 				if (add(obfuscatedFile, searchDir.SkipUnknownObfuscators, false))
 					return obfuscatedFile;
+				obfuscatedFile.Dispose();
 				return null;
 			}
 

@@ -44,6 +44,8 @@ namespace de4dot.code {
 		}
 
 		ModuleDefMD setModule(ModuleDefMD newModule) {
+			if (module != null)
+				module.Dispose();
 			module = newModule;
 			TheAssemblyResolver.Instance.addModule(module);
 			module.EnableTypeDefFindCache = true;
