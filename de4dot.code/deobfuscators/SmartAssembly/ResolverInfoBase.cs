@@ -24,7 +24,7 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.SmartAssembly {
 	abstract class ResolverInfoBase {
-		protected ModuleDefinition module;
+		protected ModuleDefMD module;
 		ISimpleDeobfuscator simpleDeobfuscator;
 		IDeobfuscator deob;
 		TypeDef resolverType;
@@ -48,7 +48,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			get { return callResolverMethod; }
 		}
 
-		public ResolverInfoBase(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
+		public ResolverInfoBase(ModuleDefMD module, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
 			this.module = module;
 			this.simpleDeobfuscator = simpleDeobfuscator;
 			this.deob = deob;
@@ -163,7 +163,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			foreach (var instr in resolveHandler.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Ldsfld && instr.OpCode.Code != Code.Stsfld)
 					continue;
-				var field = DotNetUtils.getField(module, instr.Operand as FieldReference);
+				var field = DotNetUtils.getField(module, instr.Operand as IField);
 				if (field == null)
 					continue;
 				if (!checkResolverType(field.DeclaringType))
@@ -190,20 +190,20 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 					continue;
 
 				var call = instrs[0];
-				if (!DotNetUtils.isMethod(call.Operand as MethodReference, "System.AppDomain", "()"))
+				if (!DotNetUtils.isMethod(call.Operand as IMethod, "System.AppDomain", "()"))
 					continue;
 
 				var ldftn = instrs[2];
-				var handlerDef = DotNetUtils.getMethod(module, ldftn.Operand as MethodReference);
+				var handlerDef = DotNetUtils.getMethod(module, ldftn.Operand as IMethod);
 				if (handlerDef == null)
 					continue;
 
 				var newobj = instrs[3];
-				if (!DotNetUtils.isMethod(newobj.Operand as MethodReference, "System.Void", "(System.Object,System.IntPtr)"))
+				if (!DotNetUtils.isMethod(newobj.Operand as IMethod, "System.Void", "(System.Object,System.IntPtr)"))
 					continue;
 
 				var callvirt = instrs[4];
-				if (!DotNetUtils.isMethod(callvirt.Operand as MethodReference, "System.Void", "(System.ResolveEventHandler)"))
+				if (!DotNetUtils.isMethod(callvirt.Operand as IMethod, "System.Void", "(System.ResolveEventHandler)"))
 					continue;
 
 				numHandlers++;

@@ -25,9 +25,6 @@ using dot10.DotNet;
 using dot10.DotNet.Emit;
 using de4dot.blocks;
 
-// SmartAssembly can add so much junk that it's very difficult to find and remove all of it.
-// I remove some safe types that are almost guaranteed not to have any references in the code.
-
 namespace de4dot.code.deobfuscators.SmartAssembly {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "SmartAssembly";
@@ -123,7 +120,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			StringFeatures = StringFeatures.AllowStaticDecryption;
 		}
 
-		public override void init(ModuleDefinition module) {
+		public override void init(ModuleDefMD module) {
 			base.init(module);
 		}
 
@@ -241,7 +238,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 
 				var attrs2 = new Dictionary<TypeDef, bool>();
 				foreach (var cattr in cattrs) {
-					if (!DotNetUtils.isMethod(cattr.Constructor, "System.Void", "(System.Int32)"))
+					if (!DotNetUtils.isMethod(cattr.Constructor as IMethod, "System.Void", "(System.Int32)"))
 						continue;
 					var attrType = cattr.AttributeType as TypeDef;
 					if (attrType == null)
@@ -275,7 +272,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			foreach (var type in module.Types) {
 				if (type == moduleType)
 					continue;
-				var ns = type.Namespace;
+				var ns = type.Namespace.String;
 				if (!namespaces.ContainsKey(ns))
 					namespaces[ns] = 0;
 				if (type.Name != "" || type.IsPublic || type.HasFields || type.HasMethods || type.HasProperties || type.HasEvents)
@@ -417,8 +414,9 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			Logger.v("Adding string decrypter. Resource: {0}", Utils.toCsharpString(info.StringsResource.Name));
 			var decrypter = new StringDecrypter(info);
 			if (decrypter.CanDecrypt) {
-				staticStringInliner.add(DotNetUtils.getMethod(info.GetStringDelegate, "Invoke"), (method, gim, args) => {
-					var fieldDefinition = DotNetUtils.getField(module, (FieldReference)args[0]);
+				var invokeMethod = info.GetStringDelegate == null ? null : info.GetStringDelegate.FindMethod("Invoke");
+				staticStringInliner.add(invokeMethod, (method, gim, args) => {
+					var fieldDefinition = DotNetUtils.getField(module, (IField)args[0]);
 					return decrypter.decrypt(fieldDefinition.MDToken.ToInt32(), (int)args[1]);
 				});
 				staticStringInliner.add(info.StringDecrypterMethod, (method, gim, args) => {

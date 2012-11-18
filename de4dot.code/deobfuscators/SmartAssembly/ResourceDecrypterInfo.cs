@@ -24,7 +24,7 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.SmartAssembly {
 	class ResourceDecrypterInfo {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		MethodDef simpleZipTypeDecryptMethod;
 
 		public byte[] DES_Key { get; private set; }
@@ -36,11 +36,11 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			get { return simpleZipTypeDecryptMethod != null; }
 		}
 
-		public ResourceDecrypterInfo(ModuleDefinition module) {
+		public ResourceDecrypterInfo(ModuleDefMD module) {
 			this.module = module;
 		}
 
-		public ResourceDecrypterInfo(ModuleDefinition module, MethodDef simpleZipTypeDecryptMethod, ISimpleDeobfuscator simpleDeobfuscator)
+		public ResourceDecrypterInfo(ModuleDefMD module, MethodDef simpleZipTypeDecryptMethod, ISimpleDeobfuscator simpleDeobfuscator)
 			: this(module) {
 			setSimpleZipType(simpleZipTypeDecryptMethod, simpleDeobfuscator);
 		}
@@ -62,7 +62,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				var ldtoken = instructions[i];
 				if (ldtoken.OpCode.Code != Code.Ldtoken)
 					continue;
-				var field = DotNetUtils.getField(module, ldtoken.Operand as FieldReference);
+				var field = DotNetUtils.getField(module, ldtoken.Operand as IField);
 				if (field == null)
 					continue;
 				if (field.InitialValue == null)
@@ -71,7 +71,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				var call = instructions[i + 1];
 				if (call.OpCode.Code != Code.Call)
 					continue;
-				var calledMethod = call.Operand as MethodReference;
+				var calledMethod = call.Operand as IMethod;
 				if (!DotNetUtils.isMethod(calledMethod, "System.Void", "(System.Array,System.RuntimeFieldHandle)"))
 					continue;
 

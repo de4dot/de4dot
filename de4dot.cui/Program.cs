@@ -55,9 +55,7 @@ namespace de4dot.cui {
 				new de4dot.code.deobfuscators.MPRESS.DeobfuscatorInfo(),
 				new de4dot.code.deobfuscators.Rummage.DeobfuscatorInfo(),
 				new de4dot.code.deobfuscators.Skater_NET.DeobfuscatorInfo(),
-#if PORT
 				new de4dot.code.deobfuscators.SmartAssembly.DeobfuscatorInfo(),
-#endif
 				new de4dot.code.deobfuscators.Spices_Net.DeobfuscatorInfo(),
 				new de4dot.code.deobfuscators.Xenocode.DeobfuscatorInfo(),
 			};

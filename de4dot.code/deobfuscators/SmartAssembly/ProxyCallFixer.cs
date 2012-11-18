@@ -37,7 +37,6 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			'\x9E', '\x9F',
 		};
 
-		IList<MemberReference> memberReferences;
 		ISimpleDeobfuscator simpleDeobfuscator;
 
 		static ProxyCallFixer() {
@@ -45,9 +44,8 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				specialCharsDict[specialChars[i]] = i;
 		}
 
-		public ProxyCallFixer(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator)
+		public ProxyCallFixer(ModuleDefMD module, ISimpleDeobfuscator simpleDeobfuscator)
 			: base(module) {
-			this.memberReferences = new List<MemberReference>(module.GetMemberReferences());
 			this.simpleDeobfuscator = simpleDeobfuscator;
 		}
 
@@ -59,14 +57,14 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				simpleDeobfuscator.deobfuscate(cctor);
 			if (instrs.Count != 3)
 				return null;
-			if (!DotNetUtils.isLdcI4(instrs[0].OpCode.Code))
+			if (!instrs[0].IsLdcI4())
 				return null;
 			if (instrs[1].OpCode != OpCodes.Call || !isDelegateCreatorMethod(instrs[1].Operand as MethodDef))
 				return null;
 			if (instrs[2].OpCode != OpCodes.Ret)
 				return null;
 
-			int delegateToken = 0x02000001 + DotNetUtils.getLdcI4Value(instrs[0]);
+			int delegateToken = 0x02000001 + instrs[0].GetLdcI4Value();
 			if (type.MDToken.ToInt32() != delegateToken) {
 				Logger.w("Delegate token is not current type");
 				return null;
@@ -75,11 +73,11 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return new object();
 		}
 
-		protected override void getCallInfo(object context, FieldDef field, out MethodReference calledMethod, out OpCode callOpcode) {
+		protected override void getCallInfo(object context, FieldDef field, out IMethod calledMethod, out OpCode callOpcode) {
 			callOpcode = OpCodes.Call;
-			string name = field.Name;
+			string name = field.Name.String;
 
-			int methodIndex = 0;
+			uint memberRefRid = 0;
 			for (int i = name.Length - 1; i >= 0; i--) {
 				char c = name[i];
 				if (c == '~') {
@@ -89,24 +87,21 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 
 				int val;
 				if (specialCharsDict.TryGetValue(c, out val))
-					methodIndex = methodIndex * specialChars.Length + val;
+					memberRefRid = memberRefRid * (uint)specialChars.Length + (uint)val;
 			}
+			memberRefRid++;
 
-			if (methodIndex >= memberReferences.Count) {
-				Logger.w("Ignoring invalid methodIndex: {0:X8}, field: {1:X8}", methodIndex, field.MDToken.ToInt32());
-				calledMethod = null;
-				return;
-			}
-
-			calledMethod = memberReferences[methodIndex] as MethodReference;
+			calledMethod = module.ResolveMemberRef(memberRefRid);
+			if (calledMethod == null)
+				Logger.w("Ignoring invalid method RID: {0:X8}, field: {1:X8}", memberRefRid, field.MDToken.ToInt32());
 		}
 
-		public void findDelegateCreator(ModuleDefinition module) {
+		public void findDelegateCreator(ModuleDefMD module) {
 			var callCounter = new CallCounter();
 			foreach (var type in module.Types) {
 				if (type.Namespace != "" || !DotNetUtils.derivesFromDelegate(type))
 					continue;
-				var cctor = DotNetUtils.getMethod(type, ".cctor");
+				var cctor = type.FindStaticConstructor();
 				if (cctor == null)
 					continue;
 				foreach (var method in DotNetUtils.getMethodCalls(cctor))

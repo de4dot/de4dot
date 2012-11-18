@@ -22,7 +22,7 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.SmartAssembly {
 	class MemoryManagerInfo {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		TypeDef memoryManagerType;
 		MethodDef attachAppMethod;
 
@@ -38,7 +38,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			get { return attachAppMethod; }
 		}
 
-		public MemoryManagerInfo(ModuleDefinition module) {
+		public MemoryManagerInfo(ModuleDefMD module) {
 			this.module = module;
 		}
 
@@ -72,7 +72,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			// Only two fields: itself and a long
 			int fields = 0;
 			foreach (var field in type.Fields) {
-				if (MemberReferenceHelper.compareTypes(field.FieldType, type) ||
+				if (new SigComparer().Equals(field.FieldType, type) ||
 					field.FieldType.FullName == "System.Int64") {
 					fields++;
 					continue;

@@ -30,7 +30,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			get { return resourceInfo; }
 		}
 
-		public ResourceResolverInfo(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob, AssemblyResolverInfo assemblyResolverInfo)
+		public ResourceResolverInfo(ModuleDefMD module, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob, AssemblyResolverInfo assemblyResolverInfo)
 			: base(module, simpleDeobfuscator, deob) {
 			this.assemblyResolverInfo = assemblyResolverInfo;
 		}
@@ -51,7 +51,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 					continue;
 
 				var s = instrs[0].Operand as string;
-				var calledMethod = instrs[1].Operand as MethodReference;
+				var calledMethod = instrs[1].Operand as IMethod;
 				if (s == null || calledMethod == null)
 					continue;
 

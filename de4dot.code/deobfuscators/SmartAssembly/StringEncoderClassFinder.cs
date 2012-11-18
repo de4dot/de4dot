@@ -35,7 +35,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 	}
 
 	class StringEncoderClassFinder {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		ISimpleDeobfuscator simpleDeobfuscator;
 		IList<StringsEncoderInfo> stringsEncoderInfos = new List<StringsEncoderInfo>();
 
@@ -43,12 +43,12 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			get { return stringsEncoderInfos; }
 		}
 
-		public StringEncoderClassFinder(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator) {
+		public StringEncoderClassFinder(ModuleDefMD module, ISimpleDeobfuscator simpleDeobfuscator) {
 			this.module = module;
 			this.simpleDeobfuscator = simpleDeobfuscator;
 		}
 
-		TypeDef getType(TypeReference typeReference) {
+		TypeDef getType(ITypeDefOrRef typeReference) {
 			return DotNetUtils.getType(module, typeReference);
 		}
 
@@ -113,13 +113,13 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			foreach (var ldtoken in stringsCreateDelegateMethod.Body.Instructions) {
 				if (ldtoken.OpCode.Code != Code.Ldtoken)
 					continue;
-				var typeToken = ldtoken.Operand as TypeReference;
+				var typeToken = ldtoken.Operand as ITypeDefOrRef;
 				if (typeToken == null)
 					continue;
 				var delegateType = getType(typeToken);
 				if (!DotNetUtils.derivesFromDelegate(delegateType))
 					continue;
-				var invoke = DotNetUtils.getMethod(delegateType, "Invoke");
+				var invoke = delegateType.FindMethod("Invoke");
 				if (invoke == null || !DotNetUtils.isMethod(invoke, "System.String", "(System.Int32)"))
 					continue;
 
@@ -139,7 +139,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			foreach (var ldtoken in stringsCreateDelegateMethod.Body.Instructions) {
 				if (ldtoken.OpCode.Code != Code.Ldtoken)
 					continue;
-				var typeToken = ldtoken.Operand as TypeReference;
+				var typeToken = ldtoken.Operand as ITypeDefOrRef;
 				if (typeToken == null)
 					continue;
 				var type = getType(typeToken);
@@ -186,7 +186,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			if (fields.exists("System.Collections.Hashtable") ||
 				fields.exists("System.Collections.Generic.Dictionary`2<System.Int32,System.String>") ||
 				fields.exactly(fields3x)) {
-				if (DotNetUtils.getMethod(type, ".cctor") == null)
+				if (type.FindStaticConstructor() == null)
 					return false;
 			}
 			else if (fields.exactly(fields1x) || fields.exactly(fields2x)) {

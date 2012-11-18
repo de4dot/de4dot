@@ -24,12 +24,12 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.SmartAssembly {
 	class ResourceResolver {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		AssemblyResolver assemblyResolver;
 		ResourceResolverInfo resourceResolverInfo;
 		bool mergedIt = false;
 
-		public ResourceResolver(ModuleDefinition module, AssemblyResolver assemblyResolver, ResourceResolverInfo resourceResolverInfo) {
+		public ResourceResolver(ModuleDefMD module, AssemblyResolver assemblyResolver, ResourceResolverInfo resourceResolverInfo) {
 			this.module = module;
 			this.assemblyResolver = assemblyResolver;
 			this.resourceResolverInfo = resourceResolverInfo;

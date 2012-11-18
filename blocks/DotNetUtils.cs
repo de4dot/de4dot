@@ -375,18 +375,18 @@ namespace de4dot.blocks {
 			return type.FindMethod(methodRef.Name, methodRef.MethodSig);
 		}
 
-#if PORT
-		public static IEnumerable<MethodDef> getNormalMethods(TypeDefinition type) {
+		public static IEnumerable<MethodDef> getNormalMethods(TypeDef type) {
 			foreach (var method in type.Methods) {
-				if (method.HasPInvokeInfo)
+				if (method.HasImplMap)
 					continue;
-				if (method.Name == ".ctor" || method.Name == ".cctor")
+				if (method.IsConstructor)
 					continue;
 
 				yield return method;
 			}
 		}
 
+#if PORT
 		public static TypeDefinition getType(ModuleDefinition module, TypeReference typeReference) {
 			if (typeReference == null)
 				return null;
@@ -394,15 +394,15 @@ namespace de4dot.blocks {
 				return (TypeDefinition)typeReference;
 			return typeCaches.lookup(module, typeReference);
 		}
+#endif
 
-		public static FieldDefinition getField(ModuleDefinition module, FieldReference field) {
+		public static FieldDef getField(ModuleDef module, IField field) {
 			if (field == null)
 				return null;
-			if (field is FieldDefinition)
-				return (FieldDefinition)field;
+			if (field is FieldDef)
+				return (FieldDef)field;
 			return getField(getType(module, field.DeclaringType), field);
 		}
-#endif
 
 		public static FieldDef getField(TypeDef type, IField fieldReference) {
 			if (type == null || fieldReference == null)
@@ -432,12 +432,13 @@ namespace de4dot.blocks {
 			}
 			return null;
 		}
+#endif
 
-		public static IEnumerable<MethodReference> getMethodCalls(MethodDef method) {
-			var list = new List<MethodReference>();
+		public static IEnumerable<IMethod> getMethodCalls(MethodDef method) {
+			var list = new List<IMethod>();
 			if (method.HasBody) {
 				foreach (var instr in method.Body.Instructions) {
-					var calledMethod = instr.Operand as MethodReference;
+					var calledMethod = instr.Operand as IMethod;
 					if (calledMethod != null)
 						list.Add(calledMethod);
 				}
@@ -445,6 +446,7 @@ namespace de4dot.blocks {
 			return list;
 		}
 
+#if PORT
 		public static MethodCalls getMethodCallCounts(MethodDef method) {
 			var methodCalls = new MethodCalls();
 			methodCalls.addMethodCalls(method);

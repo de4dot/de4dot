@@ -38,7 +38,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return assemblyName ?? base.ToString();
 		}
 
-		public static EmbeddedAssemblyInfo create(ModuleDefinition module, string encName, string rsrcName) {
+		public static EmbeddedAssemblyInfo create(ModuleDefMD module, string encName, string rsrcName) {
 			var info = new EmbeddedAssemblyInfo();
 
 			try {
@@ -82,7 +82,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			get { return embeddedAssemblyInfos; }
 		}
 
-		public AssemblyResolverInfo(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob)
+		public AssemblyResolverInfo(ModuleDefMD module, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob)
 			: base(module, simpleDeobfuscator, deob) {
 		}
 
@@ -160,7 +160,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			foreach (var call in method.Body.Instructions) {
 				if (call.OpCode.Code != Code.Call)
 					continue;
-				var calledMethod = call.Operand as MethodReference;
+				var calledMethod = call.Operand as IMethod;
 				if (calledMethod == null)
 					continue;
 				if (!SimpleZipInfo.isSimpleZipDecryptMethod_QuickCheck(module, calledMethod, out simpleZipTypeMethod))
