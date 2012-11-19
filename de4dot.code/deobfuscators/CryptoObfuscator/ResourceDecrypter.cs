@@ -188,7 +188,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				var ldloc = instrs[i];
 				if (!ldloc.IsLdloc())
 					continue;
-				var local = ldloc.GetLocal(method.Body.LocalList);
+				var local = ldloc.GetLocal(method.Body.Variables);
 				if (local == null || local.Type.GetElementType().GetPrimitiveSize() < 0)
 					continue;
 
@@ -222,7 +222,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				var ldloc = instructions[i - 2];
 				if (!ldloc.IsLdloc())
 					continue;
-				var local = ldloc.GetLocal(method.Body.LocalList);
+				var local = ldloc.GetLocal(method.Body.Variables);
 				if (local.Type.GetElementType().GetPrimitiveSize() < 0)
 					continue;
 				constants.Add(flagValue);

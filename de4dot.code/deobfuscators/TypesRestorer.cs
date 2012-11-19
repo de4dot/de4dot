@@ -329,7 +329,7 @@ namespace de4dot.code.deobfuscators {
 					pushedArgs = MethodStack.getPushedArgInstructions(instructions, i);
 					if (pushedArgs.NumValidArgs < 1)
 						break;
-					addMethodArgType(method, getParameter(methodParams, pushedArgs.getEnd(0)), instr.GetLocal(method.Body.LocalList));
+					addMethodArgType(method, getParameter(methodParams, pushedArgs.getEnd(0)), instr.GetLocal(method.Body.Variables));
 					break;
 
 				case Code.Stsfld:

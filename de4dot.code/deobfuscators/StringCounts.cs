@@ -88,7 +88,7 @@ namespace de4dot.code.deobfuscators {
 	class LocalTypes : StringCounts {
 		public LocalTypes(MethodDef method) {
 			if (method != null && method.Body != null)
-				init(method.Body.LocalList);
+				init(method.Body.Variables);
 		}
 
 		public LocalTypes(IEnumerable<Local> locals) {

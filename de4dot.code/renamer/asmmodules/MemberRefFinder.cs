@@ -405,7 +405,7 @@ namespace de4dot.code.renamer.asmmodules {
 				return;
 			add(cb.Instructions);
 			add(cb.ExceptionHandlers);
-			add(cb.LocalList);
+			add(cb.Variables);
 		}
 
 		void add(IEnumerable<Instruction> instrs) {

@@ -530,11 +530,11 @@ namespace de4dot.code.renamer {
 			if (ret == null)
 				return null;
 			if (ret.IsStloc()) {
-				var local = ret.GetLocal(method.Body.LocalList);
+				var local = ret.GetLocal(method.Body.Variables);
 				ret = DotNetUtils.getInstruction(instructions, ref index);
 				if (ret == null || !ret.IsLdloc())
 					return null;
-				if (ret.GetLocal(method.Body.LocalList) != local)
+				if (ret.GetLocal(method.Body.Variables) != local)
 					return null;
 				ret = DotNetUtils.getInstruction(instructions, ref index);
 			}
@@ -592,9 +592,9 @@ namespace de4dot.code.renamer {
 				return null;
 			if (sig.Params.Count != 1)
 				return null;
-			if (method.Body.LocalList.Count != 1)
+			if (method.Body.Variables.Count != 1)
 				return null;
-			if (!isEventHandlerType(method.Body.LocalList[0].Type))
+			if (!isEventHandlerType(method.Body.Variables[0].Type))
 				return null;
 
 			var instructions = method.Body.Instructions;

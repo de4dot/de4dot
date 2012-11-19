@@ -112,7 +112,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 					continue;
 				if (!DotNetUtils.isMethod(method, "System.Void", "()"))
 					continue;
-				if (method.Body.LocalList.Count > 1)
+				if (method.Body.Variables.Count > 1)
 					continue;
 
 				simpleDeobfuscator.deobfuscate(method);

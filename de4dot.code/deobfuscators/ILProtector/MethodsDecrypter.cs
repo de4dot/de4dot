@@ -212,7 +212,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 							Utils.removeNewlines(method.FullName),
 							method.MDToken.ToInt32(),
 							method.Body.Instructions.Count,
-							method.Body.LocalList.Count,
+							method.Body.Variables.Count,
 							method.Body.ExceptionHandlers.Count);
 					}
 				}

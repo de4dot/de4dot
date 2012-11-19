@@ -134,7 +134,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 					foreach (var parameter in method.MethodSig.GetParams())
 						removeType(candidates, parameter);
 					if (method.Body != null) {
-						foreach (var local in method.Body.LocalList)
+						foreach (var local in method.Body.Variables)
 							removeType(candidates, local.Type);
 					}
 				}

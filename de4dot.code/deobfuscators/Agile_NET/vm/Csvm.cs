@@ -123,8 +123,8 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 
 			Logger.v("Locals:");
 			Logger.Instance.indent();
-			for (int i = 0; i < method.Body.LocalList.Count; i++)
-				Logger.v("#{0}: {1}", i, method.Body.LocalList[i].Type);
+			for (int i = 0; i < method.Body.Variables.Count; i++)
+				Logger.v("#{0}: {1}", i, method.Body.Variables[i].Type);
 			Logger.Instance.deIndent();
 
 			Logger.v("Code:");

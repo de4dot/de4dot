@@ -97,7 +97,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			var cctor = DotNetUtils.getModuleTypeCctor(module);
 			if (cctor != null) {
 				cctor.Body.InitLocals = false;
-				cctor.Body.LocalList.Clear();
+				cctor.Body.Variables.Clear();
 				cctor.Body.Instructions.Clear();
 				cctor.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
 				cctor.Body.ExceptionHandlers.Clear();

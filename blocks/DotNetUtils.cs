@@ -442,9 +442,9 @@ namespace de4dot.blocks {
 			var fromBody = fromMethod.Body;
 			var toBody = toMethod.Body;
 
-			toBody.LocalList.Clear();
-			foreach (var local in fromBody.LocalList)
-				toBody.LocalList.Add(new Local(local.Type));
+			toBody.Variables.Clear();
+			foreach (var local in fromBody.Variables)
+				toBody.Variables.Add(new Local(local.Type));
 		}
 
 		static void updateInstructionOperands(MethodDef fromMethod, MethodDef toMethod) {
@@ -459,8 +459,8 @@ namespace de4dot.blocks {
 			var toParams = toMethod.Parameters;
 			for (int i = 0; i < fromParams.Count; i++)
 				newOperands[fromParams[i]] = toParams[i];
-			for (int i = 0; i < fromBody.LocalList.Count; i++)
-				newOperands[fromBody.LocalList[i]] = toBody.LocalList[i];
+			for (int i = 0; i < fromBody.Variables.Count; i++)
+				newOperands[fromBody.Variables[i]] = toBody.Variables[i];
 
 			foreach (var instr in toBody.Instructions) {
 				if (instr.Operand == null)

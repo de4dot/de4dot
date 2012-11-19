@@ -159,7 +159,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 					Utils.removeNewlines(encMethod.FullName),
 					encMethod.MDToken.ToInt32(),
 					encMethod.Body.Instructions.Count,
-					encMethod.Body.LocalList.Count,
+					encMethod.Body.Variables.Count,
 					encMethod.Body.ExceptionHandlers.Count);
 			delegateTypes.Add(delegateType);
 		}

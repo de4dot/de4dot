@@ -65,7 +65,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				var stloc = instrs[i + 2];
 				if (!stloc.IsStloc())
 					continue;
-				var local = stloc.GetLocal(initMethod.Body.LocalList);
+				var local = stloc.GetLocal(initMethod.Body.Variables);
 
 				int startInitIndex = i;
 				i++;
@@ -89,7 +89,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				var ldloc = instrs[i];
 				if (!ldloc.IsLdloc())
 					continue;
-				if (ldloc.GetLocal(method.Body.LocalList) != local)
+				if (ldloc.GetLocal(method.Body.Variables) != local)
 					continue;
 
 				var stsfld = instrs[i + 1];

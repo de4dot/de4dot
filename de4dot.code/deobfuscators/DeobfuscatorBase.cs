@@ -555,7 +555,7 @@ namespace de4dot.code.deobfuscators {
 			var body = method.Body;
 			if (body.InitLocals || body.MaxStack > 8)
 				return true;
-			if (body.LocalList.Count > 0)
+			if (body.Variables.Count > 0)
 				return true;
 			if (body.ExceptionHandlers.Count > 0)
 				return true;

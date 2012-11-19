@@ -462,7 +462,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 		}
 
 		static bool rethrow_check(UnknownHandlerInfo info) {
-			return info.ExecuteMethod.Body.LocalList.Count == 0;
+			return info.ExecuteMethod.Body.Variables.Count == 0;
 		}
 
 		static Instruction rethrow_read(BinaryReader reader) {
