@@ -89,7 +89,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 					var ldcloc = instrs[i + 2];
 					if (!ldcloc.IsLdloc())
 						continue;
-					if (stloc.GetLocal(method.Body.LocalList) != ldcloc.GetLocal(method.Body.LocalList))
+					if (stloc.GetLocal(method.Body.Variables) != ldcloc.GetLocal(method.Body.Variables))
 						continue;
 					if (instrs[i + 3].OpCode.Code != Code.Xor)
 						continue;

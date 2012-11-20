@@ -323,7 +323,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				if (instrs[i + 5].OpCode.Code != Code.And)
 					continue;
 
-				return ldloc.GetLocal(method.Body.LocalList);
+				return ldloc.GetLocal(method.Body.Variables);
 			}
 			return null;
 		}
@@ -333,7 +333,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			for (int i = 0; i < instrs.Count - 5; i++) {
 				int index = i;
 				var stloc = instrs[index++];
-				if (!stloc.IsStloc() || stloc.GetLocal(method.Body.LocalList) != local)
+				if (!stloc.IsStloc() || stloc.GetLocal(method.Body.Variables) != local)
 					continue;
 				if (!instrs[index++].IsLdloc())
 					continue;
@@ -347,7 +347,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				if (!instrs[index++].IsLdloc())
 					continue;
 				var ldloc = instrs[index++];
-				if (!ldloc.IsLdloc() || ldloc.GetLocal(method.Body.LocalList) != local)
+				if (!ldloc.IsLdloc() || ldloc.GetLocal(method.Body.Variables) != local)
 					continue;
 				if (instrs[index++].OpCode.Code != Code.Conv_U1)
 					continue;
@@ -363,7 +363,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 11; i++) {
 				var stloc = instrs[i];
-				if (!stloc.IsStloc() || stloc.GetLocal(method.Body.LocalList) != local)
+				if (!stloc.IsStloc() || stloc.GetLocal(method.Body.Variables) != local)
 					continue;
 				if (!instrs[i + 1].IsLdloc())
 					continue;

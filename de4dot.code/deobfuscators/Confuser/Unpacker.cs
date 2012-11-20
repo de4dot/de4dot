@@ -289,7 +289,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			var stloc = instrs[3];
 			if (!stloc.IsStloc())
 				return false;
-			var local = stloc.GetLocal(method.Body.LocalList);
+			var local = stloc.GetLocal(method.Body.Variables);
 			if (local == null || local.Type.FullName != "System.IO.BinaryReader")
 				return false;
 

@@ -585,7 +585,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			var instrs = installMethod.Body.Instructions;
 			for (int i = startIndex; i < instrs.Count; i++) {
 				var instr = instrs[i];
-				if (instr.IsStloc() && instr.GetLocal(installMethod.Body.LocalList) == local)
+				if (instr.IsStloc() && instr.GetLocal(installMethod.Body.Variables) == local)
 					return i;
 			}
 			return -1;
@@ -607,7 +607,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 					continue;
 
 				instrIndex = index;
-				return ldloc.GetLocal(installMethod.Body.LocalList);
+				return ldloc.GetLocal(installMethod.Body.Variables);
 			}
 			instrIndex = 0;
 			return null;

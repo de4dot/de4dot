@@ -218,7 +218,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				var ldloc = instrs[i + 4];
 				if (!ldloc.IsLdloc())
 					continue;
-				if (ldloc.GetLocal(method.Body.LocalList) != stloc.GetLocal(method.Body.LocalList))
+				if (ldloc.GetLocal(method.Body.Variables) != stloc.GetLocal(method.Body.Variables))
 					continue;
 
 				key = (uint)ldci4.GetLdcI4Value();
@@ -252,7 +252,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				var ldloc = instrs[i + 4];
 				if (!ldloc.IsLdloc())
 					continue;
-				if (ldloc.GetLocal(method.Body.LocalList) == stloc.GetLocal(method.Body.LocalList))
+				if (ldloc.GetLocal(method.Body.Variables) == stloc.GetLocal(method.Body.Variables))
 					continue;
 				if (!instrs[i + 5].IsLdloc())
 					continue;

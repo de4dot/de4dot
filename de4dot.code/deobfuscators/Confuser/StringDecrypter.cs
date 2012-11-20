@@ -167,7 +167,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 						continue;
 					if (!instrs[i + 3].IsStloc())
 						continue;
-					return instrs[i + 3].GetLocal(method.Body.LocalList);
+					return instrs[i + 3].GetLocal(method.Body.Variables);
 				}
 				return null;
 			}
