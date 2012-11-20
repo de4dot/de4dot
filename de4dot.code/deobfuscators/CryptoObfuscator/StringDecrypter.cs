@@ -61,7 +61,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		}
 
 		public void init(ResourceDecrypter resourceDecrypter) {
-			if (decryptedData != null)
+			if (decryptedData != null || stringDecrypterType == null)
 				return;
 
 			var resourceName = getResourceName();
