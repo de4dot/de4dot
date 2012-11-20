@@ -38,10 +38,6 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			get { return Detected ? resource : null; }
 		}
 
-		public AssemblyRef VmAssemblyReference {
-			get { return Detected ? vmAssemblyReference : null; }
-		}
-
 		public Csvm(IDeobfuscatorContext deobfuscatorContext, ModuleDefMD module) {
 			this.deobfuscatorContext = deobfuscatorContext;
 			this.module = module;
