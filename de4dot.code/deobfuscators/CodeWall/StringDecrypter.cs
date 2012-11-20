@@ -255,6 +255,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 				info.Magic2 = findMagic2(info.Method);
 				info.Magic3 = findMagic3(info.Method);
 				info.Reader = info.Resource.Data;
+				info.Reader.Position = 0;
 			}
 		}
 

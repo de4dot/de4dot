@@ -128,6 +128,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			var data = bundleData.Data.ReadAllBytes();
 
 			var doc = new XmlDocument();
+			bundleXmlFile.Data.Position = 0;
 			doc.Load(XmlReader.Create(bundleXmlFile.Data.CreateStream()));
 			var manifest = doc.DocumentElement;
 			if (manifest.Name.ToLowerInvariant() != "manifest") {

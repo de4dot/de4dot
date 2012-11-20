@@ -83,6 +83,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 				if (resource == null)
 					continue;
 				var reader = resource.Data;
+				reader.Position = 0;
 				if (!checkResourceV100(reader) &&
 					!checkResourceV105(reader))
 					continue;
@@ -133,6 +134,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 
 		byte[] getMethodsData(EmbeddedResource resource) {
 			var reader = resource.Data;
+			reader.Position = 0;
 			reader.Position = startOffset;
 			if ((reader.ReadInt32() & 1) != 0)
 				return decompress(reader);
