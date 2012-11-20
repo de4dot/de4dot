@@ -106,7 +106,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor {
 					return false;
 				if (intersect(offset, length, dnFile.MetaData.ImageCor20Header))
 					return false;
-				if (intersect(offset, length, (uint)dnFile.MetaData.TablesStream.FileOffset, dnFile.MetaData.TablesStream.HeaderLength))
+				if (intersect(offset, length, dnFile.MetaData.MetaDataHeader))
 					return false;
 			}
 
