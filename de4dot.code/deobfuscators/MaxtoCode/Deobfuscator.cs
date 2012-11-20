@@ -139,6 +139,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				addCctorInitCallToBeRemoved(method);
 			addTypeToBeRemoved(mainType.Type, "Obfuscator type");
 			removeDuplicateEmbeddedResources();
+			removeInvalidResources();
 		}
 
 		static Encoding getEncoding(int cp) {
@@ -160,6 +161,8 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 
 			public override int GetHashCode() {
 				int hash = 0;
+				if (resource.Offset != null)
+					hash ^= resource.Offset.GetHashCode();
 				hash ^= (int)resource.Data.Position;
 				hash ^= (int)resource.Data.Length;
 				return hash;
@@ -184,7 +187,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				var rsrc = tmp as EmbeddedResource;
 				if (rsrc == null)
 					continue;
-				if (rsrc.Data.FileOffset == 0)
+				if (rsrc.Offset == null)
 					continue;
 				List<EmbeddedResource> list;
 				var key = new ResourceKey(rsrc);
@@ -213,6 +216,16 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 						continue;
 					addResourceToBeRemoved(rsrc, string.Format("Duplicate of resource {0}", Utils.toCsharpString(resourceToKeep.Name)));
 				}
+			}
+		}
+
+		void removeInvalidResources() {
+			foreach (var tmp in module.Resources) {
+				var resource = tmp as EmbeddedResource;
+				if (resource == null)
+					continue;
+				if (resource.Offset == null || (resource.Data.FileOffset == 0 && resource.Data.Length == 0))
+					addResourceToBeRemoved(resource, "Invalid resource");
 			}
 		}
 

@@ -100,7 +100,7 @@ namespace de4dot.code.deobfuscators {
 
 		public ConstantsReader(MethodDef method)
 			: this(method.Body.Instructions) {
-			this.locals = method.Body.LocalList;
+			this.locals = method.Body.Variables;
 		}
 
 		public ConstantsReader(IList<Instr> instrs, IList<Local> locals)

@@ -349,7 +349,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				var ldloc = instrs[index];
 				if (!ldloc.IsLdloc())
 					continue;
-				if (ldloc.GetLocal(method.Body.LocalList) != local)
+				if (ldloc.GetLocal(method.Body.Variables) != local)
 					continue;
 
 				return index;
@@ -374,7 +374,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			var stloc = instrs[index++];
 			if (!stloc.IsStloc())
 				return null;
-			return stloc.GetLocal(method.Body.LocalList);
+			return stloc.GetLocal(method.Body.Variables);
 		}
 
 		void initialize() {

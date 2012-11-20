@@ -43,7 +43,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			var newExceptions = readExceptions(cilMethod, csvmMethod, newInstructions);
 
 			fixInstructionOperands(newInstructions);
-			fixLocals(newInstructions, cilMethod.Body.LocalList);
+			fixLocals(newInstructions, cilMethod.Body.Variables);
 			fixArgs(newInstructions, cilMethod);
 
 			DotNetUtils.restoreBody(cilMethod, newInstructions, newExceptions);

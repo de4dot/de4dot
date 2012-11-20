@@ -191,6 +191,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 		}
 
 		void findCliSecureAttribute() {
+			obfuscatorName = "CliSecure";
 			foreach (var type in module.Types) {
 				if (Utils.StartsWith(type.FullName, "SecureTeam.Attributes.ObfuscatedByCliSecureAttribute", StringComparison.Ordinal)) {
 					cliSecureAttributes.Add(type);

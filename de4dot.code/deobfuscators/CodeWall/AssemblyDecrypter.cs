@@ -217,6 +217,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 		void decryptAllAssemblies() {
 			if (assemblyResource == null)
 				return;
+			assemblyResource.Data.Position = 0;
 			var resourceSet = ResourceReader.read(resourceModule, assemblyResource.Data);
 			foreach (var resourceElement in resourceSet.ResourceElements) {
 				if (resourceElement.ResourceData.Code != ResourceTypeCode.ByteArray)

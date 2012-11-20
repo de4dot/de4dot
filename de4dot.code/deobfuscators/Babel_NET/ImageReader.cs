@@ -115,9 +115,9 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			body.MaxStack = babelMethod.MaxStack;
 			body.InitLocals = babelMethod.InitLocals;
 
-			body.LocalList.Clear();
+			body.Variables.Clear();
 			foreach (var local in babelMethod.Locals)
-				body.LocalList.Add(local);
+				body.Variables.Add(local);
 
 			var toNewOperand = new Dictionary<object, object>();
 			if (babelMethod.ThisParameter != null)

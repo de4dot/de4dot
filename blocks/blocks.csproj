@@ -72,8 +72,6 @@
     <Compile Include="Instr.cs" />
     <Compile Include="InstructionListParser.cs" />
     <Compile Include="MemberDefDict.cs" />
-    <Compile Include="MemberReferenceHelper.cs" />
-    <Compile Include="MemberRefInstance.cs" />
     <Compile Include="MethodBlocks.cs" />
     <Compile Include="PE\Cor20Header.cs" />
     <Compile Include="PE\DataDirectory.cs" />
@@ -95,7 +93,6 @@
     <Compile Include="ScopeBlock.cs" />
     <Compile Include="TryBlock.cs" />
     <Compile Include="TryHandlerBlock.cs" />
-    <Compile Include="TypeReferenceUpdaterBase.cs" />
     <Compile Include="Utils.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -54,7 +54,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		static IList<Local> getLocals(MethodDef method) {
 			if (method.Body == null)
 				return new List<Local>();
-			return method.Body.LocalList;
+			return method.Body.Variables;
 		}
 
 		protected override IField ReadInlineField(Instruction instr) {

@@ -29,6 +29,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 		IBinaryReader reader;
 
 		public CsvmDataReader(IBinaryReader reader) {
+			reader.Position = 0;
 			this.reader = reader;
 		}
 

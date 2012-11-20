@@ -141,8 +141,8 @@ namespace de4dot.code.deobfuscators {
 			return (ClassOrValueTypeSig)add(type);
 		}
 
-		public ArraySig array(TypeSig typeRef) {
-			return (ArraySig)add(new ArraySig(typeRef));
+		public SZArraySig array(TypeSig typeRef) {
+			return (SZArraySig)add(new SZArraySig(typeRef));
 		}
 
 		TypeSig add(TypeSig typeRef) {

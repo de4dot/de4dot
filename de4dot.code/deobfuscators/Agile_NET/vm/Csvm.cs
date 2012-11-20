@@ -38,10 +38,6 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			get { return Detected ? resource : null; }
 		}
 
-		public AssemblyRef VmAssemblyReference {
-			get { return Detected ? vmAssemblyReference : null; }
-		}
-
 		public Csvm(IDeobfuscatorContext deobfuscatorContext, ModuleDefMD module) {
 			this.deobfuscatorContext = deobfuscatorContext;
 			this.module = module;
@@ -123,8 +119,8 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 
 			Logger.v("Locals:");
 			Logger.Instance.indent();
-			for (int i = 0; i < method.Body.LocalList.Count; i++)
-				Logger.v("#{0}: {1}", i, method.Body.LocalList[i].Type);
+			for (int i = 0; i < method.Body.Variables.Count; i++)
+				Logger.v("#{0}: {1}", i, method.Body.Variables[i].Type);
 			Logger.Instance.deIndent();
 
 			Logger.v("Code:");

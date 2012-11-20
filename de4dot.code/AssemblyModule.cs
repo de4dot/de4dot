@@ -79,7 +79,7 @@ namespace de4dot.code {
 		}
 
 		public ModuleDefMD reload(byte[] newModuleData, DumpedMethodsRestorer dumpedMethodsRestorer, IStringDecrypter stringDecrypter) {
-			TheAssemblyResolver.Instance.removeModule(module);
+			TheAssemblyResolver.Instance.Remove(module);
 			var mod = ModuleDefMD.Load(newModuleData, moduleContext);
 			if (dumpedMethodsRestorer != null)
 				dumpedMethodsRestorer.Module = mod;

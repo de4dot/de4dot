@@ -193,6 +193,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			if (assemblyEncryptedResource == null)
 				return null;
 
+			assemblyEncryptedResource.Data.Position = 0;
 			var reader = new BinaryReader(assemblyEncryptedResource.Data.CreateStream());
 			var encryptedData = DeobUtils.gunzip(reader.BaseStream, reader.ReadInt32());
 			reader = new BinaryReader(new MemoryStream(encryptedData));

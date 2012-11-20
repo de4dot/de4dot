@@ -99,6 +99,24 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 				case ElementType.Class:
 				case ElementType.ValueType:
 				case ElementType.FnPtr:
+				case ElementType.Void:
+				case ElementType.Boolean:
+				case ElementType.Char:
+				case ElementType.I1:
+				case ElementType.U1:
+				case ElementType.I2:
+				case ElementType.U2:
+				case ElementType.I4:
+				case ElementType.U4:
+				case ElementType.I8:
+				case ElementType.U8:
+				case ElementType.R4:
+				case ElementType.R8:
+				case ElementType.TypedByRef:
+				case ElementType.I:
+				case ElementType.U:
+				case ElementType.String:
+				case ElementType.Object:
 					break;
 
 				case ElementType.MVar:
@@ -115,6 +133,15 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 					break;
 
 				case ElementType.ByRef:
+				case ElementType.CModOpt:
+				case ElementType.CModReqd:
+				case ElementType.Pinned:
+				case ElementType.Sentinel:
+				case ElementType.ValueArray:
+				case ElementType.R:
+				case ElementType.End:
+				case ElementType.Internal:
+				case ElementType.Module:
 				default:
 					return false;
 				}

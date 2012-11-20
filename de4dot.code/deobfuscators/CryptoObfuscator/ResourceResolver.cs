@@ -75,6 +75,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			if (resource == null)
 				return null;
 
+			resource.Data.Position = 0;
 			DeobUtils.decryptAndAddResources(module, resource.Name.String, () => resourceDecrypter.decrypt(resource.Data.CreateStream()));
 			mergedIt = true;
 			return resource;

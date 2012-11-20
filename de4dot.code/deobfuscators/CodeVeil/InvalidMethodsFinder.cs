@@ -39,6 +39,8 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			var sig = method.MethodSig;
 			if (sig == null || sig.Params.Count != 0)
 				return false;
+			if (sig.RetType == null)
+				return true;
 			var retType = sig.RetType as GenericSig;
 			if (retType == null)
 				return false;

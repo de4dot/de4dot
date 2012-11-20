@@ -124,6 +124,7 @@ namespace de4dot.code.renamer {
 
 		void rename(TypeDef type, EmbeddedResource resource) {
 			newNames.Clear();
+			resource.Data.Position = 0;
 			var resourceSet = ResourceReader.read(module, resource.Data);
 			var renamed = new List<RenameInfo>();
 			foreach (var elem in resourceSet.ResourceElements) {

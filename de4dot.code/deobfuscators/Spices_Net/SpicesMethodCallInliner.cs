@@ -102,7 +102,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			calledMethod = null;
 			if (method.Body == null)
 				return false;
-			if (method.Body.LocalList.Count > 0)
+			if (method.Body.Variables.Count > 0)
 				return false;
 			if (method.Body.ExceptionHandlers.Count > 0)
 				return false;
