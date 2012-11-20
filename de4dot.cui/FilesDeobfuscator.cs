@@ -79,7 +79,7 @@ namespace de4dot.cui {
 		}
 
 		static void removeModule(ModuleDef module) {
-			TheAssemblyResolver.Instance.removeModule(module);
+			TheAssemblyResolver.Instance.Remove(module);
 		}
 
 		void detectObfuscators() {

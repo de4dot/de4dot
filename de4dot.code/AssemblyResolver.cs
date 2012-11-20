@@ -20,7 +20,7 @@
 using dot10.DotNet;
 
 namespace de4dot.code {
-	public class TheAssemblyResolver : dot10.DotNet.AssemblyResolver {
+	public class TheAssemblyResolver : AssemblyResolver {
 		public static readonly TheAssemblyResolver Instance = new TheAssemblyResolver();
 
 		public TheAssemblyResolver() {
@@ -41,13 +41,7 @@ namespace de4dot.code {
 			if (assembly == null)
 				return;
 
-			removeModule(assembly.FullName);
-		}
-
-		public void removeModule(string asmFullName) {
-			if (string.IsNullOrEmpty(asmFullName))
-				return;
-			//TODO: Remove it from the cache
+			Remove(module.Assembly);
 		}
 
 		public void clearAll() {
