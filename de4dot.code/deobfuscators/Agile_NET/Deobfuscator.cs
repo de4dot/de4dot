@@ -23,7 +23,6 @@ using dot10.IO;
 using dot10.PE;
 using dot10.DotNet;
 using de4dot.blocks;
-using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.Agile_NET {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
@@ -209,11 +208,11 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 				return false;
 
 			byte[] fileData = ModuleBytes ?? DeobUtils.readModule(module);
-			var peImage = new PeImage(fileData);
-
-			if (!new MethodsDecrypter().decrypt(peImage, module, cliSecureRtType, ref dumpedMethods)) {
-				Logger.v("Methods aren't encrypted or invalid signature");
-				return false;
+			using (var peImage = new MyPEImage(fileData)) {
+				if (!new MethodsDecrypter().decrypt(peImage, module, cliSecureRtType, ref dumpedMethods)) {
+					Logger.v("Methods aren't encrypted or invalid signature");
+					return false;
+				}
 			}
 
 			newFileData = fileData;

@@ -21,7 +21,6 @@ using System;
 using System.Collections.Generic;
 using dot10.DotNet;
 using de4dot.blocks;
-using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.CodeWall {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
@@ -164,10 +163,10 @@ namespace de4dot.code.deobfuscators.CodeWall {
 				return false;
 
 			byte[] fileData = ModuleBytes ?? DeobUtils.readModule(module);
-			var peImage = new PeImage(fileData);
-
-			if (!methodsDecrypter.decrypt(peImage, ref dumpedMethods))
-				return false;
+			using (var peImage = new MyPEImage(fileData)) {
+				if (!methodsDecrypter.decrypt(peImage, ref dumpedMethods))
+					return false;
+			}
 
 			newFileData = fileData;
 			return true;

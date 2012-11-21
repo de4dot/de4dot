@@ -20,7 +20,6 @@
 using System;
 using dot10.DotNet;
 using dot10.DotNet.Emit;
-using de4dot.PE;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CodeWall {
@@ -67,50 +66,33 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			return false;
 		}
 
-		public bool decrypt(PeImage peImage, ref DumpedMethods dumpedMethods) {
+		public bool decrypt(MyPEImage peImage, ref DumpedMethods dumpedMethods) {
 			dumpedMethods = new DumpedMethods();
 
 			bool decrypted = false;
 
-			var metadataTables = peImage.Cor20Header.createMetadataTables();
-			var methodDef = metadataTables.getMetadataType(MetadataIndex.iMethodDef);
-			uint methodDefOffset = methodDef.fileOffset;
-			for (int i = 0; i < methodDef.rows; i++, methodDefOffset += methodDef.totalSize) {
-				uint bodyRva = peImage.offsetReadUInt32(methodDefOffset);
-				if (bodyRva == 0)
-					continue;
-				uint bodyOffset = peImage.rvaToOffset(bodyRva);
-
+			var methodDef = peImage.DotNetFile.MetaData.TablesStream.MethodTable;
+			for (uint rid = 1; rid <= methodDef.Rows; rid++) {
 				var dm = new DumpedMethod();
-				dm.token = (uint)(0x06000001 + i);
+				peImage.readMethodTableRowTo(dm, rid);
 
-				byte[] code, extraSections;
-				peImage.Reader.BaseStream.Position = bodyOffset;
-				var mbHeader = MethodBodyParser.parseMethodBody(peImage.Reader, out code, out extraSections);
-
-				if (code.Length < 6 || code[0] != 0x2A || code[1] != 0x2A)
+				if (dm.mdRVA == 0)
 					continue;
-				dm.code = code;
-				dm.extraSections = extraSections;
+				uint bodyOffset = peImage.rvaToOffset(dm.mdRVA);
 
-				int seed = BitConverter.ToInt32(code, 2);
-				Array.Copy(newCodeHeader, code, newCodeHeader.Length);
+				peImage.Reader.Position = bodyOffset;
+				var mbHeader = MethodBodyParser.parseMethodBody(peImage.Reader, out dm.code, out dm.extraSections);
+				peImage.updateMethodHeaderInfo(dm, mbHeader);
+
+				if (dm.code.Length < 6 || dm.code[0] != 0x2A || dm.code[1] != 0x2A)
+					continue;
+
+				int seed = BitConverter.ToInt32(dm.code, 2);
+				Array.Copy(newCodeHeader, dm.code, newCodeHeader.Length);
 				if (seed == 0)
-					decrypt(code);
+					decrypt(dm.code);
 				else
-					decrypt(code, seed);
-
-				dm.mdRVA = peImage.offsetRead(methodDefOffset + (uint)methodDef.fields[0].offset, methodDef.fields[0].size);
-				dm.mdImplFlags = peImage.offsetReadUInt16(methodDefOffset + (uint)methodDef.fields[1].offset);
-				dm.mdFlags = peImage.offsetReadUInt16(methodDefOffset + (uint)methodDef.fields[2].offset);
-				dm.mdName = peImage.offsetRead(methodDefOffset + (uint)methodDef.fields[3].offset, methodDef.fields[3].size);
-				dm.mdSignature = peImage.offsetRead(methodDefOffset + (uint)methodDef.fields[4].offset, methodDef.fields[4].size);
-				dm.mdParamList = peImage.offsetRead(methodDefOffset + (uint)methodDef.fields[5].offset, methodDef.fields[5].size);
-
-				dm.mhFlags = mbHeader.flags;
-				dm.mhMaxStack = mbHeader.maxStack;
-				dm.mhCodeSize = (uint)dm.code.Length;
-				dm.mhLocalVarSigTok = mbHeader.localVarSigTok;
+					decrypt(dm.code, seed);
 
 				dumpedMethods.add(dm);
 				decrypted = true;

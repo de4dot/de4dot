@@ -22,7 +22,6 @@ using System.Collections.Generic;
 using System.Text;
 using dot10.DotNet;
 using de4dot.blocks;
-using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 	// Find the type that decrypts strings and calls the native lib

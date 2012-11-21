@@ -22,7 +22,6 @@ using System.Collections.Generic;
 using System.IO;
 using dot10.DotNet;
 using de4dot.blocks;
-using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.Agile_NET {
 	class CliSecureRtType {
@@ -192,13 +191,9 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 		}
 
 		bool findNativeCode(byte[] moduleBytes) {
-			var stream = moduleBytes != null ?
-				(Stream)new MemoryStream(moduleBytes) :
-				(Stream)new FileStream(module.Location, FileMode.Open, FileAccess.Read, FileShare.Read);
-			using (stream) {
-				var peImage = new PeImage(stream);
+			var bytes = moduleBytes != null ? moduleBytes : DeobUtils.readModule(module);
+			using (var peImage = new MyPEImage(bytes))
 				return foundSig = MethodsDecrypter.detect(peImage);
-			}
 		}
 
 		public bool isAtLeastVersion50() {

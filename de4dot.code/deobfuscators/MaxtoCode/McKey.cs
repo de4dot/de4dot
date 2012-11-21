@@ -19,7 +19,6 @@
 
 using System;
 using System.IO;
-using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.MaxtoCode {
 	class McKey {
@@ -30,7 +29,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			get { return data[index]; }
 		}
 
-		public McKey(PeImage peImage, PeHeader peHeader) {
+		public McKey(MyPEImage peImage, PeHeader peHeader) {
 			this.peHeader = peHeader;
 			try {
 				this.data = peImage.readBytes(peHeader.getMcKeyRva(), 0x2000);
