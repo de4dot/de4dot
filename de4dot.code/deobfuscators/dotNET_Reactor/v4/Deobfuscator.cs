@@ -346,7 +346,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				return DeobfuscatorInfo.THE_NAME + " 4.0";
 			}
 			if (!hasCorEnableProfilingString)
-				return DeobfuscatorInfo.THE_NAME;
+				return DeobfuscatorInfo.THE_NAME + " 4.x";
 			// 4.2-4.4
 
 			if (!localTypes.exists("System.Byte&"))
