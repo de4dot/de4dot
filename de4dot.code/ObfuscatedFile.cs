@@ -778,9 +778,7 @@ namespace de4dot.code {
 			var baseDir = Utils.getDirName(options.NewFilename);
 			var newName = Path.Combine(baseDir, assemblyName + extension);
 			Logger.n("Creating file {0}", newName);
-			using (var writer = new BinaryWriter(new FileStream(newName, FileMode.Create))) {
-				writer.Write(data);
-			}
+			File.WriteAllBytes(newName, data);
 		}
 
 		void IDeobfuscatedFile.stringDecryptersAdded() {
