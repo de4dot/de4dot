@@ -782,5 +782,13 @@ namespace de4dot.code.deobfuscators {
 		protected static int toInt32(bool b) {
 			return b ? 1 : 0;
 		}
+
+		public void Dispose() {
+			Dispose(true);
+			GC.SuppressFinalize(this);
+		}
+
+		protected virtual void Dispose(bool disposing) {
+		}
 	}
 }

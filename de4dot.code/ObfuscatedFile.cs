@@ -160,14 +160,22 @@ namespace de4dot.code {
 			return noExt + "-cleaned" + ext;
 		}
 
-		public void load(IEnumerable<IDeobfuscator> deobfuscators) {
-			loadModule(deobfuscators);
-			TheAssemblyResolver.Instance.addSearchDirectory(Utils.getDirName(Filename));
-			TheAssemblyResolver.Instance.addSearchDirectory(Utils.getDirName(NewFilename));
-			detectObfuscator(deobfuscators);
-			if (deob == null)
-				throw new ApplicationException("Could not detect obfuscator!");
-			initializeDeobfuscator();
+		public void load(IList<IDeobfuscator> deobfuscators) {
+			try {
+				loadModule(deobfuscators);
+				TheAssemblyResolver.Instance.addSearchDirectory(Utils.getDirName(Filename));
+				TheAssemblyResolver.Instance.addSearchDirectory(Utils.getDirName(NewFilename));
+				detectObfuscator(deobfuscators);
+				if (deob == null)
+					throw new ApplicationException("Could not detect obfuscator!");
+				initializeDeobfuscator();
+			}
+			finally {
+				foreach (var d in deobfuscators) {
+					if (d != deob && d != null)
+						d.Dispose();
+				}
+			}
 		}
 
 		void loadModule(IEnumerable<IDeobfuscator> deobfuscators) {
@@ -793,6 +801,8 @@ namespace de4dot.code {
 			deobfuscateCleanUp();
 			if (module != null)
 				module.Dispose();
+			if (deob != null)
+				deob.Dispose();
 			module = null;
 			deob = null;
 		}

@@ -52,7 +52,7 @@ namespace de4dot.code.deobfuscators {
 		RenameResourceKeys = 2,
 	}
 
-	public interface IDeobfuscator : INameChecker {
+	public interface IDeobfuscator : INameChecker, IDisposable {
 		string Type { get; }
 		string TypeLong { get; }
 		string Name { get; }

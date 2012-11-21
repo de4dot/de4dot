@@ -250,5 +250,11 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				list.Add(stringDecrypter.Method.MDToken.ToInt32());
 			return list;
 		}
+
+		protected override void Dispose(bool disposing) {
+			if (disposing)
+				freePEImage();
+			base.Dispose(disposing);
+		}
 	}
 }

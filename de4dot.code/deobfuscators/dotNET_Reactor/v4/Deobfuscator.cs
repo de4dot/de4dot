@@ -614,5 +614,11 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				break;
 			}
 		}
+
+		protected override void Dispose(bool disposing) {
+			if (disposing)
+				freePEImage();
+			base.Dispose(disposing);
+		}
 	}
 }

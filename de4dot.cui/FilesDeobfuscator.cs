@@ -162,7 +162,7 @@ namespace de4dot.cui {
 				public ModuleContext ModuleContext { get; set; }
 				public IEnumerable<IObfuscatedFile> PossibleFiles { get; set; }
 				public IEnumerable<SearchDir> SearchDirs { get; set; }
-				public Func<IEnumerable<IDeobfuscator>> CreateDeobfuscators { get; set; }
+				public Func<IList<IDeobfuscator>> CreateDeobfuscators { get; set; }
 				public DecrypterType? DefaultStringDecrypterType { get; set; }
 				public List<string> DefaultStringDecrypterMethods { get; set; }
 				public IAssemblyClientFactory AssemblyClientFactory { get; set; }
@@ -358,7 +358,7 @@ namespace de4dot.cui {
 				file.save();
 		}
 
-		IEnumerable<IDeobfuscator> createDeobfuscators() {
+		IList<IDeobfuscator> createDeobfuscators() {
 			var list = new List<IDeobfuscator>(options.DeobfuscatorInfos.Count);
 			foreach (var info in options.DeobfuscatorInfos)
 				list.Add(info.createDeobfuscator());
