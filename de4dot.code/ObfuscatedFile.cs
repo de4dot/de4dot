@@ -187,32 +187,32 @@ namespace de4dot.code {
 		}
 
 		bool unpackNativeImage(IEnumerable<IDeobfuscator> deobfuscators) {
-			var peImage = new PEImage(Filename);
+			using (var peImage = new PEImage(Filename)) {
+				foreach (var deob in deobfuscators) {
+					byte[] unpackedData = null;
+					try {
+						unpackedData = deob.unpackNativeFile(peImage);
+					}
+					catch {
+					}
+					if (unpackedData == null)
+						continue;
 
-			foreach (var deob in deobfuscators) {
-				byte[] unpackedData = null;
-				try {
-					unpackedData = deob.unpackNativeFile(peImage);
+					var oldModule = module;
+					try {
+						module = assemblyModule.load(unpackedData);
+					}
+					catch {
+						Logger.w("Could not load unpacked data. File: {0}, deobfuscator: {0}", peImage.FileName ?? "(unknown filename)", deob.TypeLong);
+						continue;
+					}
+					finally {
+						if (oldModule != null)
+							oldModule.Dispose();
+					}
+					this.deob = deob;
+					return true;
 				}
-				catch {
-				}
-				if (unpackedData == null)
-					continue;
-
-				var oldModule = module;
-				try {
-					module = assemblyModule.load(unpackedData);
-				}
-				catch {
-					Logger.w("Could not load unpacked data. File: {0}, deobfuscator: {0}", peImage.FileName ?? "(unknown filename)", deob.TypeLong);
-					continue;
-				}
-				finally {
-					if (oldModule != null)
-						oldModule.Dispose();
-				}
-				this.deob = deob;
-				return true;
 			}
 
 			return false;
