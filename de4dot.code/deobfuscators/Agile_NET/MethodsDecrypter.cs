@@ -447,7 +447,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			case DecryptResult.NotEncrypted: return false;
 
 			case DecryptResult.Error:
-				Logger.w("Using dynamic method decryption");
+				Logger.n("Using dynamic method decryption");
 				byte[] moduleCctorBytes = getModuleCctorBytes(csRtType);
 				dumpedMethods = de4dot.code.deobfuscators.MethodsDecrypter.decrypt(module.Location, moduleCctorBytes);
 				return true;
