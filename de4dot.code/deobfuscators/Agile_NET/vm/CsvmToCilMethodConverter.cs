@@ -234,12 +234,12 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 				throw new ApplicationException("Invalid number of locals");
 
 			for (int i = 0; i < numLocals; i++)
-				locals.Add(new Local(readTypeReference(reader)));
+				locals.Add(new Local(readTypeRef(reader)));
 
 			return locals;
 		}
 
-		TypeSig readTypeReference(BinaryReader reader) {
+		TypeSig readTypeRef(BinaryReader reader) {
 			var etype = (ElementType)reader.ReadInt32();
 			switch (etype) {
 			case ElementType.Void: return module.CorLibTypes.Void;
@@ -345,7 +345,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 
 		object fixOperand(IList<Instruction> instrs, Instruction instr, IVmOperand vmOperand) {
 			if (vmOperand is TokenOperand)
-				return getMemberReference(((TokenOperand)vmOperand).token);
+				return getMemberRef(((TokenOperand)vmOperand).token);
 
 			if (vmOperand is TargetDisplOperand)
 				return getInstruction(instrs, instr, ((TargetDisplOperand)vmOperand).displacement);
@@ -387,7 +387,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			return fieldRef;
 		}
 
-		ITokenOperand getMemberReference(int token) {
+		ITokenOperand getMemberRef(int token) {
 			var memberRef = module.ResolveToken(token) as ITokenOperand;
 			if (memberRef == null)
 				throw new ApplicationException(string.Format("Could not find member ref: {0:X8}", token));

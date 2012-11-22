@@ -217,7 +217,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 
 		// Find the string decrypter string offset value or null if none found
 		int? findOffsetValue(MethodDef method) {
-			var fieldDict = new FieldDefinitionAndDeclaringTypeDict<IField>();
+			var fieldDict = new FieldDefAndDeclaringTypeDict<IField>();
 			foreach (var field in method.DeclaringType.Fields)
 				fieldDict.add(field, field);
 
@@ -253,7 +253,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return null;
 		}
 
-		int? findOffsetValue(MethodDef method, FieldDef offsetField, FieldDefinitionAndDeclaringTypeDict<IField> fields) {
+		int? findOffsetValue(MethodDef method, FieldDef offsetField, FieldDefAndDeclaringTypeDict<IField> fields) {
 			var instructions = method.Body.Instructions;
 			for (int i = 0; i <= instructions.Count - 2; i++) {
 				var ldstr = instructions[i];

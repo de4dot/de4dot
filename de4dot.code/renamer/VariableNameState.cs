@@ -86,13 +86,13 @@ namespace de4dot.code.renamer {
 			existingEventNames.merge(other.existingEventNames);
 		}
 
-		public string getNewPropertyName(PropertyDef propertyDefinition) {
-			var propType = propertyDefinition.PropertySig.GetRetType();
+		public string getNewPropertyName(PropertyDef propertyDef) {
+			var propType = propertyDef.PropertySig.GetRetType();
 			string newName;
 			if (isGeneric(propType))
-				newName = existingPropertyNames.getName(propertyDefinition.Name, genericPropertyNameCreator);
+				newName = existingPropertyNames.getName(propertyDef.Name, genericPropertyNameCreator);
 			else
-				newName = existingPropertyNames.getName(propertyDefinition.Name, () => propertyNameCreator.create(propType));
+				newName = existingPropertyNames.getName(propertyDef.Name, () => propertyNameCreator.create(propType));
 			addPropertyName(newName);
 			return newName;
 		}
@@ -106,7 +106,7 @@ namespace de4dot.code.renamer {
 			return false;
 		}
 
-		public string getNewEventName(EventDef eventDefinition) {
+		public string getNewEventName(EventDef eventDef) {
 			string newName = eventNameCreator.create();
 			addEventName(newName);
 			return newName;

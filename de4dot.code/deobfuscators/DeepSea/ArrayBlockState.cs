@@ -25,7 +25,7 @@ using de4dot.blocks;
 namespace de4dot.code.deobfuscators.DeepSea {
 	class ArrayBlockState {
 		ModuleDefMD module;
-		FieldDefinitionAndDeclaringTypeDict<FieldInfo> fieldToInfo = new FieldDefinitionAndDeclaringTypeDict<FieldInfo>();
+		FieldDefAndDeclaringTypeDict<FieldInfo> fieldToInfo = new FieldDefAndDeclaringTypeDict<FieldInfo>();
 
 		public class FieldInfo {
 			public readonly FieldDef field;

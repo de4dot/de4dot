@@ -24,7 +24,7 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators {
 	class ExceptionLoggerRemover {
-		MethodDefinitionAndDeclaringTypeDict<bool> exceptionLoggerMethods = new MethodDefinitionAndDeclaringTypeDict<bool>();
+		MethodDefAndDeclaringTypeDict<bool> exceptionLoggerMethods = new MethodDefAndDeclaringTypeDict<bool>();
 
 		public int NumRemovedExceptionLoggers { get; set; }
 

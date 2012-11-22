@@ -309,7 +309,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return null;
 		}
 
-		class ReflectionToCecilMethodCreator {
+		class ReflectionToDot10MethodCreator {
 			MethodDef method;
 			List<Instruction> instructions = new List<Instruction>();
 			InstructionEmulator emulator;
@@ -331,7 +331,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				get { return instructions; }
 			}
 
-			public ReflectionToCecilMethodCreator(MethodDef method) {
+			public ReflectionToDot10MethodCreator(MethodDef method) {
 				this.method = method;
 				this.emulator = new InstructionEmulator(method);
 			}
@@ -439,7 +439,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 					emulator.pop();	// the this ptr
 					addInstruction(new Instruction {
 						OpCode = opcode,
-						Operand = createCecilOperand(opcode, operand),
+						Operand = createDot10Operand(opcode, operand),
 					});
 					return true;
 				}
@@ -449,7 +449,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				}
 			}
 
-			object createCecilOperand(OpCode opcode, Value op) {
+			object createDot10Operand(OpCode opcode, Value op) {
 				if (op is Int32Value)
 					return ((Int32Value)op).value;
 				if (op is StringValue)
@@ -470,7 +470,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		}
 
 		static List<Instruction> getOffsetCalcInstructions(MethodDef method) {
-			var creator = new ReflectionToCecilMethodCreator(method);
+			var creator = new ReflectionToDot10MethodCreator(method);
 			creator.create();
 			var instrs = creator.Instructions;
 

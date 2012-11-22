@@ -73,21 +73,21 @@ namespace AssemblyData.methodsrewriter {
 			return null;
 		}
 
-		public static MMethod getMethod(IMethod methodReference) {
-			if (methodReference == null)
+		public static MMethod getMethod(IMethod methodRef) {
+			if (methodRef == null)
 				return null;
-			var module = getModule(methodReference.DeclaringType.Scope);
+			var module = getModule(methodRef.DeclaringType.Scope);
 			if (module != null)
-				return module.getMethod(methodReference);
+				return module.getMethod(methodRef);
 			return null;
 		}
 
-		public static MField getField(IField fieldReference) {
-			if (fieldReference == null)
+		public static MField getField(IField fieldRef) {
+			if (fieldRef == null)
 				return null;
-			var module = getModule(fieldReference.DeclaringType.Scope);
+			var module = getModule(fieldRef.DeclaringType.Scope);
 			if (module != null)
-				return module.getField(fieldReference);
+				return module.getField(fieldRef);
 			return null;
 		}
 
@@ -104,7 +104,7 @@ namespace AssemblyData.methodsrewriter {
 			if (method != null && method.MethodSig != null)
 				return getRtMethod(method);
 
-			throw new ApplicationException(string.Format("Unknown MemberReference: {0}", memberRef));
+			throw new ApplicationException(string.Format("Unknown MemberRef: {0}", memberRef));
 		}
 
 		public static Type getRtType(IType typeRef) {

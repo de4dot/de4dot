@@ -27,14 +27,14 @@ namespace de4dot.code.renamer.asmmodules {
 		public MMethodDef RaiseMethod { get; set; }
 
 		public EventDef EventDef {
-			get { return (EventDef)memberReference; }
+			get { return (EventDef)memberRef; }
 		}
 
-		public MEventDef(EventDef eventDefinition, MTypeDef owner, int index)
-			: base(eventDefinition, owner, index) {
+		public MEventDef(EventDef eventDef, MTypeDef owner, int index)
+			: base(eventDef, owner, index) {
 		}
 
-		public IEnumerable<MethodDef> methodDefinitions() {
+		public IEnumerable<MethodDef> methodDefs() {
 			if (EventDef.AddMethod != null)
 				yield return EventDef.AddMethod;
 			if (EventDef.RemoveMethod != null)
@@ -48,7 +48,7 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 
 		public bool isVirtual() {
-			foreach (var method in methodDefinitions()) {
+			foreach (var method in methodDefs()) {
 				if (method.IsVirtual)
 					return true;
 			}

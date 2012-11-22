@@ -91,10 +91,10 @@ namespace de4dot.blocks {
 			return true;
 		}
 
-		public static FieldDef findFieldType(TypeDef typeDefinition, string typeName, bool isStatic) {
-			if (typeDefinition == null)
+		public static FieldDef findFieldType(TypeDef typeDef, string typeName, bool isStatic) {
+			if (typeDef == null)
 				return null;
-			foreach (var field in typeDefinition.Fields) {
+			foreach (var field in typeDef.Fields) {
 				if (field.IsStatic == isStatic && field.FieldSig.GetFieldType().GetFullName() == typeName)
 					return field;
 			}
@@ -274,12 +274,12 @@ namespace de4dot.blocks {
 			return getField(getType(module, field.DeclaringType), field);
 		}
 
-		public static FieldDef getField(TypeDef type, IField fieldReference) {
-			if (type == null || fieldReference == null)
+		public static FieldDef getField(TypeDef type, IField fieldRef) {
+			if (type == null || fieldRef == null)
 				return null;
-			if (fieldReference is FieldDef)
-				return (FieldDef)fieldReference;
-			return type.FindField(fieldReference.Name, fieldReference.FieldSig);
+			if (fieldRef is FieldDef)
+				return (FieldDef)fieldRef;
+			return type.FindField(fieldRef.Name, fieldRef.FieldSig);
 		}
 
 		public static FieldDef getField(TypeDef type, string typeFullName) {
@@ -596,7 +596,7 @@ namespace de4dot.blocks {
 			return null;
 		}
 
-		public static TypeDefOrRefSig findOrCreateTypeReference(ModuleDef module, AssemblyRef asmRef, string ns, string name, bool isValueType) {
+		public static TypeDefOrRefSig findOrCreateTypeRef(ModuleDef module, AssemblyRef asmRef, string ns, string name, bool isValueType) {
 			var typeRef = module.UpdateRowId(new TypeRefUser(module, ns, name, asmRef));
 			if (isValueType)
 				return new ValueTypeSig(typeRef);

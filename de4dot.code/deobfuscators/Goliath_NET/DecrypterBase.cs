@@ -32,7 +32,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 		TypeDef delegateType;
 		TypeDef delegateInitType;
 		protected BinaryReader decryptedReader;
-		MethodDefinitionAndDeclaringTypeDict<Info> decrypterMethods = new MethodDefinitionAndDeclaringTypeDict<Info>();
+		MethodDefAndDeclaringTypeDict<Info> decrypterMethods = new MethodDefAndDeclaringTypeDict<Info>();
 
 		protected class Info {
 			public MethodDef method;
@@ -66,7 +66,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 
 		public IEnumerable<TypeDef> DecrypterTypes {
 			get {
-				var types = new TypeDefinitionDict<TypeDef>();
+				var types = new TypeDefDict<TypeDef>();
 				foreach (var info in decrypterMethods.getValues()) {
 					if (info.referenced)
 						types.add(info.method.DeclaringType, info.method.DeclaringType);

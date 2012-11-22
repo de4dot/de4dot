@@ -83,13 +83,13 @@ namespace de4dot.code.renamer {
 			renameResourceKeys();
 			var groups = modules.initializeVirtualMembers();
 			memberInfos.initialize(modules);
-			renameTypeDefinitions();
-			renameTypeReferences();
+			renameTypeDefs();
+			renameTypeRefs();
 			modules.onTypesRenamed();
 			restorePropertiesAndEvents(groups);
-			prepareRenameMemberDefinitions(groups);
-			renameMemberDefinitions();
-			renameMemberReferences();
+			prepareRenameMemberDefs(groups);
+			renameMemberDefs();
+			renameMemberRefs();
 			removeUselessOverrides(groups);
 			renameResources();
 			modules.cleanUp();
@@ -127,7 +127,7 @@ namespace de4dot.code.renamer {
 			}
 		}
 
-		void renameTypeDefinitions() {
+		void renameTypeDefs() {
 			if (isVerbose)
 				Logger.v("Renaming obfuscated type definitions");
 
@@ -141,7 +141,7 @@ namespace de4dot.code.renamer {
 				state.addTypeName(memberInfos.type(type).oldName);
 			prepareRenameTypes(modules.BaseTypes, state);
 			fixClsTypeNames();
-			renameTypeDefinitions(modules.NonNestedTypes);
+			renameTypeDefs(modules.NonNestedTypes);
 		}
 
 		void removeOneClassNamespaces(Module module) {
@@ -174,37 +174,37 @@ namespace de4dot.code.renamer {
 			}
 		}
 
-		void renameTypeDefinitions(IEnumerable<MTypeDef> typeDefs) {
+		void renameTypeDefs(IEnumerable<MTypeDef> typeDefs) {
 			Logger.Instance.indent();
 			foreach (var typeDef in typeDefs) {
 				rename(typeDef);
-				renameTypeDefinitions(typeDef.NestedTypes);
+				renameTypeDefs(typeDef.NestedTypes);
 			}
 			Logger.Instance.deIndent();
 		}
 
 		void rename(MTypeDef type) {
-			var typeDefinition = type.TypeDef;
+			var typeDef = type.TypeDef;
 			var info = memberInfos.type(type);
 
 			if (isVerbose)
-				Logger.v("Type: {0} ({1:X8})", Utils.removeNewlines(typeDefinition.FullName), typeDefinition.MDToken.ToUInt32());
+				Logger.v("Type: {0} ({1:X8})", Utils.removeNewlines(typeDef.FullName), typeDef.MDToken.ToUInt32());
 			Logger.Instance.indent();
 
 			renameGenericParams(type.GenericParams);
 
 			if (RenameTypes && info.gotNewName()) {
-				var old = typeDefinition.Name;
-				typeDefinition.Name = new UTF8String(info.newName);
+				var old = typeDef.Name;
+				typeDef.Name = new UTF8String(info.newName);
 				if (isVerbose)
-					Logger.v("Name: {0} => {1}", Utils.removeNewlines(old), Utils.removeNewlines(typeDefinition.Name));
+					Logger.v("Name: {0} => {1}", Utils.removeNewlines(old), Utils.removeNewlines(typeDef.Name));
 			}
 
 			if (RenameNamespaces && info.newNamespace != null) {
-				var old = typeDefinition.Namespace;
-				typeDefinition.Namespace = new UTF8String(info.newNamespace);
+				var old = typeDef.Namespace;
+				typeDef.Namespace = new UTF8String(info.newNamespace);
 				if (isVerbose)
-					Logger.v("Namespace: {0} => {1}", Utils.removeNewlines(old), Utils.removeNewlines(typeDefinition.Namespace));
+					Logger.v("Namespace: {0} => {1}", Utils.removeNewlines(old), Utils.removeNewlines(typeDef.Namespace));
 			}
 
 			Logger.Instance.deIndent();
@@ -223,7 +223,7 @@ namespace de4dot.code.renamer {
 			}
 		}
 
-		void renameMemberDefinitions() {
+		void renameMemberDefs() {
 			if (isVerbose)
 				Logger.v("Renaming member definitions #2");
 
@@ -321,13 +321,13 @@ namespace de4dot.code.renamer {
 						var paramInfo = memberInfos.param(param);
 						if (!paramInfo.gotNewName())
 							continue;
-						param.ParameterDefinition.CreateParamDef();
-						param.ParameterDefinition.Name = paramInfo.newName;
+						param.ParameterDef.CreateParamDef();
+						param.ParameterDef.Name = paramInfo.newName;
 						if (isVerbose) {
 							if (param.IsReturnParameter)
 								Logger.v("RetParam: {0} => {1}", Utils.removeNewlines(paramInfo.oldName), Utils.removeNewlines(paramInfo.newName));
 							else
-								Logger.v("Param ({0}/{1}): {2} => {3}", param.ParameterDefinition.MethodSigIndex + 1, methodDef.MethodDef.MethodSig.GetParamCount(), Utils.removeNewlines(paramInfo.oldName), Utils.removeNewlines(paramInfo.newName));
+								Logger.v("Param ({0}/{1}): {2} => {3}", param.ParameterDef.MethodSigIndex + 1, methodDef.MethodDef.MethodSig.GetParamCount(), Utils.removeNewlines(paramInfo.oldName), Utils.removeNewlines(paramInfo.newName));
 						}
 					}
 				}
@@ -336,7 +336,7 @@ namespace de4dot.code.renamer {
 			}
 		}
 
-		void renameMemberReferences() {
+		void renameMemberRefs() {
 			if (isVerbose)
 				Logger.v("Renaming references to other definitions");
 			foreach (var module in modules.TheModules) {
@@ -347,9 +347,9 @@ namespace de4dot.code.renamer {
 					refToDef.reference.Name = refToDef.definition.Name;
 				foreach (var refToDef in module.FieldRefsToRename)
 					refToDef.reference.Name = refToDef.definition.Name;
-				foreach (var info in module.CustomAttributeFieldReferences)
+				foreach (var info in module.CustomAttributeFieldRefs)
 					info.cattr.NamedArguments[info.index].Name = info.reference.Name;
-				foreach (var info in module.CustomAttributePropertyReferences)
+				foreach (var info in module.CustomAttributePropertyRefs)
 					info.cattr.NamedArguments[info.index].Name = info.reference.Name;
 				Logger.Instance.deIndent();
 			}
@@ -405,7 +405,7 @@ namespace de4dot.code.renamer {
 			}
 		}
 
-		void renameTypeReferences() {
+		void renameTypeRefs() {
 			if (isVerbose)
 				Logger.v("Renaming references to type definitions");
 			var theModules = modules.TheModules;
@@ -891,7 +891,7 @@ namespace de4dot.code.renamer {
 			return eventDef;
 		}
 
-		void prepareRenameMemberDefinitions(MethodNameGroups groups) {
+		void prepareRenameMemberDefs(MethodNameGroups groups) {
 			if (isVerbose)
 				Logger.v("Renaming member definitions #1");
 
@@ -987,7 +987,7 @@ namespace de4dot.code.renamer {
 			foreach (var method in methods) {
 				var nameChecker = !method.Owner.HasModule ? null : method.Owner.Module.ObfuscatedFile.NameChecker;
 				for (int i = 0; i < argNames.Length; i++) {
-					var argName = method.ParamDefs[i].ParameterDefinition.Name;
+					var argName = method.ParamDefs[i].ParameterDef.Name;
 					if (nameChecker == null || nameChecker.isValidMethodArgName(argName))
 						argNames[i] = argName;
 				}
@@ -1416,7 +1416,7 @@ namespace de4dot.code.renamer {
 			foreach (var propMethod in group.Methods) {
 				TypeSig propType;
 				if (methodType == PropertyMethodType.Setter)
-					propType = propMethod.ParamDefs[propMethod.ParamDefs.Count - 1].ParameterDefinition.Type;
+					propType = propMethod.ParamDefs[propMethod.ParamDefs.Count - 1].ParameterDef.Type;
 				else
 					propType = propMethod.MethodDef.MethodSig.GetRetType();
 				if (type == null)
@@ -1613,7 +1613,7 @@ namespace de4dot.code.renamer {
 				memberInfos.method(methodDef).suggestedName = "Main";
 				if (methodDef.ParamDefs.Count == 1) {
 					var paramDef = methodDef.ParamDefs[0];
-					var type = paramDef.ParameterDefinition.Type;
+					var type = paramDef.ParameterDef.Type;
 					if (type.FullName == "System.String[]")
 						memberInfos.param(paramDef).newName = "args";
 				}

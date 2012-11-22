@@ -128,7 +128,7 @@ namespace de4dot.code {
 	}
 
 	class StaticStringInliner : StringInlinerBase {
-		MethodDefinitionAndDeclaringTypeDict<Func<MethodDef, MethodSpec, object[], string>> stringDecrypters = new MethodDefinitionAndDeclaringTypeDict<Func<MethodDef, MethodSpec, object[], string>>();
+		MethodDefAndDeclaringTypeDict<Func<MethodDef, MethodSpec, object[], string>> stringDecrypters = new MethodDefAndDeclaringTypeDict<Func<MethodDef, MethodSpec, object[], string>>();
 
 		public override bool HasHandlers {
 			get { return stringDecrypters.Count != 0; }

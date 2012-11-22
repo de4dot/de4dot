@@ -27,8 +27,8 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 		ModuleDefMD module;
 		TypeDef resourceManagerType;
 		TypeDef componentResourceManagerType;
-		MethodDefinitionAndDeclaringTypeDict<IMethod> resourceManagerCtors = new MethodDefinitionAndDeclaringTypeDict<IMethod>();
-		MethodDefinitionAndDeclaringTypeDict<IMethod> componentManagerCtors = new MethodDefinitionAndDeclaringTypeDict<IMethod>();
+		MethodDefAndDeclaringTypeDict<IMethod> resourceManagerCtors = new MethodDefAndDeclaringTypeDict<IMethod>();
+		MethodDefAndDeclaringTypeDict<IMethod> componentManagerCtors = new MethodDefAndDeclaringTypeDict<IMethod>();
 
 		public TypeDef ResourceManagerType {
 			get { return resourceManagerType; }
@@ -54,7 +54,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			initializeCtors(componentResourceManagerType, componentManagerCtors);
 		}
 
-		void initializeCtors(TypeDef manager, MethodDefinitionAndDeclaringTypeDict<IMethod> ctors) {
+		void initializeCtors(TypeDef manager, MethodDefAndDeclaringTypeDict<IMethod> ctors) {
 			if (manager == null)
 				return;
 

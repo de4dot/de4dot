@@ -52,15 +52,15 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		string[] strings;
 		AssemblyRef[] assemblyNames;
 		Dictionary<string, int> methodOffsets;
-		List<TypeSig> typeReferences;
-		MemberReferenceConverter memberReferenceConverter;
+		List<TypeSig> typeRefs;
+		MemberRefConverter memberRefConverter;
 		IDeobfuscatorContext deobfuscatorContext;
 
 		public ImageReader(IDeobfuscatorContext deobfuscatorContext, ModuleDefMD module, byte[] data) {
 			this.deobfuscatorContext = deobfuscatorContext;
 			this.module = module;
 			this.reader = MemoryImageStream.Create(data);
-			this.memberReferenceConverter = new MemberReferenceConverter(module);
+			this.memberRefConverter = new MemberRefConverter(module);
 		}
 
 		public bool initialize() {
@@ -86,26 +86,26 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		void initializeV10() {
 			reader.ReadInt16();
 			int methodNamesOffset = (int)reader.ReadInt64();
-			int typeReferencesOffset = (int)reader.ReadInt64();
-			int assemblyReferencesOffset = (int)reader.ReadInt64();
+			int typeRefsOffset = (int)reader.ReadInt64();
+			int assemblyRefsOffset = (int)reader.ReadInt64();
 			int stringsOffset = (int)reader.ReadInt64();
 
 			initializeStrings(stringsOffset);
-			initializeAssemblyNames(assemblyReferencesOffset);
+			initializeAssemblyNames(assemblyRefsOffset);
 			initializeMethodNames(methodNamesOffset);
-			initializeTypeReferences(typeReferencesOffset);
+			initializeTypeRefs(typeRefsOffset);
 		}
 
 		void initializeV55() {
 			int methodNamesOffset = (int)reader.ReadInt64() ^ METADATA_SIG;
-			int typeReferencesOffset = (int)reader.ReadInt64() ^ (METADATA_SIG << 1);
-			int assemblyReferencesOffset = (int)reader.ReadInt64() ^ ((METADATA_SIG << 1) + 1);
+			int typeRefsOffset = (int)reader.ReadInt64() ^ (METADATA_SIG << 1);
+			int assemblyRefsOffset = (int)reader.ReadInt64() ^ ((METADATA_SIG << 1) + 1);
 			int stringsOffset = (int)reader.ReadInt64() ^ (((METADATA_SIG << 1) + 1) << 1);
 
 			initializeStrings(stringsOffset);
-			initializeAssemblyNames(assemblyReferencesOffset);
+			initializeAssemblyNames(assemblyRefsOffset);
 			initializeMethodNames(methodNamesOffset);
-			initializeTypeReferences(typeReferencesOffset);
+			initializeTypeRefs(typeRefsOffset);
 		}
 
 		public void restore(string name, MethodDef method) {
@@ -138,11 +138,11 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				body.ExceptionHandlers.Add(eh);
 		}
 
-		BabelMethodDefinition getMethod(string name) {
+		BabelMethodDef getMethod(string name) {
 			int offset = methodOffsets[name];
 			methodOffsets.Remove(name);
 			reader.Position = offset;
-			return new MethodDefinitionReader(this, reader).read();
+			return new MethodDefReader(this, reader).read();
 		}
 
 		public string readString() {
@@ -150,7 +150,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		}
 
 		public TypeSig readTypeSig() {
-			return typeReferences[readVariableLengthInt32()];
+			return typeRefs[readVariableLengthInt32()];
 		}
 
 		public TypeSig[] readTypeSigs() {
@@ -160,7 +160,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return refs;
 		}
 
-		public IField readFieldReference() {
+		public IField readFieldRef() {
 			var name = readString();
 			var declaringType = readTypeSig();
 
@@ -171,7 +171,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 								Utils.removeNewlines(declaringType)));
 			}
 
-			return memberReferenceConverter.convert(fields[0]);
+			return memberRefConverter.convert(fields[0]);
 		}
 
 		static List<FieldDef> getFields(TypeDef type, string name) {
@@ -180,10 +180,10 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return new List<FieldDef>(type.FindFields(name));
 		}
 
-		public IMethod readMethodReference() {
-			var babelMethodRef = new MethodReferenceReader(this, reader).read();
+		public IMethod readMethodRef() {
+			var babelMethodRef = new MethodRefReader(this, reader).read();
 
-			var method = getMethodReference(babelMethodRef);
+			var method = getMethodRef(babelMethodRef);
 			if (method == null) {
 				throw new ApplicationException(string.Format("Could not find method '{0}' in type '{1}'",
 							Utils.removeNewlines(babelMethodRef.Name),
@@ -198,7 +198,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return module.UpdateRowId(mr);
 		}
 
-		IMethod getMethodReference(BabelMethodreference babelMethodRef) {
+		IMethod getMethodRef(BabelMethodreference babelMethodRef) {
 			var declaringType = resolve(babelMethodRef.DeclaringType);
 			if (declaringType == null)
 				return null;
@@ -221,10 +221,10 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			foreach (var method in declaringType.Methods) {
 				if (compareMethod(GenericArgsSubstitutor.create(method, gis, gim), babelMethodRef)) {
 					if (!babelMethodRef.IsGenericMethod)
-						methods.Add(memberReferenceConverter.convert(method));
+						methods.Add(memberRefConverter.convert(method));
 					else {
 						var gim2 = new GenericInstMethodSig(babelMethodRef.GenericArguments);
-						var ms = module.UpdateRowId(new MethodSpecUser(memberReferenceConverter.convert(method), gim2));
+						var ms = module.UpdateRowId(new MethodSpecUser(memberRefConverter.convert(method), gim2));
 						methods.Add(ms);
 					}
 				}
@@ -329,39 +329,39 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			}
 		}
 
-		void initializeTypeReferences(int headerOffset) {
+		void initializeTypeRefs(int headerOffset) {
 			reader.Position = headerOffset;
 			if (reader.ReadInt32() != TYPEREFS_SIG)
 				throw new ApplicationException("Invalid typerefs sig");
 
 			int numTypeRefs = reader.ReadInt32();
-			typeReferences = new List<TypeSig>(numTypeRefs + 1);
-			typeReferences.Add(null);
+			typeRefs = new List<TypeSig>(numTypeRefs + 1);
+			typeRefs.Add(null);
 			var genericArgFixes = new Dictionary<GenericInstSig, List<int>>();
 			for (int i = 0; i < numTypeRefs; i++) {
 				TypeId typeId = (TypeId)reader.ReadByte();
 				switch (typeId) {
 				case TypeId.TypeRef:
-					typeReferences.Add(readTypeRef());
+					typeRefs.Add(readTypeRef());
 					break;
 
 				case TypeId.GenericInstance:
 					List<int> genericArgs;
 					var git = readGenericInstanceType(out genericArgs);
-					typeReferences.Add(git);
+					typeRefs.Add(git);
 					genericArgFixes[git] = genericArgs;
 					break;
 
 				case TypeId.Pointer:
-					typeReferences.Add(readPointerType());
+					typeRefs.Add(readPointerType());
 					break;
 
 				case TypeId.Array:
-					typeReferences.Add(readArrayType());
+					typeRefs.Add(readArrayType());
 					break;
 
 				case TypeId.ByRef:
-					typeReferences.Add(readByReferenceType());
+					typeRefs.Add(readByRefType());
 					break;
 
 				default:
@@ -372,7 +372,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			foreach (var kv in genericArgFixes) {
 				var git = kv.Key;
 				foreach (var typeNum in kv.Value)
-					git.GenericArguments.Add(typeReferences[typeNum]);
+					git.GenericArguments.Add(typeRefs[typeNum]);
 			}
 		}
 
@@ -381,13 +381,13 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			parseReflectionTypeName(readString(), out ns, out name);
 			var asmRef = assemblyNames[readVariableLengthInt32()];
 			var declaringType = readTypeSig();
-			var typeReference = new TypeRefUser(module, ns, name);
+			var typeRef = new TypeRefUser(module, ns, name);
 			if (declaringType != null)
-				typeReference.ResolutionScope = getTypeRef(declaringType);
+				typeRef.ResolutionScope = getTypeRef(declaringType);
 			else
-				typeReference.ResolutionScope = asmRef;
+				typeRef.ResolutionScope = asmRef;
 
-			return memberReferenceConverter.convert(typeReference);
+			return memberRefConverter.convert(typeRef);
 		}
 
 		TypeRef getTypeRef(TypeSig type) {
@@ -469,7 +469,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return new ArraySig(typeSig, rank);
 		}
 
-		ByRefSig readByReferenceType() {
+		ByRefSig readByRefType() {
 			return new ByRefSig(readTypeSig());
 		}
 

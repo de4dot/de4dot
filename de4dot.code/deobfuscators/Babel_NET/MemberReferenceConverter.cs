@@ -23,14 +23,14 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Babel_NET {
 	// Converts type references/definitions in one module to this module
-	class MemberReferenceConverter {
+	class MemberRefConverter {
 		ModuleDefMD module;
 
 		public ModuleDefMD Module {
 			get { return module; }
 		}
 
-		public MemberReferenceConverter(ModuleDefMD module) {
+		public MemberRefConverter(ModuleDefMD module) {
 			this.module = module;
 		}
 
@@ -60,7 +60,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 		public IField convert(IField fieldRef) {
 			if (isInOurModule(fieldRef))
-				return tryGetFieldDefinition(fieldRef);
+				return tryGetFieldDef(fieldRef);
 			return createImporter().Import(fieldRef);
 		}
 
@@ -68,11 +68,11 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			if (!(methodRef is MemberRef || methodRef is MethodDef) || methodRef.MethodSig == null)
 				throw new ApplicationException("Invalid method reference type");
 			if (isInOurModule(methodRef))
-				return (IMethodDefOrRef)tryGetMethodDefinition(methodRef);
+				return (IMethodDefOrRef)tryGetMethodDef(methodRef);
 			return (IMethodDefOrRef)createImporter().Import(methodRef);
 		}
 
-		public IField tryGetFieldDefinition(IField fieldRef) {
+		public IField tryGetFieldDef(IField fieldRef) {
 			var fieldDef = fieldRef as FieldDef;
 			if (fieldDef != null)
 				return fieldDef;
@@ -83,7 +83,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return DotNetUtils.getField(declaringType, fieldRef);
 		}
 
-		public IMethod tryGetMethodDefinition(IMethod methodRef) {
+		public IMethod tryGetMethodDef(IMethod methodRef) {
 			var methodDef = methodRef as MethodDef;
 			if (methodDef != null)
 				return methodDef;

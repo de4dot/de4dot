@@ -29,7 +29,7 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 	}
 
-	class TypeDefDict : TypeDefinitionDict<MTypeDef> {
+	class TypeDefDict : TypeDefDict<MTypeDef> {
 		public IEnumerable<MTypeDef> getSorted() {
 			return DictHelper.getSorted(getValues());
 		}
@@ -39,7 +39,7 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 	}
 
-	class FieldDefDict : FieldDefinitionDict<MFieldDef> {
+	class FieldDefDict : FieldDefDict<MFieldDef> {
 		public IEnumerable<MFieldDef> getSorted() {
 			return DictHelper.getSorted(getValues());
 		}
@@ -49,7 +49,7 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 	}
 
-	class MethodDefDict : MethodDefinitionDict<MMethodDef> {
+	class MethodDefDict : MethodDefDict<MMethodDef> {
 		public IEnumerable<MMethodDef> getSorted() {
 			return DictHelper.getSorted(getValues());
 		}
@@ -59,7 +59,7 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 	}
 
-	class PropertyDefDict : PropertyDefinitionDict<MPropertyDef> {
+	class PropertyDefDict : PropertyDefDict<MPropertyDef> {
 		public IEnumerable<MPropertyDef> getSorted() {
 			return DictHelper.getSorted(getValues());
 		}
@@ -69,7 +69,7 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 	}
 
-	class EventDefDict : EventDefinitionDict<MEventDef> {
+	class EventDefDict : EventDefDict<MEventDef> {
 		public IEnumerable<MEventDef> getSorted() {
 			return DictHelper.getSorted(getValues());
 		}

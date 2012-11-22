@@ -25,15 +25,15 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators {
 	abstract class ValueInlinerBase<TValue> : MethodReturnValueInliner {
-		MethodDefinitionAndDeclaringTypeDict<Func<MethodDef, MethodSpec, object[], object>> decrypterMethods = new MethodDefinitionAndDeclaringTypeDict<Func<MethodDef, MethodSpec, object[], object>>();
+		MethodDefAndDeclaringTypeDict<Func<MethodDef, MethodSpec, object[], object>> decrypterMethods = new MethodDefAndDeclaringTypeDict<Func<MethodDef, MethodSpec, object[], object>>();
 		bool removeUnbox = false;
 
 		class MyCallResult : CallResult {
-			public IMethod methodReference;
+			public IMethod methodRef;
 			public MethodSpec gim;
 			public MyCallResult(Block block, int callEndIndex, IMethod method, MethodSpec gim)
 				: base(block, callEndIndex) {
-				this.methodReference = method;
+				this.methodRef = method;
 				this.gim = gim;
 			}
 		}
@@ -63,8 +63,8 @@ namespace de4dot.code.deobfuscators {
 		protected override void inlineAllCalls() {
 			foreach (var tmp in callResults) {
 				var callResult = (MyCallResult)tmp;
-				var handler = decrypterMethods.find(callResult.methodReference);
-				callResult.returnValue = handler((MethodDef)callResult.methodReference, callResult.gim, callResult.args);
+				var handler = decrypterMethods.find(callResult.methodRef);
+				callResult.returnValue = handler((MethodDef)callResult.methodRef, callResult.gim, callResult.args);
 			}
 		}
 

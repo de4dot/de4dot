@@ -243,7 +243,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 		}
 
 		static void restoreMethod(MethodDef method, MethodReader methodReader) {
-			// body.MaxStackSize = <let Mono.Cecil calculate this>
+			// body.MaxStackSize = <let dot10 calculate this>
 			method.Body.InitLocals = methodReader.InitLocals;
 			methodReader.RestoreMethod(method);
 		}

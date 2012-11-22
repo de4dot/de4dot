@@ -31,7 +31,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 		MethodDef stringDecrypter1;
 		MethodDef stringDecrypter2;
 		List<MethodDef> initMethods = new List<MethodDef>();
-		List<ModuleRef> moduleReferences = new List<ModuleRef>();
+		List<ModuleRef> moduleRefs = new List<ModuleRef>();
 		Resource linkedResource;
 
 		public bool Detected {
@@ -78,7 +78,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			this.stringDecrypter2 = lookup(oldOne.stringDecrypter2, "Could not find stringDecrypter2");
 			foreach (var method in oldOne.initMethods)
 				initMethods.Add(lookup(method, "Could not find initMethod"));
-			updateModuleReferences();
+			updateModuleRefs();
 		}
 
 		T lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
@@ -97,18 +97,18 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 					if (DotNetUtils.isMethod(method, "System.Void", "()"))
 						initMethods.Add(method);
 				}
-				updateModuleReferences();
+				updateModuleRefs();
 				return;
 			}
 		}
 
-		void updateModuleReferences() {
+		void updateModuleRefs() {
 			foreach (var method in decrypterType.Methods) {
 				if (method.ImplMap != null) {
 					switch (method.ImplMap.Name.String) {
 					case "nr_nli":
 					case "nr_startup":
-						moduleReferences.Add(method.ImplMap.Module);
+						moduleRefs.Add(method.ImplMap.Module);
 						break;
 					}
 				}
@@ -117,7 +117,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 		}
 
 		void updateLinkedResource() {
-			foreach (var modref in moduleReferences) {
+			foreach (var modref in moduleRefs) {
 				var resource = DotNetUtils.getResource(module, modref.Name.String) as LinkedResource;
 				if (resource == null)
 					continue;

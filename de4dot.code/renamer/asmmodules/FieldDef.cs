@@ -22,11 +22,11 @@ using dot10.DotNet;
 namespace de4dot.code.renamer.asmmodules {
 	class MFieldDef : Ref {
 		public FieldDef FieldDef {
-			get { return (FieldDef)memberReference; }
+			get { return (FieldDef)memberRef; }
 		}
 
-		public MFieldDef(FieldDef fieldDefinition, MTypeDef owner, int index)
-			: base(fieldDefinition, owner, index) {
+		public MFieldDef(FieldDef fieldDef, MTypeDef owner, int index)
+			: base(fieldDef, owner, index) {
 		}
 	}
 }

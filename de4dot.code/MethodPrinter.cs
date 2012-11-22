@@ -133,11 +133,11 @@ namespace de4dot.code {
 					printExInfo(exInfo);
 				var instrString = instr.OpCode.Name;
 				var operandString = getOperandString(instr);
-				var memberReference = instr.Operand as ITokenOperand;
+				var memberRef = instr.Operand as ITokenOperand;
 				if (operandString == "")
 					Logger.log(loggerEvent, "{0}", instrString);
-				else if (memberReference != null)
-					Logger.log(loggerEvent, "{0,-9} {1} // {2:X8}", instrString, Utils.removeNewlines(operandString), memberReference.MDToken.ToUInt32());
+				else if (memberRef != null)
+					Logger.log(loggerEvent, "{0,-9} {1} // {2:X8}", instrString, Utils.removeNewlines(operandString), memberRef.MDToken.ToUInt32());
 				else
 					Logger.log(loggerEvent, "{0,-9} {1}", instrString, Utils.removeNewlines(operandString));
 			}

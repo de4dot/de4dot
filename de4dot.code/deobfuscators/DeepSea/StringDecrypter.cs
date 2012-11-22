@@ -27,7 +27,7 @@ using de4dot.blocks;
 namespace de4dot.code.deobfuscators.DeepSea {
 	class StringDecrypter {
 		ModuleDefMD module;
-		MethodDefinitionAndDeclaringTypeDict<IDecrypterInfo> methodToInfo = new MethodDefinitionAndDeclaringTypeDict<IDecrypterInfo>();
+		MethodDefAndDeclaringTypeDict<IDecrypterInfo> methodToInfo = new MethodDefAndDeclaringTypeDict<IDecrypterInfo>();
 		DecrypterVersion version = DecrypterVersion.Unknown;
 
 		public enum DecrypterVersion {
@@ -45,12 +45,12 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		}
 
 		static short[] findKey(MethodDef initMethod, FieldDef keyField) {
-			var fields = new FieldDefinitionAndDeclaringTypeDict<bool>();
+			var fields = new FieldDefAndDeclaringTypeDict<bool>();
 			fields.add(keyField, true);
 			return findKey(initMethod, fields);
 		}
 
-		static short[] findKey(MethodDef initMethod, FieldDefinitionAndDeclaringTypeDict<bool> fields) {
+		static short[] findKey(MethodDef initMethod, FieldDefAndDeclaringTypeDict<bool> fields) {
 			var instrs = initMethod.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 2; i++) {
 				var ldci4 = instrs[i];
@@ -153,7 +153,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			MethodDef cctor;
 			int magic;
 			int arg1, arg2;
-			FieldDefinitionAndDeclaringTypeDict<bool> fields;
+			FieldDefAndDeclaringTypeDict<bool> fields;
 			ArrayInfo arrayInfo;
 			ushort[] encryptedData;
 			short[] key;
@@ -206,8 +206,8 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				return count >= 2;
 			}
 
-			static FieldDefinitionAndDeclaringTypeDict<bool> getFields(MethodDef method) {
-				var fields = new FieldDefinitionAndDeclaringTypeDict<bool>();
+			static FieldDefAndDeclaringTypeDict<bool> getFields(MethodDef method) {
+				var fields = new FieldDefAndDeclaringTypeDict<bool>();
 				foreach (var instr in method.Body.Instructions) {
 					if (instr.OpCode.Code != Code.Ldsfld && instr.OpCode.Code != Code.Stsfld)
 						continue;

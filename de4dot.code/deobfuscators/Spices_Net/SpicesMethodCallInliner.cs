@@ -26,8 +26,8 @@ using de4dot.blocks.cflow;
 namespace de4dot.code.deobfuscators.Spices_Net {
 	class SpicesMethodCallInliner : MethodCallInliner {
 		ModuleDefMD module;
-		TypeDefinitionDict<bool> methodsTypes = new TypeDefinitionDict<bool>();
-		MethodDefinitionAndDeclaringTypeDict<MethodDef> classMethods = new MethodDefinitionAndDeclaringTypeDict<MethodDef>();
+		TypeDefDict<bool> methodsTypes = new TypeDefDict<bool>();
+		MethodDefAndDeclaringTypeDict<MethodDef> classMethods = new MethodDefAndDeclaringTypeDict<MethodDef>();
 
 		public SpicesMethodCallInliner(ModuleDefMD module)
 			: base(false) {
@@ -58,7 +58,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 		}
 
 		void restoreMethodBodies() {
-			var methodToOrigMethods = new MethodDefinitionAndDeclaringTypeDict<List<MethodDef>>();
+			var methodToOrigMethods = new MethodDefAndDeclaringTypeDict<List<MethodDef>>();
 			foreach (var t in module.Types) {
 				var types = new List<TypeDef>(AllTypesHelper.Types(new List<TypeDef> { t }));
 				foreach (var type in types) {
@@ -207,12 +207,12 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			return list;
 		}
 
-		public TypeDefinitionDict<bool> getInlinedTypes(IEnumerable<MethodDef> unusedMethods) {
-			var unused = new MethodDefinitionAndDeclaringTypeDict<bool>();
+		public TypeDefDict<bool> getInlinedTypes(IEnumerable<MethodDef> unusedMethods) {
+			var unused = new MethodDefAndDeclaringTypeDict<bool>();
 			foreach (var method in unusedMethods)
 				unused.add(method, true);
 
-			var types = new TypeDefinitionDict<bool>();
+			var types = new TypeDefDict<bool>();
 			foreach (var type in methodsTypes.getKeys()) {
 				if (checkAllMethodsUnused(unused, type))
 					types.add(type, true);
@@ -220,7 +220,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			return types;
 		}
 
-		static bool checkAllMethodsUnused(MethodDefinitionAndDeclaringTypeDict<bool> unused, TypeDef type) {
+		static bool checkAllMethodsUnused(MethodDefAndDeclaringTypeDict<bool> unused, TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (!unused.find(method))
 					return false;

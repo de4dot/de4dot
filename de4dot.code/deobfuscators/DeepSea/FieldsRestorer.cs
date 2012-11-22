@@ -27,9 +27,9 @@ namespace de4dot.code.deobfuscators.DeepSea {
 	// DS 4.x can move fields from a class to a struct. This class restores the fields.
 	class FieldsRestorer {
 		ModuleDefMD module;
-		TypeDefinitionDict<List<TypeDef>> structToOwners = new TypeDefinitionDict<List<TypeDef>>();
-		FieldDefinitionAndDeclaringTypeDict<bool> structFieldsToFix = new FieldDefinitionAndDeclaringTypeDict<bool>();
-		TypeDefinitionDict<FieldDefinitionAndDeclaringTypeDict<FieldDef>> typeToFieldsDict = new TypeDefinitionDict<FieldDefinitionAndDeclaringTypeDict<FieldDef>>();
+		TypeDefDict<List<TypeDef>> structToOwners = new TypeDefDict<List<TypeDef>>();
+		FieldDefAndDeclaringTypeDict<bool> structFieldsToFix = new FieldDefAndDeclaringTypeDict<bool>();
+		TypeDefDict<FieldDefAndDeclaringTypeDict<FieldDef>> typeToFieldsDict = new TypeDefDict<FieldDefAndDeclaringTypeDict<FieldDef>>();
 
 		public List<TypeDef> FieldStructs {
 			get {
@@ -76,7 +76,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 						break;
 					}
 
-					var fieldsDict = new FieldDefinitionAndDeclaringTypeDict<FieldDef>();
+					var fieldsDict = new FieldDefAndDeclaringTypeDict<FieldDef>();
 					typeToFieldsDict.add(ownerType, fieldsDict);
 					foreach (var structField in structType.Fields) {
 						var newField = module.UpdateRowId(new FieldDefUser(structField.Name, structField.FieldSig.Clone(), structField.Attributes));
@@ -144,7 +144,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		}
 
 		IEnumerable<FieldDef> getPossibleFields(TypeDef type) {
-			var typeToFields = new TypeDefinitionDict<List<FieldDef>>();
+			var typeToFields = new TypeDefDict<List<FieldDef>>();
 			foreach (var field in type.Fields) {
 				if (field.Attributes != FieldAttributes.Private)
 					continue;

@@ -24,9 +24,9 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators {
 	class MethodCallRestorerBase {
-		protected MemberReferenceBuilder builder;
+		protected MemberRefBuilder builder;
 		protected ModuleDefMD module;
-		MethodDefinitionAndDeclaringTypeDict<NewMethodInfo> oldToNewMethod = new MethodDefinitionAndDeclaringTypeDict<NewMethodInfo>();
+		MethodDefAndDeclaringTypeDict<NewMethodInfo> oldToNewMethod = new MethodDefAndDeclaringTypeDict<NewMethodInfo>();
 
 		class NewMethodInfo {
 			public OpCode opCode;
@@ -40,7 +40,7 @@ namespace de4dot.code.deobfuscators {
 
 		public MethodCallRestorerBase(ModuleDefMD module) {
 			this.module = module;
-			this.builder = new MemberReferenceBuilder(module);
+			this.builder = new MemberRefBuilder(module);
 		}
 
 		public void createGetManifestResourceStream1(MethodDef oldMethod) {

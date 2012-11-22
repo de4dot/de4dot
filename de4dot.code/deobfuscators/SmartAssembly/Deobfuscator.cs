@@ -416,8 +416,8 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			if (decrypter.CanDecrypt) {
 				var invokeMethod = info.GetStringDelegate == null ? null : info.GetStringDelegate.FindMethod("Invoke");
 				staticStringInliner.add(invokeMethod, (method, gim, args) => {
-					var fieldDefinition = DotNetUtils.getField(module, (IField)args[0]);
-					return decrypter.decrypt(fieldDefinition.MDToken.ToInt32(), (int)args[1]);
+					var fieldDef = DotNetUtils.getField(module, (IField)args[0]);
+					return decrypter.decrypt(fieldDef.MDToken.ToInt32(), (int)args[1]);
 				});
 				staticStringInliner.add(info.StringDecrypterMethod, (method, gim, args) => {
 					return decrypter.decrypt(0, (int)args[0]);

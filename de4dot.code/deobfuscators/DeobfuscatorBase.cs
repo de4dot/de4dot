@@ -229,8 +229,8 @@ namespace de4dot.code.deobfuscators {
 		public abstract IEnumerable<int> getStringDecrypterMethods();
 
 		class MethodCallRemover {
-			Dictionary<string, MethodDefinitionAndDeclaringTypeDict<bool>> methodNameInfos = new Dictionary<string, MethodDefinitionAndDeclaringTypeDict<bool>>();
-			MethodDefinitionAndDeclaringTypeDict<MethodDefinitionAndDeclaringTypeDict<bool>> methodRefInfos = new MethodDefinitionAndDeclaringTypeDict<MethodDefinitionAndDeclaringTypeDict<bool>>();
+			Dictionary<string, MethodDefAndDeclaringTypeDict<bool>> methodNameInfos = new Dictionary<string, MethodDefAndDeclaringTypeDict<bool>>();
+			MethodDefAndDeclaringTypeDict<MethodDefAndDeclaringTypeDict<bool>> methodRefInfos = new MethodDefAndDeclaringTypeDict<MethodDefAndDeclaringTypeDict<bool>>();
 
 			void checkMethod(IMethod methodToBeRemoved) {
 				var sig = methodToBeRemoved.MethodSig;
@@ -245,9 +245,9 @@ namespace de4dot.code.deobfuscators {
 					return;
 				checkMethod(methodToBeRemoved);
 
-				MethodDefinitionAndDeclaringTypeDict<bool> dict;
+				MethodDefAndDeclaringTypeDict<bool> dict;
 				if (!methodNameInfos.TryGetValue(method, out dict))
-					methodNameInfos[method] = dict = new MethodDefinitionAndDeclaringTypeDict<bool>();
+					methodNameInfos[method] = dict = new MethodDefAndDeclaringTypeDict<bool>();
 				dict.add(methodToBeRemoved, true);
 			}
 
@@ -258,7 +258,7 @@ namespace de4dot.code.deobfuscators {
 
 				var dict = methodRefInfos.find(method);
 				if (dict == null)
-					methodRefInfos.add(method, dict = new MethodDefinitionAndDeclaringTypeDict<bool>());
+					methodRefInfos.add(method, dict = new MethodDefAndDeclaringTypeDict<bool>());
 				dict.add(methodToBeRemoved, true);
 			}
 
@@ -270,7 +270,7 @@ namespace de4dot.code.deobfuscators {
 			}
 
 			void removeAll(IList<Block> allBlocks, Blocks blocks, string method) {
-				MethodDefinitionAndDeclaringTypeDict<bool> info;
+				MethodDefAndDeclaringTypeDict<bool> info;
 				if (!methodNameInfos.TryGetValue(method, out info))
 					return;
 
@@ -285,7 +285,7 @@ namespace de4dot.code.deobfuscators {
 				removeCalls(allBlocks, blocks, info);
 			}
 
-			void removeCalls(IList<Block> allBlocks, Blocks blocks, MethodDefinitionAndDeclaringTypeDict<bool> info) {
+			void removeCalls(IList<Block> allBlocks, Blocks blocks, MethodDefAndDeclaringTypeDict<bool> info) {
 				var instrsToDelete = new List<int>();
 				foreach (var block in allBlocks) {
 					instrsToDelete.Clear();

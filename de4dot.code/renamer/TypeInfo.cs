@@ -315,7 +315,7 @@ namespace de4dot.code.renamer {
 						if (info.gotNewName())
 							continue;
 						if (!checker.isValidMethodArgName(info.oldName))
-							info.newName = newVariableNameState.getNewParamName(info.oldName, paramDef.ParameterDefinition);
+							info.newName = newVariableNameState.getNewParamName(info.oldName, paramDef.ParameterDef);
 					}
 				}
 			}
@@ -325,7 +325,7 @@ namespace de4dot.code.renamer {
 				if (!NameChecker.isValidMethodReturnArgName(info.oldName)) {
 					if (newVariableNameState == null)
 						newVariableNameState = variableNameState.cloneParamsOnly();
-					info.newName = newVariableNameState.getNewParamName(info.oldName, methodDef.ReturnParamDef.ParameterDefinition);
+					info.newName = newVariableNameState.getNewParamName(info.oldName, methodDef.ReturnParamDef.ParameterDef);
 				}
 			}
 
@@ -451,10 +451,10 @@ namespace de4dot.code.renamer {
 		void initializeWindowsFormsFieldsAndProps() {
 			var checker = NameChecker;
 
-			var ourFields = new FieldDefinitionAndDeclaringTypeDict<MFieldDef>();
+			var ourFields = new FieldDefAndDeclaringTypeDict<MFieldDef>();
 			foreach (var fieldDef in type.AllFields)
 				ourFields.add(fieldDef.FieldDef, fieldDef);
-			var ourMethods = new MethodDefinitionAndDeclaringTypeDict<MMethodDef>();
+			var ourMethods = new MethodDefAndDeclaringTypeDict<MMethodDef>();
 			foreach (var methodDef in type.AllMethods)
 				ourMethods.add(methodDef.MethodDef, methodDef);
 
@@ -487,7 +487,7 @@ namespace de4dot.code.renamer {
 						var calledMethodDef = ourMethods.find(calledMethod);
 						if (calledMethodDef == null)
 							continue;
-						fieldRef = getFieldReference(calledMethodDef.MethodDef);
+						fieldRef = getFieldRef(calledMethodDef.MethodDef);
 
 						var propDef = calledMethodDef.Property;
 						if (propDef == null)
@@ -515,7 +515,7 @@ namespace de4dot.code.renamer {
 			}
 		}
 
-		static IField getFieldReference(MethodDef method) {
+		static IField getFieldRef(MethodDef method) {
 			if (method == null || method.Body == null)
 				return null;
 			var instructions = method.Body.Instructions;
@@ -544,10 +544,10 @@ namespace de4dot.code.renamer {
 		}
 
 		public void initializeEventHandlerNames() {
-			var ourFields = new FieldDefinitionAndDeclaringTypeDict<MFieldDef>();
+			var ourFields = new FieldDefAndDeclaringTypeDict<MFieldDef>();
 			foreach (var fieldDef in type.AllFields)
 				ourFields.add(fieldDef.FieldDef, fieldDef);
-			var ourMethods = new MethodDefinitionAndDeclaringTypeDict<MMethodDef>();
+			var ourMethods = new MethodDefAndDeclaringTypeDict<MMethodDef>();
 			foreach (var methodDef in type.AllMethods)
 				ourMethods.add(methodDef.MethodDef, methodDef);
 
@@ -558,7 +558,7 @@ namespace de4dot.code.renamer {
 
 		// VB initializes the handlers in the property setter, where it first removes the handler
 		// from the previous control, and then adds the handler to the new control.
-		void initVbEventHandlers(FieldDefinitionAndDeclaringTypeDict<MFieldDef> ourFields, MethodDefinitionAndDeclaringTypeDict<MMethodDef> ourMethods) {
+		void initVbEventHandlers(FieldDefAndDeclaringTypeDict<MFieldDef> ourFields, MethodDefAndDeclaringTypeDict<MMethodDef> ourMethods) {
 			var checker = NameChecker;
 
 			foreach (var propDef in type.AllProperties) {
@@ -675,7 +675,7 @@ namespace de4dot.code.renamer {
 			return -1;
 		}
 
-		void initFieldEventHandlers(FieldDefinitionAndDeclaringTypeDict<MFieldDef> ourFields, MethodDefinitionAndDeclaringTypeDict<MMethodDef> ourMethods) {
+		void initFieldEventHandlers(FieldDefAndDeclaringTypeDict<MFieldDef> ourFields, MethodDefAndDeclaringTypeDict<MMethodDef> ourMethods) {
 			var checker = NameChecker;
 
 			foreach (var methodDef in type.AllMethods) {
@@ -754,7 +754,7 @@ namespace de4dot.code.renamer {
 			}
 		}
 
-		void initTypeEventHandlers(FieldDefinitionAndDeclaringTypeDict<MFieldDef> ourFields, MethodDefinitionAndDeclaringTypeDict<MMethodDef> ourMethods) {
+		void initTypeEventHandlers(FieldDefAndDeclaringTypeDict<MFieldDef> ourFields, MethodDefAndDeclaringTypeDict<MMethodDef> ourMethods) {
 			var checker = NameChecker;
 
 			foreach (var methodDef in type.AllMethods) {

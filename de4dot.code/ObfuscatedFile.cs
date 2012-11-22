@@ -552,8 +552,6 @@ namespace de4dot.code {
 			deob.DeobfuscatedFile = null;
 
 			if (!options.ControlFlowDeobfuscation) {
-				// If it's the unknown type, we don't remove any types that could cause Mono.Cecil
-				// to throw an exception.
 				if (ShouldPreserveTokens())
 					return;
 			}

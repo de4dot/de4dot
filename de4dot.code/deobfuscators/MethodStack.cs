@@ -257,12 +257,12 @@ namespace de4dot.code.deobfuscators {
 				local = pushInstr.Operand as Local;
 				if (local == null)
 					return null;
-				type = createByReferenceType(local.Type.RemovePinned());
+				type = createByRefType(local.Type.RemovePinned());
 				break;
 
 			case Code.Ldarga:
 			case Code.Ldarga_S:
-				type = createByReferenceType(pushInstr.GetArgumentType(method.MethodSig, method.DeclaringType));
+				type = createByRefType(pushInstr.GetArgumentType(method.MethodSig, method.DeclaringType));
 				break;
 
 			case Code.Ldfld:
@@ -278,12 +278,12 @@ namespace de4dot.code.deobfuscators {
 				var field2 = pushInstr.Operand as IField;
 				if (field2 == null || field2.FieldSig == null)
 					return null;
-				type = createByReferenceType(field2.FieldSig.GetFieldType());
+				type = createByRefType(field2.FieldSig.GetFieldType());
 				break;
 
 			case Code.Ldelema:
 			case Code.Unbox:
-				type = createByReferenceType(pushInstr.Operand as ITypeDefOrRef);
+				type = createByRefType(pushInstr.Operand as ITypeDefOrRef);
 				break;
 
 			default:
@@ -293,13 +293,13 @@ namespace de4dot.code.deobfuscators {
 			return type;
 		}
 
-		static ByRefSig createByReferenceType(ITypeDefOrRef elementType) {
+		static ByRefSig createByRefType(ITypeDefOrRef elementType) {
 			if (elementType == null)
 				return null;
 			return new ByRefSig(elementType.ToTypeSig());
 		}
 
-		static ByRefSig createByReferenceType(TypeSig elementType) {
+		static ByRefSig createByRefType(TypeSig elementType) {
 			if (elementType == null)
 				return null;
 			return new ByRefSig(elementType);

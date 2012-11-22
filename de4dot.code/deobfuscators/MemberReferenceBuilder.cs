@@ -23,11 +23,11 @@ using dot10.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators {
-	class MemberReferenceBuilder {
+	class MemberRefBuilder {
 		ModuleDefMD module;
 		Dictionary<TypeSig, TypeSig> createdTypes = new Dictionary<TypeSig, TypeSig>(TypeEqualityComparer.Instance);
 
-		public MemberReferenceBuilder(ModuleDefMD module) {
+		public MemberRefBuilder(ModuleDefMD module) {
 			this.module = module;
 		}
 
@@ -108,7 +108,7 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		public ClassSig type(string ns, string name, string asmSimpleName) {
-			return type(ns, name, findAssemblyReference(asmSimpleName));
+			return type(ns, name, findAssemblyRef(asmSimpleName));
 		}
 
 		public ClassSig type(string ns, string name) {
@@ -120,7 +120,7 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		public ValueTypeSig valueType(string ns, string name, string asmSimpleName) {
-			return valueType(ns, name, findAssemblyReference(asmSimpleName));
+			return valueType(ns, name, findAssemblyRef(asmSimpleName));
 		}
 
 		public ValueTypeSig valueType(string ns, string name) {
@@ -173,7 +173,7 @@ namespace de4dot.code.deobfuscators {
 			return module.UpdateRowId(new MemberRefUser(module, name, sig, declaringType));
 		}
 
-		AssemblyRef findAssemblyReference(string asmSimpleName) {
+		AssemblyRef findAssemblyRef(string asmSimpleName) {
 			var asmRef = module.GetAssemblyRef(asmSimpleName);
 			if (asmRef == null)
 				throw new ApplicationException(string.Format("Could not find assembly {0} in assembly references", asmSimpleName));

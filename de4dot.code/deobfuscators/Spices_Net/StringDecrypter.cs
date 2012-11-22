@@ -30,7 +30,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 		TypeDef decrypterType;
 		FieldDef encryptedDataField;
 		StringDataFlags stringDataFlags;
-		MethodDefinitionAndDeclaringTypeDict<DecrypterInfo> methodToInfo = new MethodDefinitionAndDeclaringTypeDict<DecrypterInfo>();
+		MethodDefAndDeclaringTypeDict<DecrypterInfo> methodToInfo = new MethodDefAndDeclaringTypeDict<DecrypterInfo>();
 		byte[] decryptedData;
 		byte[] key;
 		byte[] iv;

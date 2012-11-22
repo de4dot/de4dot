@@ -28,10 +28,10 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 		IDeobfuscatorContext deobfuscatorContext;
 		ModuleDefMD module;
 		EmbeddedResource resource;
-		AssemblyRef vmAssemblyReference;
+		AssemblyRef vmAssemblyRef;
 
 		public bool Detected {
-			get { return resource != null && vmAssemblyReference != null; }
+			get { return resource != null && vmAssemblyRef != null; }
 		}
 
 		public EmbeddedResource Resource {
@@ -48,16 +48,16 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			this.module = module;
 			if (oldOne.resource != null)
 				this.resource = (EmbeddedResource)module.Resources[oldOne.module.Resources.IndexOf(oldOne.resource)];
-			if (oldOne.vmAssemblyReference != null)
-				this.vmAssemblyReference = module.ResolveAssemblyRef(oldOne.vmAssemblyReference.Rid);
+			if (oldOne.vmAssemblyRef != null)
+				this.vmAssemblyRef = module.ResolveAssemblyRef(oldOne.vmAssemblyRef.Rid);
 		}
 
 		public void find() {
 			resource = findCsvmResource();
-			vmAssemblyReference = findVmAssemblyReference();
+			vmAssemblyRef = findVmAssemblyRef();
 		}
 
-		AssemblyRef findVmAssemblyReference() {
+		AssemblyRef findVmAssemblyRef() {
 			foreach (var memberRef in module.GetMemberRefs()) {
 				var sig = memberRef.MethodSig;
 				if (sig == null)
@@ -132,7 +132,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 		}
 
 		VmOpCodeHandlerDetector getVmOpCodeHandlerDetector() {
-			var vmFilename = vmAssemblyReference.Name + ".dll";
+			var vmFilename = vmAssemblyRef.Name + ".dll";
 			var vmModulePath = Path.Combine(Path.GetDirectoryName(module.Location), vmFilename);
 			Logger.v("CSVM filename: {0}", vmFilename);
 

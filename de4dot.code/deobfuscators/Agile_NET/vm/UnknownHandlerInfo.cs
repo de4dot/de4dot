@@ -75,7 +75,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 		}
 
 		static internal IEnumerable<FieldDef> getFields(TypeDef type) {
-			var typeFields = new FieldDefinitionAndDeclaringTypeDict<FieldDef>();
+			var typeFields = new FieldDefAndDeclaringTypeDict<FieldDef>();
 			foreach (var field in type.Fields)
 				typeFields.add(field, field);
 			var realFields = new Dictionary<FieldDef, bool>();

@@ -21,18 +21,18 @@ using dot10.DotNet;
 
 namespace de4dot.code.renamer.asmmodules {
 	abstract class Ref {
-		public readonly IMemberRef memberReference;
+		public readonly IMemberRef memberRef;
 		public int Index { get; set; }
 		public MTypeDef Owner { get; set; }
 
-		protected Ref(IMemberRef memberReference, MTypeDef owner, int index) {
-			this.memberReference = memberReference;
+		protected Ref(IMemberRef memberRef, MTypeDef owner, int index) {
+			this.memberRef = memberRef;
 			Owner = owner;
 			Index = index;
 		}
 
 		public override string ToString() {
-			return memberReference != null ? memberReference.ToString() : null;
+			return memberRef != null ? memberRef.ToString() : null;
 		}
 	}
 }

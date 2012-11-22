@@ -34,7 +34,7 @@ using ROpCodes = System.Reflection.Emit.OpCodes;
 
 namespace AssemblyData.methodsrewriter {
 	class CodeGenerator {
-		static Dictionary<OpCode, ROpCode> cecilToReflection = new Dictionary<OpCode, ROpCode>();
+		static Dictionary<OpCode, ROpCode> dot10ToReflection = new Dictionary<OpCode, ROpCode>();
 		static CodeGenerator() {
 			var refDict = new Dictionary<short, ROpCode>(0x100);
 			foreach (var f in typeof(ROpCodes).GetFields(BindingFlags.Static | BindingFlags.Public)) {
@@ -51,7 +51,7 @@ namespace AssemblyData.methodsrewriter {
 				ROpCode ropcode;
 				if (!refDict.TryGetValue(opcode.Value, out ropcode))
 					continue;
-				cecilToReflection[opcode] = ropcode;
+				dot10ToReflection[opcode] = ropcode;
 			}
 		}
 
@@ -332,7 +332,7 @@ namespace AssemblyData.methodsrewriter {
 
 		ROpCode convertOpCode(OpCode opcode) {
 			ROpCode ropcode;
-			if (cecilToReflection.TryGetValue(opcode, out ropcode))
+			if (dot10ToReflection.TryGetValue(opcode, out ropcode))
 				return ropcode;
 			return ROpCodes.Nop;
 		}
