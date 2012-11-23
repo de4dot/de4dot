@@ -25,6 +25,7 @@ using dot10.PE;
 using dot10.DotNet;
 using dot10.DotNet.MD;
 using de4dot.blocks;
+using de4dot.code.AssemblyClient;
 
 namespace de4dot.code.deobfuscators.Agile_NET {
 	class CodeHeader {
@@ -449,7 +450,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			case DecryptResult.Error:
 				Logger.n("Using dynamic method decryption");
 				byte[] moduleCctorBytes = getModuleCctorBytes(csRtType);
-				dumpedMethods = de4dot.code.deobfuscators.MethodsDecrypter.decrypt(module.Location, moduleCctorBytes);
+				dumpedMethods = de4dot.code.deobfuscators.MethodsDecrypter.decrypt(module, moduleCctorBytes);
 				return true;
 
 			default:

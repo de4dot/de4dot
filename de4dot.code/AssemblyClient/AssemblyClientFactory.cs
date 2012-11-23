@@ -35,8 +35,18 @@ namespace de4dot.code.AssemblyClient {
 	}
 
 	public class NewProcessAssemblyClientFactory : IAssemblyClientFactory {
+		ServerClrVersion serverVersion;
+
+		public NewProcessAssemblyClientFactory() {
+			this.serverVersion = ServerClrVersion.CLR_ANY_ANYCPU;
+		}
+
+		internal NewProcessAssemblyClientFactory(ServerClrVersion serverVersion) {
+			this.serverVersion = serverVersion;
+		}
+
 		public IAssemblyClient create() {
-			return new AssemblyClient(new NewProcessAssemblyServerLoader());
+			return new AssemblyClient(new NewProcessAssemblyServerLoader(serverVersion));
 		}
 	}
 }

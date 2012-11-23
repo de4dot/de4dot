@@ -20,11 +20,11 @@
 using System.Reflection;
 using System.Runtime.InteropServices;
 
-[assembly: AssemblyTitle("AssemblyServer-x64")]
-[assembly: AssemblyDescription("Assembly Server - CLR any version - x64")]
+[assembly: AssemblyTitle("AssemblyServer-CLR20")]
+[assembly: AssemblyDescription("Assembly Server - CLR v2.0 - x86")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("AssemblyServer-x64")]
+[assembly: AssemblyProduct("AssemblyServer-CLR20")]
 [assembly: AssemblyCopyright("Copyright (C) 2011-2012 de4dot@gmail.com")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

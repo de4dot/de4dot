@@ -21,23 +21,45 @@ using System;
 using AssemblyData;
 
 namespace de4dot.code.AssemblyClient {
+	enum ServerClrVersion {
+		CLR_ANY_ANYCPU,
+		CLR_ANY_x86,
+		CLR_ANY_x64,
+		CLR_v20_x86,
+		CLR_v20_x64,
+		CLR_v40_x86,
+		CLR_v40_x64,
+	}
+
 	abstract class IpcAssemblyServerLoader : IAssemblyServerLoader {
-		const string ASSEMBLY_SERVER_FILENAME_X86 = "AssemblyServer.exe";
-		const string ASSEMBLY_SERVER_FILENAME_X64 = "AssemblyServer-x64.exe";
 		readonly string assemblyServerFilename;
 		protected string ipcName;
 		protected string ipcUri;
 		string url;
 
-		protected IpcAssemblyServerLoader() {
-			assemblyServerFilename = getServerName();
+		protected IpcAssemblyServerLoader()
+			: this(ServerClrVersion.CLR_ANY_ANYCPU) {
+		}
+
+		protected IpcAssemblyServerLoader(ServerClrVersion serverVersion) {
+			assemblyServerFilename = getServerName(serverVersion);
 			ipcName = Utils.randomName(15, 20);
 			ipcUri = Utils.randomName(15, 20);
 			url = string.Format("ipc://{0}/{1}", ipcName, ipcUri);
 		}
 
-		static string getServerName() {
-			return IntPtr.Size == 4 ? ASSEMBLY_SERVER_FILENAME_X86 : ASSEMBLY_SERVER_FILENAME_X64;
+		static string getServerName(ServerClrVersion serverVersion) {
+			if (serverVersion == ServerClrVersion.CLR_ANY_ANYCPU)
+				serverVersion = IntPtr.Size == 4 ? ServerClrVersion.CLR_ANY_x86 : ServerClrVersion.CLR_ANY_x64;
+			switch (serverVersion) {
+			case ServerClrVersion.CLR_ANY_x86: return "AssemblyServer.exe";
+			case ServerClrVersion.CLR_ANY_x64: return "AssemblyServer-x64.exe";
+			case ServerClrVersion.CLR_v20_x86: return "AssemblyServer-CLR20.exe";
+			case ServerClrVersion.CLR_v20_x64: return "AssemblyServer-CLR20-x64.exe";
+			case ServerClrVersion.CLR_v40_x86: return "AssemblyServer-CLR40.exe";
+			case ServerClrVersion.CLR_v40_x64: return "AssemblyServer-CLR40-x64.exe";
+			default: throw new ArgumentException(string.Format("Invalid server version: {0}", serverVersion));
+			}
 		}
 
 		public void loadServer() {

@@ -17,17 +17,10 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using System.Reflection;
-using System.Runtime.InteropServices;
-
-[assembly: AssemblyTitle("AssemblyServer-x64")]
-[assembly: AssemblyDescription("Assembly Server - CLR any version - x64")]
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("AssemblyServer-x64")]
-[assembly: AssemblyCopyright("Copyright (C) 2011-2012 de4dot@gmail.com")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
-[assembly: ComVisible(false)]
-[assembly: AssemblyVersion("1.9.1.3405")]
-[assembly: AssemblyFileVersion("1.9.1.3405")]
+namespace AssemblyServer_CLR20 {
+	class Program {
+		static int Main(string[] args) {
+			return AssemblyServer.Start.main(args);
+		}
+	}
+}
