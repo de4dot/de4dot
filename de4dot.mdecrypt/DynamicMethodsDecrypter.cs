@@ -107,13 +107,16 @@ namespace de4dot.mdecrypt {
 			}
 		}
 
-		static Version VersionNet45 = new Version(4, 0, 30319, 17020);
+		static Version VersionNet45DevPreview = new Version(4, 0, 30319, 17020);
+		static Version VersionNet45Rtm = new Version(4, 0, 30319, 17929);
 		DynamicMethodsDecrypter() {
 			if (UIntPtr.Size != 4)
 				throw new ApplicationException("Only 32-bit dynamic methods decryption is supported");
 
-			// .NET 4.5's compileMethod has thiscall calling convention
-			compileMethodIsThisCall = Environment.Version >= VersionNet45;
+			// .NET 4.5 beta/preview/RC compileMethod has thiscall calling convention, but they
+			// switched back to stdcall in .NET 4.5 RTM
+			compileMethodIsThisCall = Environment.Version >= VersionNet45DevPreview &&
+				Environment.Version < VersionNet45Rtm;
 		}
 
 		[DllImport("kernel32", CharSet = CharSet.Ansi)]
