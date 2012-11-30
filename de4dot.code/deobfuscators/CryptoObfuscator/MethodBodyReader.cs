@@ -36,7 +36,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 
 		public void read(MethodDef method) {
 			this.parameters = method.Parameters;
-			this.locals = getLocals(method);
+			SetLocals(getLocals(method));
 
 			maxStackSize = (ushort)reader.ReadInt32();
 			ReadInstructionsNumBytes(reader.ReadUInt32());
