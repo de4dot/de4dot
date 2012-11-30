@@ -22,7 +22,7 @@ using System.Collections.Generic;
 using dot10.DotNet;
 
 namespace de4dot.blocks {
-	public class TypeDefinitionDict<TValue> {
+	public class TypeDefDict<TValue> {
 		Dictionary<ScopeAndTokenKey, TValue> tokenToValue = new Dictionary<ScopeAndTokenKey, TValue>();
 		Dictionary<ScopeAndTokenKey, TypeDef> tokenToKey = new Dictionary<ScopeAndTokenKey, TypeDef>();
 		Dictionary<IType, TValue> refToValue = new Dictionary<IType, TValue>(TypeEqualityComparer.Instance);
@@ -101,11 +101,11 @@ namespace de4dot.blocks {
 		}
 	}
 
-	public abstract class FieldDefinitionDictBase<TValue> {
+	public abstract class FieldDefDictBase<TValue> {
 		Dictionary<ScopeAndTokenKey, TValue> tokenToValue = new Dictionary<ScopeAndTokenKey, TValue>();
 		Dictionary<ScopeAndTokenKey, FieldDef> tokenToKey = new Dictionary<ScopeAndTokenKey, FieldDef>();
-		Dictionary<IFieldReferenceKey, TValue> refToValue = new Dictionary<IFieldReferenceKey, TValue>();
-		Dictionary<IFieldReferenceKey, FieldDef> refToKey = new Dictionary<IFieldReferenceKey, FieldDef>();
+		Dictionary<IFieldRefKey, TValue> refToValue = new Dictionary<IFieldRefKey, TValue>();
+		Dictionary<IFieldRefKey, FieldDef> refToKey = new Dictionary<IFieldRefKey, FieldDef>();
 
 		public int Count {
 			get { return tokenToValue.Count; }
@@ -123,7 +123,7 @@ namespace de4dot.blocks {
 			return new ScopeAndTokenKey(fieldDef);
 		}
 
-		internal abstract IFieldReferenceKey getReferenceKey(IField fieldRef);
+		internal abstract IFieldRefKey getRefKey(IField fieldRef);
 
 		public TValue find(IField fieldRef) {
 			TValue value;
@@ -131,7 +131,7 @@ namespace de4dot.blocks {
 			if (fieldDef != null)
 				tokenToValue.TryGetValue(getTokenKey(fieldDef), out value);
 			else
-				refToValue.TryGetValue(getReferenceKey(fieldRef), out value);
+				refToValue.TryGetValue(getRefKey(fieldRef), out value);
 			return value;
 		}
 
@@ -141,7 +141,7 @@ namespace de4dot.blocks {
 			if (fieldDef != null && tokenToValue.TryGetValue(getTokenKey(fieldDef), out value))
 				return value;
 
-			refToValue.TryGetValue(getReferenceKey(fieldRef), out value);
+			refToValue.TryGetValue(getRefKey(fieldRef), out value);
 			return value;
 		}
 
@@ -150,7 +150,7 @@ namespace de4dot.blocks {
 			tokenToValue[tokenKey] = value;
 			tokenToKey[tokenKey] = fieldDef;
 
-			var refKey = getReferenceKey(fieldDef);
+			var refKey = getRefKey(fieldDef);
 			if (!refToValue.ContainsKey(refKey) ||
 				getAccessibilityOrder(fieldDef) < getAccessibilityOrder(refToKey[refKey])) {
 				refToKey[refKey] = fieldDef;
@@ -169,35 +169,35 @@ namespace de4dot.blocks {
 			0,		// Public
 			70,		// <reserved>
 		};
-		static int getAccessibilityOrder(FieldDef fieldDefinition) {
-			return accessibilityOrder[(int)fieldDefinition.Attributes & 7];
+		static int getAccessibilityOrder(FieldDef fieldDef) {
+			return accessibilityOrder[(int)fieldDef.Attributes & 7];
 		}
 
 		public void onTypesRenamed() {
-			var newFieldRefToDef = new Dictionary<IFieldReferenceKey, TValue>(refToValue.Count);
+			var newFieldRefToDef = new Dictionary<IFieldRefKey, TValue>(refToValue.Count);
 			foreach (var kvp in refToValue)
-				newFieldRefToDef[getReferenceKey((FieldDef)kvp.Key.FieldReference)] = kvp.Value;
+				newFieldRefToDef[getRefKey((FieldDef)kvp.Key.FieldRef)] = kvp.Value;
 			refToValue = newFieldRefToDef;
 		}
 	}
 
-	public class FieldDefinitionDict<TValue> : FieldDefinitionDictBase<TValue> {
-		internal override IFieldReferenceKey getReferenceKey(IField fieldRef) {
-			return new FieldReferenceKey(fieldRef);
+	public class FieldDefDict<TValue> : FieldDefDictBase<TValue> {
+		internal override IFieldRefKey getRefKey(IField fieldRef) {
+			return new FieldRefKey(fieldRef);
 		}
 	}
 
-	public class FieldDefinitionAndDeclaringTypeDict<TValue> : FieldDefinitionDictBase<TValue> {
-		internal override IFieldReferenceKey getReferenceKey(IField fieldRef) {
-			return new FieldReferenceAndDeclaringTypeKey(fieldRef);
+	public class FieldDefAndDeclaringTypeDict<TValue> : FieldDefDictBase<TValue> {
+		internal override IFieldRefKey getRefKey(IField fieldRef) {
+			return new FieldRefAndDeclaringTypeKey(fieldRef);
 		}
 	}
 
-	public abstract class MethodDefinitionDictBase<TValue> {
+	public abstract class MethodDefDictBase<TValue> {
 		Dictionary<ScopeAndTokenKey, TValue> tokenToValue = new Dictionary<ScopeAndTokenKey, TValue>();
 		Dictionary<ScopeAndTokenKey, MethodDef> tokenToKey = new Dictionary<ScopeAndTokenKey, MethodDef>();
-		Dictionary<IMethodReferenceKey, TValue> refToValue = new Dictionary<IMethodReferenceKey, TValue>();
-		Dictionary<IMethodReferenceKey, MethodDef> refToKey = new Dictionary<IMethodReferenceKey, MethodDef>();
+		Dictionary<IMethodRefKey, TValue> refToValue = new Dictionary<IMethodRefKey, TValue>();
+		Dictionary<IMethodRefKey, MethodDef> refToKey = new Dictionary<IMethodRefKey, MethodDef>();
 
 		public int Count {
 			get { return tokenToValue.Count; }
@@ -215,7 +215,7 @@ namespace de4dot.blocks {
 			return new ScopeAndTokenKey(methodDef);
 		}
 
-		internal abstract IMethodReferenceKey getReferenceKey(IMethod methodRef);
+		internal abstract IMethodRefKey getRefKey(IMethod methodRef);
 
 		public TValue find(IMethod methodRef) {
 			TValue value;
@@ -223,7 +223,7 @@ namespace de4dot.blocks {
 			if (methodDef != null)
 				tokenToValue.TryGetValue(getTokenKey(methodDef), out value);
 			else
-				refToValue.TryGetValue(getReferenceKey(methodRef), out value);
+				refToValue.TryGetValue(getRefKey(methodRef), out value);
 			return value;
 		}
 
@@ -233,7 +233,7 @@ namespace de4dot.blocks {
 			if (methodDef != null && tokenToValue.TryGetValue(getTokenKey(methodDef), out value))
 				return value;
 
-			refToValue.TryGetValue(getReferenceKey(methodRef), out value);
+			refToValue.TryGetValue(getRefKey(methodRef), out value);
 			return value;
 		}
 
@@ -242,7 +242,7 @@ namespace de4dot.blocks {
 			tokenToValue[tokenKey] = value;
 			tokenToKey[tokenKey] = methodDef;
 
-			var refKey = getReferenceKey(methodDef);
+			var refKey = getRefKey(methodDef);
 			if (!refToValue.ContainsKey(refKey) ||
 				getAccessibilityOrder(methodDef) < getAccessibilityOrder(refToKey[refKey])) {
 				refToKey[refKey] = methodDef;
@@ -261,34 +261,34 @@ namespace de4dot.blocks {
 			0,		// Public
 			70,		// <reserved>
 		};
-		static int getAccessibilityOrder(MethodDef methodDefinition) {
-			return accessibilityOrder[(int)methodDefinition.Attributes & 7];
+		static int getAccessibilityOrder(MethodDef methodDef) {
+			return accessibilityOrder[(int)methodDef.Attributes & 7];
 		}
 
 		public void onTypesRenamed() {
-			var newFieldRefToDef = new Dictionary<IMethodReferenceKey, TValue>(refToValue.Count);
+			var newFieldRefToDef = new Dictionary<IMethodRefKey, TValue>(refToValue.Count);
 			foreach (var kvp in refToValue)
-				newFieldRefToDef[getReferenceKey((MethodDef)kvp.Key.MethodReference)] = kvp.Value;
+				newFieldRefToDef[getRefKey((MethodDef)kvp.Key.MethodRef)] = kvp.Value;
 			refToValue = newFieldRefToDef;
 		}
 	}
 
-	public class MethodDefinitionDict<TValue> : MethodDefinitionDictBase<TValue> {
-		internal override IMethodReferenceKey getReferenceKey(IMethod methodRef) {
-			return new MethodReferenceKey(methodRef);
+	public class MethodDefDict<TValue> : MethodDefDictBase<TValue> {
+		internal override IMethodRefKey getRefKey(IMethod methodRef) {
+			return new MethodRefKey(methodRef);
 		}
 	}
 
-	public class MethodDefinitionAndDeclaringTypeDict<TValue> : MethodDefinitionDictBase<TValue> {
-		internal override IMethodReferenceKey getReferenceKey(IMethod methodRef) {
-			return new MethodReferenceAndDeclaringTypeKey(methodRef);
+	public class MethodDefAndDeclaringTypeDict<TValue> : MethodDefDictBase<TValue> {
+		internal override IMethodRefKey getRefKey(IMethod methodRef) {
+			return new MethodRefAndDeclaringTypeKey(methodRef);
 		}
 	}
 
-	public abstract class EventDefinitionDictBase<TValue> {
+	public abstract class EventDefDictBase<TValue> {
 		Dictionary<ScopeAndTokenKey, TValue> tokenToValue = new Dictionary<ScopeAndTokenKey, TValue>();
 		Dictionary<ScopeAndTokenKey, EventDef> tokenToKey = new Dictionary<ScopeAndTokenKey, EventDef>();
-		Dictionary<IEventReferenceKey, TValue> refToValue = new Dictionary<IEventReferenceKey, TValue>();
+		Dictionary<IEventRefKey, TValue> refToValue = new Dictionary<IEventRefKey, TValue>();
 
 		public int Count {
 			get { return tokenToValue.Count; }
@@ -302,11 +302,11 @@ namespace de4dot.blocks {
 			return tokenToValue.Values;
 		}
 
-		ScopeAndTokenKey getTokenKey(EventDef eventReference) {
-			return new ScopeAndTokenKey(eventReference);
+		ScopeAndTokenKey getTokenKey(EventDef eventRef) {
+			return new ScopeAndTokenKey(eventRef);
 		}
 
-		internal abstract IEventReferenceKey getReferenceKey(EventDef eventRef);
+		internal abstract IEventRefKey getRefKey(EventDef eventRef);
 
 		public TValue find(EventDef eventRef) {
 			TValue value;
@@ -319,7 +319,7 @@ namespace de4dot.blocks {
 			if (tokenToValue.TryGetValue(getTokenKey(eventRef), out value))
 				return value;
 
-			refToValue.TryGetValue(getReferenceKey(eventRef), out value);
+			refToValue.TryGetValue(getRefKey(eventRef), out value);
 			return value;
 		}
 
@@ -328,33 +328,33 @@ namespace de4dot.blocks {
 			tokenToValue[tokenKey] = value;
 			tokenToKey[tokenKey] = eventDef;
 
-			refToValue[getReferenceKey(eventDef)] = value;
+			refToValue[getRefKey(eventDef)] = value;
 		}
 
 		public void onTypesRenamed() {
-			var newFieldRefToDef = new Dictionary<IEventReferenceKey, TValue>(refToValue.Count);
+			var newFieldRefToDef = new Dictionary<IEventRefKey, TValue>(refToValue.Count);
 			foreach (var kvp in refToValue)
-				newFieldRefToDef[getReferenceKey((EventDef)kvp.Key.EventDef)] = kvp.Value;
+				newFieldRefToDef[getRefKey((EventDef)kvp.Key.EventDef)] = kvp.Value;
 			refToValue = newFieldRefToDef;
 		}
 	}
 
-	public class EventDefinitionDict<TValue> : EventDefinitionDictBase<TValue> {
-		internal override IEventReferenceKey getReferenceKey(EventDef eventRef) {
-			return new EventReferenceKey(eventRef);
+	public class EventDefDict<TValue> : EventDefDictBase<TValue> {
+		internal override IEventRefKey getRefKey(EventDef eventRef) {
+			return new EventRefKey(eventRef);
 		}
 	}
 
-	public class EventDefinitionAndDeclaringTypeDict<TValue> : EventDefinitionDictBase<TValue> {
-		internal override IEventReferenceKey getReferenceKey(EventDef eventRef) {
-			return new EventReferenceAndDeclaringTypeKey(eventRef);
+	public class EventDefAndDeclaringTypeDict<TValue> : EventDefDictBase<TValue> {
+		internal override IEventRefKey getRefKey(EventDef eventRef) {
+			return new EventRefAndDeclaringTypeKey(eventRef);
 		}
 	}
 
-	public abstract class PropertyDefinitionDictBase<TValue> {
+	public abstract class PropertyDefDictBase<TValue> {
 		Dictionary<ScopeAndTokenKey, TValue> tokenToValue = new Dictionary<ScopeAndTokenKey, TValue>();
 		Dictionary<ScopeAndTokenKey, PropertyDef> tokenToKey = new Dictionary<ScopeAndTokenKey, PropertyDef>();
-		Dictionary<IPropertyReferenceKey, TValue> refToValue = new Dictionary<IPropertyReferenceKey, TValue>();
+		Dictionary<IPropertyRefKey, TValue> refToValue = new Dictionary<IPropertyRefKey, TValue>();
 
 		public int Count {
 			get { return tokenToValue.Count; }
@@ -368,11 +368,11 @@ namespace de4dot.blocks {
 			return tokenToValue.Values;
 		}
 
-		ScopeAndTokenKey getTokenKey(PropertyDef propertyReference) {
-			return new ScopeAndTokenKey(propertyReference);
+		ScopeAndTokenKey getTokenKey(PropertyDef propertyRef) {
+			return new ScopeAndTokenKey(propertyRef);
 		}
 
-		internal abstract IPropertyReferenceKey getReferenceKey(PropertyDef propertyReference);
+		internal abstract IPropertyRefKey getRefKey(PropertyDef propertyRef);
 
 		public TValue find(PropertyDef propRef) {
 			TValue value;
@@ -385,7 +385,7 @@ namespace de4dot.blocks {
 			if (tokenToValue.TryGetValue(getTokenKey(propRef), out value))
 				return value;
 
-			refToValue.TryGetValue(getReferenceKey(propRef), out value);
+			refToValue.TryGetValue(getRefKey(propRef), out value);
 			return value;
 		}
 
@@ -394,26 +394,26 @@ namespace de4dot.blocks {
 			tokenToValue[tokenKey] = value;
 			tokenToKey[tokenKey] = propDef;
 
-			refToValue[getReferenceKey(propDef)] = value;
+			refToValue[getRefKey(propDef)] = value;
 		}
 
 		public void onTypesRenamed() {
-			var newFieldRefToDef = new Dictionary<IPropertyReferenceKey, TValue>(refToValue.Count);
+			var newFieldRefToDef = new Dictionary<IPropertyRefKey, TValue>(refToValue.Count);
 			foreach (var kvp in refToValue)
-				newFieldRefToDef[getReferenceKey((PropertyDef)kvp.Key.PropertyDef)] = kvp.Value;
+				newFieldRefToDef[getRefKey((PropertyDef)kvp.Key.PropertyDef)] = kvp.Value;
 			refToValue = newFieldRefToDef;
 		}
 	}
 
-	public class PropertyDefinitionDict<TValue> : PropertyDefinitionDictBase<TValue> {
-		internal override IPropertyReferenceKey getReferenceKey(PropertyDef propRef) {
-			return new PropertyReferenceKey(propRef);
+	public class PropertyDefDict<TValue> : PropertyDefDictBase<TValue> {
+		internal override IPropertyRefKey getRefKey(PropertyDef propRef) {
+			return new PropertyRefKey(propRef);
 		}
 	}
 
-	public class PropertyDefinitionAndDeclaringTypeDict<TValue> : PropertyDefinitionDictBase<TValue> {
-		internal override IPropertyReferenceKey getReferenceKey(PropertyDef propRef) {
-			return new PropertyReferenceAndDeclaringTypeKey(propRef);
+	public class PropertyDefAndDeclaringTypeDict<TValue> : PropertyDefDictBase<TValue> {
+		internal override IPropertyRefKey getRefKey(PropertyDef propRef) {
+			return new PropertyRefAndDeclaringTypeKey(propRef);
 		}
 	}
 
@@ -502,30 +502,30 @@ namespace de4dot.blocks {
 		}
 	}
 
-	interface IFieldReferenceKey {
-		IField FieldReference { get; }
+	interface IFieldRefKey {
+		IField FieldRef { get; }
 	}
 
-	interface IMethodReferenceKey {
-		IMethod MethodReference { get; }
+	interface IMethodRefKey {
+		IMethod MethodRef { get; }
 	}
 
-	interface IEventReferenceKey {
+	interface IEventRefKey {
 		EventDef EventDef { get; }
 	}
 
-	interface IPropertyReferenceKey {
+	interface IPropertyRefKey {
 		PropertyDef PropertyDef { get; }
 	}
 
-	sealed class FieldReferenceKey : IFieldReferenceKey {
+	sealed class FieldRefKey : IFieldRefKey {
 		readonly IField fieldRef;
 
-		public IField FieldReference {
+		public IField FieldRef {
 			get { return fieldRef; }
 		}
 
-		public FieldReferenceKey(IField fieldRef) {
+		public FieldRefKey(IField fieldRef) {
 			this.fieldRef = fieldRef;
 		}
 
@@ -534,7 +534,7 @@ namespace de4dot.blocks {
 		}
 
 		public override bool Equals(object obj) {
-			var other = obj as FieldReferenceKey;
+			var other = obj as FieldRefKey;
 			if (other == null)
 				return false;
 			return new SigComparer().Equals(fieldRef, other.fieldRef);
@@ -545,14 +545,14 @@ namespace de4dot.blocks {
 		}
 	}
 
-	sealed class MethodReferenceKey : IMethodReferenceKey {
+	sealed class MethodRefKey : IMethodRefKey {
 		readonly IMethod methodRef;
 
-		public IMethod MethodReference {
+		public IMethod MethodRef {
 			get { return methodRef; }
 		}
 
-		public MethodReferenceKey(IMethod methodRef) {
+		public MethodRefKey(IMethod methodRef) {
 			this.methodRef = methodRef;
 		}
 
@@ -561,7 +561,7 @@ namespace de4dot.blocks {
 		}
 
 		public override bool Equals(object obj) {
-			var other = obj as MethodReferenceKey;
+			var other = obj as MethodRefKey;
 			if (other == null)
 				return false;
 			return new SigComparer().Equals(methodRef, other.methodRef);
@@ -572,14 +572,14 @@ namespace de4dot.blocks {
 		}
 	}
 
-	sealed class FieldReferenceAndDeclaringTypeKey : IFieldReferenceKey {
+	sealed class FieldRefAndDeclaringTypeKey : IFieldRefKey {
 		readonly IField fieldRef;
 
-		public IField FieldReference {
+		public IField FieldRef {
 			get { return fieldRef; }
 		}
 
-		public FieldReferenceAndDeclaringTypeKey(IField fieldRef) {
+		public FieldRefAndDeclaringTypeKey(IField fieldRef) {
 			this.fieldRef = fieldRef;
 		}
 
@@ -588,7 +588,7 @@ namespace de4dot.blocks {
 		}
 
 		public override bool Equals(object obj) {
-			var other = obj as FieldReferenceAndDeclaringTypeKey;
+			var other = obj as FieldRefAndDeclaringTypeKey;
 			if (other == null)
 				return false;
 			return new SigComparer(SigComparerOptions.CompareMethodFieldDeclaringType).Equals(fieldRef, other.fieldRef);
@@ -599,14 +599,14 @@ namespace de4dot.blocks {
 		}
 	}
 
-	sealed class MethodReferenceAndDeclaringTypeKey : IMethodReferenceKey {
+	sealed class MethodRefAndDeclaringTypeKey : IMethodRefKey {
 		readonly IMethod methodRef;
 
-		public IMethod MethodReference {
+		public IMethod MethodRef {
 			get { return methodRef; }
 		}
 
-		public MethodReferenceAndDeclaringTypeKey(IMethod methodRef) {
+		public MethodRefAndDeclaringTypeKey(IMethod methodRef) {
 			this.methodRef = methodRef;
 		}
 
@@ -615,7 +615,7 @@ namespace de4dot.blocks {
 		}
 
 		public override bool Equals(object obj) {
-			var other = obj as MethodReferenceAndDeclaringTypeKey;
+			var other = obj as MethodRefAndDeclaringTypeKey;
 			if (other == null)
 				return false;
 			return new SigComparer(SigComparerOptions.CompareMethodFieldDeclaringType).Equals(methodRef, other.methodRef);
@@ -626,14 +626,14 @@ namespace de4dot.blocks {
 		}
 	}
 
-	sealed class EventReferenceKey : IEventReferenceKey {
+	sealed class EventRefKey : IEventRefKey {
 		readonly EventDef eventRef;
 
 		public EventDef EventDef {
 			get { return eventRef; }
 		}
 
-		public EventReferenceKey(EventDef eventRef) {
+		public EventRefKey(EventDef eventRef) {
 			this.eventRef = eventRef;
 		}
 
@@ -642,7 +642,7 @@ namespace de4dot.blocks {
 		}
 
 		public override bool Equals(object obj) {
-			var other = obj as EventReferenceKey;
+			var other = obj as EventRefKey;
 			if (other == null)
 				return false;
 			return new SigComparer().Equals(eventRef, other.eventRef);
@@ -653,14 +653,14 @@ namespace de4dot.blocks {
 		}
 	}
 
-	sealed class EventReferenceAndDeclaringTypeKey : IEventReferenceKey {
+	sealed class EventRefAndDeclaringTypeKey : IEventRefKey {
 		readonly EventDef eventRef;
 
 		public EventDef EventDef {
 			get { return eventRef; }
 		}
 
-		public EventReferenceAndDeclaringTypeKey(EventDef eventRef) {
+		public EventRefAndDeclaringTypeKey(EventDef eventRef) {
 			this.eventRef = eventRef;
 		}
 
@@ -669,7 +669,7 @@ namespace de4dot.blocks {
 		}
 
 		public override bool Equals(object obj) {
-			var other = obj as EventReferenceAndDeclaringTypeKey;
+			var other = obj as EventRefAndDeclaringTypeKey;
 			if (other == null)
 				return false;
 			return new SigComparer(SigComparerOptions.CompareEventDeclaringType).Equals(eventRef, other.eventRef);
@@ -680,14 +680,14 @@ namespace de4dot.blocks {
 		}
 	}
 
-	sealed class PropertyReferenceKey : IPropertyReferenceKey {
+	sealed class PropertyRefKey : IPropertyRefKey {
 		readonly PropertyDef propRef;
 
 		public PropertyDef PropertyDef {
 			get { return propRef; }
 		}
 
-		public PropertyReferenceKey(PropertyDef propRef) {
+		public PropertyRefKey(PropertyDef propRef) {
 			this.propRef = propRef;
 		}
 
@@ -696,7 +696,7 @@ namespace de4dot.blocks {
 		}
 
 		public override bool Equals(object obj) {
-			var other = obj as PropertyReferenceKey;
+			var other = obj as PropertyRefKey;
 			if (other == null)
 				return false;
 			return new SigComparer().Equals(propRef, other.propRef);
@@ -707,14 +707,14 @@ namespace de4dot.blocks {
 		}
 	}
 
-	sealed class PropertyReferenceAndDeclaringTypeKey : IPropertyReferenceKey {
+	sealed class PropertyRefAndDeclaringTypeKey : IPropertyRefKey {
 		readonly PropertyDef propRef;
 
 		public PropertyDef PropertyDef {
 			get { return propRef; }
 		}
 
-		public PropertyReferenceAndDeclaringTypeKey(PropertyDef propRef) {
+		public PropertyRefAndDeclaringTypeKey(PropertyDef propRef) {
 			this.propRef = propRef;
 		}
 
@@ -723,7 +723,7 @@ namespace de4dot.blocks {
 		}
 
 		public override bool Equals(object obj) {
-			var other = obj as PropertyReferenceAndDeclaringTypeKey;
+			var other = obj as PropertyRefAndDeclaringTypeKey;
 			if (other == null)
 				return false;
 			return new SigComparer(SigComparerOptions.ComparePropertyDeclaringType).Equals(propRef, other.propRef);

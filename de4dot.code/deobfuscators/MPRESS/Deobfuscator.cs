@@ -21,8 +21,8 @@ using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
+using dot10.PE;
 using dot10.DotNet;
-using de4dot.PE;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.MPRESS {
@@ -159,7 +159,7 @@ namespace de4dot.code.deobfuscators.MPRESS {
 			if (checkMethods(type, methods_v1x)) {
 				var lfMethod = DotNetUtils.getMethod(type, "System.Boolean", "(System.String,System.Byte[]&)");
 				if (lfMethod != null) {
-					if (DeobUtils.hasInteger(lfMethod, (int)Machine.amd64))
+					if (DeobUtils.hasInteger(lfMethod, (int)Machine.AMD64))
 						return Version.V218;
 					return Version.V1x_217;
 				}
@@ -194,37 +194,39 @@ namespace de4dot.code.deobfuscators.MPRESS {
 				return false;
 
 			byte[] fileData = ModuleBytes ?? DeobUtils.readModule(module);
-			var peImage = new PeImage(fileData);
-			var section = peImage.Sections[peImage.Sections.Length - 1];
-			var offset = section.pointerToRawData;
-			offset += 16;
+			byte[] decompressed;
+			using (var peImage = new MyPEImage(fileData)) {
+				var section = peImage.Sections[peImage.Sections.Count - 1];
+				var offset = section.PointerToRawData;
+				offset += 16;
 
-			byte[] decompressed, compressed;
-			int compressedLen;
-			switch (version) {
-			case Version.V0x:
-				compressedLen = fileData.Length - (int)offset;
-				compressed = peImage.offsetReadBytes(offset, compressedLen);
-				decompressed = Lzmat.decompress_old(compressed);
-				if (decompressed == null)
-					throw new ApplicationException("LZMAT decompression failed");
-				break;
+				byte[] compressed;
+				int compressedLen;
+				switch (version) {
+				case Version.V0x:
+					compressedLen = fileData.Length - (int)offset;
+					compressed = peImage.offsetReadBytes(offset, compressedLen);
+					decompressed = Lzmat.decompress_old(compressed);
+					if (decompressed == null)
+						throw new ApplicationException("LZMAT decompression failed");
+					break;
 
-			case Version.V1x_217:
-			case Version.V218:
-				if (peImage.FileHeader.machine == Machine.amd64 && version == Version.V218)
-					offset = section.pointerToRawData + section.virtualSize;
-				int decompressedLen = (int)peImage.offsetReadUInt32(offset);
-				compressedLen = fileData.Length - (int)offset - 4;
-				compressed = peImage.offsetReadBytes(offset + 4, compressedLen);
-				decompressed = new byte[decompressedLen];
-				uint decompressedLen2;
-				if (Lzmat.decompress(decompressed, out decompressedLen2, compressed) != LzmatStatus.OK)
-					throw new ApplicationException("LZMAT decompression failed");
-				break;
+				case Version.V1x_217:
+				case Version.V218:
+					if (peImage.PEImage.ImageNTHeaders.FileHeader.Machine == Machine.AMD64 && version == Version.V218)
+						offset = section.PointerToRawData + section.VirtualSize;
+					int decompressedLen = (int)peImage.offsetReadUInt32(offset);
+					compressedLen = fileData.Length - (int)offset - 4;
+					compressed = peImage.offsetReadBytes(offset + 4, compressedLen);
+					decompressed = new byte[decompressedLen];
+					uint decompressedLen2;
+					if (Lzmat.decompress(decompressed, out decompressedLen2, compressed) != LzmatStatus.OK)
+						throw new ApplicationException("LZMAT decompression failed");
+					break;
 
-			default:
-				throw new ApplicationException("Unknown MPRESS version");
+				default:
+					throw new ApplicationException("Unknown MPRESS version");
+				}
 			}
 
 			newFileData = decompressed;

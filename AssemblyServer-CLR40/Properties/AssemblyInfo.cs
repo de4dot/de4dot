@@ -17,20 +17,17 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using System.IO;
+using System.Reflection;
+using System.Runtime.InteropServices;
 
-namespace de4dot.PE {
-	public struct DataDirectory {
-		public uint virtualAddress;
-		public uint size;
-
-		public void read(BinaryReader reader) {
-			virtualAddress = reader.ReadUInt32();
-			size = reader.ReadUInt32();
-		}
-
-		public override string ToString() {
-			return string.Format("{0:X8} {1:X8}", virtualAddress, size);
-		}
-	}
-}
+[assembly: AssemblyTitle("AssemblyServer-CLR40")]
+[assembly: AssemblyDescription("Assembly Server - CLR v4.0 - x86")]
+[assembly: AssemblyConfiguration("")]
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyProduct("AssemblyServer-CLR40")]
+[assembly: AssemblyCopyright("Copyright (C) 2011-2012 de4dot@gmail.com")]
+[assembly: AssemblyTrademark("")]
+[assembly: AssemblyCulture("")]
+[assembly: ComVisible(false)]
+[assembly: AssemblyVersion("1.9.1.3405")]
+[assembly: AssemblyFileVersion("1.9.1.3405")]

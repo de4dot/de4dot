@@ -160,14 +160,22 @@ namespace de4dot.code {
 			return noExt + "-cleaned" + ext;
 		}
 
-		public void load(IEnumerable<IDeobfuscator> deobfuscators) {
-			loadModule(deobfuscators);
-			TheAssemblyResolver.Instance.addSearchDirectory(Utils.getDirName(Filename));
-			TheAssemblyResolver.Instance.addSearchDirectory(Utils.getDirName(NewFilename));
-			detectObfuscator(deobfuscators);
-			if (deob == null)
-				throw new ApplicationException("Could not detect obfuscator!");
-			initializeDeobfuscator();
+		public void load(IList<IDeobfuscator> deobfuscators) {
+			try {
+				loadModule(deobfuscators);
+				TheAssemblyResolver.Instance.addSearchDirectory(Utils.getDirName(Filename));
+				TheAssemblyResolver.Instance.addSearchDirectory(Utils.getDirName(NewFilename));
+				detectObfuscator(deobfuscators);
+				if (deob == null)
+					throw new ApplicationException("Could not detect obfuscator!");
+				initializeDeobfuscator();
+			}
+			finally {
+				foreach (var d in deobfuscators) {
+					if (d != deob && d != null)
+						d.Dispose();
+				}
+			}
 		}
 
 		void loadModule(IEnumerable<IDeobfuscator> deobfuscators) {
@@ -187,32 +195,32 @@ namespace de4dot.code {
 		}
 
 		bool unpackNativeImage(IEnumerable<IDeobfuscator> deobfuscators) {
-			var peImage = new PEImage(Filename);
+			using (var peImage = new PEImage(Filename)) {
+				foreach (var deob in deobfuscators) {
+					byte[] unpackedData = null;
+					try {
+						unpackedData = deob.unpackNativeFile(peImage);
+					}
+					catch {
+					}
+					if (unpackedData == null)
+						continue;
 
-			foreach (var deob in deobfuscators) {
-				byte[] unpackedData = null;
-				try {
-					unpackedData = deob.unpackNativeFile(peImage);
+					var oldModule = module;
+					try {
+						module = assemblyModule.load(unpackedData);
+					}
+					catch {
+						Logger.w("Could not load unpacked data. File: {0}, deobfuscator: {0}", peImage.FileName ?? "(unknown filename)", deob.TypeLong);
+						continue;
+					}
+					finally {
+						if (oldModule != null)
+							oldModule.Dispose();
+					}
+					this.deob = deob;
+					return true;
 				}
-				catch {
-				}
-				if (unpackedData == null)
-					continue;
-
-				var oldModule = module;
-				try {
-					module = assemblyModule.load(unpackedData);
-				}
-				catch {
-					Logger.w("Could not load unpacked data. File: {0}, deobfuscator: {0}", peImage.FileName ?? "(unknown filename)", deob.TypeLong);
-					continue;
-				}
-				finally {
-					if (oldModule != null)
-						oldModule.Dispose();
-				}
-				this.deob = deob;
-				return true;
 			}
 
 			return false;
@@ -544,8 +552,6 @@ namespace de4dot.code {
 			deob.DeobfuscatedFile = null;
 
 			if (!options.ControlFlowDeobfuscation) {
-				// If it's the unknown type, we don't remove any types that could cause Mono.Cecil
-				// to throw an exception.
 				if (ShouldPreserveTokens())
 					return;
 			}
@@ -778,9 +784,7 @@ namespace de4dot.code {
 			var baseDir = Utils.getDirName(options.NewFilename);
 			var newName = Path.Combine(baseDir, assemblyName + extension);
 			Logger.n("Creating file {0}", newName);
-			using (var writer = new BinaryWriter(new FileStream(newName, FileMode.Create))) {
-				writer.Write(data);
-			}
+			File.WriteAllBytes(newName, data);
 		}
 
 		void IDeobfuscatedFile.stringDecryptersAdded() {
@@ -795,6 +799,8 @@ namespace de4dot.code {
 			deobfuscateCleanUp();
 			if (module != null)
 				module.Dispose();
+			if (deob != null)
+				deob.Dispose();
 			module = null;
 			deob = null;
 		}

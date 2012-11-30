@@ -46,7 +46,7 @@ namespace de4dot.code {
 			dataDict.Remove(name);
 		}
 
-		static ITypeDefOrRef getNonGenericTypeReference(ITypeDefOrRef typeRef) {
+		static ITypeDefOrRef getNonGenericTypeRef(ITypeDefOrRef typeRef) {
 			var ts = typeRef as TypeSpec;
 			if (ts == null)
 				return typeRef;
@@ -59,7 +59,7 @@ namespace de4dot.code {
 		public TypeDef resolveType(ITypeDefOrRef type) {
 			if (type == null)
 				return null;
-			type = getNonGenericTypeReference(type);
+			type = getNonGenericTypeRef(type);
 
 			var typeDef = type as TypeDef;
 			if (typeDef != null)

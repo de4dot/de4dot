@@ -25,7 +25,7 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Babel_NET {
 	class ProxyCallFixer : ProxyCallFixer2 {
-		MethodDefinitionAndDeclaringTypeDict<ProxyCreatorType> methodToType = new MethodDefinitionAndDeclaringTypeDict<ProxyCreatorType>();
+		MethodDefAndDeclaringTypeDict<ProxyCreatorType> methodToType = new MethodDefAndDeclaringTypeDict<ProxyCreatorType>();
 
 		public ProxyCallFixer(ModuleDefMD module)
 			: base(module) {

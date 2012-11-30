@@ -25,6 +25,13 @@ namespace de4dot.code.AssemblyClient {
 	class NewProcessAssemblyServerLoader : IpcAssemblyServerLoader {
 		Process process;
 
+		public NewProcessAssemblyServerLoader() {
+		}
+
+		public NewProcessAssemblyServerLoader(ServerClrVersion version)
+			: base(version) {
+		}
+
 		public override void loadServer(string filename) {
 			if (process != null)
 				throw new ApplicationException("Server is already loaded");

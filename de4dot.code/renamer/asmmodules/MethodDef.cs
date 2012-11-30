@@ -60,20 +60,20 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 
 		public MethodDef MethodDef {
-			get { return (MethodDef)memberReference; }
+			get { return (MethodDef)memberRef; }
 		}
 
-		public MMethodDef(MethodDef methodDefinition, MTypeDef owner, int index)
-			: base(methodDefinition, owner, index) {
+		public MMethodDef(MethodDef methodDef, MTypeDef owner, int index)
+			: base(methodDef, owner, index) {
 			genericParams = MGenericParamDef.createGenericParamDefList(MethodDef.GenericParameters);
-			visibleBaseIndex = methodDefinition.MethodSig != null && methodDefinition.MethodSig.HasThis ? 1 : 0;
-			for (int i = 0; i < methodDefinition.Parameters.Count; i++) {
-				var param = methodDefinition.Parameters[i];
+			visibleBaseIndex = methodDef.MethodSig != null && methodDef.MethodSig.HasThis ? 1 : 0;
+			for (int i = 0; i < methodDef.Parameters.Count; i++) {
+				var param = methodDef.Parameters[i];
 				if (param.IsNormalMethodParameter)
 					visibleParamCount++;
 				paramDefs.Add(new MParamDef(param, i));
 			}
-			returnParamDef = new MParamDef(methodDefinition.Parameters.ReturnParameter, -1);
+			returnParamDef = new MParamDef(methodDef.Parameters.ReturnParameter, -1);
 		}
 
 		public bool isPublic() {

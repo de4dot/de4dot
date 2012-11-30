@@ -27,15 +27,15 @@ namespace AssemblyData.methodsrewriter {
 	class MModule {
 		public Module module;
 		public ModuleDefMD moduleDef;
-		TypeDefinitionDict<MType> typeReferenceToType = new TypeDefinitionDict<MType>();
+		TypeDefDict<MType> typeRefToType = new TypeDefDict<MType>();
 		Dictionary<int, MType> tokenToType = new Dictionary<int, MType>();
 		Dictionary<int, MMethod> tokenToGlobalMethod;
 		Dictionary<int, MField> tokenToGlobalField;
 		TypeDef moduleType;
 
-		public MModule(Module module, ModuleDefMD moduleDefinition) {
+		public MModule(Module module, ModuleDefMD moduleDef) {
 			this.module = module;
-			this.moduleDef = moduleDefinition;
+			this.moduleDef = moduleDef;
 			initTokenToType();
 		}
 
@@ -49,17 +49,17 @@ namespace AssemblyData.methodsrewriter {
 				}
 				catch {
 					tokenToType[token] = null;
-					typeReferenceToType.add(typeDef, null);
+					typeRefToType.add(typeDef, null);
 					continue;
 				}
 				var mtype = new MType(type, typeDef);
 				tokenToType[token] = mtype;
-				typeReferenceToType.add(typeDef, mtype);
+				typeRefToType.add(typeDef, mtype);
 			}
 		}
 
 		public MType getType(IType typeRef) {
-			return typeReferenceToType.find(typeRef);
+			return typeRefToType.find(typeRef);
 		}
 
 		public MMethod getMethod(IMethod methodRef) {

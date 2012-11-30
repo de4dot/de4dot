@@ -20,10 +20,10 @@
 using System;
 using System.Text;
 using System.Collections.Generic;
+using dot10.PE;
 using dot10.DotNet;
 using dot10.DotNet.Emit;
 using de4dot.blocks;
-using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 	class StringDecrypter {
@@ -32,7 +32,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		List<DecrypterInfo> decrypterInfos = new List<DecrypterInfo>();
 		MethodDef otherStringDecrypter;
 		byte[] decryptedData;
-		PeImage peImage;
+		MyPEImage peImage;
 		byte[] fileData;
 		StringDecrypterVersion stringDecrypterVersion;
 
@@ -153,7 +153,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			}
 		}
 
-		public void init(PeImage peImage, byte[] fileData, ISimpleDeobfuscator simpleDeobfuscator) {
+		public void init(MyPEImage peImage, byte[] fileData, ISimpleDeobfuscator simpleDeobfuscator) {
 			if (encryptedResource.Method == null)
 				return;
 			this.peImage = peImage;

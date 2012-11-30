@@ -23,7 +23,7 @@ using System.Collections.Generic;
 namespace de4dot.blocks {
 	// This class makes sure that each block that is entered with a non-empty stack has at
 	// least one of its source blocks sorted before itself. This is to make sure peverify
-	// doesn't complain AND also to make sure Mono.Cecil sets the correct maxstack.
+	// doesn't complain AND also to make sure dot10 sets the correct maxstack.
 	class ForwardScanOrder {
 		ScopeBlock scopeBlock;
 		IList<BaseBlock> sorted;

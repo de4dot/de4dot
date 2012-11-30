@@ -17,22 +17,27 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using de4dot.PE;
+using System;
 
 namespace de4dot.code.deobfuscators.MaxtoCode {
-	class DecrypterInfo {
+	class DecrypterInfo : IDisposable {
 		public MainType mainType;
-		public readonly PeImage peImage;
+		public readonly MyPEImage peImage;
 		public readonly PeHeader peHeader;
 		public readonly McKey mcKey;
 		public readonly byte[] fileData;
 
 		public DecrypterInfo(MainType mainType, byte[] fileData) {
 			this.mainType = mainType;
-			this.peImage = new PeImage(fileData);
+			this.peImage = new MyPEImage(fileData);
 			this.peHeader = new PeHeader(mainType, peImage);
 			this.mcKey = new McKey(peImage, peHeader);
 			this.fileData = fileData;
+		}
+
+		public void Dispose() {
+			if (peImage != null)
+				peImage.Dispose();
 		}
 	}
 }

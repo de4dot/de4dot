@@ -1,19 +1,57 @@
 ﻿using System;
+using System.Collections.Generic;
 using dot10.IO;
 using dot10.PE;
 using dot10.DotNet.MD;
+using de4dot.blocks;
 
-namespace de4dot.code.deobfuscators.dotNET_Reactor {
+namespace de4dot.code.deobfuscators {
 	sealed class MyPEImage : IDisposable {
 		IPEImage peImage;
 		byte[] peImageData;
 		IImageStream peStream;
 		DotNetFile dnFile;
+		bool dnFileInitialized;
 		ImageSectionHeader dotNetSection;
 		bool ownPeImage;
 
+		public DotNetFile DotNetFile {
+			get {
+				if (dnFileInitialized)
+					return dnFile;
+				dnFileInitialized = true;
+
+				var dotNetDir = peImage.ImageNTHeaders.OptionalHeader.DataDirectories[14];
+				if (dotNetDir.VirtualAddress != 0 && dotNetDir.Size >= 0x48) {
+					dnFile = DotNetFile.Load(peImage, false);
+					dotNetSection = findSection(dotNetDir.VirtualAddress);
+				}
+				return dnFile;
+			}
+		}
+
+		public ImageCor20Header Cor20Header {
+			get { return DotNetFile.MetaData.ImageCor20Header; }
+		}
+
+		public IBinaryReader Reader {
+			get { return peStream; }
+		}
+
 		public IPEImage PEImage {
 			get { return peImage; }
+		}
+
+		public ImageFileHeader FileHeader {
+			get { return peImage.ImageNTHeaders.FileHeader; }
+		}
+
+		public IImageOptionalHeader OptionalHeader {
+			get { return peImage.ImageNTHeaders.OptionalHeader; }
+		}
+
+		public IList<ImageSectionHeader> Sections {
+			get { return peImage.ImageSectionHeaders; }
 		}
 
 		public uint Length {
@@ -33,13 +71,6 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor {
 		void initialize(IPEImage peImage) {
 			this.peImage = peImage;
 			this.peStream = peImage.CreateFullStream();
-
-			//TODO: Only init this if they use the .NET MD
-			var dotNetDir = peImage.ImageNTHeaders.OptionalHeader.DataDirectories[14];
-			if (dotNetDir.VirtualAddress != 0 && dotNetDir.Size >= 0x48) {
-				dnFile = DotNetFile.Load(peImage, false);
-				dotNetSection = findSection(dotNetDir.VirtualAddress);
-			}
 		}
 
 		ImageSectionHeader findSection(RVA rva) {
@@ -50,8 +81,64 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor {
 			return null;
 		}
 
+		public ImageSectionHeader findSection(string name) {
+			foreach (var section in peImage.ImageSectionHeaders) {
+				if (section.DisplayName == name)
+					return section;
+			}
+			return null;
+		}
+
+		public void readMethodTableRowTo(DumpedMethod dm, uint rid) {
+			dm.token = 0x06000000 + rid;
+			var row = DotNetFile.MetaData.TablesStream.ReadMethodRow(rid);
+			if (row == null)
+				throw new ArgumentException("Invalid Method rid");
+			dm.mdRVA = row.RVA;
+			dm.mdImplFlags = row.ImplFlags;
+			dm.mdFlags = row.Flags;
+			dm.mdName = row.Name;
+			dm.mdSignature = row.Signature;
+			dm.mdParamList = row.ParamList;
+		}
+
+		public void updateMethodHeaderInfo(DumpedMethod dm, MethodBodyHeader mbHeader) {
+			dm.mhFlags = mbHeader.flags;
+			dm.mhMaxStack = mbHeader.maxStack;
+			dm.mhCodeSize = dm.code == null ? 0 : (uint)dm.code.Length;
+			dm.mhLocalVarSigTok = mbHeader.localVarSigTok;
+		}
+
+		public uint rvaToOffset(uint rva) {
+			return (uint)peImage.ToFileOffset((RVA)rva);
+		}
+
 		static bool isInside(ImageSectionHeader section, uint offset, uint length) {
 			return offset >= section.PointerToRawData && offset + length <= section.PointerToRawData + section.SizeOfRawData;
+		}
+
+		public void writeUInt32(uint rva, uint data) {
+			offsetWriteUInt32(rvaToOffset(rva), data);
+		}
+
+		public void writeUInt16(uint rva, ushort data) {
+			offsetWriteUInt16(rvaToOffset(rva), data);
+		}
+
+		public byte readByte(uint rva) {
+			return offsetReadByte(rvaToOffset(rva));
+		}
+
+		public int readInt32(uint rva) {
+			return (int)offsetReadUInt32(rvaToOffset(rva));
+		}
+
+		public ushort readUInt16(uint rva) {
+			return offsetReadUInt16(rvaToOffset(rva));
+		}
+
+		public byte[] readBytes(uint rva, int size) {
+			return offsetReadBytes(rvaToOffset(rva), size);
 		}
 
 		public void offsetWriteUInt32(uint offset, uint val) {
@@ -99,14 +186,14 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor {
 		}
 
 		public bool dotNetSafeWriteOffset(uint offset, byte[] data) {
-			if (dnFile != null) {
+			if (DotNetFile != null) {
 				uint length = (uint)data.Length;
 
 				if (!isInside(dotNetSection, offset, length))
 					return false;
-				if (intersect(offset, length, dnFile.MetaData.ImageCor20Header))
+				if (intersect(offset, length, DotNetFile.MetaData.ImageCor20Header))
 					return false;
-				if (intersect(offset, length, dnFile.MetaData.MetaDataHeader))
+				if (intersect(offset, length, DotNetFile.MetaData.MetaDataHeader))
 					return false;
 			}
 

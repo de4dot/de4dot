@@ -21,7 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using de4dot.PE;
+using dot10.IO;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.MaxtoCode {
@@ -31,7 +31,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 
 		class MethodInfos {
 			MainType mainType;
-			PeImage peImage;
+			MyPEImage peImage;
 			PeHeader peHeader;
 			McKey mcKey;
 			uint structSize;
@@ -61,7 +61,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				}
 			}
 
-			public MethodInfos(MainType mainType, PeImage peImage, PeHeader peHeader, McKey mcKey) {
+			public MethodInfos(MainType mainType, MyPEImage peImage, PeHeader peHeader, McKey mcKey) {
 				this.mainType = mainType;
 				this.peImage = peImage;
 				this.peHeader = peHeader;
@@ -463,55 +463,21 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			var methodInfos = new MethodInfos(decrypterInfo.mainType, peImage, decrypterInfo.peHeader, decrypterInfo.mcKey);
 			methodInfos.initializeInfos();
 
-			var metadataTables = peImage.Cor20Header.createMetadataTables();
-			var methodDef = metadataTables.getMetadataType(MetadataIndex.iMethodDef);
-			uint methodDefOffset = methodDef.fileOffset;
-			for (int i = 0; i < methodDef.rows; i++, methodDefOffset += methodDef.totalSize) {
-				uint bodyRva = peImage.offsetReadUInt32(methodDefOffset);
-				if (bodyRva == 0)
-					continue;
+			var methodDef = peImage.DotNetFile.MetaData.TablesStream.MethodTable;
+			for (uint rid = 1; rid <= methodDef.Rows; rid++) {
+				var dm = new DumpedMethod();
+				peImage.readMethodTableRowTo(dm, rid);
 
-				var info = methodInfos.lookup(bodyRva);
+				var info = methodInfos.lookup(dm.mdRVA);
 				if (info == null)
 					continue;
 
-				uint bodyOffset = peImage.rvaToOffset(bodyRva);
-				ushort magic = peImage.offsetReadUInt16(bodyOffset);
+				ushort magic = peImage.readUInt16(dm.mdRVA);
 				if (magic != 0xFFF3)
 					continue;
 
-				var dm = new DumpedMethod();
-				dm.token = (uint)(0x06000001 + i);
-				dm.mdRVA = peImage.offsetRead(methodDefOffset + (uint)methodDef.fields[0].offset, methodDef.fields[0].size);
-				dm.mdImplFlags = peImage.offsetReadUInt16(methodDefOffset + (uint)methodDef.fields[1].offset);
-				dm.mdFlags = peImage.offsetReadUInt16(methodDefOffset + (uint)methodDef.fields[2].offset);
-				dm.mdName = peImage.offsetRead(methodDefOffset + (uint)methodDef.fields[3].offset, methodDef.fields[3].size);
-				dm.mdSignature = peImage.offsetRead(methodDefOffset + (uint)methodDef.fields[4].offset, methodDef.fields[4].size);
-				dm.mdParamList = peImage.offsetRead(methodDefOffset + (uint)methodDef.fields[5].offset, methodDef.fields[5].size);
-
-				var reader = new BinaryReader(new MemoryStream(info.body));
-				byte b = reader.ReadByte();
-				if ((b & 3) == 2) {
-					dm.mhFlags = 2;
-					dm.mhMaxStack = 8;
-					dm.mhCodeSize = (uint)(b >> 2);
-					dm.mhLocalVarSigTok = 0;
-				}
-				else {
-					reader.BaseStream.Position--;
-					dm.mhFlags = reader.ReadUInt16();
-					dm.mhMaxStack = reader.ReadUInt16();
-					dm.mhCodeSize = reader.ReadUInt32();
-					dm.mhLocalVarSigTok = reader.ReadUInt32();
-					uint codeOffset = (uint)(dm.mhFlags >> 12) * 4;
-					reader.BaseStream.Position += codeOffset - 12;
-				}
-
-				dm.code = reader.ReadBytes((int)dm.mhCodeSize);
-				if ((dm.mhFlags & 8) != 0) {
-					reader.BaseStream.Position = (reader.BaseStream.Position + 3) & ~3;
-					dm.extraSections = reader.ReadBytes((int)(reader.BaseStream.Length - reader.BaseStream.Position));
-				}
+				var mbHeader = MethodBodyParser.parseMethodBody(MemoryImageStream.Create(info.body), out dm.code, out dm.extraSections);
+				peImage.updateMethodHeaderInfo(dm, mbHeader);
 
 				dumpedMethods.add(dm);
 			}
@@ -529,8 +495,8 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			uint resourceSize = peHeader.readUInt32(0x0E14) ^ mcKey.readUInt32(0x00AA);
 			if (resourceRva == 0 || resourceSize == 0)
 				return;
-			if (resourceRva != peImage.Cor20Header.resources.virtualAddress ||
-				resourceSize != peImage.Cor20Header.resources.size) {
+			if (resourceRva != (uint)peImage.Cor20Header.Resources.VirtualAddress ||
+				resourceSize != peImage.Cor20Header.Resources.Size) {
 				Logger.w("Invalid resource RVA and size found");
 			}
 
@@ -551,10 +517,10 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			uint usHeapSize = peHeader.readUInt32(0x0E04) ^ mcKey.readUInt32(0x0082);
 			if (usHeapRva == 0 || usHeapSize == 0)
 				return;
-			var usHeap = peImage.Cor20Header.metadata.getStream("#US");
-			if (usHeap == null ||
-				peImage.rvaToOffset(usHeapRva) != usHeap.fileOffset ||
-				usHeapSize != usHeap.Length) {
+			var usHeap = peImage.DotNetFile.MetaData.USStream;
+			if (usHeap.StartOffset == 0 ||	// Start offset is 0 if it's not present in the file
+				peImage.rvaToOffset(usHeapRva) != (uint)usHeap.StartOffset ||
+				usHeapSize != (uint)(usHeap.EndOffset - usHeap.StartOffset)) {
 				Logger.w("Invalid #US heap RVA and size found");
 			}
 

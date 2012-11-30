@@ -149,19 +149,19 @@ namespace de4dot.code.renamer.asmmodules {
 
 		public void initialize() {
 			initializeCalled = true;
-			findAllMemberReferences();
+			findAllMemberRefs();
 			initAllTypes();
 			resolveAllRefs();
 		}
 
-		void findAllMemberReferences() {
-			Logger.v("Finding all MemberReferences");
+		void findAllMemberRefs() {
+			Logger.v("Finding all MemberRefs");
 			int index = 0;
 			foreach (var module in modules) {
 				if (modules.Count > 1)
-					Logger.v("Finding all MemberReferences ({0})", module.Filename);
+					Logger.v("Finding all MemberRefs ({0})", module.Filename);
 				Logger.Instance.indent();
-				module.findAllMemberReferences(ref index);
+				module.findAllMemberRefs(ref index);
 				Logger.Instance.deIndent();
 			}
 		}
@@ -319,22 +319,22 @@ namespace de4dot.code.renamer.asmmodules {
 			if (typeToTypeDefDict.tryGetValue(type, out typeDef))
 				return typeDef;
 
-			var typeDefinition = deobfuscatorContext.resolveType(type);
-			if (typeDefinition == null) {
+			var typeDef2 = deobfuscatorContext.resolveType(type);
+			if (typeDef2 == null) {
 				typeToTypeDefDict.tryGetSimilarValue(type, out typeDef);
 				typeToTypeDefDict[type] = typeDef;
 				return typeDef;
 			}
 
-			if (typeToTypeDefDict.tryGetValue(typeDefinition, out typeDef)) {
+			if (typeToTypeDefDict.tryGetValue(typeDef2, out typeDef)) {
 				typeToTypeDefDict[type] = typeDef;
 				return typeDef;
 			}
 
 			typeToTypeDefDict[type] = null;	// In case of a circular reference
-			typeToTypeDefDict[typeDefinition] = null;
+			typeToTypeDefDict[typeDef2] = null;
 
-			typeDef = new MTypeDef(typeDefinition, null, 0);
+			typeDef = new MTypeDef(typeDef2, null, 0);
 			typeDef.addMembers();
 			foreach (var iface in typeDef.TypeDef.Interfaces) {
 				var ifaceDef = resolveOther(iface.Interface);
@@ -347,8 +347,8 @@ namespace de4dot.code.renamer.asmmodules {
 				typeDef.addBaseType(baseDef, typeDef.TypeDef.BaseType);
 
 			typeToTypeDefDict[type] = typeDef;
-			if (type != typeDefinition)
-				typeToTypeDefDict[typeDefinition] = typeDef;
+			if (type != typeDef2)
+				typeToTypeDefDict[typeDef2] = typeDef;
 			return typeDef;
 		}
 
@@ -449,7 +449,7 @@ namespace de4dot.code.renamer.asmmodules {
 			}
 			if (isAutoCreatedType(typeRef))
 				return null;
-			Logger.e("Could not resolve TypeReference {0} ({1:X8}) (from {2} -> {3})",
+			Logger.e("Could not resolve TypeRef {0} ({1:X8}) (from {2} -> {3})",
 						Utils.removeNewlines(typeRef),
 						typeRef.MDToken.ToInt32(),
 						typeRef.Module,
@@ -470,7 +470,7 @@ namespace de4dot.code.renamer.asmmodules {
 			}
 			if (isAutoCreatedType(methodRef.DeclaringType))
 				return null;
-			Logger.e("Could not resolve MethodReference {0} ({1:X8}) (from {2} -> {3})",
+			Logger.e("Could not resolve MethodRef {0} ({1:X8}) (from {2} -> {3})",
 						Utils.removeNewlines(methodRef),
 						methodRef.MDToken.ToInt32(),
 						methodRef.DeclaringType.Module,
@@ -478,24 +478,24 @@ namespace de4dot.code.renamer.asmmodules {
 			return null;
 		}
 
-		public MFieldDef resolveField(MemberRef fieldReference) {
-			if (fieldReference.DeclaringType == null)
+		public MFieldDef resolveField(MemberRef fieldRef) {
+			if (fieldRef.DeclaringType == null)
 				return null;
-			var modules = findModules(fieldReference.DeclaringType);
+			var modules = findModules(fieldRef.DeclaringType);
 			if (modules == null)
 				return null;
 			foreach (var module in modules) {
-				var rv = module.resolveField(fieldReference);
+				var rv = module.resolveField(fieldRef);
 				if (rv != null)
 					return rv;
 			}
-			if (isAutoCreatedType(fieldReference.DeclaringType))
+			if (isAutoCreatedType(fieldRef.DeclaringType))
 				return null;
-			Logger.e("Could not resolve FieldReference {0} ({1:X8}) (from {2} -> {3})",
-						Utils.removeNewlines(fieldReference),
-						fieldReference.MDToken.ToInt32(),
-						fieldReference.DeclaringType.Module,
-						fieldReference.DeclaringType.Scope);
+			Logger.e("Could not resolve FieldRef {0} ({1:X8}) (from {2} -> {3})",
+						Utils.removeNewlines(fieldRef),
+						fieldRef.MDToken.ToInt32(),
+						fieldRef.DeclaringType.Module,
+						fieldRef.DeclaringType.Scope);
 			return null;
 		}
 	}

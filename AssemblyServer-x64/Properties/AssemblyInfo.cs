@@ -21,7 +21,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 
 [assembly: AssemblyTitle("AssemblyServer-x64")]
-[assembly: AssemblyDescription("Assembly Server - x64")]
+[assembly: AssemblyDescription("Assembly Server - CLR any version - x64")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("AssemblyServer-x64")]

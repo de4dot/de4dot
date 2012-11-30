@@ -165,7 +165,7 @@ namespace de4dot.code {
 				this.callEndIndex = callEndIndex;
 			}
 
-			public IMethod getMethodReference() {
+			public IMethod getMethodRef() {
 				return (IMethod)block.Instructions[callEndIndex].Operand;
 			}
 		}
@@ -257,7 +257,7 @@ namespace de4dot.code {
 
 		bool findArgs(CallResult callResult) {
 			var block = callResult.block;
-			var method = callResult.getMethodReference();
+			var method = callResult.getMethodRef();
 			var methodArgs = DotNetUtils.getArgs(method);
 			int numArgs = methodArgs.Count;
 			var args = new object[numArgs];

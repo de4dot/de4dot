@@ -31,9 +31,9 @@ namespace de4dot.code.renamer {
 
 		public MemberInfo(Ref memberRef) {
 			this.memberRef = memberRef;
-			oldFullName = memberRef.memberReference.FullName;
-			oldName = memberRef.memberReference.Name.String;
-			newName = memberRef.memberReference.Name.String;
+			oldFullName = memberRef.memberRef.FullName;
+			oldName = memberRef.memberRef.Name.String;
+			newName = memberRef.memberRef.Name.String;
 		}
 
 		public void rename(string newTypeName) {
@@ -91,8 +91,8 @@ namespace de4dot.code.renamer {
 
 		public ParamInfo(MParamDef paramDef) {
 			this.paramDef = paramDef;
-			this.oldName = paramDef.ParameterDefinition.Name;
-			this.newName = paramDef.ParameterDefinition.Name;
+			this.oldName = paramDef.ParameterDef.Name;
+			this.newName = paramDef.ParameterDef.Name;
 		}
 
 		public bool gotNewName() {

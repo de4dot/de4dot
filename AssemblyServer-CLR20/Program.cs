@@ -17,30 +17,10 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using System.IO;
-
-namespace de4dot.PE {
-	public class DotNetStream : IFileLocation {
-		public string name;
-		public uint fileOffset;
-		public uint length;
-
-		public uint Offset {
-			get { return fileOffset; }
-		}
-
-		public uint Length {
-			get { return length; }
-		}
-
-		public DotNetStream(string name, uint fileOffset, uint length) {
-			this.name = name;
-			this.fileOffset = fileOffset;
-			this.length = length;
-		}
-
-		public override string ToString() {
-			return string.Format("{0:X8} {1:X8} {2}", fileOffset, length, name);
+namespace AssemblyServer_CLR20 {
+	class Program {
+		static int Main(string[] args) {
+			return AssemblyServer.Start.main(args);
 		}
 	}
 }

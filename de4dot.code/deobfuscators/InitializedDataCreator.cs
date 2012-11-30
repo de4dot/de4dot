@@ -44,9 +44,9 @@ namespace de4dot.code.deobfuscators {
 
 		MemberRef createInitializeArrayMethod() {
 			if (initializeArrayMethod == null) {
-				var runtimeHelpersType = DotNetUtils.findOrCreateTypeReference(module, module.CorLibTypes.AssemblyRef, "System.Runtime.CompilerServices", "RuntimeHelpers", false);
-				var systemArrayType = DotNetUtils.findOrCreateTypeReference(module, module.CorLibTypes.AssemblyRef, "System", "Array", false);
-				var runtimeFieldHandleType = DotNetUtils.findOrCreateTypeReference(module, module.CorLibTypes.AssemblyRef, "System", "RuntimeFieldHandle", true);
+				var runtimeHelpersType = DotNetUtils.findOrCreateTypeRef(module, module.CorLibTypes.AssemblyRef, "System.Runtime.CompilerServices", "RuntimeHelpers", false);
+				var systemArrayType = DotNetUtils.findOrCreateTypeRef(module, module.CorLibTypes.AssemblyRef, "System", "Array", false);
+				var runtimeFieldHandleType = DotNetUtils.findOrCreateTypeRef(module, module.CorLibTypes.AssemblyRef, "System", "RuntimeFieldHandle", true);
 				var methodSig = MethodSig.CreateStatic(module.CorLibTypes.Void, systemArrayType, runtimeFieldHandleType);
 				initializeArrayMethod = module.UpdateRowId(new MemberRefUser(module, "InitializeArray", methodSig, runtimeHelpersType.TypeDefOrRef));
 			}
@@ -96,7 +96,7 @@ namespace de4dot.code.deobfuscators {
 				return arrayType;
 
 			if (valueType == null)
-				valueType = DotNetUtils.findOrCreateTypeReference(module, module.CorLibTypes.AssemblyRef, "System", "ValueType", false);
+				valueType = DotNetUtils.findOrCreateTypeRef(module, module.CorLibTypes.AssemblyRef, "System", "ValueType", false);
 			arrayType = new TypeDefUser("", string.Format("__StaticArrayInitTypeSize={0}", size), valueType.TypeDefOrRef);
 			module.UpdateRowId(arrayType);
 			arrayType.Attributes = TypeAttributes.NestedPrivate | TypeAttributes.ExplicitLayout |

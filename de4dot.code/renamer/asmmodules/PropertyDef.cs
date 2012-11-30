@@ -26,14 +26,14 @@ namespace de4dot.code.renamer.asmmodules {
 		public MMethodDef SetMethod { get; set; }
 
 		public PropertyDef PropertyDef {
-			get { return (PropertyDef)memberReference; }
+			get { return (PropertyDef)memberRef; }
 		}
 
-		public MPropertyDef(PropertyDef propertyDefinition, MTypeDef owner, int index)
-			: base(propertyDefinition, owner, index) {
+		public MPropertyDef(PropertyDef propertyDef, MTypeDef owner, int index)
+			: base(propertyDef, owner, index) {
 		}
 
-		public IEnumerable<MethodDef> methodDefinitions() {
+		public IEnumerable<MethodDef> methodDefs() {
 			if (PropertyDef.GetMethod != null)
 				yield return PropertyDef.GetMethod;
 			if (PropertyDef.SetMethod != null)
@@ -45,7 +45,7 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 
 		public bool isVirtual() {
-			foreach (var method in methodDefinitions()) {
+			foreach (var method in methodDefs()) {
 				if (method.IsVirtual)
 					return true;
 			}

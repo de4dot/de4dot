@@ -45,11 +45,11 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		}
 
 		protected override IField ReadInlineField(Instruction instr) {
-			return imageReader.readFieldReference();
+			return imageReader.readFieldRef();
 		}
 
 		protected override IMethod ReadInlineMethod(Instruction instr) {
-			return imageReader.readMethodReference();
+			return imageReader.readMethodRef();
 		}
 
 		protected override MethodSig ReadInlineSig(Instruction instr) {
@@ -63,8 +63,8 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		protected override ITokenOperand ReadInlineTok(Instruction instr) {
 			switch (reader.ReadByte()) {
 			case 0: return imageReader.readTypeSig().ToTypeDefOrRef();
-			case 1: return imageReader.readFieldReference();
-			case 2: return imageReader.readMethodReference();
+			case 1: return imageReader.readFieldRef();
+			case 2: return imageReader.readMethodRef();
 			default: throw new ApplicationException("Unknown token type");
 			}
 		}

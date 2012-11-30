@@ -24,9 +24,9 @@ namespace AssemblyData.methodsrewriter {
 	class MMethod {
 		public MethodBase methodBase;
 		public MethodDef methodDef;
-		public MMethod(MethodBase methodBase, MethodDef methodDefinition) {
+		public MMethod(MethodBase methodBase, MethodDef methodDef) {
 			this.methodBase = methodBase;
-			this.methodDef = methodDefinition;
+			this.methodDef = methodDef;
 		}
 
 		public bool hasInstructions() {

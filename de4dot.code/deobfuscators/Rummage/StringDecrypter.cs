@@ -29,7 +29,7 @@ namespace de4dot.code.deobfuscators.Rummage {
 	class StringDecrypter {
 		ModuleDefMD module;
 		MethodDef stringDecrypterMethod;
-		FieldDefinitionAndDeclaringTypeDict<StringInfo> stringInfos = new FieldDefinitionAndDeclaringTypeDict<StringInfo>();
+		FieldDefAndDeclaringTypeDict<StringInfo> stringInfos = new FieldDefAndDeclaringTypeDict<StringInfo>();
 		int fileDispl;
 		uint[] key;
 		BinaryReader reader;

@@ -120,8 +120,16 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			newOne.setModule(module);
 			newOne.mainType = new MainType(module, mainType);
 			newOne.decrypterInfo = decrypterInfo;
-			newOne.decrypterInfo.mainType = newOne.mainType;
+			decrypterInfo = null;
+			if (newOne.decrypterInfo != null)
+				newOne.decrypterInfo.mainType = newOne.mainType;
 			return newOne;
+		}
+
+		void freePEImage() {
+			if (decrypterInfo != null)
+				decrypterInfo.Dispose();
+			decrypterInfo = null;
 		}
 
 		public override void deobfuscateBegin() {
@@ -134,12 +142,19 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				staticStringInliner.add(stringDecrypter.Method, (method, gim, args) => stringDecrypter.decrypt((uint)args[0]));
 				DeobfuscatedFile.stringDecryptersAdded();
 			}
+			else
+				freePEImage();
 
 			foreach (var method in mainType.InitMethods)
 				addCctorInitCallToBeRemoved(method);
 			addTypeToBeRemoved(mainType.Type, "Obfuscator type");
 			removeDuplicateEmbeddedResources();
 			removeInvalidResources();
+		}
+
+		public override void deobfuscateEnd() {
+			freePEImage();
+			base.deobfuscateEnd();
 		}
 
 		static Encoding getEncoding(int cp) {
@@ -234,6 +249,12 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			if (stringDecrypter != null && stringDecrypter.Detected)
 				list.Add(stringDecrypter.Method.MDToken.ToInt32());
 			return list;
+		}
+
+		protected override void Dispose(bool disposing) {
+			if (disposing)
+				freePEImage();
+			base.Dispose(disposing);
 		}
 	}
 }

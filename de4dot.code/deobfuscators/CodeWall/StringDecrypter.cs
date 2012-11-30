@@ -29,7 +29,7 @@ using de4dot.blocks;
 namespace de4dot.code.deobfuscators.CodeWall {
 	class StringDecrypter {
 		ModuleDefMD module;
-		MethodDefinitionAndDeclaringTypeDict<StringEncrypterInfo> stringEncrypterInfos = new MethodDefinitionAndDeclaringTypeDict<StringEncrypterInfo>();
+		MethodDefAndDeclaringTypeDict<StringEncrypterInfo> stringEncrypterInfos = new MethodDefAndDeclaringTypeDict<StringEncrypterInfo>();
 		Version version;
 
 		public enum Version {

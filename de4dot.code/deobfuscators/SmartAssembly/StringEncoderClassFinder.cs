@@ -48,8 +48,8 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			this.simpleDeobfuscator = simpleDeobfuscator;
 		}
 
-		TypeDef getType(ITypeDefOrRef typeReference) {
-			return DotNetUtils.getType(module, typeReference);
+		TypeDef getType(ITypeDefOrRef typeRef) {
+			return DotNetUtils.getType(module, typeRef);
 		}
 
 		public void find() {

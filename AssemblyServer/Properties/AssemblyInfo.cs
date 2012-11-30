@@ -21,7 +21,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 
 [assembly: AssemblyTitle("AssemblyServer")]
-[assembly: AssemblyDescription("Assembly Server - AnyCpu")]
+[assembly: AssemblyDescription("Assembly Server - CLR any version - x86")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("AssemblyServer")]

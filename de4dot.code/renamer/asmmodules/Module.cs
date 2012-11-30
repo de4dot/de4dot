@@ -30,15 +30,15 @@ namespace de4dot.code.renamer.asmmodules {
 		IList<RefToDef<TypeRef, TypeDef>> typeRefsToRename = new List<RefToDef<TypeRef, TypeDef>>();
 		IList<RefToDef<MemberRef, MethodDef>> methodRefsToRename = new List<RefToDef<MemberRef, MethodDef>>();
 		IList<RefToDef<MemberRef, FieldDef>> fieldRefsToRename = new List<RefToDef<MemberRef, FieldDef>>();
-		List<CustomAttributeReference> customAttributeFieldReferences = new List<CustomAttributeReference>();
-		List<CustomAttributeReference> customAttributePropertyReferences = new List<CustomAttributeReference>();
+		List<CustomAttributeRef> customAttributeFieldRefs = new List<CustomAttributeRef>();
+		List<CustomAttributeRef> customAttributePropertyRefs = new List<CustomAttributeRef>();
 		List<MethodDef> allMethods;
 
-		public class CustomAttributeReference {
+		public class CustomAttributeRef {
 			public CustomAttribute cattr;
 			public int index;
 			public IMemberRef reference;
-			public CustomAttributeReference(CustomAttribute cattr, int index, IMemberRef reference) {
+			public CustomAttributeRef(CustomAttribute cattr, int index, IMemberRef reference) {
 				this.cattr = cattr;
 				this.index = index;
 				this.reference = reference;
@@ -66,12 +66,12 @@ namespace de4dot.code.renamer.asmmodules {
 			get { return fieldRefsToRename; }
 		}
 
-		public IEnumerable<CustomAttributeReference> CustomAttributeFieldReferences {
-			get { return customAttributeFieldReferences; }
+		public IEnumerable<CustomAttributeRef> CustomAttributeFieldRefs {
+			get { return customAttributeFieldRefs; }
 		}
 
-		public IEnumerable<CustomAttributeReference> CustomAttributePropertyReferences {
-			get { return customAttributePropertyReferences; }
+		public IEnumerable<CustomAttributeRef> CustomAttributePropertyRefs {
+			get { return customAttributePropertyRefs; }
 		}
 
 		public IObfuscatedFile ObfuscatedFile {
@@ -98,7 +98,7 @@ namespace de4dot.code.renamer.asmmodules {
 			return allMethods;
 		}
 
-		public void findAllMemberReferences(ref int typeIndex) {
+		public void findAllMemberRefs(ref int typeIndex) {
 			memberRefFinder = new MemberRefFinder();
 			memberRefFinder.findAll(ModuleDefMD);
 			allMethods = new List<MethodDef>(memberRefFinder.methodDefs.Keys);
@@ -118,8 +118,8 @@ namespace de4dot.code.renamer.asmmodules {
 			foreach (var typeDef in allTypesList) {
 				if (typeDef.TypeDef.NestedTypes == null)
 					continue;
-				foreach (var nestedTypeDefinition in typeDef.TypeDef.NestedTypes) {
-					int index = typeToIndex[nestedTypeDefinition];
+				foreach (var nestedTypeDef2 in typeDef.TypeDef.NestedTypes) {
+					int index = typeToIndex[nestedTypeDef2];
 					var nestedTypeDef = allTypesCopy[index];
 					allTypesCopy[index] = null;
 					if (nestedTypeDef == null)	// Impossible
@@ -169,7 +169,7 @@ namespace de4dot.code.renamer.asmmodules {
 							continue;
 						}
 
-						customAttributeFieldReferences.Add(new CustomAttributeReference(cattr, i, fieldDef.FieldDef));
+						customAttributeFieldRefs.Add(new CustomAttributeRef(cattr, i, fieldDef.FieldDef));
 					}
 					else {
 						var propDef = findProperty(typeDef, namedArg.Name, namedArg.Type);
@@ -181,7 +181,7 @@ namespace de4dot.code.renamer.asmmodules {
 							continue;
 						}
 
-						customAttributePropertyReferences.Add(new CustomAttributeReference(cattr, i, propDef.PropertyDef));
+						customAttributePropertyRefs.Add(new CustomAttributeRef(cattr, i, propDef.PropertyDef));
 					}
 				}
 			}
@@ -232,7 +232,7 @@ namespace de4dot.code.renamer.asmmodules {
 			ModuleDefMD.EnableTypeDefFindCache = old;
 		}
 
-		static ITypeDefOrRef getNonGenericTypeReference(ITypeDefOrRef typeRef) {
+		static ITypeDefOrRef getNonGenericTypeRef(ITypeDefOrRef typeRef) {
 			var ts = typeRef as TypeSpec;
 			if (ts == null)
 				return typeRef;
@@ -242,19 +242,19 @@ namespace de4dot.code.renamer.asmmodules {
 			return gis.GenericType.TypeDefOrRef;
 		}
 
-		public MTypeDef resolveType(ITypeDefOrRef typeReference) {
-			return this.types.find(getNonGenericTypeReference(typeReference));
+		public MTypeDef resolveType(ITypeDefOrRef typeRef) {
+			return this.types.find(getNonGenericTypeRef(typeRef));
 		}
 
 		public MMethodDef resolveMethod(IMethodDefOrRef methodRef) {
-			var typeDef = this.types.find(getNonGenericTypeReference(methodRef.DeclaringType));
+			var typeDef = this.types.find(getNonGenericTypeRef(methodRef.DeclaringType));
 			if (typeDef == null)
 				return null;
 			return typeDef.findMethod(methodRef);
 		}
 
 		public MFieldDef resolveField(MemberRef fieldRef) {
-			var typeDef = this.types.find(getNonGenericTypeReference(fieldRef.DeclaringType));
+			var typeDef = this.types.find(getNonGenericTypeRef(fieldRef.DeclaringType));
 			if (typeDef == null)
 				return null;
 			return typeDef.findField(fieldRef);

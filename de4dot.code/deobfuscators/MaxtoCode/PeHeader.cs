@@ -18,7 +18,6 @@
 */
 
 using System;
-using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.MaxtoCode {
 	enum EncryptionVersion {
@@ -40,7 +39,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			get { return version; }
 		}
 
-		public PeHeader(MainType mainType, PeImage peImage) {
+		public PeHeader(MainType mainType, MyPEImage peImage) {
 			uint headerOffset;
 			version = getHeaderOffsetAndVersion(peImage, out headerOffset);
 			headerData = peImage.offsetReadBytes(headerOffset, 0x1000);
@@ -58,7 +57,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			return BitConverter.ToUInt32(headerData, offset);
 		}
 
-		static EncryptionVersion getHeaderOffsetAndVersion(PeImage peImage, out uint headerOffset) {
+		static EncryptionVersion getHeaderOffsetAndVersion(MyPEImage peImage, out uint headerOffset) {
 			headerOffset = 0;
 
 			var version = getVersion(peImage, headerOffset);
@@ -69,8 +68,8 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			if (section == null)
 				return EncryptionVersion.Unknown;
 
-			headerOffset = section.pointerToRawData;
-			uint end = section.pointerToRawData + section.sizeOfRawData - 0x1000 + 1;
+			headerOffset = section.PointerToRawData;
+			uint end = section.PointerToRawData + section.SizeOfRawData - 0x1000 + 1;
 			while (headerOffset < end) {
 				version = getVersion(peImage, headerOffset);
 				if (version != EncryptionVersion.Unknown)
@@ -81,7 +80,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			return EncryptionVersion.Unknown;
 		}
 
-		static EncryptionVersion getVersion(PeImage peImage, uint headerOffset) {
+		static EncryptionVersion getVersion(MyPEImage peImage, uint headerOffset) {
 			uint m1lo = peImage.offsetReadUInt32(headerOffset + 0x900);
 			uint m1hi = peImage.offsetReadUInt32(headerOffset + 0x904);
 

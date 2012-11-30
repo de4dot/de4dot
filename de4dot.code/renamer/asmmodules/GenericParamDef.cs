@@ -23,7 +23,7 @@ using dot10.DotNet;
 namespace de4dot.code.renamer.asmmodules {
 	class MGenericParamDef : Ref {
 		public GenericParam GenericParam {
-			get { return (GenericParam)memberReference; }
+			get { return (GenericParam)memberRef; }
 		}
 
 		public MGenericParamDef(GenericParam genericParameter, int index)

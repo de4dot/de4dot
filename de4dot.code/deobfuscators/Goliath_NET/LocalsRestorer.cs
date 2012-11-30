@@ -25,7 +25,7 @@ using de4dot.blocks;
 namespace de4dot.code.deobfuscators.Goliath_NET {
 	class LocalsRestorer {
 		ModuleDefMD module;
-		TypeDefinitionDict<Info> typeToInfo = new TypeDefinitionDict<Info>();
+		TypeDefDict<Info> typeToInfo = new TypeDefDict<Info>();
 
 		class Info {
 			public TypeDef type;

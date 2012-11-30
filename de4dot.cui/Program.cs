@@ -92,7 +92,6 @@ namespace de4dot.cui {
 				if (printFullStackTrace()) {
 					printStackTrace(ex);
 					Logger.Instance.LogErrorDontIgnore("\nTry the latest version before reporting this problem!");
-					Logger.Instance.LogErrorDontIgnore("Send bug reports to de4dot@gmail.com or go to https://github.com/0xd4d/de4dot/issues");
 				}
 				else {
 					Logger.Instance.LogErrorDontIgnore("\n\n");
@@ -100,8 +99,9 @@ namespace de4dot.cui {
 					Logger.Instance.LogErrorDontIgnore("    EX: {0} : message: {1}", ex.GetType(), ex.Message);
 					Logger.Instance.LogErrorDontIgnore("If it's a supported obfuscator, it could be a bug or a new obfuscator version.");
 					Logger.Instance.LogErrorDontIgnore("If it's an unsupported obfuscator, make sure the methods are decrypted!");
-					Logger.Instance.LogErrorDontIgnore("Send bug reports to de4dot@gmail.com or go to https://github.com/0xd4d/de4dot/issues");
 				}
+				Logger.Instance.LogErrorDontIgnore("Send bug reports to de4dot@gmail.com or go to https://github.com/0xd4d/de4dot/issues");
+				Logger.Instance.LogErrorDontIgnore("I will need the original files, so email me a link to the installer or a zip/rar file.");
 				exitCode = 1;
 			}
 

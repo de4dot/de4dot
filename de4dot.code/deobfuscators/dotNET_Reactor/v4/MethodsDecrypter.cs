@@ -26,7 +26,6 @@ using dot10.DotNet.MD;
 using dot10.DotNet.Emit;
 using dot10.DotNet.Writer;
 using de4dot.blocks;
-using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 	class MethodsDecrypter {
@@ -124,7 +123,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 
 		static short[] nativeLdci4 = new short[] { 0x55, 0x8B, 0xEC, 0xB8, -1, -1, -1, -1, 0x5D, 0xC3 };
 		static short[] nativeLdci4_0 = new short[] { 0x55, 0x8B, 0xEC, 0x33, 0xC0, 0x5D, 0xC3 };
-		public bool decrypt(PeImage peImage, ISimpleDeobfuscator simpleDeobfuscator, ref DumpedMethods dumpedMethods, Dictionary<uint, byte[]> tokenToNativeCode) {
+		public bool decrypt(MyPEImage peImage, ISimpleDeobfuscator simpleDeobfuscator, ref DumpedMethods dumpedMethods, Dictionary<uint, byte[]> tokenToNativeCode) {
 			if (encryptedResource.Method == null)
 				return false;
 
@@ -138,20 +137,20 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			xorKey = getXorKey();
 			xorEncrypt(methodsData);
 
-			var methodsDataReader = new BinaryReader(new MemoryStream(methodsData));
+			var methodsDataReader = MemoryImageStream.Create(methodsData);
 			int patchCount = methodsDataReader.ReadInt32();
 			int mode = methodsDataReader.ReadInt32();
 
 			int tmp = methodsDataReader.ReadInt32();
-			methodsDataReader.BaseStream.Position -= 4;
+			methodsDataReader.Position -= 4;
 			if ((tmp & 0xFF000000) == 0x06000000) {
 				// It's method token + rva. DNR 3.7.0.3 (and earlier?) - 3.9.0.1
-				methodsDataReader.BaseStream.Position += 8L * patchCount;
+				methodsDataReader.Position += 8L * patchCount;
 				patchCount = methodsDataReader.ReadInt32();
 				mode = methodsDataReader.ReadInt32();
 
 				patchDwords(peImage, methodsDataReader, patchCount);
-				while (methodsDataReader.BaseStream.Position < methodsData.Length - 1) {
+				while (methodsDataReader.Position < methodsData.Length - 1) {
 					uint token = methodsDataReader.ReadUInt32();
 					int numDwords = methodsDataReader.ReadInt32();
 					patchDwords(peImage, methodsDataReader, numDwords / 2);
@@ -160,7 +159,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			else if (!hooksJitter || mode == 1) {
 				// DNR 3.9.8.0, 4.0, 4.1, 4.2, 4.3, 4.4
 				patchDwords(peImage, methodsDataReader, patchCount);
-				while (methodsDataReader.BaseStream.Position < methodsData.Length - 1) {
+				while (methodsDataReader.Position < methodsData.Length - 1) {
 					uint rva = methodsDataReader.ReadUInt32();
 					uint token = methodsDataReader.ReadUInt32();	// token, unknown, or index
 					int size = methodsDataReader.ReadInt32();
@@ -171,13 +170,12 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			else {
 				// DNR 4.0 - 4.4 (jitter is hooked)
 
-				var metadataTables = peImage.Cor20Header.createMetadataTables();
-				var methodDef = metadataTables.getMetadataType(MetadataIndex.iMethodDef);
-				var rvaToIndex = new Dictionary<uint, int>((int)methodDef.rows);
-				uint offset = methodDef.fileOffset;
-				for (int i = 0; i < methodDef.rows; i++) {
+				var methodDef = peImage.DotNetFile.MetaData.TablesStream.MethodTable;
+				var rvaToIndex = new Dictionary<uint, int>((int)methodDef.Rows);
+				uint offset = (uint)methodDef.StartOffset;
+				for (int i = 0; i < methodDef.Rows; i++) {
 					uint rva = peImage.offsetReadUInt32(offset);
-					offset += methodDef.totalSize;
+					offset += methodDef.RowSize;
 					if (rva == 0)
 						continue;
 
@@ -191,7 +189,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				patchDwords(peImage, methodsDataReader, patchCount);
 				int count = methodsDataReader.ReadInt32();
 				dumpedMethods = new DumpedMethods();
-				while (methodsDataReader.BaseStream.Position < methodsData.Length - 1) {
+				while (methodsDataReader.Position < methodsData.Length - 1) {
 					uint rva = methodsDataReader.ReadUInt32();
 					uint index = methodsDataReader.ReadUInt32();
 					bool isNativeCode = index >= 0x70000000;
@@ -203,6 +201,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 						Logger.w("Could not find method having code RVA {0:X8}", rva);
 						continue;
 					}
+
 					uint methodToken = 0x06000001 + (uint)methodIndex;
 
 					if (isNativeCode) {
@@ -234,27 +233,14 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 					}
 
 					var dm = new DumpedMethod();
-					dm.token = methodToken;
+					peImage.readMethodTableRowTo(dm, MDToken.ToRID(methodToken));
 					dm.code = methodData;
 
-					offset = methodDef.fileOffset + (uint)(methodIndex * methodDef.totalSize);
-					rva = peImage.offsetReadUInt32(offset);
-					dm.mdRVA = peImage.offsetRead(offset + (uint)methodDef.fields[0].offset, methodDef.fields[0].size);
-					dm.mdImplFlags = peImage.offsetReadUInt16(offset + (uint)methodDef.fields[1].offset);
-					dm.mdFlags = peImage.offsetReadUInt16(offset + (uint)methodDef.fields[2].offset);
-					dm.mdName = peImage.offsetRead(offset + (uint)methodDef.fields[3].offset, methodDef.fields[3].size);
-					dm.mdSignature = peImage.offsetRead(offset + (uint)methodDef.fields[4].offset, methodDef.fields[4].size);
-					dm.mdParamList = peImage.offsetRead(offset + (uint)methodDef.fields[5].offset, methodDef.fields[5].size);
-
 					var codeReader = peImage.Reader;
-					codeReader.BaseStream.Position = peImage.rvaToOffset(rva);
-					byte[] code, extraSections;
-					var mb = MethodBodyParser.parseMethodBody(codeReader, out code, out extraSections);
-					dm.mhFlags = mb.flags;
-					dm.mhMaxStack = mb.maxStack;
-					dm.mhCodeSize = (uint)dm.code.Length;
-					dm.mhLocalVarSigTok = mb.localVarSigTok;
-					dm.extraSections = extraSections;
+					codeReader.Position = peImage.rvaToOffset(dm.mdRVA);
+					byte[] code;
+					var mbHeader = MethodBodyParser.parseMethodBody(codeReader, out code, out dm.extraSections);
+					peImage.updateMethodHeaderInfo(dm, mbHeader);
 
 					dumpedMethods.add(dm);
 				}
@@ -263,7 +249,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			return true;
 		}
 
-		static void patchDwords(PeImage peImage, BinaryReader reader, int count) {
+		static void patchDwords(MyPEImage peImage, IBinaryReader reader, int count) {
 			for (int i = 0; i < count; i++) {
 				uint rva = reader.ReadUInt32();
 				uint data = reader.ReadUInt32();

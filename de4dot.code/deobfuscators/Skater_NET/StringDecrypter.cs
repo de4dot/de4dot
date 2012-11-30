@@ -32,7 +32,7 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 		ModuleDefMD module;
 		TypeDef decrypterType;
 		MethodDef decrypterCctor;
-		FieldDefinitionAndDeclaringTypeDict<string> fieldToDecryptedString = new FieldDefinitionAndDeclaringTypeDict<string>();
+		FieldDefAndDeclaringTypeDict<string> fieldToDecryptedString = new FieldDefAndDeclaringTypeDict<string>();
 		bool canRemoveType;
 		IDecrypter decrypter;
 

@@ -21,7 +21,6 @@ using System;
 using System.Collections.Generic;
 using dot10.DotNet;
 using de4dot.blocks;
-using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.CodeFort {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {

@@ -181,7 +181,7 @@ namespace de4dot.code.deobfuscators {
 	//		...push args...
 	//		call Invoke
 	abstract class ProxyCallFixer1 : ProxyCallFixerBase {
-		FieldDefinitionAndDeclaringTypeDict<DelegateInfo> fieldToDelegateInfo = new FieldDefinitionAndDeclaringTypeDict<DelegateInfo>();
+		FieldDefAndDeclaringTypeDict<DelegateInfo> fieldToDelegateInfo = new FieldDefAndDeclaringTypeDict<DelegateInfo>();
 
 		protected ProxyCallFixer1(ModuleDefMD module)
 			: base(module) {
@@ -369,7 +369,7 @@ namespace de4dot.code.deobfuscators {
 	//		...push args...
 	//		call static method
 	abstract class ProxyCallFixer2 : ProxyCallFixerBase {
-		MethodDefinitionAndDeclaringTypeDict<DelegateInfo> proxyMethodToDelegateInfo = new MethodDefinitionAndDeclaringTypeDict<DelegateInfo>();
+		MethodDefAndDeclaringTypeDict<DelegateInfo> proxyMethodToDelegateInfo = new MethodDefAndDeclaringTypeDict<DelegateInfo>();
 
 		protected ProxyCallFixer2(ModuleDefMD module)
 			: base(module) {

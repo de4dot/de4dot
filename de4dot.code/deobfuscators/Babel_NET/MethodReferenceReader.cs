@@ -42,7 +42,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		}
 	}
 
-	class BabelMethodDefinition : BabelMethodreference {
+	class BabelMethodDef : BabelMethodreference {
 		Parameter thisParameter;
 
 		public int Flags2 { get; set; }
@@ -95,16 +95,16 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		}
 	}
 
-	class MethodReferenceReader {
+	class MethodRefReader {
 		ImageReader imageReader;
 		IBinaryReader reader;
 		BabelMethodreference bmr;
 
-		public MethodReferenceReader(ImageReader imageReader, IBinaryReader reader)
+		public MethodRefReader(ImageReader imageReader, IBinaryReader reader)
 			: this(imageReader, reader, new BabelMethodreference()) {
 		}
 
-		public MethodReferenceReader(ImageReader imageReader, IBinaryReader reader, BabelMethodreference bmr) {
+		public MethodRefReader(ImageReader imageReader, IBinaryReader reader, BabelMethodreference bmr) {
 			this.imageReader = imageReader;
 			this.reader = reader;
 			this.bmr = bmr;
@@ -133,19 +133,19 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		}
 	}
 
-	class MethodDefinitionReader {
-		MethodReferenceReader methodReferenceReader;
+	class MethodDefReader {
+		MethodRefReader methodRefReader;
 		MethodBodyReader methodBodyReader;
-		BabelMethodDefinition bmd;
+		BabelMethodDef bmd;
 
-		public MethodDefinitionReader(ImageReader imageReader, IBinaryReader reader) {
-			this.bmd = new BabelMethodDefinition();
-			this.methodReferenceReader = new MethodReferenceReader(imageReader, reader, bmd);
+		public MethodDefReader(ImageReader imageReader, IBinaryReader reader) {
+			this.bmd = new BabelMethodDef();
+			this.methodRefReader = new MethodRefReader(imageReader, reader, bmd);
 			this.methodBodyReader = new MethodBodyReader(imageReader, reader);
 		}
 
-		public BabelMethodDefinition read() {
-			methodReferenceReader.read();
+		public BabelMethodDef read() {
+			methodRefReader.read();
 			methodBodyReader.read(bmd.getRealParameters());
 			bmd.setBody(methodBodyReader);
 			return bmd;

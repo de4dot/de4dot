@@ -25,7 +25,7 @@ using de4dot.blocks;
 namespace de4dot.code.deobfuscators.Dotfuscator {
 	class StringDecrypter {
 		ModuleDefMD module;
-		MethodDefinitionAndDeclaringTypeDict<StringDecrypterInfo> stringDecrypterMethods = new MethodDefinitionAndDeclaringTypeDict<StringDecrypterInfo>();
+		MethodDefAndDeclaringTypeDict<StringDecrypterInfo> stringDecrypterMethods = new MethodDefAndDeclaringTypeDict<StringDecrypterInfo>();
 
 		public class StringDecrypterInfo {
 			public MethodDef method;

@@ -40,7 +40,7 @@ namespace de4dot.code {
 		void deobfuscateEnd();
 		void deobfuscateCleanUp();
 
-		void load(IEnumerable<IDeobfuscator> deobfuscators);
+		void load(IList<IDeobfuscator> deobfuscators);
 		void save();
 	}
 }

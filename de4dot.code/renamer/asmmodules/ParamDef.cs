@@ -21,17 +21,17 @@ using dot10.DotNet;
 
 namespace de4dot.code.renamer.asmmodules {
 	class MParamDef {
-		public Parameter ParameterDefinition { get; set; }
+		public Parameter ParameterDef { get; set; }
 		public int Index { get; private set; }
 		public bool IsReturnParameter {
-			get { return ParameterDefinition.IsReturnTypeParameter; }
+			get { return ParameterDef.IsReturnTypeParameter; }
 		}
 		public bool IsHiddenThisParameter {
-			get { return ParameterDefinition.IsHiddenThisParameter; }
+			get { return ParameterDef.IsHiddenThisParameter; }
 		}
 
-		public MParamDef(Parameter parameterDefinition, int index) {
-			this.ParameterDefinition = parameterDefinition;
+		public MParamDef(Parameter parameterDef, int index) {
+			this.ParameterDef = parameterDef;
 			Index = index;
 		}
 	}

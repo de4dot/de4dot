@@ -182,7 +182,7 @@
     <Compile Include="deobfuscators\DeobUtils.cs" />
     <Compile Include="deobfuscators\Dotfuscator\Deobfuscator.cs" />
     <Compile Include="deobfuscators\Dotfuscator\StringDecrypter.cs" />
-    <Compile Include="deobfuscators\dotNET_Reactor\MyPEImage.cs" />
+    <Compile Include="deobfuscators\MyPEImage.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v3\AntiStrongName.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v3\ApplicationModeDecrypter.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v3\ApplicationModeUnpacker.cs" />

@@ -23,8 +23,8 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators {
 	class MethodCollection {
-		TypeDefinitionDict<bool> types = new TypeDefinitionDict<bool>();
-		MethodDefinitionAndDeclaringTypeDict<bool> methods = new MethodDefinitionAndDeclaringTypeDict<bool>();
+		TypeDefDict<bool> types = new TypeDefDict<bool>();
+		MethodDefAndDeclaringTypeDict<bool> methods = new MethodDefAndDeclaringTypeDict<bool>();
 
 		public bool exists(IMethod method) {
 			if (method == null)

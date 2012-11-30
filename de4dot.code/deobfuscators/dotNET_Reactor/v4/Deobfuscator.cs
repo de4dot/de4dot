@@ -26,7 +26,6 @@ using dot10.DotNet;
 using dot10.DotNet.Emit;
 using dot10.DotNet.Writer;
 using de4dot.blocks;
-using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
@@ -42,7 +41,6 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		BoolOption decryptResources;
 		BoolOption removeNamespaces;
 		BoolOption removeAntiStrongName;
-		NoArgOption dumpNativeMethods;
 
 		public DeobfuscatorInfo()
 			: base(DEFAULT_REGEX) {
@@ -55,7 +53,6 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			decryptResources = new BoolOption(null, makeArgName("rsrc"), "Decrypt resources", true);
 			removeNamespaces = new BoolOption(null, makeArgName("ns1"), "Clear namespace if there's only one class in it", true);
 			removeAntiStrongName = new BoolOption(null, makeArgName("sn"), "Remove anti strong name code", true);
-			dumpNativeMethods = new NoArgOption(null, makeArgName("dump-native"), "Dump native methods to filename.dll.native");
 		}
 
 		public override string Name {
@@ -78,7 +75,6 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				DecryptResources = decryptResources.get(),
 				RemoveNamespaces = removeNamespaces.get(),
 				RemoveAntiStrongName = removeAntiStrongName.get(),
-				DumpNativeMethods = dumpNativeMethods.get(),
 			});
 		}
 
@@ -93,7 +89,6 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				decryptResources,
 				removeNamespaces,
 				removeAntiStrongName,
-				dumpNativeMethods,
 			};
 		}
 	}
@@ -102,7 +97,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		Options options;
 		string obfuscatorName = DeobfuscatorInfo.THE_NAME;
 
-		PeImage peImage;
+		MyPEImage peImage;
 		byte[] fileData;
 		MethodsDecrypter methodsDecrypter;
 		StringDecrypter stringDecrypter;
@@ -129,7 +124,6 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			public bool DecryptResources { get; set; }
 			public bool RemoveNamespaces { get; set; }
 			public bool RemoveAntiStrongName { get; set; }
-			public bool DumpNativeMethods { get; set; }
 		}
 
 		public override string Type {
@@ -352,7 +346,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				return DeobfuscatorInfo.THE_NAME + " 4.0";
 			}
 			if (!hasCorEnableProfilingString)
-				return DeobfuscatorInfo.THE_NAME;
+				return DeobfuscatorInfo.THE_NAME + " 4.x";
 			// 4.2-4.4
 
 			if (!localTypes.exists("System.Byte&"))
@@ -376,7 +370,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			if (count != 0)
 				return false;
 			fileData = ModuleBytes ?? DeobUtils.readModule(module);
-			peImage = new PeImage(fileData);
+			peImage = new MyPEImage(fileData);
 
 			if (!options.DecryptMethods)
 				return false;
@@ -385,30 +379,16 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			if (!methodsDecrypter.decrypt(peImage, DeobfuscatedFile, ref dumpedMethods, tokenToNativeCode))
 				return false;
 
-			if (options.DumpNativeMethods) {
-				using (var fileStream = new FileStream(module.Location + ".native", FileMode.Create, FileAccess.Write, FileShare.Read)) {
-					var sortedTokens = new List<uint>(tokenToNativeCode.Keys);
-					sortedTokens.Sort();
-					var writer = new BinaryWriter(fileStream);
-					var nops = new byte[] { 0x90, 0x90, 0x90, 0x90 };
-					foreach (var token in sortedTokens) {
-						writer.Write((byte)0xB8);
-						writer.Write(token);
-						writer.Write(tokenToNativeCode[token]);
-						writer.Write(nops);
-					}
-				}
-			}
-
 			newFileData = fileData;
 			return true;
 		}
 
 		public override IDeobfuscator moduleReloaded(ModuleDefMD module) {
+			freePEImage();
 			var newOne = new Deobfuscator(options);
 			newOne.setModule(module);
 			newOne.fileData = fileData;
-			newOne.peImage = new PeImage(fileData);
+			newOne.peImage = new MyPEImage(fileData);
 			newOne.methodsDecrypter = new MethodsDecrypter(module, methodsDecrypter);
 			newOne.stringDecrypter = new StringDecrypter(module, stringDecrypter);
 			newOne.booleanDecrypter = new BooleanDecrypter(module, booleanDecrypter);
@@ -416,6 +396,12 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			newOne.resourceResolver = new ResourceResolver(module, resourceResolver);
 			newOne.methodsDecrypter.reloaded();
 			return newOne;
+		}
+
+		void freePEImage() {
+			if (peImage != null)
+				peImage.Dispose();
+			peImage = null;
 		}
 
 		public override void deobfuscateBegin() {
@@ -426,6 +412,8 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			proxyCallFixer.find();
 
 			stringDecrypter.init(peImage, fileData, DeobfuscatedFile);
+			if (!stringDecrypter.Detected)
+				freePEImage();
 			booleanDecrypter.init(fileData, DeobfuscatedFile);
 			booleanValueInliner = new BooleanValueInliner();
 			emptyClass = new EmptyClass(module);
@@ -575,6 +563,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		}
 
 		public override void deobfuscateEnd() {
+			freePEImage();
 			removeProxyDelegates(proxyCallFixer);
 			removeInlinedMethods();
 			if (options.RestoreTypes)
@@ -608,7 +597,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		}
 
 		public override void OnWriterEvent(ModuleWriterBase writer, ModuleWriterEvent evt) {
-			if (!options.DecryptMethods)
+			if (!options.DecryptMethods || !methodsDecrypter.HasNativeMethods)
 				return;
 			switch (evt) {
 			case ModuleWriterEvent.Begin:
@@ -624,6 +613,12 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				methodsDecrypter.encryptNativeMethods(writer);
 				break;
 			}
+		}
+
+		protected override void Dispose(bool disposing) {
+			if (disposing)
+				freePEImage();
+			base.Dispose(disposing);
 		}
 	}
 }

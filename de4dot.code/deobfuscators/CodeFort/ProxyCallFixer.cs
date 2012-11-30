@@ -25,7 +25,7 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CodeFort {
 	class ProxyCallFixer : ProxyCallFixer3 {
-		MethodDefinitionAndDeclaringTypeDict<bool> proxyTargetMethods = new MethodDefinitionAndDeclaringTypeDict<bool>();
+		MethodDefAndDeclaringTypeDict<bool> proxyTargetMethods = new MethodDefAndDeclaringTypeDict<bool>();
 		TypeDef proxyMethodsType;
 
 		public TypeDef ProxyMethodsType {
