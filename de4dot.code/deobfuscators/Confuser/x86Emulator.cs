@@ -20,10 +20,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using de4dot.PE;
+using dot10.IO;
 
 namespace de4dot.code.deobfuscators.Confuser {
-	class x86Emulator {
+	class x86Emulator : IDisposable {
 		// Confuser 1.7 r73740 - r73822
 		static readonly byte[] prolog1 = new byte[] {
 			0x8B, 0x44, 0x24, 0x04, 0x53, 0x50,
@@ -42,8 +42,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 			0x5E, 0x5F, 0x5B, 0xC3,
 		};
 
-		PeImage peImage;
-		BinaryReader reader;
+		MyPEImage peImage;
+		IBinaryReader reader;
 		uint[] args;
 		int nextArgIndex;
 		uint[] regs = new uint[8];
@@ -121,8 +121,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 			}
 		}
 
-		public x86Emulator(PeImage peImage) {
-			this.peImage = peImage;
+		public x86Emulator(byte[] fileData) {
+			this.peImage = new MyPEImage(fileData);
 			this.reader = peImage.Reader;
 		}
 
@@ -133,7 +133,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		public uint emulate(uint rva, uint[] args) {
 			initialize(args);
 
-			reader.BaseStream.Position = peImage.rvaToOffset(rva);
+			reader.Position = peImage.rvaToOffset(rva);
 			byte[] prolog, epilog;
 			if (isBytes(prolog1)) {
 				prolog = prolog1;
@@ -145,7 +145,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			}
 			else
 				throw new ApplicationException(string.Format("Missing prolog @ RVA {0:X8}", rva));
-			reader.BaseStream.Position += prolog.Length;
+			reader.Position += prolog.Length;
 
 			while (!isBytes(epilog))
 				emulate();
@@ -161,7 +161,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		bool isBytes(IList<byte> bytes) {
-			long oldPos = reader.BaseStream.Position;
+			long oldPos = reader.Position;
 			bool result = true;
 			for (int i = 0; i < bytes.Count; i++) {
 				if (bytes[i] != reader.ReadByte()) {
@@ -169,7 +169,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 					break;
 				}
 			}
-			reader.BaseStream.Position = oldPos;
+			reader.Position = oldPos;
 			return result;
 		}
 
@@ -302,6 +302,13 @@ namespace de4dot.code.deobfuscators.Confuser {
 			rm = (byte)(modRM & 7);
 			if (mod != 3)
 				throw new ApplicationException("Memory operand");
+		}
+
+		public void Dispose() {
+			if (peImage != null)
+				peImage.Dispose();
+			peImage = null;
+			reader = null;
 		}
 	}
 }

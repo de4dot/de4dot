@@ -25,7 +25,6 @@ using dot10.IO;
 using dot10.DotNet;
 using dot10.DotNet.Emit;
 using de4dot.blocks;
-using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.Confuser {
 	class JitMethodsDecrypter : MethodsDecrypterBase, IStringDecrypter {
@@ -449,7 +448,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return -1;
 		}
 
-		public bool decrypt(PeImage peImage, byte[] fileData, ref DumpedMethods dumpedMethods) {
+		public bool decrypt(MyPEImage peImage, byte[] fileData, ref DumpedMethods dumpedMethods) {
 			if (initMethod == null)
 				return false;
 
@@ -468,52 +467,38 @@ namespace de4dot.code.deobfuscators.Confuser {
 			}
 		}
 
-		bool decrypt_v17_r73404(PeImage peImage, byte[] fileData, ref DumpedMethods dumpedMethods) {
+		bool decrypt_v17_r73404(MyPEImage peImage, byte[] fileData, ref DumpedMethods dumpedMethods) {
 			methodsData = decryptMethodsData_v17_r73404(peImage);
 			dumpedMethods = decrypt_v17_r73404(peImage, fileData);
 			return dumpedMethods != null;
 		}
 
-		DumpedMethods decrypt_v17_r73404(PeImage peImage, byte[] fileData) {
+		DumpedMethods decrypt_v17_r73404(MyPEImage peImage, byte[] fileData) {
 			var dumpedMethods = new DumpedMethods();
 
-			var metadataTables = peImage.Cor20Header.createMetadataTables();
-			var methodDef = metadataTables.getMetadataType(MetadataIndex.iMethodDef);
-			uint methodDefOffset = methodDef.fileOffset;
-			for (int i = 0; i < methodDef.rows; i++, methodDefOffset += methodDef.totalSize) {
-				uint bodyRva = peImage.offsetReadUInt32(methodDefOffset);
-				if (bodyRva == 0)
+			var methodDef = peImage.DotNetFile.MetaData.TablesStream.MethodTable;
+			for (uint rid = 1; rid <= methodDef.Rows; rid++) {
+				var dm = new DumpedMethod();
+				peImage.readMethodTableRowTo(dm, rid);
+
+				if (dm.mdRVA == 0)
 					continue;
-				uint bodyOffset = peImage.rvaToOffset(bodyRva);
+				uint bodyOffset = peImage.rvaToOffset(dm.mdRVA);
 
 				if (!isEncryptedMethod(fileData, (int)bodyOffset))
 					continue;
-
-				var dm = new DumpedMethod();
-				dm.token = (uint)(0x06000001 + i);
-				dm.mdImplFlags = peImage.offsetReadUInt16(methodDefOffset + (uint)methodDef.fields[1].offset);
-				dm.mdFlags = peImage.offsetReadUInt16(methodDefOffset + (uint)methodDef.fields[2].offset);
-				dm.mdName = peImage.offsetRead(methodDefOffset + (uint)methodDef.fields[3].offset, methodDef.fields[3].size);
-				dm.mdSignature = peImage.offsetRead(methodDefOffset + (uint)methodDef.fields[4].offset, methodDef.fields[4].size);
-				dm.mdParamList = peImage.offsetRead(methodDefOffset + (uint)methodDef.fields[5].offset, methodDef.fields[5].size);
 
 				int key = BitConverter.ToInt32(fileData, (int)bodyOffset + 6);
 				int mdOffs = BitConverter.ToInt32(fileData, (int)bodyOffset + 2) ^ key;
 				int len = BitConverter.ToInt32(fileData, (int)bodyOffset + 11) ^ ~key;
 				var codeData = decryptMethodData_v17_r73404(methodsData, mdOffs + 2, (uint)key, len);
 
-				byte[] code, extraSections;
-				var reader = new BinaryReader(new MemoryStream(codeData));
-				var mbHeader = MethodBodyParser.parseMethodBody(reader, out code, out extraSections);
-				if (reader.BaseStream.Position != reader.BaseStream.Length)
+				var reader = MemoryImageStream.Create(codeData);
+				var mbHeader = MethodBodyParser.parseMethodBody(reader, out dm.code, out dm.extraSections);
+				if (reader.Position != reader.Length)
 					throw new ApplicationException("Invalid method data");
 
-				dm.mhFlags = mbHeader.flags;
-				dm.mhMaxStack = mbHeader.maxStack;
-				dm.code = code;
-				dm.extraSections = extraSections;
-				dm.mhCodeSize = (uint)dm.code.Length;
-				dm.mhLocalVarSigTok = mbHeader.localVarSigTok;
+				peImage.updateMethodHeaderInfo(dm, mbHeader);
 
 				dumpedMethods.add(dm);
 			}
@@ -521,35 +506,35 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return dumpedMethods;
 		}
 
-		bool decrypt_v17_r73477(PeImage peImage, byte[] fileData, ref DumpedMethods dumpedMethods) {
+		bool decrypt_v17_r73477(MyPEImage peImage, byte[] fileData, ref DumpedMethods dumpedMethods) {
 			methodsData = decryptMethodsData_v17_r73404(peImage);
 			dumpedMethods = decrypt_v17_r73477(peImage, fileData);
 			return dumpedMethods != null;
 		}
 
-		DumpedMethods decrypt_v17_r73477(PeImage peImage, byte[] fileData) {
+		DumpedMethods decrypt_v17_r73477(MyPEImage peImage, byte[] fileData) {
 			return decrypt(peImage, fileData, new DecryptMethodData_v17_r73477());
 		}
 
-		bool decrypt_v17_r73479(PeImage peImage, byte[] fileData, ref DumpedMethods dumpedMethods) {
+		bool decrypt_v17_r73479(MyPEImage peImage, byte[] fileData, ref DumpedMethods dumpedMethods) {
 			methodsData = decryptMethodsData_v17_r73404(peImage);
 			dumpedMethods = decrypt_v17_r73479(peImage, fileData);
 			return dumpedMethods != null;
 		}
 
-		DumpedMethods decrypt_v17_r73479(PeImage peImage, byte[] fileData) {
+		DumpedMethods decrypt_v17_r73479(MyPEImage peImage, byte[] fileData) {
 			return decrypt(peImage, fileData, new DecryptMethodData_v17_r73479());
 		}
 
-		bool decrypt_v18_r75402(PeImage peImage, byte[] fileData, ref DumpedMethods dumpedMethods) {
-			if (peImage.OptionalHeader.checkSum == 0)
+		bool decrypt_v18_r75402(MyPEImage peImage, byte[] fileData, ref DumpedMethods dumpedMethods) {
+			if (peImage.OptionalHeader.CheckSum == 0)
 				return false;
 			methodsData = decryptMethodsData_v17_r73404(peImage);
 			dumpedMethods = decrypt_v18_r75402(peImage, fileData);
 			return dumpedMethods != null;
 		}
 
-		DumpedMethods decrypt_v18_r75402(PeImage peImage, byte[] fileData) {
+		DumpedMethods decrypt_v18_r75402(MyPEImage peImage, byte[] fileData) {
 			return decrypt(peImage, fileData, new DecryptMethodData_v18_r75402(this));
 		}
 
@@ -616,28 +601,20 @@ namespace de4dot.code.deobfuscators.Confuser {
 			}
 		}
 
-		DumpedMethods decrypt(PeImage peImage, byte[] fileData, DecryptMethodData decrypter) {
+		DumpedMethods decrypt(MyPEImage peImage, byte[] fileData, DecryptMethodData decrypter) {
 			var dumpedMethods = new DumpedMethods();
 
-			var metadataTables = peImage.Cor20Header.createMetadataTables();
-			var methodDef = metadataTables.getMetadataType(MetadataIndex.iMethodDef);
-			uint methodDefOffset = methodDef.fileOffset;
-			for (int i = 0; i < methodDef.rows; i++, methodDefOffset += methodDef.totalSize) {
-				uint bodyRva = peImage.offsetReadUInt32(methodDefOffset);
-				if (bodyRva == 0)
+			var methodDef = peImage.DotNetFile.MetaData.TablesStream.MethodTable;
+			for (uint rid = 1; rid <= methodDef.Rows; rid++) {
+				var dm = new DumpedMethod();
+				peImage.readMethodTableRowTo(dm, rid);
+
+				if (dm.mdRVA == 0)
 					continue;
-				uint bodyOffset = peImage.rvaToOffset(bodyRva);
+				uint bodyOffset = peImage.rvaToOffset(dm.mdRVA);
 
 				if (!isEncryptedMethod(fileData, (int)bodyOffset))
 					continue;
-
-				var dm = new DumpedMethod();
-				dm.token = (uint)(0x06000001 + i);
-				dm.mdImplFlags = peImage.offsetReadUInt16(methodDefOffset + (uint)methodDef.fields[1].offset);
-				dm.mdFlags = peImage.offsetReadUInt16(methodDefOffset + (uint)methodDef.fields[2].offset);
-				dm.mdName = peImage.offsetRead(methodDefOffset + (uint)methodDef.fields[3].offset, methodDef.fields[3].size);
-				dm.mdSignature = peImage.offsetRead(methodDefOffset + (uint)methodDef.fields[4].offset, methodDef.fields[4].size);
-				dm.mdParamList = peImage.offsetRead(methodDefOffset + (uint)methodDef.fields[5].offset, methodDef.fields[5].size);
 
 				int key = BitConverter.ToInt32(fileData, (int)bodyOffset + 6);
 				int mdOffs = BitConverter.ToInt32(fileData, (int)bodyOffset + 2) ^ key;
@@ -657,7 +634,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				uint options = methodData[methodDataIndexes.options];
 				int codeSize = (int)methodData[methodDataIndexes.codeSize];
 
-				var codeDataReader = new BinaryReader(new MemoryStream(codeData));
+				var codeDataReader = MemoryImageStream.Create(codeData);
 				if (decrypter.isCodeFollowedByExtraSections(options)) {
 					dm.code = codeDataReader.ReadBytes(codeSize);
 					dm.extraSections = readExceptionHandlers(codeDataReader, numExceptions);
@@ -666,7 +643,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 					dm.extraSections = readExceptionHandlers(codeDataReader, numExceptions);
 					dm.code = codeDataReader.ReadBytes(codeSize);
 				}
-				if (codeDataReader.BaseStream.Position != codeDataReader.BaseStream.Length)
+				if (codeDataReader.Position != codeDataReader.Length)
 					throw new ApplicationException("Invalid method data");
 				if (dm.extraSections != null)
 					dm.mhFlags |= 8;
@@ -694,7 +671,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				fileData[offset + 15] == 0x26;
 		}
 
-		static byte[] readExceptionHandlers(BinaryReader reader, int numExceptions) {
+		static byte[] readExceptionHandlers(IBinaryReader reader, int numExceptions) {
 			if (numExceptions == 0)
 				return null;
 

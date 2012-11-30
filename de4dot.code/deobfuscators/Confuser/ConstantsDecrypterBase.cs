@@ -24,7 +24,6 @@ using dot10.IO;
 using dot10.DotNet;
 using dot10.DotNet.Emit;
 using de4dot.blocks;
-using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.Confuser {
 	abstract class ConstantsDecrypterBase : IVersionProvider {
@@ -32,8 +31,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 		protected byte[] fileData;
 		protected ISimpleDeobfuscator simpleDeobfuscator;
 		protected MethodDef nativeMethod;
-		MethodDefinitionAndDeclaringTypeDict<DecrypterInfo> methodToDecrypterInfo = new MethodDefinitionAndDeclaringTypeDict<DecrypterInfo>();
-		FieldDefinitionAndDeclaringTypeDict<bool> fields = new FieldDefinitionAndDeclaringTypeDict<bool>();
+		MethodDefAndDeclaringTypeDict<DecrypterInfo> methodToDecrypterInfo = new MethodDefAndDeclaringTypeDict<DecrypterInfo>();
+		FieldDefAndDeclaringTypeDict<bool> fields = new FieldDefAndDeclaringTypeDict<bool>();
 		protected EmbeddedResource resource;
 		protected IBinaryReader reader;
 
@@ -441,8 +440,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		protected byte[] decryptConstant_v17_r73764_native(DecrypterInfo info, byte[] encrypted, uint offs, uint key1, byte[] key2) {
-			var x86Emu = new x86Emulator(new PeImage(fileData));
-			return decrypt(encrypted, key1, (magic, i) => (byte)(x86Emu.emulate((uint)nativeMethod.RVA, magic) ^ key2[i % key2.Length]));
+			using (var x86Emu = new x86Emulator(fileData))
+				return decrypt(encrypted, key1, (magic, i) => (byte)(x86Emu.emulate((uint)nativeMethod.RVA, magic) ^ key2[i % key2.Length]));
 		}
 
 		static byte[] decrypt(byte[] encrypted, uint key, Func<uint, int, byte> decryptFunc) {

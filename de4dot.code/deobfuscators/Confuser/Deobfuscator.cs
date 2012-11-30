@@ -23,7 +23,6 @@ using dot10.DotNet;
 using dot10.IO;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
-using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.Confuser {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
@@ -267,29 +266,30 @@ namespace de4dot.code.deobfuscators.Confuser {
 		public override bool getDecryptedModule(int count, ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
 			hasUnpacked = false;
 			byte[] fileData = getFileData();
-			var peImage = new PeImage(fileData);
 
-			if ((decryptState & DecryptState.CanDecryptMethods) != 0) {
-				bool decrypted = false;
-				if (jitMethodsDecrypter != null && jitMethodsDecrypter.Detected) {
-					jitMethodsDecrypter.initialize();
-					if (!jitMethodsDecrypter.decrypt(peImage, fileData, ref dumpedMethods))
-						return false;
-					decrypted = true;
-				}
-				else if (memoryMethodsDecrypter != null && memoryMethodsDecrypter.Detected) {
-					memoryMethodsDecrypter.initialize();
-					if (!memoryMethodsDecrypter.decrypt(peImage, fileData))
-						return false;
-					decrypted = true;
-				}
+			using (var peImage = new MyPEImage(fileData)) {
+				if ((decryptState & DecryptState.CanDecryptMethods) != 0) {
+					bool decrypted = false;
+					if (jitMethodsDecrypter != null && jitMethodsDecrypter.Detected) {
+						jitMethodsDecrypter.initialize();
+						if (!jitMethodsDecrypter.decrypt(peImage, fileData, ref dumpedMethods))
+							return false;
+						decrypted = true;
+					}
+					else if (memoryMethodsDecrypter != null && memoryMethodsDecrypter.Detected) {
+						memoryMethodsDecrypter.initialize();
+						if (!memoryMethodsDecrypter.decrypt(peImage, fileData))
+							return false;
+						decrypted = true;
+					}
 
-				if (decrypted) {
-					decryptState &= ~DecryptState.CanDecryptMethods;
-					decryptState |= DecryptState.CanUnpack;
-					newFileData = fileData;
-					ModuleBytes = newFileData;
-					return true;
+					if (decrypted) {
+						decryptState &= ~DecryptState.CanDecryptMethods;
+						decryptState |= DecryptState.CanUnpack;
+						newFileData = fileData;
+						ModuleBytes = newFileData;
+						return true;
+					}
 				}
 			}
 
@@ -599,6 +599,15 @@ namespace de4dot.code.deobfuscators.Confuser {
 			if (jitMethodsDecrypter == null)
 				return null;
 			return ((IStringDecrypter)jitMethodsDecrypter).ReadUserString(token);
+		}
+
+		protected override void Dispose(bool disposing) {
+			if (disposing) {
+				if (proxyCallFixer != null)
+					proxyCallFixer.Dispose();
+				proxyCallFixer = null;
+			}
+			base.Dispose(disposing);
 		}
 	}
 }

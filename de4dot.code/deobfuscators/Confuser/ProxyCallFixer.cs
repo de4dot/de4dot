@@ -24,12 +24,11 @@ using System.Text;
 using dot10.DotNet;
 using dot10.DotNet.Emit;
 using de4dot.blocks;
-using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.Confuser {
-	class ProxyCallFixer : ProxyCallFixer2, IVersionProvider {
-		MethodDefinitionAndDeclaringTypeDict<ProxyCreatorInfo> methodToInfo = new MethodDefinitionAndDeclaringTypeDict<ProxyCreatorInfo>();
-		FieldDefinitionAndDeclaringTypeDict<List<MethodDef>> fieldToMethods = new FieldDefinitionAndDeclaringTypeDict<List<MethodDef>>();
+	class ProxyCallFixer : ProxyCallFixer2, IVersionProvider, IDisposable {
+		MethodDefAndDeclaringTypeDict<ProxyCreatorInfo> methodToInfo = new MethodDefAndDeclaringTypeDict<ProxyCreatorInfo>();
+		FieldDefAndDeclaringTypeDict<List<MethodDef>> fieldToMethods = new FieldDefAndDeclaringTypeDict<List<MethodDef>>();
 		string ourAsm;
 		ConfuserVersion version = ConfuserVersion.Unknown;
 		byte[] fileData;
@@ -160,7 +159,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		protected override object checkCctor(TypeDef type, MethodDef cctor) {
 			// Here if 1.2 r54564 (almost 1.3) or later
 
-			var fieldToInfo = new FieldDefinitionAndDeclaringTypeDict<DelegateInitInfo>();
+			var fieldToInfo = new FieldDefAndDeclaringTypeDict<DelegateInitInfo>();
 
 			var instrs = cctor.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 1; i++) {
@@ -192,7 +191,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		protected override void getCallInfo(object context, FieldDef field, out IMethod calledMethod, out OpCode callOpcode) {
 			var info = context as DelegateInitInfo;
 			if (info == null) {
-				var fieldToInfo = context as FieldDefinitionAndDeclaringTypeDict<DelegateInitInfo>;
+				var fieldToInfo = context as FieldDefAndDeclaringTypeDict<DelegateInitInfo>;
 				if (fieldToInfo != null)
 					info = fieldToInfo.find(field);
 			}
@@ -373,7 +372,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			bool isCallvirt;
 			extract_v17_r73740(creatorInfo, nameInfo, out arg, out table, out isCallvirt);
 			if (x86emu == null)
-				x86emu = new x86Emulator(new PeImage(fileData));
+				x86emu = new x86Emulator(fileData);
 			uint token = x86emu.emulate((uint)creatorInfo.nativeMethod.RVA, arg) | table;
 
 			calledMethod = module.ResolveToken((int)token) as IMethod;
@@ -387,7 +386,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		void getCallInfo_v18_r75367_native(DelegateInitInfo info, ProxyCreatorInfo creatorInfo, out IMethod calledMethod, out OpCode callOpcode) {
 			getCallInfo_v18_r75367(info, creatorInfo, out calledMethod, out callOpcode, (creatorInfo2, magic) => {
 				if (x86emu == null)
-					x86emu = new x86Emulator(new PeImage(fileData));
+					x86emu = new x86Emulator(fileData);
 				return x86emu.emulate((uint)creatorInfo2.nativeMethod.RVA, magic);
 			});
 		}
@@ -876,7 +875,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			find2();
 		}
 
-		FieldDefinitionAndDeclaringTypeDict<DelegateInitInfo> createDelegateInitInfos(MethodDef method) {
+		FieldDefAndDeclaringTypeDict<DelegateInitInfo> createDelegateInitInfos(MethodDef method) {
 			switch (version) {
 			case ConfuserVersion.v10_r42915:
 			case ConfuserVersion.v10_r42919:
@@ -886,8 +885,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 			}
 		}
 
-		FieldDefinitionAndDeclaringTypeDict<DelegateInitInfo> createDelegateInitInfos_v10_r42915(MethodDef method) {
-			var infos = new FieldDefinitionAndDeclaringTypeDict<DelegateInitInfo>();
+		FieldDefAndDeclaringTypeDict<DelegateInitInfo> createDelegateInitInfos_v10_r42915(MethodDef method) {
+			var infos = new FieldDefAndDeclaringTypeDict<DelegateInitInfo>();
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 2; i++) {
 				var ldstr = instrs[i];
@@ -920,8 +919,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return infos;
 		}
 
-		FieldDefinitionAndDeclaringTypeDict<DelegateInitInfo> createDelegateInitInfos_v10_r48717(MethodDef method) {
-			var infos = new FieldDefinitionAndDeclaringTypeDict<DelegateInitInfo>();
+		FieldDefAndDeclaringTypeDict<DelegateInitInfo> createDelegateInitInfos_v10_r48717(MethodDef method) {
+			var infos = new FieldDefAndDeclaringTypeDict<DelegateInitInfo>();
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 1; i++) {
 				var ldtoken = instrs[i];
@@ -947,8 +946,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return infos;
 		}
 
-		static FieldDefinitionAndDeclaringTypeDict<List<MethodDef>> createFieldToMethodsDictionary(TypeDef type) {
-			var dict = new FieldDefinitionAndDeclaringTypeDict<List<MethodDef>>();
+		static FieldDefAndDeclaringTypeDict<List<MethodDef>> createFieldToMethodsDictionary(TypeDef type) {
+			var dict = new FieldDefAndDeclaringTypeDict<List<MethodDef>>();
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic || method.Body == null || method.Name == ".cctor")
 					continue;
@@ -1122,6 +1121,12 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			default: throw new ApplicationException("Invalid version");
 			}
+		}
+
+		public void Dispose() {
+			if (x86emu != null)
+				x86emu.Dispose();
+			x86emu = null;
 		}
 	}
 }

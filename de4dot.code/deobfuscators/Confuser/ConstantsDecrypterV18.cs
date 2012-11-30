@@ -26,7 +26,6 @@ using dot10.DotNet;
 using dot10.DotNet.MD;
 using dot10.DotNet.Emit;
 using de4dot.blocks;
-using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.Confuser {
 	// Since v1.8 r75367
@@ -36,7 +35,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		ISimpleDeobfuscator simpleDeobfuscator;
 		FieldDef dictField, dataField;
 		MethodDef installMethod;
-		MethodDefinitionAndDeclaringTypeDict<DecrypterInfo> decrypters = new MethodDefinitionAndDeclaringTypeDict<DecrypterInfo>();
+		MethodDefAndDeclaringTypeDict<DecrypterInfo> decrypters = new MethodDefAndDeclaringTypeDict<DecrypterInfo>();
 		uint key0, key0d;
 		MethodDef nativeMethod;
 		EmbeddedResource resource;
@@ -639,8 +638,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		byte[] decryptResource_v18_r75367_native(byte[] encrypted) {
-			var x86Emu = new x86Emulator(new PeImage(fileData));
-			return decryptResource(encrypted, magic => (byte)x86Emu.emulate((uint)nativeMethod.RVA, magic));
+			using (var x86Emu = new x86Emulator(fileData))
+				return decryptResource(encrypted, magic => (byte)x86Emu.emulate((uint)nativeMethod.RVA, magic));
 		}
 
 		byte[] decryptResource(byte[] encrypted, Func<uint, byte> decryptFunc) {

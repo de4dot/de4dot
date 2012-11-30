@@ -21,10 +21,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
+using dot10.PE;
 using dot10.DotNet;
 using dot10.DotNet.Emit;
 using de4dot.blocks;
-using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.Confuser {
 	abstract class MethodsDecrypterBase : IVersionProvider {
@@ -318,16 +318,16 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return ConfuserUtils.findCallMethod(instrs, index, Code.Callvirt, "System.UInt64 System.IO.BinaryReader::ReadUInt64()");
 		}
 
-		protected byte[] decryptMethodsData_v17_r73404(PeImage peImage) {
+		protected byte[] decryptMethodsData_v17_r73404(MyPEImage peImage) {
 			return decryptMethodsData_v16_r71742(peImage, getEncryptedHeaderOffset_vXX(peImage.Sections));
 		}
 
-		protected byte[] decryptMethodsData_v16_r71742(PeImage peImage, uint encryptedHeaderOffset) {
-			uint mdRva = peImage.OptionalHeader.checkSum ^ (uint)key0;
-			if (peImage.rvaToOffset(mdRva) != peImage.Cor20Header.MetadataOffset)
+		protected byte[] decryptMethodsData_v16_r71742(MyPEImage peImage, uint encryptedHeaderOffset) {
+			uint mdRva = peImage.OptionalHeader.CheckSum ^ (uint)key0;
+			if ((RVA)mdRva != peImage.Cor20Header.MetaData.VirtualAddress)
 				throw new ApplicationException("Invalid metadata rva");
 			var reader = peImage.Reader;
-			reader.BaseStream.Position = encryptedHeaderOffset;
+			reader.Position = encryptedHeaderOffset;
 			ulong checkSum = reader.ReadUInt64() ^ lkey0;
 			reader.ReadInt32();	// strong name RVA
 			reader.ReadInt32();	// strong name len
@@ -342,31 +342,31 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return decrypted;
 		}
 
-		protected uint getEncryptedHeaderOffset_v16_r71742(IList<SectionHeader> sections) {
+		protected uint getEncryptedHeaderOffset_v16_r71742(IList<ImageSectionHeader> sections) {
 			for (int i = sections.Count - 1; i >= 0; i--) {
 				var section = sections[i];
-				if (section.displayName == ".confuse")
-					return section.pointerToRawData;
+				if (section.DisplayName == ".confuse")
+					return section.PointerToRawData;
 			}
 			throw new ApplicationException("Could not find encrypted section");
 		}
 
-		uint getEncryptedHeaderOffset_vXX(IList<SectionHeader> sections) {
+		uint getEncryptedHeaderOffset_vXX(IList<ImageSectionHeader> sections) {
 			for (int i = sections.Count - 1; i >= 0; i--) {
 				var section = sections[i];
 				if (getSectionNameHash(section) == (uint)key1)
-					return section.pointerToRawData;
+					return section.PointerToRawData;
 			}
 			throw new ApplicationException("Could not find encrypted section");
 		}
 
-		static byte[] getStreamsBuffer(PeImage peImage) {
+		static byte[] getStreamsBuffer(MyPEImage peImage) {
 			var memStream = new MemoryStream();
 			var writer = new BinaryWriter(memStream);
 			var reader = peImage.Reader;
-			foreach (var mdStream in peImage.Cor20Header.metadata.Streams) {
-				reader.BaseStream.Position = mdStream.Offset;
-				writer.Write(reader.ReadBytes((int)mdStream.length));
+			foreach (var mdStream in peImage.DotNetFile.MetaData.AllStreams) {
+				reader.Position = (long)mdStream.StartOffset;
+				writer.Write(reader.ReadBytes((int)(mdStream.EndOffset - mdStream.StartOffset)));
 			}
 			return memStream.ToArray();
 		}
@@ -376,9 +376,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return BitConverter.ToUInt64(sum, 0) ^ BitConverter.ToUInt64(sum, 8);
 		}
 
-		static uint getSectionNameHash(SectionHeader section) {
+		static uint getSectionNameHash(ImageSectionHeader section) {
 			uint hash = 0;
-			foreach (var c in section.name)
+			foreach (var c in section.Name)
 				hash += c;
 			return hash;
 		}

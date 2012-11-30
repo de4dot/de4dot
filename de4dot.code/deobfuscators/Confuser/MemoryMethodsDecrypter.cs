@@ -22,7 +22,6 @@ using System.IO;
 using dot10.DotNet;
 using dot10.DotNet.Emit;
 using de4dot.blocks;
-using de4dot.PE;
 
 namespace de4dot.code.deobfuscators.Confuser {
 	class MemoryMethodsDecrypter : MethodsDecrypterBase {
@@ -265,7 +264,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		public bool decrypt(PeImage peImage, byte[] fileData) {
+		public bool decrypt(MyPEImage peImage, byte[] fileData) {
 			if (initMethod == null)
 				return false;
 
@@ -284,7 +283,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			}
 		}
 
-		bool decrypt_v14_r57884(PeImage peImage, byte[] fileData) {
+		bool decrypt_v14_r57884(MyPEImage peImage, byte[] fileData) {
 			methodsData = decryptMethodsData_v14_r57884(peImage, false);
 
 			var reader = new BinaryReader(new MemoryStream(methodsData));
@@ -302,12 +301,12 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return true;
 		}
 
-		byte[] decryptMethodsData_v14_r57884(PeImage peImage, bool hasStrongNameInfo) {
+		byte[] decryptMethodsData_v14_r57884(MyPEImage peImage, bool hasStrongNameInfo) {
 			var reader = peImage.Reader;
-			reader.BaseStream.Position = 0;
-			var md5SumData = reader.ReadBytes((int)peImage.OptionalHeader.checkSum ^ (int)key0);
+			reader.Position = 0;
+			var md5SumData = reader.ReadBytes((int)peImage.OptionalHeader.CheckSum ^ (int)key0);
 
-			int csOffs = (int)peImage.OptionalHeader.Offset + 0x40;
+			int csOffs = (int)peImage.OptionalHeader.StartOffset + 0x40;
 			Array.Clear(md5SumData, csOffs, 4);
 			var md5Sum = DeobUtils.md5Sum(md5SumData);
 			ulong checkSum = reader.ReadUInt64() ^ lkey0;
@@ -315,8 +314,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 				int sn = reader.ReadInt32();
 				int snLen = reader.ReadInt32();
 				if (sn != 0) {
-					if (peImage.rvaToOffset(peImage.Cor20Header.strongNameSignature.virtualAddress) != sn ||
-						peImage.Cor20Header.strongNameSignature.size != snLen)
+					if (peImage.rvaToOffset((uint)peImage.Cor20Header.StrongNameSignature.VirtualAddress) != sn ||
+						peImage.Cor20Header.StrongNameSignature.Size != snLen)
 						throw new ApplicationException("Invalid sn and snLen");
 					Array.Clear(md5SumData, sn, snLen);
 				}
@@ -331,12 +330,12 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return decrypted;
 		}
 
-		bool decrypt_v14_r58004(PeImage peImage, byte[] fileData) {
+		bool decrypt_v14_r58004(MyPEImage peImage, byte[] fileData) {
 			methodsData = decryptMethodsData_v14_r57884(peImage, false);
 			return decryptImage_v14_r58004(peImage, fileData);
 		}
 
-		bool decryptImage_v14_r58004(PeImage peImage, byte[] fileData) {
+		bool decryptImage_v14_r58004(MyPEImage peImage, byte[] fileData) {
 			var reader = new BinaryReader(new MemoryStream(methodsData));
 			reader.ReadInt16();	// sig
 			var writer = new BinaryWriter(new MemoryStream(fileData));
@@ -355,25 +354,25 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return true;
 		}
 
-		bool decrypt_v15_r59014(PeImage peImage, byte[] fileData) {
+		bool decrypt_v15_r59014(MyPEImage peImage, byte[] fileData) {
 			methodsData = decryptMethodsData_v14_r57884(peImage, true);
 			return decryptImage_v14_r58004(peImage, fileData);
 		}
 
-		bool decrypt_v16_r71742(PeImage peImage, byte[] fileData) {
+		bool decrypt_v16_r71742(MyPEImage peImage, byte[] fileData) {
 			methodsData = decryptMethodsData_v16_r71742(peImage, getEncryptedHeaderOffset_v16_r71742(peImage.Sections));
 			return decryptImage_v16_r71742(peImage, fileData);
 		}
 
-		bool decrypt_v17_r73605(PeImage peImage, byte[] fileData) {
-			if (peImage.OptionalHeader.checkSum == 0)
+		bool decrypt_v17_r73605(MyPEImage peImage, byte[] fileData) {
+			if (peImage.OptionalHeader.CheckSum == 0)
 				return false;
 
 			methodsData = decryptMethodsData_v17_r73404(peImage);
 			return decryptImage_v16_r71742(peImage, fileData);
 		}
 
-		bool decryptImage_v16_r71742(PeImage peImage, byte[] fileData) {
+		bool decryptImage_v16_r71742(MyPEImage peImage, byte[] fileData) {
 			var reader = new BinaryReader(new MemoryStream(methodsData));
 			reader.ReadInt16();	// sig
 			int numInfos = reader.ReadInt32();
