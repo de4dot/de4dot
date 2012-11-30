@@ -42,6 +42,14 @@ namespace de4dot.code.deobfuscators {
 			get { return peImage; }
 		}
 
+		public ImageFileHeader FileHeader {
+			get { return peImage.ImageNTHeaders.FileHeader; }
+		}
+
+		public IImageOptionalHeader OptionalHeader {
+			get { return peImage.ImageNTHeaders.OptionalHeader; }
+		}
+
 		public IList<ImageSectionHeader> Sections {
 			get { return peImage.ImageSectionHeaders; }
 		}
