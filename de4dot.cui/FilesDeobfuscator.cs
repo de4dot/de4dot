@@ -49,6 +49,7 @@ namespace de4dot.cui {
 			public bool RenameMethods { get; set; }
 			public bool RenameMethodArgs { get; set; }
 			public bool RenameGenericParams { get; set; }
+			public bool DontRenameDelegateFields { get; set; }
 			public bool RenameSymbols { get; set; }
 			public bool RestorePropsEvents { get; set; }
 			public bool ControlFlowDeobfuscation { get; set; }
@@ -400,6 +401,7 @@ namespace de4dot.cui {
 				RenameMethods = options.RenameMethods,
 				RenameMethodArgs = options.RenameMethodArgs,
 				RenameGenericParams = options.RenameGenericParams,
+				DontRenameDelegateFields = options.DontRenameDelegateFields,
 				RestorePropertiesFromNames = options.RestorePropsEvents,
 				RestoreEventsFromNames = options.RestorePropsEvents,
 			};

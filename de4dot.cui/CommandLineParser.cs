@@ -121,7 +121,7 @@ namespace de4dot.cui {
 			miscOptions.Add(new NoArgOption(null, "dont-rename", "Don't rename classes, methods, etc.", () => {
 				filesOptions.RenameSymbols = false;
 			}));
-			miscOptions.Add(new OneArgOption(null, "keep-names", "Don't rename n(amespaces), t(ypes), p(rops), e(vents), f(ields), m(ethods), a(rgs), g(enericparams). Can be combined, eg. efm", "flags", (val) => {
+			miscOptions.Add(new OneArgOption(null, "keep-names", "Don't rename n(amespaces), t(ypes), p(rops), e(vents), f(ields), m(ethods), a(rgs), g(enericparams), d(elegate fields). Can be combined, eg. efm", "flags", (val) => {
 				foreach (var c in val) {
 					switch (c) {
 					case 'n': filesOptions.RenameNamespaces = false; break;
@@ -132,6 +132,7 @@ namespace de4dot.cui {
 					case 'm': filesOptions.RenameMethods = false; break;
 					case 'a': filesOptions.RenameMethodArgs = false; break;
 					case 'g': filesOptions.RenameGenericParams = false; break;
+					case 'd': filesOptions.DontRenameDelegateFields = true; break;
 					default: throw new UserException(string.Format("Unrecognized --keep-names char: '{0}'", c));
 					}
 				}

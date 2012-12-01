@@ -40,6 +40,7 @@ namespace de4dot.code.renamer {
 		public bool RestoreEvents { get; set; }
 		public bool RestoreEventsFromNames { get; set; }
 		public bool DontCreateNewParamDefs { get; set; }
+		public bool DontRenameDelegateFields { get; set; }
 
 		Modules modules;
 		MemberInfos memberInfos = new MemberInfos();
@@ -255,9 +256,12 @@ namespace de4dot.code.renamer {
 		void renameFields(TypeInfo info) {
 			if (!RenameFields)
 				return;
+			bool isDelegateType = isDelegateClass.check(info.type);
 			foreach (var fieldDef in info.type.AllFieldsSorted) {
 				var fieldInfo = memberInfos.field(fieldDef);
 				if (!fieldInfo.gotNewName())
+					continue;
+				if (isDelegateType && DontRenameDelegateFields)
 					continue;
 				fieldDef.FieldDef.Name = new UTF8String(fieldInfo.newName);
 				if (isVerbose)
