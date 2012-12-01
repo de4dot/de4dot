@@ -38,6 +38,14 @@ namespace de4dot.cui {
 			public IList<IObfuscatedFile> Files { get; set; }
 			public IList<SearchDir> SearchDirs { get; set; }
 			public bool DetectObfuscators { get; set; }
+			public bool RenameNamespaces { get; set; }
+			public bool RenameTypes { get; set; }
+			public bool RenameProperties { get; set; }
+			public bool RenameEvents { get; set; }
+			public bool RenameFields { get; set; }
+			public bool RenameMethods { get; set; }
+			public bool RenameMethodArgs { get; set; }
+			public bool RenameGenericParams { get; set; }
 			public bool RenameSymbols { get; set; }
 			public bool RestorePropsEvents { get; set; }
 			public bool ControlFlowDeobfuscation { get; set; }
@@ -53,6 +61,14 @@ namespace de4dot.cui {
 				Files = new List<IObfuscatedFile>();
 				SearchDirs = new List<SearchDir>();
 				DefaultStringDecrypterMethods = new List<string>();
+				RenameNamespaces = true;
+				RenameTypes = true;
+				RenameProperties = true;
+				RenameEvents = true;
+				RenameFields = true;
+				RenameMethods = true;
+				RenameMethodArgs = true;
+				RenameGenericParams = true;
 				RenameSymbols = true;
 				RestorePropsEvents = true;
 				ControlFlowDeobfuscation = true;
@@ -369,6 +385,14 @@ namespace de4dot.cui {
 			if (!options.RenameSymbols)
 				return;
 			var renamer = new Renamer(deobfuscatorContext, theFiles) {
+				RenameNamespaces = options.RenameNamespaces,
+				RenameTypes = options.RenameTypes,
+				RenameProperties = options.RenameProperties,
+				RenameEvents = options.RenameEvents,
+				RenameFields = options.RenameFields,
+				RenameMethods = options.RenameMethods,
+				RenameMethodArgs = options.RenameMethodArgs,
+				RenameGenericParams = options.RenameGenericParams,
 				RestorePropertiesFromNames = options.RestorePropsEvents,
 				RestoreEventsFromNames = options.RestorePropsEvents,
 			};
