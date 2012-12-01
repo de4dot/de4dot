@@ -135,6 +135,9 @@ namespace de4dot.cui {
 					}
 				}
 			}));
+			miscOptions.Add(new NoArgOption(null, "dont-create-params", "Don't create method params when renaming", () => {
+				filesOptions.DontCreateNewParamDefs = true;
+			}));
 			miscOptions.Add(new NoArgOption(null, "dont-restore-props", "Don't restore properties/events", () => {
 				filesOptions.RestorePropsEvents = false;
 			}));

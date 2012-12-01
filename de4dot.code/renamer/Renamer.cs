@@ -39,6 +39,7 @@ namespace de4dot.code.renamer {
 		public bool RestorePropertiesFromNames { get; set; }
 		public bool RestoreEvents { get; set; }
 		public bool RestoreEventsFromNames { get; set; }
+		public bool DontCreateNewParamDefs { get; set; }
 
 		Modules modules;
 		MemberInfos memberInfos = new MemberInfos();
@@ -321,7 +322,11 @@ namespace de4dot.code.renamer {
 						var paramInfo = memberInfos.param(param);
 						if (!paramInfo.gotNewName())
 							continue;
-						param.ParameterDef.CreateParamDef();
+						if (!param.ParameterDef.HasParamDef) {
+							if (DontCreateNewParamDefs)
+								continue;
+							param.ParameterDef.CreateParamDef();
+						}
 						param.ParameterDef.Name = paramInfo.newName;
 						if (isVerbose) {
 							if (param.IsReturnParameter)

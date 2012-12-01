@@ -38,6 +38,7 @@ namespace de4dot.cui {
 			public IList<IObfuscatedFile> Files { get; set; }
 			public IList<SearchDir> SearchDirs { get; set; }
 			public bool DetectObfuscators { get; set; }
+			public bool DontCreateNewParamDefs { get; set; }
 			public bool RenameNamespaces { get; set; }
 			public bool RenameTypes { get; set; }
 			public bool RenameProperties { get; set; }
@@ -385,6 +386,7 @@ namespace de4dot.cui {
 			if (!options.RenameSymbols)
 				return;
 			var renamer = new Renamer(deobfuscatorContext, theFiles) {
+				DontCreateNewParamDefs = options.DontCreateNewParamDefs,
 				RenameNamespaces = options.RenameNamespaces,
 				RenameTypes = options.RenameTypes,
 				RenameProperties = options.RenameProperties,
