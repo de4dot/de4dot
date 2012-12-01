@@ -77,6 +77,10 @@ namespace de4dot.code.deobfuscators {
 		public virtual RenamingOptions RenamingOptions { get; set; }
 		public DecrypterType DefaultDecrypterType { get; set; }
 
+		public virtual MetaDataFlags MetaDataFlags {
+			get { return Operations.MetaDataFlags; }
+		}
+
 		public abstract string Type { get; }
 		public abstract string TypeLong { get; }
 		public abstract string Name { get; }

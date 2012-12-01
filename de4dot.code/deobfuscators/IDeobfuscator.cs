@@ -19,8 +19,9 @@
 
 using System;
 using System.Collections.Generic;
-using dot10.DotNet;
 using dot10.PE;
+using dot10.DotNet;
+using dot10.DotNet.Writer;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
 using de4dot.code.renamer;
@@ -58,6 +59,7 @@ namespace de4dot.code.deobfuscators {
 		string Name { get; }
 		IDeobfuscatorOptions TheOptions { get; }
 		IOperations Operations { get; set; }
+		MetaDataFlags MetaDataFlags { get; }
 		StringFeatures StringFeatures { get; }
 		RenamingOptions RenamingOptions { get; }
 		DecrypterType DefaultDecrypterType { get; }

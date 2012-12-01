@@ -17,6 +17,8 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using dot10.DotNet.Writer;
+
 namespace de4dot.code.deobfuscators {
 	public enum OpDecryptString {
 		None,
@@ -26,11 +28,13 @@ namespace de4dot.code.deobfuscators {
 
 	public interface IOperations {
 		bool KeepObfuscatorTypes { get; }
+		MetaDataFlags MetaDataFlags { get; }
 		OpDecryptString DecryptStrings { get; }
 	}
 
 	class Operations : IOperations {
 		public bool KeepObfuscatorTypes { get; set; }
+		public MetaDataFlags MetaDataFlags { get; set; }
 		public OpDecryptString DecryptStrings { get; set; }
 	}
 }

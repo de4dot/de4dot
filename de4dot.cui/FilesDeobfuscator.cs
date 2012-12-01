@@ -21,6 +21,7 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using dot10.DotNet;
+using dot10.DotNet.Writer;
 using de4dot.blocks;
 using de4dot.code;
 using de4dot.code.renamer;
@@ -37,6 +38,7 @@ namespace de4dot.cui {
 			public IList<IDeobfuscatorInfo> DeobfuscatorInfos { get; set; }
 			public IList<IObfuscatedFile> Files { get; set; }
 			public IList<SearchDir> SearchDirs { get; set; }
+			public MetaDataFlags MetaDataFlags { get; set; }
 			public bool DetectObfuscators { get; set; }
 			public bool DontCreateNewParamDefs { get; set; }
 			public bool RenameNamespaces { get; set; }
@@ -163,6 +165,7 @@ namespace de4dot.cui {
 				DeobfuscatorContext = deobfuscatorContext,
 				ControlFlowDeobfuscation = options.ControlFlowDeobfuscation,
 				KeepObfuscatorTypes = options.KeepObfuscatorTypes,
+				MetaDataFlags = options.MetaDataFlags,
 				CreateDestinationDir = !onlyScan,
 			});
 
@@ -186,6 +189,7 @@ namespace de4dot.cui {
 				public IDeobfuscatorContext DeobfuscatorContext { get; set; }
 				public bool ControlFlowDeobfuscation { get; set; }
 				public bool KeepObfuscatorTypes { get; set; }
+				public MetaDataFlags MetaDataFlags { get; set; }
 				public bool CreateDestinationDir { get; set; }
 			}
 
@@ -312,6 +316,7 @@ namespace de4dot.cui {
 					Filename = Utils.getFullPath(filename),
 					ControlFlowDeobfuscation = options.ControlFlowDeobfuscation,
 					KeepObfuscatorTypes = options.KeepObfuscatorTypes,
+					MetaDataFlags = options.MetaDataFlags,
 				};
 				if (options.DefaultStringDecrypterType != null)
 					fileOptions.StringDecrypterType = options.DefaultStringDecrypterType.Value;
