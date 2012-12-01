@@ -17,6 +17,8 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using dot10.DotNet;
+
 namespace de4dot.code.AssemblyClient {
 	public interface IAssemblyClientFactory {
 		IAssemblyClient create();
@@ -45,8 +47,27 @@ namespace de4dot.code.AssemblyClient {
 			this.serverVersion = serverVersion;
 		}
 
+		public IAssemblyClient create(ModuleDef module) {
+			return new AssemblyClient(new NewProcessAssemblyServerLoader(getServerClrVersion(module)));
+		}
+
 		public IAssemblyClient create() {
 			return new AssemblyClient(new NewProcessAssemblyServerLoader(serverVersion));
+		}
+
+		internal static ServerClrVersion getServerClrVersion(ModuleDef module) {
+			switch (module.GetPointerSize()) {
+			default:
+			case 4:
+				if (module.IsClr40)
+					return ServerClrVersion.CLR_v40_x86;
+				return ServerClrVersion.CLR_v20_x86;
+
+			case 8:
+				if (module.IsClr40)
+					return ServerClrVersion.CLR_v40_x64;
+				return ServerClrVersion.CLR_v20_x64;
+			}
 		}
 	}
 }

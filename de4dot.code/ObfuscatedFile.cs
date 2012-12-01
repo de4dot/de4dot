@@ -355,7 +355,11 @@ namespace de4dot.code {
 			case DecrypterType.Delegate:
 			case DecrypterType.Emulate:
 				checkSupportedStringDecrypter(StringFeatures.AllowDynamicDecryption);
-				assemblyClient = assemblyClientFactory.create();
+				var newProcFactory = assemblyClientFactory as NewProcessAssemblyClientFactory;
+				if (newProcFactory != null)
+					assemblyClient = newProcFactory.create(module);
+				else
+					assemblyClient = assemblyClientFactory.create();
 				assemblyClient.connect();
 				break;
 

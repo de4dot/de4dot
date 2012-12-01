@@ -25,7 +25,7 @@ using de4dot.mdecrypt;
 namespace de4dot.code.deobfuscators {
 	static class MethodsDecrypter {
 		public static DumpedMethods decrypt(ModuleDef module, byte[] moduleCctorBytes) {
-			return decrypt(getServerClrVersion(module), module.Location, moduleCctorBytes);
+			return decrypt(NewProcessAssemblyClientFactory.getServerClrVersion(module), module.Location, moduleCctorBytes);
 		}
 
 		public static DumpedMethods decrypt(ServerClrVersion serverVersion, string filename, byte[] moduleCctorBytes) {
@@ -37,21 +37,6 @@ namespace de4dot.code.deobfuscators {
 				client.Service.installCompileMethod(info);
 				client.Service.loadObfuscator(filename);
 				return client.Service.decryptMethods();
-			}
-		}
-
-		static ServerClrVersion getServerClrVersion(ModuleDef module) {
-			switch (module.GetPointerSize()) {
-			default:
-			case 4:
-				if (module.IsClr40)
-					return ServerClrVersion.CLR_v40_x86;
-				return ServerClrVersion.CLR_v20_x86;
-
-			case 8:
-				if (module.IsClr40)
-					return ServerClrVersion.CLR_v40_x64;
-				return ServerClrVersion.CLR_v20_x64;
 			}
 		}
 	}
