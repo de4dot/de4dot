@@ -93,7 +93,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 					continue;
 				if (type.HasEvents || type.HasProperties)
 					continue;
-				if (type.Fields.Count != 2)
+				if (type.Fields.Count < 2 || type.Fields.Count > 3)
 					continue;
 				if ((type.Attributes & ~TypeAttributes.Sealed) != 0)
 					continue;
