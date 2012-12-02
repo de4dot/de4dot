@@ -46,6 +46,7 @@ namespace de4dot.code.deobfuscators.Rummage {
 	}
 
 	class Deobfuscator : DeobfuscatorBase {
+		string obfuscatorName = DeobfuscatorInfo.THE_NAME;
 		StringDecrypter stringDecrypter;
 
 		internal class Options : OptionsBase {
@@ -60,7 +61,7 @@ namespace de4dot.code.deobfuscators.Rummage {
 		}
 
 		public override string Name {
-			get { return TypeLong; }
+			get { return obfuscatorName; }
 		}
 
 		public Deobfuscator(Options options)
@@ -80,6 +81,18 @@ namespace de4dot.code.deobfuscators.Rummage {
 		protected override void scanForObfuscator() {
 			stringDecrypter = new StringDecrypter(module);
 			stringDecrypter.find();
+			detectVersion();
+		}
+
+		void detectVersion() {
+			string version;
+			switch (stringDecrypter.Version) {
+			case RummageVersion.V1_1_445: version = "v1.1 - v2.0"; break;
+			case RummageVersion.V2_1_729: version = "v2.1 - v2.2"; break;
+			default: version = null; break;
+			}
+			if (version != null)
+				obfuscatorName += " " + version;
 		}
 
 		public override void deobfuscateBegin() {
