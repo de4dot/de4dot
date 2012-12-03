@@ -76,10 +76,10 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 		public string decrypt(string es) {
 			if (stringDecrypterKey == null)
 				throw new ApplicationException("Trying to decrypt strings when stringDecrypterKey is null (could not find it!)");
-			StringBuilder sb = new StringBuilder(es.Length);
+			char[] buf = new char[es.Length];
 			for (int i = 0; i < es.Length; i++)
-				sb.Append(Convert.ToChar((int)(es[i] ^ stringDecrypterKey[i % stringDecrypterKey.Length])));
-			return sb.ToString();
+				buf[i] = (char)(es[i] ^ stringDecrypterKey[i % stringDecrypterKey.Length]);
+			return new string(buf);
 		}
 	}
 }
