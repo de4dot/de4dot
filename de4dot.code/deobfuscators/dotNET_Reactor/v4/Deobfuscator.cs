@@ -382,7 +382,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				return false;
 
 			var tokenToNativeCode = new Dictionary<uint,byte[]>();
-			if (!methodsDecrypter.decrypt(peImage, DeobfuscatedFile, ref dumpedMethods, tokenToNativeCode))
+			if (!methodsDecrypter.decrypt(peImage, DeobfuscatedFile, ref dumpedMethods, tokenToNativeCode, unpackedNativeFile))
 				return false;
 
 			newFileData = fileData;
@@ -584,7 +584,24 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			else
 				Logger.v("Could not remove decrypter type");
 
+			fixEntryPoint();
+
 			base.deobfuscateEnd();
+		}
+
+		void fixEntryPoint() {
+			if (!module.IsClr1x)
+				return;
+
+			var ep = module.EntryPoint;
+			if (ep == null)
+				return;
+			if (ep.MethodSig.GetParamCount() <= 1)
+				return;
+
+			ep.MethodSig = MethodSig.CreateStatic(ep.MethodSig.RetType, new SZArraySig(module.CorLibTypes.String));
+			ep.ParamList.Clear();
+			ep.Parameters.UpdateParameterTypes();
 		}
 
 		void removeInlinedMethods() {
