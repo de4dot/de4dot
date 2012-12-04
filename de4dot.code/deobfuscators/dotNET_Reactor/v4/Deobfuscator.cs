@@ -345,8 +345,14 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 					return DeobfuscatorInfo.THE_NAME + " 4.1";
 				return DeobfuscatorInfo.THE_NAME + " 4.0";
 			}
-			if (!hasCorEnableProfilingString)
-				return DeobfuscatorInfo.THE_NAME + " 4.x";
+			if (!hasCorEnableProfilingString) {
+				// 4.x or 4.5
+				bool callsReverse = DotNetUtils.callsMethod(methodsDecrypter.Method, "System.Void System.Array::Reverse(System.Array)");
+				if (!callsReverse)
+					return DeobfuscatorInfo.THE_NAME + " 4.x";
+				return DeobfuscatorInfo.THE_NAME + " 4.5";
+			}
+
 			// 4.2-4.4
 
 			if (!localTypes.exists("System.Byte&"))

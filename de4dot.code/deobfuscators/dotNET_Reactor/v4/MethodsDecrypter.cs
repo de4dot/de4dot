@@ -168,7 +168,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				}
 			}
 			else {
-				// DNR 4.0 - 4.4 (jitter is hooked)
+				// DNR 4.0 - 4.5 (jitter is hooked)
 
 				var methodDef = peImage.DotNetFile.MetaData.TablesStream.MethodTable;
 				var rvaToIndex = new Dictionary<uint, int>((int)methodDef.Rows);

@@ -116,6 +116,8 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			iv = ArrayFinder.getInitializedByteArray(resourceDecrypterMethod, 16);
 			if (iv == null)
 				throw new ApplicationException("Could not find resource decrypter IV");
+			if (needReverse())
+				Array.Reverse(iv);	// DNR 4.5.0.0
 			if (usesPublicKeyToken()) {
 				var publicKeyToken = module.Assembly.PublicKeyToken;
 				if (publicKeyToken != null && publicKeyToken.Data.Length > 0) {
@@ -144,6 +146,10 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 					return true;
 			}
 			return false;
+		}
+
+		bool needReverse() {
+			return DotNetUtils.callsMethod(resourceDecrypterMethod, "System.Void System.Array::Reverse(System.Array)");
 		}
 
 		EmbeddedResource findMethodsDecrypterResource(MethodDef method) {
