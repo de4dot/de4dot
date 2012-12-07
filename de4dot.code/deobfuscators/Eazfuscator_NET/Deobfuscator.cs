@@ -20,6 +20,7 @@
 using System.Collections.Generic;
 using dot10.DotNet;
 using de4dot.blocks;
+using de4dot.code.renamer;
 
 namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
@@ -130,7 +131,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			addModuleCctorInitCallToBeRemoved(resourceResolver.InitMethod);
 
 			resourceMethodsRestorer = new ResourceMethodsRestorer(module);
-			resourceMethodsRestorer.find(DeobfuscatedFile, this);
+			if ((Operations.RenamerFlags & (RenamerFlags.RenameTypes | RenamerFlags.RenameNamespaces)) != 0)
+				resourceMethodsRestorer.find(DeobfuscatedFile, this);
 
 			dumpEmbeddedAssemblies();
 		}
