@@ -18,6 +18,7 @@
 */
 
 using dot10.DotNet.Writer;
+using de4dot.code.renamer;
 
 namespace de4dot.code.deobfuscators {
 	public enum OpDecryptString {
@@ -29,12 +30,14 @@ namespace de4dot.code.deobfuscators {
 	public interface IOperations {
 		bool KeepObfuscatorTypes { get; }
 		MetaDataFlags MetaDataFlags { get; }
+		RenamerFlags RenamerFlags { get; }
 		OpDecryptString DecryptStrings { get; }
 	}
 
 	class Operations : IOperations {
 		public bool KeepObfuscatorTypes { get; set; }
 		public MetaDataFlags MetaDataFlags { get; set; }
+		public RenamerFlags RenamerFlags { get; set; }
 		public OpDecryptString DecryptStrings { get; set; }
 	}
 }

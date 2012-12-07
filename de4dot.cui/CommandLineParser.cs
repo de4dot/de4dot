@@ -25,6 +25,7 @@ using dot10.DotNet.Writer;
 using de4dot.code;
 using de4dot.code.deobfuscators;
 using de4dot.code.AssemblyClient;
+using de4dot.code.renamer;
 
 namespace de4dot.cui {
 	class CommandLineParser {
@@ -120,28 +121,29 @@ namespace de4dot.cui {
 			}));
 			miscOptions.Add(new NoArgOption(null, "dont-rename", "Don't rename classes, methods, etc.", () => {
 				filesOptions.RenameSymbols = false;
+				filesOptions.RenamerFlags = 0;
 			}));
 			miscOptions.Add(new OneArgOption(null, "keep-names", "Don't rename n(amespaces), t(ypes), p(rops), e(vents), f(ields), m(ethods), a(rgs), g(enericparams), d(elegate fields). Can be combined, eg. efm", "flags", (val) => {
 				foreach (var c in val) {
 					switch (c) {
-					case 'n': filesOptions.RenameNamespaces = false; break;
-					case 't': filesOptions.RenameTypes = false; break;
-					case 'p': filesOptions.RenameProperties = false; break;
-					case 'e': filesOptions.RenameEvents = false; break;
-					case 'f': filesOptions.RenameFields = false; break;
-					case 'm': filesOptions.RenameMethods = false; break;
-					case 'a': filesOptions.RenameMethodArgs = false; break;
-					case 'g': filesOptions.RenameGenericParams = false; break;
-					case 'd': filesOptions.DontRenameDelegateFields = true; break;
+					case 'n': filesOptions.RenamerFlags &= ~RenamerFlags.RenameNamespaces; break;
+					case 't': filesOptions.RenamerFlags &= ~RenamerFlags.RenameTypes; break;
+					case 'p': filesOptions.RenamerFlags &= ~RenamerFlags.RenameProperties; break;
+					case 'e': filesOptions.RenamerFlags &= ~RenamerFlags.RenameEvents; break;
+					case 'f': filesOptions.RenamerFlags &= ~RenamerFlags.RenameFields; break;
+					case 'm': filesOptions.RenamerFlags &= ~RenamerFlags.RenameMethods; break;
+					case 'a': filesOptions.RenamerFlags &= ~RenamerFlags.RenameMethodArgs; break;
+					case 'g': filesOptions.RenamerFlags &= ~RenamerFlags.RenameGenericParams; break;
+					case 'd': filesOptions.RenamerFlags |= RenamerFlags.DontRenameDelegateFields; break;
 					default: throw new UserException(string.Format("Unrecognized --keep-names char: '{0}'", c));
 					}
 				}
 			}));
 			miscOptions.Add(new NoArgOption(null, "dont-create-params", "Don't create method params when renaming", () => {
-				filesOptions.DontCreateNewParamDefs = true;
+				filesOptions.RenamerFlags |= RenamerFlags.DontCreateNewParamDefs;
 			}));
 			miscOptions.Add(new NoArgOption(null, "dont-restore-props", "Don't restore properties/events", () => {
-				filesOptions.RestorePropsEvents = false;
+				filesOptions.RenamerFlags &= ~(RenamerFlags.RestorePropertiesFromNames | RenamerFlags.RestoreEventsFromNames);
 			}));
 			miscOptions.Add(new OneArgOption(null, "default-strtyp", "Default string decrypter type", "type", (val) => {
 				object decrypterType;
@@ -223,6 +225,7 @@ namespace de4dot.cui {
 					ControlFlowDeobfuscation = filesOptions.ControlFlowDeobfuscation,
 					KeepObfuscatorTypes = filesOptions.KeepObfuscatorTypes,
 					MetaDataFlags = filesOptions.MetaDataFlags,
+					RenamerFlags = filesOptions.RenamerFlags,
 				};
 				if (defaultStringDecrypterType != null)
 					newFileOptions.StringDecrypterType = defaultStringDecrypterType.Value;

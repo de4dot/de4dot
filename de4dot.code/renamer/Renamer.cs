@@ -26,21 +26,152 @@ using de4dot.code.renamer.asmmodules;
 using de4dot.blocks;
 
 namespace de4dot.code.renamer {
+	[Flags]
+	public enum RenamerFlags {
+		RenameNamespaces = 1,
+		RenameTypes = 2,
+		RenameProperties = 4,
+		RenameEvents = 8,
+		RenameFields = 0x10,
+		RenameMethods = 0x20,
+		RenameMethodArgs = 0x40,
+		RenameGenericParams = 0x80,
+		RestoreProperties = 0x100,
+		RestorePropertiesFromNames = 0x200,
+		RestoreEvents = 0x400,
+		RestoreEventsFromNames = 0x800,
+		DontCreateNewParamDefs = 0x1000,
+		DontRenameDelegateFields = 0x2000,
+	}
+
 	public class Renamer {
-		public bool RenameNamespaces { get; set; }
-		public bool RenameTypes { get; set; }
-		public bool RenameProperties { get; set; }
-		public bool RenameEvents { get; set; }
-		public bool RenameFields { get; set; }
-		public bool RenameMethods { get; set; }
-		public bool RenameMethodArgs { get; set; }
-		public bool RenameGenericParams { get; set; }
-		public bool RestoreProperties { get; set; }
-		public bool RestorePropertiesFromNames { get; set; }
-		public bool RestoreEvents { get; set; }
-		public bool RestoreEventsFromNames { get; set; }
-		public bool DontCreateNewParamDefs { get; set; }
-		public bool DontRenameDelegateFields { get; set; }
+		public RenamerFlags RenamerFlags { get; set; }
+		public bool RenameNamespaces {
+			get { return (RenamerFlags & RenamerFlags.RenameNamespaces) != 0; }
+			set {
+				if (value)
+					RenamerFlags |= RenamerFlags.RenameNamespaces;
+				else
+					RenamerFlags &= ~RenamerFlags.RenameNamespaces;
+			}
+		}
+		public bool RenameTypes {
+			get { return (RenamerFlags & RenamerFlags.RenameTypes) != 0; }
+			set {
+				if (value)
+					RenamerFlags |= RenamerFlags.RenameTypes;
+				else
+					RenamerFlags &= ~RenamerFlags.RenameTypes;
+			}
+		}
+		public bool RenameProperties {
+			get { return (RenamerFlags & RenamerFlags.RenameProperties) != 0; }
+			set {
+				if (value)
+					RenamerFlags |= RenamerFlags.RenameProperties;
+				else
+					RenamerFlags &= ~RenamerFlags.RenameProperties;
+			}
+		}
+		public bool RenameEvents {
+			get { return (RenamerFlags & RenamerFlags.RenameEvents) != 0; }
+			set {
+				if (value)
+					RenamerFlags |= RenamerFlags.RenameEvents;
+				else
+					RenamerFlags &= ~RenamerFlags.RenameEvents;
+			}
+		}
+		public bool RenameFields {
+			get { return (RenamerFlags & RenamerFlags.RenameFields) != 0; }
+			set {
+				if (value)
+					RenamerFlags |= RenamerFlags.RenameFields;
+				else
+					RenamerFlags &= ~RenamerFlags.RenameFields;
+			}
+		}
+		public bool RenameMethods {
+			get { return (RenamerFlags & RenamerFlags.RenameMethods) != 0; }
+			set {
+				if (value)
+					RenamerFlags |= RenamerFlags.RenameMethods;
+				else
+					RenamerFlags &= ~RenamerFlags.RenameMethods;
+			}
+		}
+		public bool RenameMethodArgs {
+			get { return (RenamerFlags & RenamerFlags.RenameMethodArgs) != 0; }
+			set {
+				if (value)
+					RenamerFlags |= RenamerFlags.RenameMethodArgs;
+				else
+					RenamerFlags &= ~RenamerFlags.RenameMethodArgs;
+			}
+		}
+		public bool RenameGenericParams {
+			get { return (RenamerFlags & RenamerFlags.RenameGenericParams) != 0; }
+			set {
+				if (value)
+					RenamerFlags |= RenamerFlags.RenameGenericParams;
+				else
+					RenamerFlags &= ~RenamerFlags.RenameGenericParams;
+			}
+		}
+		public bool RestoreProperties {
+			get { return (RenamerFlags & RenamerFlags.RestoreProperties) != 0; }
+			set {
+				if (value)
+					RenamerFlags |= RenamerFlags.RestoreProperties;
+				else
+					RenamerFlags &= ~RenamerFlags.RestoreProperties;
+			}
+		}
+		public bool RestorePropertiesFromNames {
+			get { return (RenamerFlags & RenamerFlags.RestorePropertiesFromNames) != 0; }
+			set {
+				if (value)
+					RenamerFlags |= RenamerFlags.RestorePropertiesFromNames;
+				else
+					RenamerFlags &= ~RenamerFlags.RestorePropertiesFromNames;
+			}
+		}
+		public bool RestoreEvents {
+			get { return (RenamerFlags & RenamerFlags.RestoreEvents) != 0; }
+			set {
+				if (value)
+					RenamerFlags |= RenamerFlags.RestoreEvents;
+				else
+					RenamerFlags &= ~RenamerFlags.RestoreEvents;
+			}
+		}
+		public bool RestoreEventsFromNames {
+			get { return (RenamerFlags & RenamerFlags.RestoreEventsFromNames) != 0; }
+			set {
+				if (value)
+					RenamerFlags |= RenamerFlags.RestoreEventsFromNames;
+				else
+					RenamerFlags &= ~RenamerFlags.RestoreEventsFromNames;
+			}
+		}
+		public bool DontCreateNewParamDefs {
+			get { return (RenamerFlags & RenamerFlags.DontCreateNewParamDefs) != 0; }
+			set {
+				if (value)
+					RenamerFlags |= RenamerFlags.DontCreateNewParamDefs;
+				else
+					RenamerFlags &= ~RenamerFlags.DontCreateNewParamDefs;
+			}
+		}
+		public bool DontRenameDelegateFields {
+			get { return (RenamerFlags & RenamerFlags.DontRenameDelegateFields) != 0; }
+			set {
+				if (value)
+					RenamerFlags |= RenamerFlags.DontRenameDelegateFields;
+				else
+					RenamerFlags &= ~RenamerFlags.DontRenameDelegateFields;
+			}
+		}
 
 		Modules modules;
 		MemberInfos memberInfos = new MemberInfos();
@@ -53,19 +184,8 @@ namespace de4dot.code.renamer {
 			"System.MulticastDelegate",
 		};
 
-		public Renamer(IDeobfuscatorContext deobfuscatorContext, IEnumerable<IObfuscatedFile> files) {
-			RenameNamespaces = true;
-			RenameTypes = true;
-			RenameProperties = true;
-			RenameEvents = true;
-			RenameFields = true;
-			RenameMethods = true;
-			RenameMethodArgs = true;
-			RenameGenericParams = true;
-			RestoreProperties = true;
-			RestorePropertiesFromNames = true;
-			RestoreEvents = true;
-			RestoreEventsFromNames = true;
+		public Renamer(IDeobfuscatorContext deobfuscatorContext, IEnumerable<IObfuscatedFile> files, RenamerFlags flags) {
+			RenamerFlags = flags;
 
 			modules = new Modules(deobfuscatorContext);
 			isDelegateClass = new DerivedFrom(delegateClasses);
