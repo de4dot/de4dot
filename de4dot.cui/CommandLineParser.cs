@@ -169,23 +169,35 @@ namespace de4dot.cui {
 						MetaDataFlags.PreserveBlobOffsets |
 						MetaDataFlags.PreserveExtraSignatureData;
 			}));
-			miscOptions.Add(new OneArgOption(null, "preserve-table", "Preserve rids in table: tr (TypeRef), td (TypeDef), fd (Field), md (Method), pd (Param), mr (MemberRef), s (StandAloneSig), ed (Event), pr (Property), ts (TypeSpec), ms (MethodSpec). Can be combined: ed,fd,md", "flags", (val) => {
-				foreach (var s in val.Split(',')) {
+			miscOptions.Add(new OneArgOption(null, "preserve-table", "Preserve rids in table: tr (TypeRef), td (TypeDef), fd (Field), md (Method), pd (Param), mr (MemberRef), s (StandAloneSig), ed (Event), pr (Property), ts (TypeSpec), ms (MethodSpec), all (all previous tables). Use - to disable (eg. all,-pd). Can be combined: ed,fd,md", "flags", (val) => {
+				foreach (var t in val.Split(',')) {
+					var s = t.Trim();
+					if (s.Length == 0)
+						continue;
+					bool clear = s[0] == '-';
+					if (clear)
+						s = s.Substring(1);
+					MetaDataFlags flag;
 					switch (s.Trim()) {
-					case "": break;
-					case "tr": filesOptions.MetaDataFlags |= MetaDataFlags.PreserveTypeRefRids; break;
-					case "td": filesOptions.MetaDataFlags |= MetaDataFlags.PreserveTypeDefRids; break;
-					case "fd": filesOptions.MetaDataFlags |= MetaDataFlags.PreserveFieldRids; break;
-					case "md": filesOptions.MetaDataFlags |= MetaDataFlags.PreserveMethodRids; break;
-					case "pd": filesOptions.MetaDataFlags |= MetaDataFlags.PreserveParamRids; break;
-					case "mr": filesOptions.MetaDataFlags |= MetaDataFlags.PreserveMemberRefRids; break;
-					case "s": filesOptions.MetaDataFlags |= MetaDataFlags.PreserveStandAloneSigRids; break;
-					case "ed": filesOptions.MetaDataFlags |= MetaDataFlags.PreserveEventRids; break;
-					case "pr": filesOptions.MetaDataFlags |= MetaDataFlags.PreservePropertyRids; break;
-					case "ts": filesOptions.MetaDataFlags |= MetaDataFlags.PreserveTypeSpecRids; break;
-					case "ms": filesOptions.MetaDataFlags |= MetaDataFlags.PreserveMethodSpecRids; break;
+					case "": flag = 0; break;
+					case "all": flag = MetaDataFlags.PreserveRids; break;
+					case "tr": flag = MetaDataFlags.PreserveTypeRefRids; break;
+					case "td": flag = MetaDataFlags.PreserveTypeDefRids; break;
+					case "fd": flag = MetaDataFlags.PreserveFieldRids; break;
+					case "md": flag = MetaDataFlags.PreserveMethodRids; break;
+					case "pd": flag = MetaDataFlags.PreserveParamRids; break;
+					case "mr": flag = MetaDataFlags.PreserveMemberRefRids; break;
+					case "s": flag = MetaDataFlags.PreserveStandAloneSigRids; break;
+					case "ed": flag = MetaDataFlags.PreserveEventRids; break;
+					case "pr": flag = MetaDataFlags.PreservePropertyRids; break;
+					case "ts": flag = MetaDataFlags.PreserveTypeSpecRids; break;
+					case "ms": flag = MetaDataFlags.PreserveMethodSpecRids; break;
 					default: throw new UserException(string.Format("Invalid --preserve-table option: {0}", s));
 					}
+					if (clear)
+						filesOptions.MetaDataFlags &= ~flag;
+					else
+						filesOptions.MetaDataFlags |= flag;
 				}
 			}));
 			miscOptions.Add(new NoArgOption(null, "preserve-strings", "Preserve #Strings heap offsets", () => {
