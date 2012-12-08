@@ -45,6 +45,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		StreamHelperType streamHelperType;
 		EfConstantsReader stringMethodConsts;
 		bool isV32OrLater;
+		int? validStringDecrypterValue;
 
 		class StreamHelperType {
 			public TypeDef type;
@@ -74,6 +75,10 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 						readBytesMethod = method;
 				}
 			}
+		}
+
+		public int? ValidStringDecrypterValue {
+			get { return validStringDecrypterValue;}
 		}
 
 		public TypeDef Type {
@@ -391,6 +396,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		}
 
 		public string decrypt(int val) {
+			validStringDecrypterValue = val;
 			while (true) {
 				int offset = magic1 ^ i3 ^ val ^ i6;
 				reader.BaseStream.Position = offset;
