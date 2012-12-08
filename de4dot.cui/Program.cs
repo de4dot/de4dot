@@ -84,7 +84,7 @@ namespace de4dot.cui {
 				exitCode = ex.code;
 			}
 			catch (UserException ex) {
-				Logger.Instance.LogErrorDontIgnore("ERROR: {0}", ex.Message);
+				Logger.Instance.LogErrorDontIgnore("{0}", ex.Message);
 				exitCode = 1;
 			}
 			catch (Exception ex) {
