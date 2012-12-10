@@ -24,6 +24,7 @@ using System.Text;
 using dot10.DotNet;
 using dot10.DotNet.Emit;
 using de4dot.blocks;
+using de4dot.blocks.cflow;
 
 namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 	class StringDecrypter {
@@ -249,8 +250,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 
 			if (isV32OrLater) {
 				bool initializedAll;
-				if (!findInts(out initializedAll))
-					return false;
+				int index = findInitIntsIndex(stringMethod, out initializedAll);
 
 				var cctor = stringType.FindStaticConstructor();
 				if (!initializedAll && cctor != null) {
@@ -260,6 +260,9 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				}
 
 				if (decrypterType.Detected && !decrypterType.initialize())
+					return false;
+
+				if (!findInts(index))
 					return false;
 			}
 
@@ -389,10 +392,6 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				theKey = reader.ReadBytes(len);
 			else
 				keyLen = reader.ReadInt16() ^ s2;
-
-			magic1 = i1 ^ i2;
-			if (decrypterType.Detected)
-				magic1 ^= (int)decrypterType.getMagic();
 		}
 
 		public string decrypt(int val) {
@@ -586,40 +585,68 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return stringMethodConsts.getInt16(ref index, out s);
 		}
 
-		bool findInts(out bool initializedAll) {
-			int index = findInitIntsIndex(stringMethod, out initializedAll);
+		bool findInts(int index) {
 			if (index < 0)
 				return false;
 
 			i2 = 0;
-			bool returnValue = false;
 			var instrs = stringMethod.Body.Instructions;
+
+			var emu = new InstructionEmulator(stringMethod);
+			foreach (var kv in stringMethodConsts.Locals32)
+				emu.setLocal(kv.Key, new Int32Value(kv.Value));
+
+			var fields = new Dictionary<FieldDef, int?>();
 			for (int i = index; i < instrs.Count - 2; i++) {
 				var instr = instrs[i];
 
-				if (instr.OpCode.Code == Code.Ldsfld &&
-					instrs[i + 1].OpCode.Code == Code.Ldc_I4 &&
-					(int)instrs[i + 1].Operand == 268435314)
-					break;
-				if (instr.OpCode.Code != Code.Call && instr.OpCode.FlowControl != FlowControl.Next)
+				FieldDef field;
+				switch (instr.OpCode.Code) {
+				case Code.Ldsfld:
+					field = instr.Operand as FieldDef;
+					if (field == null || field.DeclaringType != stringMethod.DeclaringType || field.FieldType.GetElementType() != ElementType.I4)
+						goto default;
+					fields[field] = null;
+					emu.push(new Int32Value(i1));
 					break;
 
-				if (!stringMethodConsts.isLoadConstantInt32(instr))
-					continue;
+				case Code.Stsfld:
+					field = instr.Operand as FieldDef;
+					if (field == null || field.DeclaringType != stringMethod.DeclaringType || field.FieldType.GetElementType() != ElementType.I4)
+						goto default;
+					if (fields.ContainsKey(field) && fields[field] == null)
+						goto default;
+					var val = emu.pop() as Int32Value;
+					if (val == null || !val.allBitsValid())
+						fields[field] = null;
+					else
+						fields[field] = val.value;
+					break;
 
-				int tmp;
-				if (!stringMethodConsts.getNextInt32(ref i, out tmp))
-					continue;
-				if ((instrs[i - 1].OpCode.Code == Code.Xor && instrs[i].IsStloc()) ||
-					(instrs[i].OpCode.Code == Code.Xor && instrs[i + 1].IsStloc()) ||
-					instrs[i].IsLdloc()) {
-					i2 ^= tmp;
-					returnValue = true;
+				case Code.Call:
+					var method = instr.Operand as MethodDef;
+					if (!decrypterType.Detected || method != decrypterType.Int64Method)
+						goto done;
+					emu.push(new Int64Value((long)decrypterType.getMagic()));
+					break;
+
+				default:
+					if (instr.OpCode.FlowControl != FlowControl.Next)
+						goto done;
+					emu.emulate(instr);
+					break;
 				}
-				i--;
+			}
+done: ;
+
+			foreach (var val in fields.Values) {
+				if (val == null)
+					continue;
+				magic1 = i2 = val.Value;
+				return true;
 			}
 
-			return returnValue;
+			return false;
 		}
 
 		static int findInitIntsIndex(MethodDef method, out bool initializedAll) {
