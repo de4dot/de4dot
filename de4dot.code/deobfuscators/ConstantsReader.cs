@@ -31,6 +31,18 @@ namespace de4dot.code.deobfuscators {
 		protected Dictionary<Local, double> localsValuesDouble = new Dictionary<Local, double>();
 		bool emulateConvInstrs;
 
+		public IEnumerable<KeyValuePair<Local, int>> Locals32 {
+			get { return localsValuesInt32; }
+		}
+
+		public IEnumerable<KeyValuePair<Local, long>> Locals64 {
+			get { return localsValuesInt64; }
+		}
+
+		public IEnumerable<KeyValuePair<Local, double>> LocalsDouble {
+			get { return localsValuesDouble; }
+		}
+
 		public interface IInstructions {
 			int Count { get; }
 			Instruction this[int index] { get; }
