@@ -47,6 +47,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		EfConstantsReader stringMethodConsts;
 		bool isV32OrLater;
 		int? validStringDecrypterValue;
+		Dynocode dynocode;
 
 		class StreamHelperType {
 			public TypeDef type;
@@ -97,6 +98,10 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					dataDecrypterType,
 				};
 			}
+		}
+
+		public IEnumerable<TypeDef> DynocodeTypes {
+			get { return dynocode.Types; }
 		}
 
 		public MethodDef Method {
@@ -223,6 +228,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		}
 
 		bool findConstants(ISimpleDeobfuscator simpleDeobfuscator) {
+			dynocode = new Dynocode(simpleDeobfuscator);
 			simpleDeobfuscator.deobfuscate(stringMethod);
 			stringMethodConsts = new EfConstantsReader(stringMethod);
 
@@ -630,6 +636,11 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					emu.push(new Int64Value((long)decrypterType.getMagic()));
 					break;
 
+				case Code.Newobj:
+					if (!emulateDynocode(emu, ref i))
+						goto default;
+					break;
+
 				default:
 					if (instr.OpCode.FlowControl != FlowControl.Next)
 						goto done;
@@ -647,6 +658,72 @@ done: ;
 			}
 
 			return false;
+		}
+
+		bool emulateDynocode(InstructionEmulator emu, ref int index) {
+			var instrs = stringMethod.Body.Instructions;
+			var instr = instrs[index];
+
+			var ctor = instr.Operand as MethodDef;
+			if (ctor == null || ctor.MethodSig.GetParamCount() != 1 || ctor.MethodSig.Params[0].ElementType != ElementType.I4)
+				return false;
+
+			if (index + 4 >= instrs.Count)
+				return false;
+			var ldloc = instrs[index + 3];
+			if (!ldloc.IsLdloc() || instrs[index + 4].OpCode.Code != Code.Stfld)
+				return false;
+
+			var initValue = emu.getLocal(ldloc.GetLocal(stringMethod.Body.Variables)) as Int32Value;
+			if (initValue == null || !initValue.allBitsValid())
+				return false;
+
+			int leaveIndex = findLeave(instrs, index);
+			if (leaveIndex < 0)
+				return false;
+			var afterLoop = instrs[leaveIndex].Operand as Instruction;
+			if (afterLoop == null)
+				return false;
+			int newIndex = instrs.IndexOf(afterLoop);
+			var loopLocal = getDCLoopLocal(index, newIndex);
+			if (loopLocal == null)
+				return false;
+			var initValue2 = emu.getLocal(loopLocal) as Int32Value;
+			if (initValue2 == null || !initValue2.allBitsValid())
+				return false;
+
+			var dcGen = dynocode.getDynocodeGenerator(ctor.DeclaringType);
+			if (dcGen == null)
+				return false;
+			int loopLocalValue = initValue2.value;
+			foreach (var val in dcGen.getValues(initValue.value))
+				loopLocalValue ^= val;
+
+			emu.setLocal(loopLocal, new Int32Value(loopLocalValue));
+			emu.emulate(instr);
+			index = newIndex - 1;
+			return true;
+		}
+
+		Local getDCLoopLocal(int start, int end) {
+			var instrs = stringMethod.Body.Instructions;
+			for (int i = start; i < end - 1; i++) {
+				if (instrs[i].OpCode.Code != Code.Xor)
+					continue;
+				var stloc = instrs[i + 1];
+				if (!stloc.IsStloc())
+					continue;
+				return stloc.GetLocal(stringMethod.Body.Variables);
+			}
+			return null;
+		}
+
+		static int findLeave(IList<Instruction> instrs, int index) {
+			for (int i = index; i < instrs.Count; i++) {
+				if (instrs[i].OpCode.Code == Code.Leave_S || instrs[i].OpCode.Code == Code.Leave)
+					return i;
+			}
+			return -1;
 		}
 
 		static int findInitIntsIndex(MethodDef method, out bool initializedAll) {

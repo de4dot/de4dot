@@ -156,6 +156,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			if (CanRemoveStringDecrypterType) {
 				addTypesToBeRemoved(stringDecrypter.Types, "String decrypter type");
 				addTypeToBeRemoved(decrypterType.Type, "Decrypter type");
+				addTypesToBeRemoved(stringDecrypter.DynocodeTypes, "Dynocode type");
 				addResourceToBeRemoved(stringDecrypter.Resource, "Encrypted strings");
 			}
 			addTypeToBeRemoved(assemblyResolver.Type, "Assembly resolver type");
