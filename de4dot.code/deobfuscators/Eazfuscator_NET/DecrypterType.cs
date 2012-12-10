@@ -36,6 +36,10 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		int m1_i1, m2_i1, m2_i2, m3_i1;
 		MethodDef[] efConstMethods;
 
+		public MethodDef Int64Method {
+			get { return int64Method; }
+		}
+
 		public TypeDef Type {
 			get { return type; }
 			set {
