@@ -125,24 +125,25 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				if (type.Fields.Count != 0)
 					continue;
 
-				var method = getDecrypterMethod(type);
-				if (method == null)
-					continue;
-				if (!new LocalTypes(method).exactly(requiredLocals_v1))
-					continue;
-				if (!DotNetUtils.callsMethod(method, "System.Int64", "()"))
-					continue;
-				if (!DotNetUtils.callsMethod(method, "System.Int32", "(System.Byte[],System.Int32,System.Int32)"))
-					continue;
-				if (!DotNetUtils.callsMethod(method, "System.Void", "(System.Array,System.Int32,System.Array,System.Int32,System.Int32)"))
-					continue;
-				if (!DotNetUtils.callsMethod(method, "System.Security.Cryptography.ICryptoTransform", "()"))
-					continue;
-				if (!DotNetUtils.callsMethod(method, "System.Byte[]", "(System.Byte[],System.Int32,System.Int32)"))
-					continue;
+				foreach (var method in getDecrypterMethods(type)) {
+					if (method == null)
+						continue;
+					if (!new LocalTypes(method).exactly(requiredLocals_v1))
+						continue;
+					if (!DotNetUtils.callsMethod(method, "System.Int64", "()"))
+						continue;
+					if (!DotNetUtils.callsMethod(method, "System.Int32", "(System.Byte[],System.Int32,System.Int32)"))
+						continue;
+					if (!DotNetUtils.callsMethod(method, "System.Void", "(System.Array,System.Int32,System.Array,System.Int32,System.Int32)"))
+						continue;
+					if (!DotNetUtils.callsMethod(method, "System.Security.Cryptography.ICryptoTransform", "()"))
+						continue;
+					if (!DotNetUtils.callsMethod(method, "System.Byte[]", "(System.Byte[],System.Int32,System.Int32)"))
+						continue;
 
-				resourceDecrypterType = type;
-				return true;
+					resourceDecrypterType = type;
+					return true;
+				}
 			}
 			return false;
 		}
@@ -158,22 +159,24 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 					continue;
 				if (type.HasNestedTypes || type.HasGenericParameters)
 					continue;
-				var method = getDecrypterMethod(type);
-				if (method == null)
-					continue;
-				if (!new LocalTypes(method).exactly(requiredLocals_sl))
-					continue;
 
-				resourceDecrypterType = type;
-				break;
+				foreach (var method in getDecrypterMethods(type)) {
+					if (method == null)
+						continue;
+					if (!new LocalTypes(method).exactly(requiredLocals_sl))
+						continue;
+
+					resourceDecrypterType = type;
+					return;
+				}
 			}
 		}
 
 		void initializeHeaderInfo(ISimpleDeobfuscator simpleDeobfuscator) {
 			skipBytes = 0;
 
-			if (resourceDecrypterType != null) {
-				if (updateFlags(getDecrypterMethod(), simpleDeobfuscator))
+			foreach (var method in getDecrypterMethods(resourceDecrypterType)) {
+				if (updateFlags(method, simpleDeobfuscator))
 					return;
 			}
 
@@ -203,7 +206,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		}
 
 		bool updateFlags(MethodDef method, ISimpleDeobfuscator simpleDeobfuscator) {
-			if (method == null || method.Body == null)
+			if (method == null || method.Body == null || method.Body.Variables.Count < 3)
 				return false;
 
 			var constants = new List<int>();
@@ -276,7 +279,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				if (loopCount < 2 || loopCount > 3)
 					continue;
 				var blt = instrs[i + 1];
-				if (blt.OpCode.Code != Code.Blt && blt.OpCode.Code != Code.Blt_S)
+				if (blt.OpCode.Code != Code.Blt && blt.OpCode.Code != Code.Blt_S && blt.OpCode.Code != Code.Clt)
 					continue;
 				return loopCount - 1;
 			}
@@ -291,28 +294,25 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return false;
 		}
 
-		MethodDef getDecrypterMethod() {
-			return getDecrypterMethod(resourceDecrypterType);
-		}
-
-		static MethodDef getDecrypterMethod(TypeDef type) {
+		static IEnumerable<MethodDef> getDecrypterMethods(TypeDef type) {
+			if (type == null)
+				yield break;
 			foreach (var method in type.Methods) {
 				if (DotNetUtils.isMethod(method, "System.Byte[]", "(System.IO.Stream)"))
-					return method;
-				if (DotNetUtils.isMethod(method, "System.Byte[]", "(System.Int32,System.IO.Stream)"))
-					return method;
-				if (DotNetUtils.isMethod(method, "System.Byte[]", "(System.Int16,System.IO.Stream)"))
-					return method;
-				if (DotNetUtils.isMethod(method, "System.Byte[]", "(System.Byte,System.IO.Stream)"))
-					return method;
-				if (DotNetUtils.isMethod(method, "System.Byte[]", "(System.SByte,System.IO.Stream)"))
-					return method;
-				if (DotNetUtils.isMethod(method, "System.Byte[]", "(System.Byte,System.IO.Stream,System.Int32)"))
-					return method;
-				if (DotNetUtils.isMethod(method, "System.Byte[]", "(System.SByte,System.IO.Stream,System.UInt32)"))
-					return method;
+					yield return method;
+				else if (DotNetUtils.isMethod(method, "System.Byte[]", "(System.Int32,System.IO.Stream)"))
+					yield return method;
+				else if (DotNetUtils.isMethod(method, "System.Byte[]", "(System.Int16,System.IO.Stream)"))
+					yield return method;
+				else if (DotNetUtils.isMethod(method, "System.Byte[]", "(System.Byte,System.IO.Stream)"))
+					yield return method;
+				else if (DotNetUtils.isMethod(method, "System.Byte[]", "(System.SByte,System.IO.Stream)"))
+					yield return method;
+				else if (DotNetUtils.isMethod(method, "System.Byte[]", "(System.Byte,System.IO.Stream,System.Int32)"))
+					yield return method;
+				else if (DotNetUtils.isMethod(method, "System.Byte[]", "(System.SByte,System.IO.Stream,System.UInt32)"))
+					yield return method;
 			}
-			return null;
 		}
 
 		public byte[] decrypt(Stream resourceStream) {
