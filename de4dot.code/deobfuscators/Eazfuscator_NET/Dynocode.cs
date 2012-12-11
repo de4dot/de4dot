@@ -92,7 +92,10 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		}
 
 		public IEnumerable<TypeDef> Types {
-			get { return typeToDCGen.Keys; }
+			get {
+				foreach (var type in typeToDCGen.Keys)
+					yield return type.DeclaringType;
+			}
 		}
 
 		public Dynocode(ISimpleDeobfuscator simpleDeobfuscator) {
