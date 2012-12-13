@@ -156,7 +156,7 @@ namespace de4dot.cui {
 			Logger.Instance.Log(false, null, loggerEvent, "\n\n");
 			Logger.Instance.Log(false, null, loggerEvent, line);
 			Logger.Instance.Log(false, null, loggerEvent, "Stack trace:\n{0}", ex.StackTrace);
-			Logger.Instance.Log(false, null, loggerEvent, "\n\nERROR: Caught an exception:\n");
+			Logger.Instance.Log(false, null, loggerEvent, "\n\nCaught an exception:\n");
 			Logger.Instance.Log(false, null, loggerEvent, line);
 			Logger.Instance.Log(false, null, loggerEvent, "Message:");
 			Logger.Instance.Log(false, null, loggerEvent, "  {0}", ex.Message);
