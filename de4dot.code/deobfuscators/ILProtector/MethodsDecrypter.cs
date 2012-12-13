@@ -169,11 +169,11 @@ namespace de4dot.code.deobfuscators.ILProtector {
 
 			public static DecrypterV106 create(IBinaryReader reader) {
 				try {
-					int keyXorOffs2 = (ReadByteAt(reader, 0) ^ ReadByteAt(reader, 2)) + 2;
-					reader.Position = keyXorOffs2 + (ReadByteAt(reader, 1) ^ ReadByteAt(reader, keyXorOffs2));
+					int keyXorOffs7 = (ReadByteAt(reader, 0) ^ ReadByteAt(reader, 2)) + 2;
+					reader.Position = keyXorOffs7 + (ReadByteAt(reader, 1) ^ ReadByteAt(reader, keyXorOffs7));
 
 					int sha1DataLen = reader.Read7BitEncodedInt32() + 0x80;
-					int keyXorOffs1 = (int)reader.Position;
+					int keyXorOffs6 = (int)reader.Position;
 					int encryptedOffs = (int)reader.Position + sha1DataLen;
 					var sha1Data = reader.ReadBytes(sha1DataLen);
 					uint crc32 = CRC32.checksum(sha1Data);
@@ -184,8 +184,8 @@ namespace de4dot.code.deobfuscators.ILProtector {
 						return null;
 
 					var key0 = DeobUtils.sha1Sum(sha1Data);			// 1.0.6.0
-					var key6 = getKey(reader, key0, keyXorOffs1);	// 1.0.6.6
-					var key7 = getKey(reader, key0, keyXorOffs2);	// 1.0.6.7
+					var key6 = getKey(reader, key0, keyXorOffs6);	// 1.0.6.6
+					var key7 = getKey(reader, key0, keyXorOffs7);	// 1.0.6.7
 					return new DecrypterV106(key0, key6, key7, encryptedOffs);
 				}
 				catch (IOException) {
@@ -196,27 +196,27 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			static byte[] getKey(IBinaryReader reader, byte[] sha1Sum, int offs) {
 				var key = (byte[])sha1Sum.Clone();
 				reader.Position = offs;
-				for (int i = 0; i < key.Length; i++) {
-					byte b = reader.ReadByte();
-					key[i] ^= b;
-				}
+				for (int i = 0; i < key.Length; i++)
+					key[i] ^= reader.ReadByte();
 				return key;
 			}
 
 			static byte ReadByteAt(IBinaryReader reader, int offs) {
 				reader.Position = offs;
-				byte b = reader.ReadByte();
-				return b;
+				return reader.ReadByte();
 			}
 
 			public override byte[] getMethodsData(EmbeddedResource resource) {
 				var reader = resource.Data;
+				reader.Position = startOffset;
+				var decrypted = new byte[reader.Read7BitEncodedUInt32()];
+				uint origCrc32 = reader.ReadUInt32();
+				long pos = reader.Position;
+
 				var keys = new byte[][] { decryptionKey, decryptionKey6, decryptionKey7 };
 				foreach (var key in keys) {
 					try {
-						reader.Position = startOffset;
-						var decrypted = new byte[reader.Read7BitEncodedUInt32()];
-						uint origCrc32 = reader.ReadUInt32();
+						reader.Position = pos;
 						decompress(decrypted, reader, key, decryptionKeyMod);
 						uint crc32 = CRC32.checksum(decrypted);
 						if (crc32 == origCrc32)
