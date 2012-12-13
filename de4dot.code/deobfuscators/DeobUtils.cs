@@ -73,6 +73,10 @@ namespace de4dot.code.deobfuscators {
 			return MD5.Create().ComputeHash(data);
 		}
 
+		public static byte[] sha1Sum(byte[] data) {
+			return SHA1.Create().ComputeHash(data);
+		}
+
 		public static byte[] sha256Sum(byte[] data) {
 			return SHA256.Create().ComputeHash(data);
 		}
