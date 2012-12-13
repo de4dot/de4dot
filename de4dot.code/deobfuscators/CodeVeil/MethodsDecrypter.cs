@@ -199,7 +199,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 
 			const int RVA_EXECUTIVE_OFFSET = 1 * 4;
 			const int ENC_CODE_OFFSET = 6 * 4;
-			int lastOffset = (int)(section.PointerToRawData + section.SizeOfRawData);
+			int lastOffset = Math.Min(fileData.Length, (int)(section.PointerToRawData + section.SizeOfRawData));
 			for (int offset = getStartOffset(peImage); offset < lastOffset; ) {
 				offset = findSig(fileData, offset, lastOffset, initializeMethodEnd);
 				if (offset < 0)
