@@ -17,6 +17,7 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Collections.Generic;
 using dot10.DotNet;
 using dot10.DotNet.Emit;
@@ -28,14 +29,62 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		FieldDefAndDeclaringTypeDict<FieldInfo> fieldToInfo = new FieldDefAndDeclaringTypeDict<FieldInfo>();
 
 		public class FieldInfo {
+			public readonly ElementType elementType;
 			public readonly FieldDef field;
 			public readonly FieldDef arrayInitField;
-			public readonly byte[] array;
+			public readonly Array array;
 
 			public FieldInfo(FieldDef field, FieldDef arrayInitField) {
 				this.field = field;
+				this.elementType = ((SZArraySig)field.FieldType).Next.GetElementType();
 				this.arrayInitField = arrayInitField;
-				this.array = (byte[])arrayInitField.InitialValue.Clone();
+				this.array = createArray(elementType, arrayInitField.InitialValue);
+			}
+
+			static Array createArray(ElementType etype, byte[] data) {
+				switch (etype) {
+				case ElementType.Boolean:
+				case ElementType.I1:
+				case ElementType.U1:
+					return (byte[])data.Clone();
+
+				case ElementType.Char:
+				case ElementType.I2:
+				case ElementType.U2:
+					var ary2 = new ushort[data.Length / 2];
+					Buffer.BlockCopy(data, 0, ary2, 0, ary2.Length * 2);
+					return ary2;
+
+				case ElementType.I4:
+				case ElementType.U4:
+					var ary4 = new uint[data.Length / 4];
+					Buffer.BlockCopy(data, 0, ary4, 0, ary4.Length * 4);
+					return ary4;
+
+				default:
+					throw new ApplicationException("Invalid etype");
+				}
+			}
+
+			public uint readArrayElement(int index) {
+				switch (elementType) {
+				case ElementType.Boolean:
+				case ElementType.I1:
+				case ElementType.U1:
+					return ((byte[])array)[index];
+
+				case ElementType.Char:
+				case ElementType.I2:
+				case ElementType.U2:
+					return ((ushort[])array)[index];
+
+				case ElementType.I4:
+				case ElementType.U4:
+					return ((uint[])array)[index];
+
+				default:
+					throw new ApplicationException("Invalid etype");
+				}
 			}
 		}
 
@@ -71,10 +120,6 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				if (instrs == null)
 					continue;
 
-				var arrayType = instrs[0].Operand as ITypeDefOrRef;
-				if (arrayType == null || (arrayType.FullName != "System.Byte" && !arrayType.DefinitionAssembly.IsCorLib()))
-					continue;
-
 				var arrayInitField = instrs[2].Operand as FieldDef;
 				if (arrayInitField == null || arrayInitField.InitialValue == null || arrayInitField.InitialValue.Length == 0)
 					continue;
@@ -84,7 +129,10 @@ namespace de4dot.code.deobfuscators.DeepSea {
 					continue;
 
 				var targetField = instrs[4].Operand as FieldDef;
-				if (targetField == null)
+				if (targetField == null || targetField.FieldType.GetElementType() != ElementType.SZArray)
+					continue;
+				var etype = ((SZArraySig)targetField.FieldType).Next.GetElementType();
+				if (etype < ElementType.Boolean || etype > ElementType.U4)
 					continue;
 
 				if (fieldToInfo.find(targetField) == null) {
