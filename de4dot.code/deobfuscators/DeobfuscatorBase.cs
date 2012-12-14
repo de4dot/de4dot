@@ -51,6 +51,8 @@ namespace de4dot.code.deobfuscators {
 		MethodCallRemover methodCallRemover = new MethodCallRemover();
 		byte[] moduleBytes;
 		protected InitializedDataCreator initializedDataCreator;
+		bool keepTypes;
+		MetaDataFlags? mdFlags;
 
 		protected byte[] ModuleBytes {
 			get { return moduleBytes; }
@@ -78,7 +80,7 @@ namespace de4dot.code.deobfuscators {
 		public DecrypterType DefaultDecrypterType { get; set; }
 
 		public virtual MetaDataFlags MetaDataFlags {
-			get { return Operations.MetaDataFlags; }
+			get { return mdFlags ?? Operations.MetaDataFlags; }
 		}
 
 		public abstract string Type { get; }
@@ -89,8 +91,9 @@ namespace de4dot.code.deobfuscators {
 			get { return false; }
 		}
 
-		protected virtual bool KeepTypes {
-			get { return false; }
+		protected bool KeepTypes {
+			get { return keepTypes; }
+			set { keepTypes = value; }
 		}
 
 		protected bool CanRemoveTypes {
@@ -127,6 +130,15 @@ namespace de4dot.code.deobfuscators {
 		protected void setModule(ModuleDefMD module) {
 			this.module = module;
 			initializedDataCreator = new InitializedDataCreator(module);
+		}
+
+		protected void preserveTokensAndTypes() {
+			keepTypes = true;
+			mdFlags = Operations.MetaDataFlags;
+			mdFlags |= MetaDataFlags.PreserveRids |
+						MetaDataFlags.PreserveUSOffsets |
+						MetaDataFlags.PreserveBlobOffsets |
+						MetaDataFlags.PreserveExtraSignatureData;
 		}
 
 		protected virtual bool checkValidName(string name) {
