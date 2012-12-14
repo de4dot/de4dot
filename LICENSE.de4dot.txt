@@ -17,6 +17,6 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 </LICENSE>
 
-Official site: https://github.com/0xd4d/de4dot
+Official site: https://bitbucket.org/0xd4d/de4dot
 
 See the file COPYING for more details.
