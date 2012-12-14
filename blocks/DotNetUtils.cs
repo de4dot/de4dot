@@ -364,7 +364,7 @@ namespace de4dot.blocks {
 				newMethod.ParamList.Add(new ParamDefUser(pd.Name, pd.Sequence, pd.Attributes));
 			foreach (var gp in method.GenericParameters) {
 				var newGp = new GenericParamUser(gp.Number, gp.Flags, gp.Name);
-				foreach (var gpc in newGp.GenericParamConstraints)
+				foreach (var gpc in gp.GenericParamConstraints)
 					newGp.GenericParamConstraints.Add(new GenericParamConstraintUser(gpc.Constraint));
 				newMethod.GenericParameters.Add(newGp);
 			}
