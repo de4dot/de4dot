@@ -51,8 +51,13 @@ namespace de4dot.code.deobfuscators.DeepSea {
 
 		bool inlineMethod(Instruction callInstr, int instrIndex) {
 			var method = callInstr.Operand as MethodDef;
-			if (method == null)
-				return false;
+			if (method == null) {
+				var ms = callInstr.Operand as MethodSpec;
+				if (ms != null)
+					method = ms.Method as MethodDef;
+				if (method == null)
+					return false;
+			}
 			if (!canInline(method))
 				return false;
 
@@ -67,6 +72,14 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				return false;
 
 			return true;
+		}
+
+		protected override Instruction onAfterLoadArg(MethodDef methodToInline, Instruction instr, ref int instrIndex) {
+			if (instr.OpCode.Code != Code.Box)
+				return instr;
+			if (methodToInline.MethodSig.GetGenParamCount() == 0)
+				return instr;
+			return DotNetUtils.getInstruction(methodToInline.Body.Instructions, ref instrIndex);
 		}
 
 		bool inlineMethod(MethodDef methodToInline, int instrIndex, int const1, int const2) {
@@ -271,8 +284,7 @@ done:
 		bool emulateToReturn(int index, Instruction lastInstr) {
 			int pushes, pops;
 			lastInstr.CalculateStackUsage(false, out pushes, out pops);
-			for (int i = 0; i < pops; i++)
-				instructionEmulator.pop();
+			instructionEmulator.pop(pops);
 
 			returnValue = null;
 			if (pushes != 0) {
@@ -300,8 +312,6 @@ done:
 				return false;
 			if (method.Attributes != (MethodAttributes.Assembly | MethodAttributes.Static))
 				return false;
-			if (method.GenericParameters.Count > 0)
-				return false;
 			if (method.Body.ExceptionHandlers.Count > 0)
 				return false;
 
@@ -309,6 +319,14 @@ done:
 			int paramCount = parameters.Count;
 			if (paramCount < 2)
 				return false;
+
+			if (method.GenericParameters.Count > 0) {
+				foreach (var gp in method.GenericParameters) {
+					if (gp.GenericParamConstraints.Count == 0)
+						return false;
+				}
+			}
+
 			var param1 = parameters[paramCount - 1];
 			var param2 = parameters[paramCount - 2];
 			if (!isIntType(param1.ElementType))

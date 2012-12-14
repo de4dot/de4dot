@@ -104,6 +104,10 @@ namespace de4dot.blocks.cflow {
 			return tryInlineOtherMethod(patchIndex, methodToInline, instr, instrIndex, 0);
 		}
 
+		protected virtual Instruction onAfterLoadArg(MethodDef methodToInline, Instruction instr, ref int instrIndex) {
+			return instr;
+		}
+
 		protected InstructionPatcher tryInlineOtherMethod(int patchIndex, MethodDef methodToInline, Instruction instr, int instrIndex, int popLastArgs) {
 			int loadIndex = 0;
 			int methodArgsCount = DotNetUtils.getArgsCount(methodToInline);
@@ -133,6 +137,7 @@ namespace de4dot.blocks.cflow {
 					return null;
 				loadIndex++;
 				instr = DotNetUtils.getInstruction(methodToInline.Body.Instructions, ref instrIndex);
+				instr = onAfterLoadArg(methodToInline, instr, ref instrIndex);
 			}
 			if (instr == null || loadIndex != methodArgsCount - popLastArgs)
 				return null;
@@ -224,7 +229,7 @@ namespace de4dot.blocks.cflow {
 				return false;
 			for (int i = 0; i < methodArgs.Count; i++) {
 				var methodArg = methodArgs[i];
-				var methodToInlineArg = methodToInlineArgs[i].Type;
+				var methodToInlineArg = getArgType(methodToInline, methodToInlineArgs[i].Type);
 				if (!isCompatibleType(i, methodArg, methodToInlineArg)) {
 					if (i != 0 || !hasImplicitThis)
 						return false;
@@ -234,6 +239,19 @@ namespace de4dot.blocks.cflow {
 			}
 
 			return true;
+		}
+
+		static TypeSig getArgType(MethodDef method, TypeSig arg) {
+			if (arg.GetElementType() != ElementType.MVar)
+				return arg;
+			var mvar = (GenericMVar)arg;
+			foreach (var gp in method.GenericParameters) {
+				if (gp.Number != mvar.Number)
+					continue;
+				foreach (var gpc in gp.GenericParamConstraints)
+					return gpc.Constraint.ToTypeSig();
+			}
+			return arg;
 		}
 
 		protected virtual bool isCompatibleType(int paramIndex, IType origType, IType newType) {
