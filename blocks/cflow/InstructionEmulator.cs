@@ -232,6 +232,17 @@ namespace de4dot.blocks.cflow {
 			valueStack.push(value);
 		}
 
+		public void clearStack() {
+			valueStack.clear();
+		}
+
+		public void pop(int num) {
+			if (num < 0)
+				valueStack.clear();
+			else
+				valueStack.pop(num);
+		}
+
 		public Value pop() {
 			return valueStack.pop();
 		}
