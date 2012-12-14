@@ -140,7 +140,8 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			data41.resourceField = getLdtokenField(info.handler);
 			if (data41.resourceField == null)
 				return false;
-			int magicArgIndex = getMagicArgIndex41Retail(info.handler);
+			bool isOtherRetail;
+			int magicArgIndex = getMagicArgIndex41Retail(info.handler, out isOtherRetail);
 			if (magicArgIndex < 0) {
 				magicArgIndex = getMagicArgIndex41Trial(info.handler);
 				data41.isTrial = true;
@@ -153,29 +154,40 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				return false;
 			if (data41.isTrial)
 				data41.magic = (int)val >> 3;
+			else if (isOtherRetail)
+				data41.magic = data41.resourceField.InitialValue.Length - (int)val;
 			else
 				data41.magic = ((asmVer.Major << 3) | (asmVer.Minor << 2) | asmVer.Revision) - (int)val;
 			return true;
 		}
 
-		static int getMagicArgIndex41Retail(MethodDef method) {
+		static int getMagicArgIndex41Retail(MethodDef method, out bool isOtherRetail) {
+			isOtherRetail = false;
 			var instrs = method.Body.Instructions;
-			for (int i = 0; i < instrs.Count - 3; i++) {
-				var add = instrs[i];
+			for (int i = 0; i < instrs.Count - 4; i++) {
+				isOtherRetail = false;
+				var ld = instrs[i];
+				if (ld.IsLdarg())
+					isOtherRetail = true;
+				else if (!ld.IsLdloc())
+					continue;
+
+				var add = instrs[i + 1];
 				if (add.OpCode.Code != Code.Add)
 					continue;
-				var ldarg = instrs[i + 1];
+				var ldarg = instrs[i + 2];
 				if (!ldarg.IsLdarg())
 					continue;
-				var sub = instrs[i + 2];
+				var sub = instrs[i + 3];
 				if (sub.OpCode.Code != Code.Sub)
 					continue;
-				var ldci4 = instrs[i + 3];
+				var ldci4 = instrs[i + 4];
 				if (!ldci4.IsLdcI4() || ldci4.GetLdcI4Value() != 0xFF)
 					continue;
 
 				return ldarg.GetParameterIndex();
 			}
+
 			return -1;
 		}
 
