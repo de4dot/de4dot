@@ -78,13 +78,17 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			return DotNetUtils.getResource(module, "_CSVM") as EmbeddedResource;
 		}
 
-		public void restore() {
+		public bool restore() {
 			if (!Detected)
-				return;
+				return true;
 
 			int oldIndent = Logger.Instance.IndentLevel;
 			try {
 				restore2();
+				return true;
+			}
+			catch {
+				return false;
 			}
 			finally {
 				Logger.Instance.IndentLevel = oldIndent;
