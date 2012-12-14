@@ -158,7 +158,14 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			ushort[] encryptedData;
 			short[] key;
 			int keyShift;
-			bool isTrial;
+			DecryptType decryptType;
+
+			// This'll do for now. Code should be added to detect the constants in the code.
+			enum DecryptType {
+				Type1,
+				Type2,
+				Type3,
+			}
 
 			class ArrayInfo {
 				public int sizeInElems;
@@ -238,13 +245,21 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				encryptedData = new ushort[arrayInfo.initField.InitialValue.Length / 2];
 				Buffer.BlockCopy(arrayInfo.initField.InitialValue, 0, encryptedData, 0, arrayInfo.initField.InitialValue.Length);
 
-				isTrial = !DeobUtils.hasInteger(Method, 0xFFF0);
+				decryptType = getDecryptType(Method);
 				keyShift = findKeyShift(cctor);
 				key = findKey();
 				if (key == null || key.Length == 0)
 					return false;
 
 				return true;
+			}
+
+			static DecryptType getDecryptType(MethodDef method) {
+				if (DeobUtils.hasInteger(method, 0xFFF0))
+					return DecryptType.Type2;
+				if (DeobUtils.hasInteger(method, 0xFFC0))
+					return DecryptType.Type3;
+				return DecryptType.Type1;	// trial
 			}
 
 			int findKeyShift(MethodDef method) {
@@ -342,9 +357,19 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			}
 
 			public string decrypt(object[] args) {
-				if (isTrial)
+				switch (decryptType) {
+				case DecryptType.Type1:
 					return decryptTrial((int)args[arg1], (int)args[arg2]);
-				return decryptRetail((int)args[arg1], (int)args[arg2]);
+
+				case DecryptType.Type2:
+					return decryptRetail2((int)args[arg1], (int)args[arg2]);
+
+				case DecryptType.Type3:
+					return decryptRetail3((int)args[arg1], (int)args[arg2]);
+
+				default:
+					throw new ApplicationException("Unknown type");
+				}
 			}
 
 			string decryptTrial(int magic2, int magic3) {
@@ -359,13 +384,21 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				return sb.ToString();
 			}
 
-			string decryptRetail(int magic2, int magic3) {
+			string decryptRetail2(int magic2, int magic3) {
+				return decryptRetail(magic2, magic3, 2, 1, 0, 8, 0);
+			}
+
+			string decryptRetail3(int magic2, int magic3) {
+				return decryptRetail(magic2, magic3, 0, 2, 1, 0x20, 17);
+			}
+
+			string decryptRetail(int magic2, int magic3, int keyCharOffs, int cachedIndexOffs, int flagsOffset, int flag, int keyDispl) {
 				int offset = magic ^ magic2 ^ magic3;
-				var keyChar = encryptedData[offset + 2];
-				int cachedIndex = encryptedData[offset + 1] ^ keyChar;
-				int flags = encryptedData[offset] ^ keyChar;
-				int numChars = (flags >> 1) & ~7 | (flags & 7);
-				if ((flags & 8) != 0) {
+				var keyChar = encryptedData[offset + keyCharOffs];
+				int cachedIndex = encryptedData[offset + cachedIndexOffs] ^ keyChar;
+				int flags = encryptedData[offset + flagsOffset] ^ keyChar;
+				int numChars = ((flags >> 1) & ~(flag - 1)) | (flags & (flag - 1));
+				if ((flags & flag) != 0) {
 					numChars <<= 15;
 					numChars |= encryptedData[offset + 3] ^ keyChar;
 					offset++;
@@ -373,7 +406,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				offset += 3;
 				var sb = new StringBuilder(numChars);
 				for (int i = 0; i < numChars; i++)
-					sb.Append((char)(keyChar ^ encryptedData[offset + numChars - i - 1] ^ key[(i + 1 + offset) % key.Length]));
+					sb.Append((char)(keyChar ^ encryptedData[offset + numChars - i - 1] ^ key[(i + 1 + keyDispl + offset) % key.Length]));
 				return sb.ToString();
 			}
 
