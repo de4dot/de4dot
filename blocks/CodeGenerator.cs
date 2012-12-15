@@ -185,7 +185,7 @@ namespace de4dot.blocks {
 					block.LastInstr.updateTargets(new List<Instr> { block.Targets[0].FirstInstr });
 				}
 				else if (block.FallThrough != null && block.FallThrough != next) {
-					var instr = new Instr(Instruction.Create(OpCodes.Br, block.FallThrough.FirstInstr.Instruction));
+					var instr = new Instr(OpCodes.Br.ToInstruction(block.FallThrough.FirstInstr.Instruction));
 					instr.updateTargets(new List<Instr> { block.FallThrough.FirstInstr });
 					allInstructions.Add(instr.Instruction);
 				}
@@ -257,7 +257,7 @@ namespace de4dot.blocks {
 		void fixEmptyBlocks() {
 			foreach (var block in methodBlocks.getAllBlocks()) {
 				if (block.Instructions.Count == 0) {
-					block.Instructions.Add(new Instr(Instruction.Create(OpCodes.Nop)));
+					block.Instructions.Add(new Instr(OpCodes.Nop.ToInstruction()));
 				}
 			}
 		}

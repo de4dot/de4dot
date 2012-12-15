@@ -56,10 +56,10 @@ namespace de4dot.code.deobfuscators {
 		public void addInitializeArrayCode(Block block, int start, int numToRemove, ITypeDefOrRef elementType, byte[] data) {
 			int index = start;
 			block.replace(index++, numToRemove, Instruction.CreateLdcI4(data.Length / elementType.ToTypeSig().ElementType.GetPrimitiveSize()));
-			block.insert(index++, Instruction.Create(OpCodes.Newarr, elementType));
-			block.insert(index++, Instruction.Create(OpCodes.Dup));
-			block.insert(index++, Instruction.Create(OpCodes.Ldtoken, (IField)create(data)));
-			block.insert(index++, Instruction.Create(OpCodes.Call, (IMethod)InitializeArrayMethod));
+			block.insert(index++, OpCodes.Newarr.ToInstruction(elementType));
+			block.insert(index++, OpCodes.Dup.ToInstruction());
+			block.insert(index++, OpCodes.Ldtoken.ToInstruction((IField)create(data)));
+			block.insert(index++, OpCodes.Call.ToInstruction((IMethod)InitializeArrayMethod));
 		}
 
 		void createOurType() {

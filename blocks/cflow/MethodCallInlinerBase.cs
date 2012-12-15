@@ -75,7 +75,7 @@ namespace de4dot.blocks.cflow {
 
 			int methodArgsCount = DotNetUtils.getArgsCount(methodToInline);
 			for (int i = 0; i < methodArgsCount; i++)
-				block.insert(patchIndex++, Instruction.Create(OpCodes.Pop));
+				block.insert(patchIndex++, OpCodes.Pop.ToInstruction());
 
 			block.Instructions[patchIndex] = new Instr(loadInstr.Clone());
 			return true;

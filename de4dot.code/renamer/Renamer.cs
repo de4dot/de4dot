@@ -317,14 +317,14 @@ namespace de4dot.code.renamer {
 
 			if (RenameTypes && info.gotNewName()) {
 				var old = typeDef.Name;
-				typeDef.Name = new UTF8String(info.newName);
+				typeDef.Name = info.newName;
 				if (isVerbose)
 					Logger.v("Name: {0} => {1}", Utils.removeNewlines(old), Utils.removeNewlines(typeDef.Name));
 			}
 
 			if (RenameNamespaces && info.newNamespace != null) {
 				var old = typeDef.Namespace;
-				typeDef.Namespace = new UTF8String(info.newNamespace);
+				typeDef.Namespace = info.newNamespace;
 				if (isVerbose)
 					Logger.v("Namespace: {0} => {1}", Utils.removeNewlines(old), Utils.removeNewlines(typeDef.Namespace));
 			}
@@ -339,7 +339,7 @@ namespace de4dot.code.renamer {
 				var info = memberInfos.gparam(param);
 				if (!info.gotNewName())
 					continue;
-				param.GenericParam.Name = new UTF8String(info.newName);
+				param.GenericParam.Name = info.newName;
 				if (isVerbose)
 					Logger.v("GenParam: {0} => {1}", Utils.removeNewlines(info.oldFullName), Utils.removeNewlines(param.GenericParam.FullName));
 			}
@@ -383,7 +383,7 @@ namespace de4dot.code.renamer {
 					continue;
 				if (isDelegateType && DontRenameDelegateFields)
 					continue;
-				fieldDef.FieldDef.Name = new UTF8String(fieldInfo.newName);
+				fieldDef.FieldDef.Name = fieldInfo.newName;
 				if (isVerbose)
 					Logger.v("Field: {0} ({1:X8}) => {2}",
 							Utils.removeNewlines(fieldInfo.oldFullName),
@@ -399,7 +399,7 @@ namespace de4dot.code.renamer {
 				var propInfo = memberInfos.prop(propDef);
 				if (!propInfo.gotNewName())
 					continue;
-				propDef.PropertyDef.Name = new UTF8String(propInfo.newName);
+				propDef.PropertyDef.Name = propInfo.newName;
 				if (isVerbose)
 					Logger.v("Property: {0} ({1:X8}) => {2}",
 							Utils.removeNewlines(propInfo.oldFullName),
@@ -415,7 +415,7 @@ namespace de4dot.code.renamer {
 				var eventInfo = memberInfos.evt(eventDef);
 				if (!eventInfo.gotNewName())
 					continue;
-				eventDef.EventDef.Name = new UTF8String(eventInfo.newName);
+				eventDef.EventDef.Name = eventInfo.newName;
 				if (isVerbose)
 					Logger.v("Event: {0} ({1:X8}) => {2}",
 							Utils.removeNewlines(eventInfo.oldFullName),
@@ -436,7 +436,7 @@ namespace de4dot.code.renamer {
 				renameGenericParams(methodDef.GenericParams);
 
 				if (RenameMethods && methodInfo.gotNewName()) {
-					methodDef.MethodDef.Name = new UTF8String(methodInfo.newName);
+					methodDef.MethodDef.Name = methodInfo.newName;
 					if (isVerbose)
 						Logger.v("Name: {0} => {1}", Utils.removeNewlines(methodInfo.oldFullName), Utils.removeNewlines(methodDef.MethodDef.FullName));
 				}

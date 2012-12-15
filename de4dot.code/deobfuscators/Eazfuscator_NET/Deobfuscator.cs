@@ -199,14 +199,14 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			newMethod.Body = new CilBody();
 			newMethod.Body.MaxStack = 1;
 			newMethod.Body.Instructions.Add(Instruction.CreateLdcI4(stringDecrypter.ValidStringDecrypterValue.Value));
-			newMethod.Body.Instructions.Add(Instruction.Create(OpCodes.Call, stringDecrypter.Method));
-			newMethod.Body.Instructions.Add(Instruction.Create(OpCodes.Pop));
-			newMethod.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
+			newMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(stringDecrypter.Method));
+			newMethod.Body.Instructions.Add(OpCodes.Pop.ToInstruction());
+			newMethod.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
 
 			var cctor = module.GlobalType.FindOrCreateStaticConstructor();
 			var blocks = new Blocks(cctor);
 			var block = blocks.MethodBlocks.getAllBlocks()[0];
-			block.insert(0, Instruction.Create(OpCodes.Call, newMethod));
+			block.insert(0, OpCodes.Call.ToInstruction(newMethod));
 
 			IList<Instruction> allInstructions;
 			IList<ExceptionHandler> allExceptionHandlers;

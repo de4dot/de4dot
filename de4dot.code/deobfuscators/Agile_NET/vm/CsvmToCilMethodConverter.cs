@@ -415,7 +415,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 					continue;
 				if (hasPrefix(instrs, i, Code.Constrained))
 					continue;
-				instrs.Insert(i, Instruction.Create(OpCodes.Constrained, thisType.Next.ToTypeDefOrRef()));
+				instrs.Insert(i, OpCodes.Constrained.ToInstruction(thisType.Next.ToTypeDefOrRef()));
 				i++;
 			}
 		}

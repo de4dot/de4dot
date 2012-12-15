@@ -96,7 +96,7 @@ namespace de4dot.blocks.cflow {
 				var intValue = (Int64Value)value;
 				if (!intValue.allBitsValid())
 					return false;
-				block.Instructions[index] = new Instr(Instruction.Create(OpCodes.Ldc_I8, intValue.value));
+				block.Instructions[index] = new Instr(OpCodes.Ldc_I8.ToInstruction(intValue.value));
 				return true;
 			}
 			return false;

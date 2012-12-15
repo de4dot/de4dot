@@ -33,6 +33,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssemblyServer-CLR40", "Ass
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssemblyServer-CLR40-x64", "AssemblyServer-CLR40-x64\AssemblyServer-CLR40-x64.csproj", "{A0F58B9F-BB56-4D9B-B04A-726F9E7961EB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Examples", "dot10\Examples\Examples.csproj", "{F27E72B5-C4BD-40BF-AD19-4C8A99B55872}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -237,6 +239,18 @@ Global
 		{A0F58B9F-BB56-4D9B-B04A-726F9E7961EB}.Release|Win32.ActiveCfg = Release|x86
 		{A0F58B9F-BB56-4D9B-B04A-726F9E7961EB}.Release|x86.ActiveCfg = Release|x86
 		{A0F58B9F-BB56-4D9B-B04A-726F9E7961EB}.Release|x86.Build.0 = Release|x86
+		{F27E72B5-C4BD-40BF-AD19-4C8A99B55872}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{F27E72B5-C4BD-40BF-AD19-4C8A99B55872}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
+		{F27E72B5-C4BD-40BF-AD19-4C8A99B55872}.Debug|Mixed Platforms.Build.0 = Debug|x86
+		{F27E72B5-C4BD-40BF-AD19-4C8A99B55872}.Debug|Win32.ActiveCfg = Debug|x86
+		{F27E72B5-C4BD-40BF-AD19-4C8A99B55872}.Debug|x86.ActiveCfg = Debug|x86
+		{F27E72B5-C4BD-40BF-AD19-4C8A99B55872}.Debug|x86.Build.0 = Debug|x86
+		{F27E72B5-C4BD-40BF-AD19-4C8A99B55872}.Release|Any CPU.ActiveCfg = Release|x86
+		{F27E72B5-C4BD-40BF-AD19-4C8A99B55872}.Release|Mixed Platforms.ActiveCfg = Release|x86
+		{F27E72B5-C4BD-40BF-AD19-4C8A99B55872}.Release|Mixed Platforms.Build.0 = Release|x86
+		{F27E72B5-C4BD-40BF-AD19-4C8A99B55872}.Release|Win32.ActiveCfg = Release|x86
+		{F27E72B5-C4BD-40BF-AD19-4C8A99B55872}.Release|x86.ActiveCfg = Release|x86
+		{F27E72B5-C4BD-40BF-AD19-4C8A99B55872}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

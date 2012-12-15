@@ -305,7 +305,7 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 						if (decrypted == null)
 							continue;
 
-						instrs[i] = new Instr(Instruction.Create(OpCodes.Ldstr, decrypted));
+						instrs[i] = new Instr(OpCodes.Ldstr.ToInstruction(decrypted));
 						Logger.v("Decrypted string: {0}", Utils.toCsharpString(decrypted));
 					}
 				}

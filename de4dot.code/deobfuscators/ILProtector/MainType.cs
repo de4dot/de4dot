@@ -99,7 +99,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 				cctor.Body.InitLocals = false;
 				cctor.Body.Variables.Clear();
 				cctor.Body.Instructions.Clear();
-				cctor.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
+				cctor.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
 				cctor.Body.ExceptionHandlers.Clear();
 			}
 		}

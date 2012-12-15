@@ -356,8 +356,8 @@ namespace de4dot.code.deobfuscators {
 					// Oooops!!! The obfuscator is buggy. Well, let's hope it is, or it's my code. ;)
 
 					Logger.w("Holy obfuscator bugs, Batman! Found a proxy delegate call with no instance push in {0:X8}. Replacing it with a throw...", obfuscatedMethod.MDToken.ToInt32());
-					block.insert(i, Instruction.Create(OpCodes.Ldnull));
-					block.replace(i + 1, 1, Instruction.Create(OpCodes.Throw));
+					block.insert(i, OpCodes.Ldnull.ToInstruction());
+					block.replace(i + 1, 1, OpCodes.Throw.ToInstruction());
 					i++;
 				}
 			}

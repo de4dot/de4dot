@@ -109,8 +109,8 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			if (!emulateToReturn(patcher.afterIndex, patcher.lastInstr))
 				return false;
 			patcher.patch(block);
-			block.insert(instrIndex, Instruction.Create(OpCodes.Pop));
-			block.insert(instrIndex, Instruction.Create(OpCodes.Pop));
+			block.insert(instrIndex, OpCodes.Pop.ToInstruction());
+			block.insert(instrIndex, OpCodes.Pop.ToInstruction());
 			return true;
 		}
 

@@ -563,7 +563,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 						continue;
 					if (!new SigComparer().Equals(type, instr.Operand as ITypeDefOrRef))
 						continue;
-					instructions[i] = new Instr(Instruction.Create(OpCodes.Ldtoken, blocks.Method.DeclaringType));
+					instructions[i] = new Instr(OpCodes.Ldtoken.ToInstruction(blocks.Method.DeclaringType));
 				}
 			}
 		}
@@ -600,7 +600,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				return;
 
 			ep.MethodSig = MethodSig.CreateStatic(ep.MethodSig.RetType, new SZArraySig(module.CorLibTypes.String));
-			ep.ParamList.Clear();
+			ep.ParamDefs.Clear();
 			ep.Parameters.UpdateParameterTypes();
 		}
 

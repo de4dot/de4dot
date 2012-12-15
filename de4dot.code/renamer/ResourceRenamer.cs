@@ -156,7 +156,7 @@ namespace de4dot.code.renamer {
 				newNames[resource] = new RenameInfo(resource, info, newName);
 
 				Logger.v("Renamed resource in resources: {0} => {1}", Utils.removeNewlines(resource.Name), newName);
-				resource.Name = new UTF8String(newName);
+				resource.Name = newName;
 			}
 		}
 	}

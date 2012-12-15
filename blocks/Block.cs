@@ -52,7 +52,7 @@ namespace de4dot.blocks {
 		public Instr FirstInstr {
 			get {
 				if (instructions.Count == 0)
-					add(new Instr(Instruction.Create(OpCodes.Nop)));
+					add(new Instr(OpCodes.Nop.ToInstruction()));
 				return instructions[0];
 			}
 		}
@@ -60,7 +60,7 @@ namespace de4dot.blocks {
 		public Instr LastInstr {
 			get {
 				if (instructions.Count == 0)
-					add(new Instr(Instruction.Create(OpCodes.Nop)));
+					add(new Instr(OpCodes.Nop.ToInstruction()));
 				return instructions[instructions.Count - 1];
 			}
 		}

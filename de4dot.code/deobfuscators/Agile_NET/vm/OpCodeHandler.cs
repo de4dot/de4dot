@@ -70,19 +70,19 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 	static partial class OpCodeHandlers {
 		static Instruction arithmetic_read(BinaryReader reader) {
 			switch (reader.ReadByte()) {
-			case 0: return Instruction.Create(OpCodes.Add);
-			case 1: return Instruction.Create(OpCodes.Add_Ovf);
-			case 2: return Instruction.Create(OpCodes.Add_Ovf_Un);
-			case 3: return Instruction.Create(OpCodes.Sub);
-			case 4: return Instruction.Create(OpCodes.Sub_Ovf);
-			case 5: return Instruction.Create(OpCodes.Sub_Ovf_Un);
-			case 6: return Instruction.Create(OpCodes.Mul);
-			case 7: return Instruction.Create(OpCodes.Mul_Ovf);
-			case 8: return Instruction.Create(OpCodes.Mul_Ovf_Un);
-			case 9: return Instruction.Create(OpCodes.Div);
-			case 10: return Instruction.Create(OpCodes.Div_Un);
-			case 11: return Instruction.Create(OpCodes.Rem);
-			case 12: return Instruction.Create(OpCodes.Rem_Un);
+			case 0: return OpCodes.Add.ToInstruction();
+			case 1: return OpCodes.Add_Ovf.ToInstruction();
+			case 2: return OpCodes.Add_Ovf_Un.ToInstruction();
+			case 3: return OpCodes.Sub.ToInstruction();
+			case 4: return OpCodes.Sub_Ovf.ToInstruction();
+			case 5: return OpCodes.Sub_Ovf_Un.ToInstruction();
+			case 6: return OpCodes.Mul.ToInstruction();
+			case 7: return OpCodes.Mul_Ovf.ToInstruction();
+			case 8: return OpCodes.Mul_Ovf_Un.ToInstruction();
+			case 9: return OpCodes.Div.ToInstruction();
+			case 10: return OpCodes.Div_Un.ToInstruction();
+			case 11: return OpCodes.Rem.ToInstruction();
+			case 12: return OpCodes.Rem_Un.ToInstruction();
 			default: throw new ApplicationException("Invalid opcode");
 			}
 		}
@@ -226,8 +226,8 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 
 		static Instruction dup_read(BinaryReader reader) {
 			switch (reader.ReadByte()) {
-			case 0: return Instruction.Create(OpCodes.Dup);
-			case 1: return Instruction.Create(OpCodes.Pop);
+			case 0: return OpCodes.Dup.ToInstruction();
+			case 1: return OpCodes.Pop.ToInstruction();
 			default: throw new ApplicationException("Invalid opcode");
 			}
 		}
@@ -290,7 +290,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 		}
 
 		static Instruction endfinally_read(BinaryReader reader) {
-			return Instruction.Create(OpCodes.Endfinally);
+			return OpCodes.Endfinally.ToInstruction();
 		}
 
 		static Instruction ldfld_read(BinaryReader reader) {
@@ -350,7 +350,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 		}
 
 		static Instruction ldlen_read(BinaryReader reader) {
-			return Instruction.Create(OpCodes.Ldlen);
+			return OpCodes.Ldlen.ToInstruction();
 		}
 
 		static Instruction ldobj_read(BinaryReader reader) {
@@ -361,7 +361,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 		}
 
 		static Instruction ldstr_read(BinaryReader reader) {
-			return Instruction.Create(OpCodes.Ldstr, reader.ReadString());
+			return OpCodes.Ldstr.ToInstruction(reader.ReadString());
 		}
 
 		static bool ldtoken_check(UnknownHandlerInfo info) {
@@ -392,10 +392,10 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 		static Instruction ldc_read(BinaryReader reader) {
 			switch ((ElementType)reader.ReadByte()) {
 			case ElementType.I4: return Instruction.CreateLdcI4(reader.ReadInt32());
-			case ElementType.I8: return Instruction.Create(OpCodes.Ldc_I8, reader.ReadInt64());
-			case ElementType.R4: return Instruction.Create(OpCodes.Ldc_R4, reader.ReadSingle());
-			case ElementType.R8: return Instruction.Create(OpCodes.Ldc_R8, reader.ReadDouble());
-			case ElementType.Object: return Instruction.Create(OpCodes.Ldnull);
+			case ElementType.I8: return OpCodes.Ldc_I8.ToInstruction(reader.ReadInt64());
+			case ElementType.R4: return OpCodes.Ldc_R4.ToInstruction(reader.ReadSingle());
+			case ElementType.R8: return OpCodes.Ldc_R8.ToInstruction(reader.ReadDouble());
+			case ElementType.Object: return OpCodes.Ldnull.ToInstruction();
 			default: throw new ApplicationException("Invalid opcode");
 			}
 		}
@@ -424,12 +424,12 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 
 		static Instruction logical_read(BinaryReader reader) {
 			switch (reader.ReadByte()) {
-			case 0: return Instruction.Create(OpCodes.And);
-			case 1: return Instruction.Create(OpCodes.Or);
-			case 2: return Instruction.Create(OpCodes.Xor);
-			case 3: return Instruction.Create(OpCodes.Shl);
-			case 4: return Instruction.Create(OpCodes.Shr);
-			case 5: return Instruction.Create(OpCodes.Shr_Un);
+			case 0: return OpCodes.And.ToInstruction();
+			case 1: return OpCodes.Or.ToInstruction();
+			case 2: return OpCodes.Xor.ToInstruction();
+			case 3: return OpCodes.Shl.ToInstruction();
+			case 4: return OpCodes.Shr.ToInstruction();
+			case 5: return OpCodes.Shr_Un.ToInstruction();
 			default: throw new ApplicationException("Invalid opcode");
 			}
 		}
@@ -449,7 +449,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 		}
 
 		static Instruction nop_read(BinaryReader reader) {
-			return Instruction.Create(OpCodes.Nop);
+			return OpCodes.Nop.ToInstruction();
 		}
 
 		static bool ret_check(UnknownHandlerInfo info) {
@@ -458,7 +458,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 
 		static Instruction ret_read(BinaryReader reader) {
 			reader.ReadInt32();	// token of current method
-			return Instruction.Create(OpCodes.Ret);
+			return OpCodes.Ret.ToInstruction();
 		}
 
 		static bool rethrow_check(UnknownHandlerInfo info) {
@@ -466,7 +466,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 		}
 
 		static Instruction rethrow_read(BinaryReader reader) {
-			return Instruction.Create(OpCodes.Rethrow);
+			return OpCodes.Rethrow.ToInstruction();
 		}
 
 		static Instruction stloc_read(BinaryReader reader) {
@@ -510,13 +510,13 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 		}
 
 		static Instruction throw_read(BinaryReader reader) {
-			return Instruction.Create(OpCodes.Throw);
+			return OpCodes.Throw.ToInstruction();
 		}
 
 		static Instruction neg_read(BinaryReader reader) {
 			switch (reader.ReadByte()) {
-			case 0: return Instruction.Create(OpCodes.Neg);
-			case 1: return Instruction.Create(OpCodes.Not);
+			case 0: return OpCodes.Neg.ToInstruction();
+			case 1: return OpCodes.Not.ToInstruction();
 			default: throw new ApplicationException("Invalid opcode");
 			}
 		}

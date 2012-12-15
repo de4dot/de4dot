@@ -36,7 +36,7 @@ namespace de4dot.code {
 					continue;
 
 				int ldstrIndex = callResult.callStartIndex;
-				block.replace(ldstrIndex, num, Instruction.Create(OpCodes.Ldstr, decryptedString));
+				block.replace(ldstrIndex, num, OpCodes.Ldstr.ToInstruction(decryptedString));
 
 				// If it's followed by castclass string, remove it
 				if (ldstrIndex + 1 < block.Instructions.Count) {

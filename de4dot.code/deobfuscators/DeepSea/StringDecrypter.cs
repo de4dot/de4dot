@@ -144,8 +144,8 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				if (calledMethod.ToString() != "System.Void System.Runtime.CompilerServices.RuntimeHelpers::InitializeArray(System.Array,System.RuntimeFieldHandle)")
 					continue;
 
-				instrs[i] = Instruction.Create(OpCodes.Pop);
-				instrs[i + 1] = Instruction.Create(OpCodes.Nop);
+				instrs[i] = OpCodes.Pop.ToInstruction();
+				instrs[i + 1] = OpCodes.Nop.ToInstruction();
 			}
 		}
 

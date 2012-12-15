@@ -58,7 +58,7 @@ namespace de4dot.blocks.cflow {
 			// Pop the arguments to the bcc instruction. The dead code remover will get rid of the
 			// pop and any pushed arguments. Insert the pops just before the bcc instr.
 			for (int i = 0; i < stackArgs; i++)
-				block.insert(block.Instructions.Count - 1, Instruction.Create(OpCodes.Pop));
+				block.insert(block.Instructions.Count - 1, OpCodes.Pop.ToInstruction());
 		}
 
 		void IBranchHandler.handleNormal(int stackArgs, bool isTaken) {

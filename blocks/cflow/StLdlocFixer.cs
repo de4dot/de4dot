@@ -54,7 +54,7 @@ namespace de4dot.blocks.cflow {
 						continue;
 					if (local != Instr.getLocalVar(locals, instructions[i + 1]))
 						break;
-					instructions[i] = new Instr(Instruction.Create(OpCodes.Dup));
+					instructions[i] = new Instr(OpCodes.Dup.ToInstruction());
 					instructions[i + 1] = instr;
 					changed = true;
 					break;

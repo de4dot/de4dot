@@ -153,7 +153,7 @@ namespace de4dot.blocks {
 		public static MethodDef getPInvokeMethod(TypeDef type, string methodName) {
 			if (type == null)
 				return null;
-			var mname = new UTF8String(methodName);
+			UTF8String mname = methodName;
 			foreach (var method in type.Methods) {
 				if (method.ImplMap == null)
 					continue;
@@ -338,7 +338,7 @@ namespace de4dot.blocks {
 				var resourceName = removeFromNullChar(tmp);
 				if (resourceName == null)
 					continue;
-				var name = new UTF8String(resourceName);
+				UTF8String name = resourceName;
 				foreach (var resource in resources) {
 					if (UTF8String.Equals(resource.Name, name))
 						return resource;
@@ -360,8 +360,8 @@ namespace de4dot.blocks {
 			var newMethod = new MethodDefUser(method.Name, method.MethodSig, method.ImplAttributes, method.Attributes);
 			newMethod.Rid = method.Rid;
 			newMethod.DeclaringType2 = method.DeclaringType;
-			foreach (var pd in method.ParamList)
-				newMethod.ParamList.Add(new ParamDefUser(pd.Name, pd.Sequence, pd.Attributes));
+			foreach (var pd in method.ParamDefs)
+				newMethod.ParamDefs.Add(new ParamDefUser(pd.Name, pd.Sequence, pd.Attributes));
 			foreach (var gp in method.GenericParameters) {
 				var newGp = new GenericParamUser(gp.Number, gp.Flags, gp.Name);
 				foreach (var gpc in gp.GenericParamConstraints)

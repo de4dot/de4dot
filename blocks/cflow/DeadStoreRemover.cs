@@ -147,7 +147,7 @@ namespace de4dot.blocks.cflow {
 						continue;
 					if (!deadLocals[local.Index])
 						continue;
-					instructions[i] = new Instr(Instruction.Create(OpCodes.Pop));
+					instructions[i] = new Instr(OpCodes.Pop.ToInstruction());
 					changed = true;
 				}
 			}

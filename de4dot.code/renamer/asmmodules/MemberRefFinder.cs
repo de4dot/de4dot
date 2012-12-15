@@ -385,7 +385,7 @@ namespace de4dot.code.renamer.asmmodules {
 				return;
 			methodDefs[md] = true;
 			add(md.Signature);
-			add(md.ParamList);
+			add(md.ParamDefs);
 			add(md.GenericParameters);
 			add(md.DeclSecurities);
 			add(md.MethodBody);
