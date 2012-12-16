@@ -73,79 +73,9 @@ namespace de4dot.blocks {
 			sortExceptions();
 			layOutInstructions(out allInstructions, out allExceptionHandlers);
 
-			foreach (var instr in allInstructions) {
-				if (instr.OpCode == OpCodes.Br_S) instr.OpCode = OpCodes.Br;
-				else if (instr.OpCode == OpCodes.Brfalse_S) instr.OpCode = OpCodes.Brfalse;
-				else if (instr.OpCode == OpCodes.Brtrue_S) instr.OpCode = OpCodes.Brtrue;
-				else if (instr.OpCode == OpCodes.Beq_S) instr.OpCode = OpCodes.Beq;
-				else if (instr.OpCode == OpCodes.Bge_S) instr.OpCode = OpCodes.Bge;
-				else if (instr.OpCode == OpCodes.Bgt_S) instr.OpCode = OpCodes.Bgt;
-				else if (instr.OpCode == OpCodes.Ble_S) instr.OpCode = OpCodes.Ble;
-				else if (instr.OpCode == OpCodes.Blt_S) instr.OpCode = OpCodes.Blt;
-				else if (instr.OpCode == OpCodes.Bne_Un_S) instr.OpCode = OpCodes.Bne_Un;
-				else if (instr.OpCode == OpCodes.Bge_Un_S) instr.OpCode = OpCodes.Bge_Un;
-				else if (instr.OpCode == OpCodes.Bgt_Un_S) instr.OpCode = OpCodes.Bgt_Un;
-				else if (instr.OpCode == OpCodes.Ble_Un_S) instr.OpCode = OpCodes.Ble_Un;
-				else if (instr.OpCode == OpCodes.Blt_Un_S) instr.OpCode = OpCodes.Blt_Un;
-				else if (instr.OpCode == OpCodes.Leave_S) instr.OpCode = OpCodes.Leave;
-			}
-
-			for (int i = 0; i < 10; i++) {
-				if (!optimizeBranches(allInstructions))
-					break;
-			}
-
-			recalculateInstructionOffsets(allInstructions);
-		}
-
-		void recalculateInstructionOffsets(IList<Instruction> allInstructions) {
-			uint offset = 0;
-			foreach (var instr in allInstructions) {
-				instr.Offset = offset;
-				offset += (uint)instr.GetSize();
-			}
-		}
-
-		bool getShortBranch(Instruction instruction, out OpCode opcode) {
-			switch (instruction.OpCode.Code) {
-			case Code.Br:		opcode = OpCodes.Br_S; return true;
-			case Code.Brfalse:	opcode = OpCodes.Brfalse_S; return true;
-			case Code.Brtrue:	opcode = OpCodes.Brtrue_S; return true;
-			case Code.Beq:		opcode = OpCodes.Beq_S; return true;
-			case Code.Bge:		opcode = OpCodes.Bge_S; return true;
-			case Code.Bgt:		opcode = OpCodes.Bgt_S; return true;
-			case Code.Ble:		opcode = OpCodes.Ble_S; return true;
-			case Code.Blt:		opcode = OpCodes.Blt_S; return true;
-			case Code.Bne_Un:	opcode = OpCodes.Bne_Un_S; return true;
-			case Code.Bge_Un:	opcode = OpCodes.Bge_Un_S; return true;
-			case Code.Bgt_Un:	opcode = OpCodes.Bgt_Un_S; return true;
-			case Code.Ble_Un:	opcode = OpCodes.Ble_Un_S; return true;
-			case Code.Blt_Un:	opcode = OpCodes.Blt_Un_S; return true;
-			case Code.Leave:	opcode = OpCodes.Leave_S; return true;
-			default:			opcode = OpCodes.Nop; return false;
-			}
-		}
-
-		// Returns true if something was changed
-		bool optimizeBranches(IList<Instruction> allInstructions) {
-			bool changed = false;
-
-			recalculateInstructionOffsets(allInstructions);
-			for (int i = 0; i < allInstructions.Count; i++) {
-				var instruction = allInstructions[i];
-				OpCode opcode;
-				if (getShortBranch(instruction, out opcode)) {
-					const int instrSize = 5;	// It's a long branch instruction
-					var target = (Instruction)instruction.Operand;
-					int distance = target == null ? int.MaxValue : (int)(target.Offset - (instruction.Offset + instrSize));
-					if (-0x80 <= distance && distance <= 0x7F) {
-						instruction.OpCode = opcode;
-						changed = true;
-					}
-				}
-			}
-
-			return changed;
+			allInstructions.SimplifyBranches();
+			allInstructions.OptimizeBranches();
+			allInstructions.UpdateInstructionOffsets();
 		}
 
 		class BlockInfo {
