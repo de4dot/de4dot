@@ -274,7 +274,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 				if (csvm.restore())
 					addResourceToBeRemoved(csvm.Resource, "CSVM data resource");
 				else {
-					Logger.e("Couldn't restore VM methods");
+					Logger.e("Couldn't restore VM methods. Use --dont-rename or it will not run");
 					preserveTokensAndTypes();
 				}
 			}
