@@ -50,7 +50,7 @@ namespace de4dot.code {
 			var ts = typeRef as TypeSpec;
 			if (ts == null)
 				return typeRef;
-			var gis = ts.ToGenericInstSig();
+			var gis = ts.TryGetGenericInstSig();
 			if (gis == null || gis.GenericType == null)
 				return typeRef;
 			return gis.GenericType.TypeDefOrRef;

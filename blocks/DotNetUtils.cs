@@ -190,7 +190,7 @@ namespace de4dot.blocks {
 				return null;
 			if (method is MethodDef)
 				return (MethodDef)method;
-			var git = method.DeclaringType.ToGenericInstSig();
+			var git = method.DeclaringType.TryGetGenericInstSig();
 			var dt = git == null ? method.DeclaringType : git.GenericType.TypeDefOrRef;
 			return getMethod(module, method, dt);
 		}

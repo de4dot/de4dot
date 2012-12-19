@@ -40,7 +40,7 @@ namespace AssemblyData.methodsrewriter {
 			if (!fields.TryGetValue(fieldRef.Name.String, out list))
 				return null;
 
-			fieldRef = GenericArgsSubstitutor.create(fieldRef, fieldRef.DeclaringType.ToGenericInstSig());
+			fieldRef = GenericArgsSubstitutor.create(fieldRef, fieldRef.DeclaringType.TryGetGenericInstSig());
 
 			foreach (var field in list) {
 				if (ResolverUtils.compareFields(field, fieldRef))
@@ -71,7 +71,7 @@ namespace AssemblyData.methodsrewriter {
 			if (!methods.TryGetValue(methodRef.Name.String, out list))
 				return null;
 
-			methodRef = GenericArgsSubstitutor.create(methodRef, methodRef.DeclaringType.ToGenericInstSig());
+			methodRef = GenericArgsSubstitutor.create(methodRef, methodRef.DeclaringType.TryGetGenericInstSig());
 
 			foreach (var method in list) {
 				if (ResolverUtils.compareMethods(method, methodRef))

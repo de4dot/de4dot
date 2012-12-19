@@ -252,7 +252,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 					var castclass = instrs[index++];
 					if (castclass.OpCode.Code != Code.Castclass)
 						continue;
-					var arrayType = (castclass.Operand as ITypeDefOrRef).ToSZArraySig();
+					var arrayType = (castclass.Operand as ITypeDefOrRef).TryGetSZArraySig();
 					if (arrayType == null)
 						continue;
 					if (arrayType.Next.ElementType.GetPrimitiveSize() == -1) {

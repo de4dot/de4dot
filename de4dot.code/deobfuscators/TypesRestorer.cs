@@ -513,7 +513,7 @@ namespace de4dot.code.deobfuscators {
 							continue;
 
 						IList<TypeSig> calledMethodArgs = DotNetUtils.getArgs(calledMethodDefOrRef);
-						calledMethodArgs = DotNetUtils.replaceGenericParameters(calledMethodDefOrRef.DeclaringType.ToGenericInstSig(), calledMethodSpec, calledMethodArgs);
+						calledMethodArgs = DotNetUtils.replaceGenericParameters(calledMethodDefOrRef.DeclaringType.TryGetGenericInstSig(), calledMethodSpec, calledMethodArgs);
 						for (int j = 0; j < pushedArgs.NumValidArgs; j++) {
 							var pushInstr = pushedArgs.getEnd(j);
 							if (pushInstr.OpCode.Code != Code.Ldfld && pushInstr.OpCode.Code != Code.Ldsfld)

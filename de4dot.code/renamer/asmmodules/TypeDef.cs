@@ -494,7 +494,7 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 
 		void initializeInterfaces(TypeInfo typeInfo) {
-			var git = typeInfo.typeRef.ToGenericInstSig();
+			var git = typeInfo.typeRef.TryGetGenericInstSig();
 			interfaceMethodInfos.initializeFrom(typeInfo.typeDef.interfaceMethodInfos, git);
 			foreach (var info in typeInfo.typeDef.allImplementedInterfaces.Keys) {
 				var newTypeInfo = new TypeInfo(info, git);
@@ -540,7 +540,7 @@ namespace de4dot.code.renamer.asmmodules {
 						var ifaceMethod = methodInst.origMethodDef;
 						if (!ifaceMethod.isVirtual())
 							continue;
-						var ifaceMethodRef = GenericArgsSubstitutor.create(methodInst.methodRef, ifaceInfo.typeRef.ToGenericInstSig());
+						var ifaceMethodRef = GenericArgsSubstitutor.create(methodInst.methodRef, ifaceInfo.typeRef.TryGetGenericInstSig());
 						MMethodDef classMethod;
 						if (!methodsDict.TryGetValue(ifaceMethodRef, out classMethod))
 							continue;
@@ -574,7 +574,7 @@ namespace de4dot.code.renamer.asmmodules {
 					var ifaceMethod = methodsList[0].origMethodDef;
 					if (!ifaceMethod.isVirtual())
 						continue;
-					var ifaceMethodRef = GenericArgsSubstitutor.create(ifaceMethod.MethodDef, ifaceInfo.typeRef.ToGenericInstSig());
+					var ifaceMethodRef = GenericArgsSubstitutor.create(ifaceMethod.MethodDef, ifaceInfo.typeRef.TryGetGenericInstSig());
 					MMethodDef classMethod;
 					if (!methodsDict.TryGetValue(ifaceMethodRef, out classMethod))
 						continue;
@@ -588,7 +588,7 @@ namespace de4dot.code.renamer.asmmodules {
 			methodsDict.Clear();
 			var ifaceMethodsDict = new Dictionary<IMethodDefOrRef, MMethodDef>(MethodEqualityComparer.CompareDeclaringTypes);
 			foreach (var ifaceInfo in allImplementedInterfaces.Keys) {
-				var git = ifaceInfo.typeRef.ToGenericInstSig();
+				var git = ifaceInfo.typeRef.TryGetGenericInstSig();
 				foreach (var ifaceMethod in ifaceInfo.typeDef.methods.getValues()) {
 					IMethodDefOrRef ifaceMethodRef = ifaceMethod.MethodDef;
 					if (git != null)
@@ -699,7 +699,7 @@ namespace de4dot.code.renamer.asmmodules {
 		void instantiateVirtualMembers(MethodNameGroups groups) {
 			if (!TypeDef.IsInterface) {
 				if (baseType != null)
-					virtualMethodInstances.initializeFrom(baseType.typeDef.virtualMethodInstances, baseType.typeRef.ToGenericInstSig());
+					virtualMethodInstances.initializeFrom(baseType.typeDef.virtualMethodInstances, baseType.typeRef.TryGetGenericInstSig());
 
 				// Figure out which methods we override in the base class
 				foreach (var methodDef in methods.getValues()) {
