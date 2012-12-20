@@ -101,7 +101,7 @@ To show you an example, most obfuscators can encrypt all the strings in your ass
 
 The actual string decrypter code is 4 lines long, and it's a simple XOR loop! When Agile.NET (aka CliSecure) encrypts your strings, it replaces the original strings with an XOR'd copy, and adds a call to their string decrypter. This decrypter merely XOR's every character and returns the decrypted string. Here's the string decrypter code de4dot uses:
 
-```C#
+```
 		public string decrypt(string es) {
 			char[] buf = new char[es.Length];
 			for (int i = 0; i < es.Length; i++)
@@ -112,13 +112,13 @@ The actual string decrypter code is 4 lines long, and it's a simple XOR loop! Wh
 
 Your code might look like this:
 
-```C#
+```
 	string myString = "Hello World";
 ```
 
 and the obfuscator (eg. Agile.NET / CliSecure) will replace that with something similar to this:
 
-```C#
+```
 	string myString = DecryptClass.decrypt("AoF41Fk5422");
 ```
 
