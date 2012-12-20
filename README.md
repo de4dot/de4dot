@@ -101,26 +101,23 @@ To show you an example, most obfuscators can encrypt all the strings in your ass
 
 The actual string decrypter code is 4 lines long, and it's a simple XOR loop! When Agile.NET (aka CliSecure) encrypts your strings, it replaces the original strings with an XOR'd copy, and adds a call to their string decrypter. This decrypter merely XOR's every character and returns the decrypted string. Here's the string decrypter code de4dot uses:
 
-```
-		public string decrypt(string es) {
-			char[] buf = new char[es.Length];
-			for (int i = 0; i < es.Length; i++)
-				buf[i] = (char)(es[i] ^ stringDecrypterKey[i % stringDecrypterKey.Length]);
-			return new string(buf);
-		}
-```
+    :::C#
+    public string decrypt(string es) {
+    	char[] buf = new char[es.Length];
+    	for (int i = 0; i < es.Length; i++)
+    		buf[i] = (char)(es[i] ^ stringDecrypterKey[i % stringDecrypterKey.Length]);
+    	return new string(buf);
+    }
 
 Your code might look like this:
 
-```
-	string myString = "Hello World";
-```
+    :::C#
+    string myString = "Hello World";
 
 and the obfuscator (eg. Agile.NET / CliSecure) will replace that with something similar to this:
 
-```
-	string myString = DecryptClass.decrypt("AoF41Fk5422");
-```
+    :::C#
+    string myString = DecryptClass.decrypt("AoF41Fk5422");
 
 Yes, Agile.NET's string encryption feature really is this bad! I bet you that none of their customers knows about this. And SecureTeam sure wants to keep it that way. :)
 
@@ -138,7 +135,7 @@ How to use de4dot
 N00b users
 ----------
 
-If you're command line challenged, drag and drop the file(s) onto de4dot.exe and wait a few seconds.
+Drag and drop the file(s) onto de4dot.exe and wait a few seconds.
 
 Deobfuscate more than one file at a time
 ----------------------------------------
@@ -200,8 +197,8 @@ Preserve all important tokens except the Param tokens.
 
     de4dot --preserve-table all,-pd file1.dll
 
-Dynamically decrypt strings
----------------------------
+Dynamically decrypting strings
+------------------------------
 
 Although `de4dot` supports a lot of obfuscators, there's still some it doesn't support. To decrypt strings, you'll first need to figure out which method or methods decrypt strings. To get the method token of these string decrypters, you can use ILDASM with the 'show metadata tokens' option enabled. A method token is a 32-bit number and begins with 06, eg. 06012345.
 
@@ -226,8 +223,8 @@ Force unsupported obfuscator
 
 For other obfuscator types, see the help screen.
 
-Disable renaming symbols
-------------------------
+Disabling symbol renaming
+-------------------------
 
 Renaming symbols isn't as easy as renaming A to B when reflection is involved. `de4dot` currently doesn't support renaming XAML so if you suspect that it uses WPF (or if it's a Silverlight app) you should disable renaming if the assembly fails to run.
 
