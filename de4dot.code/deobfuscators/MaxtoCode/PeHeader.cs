@@ -27,13 +27,13 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		V3,
 		V4,
 		V5,
+		V6,
 	}
 
 	class PeHeader {
-		const int XOR_KEY = 0x7ABF931;
-
 		EncryptionVersion version;
 		byte[] headerData;
+		uint xorKey;
 
 		public EncryptionVersion EncryptionVersion {
 			get { return version; }
@@ -42,15 +42,31 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		public PeHeader(MainType mainType, MyPEImage peImage) {
 			uint headerOffset;
 			version = getHeaderOffsetAndVersion(peImage, out headerOffset);
+
+			switch (version) {
+			case EncryptionVersion.V1:
+			case EncryptionVersion.V2:
+			case EncryptionVersion.V3:
+			case EncryptionVersion.V4:
+			case EncryptionVersion.V5:
+			default:
+				xorKey = 0x7ABF931;
+				break;
+
+			case EncryptionVersion.V6:
+				xorKey = 0x7ABA931;
+				break;
+			}
+
 			headerData = peImage.offsetReadBytes(headerOffset, 0x1000);
 		}
 
 		public uint getMcKeyRva() {
-			return getRva(0x0FFC, XOR_KEY);
+			return getRva(0x0FFC, xorKey);
 		}
 
 		public uint getRva(int offset, uint xorKey) {
-			return (readUInt32(offset) ^ xorKey);
+			return readUInt32(offset) ^ xorKey;
 		}
 
 		public uint readUInt32(int offset) {
