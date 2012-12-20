@@ -194,6 +194,7 @@ namespace de4dot.code.deobfuscators {
 			}
 
 			restoreBaseType();
+			fixMDHeaderVersion();
 		}
 
 		static bool isTypeWithInvalidBaseType(TypeDef moduleType, TypeDef type) {
@@ -210,6 +211,13 @@ namespace de4dot.code.deobfuscators {
 							type.MDToken.ToInt32());
 				type.BaseType = module.CorLibTypes.Object.TypeDefOrRef;
 			}
+		}
+
+		void fixMDHeaderVersion() {
+			// Version 1.1 supports generics but it's a little different. Most tools
+			// will have a problem reading the MD tables, so switch to the standard v2.0.
+			if (module.TablesHeaderVersion == 0x0101)
+				module.TablesHeaderVersion = 0x0200;
 		}
 
 		void removeTypesWithInvalidBaseTypes() {
