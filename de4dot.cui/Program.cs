@@ -20,7 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using dot10.DotNet;
+using dnlib.DotNet;
 using de4dot.code;
 using de4dot.code.deobfuscators;
 

@@ -17,7 +17,7 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using dot10.DotNet.Writer;
+using dnlib.DotNet.Writer;
 using de4dot.code.renamer;
 
 namespace de4dot.code.deobfuscators {

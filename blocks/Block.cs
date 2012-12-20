@@ -19,7 +19,7 @@
 
 using System;
 using System.Collections.Generic;
-using dot10.DotNet.Emit;
+using dnlib.DotNet.Emit;
 
 namespace de4dot.blocks {
 	public class Block : BaseBlock {

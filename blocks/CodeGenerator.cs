@@ -19,8 +19,8 @@
 
 using System;
 using System.Collections.Generic;
-using dot10.DotNet;
-using dot10.DotNet.Emit;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 
 namespace de4dot.blocks {
 	class CodeGenerator {

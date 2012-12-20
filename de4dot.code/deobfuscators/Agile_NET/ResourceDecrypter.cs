@@ -20,8 +20,8 @@
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
-using dot10.IO;
-using dot10.DotNet;
+using dnlib.IO;
+using dnlib.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Agile_NET {

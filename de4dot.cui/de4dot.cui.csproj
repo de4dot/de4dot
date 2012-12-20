@@ -51,9 +51,9 @@
       <Project>{4D10B9EB-3BF1-4D61-A389-CB019E8C9622}</Project>
       <Name>de4dot.code</Name>
     </ProjectReference>
-    <ProjectReference Include="..\dot10\src\dot10.csproj">
+    <ProjectReference Include="..\dnlib\src\dnlib.csproj">
       <Project>{FDFC1237-143F-4919-8318-4926901F4639}</Project>
-      <Name>dot10</Name>
+      <Name>dnlib</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

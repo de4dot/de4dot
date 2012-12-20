@@ -19,8 +19,8 @@
 
 using System;
 using System.IO;
-using dot10.IO;
-using dot10.DotNet;
+using dnlib.IO;
+using dnlib.DotNet;
 using de4dot.code.resources;
 
 namespace de4dot.code.deobfuscators.CodeVeil {

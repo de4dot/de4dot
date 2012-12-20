@@ -19,10 +19,10 @@
 
 using System;
 using System.Collections.Generic;
-using dot10.DotNet;
-using dot10.DotNet.Emit;
-using dot10.DotNet.Writer;
-using dot10.PE;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
+using dnlib.DotNet.Writer;
+using dnlib.PE;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
 

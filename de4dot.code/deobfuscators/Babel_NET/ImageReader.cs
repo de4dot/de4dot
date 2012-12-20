@@ -22,13 +22,13 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.IO;
 using System.Text;
-using dot10.IO;
-using dot10.DotNet;
-using dot10.DotNet.Emit;
+using dnlib.IO;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 using CR = System.Runtime.InteropServices;
-using DR = dot10.DotNet;
+using DR = dnlib.DotNet;
 
 namespace de4dot.code.deobfuscators.Babel_NET {
 	class ImageReader {

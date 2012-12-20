@@ -19,7 +19,7 @@
 
 using System;
 using System.Collections.Generic;
-using dot10.DotNet.Emit;
+using dnlib.DotNet.Emit;
 
 namespace de4dot.blocks.cflow {
 	// Removes dead stores by replacing the stloc with a pop. Other optimizations will notice it's

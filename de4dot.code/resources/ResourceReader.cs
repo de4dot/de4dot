@@ -22,8 +22,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
-using dot10.DotNet;
-using dot10.IO;
+using dnlib.DotNet;
+using dnlib.IO;
 
 namespace de4dot.code.resources {
 	[Serializable]

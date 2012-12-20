@@ -19,9 +19,9 @@
 
 using System;
 using System.Collections.Generic;
-using dot10.PE;
-using dot10.DotNet;
-using dot10.DotNet.Writer;
+using dnlib.PE;
+using dnlib.DotNet;
+using dnlib.DotNet.Writer;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
 using de4dot.code.renamer;

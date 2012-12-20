@@ -20,7 +20,7 @@
 using System;
 using System.Collections.Generic;
 using de4dot.code.deobfuscators;
-using dot10.DotNet;
+using dnlib.DotNet;
 using de4dot.code.renamer;
 
 namespace de4dot.code {

@@ -17,7 +17,7 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using dot10.DotNet;
+using dnlib.DotNet;
 
 namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 	class CodeCompilerMethodCallRestorer : MethodCallRestorerBase {

@@ -22,8 +22,8 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Reflection;
-using dot10.DotNet;
-using dot10.DotNet.MD;
+using dnlib.DotNet;
+using dnlib.DotNet.MD;
 using de4dot.blocks;
 
 namespace de4dot.mdecrypt {
@@ -92,7 +92,7 @@ namespace de4dot.mdecrypt {
 
 		MDTable methodDefTable;
 		IntPtr methodDefTablePtr;
-		ModuleDefMD dot10Module;
+		ModuleDefMD dnlibModule;
 		MethodDef moduleCctor;
 		uint moduleCctorCodeRva;
 		IntPtr moduleToDecryptScope;
@@ -151,11 +151,11 @@ namespace de4dot.mdecrypt {
 				hInstModule = Marshal.GetHINSTANCE(moduleToDecrypt);
 				moduleToDecryptScope = getScope(moduleToDecrypt);
 
-				dot10Module = ModuleDefMD.Load(hInstModule);
-				methodDefTable = dot10Module.TablesStream.MethodTable;
-				methodDefTablePtr = new IntPtr((byte*)hInstModule + (uint)dot10Module.MetaData.PEImage.ToRVA(methodDefTable.StartOffset));
+				dnlibModule = ModuleDefMD.Load(hInstModule);
+				methodDefTable = dnlibModule.TablesStream.MethodTable;
+				methodDefTablePtr = new IntPtr((byte*)hInstModule + (uint)dnlibModule.MetaData.PEImage.ToRVA(methodDefTable.StartOffset));
 
-				initializeDot10Methods();
+				initializeDNLibMethods();
 			}
 		}
 
@@ -176,8 +176,8 @@ namespace de4dot.mdecrypt {
 			return field.GetValue(obj);
 		}
 
-		unsafe void initializeDot10Methods() {
-			moduleCctor = dot10Module.GlobalType.FindStaticConstructor();
+		unsafe void initializeDNLibMethods() {
+			moduleCctor = dnlibModule.GlobalType.FindStaticConstructor();
 			if (moduleCctor == null)
 				moduleCctorCodeRva = 0;
 			else {
@@ -478,7 +478,7 @@ namespace de4dot.mdecrypt {
 			ctx.dm = new DumpedMethod();
 			ctx.dm.token = token;
 
-			ctx.method = dot10Module.ResolveMethod(MDToken.ToRID(token));
+			ctx.method = dnlibModule.ResolveMethod(MDToken.ToRID(token));
 			if (ctx.method == null)
 				throw new ApplicationException(string.Format("Could not find method {0:X8}", token));
 

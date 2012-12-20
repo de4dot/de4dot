@@ -18,7 +18,7 @@
 */
 
 using System;
-using dot10.DotNet.Emit;
+using dnlib.DotNet.Emit;
 
 namespace de4dot.blocks.cflow {
 	class BlockCflowDeobfuscator : BlockDeobfuscator, IBranchHandler {

@@ -21,7 +21,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 
 [assembly: AssemblyTitle("blocks")]
-[assembly: AssemblyDescription("Modifies dot10 MethodDef bodies")]
+[assembly: AssemblyDescription("Modifies dnlib MethodDef bodies")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("blocks")]

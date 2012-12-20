@@ -21,8 +21,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using de4dot.blocks;
-using dot10.DotNet;
-using dot10.DotNet.Emit;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 
 namespace de4dot.code.deobfuscators.Agile_NET.vm {
 	partial class OpCodeHandler {

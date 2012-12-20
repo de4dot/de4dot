@@ -20,8 +20,8 @@
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using dot10.DotNet;
-using dot10.DotNet.Emit;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.code.renamer.asmmodules;
 using de4dot.blocks;
 

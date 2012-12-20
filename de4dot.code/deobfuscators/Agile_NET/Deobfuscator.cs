@@ -19,9 +19,9 @@
 
 using System;
 using System.Collections.Generic;
-using dot10.IO;
-using dot10.PE;
-using dot10.DotNet;
+using dnlib.IO;
+using dnlib.PE;
+using dnlib.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Agile_NET {

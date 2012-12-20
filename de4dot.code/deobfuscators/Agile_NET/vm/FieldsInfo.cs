@@ -19,7 +19,7 @@
 
 using System;
 using System.Collections.Generic;
-using dot10.DotNet;
+using dnlib.DotNet;
 
 namespace de4dot.code.deobfuscators.Agile_NET.vm {
 	class FieldsInfo {

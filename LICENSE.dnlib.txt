@@ -21,4 +21,4 @@
     SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 </LICENSE>
 
-Official site: https://bitbucket.org/0xd4d/dot10
+Official site: https://bitbucket.org/0xd4d/dnlib

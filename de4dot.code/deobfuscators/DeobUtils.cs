@@ -22,8 +22,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Security.Cryptography;
-using dot10.DotNet;
-using dot10.DotNet.Emit;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using ICSharpCode.SharpZipLib.Zip.Compression;
 using de4dot.blocks;
 

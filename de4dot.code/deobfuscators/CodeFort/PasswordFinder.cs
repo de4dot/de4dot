@@ -22,7 +22,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
-using dot10.DotNet;
+using dnlib.DotNet;
 
 namespace de4dot.code.deobfuscators.CodeFort {
 	class PasswordInfo {

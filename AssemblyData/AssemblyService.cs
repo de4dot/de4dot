@@ -21,7 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
-using dot10.DotNet;
+using dnlib.DotNet;
 using de4dot.blocks;
 using de4dot.mdecrypt;
 

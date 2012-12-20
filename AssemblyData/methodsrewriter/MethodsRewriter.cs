@@ -22,12 +22,12 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Reflection.Emit;
-using dot10.DotNet.Emit;
-using dot10.DotNet;
+using dnlib.DotNet.Emit;
+using dnlib.DotNet;
 using de4dot.blocks;
 
-using OpCode = dot10.DotNet.Emit.OpCode;
-using OpCodes = dot10.DotNet.Emit.OpCodes;
+using OpCode = dnlib.DotNet.Emit.OpCode;
+using OpCodes = dnlib.DotNet.Emit.OpCodes;
 using ROpCode = System.Reflection.Emit.OpCode;
 using ROpCodes = System.Reflection.Emit.OpCodes;
 

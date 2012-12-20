@@ -21,7 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using dot10.IO;
+using dnlib.IO;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.MaxtoCode {

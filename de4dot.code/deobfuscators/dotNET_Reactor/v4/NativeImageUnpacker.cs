@@ -20,9 +20,9 @@
 using System;
 using System.IO;
 using ICSharpCode.SharpZipLib.Zip.Compression;
-using dot10.PE;
-using dot10.IO;
-using dot10.DotNet;
+using dnlib.PE;
+using dnlib.IO;
+using dnlib.DotNet;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 	class NativeImageUnpacker {

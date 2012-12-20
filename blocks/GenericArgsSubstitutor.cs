@@ -18,7 +18,7 @@
 */
 
 using System.Collections.Generic;
-using dot10.DotNet;
+using dnlib.DotNet;
 
 namespace de4dot.blocks {
 	public struct GenericArgsSubstitutor {
