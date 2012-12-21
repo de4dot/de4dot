@@ -43,6 +43,7 @@ namespace de4dot.blocks.cflow {
 			ourBlocksDeobfuscators.Add(new DeadCodeRemover { ExecuteOnNoChange = false });
 			ourBlocksDeobfuscators.Add(new ConstantsFolder { ExecuteOnNoChange = true });
 			ourBlocksDeobfuscators.Add(new StLdlocFixer { ExecuteOnNoChange = true });
+			ourBlocksDeobfuscators.Add(new DupBlockCflowDeobfuscator { ExecuteOnNoChange = true });
 		}
 
 		public void add(IEnumerable<IBlocksDeobfuscator> blocksDeobfuscators) {
