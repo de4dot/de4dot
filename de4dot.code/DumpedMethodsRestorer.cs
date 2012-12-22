@@ -18,10 +18,10 @@
 */
 
 using System.Collections.Generic;
-using dot10.PE;
-using dot10.DotNet.MD;
-using dot10.DotNet.Emit;
-using dot10.DotNet;
+using dnlib.PE;
+using dnlib.DotNet.MD;
+using dnlib.DotNet.Emit;
+using dnlib.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code {

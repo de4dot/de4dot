@@ -18,7 +18,7 @@
 */
 
 using System.Reflection;
-using dot10.DotNet;
+using dnlib.DotNet;
 
 namespace AssemblyData.methodsrewriter {
 	class MMethod {

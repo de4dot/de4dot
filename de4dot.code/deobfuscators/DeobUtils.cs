@@ -22,8 +22,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Security.Cryptography;
-using dot10.DotNet;
-using dot10.DotNet.Emit;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using ICSharpCode.SharpZipLib.Zip.Compression;
 using de4dot.blocks;
 
@@ -71,6 +71,10 @@ namespace de4dot.code.deobfuscators {
 
 		public static byte[] md5Sum(byte[] data) {
 			return MD5.Create().ComputeHash(data);
+		}
+
+		public static byte[] sha1Sum(byte[] data) {
+			return SHA1.Create().ComputeHash(data);
 		}
 
 		public static byte[] sha256Sum(byte[] data) {

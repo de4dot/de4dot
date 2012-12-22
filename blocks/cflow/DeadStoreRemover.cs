@@ -19,7 +19,7 @@
 
 using System;
 using System.Collections.Generic;
-using dot10.DotNet.Emit;
+using dnlib.DotNet.Emit;
 
 namespace de4dot.blocks.cflow {
 	// Removes dead stores by replacing the stloc with a pop. Other optimizations will notice it's
@@ -147,7 +147,7 @@ namespace de4dot.blocks.cflow {
 						continue;
 					if (!deadLocals[local.Index])
 						continue;
-					instructions[i] = new Instr(Instruction.Create(OpCodes.Pop));
+					instructions[i] = new Instr(OpCodes.Pop.ToInstruction());
 					changed = true;
 				}
 			}

@@ -17,8 +17,8 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using dot10.DotNet;
-using dot10.DotNet.Emit;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
@@ -97,7 +97,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 						continue;
 
 					uint token = (uint)(int)instrs[i].Operand;
-					instrs[i] = new Instr(Instruction.Create(OpCodes.Nop));
+					instrs[i] = new Instr(OpCodes.Nop.ToInstruction());
 					instrs[i + 1] = new Instr(new Instruction(OpCodes.Ldtoken, module.ResolveToken(token) as ITokenOperand));
 				}
 			}

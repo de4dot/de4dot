@@ -19,7 +19,7 @@
 
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using dot10.DotNet;
+using dnlib.DotNet;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
 

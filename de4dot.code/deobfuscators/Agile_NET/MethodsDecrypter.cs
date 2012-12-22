@@ -20,10 +20,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using dot10.IO;
-using dot10.PE;
-using dot10.DotNet;
-using dot10.DotNet.MD;
+using dnlib.IO;
+using dnlib.PE;
+using dnlib.DotNet;
+using dnlib.DotNet.MD;
 using de4dot.blocks;
 using de4dot.code.AssemblyClient;
 

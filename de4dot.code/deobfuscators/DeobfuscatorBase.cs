@@ -19,10 +19,10 @@
 
 using System;
 using System.Collections.Generic;
-using dot10.DotNet;
-using dot10.DotNet.Emit;
-using dot10.DotNet.Writer;
-using dot10.PE;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
+using dnlib.DotNet.Writer;
+using dnlib.PE;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
 
@@ -51,6 +51,8 @@ namespace de4dot.code.deobfuscators {
 		MethodCallRemover methodCallRemover = new MethodCallRemover();
 		byte[] moduleBytes;
 		protected InitializedDataCreator initializedDataCreator;
+		bool keepTypes;
+		MetaDataFlags? mdFlags;
 
 		protected byte[] ModuleBytes {
 			get { return moduleBytes; }
@@ -77,6 +79,10 @@ namespace de4dot.code.deobfuscators {
 		public virtual RenamingOptions RenamingOptions { get; set; }
 		public DecrypterType DefaultDecrypterType { get; set; }
 
+		public virtual MetaDataFlags MetaDataFlags {
+			get { return mdFlags ?? Operations.MetaDataFlags; }
+		}
+
 		public abstract string Type { get; }
 		public abstract string TypeLong { get; }
 		public abstract string Name { get; }
@@ -85,8 +91,9 @@ namespace de4dot.code.deobfuscators {
 			get { return false; }
 		}
 
-		protected virtual bool KeepTypes {
-			get { return false; }
+		protected bool KeepTypes {
+			get { return keepTypes; }
+			set { keepTypes = value; }
 		}
 
 		protected bool CanRemoveTypes {
@@ -123,6 +130,15 @@ namespace de4dot.code.deobfuscators {
 		protected void setModule(ModuleDefMD module) {
 			this.module = module;
 			initializedDataCreator = new InitializedDataCreator(module);
+		}
+
+		protected void preserveTokensAndTypes() {
+			keepTypes = true;
+			mdFlags = Operations.MetaDataFlags;
+			mdFlags |= MetaDataFlags.PreserveRids |
+						MetaDataFlags.PreserveUSOffsets |
+						MetaDataFlags.PreserveBlobOffsets |
+						MetaDataFlags.PreserveExtraSignatureData;
 		}
 
 		protected virtual bool checkValidName(string name) {
@@ -178,6 +194,7 @@ namespace de4dot.code.deobfuscators {
 			}
 
 			restoreBaseType();
+			fixMDHeaderVersion();
 		}
 
 		static bool isTypeWithInvalidBaseType(TypeDef moduleType, TypeDef type) {
@@ -194,6 +211,13 @@ namespace de4dot.code.deobfuscators {
 							type.MDToken.ToInt32());
 				type.BaseType = module.CorLibTypes.Object.TypeDefOrRef;
 			}
+		}
+
+		void fixMDHeaderVersion() {
+			// Version 1.1 supports generics but it's a little different. Most tools
+			// will have a problem reading the MD tables, so switch to the standard v2.0.
+			if (module.TablesHeaderVersion == 0x0101)
+				module.TablesHeaderVersion = 0x0200;
 		}
 
 		void removeTypesWithInvalidBaseTypes() {

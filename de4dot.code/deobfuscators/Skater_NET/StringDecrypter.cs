@@ -23,8 +23,8 @@ using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
-using dot10.DotNet;
-using dot10.DotNet.Emit;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Skater_NET {
@@ -305,7 +305,7 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 						if (decrypted == null)
 							continue;
 
-						instrs[i] = new Instr(Instruction.Create(OpCodes.Ldstr, decrypted));
+						instrs[i] = new Instr(OpCodes.Ldstr.ToInstruction(decrypted));
 						Logger.v("Decrypted string: {0}", Utils.toCsharpString(decrypted));
 					}
 				}

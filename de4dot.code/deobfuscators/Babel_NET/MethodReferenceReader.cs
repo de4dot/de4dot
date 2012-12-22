@@ -20,9 +20,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using dot10.IO;
-using dot10.DotNet;
-using dot10.DotNet.Emit;
+using dnlib.IO;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 
 namespace de4dot.code.deobfuscators.Babel_NET {
 	class BabelMethodreference {

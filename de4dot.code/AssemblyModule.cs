@@ -20,8 +20,8 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
-using dot10.DotNet;
-using dot10.DotNet.Writer;
+using dnlib.DotNet;
+using dnlib.DotNet.Writer;
 using de4dot.blocks;
 
 namespace de4dot.code {
@@ -51,17 +51,7 @@ namespace de4dot.code {
 			return module;
 		}
 
-		public void save(string newFilename, bool preserveTokens, bool updateMaxStack, IModuleWriterListener writerListener) {
-			MetaDataFlags mdFlags = 0;
-			if (!updateMaxStack)
-				mdFlags |= MetaDataFlags.KeepOldMaxStack;
-			if (preserveTokens) {
-				mdFlags |= MetaDataFlags.PreserveRids |
-						MetaDataFlags.PreserveUSOffsets |
-						MetaDataFlags.PreserveBlobOffsets |
-						MetaDataFlags.PreserveExtraSignatureData;
-			}
-
+		public void save(string newFilename, MetaDataFlags mdFlags, IModuleWriterListener writerListener) {
 			if (module.IsILOnly) {
 				var writerOptions = new ModuleWriterOptions(module, writerListener);
 				writerOptions.MetaDataOptions.Flags |= mdFlags;

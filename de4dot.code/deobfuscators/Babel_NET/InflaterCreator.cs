@@ -18,8 +18,8 @@
 */
 
 using ICSharpCode.SharpZipLib.Zip.Compression;
-using dot10.DotNet;
-using dot10.DotNet.Emit;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Babel_NET {

@@ -21,10 +21,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
-using dot10.PE;
-using dot10.DotNet;
-using dot10.DotNet.Emit;
-using dot10.DotNet.Writer;
+using dnlib.PE;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
+using dnlib.DotNet.Writer;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
@@ -345,8 +345,14 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 					return DeobfuscatorInfo.THE_NAME + " 4.1";
 				return DeobfuscatorInfo.THE_NAME + " 4.0";
 			}
-			if (!hasCorEnableProfilingString)
-				return DeobfuscatorInfo.THE_NAME + " 4.x";
+			if (!hasCorEnableProfilingString) {
+				// 4.x or 4.5
+				bool callsReverse = DotNetUtils.callsMethod(methodsDecrypter.Method, "System.Void System.Array::Reverse(System.Array)");
+				if (!callsReverse)
+					return DeobfuscatorInfo.THE_NAME + " 4.x";
+				return DeobfuscatorInfo.THE_NAME + " 4.5";
+			}
+
 			// 4.2-4.4
 
 			if (!localTypes.exists("System.Byte&"))
@@ -376,7 +382,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				return false;
 
 			var tokenToNativeCode = new Dictionary<uint,byte[]>();
-			if (!methodsDecrypter.decrypt(peImage, DeobfuscatedFile, ref dumpedMethods, tokenToNativeCode))
+			if (!methodsDecrypter.decrypt(peImage, DeobfuscatedFile, ref dumpedMethods, tokenToNativeCode, unpackedNativeFile))
 				return false;
 
 			newFileData = fileData;
@@ -557,7 +563,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 						continue;
 					if (!new SigComparer().Equals(type, instr.Operand as ITypeDefOrRef))
 						continue;
-					instructions[i] = new Instr(Instruction.Create(OpCodes.Ldtoken, blocks.Method.DeclaringType));
+					instructions[i] = new Instr(OpCodes.Ldtoken.ToInstruction(blocks.Method.DeclaringType));
 				}
 			}
 		}
@@ -578,7 +584,24 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			else
 				Logger.v("Could not remove decrypter type");
 
+			fixEntryPoint();
+
 			base.deobfuscateEnd();
+		}
+
+		void fixEntryPoint() {
+			if (!module.IsClr1x)
+				return;
+
+			var ep = module.EntryPoint;
+			if (ep == null)
+				return;
+			if (ep.MethodSig.GetParamCount() <= 1)
+				return;
+
+			ep.MethodSig = MethodSig.CreateStatic(ep.MethodSig.RetType, new SZArraySig(module.CorLibTypes.String));
+			ep.ParamDefs.Clear();
+			ep.Parameters.UpdateParameterTypes();
 		}
 
 		void removeInlinedMethods() {

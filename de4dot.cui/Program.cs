@@ -20,7 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using dot10.DotNet;
+using dnlib.DotNet;
 using de4dot.code;
 using de4dot.code.deobfuscators;
 
@@ -74,7 +74,7 @@ namespace de4dot.cui {
 
 				Logger.n("");
 				Logger.n("de4dot v{0} Copyright (C) 2011-2012 de4dot@gmail.com", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
-				Logger.n("Latest version and source code: https://github.com/0xd4d/de4dot");
+				Logger.n("Latest version and source code: https://bitbucket.org/0xd4d/de4dot");
 				Logger.n("");
 
 				var options = new FilesDeobfuscator.Options();
@@ -85,7 +85,7 @@ namespace de4dot.cui {
 				exitCode = ex.code;
 			}
 			catch (UserException ex) {
-				Logger.Instance.LogErrorDontIgnore("ERROR: {0}", ex.Message);
+				Logger.Instance.LogErrorDontIgnore("{0}", ex.Message);
 				exitCode = 1;
 			}
 			catch (Exception ex) {
@@ -100,7 +100,7 @@ namespace de4dot.cui {
 					Logger.Instance.LogErrorDontIgnore("If it's a supported obfuscator, it could be a bug or a new obfuscator version.");
 					Logger.Instance.LogErrorDontIgnore("If it's an unsupported obfuscator, make sure the methods are decrypted!");
 				}
-				Logger.Instance.LogErrorDontIgnore("Send bug reports to de4dot@gmail.com or go to https://github.com/0xd4d/de4dot/issues");
+				Logger.Instance.LogErrorDontIgnore("Send bug reports to de4dot@gmail.com or go to https://bitbucket.org/0xd4d/de4dot/issues");
 				Logger.Instance.LogErrorDontIgnore("I will need the original files, so email me a link to the installer or a zip/rar file.");
 				exitCode = 1;
 			}
@@ -157,7 +157,7 @@ namespace de4dot.cui {
 			Logger.Instance.Log(false, null, loggerEvent, "\n\n");
 			Logger.Instance.Log(false, null, loggerEvent, line);
 			Logger.Instance.Log(false, null, loggerEvent, "Stack trace:\n{0}", ex.StackTrace);
-			Logger.Instance.Log(false, null, loggerEvent, "\n\nERROR: Caught an exception:\n");
+			Logger.Instance.Log(false, null, loggerEvent, "\n\nCaught an exception:\n");
 			Logger.Instance.Log(false, null, loggerEvent, line);
 			Logger.Instance.Log(false, null, loggerEvent, "Message:");
 			Logger.Instance.Log(false, null, loggerEvent, "  {0}", ex.Message);

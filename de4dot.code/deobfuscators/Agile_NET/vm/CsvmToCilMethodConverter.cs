@@ -20,8 +20,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using dot10.DotNet;
-using dot10.DotNet.Emit;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Agile_NET.vm {
@@ -415,7 +415,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 					continue;
 				if (hasPrefix(instrs, i, Code.Constrained))
 					continue;
-				instrs.Insert(i, Instruction.Create(OpCodes.Constrained, thisType.Next.ToTypeDefOrRef()));
+				instrs.Insert(i, OpCodes.Constrained.ToInstruction(thisType.Next.ToTypeDefOrRef()));
 				i++;
 			}
 		}

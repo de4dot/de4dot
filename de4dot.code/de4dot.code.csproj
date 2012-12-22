@@ -152,6 +152,7 @@
     <Compile Include="deobfuscators\CodeWall\randomc\CRandomMother.cs" />
     <Compile Include="deobfuscators\CodeWall\StringDecrypter.cs" />
     <Compile Include="deobfuscators\ConstantsReader.cs" />
+    <Compile Include="deobfuscators\CRC32.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\AntiDebugger.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\AssemblyResolver.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\ConstantsDecrypter.cs" />
@@ -182,6 +183,7 @@
     <Compile Include="deobfuscators\DeobUtils.cs" />
     <Compile Include="deobfuscators\Dotfuscator\Deobfuscator.cs" />
     <Compile Include="deobfuscators\Dotfuscator\StringDecrypter.cs" />
+    <Compile Include="deobfuscators\Eazfuscator_NET\Dynocode.cs" />
     <Compile Include="deobfuscators\MyPEImage.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v3\AntiStrongName.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v3\ApplicationModeDecrypter.cs" />
@@ -260,6 +262,7 @@
     <Compile Include="deobfuscators\QuickLZ.cs" />
     <Compile Include="deobfuscators\RandomNameChecker.cs" />
     <Compile Include="deobfuscators\Rummage\Deobfuscator.cs" />
+    <Compile Include="deobfuscators\Rummage\RummageVersion.cs" />
     <Compile Include="deobfuscators\Rummage\StringDecrypter.cs" />
     <Compile Include="deobfuscators\Skater_NET\Deobfuscator.cs" />
     <Compile Include="deobfuscators\Skater_NET\EnumClassFinder.cs" />
@@ -366,15 +369,16 @@
       <Project>{5C93C5E2-196F-4877-BF65-96FEBFCEFCA1}</Project>
       <Name>de4dot.mdecrypt</Name>
     </ProjectReference>
-    <ProjectReference Include="..\dot10\src\dot10.csproj">
+    <ProjectReference Include="..\dnlib\src\dnlib.csproj">
       <Project>{FDFC1237-143F-4919-8318-4926901F4639}</Project>
-      <Name>dot10</Name>
+      <Name>dnlib</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy "$(SolutionDir)LICENSE*.txt" "..\$(OutDir).."
-copy "$(SolutionDir)COPYING" "..\$(OutDir).."</PostBuildEvent>
+    <PostBuildEvent>mkdir "..\$(OutDir)..\LICENSES"
+copy "$(SolutionDir)LICENSE*.txt" "..\$(OutDir)..\LICENSES"
+copy "$(SolutionDir)COPYING" "..\$(OutDir)..\LICENSES"</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

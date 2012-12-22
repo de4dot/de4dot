@@ -19,7 +19,7 @@
 
 using System;
 using System.Collections.Generic;
-using dot10.DotNet;
+using dnlib.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Eazfuscator_NET {
@@ -616,6 +616,10 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					return "3.3";
 				}
 
+				/////////////////////////////////////////////////////////////////
+				/////////////////////////////////////////////////////////////////
+				/////////////////////////////////////////////////////////////////
+
 				var fields33_149 = new string[] {
 					getNestedTypeName(0),
 					getNestedTypeName(1),
@@ -662,8 +666,63 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					decryptStringMethod.Body.MaxStack <= 8 &&
 					(decryptStringMethod.Body.ExceptionHandlers.Count == 1 || decryptStringMethod.Body.ExceptionHandlers.Count == 2) &&
 					new LocalTypes(decryptStringMethod).exactly(locals33_149) &&
-					checkTypeFields(fields33_149)) {
-					return "3.3";	// 3.3.149 (but not SL or CF)
+					checkTypeFields2(fields33_149)) {
+					return "3.3.149 - 3.4";	// 3.3.149+ (but not SL or CF)
+				}
+
+				/////////////////////////////////////////////////////////////////
+				/////////////////////////////////////////////////////////////////
+				/////////////////////////////////////////////////////////////////
+
+				var fields35 = new string[] {
+					getNestedTypeName(0),
+					getNestedTypeName(1),
+					"System.Byte[]",
+					"System.Int16",
+					"System.Int32",
+					"System.Byte[]",
+					"System.Int32",
+					"System.Int32",
+					getNestedTypeName(2),
+				};
+				var locals35 = createLocalsArray(
+					"System.Boolean",
+					"System.Byte",
+					"System.Byte[]",
+					"System.Char[]",
+					"System.Collections.Generic.IEnumerator`1<System.Int32>",
+					getNestedTypeName(0),
+					"System.Diagnostics.StackFrame",
+					"System.Diagnostics.StackTrace",
+					"System.Int16",
+					"System.Int32",
+					"System.Int64",
+					"System.IO.Stream",
+					"System.Reflection.Assembly",
+					"System.Reflection.AssemblyName",
+					"System.Reflection.MethodBase",
+					"System.String",
+					"System.Text.StringBuilder",
+					"System.Type"
+				);
+				var olocals35 = createLocalsArray(
+					"System.Int32"
+				);
+				if (otherMethods.Count == 1 &&
+					decryptStringType.NestedTypes.Count == 3 &&
+					DotNetUtils.isMethod(otherMethods[0], "System.Void", "(System.Byte[],System.Int32,System.Byte[])") &&
+					otherMethods[0].IsPrivate &&
+					otherMethods[0].IsStatic &&
+					new LocalTypes(otherMethods[0]).exactly(olocals35) &&
+					decryptStringMethod.IsNoInlining &&
+					decryptStringMethod.IsAssembly &&
+					!decryptStringMethod.IsSynchronized &&
+					decryptStringMethod.Body.MaxStack >= 1 &&
+					decryptStringMethod.Body.MaxStack <= 8 &&
+					decryptStringMethod.Body.ExceptionHandlers.Count >= 2 &&
+					new LocalTypes(decryptStringMethod).all(locals35) &&
+					checkTypeFields2(fields35)) {
+					return "3.5 - 3.6";
 				}
 			}
 
@@ -673,21 +732,28 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		TypeDef getNestedType(int n) {
 			var type = stringDecrypter.Type;
 
-			int fieldIndex;
-			switch (n) {
-			case 0: fieldIndex = 0; break;
-			case 1: fieldIndex = 1; break;
-			case 2: fieldIndex = 8; break;
-			default: throw new ApplicationException("Invalid index: " + n);
+			if (n == 0) {
+				foreach (var nested in type.NestedTypes) {
+					if (nested.NestedTypes.Count == 1)
+						return nested;
+				}
 			}
-
-			if (fieldIndex >= type.Fields.Count)
-				return null;
-			var nestedType = type.Fields[fieldIndex].FieldType.TryGetTypeDef();
-			if (nestedType == null || type.NestedTypes.IndexOf(nestedType) < 0)
-				return null;
-
-			return nestedType;
+			else if (n == 1) {
+				foreach (var nested in type.NestedTypes) {
+					if (nested.IsEnum)
+						continue;
+					if (nested.NestedTypes.Count != 0)
+						continue;
+					return nested;
+				}
+			}
+			else if (n == 2) {
+				foreach (var nested in type.NestedTypes) {
+					if (nested.IsEnum)
+						return nested;
+				}
+			}
+			return null;
 		}
 
 		string getNestedTypeName(int n) {
@@ -700,6 +766,25 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				return false;
 			for (int i = 0; i < fieldTypes.Length; i++) {
 				if (fieldTypes[i] != stringDecrypter.Type.Fields[i].FieldType.FullName)
+					return false;
+			}
+			return true;
+		}
+
+		bool checkTypeFields2(string[] fieldTypes) {
+			if (fieldTypes.Length != stringDecrypter.Type.Fields.Count)
+				return false;
+
+			var fieldTypes1 = new List<string>(fieldTypes);
+			fieldTypes1.Sort();
+
+			var fieldTypes2 = new List<string>();
+			foreach (var f in stringDecrypter.Type.Fields)
+				fieldTypes2.Add(f.FieldType.FullName);
+			fieldTypes2.Sort();
+
+			for (int i = 0; i < fieldTypes1.Count; i++) {
+				if (fieldTypes1[i] != fieldTypes2[i])
 					return false;
 			}
 			return true;

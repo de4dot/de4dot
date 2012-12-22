@@ -19,8 +19,8 @@
 
 using System;
 using System.Collections.Generic;
-using dot10.DotNet;
-using dot10.DotNet.Emit;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 
 namespace de4dot.blocks.cflow {
 	public class InstructionEmulator {
@@ -230,6 +230,17 @@ namespace de4dot.blocks.cflow {
 
 		public void push(Value value) {
 			valueStack.push(value);
+		}
+
+		public void clearStack() {
+			valueStack.clear();
+		}
+
+		public void pop(int num) {
+			if (num < 0)
+				valueStack.clear();
+			else
+				valueStack.pop(num);
 		}
 
 		public Value pop() {

@@ -18,7 +18,7 @@
 */
 
 using System.Collections.Generic;
-using dot10.DotNet.Emit;
+using dnlib.DotNet.Emit;
 
 namespace de4dot.blocks.cflow {
 	// Removes dead code that is the result of one of our optimizations, or created by the

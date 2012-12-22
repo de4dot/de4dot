@@ -19,8 +19,8 @@
 
 using System;
 using System.Collections.Generic;
-using dot10.DotNet;
-using dot10.DotNet.Emit;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 
 namespace de4dot.blocks.cflow {
 	class SwitchCflowDeobfuscator : BlockDeobfuscator {
@@ -165,7 +165,7 @@ namespace de4dot.blocks.cflow {
 				if (target == null)
 					continue;
 				source.replaceLastNonBranchWithBranch(0, target);
-				source.add(new Instr(Instruction.Create(OpCodes.Pop)));
+				source.add(new Instr(OpCodes.Pop.ToInstruction()));
 				changed = true;
 			}
 			return changed;
@@ -232,7 +232,7 @@ namespace de4dot.blocks.cflow {
 				}
 				else {
 					source.replaceLastNonBranchWithBranch(0, target);
-					source.add(new Instr(Instruction.Create(OpCodes.Pop)));
+					source.add(new Instr(OpCodes.Pop.ToInstruction()));
 					changed = true;
 				}
 			}
@@ -371,7 +371,7 @@ namespace de4dot.blocks.cflow {
 			var block = new Block();
 			foreach (var kv in consts) {
 				block.Instructions.Add(new Instr(Instruction.CreateLdcI4(kv.Value)));
-				block.Instructions.Add(new Instr(Instruction.Create(OpCodes.Stloc, kv.Key)));
+				block.Instructions.Add(new Instr(OpCodes.Stloc.ToInstruction(kv.Key)));
 			}
 			fallThrough.Parent.add(block);
 			return block;

@@ -18,8 +18,8 @@
 */
 
 using System.Collections.Generic;
-using dot10.DotNet;
-using dot10.DotNet.Emit;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 
 namespace de4dot.blocks.cflow {
 	// Replace stloc + ldloc with dup + stloc
@@ -54,7 +54,7 @@ namespace de4dot.blocks.cflow {
 						continue;
 					if (local != Instr.getLocalVar(locals, instructions[i + 1]))
 						break;
-					instructions[i] = new Instr(Instruction.Create(OpCodes.Dup));
+					instructions[i] = new Instr(OpCodes.Dup.ToInstruction());
 					instructions[i + 1] = instr;
 					changed = true;
 					break;

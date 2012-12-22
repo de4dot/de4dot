@@ -19,8 +19,8 @@
 
 using System;
 using System.Collections.Generic;
-using dot10.DotNet;
-using dot10.DotNet.Emit;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 using de4dot.code.renamer.asmmodules;
 
@@ -156,7 +156,7 @@ namespace de4dot.code.renamer {
 				newNames[resource] = new RenameInfo(resource, info, newName);
 
 				Logger.v("Renamed resource in resources: {0} => {1}", Utils.removeNewlines(resource.Name), newName);
-				resource.Name = new UTF8String(newName);
+				resource.Name = newName;
 			}
 		}
 	}

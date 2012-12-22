@@ -19,7 +19,7 @@
 
 using System;
 using System.Collections.Generic;
-using dot10.DotNet;
+using dnlib.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.renamer.asmmodules {
@@ -236,7 +236,7 @@ namespace de4dot.code.renamer.asmmodules {
 			var ts = typeRef as TypeSpec;
 			if (ts == null)
 				return typeRef;
-			var gis = ts.ToGenericInstSig();
+			var gis = ts.TryGetGenericInstSig();
 			if (gis == null || gis.GenericType == null)
 				return typeRef;
 			return gis.GenericType.TypeDefOrRef;

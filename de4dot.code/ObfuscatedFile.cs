@@ -22,10 +22,10 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text;
-using dot10.DotNet;
-using dot10.DotNet.Emit;
-using dot10.DotNet.Writer;
-using dot10.PE;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
+using dnlib.DotNet.Writer;
+using dnlib.PE;
 using de4dot.code.deobfuscators;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
@@ -88,6 +88,9 @@ namespace de4dot.code {
 			public List<string> StringDecrypterMethods { get; private set; }
 			public bool ControlFlowDeobfuscation { get; set; }
 			public bool KeepObfuscatorTypes { get; set; }
+			public bool PreserveTokens { get; set; }
+			public MetaDataFlags MetaDataFlags { get; set; }
+			public RenamerFlags RenamerFlags { get; set; }
 
 			public Options() {
 				StringDecrypterType = DecrypterType.Default;
@@ -251,6 +254,8 @@ namespace de4dot.code {
 			}
 
 			op.KeepObfuscatorTypes = options.KeepObfuscatorTypes;
+			op.MetaDataFlags = options.MetaDataFlags;
+			op.RenamerFlags = options.RenamerFlags;
 
 			return op;
 		}
@@ -322,13 +327,26 @@ namespace de4dot.code {
 			return detected;
 		}
 
-		bool ShouldPreserveTokens() {
-			return options.KeepObfuscatorTypes || deob.Type == "un";
+		MetaDataFlags getMetaDataFlags() {
+			var mdFlags = options.MetaDataFlags | deob.MetaDataFlags;
+
+			// Always preserve tokens if it's an unknown obfuscator
+			if (deob.Type == "un") {
+				mdFlags |= MetaDataFlags.PreserveRids |
+						MetaDataFlags.PreserveUSOffsets |
+						MetaDataFlags.PreserveBlobOffsets |
+						MetaDataFlags.PreserveExtraSignatureData;
+			}
+
+			return mdFlags;
 		}
 
 		public void save() {
 			Logger.n("Saving {0}", options.NewFilename);
-			assemblyModule.save(options.NewFilename, ShouldPreserveTokens(), options.ControlFlowDeobfuscation, deob as IModuleWriterListener);
+			var mdFlags = getMetaDataFlags();
+			if (!options.ControlFlowDeobfuscation)
+				mdFlags |= MetaDataFlags.KeepOldMaxStack;
+			assemblyModule.save(options.NewFilename, mdFlags, deob as IModuleWriterListener);
 		}
 
 		IList<MethodDef> getAllMethods() {
@@ -355,7 +373,11 @@ namespace de4dot.code {
 			case DecrypterType.Delegate:
 			case DecrypterType.Emulate:
 				checkSupportedStringDecrypter(StringFeatures.AllowDynamicDecryption);
-				assemblyClient = assemblyClientFactory.create();
+				var newProcFactory = assemblyClientFactory as NewProcessAssemblyClientFactory;
+				if (newProcFactory != null)
+					assemblyClient = newProcFactory.create(module);
+				else
+					assemblyClient = assemblyClientFactory.create();
 				assemblyClient.connect();
 				break;
 
@@ -552,7 +574,7 @@ namespace de4dot.code {
 			deob.DeobfuscatedFile = null;
 
 			if (!options.ControlFlowDeobfuscation) {
-				if (ShouldPreserveTokens())
+				if (options.KeepObfuscatorTypes || deob.Type == "un")
 					return;
 			}
 
@@ -607,6 +629,11 @@ namespace de4dot.code {
 			}
 		}
 
+		bool CanOptimizeLocals() {
+			// Don't remove any locals if we must preserve StandAloneSig table
+			return (getMetaDataFlags() & MetaDataFlags.PreserveStandAloneSigRids) == 0;
+		}
+
 		void deobfuscate(MethodDef method, BlocksCflowDeobfuscator cflowDeobfuscator, MethodPrinter methodPrinter, bool isVerbose, bool isVV) {
 			if (!hasNonEmptyBody(method))
 				return;
@@ -625,9 +652,7 @@ namespace de4dot.code {
 				cflowDeobfuscator.deobfuscate();
 
 			if (options.ControlFlowDeobfuscation) {
-				// Don't remove any locals if we should preserve tokens or we won't be able
-				// to always preserve StandAloneSig tokens.
-				if (!ShouldPreserveTokens())
+				if (CanOptimizeLocals())
 					numRemovedLocals = blocks.optimizeLocals();
 				blocks.repartitionBlocks();
 			}

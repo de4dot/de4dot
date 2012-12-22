@@ -18,8 +18,8 @@
 */
 
 using System.Collections.Generic;
-using dot10.DotNet;
-using dot10.DotNet.Emit;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Spices_Net {
@@ -135,7 +135,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			Logger.v("Restoring resource name: '{0}' => '{1}'",
 								Utils.removeNewlines(resource.Name),
 								Utils.removeNewlines(newName));
-			resource.Name = new UTF8String(newName);
+			resource.Name = newName;
 			numToResource.Remove(hash);
 		}
 

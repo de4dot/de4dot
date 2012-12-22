@@ -22,9 +22,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
-using dot10.DotNet;
-using dot10.DotNet.Emit;
-using dot10.IO;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
+using dnlib.IO;
 using de4dot.blocks;
 using de4dot.code.resources;
 

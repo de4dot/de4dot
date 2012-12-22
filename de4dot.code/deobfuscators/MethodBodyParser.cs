@@ -19,7 +19,7 @@
 
 using System;
 using System.IO;
-using dot10.IO;
+using dnlib.IO;
 
 namespace de4dot.code.deobfuscators {
 	[Serializable]

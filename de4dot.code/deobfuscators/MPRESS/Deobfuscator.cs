@@ -21,8 +21,8 @@ using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
-using dot10.PE;
-using dot10.DotNet;
+using dnlib.PE;
+using dnlib.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.MPRESS {

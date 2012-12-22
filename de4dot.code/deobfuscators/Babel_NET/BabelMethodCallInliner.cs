@@ -18,8 +18,8 @@
 */
 
 using System.Collections.Generic;
-using dot10.DotNet;
-using dot10.DotNet.Emit;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
 
@@ -119,7 +119,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			if (!getNewValue(methodToInline, ldci4.getLdcI4Value(), out newValue))
 				return false;
 
-			block.Instructions[instrIndex - 1] = new Instr(Instruction.Create(OpCodes.Nop));
+			block.Instructions[instrIndex - 1] = new Instr(OpCodes.Nop.ToInstruction());
 			block.Instructions[instrIndex] = new Instr(Instruction.CreateLdcI4(newValue));
 			return true;
 		}

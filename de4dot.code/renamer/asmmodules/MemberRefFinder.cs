@@ -19,8 +19,8 @@
 
 using System;
 using System.Collections.Generic;
-using dot10.DotNet;
-using dot10.DotNet.Emit;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.renamer.asmmodules {
@@ -385,7 +385,7 @@ namespace de4dot.code.renamer.asmmodules {
 				return;
 			methodDefs[md] = true;
 			add(md.Signature);
-			add(md.ParamList);
+			add(md.ParamDefs);
 			add(md.GenericParameters);
 			add(md.DeclSecurities);
 			add(md.MethodBody);

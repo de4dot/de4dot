@@ -17,9 +17,12 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Collections.Generic;
-using dot10.DotNet;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
+using de4dot.code.renamer;
 
 namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
@@ -130,7 +133,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			addModuleCctorInitCallToBeRemoved(resourceResolver.InitMethod);
 
 			resourceMethodsRestorer = new ResourceMethodsRestorer(module);
-			resourceMethodsRestorer.find(DeobfuscatedFile, this);
+			if ((Operations.RenamerFlags & (RenamerFlags.RenameTypes | RenamerFlags.RenameNamespaces)) != 0)
+				resourceMethodsRestorer.find(DeobfuscatedFile, this);
 
 			dumpEmbeddedAssemblies();
 		}
@@ -152,6 +156,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			if (CanRemoveStringDecrypterType) {
 				addTypesToBeRemoved(stringDecrypter.Types, "String decrypter type");
 				addTypeToBeRemoved(decrypterType.Type, "Decrypter type");
+				addTypesToBeRemoved(stringDecrypter.DynocodeTypes, "Dynocode type");
 				addResourceToBeRemoved(stringDecrypter.Resource, "Encrypted strings");
 			}
 			addTypeToBeRemoved(assemblyResolver.Type, "Assembly resolver type");
@@ -161,7 +166,52 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			addResourceToBeRemoved(resourceMethodsRestorer.Resource, "GetManifestResourceStream type resource");
 
 			fixInterfaces();
+			stringDecrypterBugWorkaround();
 			base.deobfuscateEnd();
+		}
+
+		void stringDecrypterBugWorkaround() {
+			// There's a bug in Eazfuscator.NET when the VM and string encryption features are
+			// enabled. The string decrypter's initialization code checks to make sure it's not
+			// called by eg. a dynamic method. When it's called from the VM code, it is
+			// called by MethodBase.Invoke() and the string decrypter antis set in causing it
+			// to fail.
+			// One way to work around this is to make sure the string decrypter has been called
+			// once. That way, any VM code calling it won't trigger a failure.
+			// We can put this code in <Module>::.cctor() since it gets executed before any
+			// other code.
+			// Note that we can't call the string decrypter from <Module>::.cctor() since
+			// its DeclaringType property will return null (since it's the global type). We
+			// must call another created class which calls the string decrypter.
+
+			// You must use --dont-rename --keep-types --preserve-tokens and decrypt strings
+			if (!Operations.KeepObfuscatorTypes || Operations.DecryptStrings == OpDecryptString.None ||
+				(Operations.RenamerFlags & (RenamerFlags.RenameNamespaces | RenamerFlags.RenameTypes)) != 0)
+				return;
+
+			if (stringDecrypter.ValidStringDecrypterValue == null)
+				return;
+
+			var newType = module.UpdateRowId(new TypeDefUser(Guid.NewGuid().ToString("B"), module.CorLibTypes.Object.TypeDefOrRef));
+			module.Types.Add(newType);
+			var newMethod = module.UpdateRowId(new MethodDefUser("x", MethodSig.CreateStatic(module.CorLibTypes.Void), 0, MethodAttributes.Static | MethodAttributes.HideBySig));
+			newType.Methods.Add(newMethod);
+			newMethod.Body = new CilBody();
+			newMethod.Body.MaxStack = 1;
+			newMethod.Body.Instructions.Add(Instruction.CreateLdcI4(stringDecrypter.ValidStringDecrypterValue.Value));
+			newMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(stringDecrypter.Method));
+			newMethod.Body.Instructions.Add(OpCodes.Pop.ToInstruction());
+			newMethod.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
+
+			var cctor = module.GlobalType.FindOrCreateStaticConstructor();
+			var blocks = new Blocks(cctor);
+			var block = blocks.MethodBlocks.getAllBlocks()[0];
+			block.insert(0, OpCodes.Call.ToInstruction(newMethod));
+
+			IList<Instruction> allInstructions;
+			IList<ExceptionHandler> allExceptionHandlers;
+			blocks.getCode(out allInstructions, out allExceptionHandlers);
+			DotNetUtils.restoreBody(cctor, allInstructions, allExceptionHandlers);
 		}
 
 		public override IEnumerable<int> getStringDecrypterMethods() {

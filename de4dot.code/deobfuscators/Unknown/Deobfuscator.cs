@@ -63,12 +63,9 @@ namespace de4dot.code.deobfuscators.Unknown {
 			get { return obfuscatorName ?? "Unknown Obfuscator"; }
 		}
 
-		protected override bool KeepTypes {
-			get { return true; }
-		}
-
 		internal Deobfuscator(Options options)
 			: base(options) {
+			KeepTypes = true;
 		}
 
 		void setName(string name) {

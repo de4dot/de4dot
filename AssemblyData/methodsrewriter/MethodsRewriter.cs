@@ -22,12 +22,12 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Reflection.Emit;
-using dot10.DotNet.Emit;
-using dot10.DotNet;
+using dnlib.DotNet.Emit;
+using dnlib.DotNet;
 using de4dot.blocks;
 
-using OpCode = dot10.DotNet.Emit.OpCode;
-using OpCodes = dot10.DotNet.Emit.OpCodes;
+using OpCode = dnlib.DotNet.Emit.OpCode;
+using OpCodes = dnlib.DotNet.Emit.OpCodes;
 using ROpCode = System.Reflection.Emit.OpCode;
 using ROpCodes = System.Reflection.Emit.OpCodes;
 
@@ -251,7 +251,7 @@ namespace AssemblyData.methodsrewriter {
 					if (calledMethod.DeclaringType.DefinitionAssembly.IsCorLib()) {
 						var calledMethodFullName = calledMethod.FullName;
 						if (calledMethodFullName == "System.Reflection.Assembly System.Reflection.Assembly::GetAssembly(System.Type)") {
-							block.replace(i, 1, Instruction.Create(OpCodes.Nop));
+							block.replace(i, 1, OpCodes.Nop.ToInstruction());
 							insertLoadThis(block, i + 1);
 							insertCallOurMethod(block, i + 2, "static_rtGetAssembly_TypeArg");
 							i += 2;
@@ -260,9 +260,9 @@ namespace AssemblyData.methodsrewriter {
 						else if (calledMethodFullName == "System.Reflection.Assembly System.Reflection.Assembly::GetCallingAssembly()" ||
 								calledMethodFullName == "System.Reflection.Assembly System.Reflection.Assembly::GetEntryAssembly()" ||
 								calledMethodFullName == "System.Reflection.Assembly System.Reflection.Assembly::GetExecutingAssembly()") {
-							block.replace(i, 1, Instruction.Create(OpCodes.Nop));
+							block.replace(i, 1, OpCodes.Nop.ToInstruction());
 							insertLoadThis(block, i + 1);
-							block.insert(i + 2, Instruction.Create(OpCodes.Ldc_I4, currentMethodInfo.delegateIndex));
+							block.insert(i + 2, OpCodes.Ldc_I4.ToInstruction(currentMethodInfo.delegateIndex));
 							insertCallOurMethod(block, i + 3, "rtGetAssembly");
 							i += 3;
 							continue;
@@ -274,32 +274,32 @@ namespace AssemblyData.methodsrewriter {
 						createMethod(method.methodBase);
 						var newMethodInfo = realMethodToNewMethod[method.methodBase];
 
-						block.replace(i, 1, Instruction.Create(OpCodes.Nop));
+						block.replace(i, 1, OpCodes.Nop.ToInstruction());
 						int n = i + 1;
 
 						// Pop all pushed args to a temp array
 						var mparams = getParameters(method.methodDef);
 						if (mparams.Count > 0) {
-							block.insert(n++, Instruction.Create(OpCodes.Ldc_I4, mparams.Count));
+							block.insert(n++, OpCodes.Ldc_I4.ToInstruction(mparams.Count));
 							var objectType = method.methodDef.DeclaringType.Module.CorLibTypes.Object;
-							block.insert(n++, Instruction.Create(OpCodes.Newarr, objectType));
+							block.insert(n++, OpCodes.Newarr.ToInstruction(objectType));
 							block.insert(n++, create(OpCodes.Stloc, new Operand(Operand.Type.TempObjArray)));
 
 							for (int j = mparams.Count - 1; j >= 0; j--) {
 								var argType = mparams[j];
 								if (argType.RemovePinnedAndModifiers().IsValueType)
-									block.insert(n++, Instruction.Create(OpCodes.Box, ((TypeDefOrRefSig)argType).TypeDefOrRef));
+									block.insert(n++, OpCodes.Box.ToInstruction(((TypeDefOrRefSig)argType).TypeDefOrRef));
 								block.insert(n++, create(OpCodes.Stloc, new Operand(Operand.Type.TempObj)));
 								block.insert(n++, create(OpCodes.Ldloc, new Operand(Operand.Type.TempObjArray)));
-								block.insert(n++, Instruction.Create(OpCodes.Ldc_I4, j));
+								block.insert(n++, OpCodes.Ldc_I4.ToInstruction(j));
 								block.insert(n++, create(OpCodes.Ldloc, new Operand(Operand.Type.TempObj)));
-								block.insert(n++, Instruction.Create(OpCodes.Stelem_Ref));
+								block.insert(n++, OpCodes.Stelem_Ref.ToInstruction());
 							}
 						}
 
 						// Push delegate instance
 						insertLoadThis(block, n++);
-						block.insert(n++, Instruction.Create(OpCodes.Ldc_I4, newMethodInfo.delegateIndex));
+						block.insert(n++, OpCodes.Ldc_I4.ToInstruction(newMethodInfo.delegateIndex));
 						insertCallOurMethod(block, n++, "rtGetDelegateInstance");
 						block.insert(n++, create(OpCodes.Castclass, new Operand(Operand.Type.ReflectionType, newMethodInfo.delegateType)));
 
@@ -307,11 +307,11 @@ namespace AssemblyData.methodsrewriter {
 						if (mparams.Count > 0) {
 							for (int j = 0; j < mparams.Count; j++) {
 								block.insert(n++, create(OpCodes.Ldloc, new Operand(Operand.Type.TempObjArray)));
-								block.insert(n++, Instruction.Create(OpCodes.Ldc_I4, j));
-								block.insert(n++, Instruction.Create(OpCodes.Ldelem_Ref));
+								block.insert(n++, OpCodes.Ldc_I4.ToInstruction(j));
+								block.insert(n++, OpCodes.Ldelem_Ref.ToInstruction());
 								var argType = mparams[j];
 								if (argType.RemovePinnedAndModifiers().IsValueType)
-									block.insert(n++, Instruction.Create(OpCodes.Unbox_Any, ((TypeDefOrRefSig)argType).TypeDefOrRef));
+									block.insert(n++, OpCodes.Unbox_Any.ToInstruction(((TypeDefOrRefSig)argType).TypeDefOrRef));
 								else {
 									// Don't cast it to its correct type. This will sometimes cause
 									// an exception in some EF obfuscated assembly since we'll be

@@ -21,9 +21,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
-using dot10.IO;
-using dot10.DotNet;
-using dot10.DotNet.Emit;
+using dnlib.IO;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Babel_NET {
@@ -252,7 +252,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 					var castclass = instrs[index++];
 					if (castclass.OpCode.Code != Code.Castclass)
 						continue;
-					var arrayType = (castclass.Operand as ITypeDefOrRef).ToSZArraySig();
+					var arrayType = (castclass.Operand as ITypeDefOrRef).TryGetSZArraySig();
 					if (arrayType == null)
 						continue;
 					if (arrayType.Next.ElementType.GetPrimitiveSize() == -1) {

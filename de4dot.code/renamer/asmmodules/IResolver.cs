@@ -17,7 +17,7 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using dot10.DotNet;
+using dnlib.DotNet;
 
 namespace de4dot.code.renamer.asmmodules {
 	interface IResolver {

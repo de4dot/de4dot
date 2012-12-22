@@ -81,6 +81,12 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				MagicHi = 0xF28EDDA3,
 				Version = EncryptionVersion.V5,
 			},
+			// 50A0963C = Mon, 12 Nov 2012 06:25:00
+			new EncryptionInfo {
+				MagicLo = 0xBA683B87,
+				MagicHi = 0xF28ECDA3,
+				Version = EncryptionVersion.V6,
+			},
 		};
 
 		public static readonly EncryptionInfo[] McKey8C0h = new EncryptionInfo[] {

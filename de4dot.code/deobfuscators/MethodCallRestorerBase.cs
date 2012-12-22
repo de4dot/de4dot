@@ -18,8 +18,8 @@
 */
 
 using System.Collections.Generic;
-using dot10.DotNet;
-using dot10.DotNet.Emit;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators {
@@ -100,6 +100,8 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		public void deobfuscate(Blocks blocks) {
+			if (oldToNewMethod.Count == 0)
+				return;
 			foreach (var block in blocks.MethodBlocks.getAllBlocks()) {
 				var instrs = block.Instructions;
 				for (int i = 0; i < instrs.Count; i++) {

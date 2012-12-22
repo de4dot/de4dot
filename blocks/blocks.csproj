@@ -48,6 +48,7 @@
     <Compile Include="cflow\ConstantsFolder.cs" />
     <Compile Include="cflow\DeadCodeRemover.cs" />
     <Compile Include="cflow\DeadStoreRemover.cs" />
+    <Compile Include="cflow\DupBlockDeobfuscator.cs" />
     <Compile Include="cflow\IBlocksDeobfuscator.cs" />
     <Compile Include="cflow\ICflowDeobfuscator.cs" />
     <Compile Include="cflow\InstructionEmulator.cs" />
@@ -80,9 +81,9 @@
     <Compile Include="Utils.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\dot10\src\dot10.csproj">
+    <ProjectReference Include="..\dnlib\src\dnlib.csproj">
       <Project>{FDFC1237-143F-4919-8318-4926901F4639}</Project>
-      <Name>dot10</Name>
+      <Name>dnlib</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

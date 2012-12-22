@@ -20,11 +20,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using dot10.IO;
-using dot10.DotNet;
-using dot10.DotNet.MD;
-using dot10.DotNet.Emit;
-using dot10.DotNet.Writer;
+using dnlib.IO;
+using dnlib.DotNet;
+using dnlib.DotNet.MD;
+using dnlib.DotNet.Emit;
+using dnlib.DotNet.Writer;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
@@ -123,7 +123,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 
 		static short[] nativeLdci4 = new short[] { 0x55, 0x8B, 0xEC, 0xB8, -1, -1, -1, -1, 0x5D, 0xC3 };
 		static short[] nativeLdci4_0 = new short[] { 0x55, 0x8B, 0xEC, 0x33, 0xC0, 0x5D, 0xC3 };
-		public bool decrypt(MyPEImage peImage, ISimpleDeobfuscator simpleDeobfuscator, ref DumpedMethods dumpedMethods, Dictionary<uint, byte[]> tokenToNativeCode) {
+		public bool decrypt(MyPEImage peImage, ISimpleDeobfuscator simpleDeobfuscator, ref DumpedMethods dumpedMethods, Dictionary<uint, byte[]> tokenToNativeCode, bool unpackedNativeFile) {
 			if (encryptedResource.Method == null)
 				return false;
 
@@ -158,17 +158,26 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			}
 			else if (!hooksJitter || mode == 1) {
 				// DNR 3.9.8.0, 4.0, 4.1, 4.2, 4.3, 4.4
+
+				// If it's .NET 1.x, then offsets are used, not RVAs.
+				bool useOffsets = unpackedNativeFile && module.IsClr1x;
+
 				patchDwords(peImage, methodsDataReader, patchCount);
 				while (methodsDataReader.Position < methodsData.Length - 1) {
 					uint rva = methodsDataReader.ReadUInt32();
 					uint token = methodsDataReader.ReadUInt32();	// token, unknown, or index
 					int size = methodsDataReader.ReadInt32();
-					if (size > 0)
-						peImage.dotNetSafeWrite(rva, methodsDataReader.ReadBytes(size));
+					if (size > 0) {
+						var newData = methodsDataReader.ReadBytes(size);
+						if (useOffsets)
+							peImage.dotNetSafeWriteOffset(rva, newData);
+						else
+							peImage.dotNetSafeWrite(rva, newData);
+					}
 				}
 			}
 			else {
-				// DNR 4.0 - 4.4 (jitter is hooked)
+				// DNR 4.0 - 4.5 (jitter is hooked)
 
 				var methodDef = peImage.DotNetFile.MetaData.TablesStream.MethodTable;
 				var rvaToIndex = new Dictionary<uint, int>((int)methodDef.Rows);

@@ -19,8 +19,8 @@
 
 using System;
 using System.Collections.Generic;
-using dot10.DotNet;
-using dot10.DotNet.Emit;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 
 namespace de4dot.blocks {
 	public class Blocks {
@@ -171,16 +171,16 @@ namespace de4dot.blocks {
 			case Code.Ldloc_2:
 			case Code.Ldloc_3:
 				if (newIndex == 0)
-					return Instruction.Create(OpCodes.Ldloc_0);
+					return OpCodes.Ldloc_0.ToInstruction();
 				if (newIndex == 1)
-					return Instruction.Create(OpCodes.Ldloc_1);
+					return OpCodes.Ldloc_1.ToInstruction();
 				if (newIndex == 2)
-					return Instruction.Create(OpCodes.Ldloc_2);
+					return OpCodes.Ldloc_2.ToInstruction();
 				if (newIndex == 3)
-					return Instruction.Create(OpCodes.Ldloc_3);
+					return OpCodes.Ldloc_3.ToInstruction();
 				if (newIndex <= 0xFF)
-					return Instruction.Create(OpCodes.Ldloc_S, local);
-				return Instruction.Create(OpCodes.Ldloc, local);
+					return OpCodes.Ldloc_S.ToInstruction(local);
+				return OpCodes.Ldloc.ToInstruction(local);
 
 			case Code.Stloc:
 			case Code.Stloc_S:
@@ -189,22 +189,22 @@ namespace de4dot.blocks {
 			case Code.Stloc_2:
 			case Code.Stloc_3:
 				if (newIndex == 0)
-					return Instruction.Create(OpCodes.Stloc_0);
+					return OpCodes.Stloc_0.ToInstruction();
 				if (newIndex == 1)
-					return Instruction.Create(OpCodes.Stloc_1);
+					return OpCodes.Stloc_1.ToInstruction();
 				if (newIndex == 2)
-					return Instruction.Create(OpCodes.Stloc_2);
+					return OpCodes.Stloc_2.ToInstruction();
 				if (newIndex == 3)
-					return Instruction.Create(OpCodes.Stloc_3);
+					return OpCodes.Stloc_3.ToInstruction();
 				if (newIndex <= 0xFF)
-					return Instruction.Create(OpCodes.Stloc_S, local);
-				return Instruction.Create(OpCodes.Stloc, local);
+					return OpCodes.Stloc_S.ToInstruction(local);
+				return OpCodes.Stloc.ToInstruction(local);
 
 			case Code.Ldloca_S:
 			case Code.Ldloca:
 				if (newIndex <= 0xFF)
-					return Instruction.Create(OpCodes.Ldloca_S, local);
-				return Instruction.Create(OpCodes.Ldloca, local);
+					return OpCodes.Ldloca_S.ToInstruction(local);
+				return OpCodes.Ldloca.ToInstruction(local);
 
 			default:
 				throw new ApplicationException("Invalid ld/st local instruction");

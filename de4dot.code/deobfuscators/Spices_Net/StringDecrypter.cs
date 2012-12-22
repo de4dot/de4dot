@@ -20,8 +20,8 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using dot10.DotNet;
-using dot10.DotNet.Emit;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Spices_Net {
@@ -93,7 +93,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 					continue;
 				if (type.HasEvents || type.HasProperties)
 					continue;
-				if (type.Fields.Count != 2)
+				if (type.Fields.Count < 2 || type.Fields.Count > 3)
 					continue;
 				if ((type.Attributes & ~TypeAttributes.Sealed) != 0)
 					continue;

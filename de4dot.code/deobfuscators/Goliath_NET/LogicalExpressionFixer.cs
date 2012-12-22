@@ -17,7 +17,7 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using dot10.DotNet.Emit;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Goliath_NET {
@@ -30,13 +30,13 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 					var second = instrs[i + 1];
 					if (first.OpCode.Code == Code.Not && second.OpCode.Code == Code.Neg) {
 						// It's increment
-						instrs[i] = new Instr(Instruction.Create(OpCodes.Ldc_I4_1));
-						instrs[i + 1] = new Instr(Instruction.Create(OpCodes.Add));
+						instrs[i] = new Instr(OpCodes.Ldc_I4_1.ToInstruction());
+						instrs[i + 1] = new Instr(OpCodes.Add.ToInstruction());
 					}
 					else if (first.OpCode.Code == Code.Neg && second.OpCode.Code == Code.Not) {
 						// It's decrement
-						instrs[i] = new Instr(Instruction.Create(OpCodes.Ldc_I4_1));
-						instrs[i + 1] = new Instr(Instruction.Create(OpCodes.Sub));
+						instrs[i] = new Instr(OpCodes.Ldc_I4_1.ToInstruction());
+						instrs[i + 1] = new Instr(OpCodes.Sub.ToInstruction());
 					}
 				}
 			}

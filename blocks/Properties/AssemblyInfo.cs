@@ -21,7 +21,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 
 [assembly: AssemblyTitle("blocks")]
-[assembly: AssemblyDescription("Modifies dot10 MethodDef bodies")]
+[assembly: AssemblyDescription("Modifies dnlib MethodDef bodies")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("blocks")]
@@ -29,5 +29,5 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 [assembly: ComVisible(false)]
-[assembly: AssemblyVersion("1.9.1.3405")]
-[assembly: AssemblyFileVersion("1.9.1.3405")]
+[assembly: AssemblyVersion("2.0.2.3405")]
+[assembly: AssemblyFileVersion("2.0.2.3405")]

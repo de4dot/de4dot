@@ -19,9 +19,9 @@
 
 using System;
 using System.Collections.Generic;
-using dot10.IO;
-using dot10.PE;
-using dot10.DotNet;
+using dnlib.IO;
+using dnlib.PE;
+using dnlib.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Agile_NET {
@@ -271,8 +271,12 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			}
 
 			if (options.RestoreVmCode) {
-				csvm.restore();
-				addResourceToBeRemoved(csvm.Resource, "CSVM data resource");
+				if (csvm.restore())
+					addResourceToBeRemoved(csvm.Resource, "CSVM data resource");
+				else {
+					Logger.e("Couldn't restore VM methods. Use --dont-rename or it will not run");
+					preserveTokensAndTypes();
+				}
 			}
 		}
 

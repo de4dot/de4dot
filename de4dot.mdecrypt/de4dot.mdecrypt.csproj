@@ -46,9 +46,9 @@
       <Project>{045B96F2-AF80-4C4C-8D27-E38635AC705E}</Project>
       <Name>blocks</Name>
     </ProjectReference>
-    <ProjectReference Include="..\dot10\src\dot10.csproj">
+    <ProjectReference Include="..\dnlib\src\dnlib.csproj">
       <Project>{FDFC1237-143F-4919-8318-4926901F4639}</Project>
-      <Name>dot10</Name>
+      <Name>dnlib</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

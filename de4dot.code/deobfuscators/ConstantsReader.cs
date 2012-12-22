@@ -18,8 +18,8 @@
 */
 
 using System.Collections.Generic;
-using dot10.DotNet;
-using dot10.DotNet.Emit;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators {
@@ -30,6 +30,18 @@ namespace de4dot.code.deobfuscators {
 		protected Dictionary<Local, long> localsValuesInt64 = new Dictionary<Local, long>();
 		protected Dictionary<Local, double> localsValuesDouble = new Dictionary<Local, double>();
 		bool emulateConvInstrs;
+
+		public IEnumerable<KeyValuePair<Local, int>> Locals32 {
+			get { return localsValuesInt32; }
+		}
+
+		public IEnumerable<KeyValuePair<Local, long>> Locals64 {
+			get { return localsValuesInt64; }
+		}
+
+		public IEnumerable<KeyValuePair<Local, double>> LocalsDouble {
+			get { return localsValuesDouble; }
+		}
 
 		public interface IInstructions {
 			int Count { get; }

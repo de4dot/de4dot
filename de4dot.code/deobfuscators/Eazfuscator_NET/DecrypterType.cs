@@ -20,8 +20,8 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using dot10.DotNet;
-using dot10.DotNet.Emit;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Eazfuscator_NET {
@@ -35,6 +35,10 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		int i1, i2, i3;
 		int m1_i1, m2_i1, m2_i2, m3_i1;
 		MethodDef[] efConstMethods;
+
+		public MethodDef Int64Method {
+			get { return int64Method; }
+		}
 
 		public TypeDef Type {
 			get { return type; }
