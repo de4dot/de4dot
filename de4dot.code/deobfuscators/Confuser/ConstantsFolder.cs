@@ -18,7 +18,7 @@
 */
 
 using System.Collections.Generic;
-using dot10.DotNet.Emit;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
 

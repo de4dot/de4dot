@@ -20,7 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using dot10.IO;
+using dnlib.IO;
 
 namespace de4dot.code.deobfuscators.Confuser {
 	class x86Emulator : IDisposable {
