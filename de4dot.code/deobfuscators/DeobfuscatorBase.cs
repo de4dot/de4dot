@@ -206,6 +206,9 @@ namespace de4dot.code.deobfuscators {
 			foreach (var type in module.GetTypes()) {
 				if (!isTypeWithInvalidBaseType(moduleType, type))
 					continue;
+				var corSig = module.CorLibTypes.GetCorLibTypeSig(type);
+				if (corSig != null && corSig.ElementType == ElementType.Object)
+					continue;
 				Logger.v("Adding System.Object as base type: {0} ({1:X8})",
 							Utils.removeNewlines(type),
 							type.MDToken.ToInt32());
