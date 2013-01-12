@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2013 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -73,7 +73,7 @@ namespace de4dot.cui {
 				Logger.Instance.CanIgnoreMessages = !hasEnv(showAllMessagesEnvName);
 
 				Logger.n("");
-				Logger.n("de4dot v{0} Copyright (C) 2011-2012 de4dot@gmail.com", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
+				Logger.n("de4dot v{0} Copyright (C) 2011-2013 de4dot@gmail.com", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
 				Logger.n("Latest version and source code: https://bitbucket.org/0xd4d/de4dot");
 				Logger.n("");
 

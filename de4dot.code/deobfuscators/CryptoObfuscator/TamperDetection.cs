@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2013 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -84,7 +84,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 
 			if (!method.IsStatic || !DotNetUtils.isMethod(method, "System.Void", "()"))
 				return false;
-			if (type.Methods.Count < 3 || type.Methods.Count > 16)
+			if (type.Methods.Count < 3 || type.Methods.Count > 20)
 				return false;
 			if (DotNetUtils.getPInvokeMethod(type, "mscoree", "StrongNameSignatureVerificationEx") != null) {
 			}

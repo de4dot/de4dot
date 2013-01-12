@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2013 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -110,7 +110,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		MethodDef getProxyCreateMethod(TypeDef type) {
 			if (DotNetUtils.findFieldType(type, "System.ModuleHandle", true) == null)
 				return null;
-			if (type.Fields.Count < 1 || type.Fields.Count > 12)
+			if (type.Fields.Count < 1 || type.Fields.Count > 14)
 				return null;
 
 			MethodDef createMethod = null;
