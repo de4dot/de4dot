@@ -36,7 +36,11 @@ namespace de4dot.code.renamer {
 		public void rename(List<TypeInfo> renamedTypes) {
 			// Rename the longest names first. Otherwise eg. b.g.resources could be renamed
 			// Class0.g.resources instead of Class1.resources when b.g was renamed Class1.
-			renamedTypes.Sort((a, b) => b.oldFullName.Length.CompareTo(a.oldFullName.Length));
+			renamedTypes.Sort((a, b) => {
+				if (b.oldFullName.Length != a.oldFullName.Length)
+					return b.oldFullName.Length.CompareTo(a.oldFullName.Length);
+				return b.oldFullName.CompareTo(a.oldFullName);
+			});
 
 			nameToResource = new Dictionary<string, Resource>(module.ModuleDefMD.Resources.Count * 3, StringComparer.Ordinal);
 			foreach (var resource in module.ModuleDefMD.Resources) {
