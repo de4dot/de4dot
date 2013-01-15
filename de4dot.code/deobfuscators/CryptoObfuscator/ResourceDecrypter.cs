@@ -79,9 +79,9 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		bool findDesktopOrCompactFramework() {
 			resourceDecrypterType = null;
 			foreach (var type in module.Types) {
-				if (type.Fields.Count != 5)
+				if (type.Fields.Count < 5)
 					continue;
-				if (!new FieldTypes(type).exactly(requiredTypes))
+				if (!new FieldTypes(type).all(requiredTypes))
 					continue;
 
 				var cctor = type.FindStaticConstructor();
@@ -299,6 +299,8 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				yield break;
 			foreach (var method in type.Methods) {
 				if (DotNetUtils.isMethod(method, "System.Byte[]", "(System.IO.Stream)"))
+					yield return method;
+				else if (DotNetUtils.isMethod(method, "System.Byte[]", "(System.Int64,System.IO.Stream)"))
 					yield return method;
 				else if (DotNetUtils.isMethod(method, "System.Byte[]", "(System.Int32,System.IO.Stream)"))
 					yield return method;

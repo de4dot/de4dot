@@ -67,7 +67,8 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 					!containsString(method, "Debugger detected") &&
 					!containsString(method, "Debugger was detected") &&
 					!containsString(method, "{0} was detected") &&
-					!containsString(method, "run under"))
+					!containsString(method, "run under") &&
+					!containsString(method, "run with"))
 					continue;
 
 				antiDebuggerType = type;
