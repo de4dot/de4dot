@@ -38,7 +38,7 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 			get { return THE_TYPE; }
 		}
 
-		public override IDeobfuscator createDeobfuscator() {
+		public override IDeobfuscator CreateDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
 				RenameResourcesInCode = false,
 				ValidNameRegex = validNameRegex.get(),
@@ -73,7 +73,7 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 			this.options = options;
 		}
 
-		protected override int detectInternal() {
+		protected override int DetectInternal() {
 			int val = 0;
 
 			if (stringDecrypter.Detected)
@@ -84,25 +84,25 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 			return val;
 		}
 
-		protected override void scanForObfuscator() {
+		protected override void ScanForObfuscator() {
 			stringDecrypter = new StringDecrypter(module);
-			stringDecrypter.find(DeobfuscatedFile);
-			findDotfuscatorAttribute();
+			stringDecrypter.Find(DeobfuscatedFile);
+			FindDotfuscatorAttribute();
 		}
 
-		void findDotfuscatorAttribute() {
+		void FindDotfuscatorAttribute() {
 			foreach (var type in module.Types) {
 				if (type.FullName == "DotfuscatorAttribute") {
 					foundDotfuscatorAttribute = true;
-					addAttributeToBeRemoved(type, "Obfuscator attribute");
-					initializeVersion(type);
+					AddAttributeToBeRemoved(type, "Obfuscator attribute");
+					InitializeVersion(type);
 					return;
 				}
 			}
 		}
 
-		void initializeVersion(TypeDef attr) {
-			var s = DotNetUtils.getCustomArgAsString(getAssemblyAttribute(attr), 0);
+		void InitializeVersion(TypeDef attr) {
+			var s = DotNetUtils.GetCustomArgAsString(GetAssemblyAttribute(attr), 0);
 			if (s == null)
 				return;
 
@@ -112,21 +112,21 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 			obfuscatorName = "Dotfuscator " + val.Groups[1].ToString();
 		}
 
-		public override void deobfuscateBegin() {
-			base.deobfuscateBegin();
+		public override void DeobfuscateBegin() {
+			base.DeobfuscateBegin();
 			foreach (var info in stringDecrypter.StringDecrypterInfos)
-				staticStringInliner.add(info.method, (method, gim, args) => stringDecrypter.decrypt(method, (string)args[0], (int)args[1]));
-			DeobfuscatedFile.stringDecryptersAdded();
+				staticStringInliner.Add(info.method, (method, gim, args) => stringDecrypter.Decrypt(method, (string)args[0], (int)args[1]));
+			DeobfuscatedFile.StringDecryptersAdded();
 		}
 
-		public override void deobfuscateEnd() {
+		public override void DeobfuscateEnd() {
 			if (CanRemoveStringDecrypterType)
-				addMethodsToBeRemoved(stringDecrypter.StringDecrypters, "String decrypter method");
+				AddMethodsToBeRemoved(stringDecrypter.StringDecrypters, "String decrypter method");
 
-			base.deobfuscateEnd();
+			base.DeobfuscateEnd();
 		}
 
-		public override IEnumerable<int> getStringDecrypterMethods() {
+		public override IEnumerable<int> GetStringDecrypterMethods() {
 			var list = new List<int>();
 			foreach (var method in stringDecrypter.StringDecrypters)
 				list.Add(method.MDToken.ToInt32());

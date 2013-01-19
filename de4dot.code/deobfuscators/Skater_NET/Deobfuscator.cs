@@ -39,7 +39,7 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 			get { return THE_TYPE; }
 		}
 
-		public override IDeobfuscator createDeobfuscator() {
+		public override IDeobfuscator CreateDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
 				ValidNameRegex = validNameRegex.get(),
 			});
@@ -73,7 +73,7 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 			StringFeatures = StringFeatures.AllowNoDecryption | StringFeatures.AllowStaticDecryption;
 		}
 
-		protected override int detectInternal() {
+		protected override int DetectInternal() {
 			int val = 0;
 
 			if (stringDecrypter.Detected)
@@ -82,14 +82,14 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 			return val;
 		}
 
-		protected override void scanForObfuscator() {
+		protected override void ScanForObfuscator() {
 			stringDecrypter = new StringDecrypter(module);
 
-			if (hasAssemblyRef("Microsoft.VisualBasic"))
-				stringDecrypter.find();
+			if (HasAssemblyRef("Microsoft.VisualBasic"))
+				stringDecrypter.Find();
 		}
 
-		bool hasAssemblyRef(string name) {
+		bool HasAssemblyRef(string name) {
 			foreach (var asmRef in module.GetAssemblyRefs()) {
 				if (asmRef.Name == name)
 					return true;
@@ -97,30 +97,30 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 			return false;
 		}
 
-		public override void deobfuscateBegin() {
-			base.deobfuscateBegin();
+		public override void DeobfuscateBegin() {
+			base.DeobfuscateBegin();
 
 			enumClassFinder = new EnumClassFinder(module);
 
-			stringDecrypter.initialize(DeobfuscatedFile);
+			stringDecrypter.Initialize(DeobfuscatedFile);
 		}
 
-		public override void deobfuscateMethodEnd(Blocks blocks) {
+		public override void DeobfuscateMethodEnd(Blocks blocks) {
 			if (CanRemoveStringDecrypterType)
-				stringDecrypter.deobfuscate(blocks);
-			enumClassFinder.deobfuscate(blocks);
-			base.deobfuscateMethodEnd(blocks);
+				stringDecrypter.Deobfuscate(blocks);
+			enumClassFinder.Deobfuscate(blocks);
+			base.DeobfuscateMethodEnd(blocks);
 		}
 
-		public override void deobfuscateEnd() {
+		public override void DeobfuscateEnd() {
 			if (Operations.DecryptStrings != OpDecryptString.None && stringDecrypter.CanRemoveType)
-				addTypeToBeRemoved(stringDecrypter.Type, "String decrypter type");
-			fixEnumTypes();
+				AddTypeToBeRemoved(stringDecrypter.Type, "String decrypter type");
+			FixEnumTypes();
 
-			base.deobfuscateEnd();
+			base.DeobfuscateEnd();
 		}
 
-		public override IEnumerable<int> getStringDecrypterMethods() {
+		public override IEnumerable<int> GetStringDecrypterMethods() {
 			var list = new List<int>();
 			return list;
 		}

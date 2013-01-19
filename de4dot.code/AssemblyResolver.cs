@@ -27,16 +27,16 @@ namespace de4dot.code {
 			EnableTypeDefCache = true;
 		}
 
-		public void addSearchDirectory(string dir) {
+		public void AddSearchDirectory(string dir) {
 			if (!PostSearchPaths.Contains(dir))
 				PostSearchPaths.Add(dir);
 		}
 
-		public void addModule(ModuleDef module) {
+		public void AddModule(ModuleDef module) {
 			AddToCache(module.Assembly);
 		}
 
-		public void removeModule(ModuleDef module) {
+		public void RemoveModule(ModuleDef module) {
 			var assembly = module.Assembly;
 			if (assembly == null)
 				return;
@@ -44,7 +44,7 @@ namespace de4dot.code {
 			Remove(module.Assembly);
 		}
 
-		public void clearAll() {
+		public void ClearAll() {
 			//TODO: cache.Clear();
 			//TODO: resetSearchPaths();
 		}

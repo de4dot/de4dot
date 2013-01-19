@@ -36,12 +36,12 @@ namespace de4dot.code.renamer {
 			newName = memberRef.memberRef.Name.String;
 		}
 
-		public void rename(string newTypeName) {
+		public void Rename(string newTypeName) {
 			renamed = true;
 			newName = newTypeName;
 		}
 
-		public bool gotNewName() {
+		public bool GotNewName() {
 			return oldName != newName;
 		}
 
@@ -95,7 +95,7 @@ namespace de4dot.code.renamer {
 			this.newName = paramDef.ParameterDef.Name;
 		}
 
-		public bool gotNewName() {
+		public bool GotNewName() {
 			return oldName != newName;
 		}
 	}
@@ -210,59 +210,59 @@ namespace de4dot.code.renamer {
 			checkWinFormsClass = new DerivedFrom(WINFORMS_CLASSES);
 		}
 
-		public bool isWinFormsClass(MTypeDef type) {
-			return checkWinFormsClass.check(type);
+		public bool IsWinFormsClass(MTypeDef type) {
+			return checkWinFormsClass.Check(type);
 		}
 
-		public TypeInfo type(MTypeDef t) {
+		public TypeInfo Type(MTypeDef t) {
 			return allTypeInfos[t];
 		}
 
-		public bool tryGetType(MTypeDef t, out TypeInfo info) {
+		public bool TryGetType(MTypeDef t, out TypeInfo info) {
 			return allTypeInfos.TryGetValue(t, out info);
 		}
 
-		public bool tryGetEvent(MEventDef e, out EventInfo info) {
+		public bool TryGetEvent(MEventDef e, out EventInfo info) {
 			return allEventInfos.TryGetValue(e, out info);
 		}
 
-		public bool tryGetProperty(MPropertyDef p, out PropertyInfo info) {
+		public bool TryGetProperty(MPropertyDef p, out PropertyInfo info) {
 			return allPropertyInfos.TryGetValue(p, out info);
 		}
 
-		public PropertyInfo prop(MPropertyDef prop) {
+		public PropertyInfo Property(MPropertyDef prop) {
 			return allPropertyInfos[prop];
 		}
 
-		public EventInfo evt(MEventDef evt) {
+		public EventInfo Event(MEventDef evt) {
 			return allEventInfos[evt];
 		}
 
-		public FieldInfo field(MFieldDef field) {
+		public FieldInfo Field(MFieldDef field) {
 			return allFieldInfos[field];
 		}
 
-		public MethodInfo method(MMethodDef method) {
+		public MethodInfo Method(MMethodDef method) {
 			return allMethodInfos[method];
 		}
 
-		public GenericParamInfo gparam(MGenericParamDef gparam) {
+		public GenericParamInfo GenericParam(MGenericParamDef gparam) {
 			return allGenericParamInfos[gparam];
 		}
 
-		public ParamInfo param(MParamDef param) {
+		public ParamInfo Param(MParamDef param) {
 			return allParamInfos[param];
 		}
 
-		public void add(MPropertyDef prop) {
+		public void Add(MPropertyDef prop) {
 			allPropertyInfos[prop] = new PropertyInfo(prop);
 		}
 
-		public void add(MEventDef evt) {
+		public void Add(MEventDef evt) {
 			allEventInfos[evt] = new EventInfo(evt);
 		}
 
-		public void initialize(Modules modules) {
+		public void Initialize(Modules modules) {
 			foreach (var type in modules.AllTypes) {
 				allTypeInfos[type] = new TypeInfo(type, this);
 
@@ -273,10 +273,10 @@ namespace de4dot.code.renamer {
 					allFieldInfos[field] = new FieldInfo(field);
 
 				foreach (var evt in type.AllEvents)
-					add(evt);
+					Add(evt);
 
 				foreach (var prop in type.AllProperties)
-					add(prop);
+					Add(prop);
 
 				foreach (var method in type.AllMethods) {
 					allMethodInfos[method] = new MethodInfo(method);

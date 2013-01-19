@@ -31,21 +31,21 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			this.assemblyResolverInfo = assemblyResolverInfo;
 		}
 
-		public bool resolveResources() {
-			return assemblyResolverInfo.resolveResources();
+		public bool ResolveResources() {
+			return assemblyResolverInfo.ResolveResources();
 		}
 
-		public bool canDecryptResource(EmbeddedAssemblyInfo info) {
+		public bool CanDecryptResource(EmbeddedAssemblyInfo info) {
 			if (info == null || !info.isCompressed)
 				return true;
 			return resourceDecrypter.CanDecrypt;
 		}
 
-		public IEnumerable<Tuple<EmbeddedAssemblyInfo, byte[]>> getDecryptedResources() {
+		public IEnumerable<Tuple<EmbeddedAssemblyInfo, byte[]>> GetDecryptedResources() {
 			var returned = new Dictionary<Resource, bool>();
 			foreach (var info in assemblyResolverInfo.EmbeddedAssemblyInfos) {
 				if (info.resource == null) {
-					Logger.w("Could not find embedded resource {0}", Utils.toCsharpString(info.resourceName));
+					Logger.w("Could not find embedded resource {0}", Utils.ToCsharpString(info.resourceName));
 					continue;
 				}
 				if (returned.ContainsKey(info.resource))
@@ -54,24 +54,24 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 
 				yield return new Tuple<EmbeddedAssemblyInfo, byte[]> {
 					Item1 = info,
-					Item2 = decryptResource(info),
+					Item2 = DecryptResource(info),
 				};
 			}
 		}
 
-		public byte[] removeDecryptedResource(EmbeddedAssemblyInfo info) {
+		public byte[] RemoveDecryptedResource(EmbeddedAssemblyInfo info) {
 			if (info == null)
 				return null;
 
-			var data = decryptResource(info);
-			if (!assemblyResolverInfo.removeEmbeddedAssemblyInfo(info))
-				throw new ApplicationException(string.Format("Could not remove resource {0}", Utils.toCsharpString(info.resourceName)));
+			var data = DecryptResource(info);
+			if (!assemblyResolverInfo.RemoveEmbeddedAssemblyInfo(info))
+				throw new ApplicationException(string.Format("Could not remove resource {0}", Utils.ToCsharpString(info.resourceName)));
 			return data;
 		}
 
-		byte[] decryptResource(EmbeddedAssemblyInfo info) {
+		byte[] DecryptResource(EmbeddedAssemblyInfo info) {
 			if (info.isCompressed)
-				return resourceDecrypter.decrypt(info.resource);
+				return resourceDecrypter.Decrypt(info.resource);
 			else
 				return info.resource.GetResourceData();
 		}

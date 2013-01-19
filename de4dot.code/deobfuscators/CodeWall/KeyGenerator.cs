@@ -30,14 +30,14 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			mother = new CRandomMother(seed);
 		}
 
-		uint random() {
+		uint Random() {
 			return (mersenne.BRandom() >> 1) ^ (uint)Math.Abs((int)(mother.Random() * int.MinValue));
 		}
 
-		public byte[] generate(int size) {
+		public byte[] Generate(int size) {
 			var key = new byte[size];
 			for (int i = 0; i < size; i++)
-				key[i] = (byte)random();
+				key[i] = (byte)Random();
 			return key;
 		}
 	}

@@ -37,7 +37,7 @@ namespace de4dot.code.deobfuscators.Unknown {
 			get { return THE_TYPE; }
 		}
 
-		public override IDeobfuscator createDeobfuscator() {
+		public override IDeobfuscator CreateDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
 				RenameResourcesInCode = false,
 				ValidNameRegex = validNameRegex.get(),
@@ -68,20 +68,20 @@ namespace de4dot.code.deobfuscators.Unknown {
 			KeepTypes = true;
 		}
 
-		void setName(string name) {
+		void SetName(string name) {
 			if (obfuscatorName == null && name != null)
 				obfuscatorName = string.Format("{0} (not supported)", name);
 		}
 
-		protected override int detectInternal() {
-			setName(scanTypes());
+		protected override int DetectInternal() {
+			SetName(ScanTypes());
 			return 1;
 		}
 
-		protected override void scanForObfuscator() {
+		protected override void ScanForObfuscator() {
 		}
 
-		string scanTypes() {
+		string ScanTypes() {
 			foreach (var type in module.Types) {
 				var fn = type.FullName;
 				if (fn == "ZYXDNGuarder")
@@ -96,7 +96,7 @@ namespace de4dot.code.deobfuscators.Unknown {
 			return null;
 		}
 
-		public override IEnumerable<int> getStringDecrypterMethods() {
+		public override IEnumerable<int> GetStringDecrypterMethods() {
 			return new List<int>();
 		}
 	}

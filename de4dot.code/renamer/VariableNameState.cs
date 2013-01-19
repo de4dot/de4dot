@@ -32,7 +32,7 @@ namespace de4dot.code.renamer {
 		public NameCreator staticMethodNameCreator;
 		public NameCreator instanceMethodNameCreator;
 
-		public static VariableNameState create() {
+		public static VariableNameState Create() {
 			var vns = new VariableNameState();
 			vns.existingVariableNames = new ExistingNames();
 			vns.existingMethodNames = new ExistingNames();
@@ -51,53 +51,53 @@ namespace de4dot.code.renamer {
 		}
 
 		// Cloning only params will speed up the method param renaming code
-		public VariableNameState cloneParamsOnly() {
+		public VariableNameState CloneParamsOnly() {
 			var vns = new VariableNameState();
 			vns.existingVariableNames = new ExistingNames();
 			vns.variableNameCreator = new VariableNameCreator();
-			vns.existingVariableNames.merge(existingVariableNames);
-			vns.variableNameCreator.merge(variableNameCreator);
+			vns.existingVariableNames.Merge(existingVariableNames);
+			vns.variableNameCreator.Merge(variableNameCreator);
 			return vns;
 		}
 
-		public VariableNameState merge(VariableNameState other) {
-			existingVariableNames.merge(other.existingVariableNames);
-			existingMethodNames.merge(other.existingMethodNames);
-			existingPropertyNames.merge(other.existingPropertyNames);
-			existingEventNames.merge(other.existingEventNames);
-			variableNameCreator.merge(other.variableNameCreator);
-			propertyNameCreator.merge(other.propertyNameCreator);
-			eventNameCreator.merge(other.eventNameCreator);
-			genericPropertyNameCreator.merge(other.genericPropertyNameCreator);
-			staticMethodNameCreator.merge(other.staticMethodNameCreator);
-			instanceMethodNameCreator.merge(other.instanceMethodNameCreator);
+		public VariableNameState Merge(VariableNameState other) {
+			existingVariableNames.Merge(other.existingVariableNames);
+			existingMethodNames.Merge(other.existingMethodNames);
+			existingPropertyNames.Merge(other.existingPropertyNames);
+			existingEventNames.Merge(other.existingEventNames);
+			variableNameCreator.Merge(other.variableNameCreator);
+			propertyNameCreator.Merge(other.propertyNameCreator);
+			eventNameCreator.Merge(other.eventNameCreator);
+			genericPropertyNameCreator.Merge(other.genericPropertyNameCreator);
+			staticMethodNameCreator.Merge(other.staticMethodNameCreator);
+			instanceMethodNameCreator.Merge(other.instanceMethodNameCreator);
 			return this;
 		}
 
-		public void mergeMethods(VariableNameState other) {
-			existingMethodNames.merge(other.existingMethodNames);
+		public void MergeMethods(VariableNameState other) {
+			existingMethodNames.Merge(other.existingMethodNames);
 		}
 
-		public void mergeProperties(VariableNameState other) {
-			existingPropertyNames.merge(other.existingPropertyNames);
+		public void MergeProperties(VariableNameState other) {
+			existingPropertyNames.Merge(other.existingPropertyNames);
 		}
 
-		public void mergeEvents(VariableNameState other) {
-			existingEventNames.merge(other.existingEventNames);
+		public void MergeEvents(VariableNameState other) {
+			existingEventNames.Merge(other.existingEventNames);
 		}
 
-		public string getNewPropertyName(PropertyDef propertyDef) {
+		public string GetNewPropertyName(PropertyDef propertyDef) {
 			var propType = propertyDef.PropertySig.GetRetType();
 			string newName;
-			if (isGeneric(propType))
-				newName = existingPropertyNames.getName(propertyDef.Name, genericPropertyNameCreator);
+			if (IsGeneric(propType))
+				newName = existingPropertyNames.GetName(propertyDef.Name, genericPropertyNameCreator);
 			else
-				newName = existingPropertyNames.getName(propertyDef.Name, () => propertyNameCreator.create(propType));
-			addPropertyName(newName);
+				newName = existingPropertyNames.GetName(propertyDef.Name, () => propertyNameCreator.Create(propType));
+			AddPropertyName(newName);
 			return newName;
 		}
 
-		static bool isGeneric(TypeSig type) {
+		static bool IsGeneric(TypeSig type) {
 			while (type != null) {
 				if (type.IsGenericParameter)
 					return true;
@@ -106,58 +106,58 @@ namespace de4dot.code.renamer {
 			return false;
 		}
 
-		public string getNewEventName(EventDef eventDef) {
-			string newName = eventNameCreator.create();
-			addEventName(newName);
+		public string GetNewEventName(EventDef eventDef) {
+			string newName = eventNameCreator.Create();
+			AddEventName(newName);
 			return newName;
 		}
 
-		public void addFieldName(string fieldName) {
-			existingVariableNames.add(fieldName);
+		public void AddFieldName(string fieldName) {
+			existingVariableNames.Add(fieldName);
 		}
 
-		public void addParamName(string paramName) {
-			existingVariableNames.add(paramName);
+		public void AddParamName(string paramName) {
+			existingVariableNames.Add(paramName);
 		}
 
-		public void addMethodName(string methodName) {
-			existingMethodNames.add(methodName);
+		public void AddMethodName(string methodName) {
+			existingMethodNames.Add(methodName);
 		}
 
-		public void addPropertyName(string propName) {
-			existingPropertyNames.add(propName);
+		public void AddPropertyName(string propName) {
+			existingPropertyNames.Add(propName);
 		}
 
-		public void addEventName(string eventName) {
-			existingEventNames.add(eventName);
+		public void AddEventName(string eventName) {
+			existingEventNames.Add(eventName);
 		}
 
-		public bool isMethodNameUsed(string methodName) {
-			return existingMethodNames.exists(methodName);
+		public bool IsMethodNameUsed(string methodName) {
+			return existingMethodNames.Exists(methodName);
 		}
 
-		public bool isPropertyNameUsed(string propName) {
-			return existingPropertyNames.exists(propName);
+		public bool IsPropertyNameUsed(string propName) {
+			return existingPropertyNames.Exists(propName);
 		}
 
-		public bool isEventNameUsed(string eventName) {
-			return existingEventNames.exists(eventName);
+		public bool IsEventNameUsed(string eventName) {
+			return existingEventNames.Exists(eventName);
 		}
 
-		public string getNewFieldName(FieldDef field) {
-			return existingVariableNames.getName(field.Name, () => variableNameCreator.create(field.FieldSig.GetFieldType()));
+		public string GetNewFieldName(FieldDef field) {
+			return existingVariableNames.GetName(field.Name, () => variableNameCreator.Create(field.FieldSig.GetFieldType()));
 		}
 
-		public string getNewFieldName(string oldName, INameCreator nameCreator) {
-			return existingVariableNames.getName(oldName, () => nameCreator.create());
+		public string GetNewFieldName(string oldName, INameCreator nameCreator) {
+			return existingVariableNames.GetName(oldName, () => nameCreator.Create());
 		}
 
-		public string getNewParamName(string oldName, Parameter param) {
-			return existingVariableNames.getName(oldName, () => variableNameCreator.create(param.Type));
+		public string GetNewParamName(string oldName, Parameter param) {
+			return existingVariableNames.GetName(oldName, () => variableNameCreator.Create(param.Type));
 		}
 
-		public string getNewMethodName(string oldName, INameCreator nameCreator) {
-			return existingMethodNames.getName(oldName, nameCreator);
+		public string GetNewMethodName(string oldName, INameCreator nameCreator) {
+			return existingMethodNames.GetName(oldName, nameCreator);
 		}
 	}
 }

@@ -37,33 +37,33 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			this.opCodeDetector = opCodeDetector;
 		}
 
-		public void convert(MethodDef cilMethod, CsvmMethodData csvmMethod) {
-			var newInstructions = readInstructions(cilMethod, csvmMethod);
-			var newLocals = readLocals(cilMethod, csvmMethod);
-			var newExceptions = readExceptions(cilMethod, csvmMethod, newInstructions);
+		public void Convert(MethodDef cilMethod, CsvmMethodData csvmMethod) {
+			var newInstructions = ReadInstructions(cilMethod, csvmMethod);
+			var newLocals = ReadLocals(cilMethod, csvmMethod);
+			var newExceptions = ReadExceptions(cilMethod, csvmMethod, newInstructions);
 
-			fixInstructionOperands(newInstructions);
-			fixLocals(newInstructions, cilMethod.Body.Variables);
-			fixArgs(newInstructions, cilMethod);
+			FixInstructionOperands(newInstructions);
+			FixLocals(newInstructions, cilMethod.Body.Variables);
+			FixArgs(newInstructions, cilMethod);
 
-			DotNetUtils.restoreBody(cilMethod, newInstructions, newExceptions);
+			DotNetUtils.RestoreBody(cilMethod, newInstructions, newExceptions);
 
-			if (!operandRestorer.restore(cilMethod))
+			if (!operandRestorer.Restore(cilMethod))
 				Logger.w("Failed to restore one or more instruction operands in CSVM method {0:X8}", cilMethod.MDToken.ToInt32());
-			restoreConstrainedPrefix(cilMethod);
+			RestoreConstrainedPrefix(cilMethod);
 		}
 
-		void fixLocals(IList<Instruction> instrs, IList<Local> locals) {
+		void FixLocals(IList<Instruction> instrs, IList<Local> locals) {
 			foreach (var instr in instrs) {
 				var op = instr.Operand as LocalOperand;
 				if (op == null)
 					continue;
 
-				updateLocalInstruction(instr, locals[op.local], op.local);
+				UpdateLocalInstruction(instr, locals[op.local], op.local);
 			}
 		}
 
-		static void updateLocalInstruction(Instruction instr, Local local, int index) {
+		static void UpdateLocalInstruction(Instruction instr, Local local, int index) {
 			object operand = null;
 			OpCode opcode;
 
@@ -128,17 +128,17 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			instr.Operand = operand;
 		}
 
-		void fixArgs(IList<Instruction> instrs, MethodDef method) {
+		void FixArgs(IList<Instruction> instrs, MethodDef method) {
 			foreach (var instr in instrs) {
 				var op = instr.Operand as ArgOperand;
 				if (op == null)
 					continue;
 
-				updateArgInstruction(instr, method.Parameters[op.arg], op.arg);
+				UpdateArgInstruction(instr, method.Parameters[op.arg], op.arg);
 			}
 		}
 
-		static void updateArgInstruction(Instruction instr, Parameter arg, int index) {
+		static void UpdateArgInstruction(Instruction instr, Parameter arg, int index) {
 			switch (instr.OpCode.Code) {
 			case Code.Ldarg:
 			case Code.Ldarg_S:
@@ -197,7 +197,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			}
 		}
 
-		List<Instruction> readInstructions(MethodDef cilMethod, CsvmMethodData csvmMethod) {
+		List<Instruction> ReadInstructions(MethodDef cilMethod, CsvmMethodData csvmMethod) {
 			var reader = new BinaryReader(new MemoryStream(csvmMethod.Instructions));
 			var instrs = new List<Instruction>();
 			uint offset = 0;
@@ -205,13 +205,13 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 				int vmOpCode = reader.ReadUInt16();
 				var instr = opCodeDetector.Handlers[vmOpCode].Read(reader);
 				instr.Offset = offset;
-				offset += (uint)getInstructionSize(instr);
+				offset += (uint)GetInstructionSize(instr);
 				instrs.Add(instr);
 			}
 			return instrs;
 		}
 
-		static int getInstructionSize(Instruction instr) {
+		static int GetInstructionSize(Instruction instr) {
 			var opcode = instr.OpCode;
 			if (opcode == null)
 				return 5;	// Load store/field
@@ -221,7 +221,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			return instr.OpCode.Size + (op.targetDisplacements.Length + 1) * 4;
 		}
 
-		List<Local> readLocals(MethodDef cilMethod, CsvmMethodData csvmMethod) {
+		List<Local> ReadLocals(MethodDef cilMethod, CsvmMethodData csvmMethod) {
 			var locals = new List<Local>();
 			var reader = new BinaryReader(new MemoryStream(csvmMethod.Locals));
 
@@ -234,12 +234,12 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 				throw new ApplicationException("Invalid number of locals");
 
 			for (int i = 0; i < numLocals; i++)
-				locals.Add(new Local(readTypeRef(reader)));
+				locals.Add(new Local(ReadTypeRef(reader)));
 
 			return locals;
 		}
 
-		TypeSig readTypeRef(BinaryReader reader) {
+		TypeSig ReadTypeRef(BinaryReader reader) {
 			var etype = (ElementType)reader.ReadInt32();
 			switch (etype) {
 			case ElementType.Void: return module.CorLibTypes.Void;
@@ -289,7 +289,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			}
 		}
 
-		List<ExceptionHandler> readExceptions(MethodDef cilMethod, CsvmMethodData csvmMethod, List<Instruction> cilInstructions) {
+		List<ExceptionHandler> ReadExceptions(MethodDef cilMethod, CsvmMethodData csvmMethod, List<Instruction> cilInstructions) {
 			var reader = new BinaryReader(new MemoryStream(csvmMethod.Exceptions));
 			var ehs = new List<ExceptionHandler>();
 
@@ -302,14 +302,14 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 
 			for (int i = 0; i < numExceptions; i++) {
 				var eh = new ExceptionHandler((ExceptionHandlerType)reader.ReadInt32());
-				eh.TryStart = getInstruction(cilInstructions, reader.ReadInt32());
-				eh.TryEnd = getInstructionEnd(cilInstructions, reader.ReadInt32());
-				eh.HandlerStart = getInstruction(cilInstructions, reader.ReadInt32());
-				eh.HandlerEnd = getInstructionEnd(cilInstructions, reader.ReadInt32());
+				eh.TryStart = GetInstruction(cilInstructions, reader.ReadInt32());
+				eh.TryEnd = GetInstructionEnd(cilInstructions, reader.ReadInt32());
+				eh.HandlerStart = GetInstruction(cilInstructions, reader.ReadInt32());
+				eh.HandlerEnd = GetInstructionEnd(cilInstructions, reader.ReadInt32());
 				if (eh.HandlerType == ExceptionHandlerType.Catch)
 					eh.CatchType = module.ResolveToken(reader.ReadUInt32()) as ITypeDefOrRef;
 				else if (eh.HandlerType == ExceptionHandlerType.Filter)
-					eh.FilterStart = getInstruction(cilInstructions, reader.ReadInt32());
+					eh.FilterStart = GetInstruction(cilInstructions, reader.ReadInt32());
 
 				ehs.Add(eh);
 			}
@@ -317,44 +317,44 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			return ehs;
 		}
 
-		static Instruction getInstruction(IList<Instruction> instrs, int index) {
+		static Instruction GetInstruction(IList<Instruction> instrs, int index) {
 			return instrs[index];
 		}
 
-		static Instruction getInstructionEnd(IList<Instruction> instrs, int index) {
+		static Instruction GetInstructionEnd(IList<Instruction> instrs, int index) {
 			index++;
 			if (index == instrs.Count)
 				return null;
 			return instrs[index];
 		}
 
-		static Instruction getInstruction(IList<Instruction> instrs, Instruction source, int displ) {
+		static Instruction GetInstruction(IList<Instruction> instrs, Instruction source, int displ) {
 			int sourceIndex = instrs.IndexOf(source);
 			if (sourceIndex < 0)
 				throw new ApplicationException("Could not find source instruction");
 			return instrs[sourceIndex + displ];
 		}
 
-		void fixInstructionOperands(IList<Instruction> instrs) {
+		void FixInstructionOperands(IList<Instruction> instrs) {
 			foreach (var instr in instrs) {
 				var op = instr.Operand as IVmOperand;
 				if (op != null)
-					instr.Operand = fixOperand(instrs, instr, op);
+					instr.Operand = FixOperand(instrs, instr, op);
 			}
 		}
 
-		object fixOperand(IList<Instruction> instrs, Instruction instr, IVmOperand vmOperand) {
+		object FixOperand(IList<Instruction> instrs, Instruction instr, IVmOperand vmOperand) {
 			if (vmOperand is TokenOperand)
-				return getMemberRef(((TokenOperand)vmOperand).token);
+				return GetMemberRef(((TokenOperand)vmOperand).token);
 
 			if (vmOperand is TargetDisplOperand)
-				return getInstruction(instrs, instr, ((TargetDisplOperand)vmOperand).displacement);
+				return GetInstruction(instrs, instr, ((TargetDisplOperand)vmOperand).displacement);
 
 			if (vmOperand is SwitchTargetDisplOperand) {
 				var targetDispls = ((SwitchTargetDisplOperand)vmOperand).targetDisplacements;
 				Instruction[] targets = new Instruction[targetDispls.Length];
 				for (int i = 0; i < targets.Length; i++)
-					targets[i] = getInstruction(instrs, instr, targetDispls[i]);
+					targets[i] = GetInstruction(instrs, instr, targetDispls[i]);
 				return targets;
 			}
 
@@ -362,20 +362,20 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 				return vmOperand;
 
 			if (vmOperand is LoadFieldOperand)
-				return fixLoadStoreFieldInstruction(instr, ((LoadFieldOperand)vmOperand).token, OpCodes.Ldsfld, OpCodes.Ldfld);
+				return FixLoadStoreFieldInstruction(instr, ((LoadFieldOperand)vmOperand).token, OpCodes.Ldsfld, OpCodes.Ldfld);
 
 			if (vmOperand is LoadFieldAddressOperand)
-				return fixLoadStoreFieldInstruction(instr, ((LoadFieldAddressOperand)vmOperand).token, OpCodes.Ldsflda, OpCodes.Ldflda);
+				return FixLoadStoreFieldInstruction(instr, ((LoadFieldAddressOperand)vmOperand).token, OpCodes.Ldsflda, OpCodes.Ldflda);
 
 			if (vmOperand is StoreFieldOperand)
-				return fixLoadStoreFieldInstruction(instr, ((StoreFieldOperand)vmOperand).token, OpCodes.Stsfld, OpCodes.Stfld);
+				return FixLoadStoreFieldInstruction(instr, ((StoreFieldOperand)vmOperand).token, OpCodes.Stsfld, OpCodes.Stfld);
 
 			throw new ApplicationException(string.Format("Unknown operand type: {0}", vmOperand.GetType()));
 		}
 
-		IField fixLoadStoreFieldInstruction(Instruction instr, int token, OpCode staticInstr, OpCode instanceInstr) {
+		IField FixLoadStoreFieldInstruction(Instruction instr, int token, OpCode staticInstr, OpCode instanceInstr) {
 			var fieldRef = module.ResolveToken(token) as IField;
-			var field = deobfuscatorContext.resolveField(fieldRef);
+			var field = deobfuscatorContext.ResolveField(fieldRef);
 			bool isStatic;
 			if (field == null) {
 				Logger.w("Could not resolve field {0:X8}. Assuming it's not static.", token);
@@ -387,14 +387,14 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			return fieldRef;
 		}
 
-		ITokenOperand getMemberRef(int token) {
+		ITokenOperand GetMemberRef(int token) {
 			var memberRef = module.ResolveToken(token) as ITokenOperand;
 			if (memberRef == null)
 				throw new ApplicationException(string.Format("Could not find member ref: {0:X8}", token));
 			return memberRef;
 		}
 
-		static void restoreConstrainedPrefix(MethodDef method) {
+		static void RestoreConstrainedPrefix(MethodDef method) {
 			if (method == null || method.Body == null)
 				return;
 
@@ -410,17 +410,17 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 				var sig = calledMethod.MethodSig;
 				if (sig == null || !sig.HasThis)
 					continue;
-				var thisType = MethodStack.getLoadedType(method, instrs, i, sig.Params.Count) as ByRefSig;
+				var thisType = MethodStack.GetLoadedType(method, instrs, i, sig.Params.Count) as ByRefSig;
 				if (thisType == null)
 					continue;
-				if (hasPrefix(instrs, i, Code.Constrained))
+				if (HasPrefix(instrs, i, Code.Constrained))
 					continue;
 				instrs.Insert(i, OpCodes.Constrained.ToInstruction(thisType.Next.ToTypeDefOrRef()));
 				i++;
 			}
 		}
 
-		static bool hasPrefix(IList<Instruction> instrs, int index, Code prefix) {
+		static bool HasPrefix(IList<Instruction> instrs, int index, Code prefix) {
 			index--;
 			for (; index >= 0; index--) {
 				var instr = instrs[index];

@@ -37,15 +37,15 @@ namespace de4dot.code.renamer {
 			internalTypeNameCreator = new TypeNameCreator(existingNames);
 		}
 
-		public void addTypeName(string name) {
-			existingNames.add(name);
+		public void AddTypeName(string name) {
+			existingNames.Add(name);
 		}
 
-		public string getTypeName(string oldName, string newName) {
-			return existingNames.getName(oldName, new NameCreator2(newName));
+		public string GetTypeName(string oldName, string newName) {
+			return existingNames.GetName(oldName, new NameCreator2(newName));
 		}
 
-		public string createNamespace(TypeDef type, string ns) {
+		public string CreateNamespace(TypeDef type, string ns) {
 			string newName;
 
 			string asmFullName;
@@ -63,7 +63,7 @@ namespace de4dot.code.renamer {
 						ns);
 			if (namespaceToNewName.TryGetValue(key, out newName))
 				return newName;
-			return namespaceToNewName[key] = createNamespaceName.create();
+			return namespaceToNewName[key] = createNamespaceName.Create();
 		}
 	}
 }

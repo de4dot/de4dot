@@ -24,7 +24,7 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators {
 	static class InlinedMethodsFinder {
-		public static List<MethodDef> find(ModuleDef module) {
+		public static List<MethodDef> Find(ModuleDef module) {
 			// Not all garbage methods are inlined, possibly because we remove some code that calls
 			// the garbage method before the methods inliner has a chance to inline it. Try to find
 			// all garbage methods and other code will figure out if there are any calls left.
@@ -82,7 +82,7 @@ namespace de4dot.code.deobfuscators {
 					case Code.Ldarga_S:
 					case Code.Call:
 					case Code.Newobj:
-						if (!isCallMethod(method))
+						if (!IsCallMethod(method))
 							continue;
 						break;
 
@@ -97,9 +97,9 @@ namespace de4dot.code.deobfuscators {
 			return inlinedMethods;
 		}
 
-		static bool isCallMethod(MethodDef method) {
+		static bool IsCallMethod(MethodDef method) {
 			int loadIndex = 0;
-			int methodArgsCount = DotNetUtils.getArgsCount(method);
+			int methodArgsCount = DotNetUtils.GetArgsCount(method);
 			var instrs = method.Body.Instructions;
 			int i = 0;
 			for (; i < instrs.Count && i < methodArgsCount; i++) {

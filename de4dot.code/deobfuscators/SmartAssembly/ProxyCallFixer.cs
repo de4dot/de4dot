@@ -49,17 +49,17 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			this.simpleDeobfuscator = simpleDeobfuscator;
 		}
 
-		protected override object checkCctor(ref TypeDef type, MethodDef cctor) {
+		protected override object CheckCctor(ref TypeDef type, MethodDef cctor) {
 			var instrs = cctor.Body.Instructions;
 			if (instrs.Count > 10)
 				return null;
 			if (instrs.Count != 3)
-				simpleDeobfuscator.deobfuscate(cctor);
+				simpleDeobfuscator.Deobfuscate(cctor);
 			if (instrs.Count != 3)
 				return null;
 			if (!instrs[0].IsLdcI4())
 				return null;
-			if (instrs[1].OpCode != OpCodes.Call || !isDelegateCreatorMethod(instrs[1].Operand as MethodDef))
+			if (instrs[1].OpCode != OpCodes.Call || !IsDelegateCreatorMethod(instrs[1].Operand as MethodDef))
 				return null;
 			if (instrs[2].OpCode != OpCodes.Ret)
 				return null;
@@ -73,7 +73,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return new object();
 		}
 
-		protected override void getCallInfo(object context, FieldDef field, out IMethod calledMethod, out OpCode callOpcode) {
+		protected override void GetCallInfo(object context, FieldDef field, out IMethod calledMethod, out OpCode callOpcode) {
 			callOpcode = OpCodes.Call;
 			string name = field.Name.String;
 
@@ -96,23 +96,23 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				Logger.w("Ignoring invalid method RID: {0:X8}, field: {1:X8}", memberRefRid, field.MDToken.ToInt32());
 		}
 
-		public void findDelegateCreator(ModuleDefMD module) {
+		public void FindDelegateCreator(ModuleDefMD module) {
 			var callCounter = new CallCounter();
 			foreach (var type in module.Types) {
-				if (type.Namespace != "" || !DotNetUtils.derivesFromDelegate(type))
+				if (type.Namespace != "" || !DotNetUtils.DerivesFromDelegate(type))
 					continue;
 				var cctor = type.FindStaticConstructor();
 				if (cctor == null)
 					continue;
-				foreach (var method in DotNetUtils.getMethodCalls(cctor))
-					callCounter.add(method);
+				foreach (var method in DotNetUtils.GetMethodCalls(cctor))
+					callCounter.Add(method);
 			}
 
-			var mostCalls = callCounter.most();
+			var mostCalls = callCounter.Most();
 			if (mostCalls == null)
 				return;
 
-			setDelegateCreatorMethod(DotNetUtils.getMethod(module, mostCalls));
+			SetDelegateCreatorMethod(DotNetUtils.GetMethod(module, mostCalls));
 		}
 	}
 }

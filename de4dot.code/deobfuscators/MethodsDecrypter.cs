@@ -24,19 +24,19 @@ using de4dot.mdecrypt;
 
 namespace de4dot.code.deobfuscators {
 	static class MethodsDecrypter {
-		public static DumpedMethods decrypt(ModuleDef module, byte[] moduleCctorBytes) {
-			return decrypt(NewProcessAssemblyClientFactory.getServerClrVersion(module), module.Location, moduleCctorBytes);
+		public static DumpedMethods Decrypt(ModuleDef module, byte[] moduleCctorBytes) {
+			return Decrypt(NewProcessAssemblyClientFactory.GetServerClrVersion(module), module.Location, moduleCctorBytes);
 		}
 
-		public static DumpedMethods decrypt(ServerClrVersion serverVersion, string filename, byte[] moduleCctorBytes) {
-			using (var client = new NewProcessAssemblyClientFactory(serverVersion).create()) {
-				client.connect();
-				client.waitConnected();
+		public static DumpedMethods Decrypt(ServerClrVersion serverVersion, string filename, byte[] moduleCctorBytes) {
+			using (var client = new NewProcessAssemblyClientFactory(serverVersion).Create()) {
+				client.Connect();
+				client.WaitConnected();
 				var info = new DecryptMethodsInfo();
 				info.moduleCctorBytes = moduleCctorBytes;
-				client.Service.installCompileMethod(info);
-				client.Service.loadObfuscator(filename);
-				return client.Service.decryptMethods();
+				client.Service.InstallCompileMethod(info);
+				client.Service.LoadObfuscator(filename);
+				return client.Service.DecryptMethods();
 			}
 		}
 	}

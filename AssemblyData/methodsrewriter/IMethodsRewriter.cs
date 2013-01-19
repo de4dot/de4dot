@@ -22,6 +22,6 @@ using System.Reflection;
 
 namespace AssemblyData.methodsrewriter {
 	interface IMethodsRewriter {
-		Type getDelegateType(MethodBase methodBase);
+		Type GetDelegateType(MethodBase methodBase);
 	}
 }

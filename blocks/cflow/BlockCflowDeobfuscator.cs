@@ -31,11 +31,11 @@ namespace de4dot.blocks.cflow {
 			branchEmulator = new BranchEmulator(instructionEmulator, this);
 		}
 
-		protected override bool deobfuscate(Block block) {
+		protected override bool Deobfuscate(Block block) {
 			this.block = block;
-			if (!block.LastInstr.isConditionalBranch() && block.LastInstr.OpCode.Code != Code.Switch)
+			if (!block.LastInstr.IsConditionalBranch() && block.LastInstr.OpCode.Code != Code.Switch)
 				return false;
-			instructionEmulator.init(blocks);
+			instructionEmulator.Initialize(blocks);
 
 			var instructions = block.Instructions;
 			if (instructions.Count == 0)
@@ -43,7 +43,7 @@ namespace de4dot.blocks.cflow {
 			try {
 				for (int i = 0; i < instructions.Count - 1; i++) {
 					var instr = instructions[i].Instruction;
-					instructionEmulator.emulate(instr);
+					instructionEmulator.Emulate(instr);
 				}
 			}
 			catch (NullReferenceException) {
@@ -51,28 +51,28 @@ namespace de4dot.blocks.cflow {
 				return false;
 			}
 
-			return branchEmulator.emulate(block.LastInstr.Instruction);
+			return branchEmulator.Emulate(block.LastInstr.Instruction);
 		}
 
-		void popPushedArgs(int stackArgs) {
+		void PopPushedArgs(int stackArgs) {
 			// Pop the arguments to the bcc instruction. The dead code remover will get rid of the
 			// pop and any pushed arguments. Insert the pops just before the bcc instr.
 			for (int i = 0; i < stackArgs; i++)
-				block.insert(block.Instructions.Count - 1, OpCodes.Pop.ToInstruction());
+				block.Insert(block.Instructions.Count - 1, OpCodes.Pop.ToInstruction());
 		}
 
-		void IBranchHandler.handleNormal(int stackArgs, bool isTaken) {
-			popPushedArgs(stackArgs);
-			block.replaceBccWithBranch(isTaken);
+		void IBranchHandler.HandleNormal(int stackArgs, bool isTaken) {
+			PopPushedArgs(stackArgs);
+			block.ReplaceBccWithBranch(isTaken);
 		}
 
-		bool IBranchHandler.handleSwitch(Int32Value switchIndex) {
-			var target = CflowUtils.getSwitchTarget(block.Targets, block.FallThrough, switchIndex);
+		bool IBranchHandler.HandleSwitch(Int32Value switchIndex) {
+			var target = CflowUtils.GetSwitchTarget(block.Targets, block.FallThrough, switchIndex);
 			if (target == null)
 				return false;
 
-			popPushedArgs(1);
-			block.replaceSwitchWithBranch(target);
+			PopPushedArgs(1);
+			block.ReplaceSwitchWithBranch(target);
 			return true;
 		}
 	}

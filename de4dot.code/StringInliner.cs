@@ -26,7 +26,7 @@ using de4dot.blocks;
 
 namespace de4dot.code {
 	abstract class StringInlinerBase : MethodReturnValueInliner {
-		protected override void inlineReturnValues(IList<CallResult> callResults) {
+		protected override void InlineReturnValues(IList<CallResult> callResults) {
 			foreach (var callResult in callResults) {
 				var block = callResult.block;
 				int num = callResult.callEndIndex - callResult.callStartIndex + 1;
@@ -36,13 +36,13 @@ namespace de4dot.code {
 					continue;
 
 				int ldstrIndex = callResult.callStartIndex;
-				block.replace(ldstrIndex, num, OpCodes.Ldstr.ToInstruction(decryptedString));
+				block.Replace(ldstrIndex, num, OpCodes.Ldstr.ToInstruction(decryptedString));
 
 				// If it's followed by castclass string, remove it
 				if (ldstrIndex + 1 < block.Instructions.Count) {
 					var instr = block.Instructions[ldstrIndex + 1];
 					if (instr.OpCode.Code == Code.Castclass && instr.Operand.ToString() == "System.String")
-						block.remove(ldstrIndex + 1, 1);
+						block.Remove(ldstrIndex + 1, 1);
 				}
 
 				// If it's followed by String.Intern(), then nop out that call
@@ -52,12 +52,12 @@ namespace de4dot.code {
 						var calledMethod = instr.Operand as IMethod;
 						if (calledMethod != null &&
 							calledMethod.FullName == "System.String System.String::Intern(System.String)") {
-							block.remove(ldstrIndex + 1, 1);
+							block.Remove(ldstrIndex + 1, 1);
 						}
 					}
 				}
 
-				Logger.v("Decrypted string: {0}", Utils.toCsharpString(decryptedString));
+				Logger.v("Decrypted string: {0}", Utils.ToCsharpString(decryptedString));
 			}
 		}
 	}
@@ -84,23 +84,23 @@ namespace de4dot.code {
 			this.assemblyClient = assemblyClient;
 		}
 
-		public void init(IEnumerable<int> methodTokens) {
+		public void Initialize(IEnumerable<int> methodTokens) {
 			methodTokenToId.Clear();
 			foreach (var methodToken in methodTokens) {
 				if (methodTokenToId.ContainsKey(methodToken))
 					continue;
-				methodTokenToId[methodToken] = assemblyClient.Service.defineStringDecrypter(methodToken);
+				methodTokenToId[methodToken] = assemblyClient.Service.DefineStringDecrypter(methodToken);
 			}
 		}
 
-		protected override CallResult createCallResult(IMethod method, MethodSpec gim, Block block, int callInstrIndex) {
+		protected override CallResult CreateCallResult(IMethod method, MethodSpec gim, Block block, int callInstrIndex) {
 			int methodId;
 			if (!methodTokenToId.TryGetValue(method.MDToken.ToInt32(), out methodId))
 				return null;
 			return new MyCallResult(block, callInstrIndex, methodId, gim);
 		}
 
-		protected override void inlineAllCalls() {
+		protected override void InlineAllCalls() {
 			var sortedCalls = new Dictionary<int, List<MyCallResult>>();
 			foreach (var tmp in callResults) {
 				var callResult = (MyCallResult)tmp;
@@ -114,13 +114,13 @@ namespace de4dot.code {
 				var list = sortedCalls[methodId];
 				var args = new object[list.Count];
 				for (int i = 0; i < list.Count; i++) {
-					AssemblyData.SimpleData.pack(list[i].args);
+					AssemblyData.SimpleData.Pack(list[i].args);
 					args[i] = list[i].args;
 				}
-				var decryptedStrings = assemblyClient.Service.decryptStrings(methodId, args, Method.MDToken.ToInt32());
+				var decryptedStrings = assemblyClient.Service.DecryptStrings(methodId, args, Method.MDToken.ToInt32());
 				if (decryptedStrings.Length != args.Length)
 					throw new ApplicationException("Invalid decrypted strings array length");
-				AssemblyData.SimpleData.unpack(decryptedStrings);
+				AssemblyData.SimpleData.Unpack(decryptedStrings);
 				for (int i = 0; i < list.Count; i++)
 					list[i].returnValue = (string)decryptedStrings[i];
 			}
@@ -135,7 +135,7 @@ namespace de4dot.code {
 		}
 
 		public IEnumerable<MethodDef> Methods {
-			get { return stringDecrypters.getKeys(); }
+			get { return stringDecrypters.GetKeys(); }
 		}
 
 		class MyCallResult : CallResult {
@@ -148,21 +148,21 @@ namespace de4dot.code {
 			}
 		}
 
-		public void add(MethodDef method, Func<MethodDef, MethodSpec, object[], string> handler) {
+		public void Add(MethodDef method, Func<MethodDef, MethodSpec, object[], string> handler) {
 			if (method != null)
-				stringDecrypters.add(method, handler);
+				stringDecrypters.Add(method, handler);
 		}
 
-		protected override void inlineAllCalls() {
+		protected override void InlineAllCalls() {
 			foreach (var tmp in callResults) {
 				var callResult = (MyCallResult)tmp;
-				var handler = stringDecrypters.find(callResult.IMethod);
+				var handler = stringDecrypters.Find(callResult.IMethod);
 				callResult.returnValue = handler((MethodDef)callResult.IMethod, callResult.gim, callResult.args);
 			}
 		}
 
-		protected override CallResult createCallResult(IMethod method, MethodSpec gim, Block block, int callInstrIndex) {
-			if (stringDecrypters.find(method) == null)
+		protected override CallResult CreateCallResult(IMethod method, MethodSpec gim, Block block, int callInstrIndex) {
+			if (stringDecrypters.Find(method) == null)
 				return null;
 			return new MyCallResult(block, callInstrIndex, method, gim);
 		}

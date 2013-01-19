@@ -67,11 +67,11 @@ namespace de4dot.blocks {
 			this.methodBlocks = methodBlocks;
 		}
 
-		public void getCode(out IList<Instruction> allInstructions, out IList<ExceptionHandler> allExceptionHandlers) {
-			fixEmptyBlocks();
-			layOutBlocks();
-			sortExceptions();
-			layOutInstructions(out allInstructions, out allExceptionHandlers);
+		public void GetCode(out IList<Instruction> allInstructions, out IList<ExceptionHandler> allExceptionHandlers) {
+			FixEmptyBlocks();
+			LayOutBlocks();
+			SortExceptions();
+			LayOutInstructions(out allInstructions, out allExceptionHandlers);
 
 			allInstructions.SimplifyBranches();
 			allInstructions.OptimizeBranches();
@@ -87,7 +87,7 @@ namespace de4dot.blocks {
 			}
 		}
 
-		void layOutInstructions(out IList<Instruction> allInstructions, out IList<ExceptionHandler> allExceptionHandlers) {
+		void LayOutInstructions(out IList<Instruction> allInstructions, out IList<ExceptionHandler> allExceptionHandlers) {
 			allInstructions = new List<Instruction>();
 			allExceptionHandlers = new List<ExceptionHandler>();
 
@@ -103,20 +103,20 @@ namespace de4dot.blocks {
 					var targets = new List<Instr>();
 					foreach (var target in block.Targets)
 						targets.Add(target.FirstInstr);
-					block.LastInstr.updateTargets(targets);
+					block.LastInstr.UpdateTargets(targets);
 				}
 				allInstructions.Add(block.LastInstr.Instruction);
 
 				var next = i + 1 < blocks.Count ? blocks[i + 1] : null;
 
 				// If eg. ble next, then change it to bgt XYZ and fall through to next.
-				if (block.Targets != null && block.canFlipConditionalBranch() && block.Targets[0] == next) {
-					block.flipConditionalBranch();
-					block.LastInstr.updateTargets(new List<Instr> { block.Targets[0].FirstInstr });
+				if (block.Targets != null && block.CanFlipConditionalBranch() && block.Targets[0] == next) {
+					block.FlipConditionalBranch();
+					block.LastInstr.UpdateTargets(new List<Instr> { block.Targets[0].FirstInstr });
 				}
 				else if (block.FallThrough != null && block.FallThrough != next) {
 					var instr = new Instr(OpCodes.Br.ToInstruction(block.FallThrough.FirstInstr.Instruction));
-					instr.updateTargets(new List<Instr> { block.FallThrough.FirstInstr });
+					instr.UpdateTargets(new List<Instr> { block.FallThrough.FirstInstr });
 					allInstructions.Add(instr.Instruction);
 				}
 
@@ -126,25 +126,25 @@ namespace de4dot.blocks {
 			}
 
 			foreach (var ex in exceptions) {
-				var tryStart = getBlockInfo(blockInfos, ex.tryStart).start;
-				var tryEnd = getBlockInfo(blockInfos, ex.tryEnd).end;
-				var filterStart = ex.filterStart == -1 ? -1 : getBlockInfo(blockInfos, ex.filterStart).start;
-				var handlerStart = getBlockInfo(blockInfos, ex.handlerStart).start;
-				var handlerEnd = getBlockInfo(blockInfos, ex.handlerEnd).end;
+				var tryStart = GetBlockInfo(blockInfos, ex.tryStart).start;
+				var tryEnd = GetBlockInfo(blockInfos, ex.tryEnd).end;
+				var filterStart = ex.filterStart == -1 ? -1 : GetBlockInfo(blockInfos, ex.filterStart).start;
+				var handlerStart = GetBlockInfo(blockInfos, ex.handlerStart).start;
+				var handlerEnd = GetBlockInfo(blockInfos, ex.handlerEnd).end;
 
 				var eh = new ExceptionHandler(ex.handlerType);
 				eh.CatchType = ex.catchType;
-				eh.TryStart = getInstruction(allInstructions, tryStart);
-				eh.TryEnd = getInstruction(allInstructions, tryEnd + 1);
-				eh.FilterStart = filterStart == -1 ? null : getInstruction(allInstructions, filterStart);
-				eh.HandlerStart = getInstruction(allInstructions, handlerStart);
-				eh.HandlerEnd = getInstruction(allInstructions, handlerEnd + 1);
+				eh.TryStart = GetInstruction(allInstructions, tryStart);
+				eh.TryEnd = GetInstruction(allInstructions, tryEnd + 1);
+				eh.FilterStart = filterStart == -1 ? null : GetInstruction(allInstructions, filterStart);
+				eh.HandlerStart = GetInstruction(allInstructions, handlerStart);
+				eh.HandlerEnd = GetInstruction(allInstructions, handlerEnd + 1);
 
 				allExceptionHandlers.Add(eh);
 			}
 		}
 
-		static BlockInfo getBlockInfo(List<BlockInfo> blockInfos, int index) {
+		static BlockInfo GetBlockInfo(List<BlockInfo> blockInfos, int index) {
 			if (index >= blockInfos.Count)
 				index = blockInfos.Count - 1;
 			if (index < 0)
@@ -152,13 +152,13 @@ namespace de4dot.blocks {
 			return blockInfos[index];
 		}
 
-		static Instruction getInstruction(IList<Instruction> allInstructions, int i) {
+		static Instruction GetInstruction(IList<Instruction> allInstructions, int i) {
 			if (i < allInstructions.Count)
 				return allInstructions[i];
 			return null;
 		}
 
-		void sortExceptions() {
+		void SortExceptions() {
 			exceptions.Sort((a, b) => {
 				// Make sure nested try blocks are sorted before the outer try block.
 				if (a.tryStart > b.tryStart) return -1;	// a could be nested, but b is not
@@ -184,8 +184,8 @@ namespace de4dot.blocks {
 			});
 		}
 
-		void fixEmptyBlocks() {
-			foreach (var block in methodBlocks.getAllBlocks()) {
+		void FixEmptyBlocks() {
+			foreach (var block in methodBlocks.GetAllBlocks()) {
 				if (block.Instructions.Count == 0) {
 					block.Instructions.Add(new Instr(OpCodes.Nop.ToInstruction()));
 				}
@@ -193,12 +193,12 @@ namespace de4dot.blocks {
 		}
 
 		// Write all blocks to the blocks list
-		void layOutBlocks() {
+		void LayOutBlocks() {
 			if (methodBlocks.BaseBlocks.Count == 0)
 				return;
 
 			stateStack.Push(new BlockState(methodBlocks));
-			processBaseBlocks(methodBlocks.BaseBlocks, (block) => {
+			ProcessBaseBlocks(methodBlocks.BaseBlocks, (block) => {
 				return block.LastInstr.OpCode == OpCodes.Ret;
 			});
 
@@ -212,7 +212,7 @@ namespace de4dot.blocks {
 			}
 		}
 
-		void processBaseBlocks(List<BaseBlock> lb, Func<Block, bool> placeLast) {
+		void ProcessBaseBlocks(List<BaseBlock> lb, Func<Block, bool> placeLast) {
 			var bbs = new List<BaseBlock>();
 			int lastIndex = -1;
 			for (int i = 0; i < lb.Count; i++) {
@@ -228,22 +228,22 @@ namespace de4dot.blocks {
 				bbs.Add(block);
 			}
 			foreach (var bb in bbs)
-				doBaseBlock(bb);
+				DoBaseBlock(bb);
 		}
 
 		// Returns the BaseBlock's ScopeBlock. The return value is either current ScopeBlock,
 		// the ScopeBlock one step below current (current one's child), or null.
-		ScopeBlock getScopeBlock(BaseBlock bb) {
+		ScopeBlock GetScopeBlock(BaseBlock bb) {
 			BlockState current = stateStack.Peek();
 
-			if (current.scopeBlock.isOurBaseBlock(bb))
+			if (current.scopeBlock.IsOurBaseBlock(bb))
 				return current.scopeBlock;
-			return (ScopeBlock)current.scopeBlock.toChild(bb);
+			return (ScopeBlock)current.scopeBlock.ToChild(bb);
 		}
 
-		void doBaseBlock(BaseBlock bb) {
+		void DoBaseBlock(BaseBlock bb) {
 			BlockState current = stateStack.Peek();
-			ScopeBlock newOne = getScopeBlock(bb);
+			ScopeBlock newOne = GetScopeBlock(bb);
 			if (newOne == null)
 				return;		// Not a BaseBlock somewhere inside this ScopeBlock
 			if (newOne != current.scopeBlock)
@@ -257,13 +257,13 @@ namespace de4dot.blocks {
 			visited[bb] = true;
 
 			if (bb is Block)
-				doBlock(bb as Block);
+				DoBlock(bb as Block);
 			else if (bb is TryBlock)
-				doTryBlock(bb as TryBlock);
+				DoTryBlock(bb as TryBlock);
 			else if (bb is FilterHandlerBlock)
-				doFilterHandlerBlock(bb as FilterHandlerBlock);
+				DoFilterHandlerBlock(bb as FilterHandlerBlock);
 			else if (bb is HandlerBlock)
-				doHandlerBlock(bb as HandlerBlock);
+				DoHandlerBlock(bb as HandlerBlock);
 			else if (bb is TryHandlerBlock) {
 				// The try handler block is usually after the try block, but sometimes it isn't...
 				// Handle that case here.
@@ -274,14 +274,14 @@ namespace de4dot.blocks {
 				throw new ApplicationException("Invalid block found");
 		}
 
-		void doBlock(Block block) {
+		void DoBlock(Block block) {
 			blocks.Add(block);
 		}
 
-		void doTryBlock(TryBlock tryBlock) {
+		void DoTryBlock(TryBlock tryBlock) {
 			var tryStart = blocks.Count;
 			stateStack.Push(new BlockState(tryBlock));
-			processBaseBlocks(tryBlock.BaseBlocks, (block) => {
+			ProcessBaseBlocks(tryBlock.BaseBlocks, (block) => {
 				return block.LastInstr.OpCode == OpCodes.Leave ||
 						block.LastInstr.OpCode == OpCodes.Leave_S;
 			});
@@ -298,10 +298,10 @@ namespace de4dot.blocks {
 
 				var filterStart = blocks.Count;
 				if (handlerBlock.FilterHandlerBlock.BaseBlocks != null)
-					doBaseBlock(handlerBlock.FilterHandlerBlock);
+					DoBaseBlock(handlerBlock.FilterHandlerBlock);
 
 				var handlerStart = blocks.Count;
-				doBaseBlock(handlerBlock.HandlerBlock);
+				DoBaseBlock(handlerBlock.HandlerBlock);
 				var handlerEnd = blocks.Count - 1;
 
 				exceptions.Add(new ExceptionInfo(tryStart, tryEnd, filterStart, handlerStart, handlerEnd, handlerBlock.CatchType, handlerBlock.HandlerType));
@@ -310,17 +310,17 @@ namespace de4dot.blocks {
 			}
 		}
 
-		void doFilterHandlerBlock(FilterHandlerBlock filterHandlerBlock) {
+		void DoFilterHandlerBlock(FilterHandlerBlock filterHandlerBlock) {
 			stateStack.Push(new BlockState(filterHandlerBlock));
-			processBaseBlocks(filterHandlerBlock.BaseBlocks, (block) => {
+			ProcessBaseBlocks(filterHandlerBlock.BaseBlocks, (block) => {
 				return block.LastInstr.OpCode == OpCodes.Endfilter;	// MUST end with endfilter!
 			});
 			stateStack.Pop();
 		}
 
-		void doHandlerBlock(HandlerBlock handlerBlock) {
+		void DoHandlerBlock(HandlerBlock handlerBlock) {
 			stateStack.Push(new BlockState(handlerBlock));
-			processBaseBlocks(handlerBlock.BaseBlocks, (block) => {
+			ProcessBaseBlocks(handlerBlock.BaseBlocks, (block) => {
 				return block.LastInstr.OpCode == OpCodes.Endfinally ||
 						block.LastInstr.OpCode == OpCodes.Leave ||
 						block.LastInstr.OpCode == OpCodes.Leave_S;

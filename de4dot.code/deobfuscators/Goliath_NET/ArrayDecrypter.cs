@@ -31,16 +31,16 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			"System.Byte[]",
 			"System.Collections.Generic.Dictionary`2<System.Int32,System.Byte[]>",
 		};
-		protected override bool checkDecrypterType(TypeDef type) {
-			return new FieldTypes(type).exactly(requiredFields);
+		protected override bool CheckDecrypterType(TypeDef type) {
+			return new FieldTypes(type).Exactly(requiredFields);
 		}
 
-		protected override bool checkDelegateInvokeMethod(MethodDef invokeMethod) {
-			return DotNetUtils.isMethod(invokeMethod, "System.Byte[]", "(System.Int32)");
+		protected override bool CheckDelegateInvokeMethod(MethodDef invokeMethod) {
+			return DotNetUtils.IsMethod(invokeMethod, "System.Byte[]", "(System.Int32)");
 		}
 
-		public byte[] decrypt(MethodDef method) {
-			var info = getInfo(method);
+		public byte[] Decrypt(MethodDef method) {
+			var info = GetInfo(method);
 			decryptedReader.BaseStream.Position = info.offset;
 			return decryptedReader.ReadBytes(decryptedReader.ReadInt32());
 		}

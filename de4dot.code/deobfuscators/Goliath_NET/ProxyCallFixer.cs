@@ -38,7 +38,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			}
 		}
 
-		public new void find() {
+		public new void Find() {
 			Logger.v("Finding all proxy delegates");
 			var infos = new List<MyInfo>();
 			foreach (var type in module.GetTypes()) {
@@ -48,7 +48,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 				infos.Clear();
 				foreach (var method in type.Methods) {
 					DelegateInfo info;
-					if (!checkProxyMethod(method, out info))
+					if (!CheckProxyMethod(method, out info))
 						continue;
 					infos.Add(new MyInfo(method, info));
 				}
@@ -56,24 +56,24 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 				if (infos.Count == 0)
 					continue;
 
-				Logger.v("Found proxy delegate: {0} ({1:X8})", Utils.removeNewlines(type), type.MDToken.ToUInt32());
+				Logger.v("Found proxy delegate: {0} ({1:X8})", Utils.RemoveNewlines(type), type.MDToken.ToUInt32());
 				RemovedDelegateCreatorCalls++;
-				Logger.Instance.indent();
+				Logger.Instance.Indent();
 				foreach (var info in infos) {
 					var di = info.delegateInfo;
-					add(info.method, di);
+					Add(info.method, di);
 					Logger.v("Field: {0}, Opcode: {1}, Method: {2} ({3:X8})",
-								Utils.removeNewlines(di.field.Name),
+								Utils.RemoveNewlines(di.field.Name),
 								di.callOpcode,
-								Utils.removeNewlines(di.methodRef),
+								Utils.RemoveNewlines(di.methodRef),
 								di.methodRef.MDToken.ToUInt32());
 				}
-				Logger.Instance.deIndent();
+				Logger.Instance.DeIndent();
 				delegateTypesDict[type] = true;
 			}
 		}
 
-		bool checkProxyMethod(MethodDef method, out DelegateInfo info) {
+		bool CheckProxyMethod(MethodDef method, out DelegateInfo info) {
 			info = null;
 			if (!method.IsStatic || method.Body == null)
 				return false;
@@ -135,11 +135,11 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			return true;
 		}
 
-		protected override object checkCctor(TypeDef type, MethodDef cctor) {
+		protected override object CheckCctor(TypeDef type, MethodDef cctor) {
 			throw new System.NotImplementedException();
 		}
 
-		protected override void getCallInfo(object context, FieldDef field, out IMethod calledMethod, out OpCode callOpcode) {
+		protected override void GetCallInfo(object context, FieldDef field, out IMethod calledMethod, out OpCode callOpcode) {
 			throw new System.NotImplementedException();
 		}
 	}

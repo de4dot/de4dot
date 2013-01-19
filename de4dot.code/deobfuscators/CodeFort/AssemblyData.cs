@@ -26,15 +26,15 @@ using System.Text;
 
 namespace de4dot.code.deobfuscators.CodeFort {
 	interface ICFType {
-		Type get(SerializedTypes serializedTypes);
+		Type Get(SerializedTypes serializedTypes);
 	}
 
 	static class ITypeCreator {
-		public static ICFType create(string name) {
+		public static ICFType Create(string name) {
 			return new StringType(name);
 		}
 
-		public static ICFType create(Type type) {
+		public static ICFType Create(Type type) {
 			return new ExistingType(type);
 		}
 	}
@@ -46,8 +46,8 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			this.name = name;
 		}
 
-		public Type get(SerializedTypes serializedTypes) {
-			return serializedTypes.getBuilderType(name);
+		public Type Get(SerializedTypes serializedTypes) {
+			return serializedTypes.GetBuilderType(name);
 		}
 
 		public override string ToString() {
@@ -62,7 +62,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			this.type = type;
 		}
 
-		public Type get(SerializedTypes serializedTypes) {
+		public Type Get(SerializedTypes serializedTypes) {
 			return type;
 		}
 
@@ -76,11 +76,11 @@ namespace de4dot.code.deobfuscators.CodeFort {
 		ICFType[] genericArgs;
 
 		public GenericType(string type, ICFType[] genericArgs)
-			: this(ITypeCreator.create(type), genericArgs) {
+			: this(ITypeCreator.Create(type), genericArgs) {
 		}
 
 		public GenericType(Type type, ICFType[] genericArgs)
-			: this(ITypeCreator.create(type), genericArgs) {
+			: this(ITypeCreator.Create(type), genericArgs) {
 		}
 
 		public GenericType(ICFType type, ICFType[] genericArgs) {
@@ -88,17 +88,17 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			this.genericArgs = genericArgs;
 		}
 
-		public Type get(SerializedTypes serializedTypes) {
-			var genericType = type.get(serializedTypes);
+		public Type Get(SerializedTypes serializedTypes) {
+			var genericType = type.Get(serializedTypes);
 			var types = new List<Type>(genericArgs.Length);
 			foreach (var ga in genericArgs)
-				types.Add(ga.get(serializedTypes));
+				types.Add(ga.Get(serializedTypes));
 			return genericType.MakeGenericType(types.ToArray());
 		}
 
 		public override string ToString() {
 			var sb = new StringBuilder();
-			sb.Append(getTypeName());
+			sb.Append(GetTypeName());
 			if (genericArgs != null && genericArgs.Length > 0) {
 				sb.Append('<');
 				for (int i = 0; i < genericArgs.Length; i++) {
@@ -111,7 +111,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			return sb.ToString();
 		}
 
-		string getTypeName() {
+		string GetTypeName() {
 			var typeName = type.ToString();
 			int index = typeName.LastIndexOf('`');
 			if (index < 0)
@@ -122,11 +122,11 @@ namespace de4dot.code.deobfuscators.CodeFort {
 
 	class ListType : GenericType {
 		public ListType(string type)
-			: this(ITypeCreator.create(type)) {
+			: this(ITypeCreator.Create(type)) {
 		}
 
 		public ListType(Type type)
-			: this(ITypeCreator.create(type)) {
+			: this(ITypeCreator.Create(type)) {
 		}
 
 		public ListType(ICFType type)
@@ -161,7 +161,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 		}
 
 		public TypeInfo(string name, string dcNamespace, string dcName, TypeFieldInfo[] fieldInfos)
-			: this(ITypeCreator.create(typeof(object)), name, dcNamespace, dcName, fieldInfos) {
+			: this(ITypeCreator.Create(typeof(object)), name, dcNamespace, dcName, fieldInfos) {
 		}
 
 		public TypeInfo(ICFType baseType, string name, string dcName, TypeFieldInfo[] fieldInfos)
@@ -181,11 +181,11 @@ namespace de4dot.code.deobfuscators.CodeFort {
 		public readonly string dmName;
 
 		public TypeFieldInfo(string type, string name, string dmName)
-			: this(ITypeCreator.create(type), name, dmName) {
+			: this(ITypeCreator.Create(type), name, dmName) {
 		}
 
 		public TypeFieldInfo(Type type, string name, string dmName)
-			: this(ITypeCreator.create(type), name, dmName) {
+			: this(ITypeCreator.Create(type), name, dmName) {
 		}
 
 		public TypeFieldInfo(ICFType type, string name, string dmName) {
@@ -317,7 +317,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 				new TypeFieldInfo("TypeRef", "ReturnType", "T"),
 			}),
 
-			new TypeInfo(ITypeCreator.create("MemberRef"), "MethodRef", "i", new TypeFieldInfo[] {
+			new TypeInfo(ITypeCreator.Create("MemberRef"), "MethodRef", "i", new TypeFieldInfo[] {
 				new TypeFieldInfo(new ListType("ParameterRef"), "Parameters", "P"),
 				new TypeFieldInfo(typeof(int), "CallingConventions", "V"),
 			}),
@@ -341,18 +341,18 @@ namespace de4dot.code.deobfuscators.CodeFort {
 				new TypeFieldInfo("TypeRef", "Type", "T"),
 			}),
 
-			new TypeInfo(ITypeCreator.create("MemberDef"), "PropertyDef", "n", new TypeFieldInfo[] {
+			new TypeInfo(ITypeCreator.Create("MemberDef"), "PropertyDef", "n", new TypeFieldInfo[] {
 				new TypeFieldInfo("MethodDef", "GetMethod", "G"),
 				new TypeFieldInfo(new ListType("ParameterDef"), "ParameterTypes", "P"),
 				new TypeFieldInfo("MethodDef", "SetMethod", "S"),
 			}),
 
-			new TypeInfo(ITypeCreator.create("MemberDef"), "EventDef", "o", new TypeFieldInfo[] {
+			new TypeInfo(ITypeCreator.Create("MemberDef"), "EventDef", "o", new TypeFieldInfo[] {
 				new TypeFieldInfo("MethodDef", "AddOnMethod", "A"),
 				new TypeFieldInfo("MethodDef", "RemoveOnMethod", "R"),
 			}),
 
-			new TypeInfo(ITypeCreator.create("MemberDef"), "MethodDef", "p", new TypeFieldInfo[] {
+			new TypeInfo(ITypeCreator.Create("MemberDef"), "MethodDef", "p", new TypeFieldInfo[] {
 				new TypeFieldInfo(new ListType("Instruction"), "Instructions", "A"),
 				new TypeFieldInfo(typeof(CallingConventions), "CallingConventions", "C"),
 				new TypeFieldInfo(typeof(MethodImplAttributes), "MethodImplAttributes", "I"),
@@ -398,20 +398,20 @@ namespace de4dot.code.deobfuscators.CodeFort {
 
 		public SerializedTypes(ModuleBuilder moduleBuilder) {
 			this.moduleBuilder = moduleBuilder;
-			createTypeBuilders();
-			initializeEnums();
-			initializeTypes();
-			createTypes();
+			CreateTypeBuilders();
+			InitializeEnums();
+			InitializeTypes();
+			CreateTypes();
 		}
 
-		void createTypeBuilders() {
+		void CreateTypeBuilders() {
 			foreach (var info in enumInfos)
-				add(info.name, moduleBuilder.DefineEnum(info.name, TypeAttributes.Public, info.underlyingType));
+				Add(info.name, moduleBuilder.DefineEnum(info.name, TypeAttributes.Public, info.underlyingType));
 			foreach (var info in typeInfos)
-				add(info.name, moduleBuilder.DefineType(info.name, TypeAttributes.Public, info.baseType.get(this)));
+				Add(info.name, moduleBuilder.DefineType(info.name, TypeAttributes.Public, info.baseType.Get(this)));
 		}
 
-		CustomAttributeBuilder createDataContractAttribute(string ns, string name, bool isReference) {
+		CustomAttributeBuilder CreateDataContractAttribute(string ns, string name, bool isReference) {
 			var dcAttr = Type.GetType("System.Runtime.Serialization.DataContractAttribute," + serializationAssemblyname);
 			var ctor = dcAttr.GetConstructor(Type.EmptyTypes);
 			var propCreator = new PropertyInfoCreator(dcAttr);
@@ -421,7 +421,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			return new CustomAttributeBuilder(ctor, new object[0], propCreator.Properties, propCreator.Values);
 		}
 
-		CustomAttributeBuilder createEnumMemberAttribute(string value) {
+		CustomAttributeBuilder CreateEnumMemberAttribute(string value) {
 			var emAttr = Type.GetType("System.Runtime.Serialization.EnumMemberAttribute," + serializationAssemblyname);
 			var ctor = emAttr.GetConstructor(Type.EmptyTypes);
 			var propCreator = new PropertyInfoCreator(emAttr);
@@ -429,7 +429,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			return new CustomAttributeBuilder(ctor, new object[0], propCreator.Properties, propCreator.Values);
 		}
 
-		CustomAttributeBuilder createDataMemberAttribute(string name, bool emitDefaultValue) {
+		CustomAttributeBuilder CreateDataMemberAttribute(string name, bool emitDefaultValue) {
 			var dmAttr = Type.GetType("System.Runtime.Serialization.DataMemberAttribute," + serializationAssemblyname);
 			var ctor = dmAttr.GetConstructor(Type.EmptyTypes);
 			var propCreator = new PropertyInfoCreator(dmAttr);
@@ -438,41 +438,41 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			return new CustomAttributeBuilder(ctor, new object[0], propCreator.Properties, propCreator.Values);
 		}
 
-		void add(string name, EnumBuilder builder) {
+		void Add(string name, EnumBuilder builder) {
 			if (enumBuilders.ContainsKey(name))
 				throw new ApplicationException(string.Format("Enum {0} already exists", name));
 			enumBuilders[name] = builder;
 		}
 
-		void add(string name, TypeBuilder builder) {
+		void Add(string name, TypeBuilder builder) {
 			if (typeBuilders.ContainsKey(name))
 				throw new ApplicationException(string.Format("Type {0} already exists", name));
 			typeBuilders[name] = builder;
 		}
 
-		void initializeEnums() {
+		void InitializeEnums() {
 			foreach (var info in enumInfos) {
 				var builder = enumBuilders[info.name];
-				builder.SetCustomAttribute(createDataContractAttribute(info.dcNamespace, info.dcName, false));
+				builder.SetCustomAttribute(CreateDataContractAttribute(info.dcNamespace, info.dcName, false));
 				foreach (var fieldInfo in info.fieldInfos) {
 					var fieldBuilder = builder.DefineLiteral(fieldInfo.name, fieldInfo.value);
-					fieldBuilder.SetCustomAttribute(createEnumMemberAttribute(fieldInfo.emValue));
+					fieldBuilder.SetCustomAttribute(CreateEnumMemberAttribute(fieldInfo.emValue));
 				}
 			}
 		}
 
-		void initializeTypes() {
+		void InitializeTypes() {
 			foreach (var info in typeInfos) {
 				var builder = typeBuilders[info.name];
-				builder.SetCustomAttribute(createDataContractAttribute(info.dcNamespace, info.dcName, true));
+				builder.SetCustomAttribute(CreateDataContractAttribute(info.dcNamespace, info.dcName, true));
 				foreach (var fieldInfo in info.fieldInfos) {
-					var fieldBuilder = builder.DefineField(fieldInfo.name, fieldInfo.type.get(this), FieldAttributes.Public);
-					fieldBuilder.SetCustomAttribute(createDataMemberAttribute(fieldInfo.dmName, false));
+					var fieldBuilder = builder.DefineField(fieldInfo.name, fieldInfo.type.Get(this), FieldAttributes.Public);
+					fieldBuilder.SetCustomAttribute(CreateDataMemberAttribute(fieldInfo.dmName, false));
 				}
 			}
 		}
 
-		void createTypes() {
+		void CreateTypes() {
 			foreach (var info in enumInfos)
 				createdTypes[info.name] = enumBuilders[info.name].CreateType();
 			foreach (var info in typeInfos)
@@ -482,7 +482,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			typeBuilders = null;
 		}
 
-		public Type getBuilderType(string name) {
+		public Type GetBuilderType(string name) {
 			EnumBuilder enumBuilder;
 			if (enumBuilders.TryGetValue(name, out enumBuilder))
 				return enumBuilder;
@@ -494,32 +494,32 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			throw new ApplicationException(string.Format("Could not find type {0}", name));
 		}
 
-		Type getType(string name) {
+		Type GetType(string name) {
 			return createdTypes[name];
 		}
 
-		public object deserialize(byte[] data) {
+		public object Deserialize(byte[] data) {
 			var serializerType = Type.GetType("System.Runtime.Serialization.DataContractSerializer," + serializationAssemblyname);
 			if (serializerType == null)
 				throw new ApplicationException("You need .NET 3.0 or later to decrypt the assembly");
 			var quotasType = Type.GetType("System.Xml.XmlDictionaryReaderQuotas," + serializationAssemblyname);
 			var serializerCtor = serializerType.GetConstructor(new Type[] { typeof(Type), typeof(IEnumerable<Type>) });
-			var serializer = serializerCtor.Invoke(new object[] { getType("AllTypes"), new Type[] {
-				getType("MemberTypes1"),
-				getType("Instruction"),
-				getType("InstructionType"),
-				getType("InstructionLabel"),
-				getType("LocalVariable"),
-				getType("ParameterDef"),
-				getType("TypeDef"),
-				getType("MemberDef"),
-				getType("MethodDef"),
-				getType("EventDef"),
-				getType("PropertyDef"),
-				getType("ParameterRef"),
-				getType("TypeRef"),
-				getType("MemberRef"),
-				getType("MethodRef"),
+			var serializer = serializerCtor.Invoke(new object[] { GetType("AllTypes"), new Type[] {
+				GetType("MemberTypes1"),
+				GetType("Instruction"),
+				GetType("InstructionType"),
+				GetType("InstructionLabel"),
+				GetType("LocalVariable"),
+				GetType("ParameterDef"),
+				GetType("TypeDef"),
+				GetType("MemberDef"),
+				GetType("MethodDef"),
+				GetType("EventDef"),
+				GetType("PropertyDef"),
+				GetType("ParameterRef"),
+				GetType("TypeRef"),
+				GetType("MemberRef"),
+				GetType("MethodRef"),
 			}});
 
 			var xmlReaderType = Type.GetType("System.Xml.XmlDictionaryReader," + serializationAssemblyname);

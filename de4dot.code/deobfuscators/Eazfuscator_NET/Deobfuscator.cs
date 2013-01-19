@@ -41,7 +41,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			get { return THE_TYPE; }
 		}
 
-		public override IDeobfuscator createDeobfuscator() {
+		public override IDeobfuscator CreateDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
 				ValidNameRegex = validNameRegex.get(),
 			});
@@ -79,12 +79,12 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			this.options = options;
 		}
 
-		protected override int detectInternal() {
+		protected override int DetectInternal() {
 			int val = 0;
 
-			int sum = toInt32(stringDecrypter.Detected) +
-					toInt32(assemblyResolver.Detected) +
-					toInt32(resourceResolver.Detected);
+			int sum = ToInt32(stringDecrypter.Detected) +
+					ToInt32(assemblyResolver.Detected) +
+					ToInt32(resourceResolver.Detected);
 			if (sum > 0)
 				val += 100 + 10 * (sum - 1);
 			if (detectedVersion)
@@ -93,20 +93,20 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return val;
 		}
 
-		protected override void scanForObfuscator() {
+		protected override void ScanForObfuscator() {
 			decrypterType = new DecrypterType(module, DeobfuscatedFile);
 			stringDecrypter = new StringDecrypter(module, decrypterType);
-			stringDecrypter.find();
+			stringDecrypter.Find();
 			assemblyResolver = new AssemblyResolver(module, decrypterType);
-			assemblyResolver.find();
+			assemblyResolver.Find();
 			resourceResolver = new ResourceResolver(module, assemblyResolver);
-			resourceResolver.find();
+			resourceResolver.Find();
 			if (stringDecrypter.Detected)
-				detectVersion();
+				DetectVersion();
 		}
 
-		void detectVersion() {
-			var version = new VersionDetector(module, stringDecrypter).detect();
+		void DetectVersion() {
+			var version = new VersionDetector(module, stringDecrypter).Detect();
 			if (version == null)
 				return;
 
@@ -114,63 +114,63 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			obfuscatorName = DeobfuscatorInfo.THE_NAME + " " +  version;
 		}
 
-		public override void deobfuscateBegin() {
-			base.deobfuscateBegin();
+		public override void DeobfuscateBegin() {
+			base.DeobfuscateBegin();
 
-			stringDecrypter.initialize(DeobfuscatedFile);
-			staticStringInliner.add(stringDecrypter.Method, (method2, gim, args) => {
-				return stringDecrypter.decrypt((int)args[0]);
+			stringDecrypter.Initialize(DeobfuscatedFile);
+			staticStringInliner.Add(stringDecrypter.Method, (method2, gim, args) => {
+				return stringDecrypter.Decrypt((int)args[0]);
 			});
-			DeobfuscatedFile.stringDecryptersAdded();
+			DeobfuscatedFile.StringDecryptersAdded();
 
-			assemblyResolver.initialize(DeobfuscatedFile, this);
-			assemblyResolver.initializeEmbeddedFiles();
-			addModuleCctorInitCallToBeRemoved(assemblyResolver.InitMethod);
+			assemblyResolver.Initialize(DeobfuscatedFile, this);
+			assemblyResolver.InitializeEmbeddedFiles();
+			AddModuleCctorInitCallToBeRemoved(assemblyResolver.InitMethod);
 
-			resourceResolver.initialize(DeobfuscatedFile, this);
-			foreach (var info in resourceResolver.mergeResources())
-				addResourceToBeRemoved(info.Resource, "Encrypted resources");
-			addModuleCctorInitCallToBeRemoved(resourceResolver.InitMethod);
+			resourceResolver.Initialize(DeobfuscatedFile, this);
+			foreach (var info in resourceResolver.MergeResources())
+				AddResourceToBeRemoved(info.Resource, "Encrypted resources");
+			AddModuleCctorInitCallToBeRemoved(resourceResolver.InitMethod);
 
 			resourceMethodsRestorer = new ResourceMethodsRestorer(module);
 			if ((Operations.RenamerFlags & (RenamerFlags.RenameTypes | RenamerFlags.RenameNamespaces)) != 0)
-				resourceMethodsRestorer.find(DeobfuscatedFile, this);
+				resourceMethodsRestorer.Find(DeobfuscatedFile, this);
 
-			dumpEmbeddedAssemblies();
+			DumpEmbeddedAssemblies();
 		}
 
-		void dumpEmbeddedAssemblies() {
+		void DumpEmbeddedAssemblies() {
 			foreach (var info in assemblyResolver.AssemblyInfos) {
-				DeobfuscatedFile.createAssemblyFile(info.Data, info.SimpleName, info.Extension);
-				addResourceToBeRemoved(info.Resource, string.Format("Embedded assembly: {0}", info.AssemblyFullName));
+				DeobfuscatedFile.CreateAssemblyFile(info.Data, info.SimpleName, info.Extension);
+				AddResourceToBeRemoved(info.Resource, string.Format("Embedded assembly: {0}", info.AssemblyFullName));
 			}
 		}
 
-		public override void deobfuscateMethodEnd(Blocks blocks) {
-			resourceMethodsRestorer.deobfuscate(blocks);
-			assemblyResolver.deobfuscate(blocks);
-			base.deobfuscateMethodEnd(blocks);
+		public override void DeobfuscateMethodEnd(Blocks blocks) {
+			resourceMethodsRestorer.Deobfuscate(blocks);
+			assemblyResolver.Deobfuscate(blocks);
+			base.DeobfuscateMethodEnd(blocks);
 		}
 
-		public override void deobfuscateEnd() {
+		public override void DeobfuscateEnd() {
 			if (CanRemoveStringDecrypterType) {
-				addTypesToBeRemoved(stringDecrypter.Types, "String decrypter type");
-				addTypeToBeRemoved(decrypterType.Type, "Decrypter type");
-				addTypesToBeRemoved(stringDecrypter.DynocodeTypes, "Dynocode type");
-				addResourceToBeRemoved(stringDecrypter.Resource, "Encrypted strings");
+				AddTypesToBeRemoved(stringDecrypter.Types, "String decrypter type");
+				AddTypeToBeRemoved(decrypterType.Type, "Decrypter type");
+				AddTypesToBeRemoved(stringDecrypter.DynocodeTypes, "Dynocode type");
+				AddResourceToBeRemoved(stringDecrypter.Resource, "Encrypted strings");
 			}
-			addTypeToBeRemoved(assemblyResolver.Type, "Assembly resolver type");
-			addTypeToBeRemoved(assemblyResolver.OtherType, "Assembly resolver other type");
-			addTypeToBeRemoved(resourceResolver.Type, "Resource resolver type");
-			addTypeToBeRemoved(resourceMethodsRestorer.Type, "GetManifestResourceStream type");
-			addResourceToBeRemoved(resourceMethodsRestorer.Resource, "GetManifestResourceStream type resource");
+			AddTypeToBeRemoved(assemblyResolver.Type, "Assembly resolver type");
+			AddTypeToBeRemoved(assemblyResolver.OtherType, "Assembly resolver other type");
+			AddTypeToBeRemoved(resourceResolver.Type, "Resource resolver type");
+			AddTypeToBeRemoved(resourceMethodsRestorer.Type, "GetManifestResourceStream type");
+			AddResourceToBeRemoved(resourceMethodsRestorer.Resource, "GetManifestResourceStream type resource");
 
-			fixInterfaces();
-			stringDecrypterBugWorkaround();
-			base.deobfuscateEnd();
+			FixInterfaces();
+			StringDecrypterBugWorkaround();
+			base.DeobfuscateEnd();
 		}
 
-		void stringDecrypterBugWorkaround() {
+		void StringDecrypterBugWorkaround() {
 			// There's a bug in Eazfuscator.NET when the VM and string encryption features are
 			// enabled. The string decrypter's initialization code checks to make sure it's not
 			// called by eg. a dynamic method. When it's called from the VM code, it is
@@ -205,16 +205,16 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 
 			var cctor = module.GlobalType.FindOrCreateStaticConstructor();
 			var blocks = new Blocks(cctor);
-			var block = blocks.MethodBlocks.getAllBlocks()[0];
-			block.insert(0, OpCodes.Call.ToInstruction(newMethod));
+			var block = blocks.MethodBlocks.GetAllBlocks()[0];
+			block.Insert(0, OpCodes.Call.ToInstruction(newMethod));
 
 			IList<Instruction> allInstructions;
 			IList<ExceptionHandler> allExceptionHandlers;
-			blocks.getCode(out allInstructions, out allExceptionHandlers);
-			DotNetUtils.restoreBody(cctor, allInstructions, allExceptionHandlers);
+			blocks.GetCode(out allInstructions, out allExceptionHandlers);
+			DotNetUtils.RestoreBody(cctor, allInstructions, allExceptionHandlers);
 		}
 
-		public override IEnumerable<int> getStringDecrypterMethods() {
+		public override IEnumerable<int> GetStringDecrypterMethods() {
 			var list = new List<int>();
 			if (stringDecrypter.Method != null)
 				list.Add(stringDecrypter.Method.MDToken.ToInt32());

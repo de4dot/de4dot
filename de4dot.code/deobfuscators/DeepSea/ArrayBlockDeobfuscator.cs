@@ -33,25 +33,25 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			this.arrayBlockState = arrayBlockState;
 		}
 
-		public override void deobfuscateBegin(Blocks blocks) {
-			base.deobfuscateBegin(blocks);
-			initLocalToInfo();
+		public override void DeobfuscateBegin(Blocks blocks) {
+			base.DeobfuscateBegin(blocks);
+			InitLocalToInfo();
 		}
 
-		void initLocalToInfo() {
+		void InitLocalToInfo() {
 			localToInfo.Clear();
 
-			foreach (var block in blocks.MethodBlocks.getAllBlocks()) {
+			foreach (var block in blocks.MethodBlocks.GetAllBlocks()) {
 				var instrs = block.Instructions;
 				for (int i = 0; i < instrs.Count - 1; i++) {
 					var ldsfld = instrs[i];
 					if (ldsfld.OpCode.Code != Code.Ldsfld)
 						continue;
 					var stloc = instrs[i + 1];
-					if (!stloc.isStloc())
+					if (!stloc.IsStloc())
 						continue;
 
-					var info = arrayBlockState.getFieldInfo((IField)ldsfld.Operand);
+					var info = arrayBlockState.GetFieldInfo((IField)ldsfld.Operand);
 					if (info == null)
 						continue;
 					var local = stloc.Instruction.GetLocal(blocks.Locals);
@@ -63,25 +63,25 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			}
 		}
 
-		protected override bool deobfuscate(Block block) {
+		protected override bool Deobfuscate(Block block) {
 			bool changed = false;
 
 			constantsReader = null;
 			var instrs = block.Instructions;
 			for (int i = 0; i < instrs.Count; i++) {
-				bool ch = deobfuscate1(block, i);
+				bool ch = Deobfuscate1(block, i);
 				if (ch) {
 					changed = true;
 					continue;
 				}
 
-				ch = deobfuscate2(block, i);
+				ch = Deobfuscate2(block, i);
 				if (ch) {
 					changed = true;
 					continue;
 				}
 
-				ch = deobfuscate3(block, i);
+				ch = Deobfuscate3(block, i);
 				if (ch) {
 					changed = true;
 					continue;
@@ -133,13 +133,13 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			}
 		}
 
-		bool deobfuscate1(Block block, int i) {
+		bool Deobfuscate1(Block block, int i) {
 			var instrs = block.Instructions;
 			if (i >= instrs.Count - 2)
 				return false;
 
 			var ldloc = instrs[i];
-			if (!ldloc.isLdloc())
+			if (!ldloc.IsLdloc())
 				return false;
 			var local = ldloc.Instruction.GetLocal(blocks.Locals);
 			if (local == null)
@@ -149,19 +149,19 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				return false;
 
 			var ldci4 = instrs[i + 1];
-			if (!ldci4.isLdcI4())
+			if (!ldci4.IsLdcI4())
 				return false;
 
 			var ldelem = instrs[i + 2];
 			if (!IsLdelem(info, ldelem.OpCode.Code))
 				return false;
 
-			block.remove(i, 3 - 1);
-			instrs[i] = new Instr(Instruction.CreateLdcI4((int)info.readArrayElement(ldci4.getLdcI4Value())));
+			block.Remove(i, 3 - 1);
+			instrs[i] = new Instr(Instruction.CreateLdcI4((int)info.ReadArrayElement(ldci4.GetLdcI4Value())));
 			return true;
 		}
 
-		bool deobfuscate2(Block block, int i) {
+		bool Deobfuscate2(Block block, int i) {
 			var instrs = block.Instructions;
 			if (i >= instrs.Count - 2)
 				return false;
@@ -169,24 +169,24 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			var ldsfld = instrs[i];
 			if (ldsfld.OpCode.Code != Code.Ldsfld)
 				return false;
-			var info = arrayBlockState.getFieldInfo(ldsfld.Operand as IField);
+			var info = arrayBlockState.GetFieldInfo(ldsfld.Operand as IField);
 			if (info == null)
 				return false;
 
 			var ldci4 = instrs[i + 1];
-			if (!ldci4.isLdcI4())
+			if (!ldci4.IsLdcI4())
 				return false;
 
 			var ldelem = instrs[i + 2];
 			if (!IsLdelem(info, ldelem.OpCode.Code))
 				return false;
 
-			block.remove(i, 3 - 1);
-			instrs[i] = new Instr(Instruction.CreateLdcI4((int)info.readArrayElement(ldci4.getLdcI4Value())));
+			block.Remove(i, 3 - 1);
+			instrs[i] = new Instr(Instruction.CreateLdcI4((int)info.ReadArrayElement(ldci4.GetLdcI4Value())));
 			return true;
 		}
 
-		bool deobfuscate3(Block block, int i) {
+		bool Deobfuscate3(Block block, int i) {
 			var instrs = block.Instructions;
 			if (i + 1 >= instrs.Count)
 				return false;
@@ -195,17 +195,17 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			var ldsfld = instrs[i];
 			if (ldsfld.OpCode.Code != Code.Ldsfld)
 				return false;
-			var info = arrayBlockState.getFieldInfo(ldsfld.Operand as IField);
+			var info = arrayBlockState.GetFieldInfo(ldsfld.Operand as IField);
 			if (info == null)
 				return false;
 
-			if (!instrs[i + 1].isLdcI4())
+			if (!instrs[i + 1].IsLdcI4())
 				return false;
 
-			var constants = getConstantsReader(block);
+			var constants = GetConstantsReader(block);
 			int value;
 			i += 2;
-			if (!constants.getInt32(ref i, out value))
+			if (!constants.GetInt32(ref i, out value))
 				return false;
 
 			if (i >= instrs.Count)
@@ -214,11 +214,11 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			if (!IsStelem(info, stelem.OpCode.Code))
 				return false;
 
-			block.remove(start, i - start + 1);
+			block.Remove(start, i - start + 1);
 			return true;
 		}
 
-		DsConstantsReader getConstantsReader(Block block) {
+		DsConstantsReader GetConstantsReader(Block block) {
 			if (constantsReader != null)
 				return constantsReader;
 			return constantsReader = new DsConstantsReader(block.Instructions);

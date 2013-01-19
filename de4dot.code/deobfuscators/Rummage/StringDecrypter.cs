@@ -34,8 +34,8 @@ namespace de4dot.code.deobfuscators.Rummage {
 		interface IDecrypter {
 			RummageVersion Version { get; }
 			MethodDef Method { get; }
-			void initialize();
-			string decrypt(int stringId);
+			void Initialize();
+			string Decrypt(int stringId);
 		}
 
 		abstract class DecrypterBaseV11 : IDecrypter {
@@ -59,21 +59,21 @@ namespace de4dot.code.deobfuscators.Rummage {
 				this.fileDispl = fileDispl;
 			}
 
-			public void initialize() {
+			public void Initialize() {
 				reader = new BinaryReader(new FileStream(decrypterMethod.DeclaringType.Module.Location, FileMode.Open, FileAccess.Read, FileShare.Read));
-				initializeImpl();
+				InitializeImpl();
 			}
 
-			protected abstract void initializeImpl();
+			protected abstract void InitializeImpl();
 
-			protected static MethodDef findDecrypterMethod(TypeDef type) {
+			protected static MethodDef FindDecrypterMethod(TypeDef type) {
 				MethodDef cctor = null, decrypterMethod = null;
 				foreach (var method in type.Methods) {
 					if (!method.IsStatic || method.Body == null)
 						return null;
 					if (method.Name == ".cctor")
 						cctor = method;
-					else if (DotNetUtils.isMethod(method, "System.String", "(System.Int32)"))
+					else if (DotNetUtils.IsMethod(method, "System.String", "(System.Int32)"))
 						decrypterMethod = method;
 					else
 						return null;
@@ -84,19 +84,19 @@ namespace de4dot.code.deobfuscators.Rummage {
 				return decrypterMethod;
 			}
 
-			public abstract string decrypt(int stringId);
+			public abstract string Decrypt(int stringId);
 
-			protected string decryptInternal(int stringId) {
+			protected string DecryptInternal(int stringId) {
 				uint v0 = reader.ReadUInt32();
 				uint v1 = reader.ReadUInt32();
-				DeobUtils.xteaDecrypt(ref v0, ref v1, key, 32);
+				DeobUtils.XteaDecrypt(ref v0, ref v1, key, 32);
 				int utf8Length = (int)v0;
 				var decrypted = new uint[(utf8Length + 11) / 8 * 2 - 1];
 				decrypted[0] = v1;
 				for (int i = 1; i + 1 < decrypted.Length; i += 2) {
 					v0 = reader.ReadUInt32();
 					v1 = reader.ReadUInt32();
-					DeobUtils.xteaDecrypt(ref v0, ref v1, key, 32);
+					DeobUtils.XteaDecrypt(ref v0, ref v1, key, 32);
 					decrypted[i] = v0;
 					decrypted[i + 1] = v1;
 				}
@@ -112,12 +112,12 @@ namespace de4dot.code.deobfuscators.Rummage {
 				: base(RummageVersion.V1_1_445, decrypterMethod, fileDispl) {
 			}
 
-			public static DecrypterV11 create(MethodDef cctor) {
-				var method = checkType(cctor);
+			public static DecrypterV11 Create(MethodDef cctor) {
+				var method = CheckType(cctor);
 				if (method == null)
 					return null;
 				int fileDispl;
-				if (!getDispl(method, out fileDispl))
+				if (!GetDispl(method, out fileDispl))
 					return null;
 
 				return new DecrypterV11(method, fileDispl);
@@ -131,17 +131,17 @@ namespace de4dot.code.deobfuscators.Rummage {
 				"System.Int32",
 				"System.IO.FileStream",
 			};
-			static MethodDef checkType(MethodDef cctor) {
+			static MethodDef CheckType(MethodDef cctor) {
 				var type = cctor.DeclaringType;
-				if (!new FieldTypes(type).exactly(requiredFields))
+				if (!new FieldTypes(type).Exactly(requiredFields))
 					return null;
-				if (!new LocalTypes(cctor).all(requiredLocals))
+				if (!new LocalTypes(cctor).All(requiredLocals))
 					return null;
 
-				return findDecrypterMethod(type);
+				return FindDecrypterMethod(type);
 			}
 
-			static bool getDispl(MethodDef method, out int displ) {
+			static bool GetDispl(MethodDef method, out int displ) {
 				var instrs = method.Body.Instructions;
 				for (int i = 0; i < instrs.Count - 2; i++) {
 					var mul = instrs[i];
@@ -164,20 +164,20 @@ namespace de4dot.code.deobfuscators.Rummage {
 				return false;
 			}
 
-			protected override void initializeImpl() {
-				initKey();
+			protected override void InitializeImpl() {
+				InitKey();
 			}
 
-			void initKey() {
+			void InitKey() {
 				reader.BaseStream.Position = reader.BaseStream.Length - 48;
 				key = new uint[4];
 				for (int i = 0; i < key.Length; i++)
 					key[i] = reader.ReadUInt32();
 			}
 
-			public override string decrypt(int stringId) {
+			public override string Decrypt(int stringId) {
 				reader.BaseStream.Position = reader.BaseStream.Length + (stringId * 4 - fileDispl);
-				return decryptInternal(stringId);
+				return DecryptInternal(stringId);
 			}
 		}
 
@@ -188,12 +188,12 @@ namespace de4dot.code.deobfuscators.Rummage {
 				: base(RummageVersion.V2_1_729, decrypterMethod, fileDispl) {
 			}
 
-			public static DecrypterV21 create(MethodDef cctor) {
-				var method = checkType(cctor);
+			public static DecrypterV21 Create(MethodDef cctor) {
+				var method = CheckType(cctor);
 				if (method == null)
 					return null;
 				int fileDispl;
-				if (!getDispl(method, out fileDispl))
+				if (!GetDispl(method, out fileDispl))
 					return null;
 
 				return new DecrypterV21(method, fileDispl);
@@ -209,17 +209,17 @@ namespace de4dot.code.deobfuscators.Rummage {
 				"System.Int32",
 				"System.IO.FileStream",
 			};
-			static MethodDef checkType(MethodDef cctor) {
+			static MethodDef CheckType(MethodDef cctor) {
 				var type = cctor.DeclaringType;
-				if (!new FieldTypes(type).exactly(requiredFields))
+				if (!new FieldTypes(type).Exactly(requiredFields))
 					return null;
-				if (!new LocalTypes(cctor).all(requiredLocals))
+				if (!new LocalTypes(cctor).All(requiredLocals))
 					return null;
 
-				return findDecrypterMethod(type);
+				return FindDecrypterMethod(type);
 			}
 
-			static bool getDispl(MethodDef method, out int displ) {
+			static bool GetDispl(MethodDef method, out int displ) {
 				var instrs = method.Body.Instructions;
 				for (int i = 0; i < instrs.Count - 6; i++) {
 					var ldci4_1 = instrs[i];
@@ -256,19 +256,19 @@ namespace de4dot.code.deobfuscators.Rummage {
 				0x61, 0xE3, 0xAA, 0xBC, 0xE4, 0xB1, 0xF0, 0x92,
 			};
 
-			protected override void initializeImpl() {
-				baseOffs = initializeBaseOffs();
-				initKey();
+			protected override void InitializeImpl() {
+				baseOffs = InitializeBaseOffs();
+				InitKey();
 			}
 
-			void initKey() {
+			void InitKey() {
 				reader.BaseStream.Position = baseOffs - 16;
 				key = new uint[4];
 				for (int i = 0; i < key.Length; i++)
 					key[i] = reader.ReadUInt32();
 			}
 
-			long initializeBaseOffs() {
+			long InitializeBaseOffs() {
 				byte[] buf = new byte[0x1000];	// Must be 4096 bytes
 				reader.BaseStream.Position = reader.BaseStream.Length - buf.Length;
 				while (true) {
@@ -292,9 +292,9 @@ namespace de4dot.code.deobfuscators.Rummage {
 				}
 			}
 
-			public override string decrypt(int stringId) {
+			public override string Decrypt(int stringId) {
 				reader.BaseStream.Position = baseOffs + stringId * 4 - fileDispl;
-				return decryptInternal(stringId);
+				return DecryptInternal(stringId);
 			}
 		}
 
@@ -310,7 +310,7 @@ namespace de4dot.code.deobfuscators.Rummage {
 
 			public override string ToString() {
 				if (decrypted != null)
-					return string.Format("{0:X8} - {1}", stringId, Utils.toCsharpString(decrypted));
+					return string.Format("{0:X8} - {1}", stringId, Utils.ToCsharpString(decrypted));
 				return string.Format("{0:X8}", stringId);
 			}
 		}
@@ -326,7 +326,7 @@ namespace de4dot.code.deobfuscators.Rummage {
 		public IEnumerable<TypeDef> OtherTypes {
 			get {
 				var list = new List<TypeDef>(stringInfos.Count);
-				foreach (var info in stringInfos.getValues())
+				foreach (var info in stringInfos.GetValues())
 					list.Add(info.field.DeclaringType);
 				return list;
 			}
@@ -340,43 +340,43 @@ namespace de4dot.code.deobfuscators.Rummage {
 			this.module = module;
 		}
 
-		public void find() {
+		public void Find() {
 			foreach (var type in module.GetTypes()) {
 				var cctor = type.FindStaticConstructor();
 				if (cctor == null)
 					continue;
 
-				decrypter = DecrypterV11.create(cctor);
+				decrypter = DecrypterV11.Create(cctor);
 				if (decrypter != null)
 					break;
 
-				decrypter = DecrypterV21.create(cctor);
+				decrypter = DecrypterV21.Create(cctor);
 				if (decrypter != null)
 					break;
 			}
 		}
 
-		public void initialize() {
+		public void Initialize() {
 			if (decrypter == null)
 				return;
 
-			decrypter.initialize();
+			decrypter.Initialize();
 			foreach (var type in module.Types)
-				initType(type);
+				InitType(type);
 		}
 
-		void initType(TypeDef type) {
+		void InitType(TypeDef type) {
 			var cctor = type.FindStaticConstructor();
 			if (cctor == null)
 				return;
-			var info = getStringInfo(cctor);
+			var info = GetStringInfo(cctor);
 			if (info == null)
 				return;
 
-			stringInfos.add(info.field, info);
+			stringInfos.Add(info.field, info);
 		}
 
-		StringInfo getStringInfo(MethodDef method) {
+		StringInfo GetStringInfo(MethodDef method) {
 			if (method == null || method.Body == null)
 				return null;
 			var instrs = method.Body.Instructions;
@@ -406,10 +406,10 @@ namespace de4dot.code.deobfuscators.Rummage {
 			return null;
 		}
 
-		public void deobfuscate(Blocks blocks) {
+		public void Deobfuscate(Blocks blocks) {
 			if (decrypter == null)
 				return;
-			foreach (var block in blocks.MethodBlocks.getAllBlocks()) {
+			foreach (var block in blocks.MethodBlocks.GetAllBlocks()) {
 				var instrs = block.Instructions;
 				for (int i = 0; i < instrs.Count; i++) {
 					var instr = instrs[i];
@@ -420,20 +420,20 @@ namespace de4dot.code.deobfuscators.Rummage {
 					var field = instr.Operand as IField;
 					if (field == null)
 						continue;
-					var info = stringInfos.find(field);
+					var info = stringInfos.Find(field);
 					if (info == null)
 						continue;
-					var decrypted = decrypt(info);
+					var decrypted = Decrypt(info);
 
 					instrs[i] = new Instr(OpCodes.Ldstr.ToInstruction(decrypted));
-					Logger.v("Decrypted string: {0}", Utils.toCsharpString(decrypted));
+					Logger.v("Decrypted string: {0}", Utils.ToCsharpString(decrypted));
 				}
 			}
 		}
 
-		string decrypt(StringInfo info) {
+		string Decrypt(StringInfo info) {
 			if (info.decrypted == null)
-				info.decrypted = decrypter.decrypt(info.stringId);
+				info.decrypted = decrypter.Decrypt(info.stringId);
 
 			return info.decrypted;
 		}

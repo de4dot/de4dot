@@ -21,12 +21,12 @@ using dnlib.DotNet;
 
 namespace de4dot.code {
 	public interface IDeobfuscatorContext {
-		void clear();
-		void setData(string name, object data);
-		object getData(string name);
-		void clearData(string name);
-		TypeDef resolveType(ITypeDefOrRef type);
-		MethodDef resolveMethod(IMethod method);
-		FieldDef resolveField(IField field);
+		void Clear();
+		void SetData(string name, object data);
+		object GetData(string name);
+		void ClearData(string name);
+		TypeDef ResolveType(ITypeDefOrRef type);
+		MethodDef ResolveMethod(IMethod method);
+		FieldDef ResolveField(IField field);
 	}
 }

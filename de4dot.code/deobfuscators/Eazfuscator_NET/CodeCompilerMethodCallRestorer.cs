@@ -23,98 +23,98 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 	class CodeCompilerMethodCallRestorer : MethodCallRestorerBase {
 		ITypeDefOrRef CodeDomProvider {
 			get {
-				return builder.type("System.CodeDom.Compiler", "CodeDomProvider", "System").ToTypeDefOrRef();
+				return builder.Type("System.CodeDom.Compiler", "CodeDomProvider", "System").ToTypeDefOrRef();
 			}
 		}
 
 		ITypeDefOrRef ICodeCompiler {
 			get {
-				return builder.type("System.CodeDom.Compiler", "ICodeCompiler", "System").ToTypeDefOrRef();
+				return builder.Type("System.CodeDom.Compiler", "ICodeCompiler", "System").ToTypeDefOrRef();
 			}
 		}
 
 		TypeSig CompilerResults {
 			get {
-				return builder.type("System.CodeDom.Compiler", "CompilerResults", "System");
+				return builder.Type("System.CodeDom.Compiler", "CompilerResults", "System");
 			}
 		}
 
 		TypeSig CompilerParameters {
 			get {
-				return builder.type("System.CodeDom.Compiler", "CompilerParameters", "System");
+				return builder.Type("System.CodeDom.Compiler", "CompilerParameters", "System");
 			}
 		}
 
 		TypeSig CodeCompileUnit {
 			get {
-				return builder.type("System.CodeDom", "CodeCompileUnit", "System");
+				return builder.Type("System.CodeDom", "CodeCompileUnit", "System");
 			}
 		}
 
 		TypeSig CodeCompileUnitArray {
-			get { return builder.array(CodeCompileUnit); }
+			get { return builder.Array(CodeCompileUnit); }
 		}
 
 		TypeSig StringArray {
-			get { return builder.array(builder.String); }
+			get { return builder.Array(builder.String); }
 		}
 
 		public CodeCompilerMethodCallRestorer(ModuleDefMD module)
 			: base(module) {
 		}
 
-		public void add_CodeDomProvider_CompileAssemblyFromDom(MethodDef oldMethod) {
+		public void Add_CodeDomProvider_CompileAssemblyFromDom(MethodDef oldMethod) {
 			if (oldMethod == null)
 				return;
-			add(oldMethod, builder.instanceMethod("CompileAssemblyFromDom", CodeDomProvider, CompilerResults, CompilerParameters, CodeCompileUnitArray));
+			Add(oldMethod, builder.InstanceMethod("CompileAssemblyFromDom", CodeDomProvider, CompilerResults, CompilerParameters, CodeCompileUnitArray));
 		}
 
-		public void add_CodeDomProvider_CompileAssemblyFromFile(MethodDef oldMethod) {
+		public void Add_CodeDomProvider_CompileAssemblyFromFile(MethodDef oldMethod) {
 			if (oldMethod == null)
 				return;
-			add(oldMethod, builder.instanceMethod("CompileAssemblyFromFile", CodeDomProvider, CompilerResults, CompilerParameters, StringArray));
+			Add(oldMethod, builder.InstanceMethod("CompileAssemblyFromFile", CodeDomProvider, CompilerResults, CompilerParameters, StringArray));
 		}
 
-		public void add_CodeDomProvider_CompileAssemblyFromSource(MethodDef oldMethod) {
+		public void Add_CodeDomProvider_CompileAssemblyFromSource(MethodDef oldMethod) {
 			if (oldMethod == null)
 				return;
-			add(oldMethod, builder.instanceMethod("CompileAssemblyFromSource", CodeDomProvider, CompilerResults, CompilerParameters, StringArray));
+			Add(oldMethod, builder.InstanceMethod("CompileAssemblyFromSource", CodeDomProvider, CompilerResults, CompilerParameters, StringArray));
 		}
 
-		public void add_ICodeCompiler_CompileAssemblyFromDom(MethodDef oldMethod) {
+		public void Add_ICodeCompiler_CompileAssemblyFromDom(MethodDef oldMethod) {
 			if (oldMethod == null)
 				return;
-			add(oldMethod, builder.instanceMethod("CompileAssemblyFromDom", ICodeCompiler, CompilerResults, CompilerParameters, CodeCompileUnit));
+			Add(oldMethod, builder.InstanceMethod("CompileAssemblyFromDom", ICodeCompiler, CompilerResults, CompilerParameters, CodeCompileUnit));
 		}
 
-		public void add_ICodeCompiler_CompileAssemblyFromDomBatch(MethodDef oldMethod) {
+		public void Add_ICodeCompiler_CompileAssemblyFromDomBatch(MethodDef oldMethod) {
 			if (oldMethod == null)
 				return;
-			add(oldMethod, builder.instanceMethod("CompileAssemblyFromDomBatch", ICodeCompiler, CompilerResults, CompilerParameters, CodeCompileUnitArray));
+			Add(oldMethod, builder.InstanceMethod("CompileAssemblyFromDomBatch", ICodeCompiler, CompilerResults, CompilerParameters, CodeCompileUnitArray));
 		}
 
-		public void add_ICodeCompiler_CompileAssemblyFromFile(MethodDef oldMethod) {
+		public void Add_ICodeCompiler_CompileAssemblyFromFile(MethodDef oldMethod) {
 			if (oldMethod == null)
 				return;
-			add(oldMethod, builder.instanceMethod("CompileAssemblyFromFile", ICodeCompiler, CompilerResults, CompilerParameters, builder.String));
+			Add(oldMethod, builder.InstanceMethod("CompileAssemblyFromFile", ICodeCompiler, CompilerResults, CompilerParameters, builder.String));
 		}
 
-		public void add_ICodeCompiler_CompileAssemblyFromFileBatch(MethodDef oldMethod) {
+		public void Add_ICodeCompiler_CompileAssemblyFromFileBatch(MethodDef oldMethod) {
 			if (oldMethod == null)
 				return;
-			add(oldMethod, builder.instanceMethod("CompileAssemblyFromFileBatch", ICodeCompiler, CompilerResults, CompilerParameters, StringArray));
+			Add(oldMethod, builder.InstanceMethod("CompileAssemblyFromFileBatch", ICodeCompiler, CompilerResults, CompilerParameters, StringArray));
 		}
 
-		public void add_ICodeCompiler_CompileAssemblyFromSource(MethodDef oldMethod) {
+		public void Add_ICodeCompiler_CompileAssemblyFromSource(MethodDef oldMethod) {
 			if (oldMethod == null)
 				return;
-			add(oldMethod, builder.instanceMethod("CompileAssemblyFromSource", ICodeCompiler, CompilerResults, CompilerParameters, builder.String));
+			Add(oldMethod, builder.InstanceMethod("CompileAssemblyFromSource", ICodeCompiler, CompilerResults, CompilerParameters, builder.String));
 		}
 
-		public void add_ICodeCompiler_CompileAssemblyFromSourceBatch(MethodDef oldMethod) {
+		public void Add_ICodeCompiler_CompileAssemblyFromSourceBatch(MethodDef oldMethod) {
 			if (oldMethod == null)
 				return;
-			add(oldMethod, builder.instanceMethod("CompileAssemblyFromSourceBatch", ICodeCompiler, CompilerResults, CompilerParameters, StringArray));
+			Add(oldMethod, builder.InstanceMethod("CompileAssemblyFromSourceBatch", ICodeCompiler, CompilerResults, CompilerParameters, StringArray));
 		}
 	}
 }

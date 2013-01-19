@@ -51,10 +51,10 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			}
 		}
 
-		protected override object checkCctor(TypeDef type, MethodDef cctor) {
+		protected override object CheckCctor(TypeDef type, MethodDef cctor) {
 			var instructions = cctor.Body.Instructions;
 			for (int i = 0; i < instructions.Count; i++) {
-				var instrs = DotNetUtils.getInstructions(instructions, i, OpCodes.Ldc_I4, OpCodes.Ldc_I4, OpCodes.Ldc_I4, OpCodes.Call);
+				var instrs = DotNetUtils.GetInstructions(instructions, i, OpCodes.Ldc_I4, OpCodes.Ldc_I4, OpCodes.Ldc_I4, OpCodes.Call);
 				if (instrs == null)
 					continue;
 
@@ -73,7 +73,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return null;
 		}
 
-		protected override void getCallInfo(object context, FieldDef field, out IMethod calledMethod, out OpCode callOpcode) {
+		protected override void GetCallInfo(object context, FieldDef field, out IMethod calledMethod, out OpCode callOpcode) {
 			var ctx = (Context)context;
 
 			switch (ctx.proxyCreatorType) {
@@ -93,31 +93,31 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			calledMethod = module.ResolveToken(ctx.methodToken) as IMethod;
 		}
 
-		public void findDelegateCreator() {
+		public void FindDelegateCreator() {
 			foreach (var type in module.Types) {
-				var createMethod = getProxyCreateMethod(type);
+				var createMethod = GetProxyCreateMethod(type);
 				if (createMethod == null)
 					continue;
 
-				var proxyCreatorType = getProxyCreatorType(type, createMethod);
+				var proxyCreatorType = GetProxyCreatorType(type, createMethod);
 				if (proxyCreatorType == ProxyCreatorType.None)
 					continue;
 				methodToType[createMethod] = proxyCreatorType;
-				setDelegateCreatorMethod(createMethod);
+				SetDelegateCreatorMethod(createMethod);
 			}
 		}
 
-		MethodDef getProxyCreateMethod(TypeDef type) {
-			if (DotNetUtils.findFieldType(type, "System.ModuleHandle", true) == null)
+		MethodDef GetProxyCreateMethod(TypeDef type) {
+			if (DotNetUtils.FindFieldType(type, "System.ModuleHandle", true) == null)
 				return null;
-			if (type.Fields.Count < 1 || type.Fields.Count > 14)
+			if (type.Fields.Count < 1 || type.Fields.Count > 16)
 				return null;
 
 			MethodDef createMethod = null;
 			foreach (var m in type.Methods) {
 				if (m.Name == ".ctor" || m.Name == ".cctor")
 					continue;
-				if (createMethod == null && DotNetUtils.isMethod(m, "System.Void", "(System.Int32,System.Int32,System.Int32)")) {
+				if (createMethod == null && DotNetUtils.IsMethod(m, "System.Void", "(System.Int32,System.Int32,System.Int32)")) {
 					createMethod = m;
 					continue;
 				}
@@ -125,13 +125,13 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			}
 			if (createMethod == null || !createMethod.HasBody)
 				return null;
-			if (!DeobUtils.hasInteger(createMethod, 0xFFFFFF))
+			if (!DeobUtils.HasInteger(createMethod, 0xFFFFFF))
 				return null;
 
 			return createMethod;
 		}
 
-		ProxyCreatorType getProxyCreatorType(TypeDef type, MethodDef createMethod) {
+		ProxyCreatorType GetProxyCreatorType(TypeDef type, MethodDef createMethod) {
 			int numCalls = 0, numCallvirts = 0, numNewobjs = 0;
 			foreach (var instr in createMethod.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Ldsfld)

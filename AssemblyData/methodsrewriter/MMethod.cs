@@ -29,7 +29,7 @@ namespace AssemblyData.methodsrewriter {
 			this.methodDef = methodDef;
 		}
 
-		public bool hasInstructions() {
+		public bool HasInstructions() {
 			return methodDef.Body != null && methodDef.Body.Instructions.Count != 0;
 		}
 

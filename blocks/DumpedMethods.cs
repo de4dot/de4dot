@@ -31,21 +31,21 @@ namespace de4dot.blocks {
 			get { return methods.Count; }
 		}
 
-		public void add(uint token, DumpedMethod info) {
+		public void Add(uint token, DumpedMethod info) {
 			methods[token] = info;
 		}
 
-		public DumpedMethod get(MethodDef method) {
-			return get(method.MDToken.ToUInt32());
+		public DumpedMethod Get(MethodDef method) {
+			return Get(method.MDToken.ToUInt32());
 		}
 
-		public DumpedMethod get(uint token) {
+		public DumpedMethod Get(uint token) {
 			DumpedMethod dm;
 			methods.TryGetValue(token, out dm);
 			return dm;
 		}
 
-		public void add(DumpedMethod dm) {
+		public void Add(DumpedMethod dm) {
 			if (MDToken.ToTable(dm.token) != Table.Method || MDToken.ToRID(dm.token) == 0)
 				throw new ArgumentException("Invalid token");
 			methods[dm.token] = dm;

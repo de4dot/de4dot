@@ -29,15 +29,15 @@ namespace de4dot.blocks.cflow {
 		InstructionEmulator instructionEmulator = new InstructionEmulator();
 		IList<Parameter> args;
 
-		protected override void init(List<Block> allBlocks) {
-			base.init(allBlocks);
+		protected override void Initialize(List<Block> allBlocks) {
+			base.Initialize(allBlocks);
 			args = blocks.Method.Parameters;
 		}
 
-		protected override bool deobfuscate(Block block) {
+		protected override bool Deobfuscate(Block block) {
 			bool changed = false;
 
-			instructionEmulator.init(blocks);
+			instructionEmulator.Initialize(blocks);
 			var instrs = block.Instructions;
 			for (int i = 0; i < instrs.Count; i++) {
 				var instr = instrs[i];
@@ -49,7 +49,7 @@ namespace de4dot.blocks.cflow {
 				case Code.Ldarg_2:
 				case Code.Ldarg_3:
 				case Code.Ldarg_S:
-					changed |= fixLoadInstruction(block, i, instructionEmulator.getArg(instr.Instruction.GetParameter(args)));
+					changed |= FixLoadInstruction(block, i, instructionEmulator.GetArg(instr.Instruction.GetParameter(args)));
 					break;
 
 				case Code.Ldloc:
@@ -58,22 +58,22 @@ namespace de4dot.blocks.cflow {
 				case Code.Ldloc_2:
 				case Code.Ldloc_3:
 				case Code.Ldloc_S:
-					changed |= fixLoadInstruction(block, i, instructionEmulator.getLocal(instr.Instruction.GetLocal(blocks.Locals)));
+					changed |= FixLoadInstruction(block, i, instructionEmulator.GetLocal(instr.Instruction.GetLocal(blocks.Locals)));
 					break;
 
 				case Code.Ldarga:
 				case Code.Ldarga_S:
-					instructionEmulator.makeArgUnknown((Parameter)instr.Operand);
+					instructionEmulator.MakeArgUnknown((Parameter)instr.Operand);
 					break;
 
 				case Code.Ldloca:
 				case Code.Ldloca_S:
-					instructionEmulator.makeLocalUnknown((Local)instr.Operand);
+					instructionEmulator.MakeLocalUnknown((Local)instr.Operand);
 					break;
 				}
 
 				try {
-					instructionEmulator.emulate(instr.Instruction);
+					instructionEmulator.Emulate(instr.Instruction);
 				}
 				catch (NullReferenceException) {
 					// Here if eg. invalid metadata token in a call instruction (operand is null)
@@ -84,17 +84,17 @@ namespace de4dot.blocks.cflow {
 			return changed;
 		}
 
-		bool fixLoadInstruction(Block block, int index, Value value) {
-			if (value.isInt32()) {
+		bool FixLoadInstruction(Block block, int index, Value value) {
+			if (value.IsInt32()) {
 				var intValue = (Int32Value)value;
-				if (!intValue.allBitsValid())
+				if (!intValue.AllBitsValid())
 					return false;
 				block.Instructions[index] = new Instr(Instruction.CreateLdcI4(intValue.value));
 				return true;
 			}
-			else if (value.isInt64()) {
+			else if (value.IsInt64()) {
 				var intValue = (Int64Value)value;
-				if (!intValue.allBitsValid())
+				if (!intValue.AllBitsValid())
 					return false;
 				block.Instructions[index] = new Instr(OpCodes.Ldc_I8.ToInstruction(intValue.value));
 				return true;

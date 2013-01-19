@@ -68,11 +68,11 @@ namespace AssemblyData {
 	static class Utils {
 		static Random random = new Random();
 
-		public static uint getRandomUint() {
+		public static uint GetRandomUint() {
 			return (uint)(random.NextDouble() * uint.MaxValue);
 		}
 
-		public static Type getDelegateType(Type returnType, Type[] args) {
+		public static Type GetDelegateType(Type returnType, Type[] args) {
 			Type[] types;
 			if (returnType == typeof(void)) {
 				types = args;
@@ -133,7 +133,7 @@ namespace AssemblyData {
 			}
 		}
 
-		public static string randomName(int min, int max) {
+		public static string RandomName(int min, int max) {
 			int numChars = random.Next(min, max + 1);
 			var sb = new StringBuilder(numChars);
 			int numLower = 0;
@@ -153,7 +153,7 @@ namespace AssemblyData {
 			return sb.ToString();
 		}
 
-		public static void addCallStringDecrypterMethodInstructions(MethodInfo method, ILGenerator ilg) {
+		public static void AddCallStringDecrypterMethodInstructions(MethodInfo method, ILGenerator ilg) {
 			var args = method.GetParameters();
 			for (int i = 0; i < args.Length; i++) {
 				var arg = args[i].ParameterType;
@@ -171,7 +171,7 @@ namespace AssemblyData {
 			ilg.Emit(OpCodes.Ret);
 		}
 
-		public static string getFullPath(string path) {
+		public static string GetFullPath(string path) {
 			try {
 				return Path.GetFullPath(path);
 			}
@@ -180,7 +180,7 @@ namespace AssemblyData {
 			}
 		}
 
-		public static string getDirName(string name) {
+		public static string GetDirName(string name) {
 			return Path.GetDirectoryName(name);
 		}
 	}

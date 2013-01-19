@@ -39,10 +39,10 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 		}
 
 		public AssemblyResolver(TypeDef type, ICflowDeobfuscator cflowDeobfuscator) {
-			find(type, cflowDeobfuscator);
+			Find(type, cflowDeobfuscator);
 		}
 
-		void find(TypeDef type, ICflowDeobfuscator cflowDeobfuscator) {
+		void Find(TypeDef type, ICflowDeobfuscator cflowDeobfuscator) {
 			var additionalTypes = new List<string> {
 				"System.IO.BinaryReader",
 				"System.IO.FileStream",
@@ -51,12 +51,12 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 				"System.String",
 			};
 			foreach (var method in type.Methods) {
-				if (!DotNetUtils.isMethod(method, "System.Reflection.Assembly", "(System.Object,System.ResolveEventArgs)"))
+				if (!DotNetUtils.IsMethod(method, "System.Reflection.Assembly", "(System.Object,System.ResolveEventArgs)"))
 					continue;
-				if (!DecryptMethod.couldBeDecryptMethod(method, additionalTypes))
+				if (!DecryptMethod.CouldBeDecryptMethod(method, additionalTypes))
 					continue;
-				cflowDeobfuscator.deobfuscate(method);
-				if (!decryptMethod.getKey(method))
+				cflowDeobfuscator.Deobfuscate(method);
+				if (!decryptMethod.GetKey(method))
 					continue;
 
 				return;

@@ -36,8 +36,8 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			this.module = module;
 		}
 
-		protected override bool isExceptionLogger(IMethod method) {
-			return isExceptionLoggerMethod(method);
+		protected override bool IsExceptionLogger(IMethod method) {
+			return IsExceptionLoggerMethod(method);
 		}
 
 		public void find() {
@@ -46,11 +46,11 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				enabled = true;
 			else {
 				MethodDef exceptionMethod;
-				enabled = checkMethod(entryPoint, out exceptionMethod);
+				enabled = CheckMethod(entryPoint, out exceptionMethod);
 			}
 		}
 
-		bool checkMethod(MethodDef method, out MethodDef exceptionMethod) {
+		bool CheckMethod(MethodDef method, out MethodDef exceptionMethod) {
 			exceptionMethod = null;
 
 			var body = method.Body;
@@ -73,14 +73,14 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 
 			int handlerStart = instrs.IndexOf(eh.HandlerStart);
 			int handlerEnd = eh.HandlerEnd == null ? instrs.Count : instrs.IndexOf(eh.HandlerEnd);
-			exceptionMethod = DotNetUtils.getMethod(module, checkHandler(instrs, handlerStart, handlerEnd));
+			exceptionMethod = DotNetUtils.GetMethod(module, CheckHandler(instrs, handlerStart, handlerEnd));
 			if (exceptionMethod == null || !exceptionMethod.IsStatic || exceptionMethod.Body == null)
 				return false;
 
-			return isExceptionLoggerMethod(exceptionMethod);
+			return IsExceptionLoggerMethod(exceptionMethod);
 		}
 
-		IMethod checkHandler(IList<Instruction> instrs, int start, int end) {
+		IMethod CheckHandler(IList<Instruction> instrs, int start, int end) {
 			IMethod calledMethod = null;
 			for (int i = start; i < end; i++) {
 				var instr = instrs[i];
@@ -97,7 +97,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return calledMethod;
 		}
 
-		static bool isExceptionLoggerMethod(IMethod method) {
+		static bool IsExceptionLoggerMethod(IMethod method) {
 			if (method.Name == ".ctor" || method.Name == ".cctor")
 				return false;
 

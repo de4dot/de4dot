@@ -21,7 +21,7 @@ using System.Reflection;
 
 namespace AssemblyData {
 	interface IStringDecrypter {
-		int defineStringDecrypter(MethodInfo method);
-		object[] decryptStrings(int stringDecrypterMethod, object[] args, MethodBase caller);
+		int DefineStringDecrypter(MethodInfo method);
+		object[] DecryptStrings(int stringDecrypterMethod, object[] args, MethodBase caller);
 	}
 }

@@ -31,7 +31,7 @@ namespace de4dot.blocks {
 			get { return handlerBlocks; }
 		}
 
-		public void addTryHandler(TryHandlerBlock tryHandlerBlock) {
+		public void AddTryHandler(TryHandlerBlock tryHandlerBlock) {
 			handlerBlocks.Add(tryHandlerBlock);
 		}
 	}

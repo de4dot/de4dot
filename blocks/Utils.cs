@@ -47,21 +47,21 @@ namespace de4dot.blocks {
 	}
 
 	static class Utils {
-		public static IDictionary<T, int> createObjectToIndexDictionary<T>(IList<T> objs) {
+		public static IDictionary<T, int> CreateObjectToIndexDictionary<T>(IList<T> objs) {
 			var dict = new Dictionary<T, int>();
 			for (int i = 0; i < objs.Count; i++)
 				dict[objs[i]] = i;
 			return dict;
 		}
 
-		public static List<TOut> convert<TIn, TOut>(IEnumerable<TIn> list) where TIn : TOut {
+		public static List<TOut> Convert<TIn, TOut>(IEnumerable<TIn> list) where TIn : TOut {
 			var olist = new List<TOut>();
 			foreach (var l in list)
 				olist.Add(l);
 			return olist;
 		}
 
-		public static IEnumerable<T> unique<T>(IEnumerable<T> values) {
+		public static IEnumerable<T> Unique<T>(IEnumerable<T> values) {
 			// HashSet is only available in .NET 3.5 and later.
 			var dict = new Dictionary<T, bool>();
 			foreach (var val in values)

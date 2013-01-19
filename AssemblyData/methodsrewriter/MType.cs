@@ -37,27 +37,27 @@ namespace AssemblyData.methodsrewriter {
 			this.typeDef = typeDef;
 		}
 
-		public MMethod getMethod(IMethod methodRef) {
-			initMethods();
-			return methodRefToMethod.find(methodRef);
+		public MMethod GetMethod(IMethod methodRef) {
+			InitMethods();
+			return methodRefToMethod.Find(methodRef);
 		}
 
-		public MField getField(IField fieldRef) {
-			initFields();
-			return fieldRefToField.find(fieldRef);
+		public MField GetField(IField fieldRef) {
+			InitFields();
+			return fieldRefToField.Find(fieldRef);
 		}
 
-		public MMethod getMethod(int token) {
-			initMethods();
+		public MMethod GetMethod(int token) {
+			InitMethods();
 			return tokenToMethod[token];
 		}
 
-		public MField getField(int token) {
-			initFields();
+		public MField GetField(int token) {
+			InitFields();
 			return tokenToField[token];
 		}
 
-		void initMethods() {
+		void InitMethods() {
 			if (tokenToMethod != null)
 				return;
 			tokenToMethod = new Dictionary<int, MMethod>(typeDef.Methods.Count);
@@ -65,17 +65,17 @@ namespace AssemblyData.methodsrewriter {
 
 			var tmpTokenToMethod = new Dictionary<int, MethodBase>();
 			var flags = BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
-			foreach (var m in ResolverUtils.getMethodBases(type, flags))
+			foreach (var m in ResolverUtils.GetMethodBases(type, flags))
 				tmpTokenToMethod[m.MetadataToken] = m;
 			foreach (var m in typeDef.Methods) {
 				var token = (int)m.MDToken.Raw;
 				var method = new MMethod(tmpTokenToMethod[token], m);
 				tokenToMethod[token] = method;
-				methodRefToMethod.add(method.methodDef, method);
+				methodRefToMethod.Add(method.methodDef, method);
 			}
 		}
 
-		void initFields() {
+		void InitFields() {
 			if (tokenToField != null)
 				return;
 			tokenToField = new Dictionary<int, MField>(typeDef.Fields.Count);
@@ -89,7 +89,7 @@ namespace AssemblyData.methodsrewriter {
 				var token = (int)f.MDToken.Raw;
 				var field = new MField(tmpTokenToField[token], f);
 				tokenToField[token] = field;
-				fieldRefToField.add(field.fieldDef, field);
+				fieldRefToField.Add(field.fieldDef, field);
 			}
 		}
 

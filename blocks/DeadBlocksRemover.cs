@@ -32,10 +32,10 @@ namespace de4dot.blocks {
 			this.methodBlocks = methodBlocks;
 		}
 
-		public int remove() {
-			addScopeBlock(methodBlocks);
-			processAll();
-			return removeDeadBlocks();
+		public int Remove() {
+			AddScopeBlock(methodBlocks);
+			ProcessAll();
+			return RemoveDeadBlocks();
 		}
 
 		class ScopeBlockInfo {
@@ -46,12 +46,12 @@ namespace de4dot.blocks {
 			}
 		}
 
-		int removeDeadBlocks() {
+		int RemoveDeadBlocks() {
 			int numDeadBlocks = 0;
 
 			var infos = new Dictionary<ScopeBlock, ScopeBlockInfo>();
 			var deadBlocksDict = new Dictionary<BaseBlock, bool>();
-			foreach (var baseBlock in findDeadBlocks()) {
+			foreach (var baseBlock in FindDeadBlocks()) {
 				deadBlocksDict[baseBlock] = true;
 				ScopeBlock parent = baseBlock.Parent;
 				ScopeBlockInfo info;
@@ -62,15 +62,15 @@ namespace de4dot.blocks {
 			}
 
 			foreach (var info in infos.Values)
-				info.scopeBlock.removeAllDeadBlocks(info.deadBlocks, deadBlocksDict);
+				info.scopeBlock.RemoveAllDeadBlocks(info.deadBlocks, deadBlocksDict);
 
 			return numDeadBlocks;
 		}
 
-		IList<BaseBlock> findDeadBlocks() {
+		IList<BaseBlock> FindDeadBlocks() {
 			var deadBlocks = new List<BaseBlock>();
 
-			foreach (var bb in methodBlocks.getAllBaseBlocks()) {
+			foreach (var bb in methodBlocks.GetAllBaseBlocks()) {
 				if (!checkedBaseBlocks.ContainsKey(bb))
 					deadBlocks.Add(bb);
 			}
@@ -78,66 +78,66 @@ namespace de4dot.blocks {
 			return deadBlocks;
 		}
 
-		void addScopeBlock(ScopeBlock scopeBlock) {
+		void AddScopeBlock(ScopeBlock scopeBlock) {
 			scopeBlocksToCheck.Push(scopeBlock);
 		}
 
-		void processAll() {
+		void ProcessAll() {
 			bool didSomething;
 			do {
 				didSomething = false;
 				while (baseBlocksToCheck.Count > 0) {
-					processBaseBlock(baseBlocksToCheck.Pop());
+					ProcessBaseBlock(baseBlocksToCheck.Pop());
 					didSomething = true;
 				}
 				while (scopeBlocksToCheck.Count > 0) {
-					processScopeBlock(scopeBlocksToCheck.Pop());
+					ProcessScopeBlock(scopeBlocksToCheck.Pop());
 					didSomething = true;
 				}
 			} while (didSomething);
 		}
 
-		void processBaseBlock(BaseBlock baseBlock) {
+		void ProcessBaseBlock(BaseBlock baseBlock) {
 			if (baseBlock == null || checkedBaseBlocks.ContainsKey(baseBlock))
 				return;
 			checkedBaseBlocks[baseBlock] = true;
 
 			if (baseBlock is Block) {
 				var block = (Block)baseBlock;
-				foreach (var block2 in block.getTargets())
-					addBaseBlock(block2);
+				foreach (var block2 in block.GetTargets())
+					AddBaseBlock(block2);
 			}
 			else if (baseBlock is ScopeBlock) {
 				var scopeBlock = (ScopeBlock)baseBlock;
-				addScopeBlock(scopeBlock);
+				AddScopeBlock(scopeBlock);
 				if (scopeBlock.BaseBlocks != null && scopeBlock.BaseBlocks.Count > 0)
-					addBaseBlock(scopeBlock.BaseBlocks[0]);
+					AddBaseBlock(scopeBlock.BaseBlocks[0]);
 			}
 			else
 				throw new ApplicationException(string.Format("Unknown BaseBlock type {0}", baseBlock.GetType()));
 		}
 
 		// Add a block to be processed later, including all its enclosing ScopeBlocks.
-		void addBaseBlock(BaseBlock baseBlock) {
+		void AddBaseBlock(BaseBlock baseBlock) {
 			for (BaseBlock bb = baseBlock; bb != null; bb = bb.Parent)
 				baseBlocksToCheck.Push(bb);
 		}
 
-		void processScopeBlock(ScopeBlock scopeBlock) {
+		void ProcessScopeBlock(ScopeBlock scopeBlock) {
 			if (scopeBlock == null || checkedScopeBlocks.ContainsKey(scopeBlock))
 				return;
 			checkedScopeBlocks[scopeBlock] = true;
-			addBaseBlock(scopeBlock);
+			AddBaseBlock(scopeBlock);
 
 			if (scopeBlock is TryBlock) {
 				var tryBlock = (TryBlock)scopeBlock;
 				foreach (var handler in tryBlock.TryHandlerBlocks)
-					addScopeBlock(handler);
+					AddScopeBlock(handler);
 			}
 			else if (scopeBlock is TryHandlerBlock) {
 				var tryHandlerBlock = (TryHandlerBlock)scopeBlock;
-				addScopeBlock(tryHandlerBlock.FilterHandlerBlock);
-				addScopeBlock(tryHandlerBlock.HandlerBlock);
+				AddScopeBlock(tryHandlerBlock.FilterHandlerBlock);
+				AddScopeBlock(tryHandlerBlock.HandlerBlock);
 			}
 		}
 	}

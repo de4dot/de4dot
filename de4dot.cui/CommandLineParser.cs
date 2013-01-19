@@ -62,11 +62,11 @@ namespace de4dot.cui {
 				infos.Add(new Info(value, name, desc));
 			}
 
-			public IEnumerable<Info> getInfos() {
+			public IEnumerable<Info> GetInfos() {
 				return infos;
 			}
 
-			public bool getValue(string name, out object value) {
+			public bool GetValue(string name, out object value) {
 				foreach (var info in infos) {
 					if (name.Equals(info.name, StringComparison.OrdinalIgnoreCase)) {
 						value = info.value;
@@ -92,32 +92,32 @@ namespace de4dot.cui {
 			this.filesOptions.DeobfuscatorInfos = deobfuscatorInfos;
 			this.filesOptions.AssemblyClientFactory = new NewAppDomainAssemblyClientFactory();
 
-			addAllOptions();
+			AddAllOptions();
 		}
 
-		void addAllOptions() {
+		void AddAllOptions() {
 			miscOptions.Add(new OneArgOption("r", null, "Scan for .NET files in all subdirs", "dir", (val) => {
-				addSearchDir();
+				AddSearchDir();
 				searchDir = new FilesDeobfuscator.SearchDir();
-				if (!Utils.pathExists(val))
-					exitError(string.Format("Directory {0} does not exist", val));
+				if (!Utils.PathExists(val))
+					ExitError(string.Format("Directory {0} does not exist", val));
 				searchDir.InputDirectory = val;
 			}));
 			miscOptions.Add(new OneArgOption("ro", null, "Output base dir for recursively found files", "dir", (val) => {
 				if (searchDir == null)
-					exitError("Missing -r option");
+					ExitError("Missing -r option");
 				searchDir.OutputDirectory = val;
 			}));
 			miscOptions.Add(new NoArgOption("ru", null, "Skip recursively found files with unsupported obfuscator", () => {
 				if (searchDir == null)
-					exitError("Missing -r option");
+					ExitError("Missing -r option");
 				searchDir.SkipUnknownObfuscators = true;
 			}));
 			miscOptions.Add(new NoArgOption("d", null, "Detect obfuscators and exit", () => {
 				filesOptions.DetectObfuscators = true;
 			}));
 			miscOptions.Add(new OneArgOption(null, "asm-path", "Add an assembly search path", "path", (val) => {
-				TheAssemblyResolver.Instance.addSearchDirectory(val);
+				TheAssemblyResolver.Instance.AddSearchDirectory(val);
 			}));
 			miscOptions.Add(new NoArgOption(null, "dont-rename", "Don't rename classes, methods, etc.", () => {
 				filesOptions.RenameSymbols = false;
@@ -147,8 +147,8 @@ namespace de4dot.cui {
 			}));
 			miscOptions.Add(new OneArgOption(null, "default-strtyp", "Default string decrypter type", "type", (val) => {
 				object decrypterType;
-				if (!stringDecrypterTypes.getValue(val, out decrypterType))
-					exitError(string.Format("Invalid string decrypter type '{0}'", val));
+				if (!stringDecrypterTypes.GetValue(val, out decrypterType))
+					ExitError(string.Format("Invalid string decrypter type '{0}'", val));
 				defaultStringDecrypterType = (DecrypterType)decrypterType;
 			}));
 			miscOptions.Add(new OneArgOption(null, "default-strtok", "Default string decrypter method token or [type::][name][(args,...)]", "method", (val) => {
@@ -224,14 +224,14 @@ namespace de4dot.cui {
 				Logger.Instance.CanIgnoreMessages = false;
 			}));
 			miscOptions.Add(new NoArgOption("h", "help", "Show this help message", () => {
-				usage();
-				exit(0);
+				Usage();
+				Exit(0);
 			}));
 
 			defaultOption = new OneArgOption("f", null, "Name of .NET file", "file", (val) => {
-				addFile();
-				if (!Utils.fileExists(val))
-					exitError(string.Format("File \"{0}\" does not exist.", val));
+				AddFile();
+				if (!Utils.FileExists(val))
+					ExitError(string.Format("File \"{0}\" does not exist.", val));
 				newFileOptions = new ObfuscatedFile.Options {
 					Filename = val,
 					ControlFlowDeobfuscation = filesOptions.ControlFlowDeobfuscation,
@@ -246,46 +246,46 @@ namespace de4dot.cui {
 			fileOptions.Add(defaultOption);
 			fileOptions.Add(new OneArgOption("o", null, "Name of output file", "file", (val) => {
 				if (newFileOptions == null)
-					exitError("Missing input file");
-				if (string.Equals(Utils.getFullPath(newFileOptions.Filename), Utils.getFullPath(val), StringComparison.OrdinalIgnoreCase))
-					exitError(string.Format("Output file can't be same as input file ({0})", val));
+					ExitError("Missing input file");
+				if (string.Equals(Utils.GetFullPath(newFileOptions.Filename), Utils.GetFullPath(val), StringComparison.OrdinalIgnoreCase))
+					ExitError(string.Format("Output file can't be same as input file ({0})", val));
 				newFileOptions.NewFilename = val;
 			}));
 			fileOptions.Add(new OneArgOption("p", null, "Obfuscator type (see below)", "type", (val) => {
 				if (newFileOptions == null)
-					exitError("Missing input file");
-				if (!isValidObfuscatorType(val))
-					exitError(string.Format("Invalid obfuscator type '{0}'", val));
+					ExitError("Missing input file");
+				if (!IsValidObfuscatorType(val))
+					ExitError(string.Format("Invalid obfuscator type '{0}'", val));
 				newFileOptions.ForcedObfuscatorType = val;
 			}));
 			fileOptions.Add(new OneArgOption(null, "strtyp", "String decrypter type", "type", (val) => {
 				if (newFileOptions == null)
-					exitError("Missing input file");
+					ExitError("Missing input file");
 				object decrypterType;
-				if (!stringDecrypterTypes.getValue(val, out decrypterType))
-					exitError(string.Format("Invalid string decrypter type '{0}'", val));
+				if (!stringDecrypterTypes.GetValue(val, out decrypterType))
+					ExitError(string.Format("Invalid string decrypter type '{0}'", val));
 				newFileOptions.StringDecrypterType = (DecrypterType)decrypterType;
 			}));
 			fileOptions.Add(new OneArgOption(null, "strtok", "String decrypter method token or [type::][name][(args,...)]", "method", (val) => {
 				if (newFileOptions == null)
-					exitError("Missing input file");
+					ExitError("Missing input file");
 				newFileOptions.StringDecrypterMethods.Add(val);
 			}));
 
-			addOptions(miscOptions);
-			addOptions(fileOptions);
+			AddOptions(miscOptions);
+			AddOptions(fileOptions);
 			foreach (var info in deobfuscatorInfos)
-				addOptions(info.getOptions());
+				AddOptions(info.GetOptions());
 		}
 
-		void addOptions(IEnumerable<Option> options) {
+		void AddOptions(IEnumerable<Option> options) {
 			foreach (var option in options) {
-				addOption(option, option.ShortName);
-				addOption(option, option.LongName);
+				AddOption(option, option.ShortName);
+				AddOption(option, option.LongName);
 			}
 		}
 
-		void addOption(Option option, string name) {
+		void AddOption(Option option, string name) {
 			if (name == null)
 				return;
 			if (optionsDict.ContainsKey(name))
@@ -293,10 +293,10 @@ namespace de4dot.cui {
 			optionsDict[name] = option;
 		}
 
-		public void parse(string[] args) {
+		public void Parse(string[] args) {
 			if (args.Length == 0) {
-				usage();
-				exit(1);
+				Usage();
+				Exit(1);
 			}
 
 			for (int i = 0; i < args.Length; i++) {
@@ -307,7 +307,7 @@ namespace de4dot.cui {
 				if (optionsDict.TryGetValue(arg, out option)) {
 					if (option.NeedArgument) {
 						if (++i >= args.Length)
-							exitError("Missing options value");
+							ExitError("Missing options value");
 						val = args[i];
 					}
 				}
@@ -317,31 +317,31 @@ namespace de4dot.cui {
 				}
 
 				string errorString;
-				if (!option.set(val, out errorString))
-					exitError(errorString);
+				if (!option.Set(val, out errorString))
+					ExitError(errorString);
 			}
-			addFile();
-			addSearchDir();
+			AddFile();
+			AddSearchDir();
 			filesOptions.Files = files;
 			filesOptions.DefaultStringDecrypterMethods.AddRange(defaultStringDecrypterMethods);
 			filesOptions.DefaultStringDecrypterType = defaultStringDecrypterType;
 		}
 
-		void addFile() {
+		void AddFile() {
 			if (newFileOptions == null)
 				return;
 			files.Add(new ObfuscatedFile(newFileOptions, filesOptions.ModuleContext, filesOptions.AssemblyClientFactory));
 			newFileOptions = null;
 		}
 
-		void addSearchDir() {
+		void AddSearchDir() {
 			if (searchDir == null)
 				return;
 			filesOptions.SearchDirs.Add(searchDir);
 			searchDir = null;
 		}
 
-		bool isValidObfuscatorType(string type) {
+		bool IsValidObfuscatorType(string type) {
 			foreach (var info in deobfuscatorInfos) {
 				if (string.Equals(info.Type, type, StringComparison.OrdinalIgnoreCase))
 					return true;
@@ -349,38 +349,38 @@ namespace de4dot.cui {
 			return false;
 		}
 
-		void exitError(string msg) {
-			usage();
+		void ExitError(string msg) {
+			Usage();
 			Logger.Instance.LogErrorDontIgnore("\n\nERROR: {0}\n", msg);
-			exit(2);
+			Exit(2);
 		}
 
-		void exit(int exitCode) {
+		void Exit(int exitCode) {
 			throw new ExitException(exitCode);
 		}
 
-		void usage() {
-			string progName = getProgramBaseName();
+		void Usage() {
+			string progName = GetProgramBaseName();
 			Logger.n("Some of the advanced options may be incompatible, causing a nice exception.");
 			Logger.n("With great power comes great responsibility.");
 			Logger.n("");
 			Logger.n("{0} <options> <file options>", progName);
 			Logger.n("Options:");
 			foreach (var option in miscOptions)
-				printOption(option);
+				PrintOption(option);
 			Logger.n("");
 			Logger.n("File options:");
 			foreach (var option in fileOptions)
-				printOption(option);
+				PrintOption(option);
 			Logger.n("");
 			Logger.n("Deobfuscator options:");
 			foreach (var info in deobfuscatorInfos) {
 				Logger.n("Type {0} ({1})", info.Type, info.Name);
-				foreach (var option in info.getOptions())
-					printOption(option);
+				foreach (var option in info.GetOptions())
+					PrintOption(option);
 				Logger.n("");
 			}
-			printInfos("String decrypter types", stringDecrypterTypes);
+			PrintInfos("String decrypter types", stringDecrypterTypes);
 			Logger.n("");
 			Logger.n("Multiple regexes can be used if separated by '{0}'.", NameRegexes.regexSeparatorChar);
 			Logger.n("Use '{0}' if you want to invert the regex. Example: {0}^[a-z\\d]{{1,2}}${1}{0}^[A-Z]_\\d+${1}^[\\w.]+$", NameRegex.invertChar, NameRegexes.regexSeparatorChar);
@@ -392,28 +392,28 @@ namespace de4dot.cui {
 			Logger.n("{0} file1 --strtyp delegate --strtok 06000123", progName);
 		}
 
-		string getProgramBaseName() {
-			return Utils.getBaseName(Environment.GetCommandLineArgs()[0]);
+		string GetProgramBaseName() {
+			return Utils.GetBaseName(Environment.GetCommandLineArgs()[0]);
 		}
 
-		void printInfos(string desc, Infos infos) {
+		void PrintInfos(string desc, Infos infos) {
 			Logger.n("{0}", desc);
-			foreach (var info in infos.getInfos())
-				printOptionAndExplanation(info.name, info.desc);
+			foreach (var info in infos.GetInfos())
+				PrintOptionAndExplanation(info.name, info.desc);
 		}
 
-		void printOption(Option option) {
+		void PrintOption(Option option) {
 			string defaultAndDesc;
 			if (option.NeedArgument && option.Default != null)
 				defaultAndDesc = string.Format("{0} ({1})", option.Description, option.Default);
 			else
 				defaultAndDesc = option.Description;
-			printOptionAndExplanation(getOptionAndArgName(option, option.ShortName ?? option.LongName), defaultAndDesc);
+			PrintOptionAndExplanation(GetOptionAndArgName(option, option.ShortName ?? option.LongName), defaultAndDesc);
 			if (option.ShortName != null && option.LongName != null)
-				printOptionAndExplanation(option.LongName, string.Format("Same as {0}", option.ShortName));
+				PrintOptionAndExplanation(option.LongName, string.Format("Same as {0}", option.ShortName));
 		}
 
-		void printOptionAndExplanation(string option, string explanation) {
+		void PrintOptionAndExplanation(string option, string explanation) {
 			const int maxCols = 16;
 			const string prefix = "  ";
 			string left = string.Format(string.Format("{{0,-{0}}}", maxCols), option);
@@ -425,7 +425,7 @@ namespace de4dot.cui {
 				Logger.n("{0}{1} {2}", prefix, left, explanation);
 		}
 
-		string getOptionAndArgName(Option option, string optionName) {
+		string GetOptionAndArgName(Option option, string optionName) {
 			if (option.NeedArgument)
 				return optionName + " " + option.ArgumentValueName.ToUpperInvariant();
 			else

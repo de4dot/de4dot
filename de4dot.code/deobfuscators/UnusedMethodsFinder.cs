@@ -33,36 +33,36 @@ namespace de4dot.code.deobfuscators {
 			this.module = module;
 			this.removedMethods = removedMethods;
 			foreach (var method in possiblyUnusedMethods) {
-				if (method != module.ManagedEntryPoint && !removedMethods.exists(method))
+				if (method != module.ManagedEntryPoint && !removedMethods.Exists(method))
 					this.possiblyUnusedMethods[method] = true;
 			}
 		}
 
-		public IEnumerable<MethodDef> find() {
+		public IEnumerable<MethodDef> Find() {
 			if (possiblyUnusedMethods.Count == 0)
 				return possiblyUnusedMethods.Keys;
 
 			foreach (var type in module.GetTypes()) {
 				foreach (var method in type.Methods)
-					check(method);
+					Check(method);
 			}
 
 			while (notUnusedStack.Count > 0) {
 				var method = notUnusedStack.Pop();
 				if (!possiblyUnusedMethods.Remove(method))
 					continue;
-				check(method);
+				Check(method);
 			}
 
 			return possiblyUnusedMethods.Keys;
 		}
 
-		void check(MethodDef method) {
+		void Check(MethodDef method) {
 			if (method.Body == null)
 				return;
 			if (possiblyUnusedMethods.ContainsKey(method))
 				return;
-			if (removedMethods.exists(method))
+			if (removedMethods.Exists(method))
 				return;
 
 			foreach (var instr in method.Body.Instructions) {
@@ -79,7 +79,7 @@ namespace de4dot.code.deobfuscators {
 					continue;
 				}
 
-				var calledMethod = DotNetUtils.getMethod2(module, instr.Operand as IMethod);
+				var calledMethod = DotNetUtils.GetMethod2(module, instr.Operand as IMethod);
 				if (calledMethod == null)
 					continue;
 				if (possiblyUnusedMethods.ContainsKey(calledMethod))

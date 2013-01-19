@@ -32,18 +32,18 @@ namespace de4dot.code.AssemblyClient {
 			: base(version) {
 		}
 
-		public override void loadServer(string filename) {
+		public override void LoadServer(string filename) {
 			if (process != null)
 				throw new ApplicationException("Server is already loaded");
 
 			var psi = new ProcessStartInfo {
-				Arguments = string.Format("{0} {1}", Utils.shellEscape(ipcName), Utils.shellEscape(ipcUri)),
+				Arguments = string.Format("{0} {1}", Utils.ShellEscape(ipcName), Utils.ShellEscape(ipcUri)),
 				CreateNoWindow = true,
 				ErrorDialog = false,
 				FileName = filename,
 				LoadUserProfile = false,
 				UseShellExecute = false,
-				WorkingDirectory = Utils.getOurBaseDir(),
+				WorkingDirectory = Utils.GetOurBaseDir(),
 			};
 			process = Process.Start(psi);
 			if (process == null)

@@ -39,13 +39,13 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			get { return THE_TYPE; }
 		}
 
-		public override IDeobfuscator createDeobfuscator() {
+		public override IDeobfuscator CreateDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
 				ValidNameRegex = validNameRegex.get(),
 			});
 		}
 
-		protected override IEnumerable<Option> getOptionsInternal() {
+		protected override IEnumerable<Option> GetOptionsInternal() {
 			return new List<Option>() {
 			};
 		}
@@ -78,41 +78,41 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			this.options = options;
 		}
 
-		protected override int detectInternal() {
+		protected override int DetectInternal() {
 			return mainType.Detected ? 150 : 0;
 		}
 
-		protected override void scanForObfuscator() {
+		protected override void ScanForObfuscator() {
 			mainType = new MainType(module);
-			mainType.find();
+			mainType.Find();
 			methodsDecrypter = new MethodsDecrypter(module, mainType);
 			if (mainType.Detected)
-				methodsDecrypter.find();
+				methodsDecrypter.Find();
 
 			if (mainType.Detected && methodsDecrypter.Detected && methodsDecrypter.Version != null)
 				obfuscatorName += " " + methodsDecrypter.Version;
 		}
 
-		public override void deobfuscateBegin() {
-			base.deobfuscateBegin();
+		public override void DeobfuscateBegin() {
+			base.DeobfuscateBegin();
 
 			if (mainType.Detected) {
 				if (methodsDecrypter.Detected) {
-					methodsDecrypter.decrypt();
-					addTypesToBeRemoved(methodsDecrypter.DelegateTypes, "Obfuscator method delegate type");
-					addResourceToBeRemoved(methodsDecrypter.Resource, "Encrypted methods resource");
-					addTypeToBeRemoved(mainType.InvokerDelegate, "Invoker delegate type");
-					addFieldToBeRemoved(mainType.InvokerInstanceField, "Invoker delegate instance field");
+					methodsDecrypter.Decrypt();
+					AddTypesToBeRemoved(methodsDecrypter.DelegateTypes, "Obfuscator method delegate type");
+					AddResourceToBeRemoved(methodsDecrypter.Resource, "Encrypted methods resource");
+					AddTypeToBeRemoved(mainType.InvokerDelegate, "Invoker delegate type");
+					AddFieldToBeRemoved(mainType.InvokerInstanceField, "Invoker delegate instance field");
 					foreach (var pm in mainType.ProtectMethods)
-						addMethodToBeRemoved(pm, "Obfuscator 'Protect' init method");
-					mainType.cleanUp();
+						AddMethodToBeRemoved(pm, "Obfuscator 'Protect' init method");
+					mainType.CleanUp();
 				}
 				else
 					Logger.w("New ILProtector version. Can't decrypt methods (yet)");
 			}
 		}
 
-		public override IEnumerable<int> getStringDecrypterMethods() {
+		public override IEnumerable<int> GetStringDecrypterMethods() {
 			return new List<int>();
 		}
 	}

@@ -43,9 +43,9 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			this.module = module;
 		}
 
-		public void find() {
+		public void Find() {
 			foreach (var type in module.Types) {
-				var method = checkType(type);
+				var method = CheckType(type);
 				if (method == null)
 					continue;
 
@@ -53,22 +53,22 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			}
 		}
 
-		static MethodDef checkType(TypeDef type) {
+		static MethodDef CheckType(TypeDef type) {
 			if (type.HasFields)
 				return null;
-			return checkMethods(type);
+			return CheckMethods(type);
 		}
 
-		static MethodDef checkMethods(TypeDef type) {
+		static MethodDef CheckMethods(TypeDef type) {
 			MethodDef decryptMethod = null;
 			foreach (var method in type.Methods) {
 				if (method.Name == ".cctor")
 					continue;
 				if (!method.IsStatic || method.Body == null)
 					return null;
-				if (!DotNetUtils.isMethod(method, "System.String", "(System.String)"))
+				if (!DotNetUtils.IsMethod(method, "System.String", "(System.String)"))
 					return null;
-				if (!hasDouble(method, 3992.0))
+				if (!HasDouble(method, 3992.0))
 					return null;
 
 				decryptMethod = method;
@@ -76,7 +76,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			return decryptMethod;
 		}
 
-		static bool hasDouble(MethodDef method, double value) {
+		static bool HasDouble(MethodDef method, double value) {
 			if (method == null || method.Body == null)
 				return false;
 			foreach (var instr in method.Body.Instructions) {
@@ -88,7 +88,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			return false;
 		}
 
-		public string decrypt(string s) {
+		public string Decrypt(string s) {
 			var bytes = new byte[s.Length];
 			for (int i = 0; i < s.Length; i++)
 				bytes[i] = (byte)(s[i] ^ 0x3F);

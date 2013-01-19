@@ -52,36 +52,36 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			this.resourceDecrypter = resourceDecrypter;
 		}
 
-		public void find() {
-			var cctor = DotNetUtils.getModuleTypeCctor(module);
+		public void Find() {
+			var cctor = DotNetUtils.GetModuleTypeCctor(module);
 			if (cctor == null)
 				return;
 
-			foreach (var method in DotNetUtils.getCalledMethods(module, cctor)) {
+			foreach (var method in DotNetUtils.GetCalledMethods(module, cctor)) {
 				if (method.Name == ".cctor" || method.Name == ".ctor")
 					continue;
-				if (!method.IsStatic || !DotNetUtils.isMethod(method, "System.Void", "()"))
+				if (!method.IsStatic || !DotNetUtils.IsMethod(method, "System.Void", "()"))
 					continue;
-				if (checkType(method))
+				if (CheckType(method))
 					break;
 			}
 		}
 
-		public EmbeddedResource mergeResources() {
+		public EmbeddedResource MergeResources() {
 			if (mergedIt)
 				return null;
 
-			var resource = DotNetUtils.getResource(module, getResourceNames()) as EmbeddedResource;
+			var resource = DotNetUtils.GetResource(module, GetResourceNames()) as EmbeddedResource;
 			if (resource == null)
 				return null;
 
 			resource.Data.Position = 0;
-			DeobUtils.decryptAndAddResources(module, resource.Name.String, () => resourceDecrypter.decrypt(resource.Data.CreateStream()));
+			DeobUtils.DecryptAndAddResources(module, resource.Name.String, () => resourceDecrypter.Decrypt(resource.Data.CreateStream()));
 			mergedIt = true;
 			return resource;
 		}
 
-		IEnumerable<string> getResourceNames() {
+		IEnumerable<string> GetResourceNames() {
 			var names = new List<string>();
 
 			switch (resolverVersion) {
@@ -101,15 +101,15 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return names;
 		}
 
-		bool checkType(MethodDef initMethod) {
+		bool CheckType(MethodDef initMethod) {
 			if (!initMethod.HasBody)
 				return false;
-			if (DotNetUtils.findFieldType(initMethod.DeclaringType, "System.Reflection.Assembly", true) == null)
+			if (DotNetUtils.FindFieldType(initMethod.DeclaringType, "System.Reflection.Assembly", true) == null)
 				return false;
 
-			resolverVersion = checkSetupMethod(initMethod);
+			resolverVersion = CheckSetupMethod(initMethod);
 			if (resolverVersion == ResolverVersion.None)
-				resolverVersion = checkSetupMethod(initMethod.DeclaringType.FindStaticConstructor());
+				resolverVersion = CheckSetupMethod(initMethod.DeclaringType.FindStaticConstructor());
 			if (resolverVersion == ResolverVersion.None)
 				return false;
 
@@ -118,11 +118,11 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return true;
 		}
 
-		ResolverVersion checkSetupMethod(MethodDef setupMethod) {
+		ResolverVersion CheckSetupMethod(MethodDef setupMethod) {
 			var instructions = setupMethod.Body.Instructions;
 			int foundCount = 0;
 			for (int i = 0; i < instructions.Count; i++) {
-				var instrs = DotNetUtils.getInstructions(instructions, i, OpCodes.Ldnull, OpCodes.Ldftn, OpCodes.Newobj);
+				var instrs = DotNetUtils.GetInstructions(instructions, i, OpCodes.Ldnull, OpCodes.Ldftn, OpCodes.Newobj);
 				if (instrs == null)
 					continue;
 

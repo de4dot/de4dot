@@ -30,13 +30,13 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			this.simpleDeobfuscator = simpleDeobfuscator;
 		}
 
-		public void findDelegateCreator() {
+		public void FindDelegateCreator() {
 			foreach (var type in module.Types) {
-				var creatorMethod = checkType(type);
+				var creatorMethod = CheckType(type);
 				if (creatorMethod == null)
 					continue;
 
-				setDelegateCreatorMethod(creatorMethod);
+				SetDelegateCreatorMethod(creatorMethod);
 				return;
 			}
 		}
@@ -44,36 +44,36 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		static readonly string[] requiredFields = new string[] {
 			"System.Reflection.Module",
 		};
-		static MethodDef checkType(TypeDef type) {
-			if (!new FieldTypes(type).exactly(requiredFields))
+		static MethodDef CheckType(TypeDef type) {
+			if (!new FieldTypes(type).Exactly(requiredFields))
 				return null;
 			if (type.FindStaticConstructor() == null)
 				return null;
 
-			return checkMethods(type);
+			return CheckMethods(type);
 		}
 
-		static MethodDef checkMethods(TypeDef type) {
+		static MethodDef CheckMethods(TypeDef type) {
 			MethodDef creatorMethod = null;
 			foreach (var method in type.Methods) {
 				if (method.Body == null)
 					return null;
 				if (method.Name == ".cctor" || method.Name == ".ctor")
 					continue;
-				if (!DotNetUtils.isMethod(method, "System.Void", "(System.Int32)"))
+				if (!DotNetUtils.IsMethod(method, "System.Void", "(System.Int32)"))
 					return null;
-				if (!DeobUtils.hasInteger(method, 0x02000000))
+				if (!DeobUtils.HasInteger(method, 0x02000000))
 					return null;
-				if (!DeobUtils.hasInteger(method, 0x06000000))
+				if (!DeobUtils.HasInteger(method, 0x06000000))
 					return null;
 				creatorMethod = method;
 			}
 			return creatorMethod;
 		}
 
-		protected override object checkCctor(ref TypeDef type, MethodDef cctor) {
-			simpleDeobfuscator.deobfuscate(cctor);
-			var realType = getDelegateType(cctor);
+		protected override object CheckCctor(ref TypeDef type, MethodDef cctor) {
+			simpleDeobfuscator.Deobfuscate(cctor);
+			var realType = GetDelegateType(cctor);
 			if (realType == null)
 				return null;
 			type = realType;
@@ -81,7 +81,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			return this;
 		}
 
-		TypeDef getDelegateType(MethodDef method) {
+		TypeDef GetDelegateType(MethodDef method) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 1; i++) {
 				var ldci4 = instrs[i];
@@ -92,7 +92,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				if (call.OpCode.Code != Code.Call)
 					continue;
 				var calledMethod = call.Operand as MethodDef;
-				if (calledMethod == null || !isDelegateCreatorMethod(calledMethod))
+				if (calledMethod == null || !IsDelegateCreatorMethod(calledMethod))
 					continue;
 
 				return module.ResolveToken(0x02000000 + ldci4.GetLdcI4Value()) as TypeDef;
@@ -100,7 +100,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			return null;
 		}
 
-		protected override void getCallInfo(object context, FieldDef field, out IMethod calledMethod, out OpCode callOpcode) {
+		protected override void GetCallInfo(object context, FieldDef field, out IMethod calledMethod, out OpCode callOpcode) {
 			calledMethod = module.ResolveToken(0x06000000 + field.MDToken.ToInt32()) as IMethod;
 			callOpcode = OpCodes.Call;
 		}

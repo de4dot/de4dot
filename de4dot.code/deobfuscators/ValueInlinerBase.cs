@@ -48,33 +48,33 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		public IEnumerable<MethodDef> Methods {
-			get { return decrypterMethods.getKeys(); }
+			get { return decrypterMethods.GetKeys(); }
 		}
 
-		public void add(MethodDef method, Func<MethodDef, MethodSpec, object[], object> handler) {
+		public void Add(MethodDef method, Func<MethodDef, MethodSpec, object[], object> handler) {
 			if (method == null)
 				return;
-			if (decrypterMethods.find(method) != null)
+			if (decrypterMethods.Find(method) != null)
 				throw new ApplicationException(string.Format("Handler for method {0:X8} has already been added", method.MDToken.ToInt32()));
 			if (method != null)
-				decrypterMethods.add(method, handler);
+				decrypterMethods.Add(method, handler);
 		}
 
-		protected override void inlineAllCalls() {
+		protected override void InlineAllCalls() {
 			foreach (var tmp in callResults) {
 				var callResult = (MyCallResult)tmp;
-				var handler = decrypterMethods.find(callResult.methodRef);
+				var handler = decrypterMethods.Find(callResult.methodRef);
 				callResult.returnValue = handler((MethodDef)callResult.methodRef, callResult.gim, callResult.args);
 			}
 		}
 
-		protected override CallResult createCallResult(IMethod method, MethodSpec gim, Block block, int callInstrIndex) {
-			if (decrypterMethods.find(method) == null)
+		protected override CallResult CreateCallResult(IMethod method, MethodSpec gim, Block block, int callInstrIndex) {
+			if (decrypterMethods.Find(method) == null)
 				return null;
 			return new MyCallResult(block, callInstrIndex, method, gim);
 		}
 
-		protected bool removeUnboxInstruction(Block block, int index, string unboxType) {
+		protected bool RemoveUnboxInstruction(Block block, int index, string unboxType) {
 			if (!removeUnbox)
 				return false;
 			var instrs = block.Instructions;
@@ -86,71 +86,71 @@ namespace de4dot.code.deobfuscators {
 			var type = unbox.Operand as ITypeDefOrRef;
 			if (type == null || type.FullName != unboxType)
 				return false;
-			block.remove(index, 1);
+			block.Remove(index, 1);
 			return true;
 		}
 	}
 
 	class BooleanValueInliner : ValueInlinerBase<bool> {
-		protected override void inlineReturnValues(IList<CallResult> callResults) {
+		protected override void InlineReturnValues(IList<CallResult> callResults) {
 			foreach (var callResult in callResults) {
 				var block = callResult.block;
 				int num = callResult.callEndIndex - callResult.callStartIndex + 1;
 
-				block.replace(callResult.callStartIndex, num, Instruction.CreateLdcI4((bool)callResult.returnValue ? 1 : 0));
-				removeUnboxInstruction(block, callResult.callStartIndex + 1, "System.Boolean");
+				block.Replace(callResult.callStartIndex, num, Instruction.CreateLdcI4((bool)callResult.returnValue ? 1 : 0));
+				RemoveUnboxInstruction(block, callResult.callStartIndex + 1, "System.Boolean");
 				Logger.v("Decrypted boolean: {0}", callResult.returnValue);
 			}
 		}
 	}
 
 	class Int32ValueInliner : ValueInlinerBase<int> {
-		protected override void inlineReturnValues(IList<CallResult> callResults) {
+		protected override void InlineReturnValues(IList<CallResult> callResults) {
 			foreach (var callResult in callResults) {
 				var block = callResult.block;
 				int num = callResult.callEndIndex - callResult.callStartIndex + 1;
 
-				block.replace(callResult.callStartIndex, num, Instruction.CreateLdcI4((int)callResult.returnValue));
-				removeUnboxInstruction(block, callResult.callStartIndex + 1, "System.Int32");
+				block.Replace(callResult.callStartIndex, num, Instruction.CreateLdcI4((int)callResult.returnValue));
+				RemoveUnboxInstruction(block, callResult.callStartIndex + 1, "System.Int32");
 				Logger.v("Decrypted int32: {0}", callResult.returnValue);
 			}
 		}
 	}
 
 	class Int64ValueInliner : ValueInlinerBase<long> {
-		protected override void inlineReturnValues(IList<CallResult> callResults) {
+		protected override void InlineReturnValues(IList<CallResult> callResults) {
 			foreach (var callResult in callResults) {
 				var block = callResult.block;
 				int num = callResult.callEndIndex - callResult.callStartIndex + 1;
 
-				block.replace(callResult.callStartIndex, num, OpCodes.Ldc_I8.ToInstruction((long)callResult.returnValue));
-				removeUnboxInstruction(block, callResult.callStartIndex + 1, "System.Int64");
+				block.Replace(callResult.callStartIndex, num, OpCodes.Ldc_I8.ToInstruction((long)callResult.returnValue));
+				RemoveUnboxInstruction(block, callResult.callStartIndex + 1, "System.Int64");
 				Logger.v("Decrypted int64: {0}", callResult.returnValue);
 			}
 		}
 	}
 
 	class SingleValueInliner : ValueInlinerBase<float> {
-		protected override void inlineReturnValues(IList<CallResult> callResults) {
+		protected override void InlineReturnValues(IList<CallResult> callResults) {
 			foreach (var callResult in callResults) {
 				var block = callResult.block;
 				int num = callResult.callEndIndex - callResult.callStartIndex + 1;
 
-				block.replace(callResult.callStartIndex, num, OpCodes.Ldc_R4.ToInstruction((float)callResult.returnValue));
-				removeUnboxInstruction(block, callResult.callStartIndex + 1, "System.Single");
+				block.Replace(callResult.callStartIndex, num, OpCodes.Ldc_R4.ToInstruction((float)callResult.returnValue));
+				RemoveUnboxInstruction(block, callResult.callStartIndex + 1, "System.Single");
 				Logger.v("Decrypted single: {0}", callResult.returnValue);
 			}
 		}
 	}
 
 	class DoubleValueInliner : ValueInlinerBase<double> {
-		protected override void inlineReturnValues(IList<CallResult> callResults) {
+		protected override void InlineReturnValues(IList<CallResult> callResults) {
 			foreach (var callResult in callResults) {
 				var block = callResult.block;
 				int num = callResult.callEndIndex - callResult.callStartIndex + 1;
 
-				block.replace(callResult.callStartIndex, num, OpCodes.Ldc_R8.ToInstruction((double)callResult.returnValue));
-				removeUnboxInstruction(block, callResult.callStartIndex + 1, "System.Double");
+				block.Replace(callResult.callStartIndex, num, OpCodes.Ldc_R8.ToInstruction((double)callResult.returnValue));
+				RemoveUnboxInstruction(block, callResult.callStartIndex + 1, "System.Double");
 				Logger.v("Decrypted double: {0}", callResult.returnValue);
 			}
 		}

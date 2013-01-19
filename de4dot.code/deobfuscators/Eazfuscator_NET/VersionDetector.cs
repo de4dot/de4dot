@@ -29,10 +29,10 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 
 		public VersionDetector(ModuleDefMD module, StringDecrypter stringDecrypter) {
 			this.stringDecrypter = stringDecrypter;
-			this.frameworkType = DotNetUtils.getFrameworkType(module);
+			this.frameworkType = DotNetUtils.GetFrameworkType(module);
 		}
 
-		public string detect() {
+		public string Detect() {
 			var decryptStringType = stringDecrypter.Type;
 			var decryptStringMethod = stringDecrypter.Method;
 			if (decryptStringType == null || decryptStringMethod == null)
@@ -51,7 +51,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			if (cctor == null)
 				return null;
 
-			bool hasConstantM2 = DeobUtils.hasInteger(decryptStringMethod, -2);
+			bool hasConstantM2 = DeobUtils.HasInteger(decryptStringMethod, -2);
 
 			/////////////////////////////////////////////////////////////////
 			/////////////////////////////////////////////////////////////////
@@ -64,7 +64,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				"System.Int16",
 				"System.Boolean",
 			};
-			var locals11 = createLocalsArray(
+			var locals11 = CreateLocalsArray(
 				"System.Boolean",
 				"System.Byte[]",
 				"System.Char[]",
@@ -82,8 +82,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				decryptStringMethod.Body.MaxStack >= 35 &&
 				decryptStringMethod.Body.MaxStack <= 50 &&
 				decryptStringMethod.Body.ExceptionHandlers.Count == 0 &&
-				new LocalTypes(decryptStringMethod).exactly(locals11) &&
-				checkTypeFields(fields11)) {
+				new LocalTypes(decryptStringMethod).Exactly(locals11) &&
+				CheckTypeFields(fields11)) {
 				return "1.1 - 1.2";
 			}
 
@@ -99,7 +99,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				"System.Boolean",
 				"System.Byte[]",
 			};
-			var locals13 = createLocalsArray(
+			var locals13 = CreateLocalsArray(
 				"System.Boolean",
 				"System.Byte",
 				"System.Byte[]",
@@ -118,8 +118,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				decryptStringMethod.Body.MaxStack >= 35 &&
 				decryptStringMethod.Body.MaxStack <= 50 &&
 				decryptStringMethod.Body.ExceptionHandlers.Count == 0 &&
-				new LocalTypes(decryptStringMethod).exactly(locals13) &&
-				checkTypeFields(fields13)) {
+				new LocalTypes(decryptStringMethod).Exactly(locals13) &&
+				CheckTypeFields(fields13)) {
 				return "1.3";
 			}
 
@@ -135,7 +135,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				"System.Boolean",
 				"System.Byte[]",
 			};
-			var locals14 = createLocalsArray(
+			var locals14 = CreateLocalsArray(
 				"System.Boolean",
 				"System.Byte",
 				"System.Byte[]",
@@ -154,8 +154,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				decryptStringMethod.Body.MaxStack >= 150 &&
 				decryptStringMethod.Body.MaxStack <= 200 &&
 				decryptStringMethod.Body.ExceptionHandlers.Count == 0 &&
-				new LocalTypes(decryptStringMethod).exactly(locals14) &&
-				checkTypeFields(fields14)) {
+				new LocalTypes(decryptStringMethod).Exactly(locals14) &&
+				CheckTypeFields(fields14)) {
 				return "1.4 - 2.3";
 			}
 
@@ -171,7 +171,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				"System.Boolean",
 				"System.Byte[]",
 			};
-			var locals24 = createLocalsArray(
+			var locals24 = CreateLocalsArray(
 				"System.Boolean",
 				"System.Byte",
 				"System.Byte[]",
@@ -191,8 +191,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				decryptStringMethod.Body.MaxStack >= 1 &&
 				decryptStringMethod.Body.MaxStack <= 8 &&
 				decryptStringMethod.Body.ExceptionHandlers.Count == 0 &&
-				new LocalTypes(decryptStringMethod).exactly(locals24) &&
-				checkTypeFields(fields24)) {
+				new LocalTypes(decryptStringMethod).Exactly(locals24) &&
+				CheckTypeFields(fields24)) {
 				return "2.4 - 2.5";
 			}
 
@@ -208,7 +208,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				"System.Boolean",
 				"System.Byte[]",
 			};
-			var locals26 = createLocalsArray(
+			var locals26 = CreateLocalsArray(
 				"System.Boolean",
 				"System.Byte",
 				"System.Byte[]",
@@ -229,8 +229,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				decryptStringMethod.Body.MaxStack >= 1 &&
 				decryptStringMethod.Body.MaxStack <= 8 &&
 				decryptStringMethod.Body.ExceptionHandlers.Count == 1 &&
-				new LocalTypes(decryptStringMethod).exactly(locals26) &&
-				checkTypeFields(fields26)) {
+				new LocalTypes(decryptStringMethod).Exactly(locals26) &&
+				CheckTypeFields(fields26)) {
 				return "2.6";
 			}
 
@@ -246,7 +246,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				"System.Boolean",
 				"System.Byte[]",
 			};
-			var locals27 = createLocalsArray(
+			var locals27 = CreateLocalsArray(
 				"System.Boolean",
 				"System.Byte",
 				"System.Byte[]",
@@ -267,8 +267,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				decryptStringMethod.Body.MaxStack >= 1 &&
 				decryptStringMethod.Body.MaxStack <= 8 &&
 				decryptStringMethod.Body.ExceptionHandlers.Count == 1 &&
-				new LocalTypes(decryptStringMethod).exactly(locals27) &&
-				checkTypeFields(fields27)) {
+				new LocalTypes(decryptStringMethod).Exactly(locals27) &&
+				CheckTypeFields(fields27)) {
 				return "2.7";
 			}
 
@@ -285,7 +285,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				"System.Byte[]",
 				"System.Boolean",
 			};
-			var locals28 = createLocalsArray(
+			var locals28 = CreateLocalsArray(
 				"System.Boolean",
 				"System.Byte",
 				"System.Byte[]",
@@ -306,8 +306,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				decryptStringMethod.Body.MaxStack >= 1 &&
 				decryptStringMethod.Body.MaxStack <= 8 &&
 				decryptStringMethod.Body.ExceptionHandlers.Count == 1 &&
-				new LocalTypes(decryptStringMethod).exactly(locals28) &&
-				checkTypeFields(fields28)) {
+				new LocalTypes(decryptStringMethod).Exactly(locals28) &&
+				CheckTypeFields(fields28)) {
 				return "2.8";
 			}
 
@@ -323,7 +323,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				"System.Int32",
 				"System.Byte[]",
 			};
-			var locals29 = createLocalsArray(
+			var locals29 = CreateLocalsArray(
 				"System.Boolean",
 				"System.Byte",
 				"System.Byte[]",
@@ -349,8 +349,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				decryptStringMethod.Body.MaxStack >= 1 &&
 				decryptStringMethod.Body.MaxStack <= 8 &&
 				(decryptStringMethod.Body.ExceptionHandlers.Count == 1 || decryptStringMethod.Body.ExceptionHandlers.Count == 2) &&
-				new LocalTypes(decryptStringMethod).exactly(locals29) &&
-				checkTypeFields(fields29)) {
+				new LocalTypes(decryptStringMethod).Exactly(locals29) &&
+				CheckTypeFields(fields29)) {
 				return "2.9";
 			}
 
@@ -366,7 +366,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				"System.Int32",
 				"System.Byte[]",
 			};
-			var locals30 = createLocalsArray(
+			var locals30 = CreateLocalsArray(
 				"System.Boolean",
 				"System.Byte",
 				"System.Byte[]",
@@ -383,15 +383,15 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				"System.String",
 				"System.Type"
 			);
-			var olocals30 = createLocalsArray(
+			var olocals30 = CreateLocalsArray(
 				"System.Int32"
 			);
 			if (otherMethods.Count == 1 &&
 				decryptStringType.NestedTypes.Count == 0 &&
-				DotNetUtils.isMethod(otherMethods[0], "System.Int32", "(System.Byte[],System.Int32,System.Byte[])") &&
+				DotNetUtils.IsMethod(otherMethods[0], "System.Int32", "(System.Byte[],System.Int32,System.Byte[])") &&
 				otherMethods[0].IsPrivate &&
 				otherMethods[0].IsStatic &&
-				new LocalTypes(otherMethods[0]).exactly(olocals30) &&
+				new LocalTypes(otherMethods[0]).Exactly(olocals30) &&
 				!hasConstantM2 &&
 				decryptStringMethod.IsNoInlining &&
 				decryptStringMethod.IsAssembly &&
@@ -399,8 +399,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				decryptStringMethod.Body.MaxStack >= 1 &&
 				decryptStringMethod.Body.MaxStack <= 8 &&
 				(decryptStringMethod.Body.ExceptionHandlers.Count == 1 || decryptStringMethod.Body.ExceptionHandlers.Count == 2) &&
-				new LocalTypes(decryptStringMethod).exactly(locals30) &&
-				checkTypeFields(fields30)) {
+				new LocalTypes(decryptStringMethod).Exactly(locals30) &&
+				CheckTypeFields(fields30)) {
 				return "3.0";
 			}
 
@@ -416,7 +416,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				"System.Int32",
 				"System.Byte[]",
 			};
-			var locals31 = createLocalsArray(
+			var locals31 = CreateLocalsArray(
 				"System.Boolean",
 				"System.Byte",
 				"System.Byte[]",
@@ -433,15 +433,15 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				"System.String",
 				"System.Type"
 			);
-			var olocals31 = createLocalsArray(
+			var olocals31 = CreateLocalsArray(
 				"System.Int32"
 			);
 			if (otherMethods.Count == 1 &&
 				decryptStringType.NestedTypes.Count == 0 &&
-				DotNetUtils.isMethod(otherMethods[0], "System.Int32", "(System.Byte[],System.Int32,System.Byte[])") &&
+				DotNetUtils.IsMethod(otherMethods[0], "System.Int32", "(System.Byte[],System.Int32,System.Byte[])") &&
 				otherMethods[0].IsPrivate &&
 				otherMethods[0].IsStatic &&
-				new LocalTypes(otherMethods[0]).exactly(olocals31) &&
+				new LocalTypes(otherMethods[0]).Exactly(olocals31) &&
 				hasConstantM2 &&
 				decryptStringMethod.IsNoInlining &&
 				decryptStringMethod.IsAssembly &&
@@ -449,8 +449,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				decryptStringMethod.Body.MaxStack >= 1 &&
 				decryptStringMethod.Body.MaxStack <= 8 &&
 				(decryptStringMethod.Body.ExceptionHandlers.Count == 1 || decryptStringMethod.Body.ExceptionHandlers.Count == 2) &&
-				new LocalTypes(decryptStringMethod).exactly(locals31) &&
-				checkTypeFields(fields31)) {
+				new LocalTypes(decryptStringMethod).Exactly(locals31) &&
+				CheckTypeFields(fields31)) {
 				return "3.1";
 			}
 
@@ -467,7 +467,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				"System.Byte[]",
 				"System.Int32",
 			};
-			var locals32 = createLocalsArray(
+			var locals32 = CreateLocalsArray(
 				"System.Boolean",
 				"System.Byte",
 				"System.Byte[]",
@@ -485,15 +485,15 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				"System.String",
 				"System.Type"
 			);
-			var olocals32 = createLocalsArray(
+			var olocals32 = CreateLocalsArray(
 				"System.Int32"
 			);
 			if (otherMethods.Count == 1 &&
 				decryptStringType.NestedTypes.Count == 0 &&
-				DotNetUtils.isMethod(otherMethods[0], "System.Void", "(System.Byte[],System.Int32,System.Byte[])") &&
+				DotNetUtils.IsMethod(otherMethods[0], "System.Void", "(System.Byte[],System.Int32,System.Byte[])") &&
 				otherMethods[0].IsPrivate &&
 				otherMethods[0].IsStatic &&
-				new LocalTypes(otherMethods[0]).exactly(olocals32) &&
+				new LocalTypes(otherMethods[0]).Exactly(olocals32) &&
 				hasConstantM2 &&
 				decryptStringMethod.IsNoInlining &&
 				decryptStringMethod.IsAssembly &&
@@ -501,8 +501,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				decryptStringMethod.Body.MaxStack >= 1 &&
 				decryptStringMethod.Body.MaxStack <= 8 &&
 				(decryptStringMethod.Body.ExceptionHandlers.Count == 1 || decryptStringMethod.Body.ExceptionHandlers.Count == 2) &&
-				new LocalTypes(decryptStringMethod).exactly(locals32) &&
-				checkTypeFields(fields32)) {
+				new LocalTypes(decryptStringMethod).Exactly(locals32) &&
+				CheckTypeFields(fields32)) {
 				return "3.2";
 			}
 
@@ -522,7 +522,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					"System.Int32",
 					decryptStringType.NestedTypes[0].FullName,
 				};
-				var locals33 = createLocalsArray(
+				var locals33 = CreateLocalsArray(
 					"System.Boolean",
 					"System.Byte",
 					"System.Byte[]",
@@ -540,15 +540,15 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					"System.String",
 					"System.Type"
 				);
-				var olocals33 = createLocalsArray(
+				var olocals33 = CreateLocalsArray(
 					"System.Int32"
 				);
 				if (otherMethods.Count == 1 &&
 					decryptStringType.NestedTypes.Count == 1 &&
-					DotNetUtils.isMethod(otherMethods[0], "System.Void", "(System.Byte[],System.Int32,System.Byte[])") &&
+					DotNetUtils.IsMethod(otherMethods[0], "System.Void", "(System.Byte[],System.Int32,System.Byte[])") &&
 					otherMethods[0].IsPrivate &&
 					otherMethods[0].IsStatic &&
-					new LocalTypes(otherMethods[0]).exactly(olocals33) &&
+					new LocalTypes(otherMethods[0]).Exactly(olocals33) &&
 					hasConstantM2 &&
 					decryptStringMethod.IsNoInlining &&
 					decryptStringMethod.IsAssembly &&
@@ -556,8 +556,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					decryptStringMethod.Body.MaxStack >= 1 &&
 					decryptStringMethod.Body.MaxStack <= 8 &&
 					(decryptStringMethod.Body.ExceptionHandlers.Count == 1 || decryptStringMethod.Body.ExceptionHandlers.Count == 2) &&
-					new LocalTypes(decryptStringMethod).exactly(locals33) &&
-					checkTypeFields(fields33)) {
+					new LocalTypes(decryptStringMethod).Exactly(locals33) &&
+					CheckTypeFields(fields33)) {
 					return "3.3.29 - 3.3.57 (BETA)";
 				}
 			}
@@ -568,22 +568,22 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 
 			if (decryptStringType.NestedTypes.Count == 3) {
 				var fields33 = new string[] {
-					getNestedTypeName(0),
-					getNestedTypeName(1),
+					GetNestedTypeName(0),
+					GetNestedTypeName(1),
 					"System.Byte[]",
 					"System.Int16",
 					"System.Int32",
 					"System.Byte[]",
 					"System.Int32",
 					"System.Int32",
-					getNestedTypeName(2),
+					GetNestedTypeName(2),
 				};
-				var locals33 = createLocalsArray(
+				var locals33 = CreateLocalsArray(
 					"System.Boolean",
 					"System.Byte",
 					"System.Byte[]",
 					"System.Char[]",
-					getNestedTypeName(0),
+					GetNestedTypeName(0),
 					"System.Diagnostics.StackFrame",
 					"System.Diagnostics.StackTrace",
 					"System.Int16",
@@ -596,23 +596,23 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					"System.String",
 					"System.Type"
 				);
-				var olocals33 = createLocalsArray(
+				var olocals33 = CreateLocalsArray(
 					"System.Int32"
 				);
 				if (otherMethods.Count == 1 &&
 					decryptStringType.NestedTypes.Count == 3 &&
-					DotNetUtils.isMethod(otherMethods[0], "System.Void", "(System.Byte[],System.Int32,System.Byte[])") &&
+					DotNetUtils.IsMethod(otherMethods[0], "System.Void", "(System.Byte[],System.Int32,System.Byte[])") &&
 					otherMethods[0].IsPrivate &&
 					otherMethods[0].IsStatic &&
-					new LocalTypes(otherMethods[0]).exactly(olocals33) &&
+					new LocalTypes(otherMethods[0]).Exactly(olocals33) &&
 					decryptStringMethod.IsNoInlining &&
 					decryptStringMethod.IsAssembly &&
 					!decryptStringMethod.IsSynchronized &&
 					decryptStringMethod.Body.MaxStack >= 1 &&
 					decryptStringMethod.Body.MaxStack <= 8 &&
 					(decryptStringMethod.Body.ExceptionHandlers.Count == 1 || decryptStringMethod.Body.ExceptionHandlers.Count == 2) &&
-					new LocalTypes(decryptStringMethod).exactly(locals33) &&
-					checkTypeFields(fields33)) {
+					new LocalTypes(decryptStringMethod).Exactly(locals33) &&
+					CheckTypeFields(fields33)) {
 					return "3.3";
 				}
 
@@ -621,22 +621,22 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				/////////////////////////////////////////////////////////////////
 
 				var fields33_149 = new string[] {
-					getNestedTypeName(0),
-					getNestedTypeName(1),
+					GetNestedTypeName(0),
+					GetNestedTypeName(1),
 					"System.Byte[]",
 					"System.Int16",
 					"System.Int32",
 					"System.Byte[]",
 					"System.Int32",
 					"System.Int32",
-					getNestedTypeName(2),
+					GetNestedTypeName(2),
 				};
-				var locals33_149 = createLocalsArray(
+				var locals33_149 = CreateLocalsArray(
 					"System.Boolean",
 					"System.Byte",
 					"System.Byte[]",
 					"System.Char[]",
-					getNestedTypeName(0),
+					GetNestedTypeName(0),
 					"System.Diagnostics.StackFrame",
 					"System.Diagnostics.StackTrace",
 					"System.Int16",
@@ -650,23 +650,23 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					"System.Text.StringBuilder",
 					"System.Type"
 				);
-				var olocals33_149 = createLocalsArray(
+				var olocals33_149 = CreateLocalsArray(
 					"System.Int32"
 				);
 				if (otherMethods.Count == 1 &&
 					decryptStringType.NestedTypes.Count == 3 &&
-					DotNetUtils.isMethod(otherMethods[0], "System.Void", "(System.Byte[],System.Int32,System.Byte[])") &&
+					DotNetUtils.IsMethod(otherMethods[0], "System.Void", "(System.Byte[],System.Int32,System.Byte[])") &&
 					otherMethods[0].IsPrivate &&
 					otherMethods[0].IsStatic &&
-					new LocalTypes(otherMethods[0]).exactly(olocals33_149) &&
+					new LocalTypes(otherMethods[0]).Exactly(olocals33_149) &&
 					decryptStringMethod.IsNoInlining &&
 					decryptStringMethod.IsAssembly &&
 					!decryptStringMethod.IsSynchronized &&
 					decryptStringMethod.Body.MaxStack >= 1 &&
 					decryptStringMethod.Body.MaxStack <= 8 &&
 					(decryptStringMethod.Body.ExceptionHandlers.Count == 1 || decryptStringMethod.Body.ExceptionHandlers.Count == 2) &&
-					new LocalTypes(decryptStringMethod).exactly(locals33_149) &&
-					checkTypeFields2(fields33_149)) {
+					new LocalTypes(decryptStringMethod).Exactly(locals33_149) &&
+					CheckTypeFields2(fields33_149)) {
 					return "3.3.149 - 3.4";	// 3.3.149+ (but not SL or CF)
 				}
 
@@ -675,23 +675,23 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				/////////////////////////////////////////////////////////////////
 
 				var fields35 = new string[] {
-					getNestedTypeName(0),
-					getNestedTypeName(1),
+					GetNestedTypeName(0),
+					GetNestedTypeName(1),
 					"System.Byte[]",
 					"System.Int16",
 					"System.Int32",
 					"System.Byte[]",
 					"System.Int32",
 					"System.Int32",
-					getNestedTypeName(2),
+					GetNestedTypeName(2),
 				};
-				var locals35 = createLocalsArray(
+				var locals35 = CreateLocalsArray(
 					"System.Boolean",
 					"System.Byte",
 					"System.Byte[]",
 					"System.Char[]",
 					"System.Collections.Generic.IEnumerator`1<System.Int32>",
-					getNestedTypeName(0),
+					GetNestedTypeName(0),
 					"System.Diagnostics.StackFrame",
 					"System.Diagnostics.StackTrace",
 					"System.Int16",
@@ -705,23 +705,23 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					"System.Text.StringBuilder",
 					"System.Type"
 				);
-				var olocals35 = createLocalsArray(
+				var olocals35 = CreateLocalsArray(
 					"System.Int32"
 				);
 				if (otherMethods.Count == 1 &&
 					decryptStringType.NestedTypes.Count == 3 &&
-					DotNetUtils.isMethod(otherMethods[0], "System.Void", "(System.Byte[],System.Int32,System.Byte[])") &&
+					DotNetUtils.IsMethod(otherMethods[0], "System.Void", "(System.Byte[],System.Int32,System.Byte[])") &&
 					otherMethods[0].IsPrivate &&
 					otherMethods[0].IsStatic &&
-					new LocalTypes(otherMethods[0]).exactly(olocals35) &&
+					new LocalTypes(otherMethods[0]).Exactly(olocals35) &&
 					decryptStringMethod.IsNoInlining &&
 					decryptStringMethod.IsAssembly &&
 					!decryptStringMethod.IsSynchronized &&
 					decryptStringMethod.Body.MaxStack >= 1 &&
 					decryptStringMethod.Body.MaxStack <= 8 &&
 					decryptStringMethod.Body.ExceptionHandlers.Count >= 2 &&
-					new LocalTypes(decryptStringMethod).all(locals35) &&
-					checkTypeFields2(fields35)) {
+					new LocalTypes(decryptStringMethod).All(locals35) &&
+					CheckTypeFields2(fields35)) {
 					return "3.5 - 3.6";
 				}
 			}
@@ -729,7 +729,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return null;
 		}
 
-		TypeDef getNestedType(int n) {
+		TypeDef GetNestedType(int n) {
 			var type = stringDecrypter.Type;
 
 			if (n == 0) {
@@ -756,12 +756,12 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return null;
 		}
 
-		string getNestedTypeName(int n) {
-			var nestedType = getNestedType(n);
+		string GetNestedTypeName(int n) {
+			var nestedType = GetNestedType(n);
 			return nestedType == null ? null : nestedType.FullName;
 		}
 
-		bool checkTypeFields(string[] fieldTypes) {
+		bool CheckTypeFields(string[] fieldTypes) {
 			if (fieldTypes.Length != stringDecrypter.Type.Fields.Count)
 				return false;
 			for (int i = 0; i < fieldTypes.Length; i++) {
@@ -771,7 +771,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return true;
 		}
 
-		bool checkTypeFields2(string[] fieldTypes) {
+		bool CheckTypeFields2(string[] fieldTypes) {
 			if (fieldTypes.Length != stringDecrypter.Type.Fields.Count)
 				return false;
 
@@ -794,7 +794,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			{ "System.Diagnostics.StackFrame", true },
 			{ "System.Diagnostics.StackTrace", true },
 		};
-		string[] createLocalsArray(params string[] locals) {
+		string[] CreateLocalsArray(params string[] locals) {
 			Dictionary<string, bool> removeLocals = null;
 			switch (frameworkType) {
 			case FrameworkType.CompactFramework:

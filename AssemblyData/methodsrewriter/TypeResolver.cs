@@ -32,19 +32,19 @@ namespace AssemblyData.methodsrewriter {
 			this.type = type;
 		}
 
-		TypeInstanceResolver getTypeInstance(ITypeDefOrRef typeRef) {
+		TypeInstanceResolver GetTypeInstance(ITypeDefOrRef typeRef) {
 			TypeInstanceResolver instance;
 			if (!typeRefToInstance.TryGetValue(typeRef, out instance))
 				typeRefToInstance[typeRef] = instance = new TypeInstanceResolver(type, typeRef);
 			return instance;
 		}
 
-		public FieldInfo resolve(IField fieldRef) {
-			return getTypeInstance(fieldRef.DeclaringType).resolve(fieldRef);
+		public FieldInfo Resolve(IField fieldRef) {
+			return GetTypeInstance(fieldRef.DeclaringType).Resolve(fieldRef);
 		}
 
-		public MethodBase resolve(IMethod methodRef) {
-			return getTypeInstance(methodRef.DeclaringType).resolve(methodRef);
+		public MethodBase Resolve(IMethod methodRef) {
+			return GetTypeInstance(methodRef.DeclaringType).Resolve(methodRef);
 		}
 	}
 }

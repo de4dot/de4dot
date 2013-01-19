@@ -66,30 +66,30 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			this.module = module;
 		}
 
-		public void find() {
-			var cctor = DotNetUtils.getModuleTypeCctor(module);
+		public void Find() {
+			var cctor = DotNetUtils.GetModuleTypeCctor(module);
 			if (cctor == null)
 				return;
 
-			foreach (var method in DotNetUtils.getCalledMethods(module, cctor)) {
+			foreach (var method in DotNetUtils.GetCalledMethods(module, cctor)) {
 				if (method.Name == ".cctor" || method.Name == ".ctor")
 					continue;
-				if (!method.IsStatic || !DotNetUtils.isMethod(method, "System.Void", "()"))
+				if (!method.IsStatic || !DotNetUtils.IsMethod(method, "System.Void", "()"))
 					continue;
-				if (checkType(method.DeclaringType, method))
+				if (CheckType(method.DeclaringType, method))
 					break;
 			}
 		}
 
-		bool checkType(TypeDef type, MethodDef initMethod) {
-			if (DotNetUtils.findFieldType(type, "System.Collections.Hashtable", true) == null)
+		bool CheckType(TypeDef type, MethodDef initMethod) {
+			if (DotNetUtils.FindFieldType(type, "System.Collections.Hashtable", true) == null)
 				return false;
-			if (!checkInitMethod(initMethod))
+			if (!CheckInitMethod(initMethod))
 				return false;
 
 			List<AssemblyInfo> newAssemblyInfos = null;
-			foreach (var s in DotNetUtils.getCodeStrings(initMethod)) {
-				newAssemblyInfos = initializeEmbeddedAssemblies(s);
+			foreach (var s in DotNetUtils.GetCodeStrings(initMethod)) {
+				newAssemblyInfos = InitializeEmbeddedAssemblies(s);
 				if (newAssemblyInfos != null)
 					break;
 			}
@@ -102,13 +102,13 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return true;
 		}
 
-		bool checkInitMethod(MethodDef initMethod) {
+		bool CheckInitMethod(MethodDef initMethod) {
 			if (!initMethod.HasBody)
 				return false;
 
 			var instructions = initMethod.Body.Instructions;
 			for (int i = 0; i < instructions.Count; i++) {
-				var instrs = DotNetUtils.getInstructions(instructions, i, OpCodes.Ldnull, OpCodes.Ldftn, OpCodes.Newobj);
+				var instrs = DotNetUtils.GetInstructions(instructions, i, OpCodes.Ldnull, OpCodes.Ldftn, OpCodes.Newobj);
 				if (instrs == null)
 					continue;
 
@@ -130,7 +130,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return false;
 		}
 
-		List<AssemblyInfo> initializeEmbeddedAssemblies(string s) {
+		List<AssemblyInfo> InitializeEmbeddedAssemblies(string s) {
 			var sb = new StringBuilder(s.Length);
 			foreach (var c in s)
 				sb.Append((char)~c);
@@ -142,8 +142,8 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			for (int i = 0; i < tmpAssemblyInfos.Length; i += 2) {
 				var assemblyName = tmpAssemblyInfos[i];
 				var resourceName = tmpAssemblyInfos[i + 1];
-				var resource = DotNetUtils.getResource(module, resourceName) as EmbeddedResource;
-				var symbolsResource = DotNetUtils.getResource(module, resourceName + "#") as EmbeddedResource;
+				var resource = DotNetUtils.GetResource(module, resourceName) as EmbeddedResource;
+				var symbolsResource = DotNetUtils.GetResource(module, resourceName + "#") as EmbeddedResource;
 				if (resource == null)
 					return null;
 				newAssemblyInfos.Add(new AssemblyInfo(assemblyName, resource, symbolsResource));

@@ -41,7 +41,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 
 		public PeHeader(MainType mainType, MyPEImage peImage) {
 			uint headerOffset;
-			version = getHeaderOffsetAndVersion(peImage, out headerOffset);
+			version = GetHeaderOffsetAndVersion(peImage, out headerOffset);
 
 			switch (version) {
 			case EncryptionVersion.V1:
@@ -58,36 +58,36 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				break;
 			}
 
-			headerData = peImage.offsetReadBytes(headerOffset, 0x1000);
+			headerData = peImage.OffsetReadBytes(headerOffset, 0x1000);
 		}
 
-		public uint getMcKeyRva() {
-			return getRva(0x0FFC, xorKey);
+		public uint GetMcKeyRva() {
+			return GetRva(0x0FFC, xorKey);
 		}
 
-		public uint getRva(int offset, uint xorKey) {
-			return readUInt32(offset) ^ xorKey;
+		public uint GetRva(int offset, uint xorKey) {
+			return ReadUInt32(offset) ^ xorKey;
 		}
 
-		public uint readUInt32(int offset) {
+		public uint ReadUInt32(int offset) {
 			return BitConverter.ToUInt32(headerData, offset);
 		}
 
-		static EncryptionVersion getHeaderOffsetAndVersion(MyPEImage peImage, out uint headerOffset) {
+		static EncryptionVersion GetHeaderOffsetAndVersion(MyPEImage peImage, out uint headerOffset) {
 			headerOffset = 0;
 
-			var version = getVersion(peImage, headerOffset);
+			var version = GetVersion(peImage, headerOffset);
 			if (version != EncryptionVersion.Unknown)
 				return version;
 
-			var section = peImage.findSection(".rsrc");
+			var section = peImage.FindSection(".rsrc");
 			if (section == null)
 				return EncryptionVersion.Unknown;
 
 			headerOffset = section.PointerToRawData;
 			uint end = section.PointerToRawData + section.SizeOfRawData - 0x1000 + 1;
 			while (headerOffset < end) {
-				version = getVersion(peImage, headerOffset);
+				version = GetVersion(peImage, headerOffset);
 				if (version != EncryptionVersion.Unknown)
 					return version;
 				headerOffset++;
@@ -96,9 +96,9 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			return EncryptionVersion.Unknown;
 		}
 
-		static EncryptionVersion getVersion(MyPEImage peImage, uint headerOffset) {
-			uint m1lo = peImage.offsetReadUInt32(headerOffset + 0x900);
-			uint m1hi = peImage.offsetReadUInt32(headerOffset + 0x904);
+		static EncryptionVersion GetVersion(MyPEImage peImage, uint headerOffset) {
+			uint m1lo = peImage.OffsetReadUInt32(headerOffset + 0x900);
+			uint m1hi = peImage.OffsetReadUInt32(headerOffset + 0x904);
 
 			foreach (var info in EncryptionInfos.Rva900h) {
 				if (info.MagicLo == m1lo && info.MagicHi == m1hi)

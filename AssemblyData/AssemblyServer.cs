@@ -26,19 +26,19 @@ using AssemblyData;
 
 namespace AssemblyServer {
 	public static class Start {
-		public static int main(string[] args) {
+		public static int Main2(string[] args) {
 			if (args.Length != 2)
 				Environment.Exit(1);
 			var channelName = args[0];
 			var uri = args[1];
 
 			var service = new AssemblyService();
-			startServer(service, channelName, uri);
-			service.waitExit();
+			StartServer(service, channelName, uri);
+			service.WaitExit();
 			return 0;
 		}
 
-		static void startServer(AssemblyService service, string name, string uri) {
+		static void StartServer(AssemblyService service, string name, string uri) {
 			var props = new Hashtable();
 			props["portName"] = name;
 			var provider = new BinaryServerFormatterSinkProvider();

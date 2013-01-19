@@ -42,28 +42,28 @@ namespace de4dot.blocks {
 
 		public Blocks(MethodDef method) {
 			this.method = method;
-			updateBlocks();
+			UpdateBlocks();
 		}
 
-		public void updateBlocks() {
+		public void UpdateBlocks() {
 			var body = method.Body;
 			locals = body.Variables;
-			methodBlocks = new InstructionListParser(body.Instructions, body.ExceptionHandlers).parse();
+			methodBlocks = new InstructionListParser(body.Instructions, body.ExceptionHandlers).Parse();
 		}
 
-		IEnumerable<ScopeBlock> getAllScopeBlocks(ScopeBlock scopeBlock) {
+		IEnumerable<ScopeBlock> GetAllScopeBlocks(ScopeBlock scopeBlock) {
 			var list = new List<ScopeBlock>();
 			list.Add(scopeBlock);
-			list.AddRange(scopeBlock.getAllScopeBlocks());
+			list.AddRange(scopeBlock.GetAllScopeBlocks());
 			return list;
 		}
 
-		public int removeDeadBlocks() {
-			return new DeadBlocksRemover(methodBlocks).remove();
+		public int RemoveDeadBlocks() {
+			return new DeadBlocksRemover(methodBlocks).Remove();
 		}
 
-		public void getCode(out IList<Instruction> allInstructions, out IList<ExceptionHandler> allExceptionHandlers) {
-			new CodeGenerator(methodBlocks).getCode(out allInstructions, out allExceptionHandlers);
+		public void GetCode(out IList<Instruction> allInstructions, out IList<ExceptionHandler> allExceptionHandlers) {
+			new CodeGenerator(methodBlocks).GetCode(out allInstructions, out allExceptionHandlers);
 		}
 
 		struct LocalVariableInfo {
@@ -75,12 +75,12 @@ namespace de4dot.blocks {
 			}
 		}
 
-		public int optimizeLocals() {
+		public int OptimizeLocals() {
 			if (locals.Count == 0)
 				return 0;
 
 			var usedLocals = new Dictionary<Local, List<LocalVariableInfo>>();
-			foreach (var block in methodBlocks.getAllBlocks()) {
+			foreach (var block in methodBlocks.GetAllBlocks()) {
 				for (int i = 0; i < block.Instructions.Count; i++) {
 					var instr = block.Instructions[i];
 					Local local;
@@ -97,7 +97,7 @@ namespace de4dot.blocks {
 					case Code.Stloc_1:
 					case Code.Stloc_2:
 					case Code.Stloc_3:
-						local = Instr.getLocalVar(locals, instr);
+						local = Instr.GetLocalVar(locals, instr);
 						break;
 
 					case Code.Ldloca_S:
@@ -129,7 +129,7 @@ namespace de4dot.blocks {
 				newLocals.Add(local);
 				newLocalsDict[local] = true;
 				foreach (var info in usedLocals[local])
-					info.block.Instructions[info.index] = new Instr(optimizeLocalInstr(info.block.Instructions[info.index], local, (uint)newIndex));
+					info.block.Instructions[info.index] = new Instr(OptimizeLocalInstr(info.block.Instructions[info.index], local, (uint)newIndex));
 			}
 
 			// We can't remove all locals. Locals that reference another assembly will
@@ -162,7 +162,7 @@ namespace de4dot.blocks {
 			return numRemoved;
 		}
 
-		static Instruction optimizeLocalInstr(Instr instr, Local local, uint newIndex) {
+		static Instruction OptimizeLocalInstr(Instr instr, Local local, uint newIndex) {
 			switch (instr.OpCode.Code) {
 			case Code.Ldloc:
 			case Code.Ldloc_S:
@@ -211,11 +211,11 @@ namespace de4dot.blocks {
 			}
 		}
 
-		public void repartitionBlocks() {
-			mergeNopBlocks();
-			foreach (var scopeBlock in getAllScopeBlocks(methodBlocks)) {
+		public void RepartitionBlocks() {
+			MergeNopBlocks();
+			foreach (var scopeBlock in GetAllScopeBlocks(methodBlocks)) {
 				try {
-					scopeBlock.repartitionBlocks();
+					scopeBlock.RepartitionBlocks();
 				}
 				catch (NullReferenceException) {
 					//TODO: Send this message to the log
@@ -225,12 +225,12 @@ namespace de4dot.blocks {
 			}
 		}
 
-		void mergeNopBlocks() {
-			var allBlocks = methodBlocks.getAllBlocks();
+		void MergeNopBlocks() {
+			var allBlocks = methodBlocks.GetAllBlocks();
 
 			var nopBlocks = new Dictionary<Block, bool>();
 			foreach (var nopBlock in allBlocks) {
-				if (nopBlock.isNopBlock())
+				if (nopBlock.IsNopBlock())
 					nopBlocks[nopBlock] = true;
 			}
 
@@ -243,18 +243,18 @@ namespace de4dot.blocks {
 				foreach (var block in allBlocks) {
 					Block nopBlockTarget;
 
-					nopBlockTarget = getNopBlockTarget(nopBlocks, block, block.FallThrough);
+					nopBlockTarget = GetNopBlockTarget(nopBlocks, block, block.FallThrough);
 					if (nopBlockTarget != null) {
-						block.setNewFallThrough(nopBlockTarget);
+						block.SetNewFallThrough(nopBlockTarget);
 						changed = true;
 					}
 
 					if (block.Targets != null) {
 						for (int targetIndex = 0; targetIndex < block.Targets.Count; targetIndex++) {
-							nopBlockTarget = getNopBlockTarget(nopBlocks, block, block.Targets[targetIndex]);
+							nopBlockTarget = GetNopBlockTarget(nopBlocks, block, block.Targets[targetIndex]);
 							if (nopBlockTarget == null)
 								continue;
-							block.setNewTarget(targetIndex, nopBlockTarget);
+							block.SetNewTarget(targetIndex, nopBlockTarget);
 							changed = true;
 						}
 					}
@@ -265,10 +265,10 @@ namespace de4dot.blocks {
 			}
 
 			foreach (var nopBlock in nopBlocks.Keys)
-				nopBlock.Parent.removeDeadBlock(nopBlock);
+				nopBlock.Parent.RemoveDeadBlock(nopBlock);
 		}
 
-		static Block getNopBlockTarget(Dictionary<Block, bool> nopBlocks, Block source, Block nopBlock) {
+		static Block GetNopBlockTarget(Dictionary<Block, bool> nopBlocks, Block source, Block nopBlock) {
 			if (nopBlock == null || !nopBlocks.ContainsKey(nopBlock) || source == nopBlock.FallThrough)
 				return null;
 			if (nopBlock.Parent.BaseBlocks[0] == nopBlock)

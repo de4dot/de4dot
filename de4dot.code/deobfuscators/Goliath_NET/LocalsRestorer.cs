@@ -40,7 +40,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 		public List<TypeDef> Types {
 			get {
 				var list = new List<TypeDef>(typeToInfo.Count);
-				foreach (var info in typeToInfo.getValues()) {
+				foreach (var info in typeToInfo.GetValues()) {
 					if (info.referenced)
 						list.Add(info.type);
 				}
@@ -52,12 +52,12 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			this.module = module;
 		}
 
-		public void find() {
+		public void Find() {
 			foreach (var type in module.GetTypes())
-				initialize(type);
+				Initialize(type);
 		}
 
-		void initialize(TypeDef type) {
+		void Initialize(TypeDef type) {
 			if (type.HasEvents || type.HasProperties)
 				return;
 
@@ -81,12 +81,12 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			if (!new SigComparer().Equals(ctorParam, typeField.FieldType))
 				return;
 
-			typeToInfo.add(ctor.DeclaringType, new Info(ctor.DeclaringType, typeField.FieldType));
+			typeToInfo.Add(ctor.DeclaringType, new Info(ctor.DeclaringType, typeField.FieldType));
 		}
 
-		public void deobfuscate(Blocks blocks) {
+		public void Deobfuscate(Blocks blocks) {
 			var instrsToRemove = new List<int>();
-			foreach (var block in blocks.MethodBlocks.getAllBlocks()) {
+			foreach (var block in blocks.MethodBlocks.GetAllBlocks()) {
 				instrsToRemove.Clear();
 				var instrs = block.Instructions;
 				for (int i = 0; i < instrs.Count; i++) {
@@ -105,19 +105,19 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 							continue;
 
 						var next = instrs[i + 1];
-						if (!next.isStloc() && !next.isLeave() && next.OpCode.Code != Code.Pop)
+						if (!next.IsStloc() && !next.IsLeave() && next.OpCode.Code != Code.Pop)
 							continue;
 
 						indexToRemove = i;
 						type = ctor.DeclaringType;
-						if (next.isStloc())
-							local = Instr.getLocalVar(blocks.Locals, next);
+						if (next.IsStloc())
+							local = Instr.GetLocalVar(blocks.Locals, next);
 					}
 					else if (instr.OpCode.Code == Code.Ldfld) {
 						if (i == 0)
 							continue;
 						var ldloc = instrs[i - 1];
-						if (!ldloc.isLdloc())
+						if (!ldloc.IsLdloc())
 							continue;
 
 						var field = instr.Operand as IField;
@@ -126,14 +126,14 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 
 						indexToRemove = i;
 						type = field.DeclaringType;
-						local = Instr.getLocalVar(blocks.Locals, ldloc);
+						local = Instr.GetLocalVar(blocks.Locals, ldloc);
 					}
 					else
 						continue;
 
 					if (type == null)
 						continue;
-					var info = typeToInfo.find(type);
+					var info = typeToInfo.Find(type);
 					if (info == null)
 						continue;
 
@@ -143,7 +143,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 						local.Type = info.localType;
 				}
 				if (instrsToRemove.Count > 0)
-					block.remove(instrsToRemove);
+					block.Remove(instrsToRemove);
 			}
 		}
 	}

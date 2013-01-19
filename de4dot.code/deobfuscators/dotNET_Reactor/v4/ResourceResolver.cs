@@ -55,22 +55,22 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			this.encryptedResource = new EncryptedResource(module, oldOne.encryptedResource);
 		}
 
-		public void find(ISimpleDeobfuscator simpleDeobfuscator) {
+		public void Find(ISimpleDeobfuscator simpleDeobfuscator) {
 			var additionalTypes = new string[] {
 				"System.String",
 			};
 			foreach (var type in module.Types) {
 				if (type.BaseType == null || type.BaseType.FullName != "System.Object")
 					continue;
-				if (!checkFields(type.Fields))
+				if (!CheckFields(type.Fields))
 					continue;
 				foreach (var method in type.Methods) {
 					if (!method.IsStatic || !method.HasBody)
 						continue;
-					if (!DotNetUtils.isMethod(method, "System.Reflection.Assembly", "(System.Object,System.ResolveEventArgs)") &&
-						!DotNetUtils.isMethod(method, "System.Reflection.Assembly", "(System.Object,System.Object)"))
+					if (!DotNetUtils.IsMethod(method, "System.Reflection.Assembly", "(System.Object,System.ResolveEventArgs)") &&
+						!DotNetUtils.IsMethod(method, "System.Reflection.Assembly", "(System.Object,System.Object)"))
 						continue;
-					if (!encryptedResource.couldBeResourceDecrypter(method, additionalTypes, false))
+					if (!encryptedResource.CouldBeResourceDecrypter(method, additionalTypes, false))
 						continue;
 
 					encryptedResource.Method = method;
@@ -79,43 +79,43 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			}
 		}
 
-		bool checkFields(IList<FieldDef> fields) {
+		bool CheckFields(IList<FieldDef> fields) {
 			if (fields.Count != 3)
 				return false;
 
 			var fieldTypes = new FieldTypes(fields);
-			if (fieldTypes.count("System.Boolean") != 1)
+			if (fieldTypes.Count("System.Boolean") != 1)
 				return false;
-			if (fieldTypes.count("System.Object") == 2)
+			if (fieldTypes.Count("System.Object") == 2)
 				return true;
-			return fieldTypes.count("System.Reflection.Assembly") == 1 &&
-				fieldTypes.count("System.String[]") == 1;
+			return fieldTypes.Count("System.Reflection.Assembly") == 1 &&
+				fieldTypes.Count("System.String[]") == 1;
 		}
 
-		public void init(ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
+		public void Initialize(ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
 			if (encryptedResource.Method == null)
 				return;
 
-			initMethod = findInitMethod(simpleDeobfuscator);
+			initMethod = FindInitMethod(simpleDeobfuscator);
 			if (initMethod == null)
 				throw new ApplicationException("Could not find resource resolver init method");
 
-			simpleDeobfuscator.deobfuscate(encryptedResource.Method);
-			simpleDeobfuscator.decryptStrings(encryptedResource.Method, deob);
-			encryptedResource.init(simpleDeobfuscator);
+			simpleDeobfuscator.Deobfuscate(encryptedResource.Method);
+			simpleDeobfuscator.DecryptStrings(encryptedResource.Method, deob);
+			encryptedResource.Initialize(simpleDeobfuscator);
 		}
 
-		MethodDef findInitMethod(ISimpleDeobfuscator simpleDeobfuscator) {
+		MethodDef FindInitMethod(ISimpleDeobfuscator simpleDeobfuscator) {
 			var ctor = Type.FindMethod(".ctor");
 			foreach (var method in Type.Methods) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
-				if (!DotNetUtils.isMethod(method, "System.Void", "()"))
+				if (!DotNetUtils.IsMethod(method, "System.Void", "()"))
 					continue;
 				if (method.Body.Variables.Count > 1)
 					continue;
 
-				simpleDeobfuscator.deobfuscate(method);
+				simpleDeobfuscator.Deobfuscate(method);
 				bool stsfldUsed = false, newobjUsed = false;
 				foreach (var instr in method.Body.Instructions) {
 					if (instr.OpCode.Code == Code.Stsfld) {
@@ -143,11 +143,11 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			return null;
 		}
 
-		public EmbeddedResource mergeResources() {
+		public EmbeddedResource MergeResources() {
 			if (encryptedResource.Resource == null)
 				return null;
-			DeobUtils.decryptAndAddResources(module, encryptedResource.Resource.Name.String, () => {
-				return QuickLZ.decompress(encryptedResource.decrypt());
+			DeobUtils.DecryptAndAddResources(module, encryptedResource.Resource.Name.String, () => {
+				return QuickLZ.Decompress(encryptedResource.Decrypt());
 			});
 			return encryptedResource.Resource;
 		}

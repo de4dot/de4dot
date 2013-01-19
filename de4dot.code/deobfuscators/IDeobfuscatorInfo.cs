@@ -23,7 +23,7 @@ namespace de4dot.code.deobfuscators {
 	public interface IDeobfuscatorInfo {
 		string Type { get; }
 		string Name { get; }
-		IDeobfuscator createDeobfuscator();
-		IEnumerable<Option> getOptions();
+		IDeobfuscator CreateDeobfuscator();
+		IEnumerable<Option> GetOptions();
 	}
 }

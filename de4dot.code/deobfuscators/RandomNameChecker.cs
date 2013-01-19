@@ -26,7 +26,7 @@ namespace de4dot.code.deobfuscators {
 		static Regex noUpper = new Regex(@"^[^A-Z]+$");
 		static Regex allUpper = new Regex(@"^[A-Z]+$");
 
-		public static bool isNonRandom(string name) {
+		public static bool IsNonRandom(string name) {
 			if (name.Length < 5)
 				return true;
 			if (noUpper.IsMatch(name))
@@ -35,16 +35,16 @@ namespace de4dot.code.deobfuscators {
 				return true;
 
 			for (int i = 0; i < name.Length - 1; i++) {
-				if (isDigit(name[i]))
+				if (IsDigit(name[i]))
 					return false;
-				if (i > 0 && isUpper(name[i]) && isUpper(name[i - 1]))
+				if (i > 0 && IsUpper(name[i]) && IsUpper(name[i - 1]))
 					return false;
 			}
 
-			var words = getCamelWords(name);
+			var words = GetCamelWords(name);
 			int vowels = 0;
 			foreach (var word in words) {
-				if (word.Length > 1 && hasVowel(word))
+				if (word.Length > 1 && HasVowel(word))
 					vowels++;
 			}
 			switch (words.Count) {
@@ -65,7 +65,7 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
-		static bool hasVowel(string s) {
+		static bool HasVowel(string s) {
 			foreach (var c in s) {
 				switch (c) {
 				case 'A':
@@ -86,13 +86,13 @@ namespace de4dot.code.deobfuscators {
 			return false;
 		}
 
-		static List<string> getCamelWords(string name) {
+		static List<string> GetCamelWords(string name) {
 			var words = new List<string>();
 			var sb = new StringBuilder();
 
 			for (int i = 0; i < name.Length; i++) {
 				char c = name[i];
-				if (isUpper(c)) {
+				if (IsUpper(c)) {
 					if (sb.Length > 0)
 						words.Add(sb.ToString());
 					sb.Length = 0;
@@ -106,78 +106,78 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		// Returns true if random, false if unknown
-		public static bool isRandom(string name) {
+		public static bool IsRandom(string name) {
 			int len = name.Length;
 			if (len < 5)
 				return false;
 
-			var typeWords = getTypeWords(name);
+			var typeWords = GetTypeWords(name);
 
-			if (countNumbers(typeWords, 2))
+			if (CountNumbers(typeWords, 2))
 				return true;
 
 			int lower, upper, digits;
-			countTypeWords(typeWords, out lower, out upper, out digits);
+			CountTypeWords(typeWords, out lower, out upper, out digits);
 			if (upper >= 3)
 				return true;
 			bool hasTwoUpperWords = upper == 2;
 
 			foreach (var word in typeWords) {
-				if (word.Length > 1 && isDigit(word[0]))
+				if (word.Length > 1 && IsDigit(word[0]))
 					return true;
 			}
 
 			// Check for: lower, digit, lower
 			for (int i = 2; i < typeWords.Count; i++) {
-				if (isDigit(typeWords[i - 1][0]) && isLower(typeWords[i - 2][0]) && isLower(typeWords[i][0]))
+				if (IsDigit(typeWords[i - 1][0]) && IsLower(typeWords[i - 2][0]) && IsLower(typeWords[i][0]))
 					return true;
 			}
 
-			if (hasTwoUpperWords && hasDigit(name))
+			if (hasTwoUpperWords && HasDigit(name))
 				return true;
 
 			// Check if it ends in lower, upper, digit
-			if (isLower(name[len - 3]) && isUpper(name[len - 2]) && isDigit(name[len - 1]))
+			if (IsLower(name[len - 3]) && IsUpper(name[len - 2]) && IsDigit(name[len - 1]))
 				return true;
 
 			return false;
 		}
 
-		static bool hasDigit(string s) {
+		static bool HasDigit(string s) {
 			foreach (var c in s) {
-				if (isDigit(c))
+				if (IsDigit(c))
 					return true;
 			}
 			return false;
 		}
 
-		static List<string> getTypeWords(string s) {
+		static List<string> GetTypeWords(string s) {
 			var words = new List<string>();
 			var sb = new StringBuilder();
 
 			for (int i = 0; i < s.Length; ) {
-				if (isDigit(s[i])) {
+				if (IsDigit(s[i])) {
 					sb.Length = 0;
-					while (i < s.Length && isDigit(s[i]))
+					while (i < s.Length && IsDigit(s[i]))
 						sb.Append(s[i++]);
 					words.Add(sb.ToString());
 				}
-				else if (isUpper(s[i])) {
+				else if (IsUpper(s[i])) {
 					sb.Length = 0;
-					while (i < s.Length && isUpper(s[i]))
+					while (i < s.Length && IsUpper(s[i]))
 						sb.Append(s[i++]);
 					words.Add(sb.ToString());
 				}
-				else if (isLower(s[i])) {
+				else if (IsLower(s[i])) {
 					sb.Length = 0;
-					while (i < s.Length && isLower(s[i]))
+					while (i < s.Length && IsLower(s[i]))
 						sb.Append(s[i++]);
 					words.Add(sb.ToString());
 				}
 				else {
 					sb.Length = 0;
 					while (i < s.Length) {
-						if (isDigit(s[i]) || isUpper(s[i]) || isLower(s[i]))
+						if (IsDigit(s[i]) || IsUpper(s[i]) || IsLower(s[i]))
 							break;
 						sb.Append(s[i++]);
 					}
@@ -188,19 +188,19 @@ namespace de4dot.code.deobfuscators {
 			return words;
 		}
 
-		static bool countNumbers(List<string> words, int numbers) {
+		static bool CountNumbers(List<string> words, int numbers) {
 			int num = 0;
 			foreach (var word in words) {
 				if (string.IsNullOrEmpty(word))
 					continue;
-				if (isDigit(word[0]) && ++num >= numbers)
+				if (IsDigit(word[0]) && ++num >= numbers)
 					return true;
 			}
 			return false;
 		}
 
 		// 2+ chars only
-		static void countTypeWords(List<string> words, out int lower, out int upper, out int digits) {
+		static void CountTypeWords(List<string> words, out int lower, out int upper, out int digits) {
 			lower = 0;
 			upper = 0;
 			digits = 0;
@@ -209,24 +209,24 @@ namespace de4dot.code.deobfuscators {
 				if (word.Length <= 1)
 					continue;
 				char c = word[0];
-				if (isDigit(c))
+				if (IsDigit(c))
 					digits++;
-				else if (isLower(c))
+				else if (IsLower(c))
 					lower++;
-				else if (isUpper(c))
+				else if (IsUpper(c))
 					upper++;
 			}
 		}
 
-		static bool isLower(char c) {
+		static bool IsLower(char c) {
 			return 'a' <= c && c <= 'z';
 		}
 
-		static bool isUpper(char c) {
+		static bool IsUpper(char c) {
 			return 'A' <= c && c <= 'Z';
 		}
 
-		static bool isDigit(char c) {
+		static bool IsDigit(char c) {
 			return '0' <= c && c <= '9';
 		}
 	}

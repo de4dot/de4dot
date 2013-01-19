@@ -32,28 +32,28 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 		public ProxyCallFixer(ModuleDefMD module, ProxyCallFixer oldOne)
 			: base(module) {
 			foreach (var method in oldOne.delegateCreatorMethods)
-				setDelegateCreatorMethod(lookup(method, "Could not find delegate creator method"));
+				SetDelegateCreatorMethod(Lookup(method, "Could not find delegate creator method"));
 		}
 
-		public void findDelegateCreator() {
+		public void FindDelegateCreator() {
 			foreach (var type in module.Types) {
 				var methodName = "System.Void " + type.FullName + "::icgd(System.Int32)";
 				foreach (var method in type.Methods) {
 					if (method.FullName == methodName) {
-						setDelegateCreatorMethod(method);
+						SetDelegateCreatorMethod(method);
 						return;
 					}
 				}
 			}
 		}
 
-		protected override object checkCctor(ref TypeDef type, MethodDef cctor) {
+		protected override object CheckCctor(ref TypeDef type, MethodDef cctor) {
 			var instrs = cctor.Body.Instructions;
 			if (instrs.Count != 3)
 				return null;
 			if (!instrs[0].IsLdcI4())
 				return null;
-			if (instrs[1].OpCode != OpCodes.Call || !isDelegateCreatorMethod(instrs[1].Operand as MethodDef))
+			if (instrs[1].OpCode != OpCodes.Call || !IsDelegateCreatorMethod(instrs[1].Operand as MethodDef))
 				return null;
 			if (instrs[2].OpCode != OpCodes.Ret)
 				return null;
@@ -67,7 +67,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			return new object();
 		}
 
-		protected override void getCallInfo(object context, FieldDef field, out IMethod calledMethod, out OpCode callOpcode) {
+		protected override void GetCallInfo(object context, FieldDef field, out IMethod calledMethod, out OpCode callOpcode) {
 			var name = field.Name.String;
 			callOpcode = OpCodes.Call;
 			if (name.EndsWith("%", StringComparison.Ordinal)) {

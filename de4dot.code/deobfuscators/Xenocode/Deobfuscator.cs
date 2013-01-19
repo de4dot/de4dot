@@ -37,7 +37,7 @@ namespace de4dot.code.deobfuscators.Xenocode {
 			get { return THE_TYPE; }
 		}
 
-		public override IDeobfuscator createDeobfuscator() {
+		public override IDeobfuscator CreateDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
 				ValidNameRegex = validNameRegex.get(),
 			});
@@ -67,7 +67,7 @@ namespace de4dot.code.deobfuscators.Xenocode {
 			: base(options) {
 		}
 
-		protected override int detectInternal() {
+		protected override int DetectInternal() {
 			int val = 0;
 
 			if (stringDecrypter.Detected)
@@ -78,54 +78,54 @@ namespace de4dot.code.deobfuscators.Xenocode {
 			return val;
 		}
 
-		protected override void scanForObfuscator() {
-			findXenocodeAttribute();
+		protected override void ScanForObfuscator() {
+			FindXenocodeAttribute();
 			stringDecrypter = new StringDecrypter(module);
-			stringDecrypter.find();
+			stringDecrypter.Find();
 		}
 
-		void findXenocodeAttribute() {
+		void FindXenocodeAttribute() {
 			foreach (var type in module.Types) {
 				switch (type.FullName) {
 				case "Xenocode.Client.Attributes.AssemblyAttributes.ProcessedByXenocode":
 				case "Xenocode.Client.Attributes.AssemblyAttributes.SuppressDisassembly":
 				case "Xenocode.User.Attributes.AssemblyAttributes.ProcessedByXenoCode":
 				case "Xenocode.User.Attributes.AssemblyAttributes.SuppressDisassembly":
-					addAttributeToBeRemoved(type, "Obfuscator attribute");
+					AddAttributeToBeRemoved(type, "Obfuscator attribute");
 					foundXenocodeAttribute = true;
 					break;
 				}
 			}
 		}
 
-		public override void deobfuscateBegin() {
-			base.deobfuscateBegin();
+		public override void DeobfuscateBegin() {
+			base.DeobfuscateBegin();
 
-			staticStringInliner.add(stringDecrypter.Method, (method, gim, args) => stringDecrypter.decrypt((string)args[0], (int)args[1]));
-			DeobfuscatedFile.stringDecryptersAdded();
+			staticStringInliner.Add(stringDecrypter.Method, (method, gim, args) => stringDecrypter.Decrypt((string)args[0], (int)args[1]));
+			DeobfuscatedFile.StringDecryptersAdded();
 		}
 
-		public override void deobfuscateEnd() {
+		public override void DeobfuscateEnd() {
 			if (CanRemoveStringDecrypterType)
-				addTypeToBeRemoved(stringDecrypter.Type, "String decrypter type");
-			var obfType = findTypeWithThousandsOfMethods();
+				AddTypeToBeRemoved(stringDecrypter.Type, "String decrypter type");
+			var obfType = FindTypeWithThousandsOfMethods();
 			if (obfType != null)
-				addTypeToBeRemoved(obfType, "Obfuscator type with thousands of empty methods");
-			removeInvalidAttributes(module);
-			removeInvalidAttributes(module.Assembly);
-			base.deobfuscateEnd();
+				AddTypeToBeRemoved(obfType, "Obfuscator type with thousands of empty methods");
+			RemoveInvalidAttributes(module);
+			RemoveInvalidAttributes(module.Assembly);
+			base.DeobfuscateEnd();
 		}
 
-		TypeDef findTypeWithThousandsOfMethods() {
+		TypeDef FindTypeWithThousandsOfMethods() {
 			foreach (var type in module.Types) {
-				if (isTypeWithThousandsOfMethods(type))
+				if (IsTypeWithThousandsOfMethods(type))
 					return type;
 			}
 
 			return null;
 		}
 
-		bool isTypeWithThousandsOfMethods(TypeDef type) {
+		bool IsTypeWithThousandsOfMethods(TypeDef type) {
 			if (!type.IsNotPublic)
 				return false;
 			if (type.HasFields || type.HasEvents || type.HasProperties)
@@ -153,7 +153,7 @@ namespace de4dot.code.deobfuscators.Xenocode {
 		}
 
 		// Remove the attribute Xenocode adds that has an invalid ctor
-		void removeInvalidAttributes(IHasCustomAttribute hca) {
+		void RemoveInvalidAttributes(IHasCustomAttribute hca) {
 			if (!CanRemoveTypes)
 				return;
 			if (hca == null)
@@ -165,7 +165,7 @@ namespace de4dot.code.deobfuscators.Xenocode {
 			}
 		}
 
-		public override IEnumerable<int> getStringDecrypterMethods() {
+		public override IEnumerable<int> GetStringDecrypterMethods() {
 			var list = new List<int>();
 			if (stringDecrypter.Method != null)
 				list.Add(stringDecrypter.Method.MDToken.ToInt32());

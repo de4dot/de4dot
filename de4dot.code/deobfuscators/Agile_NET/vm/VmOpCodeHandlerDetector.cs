@@ -55,33 +55,33 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			this.module = module;
 		}
 
-		public void findHandlers() {
+		public void FindHandlers() {
 			if (opCodeHandlers != null)
 				return;
-			var vmHandlerTypes = findVmHandlerTypes();
+			var vmHandlerTypes = FindVmHandlerTypes();
 			if (vmHandlerTypes == null)
 				throw new ApplicationException("Could not find CSVM opcode handler types");
 
-			detectHandlers(vmHandlerTypes, createCsvmInfo());
+			DetectHandlers(vmHandlerTypes, CreateCsvmInfo());
 		}
 
-		internal CsvmInfo createCsvmInfo() {
+		internal CsvmInfo CreateCsvmInfo() {
 			var csvmInfo = new CsvmInfo();
-			csvmInfo.StackValue = findStackValueType();
-			csvmInfo.Stack = findStackType(csvmInfo.StackValue);
-			initStackTypeMethods(csvmInfo);
+			csvmInfo.StackValue = FindStackValueType();
+			csvmInfo.Stack = FindStackType(csvmInfo.StackValue);
+			InitStackTypeMethods(csvmInfo);
 			return csvmInfo;
 		}
 
-		TypeDef findStackValueType() {
+		TypeDef FindStackValueType() {
 			foreach (var type in module.Types) {
-				if (isStackType(type))
+				if (IsStackType(type))
 					return type;
 			}
 			return null;
 		}
 
-		static bool isStackType(TypeDef type) {
+		static bool IsStackType(TypeDef type) {
 			if (type.Fields.Count != 2)
 				return false;
 
@@ -100,20 +100,20 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			return true;
 		}
 
-		TypeDef findStackType(TypeDef stackValueType) {
+		TypeDef FindStackType(TypeDef stackValueType) {
 			foreach (var type in module.Types) {
-				if (isStackType(type, stackValueType))
+				if (IsStackType(type, stackValueType))
 					return type;
 			}
 			return null;
 		}
 
-		bool isStackType(TypeDef type, TypeDef stackValueType) {
+		bool IsStackType(TypeDef type, TypeDef stackValueType) {
 			if (type.Interfaces.Count != 2)
 				return false;
-			if (!implementsInterface(type, "System.Collections.ICollection"))
+			if (!ImplementsInterface(type, "System.Collections.ICollection"))
 				return false;
-			if (!implementsInterface(type, "System.Collections.IEnumerable"))
+			if (!ImplementsInterface(type, "System.Collections.IEnumerable"))
 				return false;
 			if (type.NestedTypes.Count == 0)
 				return false;
@@ -140,7 +140,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			return true;
 		}
 
-		static bool implementsInterface(TypeDef type, string ifaceName) {
+		static bool ImplementsInterface(TypeDef type, string ifaceName) {
 			foreach (var iface in type.Interfaces) {
 				if (iface.Interface.FullName == ifaceName)
 					return true;
@@ -148,11 +148,11 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			return false;
 		}
 
-		void initStackTypeMethods(CsvmInfo csvmInfo) {
+		void InitStackTypeMethods(CsvmInfo csvmInfo) {
 			foreach (var method in csvmInfo.Stack.Methods) {
 				var sig = method.MethodSig;
 				if (sig != null && sig.Params.Count == 0 && sig.RetType.TryGetTypeDef() == csvmInfo.StackValue) {
-					if (hasAdd(method))
+					if (HasAdd(method))
 						csvmInfo.PopMethod = method;
 					else
 						csvmInfo.PeekMethod = method;
@@ -160,7 +160,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			}
 		}
 
-		static bool hasAdd(MethodDef method) {
+		static bool HasAdd(MethodDef method) {
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code == Code.Add)
 					return true;
@@ -168,7 +168,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			return false;
 		}
 
-		List<TypeDef> findVmHandlerTypes() {
+		List<TypeDef> FindVmHandlerTypes() {
 			var requiredFields = new string[] {
 				null,
 				"System.Collections.Generic.Dictionary`2<System.UInt16,System.Type>",
@@ -180,11 +180,11 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 				if (cctor == null)
 					continue;
 				requiredFields[0] = type.FullName;
-				if (!new FieldTypes(type).exactly(requiredFields))
+				if (!new FieldTypes(type).Exactly(requiredFields))
 					continue;
 
-				cflowDeobfuscator.deobfuscate(cctor);
-				var handlers = findVmHandlerTypes(cctor);
+				cflowDeobfuscator.Deobfuscate(cctor);
+				var handlers = FindVmHandlerTypes(cctor);
 				if (handlers.Count != 31)
 					continue;
 
@@ -194,7 +194,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			return null;
 		}
 
-		static List<TypeDef> findVmHandlerTypes(MethodDef method) {
+		static List<TypeDef> FindVmHandlerTypes(MethodDef method) {
 			var list = new List<TypeDef>();
 
 			foreach (var instr in method.Body.Instructions) {
@@ -210,7 +210,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			return list;
 		}
 
-		void detectHandlers(List<TypeDef> handlerTypes, CsvmInfo csvmInfo) {
+		void DetectHandlers(List<TypeDef> handlerTypes, CsvmInfo csvmInfo) {
 			opCodeHandlers = new List<OpCodeHandler>();
 			var detected = new List<OpCodeHandler>();
 
@@ -221,14 +221,14 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 					var info = new UnknownHandlerInfo(handlerType, csvmInfo);
 					detected.Clear();
 					foreach (var opCodeHandler in handlersList) {
-						if (opCodeHandler.detect(info))
+						if (opCodeHandler.Detect(info))
 							detected.Add(opCodeHandler);
 					}
 					if (detected.Count != 1)
 						goto next;
 					opCodeHandlers.Add(detected[0]);
 				}
-				if (new List<OpCodeHandler>(Utils.unique(opCodeHandlers)).Count == opCodeHandlers.Count)
+				if (new List<OpCodeHandler>(Utils.Unique(opCodeHandlers)).Count == opCodeHandlers.Count)
 					return;
 next: ;
 			}

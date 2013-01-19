@@ -41,16 +41,16 @@ namespace de4dot.blocks.cflow {
 
 		public bool ExecuteOnNoChange { get; set; }
 
-		public void deobfuscateBegin(Blocks blocks) {
+		public void DeobfuscateBegin(Blocks blocks) {
 			this.blocks = blocks;
 		}
 
-		public bool deobfuscate(List<Block> allBlocks) {
+		public bool Deobfuscate(List<Block> allBlocks) {
 			this.allBlocks = allBlocks;
-			return remove();
+			return Remove();
 		}
 
-		bool remove() {
+		bool Remove() {
 			if (blocks.Locals.Count == 0)
 				return false;
 
@@ -61,7 +61,7 @@ namespace de4dot.blocks.cflow {
 				deadLocals.Add(false);
 			}
 
-			findLoadStores();
+			FindLoadStores();
 
 			bool deadStores = false;
 			for (int i = 0; i < blocks.Locals.Count; i++) {
@@ -74,10 +74,10 @@ namespace de4dot.blocks.cflow {
 			if (!deadStores)
 				return false;
 
-			return removeDeadStores();
+			return RemoveDeadStores();
 		}
 
-		void findLoadStores() {
+		void FindLoadStores() {
 			foreach (var block in allBlocks) {
 				foreach (var instr in block.Instructions) {
 					Local local;
@@ -89,7 +89,7 @@ namespace de4dot.blocks.cflow {
 					case Code.Ldloc_1:
 					case Code.Ldloc_2:
 					case Code.Ldloc_3:
-						local = Instr.getLocalVar(blocks.Locals, instr);
+						local = Instr.GetLocalVar(blocks.Locals, instr);
 						flags = AccessFlags.Read;
 						break;
 
@@ -99,7 +99,7 @@ namespace de4dot.blocks.cflow {
 					case Code.Stloc_1:
 					case Code.Stloc_2:
 					case Code.Stloc_3:
-						local = Instr.getLocalVar(blocks.Locals, instr);
+						local = Instr.GetLocalVar(blocks.Locals, instr);
 						flags = AccessFlags.Write;
 						break;
 
@@ -122,7 +122,7 @@ namespace de4dot.blocks.cflow {
 			}
 		}
 
-		bool removeDeadStores() {
+		bool RemoveDeadStores() {
 			bool changed = false;
 			foreach (var block in allBlocks) {
 				var instructions = block.Instructions;
@@ -136,7 +136,7 @@ namespace de4dot.blocks.cflow {
 					case Code.Stloc_1:
 					case Code.Stloc_2:
 					case Code.Stloc_3:
-						local = Instr.getLocalVar(blocks.Locals, instr);
+						local = Instr.GetLocalVar(blocks.Locals, instr);
 						break;
 
 					default:

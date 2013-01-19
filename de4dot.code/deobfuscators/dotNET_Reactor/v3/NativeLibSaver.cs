@@ -51,30 +51,30 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 
 		public NativeLibSaver(ModuleDefMD module, NativeLibSaver oldOne) {
 			this.module = module;
-			this.nativeLibCallerType = lookup(oldOne.nativeLibCallerType, "Could not find nativeLibCallerType");
-			this.initMethod = lookup(oldOne.initMethod, "Could not find initMethod");
+			this.nativeLibCallerType = Lookup(oldOne.nativeLibCallerType, "Could not find nativeLibCallerType");
+			this.initMethod = Lookup(oldOne.initMethod, "Could not find initMethod");
 			if (oldOne.nativeFileResource != null) {
-				this.nativeFileResource = DotNetUtils.getResource(module, oldOne.nativeFileResource.Name.String);
+				this.nativeFileResource = DotNetUtils.GetResource(module, oldOne.nativeFileResource.Name.String);
 				if (this.nativeFileResource == null)
 					throw new ApplicationException("Could not find nativeFileResource");
 			}
 		}
 
-		T lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
-			return DeobUtils.lookup(module, def, errorMessage);
+		T Lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
+			return DeobUtils.Lookup(module, def, errorMessage);
 		}
 
-		public void find() {
-			foreach (var calledMethod in DotNetUtils.getCalledMethods(module, DotNetUtils.getModuleTypeCctor(module))) {
-				if (!DotNetUtils.isMethod(calledMethod, "System.Void", "()"))
+		public void Find() {
+			foreach (var calledMethod in DotNetUtils.GetCalledMethods(module, DotNetUtils.GetModuleTypeCctor(module))) {
+				if (!DotNetUtils.IsMethod(calledMethod, "System.Void", "()"))
 					continue;
 				if (calledMethod.DeclaringType.FullName != "<PrivateImplementationDetails>{F1C5056B-0AFC-4423-9B83-D13A26B48869}")
 					continue;
 
 				nativeLibCallerType = calledMethod.DeclaringType;
 				initMethod = calledMethod;
-				foreach (var s in DotNetUtils.getCodeStrings(initMethod)) {
-					nativeFileResource = DotNetUtils.getResource(module, s);
+				foreach (var s in DotNetUtils.GetCodeStrings(initMethod)) {
+					nativeFileResource = DotNetUtils.GetResource(module, s);
 					if (nativeFileResource != null)
 						break;
 				}

@@ -38,14 +38,14 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			this.module = module;
 		}
 
-		public void find() {
-			foreach (var cctor in DeobUtils.getInitCctors(module, 3)) {
-				if (checkCctor(cctor))
+		public void Find() {
+			foreach (var cctor in DeobUtils.GetInitCctors(module, 3)) {
+				if (CheckCctor(cctor))
 					return;
 			}
 		}
 
-		bool checkCctor(MethodDef method) {
+		bool CheckCctor(MethodDef method) {
 			if (method == null || method.Body == null)
 				return false;
 
@@ -66,7 +66,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			return false;
 		}
 
-		public bool decrypt(MyPEImage peImage, ref DumpedMethods dumpedMethods) {
+		public bool Decrypt(MyPEImage peImage, ref DumpedMethods dumpedMethods) {
 			dumpedMethods = new DumpedMethods();
 
 			bool decrypted = false;
@@ -74,15 +74,15 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			var methodDef = peImage.DotNetFile.MetaData.TablesStream.MethodTable;
 			for (uint rid = 1; rid <= methodDef.Rows; rid++) {
 				var dm = new DumpedMethod();
-				peImage.readMethodTableRowTo(dm, rid);
+				peImage.ReadMethodTableRowTo(dm, rid);
 
 				if (dm.mdRVA == 0)
 					continue;
-				uint bodyOffset = peImage.rvaToOffset(dm.mdRVA);
+				uint bodyOffset = peImage.RvaToOffset(dm.mdRVA);
 
 				peImage.Reader.Position = bodyOffset;
-				var mbHeader = MethodBodyParser.parseMethodBody(peImage.Reader, out dm.code, out dm.extraSections);
-				peImage.updateMethodHeaderInfo(dm, mbHeader);
+				var mbHeader = MethodBodyParser.ParseMethodBody(peImage.Reader, out dm.code, out dm.extraSections);
+				peImage.UpdateMethodHeaderInfo(dm, mbHeader);
 
 				if (dm.code.Length < 6 || dm.code[0] != 0x2A || dm.code[1] != 0x2A)
 					continue;
@@ -90,35 +90,35 @@ namespace de4dot.code.deobfuscators.CodeWall {
 				int seed = BitConverter.ToInt32(dm.code, 2);
 				Array.Copy(newCodeHeader, dm.code, newCodeHeader.Length);
 				if (seed == 0)
-					decrypt(dm.code);
+					Decrypt(dm.code);
 				else
-					decrypt(dm.code, seed);
+					Decrypt(dm.code, seed);
 
-				dumpedMethods.add(dm);
+				dumpedMethods.Add(dm);
 				decrypted = true;
 			}
 
 			return decrypted;
 		}
 
-		void decrypt(byte[] data) {
+		void Decrypt(byte[] data) {
 			for (int i = 6; i < data.Length; i++)
 				data[i] ^= decryptKey[i % decryptKey.Length];
 		}
 
-		void decrypt(byte[] data, int seed) {
-			var key = new KeyGenerator(seed).generate(data.Length);
+		void Decrypt(byte[] data, int seed) {
+			var key = new KeyGenerator(seed).Generate(data.Length);
 			for (int i = 6; i < data.Length; i++)
 				data[i] ^= key[i];
 		}
 
-		public void deobfuscate(Blocks blocks) {
+		public void Deobfuscate(Blocks blocks) {
 			if (initMethod == null)
 				return;
 			if (blocks.Method.Name != ".cctor")
 				return;
 
-			foreach (var block in blocks.MethodBlocks.getAllBlocks()) {
+			foreach (var block in blocks.MethodBlocks.GetAllBlocks()) {
 				var instrs = block.Instructions;
 				for (int i = 0; i < instrs.Count; i++) {
 					var instr = instrs[i];
@@ -127,7 +127,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 					var calledMethod = instr.Operand as IMethod;
 					if (!MethodEqualityComparer.CompareDeclaringTypes.Equals(calledMethod, initMethod))
 						continue;
-					block.remove(i, 1);
+					block.Remove(i, 1);
 					i--;
 				}
 			}

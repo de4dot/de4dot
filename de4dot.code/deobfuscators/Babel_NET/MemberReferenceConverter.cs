@@ -34,64 +34,64 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			this.module = module;
 		}
 
-		bool isInOurModule(IMemberRef memberRef) {
+		bool IsInOurModule(IMemberRef memberRef) {
 			return memberRef.Module == module;
 		}
 
-		Importer createImporter() {
+		Importer CreateImporter() {
 			return new Importer(module, ImporterOptions.TryToUseTypeDefs);
 		}
 
-		public TypeSig convert(TypeRef typeRef) {
-			return createImporter().Import(typeRef).ToTypeSig();
+		public TypeSig Convert(TypeRef typeRef) {
+			return CreateImporter().Import(typeRef).ToTypeSig();
 		}
 
-		ITypeDefOrRef convert(ITypeDefOrRef tdr) {
-			return (ITypeDefOrRef)createImporter().Import(tdr);
+		ITypeDefOrRef Convert(ITypeDefOrRef tdr) {
+			return (ITypeDefOrRef)CreateImporter().Import(tdr);
 		}
 
-		TypeSig convert2(TypeSig ts) {
-			return createImporter().Import(ts);
+		TypeSig Convert2(TypeSig ts) {
+			return CreateImporter().Import(ts);
 		}
 
-		public TypeSig convert(TypeSig ts) {
-			return createImporter().Import(ts);
+		public TypeSig Convert(TypeSig ts) {
+			return CreateImporter().Import(ts);
 		}
 
-		public IField convert(IField fieldRef) {
-			if (isInOurModule(fieldRef))
-				return tryGetFieldDef(fieldRef);
-			return createImporter().Import(fieldRef);
+		public IField Convert(IField fieldRef) {
+			if (IsInOurModule(fieldRef))
+				return TryGetFieldDef(fieldRef);
+			return CreateImporter().Import(fieldRef);
 		}
 
-		public IMethodDefOrRef convert(IMethod methodRef) {
+		public IMethodDefOrRef Convert(IMethod methodRef) {
 			if (!(methodRef is MemberRef || methodRef is MethodDef) || methodRef.MethodSig == null)
 				throw new ApplicationException("Invalid method reference type");
-			if (isInOurModule(methodRef))
-				return (IMethodDefOrRef)tryGetMethodDef(methodRef);
-			return (IMethodDefOrRef)createImporter().Import(methodRef);
+			if (IsInOurModule(methodRef))
+				return (IMethodDefOrRef)TryGetMethodDef(methodRef);
+			return (IMethodDefOrRef)CreateImporter().Import(methodRef);
 		}
 
-		public IField tryGetFieldDef(IField fieldRef) {
+		public IField TryGetFieldDef(IField fieldRef) {
 			var fieldDef = fieldRef as FieldDef;
 			if (fieldDef != null)
 				return fieldDef;
 
-			var declaringType = DotNetUtils.getType(module, fieldRef.DeclaringType);
+			var declaringType = DotNetUtils.GetType(module, fieldRef.DeclaringType);
 			if (declaringType == null)
 				return fieldRef;
-			return DotNetUtils.getField(declaringType, fieldRef);
+			return DotNetUtils.GetField(declaringType, fieldRef);
 		}
 
-		public IMethod tryGetMethodDef(IMethod methodRef) {
+		public IMethod TryGetMethodDef(IMethod methodRef) {
 			var methodDef = methodRef as MethodDef;
 			if (methodDef != null)
 				return methodDef;
 
-			var declaringType = DotNetUtils.getType(module, methodRef.DeclaringType);
+			var declaringType = DotNetUtils.GetType(module, methodRef.DeclaringType);
 			if (declaringType == null)
 				return methodRef;
-			return DotNetUtils.getMethod(declaringType, methodRef);
+			return DotNetUtils.GetMethod(declaringType, methodRef);
 		}
 	}
 }

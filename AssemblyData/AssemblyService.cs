@@ -33,14 +33,14 @@ namespace AssemblyData {
 		AssemblyResolver assemblyResolver = new AssemblyResolver();
 		bool installCompileMethodCalled = false;
 
-		public void doNothing() {
+		public void DoNothing() {
 		}
 
-		public void exit() {
+		public void Exit() {
 			exitEvent.Set();
 		}
 
-		public void waitExit() {
+		public void WaitExit() {
 			exitEvent.WaitOne();
 		}
 
@@ -48,28 +48,28 @@ namespace AssemblyData {
 			return null;
 		}
 
-		void checkStringDecrypter() {
+		void CheckStringDecrypter() {
 			if (stringDecrypter == null)
 				throw new ApplicationException("setStringDecrypterType() hasn't been called yet.");
 		}
 
-		void checkAssembly() {
+		void CheckAssembly() {
 			if (assembly == null)
 				throw new ApplicationException("loadAssembly() hasn't been called yet.");
 		}
 
-		public void loadAssembly(string filename) {
+		public void LoadAssembly(string filename) {
 			if (assembly != null)
 				throw new ApplicationException("Only one assembly can be explicitly loaded");
 			try {
-				assembly = assemblyResolver.load(filename);
+				assembly = assemblyResolver.Load(filename);
 			}
 			catch (BadImageFormatException) {
 				throw new ApplicationException(string.Format("Could not load assembly {0}. Maybe it's 32-bit or 64-bit only?", filename));
 			}
 		}
 
-		public void setStringDecrypterType(StringDecrypterType type) {
+		public void SetStringDecrypterType(StringDecrypterType type) {
 			if (stringDecrypter != null)
 				throw new ApplicationException("StringDecrypterType already set");
 
@@ -87,25 +87,25 @@ namespace AssemblyData {
 			}
 		}
 
-		public int defineStringDecrypter(int methodToken) {
-			checkStringDecrypter();
-			var methodInfo = findMethod(methodToken);
+		public int DefineStringDecrypter(int methodToken) {
+			CheckStringDecrypter();
+			var methodInfo = FindMethod(methodToken);
 			if (methodInfo == null)
 				throw new ApplicationException(string.Format("Could not find method {0:X8}", methodToken));
 			if (methodInfo.ReturnType != typeof(string) && methodInfo.ReturnType != typeof(object))
 				throw new ApplicationException(string.Format("Method return type must be string or object: {0}", methodInfo));
-			return stringDecrypter.defineStringDecrypter(methodInfo);
+			return stringDecrypter.DefineStringDecrypter(methodInfo);
 		}
 
-		public object[] decryptStrings(int stringDecrypterMethod, object[] args, int callerToken) {
-			checkStringDecrypter();
-			var caller = getCaller(callerToken);
+		public object[] DecryptStrings(int stringDecrypterMethod, object[] args, int callerToken) {
+			CheckStringDecrypter();
+			var caller = GetCaller(callerToken);
 			foreach (var arg in args)
-				SimpleData.unpack((object[])arg);
-			return SimpleData.pack(stringDecrypter.decryptStrings(stringDecrypterMethod, args, caller));
+				SimpleData.Unpack((object[])arg);
+			return SimpleData.Pack(stringDecrypter.DecryptStrings(stringDecrypterMethod, args, caller));
 		}
 
-		MethodBase getCaller(int callerToken) {
+		MethodBase GetCaller(int callerToken) {
 			try {
 				return assembly.GetModules()[0].ResolveMethod(callerToken);
 			}
@@ -114,8 +114,8 @@ namespace AssemblyData {
 			}
 		}
 
-		MethodInfo findMethod(int methodToken) {
-			checkAssembly();
+		MethodInfo FindMethod(int methodToken) {
+			CheckAssembly();
 
 			foreach (var module in assembly.GetModules()) {
 				var method = module.ResolveMethod(methodToken) as MethodInfo;
@@ -126,28 +126,28 @@ namespace AssemblyData {
 			return null;
 		}
 
-		public void installCompileMethod(DecryptMethodsInfo decryptMethodsInfo) {
+		public void InstallCompileMethod(DecryptMethodsInfo decryptMethodsInfo) {
 			if (installCompileMethodCalled)
 				throw new ApplicationException("installCompileMethod() has already been called");
 			installCompileMethodCalled = true;
 			DynamicMethodsDecrypter.Instance.DecryptMethodsInfo = decryptMethodsInfo;
-			DynamicMethodsDecrypter.Instance.installCompileMethod();
+			DynamicMethodsDecrypter.Instance.InstallCompileMethod();
 		}
 
-		public void loadObfuscator(string filename) {
-			loadAssembly(filename);
+		public void LoadObfuscator(string filename) {
+			LoadAssembly(filename);
 			DynamicMethodsDecrypter.Instance.Module = assembly.ManifestModule;
-			DynamicMethodsDecrypter.Instance.loadObfuscator();
+			DynamicMethodsDecrypter.Instance.LoadObfuscator();
 		}
 
-		public bool canDecryptMethods() {
-			checkAssembly();
-			return DynamicMethodsDecrypter.Instance.canDecryptMethods();
+		public bool CanDecryptMethods() {
+			CheckAssembly();
+			return DynamicMethodsDecrypter.Instance.CanDecryptMethods();
 		}
 
-		public DumpedMethods decryptMethods() {
-			checkAssembly();
-			return DynamicMethodsDecrypter.Instance.decryptMethods();
+		public DumpedMethods DecryptMethods() {
+			CheckAssembly();
+			return DynamicMethodsDecrypter.Instance.DecryptMethods();
 		}
 	}
 }

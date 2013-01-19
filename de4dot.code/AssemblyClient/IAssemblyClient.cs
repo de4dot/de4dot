@@ -23,7 +23,7 @@ using AssemblyData;
 namespace de4dot.code.AssemblyClient {
 	public interface IAssemblyClient : IDisposable {
 		IAssemblyService Service { get; }
-		void connect();
-		void waitConnected();
+		void Connect();
+		void WaitConnected();
 	}
 }

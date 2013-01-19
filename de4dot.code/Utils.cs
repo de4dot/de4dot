@@ -55,7 +55,7 @@ namespace de4dot.code {
 	public static class Utils {
 		static Random random = new Random();
 
-		public static IEnumerable<T> unique<T>(IEnumerable<T> values) {
+		public static IEnumerable<T> Unique<T>(IEnumerable<T> values) {
 			// HashSet is only available in .NET 3.5 and later.
 			var dict = new Dictionary<T, bool>();
 			foreach (var val in values)
@@ -63,30 +63,30 @@ namespace de4dot.code {
 			return dict.Keys;
 		}
 
-		public static string toCsharpString(UTF8String s) {
-			return toCsharpString(UTF8String.ToSystemStringOrEmpty(s));
+		public static string ToCsharpString(UTF8String s) {
+			return ToCsharpString(UTF8String.ToSystemStringOrEmpty(s));
 		}
 
-		public static string toCsharpString(string s) {
+		public static string ToCsharpString(string s) {
 			var sb = new StringBuilder(s.Length + 2);
 			sb.Append('"');
 			foreach (var c in s) {
 				if ((int)c < 0x20) {
 					switch (c) {
-					case '\a': appendEscape(sb, 'a'); break;
-					case '\b': appendEscape(sb, 'b'); break;
-					case '\f': appendEscape(sb, 'f'); break;
-					case '\n': appendEscape(sb, 'n'); break;
-					case '\r': appendEscape(sb, 'r'); break;
-					case '\t': appendEscape(sb, 't'); break;
-					case '\v': appendEscape(sb, 'v'); break;
+					case '\a': AppendEscape(sb, 'a'); break;
+					case '\b': AppendEscape(sb, 'b'); break;
+					case '\f': AppendEscape(sb, 'f'); break;
+					case '\n': AppendEscape(sb, 'n'); break;
+					case '\r': AppendEscape(sb, 'r'); break;
+					case '\t': AppendEscape(sb, 't'); break;
+					case '\v': AppendEscape(sb, 'v'); break;
 					default:
 						sb.Append(string.Format(@"\u{0:X4}", (int)c));
 						break;
 					}
 				}
 				else if (c == '\\' || c == '"') {
-					appendEscape(sb, c);
+					AppendEscape(sb, c);
 				}
 				else
 					sb.Append(c);
@@ -95,12 +95,12 @@ namespace de4dot.code {
 			return sb.ToString();
 		}
 
-		public static string shellEscape(string s) {
+		public static string ShellEscape(string s) {
 			var sb = new StringBuilder(s.Length + 2);
 			sb.Append('"');
 			foreach (var c in s) {
 				if (c == '"')
-					appendEscape(sb, c);
+					AppendEscape(sb, c);
 				else
 					sb.Append(c);
 			}
@@ -108,20 +108,20 @@ namespace de4dot.code {
 			return sb.ToString();
 		}
 
-		static void appendEscape(StringBuilder sb, char c) {
+		static void AppendEscape(StringBuilder sb, char c) {
 			sb.Append('\\');
 			sb.Append(c);
 		}
 
-		public static string removeNewlines(object o) {
-			return removeNewlines(o.ToString());
+		public static string RemoveNewlines(object o) {
+			return RemoveNewlines(o.ToString());
 		}
 
-		public static string removeNewlines(string s) {
+		public static string RemoveNewlines(string s) {
 			return s.Replace('\n', ' ').Replace('\r', ' ');
 		}
 
-		public static string getFullPath(string path) {
+		public static string GetFullPath(string path) {
 			try {
 				return Path.GetFullPath(path);
 			}
@@ -130,7 +130,7 @@ namespace de4dot.code {
 			}
 		}
 
-		public static string randomName(int min, int max) {
+		public static string RandomName(int min, int max) {
 			int numChars = random.Next(min, max + 1);
 			var sb = new StringBuilder(numChars);
 			int numLower = 0;
@@ -150,26 +150,26 @@ namespace de4dot.code {
 			return sb.ToString();
 		}
 
-		public static string getBaseName(string name) {
+		public static string GetBaseName(string name) {
 			int index = name.LastIndexOf(Path.DirectorySeparatorChar);
 			if (index < 0)
 				return name;
 			return name.Substring(index + 1);
 		}
 
-		public static string getDirName(string name) {
+		public static string GetDirName(string name) {
 			return Path.GetDirectoryName(name);
 		}
 
 		static string ourBaseDir = null;
-		public static string getOurBaseDir() {
+		public static string GetOurBaseDir() {
 			if (ourBaseDir != null)
 				return ourBaseDir;
-			return ourBaseDir = getDirName(typeof(Utils).Assembly.Location);
+			return ourBaseDir = GetDirName(typeof(Utils).Assembly.Location);
 		}
 
-		public static string getPathOfOurFile(string filename) {
-			return Path.Combine(getOurBaseDir(), filename);
+		public static string GetPathOfOurFile(string filename) {
+			return Path.Combine(GetOurBaseDir(), filename);
 		}
 
 		// This fixes a mono (tested 2.10.5) String.StartsWith() bug. NB: stringComparison must be
@@ -180,14 +180,14 @@ namespace de4dot.code {
 			return left.Substring(0, right.Length).Equals(right, stringComparison);
 		}
 
-		public static string getAssemblySimpleName(string name) {
+		public static string GetAssemblySimpleName(string name) {
 			int i = name.IndexOf(',');
 			if (i < 0)
 				return name;
 			return name.Substring(0, i);
 		}
 
-		public static bool pathExists(string path) {
+		public static bool PathExists(string path) {
 			try {
 				return new DirectoryInfo(path).Exists;
 			}
@@ -196,7 +196,7 @@ namespace de4dot.code {
 			}
 		}
 
-		public static bool fileExists(string path) {
+		public static bool FileExists(string path) {
 			try {
 				return new FileInfo(path).Exists;
 			}
@@ -205,7 +205,7 @@ namespace de4dot.code {
 			}
 		}
 
-		public static bool compare(byte[] a, byte[] b) {
+		public static bool Compare(byte[] a, byte[] b) {
 			if (a.Length != b.Length)
 				return false;
 			for (int i = 0; i < a.Length; i++) {
@@ -215,7 +215,7 @@ namespace de4dot.code {
 			return true;
 		}
 
-		public static byte[] readFile(string filename) {
+		public static byte[] ReadFile(string filename) {
 			// If the file is on the network, and we read more than 2MB, we'll read from the wrong
 			// offset in the file! Tested: VMware 8, Win7 x64.
 			const int MAX_BYTES_READ = 0x200000;

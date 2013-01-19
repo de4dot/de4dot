@@ -58,85 +58,85 @@ namespace de4dot.code.renamer.asmmodules {
 		Stack<object> objectStack;
 		ModuleDef validModule;
 
-		public void removeTypeDef(TypeDef td) {
+		public void RemoveTypeDef(TypeDef td) {
 			if (!typeDefs.Remove(td))
 				throw new ApplicationException(string.Format("Could not remove TypeDef: {0}", td));
 		}
 
-		public void removeEventDef(EventDef ed) {
+		public void RemoveEventDef(EventDef ed) {
 			if (!eventDefs.Remove(ed))
 				throw new ApplicationException(string.Format("Could not remove EventDef: {0}", ed));
 		}
 
-		public void removeFieldDef(FieldDef fd) {
+		public void RemoveFieldDef(FieldDef fd) {
 			if (!fieldDefs.Remove(fd))
 				throw new ApplicationException(string.Format("Could not remove FieldDef: {0}", fd));
 		}
 
-		public void removeMethodDef(MethodDef md) {
+		public void RemoveMethodDef(MethodDef md) {
 			if (!methodDefs.Remove(md))
 				throw new ApplicationException(string.Format("Could not remove MethodDef: {0}", md));
 		}
 
-		public void removePropertyDef(PropertyDef pd) {
+		public void RemovePropertyDef(PropertyDef pd) {
 			if (!propertyDefs.Remove(pd))
 				throw new ApplicationException(string.Format("Could not remove PropertyDef: {0}", pd));
 		}
 
-		public void findAll(ModuleDef module) {
+		public void FindAll(ModuleDef module) {
 			validModule = module;
 
 			// This needs to be big. About 2048 entries should be enough for most though...
 			objectStack = new Stack<object>(0x1000);
 
-			add(module);
-			processAll();
+			Add(module);
+			ProcessAll();
 
 			objectStack = null;
 		}
 
-		void push(object mr) {
+		void Push(object mr) {
 			if (mr == null)
 				return;
 			objectStack.Push(mr);
 		}
 
-		void processAll() {
+		void ProcessAll() {
 			while (objectStack.Count > 0) {
 				var o = objectStack.Pop();
-				switch (getObjectType(o)) {
+				switch (GetObjectType(o)) {
 				case ObjectType.Unknown: break;
-				case ObjectType.EventDef:	add((EventDef)o); break;
-				case ObjectType.FieldDef:	add((FieldDef)o); break;
-				case ObjectType.GenericParam: add((GenericParam)o); break;
-				case ObjectType.MemberRef:	add((MemberRef)o); break;
-				case ObjectType.MethodDef:	add((MethodDef)o); break;
-				case ObjectType.MethodSpec:	add((MethodSpec)o); break;
-				case ObjectType.PropertyDef:add((PropertyDef)o); break;
-				case ObjectType.TypeDef:	add((TypeDef)o); break;
-				case ObjectType.TypeRef:	add((TypeRef)o); break;
-				case ObjectType.TypeSig:	add((TypeSig)o); break;
-				case ObjectType.TypeSpec:	add((TypeSpec)o); break;
-				case ObjectType.ExportedType: add((ExportedType)o); break;
+				case ObjectType.EventDef:	Add((EventDef)o); break;
+				case ObjectType.FieldDef:	Add((FieldDef)o); break;
+				case ObjectType.GenericParam: Add((GenericParam)o); break;
+				case ObjectType.MemberRef:	Add((MemberRef)o); break;
+				case ObjectType.MethodDef:	Add((MethodDef)o); break;
+				case ObjectType.MethodSpec:	Add((MethodSpec)o); break;
+				case ObjectType.PropertyDef:Add((PropertyDef)o); break;
+				case ObjectType.TypeDef:	Add((TypeDef)o); break;
+				case ObjectType.TypeRef:	Add((TypeRef)o); break;
+				case ObjectType.TypeSig:	Add((TypeSig)o); break;
+				case ObjectType.TypeSpec:	Add((TypeSpec)o); break;
+				case ObjectType.ExportedType: Add((ExportedType)o); break;
 				default: throw new InvalidOperationException(string.Format("Unknown type: {0}", o.GetType()));
 				}
 			}
 		}
 
 		readonly Dictionary<Type, ObjectType> toObjectType = new Dictionary<Type, ObjectType>();
-		ObjectType getObjectType(object o) {
+		ObjectType GetObjectType(object o) {
 			if (o == null)
 				return ObjectType.Unknown;
 			var type = o.GetType();
 			ObjectType mrType;
 			if (toObjectType.TryGetValue(type, out mrType))
 				return mrType;
-			mrType = getObjectType2(o);
+			mrType = GetObjectType2(o);
 			toObjectType[type] = mrType;
 			return mrType;
 		}
 
-		static ObjectType getObjectType2(object o) {
+		static ObjectType GetObjectType2(object o) {
 			if (o is EventDef)		return ObjectType.EventDef;
 			if (o is FieldDef)		return ObjectType.FieldDef;
 			if (o is GenericParam)	return ObjectType.GenericParam;
@@ -152,263 +152,263 @@ namespace de4dot.code.renamer.asmmodules {
 			return ObjectType.Unknown;
 		}
 
-		void add(ModuleDef mod) {
-			push(mod.ManagedEntryPoint);
-			add(mod.CustomAttributes);
-			add(mod.Types);
-			add(mod.ExportedTypes);
+		void Add(ModuleDef mod) {
+			Push(mod.ManagedEntryPoint);
+			Add(mod.CustomAttributes);
+			Add(mod.Types);
+			Add(mod.ExportedTypes);
 			if (mod.IsManifestModule)
-				add(mod.Assembly);
-			add(mod.VTableFixups);
+				Add(mod.Assembly);
+			Add(mod.VTableFixups);
 		}
 
-		void add(VTableFixups fixups) {
+		void Add(VTableFixups fixups) {
 			if (fixups == null)
 				return;
 			foreach (var fixup in fixups) {
 				foreach (var method in fixup)
-					push(method);
+					Push(method);
 			}
 		}
 
-		void add(AssemblyDef asm) {
+		void Add(AssemblyDef asm) {
 			if (asm == null)
 				return;
-			add(asm.DeclSecurities);
-			add(asm.CustomAttributes);
+			Add(asm.DeclSecurities);
+			Add(asm.CustomAttributes);
 		}
 
-		void add(CallingConventionSig sig) {
+		void Add(CallingConventionSig sig) {
 			if (sig == null)
 				return;
 
 			var fs = sig as FieldSig;
 			if (fs != null) {
-				add(fs);
+				Add(fs);
 				return;
 			}
 
 			var mbs = sig as MethodBaseSig;
 			if (mbs != null) {
-				add(mbs);
+				Add(mbs);
 				return;
 			}
 
 			var ls = sig as LocalSig;
 			if (ls != null) {
-				add(ls);
+				Add(ls);
 				return;
 			}
 
 			var gims = sig as GenericInstMethodSig;
 			if (gims != null) {
-				add(gims);
+				Add(gims);
 				return;
 			}
 		}
 
-		void add(FieldSig sig) {
+		void Add(FieldSig sig) {
 			if (sig == null)
 				return;
-			add(sig.Type);
+			Add(sig.Type);
 		}
 
-		void add(MethodBaseSig sig) {
+		void Add(MethodBaseSig sig) {
 			if (sig == null)
 				return;
-			add(sig.RetType);
-			add(sig.Params);
-			add(sig.ParamsAfterSentinel);
+			Add(sig.RetType);
+			Add(sig.Params);
+			Add(sig.ParamsAfterSentinel);
 		}
 
-		void add(LocalSig sig) {
+		void Add(LocalSig sig) {
 			if (sig == null)
 				return;
-			add(sig.Locals);
+			Add(sig.Locals);
 		}
 
-		void add(GenericInstMethodSig sig) {
+		void Add(GenericInstMethodSig sig) {
 			if (sig == null)
 				return;
-			add(sig.GenericArguments);
+			Add(sig.GenericArguments);
 		}
 
-		void add(IEnumerable<CustomAttribute> cas) {
+		void Add(IEnumerable<CustomAttribute> cas) {
 			if (cas == null)
 				return;
 			foreach (var ca in cas)
-				add(ca);
+				Add(ca);
 		}
 
-		void add(CustomAttribute ca) {
+		void Add(CustomAttribute ca) {
 			if (ca == null || customAttributes.ContainsKey(ca))
 				return;
 			customAttributes[ca] = true;
-			push(ca.Constructor);
-			add(ca.ConstructorArguments);
-			add(ca.NamedArguments);
+			Push(ca.Constructor);
+			Add(ca.ConstructorArguments);
+			Add(ca.NamedArguments);
 		}
 
-		void add(IEnumerable<CAArgument> args) {
+		void Add(IEnumerable<CAArgument> args) {
 			if (args == null)
 				return;
 			foreach (var arg in args)
-				add(arg);
+				Add(arg);
 		}
 
-		void add(CAArgument arg) {
+		void Add(CAArgument arg) {
 			// It's a struct so can't be null
-			add(arg.Type);
+			Add(arg.Type);
 		}
 
-		void add(IEnumerable<CANamedArgument> args) {
+		void Add(IEnumerable<CANamedArgument> args) {
 			if (args == null)
 				return;
 			foreach (var arg in args)
-				add(arg);
+				Add(arg);
 		}
 
-		void add(CANamedArgument arg) {
+		void Add(CANamedArgument arg) {
 			if (arg == null)
 				return;
-			add(arg.Type);
-			add(arg.Argument);
+			Add(arg.Type);
+			Add(arg.Argument);
 		}
 
-		void add(IEnumerable<DeclSecurity> decls) {
+		void Add(IEnumerable<DeclSecurity> decls) {
 			if (decls == null)
 				return;
 			foreach (var decl in decls)
-				add(decl);
+				Add(decl);
 		}
 
-		void add(DeclSecurity decl) {
+		void Add(DeclSecurity decl) {
 			if (decl == null)
 				return;
-			add(decl.CustomAttributes);
+			Add(decl.CustomAttributes);
 		}
 
-		void add(IEnumerable<EventDef> eds) {
+		void Add(IEnumerable<EventDef> eds) {
 			if (eds == null)
 				return;
 			foreach (var ed in eds)
-				add(ed);
+				Add(ed);
 		}
 
-		void add(EventDef ed) {
+		void Add(EventDef ed) {
 			if (ed == null || eventDefs.ContainsKey(ed))
 				return;
 			if (ed.DeclaringType != null && ed.DeclaringType.Module != validModule)
 				return;
 			eventDefs[ed] = true;
-			push(ed.EventType);
-			add(ed.CustomAttributes);
-			add(ed.AddMethod);
-			add(ed.InvokeMethod);
-			add(ed.RemoveMethod);
-			add(ed.OtherMethods);
-			add(ed.DeclaringType);
+			Push(ed.EventType);
+			Add(ed.CustomAttributes);
+			Add(ed.AddMethod);
+			Add(ed.InvokeMethod);
+			Add(ed.RemoveMethod);
+			Add(ed.OtherMethods);
+			Add(ed.DeclaringType);
 		}
 
-		void add(IEnumerable<FieldDef> fds) {
+		void Add(IEnumerable<FieldDef> fds) {
 			if (fds == null)
 				return;
 			foreach (var fd in fds)
-				add(fd);
+				Add(fd);
 		}
 
-		void add(FieldDef fd) {
+		void Add(FieldDef fd) {
 			if (fd == null || fieldDefs.ContainsKey(fd))
 				return;
 			if (fd.DeclaringType != null && fd.DeclaringType.Module != validModule)
 				return;
 			fieldDefs[fd] = true;
-			add(fd.CustomAttributes);
-			add(fd.Signature);
-			add(fd.DeclaringType);
+			Add(fd.CustomAttributes);
+			Add(fd.Signature);
+			Add(fd.DeclaringType);
 		}
 
-		void add(IEnumerable<GenericParam> gps) {
+		void Add(IEnumerable<GenericParam> gps) {
 			if (gps == null)
 				return;
 			foreach (var gp in gps)
-				add(gp);
+				Add(gp);
 		}
 
-		void add(GenericParam gp) {
+		void Add(GenericParam gp) {
 			if (gp == null || genericParams.ContainsKey(gp))
 				return;
 			genericParams[gp] = true;
-			push(gp.Owner);
-			push(gp.Kind);
-			add(gp.GenericParamConstraints);
-			add(gp.CustomAttributes);
+			Push(gp.Owner);
+			Push(gp.Kind);
+			Add(gp.GenericParamConstraints);
+			Add(gp.CustomAttributes);
 		}
 
-		void add(IEnumerable<GenericParamConstraint> gpcs) {
+		void Add(IEnumerable<GenericParamConstraint> gpcs) {
 			if (gpcs == null)
 				return;
 			foreach (var gpc in gpcs)
-				add(gpc);
+				Add(gpc);
 		}
 
-		void add(GenericParamConstraint gpc) {
+		void Add(GenericParamConstraint gpc) {
 			if (gpc == null)
 				return;
-			add(gpc.Owner);
-			push(gpc.Constraint);
-			add(gpc.CustomAttributes);
+			Add(gpc.Owner);
+			Push(gpc.Constraint);
+			Add(gpc.CustomAttributes);
 		}
 
-		void add(MemberRef mr) {
+		void Add(MemberRef mr) {
 			if (mr == null || memberRefs.ContainsKey(mr))
 				return;
 			if (mr.Module != validModule)
 				return;
 			memberRefs[mr] = true;
-			push(mr.Class);
-			add(mr.Signature);
-			add(mr.CustomAttributes);
+			Push(mr.Class);
+			Add(mr.Signature);
+			Add(mr.CustomAttributes);
 		}
 
-		void add(IEnumerable<MethodDef> methods) {
+		void Add(IEnumerable<MethodDef> methods) {
 			if (methods == null)
 				return;
 			foreach (var m in methods)
-				add(m);
+				Add(m);
 		}
 
-		void add(MethodDef md) {
+		void Add(MethodDef md) {
 			if (md == null || methodDefs.ContainsKey(md))
 				return;
 			if (md.DeclaringType != null && md.DeclaringType.Module != validModule)
 				return;
 			methodDefs[md] = true;
-			add(md.Signature);
-			add(md.ParamDefs);
-			add(md.GenericParameters);
-			add(md.DeclSecurities);
-			add(md.MethodBody);
-			add(md.CustomAttributes);
-			add(md.Overrides);
-			add(md.DeclaringType);
+			Add(md.Signature);
+			Add(md.ParamDefs);
+			Add(md.GenericParameters);
+			Add(md.DeclSecurities);
+			Add(md.MethodBody);
+			Add(md.CustomAttributes);
+			Add(md.Overrides);
+			Add(md.DeclaringType);
 		}
 
-		void add(MethodBody mb) {
+		void Add(MethodBody mb) {
 			var cb = mb as CilBody;
 			if (cb != null)
-				add(cb);
+				Add(cb);
 		}
 
-		void add(CilBody cb) {
+		void Add(CilBody cb) {
 			if (cb == null)
 				return;
-			add(cb.Instructions);
-			add(cb.ExceptionHandlers);
-			add(cb.Variables);
+			Add(cb.Instructions);
+			Add(cb.ExceptionHandlers);
+			Add(cb.Variables);
 		}
 
-		void add(IEnumerable<Instruction> instrs) {
+		void Add(IEnumerable<Instruction> instrs) {
 			if (instrs == null)
 				return;
 			foreach (var instr in instrs) {
@@ -419,23 +419,23 @@ namespace de4dot.code.renamer.asmmodules {
 				case OperandType.InlineType:
 				case OperandType.InlineMethod:
 				case OperandType.InlineField:
-					push(instr.Operand);
+					Push(instr.Operand);
 					break;
 
 				case OperandType.InlineSig:
-					add(instr.Operand as CallingConventionSig);
+					Add(instr.Operand as CallingConventionSig);
 					break;
 
 				case OperandType.InlineVar:
 				case OperandType.ShortInlineVar:
 					var local = instr.Operand as Local;
 					if (local != null) {
-						add(local);
+						Add(local);
 						break;
 					}
 					var arg = instr.Operand as Parameter;
 					if (arg != null) {
-						add(arg);
+						Add(arg);
 						break;
 					}
 					break;
@@ -443,157 +443,157 @@ namespace de4dot.code.renamer.asmmodules {
 			}
 		}
 
-		void add(IEnumerable<ExceptionHandler> ehs) {
+		void Add(IEnumerable<ExceptionHandler> ehs) {
 			if (ehs == null)
 				return;
 			foreach (var eh in ehs)
-				push(eh.CatchType);
+				Push(eh.CatchType);
 		}
 
-		void add(IEnumerable<Local> locals) {
+		void Add(IEnumerable<Local> locals) {
 			if (locals == null)
 				return;
 			foreach (var local in locals)
-				add(local);
+				Add(local);
 		}
 
-		void add(Local local) {
+		void Add(Local local) {
 			if (local == null)
 				return;
-			add(local.Type);
+			Add(local.Type);
 		}
 
-		void add(IEnumerable<Parameter> ps) {
+		void Add(IEnumerable<Parameter> ps) {
 			if (ps == null)
 				return;
 			foreach (var p in ps)
-				add(p);
+				Add(p);
 		}
 
-		void add(Parameter param) {
+		void Add(Parameter param) {
 			if (param == null)
 				return;
-			add(param.Type);
-			add(param.Method);
+			Add(param.Type);
+			Add(param.Method);
 		}
 
-		void add(IEnumerable<ParamDef> pds) {
+		void Add(IEnumerable<ParamDef> pds) {
 			if (pds == null)
 				return;
 			foreach (var pd in pds)
-				add(pd);
+				Add(pd);
 		}
 
-		void add(ParamDef pd) {
+		void Add(ParamDef pd) {
 			if (pd == null)
 				return;
-			add(pd.DeclaringMethod);
-			add(pd.CustomAttributes);
+			Add(pd.DeclaringMethod);
+			Add(pd.CustomAttributes);
 		}
 
-		void add(IEnumerable<MethodOverride> mos) {
+		void Add(IEnumerable<MethodOverride> mos) {
 			if (mos == null)
 				return;
 			foreach (var mo in mos)
-				add(mo);
+				Add(mo);
 		}
 
-		void add(MethodOverride mo) {
+		void Add(MethodOverride mo) {
 			// It's a struct so can't be null
-			push(mo.MethodBody);
-			push(mo.MethodDeclaration);
+			Push(mo.MethodBody);
+			Push(mo.MethodDeclaration);
 		}
 
-		void add(MethodSpec ms) {
+		void Add(MethodSpec ms) {
 			if (ms == null || methodSpecs.ContainsKey(ms))
 				return;
 			if (ms.Method != null && ms.Method.DeclaringType != null && ms.Method.DeclaringType.Module != validModule)
 				return;
 			methodSpecs[ms] = true;
-			push(ms.Method);
-			add(ms.Instantiation);
-			add(ms.CustomAttributes);
+			Push(ms.Method);
+			Add(ms.Instantiation);
+			Add(ms.CustomAttributes);
 		}
 
-		void add(IEnumerable<PropertyDef> pds) {
+		void Add(IEnumerable<PropertyDef> pds) {
 			if (pds == null)
 				return;
 			foreach (var pd in pds)
-				add(pd);
+				Add(pd);
 		}
 
-		void add(PropertyDef pd) {
+		void Add(PropertyDef pd) {
 			if (pd == null || propertyDefs.ContainsKey(pd))
 				return;
 			if (pd.DeclaringType != null && pd.DeclaringType.Module != validModule)
 				return;
 			propertyDefs[pd] = true;
-			add(pd.Type);
-			add(pd.CustomAttributes);
-			add(pd.GetMethod);
-			add(pd.SetMethod);
-			add(pd.OtherMethods);
-			add(pd.DeclaringType);
+			Add(pd.Type);
+			Add(pd.CustomAttributes);
+			Add(pd.GetMethod);
+			Add(pd.SetMethod);
+			Add(pd.OtherMethods);
+			Add(pd.DeclaringType);
 		}
 
-		void add(IEnumerable<TypeDef> tds) {
+		void Add(IEnumerable<TypeDef> tds) {
 			if (tds == null)
 				return;
 			foreach (var td in tds)
-				add(td);
+				Add(td);
 		}
 
-		void add(TypeDef td) {
+		void Add(TypeDef td) {
 			if (td == null || typeDefs.ContainsKey(td))
 				return;
 			if (td.Module != validModule)
 				return;
 			typeDefs[td] = true;
-			push(td.BaseType);
-			add(td.Fields);
-			add(td.Methods);
-			add(td.GenericParameters);
-			add(td.Interfaces);
-			add(td.DeclSecurities);
-			add(td.DeclaringType);
-			add(td.Events);
-			add(td.Properties);
-			add(td.NestedTypes);
-			add(td.CustomAttributes);
+			Push(td.BaseType);
+			Add(td.Fields);
+			Add(td.Methods);
+			Add(td.GenericParameters);
+			Add(td.Interfaces);
+			Add(td.DeclSecurities);
+			Add(td.DeclaringType);
+			Add(td.Events);
+			Add(td.Properties);
+			Add(td.NestedTypes);
+			Add(td.CustomAttributes);
 		}
 
-		void add(IEnumerable<InterfaceImpl> iis) {
+		void Add(IEnumerable<InterfaceImpl> iis) {
 			if (iis == null)
 				return;
 			foreach (var ii in iis)
-				add(ii);
+				Add(ii);
 		}
 
-		void add(InterfaceImpl ii) {
+		void Add(InterfaceImpl ii) {
 			if (ii == null)
 				return;
-			push(ii.Interface);
-			add(ii.CustomAttributes);
+			Push(ii.Interface);
+			Add(ii.CustomAttributes);
 		}
 
-		void add(TypeRef tr) {
+		void Add(TypeRef tr) {
 			if (tr == null || typeRefs.ContainsKey(tr))
 				return;
 			if (tr.Module != validModule)
 				return;
 			typeRefs[tr] = true;
-			push(tr.ResolutionScope);
-			add(tr.CustomAttributes);
+			Push(tr.ResolutionScope);
+			Add(tr.CustomAttributes);
 		}
 
-		void add(IEnumerable<TypeSig> tss) {
+		void Add(IEnumerable<TypeSig> tss) {
 			if (tss == null)
 				return;
 			foreach (var ts in tss)
-				add(ts);
+				Add(ts);
 		}
 
-		void add(TypeSig ts) {
+		void Add(TypeSig ts) {
 			if (ts == null || typeSigs.ContainsKey(ts))
 				return;
 			if (ts.Module != validModule)
@@ -623,24 +623,24 @@ namespace de4dot.code.renamer.asmmodules {
 				case ElementType.U:
 				case ElementType.Object:
 					var tdrs = (TypeDefOrRefSig)ts;
-					push(tdrs.TypeDefOrRef);
+					Push(tdrs.TypeDefOrRef);
 					break;
 
 				case ElementType.FnPtr:
 					var fps = (FnPtrSig)ts;
-					add(fps.Signature);
+					Add(fps.Signature);
 					break;
 
 				case ElementType.GenericInst:
 					var gis = (GenericInstSig)ts;
-					add(gis.GenericType);
-					add(gis.GenericArguments);
+					Add(gis.GenericType);
+					Add(gis.GenericArguments);
 					break;
 
 				case ElementType.CModReqd:
 				case ElementType.CModOpt:
 					var ms = (ModifierSig)ts;
-					push(ms.Modifier);
+					Push(ms.Modifier);
 					break;
 
 				case ElementType.End:
@@ -662,31 +662,31 @@ namespace de4dot.code.renamer.asmmodules {
 			}
 		}
 
-		void add(TypeSpec ts) {
+		void Add(TypeSpec ts) {
 			if (ts == null || typeSpecs.ContainsKey(ts))
 				return;
 			if (ts.Module != validModule)
 				return;
 			typeSpecs[ts] = true;
-			add(ts.TypeSig);
-			add(ts.CustomAttributes);
+			Add(ts.TypeSig);
+			Add(ts.CustomAttributes);
 		}
 
-		void add(IEnumerable<ExportedType> ets) {
+		void Add(IEnumerable<ExportedType> ets) {
 			if (ets == null)
 				return;
 			foreach (var et in ets)
-				add(et);
+				Add(et);
 		}
 
-		void add(ExportedType et) {
+		void Add(ExportedType et) {
 			if (et == null || exportedTypes.ContainsKey(et))
 				return;
 			if (et.Module != validModule)
 				return;
 			exportedTypes[et] = true;
-			add(et.CustomAttributes);
-			push(et.Implementation);
+			Add(et.CustomAttributes);
+			Push(et.Implementation);
 		}
 	}
 }

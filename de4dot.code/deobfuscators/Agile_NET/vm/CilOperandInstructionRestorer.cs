@@ -29,7 +29,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 	class CilOperandInstructionRestorer {
 		MethodDef method;
 
-		public bool restore(MethodDef method) {
+		public bool Restore(MethodDef method) {
 			this.method = method;
 			bool atLeastOneFailed = false;
 
@@ -45,26 +45,26 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 				TypeSig operandType = null;
 				switch (instr.OpCode.Code) {
 				case Code.Ldelema:
-					var arrayType = MethodStack.getLoadedType(method, instrs, i, 1) as SZArraySig;
+					var arrayType = MethodStack.GetLoadedType(method, instrs, i, 1) as SZArraySig;
 					if (arrayType == null)
 						break;
 					operandType = arrayType.Next;
 					break;
 
 				case Code.Ldobj:
-					operandType = getPtrElementType(MethodStack.getLoadedType(method, instrs, i, 0));
+					operandType = GetPtrElementType(MethodStack.GetLoadedType(method, instrs, i, 0));
 					break;
 
 				case Code.Stobj:
-					operandType = MethodStack.getLoadedType(method, instrs, i, 0);
-					if (!isValidType(operandType))
-						operandType = getPtrElementType(MethodStack.getLoadedType(method, instrs, i, 1));
+					operandType = MethodStack.GetLoadedType(method, instrs, i, 0);
+					if (!IsValidType(operandType))
+						operandType = GetPtrElementType(MethodStack.GetLoadedType(method, instrs, i, 1));
 					break;
 
 				default:
 					continue;
 				}
-				if (!isValidType(operandType)) {
+				if (!IsValidType(operandType)) {
 					atLeastOneFailed = true;
 					continue;
 				}
@@ -75,7 +75,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			return !atLeastOneFailed;
 		}
 
-		static TypeSig getPtrElementType(TypeSig type) {
+		static TypeSig GetPtrElementType(TypeSig type) {
 			if (type == null)
 				return null;
 			if (type.IsPointer || type.IsByRef)
@@ -83,7 +83,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			return null;
 		}
 
-		bool isValidType(TypeSig type) {
+		bool IsValidType(TypeSig type) {
 			type = type.RemovePinnedAndModifiers();
 			if (type == null)
 				return false;

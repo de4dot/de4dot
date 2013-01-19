@@ -35,18 +35,18 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			this.assemblyResolverInfo = assemblyResolverInfo;
 		}
 
-		protected override bool checkResolverType(TypeDef type) {
-			return DotNetUtils.findFieldType(type, "System.Reflection.Assembly", true) != null;
+		protected override bool CheckResolverType(TypeDef type) {
+			return DotNetUtils.FindFieldType(type, "System.Reflection.Assembly", true) != null;
 		}
 
-		protected override bool checkHandlerMethod(MethodDef method) {
+		protected override bool CheckHandlerMethod(MethodDef method) {
 			if (!method.IsStatic || !method.HasBody)
 				return false;
 
 			EmbeddedAssemblyInfo info = null;
 			var instructions = method.Body.Instructions;
 			for (int i = 0; i < instructions.Count; i++) {
-				var instrs = DotNetUtils.getInstructions(instructions, i, OpCodes.Ldstr, OpCodes.Call);
+				var instrs = DotNetUtils.GetInstructions(instructions, i, OpCodes.Ldstr, OpCodes.Call);
 				if (instrs == null)
 					continue;
 
@@ -55,7 +55,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				if (s == null || calledMethod == null)
 					continue;
 
-				info = assemblyResolverInfo.find(Utils.getAssemblySimpleName(s));
+				info = assemblyResolverInfo.Find(Utils.GetAssemblySimpleName(s));
 				if (info != null)
 					break;
 			}
@@ -63,7 +63,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				return false;
 
 			resourceInfo = info;
-			Logger.v("Found embedded assemblies resource {0}", Utils.toCsharpString(info.resourceName));
+			Logger.v("Found embedded assemblies resource {0}", Utils.ToCsharpString(info.resourceName));
 			return true;
 		}
 	}

@@ -86,46 +86,46 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			"System.Security.Cryptography.SHA1Managed",
 			"System.Windows.AssemblyPart",
 		};
-		protected override bool checkResolverInitMethodSilverlight(MethodDef resolverInitMethod) {
+		protected override bool CheckResolverInitMethodSilverlight(MethodDef resolverInitMethod) {
 			if (resolverInitMethod.Body.ExceptionHandlers.Count != 1)
 				return false;
 
-			foreach (var method in DotNetUtils.getCalledMethods(module, resolverInitMethod)) {
+			foreach (var method in DotNetUtils.GetCalledMethods(module, resolverInitMethod)) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
 				if (!method.IsPublic || method.HasGenericParameters)
 					continue;
-				if (!DotNetUtils.isMethod(method, "System.Void", "(System.String)"))
+				if (!DotNetUtils.IsMethod(method, "System.Void", "(System.String)"))
 					continue;
-				simpleDeobfuscator.deobfuscate(method);
-				if (!new LocalTypes(method).all(requiredLocals_sl))
+				simpleDeobfuscator.Deobfuscate(method);
+				if (!new LocalTypes(method).All(requiredLocals_sl))
 					continue;
 
 				initMethod = resolverInitMethod;
 				resolveHandler = method;
-				updateVersion(resolveHandler);
+				UpdateVersion(resolveHandler);
 				return true;
 			}
 
 			return false;
 		}
 
-		void updateVersion(MethodDef handler) {
-			if (isV3Old(handler)) {
+		void UpdateVersion(MethodDef handler) {
+			if (IsV3Old(handler)) {
 				version = Version.V3Old;
 				return;
 			}
-			if (isV3SL(handler)) {
+			if (IsV3SL(handler)) {
 				version = Version.V3;	// 3.x-4.0.4
 				return;
 			}
-			if (isV41SL(handler)) {
+			if (IsV41SL(handler)) {
 				version = Version.V41SL;
 				return;
 			}
 		}
 
-		static bool isV3SL(MethodDef handler) {
+		static bool IsV3SL(MethodDef handler) {
 			var instrs = handler.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 3; i++) {
 				if (!instrs[i].IsLdloc())
@@ -141,7 +141,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return false;
 		}
 
-		static bool isV41SL(MethodDef handler) {
+		static bool IsV41SL(MethodDef handler) {
 			var instrs = handler.Body.Instructions;
 			for (int i = 0; i < instrs.Count; i++) {
 				if (!instrs[i].IsLdcI4() || instrs[i].GetLdcI4Value() != 5)
@@ -157,34 +157,34 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return false;
 		}
 
-		static bool isV3Old(MethodDef method) {
-			return DotNetUtils.callsMethod(method, "System.Int32 System.IO.Stream::Read(System.Byte[],System.Int32,System.Int32)") &&
-				!DotNetUtils.callsMethod(method, "System.Int32 System.IO.Stream::ReadByte()") &&
+		static bool IsV3Old(MethodDef method) {
+			return DotNetUtils.CallsMethod(method, "System.Int32 System.IO.Stream::Read(System.Byte[],System.Int32,System.Int32)") &&
+				!DotNetUtils.CallsMethod(method, "System.Int32 System.IO.Stream::ReadByte()") &&
 				// Obfuscated System.Int32 System.IO.Stream::ReadByte()
-				!DotNetUtils.callsMethod(method, "System.Int32", "(System.IO.Stream,System.Int32,System.Int32)");
+				!DotNetUtils.CallsMethod(method, "System.Int32", "(System.IO.Stream,System.Int32,System.Int32)");
 		}
 
-		protected override bool checkResolverInitMethodInternal(MethodDef resolverInitMethod) {
-			return DotNetUtils.callsMethod(resolverInitMethod, "System.Void System.AppDomain::add_AssemblyResolve(System.ResolveEventHandler)");
+		protected override bool CheckResolverInitMethodInternal(MethodDef resolverInitMethod) {
+			return DotNetUtils.CallsMethod(resolverInitMethod, "System.Void System.AppDomain::add_AssemblyResolve(System.ResolveEventHandler)");
 		}
 
-		protected override bool checkHandlerMethodDesktopInternal(MethodDef handler) {
-			if (checkHandlerV3(handler) || checkHandlerSL(handler)) {
-				updateVersion(handler);
+		protected override bool CheckHandlerMethodDesktopInternal(MethodDef handler) {
+			if (CheckHandlerV3(handler) || checkHandlerSL(handler)) {
+				UpdateVersion(handler);
 				return true;
 			}
 
-			simpleDeobfuscator.deobfuscate(handler);
+			simpleDeobfuscator.Deobfuscate(handler);
 			List<FieldInfo> fieldInfosTmp;
 			MethodDef decryptMethodTmp;
-			if (checkHandlerV4(handler, out fieldInfosTmp, out decryptMethodTmp)) {
+			if (CheckHandlerV4(handler, out fieldInfosTmp, out decryptMethodTmp)) {
 				version = Version.V4;
 				fieldInfos = fieldInfosTmp;
 				decryptMethod = decryptMethodTmp;
 				return true;
 			}
 
-			Version versionTmp = checkHandlerV404_41(handler, out fieldInfosTmp, out decryptMethodTmp);
+			Version versionTmp = CheckHandlerV404_41(handler, out fieldInfosTmp, out decryptMethodTmp);
 			if (fieldInfosTmp.Count != 0) {
 				version = versionTmp;
 				fieldInfos = fieldInfosTmp;
@@ -204,8 +204,8 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			"System.Security.Cryptography.SHA1CryptoServiceProvider",
 			"System.String",
 		};
-		static bool checkHandlerV3(MethodDef handler) {
-			return new LocalTypes(handler).all(handlerLocalTypes_NET);
+		static bool CheckHandlerV3(MethodDef handler) {
+			return new LocalTypes(handler).All(handlerLocalTypes_NET);
 		}
 
 		static string[] handlerLocalTypes_SL = new string[] {
@@ -217,11 +217,11 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			"System.Windows.AssemblyPart",
 		};
 		static bool checkHandlerSL(MethodDef handler) {
-			return new LocalTypes(handler).all(handlerLocalTypes_SL);
+			return new LocalTypes(handler).All(handlerLocalTypes_SL);
 		}
 
 		// 4.0.1.18 .. 4.0.3
-		bool checkHandlerV4(MethodDef handler, out List<FieldInfo> fieldInfos, out MethodDef decryptMethod) {
+		bool CheckHandlerV4(MethodDef handler, out List<FieldInfo> fieldInfos, out MethodDef decryptMethod) {
 			fieldInfos = new List<FieldInfo>();
 			decryptMethod = null;
 
@@ -253,7 +253,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				if (call.OpCode.Code != Code.Call)
 					return false;
 				var decryptMethodTmp = call.Operand as MethodDef;
-				if (!DotNetUtils.isMethod(decryptMethodTmp, "System.Reflection.Assembly", "(System.RuntimeFieldHandle,System.Int32,System.Int32)"))
+				if (!DotNetUtils.IsMethod(decryptMethodTmp, "System.Reflection.Assembly", "(System.RuntimeFieldHandle,System.Int32,System.Int32)"))
 					return false;
 
 				decryptMethod = decryptMethodTmp;
@@ -264,7 +264,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		}
 
 		// 4.0.4, 4.1+
-		Version checkHandlerV404_41(MethodDef handler, out List<FieldInfo> fieldInfos, out MethodDef decryptMethod) {
+		Version CheckHandlerV404_41(MethodDef handler, out List<FieldInfo> fieldInfos, out MethodDef decryptMethod) {
 			Version version = Version.Unknown;
 			fieldInfos = new List<FieldInfo>();
 			decryptMethod = null;
@@ -293,13 +293,13 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				var call1 = instrs[index++];
 				if (call1.OpCode.Code != Code.Call)
 					continue;
-				if (!DotNetUtils.isMethod(call1.Operand as IMethod, "System.Void", "(System.Array,System.RuntimeFieldHandle)"))
+				if (!DotNetUtils.IsMethod(call1.Operand as IMethod, "System.Void", "(System.Array,System.RuntimeFieldHandle)"))
 					continue;
 
-				int callIndex = getCallDecryptMethodIndex(instrs, index);
+				int callIndex = GetCallDecryptMethodIndex(instrs, index);
 				if (callIndex < 0)
 					continue;
-				var args = DsUtils.getArgValues(instrs, callIndex);
+				var args = DsUtils.GetArgValues(instrs, callIndex);
 				if (args == null)
 					continue;
 				var decryptMethodTmp = instrs[callIndex].Operand as MethodDef;
@@ -307,7 +307,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 					continue;
 				int magic;
 				Version versionTmp;
-				getMagic(decryptMethodTmp, args, out versionTmp, out magic);
+				GetMagic(decryptMethodTmp, args, out versionTmp, out magic);
 
 				version = versionTmp;
 				decryptMethod = decryptMethodTmp;
@@ -317,9 +317,9 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return version;
 		}
 
-		static bool getMagic(MethodDef method, IList<object> args, out Version version, out int magic) {
+		static bool GetMagic(MethodDef method, IList<object> args, out Version version, out int magic) {
 			magic = 0;
-			int magicIndex = getMagicIndex(method, out version);
+			int magicIndex = GetMagicIndex(method, out version);
 			if (magicIndex < 0 || magicIndex >= args.Count)
 				return false;
 			var val = args[magicIndex];
@@ -330,14 +330,14 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return true;
 		}
 
-		static int getMagicIndex(MethodDef method, out Version version) {
-			int magicIndex = getMagicIndex404(method);
+		static int GetMagicIndex(MethodDef method, out Version version) {
+			int magicIndex = GetMagicIndex404(method);
 			if (magicIndex >= 0) {
 				version = Version.V404;
 				return magicIndex;
 			}
 
-			magicIndex = getMagicIndex41Trial(method);
+			magicIndex = GetMagicIndex41Trial(method);
 			if (magicIndex >= 0) {
 				version = Version.V41;
 				return magicIndex;
@@ -347,7 +347,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return -1;
 		}
 
-		static int getMagicIndex404(MethodDef method) {
+		static int GetMagicIndex404(MethodDef method) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 4; i++) {
 				int index = i;
@@ -368,7 +368,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return -1;
 		}
 
-		static int getMagicIndex41Trial(MethodDef method) {
+		static int GetMagicIndex41Trial(MethodDef method) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 4; i++) {
 				int index = i;
@@ -389,13 +389,13 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return -1;
 		}
 
-		static int getCallDecryptMethodIndex(IList<Instruction> instrs, int index) {
-			index = getRetIndex(instrs, index);
+		static int GetCallDecryptMethodIndex(IList<Instruction> instrs, int index) {
+			index = GetRetIndex(instrs, index);
 			if (index < 0)
 				return -1;
 			for (int i = index - 1; i >= 0; i--) {
 				var instr = instrs[i];
-				if (!isCallOrNext(instr))
+				if (!IsCallOrNext(instr))
 					break;
 				if (instr.OpCode.Code != Code.Call)
 					continue;
@@ -408,18 +408,18 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return -1;
 		}
 
-		static int getRetIndex(IList<Instruction> instrs, int index) {
+		static int GetRetIndex(IList<Instruction> instrs, int index) {
 			for (int i = index; i < instrs.Count; i++) {
 				var instr = instrs[i];
 				if (instr.OpCode.Code == Code.Ret)
 					return i;
-				if (!isCallOrNext(instr))
+				if (!IsCallOrNext(instr))
 					break;
 			}
 			return -1;
 		}
 
-		static bool isCallOrNext(Instruction instr) {
+		static bool IsCallOrNext(Instruction instr) {
 			switch (instr.OpCode.FlowControl) {
 			case FlowControl.Call:
 			case FlowControl.Next:
@@ -429,28 +429,28 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			}
 		}
 
-		public IEnumerable<AssemblyInfo> getAssemblyInfos() {
+		public IEnumerable<AssemblyInfo> GetAssemblyInfos() {
 			if (!Detected)
 				return new List<AssemblyInfo>();
 
 			switch (version) {
 			case Version.V3Old:
-				return getAssemblyInfos(resource => decryptResourceV3Old(resource));
+				return GetAssemblyInfos(resource => DecryptResourceV3Old(resource));
 			case Version.V3:
-				return getAssemblyInfos(resource => decryptResourceV3(resource));
+				return GetAssemblyInfos(resource => DecryptResourceV3(resource));
 			case Version.V4:
 			case Version.V404:
-				return getAssemblyInfosV4();
+				return GetAssemblyInfosV4();
 			case Version.V41:
-				return getAssemblyInfosV41();
+				return GetAssemblyInfosV41();
 			case Version.V41SL:
-				return getAssemblyInfos(resource => decryptResourceV41SL(resource));
+				return GetAssemblyInfos(resource => DecryptResourceV41SL(resource));
 			default:
 				throw new ApplicationException("Unknown version");
 			}
 		}
 
-		IEnumerable<AssemblyInfo> getAssemblyInfos(Func<EmbeddedResource, byte[]> decrypter) {
+		IEnumerable<AssemblyInfo> GetAssemblyInfos(Func<EmbeddedResource, byte[]> decrypter) {
 			var infos = new List<AssemblyInfo>();
 
 			foreach (var tmp in module.Resources) {
@@ -459,7 +459,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 					continue;
 				if (!Regex.IsMatch(resource.Name.String, @"^[0-9A-F]{40}$"))
 					continue;
-				var info = getAssemblyInfo(resource, decrypter);
+				var info = GetAssemblyInfo(resource, decrypter);
 				if (info == null)
 					continue;
 				infos.Add(info);
@@ -468,25 +468,25 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return infos;
 		}
 
-		AssemblyInfo getAssemblyInfo(EmbeddedResource resource, Func<EmbeddedResource, byte[]> decrypter) {
+		AssemblyInfo GetAssemblyInfo(EmbeddedResource resource, Func<EmbeddedResource, byte[]> decrypter) {
 			try {
 				var decrypted = decrypter(resource);
-				return getAssemblyInfo(decrypted, resource);
+				return GetAssemblyInfo(decrypted, resource);
 			}
 			catch (Exception) {
 				return null;
 			}
 		}
 
-		AssemblyInfo getAssemblyInfo(byte[] decryptedData, EmbeddedResource resource) {
+		AssemblyInfo GetAssemblyInfo(byte[] decryptedData, EmbeddedResource resource) {
 			var asm = AssemblyDef.Load(decryptedData);
 			var fullName = asm.FullName;
 			var simpleName = asm.Name.String;
-			var extension = DeobUtils.getExtension(asm.Modules[0].Kind);
+			var extension = DeobUtils.GetExtension(asm.Modules[0].Kind);
 			return new AssemblyInfo(decryptedData, fullName, simpleName, extension, resource);
 		}
 
-		IEnumerable<AssemblyInfo> getAssemblyInfos(Func<byte[], int, byte[]> decrypter) {
+		IEnumerable<AssemblyInfo> GetAssemblyInfos(Func<byte[], int, byte[]> decrypter) {
 			var infos = new List<AssemblyInfo>();
 
 			if (fieldInfos == null)
@@ -494,7 +494,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 
 			foreach (var fieldInfo in fieldInfos) {
 				var decrypted = decrypter(fieldInfo.field.InitialValue, fieldInfo.magic);
-				infos.Add(getAssemblyInfo(decrypted, null));
+				infos.Add(GetAssemblyInfo(decrypted, null));
 				fieldInfo.field.InitialValue = new byte[1];
 				fieldInfo.field.FieldSig.Type = module.CorLibTypes.Byte;
 				fieldInfo.field.RVA = 0;
@@ -503,15 +503,15 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return infos;
 		}
 
-		IEnumerable<AssemblyInfo> getAssemblyInfosV4() {
-			return getAssemblyInfos((data, magic) => decryptResourceV4(data, magic));
+		IEnumerable<AssemblyInfo> GetAssemblyInfosV4() {
+			return GetAssemblyInfos((data, magic) => DecryptResourceV4(data, magic));
 		}
 
-		IEnumerable<AssemblyInfo> getAssemblyInfosV41() {
-			return getAssemblyInfos((data, magic) => inflateIfNeeded(decrypt41Trial(data, magic)));
+		IEnumerable<AssemblyInfo> GetAssemblyInfosV41() {
+			return GetAssemblyInfos((data, magic) => InflateIfNeeded(Decrypt41Trial(data, magic)));
 		}
 
-		static byte[] decrypt41Trial(byte[] data, int magic) {
+		static byte[] Decrypt41Trial(byte[] data, int magic) {
 			for (int i = 0; i < data.Length; i++)
 				data[i] ^= (byte)(i / 3 + magic);
 			return data;

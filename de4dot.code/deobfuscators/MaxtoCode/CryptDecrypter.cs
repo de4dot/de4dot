@@ -147,23 +147,23 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		struct Bits {
 			readonly byte[] byteBits;
 
-			public static Bits fromBytes(byte[] bytes) {
-				return fromBytes(bytes, 0, bytes.Length * 8);
+			public static Bits FromBytes(byte[] bytes) {
+				return FromBytes(bytes, 0, bytes.Length * 8);
 			}
 
-			public static Bits fromBytes(byte[] bytes, int index, int numBits) {
+			public static Bits FromBytes(byte[] bytes, int index, int numBits) {
 				return new Bits(bytes, index, numBits);
 			}
 
-			public static Bits fromByteBits(byte[] byteBits1, byte[] byteBits2) {
+			public static Bits FromByteBits(byte[] byteBits1, byte[] byteBits2) {
 				return new Bits(byteBits1, byteBits2);
 			}
 
-			public static Bits fromByteBits(byte[] byteBits) {
-				return fromByteBits(byteBits, 0, byteBits.Length);
+			public static Bits FromByteBits(byte[] byteBits) {
+				return FromByteBits(byteBits, 0, byteBits.Length);
 			}
 
-			public static Bits fromByteBits(byte[] byteBits, int index, int numBits) {
+			public static Bits FromByteBits(byte[] byteBits, int index, int numBits) {
 				var bits = new Bits(numBits);
 				for (int i = 0; i < numBits; i++)
 					bits.byteBits[i] = byteBits[index + i];
@@ -183,14 +183,14 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			}
 
 			Bits(byte[] bytes1, byte[] bytes2) {
-				this.byteBits = concat(bytes1, bytes2);
+				this.byteBits = Concat(bytes1, bytes2);
 			}
 
 			Bits(byte[] bytes, int index, int numBits) {
-				this.byteBits = toByteBits(bytes, index, numBits);
+				this.byteBits = ToByteBits(bytes, index, numBits);
 			}
 
-			static byte[] toByteBits(byte[] bytes, int index, int numBits) {
+			static byte[] ToByteBits(byte[] bytes, int index, int numBits) {
 				var byteBits = new byte[numBits];
 				for (int i = 0; i < numBits; i++) {
 					int j = i / 8;
@@ -200,21 +200,21 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				return byteBits;
 			}
 
-			static byte[] concat(byte[] bytes1, byte[] bytes2) {
+			static byte[] Concat(byte[] bytes1, byte[] bytes2) {
 				var bytes = new byte[bytes1.Length + bytes2.Length];
 				Array.Copy(bytes1, 0, bytes, 0, bytes1.Length);
 				Array.Copy(bytes2, 0, bytes, bytes1.Length, bytes2.Length);
 				return bytes;
 			}
 
-			public Bits transpose(byte[] bits) {
+			public Bits Transpose(byte[] bits) {
 				var result = new Bits(bits.Length);
 				for (int i = 0; i < bits.Length; i++)
 					result.byteBits[i] = byteBits[bits[i] - 1];
 				return result;
 			}
 
-			public void rol() {
+			public void Rol() {
 				if (byteBits.Length == 0)
 					return;
 				var first = byteBits[0];
@@ -223,21 +223,21 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				byteBits[byteBits.Length - 1] = first;
 			}
 
-			public void rol(int num) {
+			public void Rol(int num) {
 				for (int i = 0; i < num; i++)
-					rol();
+					Rol();
 			}
 
-			public Bits extract(int index, int numBits) {
-				return fromByteBits(byteBits, index, numBits);
+			public Bits Extract(int index, int numBits) {
+				return FromByteBits(byteBits, index, numBits);
 			}
 
-			public void toBits(byte[] dest, int index) {
-				var bits = toBits();
+			public void ToBits(byte[] dest, int index) {
+				var bits = ToBits();
 				Array.Copy(bits, 0, dest, index, bits.Length);
 			}
 
-			public byte[] toBits() {
+			public byte[] ToBits() {
 				var bits = new byte[(byteBits.Length + 7) / 8];
 				for (int i = 0; i < bits.Length; i++) {
 					byte val = 0;
@@ -250,23 +250,23 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				return bits;
 			}
 
-			public Bits clone() {
-				return fromByteBits(byteBits, 0, byteBits.Length);
+			public Bits Clone() {
+				return FromByteBits(byteBits, 0, byteBits.Length);
 			}
 
-			public void set(int destIndex, Bits other) {
+			public void Set(int destIndex, Bits other) {
 				for (int i = 0; i < other.byteBits.Length; i++)
 					byteBits[destIndex + i] = other.byteBits[i];
 			}
 
-			public void xor(Bits other) {
+			public void Xor(Bits other) {
 				if (byteBits.Length != other.byteBits.Length)
 					throw new ArgumentException("other");
 				for (int i = 0; i < byteBits.Length; i++)
 					byteBits[i] ^= other.byteBits[i];
 			}
 
-			public void copyTo(byte[] dest, int index) {
+			public void CopyTo(byte[] dest, int index) {
 				for (int i = 0; i < byteBits.Length; i++)
 					dest[index + i] = byteBits[i];
 			}
@@ -278,98 +278,98 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			this.key = key;
 		}
 
-		public static byte[] decrypt(byte[] key, byte[] encrypted) {
-			return new CryptDecrypter(key).decrypt(encrypted);
+		public static byte[] Decrypt(byte[] key, byte[] encrypted) {
+			return new CryptDecrypter(key).Decrypt(encrypted);
 		}
 
-		byte[] decrypt(byte[] encrypted) {
+		byte[] Decrypt(byte[] encrypted) {
 			if (encrypted.Length % 8 != 0)
 				throw new ArgumentException("encrypted");
-			var key1 = createKey(key, 0);
-			var key2 = createKey(key, 8);
+			var key1 = CreateKey(key, 0);
+			var key2 = CreateKey(key, 8);
 
 			var decrypted = new byte[encrypted.Length];
 			int count = encrypted.Length / 8;
 			for (int i = 0; i < count; i++) {
 				var buf = new byte[8];
 				Array.Copy(encrypted, i * 8, buf, 0, buf.Length);
-				buf = decrypt(buf, key1, true);
-				buf = decrypt(buf, key2, false);
-				buf = decrypt(buf, key1, true);
+				buf = Decrypt(buf, key1, true);
+				buf = Decrypt(buf, key2, false);
+				buf = Decrypt(buf, key1, true);
 				Array.Copy(buf, 0, decrypted, i * 8, buf.Length);
 			}
 
 			return decrypted;
 		}
 
-		byte[] decrypt(byte[] data, Bits key, bool flag) {
-			var bits = Bits.fromBytes(data).transpose(ip);
+		byte[] Decrypt(byte[] data, Bits key, bool flag) {
+			var bits = Bits.FromBytes(data).Transpose(ip);
 
 			if (flag) {
 				for (int i = 0, ki = key.ByteBits.Length - 48; i < 16; i++, ki -= 48) {
-					var oldBits = bits.extract(0, 32);
-					var tmp = decrypt(oldBits.clone(), key.extract(ki, 48));
-					tmp.xor(bits.extract(32, 32));
-					bits.set(32, oldBits);
-					bits.set(0, tmp);
+					var oldBits = bits.Extract(0, 32);
+					var tmp = Decrypt(oldBits.Clone(), key.Extract(ki, 48));
+					tmp.Xor(bits.Extract(32, 32));
+					bits.Set(32, oldBits);
+					bits.Set(0, tmp);
 				}
 			}
 			else {
 				for (int i = 0, ki = 0; i < 16; i++, ki += 48) {
-					var oldBits = bits.extract(32, 32);
-					var tmp = decrypt(oldBits.clone(), key.extract(ki, 48));
-					tmp.xor(bits.extract(0, 32));
-					bits.set(0, oldBits);
-					bits.set(32, tmp);
+					var oldBits = bits.Extract(32, 32);
+					var tmp = Decrypt(oldBits.Clone(), key.Extract(ki, 48));
+					tmp.Xor(bits.Extract(0, 32));
+					bits.Set(0, oldBits);
+					bits.Set(32, tmp);
 				}
 			}
 
-			bits = bits.transpose(final);
-			return bits.toBits();
+			bits = bits.Transpose(final);
+			return bits.ToBits();
 		}
 
-		Bits decrypt(Bits data, Bits key) {
-			var newData = data.clone().transpose(esel);
-			newData.xor(key);
-			return Bits.fromByteBits(getSbox(newData)).transpose(perm);
+		Bits Decrypt(Bits data, Bits key) {
+			var newData = data.Clone().Transpose(esel);
+			newData.Xor(key);
+			return Bits.FromByteBits(GetSbox(newData)).Transpose(perm);
 		}
 
-		byte[] getSbox(Bits data) {
+		byte[] GetSbox(Bits data) {
 			var sboxByteBits = new byte[32];
 
 			for (int i = 0; i < 8; i++) {
 				int di = i * 6;
 				int index = (data[di + 0] << 5) + (data[di + 5] << 4) + (data[di + 1] << 3) +
 							(data[di + 2] << 2) + (data[di + 3] << 1) + data[di + 4] + i * 64;
-				Bits.fromBytes(sbox, index, 4).copyTo(sboxByteBits, i * 4);
+				Bits.FromBytes(sbox, index, 4).CopyTo(sboxByteBits, i * 4);
 			}
 
 			return sboxByteBits;
 		}
 
-		static Bits createKey(byte[] data, int index) {
+		static Bits CreateKey(byte[] data, int index) {
 			Bits key1, key2;
-			createKeys(data, index, out key1, out key2);
+			CreateKeys(data, index, out key1, out key2);
 			byte[] newKey = new byte[16 * 6];
 			byte[] tmpData = new byte[28 * 2];
 			for (int i = 0; i < 16; i++) {
 				int rolCount = rots[i];
-				key1.rol(rolCount);
-				key2.rol(rolCount);
-				Bits.fromByteBits(key1.ByteBits, key2.ByteBits).transpose(pc2).toBits(newKey, i * 6);
+				key1.Rol(rolCount);
+				key2.Rol(rolCount);
+				Bits.FromByteBits(key1.ByteBits, key2.ByteBits).Transpose(pc2).ToBits(newKey, i * 6);
 			}
-			return Bits.fromBytes(newKey);
+			return Bits.FromBytes(newKey);
 		}
 
-		static void createKeys(byte[] data, int index, out Bits key1, out Bits key2) {
+		static void CreateKeys(byte[] data, int index, out Bits key1, out Bits key2) {
 			var tmpKey = new byte[8];
 			int len = Math.Min(tmpKey.Length, data.Length - index);
 			if (len == 0)
 				throw new ArgumentException("data");
 			Array.Copy(data, index, tmpKey, 0, len);
-			var bits = Bits.fromBytes(tmpKey).transpose(pc1);
-			key1 = Bits.fromByteBits(bits.ByteBits, 0, 28);
-			key2 = Bits.fromByteBits(bits.ByteBits, 28, 28);
+			var bits = Bits.FromBytes(tmpKey).Transpose(pc1);
+			key1 = Bits.FromByteBits(bits.ByteBits, 0, 28);
+			key2 = Bits.FromByteBits(bits.ByteBits, 28, 28);
 		}
 	}
 }

@@ -20,7 +20,7 @@
 namespace AssemblyServer_CLR20 {
 	class Program {
 		static int Main(string[] args) {
-			return AssemblyServer.Start.main(args);
+			return AssemblyServer.Start.Main2(args);
 		}
 	}
 }

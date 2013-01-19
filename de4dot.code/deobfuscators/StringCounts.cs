@@ -34,31 +34,31 @@ namespace de4dot.code.deobfuscators {
 			get { return strings.Count; }
 		}
 
-		public void add(string s) {
+		public void Add(string s) {
 			int count;
 			strings.TryGetValue(s, out count);
 			strings[s] = count + 1;
 		}
 
-		public bool exists(string s) {
+		public bool Exists(string s) {
 			if (s == null)
 				return false;
 			return strings.ContainsKey(s);
 		}
 
-		public bool all(IList<string> list) {
+		public bool All(IList<string> list) {
 			foreach (var s in list) {
-				if (!exists(s))
+				if (!Exists(s))
 					return false;
 			}
 			return true;
 		}
 
-		public bool exactly(IList<string> list) {
-			return list.Count == strings.Count && all(list);
+		public bool Exactly(IList<string> list) {
+			return list.Count == strings.Count && All(list);
 		}
 
-		public int count(string s) {
+		public int Count(string s) {
 			int count;
 			strings.TryGetValue(s, out count);
 			return count;
@@ -67,20 +67,20 @@ namespace de4dot.code.deobfuscators {
 
 	class FieldTypes : StringCounts {
 		public FieldTypes(TypeDef type) {
-			init(type.Fields);
+			Initialize(type.Fields);
 		}
 
 		public FieldTypes(IEnumerable<FieldDef> fields) {
-			init(fields);
+			Initialize(fields);
 		}
 
-		void init(IEnumerable<FieldDef> fields) {
+		void Initialize(IEnumerable<FieldDef> fields) {
 			if (fields == null)
 				return;
 			foreach (var field in fields) {
 				var type = field.FieldSig.GetFieldType();
 				if (type != null)
-					add(type.FullName);
+					Add(type.FullName);
 			}
 		}
 	}
@@ -88,18 +88,18 @@ namespace de4dot.code.deobfuscators {
 	class LocalTypes : StringCounts {
 		public LocalTypes(MethodDef method) {
 			if (method != null && method.Body != null)
-				init(method.Body.Variables);
+				Initialize(method.Body.Variables);
 		}
 
 		public LocalTypes(IEnumerable<Local> locals) {
-			init(locals);
+			Initialize(locals);
 		}
 
-		void init(IEnumerable<Local> locals) {
+		void Initialize(IEnumerable<Local> locals) {
 			if (locals == null)
 				return;
 			foreach (var local in locals)
-				add(local.Type.FullName);
+				Add(local.Type.FullName);
 		}
 	}
 }

@@ -26,36 +26,36 @@ namespace de4dot.code.deobfuscators {
 		TypeDefDict<bool> types = new TypeDefDict<bool>();
 		MethodDefAndDeclaringTypeDict<bool> methods = new MethodDefAndDeclaringTypeDict<bool>();
 
-		public bool exists(IMethod method) {
+		public bool Exists(IMethod method) {
 			if (method == null)
 				return false;
-			if (method.DeclaringType != null && types.find(method.DeclaringType))
+			if (method.DeclaringType != null && types.Find(method.DeclaringType))
 				return true;
-			return methods.find(method);
+			return methods.Find(method);
 		}
 
-		public void add(MethodDef method) {
-			methods.add(method, true);
+		public void Add(MethodDef method) {
+			methods.Add(method, true);
 		}
 
-		public void add(IEnumerable<MethodDef> methods) {
+		public void Add(IEnumerable<MethodDef> methods) {
 			foreach (var method in methods)
-				add(method);
+				Add(method);
 		}
 
-		public void add(TypeDef type) {
-			types.add(type, true);
+		public void Add(TypeDef type) {
+			types.Add(type, true);
 		}
 
-		public void addAndNested(TypeDef type) {
-			add(type);
+		public void AddAndNested(TypeDef type) {
+			Add(type);
 			foreach (var t in type.GetTypes())
-				add(t);
+				Add(t);
 		}
 
-		public void addAndNested(IList<TypeDef> types) {
+		public void AddAndNested(IList<TypeDef> types) {
 			foreach (var type in AllTypesHelper.Types(types))
-				add(type);
+				Add(type);
 		}
 	}
 }

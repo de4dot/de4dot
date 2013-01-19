@@ -26,12 +26,12 @@ namespace de4dot.blocks.cflow {
 	class StLdlocFixer : BlockDeobfuscator {
 		IList<Local> locals;
 
-		protected override void init(List<Block> allBlocks) {
-			base.init(allBlocks);
+		protected override void Initialize(List<Block> allBlocks) {
+			base.Initialize(allBlocks);
 			locals = blocks.Locals;
 		}
 
-		protected override bool deobfuscate(Block block) {
+		protected override bool Deobfuscate(Block block) {
 			bool changed = false;
 			var instructions = block.Instructions;
 			for (int i = 0; i < instructions.Count; i++) {
@@ -47,12 +47,12 @@ namespace de4dot.blocks.cflow {
 				case Code.Stloc_3:
 					if (i + 1 >= instructions.Count)
 						break;
-					if (!instructions[i + 1].isLdloc())
+					if (!instructions[i + 1].IsLdloc())
 						break;
-					var local = Instr.getLocalVar(locals, instr);
+					var local = Instr.GetLocalVar(locals, instr);
 					if (local.Type.ElementType != ElementType.Boolean)
 						continue;
-					if (local != Instr.getLocalVar(locals, instructions[i + 1]))
+					if (local != Instr.GetLocalVar(locals, instructions[i + 1]))
 						break;
 					instructions[i] = new Instr(OpCodes.Dup.ToInstruction());
 					instructions[i + 1] = instr;

@@ -31,24 +31,24 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 		public Predicate<UnknownHandlerInfo> Check { get; set; }
 		public Func<BinaryReader, Instruction> Read { get; set; }
 
-		public bool detect(UnknownHandlerInfo info) {
+		public bool Detect(UnknownHandlerInfo info) {
 			var sigInfo = OpCodeHandlerSigInfo;
 
-			if (!compare(sigInfo.NumStaticMethods, info.NumStaticMethods))
+			if (!Compare(sigInfo.NumStaticMethods, info.NumStaticMethods))
 				return false;
-			if (!compare(sigInfo.NumInstanceMethods, info.NumInstanceMethods))
+			if (!Compare(sigInfo.NumInstanceMethods, info.NumInstanceMethods))
 				return false;
-			if (!compare(sigInfo.NumVirtualMethods, info.NumVirtualMethods))
+			if (!Compare(sigInfo.NumVirtualMethods, info.NumVirtualMethods))
 				return false;
-			if (!compare(sigInfo.NumCtors, info.NumCtors))
+			if (!Compare(sigInfo.NumCtors, info.NumCtors))
 				return false;
-			if (!compare(sigInfo.ExecuteMethodThrows, info.ExecuteMethodThrows))
+			if (!Compare(sigInfo.ExecuteMethodThrows, info.ExecuteMethodThrows))
 				return false;
-			if (!compare(sigInfo.ExecuteMethodPops, info.ExecuteMethodPops))
+			if (!Compare(sigInfo.ExecuteMethodPops, info.ExecuteMethodPops))
 				return false;
-			if (!info.hasSameFieldTypes(sigInfo.RequiredFieldTypes))
+			if (!info.HasSameFieldTypes(sigInfo.RequiredFieldTypes))
 				return false;
-			if (sigInfo.ExecuteMethodLocals != null && !new LocalTypes(info.ExecuteMethod).all(sigInfo.ExecuteMethodLocals))
+			if (sigInfo.ExecuteMethodLocals != null && !new LocalTypes(info.ExecuteMethod).All(sigInfo.ExecuteMethodLocals))
 				return false;
 
 			if (Check != null)
@@ -56,7 +56,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			return true;
 		}
 
-		static bool compare(int? val1, int val2) {
+		static bool Compare(int? val1, int val2) {
 			if (!val1.HasValue)
 				return true;
 			return val1.Value == val2;
@@ -88,7 +88,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 		}
 
 		static bool newarr_check(UnknownHandlerInfo info) {
-			return DotNetUtils.callsMethod(info.ExecuteMethod, "System.Type System.Reflection.Module::ResolveType(System.Int32)");
+			return DotNetUtils.CallsMethod(info.ExecuteMethod, "System.Type System.Reflection.Module::ResolveType(System.Int32)");
 		}
 
 		static Instruction newarr_read(BinaryReader reader) {
@@ -286,7 +286,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 		}
 
 		static bool endfinally_check(UnknownHandlerInfo info) {
-			return DotNetUtils.callsMethod(info.ExecuteMethod, "System.Reflection.MethodInfo System.Type::GetMethod(System.String,System.Reflection.BindingFlags)");
+			return DotNetUtils.CallsMethod(info.ExecuteMethod, "System.Reflection.MethodInfo System.Type::GetMethod(System.String,System.Reflection.BindingFlags)");
 		}
 
 		static Instruction endfinally_read(BinaryReader reader) {
@@ -365,7 +365,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 		}
 
 		static bool ldtoken_check(UnknownHandlerInfo info) {
-			return DotNetUtils.callsMethod(info.ExecuteMethod, "System.Reflection.MemberInfo System.Reflection.Module::ResolveMember(System.Int32)");
+			return DotNetUtils.CallsMethod(info.ExecuteMethod, "System.Reflection.MemberInfo System.Reflection.Module::ResolveMember(System.Int32)");
 		}
 
 		static Instruction ldtoken_read(BinaryReader reader) {
@@ -376,9 +376,9 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 		}
 
 		static bool leave_check(UnknownHandlerInfo info) {
-			return !DotNetUtils.callsMethod(info.ExecuteMethod, "System.Reflection.MethodBase System.Reflection.Module::ResolveMethod(System.Int32)") &&
-				!DotNetUtils.callsMethod(info.ExecuteMethod, "System.Type System.Reflection.Module::ResolveType(System.Int32)") &&
-				!DotNetUtils.callsMethod(info.ExecuteMethod, "System.Reflection.MemberInfo System.Reflection.Module::ResolveMember(System.Int32)");
+			return !DotNetUtils.CallsMethod(info.ExecuteMethod, "System.Reflection.MethodBase System.Reflection.Module::ResolveMethod(System.Int32)") &&
+				!DotNetUtils.CallsMethod(info.ExecuteMethod, "System.Type System.Reflection.Module::ResolveType(System.Int32)") &&
+				!DotNetUtils.CallsMethod(info.ExecuteMethod, "System.Reflection.MemberInfo System.Reflection.Module::ResolveMember(System.Int32)");
 		}
 
 		static Instruction leave_read(BinaryReader reader) {
@@ -435,10 +435,10 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 		}
 
 		static bool nop_check(UnknownHandlerInfo info) {
-			return isEmptyMethod(info.ReadMethod) && isEmptyMethod(info.ExecuteMethod);
+			return IsEmptyMethod(info.ReadMethod) && IsEmptyMethod(info.ExecuteMethod);
 		}
 
-		static bool isEmptyMethod(MethodDef method) {
+		static bool IsEmptyMethod(MethodDef method) {
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code == Code.Ret)
 					return true;
@@ -453,7 +453,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 		}
 
 		static bool ret_check(UnknownHandlerInfo info) {
-			return DotNetUtils.callsMethod(info.ExecuteMethod, "System.Reflection.MethodBase System.Reflection.Module::ResolveMethod(System.Int32)");
+			return DotNetUtils.CallsMethod(info.ExecuteMethod, "System.Reflection.MethodBase System.Reflection.Module::ResolveMethod(System.Int32)");
 		}
 
 		static Instruction ret_read(BinaryReader reader) {
@@ -506,7 +506,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 		}
 
 		static bool throw_check(UnknownHandlerInfo info) {
-			return !DotNetUtils.callsMethod(info.ExecuteMethod, "System.Reflection.MethodInfo System.Type::GetMethod(System.String,System.Reflection.BindingFlags)");
+			return !DotNetUtils.CallsMethod(info.ExecuteMethod, "System.Reflection.MethodInfo System.Type::GetMethod(System.String,System.Reflection.BindingFlags)");
 		}
 
 		static Instruction throw_read(BinaryReader reader) {

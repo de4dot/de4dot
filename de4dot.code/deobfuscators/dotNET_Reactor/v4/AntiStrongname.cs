@@ -29,23 +29,23 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 
 		public AntiStrongName(TypeDef decrypterType) {
 			this.decrypterType = decrypterType;
-			find();
+			Find();
 		}
 
-		public void find() {
+		public void Find() {
 			if (decrypterType == null)
 				return;
 
-			if (checkType(decrypterType))
+			if (CheckType(decrypterType))
 				return;
 
 			foreach (var type in decrypterType.NestedTypes) {
-				if (checkType(type))
+				if (CheckType(type))
 					return;
 			}
 		}
 
-		bool checkType(TypeDef type) {
+		bool CheckType(TypeDef type) {
 			var requiredTypes = new string[] {
 				"System.Byte[]",
 				"System.IO.MemoryStream",
@@ -60,15 +60,15 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				var sig = method.MethodSig;
 				if (sig == null || sig.Params.Count != 2)
 					continue;
-				if (!checkType(sig.RetType, ElementType.String))
+				if (!CheckType(sig.RetType, ElementType.String))
 					continue;
-				if (!checkType(sig.Params[0], ElementType.String))
+				if (!CheckType(sig.Params[0], ElementType.String))
 					continue;
-				if (!checkType(sig.Params[1], ElementType.String))
+				if (!CheckType(sig.Params[1], ElementType.String))
 					continue;
 
 				var localTypes = new LocalTypes(method);
-				if (!localTypes.all(requiredTypes))
+				if (!localTypes.All(requiredTypes))
 					continue;
 
 				antiStrongNameMethod = method;
@@ -78,17 +78,17 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			return false;
 		}
 
-		static bool checkType(TypeSig type, ElementType expectedType) {
+		static bool CheckType(TypeSig type, ElementType expectedType) {
 			return type != null && (type.ElementType == ElementType.Object || type.ElementType == expectedType);
 		}
 
-		public bool remove(Blocks blocks) {
+		public bool Remove(Blocks blocks) {
 			if (antiStrongNameMethod == null)
 				return false;
 
 			Block antiSnBlock;
 			int numInstructions;
-			if (!findBlock(blocks, out antiSnBlock, out numInstructions))
+			if (!FindBlock(blocks, out antiSnBlock, out numInstructions))
 				return false;
 
 			if (antiSnBlock.FallThrough == null || antiSnBlock.Targets == null || antiSnBlock.Targets.Count != 1)
@@ -97,18 +97,18 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			var goodBlock = antiSnBlock.Targets[0];
 			var badBlock = antiSnBlock.FallThrough;
 
-			antiSnBlock.replaceLastInstrsWithBranch(numInstructions, goodBlock);
+			antiSnBlock.ReplaceLastInstrsWithBranch(numInstructions, goodBlock);
 
 			if (badBlock.FallThrough == badBlock && badBlock.Sources.Count == 1 && badBlock.Targets == null) {
-				badBlock.Parent.removeGuaranteedDeadBlock(badBlock);
+				badBlock.Parent.RemoveGuaranteedDeadBlock(badBlock);
 				return true;
 			}
 			if (badBlock.Instructions.Count <= 1 && badBlock.LastInstr.OpCode.Code == Code.Nop) {
 				if (badBlock.FallThrough != null && badBlock.Targets == null && badBlock.Sources.Count == 0) {
 					var badBlock2 = badBlock.FallThrough;
 					if (badBlock2.FallThrough == badBlock2 && badBlock2.Sources.Count == 2 && badBlock2.Targets == null) {
-						badBlock.Parent.removeGuaranteedDeadBlock(badBlock);
-						badBlock2.Parent.removeGuaranteedDeadBlock(badBlock2);
+						badBlock.Parent.RemoveGuaranteedDeadBlock(badBlock);
+						badBlock2.Parent.RemoveGuaranteedDeadBlock(badBlock2);
 						return true;
 					}
 				}
@@ -117,11 +117,11 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			throw new ApplicationException("Invalid state");
 		}
 
-		bool findBlock(Blocks blocks, out Block foundBlock, out int numInstructions) {
+		bool FindBlock(Blocks blocks, out Block foundBlock, out int numInstructions) {
 			const int NUM_INSTRS = 11;
 
-			foreach (var block in blocks.MethodBlocks.getAllBlocks()) {
-				if (!block.LastInstr.isBrfalse())
+			foreach (var block in blocks.MethodBlocks.GetAllBlocks()) {
+				if (!block.LastInstr.IsBrfalse())
 					continue;
 
 				var instructions = block.Instructions;
@@ -132,23 +132,23 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 					continue;
 				if (!(instructions[i].Operand is ITypeDefOrRef))
 					continue;
-				if (!checkCall(instructions[i + 1], "System.Type System.Type::GetTypeFromHandle(System.RuntimeTypeHandle)"))
+				if (!CheckCall(instructions[i + 1], "System.Type System.Type::GetTypeFromHandle(System.RuntimeTypeHandle)"))
 					continue;
-				if (!checkCall(instructions[i + 2], "System.Reflection.Assembly System.Type::get_Assembly()"))
+				if (!CheckCall(instructions[i + 2], "System.Reflection.Assembly System.Type::get_Assembly()"))
 					continue;
-				if (!checkCall(instructions[i + 3], "System.Reflection.AssemblyName System.Reflection.Assembly::GetName()"))
+				if (!CheckCall(instructions[i + 3], "System.Reflection.AssemblyName System.Reflection.Assembly::GetName()"))
 					continue;
-				if (!checkCall(instructions[i + 4], "System.Byte[] System.Reflection.AssemblyName::GetPublicKeyToken()"))
+				if (!CheckCall(instructions[i + 4], "System.Byte[] System.Reflection.AssemblyName::GetPublicKeyToken()"))
 					continue;
-				if (!checkCall(instructions[i + 5], "System.String System.Convert::ToBase64String(System.Byte[])"))
+				if (!CheckCall(instructions[i + 5], "System.String System.Convert::ToBase64String(System.Byte[])"))
 					continue;
 				if (instructions[i + 6].OpCode.Code != Code.Ldstr)
 					continue;
-				if (!checkCall(instructions[i + 7], antiStrongNameMethod))
+				if (!CheckCall(instructions[i + 7], antiStrongNameMethod))
 					continue;
 				if (instructions[i + 8].OpCode.Code != Code.Ldstr)
 					continue;
-				if (!checkCall(instructions[i + 9], "System.Boolean System.String::op_Inequality(System.String,System.String)"))
+				if (!CheckCall(instructions[i + 9], "System.Boolean System.String::op_Inequality(System.String,System.String)"))
 					continue;
 
 				numInstructions = NUM_INSTRS;
@@ -161,7 +161,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			return false;
 		}
 
-		static bool checkCall(Instr instr, string methodFullName) {
+		static bool CheckCall(Instr instr, string methodFullName) {
 			if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt)
 				return false;
 			var calledMethod = instr.Operand as IMethod;
@@ -170,7 +170,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			return calledMethod.FullName == methodFullName;
 		}
 
-		static bool checkCall(Instr instr, IMethod expectedMethod) {
+		static bool CheckCall(Instr instr, IMethod expectedMethod) {
 			if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt)
 				return false;
 			var calledMethod = instr.Operand as IMethod;

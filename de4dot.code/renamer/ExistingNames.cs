@@ -25,34 +25,34 @@ namespace de4dot.code.renamer {
 	class ExistingNames {
 		Dictionary<string, bool> allNames = new Dictionary<string, bool>(StringComparer.Ordinal);
 
-		public void add(string name) {
+		public void Add(string name) {
 			allNames[name] = true;
 		}
 
-		public bool exists(string name) {
+		public bool Exists(string name) {
 			return allNames.ContainsKey(name);
 		}
 
-		public string getName(UTF8String oldName, INameCreator nameCreator) {
-			return getName(UTF8String.ToSystemStringOrEmpty(oldName), nameCreator);
+		public string GetName(UTF8String oldName, INameCreator nameCreator) {
+			return GetName(UTF8String.ToSystemStringOrEmpty(oldName), nameCreator);
 		}
 
-		public string getName(string oldName, INameCreator nameCreator) {
-			return getName(oldName, () => nameCreator.create());
+		public string GetName(string oldName, INameCreator nameCreator) {
+			return GetName(oldName, () => nameCreator.Create());
 		}
 
-		public string getName(UTF8String oldName, Func<string> createNewName) {
-			return getName(UTF8String.ToSystemStringOrEmpty(oldName), createNewName);
+		public string GetName(UTF8String oldName, Func<string> createNewName) {
+			return GetName(UTF8String.ToSystemStringOrEmpty(oldName), createNewName);
 		}
 
-		public string getName(string oldName, Func<string> createNewName) {
+		public string GetName(string oldName, Func<string> createNewName) {
 			string prevName = null;
 			while (true) {
 				var name = createNewName();
 				if (name == prevName)
-					throw new ApplicationException(string.Format("Could not rename symbol to {0}", Utils.toCsharpString(name)));
+					throw new ApplicationException(string.Format("Could not rename symbol to {0}", Utils.ToCsharpString(name)));
 
-				if (!exists(name) || name == oldName) {
+				if (!Exists(name) || name == oldName) {
 					allNames[name] = true;
 					return name;
 				}
@@ -61,7 +61,7 @@ namespace de4dot.code.renamer {
 			}
 		}
 
-		public void merge(ExistingNames other) {
+		public void Merge(ExistingNames other) {
 			foreach (var key in other.allNames.Keys)
 				allNames[key] = true;
 		}

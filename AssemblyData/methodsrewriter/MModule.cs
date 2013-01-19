@@ -36,10 +36,10 @@ namespace AssemblyData.methodsrewriter {
 		public MModule(Module module, ModuleDefMD moduleDef) {
 			this.module = module;
 			this.moduleDef = moduleDef;
-			initTokenToType();
+			InitTokenToType();
 		}
 
-		void initTokenToType() {
+		void InitTokenToType() {
 			moduleType = moduleDef.Types[0];
 			foreach (var typeDef in moduleDef.GetTypes()) {
 				int token = (int)typeDef.MDToken.Raw;
@@ -49,27 +49,27 @@ namespace AssemblyData.methodsrewriter {
 				}
 				catch {
 					tokenToType[token] = null;
-					typeRefToType.add(typeDef, null);
+					typeRefToType.Add(typeDef, null);
 					continue;
 				}
 				var mtype = new MType(type, typeDef);
 				tokenToType[token] = mtype;
-				typeRefToType.add(typeDef, mtype);
+				typeRefToType.Add(typeDef, mtype);
 			}
 		}
 
-		public MType getType(IType typeRef) {
-			return typeRefToType.find(typeRef);
+		public MType GetType(IType typeRef) {
+			return typeRefToType.Find(typeRef);
 		}
 
-		public MMethod getMethod(IMethod methodRef) {
-			var type = getType(methodRef.DeclaringType);
+		public MMethod GetMethod(IMethod methodRef) {
+			var type = GetType(methodRef.DeclaringType);
 			if (type != null)
-				return type.getMethod(methodRef);
+				return type.GetMethod(methodRef);
 			if (!new SigComparer().Equals(moduleType, methodRef.DeclaringType))
 				return null;
 
-			initGlobalMethods();
+			InitGlobalMethods();
 			foreach (var method in tokenToGlobalMethod.Values) {
 				if (new SigComparer().Equals(methodRef, method.methodDef))
 					return method;
@@ -78,14 +78,14 @@ namespace AssemblyData.methodsrewriter {
 			return null;
 		}
 
-		public MField getField(IField fieldRef) {
-			var type = getType(fieldRef.DeclaringType);
+		public MField GetField(IField fieldRef) {
+			var type = GetType(fieldRef.DeclaringType);
 			if (type != null)
-				return type.getField(fieldRef);
+				return type.GetField(fieldRef);
 			if (!new SigComparer().Equals(moduleType, fieldRef.DeclaringType))
 				return null;
 
-			initGlobalFields();
+			InitGlobalFields();
 			foreach (var field in tokenToGlobalField.Values) {
 				if (new SigComparer().Equals(fieldRef, field.fieldDef))
 					return field;
@@ -94,21 +94,21 @@ namespace AssemblyData.methodsrewriter {
 			return null;
 		}
 
-		public MMethod getMethod(MethodBase method) {
+		public MMethod GetMethod(MethodBase method) {
 			if (method.Module != module)
 				throw new ApplicationException("Not our module");
 			if (method.DeclaringType == null)
-				return getGlobalMethod(method);
+				return GetGlobalMethod(method);
 			var type = tokenToType[method.DeclaringType.MetadataToken];
-			return type.getMethod(method.MetadataToken);
+			return type.GetMethod(method.MetadataToken);
 		}
 
-		public MMethod getGlobalMethod(MethodBase method) {
-			initGlobalMethods();
+		public MMethod GetGlobalMethod(MethodBase method) {
+			InitGlobalMethods();
 			return tokenToGlobalMethod[method.MetadataToken];
 		}
 
-		void initGlobalMethods() {
+		void InitGlobalMethods() {
 			if (tokenToGlobalMethod != null)
 				return;
 			tokenToGlobalMethod = new Dictionary<int, MMethod>();
@@ -125,7 +125,7 @@ namespace AssemblyData.methodsrewriter {
 			}
 		}
 
-		void initGlobalFields() {
+		void InitGlobalFields() {
 			if (tokenToGlobalField != null)
 				return;
 			tokenToGlobalField = new Dictionary<int, MField>();

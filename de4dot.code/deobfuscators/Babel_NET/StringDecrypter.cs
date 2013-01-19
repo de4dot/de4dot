@@ -39,8 +39,8 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		interface IDecrypterInfo {
 			MethodDef Decrypter { get; }
 			bool NeedsResource { get; }
-			void initialize(ModuleDefMD module, EmbeddedResource resource);
-			string decrypt(object[] args);
+			void Initialize(ModuleDefMD module, EmbeddedResource resource);
+			string Decrypt(object[] args);
 		}
 
 		// Babel .NET 2.x
@@ -50,14 +50,14 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				get { return false; }
 			}
 
-			public void initialize(ModuleDefMD module, EmbeddedResource resource) {
+			public void Initialize(ModuleDefMD module, EmbeddedResource resource) {
 			}
 
-			public string decrypt(object[] args) {
-				return decrypt((string)args[0], (int)args[1]);
+			public string Decrypt(object[] args) {
+				return Decrypt((string)args[0], (int)args[1]);
 			}
 
-			string decrypt(string s, int k) {
+			string Decrypt(string s, int k) {
 				var sb = new StringBuilder(s.Length);
 				foreach (var c in s)
 					sb.Append((char)(c ^ k));
@@ -73,17 +73,17 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				get { return true; }
 			}
 
-			public void initialize(ModuleDefMD module, EmbeddedResource resource) {
+			public void Initialize(ModuleDefMD module, EmbeddedResource resource) {
 				key = resource.Data.ReadAllBytes();
 				if (key.Length != 0x100)
 					throw new ApplicationException(string.Format("Unknown key length: {0}", key.Length));
 			}
 
-			public string decrypt(object[] args) {
-				return decrypt((string)args[0], (int)args[1]);
+			public string Decrypt(object[] args) {
+				return Decrypt((string)args[0], (int)args[1]);
 			}
 
-			string decrypt(string s, int k) {
+			string Decrypt(string s, int k) {
 				var sb = new StringBuilder(s.Length);
 				byte b = key[(byte)k];
 				foreach (var c in s)
@@ -107,33 +107,33 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				this.resourceDecrypter = resourceDecrypter;
 			}
 
-			public void initialize(ModuleDefMD module, EmbeddedResource resource) {
-				var decrypted = resourceDecrypter.decrypt(resource.Data.ReadAllBytes());
+			public void Initialize(ModuleDefMD module, EmbeddedResource resource) {
+				var decrypted = resourceDecrypter.Decrypt(resource.Data.ReadAllBytes());
 				var reader = new BinaryReader(new MemoryStream(decrypted));
 				while (reader.BaseStream.Position < reader.BaseStream.Length)
-					offsetToString[getOffset((int)reader.BaseStream.Position)] = reader.ReadString();
+					offsetToString[GetOffset((int)reader.BaseStream.Position)] = reader.ReadString();
 			}
 
 			MethodDef dummyMethod;
-			int getOffset(int offset) {
+			int GetOffset(int offset) {
 				if (OffsetCalcInstructions == null || OffsetCalcInstructions.Count == 0)
 					return offset;
 				if (dummyMethod == null) {
 					dummyMethod = new MethodDefUser();
 					dummyMethod.Body = new CilBody();
 				}
-				emulator.init(dummyMethod);
-				emulator.push(new Int32Value(offset));
+				emulator.Initialize(dummyMethod);
+				emulator.Push(new Int32Value(offset));
 				foreach (var instr in OffsetCalcInstructions)
-					emulator.emulate(instr);
-				return ((Int32Value)emulator.pop()).value;
+					emulator.Emulate(instr);
+				return ((Int32Value)emulator.Pop()).value;
 			}
 
-			public string decrypt(object[] args) {
-				return decrypt((int)args[0]);
+			public string Decrypt(object[] args) {
+				return Decrypt((int)args[0]);
 			}
 
-			string decrypt(int offset) {
+			string Decrypt(int offset) {
 				return offsetToString[offset];
 			}
 		}
@@ -159,10 +159,10 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			this.resourceDecrypter = resourceDecrypter;
 		}
 
-		public void find(ISimpleDeobfuscator simpleDeobfuscator) {
+		public void Find(ISimpleDeobfuscator simpleDeobfuscator) {
 			this.simpleDeobfuscator = simpleDeobfuscator;
 			foreach (var type in module.Types) {
-				var info = checkDecrypterType(type);
+				var info = CheckDecrypterType(type);
 				if (info == null)
 					continue;
 
@@ -172,7 +172,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			}
 		}
 
-		IDecrypterInfo checkDecrypterType(TypeDef type) {
+		IDecrypterInfo CheckDecrypterType(TypeDef type) {
 			if (type.HasEvents)
 				return null;
 			if (type.NestedTypes.Count > 2)
@@ -181,34 +181,34 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				return null;
 
 			foreach (var nested in type.NestedTypes) {
-				var info = checkNested(type, nested);
+				var info = CheckNested(type, nested);
 				if (info != null)
 					return info;
 			}
 
-			return checkDecrypterTypeBabel2x(type);
+			return CheckDecrypterTypeBabel2x(type);
 		}
 
-		IDecrypterInfo checkDecrypterTypeBabel2x(TypeDef type) {
+		IDecrypterInfo CheckDecrypterTypeBabel2x(TypeDef type) {
 			if (type.HasEvents || type.HasProperties || type.HasNestedTypes)
 				return null;
 			if (type.HasFields || type.Methods.Count != 1)
 				return null;
 			var decrypter = type.Methods[0];
-			if (!checkDecryptMethodBabel2x(decrypter))
+			if (!CheckDecryptMethodBabel2x(decrypter))
 				return null;
 
 			return new DecrypterInfoV1 { Decrypter = decrypter };
 		}
 
-		bool checkDecryptMethodBabel2x(MethodDef method) {
+		bool CheckDecryptMethodBabel2x(MethodDef method) {
 			if (!method.IsStatic || !method.IsPublic)
 				return false;
 			if (method.Body == null)
 				return false;
 			if (method.Name == ".cctor")
 				return false;
-			if (!DotNetUtils.isMethod(method, "System.String", "(System.String,System.Int32)"))
+			if (!DotNetUtils.IsMethod(method, "System.String", "(System.String,System.Int32)"))
 				return false;
 
 			int stringLength = 0, stringToCharArray = 0, stringCtor = 0;
@@ -243,7 +243,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return stringLength == 1 && stringToCharArray == 1 && stringCtor == 1;
 		}
 
-		IDecrypterInfo checkNested(TypeDef type, TypeDef nested) {
+		IDecrypterInfo CheckNested(TypeDef type, TypeDef nested) {
 			if (nested.HasProperties || nested.HasEvents)
 				return null;
 
@@ -253,50 +253,50 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			if (nested.Fields.Count == 1 || nested.Fields.Count == 3) {
 				// 4.0+
 
-				if (!hasFieldType(nested.Fields, nested))
+				if (!HasFieldType(nested.Fields, nested))
 					return null;
 
-				var decrypterBuilderMethod = DotNetUtils.getMethod(nested, "System.Reflection.Emit.MethodBuilder", "(System.Reflection.Emit.TypeBuilder)");
+				var decrypterBuilderMethod = DotNetUtils.GetMethod(nested, "System.Reflection.Emit.MethodBuilder", "(System.Reflection.Emit.TypeBuilder)");
 				if (decrypterBuilderMethod == null)
 					return null;
 
-				resourceDecrypter.DecryptMethod = ResourceDecrypter.findDecrypterMethod(nested.FindMethod(".ctor"));
+				resourceDecrypter.DecryptMethod = ResourceDecrypter.FindDecrypterMethod(nested.FindMethod(".ctor"));
 
-				var nestedDecrypter = DotNetUtils.getMethod(nested, "System.String", "(System.Int32)");
+				var nestedDecrypter = DotNetUtils.GetMethod(nested, "System.String", "(System.Int32)");
 				if (nestedDecrypter == null || nestedDecrypter.IsStatic)
 					return null;
-				var decrypter = DotNetUtils.getMethod(type, "System.String", "(System.Int32)");
+				var decrypter = DotNetUtils.GetMethod(type, "System.String", "(System.Int32)");
 				if (decrypter == null || !decrypter.IsStatic)
 					return null;
 
-				simpleDeobfuscator.deobfuscate(decrypterBuilderMethod);
+				simpleDeobfuscator.Deobfuscate(decrypterBuilderMethod);
 				return new DecrypterInfoV3(resourceDecrypter) {
 					Decrypter = decrypter,
-					OffsetCalcInstructions = getOffsetCalcInstructions(decrypterBuilderMethod),
+					OffsetCalcInstructions = GetOffsetCalcInstructions(decrypterBuilderMethod),
 				};
 			}
 			else if (nested.Fields.Count == 2) {
 				// 3.0 - 3.5
 
-				if (checkFields(nested, "System.Collections.Hashtable", nested)) {
+				if (CheckFields(nested, "System.Collections.Hashtable", nested)) {
 					// 3.0 - 3.5
-					var nestedDecrypter = DotNetUtils.getMethod(nested, "System.String", "(System.Int32)");
+					var nestedDecrypter = DotNetUtils.GetMethod(nested, "System.String", "(System.Int32)");
 					if (nestedDecrypter == null || nestedDecrypter.IsStatic)
 						return null;
-					var decrypter = DotNetUtils.getMethod(type, "System.String", "(System.Int32)");
+					var decrypter = DotNetUtils.GetMethod(type, "System.String", "(System.Int32)");
 					if (decrypter == null || !decrypter.IsStatic)
 						return null;
 
-					resourceDecrypter.DecryptMethod = ResourceDecrypter.findDecrypterMethod(nested.FindMethod(".ctor"));
+					resourceDecrypter.DecryptMethod = ResourceDecrypter.FindDecrypterMethod(nested.FindMethod(".ctor"));
 
 					return new DecrypterInfoV3(resourceDecrypter) { Decrypter = decrypter };
 				}
-				else if (checkFields(nested, "System.Byte[]", nested)) {
+				else if (CheckFields(nested, "System.Byte[]", nested)) {
 					// 3.0
-					var nestedDecrypter = DotNetUtils.getMethod(nested, "System.String", "(System.String,System.Int32)");
+					var nestedDecrypter = DotNetUtils.GetMethod(nested, "System.String", "(System.String,System.Int32)");
 					if (nestedDecrypter == null || nestedDecrypter.IsStatic)
 						return null;
-					var decrypter = DotNetUtils.getMethod(type, "System.String", "(System.String,System.Int32)");
+					var decrypter = DotNetUtils.GetMethod(type, "System.String", "(System.String,System.Int32)");
 					if (decrypter == null || !decrypter.IsStatic)
 						return null;
 
@@ -309,7 +309,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return null;
 		}
 
-		class ReflectionToDot10MethodCreator {
+		class ReflectionToDNLibMethodCreator {
 			MethodDef method;
 			List<Instruction> instructions = new List<Instruction>();
 			InstructionEmulator emulator;
@@ -331,12 +331,12 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				get { return instructions; }
 			}
 
-			public ReflectionToDot10MethodCreator(MethodDef method) {
+			public ReflectionToDNLibMethodCreator(MethodDef method) {
 				this.method = method;
 				this.emulator = new InstructionEmulator(method);
 			}
 
-			public bool create() {
+			public bool Create() {
 				int arrayIndex;
 				Value array;
 				object value;
@@ -348,60 +348,60 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 					case Code.Newarr:
 						var arrayType = (ITypeDefOrRef)instr.Operand;
-						int arrayCount = ((Int32Value)emulator.pop()).value;
+						int arrayCount = ((Int32Value)emulator.Pop()).value;
 						if (arrayType.FullName == "System.Char")
-							emulator.push(new UserValue(new char[arrayCount]));
+							emulator.Push(new UserValue(new char[arrayCount]));
 						else
-							emulator.push(new UnknownValue());
+							emulator.Push(new UnknownValue());
 						break;
 
 					case Code.Call:
 					case Code.Callvirt:
-						if (!doCall(instr))
+						if (!DoCall(instr))
 							return false;
 						break;
 
 					case Code.Ldelem_U1:
-						arrayIndex = ((Int32Value)emulator.pop()).value;
-						array = (Value)emulator.pop();
+						arrayIndex = ((Int32Value)emulator.Pop()).value;
+						array = (Value)emulator.Pop();
 						if (array is UserValue)
-							emulator.push(new Int32Value(((byte[])((UserValue)array).obj)[arrayIndex]));
+							emulator.Push(new Int32Value(((byte[])((UserValue)array).obj)[arrayIndex]));
 						else
-							emulator.push(Int32Value.createUnknownUInt8());
+							emulator.Push(Int32Value.CreateUnknownUInt8());
 						break;
 
 					case Code.Stelem_I1:
-						value = emulator.pop();
-						arrayIndex = ((Int32Value)emulator.pop()).value;
-						array = (Value)emulator.pop();
+						value = emulator.Pop();
+						arrayIndex = ((Int32Value)emulator.Pop()).value;
+						array = (Value)emulator.Pop();
 						if (array is UserValue)
 							((byte[])((UserValue)array).obj)[arrayIndex] = (byte)((Int32Value)value).value;
 						break;
 
 					case Code.Stelem_I2:
-						value = emulator.pop();
-						arrayIndex = ((Int32Value)emulator.pop()).value;
-						array = (Value)emulator.pop();
+						value = emulator.Pop();
+						arrayIndex = ((Int32Value)emulator.Pop()).value;
+						array = (Value)emulator.Pop();
 						if (array is UserValue)
 							((char[])((UserValue)array).obj)[arrayIndex] = (char)((Int32Value)value).value;
 						break;
 
 					case Code.Ldelem_Ref:
-						arrayIndex = ((Int32Value)emulator.pop()).value;
-						array = (Value)emulator.pop();
+						arrayIndex = ((Int32Value)emulator.Pop()).value;
+						array = (Value)emulator.Pop();
 						var userValue = array as UserValue;
 						if (userValue != null && userValue.obj is string[])
-							emulator.push(new StringValue(((string[])userValue.obj)[arrayIndex]));
+							emulator.Push(new StringValue(((string[])userValue.obj)[arrayIndex]));
 						else
-							emulator.push(new UnknownValue());
+							emulator.Push(new UnknownValue());
 						break;
 
 					case Code.Ldsfld:
-						emulator.push(new UserValue((IField)instr.Operand));
+						emulator.Push(new UserValue((IField)instr.Operand));
 						break;
 
 					default:
-						emulator.emulate(instr);
+						emulator.Emulate(instr);
 						break;
 					}
 
@@ -409,47 +409,47 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				}
 			}
 
-			bool doCall(Instruction instr) {
+			bool DoCall(Instruction instr) {
 				var calledMethod = (IMethod)instr.Operand;
 				var sig = calledMethod.MethodSig;
 				var fn = calledMethod.FullName;
 				if (fn == "System.Byte[] System.Convert::FromBase64String(System.String)") {
-					emulator.push(new UserValue(Convert.FromBase64String(((StringValue)emulator.pop()).value)));
+					emulator.Push(new UserValue(Convert.FromBase64String(((StringValue)emulator.Pop()).value)));
 					return true;
 				}
 				else if (fn == "System.String System.Text.Encoding::GetString(System.Byte[])") {
-					emulator.push(new StringValue(Encoding.UTF8.GetString((byte[])((UserValue)emulator.pop()).obj)));
+					emulator.Push(new StringValue(Encoding.UTF8.GetString((byte[])((UserValue)emulator.Pop()).obj)));
 					return true;
 				}
 				else if (fn == "System.Int32 System.Int32::Parse(System.String)") {
-					emulator.push(new Int32Value(int.Parse(((StringValue)emulator.pop()).value)));
+					emulator.Push(new Int32Value(int.Parse(((StringValue)emulator.Pop()).value)));
 					return true;
 				}
 				else if (fn == "System.String[] System.String::Split(System.Char[])") {
-					var ary = (char[])((UserValue)emulator.pop()).obj;
-					var s = ((StringValue)emulator.pop()).value;
-					emulator.push(new UserValue(s.Split(ary)));
+					var ary = (char[])((UserValue)emulator.Pop()).obj;
+					var s = ((StringValue)emulator.Pop()).value;
+					emulator.Push(new UserValue(s.Split(ary)));
 					return true;
 				}
 				else if (sig != null && sig.HasThis && calledMethod.DeclaringType.FullName == "System.Reflection.Emit.ILGenerator" && calledMethod.Name == "Emit") {
 					Value operand = null;
 					if (calledMethod.MethodSig.GetParamCount() == 2)
-						operand = emulator.pop();
-					var opcode = reflectionToOpCode((IField)((UserValue)emulator.pop()).obj);
-					emulator.pop();	// the this ptr
-					addInstruction(new Instruction {
+						operand = emulator.Pop();
+					var opcode = ReflectionToOpCode((IField)((UserValue)emulator.Pop()).obj);
+					emulator.Pop();	// the this ptr
+					AddInstruction(new Instruction {
 						OpCode = opcode,
-						Operand = createDot10Operand(opcode, operand),
+						Operand = CreateDNLibOperand(opcode, operand),
 					});
 					return true;
 				}
 				else {
-					emulator.emulate(instr);
+					emulator.Emulate(instr);
 					return true;
 				}
 			}
 
-			object createDot10Operand(OpCode opcode, Value op) {
+			object CreateDNLibOperand(OpCode opcode, Value op) {
 				if (op is Int32Value)
 					return ((Int32Value)op).value;
 				if (op is StringValue)
@@ -457,11 +457,11 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				return null;
 			}
 
-			void addInstruction(Instruction instr) {
+			void AddInstruction(Instruction instr) {
 				instructions.Add(instr);
 			}
 
-			static OpCode reflectionToOpCode(IField reflectionField) {
+			static OpCode ReflectionToOpCode(IField reflectionField) {
 				var field = typeof(OpCodes).GetField(reflectionField.Name.String);
 				if (field == null || field.FieldType != typeof(OpCode))
 					return null;
@@ -469,19 +469,19 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			}
 		}
 
-		static List<Instruction> getOffsetCalcInstructions(MethodDef method) {
-			var creator = new ReflectionToDot10MethodCreator(method);
-			creator.create();
+		static List<Instruction> GetOffsetCalcInstructions(MethodDef method) {
+			var creator = new ReflectionToDNLibMethodCreator(method);
+			creator.Create();
 			var instrs = creator.Instructions;
 
 			int index = 0;
 
-			index = findInstruction(instrs, index, OpCodes.Conv_I4);
+			index = FindInstruction(instrs, index, OpCodes.Conv_I4);
 			if (index < 0)
 				return null;
 			int startInstr = ++index;
 
-			index = findInstruction(instrs, index, OpCodes.Box);
+			index = FindInstruction(instrs, index, OpCodes.Box);
 			if (index < 0)
 				return null;
 			int endInstr = index - 1;
@@ -492,7 +492,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return transformInstructions;
 		}
 
-		static int findInstruction(IList<Instruction> instrs, int index, OpCode opcode) {
+		static int FindInstruction(IList<Instruction> instrs, int index, OpCode opcode) {
 			if (index < 0)
 				return -1;
 			for (int i = index; i < instrs.Count; i++) {
@@ -502,7 +502,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return -1;
 		}
 
-		static bool hasFieldType(IEnumerable<FieldDef> fields, TypeDef fieldType) {
+		static bool HasFieldType(IEnumerable<FieldDef> fields, TypeDef fieldType) {
 			foreach (var field in fields) {
 				if (new SigComparer().Equals(field.FieldSig.GetFieldType(), fieldType))
 					return true;
@@ -510,7 +510,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return false;
 		}
 
-		static int getOffsetMagic(MethodDef method) {
+		static int GetOffsetMagic(MethodDef method) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 4; i++) {
 				int index = i;
@@ -552,7 +552,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return 0;
 		}
 
-		bool checkFields(TypeDef type, string fieldType1, TypeDef fieldType2) {
+		bool CheckFields(TypeDef type, string fieldType1, TypeDef fieldType2) {
 			if (type.Fields.Count != 2)
 				return false;
 			if (type.Fields[0].FieldSig.GetFieldType().GetFullName() != fieldType1 &&
@@ -564,23 +564,23 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return true;
 		}
 
-		public void initialize() {
+		public void Initialize() {
 			if (decrypterType == null)
 				return;
 			if (encryptedResource != null)
 				return;
 
 			if (decrypterInfo.NeedsResource) {
-				encryptedResource = BabelUtils.findEmbeddedResource(module, decrypterType);
+				encryptedResource = BabelUtils.FindEmbeddedResource(module, decrypterType);
 				if (encryptedResource == null)
 					return;
 			}
 
-			decrypterInfo.initialize(module, encryptedResource);
+			decrypterInfo.Initialize(module, encryptedResource);
 		}
 
-		public string decrypt(object[] args) {
-			return decrypterInfo.decrypt(args);
+		public string Decrypt(object[] args) {
+			return decrypterInfo.Decrypt(args);
 		}
 	}
 }

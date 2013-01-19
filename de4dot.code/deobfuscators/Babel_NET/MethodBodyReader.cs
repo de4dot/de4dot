@@ -35,58 +35,58 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			this.imageReader = imageReader;
 		}
 
-		public void read(IList<Parameter> parameters) {
+		public void Read(IList<Parameter> parameters) {
 			this.parameters = parameters;
 			Flags2 = reader.ReadInt16();
 			MaxStack = reader.ReadUInt16();
-			SetLocals(imageReader.readTypeSigs());
-			ReadInstructions(imageReader.readVariableLengthInt32());
-			readExceptionHandlers(imageReader.readVariableLengthInt32());
+			SetLocals(imageReader.ReadTypeSigs());
+			ReadInstructions(imageReader.ReadVariableLengthInt32());
+			ReadExceptionHandlers(imageReader.ReadVariableLengthInt32());
 		}
 
 		protected override IField ReadInlineField(Instruction instr) {
-			return imageReader.readFieldRef();
+			return imageReader.ReadFieldRef();
 		}
 
 		protected override IMethod ReadInlineMethod(Instruction instr) {
-			return imageReader.readMethodRef();
+			return imageReader.ReadMethodRef();
 		}
 
 		protected override MethodSig ReadInlineSig(Instruction instr) {
-			return imageReader.readCallSite();
+			return imageReader.ReadCallSite();
 		}
 
 		protected override string ReadInlineString(Instruction instr) {
-			return imageReader.readString();
+			return imageReader.ReadString();
 		}
 
 		protected override ITokenOperand ReadInlineTok(Instruction instr) {
 			switch (reader.ReadByte()) {
-			case 0: return imageReader.readTypeSig().ToTypeDefOrRef();
-			case 1: return imageReader.readFieldRef();
-			case 2: return imageReader.readMethodRef();
+			case 0: return imageReader.ReadTypeSig().ToTypeDefOrRef();
+			case 1: return imageReader.ReadFieldRef();
+			case 2: return imageReader.ReadMethodRef();
 			default: throw new ApplicationException("Unknown token type");
 			}
 		}
 
 		protected override ITypeDefOrRef ReadInlineType(Instruction instr) {
-			return imageReader.readTypeSig().ToTypeDefOrRef();
+			return imageReader.ReadTypeSig().ToTypeDefOrRef();
 		}
 
-		void readExceptionHandlers(int numExceptionHandlers) {
+		void ReadExceptionHandlers(int numExceptionHandlers) {
 			exceptionHandlers = new List<ExceptionHandler>(numExceptionHandlers);
 			for (int i = 0; i < numExceptionHandlers; i++)
-				Add(readExceptionHandler());
+				Add(ReadExceptionHandler());
 		}
 
-		ExceptionHandler readExceptionHandler() {
+		ExceptionHandler ReadExceptionHandler() {
 			var ehType = (ExceptionHandlerType)reader.ReadByte();
-			uint tryOffset = imageReader.readVariableLengthUInt32();
-			uint tryLength = imageReader.readVariableLengthUInt32();
-			uint handlerOffset = imageReader.readVariableLengthUInt32();
-			uint handlerLength = imageReader.readVariableLengthUInt32();
-			var catchType = imageReader.readTypeSig().ToTypeDefOrRef();
-			uint filterOffset = imageReader.readVariableLengthUInt32();
+			uint tryOffset = imageReader.ReadVariableLengthUInt32();
+			uint tryLength = imageReader.ReadVariableLengthUInt32();
+			uint handlerOffset = imageReader.ReadVariableLengthUInt32();
+			uint handlerLength = imageReader.ReadVariableLengthUInt32();
+			var catchType = imageReader.ReadTypeSig().ToTypeDefOrRef();
+			uint filterOffset = imageReader.ReadVariableLengthUInt32();
 
 			var eh = new ExceptionHandler(ehType);
 			eh.TryStart = GetInstructionThrow(tryOffset);

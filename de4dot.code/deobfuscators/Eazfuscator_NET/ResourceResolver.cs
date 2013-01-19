@@ -50,20 +50,20 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			this.assemblyResolver = assemblyResolver;
 		}
 
-		public void find() {
+		public void Find() {
 			if (!assemblyResolver.Detected)
 				return;
-			checkCalledMethods(DotNetUtils.getModuleTypeCctor(module));
+			CheckCalledMethods(DotNetUtils.GetModuleTypeCctor(module));
 		}
 
-		bool checkCalledMethods(MethodDef method) {
+		bool CheckCalledMethods(MethodDef method) {
 			if (method == null || method.Body == null)
 				return false;
 
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Call)
 					continue;
-				if (!checkInitMethod(instr.Operand as MethodDef))
+				if (!CheckInitMethod(instr.Operand as MethodDef))
 					continue;
 
 				return true;
@@ -72,18 +72,18 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return false;
 		}
 
-		bool checkInitMethod(MethodDef method) {
+		bool CheckInitMethod(MethodDef method) {
 			if (method == null || !method.IsStatic || method.Body == null)
 				return false;
-			if (!DotNetUtils.isMethod(method, "System.Void", "()"))
+			if (!DotNetUtils.IsMethod(method, "System.Void", "()"))
 				return false;
 			var type = method.DeclaringType;
 			if (type.NestedTypes.Count != 1)
 				return false;
-			if (DotNetUtils.getField(type, "System.Reflection.Assembly") == null)
+			if (DotNetUtils.GetField(type, "System.Reflection.Assembly") == null)
 				return false;
 
-			var resolveHandler = DeobUtils.getResolveMethod(method);
+			var resolveHandler = DeobUtils.GetResolveMethod(method);
 			if (resolveHandler == null)
 				return false;
 
@@ -93,26 +93,26 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return true;
 		}
 
-		public void initialize(ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
-			if (!initializeInfos(simpleDeobfuscator, deob))
+		public void Initialize(ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
+			if (!InitializeInfos(simpleDeobfuscator, deob))
 				throw new ApplicationException("Could not initialize resource decrypter");
 		}
 
-		bool initializeInfos(ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
+		bool InitializeInfos(ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
 			if (handlerMethod == null)
 				return true;
 
 			foreach (var method in resolverType.Methods) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
-				if (!DotNetUtils.isMethod(method, "System.Void", "()"))
+				if (!DotNetUtils.IsMethod(method, "System.Void", "()"))
 					continue;
-				if (!DeobUtils.hasInteger(method, ':') || !DeobUtils.hasInteger(method, '|'))
+				if (!DeobUtils.HasInteger(method, ':') || !DeobUtils.HasInteger(method, '|'))
 					continue;
 
-				simpleDeobfuscator.deobfuscate(method);
-				simpleDeobfuscator.decryptStrings(method, deob);
-				if (!initializeInfos(method))
+				simpleDeobfuscator.Deobfuscate(method);
+				simpleDeobfuscator.DecryptStrings(method, deob);
+				if (!InitializeInfos(method))
 					continue;
 
 				return true;
@@ -121,8 +121,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return false;
 		}
 
-		bool initializeInfos(MethodDef method) {
-			foreach (var s in DotNetUtils.getCodeStrings(method)) {
+		bool InitializeInfos(MethodDef method) {
+			foreach (var s in DotNetUtils.GetCodeStrings(method)) {
 				if (string.IsNullOrEmpty(s))
 					continue;
 				var ary = s.Split(':');
@@ -136,14 +136,14 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return false;
 		}
 
-		public List<AssemblyResolver.AssemblyInfo> mergeResources() {
+		public List<AssemblyResolver.AssemblyInfo> MergeResources() {
 			var list = new List<AssemblyResolver.AssemblyInfo>();
 			foreach (var asmName in resourceInfos) {
-				var asmInfo = assemblyResolver.get(asmName);
+				var asmInfo = assemblyResolver.Get(asmName);
 				if (asmInfo == null)
-					throw new ApplicationException(string.Format("Could not find resource assembly {0}", Utils.toCsharpString(asmName)));
+					throw new ApplicationException(string.Format("Could not find resource assembly {0}", Utils.ToCsharpString(asmName)));
 
-				DeobUtils.decryptAndAddResources(module, asmInfo.ResourceName, () => asmInfo.Data);
+				DeobUtils.DecryptAndAddResources(module, asmInfo.ResourceName, () => asmInfo.Data);
 				list.Add(asmInfo);
 			}
 			resourceInfos.Clear();

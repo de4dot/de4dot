@@ -85,42 +85,42 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			this.initializedDataCreator = initializedDataCreator;
 		}
 
-		public void find() {
+		public void Find() {
 			foreach (var type in module.Types) {
-				if (!isConstantDecrypter(type))
+				if (!IsConstantDecrypter(type))
 					continue;
 
-				int32Decrypter = DotNetUtils.getMethod(type, "System.Int32", "(System.Int32)");
-				int64Decrypter = DotNetUtils.getMethod(type, "System.Int64", "(System.Int32)");
-				singleDecrypter = DotNetUtils.getMethod(type, "System.Single", "(System.Int32)");
-				doubleDecrypter = DotNetUtils.getMethod(type, "System.Double", "(System.Int32)");
-				arrayDecrypter = DotNetUtils.getMethod(type, "System.Array", "(System.Byte[])");
+				int32Decrypter = DotNetUtils.GetMethod(type, "System.Int32", "(System.Int32)");
+				int64Decrypter = DotNetUtils.GetMethod(type, "System.Int64", "(System.Int32)");
+				singleDecrypter = DotNetUtils.GetMethod(type, "System.Single", "(System.Int32)");
+				doubleDecrypter = DotNetUtils.GetMethod(type, "System.Double", "(System.Int32)");
+				arrayDecrypter = DotNetUtils.GetMethod(type, "System.Array", "(System.Byte[])");
 				decrypterType = type;
 				return;
 			}
 		}
 
-		bool isConstantDecrypter(TypeDef type) {
+		bool IsConstantDecrypter(TypeDef type) {
 			if (type.HasEvents)
 				return false;
 			if (type.NestedTypes.Count != 1)
 				return false;
 
 			var nested = type.NestedTypes[0];
-			if (!checkNestedFields(nested))
+			if (!CheckNestedFields(nested))
 				return false;
 
-			resourceDecrypter.DecryptMethod = ResourceDecrypter.findDecrypterMethod(nested.FindMethod(".ctor"));
+			resourceDecrypter.DecryptMethod = ResourceDecrypter.FindDecrypterMethod(nested.FindMethod(".ctor"));
 
-			if (DotNetUtils.getMethod(type, "System.Int32", "(System.Int32)") == null)
+			if (DotNetUtils.GetMethod(type, "System.Int32", "(System.Int32)") == null)
 				return false;
-			if (DotNetUtils.getMethod(type, "System.Int64", "(System.Int32)") == null)
+			if (DotNetUtils.GetMethod(type, "System.Int64", "(System.Int32)") == null)
 				return false;
-			if (DotNetUtils.getMethod(type, "System.Single", "(System.Int32)") == null)
+			if (DotNetUtils.GetMethod(type, "System.Single", "(System.Int32)") == null)
 				return false;
-			if (DotNetUtils.getMethod(type, "System.Double", "(System.Int32)") == null)
+			if (DotNetUtils.GetMethod(type, "System.Double", "(System.Int32)") == null)
 				return false;
-			if (DotNetUtils.getMethod(type, "System.Array", "(System.Byte[])") == null)
+			if (DotNetUtils.GetMethod(type, "System.Array", "(System.Byte[])") == null)
 				return false;
 
 			return true;
@@ -132,8 +132,8 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			"System.Single[]",
 			"System.Double[]",
 		};
-		bool checkNestedFields(TypeDef nested) {
-			if (!new FieldTypes(nested).all(requiredTypes))
+		bool CheckNestedFields(TypeDef nested) {
+			if (!new FieldTypes(nested).All(requiredTypes))
 				return false;
 			foreach (var field in nested.Fields) {
 				if (new SigComparer().Equals(nested, field.FieldSig.GetFieldType()))
@@ -142,17 +142,17 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return false;
 		}
 
-		public void initialize(ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
+		public void Initialize(ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
 			if (decrypterType == null)
 				return;
 
-			encryptedResource = BabelUtils.findEmbeddedResource(module, decrypterType, simpleDeobfuscator, deob);
+			encryptedResource = BabelUtils.FindEmbeddedResource(module, decrypterType, simpleDeobfuscator, deob);
 			if (encryptedResource == null) {
 				Logger.w("Could not find encrypted constants resource");
 				return;
 			}
 
-			var decrypted = resourceDecrypter.decrypt(encryptedResource.Data.ReadAllBytes());
+			var decrypted = resourceDecrypter.Decrypt(encryptedResource.Data.ReadAllBytes());
 			var reader = new BinaryReader(new MemoryStream(decrypted));
 			int count;
 
@@ -177,19 +177,19 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				decryptedDoubles[count] = reader.ReadDouble();
 		}
 
-		public int decryptInt32(int index) {
+		public int DecryptInt32(int index) {
 			return decryptedInts[index];
 		}
 
-		public long decryptInt64(int index) {
+		public long DecryptInt64(int index) {
 			return decryptedLongs[index];
 		}
 
-		public float decryptSingle(int index) {
+		public float DecryptSingle(int index) {
 			return decryptedFloats[index];
 		}
 
-		public double decryptDouble(int index) {
+		public double DecryptDouble(int index) {
 			return decryptedDoubles[index];
 		}
 
@@ -206,19 +206,19 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			}
 		}
 
-		public void deobfuscate(Blocks blocks) {
+		public void Deobfuscate(Blocks blocks) {
 			if (arrayDecrypter == null)
 				return;
 
 			var infos = new List<ArrayInfo>();
-			foreach (var block in blocks.MethodBlocks.getAllBlocks()) {
+			foreach (var block in blocks.MethodBlocks.GetAllBlocks()) {
 				var instrs = block.Instructions;
 				infos.Clear();
 				for (int i = 0; i < instrs.Count - 6; i++) {
 					int index = i;
 
 					var ldci4 = instrs[index++];
-					if (!ldci4.isLdcI4())
+					if (!ldci4.IsLdcI4())
 						continue;
 
 					var newarr = instrs[index++];
@@ -240,7 +240,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 					var call1 = instrs[index++];
 					if (call1.OpCode.Code != Code.Call && call1.OpCode.Code != Code.Callvirt)
 						continue;
-					if (!DotNetUtils.isMethod(call1.Operand as IMethod, "System.Void", "(System.Array,System.RuntimeFieldHandle)"))
+					if (!DotNetUtils.IsMethod(call1.Operand as IMethod, "System.Void", "(System.Array,System.RuntimeFieldHandle)"))
 						continue;
 
 					var call2 = instrs[index++];
@@ -266,16 +266,16 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				infos.Reverse();
 				foreach (var info in infos) {
 					var elemSize = info.arrayType.Next.ElementType.GetPrimitiveSize();
-					var decrypted = decryptArray(info.encryptedField.InitialValue, elemSize);
+					var decrypted = DecryptArray(info.encryptedField.InitialValue, elemSize);
 
-					initializedDataCreator.addInitializeArrayCode(block, info.start, info.len, info.arrayType.Next.ToTypeDefOrRef(), decrypted);
+					initializedDataCreator.AddInitializeArrayCode(block, info.start, info.len, info.arrayType.Next.ToTypeDefOrRef(), decrypted);
 					Logger.v("Decrypted {0} array: {1} elements", info.arrayType.Next.ToString(), decrypted.Length / elemSize);
 				}
 			}
 		}
 
-		byte[] decryptArray(byte[] encryptedData, int elemSize) {
-			var decrypted = resourceDecrypter.decrypt(encryptedData);
+		byte[] DecryptArray(byte[] encryptedData, int elemSize) {
+			var decrypted = resourceDecrypter.Decrypt(encryptedData);
 			var ary = (Array)new BinaryFormatter().Deserialize(new MemoryStream(decrypted));
 			if (ary is byte[])
 				return (byte[])ary;

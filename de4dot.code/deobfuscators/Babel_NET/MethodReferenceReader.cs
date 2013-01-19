@@ -77,7 +77,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			}
 		}
 
-		public void setBody(MethodBodyReader mbr) {
+		public void SetBody(MethodBodyReader mbr) {
 			Flags2 = mbr.Flags2;
 			MaxStack = mbr.MaxStack;
 			Locals = mbr.Locals;
@@ -85,7 +85,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			ExceptionHandlers = mbr.ExceptionHandlers;
 		}
 
-		public IList<Parameter> getRealParameters() {
+		public IList<Parameter> GetRealParameters() {
 			if (ThisParameter == null)
 				return Parameters;
 			var parameters = new Parameter[Parameters.Length + 1];
@@ -110,21 +110,21 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			this.bmr = bmr;
 		}
 
-		public BabelMethodreference read() {
-			bmr.Name = imageReader.readString();
-			bmr.DeclaringType = imageReader.readTypeSig();
-			bmr.ReturnType = imageReader.readTypeSig();
-			var argTypes = imageReader.readTypeSigs();
+		public BabelMethodreference Read() {
+			bmr.Name = imageReader.ReadString();
+			bmr.DeclaringType = imageReader.ReadTypeSig();
+			bmr.ReturnType = imageReader.ReadTypeSig();
+			var argTypes = imageReader.ReadTypeSigs();
 			bmr.Flags = reader.ReadByte();
 			if (bmr.IsGenericMethod)
-				bmr.GenericArguments = imageReader.readTypeSigs();
+				bmr.GenericArguments = imageReader.ReadTypeSigs();
 			else
 				bmr.GenericArguments = new TypeSig[0];
-			bmr.Parameters = readParameters(argTypes, bmr.HasThis);
+			bmr.Parameters = ReadParameters(argTypes, bmr.HasThis);
 			return bmr;
 		}
 
-		Parameter[] readParameters(IList<TypeSig> argTypes, bool hasThis) {
+		Parameter[] ReadParameters(IList<TypeSig> argTypes, bool hasThis) {
 			var ps = new Parameter[argTypes.Count];
 			int bi = hasThis ? 1 : 0;
 			for (int i = 0; i < ps.Length; i++)
@@ -144,10 +144,10 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			this.methodBodyReader = new MethodBodyReader(imageReader, reader);
 		}
 
-		public BabelMethodDef read() {
-			methodRefReader.read();
-			methodBodyReader.read(bmd.getRealParameters());
-			bmd.setBody(methodBodyReader);
+		public BabelMethodDef Read() {
+			methodRefReader.Read();
+			methodBodyReader.Read(bmd.GetRealParameters());
+			bmd.SetBody(methodBodyReader);
 			return bmd;
 		}
 	}

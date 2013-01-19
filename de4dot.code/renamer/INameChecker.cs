@@ -19,15 +19,15 @@
 
 namespace de4dot.code.renamer {
 	public interface INameChecker {
-		bool isValidNamespaceName(string ns);
-		bool isValidTypeName(string name);
-		bool isValidMethodName(string name);
-		bool isValidPropertyName(string name);
-		bool isValidEventName(string name);
-		bool isValidFieldName(string name);
-		bool isValidGenericParamName(string name);
-		bool isValidMethodArgName(string name);
-		bool isValidMethodReturnArgName(string name);
-		bool isValidResourceKeyName(string name);
+		bool IsValidNamespaceName(string ns);
+		bool IsValidTypeName(string name);
+		bool IsValidMethodName(string name);
+		bool IsValidPropertyName(string name);
+		bool IsValidEventName(string name);
+		bool IsValidFieldName(string name);
+		bool IsValidGenericParamName(string name);
+		bool IsValidMethodArgName(string name);
+		bool IsValidMethodReturnArgName(string name);
+		bool IsValidResourceKeyName(string name);
 	}
 }

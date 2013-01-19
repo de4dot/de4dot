@@ -28,10 +28,10 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 
 		public EnumClassFinder(ModuleDefMD module) {
 			this.module = module;
-			find();
+			Find();
 		}
 
-		void find() {
+		void Find() {
 			foreach (var type in module.Types) {
 				if (type.HasEvents || type.HasProperties)
 					continue;
@@ -43,7 +43,7 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 				if (method.Name != ".ctor")
 					continue;
 				var field = type.Fields[0];
-				var fieldType = DotNetUtils.getType(module, field.FieldSig.GetFieldType());
+				var fieldType = DotNetUtils.GetType(module, field.FieldSig.GetFieldType());
 				if (fieldType == null)
 					continue;
 				if (!fieldType.IsEnum)
@@ -53,8 +53,8 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 			}
 		}
 
-		public void deobfuscate(Blocks blocks) {
-			foreach (var block in blocks.MethodBlocks.getAllBlocks()) {
+		public void Deobfuscate(Blocks blocks) {
+			foreach (var block in blocks.MethodBlocks.GetAllBlocks()) {
 				var instrs = block.Instructions;
 				for (int i = 0; i < instrs.Count - 2; i++) {
 					var ldsfld = instrs[i];
@@ -62,7 +62,7 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 						continue;
 
 					var ldci4 = instrs[i + 1];
-					if (!ldci4.isLdcI4())
+					if (!ldci4.IsLdcI4())
 						continue;
 
 					var stfld = instrs[i + 2];
@@ -72,7 +72,7 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 					var field = stfld.Operand as IField;
 					if (!FieldEqualityComparer.CompareDeclaringTypes.Equals(enumField, field))
 						continue;
-					block.remove(i, 3);
+					block.Remove(i, 3);
 					i--;
 				}
 			}

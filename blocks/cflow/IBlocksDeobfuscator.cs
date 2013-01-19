@@ -23,9 +23,9 @@ namespace de4dot.blocks.cflow {
 	public interface IBlocksDeobfuscator {
 		bool ExecuteOnNoChange { get; }
 
-		void deobfuscateBegin(Blocks blocks);
+		void DeobfuscateBegin(Blocks blocks);
 
 		// Returns true if something was updated
-		bool deobfuscate(List<Block> allBlocks);
+		bool Deobfuscate(List<Block> allBlocks);
 	}
 }

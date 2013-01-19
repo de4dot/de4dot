@@ -31,27 +31,27 @@ namespace de4dot.code {
 		ModuleContext moduleContext;
 
 		public AssemblyModule(string filename, ModuleContext moduleContext) {
-			this.filename = Utils.getFullPath(filename);
+			this.filename = Utils.GetFullPath(filename);
 			this.moduleContext = moduleContext;
 		}
 
-		public ModuleDefMD load() {
-			return setModule(ModuleDefMD.Load(filename, moduleContext));
+		public ModuleDefMD Load() {
+			return SetModule(ModuleDefMD.Load(filename, moduleContext));
 		}
 
-		public ModuleDefMD load(byte[] fileData) {
-			return setModule(ModuleDefMD.Load(fileData, moduleContext));
+		public ModuleDefMD Load(byte[] fileData) {
+			return SetModule(ModuleDefMD.Load(fileData, moduleContext));
 		}
 
-		ModuleDefMD setModule(ModuleDefMD newModule) {
+		ModuleDefMD SetModule(ModuleDefMD newModule) {
 			module = newModule;
-			TheAssemblyResolver.Instance.addModule(module);
+			TheAssemblyResolver.Instance.AddModule(module);
 			module.EnableTypeDefFindCache = true;
 			module.Location = filename;
 			return module;
 		}
 
-		public void save(string newFilename, MetaDataFlags mdFlags, IModuleWriterListener writerListener) {
+		public void Save(string newFilename, MetaDataFlags mdFlags, IModuleWriterListener writerListener) {
 			if (module.IsILOnly) {
 				var writerOptions = new ModuleWriterOptions(module, writerListener);
 				writerOptions.MetaDataOptions.Flags |= mdFlags;
@@ -68,7 +68,7 @@ namespace de4dot.code {
 			}
 		}
 
-		public ModuleDefMD reload(byte[] newModuleData, DumpedMethodsRestorer dumpedMethodsRestorer, IStringDecrypter stringDecrypter) {
+		public ModuleDefMD Reload(byte[] newModuleData, DumpedMethodsRestorer dumpedMethodsRestorer, IStringDecrypter stringDecrypter) {
 			TheAssemblyResolver.Instance.Remove(module);
 			var mod = ModuleDefMD.Load(newModuleData, moduleContext);
 			if (dumpedMethodsRestorer != null)
@@ -77,7 +77,7 @@ namespace de4dot.code {
 			mod.MethodDecrypter = dumpedMethodsRestorer;
 			mod.TablesStream.ColumnReader = dumpedMethodsRestorer;
 			mod.TablesStream.MethodRowReader = dumpedMethodsRestorer;
-			return setModule(mod);
+			return SetModule(mod);
 		}
 
 		public override string ToString() {

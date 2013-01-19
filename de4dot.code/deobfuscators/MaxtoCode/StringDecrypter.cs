@@ -42,23 +42,23 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			this.decrypterInfo = decrypterInfo;
 		}
 
-		public void find() {
+		public void Find() {
 			if (decrypterInfo == null)
 				return;
-			decryptMethod = findDecryptMethod(decrypterInfo.mainType.Type);
+			decryptMethod = FindDecryptMethod(decrypterInfo.mainType.Type);
 			if (decryptMethod == null)
 				return;
 		}
 
-		static MethodDef findDecryptMethod(TypeDef type) {
+		static MethodDef FindDecryptMethod(TypeDef type) {
 			if (type == null)
 				return null;
 			foreach (var method in type.Methods) {
 				if (method.Body == null || !method.IsStatic || method.IsPrivate)
 					continue;
-				if (!DotNetUtils.isMethod(method, "System.String", "(System.UInt32)"))
+				if (!DotNetUtils.IsMethod(method, "System.String", "(System.UInt32)"))
 					continue;
-				if (!DotNetUtils.callsMethod(method, "System.String System.Runtime.InteropServices.Marshal::PtrToStringAnsi(System.IntPtr)"))
+				if (!DotNetUtils.CallsMethod(method, "System.String System.Runtime.InteropServices.Marshal::PtrToStringAnsi(System.IntPtr)"))
 					continue;
 
 				return method;
@@ -66,11 +66,11 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			return null;
 		}
 
-		public void initialize(Encoding encoding) {
+		public void Initialize(Encoding encoding) {
 			this.encoding = encoding;
 		}
 
-		void initializeStrings() {
+		void InitializeStrings() {
 			if (decryptedStrings != null)
 				return;
 			var peImage = decrypterInfo.peImage;
@@ -78,31 +78,31 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			var mcKey = decrypterInfo.mcKey;
 			var fileData = decrypterInfo.fileData;
 
-			var stringsRva = peHeader.getRva(0x0AF0, mcKey.readUInt32(0x46));
+			var stringsRva = peHeader.GetRva(0x0AF0, mcKey.ReadUInt32(0x46));
 			if (stringsRva == 0)
 				return;
-			int stringsOffset = (int)peImage.rvaToOffset(stringsRva);
+			int stringsOffset = (int)peImage.RvaToOffset(stringsRva);
 
-			int numStrings = peImage.readInt32(stringsRva) ^ (int)mcKey.readUInt32(0);
+			int numStrings = peImage.ReadInt32(stringsRva) ^ (int)mcKey.ReadUInt32(0);
 			decryptedStrings = new string[numStrings];
 			for (int i = 0, ki = 2, soffs = stringsOffset + 4; i < numStrings; i++) {
-				int stringLen = BitConverter.ToInt32(fileData, soffs) ^ (int)mcKey.readUInt32(ki);
+				int stringLen = BitConverter.ToInt32(fileData, soffs) ^ (int)mcKey.ReadUInt32(ki);
 				ki += 2;
 				if (ki >= 0x1FF0)
 					ki = 0;
 				soffs += 4;
 				var bytes = new byte[stringLen];
 				for (int j = 0; j < stringLen; j++, soffs++) {
-					byte b = (byte)(fileData[soffs] ^ mcKey.readByte(ki));
-					ki = add(ki, 1);
+					byte b = (byte)(fileData[soffs] ^ mcKey.ReadByte(ki));
+					ki = Add(ki, 1);
 					bytes[j] = b;
 				}
 
-				decryptedStrings[i] = decode(bytes);
+				decryptedStrings[i] = Decode(bytes);
 			}
 		}
 
-		string decode(byte[] bytes) {
+		string Decode(byte[] bytes) {
 			string s = encoding.GetString(bytes);
 			int len = s.Length;
 			if (len == 0 || s[len - 1] != 0)
@@ -116,12 +116,12 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			return s.Substring(0, len);
 		}
 
-		static int add(int ki, int size) {
+		static int Add(int ki, int size) {
 			return (ki + size) % 0x1FF0;
 		}
 
-		public string decrypt(uint id) {
-			initializeStrings();
+		public string Decrypt(uint id) {
+			InitializeStrings();
 			return decryptedStrings[(int)id - 1];
 		}
 	}

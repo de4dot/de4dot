@@ -37,7 +37,7 @@ namespace de4dot.code.resources {
 			this.type = type;
 		}
 
-		public abstract void writeData(BinaryWriter writer, IFormatter formatter);
+		public abstract void WriteData(BinaryWriter writer, IFormatter formatter);
 	}
 
 	class CharArrayResourceData : UserResourceData {
@@ -49,7 +49,7 @@ namespace de4dot.code.resources {
 			this.data = data;
 		}
 
-		public override void writeData(BinaryWriter writer, IFormatter formatter) {
+		public override void WriteData(BinaryWriter writer, IFormatter formatter) {
 			formatter.Serialize(writer.BaseStream, data);
 		}
 	}
@@ -63,7 +63,7 @@ namespace de4dot.code.resources {
 			icon = new Icon(new MemoryStream(data));
 		}
 
-		public override void writeData(BinaryWriter writer, IFormatter formatter) {
+		public override void WriteData(BinaryWriter writer, IFormatter formatter) {
 			formatter.Serialize(writer.BaseStream, icon);
 		}
 	}
@@ -77,7 +77,7 @@ namespace de4dot.code.resources {
 			bitmap = new Bitmap(Image.FromStream(new MemoryStream(data)));
 		}
 
-		public override void writeData(BinaryWriter writer, IFormatter formatter) {
+		public override void WriteData(BinaryWriter writer, IFormatter formatter) {
 			formatter.Serialize(writer.BaseStream, bitmap);
 		}
 	}
@@ -90,7 +90,7 @@ namespace de4dot.code.resources {
 			this.data = data;
 		}
 
-		public override void writeData(BinaryWriter writer, IFormatter formatter) {
+		public override void WriteData(BinaryWriter writer, IFormatter formatter) {
 			writer.Write(data);
 		}
 	}

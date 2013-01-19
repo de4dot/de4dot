@@ -29,43 +29,43 @@ namespace de4dot.blocks.cflow {
 			get { return stack.Count; }
 		}
 
-		public void init() {
+		public void Initialize() {
 			stack.Clear();
 		}
 
-		public void clear() {
+		public void Clear() {
 			stack.Clear();
 		}
 
-		public void push(Value value) {
+		public void Push(Value value) {
 			stack.Add(value);
 		}
 
-		public Value peek() {
+		public Value Peek() {
 			if (stack.Count == 0)
 				return new UnknownValue();
 			return stack[stack.Count - 1];
 		}
 
-		public Value pop() {
-			Value value = peek();
+		public Value Pop() {
+			Value value = Peek();
 			if (stack.Count != 0)
 				stack.RemoveAt(stack.Count - 1);
 			return value;
 		}
 
-		public void push(int count) {
+		public void Push(int count) {
 			if (count < 0)
 				throw new ArgumentOutOfRangeException("count");
 			for (int i = 0; i < count; i++)
-				pushUnknown();
+				PushUnknown();
 		}
 
-		public void pushUnknown() {
-			push(new UnknownValue());
+		public void PushUnknown() {
+			Push(new UnknownValue());
 		}
 
-		public void pop(int count) {
+		public void Pop(int count) {
 			if (count < 0)
 				throw new ArgumentOutOfRangeException("count");
 			if (count >= stack.Count)
@@ -74,8 +74,8 @@ namespace de4dot.blocks.cflow {
 				stack.RemoveRange(stack.Count - count, count);
 		}
 
-		public void copyTop() {
-			push(peek());
+		public void CopyTop() {
+			Push(Peek());
 		}
 
 		public override string ToString() {

@@ -67,17 +67,17 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 		public UnknownHandlerInfo(TypeDef type, CsvmInfo csvmInfo) {
 			this.type = type;
 			this.csvmInfo = csvmInfo;
-			fieldsInfo = new FieldsInfo(getFields(type));
-			countMethods();
-			findOverrideMethods();
-			executeMethodThrows = countThrows(executeMethod);
-			executeMethodPops = countPops(executeMethod);
+			fieldsInfo = new FieldsInfo(GetFields(type));
+			CountMethods();
+			FindOverrideMethods();
+			executeMethodThrows = CountThrows(executeMethod);
+			executeMethodPops = CountPops(executeMethod);
 		}
 
-		static internal IEnumerable<FieldDef> getFields(TypeDef type) {
+		static internal IEnumerable<FieldDef> GetFields(TypeDef type) {
 			var typeFields = new FieldDefAndDeclaringTypeDict<FieldDef>();
 			foreach (var field in type.Fields)
-				typeFields.add(field, field);
+				typeFields.Add(field, field);
 			var realFields = new Dictionary<FieldDef, bool>();
 			foreach (var method in type.Methods) {
 				if (method.Body == null)
@@ -86,7 +86,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 					var fieldRef = instr.Operand as IField;
 					if (fieldRef == null)
 						continue;
-					var field = typeFields.find(fieldRef);
+					var field = typeFields.Find(fieldRef);
 					if (field == null)
 						continue;
 					realFields[field] = true;
@@ -95,7 +95,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			return realFields.Keys;
 		}
 
-		void countMethods() {
+		void CountMethods() {
 			foreach (var method in type.Methods) {
 				if (method.Name == ".cctor") {
 				}
@@ -110,16 +110,16 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			}
 		}
 
-		void findOverrideMethods() {
+		void FindOverrideMethods() {
 			foreach (var method in type.Methods) {
 				if (!method.IsVirtual)
 					continue;
-				if (DotNetUtils.isMethod(method, "System.Void", "(System.IO.BinaryReader)")) {
+				if (DotNetUtils.IsMethod(method, "System.Void", "(System.IO.BinaryReader)")) {
 					if (readMethod != null)
 						throw new ApplicationException("Found another read method");
 					readMethod = method;
 				}
-				else if (!DotNetUtils.hasReturnValue(method) && method.MethodSig.GetParamCount() == 1) {
+				else if (!DotNetUtils.HasReturnValue(method) && method.MethodSig.GetParamCount() == 1) {
 					if (executeMethod != null)
 						throw new ApplicationException("Found another execute method");
 					executeMethod = method;
@@ -132,7 +132,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 				throw new ApplicationException("Could not find execute method");
 		}
 
-		static int countThrows(MethodDef method) {
+		static int CountThrows(MethodDef method) {
 			int count = 0;
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code == Code.Throw)
@@ -141,7 +141,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			return count;
 		}
 
-		int countPops(MethodDef method) {
+		int CountPops(MethodDef method) {
 			int count = 0;
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt)
@@ -155,8 +155,8 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			return count;
 		}
 
-		public bool hasSameFieldTypes(object[] fieldTypes) {
-			return new FieldsInfo(fieldTypes).isSame(fieldsInfo);
+		public bool HasSameFieldTypes(object[] fieldTypes) {
+			return new FieldsInfo(fieldTypes).IsSame(fieldsInfo);
 		}
 	}
 }

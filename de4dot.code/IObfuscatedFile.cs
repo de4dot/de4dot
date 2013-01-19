@@ -35,12 +35,12 @@ namespace de4dot.code {
 		bool RemoveNamespaceWithOneType { get; }
 		bool RenameResourceKeys { get; }
 
-		void deobfuscateBegin();
-		void deobfuscate();
-		void deobfuscateEnd();
-		void deobfuscateCleanUp();
+		void DeobfuscateBegin();
+		void Deobfuscate();
+		void DeobfuscateEnd();
+		void DeobfuscateCleanUp();
 
-		void load(IList<IDeobfuscator> deobfuscators);
-		void save();
+		void Load(IList<IDeobfuscator> deobfuscators);
+		void Save();
 	}
 }

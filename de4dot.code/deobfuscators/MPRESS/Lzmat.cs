@@ -70,7 +70,7 @@ namespace de4dot.code.deobfuscators.MPRESS {
 			return BitConverter.ToUInt16(_p_, (int)_i_);
 		}
 
-		public static LzmatStatus decompress(byte[] pbOut, out uint pcbOut, byte[] pbIn) {
+		public static LzmatStatus Decompress(byte[] pbOut, out uint pcbOut, byte[] pbIn) {
 			pcbOut = 0;
 			uint cbIn = (uint)pbIn.Length;
 
@@ -202,7 +202,7 @@ namespace de4dot.code.deobfuscators.MPRESS {
 	return LzmatStatus.OK;
 		}
 
-		public static byte[] decompress_old(byte[] compressed) {
+		public static byte[] DecompressOld(byte[] compressed) {
 			int srcIndex = 3;
 			int dstIndex = 0;
 			int decompressedLen = compressed[0] + (compressed[1] << 8) + (compressed[2] << 16);

@@ -33,24 +33,24 @@ namespace de4dot.blocks.cflow {
 
 		public bool ExecuteOnNoChange { get; set; }
 
-		public void deobfuscateBegin(Blocks blocks) {
+		public void DeobfuscateBegin(Blocks blocks) {
 			this.blocks = blocks;
 			iteration = 0;
 		}
 
-		public bool deobfuscate(List<Block> allBlocks) {
+		public bool Deobfuscate(List<Block> allBlocks) {
 			if (iteration++ >= MAX_ITERATIONS)
 				return false;
 
 			bool changed = false;
 			foreach (var block in allBlocks) {
 				this.block = block;
-				changed |= deobfuscateInternal();
+				changed |= DeobfuscateInternal();
 			}
 			return changed;
 		}
 
-		protected abstract bool deobfuscateInternal();
+		protected abstract bool DeobfuscateInternal();
 
 		protected class InstructionPatcher {
 			readonly int patchIndex;
@@ -64,53 +64,53 @@ namespace de4dot.blocks.cflow {
 				this.clonedInstr = new Instr(lastInstr.Clone());
 			}
 
-			public void patch(Block block) {
+			public void Patch(Block block) {
 				block.Instructions[patchIndex] = clonedInstr;
 			}
 		}
 
-		protected bool inlineLoadMethod(int patchIndex, MethodDef methodToInline, Instruction loadInstr, int instrIndex) {
-			if (!isReturn(methodToInline, instrIndex))
+		protected bool InlineLoadMethod(int patchIndex, MethodDef methodToInline, Instruction loadInstr, int instrIndex) {
+			if (!IsReturn(methodToInline, instrIndex))
 				return false;
 
-			int methodArgsCount = DotNetUtils.getArgsCount(methodToInline);
+			int methodArgsCount = DotNetUtils.GetArgsCount(methodToInline);
 			for (int i = 0; i < methodArgsCount; i++)
-				block.insert(patchIndex++, OpCodes.Pop.ToInstruction());
+				block.Insert(patchIndex++, OpCodes.Pop.ToInstruction());
 
 			block.Instructions[patchIndex] = new Instr(loadInstr.Clone());
 			return true;
 		}
 
-		protected bool inlineOtherMethod(int patchIndex, MethodDef methodToInline, Instruction instr, int instrIndex) {
-			return inlineOtherMethod(patchIndex, methodToInline, instr, instrIndex, 0);
+		protected bool InlineOtherMethod(int patchIndex, MethodDef methodToInline, Instruction instr, int instrIndex) {
+			return InlineOtherMethod(patchIndex, methodToInline, instr, instrIndex, 0);
 		}
 
-		protected bool inlineOtherMethod(int patchIndex, MethodDef methodToInline, Instruction instr, int instrIndex, int popLastArgs) {
-			return patchMethod(methodToInline, tryInlineOtherMethod(patchIndex, methodToInline, instr, instrIndex, popLastArgs));
+		protected bool InlineOtherMethod(int patchIndex, MethodDef methodToInline, Instruction instr, int instrIndex, int popLastArgs) {
+			return PatchMethod(methodToInline, TryInlineOtherMethod(patchIndex, methodToInline, instr, instrIndex, popLastArgs));
 		}
 
-		protected bool patchMethod(MethodDef methodToInline, InstructionPatcher patcher) {
+		protected bool PatchMethod(MethodDef methodToInline, InstructionPatcher patcher) {
 			if (patcher == null)
 				return false;
 
-			if (!isReturn(methodToInline, patcher.afterIndex))
+			if (!IsReturn(methodToInline, patcher.afterIndex))
 				return false;
 
-			patcher.patch(block);
+			patcher.Patch(block);
 			return true;
 		}
 
-		protected InstructionPatcher tryInlineOtherMethod(int patchIndex, MethodDef methodToInline, Instruction instr, int instrIndex) {
-			return tryInlineOtherMethod(patchIndex, methodToInline, instr, instrIndex, 0);
+		protected InstructionPatcher TryInlineOtherMethod(int patchIndex, MethodDef methodToInline, Instruction instr, int instrIndex) {
+			return TryInlineOtherMethod(patchIndex, methodToInline, instr, instrIndex, 0);
 		}
 
-		protected virtual Instruction onAfterLoadArg(MethodDef methodToInline, Instruction instr, ref int instrIndex) {
+		protected virtual Instruction OnAfterLoadArg(MethodDef methodToInline, Instruction instr, ref int instrIndex) {
 			return instr;
 		}
 
-		protected InstructionPatcher tryInlineOtherMethod(int patchIndex, MethodDef methodToInline, Instruction instr, int instrIndex, int popLastArgs) {
+		protected InstructionPatcher TryInlineOtherMethod(int patchIndex, MethodDef methodToInline, Instruction instr, int instrIndex, int popLastArgs) {
 			int loadIndex = 0;
-			int methodArgsCount = DotNetUtils.getArgsCount(methodToInline);
+			int methodArgsCount = DotNetUtils.GetArgsCount(methodToInline);
 			bool foundLdarga = false;
 			while (instr != null && loadIndex < methodArgsCount) {
 				bool isLdarg = true;
@@ -136,8 +136,8 @@ namespace de4dot.blocks.cflow {
 				if (instr.GetParameterIndex() != loadIndex)
 					return null;
 				loadIndex++;
-				instr = DotNetUtils.getInstruction(methodToInline.Body.Instructions, ref instrIndex);
-				instr = onAfterLoadArg(methodToInline, instr, ref instrIndex);
+				instr = DotNetUtils.GetInstruction(methodToInline.Body.Instructions, ref instrIndex);
+				instr = OnAfterLoadArg(methodToInline, instr, ref instrIndex);
 			}
 			if (instr == null || loadIndex != methodArgsCount - popLastArgs)
 				return null;
@@ -150,13 +150,13 @@ namespace de4dot.blocks.cflow {
 				if (calledMethod == null)
 					return null;
 
-				if (!isCompatibleType(-1, calledMethod.MethodSig.RetType, methodToInline.MethodSig.RetType))
+				if (!IsCompatibleType(-1, calledMethod.MethodSig.RetType, methodToInline.MethodSig.RetType))
 					return null;
 
-				if (!checkSameMethods(calledMethod, methodToInline, popLastArgs))
+				if (!CheckSameMethods(calledMethod, methodToInline, popLastArgs))
 					return null;
 
-				if (!hasAccessTo(instr.Operand))
+				if (!HasAccessTo(instr.Operand))
 					return null;
 
 				return new InstructionPatcher(patchIndex, instrIndex, callInstr);
@@ -169,19 +169,19 @@ namespace de4dot.blocks.cflow {
 				if (ctor == null)
 					return null;
 
-				if (!isCompatibleType(-1, ctor.DeclaringType, methodToInline.MethodSig.RetType))
+				if (!IsCompatibleType(-1, ctor.DeclaringType, methodToInline.MethodSig.RetType))
 					return null;
 
 				var methodArgs = methodToInline.Parameters;
-				var calledMethodArgs = DotNetUtils.getArgs(ctor);
+				var calledMethodArgs = DotNetUtils.GetArgs(ctor);
 				if (methodArgs.Count + 1 - popLastArgs != calledMethodArgs.Count)
 					return null;
 				for (int i = 1; i < calledMethodArgs.Count; i++) {
-					if (!isCompatibleType(i, calledMethodArgs[i], methodArgs[i - 1].Type))
+					if (!IsCompatibleType(i, calledMethodArgs[i], methodArgs[i - 1].Type))
 						return null;
 				}
 
-				if (!hasAccessTo(instr.Operand))
+				if (!HasAccessTo(instr.Operand))
 					return null;
 
 				return new InstructionPatcher(patchIndex, instrIndex, newobjInstr);
@@ -192,7 +192,7 @@ namespace de4dot.blocks.cflow {
 				if (methodArgsCount != 1)
 					return null;
 
-				if (!hasAccessTo(instr.Operand))
+				if (!HasAccessTo(instr.Operand))
 					return null;
 
 				return new InstructionPatcher(patchIndex, instrIndex, ldInstr);
@@ -201,36 +201,36 @@ namespace de4dot.blocks.cflow {
 			return null;
 		}
 
-		bool hasAccessTo(object operand) {
+		bool HasAccessTo(object operand) {
 			if (operand == null)
 				return false;
 			accessChecker.UserType = blocks.Method.DeclaringType;
-			return accessChecker.CanAccess(operand) ?? getDefaultAccessResult();
+			return accessChecker.CanAccess(operand) ?? GetDefaultAccessResult();
 		}
 
-		protected virtual bool getDefaultAccessResult() {
+		protected virtual bool GetDefaultAccessResult() {
 			return true;
 		}
 
-		protected virtual bool isReturn(MethodDef methodToInline, int instrIndex) {
-			var instr = DotNetUtils.getInstruction(methodToInline.Body.Instructions, ref instrIndex);
+		protected virtual bool IsReturn(MethodDef methodToInline, int instrIndex) {
+			var instr = DotNetUtils.GetInstruction(methodToInline.Body.Instructions, ref instrIndex);
 			return instr != null && instr.OpCode.Code == Code.Ret;
 		}
 
-		protected bool checkSameMethods(IMethod method, MethodDef methodToInline) {
-			return checkSameMethods(method, methodToInline, 0);
+		protected bool CheckSameMethods(IMethod method, MethodDef methodToInline) {
+			return CheckSameMethods(method, methodToInline, 0);
 		}
 
-		protected bool checkSameMethods(IMethod method, MethodDef methodToInline, int ignoreLastMethodToInlineArgs) {
+		protected bool CheckSameMethods(IMethod method, MethodDef methodToInline, int ignoreLastMethodToInlineArgs) {
 			var methodToInlineArgs = methodToInline.Parameters;
-			var methodArgs = DotNetUtils.getArgs(method);
+			var methodArgs = DotNetUtils.GetArgs(method);
 			bool hasImplicitThis = method.MethodSig.ImplicitThis;
 			if (methodToInlineArgs.Count - ignoreLastMethodToInlineArgs != methodArgs.Count)
 				return false;
 			for (int i = 0; i < methodArgs.Count; i++) {
 				var methodArg = methodArgs[i];
-				var methodToInlineArg = getArgType(methodToInline, methodToInlineArgs[i].Type);
-				if (!isCompatibleType(i, methodArg, methodToInlineArg)) {
+				var methodToInlineArg = GetArgType(methodToInline, methodToInlineArgs[i].Type);
+				if (!IsCompatibleType(i, methodArg, methodToInlineArg)) {
 					if (i != 0 || !hasImplicitThis)
 						return false;
 					if (!isCompatibleValueThisPtr(methodArg, methodToInlineArg))
@@ -241,7 +241,7 @@ namespace de4dot.blocks.cflow {
 			return true;
 		}
 
-		static TypeSig getArgType(MethodDef method, TypeSig arg) {
+		static TypeSig GetArgType(MethodDef method, TypeSig arg) {
 			if (arg.GetElementType() != ElementType.MVar)
 				return arg;
 			var mvar = (GenericMVar)arg;
@@ -254,7 +254,7 @@ namespace de4dot.blocks.cflow {
 			return arg;
 		}
 
-		protected virtual bool isCompatibleType(int paramIndex, IType origType, IType newType) {
+		protected virtual bool IsCompatibleType(int paramIndex, IType origType, IType newType) {
 			return new SigComparer().Equals(origType, newType);
 		}
 
@@ -262,12 +262,12 @@ namespace de4dot.blocks.cflow {
 			var newByRef = newType as ByRefSig;
 			if (newByRef == null)
 				return false;
-			if (!isValueType(newByRef.Next) || !isValueType(origType))
+			if (!IsValueType(newByRef.Next) || !IsValueType(origType))
 				return false;
 			return new SigComparer().Equals(origType, newByRef.Next);
 		}
 
-		protected static bool isValueType(IType type) {
+		protected static bool IsValueType(IType type) {
 			if (type == null)
 				return false;
 			var ts = type as TypeSig;

@@ -20,7 +20,7 @@
 namespace de4dot_x86 {
 	class Program {
 		static int Main(string[] args) {
-			return de4dot.cui.Program.main(args);
+			return de4dot.cui.Program.Main2(args);
 		}
 	}
 }

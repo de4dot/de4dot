@@ -44,7 +44,7 @@ namespace de4dot.code.deobfuscators.Xenocode {
 			this.module = module;
 		}
 
-		public void find() {
+		public void Find() {
 			foreach (var type in module.Types) {
 				if (type.HasFields)
 					continue;
@@ -57,7 +57,7 @@ namespace de4dot.code.deobfuscators.Xenocode {
 				foreach (var m in type.Methods) {
 					if (m.Name == ".ctor" || m.Name == ".cctor")
 						continue;
-					if (DotNetUtils.isMethod(m, "System.String", "(System.String,System.Int32)")) {
+					if (DotNetUtils.IsMethod(m, "System.String", "(System.String,System.Int32)")) {
 						method = m;
 						continue;
 					}
@@ -83,7 +83,7 @@ namespace de4dot.code.deobfuscators.Xenocode {
 			}
 		}
 
-		public string decrypt(string es, int magic) {
+		public string Decrypt(string es, int magic) {
 			int newLen = es.Length / 4;
 			var sb = new StringBuilder(newLen);
 			for (int i = 0; i < newLen * 4; i += 4) {

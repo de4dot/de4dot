@@ -25,27 +25,27 @@ using de4dot.blocks;
 
 namespace AssemblyData.methodsrewriter {
 	static class ResolverUtils {
-		public static bool compareTypes(Type a, IType b) {
+		public static bool CompareTypes(Type a, IType b) {
 			return new SigComparer().Equals(a, b);
 		}
 
-		public static bool compareFields(FieldInfo a, IField b) {
+		public static bool CompareFields(FieldInfo a, IField b) {
 			return new SigComparer().Equals(a, b);
 		}
 
-		public static bool hasThis(MethodBase method) {
+		public static bool HasThis(MethodBase method) {
 			return (method.CallingConvention & CallingConventions.HasThis) != 0;
 		}
 
-		public static bool explicitThis(MethodBase method) {
+		public static bool ExplicitThis(MethodBase method) {
 			return (method.CallingConvention & CallingConventions.ExplicitThis) != 0;
 		}
 
-		public static bool compareMethods(MethodBase a, IMethod b) {
+		public static bool CompareMethods(MethodBase a, IMethod b) {
 			return new SigComparer().Equals(a, b);
 		}
 
-		public static Type getReturnType(MethodBase methodBase) {
+		public static Type GetReturnType(MethodBase methodBase) {
 			var methodInfo = methodBase as MethodInfo;
 			if (methodInfo != null)
 				return methodInfo.ReturnType;
@@ -57,7 +57,7 @@ namespace AssemblyData.methodsrewriter {
 			throw new ApplicationException(string.Format("Could not figure out return type: {0} ({1:X8})", methodBase, methodBase.MetadataToken));
 		}
 
-		public static Type[] getGenericArguments(MethodBase methodBase) {
+		public static Type[] GetGenericArguments(MethodBase methodBase) {
 			try {
 				return methodBase.GetGenericArguments();
 			}
@@ -66,7 +66,7 @@ namespace AssemblyData.methodsrewriter {
 			}
 		}
 
-		public static IEnumerable<MethodBase> getMethodBases(Type type, BindingFlags flags) {
+		public static IEnumerable<MethodBase> GetMethodBases(Type type, BindingFlags flags) {
 			if (type.TypeInitializer != null)
 				yield return type.TypeInitializer;
 			foreach (var ctor in type.GetConstructors(flags))
@@ -96,7 +96,7 @@ namespace AssemblyData.methodsrewriter {
 		}
 
 		static Dictionary<CachedMemberInfo, FieldInfo> cachedFieldInfos = new Dictionary<CachedMemberInfo, FieldInfo>();
-		public static FieldInfo getField(Type type, Type fieldType, BindingFlags flags) {
+		public static FieldInfo GetField(Type type, Type fieldType, BindingFlags flags) {
 			var key = new CachedMemberInfo(type, fieldType);
 			FieldInfo fieldInfo;
 			if (cachedFieldInfos.TryGetValue(key, out fieldInfo))
@@ -111,14 +111,14 @@ namespace AssemblyData.methodsrewriter {
 			return null;
 		}
 
-		public static FieldInfo getFieldThrow(Type type, Type fieldType, BindingFlags flags, string msg) {
-			var info = getField(type, fieldType, flags);
+		public static FieldInfo GetFieldThrow(Type type, Type fieldType, BindingFlags flags, string msg) {
+			var info = GetField(type, fieldType, flags);
 			if (info != null)
 				return info;
 			throw new ApplicationException(msg);
 		}
 
-		public static List<FieldInfo> getFields(Type type, Type fieldType, BindingFlags flags) {
+		public static List<FieldInfo> GetFields(Type type, Type fieldType, BindingFlags flags) {
 			var list = new List<FieldInfo>();
 			foreach (var field in type.GetFields(flags)) {
 				if (field.FieldType == fieldType)
@@ -127,7 +127,7 @@ namespace AssemblyData.methodsrewriter {
 			return list;
 		}
 
-		public static Type makeInstanceType(Type type, ITypeDefOrRef typeRef) {
+		public static Type MakeInstanceType(Type type, ITypeDefOrRef typeRef) {
 			var ts = typeRef as TypeSpec;
 			if (ts == null)
 				return type;
@@ -140,7 +140,7 @@ namespace AssemblyData.methodsrewriter {
 				var arg = git.GenericArguments[i];
 				if (!(arg is GenericSig))
 					isTypeDef = false;
-				types[i] = Resolver.getRtType(arg);
+				types[i] = Resolver.GetRtType(arg);
 			}
 			if (isTypeDef)
 				return type;

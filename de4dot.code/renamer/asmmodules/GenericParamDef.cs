@@ -30,7 +30,7 @@ namespace de4dot.code.renamer.asmmodules {
 			: base(genericParameter, null, index) {
 		}
 
-		public static List<MGenericParamDef> createGenericParamDefList(IEnumerable<GenericParam> parameters) {
+		public static List<MGenericParamDef> CreateGenericParamDefList(IEnumerable<GenericParam> parameters) {
 			var list = new List<MGenericParamDef>();
 			if (parameters == null)
 				return list;

@@ -120,84 +120,84 @@ namespace de4dot.code.deobfuscators {
 			this.locals = locals;
 		}
 
-		public void setConstantInt32(Local local, int value) {
+		public void SetConstantInt32(Local local, int value) {
 			localsValuesInt32[local] = value;
 		}
 
-		public void setConstantInt32(Local local, uint value) {
-			setConstantInt32(local, (int)value);
+		public void SetConstantInt32(Local local, uint value) {
+			SetConstantInt32(local, (int)value);
 		}
 
-		public void setConstantInt64(Local local, long value) {
+		public void SetConstantInt64(Local local, long value) {
 			localsValuesInt64[local] = value;
 		}
 
-		public void setConstantInt64(Local local, ulong value) {
-			setConstantInt64(local, (long)value);
+		public void SetConstantInt64(Local local, ulong value) {
+			SetConstantInt64(local, (long)value);
 		}
 
-		public void setConstantDouble(Local local, double value) {
+		public void SetConstantDouble(Local local, double value) {
 			localsValuesDouble[local] = value;
 		}
 
-		public bool getNextInt32(ref int index, out int val) {
+		public bool GetNextInt32(ref int index, out int val) {
 			for (; index < instructions.Count; index++) {
 				var instr = instructions[index];
-				if (!isLoadConstantInt32(instr))
+				if (!IsLoadConstantInt32(instr))
 					continue;
 
-				return getInt32(ref index, out val);
+				return GetInt32(ref index, out val);
 			}
 
 			val = 0;
 			return false;
 		}
 
-		public bool isLoadConstantInt32(Instruction instr) {
+		public bool IsLoadConstantInt32(Instruction instr) {
 			if (instr.IsLdcI4())
 				return true;
 			if (instr.IsLdloc()) {
 				int tmp;
-				return getLocalConstantInt32(instr, out tmp);
+				return GetLocalConstantInt32(instr, out tmp);
 			}
 			if (instr.IsLdarg()) {
 				int tmp;
-				return getArgConstantInt32(instr, out tmp);
+				return GetArgConstantInt32(instr, out tmp);
 			}
 			return false;
 		}
 
-		public bool isLoadConstantInt64(Instruction instr) {
+		public bool IsLoadConstantInt64(Instruction instr) {
 			if (instr.OpCode.Code == Code.Ldc_I8)
 				return true;
 			if (instr.IsLdloc()) {
 				long tmp;
-				return getLocalConstantInt64(instr, out tmp);
+				return GetLocalConstantInt64(instr, out tmp);
 			}
 			if (instr.IsLdarg()) {
 				long tmp;
-				return getArgConstantInt64(instr, out tmp);
+				return GetArgConstantInt64(instr, out tmp);
 			}
 			return false;
 		}
 
-		public bool isLoadConstantDouble(Instruction instr) {
+		public bool IsLoadConstantDouble(Instruction instr) {
 			if (instr.OpCode.Code == Code.Ldc_R8)
 				return true;
 			if (instr.IsLdloc()) {
 				double tmp;
-				return getLocalConstantDouble(instr, out tmp);
+				return GetLocalConstantDouble(instr, out tmp);
 			}
 			if (instr.IsLdarg()) {
 				double tmp;
-				return getArgConstantDouble(instr, out tmp);
+				return GetArgConstantDouble(instr, out tmp);
 			}
 			return false;
 		}
 
-		public bool getInt16(ref int index, out short val) {
+		public bool GetInt16(ref int index, out short val) {
 			int tmp;
-			if (!getInt32(ref index, out tmp)) {
+			if (!GetInt32(ref index, out tmp)) {
 				val = 0;
 				return false;
 			}
@@ -215,19 +215,19 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
-		protected virtual bool processInstructionInt32(ref int index, Stack<ConstantInfo<int>> stack) {
+		protected virtual bool ProcessInstructionInt32(ref int index, Stack<ConstantInfo<int>> stack) {
 			return false;
 		}
 
-		protected virtual bool processInstructionInt64(ref int index, Stack<ConstantInfo<long>> stack) {
+		protected virtual bool ProcessInstructionInt64(ref int index, Stack<ConstantInfo<long>> stack) {
 			return false;
 		}
 
-		protected virtual bool processInstructionDouble(ref int index, Stack<ConstantInfo<double>> stack) {
+		protected virtual bool ProcessInstructionDouble(ref int index, Stack<ConstantInfo<double>> stack) {
 			return false;
 		}
 
-		public bool getInt32(ref int index, out int val) {
+		public bool GetInt32(ref int index, out int val) {
 			val = 0;
 			if (index >= instructions.Count)
 				return false;
@@ -237,7 +237,7 @@ namespace de4dot.code.deobfuscators {
 			int op1;
 			ConstantInfo<int> info1, info2;
 			for (; index < instructions.Count; index++) {
-				if (processInstructionInt32(ref index, stack)) {
+				if (ProcessInstructionInt32(ref index, stack)) {
 					index--;
 					continue;
 				}
@@ -292,7 +292,7 @@ namespace de4dot.code.deobfuscators {
 				case Code.Ldloc_1:
 				case Code.Ldloc_2:
 				case Code.Ldloc_3:
-					if (!getLocalConstantInt32(instr, out op1))
+					if (!GetLocalConstantInt32(instr, out op1))
 						goto done;
 					stack.Push(new ConstantInfo<int>(index, op1));
 					break;
@@ -303,7 +303,7 @@ namespace de4dot.code.deobfuscators {
 				case Code.Ldarg_1:
 				case Code.Ldarg_2:
 				case Code.Ldarg_3:
-					if (!getArgConstantInt32(instr, out op1))
+					if (!GetArgConstantInt32(instr, out op1))
 						goto done;
 					stack.Push(new ConstantInfo<int>(index, op1));
 					break;
@@ -406,7 +406,7 @@ done:
 			return true;
 		}
 
-		public bool getInt64(ref int index, out long val) {
+		public bool GetInt64(ref int index, out long val) {
 			val = 0;
 			if (index >= instructions.Count)
 				return false;
@@ -416,7 +416,7 @@ done:
 			long op1;
 			ConstantInfo<long> info1, info2;
 			for (; index < instructions.Count; index++) {
-				if (processInstructionInt64(ref index, stack)) {
+				if (ProcessInstructionInt64(ref index, stack)) {
 					index--;
 					continue;
 				}
@@ -483,7 +483,7 @@ done:
 				case Code.Ldloc_1:
 				case Code.Ldloc_2:
 				case Code.Ldloc_3:
-					if (!getLocalConstantInt64(instr, out op1))
+					if (!GetLocalConstantInt64(instr, out op1))
 						goto done;
 					stack.Push(new ConstantInfo<long>(index, op1));
 					break;
@@ -494,7 +494,7 @@ done:
 				case Code.Ldarg_1:
 				case Code.Ldarg_2:
 				case Code.Ldarg_3:
-					if (!getArgConstantInt64(instr, out op1))
+					if (!GetArgConstantInt64(instr, out op1))
 						goto done;
 					stack.Push(new ConstantInfo<long>(index, op1));
 					break;
@@ -586,7 +586,7 @@ done:
 			return true;
 		}
 
-		public bool getDouble(ref int index, out double val) {
+		public bool GetDouble(ref int index, out double val) {
 			val = 0;
 			if (index >= instructions.Count)
 				return false;
@@ -596,7 +596,7 @@ done:
 			double op1;
 			ConstantInfo<double> info1, info2;
 			for (; index < instructions.Count; index++) {
-				if (processInstructionDouble(ref index, stack)) {
+				if (ProcessInstructionDouble(ref index, stack)) {
 					index--;
 					continue;
 				}
@@ -626,7 +626,7 @@ done:
 				case Code.Ldloc_1:
 				case Code.Ldloc_2:
 				case Code.Ldloc_3:
-					if (!getLocalConstantDouble(instr, out op1))
+					if (!GetLocalConstantDouble(instr, out op1))
 						goto done;
 					stack.Push(new ConstantInfo<double>(index, op1));
 					break;
@@ -637,7 +637,7 @@ done:
 				case Code.Ldarg_1:
 				case Code.Ldarg_2:
 				case Code.Ldarg_3:
-					if (!getArgConstantDouble(instr, out op1))
+					if (!GetArgConstantDouble(instr, out op1))
 						goto done;
 					stack.Push(new ConstantInfo<double>(index, op1));
 					break;
@@ -705,7 +705,7 @@ done:
 			return true;
 		}
 
-		protected virtual bool getLocalConstantInt32(Instruction instr, out int value) {
+		protected virtual bool GetLocalConstantInt32(Instruction instr, out int value) {
 			value = 0;
 			if (locals == null)
 				return false;
@@ -717,12 +717,12 @@ done:
 			return localsValuesInt32.TryGetValue(local, out value);
 		}
 
-		protected virtual bool getArgConstantInt32(Instruction instr, out int value) {
+		protected virtual bool GetArgConstantInt32(Instruction instr, out int value) {
 			value = 0;
 			return false;
 		}
 
-		protected virtual bool getLocalConstantInt64(Instruction instr, out long value) {
+		protected virtual bool GetLocalConstantInt64(Instruction instr, out long value) {
 			value = 0;
 			if (locals == null)
 				return false;
@@ -734,12 +734,12 @@ done:
 			return localsValuesInt64.TryGetValue(local, out value);
 		}
 
-		protected virtual bool getArgConstantInt64(Instruction instr, out long value) {
+		protected virtual bool GetArgConstantInt64(Instruction instr, out long value) {
 			value = 0;
 			return false;
 		}
 
-		protected virtual bool getLocalConstantDouble(Instruction instr, out double value) {
+		protected virtual bool GetLocalConstantDouble(Instruction instr, out double value) {
 			value = 0;
 			if (locals == null)
 				return false;
@@ -751,7 +751,7 @@ done:
 			return localsValuesDouble.TryGetValue(local, out value);
 		}
 
-		protected virtual bool getArgConstantDouble(Instruction instr, out double value) {
+		protected virtual bool GetArgConstantDouble(Instruction instr, out double value) {
 			value = 0;
 			return false;
 		}

@@ -57,7 +57,7 @@ namespace de4dot.code {
 		}
 
 		// Returns true if the new value is set, or false on error. error string is also updated.
-		public abstract bool set(string val, out string error);
+		public abstract bool Set(string val, out string error);
 
 		public Option(string shortName, string longName, string description) {
 			if (shortName != null)
@@ -79,7 +79,7 @@ namespace de4dot.code {
 			get { return "bool"; }
 		}
 
-		public override bool set(string newVal, out string error) {
+		public override bool Set(string newVal, out string error) {
 			if (string.Equals(newVal, "false", StringComparison.OrdinalIgnoreCase) ||
 				string.Equals(newVal, "off", StringComparison.OrdinalIgnoreCase) ||
 				string.Equals(newVal, "0", StringComparison.OrdinalIgnoreCase)) {
@@ -107,7 +107,7 @@ namespace de4dot.code {
 			get { return "int"; }
 		}
 
-		public override bool set(string newVal, out string error) {
+		public override bool Set(string newVal, out string error) {
 			int newInt;
 			if (!int.TryParse(newVal, out newInt)) {
 				error = string.Format("Not an integer: '{0}'", newVal);
@@ -135,7 +135,7 @@ namespace de4dot.code {
 			Default = this.val = val;
 		}
 
-		public override bool set(string newVal, out string error) {
+		public override bool Set(string newVal, out string error) {
 			val = newVal;
 			error = "";
 			return true;
@@ -158,10 +158,10 @@ namespace de4dot.code {
 			Default = this.val = new NameRegexes(val);
 		}
 
-		public override bool set(string newVal, out string error) {
+		public override bool Set(string newVal, out string error) {
 			try {
 				var regexes = new NameRegexes();
-				regexes.set(newVal);
+				regexes.Set(newVal);
 				val = regexes;
 			}
 			catch (ArgumentException) {
@@ -189,7 +189,7 @@ namespace de4dot.code {
 			Default = this.val = new Regex(val);
 		}
 
-		public override bool set(string newVal, out string error) {
+		public override bool Set(string newVal, out string error) {
 			try {
 				val = new Regex(newVal);
 			}
@@ -223,7 +223,7 @@ namespace de4dot.code {
 			this.action = action;
 		}
 
-		public override bool set(string val, out string error) {
+		public override bool Set(string val, out string error) {
 			triggered = true;
 			if (action != null)
 				action();
@@ -251,7 +251,7 @@ namespace de4dot.code {
 			Default = null;
 		}
 
-		public override bool set(string val, out string error) {
+		public override bool Set(string val, out string error) {
 			action(val);
 			error = "";
 			return true;
