@@ -34,24 +34,24 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			this.module = module;
 		}
 
-		public void read(MethodDef method) {
+		public void Read(MethodDef method) {
 			this.parameters = method.Parameters;
-			SetLocals(getLocals(method));
+			SetLocals(GetLocals(method));
 
 			maxStackSize = (ushort)reader.ReadInt32();
 			ReadInstructionsNumBytes(reader.ReadUInt32());
-			readExceptionHandlers();
+			ReadExceptionHandlers();
 		}
 
-		void readExceptionHandlers() {
+		void ReadExceptionHandlers() {
 			int totalSize = reader.ReadInt32();
 			if (totalSize == 0)
 				return;
 			reader.ReadInt32();
-			readExceptionHandlers((totalSize - 4) / 24);
+			ReadExceptionHandlers((totalSize - 4) / 24);
 		}
 
-		static IList<Local> getLocals(MethodDef method) {
+		static IList<Local> GetLocals(MethodDef method) {
 			if (method.Body == null)
 				return new List<Local>();
 			return method.Body.Variables;
@@ -82,13 +82,13 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return module.ResolveToken(reader.ReadUInt32()) as ITypeDefOrRef;
 		}
 
-		void readExceptionHandlers(int numExceptionHandlers) {
+		void ReadExceptionHandlers(int numExceptionHandlers) {
 			exceptionHandlers = new ExceptionHandler[numExceptionHandlers];
 			for (int i = 0; i < exceptionHandlers.Count; i++)
-				exceptionHandlers[i] = readExceptionHandler();
+				exceptionHandlers[i] = ReadExceptionHandler();
 		}
 
-		ExceptionHandler readExceptionHandler() {
+		ExceptionHandler ReadExceptionHandler() {
 			var eh = new ExceptionHandler((ExceptionHandlerType)reader.ReadUInt32());
 
 			uint tryOffset = reader.ReadUInt32();

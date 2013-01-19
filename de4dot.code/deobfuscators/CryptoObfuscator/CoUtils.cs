@@ -25,19 +25,19 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CryptoObfuscator {
 	static class CoUtils {
-		public static EmbeddedResource getResource(ModuleDefMD module, MethodDef method) {
+		public static EmbeddedResource GetResource(ModuleDefMD module, MethodDef method) {
 			if (method == null || method.Body == null)
 				return null;
-			return getResource(module, DotNetUtils.getCodeStrings(method));
+			return GetResource(module, DotNetUtils.GetCodeStrings(method));
 		}
 
-		public static EmbeddedResource getResource(ModuleDefMD module, IEnumerable<string> names) {
+		public static EmbeddedResource GetResource(ModuleDefMD module, IEnumerable<string> names) {
 			foreach (var name in names) {
-				var resource = DotNetUtils.getResource(module, name) as EmbeddedResource;
+				var resource = DotNetUtils.GetResource(module, name) as EmbeddedResource;
 				if (resource != null)
 					return resource;
 				try {
-					resource = DotNetUtils.getResource(module, Encoding.UTF8.GetString(Convert.FromBase64String(name))) as EmbeddedResource;
+					resource = DotNetUtils.GetResource(module, Encoding.UTF8.GetString(Convert.FromBase64String(name))) as EmbeddedResource;
 					if (resource != null)
 						return resource;
 				}

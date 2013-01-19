@@ -46,36 +46,36 @@ namespace de4dot.code.deobfuscators.DeepSea {
 
 		public ResolverBase(ModuleDefMD module, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
 			this.module = module;
-			this.frameworkType = DotNetUtils.getFrameworkType(module);
+			this.frameworkType = DotNetUtils.GetFrameworkType(module);
 			this.simpleDeobfuscator = simpleDeobfuscator;
 			this.deob = deob;
 		}
 
-		public void find() {
-			if (checkCalledMethods(DotNetUtils.getModuleTypeCctor(module)))
+		public void Find() {
+			if (CheckCalledMethods(DotNetUtils.GetModuleTypeCctor(module)))
 				return;
-			if (checkCalledMethods(module.EntryPoint))
+			if (CheckCalledMethods(module.EntryPoint))
 				return;
 		}
 
-		bool checkCalledMethods(MethodDef checkMethod) {
+		bool CheckCalledMethods(MethodDef checkMethod) {
 			if (checkMethod == null || checkMethod.Body == null)
 				return false;
 
-			foreach (var method in DotNetUtils.getCalledMethods(module, checkMethod)) {
+			foreach (var method in DotNetUtils.GetCalledMethods(module, checkMethod)) {
 				if (method.Name == ".cctor" || method.Name == ".ctor")
 					continue;
-				if (!method.IsStatic || !DotNetUtils.isMethod(method, "System.Void", "()"))
+				if (!method.IsStatic || !DotNetUtils.IsMethod(method, "System.Void", "()"))
 					continue;
 
-				if (checkResolverInitMethod(method))
+				if (CheckResolverInitMethod(method))
 					return true;
 			}
 
 			return false;
 		}
 
-		bool checkResolverInitMethod(MethodDef resolverInitMethod) {
+		bool CheckResolverInitMethod(MethodDef resolverInitMethod) {
 			if (resolverInitMethod == null || resolverInitMethod.Body == null)
 				return false;
 			if (resolverInitMethod.Body.ExceptionHandlers.Count != 1)
@@ -83,19 +83,19 @@ namespace de4dot.code.deobfuscators.DeepSea {
 
 			switch (frameworkType) {
 			case FrameworkType.Silverlight:
-				return checkResolverInitMethodSilverlight(resolverInitMethod);
+				return CheckResolverInitMethodSilverlight(resolverInitMethod);
 			default:
-				return checkResolverInitMethodDesktop(resolverInitMethod);
+				return CheckResolverInitMethodDesktop(resolverInitMethod);
 			}
 		}
 
-		bool checkResolverInitMethodDesktop(MethodDef resolverInitMethod) {
-			simpleDeobfuscator.deobfuscate(resolverInitMethod);
-			if (!checkResolverInitMethodInternal(resolverInitMethod))
+		bool CheckResolverInitMethodDesktop(MethodDef resolverInitMethod) {
+			simpleDeobfuscator.Deobfuscate(resolverInitMethod);
+			if (!CheckResolverInitMethodInternal(resolverInitMethod))
 				return false;
 
-			foreach (var resolveHandlerMethod in getLdftnMethods(resolverInitMethod)) {
-				if (!checkHandlerMethodDesktop(resolveHandlerMethod))
+			foreach (var resolveHandlerMethod in GetLdftnMethods(resolverInitMethod)) {
+				if (!CheckHandlerMethodDesktop(resolveHandlerMethod))
 					continue;
 
 				initMethod = resolverInitMethod;
@@ -106,13 +106,13 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return false;
 		}
 
-		protected virtual bool checkResolverInitMethodSilverlight(MethodDef resolverInitMethod) {
+		protected virtual bool CheckResolverInitMethodSilverlight(MethodDef resolverInitMethod) {
 			return false;
 		}
 
-		protected abstract bool checkResolverInitMethodInternal(MethodDef resolverInitMethod);
+		protected abstract bool CheckResolverInitMethodInternal(MethodDef resolverInitMethod);
 
-		IEnumerable<MethodDef> getLdftnMethods(MethodDef method) {
+		IEnumerable<MethodDef> GetLdftnMethods(MethodDef method) {
 			var list = new List<MethodDef>();
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Ldftn)
@@ -124,59 +124,59 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return list;
 		}
 
-		bool checkHandlerMethodDesktop(MethodDef handler) {
+		bool CheckHandlerMethodDesktop(MethodDef handler) {
 			if (handler == null || handler.Body == null || !handler.IsStatic)
 				return false;
-			if (!DotNetUtils.isMethod(handler, "System.Reflection.Assembly", "(System.Object,System.ResolveEventArgs)"))
+			if (!DotNetUtils.IsMethod(handler, "System.Reflection.Assembly", "(System.Object,System.ResolveEventArgs)"))
 				return false;
-			return checkHandlerMethodDesktopInternal(handler);
+			return CheckHandlerMethodDesktopInternal(handler);
 		}
 
-		protected abstract bool checkHandlerMethodDesktopInternal(MethodDef handler);
+		protected abstract bool CheckHandlerMethodDesktopInternal(MethodDef handler);
 
 		// 3.0.3.41 - 3.0.4.44
-		protected static byte[] decryptResourceV3Old(EmbeddedResource resource) {
-			return decryptResourceV3Old(resource.GetResourceData());
+		protected static byte[] DecryptResourceV3Old(EmbeddedResource resource) {
+			return DecryptResourceV3Old(resource.GetResourceData());
 		}
 
 		// 3.0.3.41 - 3.0.4.44
-		protected static byte[] decryptResourceV3Old(byte[] data) {
-			return decryptResource(data, 0, data.Length, 0);
+		protected static byte[] DecryptResourceV3Old(byte[] data) {
+			return DecryptResource(data, 0, data.Length, 0);
 		}
 
-		protected static byte[] decryptResourceV41SL(EmbeddedResource resource) {
+		protected static byte[] DecryptResourceV41SL(EmbeddedResource resource) {
 			var data = resource.GetResourceData();
 			byte k = data[0];
 			for (int i = 0; i < data.Length - 1; i++)
 				data[i + 1] ^= (byte)((k << (i & 5)) + i);
-			return inflateIfNeeded(data, 1, data.Length - 1);
+			return InflateIfNeeded(data, 1, data.Length - 1);
 		}
 
-		protected static byte[] decryptResourceV3(EmbeddedResource resource) {
-			return decryptResourceV3(resource.GetResourceData());
+		protected static byte[] DecryptResourceV3(EmbeddedResource resource) {
+			return DecryptResourceV3(resource.GetResourceData());
 		}
 
-		protected static byte[] decryptResourceV3(byte[] data) {
-			return decryptResource(data, 1, data.Length - 1, data[0]);
+		protected static byte[] DecryptResourceV3(byte[] data) {
+			return DecryptResource(data, 1, data.Length - 1, data[0]);
 		}
 
-		protected static byte[] decryptResourceV4(byte[] data, int magic) {
-			return decryptResource(data, 0, data.Length, magic);
+		protected static byte[] DecryptResourceV4(byte[] data, int magic) {
+			return DecryptResource(data, 0, data.Length, magic);
 		}
 
-		protected static byte[] decryptResource(byte[] data, int start, int len, int magic) {
+		protected static byte[] DecryptResource(byte[] data, int start, int len, int magic) {
 			for (int i = start; i < start + len; i++)
 				data[i] ^= (byte)(i - start + magic);
-			return inflateIfNeeded(data, start, len);
+			return InflateIfNeeded(data, start, len);
 		}
 
-		protected static byte[] inflateIfNeeded(byte[] data) {
-			return inflateIfNeeded(data, 0, data.Length);
+		protected static byte[] InflateIfNeeded(byte[] data) {
+			return InflateIfNeeded(data, 0, data.Length);
 		}
 
-		protected static byte[] inflateIfNeeded(byte[] data, int start, int len) {
+		protected static byte[] InflateIfNeeded(byte[] data, int start, int len) {
 			if (BitConverter.ToInt16(data, start) != 0x5A4D)
-				return DeobUtils.inflate(data, start, len, true);
+				return DeobUtils.Inflate(data, start, len, true);
 
 			var data2 = new byte[len];
 			Array.Copy(data, start, data2, 0, data2.Length);

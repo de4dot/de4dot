@@ -36,10 +36,10 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 
 		public EmptyClass(ModuleDefMD module) {
 			this.module = module;
-			init();
+			Initialize();
 		}
 
-		void init() {
+		void Initialize() {
 			var callCounter = new CallCounter();
 			int count = 0;
 			foreach (var type in module.GetTypes()) {
@@ -48,13 +48,13 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				foreach (var method in type.Methods) {
 					if (method.Name != ".ctor" && method.Name != ".cctor" && module.EntryPoint != method)
 						continue;
-					foreach (var calledMethod in DotNetUtils.getCalledMethods(module, method)) {
+					foreach (var calledMethod in DotNetUtils.GetCalledMethods(module, method)) {
 						if (!calledMethod.IsStatic || calledMethod.Body == null)
 							continue;
-						if (!DotNetUtils.isMethod(calledMethod, "System.Void", "()"))
+						if (!DotNetUtils.IsMethod(calledMethod, "System.Void", "()"))
 							continue;
-						if (isEmptyClass(calledMethod)) {
-							callCounter.add(calledMethod);
+						if (IsEmptyClass(calledMethod)) {
+							callCounter.Add(calledMethod);
 							count++;
 						}
 					}
@@ -62,13 +62,13 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			}
 
 			int numCalls;
-			var theMethod = (MethodDef)callCounter.most(out numCalls);
+			var theMethod = (MethodDef)callCounter.Most(out numCalls);
 			if (numCalls >= 10)
 				emptyMethod = theMethod;
 		}
 
-		bool isEmptyClass(MethodDef emptyMethod) {
-			if (!DotNetUtils.isEmptyObfuscated(emptyMethod))
+		bool IsEmptyClass(MethodDef emptyMethod) {
+			if (!DotNetUtils.IsEmptyObfuscated(emptyMethod))
 				return false;
 
 			var type = emptyMethod.DeclaringType;

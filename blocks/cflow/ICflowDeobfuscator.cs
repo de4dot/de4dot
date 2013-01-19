@@ -21,6 +21,6 @@ using dnlib.DotNet;
 
 namespace de4dot.blocks.cflow {
 	public interface ICflowDeobfuscator {
-		void deobfuscate(MethodDef method);
+		void Deobfuscate(MethodDef method);
 	}
 }

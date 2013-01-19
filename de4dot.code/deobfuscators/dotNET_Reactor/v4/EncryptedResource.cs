@@ -55,9 +55,9 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 
 		public EncryptedResource(ModuleDefMD module, EncryptedResource oldOne) {
 			this.module = module;
-			resourceDecrypterMethod = lookup(oldOne.resourceDecrypterMethod, "Could not find resource decrypter method");
+			resourceDecrypterMethod = Lookup(oldOne.resourceDecrypterMethod, "Could not find resource decrypter method");
 			if (oldOne.encryptedDataResource != null)
-				encryptedDataResource = DotNetUtils.getResource(module, oldOne.encryptedDataResource.Name.String) as EmbeddedResource;
+				encryptedDataResource = DotNetUtils.GetResource(module, oldOne.encryptedDataResource.Name.String) as EmbeddedResource;
 			key = oldOne.key;
 			iv = oldOne.iv;
 
@@ -65,15 +65,15 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				throw new ApplicationException("Could not initialize EncryptedResource");
 		}
 
-		T lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
-			return DeobUtils.lookup(module, def, errorMessage);
+		T Lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
+			return DeobUtils.Lookup(module, def, errorMessage);
 		}
 
-		public bool couldBeResourceDecrypter(MethodDef method, IEnumerable<string> additionalTypes) {
-			return couldBeResourceDecrypter(method, additionalTypes, true);
+		public bool CouldBeResourceDecrypter(MethodDef method, IEnumerable<string> additionalTypes) {
+			return CouldBeResourceDecrypter(method, additionalTypes, true);
 		}
 
-		public bool couldBeResourceDecrypter(MethodDef method, IEnumerable<string> additionalTypes, bool checkResource) {
+		public bool CouldBeResourceDecrypter(MethodDef method, IEnumerable<string> additionalTypes, bool checkResource) {
 			if (!method.IsStatic)
 				return false;
 			if (method.Body == null)
@@ -88,37 +88,37 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				"System.Security.Cryptography.ICryptoTransform",
 			};
 			requiredTypes.AddRange(additionalTypes);
-			if (!localTypes.all(requiredTypes))
+			if (!localTypes.All(requiredTypes))
 				return false;
-			if (!localTypes.exists("System.Security.Cryptography.RijndaelManaged") &&
-				!localTypes.exists("System.Security.Cryptography.AesManaged"))
+			if (!localTypes.Exists("System.Security.Cryptography.RijndaelManaged") &&
+				!localTypes.Exists("System.Security.Cryptography.AesManaged"))
 				return false;
 
-			if (checkResource && findMethodsDecrypterResource(method) == null)
+			if (checkResource && FindMethodsDecrypterResource(method) == null)
 				return false;
 
 			return true;
 		}
 
-		public void init(ISimpleDeobfuscator simpleDeobfuscator) {
+		public void Initialize(ISimpleDeobfuscator simpleDeobfuscator) {
 			if (resourceDecrypterMethod == null)
 				return;
 
-			simpleDeobfuscator.deobfuscate(resourceDecrypterMethod);
+			simpleDeobfuscator.Deobfuscate(resourceDecrypterMethod);
 
-			encryptedDataResource = findMethodsDecrypterResource(resourceDecrypterMethod);
+			encryptedDataResource = FindMethodsDecrypterResource(resourceDecrypterMethod);
 			if (encryptedDataResource == null)
 				return;
 
-			key = ArrayFinder.getInitializedByteArray(resourceDecrypterMethod, 32);
+			key = ArrayFinder.GetInitializedByteArray(resourceDecrypterMethod, 32);
 			if (key == null)
 				throw new ApplicationException("Could not find resource decrypter key");
-			iv = ArrayFinder.getInitializedByteArray(resourceDecrypterMethod, 16);
+			iv = ArrayFinder.GetInitializedByteArray(resourceDecrypterMethod, 16);
 			if (iv == null)
 				throw new ApplicationException("Could not find resource decrypter IV");
-			if (needReverse())
+			if (NeedReverse())
 				Array.Reverse(iv);	// DNR 4.5.0.0
-			if (usesPublicKeyToken()) {
+			if (UsesPublicKeyToken()) {
 				var publicKeyToken = module.Assembly.PublicKeyToken;
 				if (publicKeyToken != null && publicKeyToken.Data.Length > 0) {
 					for (int i = 0; i < 8; i++)
@@ -128,7 +128,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		}
 
 		static int[] pktIndexes = new int[16] { 1, 0, 3, 1, 5, 2, 7, 3, 9, 4, 11, 5, 13, 6, 15, 7 };
-		bool usesPublicKeyToken() {
+		bool UsesPublicKeyToken() {
 			int pktIndex = 0;
 			foreach (var instr in resourceDecrypterMethod.Body.Instructions) {
 				if (instr.OpCode.FlowControl != FlowControl.Next) {
@@ -148,27 +148,27 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			return false;
 		}
 
-		bool needReverse() {
-			return DotNetUtils.callsMethod(resourceDecrypterMethod, "System.Void System.Array::Reverse(System.Array)");
+		bool NeedReverse() {
+			return DotNetUtils.CallsMethod(resourceDecrypterMethod, "System.Void System.Array::Reverse(System.Array)");
 		}
 
-		EmbeddedResource findMethodsDecrypterResource(MethodDef method) {
-			foreach (var s in DotNetUtils.getCodeStrings(method)) {
-				var resource = DotNetUtils.getResource(module, s) as EmbeddedResource;
+		EmbeddedResource FindMethodsDecrypterResource(MethodDef method) {
+			foreach (var s in DotNetUtils.GetCodeStrings(method)) {
+				var resource = DotNetUtils.GetResource(module, s) as EmbeddedResource;
 				if (resource != null)
 					return resource;
 			}
 			return null;
 		}
 
-		public byte[] decrypt() {
+		public byte[] Decrypt() {
 			if (encryptedDataResource == null || key == null || iv == null)
 				throw new ApplicationException("Can't decrypt resource");
 
-			return DeobUtils.aesDecrypt(encryptedDataResource.GetResourceData(), key, iv);
+			return DeobUtils.AesDecrypt(encryptedDataResource.GetResourceData(), key, iv);
 		}
 
-		public byte[] encrypt(byte[] data) {
+		public byte[] Encrypt(byte[] data) {
 			if (key == null || iv == null)
 				throw new ApplicationException("Can't encrypt resource");
 

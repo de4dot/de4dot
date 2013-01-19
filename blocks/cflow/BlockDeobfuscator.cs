@@ -27,17 +27,17 @@ namespace de4dot.blocks.cflow {
 
 		public bool ExecuteOnNoChange { get; set; }
 
-		public virtual void deobfuscateBegin(Blocks blocks) {
+		public virtual void DeobfuscateBegin(Blocks blocks) {
 			this.blocks = blocks;
 		}
 
-		public bool deobfuscate(List<Block> allBlocks) {
-			init(allBlocks);
+		public bool Deobfuscate(List<Block> allBlocks) {
+			Initialize(allBlocks);
 
 			bool changed = false;
 			foreach (var block in allBlocks) {
 				try {
-					changed |= deobfuscate(block);
+					changed |= Deobfuscate(block);
 				}
 				catch (NullReferenceException) {
 					// Here if eg. invalid metadata token in a call instruction (operand is null)
@@ -46,10 +46,10 @@ namespace de4dot.blocks.cflow {
 			return changed;
 		}
 
-		protected virtual void init(List<Block> allBlocks) {
+		protected virtual void Initialize(List<Block> allBlocks) {
 			this.allBlocks = allBlocks;
 		}
 
-		protected abstract bool deobfuscate(Block block);
+		protected abstract bool Deobfuscate(Block block);
 	}
 }

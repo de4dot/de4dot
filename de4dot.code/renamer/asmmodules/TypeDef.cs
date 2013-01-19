@@ -32,7 +32,7 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 
 		public TypeInfo(TypeInfo other, GenericInstSig git) {
-			this.typeRef = GenericArgsSubstitutor.create(other.typeRef, git);
+			this.typeRef = GenericArgsSubstitutor.Create(other.typeRef, git);
 			this.typeDef = other.typeDef;
 		}
 
@@ -90,30 +90,30 @@ namespace de4dot.code.renamer.asmmodules {
 	class MethodInstances {
 		Dictionary<IMethodDefOrRef, List<MethodInst>> methodInstances = new Dictionary<IMethodDefOrRef, List<MethodInst>>(MethodEqualityComparer.DontCompareDeclaringTypes);
 
-		public void initializeFrom(MethodInstances other, GenericInstSig git) {
+		public void InitializeFrom(MethodInstances other, GenericInstSig git) {
 			foreach (var list in other.methodInstances.Values) {
 				foreach (var methodInst in list) {
-					var newMethod = GenericArgsSubstitutor.create(methodInst.methodRef, git);
-					add(new MethodInst(methodInst.origMethodDef, newMethod));
+					var newMethod = GenericArgsSubstitutor.Create(methodInst.methodRef, git);
+					Add(new MethodInst(methodInst.origMethodDef, newMethod));
 				}
 			}
 		}
 
-		public void add(MethodInst methodInst) {
+		public void Add(MethodInst methodInst) {
 			List<MethodInst> list;
 			var key = methodInst.methodRef;
-			if (methodInst.origMethodDef.isNewSlot() || !methodInstances.TryGetValue(key, out list))
+			if (methodInst.origMethodDef.IsNewSlot() || !methodInstances.TryGetValue(key, out list))
 				methodInstances[key] = list = new List<MethodInst>();
 			list.Add(methodInst);
 		}
 
-		public List<MethodInst> lookup(IMethodDefOrRef methodRef) {
+		public List<MethodInst> Lookup(IMethodDefOrRef methodRef) {
 			List<MethodInst> list;
 			methodInstances.TryGetValue(methodRef, out list);
 			return list;
 		}
 
-		public IEnumerable<List<MethodInst>> getMethods() {
+		public IEnumerable<List<MethodInst>> GetMethods() {
 			return methodInstances.Values;
 		}
 	}
@@ -143,7 +143,7 @@ namespace de4dot.code.renamer.asmmodules {
 				ifaceMethodToClassMethod[key] = other.ifaceMethodToClassMethod[key];
 		}
 
-		public void merge(InterfaceMethodInfo other) {
+		public void Merge(InterfaceMethodInfo other) {
 			foreach (var key in other.ifaceMethodToClassMethod.Keys) {
 				if (other.ifaceMethodToClassMethod[key] == null)
 					continue;
@@ -154,7 +154,7 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 
 		// Returns the previous method, or null if none
-		public MMethodDef addMethod(MMethodDef ifaceMethod, MMethodDef classMethod) {
+		public MMethodDef AddMethod(MMethodDef ifaceMethod, MMethodDef classMethod) {
 			var ifaceKey = new MethodDefKey(ifaceMethod);
 			if (!ifaceMethodToClassMethod.ContainsKey(ifaceKey))
 				throw new ApplicationException("Could not find interface method");
@@ -165,9 +165,9 @@ namespace de4dot.code.renamer.asmmodules {
 			return oldMethod;
 		}
 
-		public void addMethodIfEmpty(MMethodDef ifaceMethod, MMethodDef classMethod) {
+		public void AddMethodIfEmpty(MMethodDef ifaceMethod, MMethodDef classMethod) {
 			if (ifaceMethodToClassMethod[new MethodDefKey(ifaceMethod)] == null)
-				addMethod(ifaceMethod, classMethod);
+				AddMethod(ifaceMethod, classMethod);
 		}
 
 		public override string ToString() {
@@ -182,7 +182,7 @@ namespace de4dot.code.renamer.asmmodules {
 			get { return interfaceMethods.Values; }
 		}
 
-		public void initializeFrom(InterfaceMethodInfos other, GenericInstSig git) {
+		public void InitializeFrom(InterfaceMethodInfos other, GenericInstSig git) {
 			foreach (var pair in other.interfaceMethods) {
 				var oldTypeInfo = pair.Value.IFace;
 				var newTypeInfo = new TypeInfo(oldTypeInfo, git);
@@ -191,35 +191,35 @@ namespace de4dot.code.renamer.asmmodules {
 
 				InterfaceMethodInfo newMethodsInfo = new InterfaceMethodInfo(newTypeInfo, other.interfaceMethods[oldKey]);
 				if (interfaceMethods.ContainsKey(newKey))
-					newMethodsInfo.merge(interfaceMethods[newKey]);
+					newMethodsInfo.Merge(interfaceMethods[newKey]);
 				interfaceMethods[newKey] = newMethodsInfo;
 			}
 		}
 
-		public void addInterface(TypeInfo iface) {
+		public void AddInterface(TypeInfo iface) {
 			var key = iface.typeRef;
 			if (!interfaceMethods.ContainsKey(key))
 				interfaceMethods[key] = new InterfaceMethodInfo(iface);
 		}
 
 		// Returns the previous classMethod, or null if none
-		public MMethodDef addMethod(TypeInfo iface, MMethodDef ifaceMethod, MMethodDef classMethod) {
-			return addMethod(iface.typeRef, ifaceMethod, classMethod);
+		public MMethodDef AddMethod(TypeInfo iface, MMethodDef ifaceMethod, MMethodDef classMethod) {
+			return AddMethod(iface.typeRef, ifaceMethod, classMethod);
 		}
 
 		// Returns the previous classMethod, or null if none
-		public MMethodDef addMethod(ITypeDefOrRef iface, MMethodDef ifaceMethod, MMethodDef classMethod) {
+		public MMethodDef AddMethod(ITypeDefOrRef iface, MMethodDef ifaceMethod, MMethodDef classMethod) {
 			InterfaceMethodInfo info;
 			if (!interfaceMethods.TryGetValue(iface, out info))
 				throw new ApplicationException("Could not find interface");
-			return info.addMethod(ifaceMethod, classMethod);
+			return info.AddMethod(ifaceMethod, classMethod);
 		}
 
-		public void addMethodIfEmpty(TypeInfo iface, MMethodDef ifaceMethod, MMethodDef classMethod) {
+		public void AddMethodIfEmpty(TypeInfo iface, MMethodDef ifaceMethod, MMethodDef classMethod) {
 			InterfaceMethodInfo info;
 			if (!interfaceMethods.TryGetValue(iface.typeRef, out info))
 				throw new ApplicationException("Could not find interface");
-			info.addMethodIfEmpty(ifaceMethod, classMethod);
+			info.AddMethodIfEmpty(ifaceMethod, classMethod);
 		}
 	}
 
@@ -254,7 +254,7 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 
 		public IEnumerable<MTypeDef> NestedTypes {
-			get { return types.getSorted(); }
+			get { return types.GetSorted(); }
 		}
 
 		public MTypeDef NestingType { get; set; }
@@ -264,150 +264,150 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 
 		public IEnumerable<MEventDef> AllEvents {
-			get { return events.getValues(); }
+			get { return events.GetValues(); }
 		}
 
 		public IEnumerable<MFieldDef> AllFields {
-			get { return fields.getValues(); }
+			get { return fields.GetValues(); }
 		}
 
 		public IEnumerable<MMethodDef> AllMethods {
-			get { return methods.getValues(); }
+			get { return methods.GetValues(); }
 		}
 
 		public IEnumerable<MPropertyDef> AllProperties {
-			get { return properties.getValues(); }
+			get { return properties.GetValues(); }
 		}
 
 		public IEnumerable<MEventDef> AllEventsSorted {
-			get { return events.getSorted(); }
+			get { return events.GetSorted(); }
 		}
 
 		public IEnumerable<MFieldDef> AllFieldsSorted {
-			get { return fields.getSorted(); }
+			get { return fields.GetSorted(); }
 		}
 
 		public IEnumerable<MMethodDef> AllMethodsSorted {
-			get { return methods.getSorted(); }
+			get { return methods.GetSorted(); }
 		}
 
 		public IEnumerable<MPropertyDef> AllPropertiesSorted {
-			get { return properties.getSorted(); }
+			get { return properties.GetSorted(); }
 		}
 
 		public MTypeDef(TypeDef typeDef, Module module, int index)
 			: base(typeDef, null, index) {
 			this.module = module;
-			genericParams = MGenericParamDef.createGenericParamDefList(TypeDef.GenericParameters);
+			genericParams = MGenericParamDef.CreateGenericParamDefList(TypeDef.GenericParameters);
 		}
 
-		public void addInterface(MTypeDef ifaceDef, ITypeDefOrRef iface) {
+		public void AddInterface(MTypeDef ifaceDef, ITypeDefOrRef iface) {
 			if (ifaceDef == null || iface == null)
 				return;
 			interfaces.Add(new TypeInfo(iface, ifaceDef));
 		}
 
-		public void addBaseType(MTypeDef baseDef, ITypeDefOrRef baseRef) {
+		public void AddBaseType(MTypeDef baseDef, ITypeDefOrRef baseRef) {
 			if (baseDef == null || baseRef == null)
 				return;
 			baseType = new TypeInfo(baseRef, baseDef);
 		}
 
-		public void add(MEventDef e) {
-			events.add(e);
+		public void Add(MEventDef e) {
+			events.Add(e);
 		}
 
-		public void add(MFieldDef f) {
-			fields.add(f);
+		public void Add(MFieldDef f) {
+			fields.Add(f);
 		}
 
-		public void add(MMethodDef m) {
-			methods.add(m);
+		public void Add(MMethodDef m) {
+			methods.Add(m);
 		}
 
-		public void add(MPropertyDef p) {
-			properties.add(p);
+		public void Add(MPropertyDef p) {
+			properties.Add(p);
 		}
 
-		public void add(MTypeDef t) {
-			types.add(t);
+		public void Add(MTypeDef t) {
+			types.Add(t);
 		}
 
-		public MMethodDef findMethod(MemberRef mr) {
-			return methods.find(mr);
+		public MMethodDef FindMethod(MemberRef mr) {
+			return methods.Find(mr);
 		}
 
-		public MMethodDef findMethod(IMethodDefOrRef md) {
-			return methods.find(md);
+		public MMethodDef FindMethod(IMethodDefOrRef md) {
+			return methods.Find(md);
 		}
 
-		public MMethodDef findMethod(MethodDef md) {
-			return methods.find(md);
+		public MMethodDef FindMethod(MethodDef md) {
+			return methods.Find(md);
 		}
 
-		public MMethodDef findAnyMethod(MemberRef mr) {
-			return methods.findAny(mr);
+		public MMethodDef FindAnyMethod(MemberRef mr) {
+			return methods.FindAny(mr);
 		}
 
-		public MFieldDef findField(MemberRef fr) {
-			return fields.find(fr);
+		public MFieldDef FindField(MemberRef fr) {
+			return fields.Find(fr);
 		}
 
-		public MFieldDef findAnyField(MemberRef fr) {
-			return fields.findAny(fr);
+		public MFieldDef FindAnyField(MemberRef fr) {
+			return fields.FindAny(fr);
 		}
 
-		public MPropertyDef find(PropertyDef pr) {
-			return properties.find(pr);
+		public MPropertyDef Find(PropertyDef pr) {
+			return properties.Find(pr);
 		}
 
-		public MPropertyDef findAny(PropertyDef pr) {
-			return properties.findAny(pr);
+		public MPropertyDef FindAny(PropertyDef pr) {
+			return properties.FindAny(pr);
 		}
 
-		public MEventDef find(EventDef er) {
-			return events.find(er);
+		public MEventDef Find(EventDef er) {
+			return events.Find(er);
 		}
 
-		public MEventDef findAny(EventDef er) {
-			return events.findAny(er);
+		public MEventDef FindAny(EventDef er) {
+			return events.FindAny(er);
 		}
 
-		public MPropertyDef create(PropertyDef newProp) {
-			if (findAny(newProp) != null)
+		public MPropertyDef Create(PropertyDef newProp) {
+			if (FindAny(newProp) != null)
 				throw new ApplicationException("Can't add a property when it's already been added");
 
 			var propDef = new MPropertyDef(newProp, this, properties.Count);
-			add(propDef);
+			Add(propDef);
 			TypeDef.Properties.Add(newProp);
 			return propDef;
 		}
 
-		public MEventDef create(EventDef newEvent) {
-			if (findAny(newEvent) != null)
+		public MEventDef Create(EventDef newEvent) {
+			if (FindAny(newEvent) != null)
 				throw new ApplicationException("Can't add an event when it's already been added");
 
 			var eventDef = new MEventDef(newEvent, this, events.Count);
-			add(eventDef);
+			Add(eventDef);
 			TypeDef.Events.Add(newEvent);
 			return eventDef;
 		}
 
-		public void addMembers() {
+		public void AddMembers() {
 			var type = TypeDef;
 
 			for (int i = 0; i < type.Events.Count; i++)
-				add(new MEventDef(type.Events[i], this, i));
+				Add(new MEventDef(type.Events[i], this, i));
 			for (int i = 0; i < type.Fields.Count; i++)
-				add(new MFieldDef(type.Fields[i], this, i));
+				Add(new MFieldDef(type.Fields[i], this, i));
 			for (int i = 0; i < type.Methods.Count; i++)
-				add(new MMethodDef(type.Methods[i], this, i));
+				Add(new MMethodDef(type.Methods[i], this, i));
 			for (int i = 0; i < type.Properties.Count; i++)
-				add(new MPropertyDef(type.Properties[i], this, i));
+				Add(new MPropertyDef(type.Properties[i], this, i));
 
-			foreach (var propDef in properties.getValues()) {
-				foreach (var method in propDef.methodDefs()) {
-					var methodDef = findMethod(method);
+			foreach (var propDef in properties.GetValues()) {
+				foreach (var method in propDef.MethodDefs()) {
+					var methodDef = FindMethod(method);
 					if (methodDef == null)
 						throw new ApplicationException("Could not find property method");
 					methodDef.Property = propDef;
@@ -418,9 +418,9 @@ namespace de4dot.code.renamer.asmmodules {
 				}
 			}
 
-			foreach (var eventDef in events.getValues()) {
-				foreach (var method in eventDef.methodDefs()) {
-					var methodDef = findMethod(method);
+			foreach (var eventDef in events.GetValues()) {
+				foreach (var method in eventDef.MethodDefs()) {
+					var methodDef = FindMethod(method);
 					if (methodDef == null)
 						throw new ApplicationException("Could not find event method");
 					methodDef.Event = eventDef;
@@ -434,20 +434,20 @@ namespace de4dot.code.renamer.asmmodules {
 			}
 		}
 
-		public void onTypesRenamed() {
-			events.onTypesRenamed();
-			properties.onTypesRenamed();
-			fields.onTypesRenamed();
-			methods.onTypesRenamed();
-			types.onTypesRenamed();
+		public void OnTypesRenamed() {
+			events.OnTypesRenamed();
+			properties.OnTypesRenamed();
+			fields.OnTypesRenamed();
+			methods.OnTypesRenamed();
+			types.OnTypesRenamed();
 		}
 
-		public bool isNested() {
+		public bool IsNested() {
 			return NestingType != null;
 		}
 
-		public bool isGlobalType() {
-			if (!isNested())
+		public bool IsGlobalType() {
+			if (!IsNested())
 				return TypeDef.IsPublic;
 			switch (TypeDef.Visibility) {
 			case TypeAttributes.NestedPrivate:
@@ -457,53 +457,53 @@ namespace de4dot.code.renamer.asmmodules {
 			case TypeAttributes.NestedPublic:
 			case TypeAttributes.NestedFamily:
 			case TypeAttributes.NestedFamORAssem:
-				return NestingType.isGlobalType();
+				return NestingType.IsGlobalType();
 			default:
 				return false;
 			}
 		}
 
-		public void initializeVirtualMembers(MethodNameGroups groups, IResolver resolver) {
+		public void InitializeVirtualMembers(MethodNameGroups groups, IResolver resolver) {
 			if (initializeVirtualMembersCalled)
 				return;
 			initializeVirtualMembersCalled = true;
 
 			foreach (var iface in interfaces)
-				iface.typeDef.initializeVirtualMembers(groups, resolver);
+				iface.typeDef.InitializeVirtualMembers(groups, resolver);
 			if (baseType != null)
-				baseType.typeDef.initializeVirtualMembers(groups, resolver);
+				baseType.typeDef.InitializeVirtualMembers(groups, resolver);
 
-			foreach (var methodDef in methods.getValues()) {
-				if (methodDef.isVirtual())
-					groups.add(methodDef);
+			foreach (var methodDef in methods.GetValues()) {
+				if (methodDef.IsVirtual())
+					groups.Add(methodDef);
 			}
 
-			instantiateVirtualMembers(groups);
-			initializeInterfaceMethods(groups);
+			InstantiateVirtualMembers(groups);
+			InitializeInterfaceMethods(groups);
 		}
 
-		void initializeAllInterfaces() {
+		void InitializeAllInterfaces() {
 			if (baseType != null)
-				initializeInterfaces(baseType);
+				InitializeInterfaces(baseType);
 
 			foreach (var iface in interfaces) {
 				allImplementedInterfaces[iface] = true;
-				interfaceMethodInfos.addInterface(iface);
-				initializeInterfaces(iface);
+				interfaceMethodInfos.AddInterface(iface);
+				InitializeInterfaces(iface);
 			}
 		}
 
-		void initializeInterfaces(TypeInfo typeInfo) {
+		void InitializeInterfaces(TypeInfo typeInfo) {
 			var git = typeInfo.typeRef.TryGetGenericInstSig();
-			interfaceMethodInfos.initializeFrom(typeInfo.typeDef.interfaceMethodInfos, git);
+			interfaceMethodInfos.InitializeFrom(typeInfo.typeDef.interfaceMethodInfos, git);
 			foreach (var info in typeInfo.typeDef.allImplementedInterfaces.Keys) {
 				var newTypeInfo = new TypeInfo(info, git);
 				allImplementedInterfaces[newTypeInfo] = true;
 			}
 		}
 
-		void initializeInterfaceMethods(MethodNameGroups groups) {
-			initializeAllInterfaces();
+		void InitializeInterfaceMethods(MethodNameGroups groups) {
+			InitializeAllInterfaces();
 
 			if (TypeDef.IsInterface)
 				return;
@@ -526,25 +526,25 @@ namespace de4dot.code.renamer.asmmodules {
 			//---	  methods to implement the corresponding interface method.
 			if (interfaces.Count > 0) {
 				methodsDict.Clear();
-				foreach (var method in methods.getValues()) {
-					if (!method.isPublic() || !method.isVirtual() || !method.isNewSlot())
+				foreach (var method in methods.GetValues()) {
+					if (!method.IsPublic() || !method.IsVirtual() || !method.IsNewSlot())
 						continue;
 					methodsDict[method.MethodDef] = method;
 				}
 
 				foreach (var ifaceInfo in interfaces) {
-					foreach (var methodsList in ifaceInfo.typeDef.virtualMethodInstances.getMethods()) {
+					foreach (var methodsList in ifaceInfo.typeDef.virtualMethodInstances.GetMethods()) {
 						if (methodsList.Count < 1)
 							continue;
 						var methodInst = methodsList[0];
 						var ifaceMethod = methodInst.origMethodDef;
-						if (!ifaceMethod.isVirtual())
+						if (!ifaceMethod.IsVirtual())
 							continue;
-						var ifaceMethodRef = GenericArgsSubstitutor.create(methodInst.methodRef, ifaceInfo.typeRef.TryGetGenericInstSig());
+						var ifaceMethodRef = GenericArgsSubstitutor.Create(methodInst.methodRef, ifaceInfo.typeRef.TryGetGenericInstSig());
 						MMethodDef classMethod;
 						if (!methodsDict.TryGetValue(ifaceMethodRef, out classMethod))
 							continue;
-						interfaceMethodInfos.addMethod(ifaceInfo, ifaceMethod, classMethod);
+						interfaceMethodInfos.AddMethod(ifaceInfo, ifaceMethod, classMethod);
 					}
 				}
 			}
@@ -555,30 +555,30 @@ namespace de4dot.code.renamer.asmmodules {
 			//---	and signature, then use these to implement the corresponding methods on the
 			//---	interface.
 			methodsDict.Clear();
-			foreach (var methodInstList in virtualMethodInstances.getMethods()) {
+			foreach (var methodInstList in virtualMethodInstances.GetMethods()) {
 				// This class' method is at the end
 				for (int i = methodInstList.Count - 1; i >= 0; i--) {
 					var classMethod = methodInstList[i];
 					// These methods are guaranteed to be virtual.
 					// We should allow newslot methods, despite what the official doc says.
-					if (!classMethod.origMethodDef.isPublic())
+					if (!classMethod.origMethodDef.IsPublic())
 						continue;
 					methodsDict[classMethod.methodRef] = classMethod.origMethodDef;
 					break;
 				}
 			}
 			foreach (var ifaceInfo in allImplementedInterfaces.Keys) {
-				foreach (var methodsList in ifaceInfo.typeDef.virtualMethodInstances.getMethods()) {
+				foreach (var methodsList in ifaceInfo.typeDef.virtualMethodInstances.GetMethods()) {
 					if (methodsList.Count < 1)
 						continue;
 					var ifaceMethod = methodsList[0].origMethodDef;
-					if (!ifaceMethod.isVirtual())
+					if (!ifaceMethod.IsVirtual())
 						continue;
-					var ifaceMethodRef = GenericArgsSubstitutor.create(ifaceMethod.MethodDef, ifaceInfo.typeRef.TryGetGenericInstSig());
+					var ifaceMethodRef = GenericArgsSubstitutor.Create(ifaceMethod.MethodDef, ifaceInfo.typeRef.TryGetGenericInstSig());
 					MMethodDef classMethod;
 					if (!methodsDict.TryGetValue(ifaceMethodRef, out classMethod))
 						continue;
-					interfaceMethodInfos.addMethodIfEmpty(ifaceInfo, ifaceMethod, classMethod);
+					interfaceMethodInfos.AddMethodIfEmpty(ifaceInfo, ifaceMethod, classMethod);
 				}
 			}
 
@@ -589,15 +589,15 @@ namespace de4dot.code.renamer.asmmodules {
 			var ifaceMethodsDict = new Dictionary<IMethodDefOrRef, MMethodDef>(MethodEqualityComparer.CompareDeclaringTypes);
 			foreach (var ifaceInfo in allImplementedInterfaces.Keys) {
 				var git = ifaceInfo.typeRef.TryGetGenericInstSig();
-				foreach (var ifaceMethod in ifaceInfo.typeDef.methods.getValues()) {
+				foreach (var ifaceMethod in ifaceInfo.typeDef.methods.GetValues()) {
 					IMethodDefOrRef ifaceMethodRef = ifaceMethod.MethodDef;
 					if (git != null)
-						ifaceMethodRef = simpleClone(ifaceMethod.MethodDef, ifaceInfo.typeRef);
+						ifaceMethodRef = SimpleClone(ifaceMethod.MethodDef, ifaceInfo.typeRef);
 					ifaceMethodsDict[ifaceMethodRef] = ifaceMethod;
 				}
 			}
-			foreach (var classMethod in methods.getValues()) {
-				if (!classMethod.isVirtual())
+			foreach (var classMethod in methods.GetValues()) {
+				if (!classMethod.IsVirtual())
 					continue;
 				foreach (var overrideMethod in classMethod.MethodDef.Overrides) {
 					MMethodDef ifaceMethod;
@@ -607,7 +607,7 @@ namespace de4dot.code.renamer.asmmodules {
 						continue;
 					}
 
-					interfaceMethodInfos.addMethod(overrideMethod.MethodDeclaration.DeclaringType, ifaceMethod, classMethod);
+					interfaceMethodInfos.AddMethod(overrideMethod.MethodDeclaration.DeclaringType, ifaceMethod, classMethod);
 				}
 			}
 
@@ -619,16 +619,16 @@ namespace de4dot.code.renamer.asmmodules {
 				foreach (var pair in info.IfaceMethodToClassMethod) {
 					if (pair.Value != null)
 						continue;
-					if (!resolvedAllInterfaces() || !resolvedBaseClasses())
+					if (!ResolvedAllInterfaces() || !ResolvedBaseClasses())
 						continue;
 					// Ignore if COM class
 					if (!TypeDef.IsImport &&
-						!hasAttribute("System.Runtime.InteropServices.ComImportAttribute") &&
-						!hasAttribute("System.Runtime.InteropServices.TypeLibTypeAttribute")) {
+						!HasAttribute("System.Runtime.InteropServices.ComImportAttribute") &&
+						!HasAttribute("System.Runtime.InteropServices.TypeLibTypeAttribute")) {
 						Logger.w("Could not find interface method {0} ({1:X8}). Type: {2} ({3:X8})",
-								Utils.removeNewlines(pair.Key.methodDef.MethodDef),
+								Utils.RemoveNewlines(pair.Key.methodDef.MethodDef),
 								pair.Key.methodDef.MethodDef.MDToken.ToInt32(),
-								Utils.removeNewlines(TypeDef),
+								Utils.RemoveNewlines(TypeDef),
 								TypeDef.MDToken.ToInt32());
 					}
 				}
@@ -640,12 +640,12 @@ namespace de4dot.code.renamer.asmmodules {
 						continue;
 					if (pair.Key.methodDef.MethodDef.Name != pair.Value.MethodDef.Name)
 						continue;
-					groups.same(pair.Key.methodDef, pair.Value);
+					groups.Same(pair.Key.methodDef, pair.Value);
 				}
 			}
 		}
 
-		bool hasAttribute(string name) {
+		bool HasAttribute(string name) {
 			foreach (var attr in TypeDef.CustomAttributes) {
 				if (attr.TypeFullName == name)
 					return true;
@@ -655,18 +655,18 @@ namespace de4dot.code.renamer.asmmodules {
 
 		// Returns true if all interfaces have been resolved
 		bool? resolvedAllInterfacesResult;
-		bool resolvedAllInterfaces() {
+		bool ResolvedAllInterfaces() {
 			if (!resolvedAllInterfacesResult.HasValue) {
 				resolvedAllInterfacesResult = true;	// If we find a circular reference
-				resolvedAllInterfacesResult = resolvedAllInterfacesInternal();
+				resolvedAllInterfacesResult = ResolvedAllInterfacesInternal();
 			}
 			return resolvedAllInterfacesResult.Value;
 		}
-		bool resolvedAllInterfacesInternal() {
+		bool ResolvedAllInterfacesInternal() {
 			if (TypeDef.Interfaces.Count != interfaces.Count)
 				return false;
 			foreach (var ifaceInfo in interfaces) {
-				if (!ifaceInfo.typeDef.resolvedAllInterfaces())
+				if (!ifaceInfo.typeDef.ResolvedAllInterfaces())
 					return false;
 			}
 			return true;
@@ -674,49 +674,49 @@ namespace de4dot.code.renamer.asmmodules {
 
 		// Returns true if all base classes have been resolved
 		bool? resolvedBaseClassesResult;
-		bool resolvedBaseClasses() {
+		bool ResolvedBaseClasses() {
 			if (!resolvedBaseClassesResult.HasValue) {
 				resolvedBaseClassesResult = true;	// If we find a circular reference
-				resolvedBaseClassesResult = resolvedBaseClassesInternal();
+				resolvedBaseClassesResult = ResolvedBaseClassesInternal();
 			}
 			return resolvedBaseClassesResult.Value;
 		}
-		bool resolvedBaseClassesInternal() {
+		bool ResolvedBaseClassesInternal() {
 			if (TypeDef.BaseType == null)
 				return true;
 			if (baseType == null)
 				return false;
-			return baseType.typeDef.resolvedBaseClasses();
+			return baseType.typeDef.ResolvedBaseClasses();
 		}
 
-		MemberRef simpleClone(MethodDef methodRef, ITypeDefOrRef declaringType) {
+		MemberRef SimpleClone(MethodDef methodRef, ITypeDefOrRef declaringType) {
 			if (module == null)
 				return new MemberRefUser(null, methodRef.Name, methodRef.MethodSig, declaringType);
 			var mr = new MemberRefUser(module.ModuleDefMD, methodRef.Name, methodRef.MethodSig, declaringType);
 			return module.ModuleDefMD.UpdateRowId(mr);
 		}
 
-		void instantiateVirtualMembers(MethodNameGroups groups) {
+		void InstantiateVirtualMembers(MethodNameGroups groups) {
 			if (!TypeDef.IsInterface) {
 				if (baseType != null)
-					virtualMethodInstances.initializeFrom(baseType.typeDef.virtualMethodInstances, baseType.typeRef.TryGetGenericInstSig());
+					virtualMethodInstances.InitializeFrom(baseType.typeDef.virtualMethodInstances, baseType.typeRef.TryGetGenericInstSig());
 
 				// Figure out which methods we override in the base class
-				foreach (var methodDef in methods.getValues()) {
-					if (!methodDef.isVirtual() || methodDef.isNewSlot())
+				foreach (var methodDef in methods.GetValues()) {
+					if (!methodDef.IsVirtual() || methodDef.IsNewSlot())
 						continue;
-					var methodInstList = virtualMethodInstances.lookup(methodDef.MethodDef);
+					var methodInstList = virtualMethodInstances.Lookup(methodDef.MethodDef);
 					if (methodInstList == null)
 						continue;
 					foreach (var methodInst in methodInstList)
-						groups.same(methodDef, methodInst.origMethodDef);
+						groups.Same(methodDef, methodInst.origMethodDef);
 				}
 			}
 
-			foreach (var methodDef in methods.getValues()) {
-				if (!methodDef.isVirtual())
+			foreach (var methodDef in methods.GetValues()) {
+				if (!methodDef.IsVirtual())
 					continue;
-				virtualMethodInstances.add(new MethodInst(methodDef, methodDef.MethodDef));
+				virtualMethodInstances.Add(new MethodInst(methodDef, methodDef.MethodDef));
 			}
 		}
 	}

@@ -34,7 +34,7 @@ namespace de4dot.blocks {
 				this.baseBlock = baseBlock;
 			}
 
-			public bool visited() {
+			public bool Visited() {
 				return dfsNumber >= 0;
 			}
 
@@ -62,7 +62,7 @@ namespace de4dot.blocks {
 				this.skipFirstBlock = skipFirstBlock;
 			}
 
-			public List<BaseBlock> sort() {
+			public List<BaseBlock> Sort() {
 				if (validBlocks.Count == 0)
 					return new List<BaseBlock>();
 				if (skipFirstBlock)
@@ -77,14 +77,14 @@ namespace de4dot.blocks {
 				var finalList = new List<BaseBlock>(validBlocks.Count);
 
 				if (firstBlock is Block) {
-					foreach (var target in getTargets(firstBlock)) {
-						visit(target);
+					foreach (var target in GetTargets(firstBlock)) {
+						Visit(target);
 						finalList.AddRange(sorted);
 						sorted.Clear();
 					}
 				}
 				foreach (var bb in validBlocks) {
-					visit(bb);
+					Visit(bb);
 					finalList.AddRange(sorted);
 					sorted.Clear();
 				}
@@ -103,19 +103,19 @@ namespace de4dot.blocks {
 				return finalList;
 			}
 
-			void visit(BaseBlock bb) {
-				var info = getInfo(bb);
+			void Visit(BaseBlock bb) {
+				var info = GetInfo(bb);
 				if (info == null)
 					return;
 				if (info.baseBlock == firstBlock)
 					return;
-				if (info.visited())
+				if (info.Visited())
 					return;
-				visit(info);
+				Visit(info);
 			}
 
-			BlockInfo getInfo(BaseBlock baseBlock) {
-				baseBlock = scopeBlock.toChild(baseBlock);
+			BlockInfo GetInfo(BaseBlock baseBlock) {
+				baseBlock = scopeBlock.ToChild(baseBlock);
 				if (baseBlock == null)
 					return null;
 				BlockInfo info;
@@ -123,54 +123,54 @@ namespace de4dot.blocks {
 				return info;
 			}
 
-			List<BaseBlock> getTargets(BaseBlock baseBlock) {
+			List<BaseBlock> GetTargets(BaseBlock baseBlock) {
 				var list = new List<BaseBlock>();
 
 				if (baseBlock is Block) {
 					var block = (Block)baseBlock;
-					addTargets(list, block.getTargets());
+					AddTargets(list, block.GetTargets());
 				}
 				else if (baseBlock is TryBlock)
-					addTargets(list, (TryBlock)baseBlock);
+					AddTargets(list, (TryBlock)baseBlock);
 				else if (baseBlock is TryHandlerBlock)
-					addTargets(list, (TryHandlerBlock)baseBlock);
+					AddTargets(list, (TryHandlerBlock)baseBlock);
 				else
-					addTargets(list, (ScopeBlock)baseBlock);
+					AddTargets(list, (ScopeBlock)baseBlock);
 
 				return list;
 			}
 
-			void addTargets(List<BaseBlock> dest, TryBlock tryBlock) {
-				addTargets(dest, (ScopeBlock)tryBlock);
+			void AddTargets(List<BaseBlock> dest, TryBlock tryBlock) {
+				AddTargets(dest, (ScopeBlock)tryBlock);
 				foreach (var tryHandlerBlock in tryBlock.TryHandlerBlocks) {
 					dest.Add(tryHandlerBlock);
-					addTargets(dest, tryHandlerBlock);
+					AddTargets(dest, tryHandlerBlock);
 				}
 			}
 
-			void addTargets(List<BaseBlock> dest, TryHandlerBlock tryHandlerBlock) {
-				addTargets(dest, (ScopeBlock)tryHandlerBlock);
+			void AddTargets(List<BaseBlock> dest, TryHandlerBlock tryHandlerBlock) {
+				AddTargets(dest, (ScopeBlock)tryHandlerBlock);
 
 				dest.Add(tryHandlerBlock.FilterHandlerBlock);
-				addTargets(dest, tryHandlerBlock.FilterHandlerBlock);
+				AddTargets(dest, tryHandlerBlock.FilterHandlerBlock);
 
 				dest.Add(tryHandlerBlock.HandlerBlock);
-				addTargets(dest, tryHandlerBlock.HandlerBlock);
+				AddTargets(dest, tryHandlerBlock.HandlerBlock);
 			}
 
-			void addTargets(List<BaseBlock> dest, ScopeBlock scopeBlock) {
-				foreach (var block in scopeBlock.getAllBlocks())
-					addTargets(dest, block.getTargets());
+			void AddTargets(List<BaseBlock> dest, ScopeBlock scopeBlock) {
+				foreach (var block in scopeBlock.GetAllBlocks())
+					AddTargets(dest, block.GetTargets());
 			}
 
-			void addTargets(List<BaseBlock> dest, IEnumerable<Block> source) {
+			void AddTargets(List<BaseBlock> dest, IEnumerable<Block> source) {
 				var list = new List<Block>(source);
 				list.Reverse();
 				foreach (var block in list)
 					dest.Add(block);
 			}
 
-			void visit(BlockInfo info) {
+			void Visit(BlockInfo info) {
 				if (info.baseBlock == firstBlock)
 					throw new ApplicationException("Can't visit firstBlock");
 				stack.Push(info);
@@ -179,15 +179,15 @@ namespace de4dot.blocks {
 				info.low = dfsNumber;
 				dfsNumber++;
 
-				foreach (var tmp in getTargets(info.baseBlock)) {
-					var targetInfo = getInfo(tmp);
+				foreach (var tmp in GetTargets(info.baseBlock)) {
+					var targetInfo = GetInfo(tmp);
 					if (targetInfo == null)
 						continue;
 					if (targetInfo.baseBlock == firstBlock)
 						continue;
 
-					if (!targetInfo.visited()) {
-						visit(targetInfo);
+					if (!targetInfo.Visited()) {
+						Visit(targetInfo);
 						info.low = Math.Min(info.low, targetInfo.low);
 					}
 					else if (targetInfo.onStack)
@@ -206,8 +206,8 @@ namespace de4dot.blocks {
 				}
 				if (sccBlocks.Count > 1) {
 					sccBlocks.Reverse();
-					var result = new Sorter(scopeBlock, sccBlocks, true).sort();
-					sortLoopBlock(result);
+					var result = new Sorter(scopeBlock, sccBlocks, true).Sort();
+					SortLoopBlock(result);
 					sorted.InsertRange(0, result);
 				}
 				else {
@@ -215,12 +215,12 @@ namespace de4dot.blocks {
 				}
 			}
 
-			void sortLoopBlock(List<BaseBlock> list) {
+			void SortLoopBlock(List<BaseBlock> list) {
 				// Some popular decompilers sometimes produce bad output unless the loop condition
 				// checker block is at the end of the loop. Eg., they may use a while loop when
 				// it's really a for/foreach loop.
 
-				var loopStart = getLoopStartBlock(list);
+				var loopStart = GetLoopStartBlock(list);
 				if (loopStart == null)
 					return;
 
@@ -229,7 +229,7 @@ namespace de4dot.blocks {
 				list.Add(loopStart);
 			}
 
-			Block getLoopStartBlock(List<BaseBlock> list) {
+			Block GetLoopStartBlock(List<BaseBlock> list) {
 				var loopBlocks = new Dictionary<Block, bool>(list.Count);
 				foreach (var bb in list) {
 					var block = bb as Block;
@@ -268,9 +268,9 @@ namespace de4dot.blocks {
 			this.scopeBlock = scopeBlock;
 		}
 
-		public List<BaseBlock> sort() {
-			var sorted = new Sorter(scopeBlock, scopeBlock.BaseBlocks, false).sort();
-			return new ForwardScanOrder(scopeBlock, sorted).fix();
+		public List<BaseBlock> Sort() {
+			var sorted = new Sorter(scopeBlock, scopeBlock.BaseBlocks, false).Sort();
+			return new ForwardScanOrder(scopeBlock, sorted).Fix();
 		}
 	}
 }

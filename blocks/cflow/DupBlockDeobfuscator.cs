@@ -25,22 +25,22 @@ namespace de4dot.blocks.cflow {
 	// If a block is just a dup followed by a bcc, try to append the block
 	// to all its sources. Will fix some SA assemblies.
 	class DupBlockCflowDeobfuscator : BlockDeobfuscator {
-		protected override bool deobfuscate(Block block) {
+		protected override bool Deobfuscate(Block block) {
 			if (block.Instructions.Count != 2)
 				return false;
 			if (block.Instructions[0].OpCode.Code != Code.Dup)
 				return false;
-			if (!block.LastInstr.isConditionalBranch() && block.LastInstr.OpCode.Code != Code.Switch)
+			if (!block.LastInstr.IsConditionalBranch() && block.LastInstr.OpCode.Code != Code.Switch)
 				return false;
 
 			bool modified = false;
 			foreach (var source in new List<Block>(block.Sources)) {
-				if (source.getOnlyTarget() != block)
+				if (source.GetOnlyTarget() != block)
 					continue;
-				if (!source.canAppend(block))
+				if (!source.CanAppend(block))
 					continue;
 
-				source.append(block);
+				source.Append(block);
 				modified = true;
 			}
 			return modified;

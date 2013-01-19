@@ -75,12 +75,12 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			get { return true; }
 		}
 
-		public void deobfuscateBegin(Blocks blocks) {
+		public void DeobfuscateBegin(Blocks blocks) {
 			this.blocks = blocks;
 		}
 
-		public bool deobfuscate(List<Block> allBlocks) {
-			if (!init(allBlocks))
+		public bool Deobfuscate(List<Block> allBlocks) {
+			if (!Initialize(allBlocks))
 				return false;
 
 			bool changed = false;
@@ -97,7 +97,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 							continue;
 						localInfos[local].invalid();
 					}
-					else if (instr.isLdloc()) {
+					else if (instr.IsLdloc()) {
 						var local = instr.Instruction.GetLocal(blocks.Locals);
 						if (local == null)
 							continue;
@@ -105,14 +105,14 @@ namespace de4dot.code.deobfuscators.DeepSea {
 						var cast = instrs[i + 1];
 						if (localInfo.CastType == null)
 							continue;
-						if (!isCast(cast))
+						if (!IsCast(cast))
 							throw new ApplicationException("Not a cast instr");
 
 						indexesToRemove.Add(i + 1);
 					}
 				}
 				if (indexesToRemove.Count > 0) {
-					block.remove(indexesToRemove);
+					block.Remove(indexesToRemove);
 					changed = true;
 				}
 			}
@@ -136,19 +136,19 @@ namespace de4dot.code.deobfuscators.DeepSea {
 							instr = instrs[i - 1];
 						}
 
-						if (instr.isLdarg())
-							addCast(block, castIndex, i + 1, instr.Instruction.GetArgumentType(blocks.Method.MethodSig, blocks.Method.DeclaringType));
+						if (instr.IsLdarg())
+							AddCast(block, castIndex, i + 1, instr.Instruction.GetArgumentType(blocks.Method.MethodSig, blocks.Method.DeclaringType));
 						else if (instr.OpCode.Code == Code.Ldfld || instr.OpCode.Code == Code.Ldsfld) {
 							var field = instr.Operand as IField;
 							if (field == null)
 								continue;
-							addCast(block, castIndex, i + 1, field.FieldSig.GetFieldType());
+							AddCast(block, castIndex, i + 1, field.FieldSig.GetFieldType());
 						}
 						else if (instr.OpCode.Code == Code.Call || instr.OpCode.Code == Code.Callvirt) {
 							var calledMethod = instr.Operand as IMethod;
-							if (calledMethod == null || !DotNetUtils.hasReturnValue(calledMethod))
+							if (calledMethod == null || !DotNetUtils.HasReturnValue(calledMethod))
 								continue;
-							addCast(block, castIndex, i + 1, calledMethod.MethodSig.GetRetType());
+							AddCast(block, castIndex, i + 1, calledMethod.MethodSig.GetRetType());
 						}
 					}
 				}
@@ -157,13 +157,13 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return changed;
 		}
 
-		bool addCast(Block block, int castIndex, int index, TypeSig type) {
+		bool AddCast(Block block, int castIndex, int index, TypeSig type) {
 			if (type == null)
 				return false;
 			if (castIndex >= block.Instructions.Count || index >= block.Instructions.Count)
 				return false;
 			var stloc = block.Instructions[index];
-			if (!stloc.isStloc())
+			if (!stloc.IsStloc())
 				return false;
 			var local = stloc.Instruction.GetLocal(blocks.Locals);
 			if (local == null)
@@ -173,11 +173,11 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				return false;
 
 			if (!new SigComparer().Equals(localInfo.CastType, type))
-				block.insert(castIndex, new Instruction(OpCodes.Castclass, localInfo.CastType));
+				block.Insert(castIndex, new Instruction(OpCodes.Castclass, localInfo.CastType));
 			return true;
 		}
 
-		bool init(List<Block> allBlocks) {
+		bool Initialize(List<Block> allBlocks) {
 			localInfos.Clear();
 			foreach (var local in blocks.Locals)
 				localInfos[local] = new LocalInfo(local);
@@ -188,24 +188,24 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				var instrs = block.Instructions;
 				for (int i = 0; i < instrs.Count - 1; i++) {
 					var ldloc = instrs[i];
-					if (!ldloc.isLdloc())
+					if (!ldloc.IsLdloc())
 						continue;
 					var local = ldloc.Instruction.GetLocal(blocks.Locals);
 					if (local == null)
 						continue;
 					var localInfo = localInfos[local];
-					localInfo.CastType = getCastType(instrs[i + 1]);
+					localInfo.CastType = GetCastType(instrs[i + 1]);
 				}
 			}
 			return true;
 		}
 
-		static bool isCast(Instr instr) {
+		static bool IsCast(Instr instr) {
 			return instr.OpCode.Code == Code.Castclass || instr.OpCode.Code == Code.Isinst;
 		}
 
-		static ITypeDefOrRef getCastType(Instr instr) {
-			if (!isCast(instr))
+		static ITypeDefOrRef GetCastType(Instr instr) {
+			if (!IsCast(instr))
 				return null;
 			return instr.Operand as ITypeDefOrRef;
 		}

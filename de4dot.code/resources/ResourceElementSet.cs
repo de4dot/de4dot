@@ -32,7 +32,7 @@ namespace de4dot.code.resources {
 			get { return dict.Values; }
 		}
 
-		public void add(ResourceElement elem) {
+		public void Add(ResourceElement elem) {
 			dict[elem.Name] = elem;
 		}
 	}

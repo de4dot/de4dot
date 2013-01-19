@@ -21,8 +21,8 @@ using dnlib.DotNet;
 
 namespace de4dot.code.renamer.asmmodules {
 	interface IResolver {
-		MTypeDef resolveType(ITypeDefOrRef typeRef);
-		MMethodDef resolveMethod(IMethodDefOrRef methodRef);
-		MFieldDef resolveField(MemberRef fieldRef);
+		MTypeDef ResolveType(ITypeDefOrRef typeRef);
+		MMethodDef ResolveMethod(IMethodDefOrRef methodRef);
+		MFieldDef ResolveField(MemberRef fieldRef);
 	}
 }

@@ -42,27 +42,27 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 
 		public ResourceDecrypterInfo(ModuleDefMD module, MethodDef simpleZipTypeDecryptMethod, ISimpleDeobfuscator simpleDeobfuscator)
 			: this(module) {
-			setSimpleZipType(simpleZipTypeDecryptMethod, simpleDeobfuscator);
+			SetSimpleZipType(simpleZipTypeDecryptMethod, simpleDeobfuscator);
 		}
 
-		public void setSimpleZipType(MethodDef method, ISimpleDeobfuscator simpleDeobfuscator) {
+		public void SetSimpleZipType(MethodDef method, ISimpleDeobfuscator simpleDeobfuscator) {
 			if (simpleZipTypeDecryptMethod != null || method == null)
 				return;
 			simpleZipTypeDecryptMethod = method;
-			init(simpleDeobfuscator, method);
+			Initialize(simpleDeobfuscator, method);
 		}
 
-		void init(ISimpleDeobfuscator simpleDeobfuscator, MethodDef method) {
+		void Initialize(ISimpleDeobfuscator simpleDeobfuscator, MethodDef method) {
 			var desList = new List<byte[]>(2);
 			var aesList = new List<byte[]>(2);
 
 			var instructions = method.Body.Instructions;
-			simpleDeobfuscator.deobfuscate(method);
+			simpleDeobfuscator.Deobfuscate(method);
 			for (int i = 0; i <= instructions.Count - 2; i++) {
 				var ldtoken = instructions[i];
 				if (ldtoken.OpCode.Code != Code.Ldtoken)
 					continue;
-				var field = DotNetUtils.getField(module, ldtoken.Operand as IField);
+				var field = DotNetUtils.GetField(module, ldtoken.Operand as IField);
 				if (field == null)
 					continue;
 				if (field.InitialValue == null)
@@ -72,7 +72,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				if (call.OpCode.Code != Code.Call)
 					continue;
 				var calledMethod = call.Operand as IMethod;
-				if (!DotNetUtils.isMethod(calledMethod, "System.Void", "(System.Array,System.RuntimeFieldHandle)"))
+				if (!DotNetUtils.IsMethod(calledMethod, "System.Void", "(System.Array,System.RuntimeFieldHandle)"))
 					continue;
 
 				if (field.InitialValue.Length == 8)

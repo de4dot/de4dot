@@ -24,33 +24,33 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Babel_NET {
 	class InflaterCreator {
-		public static Inflater create(MethodDef method, bool noHeader) {
-			return create(findInflaterType(method), noHeader);
+		public static Inflater Create(MethodDef method, bool noHeader) {
+			return Create(FindInflaterType(method), noHeader);
 		}
 
-		public static Inflater create(TypeDef inflaterType, bool noHeader) {
+		public static Inflater Create(TypeDef inflaterType, bool noHeader) {
 			if (inflaterType == null)
-				return createNormal(noHeader);
-			var initHeaderMethod = findInitHeaderMethod(inflaterType);
+				return CreateNormal(noHeader);
+			var initHeaderMethod = FindInitHeaderMethod(inflaterType);
 			if (initHeaderMethod == null)
-				return createNormal(noHeader, "Could not find inflater init header method");
-			var magic = getMagic(initHeaderMethod);
+				return CreateNormal(noHeader, "Could not find inflater init header method");
+			var magic = GetMagic(initHeaderMethod);
 			if (!magic.HasValue)
-				return createNormal(noHeader);
+				return CreateNormal(noHeader);
 			return new BabelInflater(noHeader, magic.Value);
 		}
 
-		static Inflater createNormal(bool noHeader) {
-			return createNormal(noHeader, null);
+		static Inflater CreateNormal(bool noHeader) {
+			return CreateNormal(noHeader, null);
 		}
 
-		static Inflater createNormal(bool noHeader, string errorMessage) {
+		static Inflater CreateNormal(bool noHeader, string errorMessage) {
 			if (errorMessage != null)
 				Logger.w("{0}", errorMessage);
 			return new Inflater(noHeader);
 		}
 
-		static TypeDef findInflaterType(MethodDef method) {
+		static TypeDef FindInflaterType(MethodDef method) {
 			if (method == null || method.Body == null)
 				return null;
 			foreach (var instr in method.Body.Instructions) {
@@ -62,7 +62,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 				var type = calledMethod.DeclaringType;
 				foreach (var nested in type.NestedTypes) {
-					if (DeobUtils.hasInteger(nested.FindMethod(".ctor"), 0x8001))
+					if (DeobUtils.HasInteger(nested.FindMethod(".ctor"), 0x8001))
 						return type;
 				}
 			}
@@ -70,20 +70,20 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return null;
 		}
 
-		static MethodDef findInitHeaderMethod(TypeDef inflaterType) {
+		static MethodDef FindInitHeaderMethod(TypeDef inflaterType) {
 			foreach (var nested in inflaterType.NestedTypes) {
-				var method = findInitHeaderMethod2(nested);
+				var method = FindInitHeaderMethod2(nested);
 				if (method != null)
 					return method;
 			}
 			return null;
 		}
 
-		static MethodDef findInitHeaderMethod2(TypeDef nested) {
+		static MethodDef FindInitHeaderMethod2(TypeDef nested) {
 			foreach (var method in nested.Methods) {
 				if (method.IsStatic || method.Body == null)
 					continue;
-				if (!DotNetUtils.isMethod(method, "System.Boolean", "()"))
+				if (!DotNetUtils.IsMethod(method, "System.Boolean", "()"))
 					continue;
 
 				return method;
@@ -92,7 +92,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return null;
 		}
 
-		static int? getMagic(MethodDef method) {
+		static int? GetMagic(MethodDef method) {
 			if (method == null || method.Body == null)
 				return null;
 			var instrs = method.Body.Instructions;

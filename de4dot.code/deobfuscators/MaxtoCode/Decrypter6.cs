@@ -35,8 +35,8 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		static readonly byte[] d4h = new byte[16] { 4, 11, 12, 14, 15, 0, 8, 13, 3, 12, 9, 7, 5, 10, 6, 1 };
 		static readonly byte[] d4l = new byte[16] { 13, 2, 8, 14, 6, 7, 11, 1, 10, 9, 3, 14, 5, 0, 12, 7 };
 
-		public static byte[] decrypt(byte[] key, byte[] encrypted) {
-			return new Decrypter6(key).decrypt(encrypted);
+		public static byte[] Decrypt(byte[] key, byte[] encrypted) {
+			return new Decrypter6(key).Decrypt(encrypted);
 		}
 
 		Decrypter6(byte[] key) {
@@ -44,10 +44,10 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				throw new ArgumentException("Invalid key size", "key");
 			this.key = new uint[8];
 			Buffer.BlockCopy(key, 0, this.key, 0, key.Length);
-			initialize();
+			Initialize();
 		}
 
-		byte[] decrypt(byte[] encrypted) {
+		byte[] Decrypt(byte[] encrypted) {
 			if ((encrypted.Length & 7) != 0)
 				throw new ArgumentException("Invalid data length", "encrypted");
 			var decrypted = new byte[encrypted.Length];
@@ -55,24 +55,24 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			int count = decrypted.Length / 8;
 			for (int i = 0; i < count; i++) {
 				uint x, y;
-				decrypt(BitConverter.ToUInt32(encrypted, i * 8), BitConverter.ToUInt32(encrypted, i * 8 + 4), out x, out y);
+				Decrypt(BitConverter.ToUInt32(encrypted, i * 8), BitConverter.ToUInt32(encrypted, i * 8 + 4), out x, out y);
 				for (int j = 1; j < 100; j++)
-					decrypt(x, y, out x, out y);
-				writeUInt32(decrypted, i * 8, x);
-				writeUInt32(decrypted, i * 8 + 4, y);
+					Decrypt(x, y, out x, out y);
+				WriteUInt32(decrypted, i * 8, x);
+				WriteUInt32(decrypted, i * 8 + 4, y);
 			}
 
 			return decrypted;
 		}
 
-		static void writeUInt32(byte[] data, int index, uint value) {
+		static void WriteUInt32(byte[] data, int index, uint value) {
 			data[index] = (byte)value;
 			data[index + 1] = (byte)(value >> 8);
 			data[index + 2] = (byte)(value >> 16);
 			data[index + 3] = (byte)(value >> 24);
 		}
 
-		void initialize() {
+		void Initialize() {
 			for (int i = 0; i < 0x100; i++) {
 				gen1[i] = (byte)((d1h[i / 16] << 4) | d1l[i & 0x0F]);
 				gen2[i] = (byte)((d2h[i / 16] << 4) | d2l[i & 0x0F]);
@@ -81,42 +81,42 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			}
 		}
 
-		void decrypt(uint i0, uint i1, out uint o0, out uint o1) {
+		void Decrypt(uint i0, uint i1, out uint o0, out uint o1) {
 			uint x = i0;
-			uint y = decrypt(x + key[0]);
+			uint y = Decrypt(x + key[0]);
 			y ^= i1;
-			x ^= decrypt(y + key[1]);
-			y ^= decrypt(x + key[2]);
-			x ^= decrypt(y + key[3]);
-			y ^= decrypt(x + key[4]);
-			x ^= decrypt(y + key[5]);
-			y ^= decrypt(x + key[6]);
-			x ^= decrypt(y + key[7]);
+			x ^= Decrypt(y + key[1]);
+			y ^= Decrypt(x + key[2]);
+			x ^= Decrypt(y + key[3]);
+			y ^= Decrypt(x + key[4]);
+			x ^= Decrypt(y + key[5]);
+			y ^= Decrypt(x + key[6]);
+			x ^= Decrypt(y + key[7]);
 
 			for (int i = 0; i < 3; i++) {
-				y ^= decrypt(x + key[7]);
-				x ^= decrypt(y + key[6]);
-				y ^= decrypt(x + key[5]);
-				x ^= decrypt(y + key[4]);
-				y ^= decrypt(x + key[3]);
-				x ^= decrypt(y + key[2]);
-				y ^= decrypt(x + key[1]);
-				x ^= decrypt(y + key[0]);
+				y ^= Decrypt(x + key[7]);
+				x ^= Decrypt(y + key[6]);
+				y ^= Decrypt(x + key[5]);
+				x ^= Decrypt(y + key[4]);
+				y ^= Decrypt(x + key[3]);
+				x ^= Decrypt(y + key[2]);
+				y ^= Decrypt(x + key[1]);
+				x ^= Decrypt(y + key[0]);
 			}
 
 			o0 = y;
 			o1 = x;
 		}
 
-		uint decrypt(uint val) {
+		uint Decrypt(uint val) {
 			uint x = (uint)((gen1[(byte)(val >> 24)] << 24) |
 				(gen2[(byte)(val >> 16)] << 16) |
 				(gen3[(byte)(val >> 8)] << 8) |
 				gen4[(byte)val]);
-			return ror(x, 21);
+			return Ror(x, 21);
 		}
 
-		static uint ror(uint val, int n) {
+		static uint Ror(uint val, int n) {
 			return (val << (32 - n)) + (val >> n);
 		}
 	}

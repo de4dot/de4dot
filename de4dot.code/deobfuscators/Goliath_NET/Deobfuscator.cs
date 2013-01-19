@@ -35,12 +35,12 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 
 		public DeobfuscatorInfo()
 			: base(DEFAULT_REGEX) {
-			inlineMethods = new BoolOption(null, makeArgName("inline"), "Inline short methods", true);
-			removeInlinedMethods = new BoolOption(null, makeArgName("remove-inlined"), "Remove inlined methods", true);
-			restoreLocals = new BoolOption(null, makeArgName("locals"), "Restore locals", true);
-			decryptIntegers = new BoolOption(null, makeArgName("ints"), "Decrypt integers", true);
-			decryptArrays = new BoolOption(null, makeArgName("arrays"), "Decrypt arrays", true);
-			removeAntiStrongName = new BoolOption(null, makeArgName("sn"), "Remove anti strong name code", true);
+			inlineMethods = new BoolOption(null, MakeArgName("inline"), "Inline short methods", true);
+			removeInlinedMethods = new BoolOption(null, MakeArgName("remove-inlined"), "Remove inlined methods", true);
+			restoreLocals = new BoolOption(null, MakeArgName("locals"), "Restore locals", true);
+			decryptIntegers = new BoolOption(null, MakeArgName("ints"), "Decrypt integers", true);
+			decryptArrays = new BoolOption(null, MakeArgName("arrays"), "Decrypt arrays", true);
+			removeAntiStrongName = new BoolOption(null, MakeArgName("sn"), "Remove anti strong name code", true);
 		}
 
 		public override string Name {
@@ -51,7 +51,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			get { return THE_TYPE; }
 		}
 
-		public override IDeobfuscator createDeobfuscator() {
+		public override IDeobfuscator CreateDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
 				RenameResourcesInCode = false,
 				ValidNameRegex = validNameRegex.get(),
@@ -64,7 +64,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			});
 		}
 
-		protected override IEnumerable<Option> getOptionsInternal() {
+		protected override IEnumerable<Option> GetOptionsInternal() {
 			return new List<Option>() {
 				inlineMethods,
 				removeInlinedMethods,
@@ -123,14 +123,14 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			this.options = options;
 		}
 
-		protected override int detectInternal() {
+		protected override int DetectInternal() {
 			int val = 0;
 
-			int sum = toInt32(stringDecrypter.Detected) +
-					toInt32(integerDecrypter.Detected) +
-					toInt32(arrayDecrypter.Detected) +
-					toInt32(strongNameChecker.Detected) +
-					toInt32(hasMetadataStream("#GOLIATH"));
+			int sum = ToInt32(stringDecrypter.Detected) +
+					ToInt32(integerDecrypter.Detected) +
+					ToInt32(arrayDecrypter.Detected) +
+					ToInt32(strongNameChecker.Detected) +
+					ToInt32(HasMetadataStream("#GOLIATH"));
 			if (sum > 0)
 				val += 100 + 10 * (sum - 1);
 			if (foundGoliathAttribute)
@@ -139,31 +139,31 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			return val;
 		}
 
-		protected override void scanForObfuscator() {
-			findGoliathAttribute();
+		protected override void ScanForObfuscator() {
+			FindGoliathAttribute();
 			stringDecrypter = new StringDecrypter(module);
-			stringDecrypter.find();
+			stringDecrypter.Find();
 			integerDecrypter = new IntegerDecrypter(module);
-			integerDecrypter.find();
+			integerDecrypter.Find();
 			arrayDecrypter = new ArrayDecrypter(module);
-			arrayDecrypter.find();
+			arrayDecrypter.Find();
 			strongNameChecker = new StrongNameChecker(module);
-			strongNameChecker.find();
+			strongNameChecker.Find();
 		}
 
-		void findGoliathAttribute() {
+		void FindGoliathAttribute() {
 			foreach (var type in module.Types) {
 				if (type.FullName.Contains("ObfuscatedByGoliath")) {
 					foundGoliathAttribute = true;
-					addAttributeToBeRemoved(type, "Obfuscator attribute");
-					initializeVersion(type);
+					AddAttributeToBeRemoved(type, "Obfuscator attribute");
+					InitializeVersion(type);
 					break;
 				}
 			}
 		}
 
-		void initializeVersion(TypeDef attr) {
-			var s = DotNetUtils.getCustomArgAsString(getAssemblyAttribute(attr), 0);
+		void InitializeVersion(TypeDef attr) {
+			var s = DotNetUtils.GetCustomArgAsString(GetAssemblyAttribute(attr), 0);
 			if (s == null)
 				return;
 
@@ -174,106 +174,106 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			return;
 		}
 
-		public override void deobfuscateBegin() {
-			base.deobfuscateBegin();
+		public override void DeobfuscateBegin() {
+			base.DeobfuscateBegin();
 
 			proxyCallFixer = new ProxyCallFixer(module);
-			proxyCallFixer.find();
+			proxyCallFixer.Find();
 			localsRestorer = new LocalsRestorer(module);
 			if (options.RestoreLocals)
-				localsRestorer.find();
+				localsRestorer.Find();
 
 			logicalExpressionFixer = new LogicalExpressionFixer();
-			stringDecrypter.initialize();
-			integerDecrypter.initialize();
-			arrayDecrypter.initialize();
+			stringDecrypter.Initialize();
+			integerDecrypter.Initialize();
+			arrayDecrypter.Initialize();
 
 			if (options.DecryptIntegers) {
 				int32ValueInliner = new Int32ValueInliner();
-				foreach (var method in integerDecrypter.getMethods()) {
-					int32ValueInliner.add(method, (method2, gim, args) => {
-						return integerDecrypter.decrypt(method2);
+				foreach (var method in integerDecrypter.GetMethods()) {
+					int32ValueInliner.Add(method, (method2, gim, args) => {
+						return integerDecrypter.Decrypt(method2);
 					});
 				}
 			}
 
 			if (options.DecryptArrays) {
 				arrayValueInliner = new ArrayValueInliner(module, initializedDataCreator);
-				foreach (var method in arrayDecrypter.getMethods()) {
-					arrayValueInliner.add(method, (method2, gim, args) => {
-						return arrayDecrypter.decrypt(method2);
+				foreach (var method in arrayDecrypter.GetMethods()) {
+					arrayValueInliner.Add(method, (method2, gim, args) => {
+						return arrayDecrypter.Decrypt(method2);
 					});
 				}
 			}
 
-			foreach (var method in stringDecrypter.getMethods()) {
-				staticStringInliner.add(method, (method2, gim, args) => {
-					return stringDecrypter.decrypt(method2);
+			foreach (var method in stringDecrypter.GetMethods()) {
+				staticStringInliner.Add(method, (method2, gim, args) => {
+					return stringDecrypter.Decrypt(method2);
 				});
-				DeobfuscatedFile.stringDecryptersAdded();
+				DeobfuscatedFile.StringDecryptersAdded();
 			}
 
 			if (options.RemoveAntiStrongName)
-				addTypeToBeRemoved(strongNameChecker.Type, "Strong name checker type");
+				AddTypeToBeRemoved(strongNameChecker.Type, "Strong name checker type");
 
 			startedDeobfuscating = true;
 		}
 
-		public override void deobfuscateMethodBegin(Blocks blocks) {
-			proxyCallFixer.deobfuscate(blocks);
-			base.deobfuscateMethodBegin(blocks);
+		public override void DeobfuscateMethodBegin(Blocks blocks) {
+			proxyCallFixer.Deobfuscate(blocks);
+			base.DeobfuscateMethodBegin(blocks);
 		}
 
-		public override void deobfuscateMethodEnd(Blocks blocks) {
-			stringDecrypter.deobfuscate(blocks);
-			int32ValueInliner.decrypt(blocks);
-			arrayValueInliner.decrypt(blocks);
+		public override void DeobfuscateMethodEnd(Blocks blocks) {
+			stringDecrypter.Deobfuscate(blocks);
+			int32ValueInliner.Decrypt(blocks);
+			arrayValueInliner.Decrypt(blocks);
 			if (options.RestoreLocals)
-				localsRestorer.deobfuscate(blocks);
+				localsRestorer.Deobfuscate(blocks);
 			if (options.RemoveAntiStrongName) {
-				if (strongNameChecker.deobfuscate(blocks))
+				if (strongNameChecker.Deobfuscate(blocks))
 					Logger.v("Removed strong name checker code");
 			}
-			logicalExpressionFixer.deobfuscate(blocks);
-			base.deobfuscateMethodEnd(blocks);
+			logicalExpressionFixer.Deobfuscate(blocks);
+			base.DeobfuscateMethodEnd(blocks);
 		}
 
-		public override void deobfuscateEnd() {
-			removeProxyDelegates(proxyCallFixer);
-			removeInlinedMethods();
-			addTypesToBeRemoved(localsRestorer.Types, "Method locals obfuscation type");
+		public override void DeobfuscateEnd() {
+			RemoveProxyDelegates(proxyCallFixer);
+			RemoveInlinedMethods();
+			AddTypesToBeRemoved(localsRestorer.Types, "Method locals obfuscation type");
 
 			if (CanRemoveStringDecrypterType) {
-				removeDecrypterStuff(stringDecrypter, "String", "strings");
-				addTypeToBeRemoved(stringDecrypter.StringStruct, "String struct");
+				RemoveDecrypterStuff(stringDecrypter, "String", "strings");
+				AddTypeToBeRemoved(stringDecrypter.StringStruct, "String struct");
 			}
 			if (options.DecryptIntegers)
-				removeDecrypterStuff(integerDecrypter, "Integer", "integers");
+				RemoveDecrypterStuff(integerDecrypter, "Integer", "integers");
 			if (options.DecryptArrays)
-				removeDecrypterStuff(arrayDecrypter, "Array", "arrays");
+				RemoveDecrypterStuff(arrayDecrypter, "Array", "arrays");
 
-			base.deobfuscateEnd();
+			base.DeobfuscateEnd();
 		}
 
-		void removeDecrypterStuff(DecrypterBase decrypter, string name1, string name2) {
-			addResourceToBeRemoved(decrypter.EncryptedResource, "Encrypted " + name2);
-			addTypesToBeRemoved(decrypter.DecrypterTypes, name1 + " decrypter type");
-			addTypeToBeRemoved(decrypter.Type, name1 + " resource decrypter type");
+		void RemoveDecrypterStuff(DecrypterBase decrypter, string name1, string name2) {
+			AddResourceToBeRemoved(decrypter.EncryptedResource, "Encrypted " + name2);
+			AddTypesToBeRemoved(decrypter.DecrypterTypes, name1 + " decrypter type");
+			AddTypeToBeRemoved(decrypter.Type, name1 + " resource decrypter type");
 			if (decrypter.DelegateInitType != null) {
-				addTypeToBeRemoved(decrypter.DelegateType, name1 + " resource decrypter delegate type");
-				addTypeToBeRemoved(decrypter.DelegateInitType, name1 + " delegate initializer type");
+				AddTypeToBeRemoved(decrypter.DelegateType, name1 + " resource decrypter delegate type");
+				AddTypeToBeRemoved(decrypter.DelegateInitType, name1 + " delegate initializer type");
 			}
 		}
 
-		void removeInlinedMethods() {
+		void RemoveInlinedMethods() {
 			if (!options.InlineMethods || !options.RemoveInlinedMethods)
 				return;
-			findAndRemoveInlinedMethods();
+			FindAndRemoveInlinedMethods();
 		}
 
-		public override IEnumerable<int> getStringDecrypterMethods() {
+		public override IEnumerable<int> GetStringDecrypterMethods() {
 			var list = new List<int>();
-			foreach (var method in stringDecrypter.getMethods())
+			foreach (var method in stringDecrypter.GetMethods())
 				list.Add(method.MDToken.ToInt32());
 			return list;
 		}

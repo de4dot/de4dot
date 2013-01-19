@@ -107,45 +107,45 @@ namespace de4dot.code.deobfuscators {
 			get { return module.CorLibTypes.TypedReference; }
 		}
 
-		public ClassSig type(string ns, string name, string asmSimpleName) {
-			return type(ns, name, findAssemblyRef(asmSimpleName));
+		public ClassSig Type(string ns, string name, string asmSimpleName) {
+			return Type(ns, name, FindAssemblyRef(asmSimpleName));
 		}
 
-		public ClassSig type(string ns, string name) {
-			return type(ns, name, CorLib);
+		public ClassSig Type(string ns, string name) {
+			return Type(ns, name, CorLib);
 		}
 
-		public ClassSig type(string ns, string name, AssemblyRef asmRef) {
-			return (ClassSig)type(false, ns, name, asmRef);
+		public ClassSig Type(string ns, string name, AssemblyRef asmRef) {
+			return (ClassSig)Type(false, ns, name, asmRef);
 		}
 
-		public ValueTypeSig valueType(string ns, string name, string asmSimpleName) {
-			return valueType(ns, name, findAssemblyRef(asmSimpleName));
+		public ValueTypeSig ValueType(string ns, string name, string asmSimpleName) {
+			return ValueType(ns, name, FindAssemblyRef(asmSimpleName));
 		}
 
-		public ValueTypeSig valueType(string ns, string name) {
-			return valueType(ns, name, CorLib);
+		public ValueTypeSig ValueType(string ns, string name) {
+			return ValueType(ns, name, CorLib);
 		}
 
-		public ValueTypeSig valueType(string ns, string name, AssemblyRef asmRef) {
-			return (ValueTypeSig)type(true, ns, name, asmRef);
+		public ValueTypeSig ValueType(string ns, string name, AssemblyRef asmRef) {
+			return (ValueTypeSig)Type(true, ns, name, asmRef);
 		}
 
-		public ClassOrValueTypeSig type(bool isValueType, string ns, string name, IResolutionScope resolutionScope) {
+		public ClassOrValueTypeSig Type(bool isValueType, string ns, string name, IResolutionScope resolutionScope) {
 			var typeRef = module.UpdateRowId(new TypeRefUser(module, ns, name, resolutionScope));
 			ClassOrValueTypeSig type;
 			if (isValueType)
 				type = new ValueTypeSig(typeRef);
 			else
 				type = new ClassSig(typeRef);
-			return (ClassOrValueTypeSig)add(type);
+			return (ClassOrValueTypeSig)Add(type);
 		}
 
-		public SZArraySig array(TypeSig typeRef) {
-			return (SZArraySig)add(new SZArraySig(typeRef));
+		public SZArraySig Array(TypeSig typeRef) {
+			return (SZArraySig)Add(new SZArraySig(typeRef));
 		}
 
-		TypeSig add(TypeSig typeRef) {
+		TypeSig Add(TypeSig typeRef) {
 			TypeSig createdTypeRef;
 			if (createdTypes.TryGetValue(typeRef, out createdTypeRef)) {
 				if (createdTypeRef.ElementType != typeRef.ElementType)
@@ -156,15 +156,15 @@ namespace de4dot.code.deobfuscators {
 			return typeRef;
 		}
 
-		public MemberRef instanceMethod(string name, IMemberRefParent declaringType, TypeSig returnType, params TypeSig[] args) {
-			return method(true, name, declaringType, returnType, args);
+		public MemberRef InstanceMethod(string name, IMemberRefParent declaringType, TypeSig returnType, params TypeSig[] args) {
+			return Method(true, name, declaringType, returnType, args);
 		}
 
-		public MemberRef staticMethod(string name, IMemberRefParent declaringType, TypeSig returnType, params TypeSig[] args) {
-			return method(false, name, declaringType, returnType, args);
+		public MemberRef StaticMethod(string name, IMemberRefParent declaringType, TypeSig returnType, params TypeSig[] args) {
+			return Method(false, name, declaringType, returnType, args);
 		}
 
-		public MemberRef method(bool isInstance, string name, IMemberRefParent declaringType, TypeSig returnType, params TypeSig[] args) {
+		public MemberRef Method(bool isInstance, string name, IMemberRefParent declaringType, TypeSig returnType, params TypeSig[] args) {
 			MethodSig sig;
 			if (isInstance)
 				sig = MethodSig.CreateInstance(returnType, args);
@@ -173,7 +173,7 @@ namespace de4dot.code.deobfuscators {
 			return module.UpdateRowId(new MemberRefUser(module, name, sig, declaringType));
 		}
 
-		AssemblyRef findAssemblyRef(string asmSimpleName) {
+		AssemblyRef FindAssemblyRef(string asmSimpleName) {
 			var asmRef = module.GetAssemblyRef(asmSimpleName);
 			if (asmRef == null)
 				throw new ApplicationException(string.Format("Could not find assembly {0} in assembly references", asmSimpleName));

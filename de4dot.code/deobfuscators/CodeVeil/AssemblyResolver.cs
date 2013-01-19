@@ -46,7 +46,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 
 			public AssemblyInfo(string fullName, string extension, byte[] data) {
 				this.fullName = fullName;
-				this.simpleName = Utils.getAssemblySimpleName(fullName);
+				this.simpleName = Utils.GetAssemblySimpleName(fullName);
 				this.extension = extension;
 				this.data = data;
 			}
@@ -100,31 +100,31 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			this.module = module;
 		}
 
-		public void initialize() {
-			if (!findTypeAndResources())
+		public void Initialize() {
+			if (!FindTypeAndResources())
 				return;
 
-			findEmbeddedAssemblies();
+			FindEmbeddedAssemblies();
 		}
 
-		bool findTypeAndResources() {
-			var bundleDataTmp = DotNetUtils.getResource(module, ".bundle.dat") as EmbeddedResource;
-			var bundleXmlFileTmp = DotNetUtils.getResource(module, ".bundle.manifest") as EmbeddedResource;
+		bool FindTypeAndResources() {
+			var bundleDataTmp = DotNetUtils.GetResource(module, ".bundle.dat") as EmbeddedResource;
+			var bundleXmlFileTmp = DotNetUtils.GetResource(module, ".bundle.manifest") as EmbeddedResource;
 			if (bundleDataTmp == null || bundleXmlFileTmp == null)
 				return false;
 
-			var bundleTypeTmp = findBundleType();
+			var bundleTypeTmp = FindBundleType();
 			if (bundleTypeTmp == null)
 				return false;
 
 			bundleData = bundleDataTmp;
 			bundleXmlFile = bundleXmlFileTmp;
 			bundleType = bundleTypeTmp;
-			findOtherTypes();
+			FindOtherTypes();
 			return true;
 		}
 
-		void findEmbeddedAssemblies() {
+		void FindEmbeddedAssemblies() {
 			var data = bundleData.Data.ReadAllBytes();
 
 			var doc = new XmlDocument();
@@ -145,19 +145,19 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 					continue;
 				}
 
-				int offset = getAttributeValueInt32(assemblyElem, "offset");
+				int offset = GetAttributeValueInt32(assemblyElem, "offset");
 				if (offset < 0) {
 					Logger.w("Could not find offset attribute");
 					continue;
 				}
 
-				var assemblyData = DeobUtils.inflate(data, offset, data.Length - offset, true);
+				var assemblyData = DeobUtils.Inflate(data, offset, data.Length - offset, true);
 				var mod = ModuleDefMD.Load(assemblyData);
-				infos.Add(new AssemblyInfo(mod.Assembly.FullName, DeobUtils.getExtension(mod.Kind), assemblyData));
+				infos.Add(new AssemblyInfo(mod.Assembly.FullName, DeobUtils.GetExtension(mod.Kind), assemblyData));
 			}
 		}
 
-		static int getAttributeValueInt32(XmlElement elem, string attrName) {
+		static int GetAttributeValueInt32(XmlElement elem, string attrName) {
 			var str = elem.GetAttribute(attrName);
 			if (string.IsNullOrEmpty(str))
 				return -1;
@@ -169,7 +169,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return value;
 		}
 
-		TypeDef findBundleType() {
+		TypeDef FindBundleType() {
 			foreach (var type in module.Types) {
 				if (type.Namespace != "")
 					continue;
@@ -179,13 +179,13 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				var ctor = type.FindMethod(".ctor");
 				if (ctor == null || !ctor.IsPrivate)
 					continue;
-				if (!DotNetUtils.isMethod(ctor, "System.Void", "(System.Reflection.Assembly)"))
+				if (!DotNetUtils.IsMethod(ctor, "System.Void", "(System.Reflection.Assembly)"))
 					continue;
 
-				var initMethodTmp = findInitMethod(type);
+				var initMethodTmp = FindInitMethod(type);
 				if (initMethodTmp == null)
 					continue;
-				var getTempFilenameMethod = findGetTempFilenameMethod(type);
+				var getTempFilenameMethod = FindGetTempFilenameMethod(type);
 				if (getTempFilenameMethod == null)
 					continue;
 
@@ -195,13 +195,13 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return null;
 		}
 
-		MethodDef findInitMethod(TypeDef type) {
+		MethodDef FindInitMethod(TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
 				if (!method.IsPublic && !method.IsAssembly)
 					continue;
-				if (!DotNetUtils.isMethod(method, "System.Void", "(System.Reflection.Assembly)"))
+				if (!DotNetUtils.IsMethod(method, "System.Void", "(System.Reflection.Assembly)"))
 					continue;
 
 				return method;
@@ -210,13 +210,13 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return null;
 		}
 
-		MethodDef findGetTempFilenameMethod(TypeDef type) {
+		MethodDef FindGetTempFilenameMethod(TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (method.IsStatic || method.Body == null)
 					continue;
 				if (!method.IsPublic && !method.IsAssembly)
 					continue;
-				if (!DotNetUtils.isMethod(method, "System.String", "(System.String)"))
+				if (!DotNetUtils.IsMethod(method, "System.String", "(System.String)"))
 					continue;
 
 				return method;
@@ -225,13 +225,13 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return null;
 		}
 
-		void findOtherTypes() {
-			findAssemblyManagerType();
-			findXmlParserType();
-			findStreamProviderType();
+		void FindOtherTypes() {
+			FindAssemblyManagerType();
+			FindXmlParserType();
+			FindStreamProviderType();
 		}
 
-		void findAssemblyManagerType() {
+		void FindAssemblyManagerType() {
 			if (bundleType == null)
 				return;
 
@@ -260,7 +260,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			}
 		}
 
-		void findXmlParserType() {
+		void FindXmlParserType() {
 			if (assemblyManagerType == null)
 				return;
 			foreach (var field in assemblyManagerType.Fields) {
@@ -268,7 +268,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				if (type == null || type.IsInterface)
 					continue;
 				var ctor = type.FindMethod(".ctor");
-				if (!DotNetUtils.isMethod(ctor, "System.Void", "()"))
+				if (!DotNetUtils.IsMethod(ctor, "System.Void", "()"))
 					continue;
 				if (type.Fields.Count != 1)
 					continue;
@@ -289,11 +289,11 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			}
 		}
 
-		void findStreamProviderType() {
+		void FindStreamProviderType() {
 			if (bundleType == null)
 				return;
 			var ctor = bundleType.FindMethod(".ctor");
-			if (!DotNetUtils.isMethod(ctor, "System.Void", "(System.Reflection.Assembly)"))
+			if (!DotNetUtils.IsMethod(ctor, "System.Void", "(System.Reflection.Assembly)"))
 				return;
 			foreach (var instr in ctor.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Newobj)
@@ -303,7 +303,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 					continue;
 				if (newobjCtor.DeclaringType == assemblyManagerType)
 					continue;
-				if (!DotNetUtils.isMethod(newobjCtor, "System.Void", "(System.Reflection.Assembly,System.String)"))
+				if (!DotNetUtils.IsMethod(newobjCtor, "System.Void", "(System.Reflection.Assembly,System.String)"))
 					continue;
 				var type = newobjCtor.DeclaringType;
 				if (type.Interfaces.Count != 1)

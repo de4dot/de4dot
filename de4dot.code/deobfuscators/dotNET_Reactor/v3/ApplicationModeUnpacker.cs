@@ -93,12 +93,12 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			this.peImage = peImage;
 		}
 
-		public byte[] unpack() {
+		public byte[] Unpack() {
 			byte[] data = null;
 			MyPEImage myPeImage = null;
 			try {
 				myPeImage = new MyPEImage(peImage);
-				data = unpack2(myPeImage);
+				data = Unpack2(myPeImage);
 			}
 			catch {
 			}
@@ -114,25 +114,25 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			return null;
 		}
 
-		byte[] unpack2(MyPEImage peImage) {
+		byte[] Unpack2(MyPEImage peImage) {
 			shouldUnpack = false;
 			uint headerOffset = (uint)peImage.Length - 12;
-			uint offsetEncryptedAssembly = checkOffset(peImage, peImage.offsetReadUInt32(headerOffset));
-			uint ezencryptionLibLength = peImage.offsetReadUInt32(headerOffset + 4);
-			uint iniFileLength = peImage.offsetReadUInt32(headerOffset + 8);
+			uint offsetEncryptedAssembly = CheckOffset(peImage, peImage.OffsetReadUInt32(headerOffset));
+			uint ezencryptionLibLength = peImage.OffsetReadUInt32(headerOffset + 4);
+			uint iniFileLength = peImage.OffsetReadUInt32(headerOffset + 8);
 
 			uint offsetClrVersionNumber = checked(offsetEncryptedAssembly - 12);
 			uint iniFileOffset = checked(headerOffset - iniFileLength);
 			uint ezencryptionLibOffset = checked(iniFileOffset - ezencryptionLibLength);
 
-			uint clrVerMajor = peImage.offsetReadUInt32(offsetClrVersionNumber);
-			uint clrVerMinor = peImage.offsetReadUInt32(offsetClrVersionNumber + 4);
-			uint clrVerBuild = peImage.offsetReadUInt32(offsetClrVersionNumber + 8);
+			uint clrVerMajor = peImage.OffsetReadUInt32(offsetClrVersionNumber);
+			uint clrVerMinor = peImage.OffsetReadUInt32(offsetClrVersionNumber + 4);
+			uint clrVerBuild = peImage.OffsetReadUInt32(offsetClrVersionNumber + 8);
 			if (clrVerMajor <= 0 || clrVerMajor >= 20 || clrVerMinor >= 20 || clrVerBuild >= 1000000)
 				return null;
 
-			var settings = new IniFile(decompress2(peImage.offsetReadBytes(iniFileOffset, (int)iniFileLength)));
-			sizes = getSizes(settings["General_App_Satellite_Assemblies_Sizes"]);
+			var settings = new IniFile(Decompress2(peImage.OffsetReadBytes(iniFileOffset, (int)iniFileLength)));
+			sizes = GetSizes(settings["General_App_Satellite_Assemblies_Sizes"]);
 			if (sizes == null || sizes.Length <= 1)
 				return null;
 			shouldUnpack = true;
@@ -142,43 +142,43 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			if (sizes.Length - 1 != filenames.Length)
 				return null;
 
-			byte[] ezencryptionLibData = decompress1(peImage.offsetReadBytes(ezencryptionLibOffset, (int)ezencryptionLibLength));
+			byte[] ezencryptionLibData = Decompress1(peImage.OffsetReadBytes(ezencryptionLibOffset, (int)ezencryptionLibLength));
 			var ezencryptionLibModule = ModuleDefMD.Load(ezencryptionLibData);
 			var decrypter = new ApplicationModeDecrypter(ezencryptionLibModule);
 			if (!decrypter.Detected)
 				return null;
 
-			var mainAssembly = unpackEmbeddedFile(peImage, 0, decrypter);
-			decrypter.MemoryPatcher.patch(mainAssembly.data);
+			var mainAssembly = UnpackEmbeddedFile(peImage, 0, decrypter);
+			decrypter.MemoryPatcher.Patch(mainAssembly.data);
 			for (int i = 1; i < filenames.Length; i++)
-				satelliteAssemblies.Add(unpackEmbeddedFile(peImage, i, decrypter));
+				satelliteAssemblies.Add(UnpackEmbeddedFile(peImage, i, decrypter));
 
-			clearDllBit(mainAssembly.data);
+			ClearDllBit(mainAssembly.data);
 			return mainAssembly.data;
 		}
 
-		static void clearDllBit(byte[] peImageData) {
+		static void ClearDllBit(byte[] peImageData) {
 			using (var mainPeImage = new MyPEImage(peImageData)) {
 				uint characteristicsOffset = (uint)mainPeImage.PEImage.ImageNTHeaders.FileHeader.StartOffset + 18;
-				ushort characteristics = mainPeImage.offsetReadUInt16(characteristicsOffset);
+				ushort characteristics = mainPeImage.OffsetReadUInt16(characteristicsOffset);
 				characteristics &= 0xDFFF;
 				characteristics |= 2;
-				mainPeImage.offsetWriteUInt16(characteristicsOffset, characteristics);
+				mainPeImage.OffsetWriteUInt16(characteristicsOffset, characteristics);
 			}
 		}
 
-		UnpackedFile unpackEmbeddedFile(MyPEImage peImage, int index, ApplicationModeDecrypter decrypter) {
+		UnpackedFile UnpackEmbeddedFile(MyPEImage peImage, int index, ApplicationModeDecrypter decrypter) {
 			uint offset = 0;
 			for (int i = 0; i < index + 1; i++)
 				offset += sizes[i];
 			string filename = Win32Path.GetFileName(filenames[index]);
-			var data = peImage.offsetReadBytes(offset, (int)sizes[index + 1]);
-			data = DeobUtils.aesDecrypt(data, decrypter.AssemblyKey, decrypter.AssemblyIv);
-			data = decompress(data);
+			var data = peImage.OffsetReadBytes(offset, (int)sizes[index + 1]);
+			data = DeobUtils.AesDecrypt(data, decrypter.AssemblyKey, decrypter.AssemblyIv);
+			data = Decompress(data);
 			return new UnpackedFile(filename, data);
 		}
 
-		static uint[] getSizes(string sizes) {
+		static uint[] GetSizes(string sizes) {
 			if (sizes == null)
 				return null;
 			var list = new List<uint>();
@@ -187,32 +187,32 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			return list.ToArray();
 		}
 
-		uint checkOffset(MyPEImage peImage, uint offset) {
+		uint CheckOffset(MyPEImage peImage, uint offset) {
 			if (offset >= peImage.Length)
 				throw new Exception();
 			return offset;
 		}
 
-		static byte[] decompress1(byte[] data) {
-			return decompress(decrypt1(data));
+		static byte[] Decompress1(byte[] data) {
+			return Decompress(Decrypt1(data));
 		}
 
-		static byte[] decompress2(byte[] data) {
-			return decompress(decrypt2(data));
+		static byte[] Decompress2(byte[] data) {
+			return Decompress(Decrypt2(data));
 		}
 
-		static byte[] decompress(byte[] data) {
-			if (!QuickLZ.isCompressed(data))
+		static byte[] Decompress(byte[] data) {
+			if (!QuickLZ.IsCompressed(data))
 				return data;
-			return QuickLZ.decompress(data);
+			return QuickLZ.Decompress(data);
 		}
 
-		static byte[] decrypt1(byte[] data) {
-			return DeobUtils.aesDecrypt(data, key1, iv1);
+		static byte[] Decrypt1(byte[] data) {
+			return DeobUtils.AesDecrypt(data, key1, iv1);
 		}
 
-		static byte[] decrypt2(byte[] data) {
-			return DeobUtils.aesDecrypt(data, key2, iv2);
+		static byte[] Decrypt2(byte[] data) {
+			return DeobUtils.AesDecrypt(data, key2, iv2);
 		}
 	}
 }

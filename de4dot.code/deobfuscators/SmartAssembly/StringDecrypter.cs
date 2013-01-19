@@ -42,19 +42,19 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				}
 				else if (stringDecrypterInfo.CanDecrypt) {
 					stringOffset = stringDecrypterInfo.StringOffset;
-					decryptedData = stringDecrypterInfo.decrypt();
+					decryptedData = stringDecrypterInfo.Decrypt();
 				}
 
 				stringDecrypterVersion = StringDecrypterInfo.DecrypterVersion;
 			}
 		}
 
-		public string decrypt(int token, int id) {
+		public string Decrypt(int token, int id) {
 			if (!CanDecrypt)
 				throw new ApplicationException("Can't decrypt strings since decryptedData is null");
 
 			int index = id - (token & 0x00FFFFFF) - stringOffset;
-			int len = DeobUtils.readVariableLengthInt32(decryptedData, ref index);
+			int len = DeobUtils.ReadVariableLengthInt32(decryptedData, ref index);
 
 			switch (StringDecrypterInfo.DecrypterVersion) {
 			case StringDecrypterVersion.V1:

@@ -63,53 +63,53 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			this.memberRefConverter = new MemberRefConverter(module);
 		}
 
-		public bool initialize() {
+		public bool Initialize() {
 			if (reader.ReadInt32() != METHODS_SIG)
 				return false;
 
-			int metadataOffset = getMetadataOffset();
+			int metadataOffset = GetMetadataOffset();
 			if (metadataOffset < 0)
 				return false;
 			long pos = metadataOffset + 4;
 			reader.Position = pos;
 			int version = reader.ReadInt16();	// major, minor
 			if (version == 0x0001) {
-				initializeV10();
+				InitializeV10();
 				return true;
 			}
 
 			reader.Position = pos;
-			initializeV55();
+			InitializeV55();
 			return true;
 		}
 
-		void initializeV10() {
+		void InitializeV10() {
 			reader.ReadInt16();
 			int methodNamesOffset = (int)reader.ReadInt64();
 			int typeRefsOffset = (int)reader.ReadInt64();
 			int assemblyRefsOffset = (int)reader.ReadInt64();
 			int stringsOffset = (int)reader.ReadInt64();
 
-			initializeStrings(stringsOffset);
-			initializeAssemblyNames(assemblyRefsOffset);
-			initializeMethodNames(methodNamesOffset);
-			initializeTypeRefs(typeRefsOffset);
+			InitializeStrings(stringsOffset);
+			InitializeAssemblyNames(assemblyRefsOffset);
+			InitializeMethodNames(methodNamesOffset);
+			InitializeTypeRefs(typeRefsOffset);
 		}
 
-		void initializeV55() {
+		void InitializeV55() {
 			int methodNamesOffset = (int)reader.ReadInt64() ^ METADATA_SIG;
 			int typeRefsOffset = (int)reader.ReadInt64() ^ (METADATA_SIG << 1);
 			int assemblyRefsOffset = (int)reader.ReadInt64() ^ ((METADATA_SIG << 1) + 1);
 			int stringsOffset = (int)reader.ReadInt64() ^ (((METADATA_SIG << 1) + 1) << 1);
 
-			initializeStrings(stringsOffset);
-			initializeAssemblyNames(assemblyRefsOffset);
-			initializeMethodNames(methodNamesOffset);
-			initializeTypeRefs(typeRefsOffset);
+			InitializeStrings(stringsOffset);
+			InitializeAssemblyNames(assemblyRefsOffset);
+			InitializeMethodNames(methodNamesOffset);
+			InitializeTypeRefs(typeRefsOffset);
 		}
 
-		public void restore(string name, MethodDef method) {
-			var babelMethod = getMethod(name);
+		public void Restore(string name, MethodDef method) {
+			var babelMethod = GetMethod(name);
 			var body = method.Body;
 
 			body.MaxStack = babelMethod.MaxStack;
@@ -138,56 +138,56 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				body.ExceptionHandlers.Add(eh);
 		}
 
-		BabelMethodDef getMethod(string name) {
+		BabelMethodDef GetMethod(string name) {
 			int offset = methodOffsets[name];
 			methodOffsets.Remove(name);
 			reader.Position = offset;
-			return new MethodDefReader(this, reader).read();
+			return new MethodDefReader(this, reader).Read();
 		}
 
-		public string readString() {
-			return strings[readVariableLengthInt32()];
+		public string ReadString() {
+			return strings[ReadVariableLengthInt32()];
 		}
 
-		public TypeSig readTypeSig() {
-			return typeRefs[readVariableLengthInt32()];
+		public TypeSig ReadTypeSig() {
+			return typeRefs[ReadVariableLengthInt32()];
 		}
 
-		public TypeSig[] readTypeSigs() {
-			var refs = new TypeSig[readVariableLengthInt32()];
+		public TypeSig[] ReadTypeSigs() {
+			var refs = new TypeSig[ReadVariableLengthInt32()];
 			for (int i = 0; i < refs.Length; i++)
-				refs[i] = readTypeSig();
+				refs[i] = ReadTypeSig();
 			return refs;
 		}
 
-		public IField readFieldRef() {
-			var name = readString();
-			var declaringType = readTypeSig();
+		public IField ReadFieldRef() {
+			var name = ReadString();
+			var declaringType = ReadTypeSig();
 
-			var fields = getFields(resolve(declaringType), name);
+			var fields = GetFields(Resolve(declaringType), name);
 			if (fields == null || fields.Count != 1) {
 				throw new ApplicationException(string.Format("Couldn't find one field named '{0}' in type {1}",
 								name,
-								Utils.removeNewlines(declaringType)));
+								Utils.RemoveNewlines(declaringType)));
 			}
 
-			return memberRefConverter.convert(fields[0]);
+			return memberRefConverter.Convert(fields[0]);
 		}
 
-		static List<FieldDef> getFields(TypeDef type, string name) {
+		static List<FieldDef> GetFields(TypeDef type, string name) {
 			if (type == null)
 				return null;
 			return new List<FieldDef>(type.FindFields(name));
 		}
 
-		public IMethod readMethodRef() {
-			var babelMethodRef = new MethodRefReader(this, reader).read();
+		public IMethod ReadMethodRef() {
+			var babelMethodRef = new MethodRefReader(this, reader).Read();
 
-			var method = getMethodRef(babelMethodRef);
+			var method = GetMethodRef(babelMethodRef);
 			if (method == null) {
 				throw new ApplicationException(string.Format("Could not find method '{0}' in type '{1}'",
-							Utils.removeNewlines(babelMethodRef.Name),
-							Utils.removeNewlines(babelMethodRef.DeclaringType)));
+							Utils.RemoveNewlines(babelMethodRef.Name),
+							Utils.RemoveNewlines(babelMethodRef.DeclaringType)));
 			}
 
 			var git = babelMethodRef.DeclaringType.ToGenericInstSig();
@@ -198,33 +198,33 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return module.UpdateRowId(mr);
 		}
 
-		IMethod getMethodRef(BabelMethodreference babelMethodRef) {
-			var declaringType = resolve(babelMethodRef.DeclaringType);
+		IMethod GetMethodRef(BabelMethodreference babelMethodRef) {
+			var declaringType = Resolve(babelMethodRef.DeclaringType);
 			if (declaringType == null)
 				return null;
 
-			var methods = getMethods(declaringType, babelMethodRef);
+			var methods = GetMethods(declaringType, babelMethodRef);
 			if (methods.Count != 1) {
 				throw new ApplicationException(string.Format("Couldn't find one method named '{0}' in type {1}",
 								babelMethodRef.Name,
-								Utils.removeNewlines(declaringType)));
+								Utils.RemoveNewlines(declaringType)));
 			}
 
 			return methods[0];
 		}
 
-		List<IMethod> getMethods(TypeDef declaringType, BabelMethodreference babelMethodRef) {
+		List<IMethod> GetMethods(TypeDef declaringType, BabelMethodreference babelMethodRef) {
 			var methods = new List<IMethod>();
 
 			var gis = babelMethodRef.DeclaringType as GenericInstSig;
 			var gim = babelMethodRef.GenericArguments;
 			foreach (var method in declaringType.Methods) {
-				if (compareMethod(GenericArgsSubstitutor.create(method, gis, gim), babelMethodRef)) {
+				if (CompareMethod(GenericArgsSubstitutor.Create(method, gis, gim), babelMethodRef)) {
 					if (!babelMethodRef.IsGenericMethod)
-						methods.Add(memberRefConverter.convert(method));
+						methods.Add(memberRefConverter.Convert(method));
 					else {
 						var gim2 = new GenericInstMethodSig(babelMethodRef.GenericArguments);
-						var ms = module.UpdateRowId(new MethodSpecUser(memberRefConverter.convert(method), gim2));
+						var ms = module.UpdateRowId(new MethodSpecUser(memberRefConverter.Convert(method), gim2));
 						methods.Add(ms);
 					}
 				}
@@ -233,7 +233,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return methods;
 		}
 
-		bool compareMethod(IMethod method, BabelMethodreference babelMethodRef) {
+		bool CompareMethod(IMethod method, BabelMethodreference babelMethodRef) {
 			var sig = method.MethodSig;
 			if (sig.Params.Count != babelMethodRef.Parameters.Length)
 				return false;
@@ -255,7 +255,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return true;
 		}
 
-		TypeDef resolve(TypeSig type) {
+		TypeDef Resolve(TypeSig type) {
 			type = type.RemovePinnedAndModifiers();
 
 			var gis = type as GenericInstSig;
@@ -277,15 +277,15 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return null;
 		}
 
-		public MethodSig readCallSite() {
-			var returnType = readTypeSig();
-			var paramTypes = readTypeSigs();
+		public MethodSig ReadCallSite() {
+			var returnType = ReadTypeSig();
+			var paramTypes = ReadTypeSigs();
 			var callingConvention = (CR.CallingConvention)reader.ReadInt32();
 
-			return new MethodSig(convertCallingConvention(callingConvention), 0, returnType, paramTypes);
+			return new MethodSig(ConvertCallingConvention(callingConvention), 0, returnType, paramTypes);
 		}
 
-		static DR.CallingConvention convertCallingConvention(CR.CallingConvention callingConvention) {
+		static DR.CallingConvention ConvertCallingConvention(CR.CallingConvention callingConvention) {
 			switch (callingConvention) {
 			case CR.CallingConvention.Winapi:	return DR.CallingConvention.Default;
 			case CR.CallingConvention.Cdecl:	return DR.CallingConvention.C;
@@ -296,40 +296,40 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			}
 		}
 
-		void initializeStrings(int headerOffset) {
+		void InitializeStrings(int headerOffset) {
 			reader.Position = headerOffset;
 			if (reader.ReadInt32() != STRINGS_SIG)
 				throw new ApplicationException("Invalid strings sig");
 
-			strings = new string[readVariableLengthInt32()];
+			strings = new string[ReadVariableLengthInt32()];
 			for (int i = 0; i < strings.Length; i++)
 				strings[i] = reader.ReadString();
 		}
 
-		void initializeAssemblyNames(int headerOffset) {
+		void InitializeAssemblyNames(int headerOffset) {
 			reader.Position = headerOffset;
 			if (reader.ReadInt32() != ASSEMBLY_NAMES_SIG)
 				throw new ApplicationException("Invalid assembly names sig");
 
-			assemblyNames = new AssemblyRef[readVariableLengthInt32()];
+			assemblyNames = new AssemblyRef[ReadVariableLengthInt32()];
 			for (int i = 0; i < assemblyNames.Length; i++)
-				assemblyNames[i] = module.UpdateRowId(new AssemblyRefUser(new AssemblyNameInfo(readString())));
+				assemblyNames[i] = module.UpdateRowId(new AssemblyRefUser(new AssemblyNameInfo(ReadString())));
 		}
 
-		void initializeMethodNames(int headerOffset) {
+		void InitializeMethodNames(int headerOffset) {
 			reader.Position = headerOffset;
 			if (reader.ReadInt32() != METHOD_NAMES_SIG)
 				throw new ApplicationException("Invalid methods sig");
 
-			int numMethods = readVariableLengthInt32();
+			int numMethods = ReadVariableLengthInt32();
 			methodOffsets = new Dictionary<string, int>(numMethods, StringComparer.Ordinal);
 			for (int i = 0; i < numMethods; i++) {
-				var methodName = readString();
-				methodOffsets[methodName] = readVariableLengthInt32();
+				var methodName = ReadString();
+				methodOffsets[methodName] = ReadVariableLengthInt32();
 			}
 		}
 
-		void initializeTypeRefs(int headerOffset) {
+		void InitializeTypeRefs(int headerOffset) {
 			reader.Position = headerOffset;
 			if (reader.ReadInt32() != TYPEREFS_SIG)
 				throw new ApplicationException("Invalid typerefs sig");
@@ -342,26 +342,26 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				TypeId typeId = (TypeId)reader.ReadByte();
 				switch (typeId) {
 				case TypeId.TypeRef:
-					typeRefs.Add(readTypeRef());
+					typeRefs.Add(ReadTypeRef());
 					break;
 
 				case TypeId.GenericInstance:
 					List<int> genericArgs;
-					var git = readGenericInstanceType(out genericArgs);
+					var git = ReadGenericInstanceType(out genericArgs);
 					typeRefs.Add(git);
 					genericArgFixes[git] = genericArgs;
 					break;
 
 				case TypeId.Pointer:
-					typeRefs.Add(readPointerType());
+					typeRefs.Add(ReadPointerType());
 					break;
 
 				case TypeId.Array:
-					typeRefs.Add(readArrayType());
+					typeRefs.Add(ReadArrayType());
 					break;
 
 				case TypeId.ByRef:
-					typeRefs.Add(readByRefType());
+					typeRefs.Add(ReadByRefType());
 					break;
 
 				default:
@@ -376,21 +376,21 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			}
 		}
 
-		TypeSig readTypeRef() {
+		TypeSig ReadTypeRef() {
 			string ns, name;
-			parseReflectionTypeName(readString(), out ns, out name);
-			var asmRef = assemblyNames[readVariableLengthInt32()];
-			var declaringType = readTypeSig();
+			ParseReflectionTypeName(ReadString(), out ns, out name);
+			var asmRef = assemblyNames[ReadVariableLengthInt32()];
+			var declaringType = ReadTypeSig();
 			var typeRef = new TypeRefUser(module, ns, name);
 			if (declaringType != null)
-				typeRef.ResolutionScope = getTypeRef(declaringType);
+				typeRef.ResolutionScope = GetTypeRef(declaringType);
 			else
 				typeRef.ResolutionScope = asmRef;
 
-			return memberRefConverter.convert(typeRef);
+			return memberRefConverter.Convert(typeRef);
 		}
 
-		TypeRef getTypeRef(TypeSig type) {
+		TypeRef GetTypeRef(TypeSig type) {
 			var tdr = type as TypeDefOrRefSig;
 			if (tdr == null)
 				throw new ApplicationException("Not a type ref");
@@ -402,27 +402,27 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			throw new ApplicationException("Not a type ref");
 		}
 
-		static void parseReflectionTypeName(string fullName, out string ns, out string name) {
-			int index = getLastChar(fullName, '.');
+		static void ParseReflectionTypeName(string fullName, out string ns, out string name) {
+			int index = GetLastChar(fullName, '.');
 			if (index < 0) {
 				ns = "";
 				name = fullName;
 			}
 			else {
-				ns = unEscape(fullName.Substring(0, index));
+				ns = UnEscape(fullName.Substring(0, index));
 				name = fullName.Substring(index + 1);
 			}
 
-			index = getLastChar(name, '+');
+			index = GetLastChar(name, '+');
 			if (index < 0)
-				name = unEscape(name);
+				name = UnEscape(name);
 			else {
 				ns = "";
-				name = unEscape(name.Substring(index + 1));
+				name = UnEscape(name.Substring(index + 1));
 			}
 		}
 
-		static int getLastChar(string name, char c) {
+		static int GetLastChar(string name, char c) {
 			if (string.IsNullOrEmpty(name))
 				return -1;
 			int index = name.Length - 1;
@@ -438,7 +438,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			}
 		}
 
-		static string unEscape(string s) {
+		static string UnEscape(string s) {
 			var sb = new StringBuilder(s.Length);
 			for (int i = 0; i < s.Length; i++) {
 				if (s[i] == '\\' && i + 1 < s.Length)
@@ -448,44 +448,44 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return sb.ToString();
 		}
 
-		GenericInstSig readGenericInstanceType(out List<int> genericArgs) {
-			var git = new GenericInstSig(readTypeSig() as ClassOrValueTypeSig);
-			int numArgs = readVariableLengthInt32();
+		GenericInstSig ReadGenericInstanceType(out List<int> genericArgs) {
+			var git = new GenericInstSig(ReadTypeSig() as ClassOrValueTypeSig);
+			int numArgs = ReadVariableLengthInt32();
 			genericArgs = new List<int>(numArgs);
 			for (int i = 0; i < numArgs; i++)
-				genericArgs.Add(readVariableLengthInt32());
+				genericArgs.Add(ReadVariableLengthInt32());
 			return git;
 		}
 
-		PtrSig readPointerType() {
-			return new PtrSig(readTypeSig());
+		PtrSig ReadPointerType() {
+			return new PtrSig(ReadTypeSig());
 		}
 
-		TypeSig readArrayType() {
-			var typeSig = readTypeSig();
-			int rank = readVariableLengthInt32();
+		TypeSig ReadArrayType() {
+			var typeSig = ReadTypeSig();
+			int rank = ReadVariableLengthInt32();
 			if (rank == 1)
 				return new SZArraySig(typeSig);
 			return new ArraySig(typeSig, rank);
 		}
 
-		ByRefSig readByRefType() {
-			return new ByRefSig(readTypeSig());
+		ByRefSig ReadByRefType() {
+			return new ByRefSig(ReadTypeSig());
 		}
 
-		public uint readVariableLengthUInt32() {
+		public uint ReadVariableLengthUInt32() {
 			uint val;
 			reader.ReadCompressedUInt32(out val);
 			return val;
 		}
 
-		public int readVariableLengthInt32() {
+		public int ReadVariableLengthInt32() {
 			uint val;
 			reader.ReadCompressedUInt32(out val);
 			return (int)val;
 		}
 
-		int getMetadataOffset() {
+		int GetMetadataOffset() {
 			reader.Position = reader.Length - 4;
 			for (int i = 0; i < 30; i++) {
 				if (reader.ReadInt32() == METADATA_SIG)

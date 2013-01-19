@@ -91,28 +91,28 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			"System.Byte[]",
 			"System.Int32",
 		};
-		StringDecrypterVersion guessVersion(MethodDef cctor) {
+		StringDecrypterVersion GuessVersion(MethodDef cctor) {
 			var fieldTypes = new FieldTypes(stringsEncodingClass);
-			if (fieldTypes.exactly(fields2x))
+			if (fieldTypes.Exactly(fields2x))
 				return StringDecrypterVersion.V2;
 			if (cctor == null)
 				return StringDecrypterVersion.V1;
-			if (fieldTypes.exactly(fields3x))
+			if (fieldTypes.Exactly(fields3x))
 				return StringDecrypterVersion.V3;
 			return StringDecrypterVersion.Unknown;
 		}
 
-		public bool init(IDeobfuscator deob, ISimpleDeobfuscator simpleDeobfuscator) {
+		public bool Initialize(IDeobfuscator deob, ISimpleDeobfuscator simpleDeobfuscator) {
 			var cctor = stringsEncodingClass.FindStaticConstructor();
 			if (cctor != null)
-				simpleDeobfuscator.deobfuscate(cctor);
+				simpleDeobfuscator.Deobfuscate(cctor);
 
-			decrypterVersion = guessVersion(cctor);
+			decrypterVersion = GuessVersion(cctor);
 
-			if (!findDecrypterMethod())
+			if (!FindDecrypterMethod())
 				throw new ApplicationException("Could not find string decrypter method");
 
-			if (!findStringsResource(deob, simpleDeobfuscator, cctor))
+			if (!FindStringsResource(deob, simpleDeobfuscator, cctor))
 				return false;
 
 			if (decrypterVersion <= StringDecrypterVersion.V3) {
@@ -126,7 +126,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 
 				stringOffset = 0;
 				if (decrypterVersion != StringDecrypterVersion.V1) {
-					if (callsGetPublicKeyToken(initMethod)) {
+					if (CallsGetPublicKeyToken(initMethod)) {
 						var pkt = PublicKeyBase.ToPublicKeyToken(module.Assembly.PublicKeyToken);
 						if (!PublicKeyBase.IsNullOrEmpty2(pkt)) {
 							for (int i = 0; i < pkt.Data.Length - 1; i += 2)
@@ -134,81 +134,81 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 						}
 					}
 
-					if (DeobUtils.hasInteger(initMethod, 0xFFFFFF) &&
-						DeobUtils.hasInteger(initMethod, 0xFFFF)) {
+					if (DeobUtils.HasInteger(initMethod, 0xFFFFFF) &&
+						DeobUtils.HasInteger(initMethod, 0xFFFF)) {
 						stringOffset ^= ((stringDecrypterMethod.MDToken.ToInt32() & 0xFFFFFF) - 1) % 0xFFFF;
 					}
 				}
 			}
 			else {
-				var offsetVal = findOffsetValue(cctor);
+				var offsetVal = FindOffsetValue(cctor);
 				if (offsetVal == null)
 					throw new ApplicationException("Could not find string offset");
 				stringOffset = offsetVal.Value;
 				decrypterVersion = StringDecrypterVersion.V4;
 			}
 
-			simpleZipTypeMethod = findSimpleZipTypeMethod(cctor) ?? findSimpleZipTypeMethod(stringDecrypterMethod);
+			simpleZipTypeMethod = FindSimpleZipTypeMethod(cctor) ?? FindSimpleZipTypeMethod(stringDecrypterMethod);
 			if (simpleZipTypeMethod != null)
 				resourceDecrypter = new ResourceDecrypter(new ResourceDecrypterInfo(module, simpleZipTypeMethod, simpleDeobfuscator));
 
 			return true;
 		}
 
-		bool callsGetPublicKeyToken(MethodDef method) {
-			foreach (var calledMethod in DotNetUtils.getMethodCalls(method)) {
+		bool CallsGetPublicKeyToken(MethodDef method) {
+			foreach (var calledMethod in DotNetUtils.GetMethodCalls(method)) {
 				if (calledMethod.ToString() == "System.Byte[] System.Reflection.AssemblyName::GetPublicKeyToken()")
 					return true;
 			}
 			return false;
 		}
 
-		bool findStringsResource(IDeobfuscator deob, ISimpleDeobfuscator simpleDeobfuscator, MethodDef cctor) {
+		bool FindStringsResource(IDeobfuscator deob, ISimpleDeobfuscator simpleDeobfuscator, MethodDef cctor) {
 			if (stringsResource != null)
 				return true;
 
 			if (decrypterVersion <= StringDecrypterVersion.V3) {
-				stringsResource = DotNetUtils.getResource(module, (module.Mvid ?? Guid.NewGuid()).ToString("B")) as EmbeddedResource;
+				stringsResource = DotNetUtils.GetResource(module, (module.Mvid ?? Guid.NewGuid()).ToString("B")) as EmbeddedResource;
 				if (stringsResource != null)
 					return true;
 			}
 
-			if (findStringsResource2(deob, simpleDeobfuscator, cctor))
+			if (FindStringsResource2(deob, simpleDeobfuscator, cctor))
 				return true;
-			if (findStringsResource2(deob, simpleDeobfuscator, stringDecrypterMethod))
+			if (FindStringsResource2(deob, simpleDeobfuscator, stringDecrypterMethod))
 				return true;
 
 			return false;
 		}
 
-		bool findStringsResource2(IDeobfuscator deob, ISimpleDeobfuscator simpleDeobfuscator, MethodDef initMethod) {
+		bool FindStringsResource2(IDeobfuscator deob, ISimpleDeobfuscator simpleDeobfuscator, MethodDef initMethod) {
 			if (initMethod == null)
 				return false;
 
-			stringsResource = findStringResource(initMethod);
+			stringsResource = FindStringResource(initMethod);
 			if (stringsResource != null)
 				return true;
 
-			simpleDeobfuscator.decryptStrings(initMethod, deob);
-			stringsResource = findStringResource(initMethod);
+			simpleDeobfuscator.DecryptStrings(initMethod, deob);
+			stringsResource = FindStringResource(initMethod);
 			if (stringsResource != null)
 				return true;
 
 			return false;
 		}
 
-		public byte[] decrypt() {
+		public byte[] Decrypt() {
 			if (!CanDecrypt)
 				throw new ApplicationException("Can't decrypt strings");
-			return resourceDecrypter.decrypt(stringsResource);
+			return resourceDecrypter.Decrypt(stringsResource);
 		}
 
 		// Find the embedded resource where all the strings are encrypted
-		EmbeddedResource findStringResource(MethodDef method) {
-			foreach (var s in DotNetUtils.getCodeStrings(method)) {
+		EmbeddedResource FindStringResource(MethodDef method) {
+			foreach (var s in DotNetUtils.GetCodeStrings(method)) {
 				if (s == null)
 					continue;
-				var resource = DotNetUtils.getResource(module, s) as EmbeddedResource;
+				var resource = DotNetUtils.GetResource(module, s) as EmbeddedResource;
 				if (resource != null)
 					return resource;
 			}
@@ -216,19 +216,19 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 		}
 
 		// Find the string decrypter string offset value or null if none found
-		int? findOffsetValue(MethodDef method) {
+		int? FindOffsetValue(MethodDef method) {
 			var fieldDict = new FieldDefAndDeclaringTypeDict<IField>();
 			foreach (var field in method.DeclaringType.Fields)
-				fieldDict.add(field, field);
+				fieldDict.Add(field, field);
 
-			var offsetField = findOffsetField(method);
+			var offsetField = FindOffsetField(method);
 			if (offsetField == null)
 				return null;
 
-			return findOffsetValue(method, (FieldDef)fieldDict.find(offsetField), fieldDict);
+			return FindOffsetValue(method, (FieldDef)fieldDict.Find(offsetField), fieldDict);
 		}
 
-		IField findOffsetField(MethodDef method) {
+		IField FindOffsetField(MethodDef method) {
 			var instructions = method.Body.Instructions;
 			for (int i = 0; i <= instructions.Count - 2; i++) {
 				var ldsfld = instructions[i];
@@ -244,7 +244,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				if (call.OpCode.Code != Code.Call)
 					continue;
 				var calledMethod = call.Operand as IMethod;
-				if (!DotNetUtils.isMethod(calledMethod, "System.Int32", "(System.String)"))
+				if (!DotNetUtils.IsMethod(calledMethod, "System.Int32", "(System.String)"))
 					continue;
 
 				return field;
@@ -253,7 +253,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return null;
 		}
 
-		int? findOffsetValue(MethodDef method, FieldDef offsetField, FieldDefAndDeclaringTypeDict<IField> fields) {
+		int? FindOffsetValue(MethodDef method, FieldDef offsetField, FieldDefAndDeclaringTypeDict<IField> fields) {
 			var instructions = method.Body.Instructions;
 			for (int i = 0; i <= instructions.Count - 2; i++) {
 				var ldstr = instructions[i];
@@ -267,7 +267,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				if (stsfld.OpCode.Code != Code.Stsfld)
 					continue;
 				var field = stsfld.Operand as IField;
-				if (field == null || fields.find(field) != offsetField)
+				if (field == null || fields.Find(field) != offsetField)
 					continue;
 
 				int value;
@@ -280,11 +280,11 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return null;
 		}
 
-		bool findDecrypterMethod() {
+		bool FindDecrypterMethod() {
 			if (stringDecrypterMethod != null)
 				return true;
 
-			var methods = new List<MethodDef>(DotNetUtils.findMethods(stringsEncodingClass.Methods, "System.String", new string[] { "System.Int32" }));
+			var methods = new List<MethodDef>(DotNetUtils.FindMethods(stringsEncodingClass.Methods, "System.String", new string[] { "System.Int32" }));
 			if (methods.Count != 1)
 				return false;
 
@@ -292,7 +292,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return true;
 		}
 
-		MethodDef findSimpleZipTypeMethod(MethodDef method) {
+		MethodDef FindSimpleZipTypeMethod(MethodDef method) {
 			if (method == null || method.Body == null)
 				return null;
 			var instructions = method.Body.Instructions;
@@ -303,7 +303,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				var calledMethod = call.Operand as MethodDef;
 				if (calledMethod == null)
 					continue;
-				if (!DotNetUtils.isMethod(calledMethod, "System.Byte[]", "(System.Byte[])"))
+				if (!DotNetUtils.IsMethod(calledMethod, "System.Byte[]", "(System.Byte[])"))
 					continue;
 
 				var stsfld = instructions[i + 1];
@@ -321,7 +321,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return null;
 		}
 
-		public IEnumerable<FieldDef> getAllStringDelegateFields() {
+		public IEnumerable<FieldDef> GetAllStringDelegateFields() {
 			if (GetStringDelegate == null)
 				yield break;
 			foreach (var type in module.GetTypes()) {
@@ -332,18 +332,18 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			}
 		}
 
-		public void removeInitCode(Blocks blocks) {
+		public void RemoveInitCode(Blocks blocks) {
 			if (CreateStringDelegateMethod == null)
 				return;
 
 			if (CreateStringDelegateMethod.Parameters.Count != 0)
-				removeInitCode_v2(blocks);
+				RemoveInitCode_v2(blocks);
 			else
-				removeInitCode_v1(blocks);
+				RemoveInitCode_v1(blocks);
 		}
 
-		void removeInitCode_v1(Blocks blocks) {
-			foreach (var block in blocks.MethodBlocks.getAllBlocks()) {
+		void RemoveInitCode_v1(Blocks blocks) {
+			foreach (var block in blocks.MethodBlocks.GetAllBlocks()) {
 				var instructions = block.Instructions;
 				for (int i = 0; i < instructions.Count; i++) {
 					var call = instructions[i];
@@ -353,14 +353,14 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 					if (!MethodEqualityComparer.CompareDeclaringTypes.Equals(method, CreateStringDelegateMethod))
 						continue;
 
-					block.remove(i, 1);
+					block.Remove(i, 1);
 					break;
 				}
 			}
 		}
 
-		void removeInitCode_v2(Blocks blocks) {
-			foreach (var block in blocks.MethodBlocks.getAllBlocks()) {
+		void RemoveInitCode_v2(Blocks blocks) {
+			foreach (var block in blocks.MethodBlocks.GetAllBlocks()) {
 				var instructions = block.Instructions;
 				for (int i = 0; i <= instructions.Count - 3; i++) {
 					var ldtoken = instructions[i];
@@ -383,7 +383,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 					if (!MethodEqualityComparer.CompareDeclaringTypes.Equals(method2, CreateStringDelegateMethod))
 						continue;
 
-					block.remove(i, 3);
+					block.Remove(i, 3);
 					break;
 				}
 			}

@@ -40,20 +40,20 @@ namespace de4dot.code.resources {
 			this.resources = resources;
 		}
 
-		public static void write(ModuleDefMD module, Stream stream, ResourceElementSet resources) {
-			new ResourceWriter(module, stream, resources).write();
+		public static void Write(ModuleDefMD module, Stream stream, ResourceElementSet resources) {
+			new ResourceWriter(module, stream, resources).Write();
 		}
 
-		void write() {
-			initializeUserTypes();
+		void Write() {
+			InitializeUserTypes();
 
 			writer.Write(0xBEEFCACE);
 			writer.Write(1);
-			writeReaderType();
+			WriteReaderType();
 			writer.Write(2);
 			writer.Write(resources.Count);
 			writer.Write(typeCreator.Count);
-			foreach (var userType in typeCreator.getSortedTypes())
+			foreach (var userType in typeCreator.GetSortedTypes())
 				writer.Write(userType.Name);
 			int extraBytes = 8 - ((int)writer.BaseStream.Position & 7);
 			if (extraBytes != 8) {
@@ -71,11 +71,11 @@ namespace de4dot.code.resources {
 			int index = 0;
 			foreach (var info in resources.ResourceElements) {
 				offsets[index] = (int)nameOffsetWriter.BaseStream.Position;
-				hashes[index] = (int)hash(info.Name);
+				hashes[index] = (int)Hash(info.Name);
 				index++;
 				nameOffsetWriter.Write(info.Name);
 				nameOffsetWriter.Write((int)dataWriter.BaseStream.Position);
-				writeData(dataWriter, info, formatter);
+				WriteData(dataWriter, info, formatter);
 			}
 
 			Array.Sort(hashes, offsets);
@@ -88,13 +88,13 @@ namespace de4dot.code.resources {
 			writer.Write(dataStream.ToArray());
 		}
 
-		void writeData(BinaryWriter writer, ResourceElement info, IFormatter formatter) {
-			var code = getResourceType(info.ResourceData);
-			writeUInt32(writer, (uint)code);
-			info.ResourceData.writeData(writer, formatter);
+		void WriteData(BinaryWriter writer, ResourceElement info, IFormatter formatter) {
+			var code = GetResourceType(info.ResourceData);
+			WriteUInt32(writer, (uint)code);
+			info.ResourceData.WriteData(writer, formatter);
 		}
 
-		static void writeUInt32(BinaryWriter writer, uint value) {
+		static void WriteUInt32(BinaryWriter writer, uint value) {
 			while (value >= 0x80) {
 				writer.Write((byte)(value | 0x80));
 				value >>= 7;
@@ -102,7 +102,7 @@ namespace de4dot.code.resources {
 			writer.Write((byte)value);
 		}
 
-		ResourceTypeCode getResourceType(IResourceData data) {
+		ResourceTypeCode GetResourceType(IResourceData data) {
 			if (data is BuiltInResourceData)
 				return data.Code;
 
@@ -110,34 +110,34 @@ namespace de4dot.code.resources {
 			return dataToNewType[userData].Code;
 		}
 
-		static uint hash(string key) {
+		static uint Hash(string key) {
 			uint val = 0x1505;
 			foreach (var c in key)
 				val = ((val << 5) + val) ^ (uint)c;
 			return val;
 		}
 
-		void initializeUserTypes() {
+		void InitializeUserTypes() {
 			foreach (var resource in resources.ResourceElements) {
 				var data = resource.ResourceData as UserResourceData;
 				if (data == null)
 					continue;
-				var newType = typeCreator.createUserResourceType(data.TypeName);
+				var newType = typeCreator.CreateUserResourceType(data.TypeName);
 				dataToNewType[data] = newType;
 			}
 		}
 
-		void writeReaderType() {
+		void WriteReaderType() {
 			var memStream = new MemoryStream();
 			var headerWriter = new BinaryWriter(memStream);
-			var mscorlibFullName = getMscorlibFullname();
+			var mscorlibFullName = GetMscorlibFullname();
 			headerWriter.Write("System.Resources.ResourceReader, " + mscorlibFullName);
 			headerWriter.Write("System.Resources.RuntimeResourceSet");
 			writer.Write((int)memStream.Position);
 			writer.Write(memStream.ToArray());
 		}
 
-		string getMscorlibFullname() {
+		string GetMscorlibFullname() {
 			var mscorlibRef = module.GetAssemblyRef("mscorlib");
 			if (mscorlibRef != null)
 				return mscorlibRef.FullName;

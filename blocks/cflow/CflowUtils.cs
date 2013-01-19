@@ -21,8 +21,8 @@ using System.Collections.Generic;
 
 namespace de4dot.blocks.cflow {
 	static class CflowUtils {
-		public static Block getSwitchTarget(IList<Block> targets, Block fallThrough, Int32Value intValue) {
-			if (!intValue.allBitsValid())
+		public static Block GetSwitchTarget(IList<Block> targets, Block fallThrough, Int32Value intValue) {
+			if (!intValue.AllBitsValid())
 				return null;
 
 			int index = intValue.value;

@@ -23,6 +23,6 @@ using System.Runtime.Serialization;
 namespace de4dot.code.resources {
 	interface IResourceData {
 		ResourceTypeCode Code { get; }
-		void writeData(BinaryWriter writer, IFormatter formatter);
+		void WriteData(BinaryWriter writer, IFormatter formatter);
 	}
 }

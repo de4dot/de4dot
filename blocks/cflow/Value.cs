@@ -38,35 +38,35 @@ namespace de4dot.blocks.cflow {
 	public abstract class Value {
 		public readonly ValueType valueType;
 
-		public bool isUnknown() {
+		public bool IsUnknown() {
 			return valueType == ValueType.Unknown;
 		}
 
-		public bool isNull() {
+		public bool IsNull() {
 			return valueType == ValueType.Null;
 		}
 
-		public bool isObject() {
+		public bool IsObject() {
 			return valueType == ValueType.Object;
 		}
 
-		public bool isBoxed() {
+		public bool IsBoxed() {
 			return valueType == ValueType.Boxed;
 		}
 
-		public bool isInt32() {
+		public bool IsInt32() {
 			return valueType == ValueType.Int32;
 		}
 
-		public bool isInt64() {
+		public bool IsInt64() {
 			return valueType == ValueType.Int64;
 		}
 
-		public bool isReal8() {
+		public bool IsReal8() {
 			return valueType == ValueType.Real8;
 		}
 
-		public bool isString() {
+		public bool IsString() {
 			return valueType == ValueType.String;
 		}
 

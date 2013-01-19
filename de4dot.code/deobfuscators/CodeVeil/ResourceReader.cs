@@ -41,7 +41,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			this.reader = reader;
 		}
 
-		public ResourceInfo[] read() {
+		public ResourceInfo[] Read() {
 			if (reader.ReadUInt32() != 0xBEEFCACE)
 				throw new InvalidDataException("Invalid magic");
 			if (reader.ReadUInt32() <= 0)
@@ -66,7 +66,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 
 			var infos = new ResourceInfo[numResources];
 			for (int i = 0; i < numResources; i++) {
-				var resourceName = readResourceName(reader, encrypted);
+				var resourceName = ReadResourceName(reader, encrypted);
 				int offset = reader.ReadInt32();
 				byte resourceFlags = reader.ReadByte();
 				int resourceLength = (resourceFlags & 0x80) == 0 ? -1 : reader.ReadInt32();
@@ -86,7 +86,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 					encryptedData[i] = dataReader.ReadUInt32();
 				key[2] = dataReader.ReadUInt32();
 				key[3] = dataReader.ReadUInt32();
-				DeobUtils.xxteaDecrypt(encryptedData, key);
+				DeobUtils.XxteaDecrypt(encryptedData, key);
 				byte[] decryptedData = new byte[encryptedData.Length * 4];
 				Buffer.BlockCopy(encryptedData, 0, decryptedData, 0, decryptedData.Length);
 				dataReader = MemoryImageStream.Create(decryptedData);
@@ -94,7 +94,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 
 			if (inflateData) {
 				var data = dataReader.ReadRemainingBytes();
-				data = DeobUtils.inflate(data, true);
+				data = DeobUtils.Inflate(data, true);
 				dataReader = MemoryImageStream.Create(data);
 			}
 
@@ -104,7 +104,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return infos;
 		}
 
-		static string readResourceName(IBinaryReader reader, bool encrypted) {
+		static string ReadResourceName(IBinaryReader reader, bool encrypted) {
 			if (!encrypted)
 				return reader.ReadString();
 
@@ -113,11 +113,11 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				throw new ApplicationException("Invalid string length");
 			var sb = new StringBuilder(len);
 			for (int i = 0; i < len; i++)
-				sb.Append((char)rol3(reader.ReadChar()));
+				sb.Append((char)Rol3(reader.ReadChar()));
 			return sb.ToString();
 		}
 
-		static char rol3(char c) {
+		static char Rol3(char c) {
 			ushort s = (ushort)c;
 			return (char)((s << 3) | (s >> (16 - 3)));
 		}

@@ -39,7 +39,7 @@ namespace de4dot.code.resources {
 			this.data = data;
 		}
 
-		public void writeData(BinaryWriter writer, IFormatter formatter) {
+		public void WriteData(BinaryWriter writer, IFormatter formatter) {
 			switch (code) {
 			case ResourceTypeCode.Null:
 				return;

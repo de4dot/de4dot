@@ -30,27 +30,27 @@ namespace AssemblyData.methodsrewriter {
 		Dictionary<string, List<FieldInfo>> fields;
 
 		public TypeInstanceResolver(Type type, ITypeDefOrRef typeRef) {
-			this.type = ResolverUtils.makeInstanceType(type, typeRef);
+			this.type = ResolverUtils.MakeInstanceType(type, typeRef);
 		}
 
-		public FieldInfo resolve(IField fieldRef) {
-			initFields();
+		public FieldInfo Resolve(IField fieldRef) {
+			InitFields();
 
 			List<FieldInfo> list;
 			if (!fields.TryGetValue(fieldRef.Name.String, out list))
 				return null;
 
-			fieldRef = GenericArgsSubstitutor.create(fieldRef, fieldRef.DeclaringType.TryGetGenericInstSig());
+			fieldRef = GenericArgsSubstitutor.Create(fieldRef, fieldRef.DeclaringType.TryGetGenericInstSig());
 
 			foreach (var field in list) {
-				if (ResolverUtils.compareFields(field, fieldRef))
+				if (ResolverUtils.CompareFields(field, fieldRef))
 					return field;
 			}
 
 			return null;
 		}
 
-		void initFields() {
+		void InitFields() {
 			if (fields != null)
 				return;
 			fields = new Dictionary<string, List<FieldInfo>>(StringComparer.Ordinal);
@@ -64,30 +64,30 @@ namespace AssemblyData.methodsrewriter {
 			}
 		}
 
-		public MethodBase resolve(IMethod methodRef) {
-			initMethods();
+		public MethodBase Resolve(IMethod methodRef) {
+			InitMethods();
 
 			List<MethodBase> list;
 			if (!methods.TryGetValue(methodRef.Name.String, out list))
 				return null;
 
-			methodRef = GenericArgsSubstitutor.create(methodRef, methodRef.DeclaringType.TryGetGenericInstSig());
+			methodRef = GenericArgsSubstitutor.Create(methodRef, methodRef.DeclaringType.TryGetGenericInstSig());
 
 			foreach (var method in list) {
-				if (ResolverUtils.compareMethods(method, methodRef))
+				if (ResolverUtils.CompareMethods(method, methodRef))
 					return method;
 			}
 
 			return null;
 		}
 
-		void initMethods() {
+		void InitMethods() {
 			if (methods != null)
 				return;
 			methods = new Dictionary<string, List<MethodBase>>(StringComparer.Ordinal);
 
 			var flags = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
-			foreach (var method in ResolverUtils.getMethodBases(type, flags)) {
+			foreach (var method in ResolverUtils.GetMethodBases(type, flags)) {
 				List<MethodBase> list;
 				if (!methods.TryGetValue(method.Name, out list))
 					methods[method.Name] = list = new List<MethodBase>();

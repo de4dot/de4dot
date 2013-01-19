@@ -28,25 +28,25 @@ namespace de4dot.code {
 	public class DeobfuscatorContext : IDeobfuscatorContext {
 		Dictionary<string, object> dataDict = new Dictionary<string, object>(StringComparer.Ordinal);
 
-		public void clear() {
+		public void Clear() {
 			dataDict.Clear();
 		}
 
-		public void setData(string name, object data) {
+		public void SetData(string name, object data) {
 			dataDict[name] = data;
 		}
 
-		public object getData(string name) {
+		public object GetData(string name) {
 			object value;
 			dataDict.TryGetValue(name, out value);
 			return value;
 		}
 
-		public void clearData(string name) {
+		public void ClearData(string name) {
 			dataDict.Remove(name);
 		}
 
-		static ITypeDefOrRef getNonGenericTypeRef(ITypeDefOrRef typeRef) {
+		static ITypeDefOrRef GetNonGenericTypeRef(ITypeDefOrRef typeRef) {
 			var ts = typeRef as TypeSpec;
 			if (ts == null)
 				return typeRef;
@@ -56,10 +56,10 @@ namespace de4dot.code {
 			return gis.GenericType.TypeDefOrRef;
 		}
 
-		public TypeDef resolveType(ITypeDefOrRef type) {
+		public TypeDef ResolveType(ITypeDefOrRef type) {
 			if (type == null)
 				return null;
-			type = getNonGenericTypeRef(type);
+			type = GetNonGenericTypeRef(type);
 
 			var typeDef = type as TypeDef;
 			if (typeDef != null)
@@ -72,7 +72,7 @@ namespace de4dot.code {
 			return null;
 		}
 
-		public MethodDef resolveMethod(IMethod method) {
+		public MethodDef ResolveMethod(IMethod method) {
 			if (method == null)
 				return null;
 
@@ -84,14 +84,14 @@ namespace de4dot.code {
 			if (mr == null || !mr.IsMethodRef)
 				return null;
 
-			var type = resolveType(mr.DeclaringType);
+			var type = ResolveType(mr.DeclaringType);
 			if (type == null)
 				return null;
 
 			return type.Resolve(mr) as MethodDef;
 		}
 
-		public FieldDef resolveField(IField field) {
+		public FieldDef ResolveField(IField field) {
 			if (field == null)
 				return null;
 
@@ -103,7 +103,7 @@ namespace de4dot.code {
 			if (mr == null || !mr.IsFieldRef)
 				return null;
 
-			var type = resolveType(mr.DeclaringType);
+			var type = ResolveType(mr.DeclaringType);
 			if (type == null)
 				return null;
 

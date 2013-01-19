@@ -39,7 +39,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			get { return decryptionMethod != null; }
 		}
 
-		public static bool couldBeDecryptMethod(MethodDef method, IEnumerable<string> additionalTypes) {
+		public static bool CouldBeDecryptMethod(MethodDef method, IEnumerable<string> additionalTypes) {
 			if (method.Body == null)
 				return false;
 
@@ -51,20 +51,20 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 				"System.Security.Cryptography.ICryptoTransform",
 			};
 			requiredTypes.AddRange(additionalTypes);
-			if (!localTypes.all(requiredTypes))
+			if (!localTypes.All(requiredTypes))
 				return false;
-			if (!localTypes.exists("System.Security.Cryptography.RijndaelManaged") &&
-				!localTypes.exists("System.Security.Cryptography.AesManaged"))
+			if (!localTypes.Exists("System.Security.Cryptography.RijndaelManaged") &&
+				!localTypes.Exists("System.Security.Cryptography.AesManaged"))
 				return false;
 
 			return true;
 		}
 
-		public bool getKey(MethodDef method) {
-			var tmpKey = ArrayFinder.getInitializedByteArray(method, 32);
+		public bool GetKey(MethodDef method) {
+			var tmpKey = ArrayFinder.GetInitializedByteArray(method, 32);
 			if (tmpKey == null)
 				return false;
-			var tmpIv = ArrayFinder.getInitializedByteArray(method, 16);
+			var tmpIv = ArrayFinder.GetInitializedByteArray(method, 16);
 			if (tmpIv == null)
 				return false;
 

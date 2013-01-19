@@ -35,36 +35,36 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			foreach (var field in fields) {
 				var fieldTypeDef = field.FieldSig.GetFieldType().TryGetTypeDef();
 				if (fieldTypeDef != null && fieldTypeDef.IsEnum)
-					addEnum();
+					AddEnum();
 				else
-					add(field.FieldSig.GetFieldType());
+					Add(field.FieldSig.GetFieldType());
 			}
 		}
 
 		public FieldsInfo(object[] fieldTypes) {
 			foreach (var o in fieldTypes) {
 				if (o == EnumType)
-					addEnum();
+					AddEnum();
 				else
-					add((string)o);
+					Add((string)o);
 			}
 		}
 
-		void add(TypeSig type) {
-			add(type.GetFullName());
+		void Add(TypeSig type) {
+			Add(type.GetFullName());
 		}
 
-		void add(string typeFullName) {
+		void Add(string typeFullName) {
 			int count;
 			fieldTypes.TryGetValue(typeFullName, out count);
 			fieldTypes[typeFullName] = count + 1;
 		}
 
-		void addEnum() {
+		void AddEnum() {
 			numEnums++;
 		}
 
-		public bool isSame(FieldsInfo other) {
+		public bool IsSame(FieldsInfo other) {
 			if (numEnums != other.numEnums)
 				return false;
 			if (fieldTypes.Count != other.fieldTypes.Count)

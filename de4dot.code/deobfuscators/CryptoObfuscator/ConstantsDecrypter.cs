@@ -67,9 +67,9 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			this.module = module;
 		}
 
-		public void find() {
+		public void Find() {
 			foreach (var type in module.Types) {
-				if (!checkType(type))
+				if (!CheckType(type))
 					continue;
 
 				decrypterType = type;
@@ -80,51 +80,51 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		static readonly string[] requiredTypes = new string[] {
 			"System.Byte[]",
 		};
-		bool checkType(TypeDef type) {
+		bool CheckType(TypeDef type) {
 			if (type.Methods.Count != 7)
 				return false;
 			if (type.Fields.Count < 1 || type.Fields.Count > 2)
 				return false;
-			if (!new FieldTypes(type).all(requiredTypes))
+			if (!new FieldTypes(type).All(requiredTypes))
 				return false;
-			if (!checkMethods(type))
+			if (!CheckMethods(type))
 				return false;
 
 			return true;
 		}
 
-		bool checkMethods(TypeDef type) {
-			methodI4 = DotNetUtils.getMethod(type, "System.Int32", "(System.Int32)");
-			methodI8 = DotNetUtils.getMethod(type, "System.Int64", "(System.Int32)");
-			methodR4 = DotNetUtils.getMethod(type, "System.Single", "(System.Int32)");
-			methodR8 = DotNetUtils.getMethod(type, "System.Double", "(System.Int32)");
+		bool CheckMethods(TypeDef type) {
+			methodI4 = DotNetUtils.GetMethod(type, "System.Int32", "(System.Int32)");
+			methodI8 = DotNetUtils.GetMethod(type, "System.Int64", "(System.Int32)");
+			methodR4 = DotNetUtils.GetMethod(type, "System.Single", "(System.Int32)");
+			methodR8 = DotNetUtils.GetMethod(type, "System.Double", "(System.Int32)");
 
 			return methodI4 != null && methodI8 != null &&
 				methodR4 != null && methodR8 != null;
 		}
 
-		public void init(ResourceDecrypter resourceDecrypter) {
+		public void Initialize(ResourceDecrypter resourceDecrypter) {
 			if (decrypterType == null)
 				return;
 
-			encryptedResource = CoUtils.getResource(module, DotNetUtils.getCodeStrings(decrypterType.FindStaticConstructor()));
+			encryptedResource = CoUtils.GetResource(module, DotNetUtils.GetCodeStrings(decrypterType.FindStaticConstructor()));
 			encryptedResource.Data.Position = 0;
-			constantsData = resourceDecrypter.decrypt(encryptedResource.Data.CreateStream());
+			constantsData = resourceDecrypter.Decrypt(encryptedResource.Data.CreateStream());
 		}
 
-		public int decryptInt32(int index) {
+		public int DecryptInt32(int index) {
 			return BitConverter.ToInt32(constantsData, index);
 		}
 
-		public long decryptInt64(int index) {
+		public long DecryptInt64(int index) {
 			return BitConverter.ToInt64(constantsData, index);
 		}
 
-		public float decryptSingle(int index) {
+		public float DecryptSingle(int index) {
 			return BitConverter.ToSingle(constantsData, index);
 		}
 
-		public double decryptDouble(int index) {
+		public double DecryptDouble(int index) {
 			return BitConverter.ToDouble(constantsData, index);
 		}
 	}

@@ -40,23 +40,23 @@ namespace de4dot.code.deobfuscators {
 	}
 
 	static class MethodBodyParser {
-		public static MethodBodyHeader parseMethodBody(IBinaryReader reader, out byte[] code, out byte[] extraSections) {
+		public static MethodBodyHeader ParseMethodBody(IBinaryReader reader, out byte[] code, out byte[] extraSections) {
 			try {
-				return parseMethodBody2(reader, out code, out extraSections);
+				return ParseMethodBody2(reader, out code, out extraSections);
 			}
 			catch (IOException) {
 				throw new InvalidMethodBody();
 			}
 		}
 
-		public static bool verify(byte[] data) {
-			return verify(MemoryImageStream.Create(data));
+		public static bool Verify(byte[] data) {
+			return Verify(MemoryImageStream.Create(data));
 		}
 
-		public static bool verify(IBinaryReader reader) {
+		public static bool Verify(IBinaryReader reader) {
 			try {
 				byte[] code, extraSections;
-				parseMethodBody(reader, out code, out extraSections);
+				ParseMethodBody(reader, out code, out extraSections);
 				return true;
 			}
 			catch (InvalidMethodBody) {
@@ -64,11 +64,11 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
-		static MethodBodyHeader parseMethodBody2(IBinaryReader reader, out byte[] code, out byte[] extraSections) {
+		static MethodBodyHeader ParseMethodBody2(IBinaryReader reader, out byte[] code, out byte[] extraSections) {
 			var mbHeader = new MethodBodyHeader();
 
 			uint codeOffset;
-			byte b = peek(reader);
+			byte b = Peek(reader);
 			if ((b & 3) == 2) {
 				mbHeader.flags = 2;
 				mbHeader.maxStack = 8;
@@ -97,39 +97,39 @@ namespace de4dot.code.deobfuscators {
 			code = reader.ReadBytes((int)mbHeader.codeSize);
 
 			if ((mbHeader.flags & 8) != 0)
-				extraSections = readExtraSections2(reader);
+				extraSections = ReadExtraSections2(reader);
 			else
 				extraSections = null;
 
 			return mbHeader;
 		}
 
-		static void align(IBinaryReader reader, int alignment) {
+		static void Align(IBinaryReader reader, int alignment) {
 			reader.Position = (reader.Position + alignment - 1) & ~(alignment - 1);
 		}
 
-		public static byte[] readExtraSections(IBinaryReader reader) {
+		public static byte[] ReadExtraSections(IBinaryReader reader) {
 			try {
-				return readExtraSections2(reader);
+				return ReadExtraSections2(reader);
 			}
 			catch (IOException) {
 				throw new InvalidMethodBody();
 			}
 		}
 
-		static byte[] readExtraSections2(IBinaryReader reader) {
-			align(reader, 4);
+		static byte[] ReadExtraSections2(IBinaryReader reader) {
+			Align(reader, 4);
 			int startPos = (int)reader.Position;
-			parseSection(reader);
+			ParseSection(reader);
 			int size = (int)reader.Position - startPos;
 			reader.Position = startPos;
 			return reader.ReadBytes(size);
 		}
 
-		static void parseSection(IBinaryReader reader) {
+		static void ParseSection(IBinaryReader reader) {
 			byte flags;
 			do {
-				align(reader, 4);
+				Align(reader, 4);
 
 				flags = reader.ReadByte();
 				if ((flags & 1) == 0)
@@ -149,7 +149,7 @@ namespace de4dot.code.deobfuscators {
 			} while ((flags & 0x80) != 0);
 		}
 
-		static byte peek(IBinaryReader reader) {
+		static byte Peek(IBinaryReader reader) {
 			byte b = reader.ReadByte();
 			reader.Position--;
 			return b;

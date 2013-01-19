@@ -36,13 +36,13 @@ namespace de4dot.code.deobfuscators.DeepSea {
 
 		public DeobfuscatorInfo()
 			: base() {
-			inlineMethods = new BoolOption(null, makeArgName("inline"), "Inline short methods", true);
-			removeInlinedMethods = new BoolOption(null, makeArgName("remove-inlined"), "Remove inlined methods", true);
-			decryptResources = new BoolOption(null, makeArgName("rsrc"), "Decrypt resources", true);
-			dumpEmbeddedAssemblies = new BoolOption(null, makeArgName("embedded"), "Dump embedded assemblies", true);
-			restoreFields = new BoolOption(null, makeArgName("fields"), "Restore fields", true);
-			renameResourceKeys = new BoolOption(null, makeArgName("keys"), "Rename resource keys", true);
-			castDeobfuscation = new BoolOption(null, makeArgName("casts"), "Deobfuscate casts", true);
+			inlineMethods = new BoolOption(null, MakeArgName("inline"), "Inline short methods", true);
+			removeInlinedMethods = new BoolOption(null, MakeArgName("remove-inlined"), "Remove inlined methods", true);
+			decryptResources = new BoolOption(null, MakeArgName("rsrc"), "Decrypt resources", true);
+			dumpEmbeddedAssemblies = new BoolOption(null, MakeArgName("embedded"), "Dump embedded assemblies", true);
+			restoreFields = new BoolOption(null, MakeArgName("fields"), "Restore fields", true);
+			renameResourceKeys = new BoolOption(null, MakeArgName("keys"), "Rename resource keys", true);
+			castDeobfuscation = new BoolOption(null, MakeArgName("casts"), "Deobfuscate casts", true);
 		}
 
 		public override string Name {
@@ -53,7 +53,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			get { return THE_TYPE; }
 		}
 
-		public override IDeobfuscator createDeobfuscator() {
+		public override IDeobfuscator CreateDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
 				ValidNameRegex = validNameRegex.get(),
 				InlineMethods = inlineMethods.get(),
@@ -66,7 +66,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			});
 		}
 
-		protected override IEnumerable<Option> getOptionsInternal() {
+		protected override IEnumerable<Option> GetOptionsInternal() {
 			return new List<Option>() {
 				inlineMethods,
 				removeInlinedMethods,
@@ -118,14 +118,14 @@ namespace de4dot.code.deobfuscators.DeepSea {
 
 		public override IEnumerable<IBlocksDeobfuscator> BlocksDeobfuscators {
 			get {
-				var list = new List<IBlocksDeobfuscator>(getBlocksDeobfuscators());
+				var list = new List<IBlocksDeobfuscator>(GetBlocksDeobfuscators());
 				if (CanInlineMethods)
-					list.Add(new DsMethodCallInliner(new CachedCflowDeobfuscator(getBlocksDeobfuscators())));
+					list.Add(new DsMethodCallInliner(new CachedCflowDeobfuscator(GetBlocksDeobfuscators())));
 				return list;
 			}
 		}
 
-		List<IBlocksDeobfuscator> getBlocksDeobfuscators() {
+		List<IBlocksDeobfuscator> GetBlocksDeobfuscators() {
 			var list = new List<IBlocksDeobfuscator>();
 			if (arrayBlockState != null && arrayBlockState.Detected)
 				list.Add(new ArrayBlockDeobfuscator(arrayBlockState));
@@ -144,35 +144,35 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				this.RenamingOptions &= ~RenamingOptions.RenameResourceKeys;
 		}
 
-		protected override int detectInternal() {
+		protected override int DetectInternal() {
 			int val = 0;
 
-			int sum = toInt32(stringDecrypter.Detected) +
-					toInt32(resourceResolver.Detected) +
-					toInt32(assemblyResolver.Detected);
+			int sum = ToInt32(stringDecrypter.Detected) +
+					ToInt32(resourceResolver.Detected) +
+					ToInt32(assemblyResolver.Detected);
 			if (sum > 0)
 				val += 100 + 10 * (sum - 1);
 
 			return val;
 		}
 
-		protected override void scanForObfuscator() {
+		protected override void ScanForObfuscator() {
 			staticStringInliner.UseUnknownArgs = true;
 			arrayBlockState = new ArrayBlockState(module);
-			arrayBlockState.init(DeobfuscatedFile);
+			arrayBlockState.Initialize(DeobfuscatedFile);
 			stringDecrypter = new StringDecrypter(module);
-			stringDecrypter.find(DeobfuscatedFile);
+			stringDecrypter.Find(DeobfuscatedFile);
 			resourceResolver = new ResourceResolver(module, DeobfuscatedFile, this);
-			resourceResolver.find();
+			resourceResolver.Find();
 			assemblyResolver = new AssemblyResolver(module, DeobfuscatedFile, this);
-			assemblyResolver.find();
-			obfuscatorName = detectVersion();
+			assemblyResolver.Find();
+			obfuscatorName = DetectVersion();
 		}
 
-		string detectVersion() {
+		string DetectVersion() {
 			switch (stringDecrypter.Version) {
 			case StringDecrypter.DecrypterVersion.V1_3:
-				if (detectMethodProxyObfuscation())
+				if (DetectMethodProxyObfuscation())
 					return DeobfuscatorInfo.THE_NAME + " 3.5";
 				return DeobfuscatorInfo.THE_NAME + " 1.x-3.x";
 			case StringDecrypter.DecrypterVersion.V4_0:
@@ -184,7 +184,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return DeobfuscatorInfo.THE_NAME;
 		}
 
-		bool detectMethodProxyObfuscation() {
+		bool DetectMethodProxyObfuscation() {
 			const int MIN_FOUND_PROXIES = 10;
 
 			int foundProxies = 0, checkedMethods = 0;
@@ -196,7 +196,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 						continue;
 					if (checkedMethods++ >= 1000)
 						goto done;
-					if (!DsMethodCallInliner.canInline(method))
+					if (!DsMethodCallInliner.CanInline(method))
 						continue;
 					foundProxies++;
 				}
@@ -205,91 +205,91 @@ done:
 			return foundProxies >= MIN_FOUND_PROXIES;
 		}
 
-		public override void deobfuscateBegin() {
-			base.deobfuscateBegin();
+		public override void DeobfuscateBegin() {
+			base.DeobfuscateBegin();
 
 			if (options.RestoreFields) {
 				fieldsRestorer = new FieldsRestorer(module);
-				fieldsRestorer.initialize();
+				fieldsRestorer.Initialize();
 			}
 
 			foreach (var method in stringDecrypter.DecrypterMethods) {
-				staticStringInliner.add(method, (method2, gim, args) => {
-					return stringDecrypter.decrypt(method2, args);
+				staticStringInliner.Add(method, (method2, gim, args) => {
+					return stringDecrypter.Decrypt(method2, args);
 				});
 			}
-			DeobfuscatedFile.stringDecryptersAdded();
+			DeobfuscatedFile.StringDecryptersAdded();
 
-			resourceResolver.initialize();
-			decryptResources();
+			resourceResolver.Initialize();
+			DecryptResources();
 
-			dumpEmbeddedAssemblies();
+			DumpEmbeddedAssemblies();
 
 			startedDeobfuscating = true;
 		}
 
-		void decryptResources() {
+		void DecryptResources() {
 			if (!options.DecryptResources)
 				return;
 			EmbeddedResource rsrc;
-			if (!resourceResolver.mergeResources(out rsrc))
+			if (!resourceResolver.MergeResources(out rsrc))
 				return;
-			addResourceToBeRemoved(rsrc, "Encrypted resources");
-			addCctorInitCallToBeRemoved(resourceResolver.InitMethod);
-			addCallToBeRemoved(module.EntryPoint, resourceResolver.InitMethod);
-			addMethodToBeRemoved(resourceResolver.InitMethod, "Resource resolver init method");
-			addMethodToBeRemoved(resourceResolver.InitMethod2, "Resource resolver init method #2");
-			addMethodToBeRemoved(resourceResolver.HandlerMethod, "Resource resolver handler method");
-			addMethodToBeRemoved(resourceResolver.GetDataMethod, "Resource resolver 'get resource data' method");
+			AddResourceToBeRemoved(rsrc, "Encrypted resources");
+			AddCctorInitCallToBeRemoved(resourceResolver.InitMethod);
+			AddCallToBeRemoved(module.EntryPoint, resourceResolver.InitMethod);
+			AddMethodToBeRemoved(resourceResolver.InitMethod, "Resource resolver init method");
+			AddMethodToBeRemoved(resourceResolver.InitMethod2, "Resource resolver init method #2");
+			AddMethodToBeRemoved(resourceResolver.HandlerMethod, "Resource resolver handler method");
+			AddMethodToBeRemoved(resourceResolver.GetDataMethod, "Resource resolver 'get resource data' method");
 		}
 
-		void dumpEmbeddedAssemblies() {
+		void DumpEmbeddedAssemblies() {
 			if (!options.DumpEmbeddedAssemblies)
 				return;
-			foreach (var info in assemblyResolver.getAssemblyInfos()) {
+			foreach (var info in assemblyResolver.GetAssemblyInfos()) {
 				if (info.resource != null && info.resource == resourceResolver.Resource)
 					continue;
-				DeobfuscatedFile.createAssemblyFile(info.data, info.simpleName, info.extension);
-				addResourceToBeRemoved(info.resource, string.Format("Embedded assembly: {0}", info.fullName));
+				DeobfuscatedFile.CreateAssemblyFile(info.data, info.simpleName, info.extension);
+				AddResourceToBeRemoved(info.resource, string.Format("Embedded assembly: {0}", info.fullName));
 			}
-			addCctorInitCallToBeRemoved(assemblyResolver.InitMethod);
-			addCallToBeRemoved(module.EntryPoint, assemblyResolver.InitMethod);
-			addMethodToBeRemoved(assemblyResolver.InitMethod, "Assembly resolver init method");
-			addMethodToBeRemoved(assemblyResolver.HandlerMethod, "Assembly resolver handler method");
-			addMethodToBeRemoved(assemblyResolver.DecryptMethod, "Assembly resolver decrypt method");
+			AddCctorInitCallToBeRemoved(assemblyResolver.InitMethod);
+			AddCallToBeRemoved(module.EntryPoint, assemblyResolver.InitMethod);
+			AddMethodToBeRemoved(assemblyResolver.InitMethod, "Assembly resolver init method");
+			AddMethodToBeRemoved(assemblyResolver.HandlerMethod, "Assembly resolver handler method");
+			AddMethodToBeRemoved(assemblyResolver.DecryptMethod, "Assembly resolver decrypt method");
 		}
 
-		public override void deobfuscateMethodEnd(Blocks blocks) {
+		public override void DeobfuscateMethodEnd(Blocks blocks) {
 			if (options.RestoreFields)
-				fieldsRestorer.deobfuscate(blocks);
-			base.deobfuscateMethodEnd(blocks);
+				fieldsRestorer.Deobfuscate(blocks);
+			base.DeobfuscateMethodEnd(blocks);
 		}
 
-		public override void deobfuscateEnd() {
+		public override void DeobfuscateEnd() {
 			if (options.RestoreFields && CanRemoveTypes)
-				fieldsRestorer.cleanUp();
-			removeInlinedMethods();
+				fieldsRestorer.CleanUp();
+			RemoveInlinedMethods();
 
 			if (options.RestoreFields)
-				addTypesToBeRemoved(fieldsRestorer.FieldStructs, "Type with moved fields");
+				AddTypesToBeRemoved(fieldsRestorer.FieldStructs, "Type with moved fields");
 
 			if (CanRemoveStringDecrypterType) {
-				addMethodsToBeRemoved(stringDecrypter.DecrypterMethods, "String decrypter method");
-				stringDecrypter.cleanup();
+				AddMethodsToBeRemoved(stringDecrypter.DecrypterMethods, "String decrypter method");
+				stringDecrypter.CleanUp();
 			}
 
-			addFieldsToBeRemoved(arrayBlockState.cleanUp(), "Control flow obfuscation array");
+			AddFieldsToBeRemoved(arrayBlockState.CleanUp(), "Control flow obfuscation array");
 
-			base.deobfuscateEnd();
+			base.DeobfuscateEnd();
 		}
 
-		void removeInlinedMethods() {
+		void RemoveInlinedMethods() {
 			if (!options.InlineMethods || !options.RemoveInlinedMethods)
 				return;
-			removeInlinedMethods(DsInlinedMethodsFinder.find(module, staticStringInliner.Methods));
+			RemoveInlinedMethods(DsInlinedMethodsFinder.Find(module, staticStringInliner.Methods));
 		}
 
-		public override IEnumerable<int> getStringDecrypterMethods() {
+		public override IEnumerable<int> GetStringDecrypterMethods() {
 			var list = new List<int>();
 			foreach (var method in stringDecrypter.DecrypterMethods)
 				list.Add(method.MDToken.ToInt32());

@@ -32,52 +32,52 @@ namespace de4dot.blocks {
 			set { baseBlocks = value; }
 		}
 
-		public IEnumerable<BaseBlock> getBaseBlocks() {
+		public IEnumerable<BaseBlock> GetBaseBlocks() {
 			if (baseBlocks != null) {
 				foreach (var bb in baseBlocks)
 					yield return bb;
 			}
 		}
 
-		public List<BaseBlock> getAllBaseBlocks() {
-			return getTheBlocks(new List<BaseBlock>());
+		public List<BaseBlock> GetAllBaseBlocks() {
+			return GetTheBlocks(new List<BaseBlock>());
 		}
 
-		public List<Block> getAllBlocks() {
-			return getTheBlocks(new List<Block>());
+		public List<Block> GetAllBlocks() {
+			return GetTheBlocks(new List<Block>());
 		}
 
-		public List<Block> getAllBlocks(List<Block> allBlocks) {
+		public List<Block> GetAllBlocks(List<Block> allBlocks) {
 			allBlocks.Clear();
-			return getTheBlocks(allBlocks);
+			return GetTheBlocks(allBlocks);
 		}
 
-		public List<ScopeBlock> getAllScopeBlocks() {
-			return getTheBlocks(new List<ScopeBlock>());
+		public List<ScopeBlock> GetAllScopeBlocks() {
+			return GetTheBlocks(new List<ScopeBlock>());
 		}
 
-		public List<T> getTheBlocks<T>(List<T> list) where T : BaseBlock {
-			addBlocks(list, this);
+		public List<T> GetTheBlocks<T>(List<T> list) where T : BaseBlock {
+			AddBlocks(list, this);
 			return list;
 		}
 
-		void addBlocks<T>(IList<T> list, ScopeBlock scopeBlock) where T : BaseBlock {
-			foreach (var bb in scopeBlock.getBaseBlocks()) {
+		void AddBlocks<T>(IList<T> list, ScopeBlock scopeBlock) where T : BaseBlock {
+			foreach (var bb in scopeBlock.GetBaseBlocks()) {
 				T t = bb as T;
 				if (t != null)
 					list.Add(t);
 				if (bb is ScopeBlock)
-					addBlocks(list, (ScopeBlock)bb);
+					AddBlocks(list, (ScopeBlock)bb);
 			}
 		}
 
-		List<Block> findBlocks() {
-			return findBlocks(null);
+		List<Block> FindBlocks() {
+			return FindBlocks(null);
 		}
 
-		List<Block> findBlocks(Func<Block, bool> blockChecker) {
+		List<Block> FindBlocks(Func<Block, bool> blockChecker) {
 			var blocks = new List<Block>();
-			foreach (var bb in getBaseBlocks()) {
+			foreach (var bb in GetBaseBlocks()) {
 				Block block = bb as Block;
 				if (block != null && (blockChecker == null || blockChecker(block)))
 					blocks.Add(block);
@@ -85,7 +85,7 @@ namespace de4dot.blocks {
 			return blocks;
 		}
 
-		internal bool getLdcValue(Instr instr, out int value) {
+		internal bool GetLdcValue(Instr instr, out int value) {
 			if (Code.Ldc_I4_0 <= instr.OpCode.Code && instr.OpCode.Code <= Code.Ldc_I4_8)
 				value = instr.OpCode.Code - Code.Ldc_I4_0;
 			else if (instr.OpCode.Code == Code.Ldc_I4)
@@ -103,18 +103,18 @@ namespace de4dot.blocks {
 
 		// Remove the block if it's a dead block. If it has refs to other dead blocks, those
 		// are also removed.
-		public void removeDeadBlock(Block block) {
-			removeDeadBlocks(new List<Block> { block });
+		public void RemoveDeadBlock(Block block) {
+			RemoveDeadBlocks(new List<Block> { block });
 		}
 
 		// Remove all dead blocks we can find
-		public void removeDeadBlocks() {
-			removeDeadBlocks(findBlocks());
+		public void RemoveDeadBlocks() {
+			RemoveDeadBlocks(FindBlocks());
 		}
 
 		// Remove the blocks if they're dead blocks. If they have refs to other dead blocks,
 		// those are also removed.
-		public void removeDeadBlocks(List<Block> blocks) {
+		public void RemoveDeadBlocks(List<Block> blocks) {
 			while (blocks.Count != 0) {
 				var block = blocks[blocks.Count - 1];
 				blocks.RemoveAt(blocks.Count - 1);
@@ -122,7 +122,7 @@ namespace de4dot.blocks {
 					continue;	// Not dead
 				if (block == baseBlocks[0])
 					continue;	// It's the start of this block fence so must be present
-				if (!isOurBaseBlock(block))
+				if (!IsOurBaseBlock(block))
 					continue;	// Some other ScopeBlock owns it, eg. first instr of an exception handler
 
 				// It's a dead block we can delete!
@@ -131,27 +131,27 @@ namespace de4dot.blocks {
 					blocks.Add(block.FallThrough);
 				if (block.Targets != null)
 					blocks.AddRange(block.Targets);
-				block.removeDeadBlock();
+				block.RemoveDeadBlock();
 				if (!baseBlocks.Remove(block))
 					throw new ApplicationException("Could not remove dead block from baseBlocks");
 			}
 		}
 
-		public bool isOurBaseBlock(BaseBlock bb) {
+		public bool IsOurBaseBlock(BaseBlock bb) {
 			return bb != null && bb.Parent == this;
 		}
 
 		// For each block, if it has only one target, and the target has only one source, then
 		// merge them into one block.
-		public int mergeBlocks() {
+		public int MergeBlocks() {
 			int mergedBlocks = 0;
-			var blocks = findBlocks();
+			var blocks = FindBlocks();
 			for (int i = 0; i < blocks.Count; i++) {
 				var block = blocks[i];
-				var target = block.getOnlyTarget();
-				if (!isOurBaseBlock(target))
+				var target = block.GetOnlyTarget();
+				if (!IsOurBaseBlock(target))
 					continue;	// Only merge blocks we own!
-				if (!block.canMerge(target))
+				if (!block.CanMerge(target))
 					continue;	// Can't merge them!
 				if (target == baseBlocks[0])
 					continue;	// The first one has an implicit source (eg. start of method or exception handler)
@@ -160,7 +160,7 @@ namespace de4dot.blocks {
 				if (targetIndex < 0)
 					throw new ApplicationException("Could not remove target block from blocks");
 				blocks.RemoveAt(targetIndex);
-				block.merge(target);
+				block.Merge(target);
 				if (!baseBlocks.Remove(target))
 					throw new ApplicationException("Could not remove merged block from baseBlocks");
 				if (targetIndex < i)
@@ -174,20 +174,20 @@ namespace de4dot.blocks {
 
 		// If bb is in baseBlocks (a direct child), return bb. If bb is a BaseBlock in a
 		// ScopeBlock that is a direct child, then return that ScopeBlock. Else return null.
-		public BaseBlock toChild(BaseBlock bb) {
-			if (isOurBaseBlock(bb))
+		public BaseBlock ToChild(BaseBlock bb) {
+			if (IsOurBaseBlock(bb))
 				return bb;
 
 			for (var sb = bb.Parent; sb != null; sb = sb.Parent) {
-				if (isOurBaseBlock(sb))
+				if (IsOurBaseBlock(sb))
 					return sb;
 			}
 
 			return null;
 		}
 
-		internal void repartitionBlocks() {
-			var newBaseBlocks = new BlocksSorter(this).sort();
+		internal void RepartitionBlocks() {
+			var newBaseBlocks = new BlocksSorter(this).Sort();
 
 			const bool insane = true;
 			if (insane) {
@@ -206,7 +206,7 @@ namespace de4dot.blocks {
 
 		// Removes the TryBlock and all its TryHandlerBlocks. The code inside the try block
 		// is not removed.
-		public void removeTryBlock(TryBlock tryBlock) {
+		public void RemoveTryBlock(TryBlock tryBlock) {
 			int tryBlockIndex = baseBlocks.IndexOf(tryBlock);
 			if (tryBlockIndex < 0)
 				throw new ApplicationException("Can't remove the TryBlock since it's not this ScopeBlock's TryBlock");
@@ -220,15 +220,15 @@ namespace de4dot.blocks {
 			// Get removed blocks and make sure they're not referenced by remaining code
 			var removedBlocks = new List<Block>();
 			foreach (var handler in tryBlock.TryHandlerBlocks)
-				handler.getTheBlocks(removedBlocks);
-			if (!verifyNoExternalRefs(removedBlocks))
+				handler.GetTheBlocks(removedBlocks);
+			if (!VerifyNoExternalRefs(removedBlocks))
 				throw new ApplicationException("Removed blocks are referenced by remaining code");
 
-			removeAllDeadBlocks(Utils.convert<TryHandlerBlock, BaseBlock>(tryBlock.TryHandlerBlocks));
+			RemoveAllDeadBlocks(Utils.Convert<TryHandlerBlock, BaseBlock>(tryBlock.TryHandlerBlocks));
 		}
 
 		// Returns true if no external blocks references the blocks
-		static bool verifyNoExternalRefs(IList<Block> removedBlocks) {
+		static bool VerifyNoExternalRefs(IList<Block> removedBlocks) {
 			var removedDict = new Dictionary<Block, bool>();
 			foreach (var removedBlock in removedBlocks)
 				removedDict[removedBlock] = true;
@@ -243,13 +243,13 @@ namespace de4dot.blocks {
 		}
 
 		// Remove all blocks in deadBlocks. They're guaranteed to be dead.
-		void removeAllDeadBlocks(IEnumerable<BaseBlock> deadBlocks) {
-			removeAllDeadBlocks(deadBlocks, null);
+		void RemoveAllDeadBlocks(IEnumerable<BaseBlock> deadBlocks) {
+			RemoveAllDeadBlocks(deadBlocks, null);
 		}
 
 		// Remove all blocks in deadBlocks. They're guaranteed to be dead. deadBlocksDict is
 		// a dictionary of all dead blocks (even those not in this ScopeBlock).
-		internal void removeAllDeadBlocks(IEnumerable<BaseBlock> deadBlocks, Dictionary<BaseBlock, bool> deadBlocksDict) {
+		internal void RemoveAllDeadBlocks(IEnumerable<BaseBlock> deadBlocks, Dictionary<BaseBlock, bool> deadBlocksDict) {
 
 			// Verify that all the blocks really are dead. If all their source blocks are
 			// dead, then they are dead.
@@ -260,7 +260,7 @@ namespace de4dot.blocks {
 					allDeadBlocks.Add(bb as Block);
 				else if (bb is ScopeBlock) {
 					var sb = (ScopeBlock)bb;
-					allDeadBlocks.AddRange(sb.getAllBlocks());
+					allDeadBlocks.AddRange(sb.GetAllBlocks());
 				}
 				else
 					throw new ApplicationException(string.Format("Unknown BaseBlock type {0}", bb.GetType()));
@@ -278,20 +278,20 @@ namespace de4dot.blocks {
 			}
 
 			foreach (var block in allDeadBlocks)
-				block.removeGuaranteedDeadBlock();
+				block.RemoveGuaranteedDeadBlock();
 			foreach (var bb in deadBlocks) {
 				if (!baseBlocks.Remove(bb))
 					throw new ApplicationException("Could not remove dead base block from baseBlocks");
 			}
 		}
 
-		public void removeGuaranteedDeadBlock(Block block) {
+		public void RemoveGuaranteedDeadBlock(Block block) {
 			if (!baseBlocks.Remove(block))
 				throw new ApplicationException("Could not remove dead block");
-			block.removeGuaranteedDeadBlock();
+			block.RemoveGuaranteedDeadBlock();
 		}
 
-		public void add(Block block) {
+		public void Add(Block block) {
 			if (block.Parent != null)
 				throw new ApplicationException("Block already has a parent");
 			baseBlocks.Add(block);

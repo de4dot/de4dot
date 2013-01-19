@@ -39,7 +39,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			this.module = module;
 		}
 
-		public void find() {
+		public void Find() {
 			foreach (var type in module.Types) {
 				if (!type.HasMethods)
 					continue;
@@ -55,7 +55,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 					var sig = method.MethodSig;
 					if (sig != null && method.IsStatic && method.HasBody &&
 						sig.Params.Count == 2 && !method.HasGenericParameters &&
-						!DotNetUtils.hasReturnValue(method) &&
+						!DotNetUtils.HasReturnValue(method) &&
 						sig.Params[0].GetFullName() == "System.Exception" &&
 						sig.Params[1].GetFullName() == "System.Object[]") {
 						errorMethod = method;
@@ -65,7 +65,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 				}
 				if (errorMethod != null) {
 					stackFrameHelperType = type;
-					exceptionLoggerRemover.add(errorMethod);
+					exceptionLoggerRemover.Add(errorMethod);
 					return;
 				}
 			}

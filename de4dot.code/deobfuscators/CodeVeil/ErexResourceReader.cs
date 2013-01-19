@@ -30,7 +30,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			this.reader = reader;
 		}
 
-		public byte[] decrypt() {
+		public byte[] Decrypt() {
 			if (reader.ReadUInt32() != 0x58455245)
 				throw new InvalidDataException("Invalid EREX sig");
 			if (reader.ReadInt32() > 1)
@@ -45,29 +45,29 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				throw new ApplicationException("Invalid length");
 
 			if (isEncrypted)
-				readKey();
+				ReadKey();
 
 			if (isDeflated)
-				reader = inflate(length);
+				reader = Inflate(length);
 
 			if (isEncrypted)
-				reader = decrypt(length);
+				reader = Decrypt(length);
 
 			return reader.ReadBytes(length);
 		}
 
-		void readKey() {
+		void ReadKey() {
 			key = new uint[reader.ReadByte()];
 			for (int i = 0; i < key.Length; i++)
 				key[i] = reader.ReadUInt32();
 		}
 
-		IBinaryReader inflate(int length) {
+		IBinaryReader Inflate(int length) {
 			var data = reader.ReadRemainingBytes();
-			return MemoryImageStream.Create(DeobUtils.inflate(data, true));
+			return MemoryImageStream.Create(DeobUtils.Inflate(data, true));
 		}
 
-		IBinaryReader decrypt(int length) {
+		IBinaryReader Decrypt(int length) {
 			var block = new uint[4];
 			var decrypted = new byte[16];
 
@@ -77,7 +77,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				block[1] = reader.ReadUInt32();
 				block[2] = reader.ReadUInt32();
 				block[3] = reader.ReadUInt32();
-				DeobUtils.xxteaDecrypt(block, key);
+				DeobUtils.XxteaDecrypt(block, key);
 				Buffer.BlockCopy(block, 0, decrypted, 0, decrypted.Length);
 				outStream.Write(decrypted, 0, decrypted.Length);
 			}

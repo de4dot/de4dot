@@ -53,9 +53,9 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			this.module = module;
 		}
 
-		public void find() {
+		public void Find() {
 			foreach (var type in module.Types) {
-				if (check(type))
+				if (Check(type))
 					break;
 			}
 		}
@@ -65,18 +65,18 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			"System.Collections.Generic.Dictionary`2<System.Int32,System.Int32>",
 			"System.ModuleHandle",
 		};
-		bool check(TypeDef type) {
+		bool Check(TypeDef type) {
 			if (type.NestedTypes.Count != 1)
 				return false;
 			if (type.Fields.Count != 3)
 				return false;
-			if (!new FieldTypes(type).all(requiredFields))
+			if (!new FieldTypes(type).All(requiredFields))
 				return false;
 
 			var cctor = type.FindStaticConstructor();
 			if (cctor == null)
 				return false;
-			var decryptMethodTmp = findDecryptMethod(type);
+			var decryptMethodTmp = FindDecryptMethod(type);
 			if (decryptMethodTmp == null)
 				return false;
 
@@ -98,13 +98,13 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			"System.Type",
 			"System.Type[]",
 		};
-		static MethodDef findDecryptMethod(TypeDef type) {
+		static MethodDef FindDecryptMethod(TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
-				if (!new LocalTypes(method).all(requiredLocals))
+				if (!new LocalTypes(method).All(requiredLocals))
 					continue;
-				if (!DotNetUtils.isMethod(method, "System.Void", "(System.Int32,System.Int32,System.Int32)"))
+				if (!DotNetUtils.IsMethod(method, "System.Void", "(System.Int32,System.Int32,System.Int32)"))
 					continue;
 
 				return method;
@@ -112,36 +112,36 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return null;
 		}
 
-		public void decrypt(ResourceDecrypter resourceDecrypter) {
+		public void Decrypt(ResourceDecrypter resourceDecrypter) {
 			if (decryptMethod == null)
 				return;
 
-			resource = CoUtils.getResource(module, decrypterCctor);
+			resource = CoUtils.GetResource(module, decrypterCctor);
 			if (resource == null)
 				return;
-			var decrypted = resourceDecrypter.decrypt(resource.GetResourceStream());
+			var decrypted = resourceDecrypter.Decrypt(resource.GetResourceStream());
 			var reader = MemoryImageStream.Create(decrypted);
 			int numEncrypted = reader.ReadInt32();
 			Logger.v("Restoring {0} encrypted methods", numEncrypted);
-			Logger.Instance.indent();
+			Logger.Instance.Indent();
 			for (int i = 0; i < numEncrypted; i++) {
 				int delegateTypeToken = reader.ReadInt32();
 				uint codeOffset = reader.ReadUInt32();
 				var origOffset = reader.Position;
 				reader.Position = codeOffset;
-				decrypt(reader, delegateTypeToken);
+				Decrypt(reader, delegateTypeToken);
 				reader.Position = origOffset;
 			}
-			Logger.Instance.deIndent();
+			Logger.Instance.DeIndent();
 		}
 
-		void decrypt(IBinaryReader reader, int delegateTypeToken) {
+		void Decrypt(IBinaryReader reader, int delegateTypeToken) {
 			var delegateType = module.ResolveToken(delegateTypeToken) as TypeDef;
 			if (delegateType == null)
 				throw new ApplicationException("Couldn't find delegate type");
 
 			int delToken, encMethToken, encDeclToken;
-			if (!getTokens(delegateType, out delToken, out encMethToken, out encDeclToken))
+			if (!GetTokens(delegateType, out delToken, out encMethToken, out encDeclToken))
 				throw new ApplicationException("Could not find encrypted method tokens");
 			if (delToken != delegateTypeToken)
 				throw new ApplicationException("Invalid delegate type token");
@@ -153,10 +153,10 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				throw new ApplicationException("Invalid encrypted method token");
 
 			var bodyReader = new MethodBodyReader(module, reader);
-			bodyReader.read(encMethod);
+			bodyReader.Read(encMethod);
 			bodyReader.RestoreMethod(encMethod);
 			Logger.v("Restored method {0} ({1:X8}). Instrs:{2}, Locals:{3}, Exceptions:{4}",
-					Utils.removeNewlines(encMethod.FullName),
+					Utils.RemoveNewlines(encMethod.FullName),
 					encMethod.MDToken.ToInt32(),
 					encMethod.Body.Instructions.Count,
 					encMethod.Body.Variables.Count,
@@ -164,7 +164,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			delegateTypes.Add(delegateType);
 		}
 
-		bool getTokens(TypeDef delegateType, out int delegateToken, out int encMethodToken, out int encDeclaringTypeToken) {
+		bool GetTokens(TypeDef delegateType, out int delegateToken, out int encMethodToken, out int encDeclaringTypeToken) {
 			delegateToken = 0;
 			encMethodToken = 0;
 			encDeclaringTypeToken = 0;

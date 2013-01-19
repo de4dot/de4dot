@@ -41,7 +41,7 @@ namespace de4dot.blocks {
 				this.stackStart = stackStart;
 			}
 
-			public void calculateStackUsage() {
+			public void CalculateStackUsage() {
 				Block block = baseBlock as Block;
 				if (block == null) {
 					stackEnd = stackStart;
@@ -60,17 +60,17 @@ namespace de4dot.blocks {
 			this.sorted = sorted;
 		}
 
-		public List<BaseBlock> fix() {
-			createBlockInfos();
-			createNewList();
+		public List<BaseBlock> Fix() {
+			CreateBlockInfos();
+			CreateNewList();
 			return newList;
 		}
 
-		void createBlockInfos() {
+		void CreateBlockInfos() {
 			int firstBlockStackStart = scopeBlock is TryHandlerBlock ? 1 : 0;
-			foreach (var bb in getStartBlocks()) {
+			foreach (var bb in GetStartBlocks()) {
 				int stackStart = ReferenceEquals(bb, sorted[0]) ? firstBlockStackStart : 0;
-				scanBaseBlock(bb, stackStart);
+				ScanBaseBlock(bb, stackStart);
 			}
 
 			// One reason for this to fail is if there are still dead blocks left. Could also
@@ -79,29 +79,29 @@ namespace de4dot.blocks {
 				throw new ApplicationException(string.Format("Didn't add all blocks: {0} vs {1}", blockInfos.Count, sorted.Count));
 		}
 
-		IEnumerable<BaseBlock> getStartBlocks() {
+		IEnumerable<BaseBlock> GetStartBlocks() {
 			if (sorted.Count > 0) {
 				yield return sorted[0];
 				foreach (var bb in sorted) {
 					if (ReferenceEquals(bb, sorted[0]))
 						continue;
 					var block = bb as Block;
-					if (block == null || block.Sources == null || isOneSourceInAnotherScopeBlock(block))
+					if (block == null || block.Sources == null || IsOneSourceInAnotherScopeBlock(block))
 						yield return bb;
 				}
 			}
 		}
 
-		bool isOneSourceInAnotherScopeBlock(Block block) {
+		bool IsOneSourceInAnotherScopeBlock(Block block) {
 			foreach (var source in block.Sources) {
-				if (!scopeBlock.isOurBaseBlock(source))
+				if (!scopeBlock.IsOurBaseBlock(source))
 					return true;
 			}
 			return false;
 		}
 
-		void scanBaseBlock(BaseBlock bb, int stackStart) {
-			if (blockInfos.ContainsKey(bb) || !scopeBlock.isOurBaseBlock(bb))
+		void ScanBaseBlock(BaseBlock bb, int stackStart) {
+			if (blockInfos.ContainsKey(bb) || !scopeBlock.IsOurBaseBlock(bb))
 				return;
 
 			var blockInfo = new BlockInfo(bb, stackStart);
@@ -115,38 +115,38 @@ namespace de4dot.blocks {
 				return;
 			}
 
-			blockInfo.calculateStackUsage();
+			blockInfo.CalculateStackUsage();
 
-			foreach (var target in block.getTargets())
-				scanBaseBlock(target, blockInfo.stackEnd);
+			foreach (var target in block.GetTargets())
+				ScanBaseBlock(target, blockInfo.stackEnd);
 		}
 
-		void createNewList() {
+		void CreateNewList() {
 			newList = new List<BaseBlock>(sorted.Count);
 			foreach (var bb in sorted)
-				addToNewList(bb);
+				AddToNewList(bb);
 			if (newList.Count != sorted.Count)
 				throw new ApplicationException(string.Format("Too many/few blocks after sorting: {0} vs {1}", newList.Count, sorted.Count));
 			if (newList.Count > 0 && !ReferenceEquals(newList[0], sorted[0]))
 				throw new ApplicationException("Start block is not first block after sorting");
 		}
 
-		void addToNewList(BaseBlock bb) {
-			if (inNewList.ContainsKey(bb) || !scopeBlock.isOurBaseBlock(bb))
+		void AddToNewList(BaseBlock bb) {
+			if (inNewList.ContainsKey(bb) || !scopeBlock.IsOurBaseBlock(bb))
 				return;
 			inNewList[bb] = false;
 
 			var blockInfo = blockInfos[bb];
 			var block = bb as Block;
 			if (blockInfo.stackStart == 0 || ReferenceEquals(bb, sorted[0]) ||
-				block == null || block.Sources == null || isInNewList(block.Sources)) {
+				block == null || block.Sources == null || IsInNewList(block.Sources)) {
 			}
 			else {
 				foreach (var source in block.Sources) {
-					if (!scopeBlock.isOurBaseBlock(source))
+					if (!scopeBlock.IsOurBaseBlock(source))
 						continue;
 					int oldCount = newList.Count;
-					addToNewList(source);	// Make sure it's before this block
+					AddToNewList(source);	// Make sure it's before this block
 					if (oldCount != newList.Count)
 						break;
 				}
@@ -156,7 +156,7 @@ namespace de4dot.blocks {
 			newList.Add(bb);
 		}
 
-		bool isInNewList(IEnumerable<Block> blocks) {
+		bool IsInNewList(IEnumerable<Block> blocks) {
 			foreach (var block in blocks) {
 				if (inNewList.ContainsKey(block) && inNewList[block])
 					return true;

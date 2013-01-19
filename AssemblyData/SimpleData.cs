@@ -51,7 +51,7 @@ namespace AssemblyData {
 	}
 
 	public static class SimpleData {
-		public static object[] pack(object[] args) {
+		public static object[] Pack(object[] args) {
 			for (int i = 0; i < args.Length; i++) {
 				var s = args[i] as string;
 				if (s != null)
@@ -60,7 +60,7 @@ namespace AssemblyData {
 			return args;
 		}
 
-		public static object[] unpack(object[] args) {
+		public static object[] Unpack(object[] args) {
 			for (int i = 0; i < args.Length; i++) {
 				var s = args[i] as MyString;
 				if (s != null)

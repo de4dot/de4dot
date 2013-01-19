@@ -29,30 +29,30 @@ namespace de4dot.blocks.cflow {
 		}
 
 		public CflowDeobfuscator(IBlocksDeobfuscator blocksDeobfuscator) {
-			cflowDeobfuscator.add(blocksDeobfuscator);
+			cflowDeobfuscator.Add(blocksDeobfuscator);
 		}
 
-		public void deobfuscate(MethodDef method) {
-			deobfuscate(method, (blocks) => {
-				cflowDeobfuscator.init(blocks);
-				cflowDeobfuscator.deobfuscate();
+		public void Deobfuscate(MethodDef method) {
+			Deobfuscate(method, (blocks) => {
+				cflowDeobfuscator.Initialize(blocks);
+				cflowDeobfuscator.Deobfuscate();
 			});
 		}
 
-		static bool hasNonEmptyBody(MethodDef method) {
+		static bool HasNonEmptyBody(MethodDef method) {
 			return method.Body != null && method.Body.Instructions.Count > 0;
 		}
 
-		void deobfuscate(MethodDef method, Action<Blocks> handler) {
-			if (hasNonEmptyBody(method)) {
+		void Deobfuscate(MethodDef method, Action<Blocks> handler) {
+			if (HasNonEmptyBody(method)) {
 				var blocks = new Blocks(method);
 
 				handler(blocks);
 
 				IList<Instruction> allInstructions;
 				IList<ExceptionHandler> allExceptionHandlers;
-				blocks.getCode(out allInstructions, out allExceptionHandlers);
-				DotNetUtils.restoreBody(method, allInstructions, allExceptionHandlers);
+				blocks.GetCode(out allInstructions, out allExceptionHandlers);
+				DotNetUtils.RestoreBody(method, allInstructions, allExceptionHandlers);
 			}
 		}
 	}

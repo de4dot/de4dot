@@ -21,17 +21,17 @@ using dnlib.DotNet;
 
 namespace de4dot.code.AssemblyClient {
 	public interface IAssemblyClientFactory {
-		IAssemblyClient create();
+		IAssemblyClient Create();
 	}
 
 	public class SameAppDomainAssemblyClientFactory : IAssemblyClientFactory {
-		public IAssemblyClient create() {
+		public IAssemblyClient Create() {
 			return new AssemblyClient(new SameAppDomainAssemblyServerLoader());
 		}
 	}
 
 	public class NewAppDomainAssemblyClientFactory : IAssemblyClientFactory {
-		public IAssemblyClient create() {
+		public IAssemblyClient Create() {
 			return new AssemblyClient(new NewAppDomainAssemblyServerLoader());
 		}
 	}
@@ -47,15 +47,15 @@ namespace de4dot.code.AssemblyClient {
 			this.serverVersion = serverVersion;
 		}
 
-		public IAssemblyClient create(ModuleDef module) {
-			return new AssemblyClient(new NewProcessAssemblyServerLoader(getServerClrVersion(module)));
+		public IAssemblyClient Create(ModuleDef module) {
+			return new AssemblyClient(new NewProcessAssemblyServerLoader(GetServerClrVersion(module)));
 		}
 
-		public IAssemblyClient create() {
+		public IAssemblyClient Create() {
 			return new AssemblyClient(new NewProcessAssemblyServerLoader(serverVersion));
 		}
 
-		internal static ServerClrVersion getServerClrVersion(ModuleDef module) {
+		internal static ServerClrVersion GetServerClrVersion(ModuleDef module) {
 			switch (module.GetPointerSize()) {
 			default:
 			case 4:

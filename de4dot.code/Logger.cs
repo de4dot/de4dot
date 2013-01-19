@@ -39,7 +39,7 @@ namespace de4dot.code {
 				if (indentLevel == value)
 					return;
 				indentLevel = value;
-				initIndentString();
+				InitIndentString();
 			}
 		}
 
@@ -66,20 +66,20 @@ namespace de4dot.code {
 			this.canIgnoreMessages = canIgnoreMessages;
 		}
 
-		void initIndentString() {
+		void InitIndentString() {
 			if (indentLevel < 0)
 				indentLevel = 0;
 			indentString = new string(' ', indentLevel * indentSize);
 		}
 
-		public void indent() {
+		public void Indent() {
 			indentLevel++;
-			initIndentString();
+			InitIndentString();
 		}
 
-		public void deIndent() {
+		public void DeIndent() {
 			indentLevel--;
-			initIndentString();
+			InitIndentString();
 		}
 
 		public void Log(object sender, LoggerEvent loggerEvent, string format, params object[] args) {
@@ -93,7 +93,7 @@ namespace de4dot.code {
 		public void Log(bool canIgnore, object sender, LoggerEvent loggerEvent, string format, params object[] args) {
 			if (IgnoresEvent(loggerEvent))
 				return;
-			if (canIgnore && ignoreMessage(loggerEvent, format, args))
+			if (canIgnore && IgnoreMessage(loggerEvent, format, args))
 				return;
 
 			switch (loggerEvent) {
@@ -114,7 +114,7 @@ namespace de4dot.code {
 			}
 		}
 
-		bool ignoreMessage(LoggerEvent loggerEvent, string format, object[] args) {
+		bool IgnoreMessage(LoggerEvent loggerEvent, string format, object[] args) {
 			if (loggerEvent != LoggerEvent.Error && loggerEvent != LoggerEvent.Warning)
 				return false;
 			if (!canIgnoreMessages)
@@ -138,7 +138,7 @@ namespace de4dot.code {
 			return loggerEvent > maxLoggerEvent;
 		}
 
-		public static void log(LoggerEvent loggerEvent, string format, params object[] args) {
+		public static void Log(LoggerEvent loggerEvent, string format, params object[] args) {
 			Instance.Log(null, loggerEvent, format, args);
 		}
 

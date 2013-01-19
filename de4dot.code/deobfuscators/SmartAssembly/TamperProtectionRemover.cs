@@ -41,13 +41,13 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			this.module = module;
 		}
 
-		public bool remove(Blocks blocks) {
+		public bool Remove(Blocks blocks) {
 			if (blocks.Method.Name != ".cctor")
 				return false;
-			return removeTamperProtection(blocks);
+			return RemoveTamperProtection(blocks);
 		}
 
-		bool isTamperProtected(IEnumerable<Block> allBlocks) {
+		bool IsTamperProtected(IEnumerable<Block> allBlocks) {
 			foreach (var block in allBlocks) {
 				foreach (var instr in block.Instructions) {
 					if (instr.OpCode != OpCodes.Ldstr)
@@ -74,25 +74,25 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			public BlockInfo bad;
 		}
 
-		TamperBlocks findTamperBlocks(Blocks blocks, IList<Block> allBlocks) {
+		TamperBlocks FindTamperBlocks(Blocks blocks, IList<Block> allBlocks) {
 			var tamperBlocks = new TamperBlocks();
 
-			if (!findFirstBlocks(tamperBlocks, allBlocks, blocks.Locals))
+			if (!FindFirstBlocks(tamperBlocks, allBlocks, blocks.Locals))
 				return null;
 
 			var second = tamperBlocks.second;
-			var badBlock = second.Block.LastInstr.isBrfalse() ? second.Block.Targets[0] : second.Block.FallThrough;
-			tamperBlocks.bad = findBadBlock(badBlock);
+			var badBlock = second.Block.LastInstr.IsBrfalse() ? second.Block.Targets[0] : second.Block.FallThrough;
+			tamperBlocks.bad = FindBadBlock(badBlock);
 			if (tamperBlocks.bad == null)
 				return null;
 
 			return tamperBlocks;
 		}
 
-		bool findFirstBlocks(TamperBlocks tamperBlocks, IList<Block> allBlocks, IList<Local> locals) {
+		bool FindFirstBlocks(TamperBlocks tamperBlocks, IList<Block> allBlocks, IList<Local> locals) {
 			foreach (var b in allBlocks) {
 				try {
-					if (findFirstBlocks(b, tamperBlocks, allBlocks, locals))
+					if (FindFirstBlocks(b, tamperBlocks, allBlocks, locals))
 						return true;
 				}
 				catch (ArgumentOutOfRangeException) {
@@ -103,7 +103,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return false;
 		}
 
-		static int findCallMethod(Block block, int index, bool keepLooking, Func<IMethod, bool> func) {
+		static int FindCallMethod(Block block, int index, bool keepLooking, Func<IMethod, bool> func) {
 			var instrs = block.Instructions;
 			for (int i = index; i < instrs.Count; i++) {
 				var instr = instrs[i];
@@ -119,8 +119,8 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return -1;
 		}
 
-		bool findFirstBlocks(Block block, TamperBlocks tamperBlocks, IList<Block> allBlocks, IList<Local> locals) {
-			if (!block.LastInstr.isBrfalse())
+		bool FindFirstBlocks(Block block, TamperBlocks tamperBlocks, IList<Block> allBlocks, IList<Local> locals) {
+			if (!block.LastInstr.IsBrfalse())
 				return false;
 
 			/*
@@ -151,38 +151,38 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 
 			int index = 0;
 
-			int start = findCallMethod(block, index, true, (calledMethod) => calledMethod.ToString() == "System.Reflection.Assembly System.Reflection.Assembly::GetExecutingAssembly()");
+			int start = FindCallMethod(block, index, true, (calledMethod) => calledMethod.ToString() == "System.Reflection.Assembly System.Reflection.Assembly::GetExecutingAssembly()");
 			if (start < 0)
 				return false;
 			index = start + 1;
 			instr = instrs[--start];
-			if (!instr.isStloc())
+			if (!instr.IsStloc())
 				return false;
-			var loc0 = Instr.getLocalVar(locals, instr);
+			var loc0 = Instr.GetLocalVar(locals, instr);
 			instr = instrs[--start];
-			if (!instr.isLdcI4())
+			if (!instr.IsLdcI4())
 				return false;
 
-			index = findCallMethod(block, index, false, (calledMethod) => calledMethod.ToString() == "System.String System.Reflection.Assembly::get_Location()");
+			index = FindCallMethod(block, index, false, (calledMethod) => calledMethod.ToString() == "System.String System.Reflection.Assembly::get_Location()");
 			if (index < 0)
 				return false;
 			index++;
 
-			index = findCallMethod(block, index, false, (calledMethod) => {
-				tamperBlocks.pinvokeMethod = DotNetUtils.getMethod(module, calledMethod);
-				return DotNetUtils.isPinvokeMethod(tamperBlocks.pinvokeMethod, "mscorwks", "StrongNameSignatureVerificationEx");
+			index = FindCallMethod(block, index, false, (calledMethod) => {
+				tamperBlocks.pinvokeMethod = DotNetUtils.GetMethod(module, calledMethod);
+				return DotNetUtils.IsPinvokeMethod(tamperBlocks.pinvokeMethod, "mscorwks", "StrongNameSignatureVerificationEx");
 			});
 			if (index < 0)
 				return false;
 			index++;
 
-			if (!instrs[index].isBrfalse()) {
+			if (!instrs[index].IsBrfalse()) {
 				if (instrs[index].OpCode.Code != Code.Pop)
 					return false;
 				instr = instrs[index + 1];
-				if (!instr.isLdloc() || Instr.getLocalVar(locals, instr) != loc0)
+				if (!instr.IsLdloc() || Instr.GetLocalVar(locals, instr) != loc0)
 					return false;
-				if (!instrs[index + 2].isBrfalse())
+				if (!instrs[index + 2].IsBrfalse())
 					return false;
 
 				tamperBlocks.type = Type.V1;
@@ -206,9 +206,9 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				instrs = block.Instructions;
 				index = 0;
 				instr = instrs[index];
-				if (!instr.isLdloc() || Instr.getLocalVar(locals, instr) != loc0)
+				if (!instr.IsLdloc() || Instr.GetLocalVar(locals, instr) != loc0)
 					return false;
-				if (!instrs[index + 1].isBrfalse())
+				if (!instrs[index + 1].IsBrfalse())
 					return false;
 			}
 
@@ -217,7 +217,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			start = end = 0;
 
 			instr = instrs[end++];
-			if (!instr.isLdloc())
+			if (!instr.IsLdloc())
 				return false;
 
 			instr = instrs[end++];
@@ -239,7 +239,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				return false;
 
 			instr = instrs[end++];
-			if (!instr.isBrfalse() && !instr.isBrtrue())
+			if (!instr.IsBrfalse() && !instr.IsBrtrue())
 				return false;
 
 			end--;
@@ -252,7 +252,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return true;
 		}
 
-		BlockInfo findBadBlock(Block last) {
+		BlockInfo FindBadBlock(Block last) {
 			/*
 			 * ldstr "........."
 			 * newobj	System.Security.SecurityException(string)
@@ -290,22 +290,22 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			};
 		}
 
-		bool removeTamperProtection(Blocks blocks) {
-			var allBlocks = blocks.MethodBlocks.getAllBlocks();
-			var tamperBlocks = findTamperBlocks(blocks, allBlocks);
+		bool RemoveTamperProtection(Blocks blocks) {
+			var allBlocks = blocks.MethodBlocks.GetAllBlocks();
+			var tamperBlocks = FindTamperBlocks(blocks, allBlocks);
 
 			if (tamperBlocks == null) {
-				if (isTamperProtected(allBlocks))
-					Logger.w("Could not remove tamper protection code: {0} ({1:X8})", Utils.removeNewlines(blocks.Method), blocks.Method.MDToken.ToUInt32());
+				if (IsTamperProtected(allBlocks))
+					Logger.w("Could not remove tamper protection code: {0} ({1:X8})", Utils.RemoveNewlines(blocks.Method), blocks.Method.MDToken.ToUInt32());
 				return false;
 			}
 
 			switch (tamperBlocks.type) {
 			case Type.V1:
-				removeTamperV1(tamperBlocks);
+				RemoveTamperV1(tamperBlocks);
 				break;
 			case Type.V2:
-				removeTamperV2(tamperBlocks);
+				RemoveTamperV2(tamperBlocks);
 				break;
 			default:
 				throw new ApplicationException("Unknown type");
@@ -315,42 +315,42 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return true;
 		}
 
-		void removeTamperV1(TamperBlocks tamperBlocks) {
+		void RemoveTamperV1(TamperBlocks tamperBlocks) {
 			var first = tamperBlocks.first;
 			var second = tamperBlocks.second;
 			var bad = tamperBlocks.bad;
-			var goodBlock = second.Block.LastInstr.isBrtrue() ? second.Block.Targets[0] : second.Block.FallThrough;
+			var goodBlock = second.Block.LastInstr.IsBrtrue() ? second.Block.Targets[0] : second.Block.FallThrough;
 
 			if (first.Block.Targets.Count != 1 || first.Block.Targets[0] != bad.Block)
 				throw new ApplicationException("Invalid state");
 
-			first.Block.remove(first.Start, first.End - first.Start + 1);
-			first.Block.replaceLastInstrsWithBranch(0, goodBlock);
-			removeDeadBlock(second.Block);
-			removeDeadBlock(bad.Block);
+			first.Block.Remove(first.Start, first.End - first.Start + 1);
+			first.Block.ReplaceLastInstrsWithBranch(0, goodBlock);
+			RemoveDeadBlock(second.Block);
+			RemoveDeadBlock(bad.Block);
 		}
 
-		void removeTamperV2(TamperBlocks tamperBlocks) {
+		void RemoveTamperV2(TamperBlocks tamperBlocks) {
 			var first = tamperBlocks.first;
 			var second = tamperBlocks.second.Block;
 			var bad = tamperBlocks.bad.Block;
 			var firstFallthrough = first.Block.FallThrough;
-			var goodBlock = second.LastInstr.isBrtrue() ? second.Targets[0] : second.FallThrough;
+			var goodBlock = second.LastInstr.IsBrtrue() ? second.Targets[0] : second.FallThrough;
 
 			if (first.Block.Targets.Count != 1 || first.Block.Targets[0] != bad)
 				throw new ApplicationException("Invalid state");
 
-			first.Block.remove(first.Start, first.End - first.Start + 1);
-			first.Block.replaceLastInstrsWithBranch(0, goodBlock);
-			removeDeadBlock(firstFallthrough);
-			removeDeadBlock(second);
-			removeDeadBlock(bad);
+			first.Block.Remove(first.Start, first.End - first.Start + 1);
+			first.Block.ReplaceLastInstrsWithBranch(0, goodBlock);
+			RemoveDeadBlock(firstFallthrough);
+			RemoveDeadBlock(second);
+			RemoveDeadBlock(bad);
 		}
 
-		void removeDeadBlock(Block block) {
+		void RemoveDeadBlock(Block block) {
 			var parent = block.Parent;
 			if (parent != null)	// null if already dead
-				parent.removeDeadBlock(block);
+				parent.RemoveDeadBlock(block);
 		}
 	}
 }

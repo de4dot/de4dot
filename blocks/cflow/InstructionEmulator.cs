@@ -39,17 +39,17 @@ namespace de4dot.blocks.cflow {
 		}
 
 		public InstructionEmulator(MethodDef method) {
-			init(method);
+			Initialize(method);
 		}
 
-		public void init(Blocks blocks) {
-			init(blocks.Method);
+		public void Initialize(Blocks blocks) {
+			Initialize(blocks.Method);
 		}
 
-		public void init(MethodDef method) {
+		public void Initialize(MethodDef method) {
 			this.parameterDefs = method.Parameters;
 			this.localDefs = method.Body.Variables;
-			valueStack.init();
+			valueStack.Initialize();
 			protectedStackValues.Clear();
 
 			if (method != prev_method) {
@@ -57,11 +57,11 @@ namespace de4dot.blocks.cflow {
 
 				cached_args.Clear();
 				for (int i = 0; i < parameterDefs.Count; i++)
-					cached_args.Add(getUnknownValue(parameterDefs[i].Type));
+					cached_args.Add(GetUnknownValue(parameterDefs[i].Type));
 
 				cached_locals.Clear();
 				for (int i = 0; i < localDefs.Count; i++)
-					cached_locals.Add(getUnknownValue(localDefs[i].Type));
+					cached_locals.Add(GetUnknownValue(localDefs[i].Type));
 			}
 
 			args.Clear();
@@ -70,32 +70,32 @@ namespace de4dot.blocks.cflow {
 			locals.AddRange(cached_locals);
 		}
 
-		public void setProtected(Value value) {
+		public void SetProtected(Value value) {
 			protectedStackValues[value] = true;
 		}
 
-		static Value getUnknownValue(ITypeDefOrRef type) {
-			return getUnknownValue(type.ToTypeSig(false));
+		static Value GetUnknownValue(ITypeDefOrRef type) {
+			return GetUnknownValue(type.ToTypeSig(false));
 		}
 
-		static Value getUnknownValue(TypeSig type) {
+		static Value GetUnknownValue(TypeSig type) {
 			if (type == null)
 				return new UnknownValue();
 			switch (type.ElementType) {
-			case ElementType.Boolean: return Int32Value.createUnknownBool();
-			case ElementType.I1: return Int32Value.createUnknown();
-			case ElementType.U1: return Int32Value.createUnknownUInt8();
-			case ElementType.I2: return Int32Value.createUnknown();
-			case ElementType.U2: return Int32Value.createUnknownUInt16();
-			case ElementType.I4: return Int32Value.createUnknown();
-			case ElementType.U4: return Int32Value.createUnknown();
-			case ElementType.I8: return Int64Value.createUnknown();
-			case ElementType.U8: return Int64Value.createUnknown();
+			case ElementType.Boolean: return Int32Value.CreateUnknownBool();
+			case ElementType.I1: return Int32Value.CreateUnknown();
+			case ElementType.U1: return Int32Value.CreateUnknownUInt8();
+			case ElementType.I2: return Int32Value.CreateUnknown();
+			case ElementType.U2: return Int32Value.CreateUnknownUInt16();
+			case ElementType.I4: return Int32Value.CreateUnknown();
+			case ElementType.U4: return Int32Value.CreateUnknown();
+			case ElementType.I8: return Int64Value.CreateUnknown();
+			case ElementType.U8: return Int64Value.CreateUnknown();
 			}
 			return new UnknownValue();
 		}
 
-		Value truncateValue(Value value, TypeSig type) {
+		Value TruncateValue(Value value, TypeSig type) {
 			if (type == null)
 				return value;
 			if (protectedStackValues.ContainsKey(value))
@@ -103,302 +103,302 @@ namespace de4dot.blocks.cflow {
 
 			switch (type.ElementType) {
 			case ElementType.Boolean:
-				if (value.isInt32())
-					return ((Int32Value)value).toBoolean();
-				return Int32Value.createUnknownBool();
+				if (value.IsInt32())
+					return ((Int32Value)value).ToBoolean();
+				return Int32Value.CreateUnknownBool();
 
 			case ElementType.I1:
-				if (value.isInt32())
-					return ((Int32Value)value).toInt8();
-				return Int32Value.createUnknown();
+				if (value.IsInt32())
+					return ((Int32Value)value).ToInt8();
+				return Int32Value.CreateUnknown();
 
 			case ElementType.U1:
-				if (value.isInt32())
-					return ((Int32Value)value).toUInt8();
-				return Int32Value.createUnknownUInt8();
+				if (value.IsInt32())
+					return ((Int32Value)value).ToUInt8();
+				return Int32Value.CreateUnknownUInt8();
 
 			case ElementType.I2:
-				if (value.isInt32())
-					return ((Int32Value)value).toInt16();
-				return Int32Value.createUnknown();
+				if (value.IsInt32())
+					return ((Int32Value)value).ToInt16();
+				return Int32Value.CreateUnknown();
 
 			case ElementType.U2:
-				if (value.isInt32())
-					return ((Int32Value)value).toUInt16();
-				return Int32Value.createUnknownUInt16();
+				if (value.IsInt32())
+					return ((Int32Value)value).ToUInt16();
+				return Int32Value.CreateUnknownUInt16();
 
 			case ElementType.I4:
 			case ElementType.U4:
-				if (value.isInt32())
+				if (value.IsInt32())
 					return value;
-				return Int32Value.createUnknown();
+				return Int32Value.CreateUnknown();
 
 			case ElementType.I8:
 			case ElementType.U8:
-				if (value.isInt64())
+				if (value.IsInt64())
 					return value;
-				return Int64Value.createUnknown();
+				return Int64Value.CreateUnknown();
 
 			case ElementType.R4:
-				if (value.isReal8())
+				if (value.IsReal8())
 					return new Real8Value((float)((Real8Value)value).value);
 				return new UnknownValue();
 
 			case ElementType.R8:
-				if (value.isReal8())
+				if (value.IsReal8())
 					return value;
 				return new UnknownValue();
 			}
 			return value;
 		}
 
-		static Value getValue(List<Value> list, int i) {
+		static Value GetValue(List<Value> list, int i) {
 			if (0 <= i && i < list.Count)
 				return list[i];
 			return new UnknownValue();
 		}
 
-		public Value getArg(int i) {
-			return getValue(args, i);
+		public Value GetArg(int i) {
+			return GetValue(args, i);
 		}
 
-		public Value getArg(Parameter arg) {
+		public Value GetArg(Parameter arg) {
 			if (arg == null)
 				return new UnknownValue();
-			return getArg(arg.Index);
+			return GetArg(arg.Index);
 		}
 
-		TypeSig getArgType(int index) {
+		TypeSig GetArgType(int index) {
 			if (0 <= index && index < parameterDefs.Count)
 				return parameterDefs[index].Type;
 			return null;
 		}
 
-		public void setArg(Parameter arg, Value value) {
+		public void SetArg(Parameter arg, Value value) {
 			if (arg != null)
-				setArg(arg.Index, value);
+				SetArg(arg.Index, value);
 		}
 
-		public void makeArgUnknown(Parameter arg) {
+		public void MakeArgUnknown(Parameter arg) {
 			if (arg != null)
-				setArg(arg, getUnknownArg(arg.Index));
+				SetArg(arg, GetUnknownArg(arg.Index));
 		}
 
-		void setArg(int index, Value value) {
+		void SetArg(int index, Value value) {
 			if (0 <= index && index < args.Count)
-				args[index] = truncateValue(value, getArgType(index));
+				args[index] = TruncateValue(value, GetArgType(index));
 		}
 
-		Value getUnknownArg(int index) {
-			return getUnknownValue(getArgType(index));
+		Value GetUnknownArg(int index) {
+			return GetUnknownValue(GetArgType(index));
 		}
 
-		public Value getLocal(int i) {
-			return getValue(locals, i);
+		public Value GetLocal(int i) {
+			return GetValue(locals, i);
 		}
 
-		public Value getLocal(Local local) {
+		public Value GetLocal(Local local) {
 			if (local == null)
 				return new UnknownValue();
-			return getLocal(local.Index);
+			return GetLocal(local.Index);
 		}
 
-		public void setLocal(Local local, Value value) {
+		public void SetLocal(Local local, Value value) {
 			if (local != null)
-				setLocal(local.Index, value);
+				SetLocal(local.Index, value);
 		}
 
-		public void makeLocalUnknown(Local local) {
+		public void MakeLocalUnknown(Local local) {
 			if (local != null)
-				setLocal(local.Index, getUnknownLocal(local.Index));
+				SetLocal(local.Index, GetUnknownLocal(local.Index));
 		}
 
-		void setLocal(int index, Value value) {
+		void SetLocal(int index, Value value) {
 			if (0 <= index && index < locals.Count)
-				locals[index] = truncateValue(value, localDefs[index].Type);
+				locals[index] = TruncateValue(value, localDefs[index].Type);
 		}
 
-		Value getUnknownLocal(int index) {
+		Value GetUnknownLocal(int index) {
 			if (0 <= index && index < localDefs.Count)
-				return getUnknownValue(localDefs[index].Type);
+				return GetUnknownValue(localDefs[index].Type);
 			return new UnknownValue();
 		}
 
-		public int stackSize() {
+		public int StackSize() {
 			return valueStack.Size;
 		}
 
-		public void push(Value value) {
-			valueStack.push(value);
+		public void Push(Value value) {
+			valueStack.Push(value);
 		}
 
-		public void clearStack() {
-			valueStack.clear();
+		public void ClearStack() {
+			valueStack.Clear();
 		}
 
-		public void pop(int num) {
+		public void Pop(int num) {
 			if (num < 0)
-				valueStack.clear();
+				valueStack.Clear();
 			else
-				valueStack.pop(num);
+				valueStack.Pop(num);
 		}
 
-		public Value pop() {
-			return valueStack.pop();
+		public Value Pop() {
+			return valueStack.Pop();
 		}
 
-		public Value peek() {
-			return valueStack.peek();
+		public Value Peek() {
+			return valueStack.Peek();
 		}
 
-		public void emulate(IEnumerable<Instr> instructions) {
+		public void Emulate(IEnumerable<Instr> instructions) {
 			foreach (var instr in instructions)
-				emulate(instr.Instruction);
+				Emulate(instr.Instruction);
 		}
 
-		public void emulate(IList<Instr> instructions, int start, int end) {
+		public void Emulate(IList<Instr> instructions, int start, int end) {
 			for (int i = start; i < end; i++)
-				emulate(instructions[i].Instruction);
+				Emulate(instructions[i].Instruction);
 		}
 
-		public void emulate(Instruction instr) {
+		public void Emulate(Instruction instr) {
 			switch (instr.OpCode.Code) {
 			case Code.Starg:
-			case Code.Starg_S:	emulate_Starg((Parameter)instr.Operand); break;
+			case Code.Starg_S:	Emulate_Starg((Parameter)instr.Operand); break;
 			case Code.Stloc:
-			case Code.Stloc_S:	emulate_Stloc((Local)instr.Operand); break;
-			case Code.Stloc_0:	emulate_Stloc(0); break;
-			case Code.Stloc_1:	emulate_Stloc(1); break;
-			case Code.Stloc_2:	emulate_Stloc(2); break;
-			case Code.Stloc_3:	emulate_Stloc(3); break;
+			case Code.Stloc_S:	Emulate_Stloc((Local)instr.Operand); break;
+			case Code.Stloc_0:	Emulate_Stloc(0); break;
+			case Code.Stloc_1:	Emulate_Stloc(1); break;
+			case Code.Stloc_2:	Emulate_Stloc(2); break;
+			case Code.Stloc_3:	Emulate_Stloc(3); break;
 
 			case Code.Ldarg:
-			case Code.Ldarg_S:	valueStack.push(getArg((Parameter)instr.Operand)); break;
-			case Code.Ldarg_0:	valueStack.push(getArg(0)); break;
-			case Code.Ldarg_1:	valueStack.push(getArg(1)); break;
-			case Code.Ldarg_2:	valueStack.push(getArg(2)); break;
-			case Code.Ldarg_3:	valueStack.push(getArg(3)); break;
+			case Code.Ldarg_S:	valueStack.Push(GetArg((Parameter)instr.Operand)); break;
+			case Code.Ldarg_0:	valueStack.Push(GetArg(0)); break;
+			case Code.Ldarg_1:	valueStack.Push(GetArg(1)); break;
+			case Code.Ldarg_2:	valueStack.Push(GetArg(2)); break;
+			case Code.Ldarg_3:	valueStack.Push(GetArg(3)); break;
 			case Code.Ldloc:
-			case Code.Ldloc_S:	valueStack.push(getLocal((Local)instr.Operand)); break;
-			case Code.Ldloc_0:	valueStack.push(getLocal(0)); break;
-			case Code.Ldloc_1:	valueStack.push(getLocal(1)); break;
-			case Code.Ldloc_2:	valueStack.push(getLocal(2)); break;
-			case Code.Ldloc_3:	valueStack.push(getLocal(3)); break;
+			case Code.Ldloc_S:	valueStack.Push(GetLocal((Local)instr.Operand)); break;
+			case Code.Ldloc_0:	valueStack.Push(GetLocal(0)); break;
+			case Code.Ldloc_1:	valueStack.Push(GetLocal(1)); break;
+			case Code.Ldloc_2:	valueStack.Push(GetLocal(2)); break;
+			case Code.Ldloc_3:	valueStack.Push(GetLocal(3)); break;
 
 			case Code.Ldarga:
-			case Code.Ldarga_S:	emulate_Ldarga((Parameter)instr.Operand); break;
+			case Code.Ldarga_S:	Emulate_Ldarga((Parameter)instr.Operand); break;
 			case Code.Ldloca:
-			case Code.Ldloca_S:	emulate_Ldloca((Local)instr.Operand); break;
+			case Code.Ldloca_S:	Emulate_Ldloca((Local)instr.Operand); break;
 
-			case Code.Dup:		valueStack.copyTop(); break;
+			case Code.Dup:		valueStack.CopyTop(); break;
 
-			case Code.Ldc_I4:	valueStack.push(new Int32Value((int)instr.Operand)); break;
-			case Code.Ldc_I4_S:	valueStack.push(new Int32Value((sbyte)instr.Operand)); break;
-			case Code.Ldc_I8:	valueStack.push(new Int64Value((long)instr.Operand)); break;
-			case Code.Ldc_R4:	valueStack.push(new Real8Value((float)instr.Operand)); break;
-			case Code.Ldc_R8:	valueStack.push(new Real8Value((double)instr.Operand)); break;
-			case Code.Ldc_I4_0:	valueStack.push(Int32Value.zero); break;
-			case Code.Ldc_I4_1:	valueStack.push(Int32Value.one); break;
-			case Code.Ldc_I4_2:	valueStack.push(new Int32Value(2)); break;
-			case Code.Ldc_I4_3:	valueStack.push(new Int32Value(3)); break;
-			case Code.Ldc_I4_4:	valueStack.push(new Int32Value(4)); break;
-			case Code.Ldc_I4_5:	valueStack.push(new Int32Value(5)); break;
-			case Code.Ldc_I4_6:	valueStack.push(new Int32Value(6)); break;
-			case Code.Ldc_I4_7:	valueStack.push(new Int32Value(7)); break;
-			case Code.Ldc_I4_8:	valueStack.push(new Int32Value(8)); break;
-			case Code.Ldc_I4_M1:valueStack.push(new Int32Value(-1)); break;
-			case Code.Ldnull:	valueStack.push(NullValue.Instance); break;
-			case Code.Ldstr:	valueStack.push(new StringValue((string)instr.Operand)); break;
-			case Code.Box:		valueStack.push(new BoxedValue(valueStack.pop())); break;
+			case Code.Ldc_I4:	valueStack.Push(new Int32Value((int)instr.Operand)); break;
+			case Code.Ldc_I4_S:	valueStack.Push(new Int32Value((sbyte)instr.Operand)); break;
+			case Code.Ldc_I8:	valueStack.Push(new Int64Value((long)instr.Operand)); break;
+			case Code.Ldc_R4:	valueStack.Push(new Real8Value((float)instr.Operand)); break;
+			case Code.Ldc_R8:	valueStack.Push(new Real8Value((double)instr.Operand)); break;
+			case Code.Ldc_I4_0:	valueStack.Push(Int32Value.zero); break;
+			case Code.Ldc_I4_1:	valueStack.Push(Int32Value.one); break;
+			case Code.Ldc_I4_2:	valueStack.Push(new Int32Value(2)); break;
+			case Code.Ldc_I4_3:	valueStack.Push(new Int32Value(3)); break;
+			case Code.Ldc_I4_4:	valueStack.Push(new Int32Value(4)); break;
+			case Code.Ldc_I4_5:	valueStack.Push(new Int32Value(5)); break;
+			case Code.Ldc_I4_6:	valueStack.Push(new Int32Value(6)); break;
+			case Code.Ldc_I4_7:	valueStack.Push(new Int32Value(7)); break;
+			case Code.Ldc_I4_8:	valueStack.Push(new Int32Value(8)); break;
+			case Code.Ldc_I4_M1:valueStack.Push(new Int32Value(-1)); break;
+			case Code.Ldnull:	valueStack.Push(NullValue.Instance); break;
+			case Code.Ldstr:	valueStack.Push(new StringValue((string)instr.Operand)); break;
+			case Code.Box:		valueStack.Push(new BoxedValue(valueStack.Pop())); break;
 
-			case Code.Conv_U1:	emulate_Conv_U1(instr); break;
-			case Code.Conv_U2:	emulate_Conv_U2(instr); break;
-			case Code.Conv_U4:	emulate_Conv_U4(instr); break;
-			case Code.Conv_U8:	emulate_Conv_U8(instr); break;
-			case Code.Conv_I1:	emulate_Conv_I1(instr); break;
-			case Code.Conv_I2:	emulate_Conv_I2(instr); break;
-			case Code.Conv_I4:	emulate_Conv_I4(instr); break;
-			case Code.Conv_I8:	emulate_Conv_I8(instr); break;
-			case Code.Add:		emulate_Add(instr); break;
-			case Code.Sub:		emulate_Sub(instr); break;
-			case Code.Mul:		emulate_Mul(instr); break;
-			case Code.Div:		emulate_Div(instr); break;
-			case Code.Div_Un:	emulate_Div_Un(instr); break;
-			case Code.Rem:		emulate_Rem(instr); break;
-			case Code.Rem_Un:	emulate_Rem_Un(instr); break;
-			case Code.Neg:		emulate_Neg(instr); break;
-			case Code.And:		emulate_And(instr); break;
-			case Code.Or:		emulate_Or(instr); break;
-			case Code.Xor:		emulate_Xor(instr); break;
-			case Code.Not:		emulate_Not(instr); break;
-			case Code.Shl:		emulate_Shl(instr); break;
-			case Code.Shr:		emulate_Shr(instr); break;
-			case Code.Shr_Un:	emulate_Shr_Un(instr); break;
-			case Code.Ceq:		emulate_Ceq(instr); break;
-			case Code.Cgt:		emulate_Cgt(instr); break;
-			case Code.Cgt_Un:	emulate_Cgt_Un(instr); break;
-			case Code.Clt:		emulate_Clt(instr); break;
-			case Code.Clt_Un:	emulate_Clt_Un(instr); break;
-			case Code.Unbox_Any:emulate_Unbox_Any(instr); break;
+			case Code.Conv_U1:	Emulate_Conv_U1(instr); break;
+			case Code.Conv_U2:	Emulate_Conv_U2(instr); break;
+			case Code.Conv_U4:	Emulate_Conv_U4(instr); break;
+			case Code.Conv_U8:	Emulate_Conv_U8(instr); break;
+			case Code.Conv_I1:	Emulate_Conv_I1(instr); break;
+			case Code.Conv_I2:	Emulate_Conv_I2(instr); break;
+			case Code.Conv_I4:	Emulate_Conv_I4(instr); break;
+			case Code.Conv_I8:	Emulate_Conv_I8(instr); break;
+			case Code.Add:		Emulate_Add(instr); break;
+			case Code.Sub:		Emulate_Sub(instr); break;
+			case Code.Mul:		Emulate_Mul(instr); break;
+			case Code.Div:		Emulate_Div(instr); break;
+			case Code.Div_Un:	Emulate_Div_Un(instr); break;
+			case Code.Rem:		Emulate_Rem(instr); break;
+			case Code.Rem_Un:	Emulate_Rem_Un(instr); break;
+			case Code.Neg:		Emulate_Neg(instr); break;
+			case Code.And:		Emulate_And(instr); break;
+			case Code.Or:		Emulate_Or(instr); break;
+			case Code.Xor:		Emulate_Xor(instr); break;
+			case Code.Not:		Emulate_Not(instr); break;
+			case Code.Shl:		Emulate_Shl(instr); break;
+			case Code.Shr:		Emulate_Shr(instr); break;
+			case Code.Shr_Un:	Emulate_Shr_Un(instr); break;
+			case Code.Ceq:		Emulate_Ceq(instr); break;
+			case Code.Cgt:		Emulate_Cgt(instr); break;
+			case Code.Cgt_Un:	Emulate_Cgt_Un(instr); break;
+			case Code.Clt:		Emulate_Clt(instr); break;
+			case Code.Clt_Un:	Emulate_Clt_Un(instr); break;
+			case Code.Unbox_Any:Emulate_Unbox_Any(instr); break;
 
-			case Code.Call:		emulate_Call(instr); break;
-			case Code.Callvirt:	emulate_Callvirt(instr); break;
+			case Code.Call:		Emulate_Call(instr); break;
+			case Code.Callvirt:	Emulate_Callvirt(instr); break;
 
-			case Code.Castclass: emulate_Castclass(instr); break;
-			case Code.Isinst:	emulate_Isinst(instr); break;
+			case Code.Castclass: Emulate_Castclass(instr); break;
+			case Code.Isinst:	Emulate_Isinst(instr); break;
 
-			case Code.Add_Ovf:	emulateIntOps2(); break;
-			case Code.Add_Ovf_Un: emulateIntOps2(); break;
-			case Code.Sub_Ovf:	emulateIntOps2(); break;
-			case Code.Sub_Ovf_Un: emulateIntOps2(); break;
-			case Code.Mul_Ovf:	emulateIntOps2(); break;
-			case Code.Mul_Ovf_Un: emulateIntOps2(); break;
+			case Code.Add_Ovf:	EmulateIntOps2(); break;
+			case Code.Add_Ovf_Un: EmulateIntOps2(); break;
+			case Code.Sub_Ovf:	EmulateIntOps2(); break;
+			case Code.Sub_Ovf_Un: EmulateIntOps2(); break;
+			case Code.Mul_Ovf:	EmulateIntOps2(); break;
+			case Code.Mul_Ovf_Un: EmulateIntOps2(); break;
 
 			case Code.Conv_Ovf_I1:
-			case Code.Conv_Ovf_I1_Un: valueStack.pop(); valueStack.push(Int32Value.createUnknown()); break;
+			case Code.Conv_Ovf_I1_Un: valueStack.Pop(); valueStack.Push(Int32Value.CreateUnknown()); break;
 			case Code.Conv_Ovf_I2:
-			case Code.Conv_Ovf_I2_Un: valueStack.pop(); valueStack.push(Int32Value.createUnknown()); break;
+			case Code.Conv_Ovf_I2_Un: valueStack.Pop(); valueStack.Push(Int32Value.CreateUnknown()); break;
 			case Code.Conv_Ovf_I4:
-			case Code.Conv_Ovf_I4_Un: valueStack.pop(); valueStack.push(Int32Value.createUnknown()); break;
+			case Code.Conv_Ovf_I4_Un: valueStack.Pop(); valueStack.Push(Int32Value.CreateUnknown()); break;
 			case Code.Conv_Ovf_I8:
-			case Code.Conv_Ovf_I8_Un: valueStack.pop(); valueStack.push(Int64Value.createUnknown()); break;
+			case Code.Conv_Ovf_I8_Un: valueStack.Pop(); valueStack.Push(Int64Value.CreateUnknown()); break;
 			case Code.Conv_Ovf_U1:
-			case Code.Conv_Ovf_U1_Un: valueStack.pop(); valueStack.push(Int32Value.createUnknownUInt8()); break;
+			case Code.Conv_Ovf_U1_Un: valueStack.Pop(); valueStack.Push(Int32Value.CreateUnknownUInt8()); break;
 			case Code.Conv_Ovf_U2:
-			case Code.Conv_Ovf_U2_Un: valueStack.pop(); valueStack.push(Int32Value.createUnknownUInt16()); break;
+			case Code.Conv_Ovf_U2_Un: valueStack.Pop(); valueStack.Push(Int32Value.CreateUnknownUInt16()); break;
 			case Code.Conv_Ovf_U4:
-			case Code.Conv_Ovf_U4_Un: valueStack.pop(); valueStack.push(Int32Value.createUnknown()); break;
+			case Code.Conv_Ovf_U4_Un: valueStack.Pop(); valueStack.Push(Int32Value.CreateUnknown()); break;
 			case Code.Conv_Ovf_U8:
-			case Code.Conv_Ovf_U8_Un: valueStack.pop(); valueStack.push(Int64Value.createUnknown()); break;
+			case Code.Conv_Ovf_U8_Un: valueStack.Pop(); valueStack.Push(Int64Value.CreateUnknown()); break;
 
-			case Code.Ldelem_I1: valueStack.pop(2); valueStack.push(Int32Value.createUnknown()); break;
-			case Code.Ldelem_I2: valueStack.pop(2); valueStack.push(Int32Value.createUnknown()); break;
-			case Code.Ldelem_I4: valueStack.pop(2); valueStack.push(Int32Value.createUnknown()); break;
-			case Code.Ldelem_I8: valueStack.pop(2); valueStack.push(Int64Value.createUnknown()); break;
-			case Code.Ldelem_U1: valueStack.pop(2); valueStack.push(Int32Value.createUnknownUInt8()); break;
-			case Code.Ldelem_U2: valueStack.pop(2); valueStack.push(Int32Value.createUnknownUInt16()); break;
-			case Code.Ldelem_U4: valueStack.pop(2); valueStack.push(Int32Value.createUnknown()); break;
-			case Code.Ldelem:	 valueStack.pop(2); valueStack.push(getUnknownValue(instr.Operand as ITypeDefOrRef)); break;
+			case Code.Ldelem_I1: valueStack.Pop(2); valueStack.Push(Int32Value.CreateUnknown()); break;
+			case Code.Ldelem_I2: valueStack.Pop(2); valueStack.Push(Int32Value.CreateUnknown()); break;
+			case Code.Ldelem_I4: valueStack.Pop(2); valueStack.Push(Int32Value.CreateUnknown()); break;
+			case Code.Ldelem_I8: valueStack.Pop(2); valueStack.Push(Int64Value.CreateUnknown()); break;
+			case Code.Ldelem_U1: valueStack.Pop(2); valueStack.Push(Int32Value.CreateUnknownUInt8()); break;
+			case Code.Ldelem_U2: valueStack.Pop(2); valueStack.Push(Int32Value.CreateUnknownUInt16()); break;
+			case Code.Ldelem_U4: valueStack.Pop(2); valueStack.Push(Int32Value.CreateUnknown()); break;
+			case Code.Ldelem:	 valueStack.Pop(2); valueStack.Push(GetUnknownValue(instr.Operand as ITypeDefOrRef)); break;
 
-			case Code.Ldind_I1:	valueStack.pop(); valueStack.push(Int32Value.createUnknown()); break;
-			case Code.Ldind_I2:	valueStack.pop(); valueStack.push(Int32Value.createUnknown()); break;
-			case Code.Ldind_I4:	valueStack.pop(); valueStack.push(Int32Value.createUnknown()); break;
-			case Code.Ldind_I8:	valueStack.pop(); valueStack.push(Int64Value.createUnknown()); break;
-			case Code.Ldind_U1:	valueStack.pop(); valueStack.push(Int32Value.createUnknownUInt8()); break;
-			case Code.Ldind_U2:	valueStack.pop(); valueStack.push(Int32Value.createUnknownUInt16()); break;
-			case Code.Ldind_U4:	valueStack.pop(); valueStack.push(Int32Value.createUnknown()); break;
+			case Code.Ldind_I1:	valueStack.Pop(); valueStack.Push(Int32Value.CreateUnknown()); break;
+			case Code.Ldind_I2:	valueStack.Pop(); valueStack.Push(Int32Value.CreateUnknown()); break;
+			case Code.Ldind_I4:	valueStack.Pop(); valueStack.Push(Int32Value.CreateUnknown()); break;
+			case Code.Ldind_I8:	valueStack.Pop(); valueStack.Push(Int64Value.CreateUnknown()); break;
+			case Code.Ldind_U1:	valueStack.Pop(); valueStack.Push(Int32Value.CreateUnknownUInt8()); break;
+			case Code.Ldind_U2:	valueStack.Pop(); valueStack.Push(Int32Value.CreateUnknownUInt16()); break;
+			case Code.Ldind_U4:	valueStack.Pop(); valueStack.Push(Int32Value.CreateUnknown()); break;
 
-			case Code.Ldlen:	valueStack.pop(); valueStack.push(Int32Value.createUnknown()); break;
-			case Code.Sizeof:	valueStack.push(Int32Value.createUnknown()); break;
+			case Code.Ldlen:	valueStack.Pop(); valueStack.Push(Int32Value.CreateUnknown()); break;
+			case Code.Sizeof:	valueStack.Push(Int32Value.CreateUnknown()); break;
 
-			case Code.Ldfld:	emulate_Ldfld(instr); break;
-			case Code.Ldsfld:	emulate_Ldsfld(instr); break;
+			case Code.Ldfld:	Emulate_Ldfld(instr); break;
+			case Code.Ldsfld:	Emulate_Ldsfld(instr); break;
 
-			case Code.Ldftn:	valueStack.push(new ObjectValue(instr.Operand)); break;
-			case Code.Ldsflda:	valueStack.push(new ObjectValue(instr.Operand)); break;
-			case Code.Ldtoken:	valueStack.push(new ObjectValue(instr.Operand)); break;
-			case Code.Ldvirtftn:valueStack.pop(); valueStack.push(new ObjectValue()); break;
-			case Code.Ldflda:	valueStack.pop(); valueStack.push(new ObjectValue()); break;
+			case Code.Ldftn:	valueStack.Push(new ObjectValue(instr.Operand)); break;
+			case Code.Ldsflda:	valueStack.Push(new ObjectValue(instr.Operand)); break;
+			case Code.Ldtoken:	valueStack.Push(new ObjectValue(instr.Operand)); break;
+			case Code.Ldvirtftn:valueStack.Pop(); valueStack.Push(new ObjectValue()); break;
+			case Code.Ldflda:	valueStack.Pop(); valueStack.Push(new ObjectValue()); break;
 
 			case Code.Unbox:
 
@@ -499,449 +499,449 @@ namespace de4dot.blocks.cflow {
 			case Code.Unaligned:
 			case Code.Volatile:
 			default:
-				updateStack(instr);
+				UpdateStack(instr);
 				break;
 			}
 		}
 
-		void updateStack(Instruction instr) {
+		void UpdateStack(Instruction instr) {
 			int pushes, pops;
 			instr.CalculateStackUsage(out pushes, out pops);
 			if (pops == -1)
-				valueStack.clear();
+				valueStack.Clear();
 			else {
-				valueStack.pop(pops);
-				valueStack.push(pushes);
+				valueStack.Pop(pops);
+				valueStack.Push(pushes);
 			}
 		}
 
-		void emulate_Conv_U1(Instruction instr) {
-			var val1 = valueStack.pop();
+		void Emulate_Conv_U1(Instruction instr) {
+			var val1 = valueStack.Pop();
 			switch (val1.valueType) {
-			case ValueType.Int32:	valueStack.push(Int32Value.Conv_U1((Int32Value)val1)); break;
-			case ValueType.Int64:	valueStack.push(Int32Value.Conv_U1((Int64Value)val1)); break;
-			case ValueType.Real8:	valueStack.push(Int32Value.Conv_U1((Real8Value)val1)); break;
-			default:				valueStack.push(Int32Value.createUnknownUInt8()); break;
+			case ValueType.Int32:	valueStack.Push(Int32Value.Conv_U1((Int32Value)val1)); break;
+			case ValueType.Int64:	valueStack.Push(Int32Value.Conv_U1((Int64Value)val1)); break;
+			case ValueType.Real8:	valueStack.Push(Int32Value.Conv_U1((Real8Value)val1)); break;
+			default:				valueStack.Push(Int32Value.CreateUnknownUInt8()); break;
 			}
 		}
 
-		void emulate_Conv_I1(Instruction instr) {
-			var val1 = valueStack.pop();
+		void Emulate_Conv_I1(Instruction instr) {
+			var val1 = valueStack.Pop();
 			switch (val1.valueType) {
-			case ValueType.Int32:	valueStack.push(Int32Value.Conv_I1((Int32Value)val1)); break;
-			case ValueType.Int64:	valueStack.push(Int32Value.Conv_I1((Int64Value)val1)); break;
-			case ValueType.Real8:	valueStack.push(Int32Value.Conv_I1((Real8Value)val1)); break;
-			default:				valueStack.push(Int32Value.createUnknown()); break;
+			case ValueType.Int32:	valueStack.Push(Int32Value.Conv_I1((Int32Value)val1)); break;
+			case ValueType.Int64:	valueStack.Push(Int32Value.Conv_I1((Int64Value)val1)); break;
+			case ValueType.Real8:	valueStack.Push(Int32Value.Conv_I1((Real8Value)val1)); break;
+			default:				valueStack.Push(Int32Value.CreateUnknown()); break;
 			}
 		}
 
-		void emulate_Conv_U2(Instruction instr) {
-			var val1 = valueStack.pop();
+		void Emulate_Conv_U2(Instruction instr) {
+			var val1 = valueStack.Pop();
 			switch (val1.valueType) {
-			case ValueType.Int32:	valueStack.push(Int32Value.Conv_U2((Int32Value)val1)); break;
-			case ValueType.Int64:	valueStack.push(Int32Value.Conv_U2((Int64Value)val1)); break;
-			case ValueType.Real8:	valueStack.push(Int32Value.Conv_U2((Real8Value)val1)); break;
-			default:				valueStack.push(Int32Value.createUnknownUInt16()); break;
+			case ValueType.Int32:	valueStack.Push(Int32Value.Conv_U2((Int32Value)val1)); break;
+			case ValueType.Int64:	valueStack.Push(Int32Value.Conv_U2((Int64Value)val1)); break;
+			case ValueType.Real8:	valueStack.Push(Int32Value.Conv_U2((Real8Value)val1)); break;
+			default:				valueStack.Push(Int32Value.CreateUnknownUInt16()); break;
 			}
 		}
 
-		void emulate_Conv_I2(Instruction instr) {
-			var val1 = valueStack.pop();
+		void Emulate_Conv_I2(Instruction instr) {
+			var val1 = valueStack.Pop();
 			switch (val1.valueType) {
-			case ValueType.Int32:	valueStack.push(Int32Value.Conv_I2((Int32Value)val1)); break;
-			case ValueType.Int64:	valueStack.push(Int32Value.Conv_I2((Int64Value)val1)); break;
-			case ValueType.Real8:	valueStack.push(Int32Value.Conv_I2((Real8Value)val1)); break;
-			default:				valueStack.push(Int32Value.createUnknown()); break;
+			case ValueType.Int32:	valueStack.Push(Int32Value.Conv_I2((Int32Value)val1)); break;
+			case ValueType.Int64:	valueStack.Push(Int32Value.Conv_I2((Int64Value)val1)); break;
+			case ValueType.Real8:	valueStack.Push(Int32Value.Conv_I2((Real8Value)val1)); break;
+			default:				valueStack.Push(Int32Value.CreateUnknown()); break;
 			}
 		}
 
-		void emulate_Conv_U4(Instruction instr) {
-			var val1 = valueStack.pop();
+		void Emulate_Conv_U4(Instruction instr) {
+			var val1 = valueStack.Pop();
 			switch (val1.valueType) {
-			case ValueType.Int32:	valueStack.push(Int32Value.Conv_U4((Int32Value)val1)); break;
-			case ValueType.Int64:	valueStack.push(Int32Value.Conv_U4((Int64Value)val1)); break;
-			case ValueType.Real8:	valueStack.push(Int32Value.Conv_U4((Real8Value)val1)); break;
-			default:				valueStack.push(Int32Value.createUnknown()); break;
+			case ValueType.Int32:	valueStack.Push(Int32Value.Conv_U4((Int32Value)val1)); break;
+			case ValueType.Int64:	valueStack.Push(Int32Value.Conv_U4((Int64Value)val1)); break;
+			case ValueType.Real8:	valueStack.Push(Int32Value.Conv_U4((Real8Value)val1)); break;
+			default:				valueStack.Push(Int32Value.CreateUnknown()); break;
 			}
 		}
 
-		void emulate_Conv_I4(Instruction instr) {
-			var val1 = valueStack.pop();
+		void Emulate_Conv_I4(Instruction instr) {
+			var val1 = valueStack.Pop();
 			switch (val1.valueType) {
-			case ValueType.Int32:	valueStack.push(Int32Value.Conv_I4((Int32Value)val1)); break;
-			case ValueType.Int64:	valueStack.push(Int32Value.Conv_I4((Int64Value)val1)); break;
-			case ValueType.Real8:	valueStack.push(Int32Value.Conv_I4((Real8Value)val1)); break;
-			default:				valueStack.push(Int32Value.createUnknown()); break;
+			case ValueType.Int32:	valueStack.Push(Int32Value.Conv_I4((Int32Value)val1)); break;
+			case ValueType.Int64:	valueStack.Push(Int32Value.Conv_I4((Int64Value)val1)); break;
+			case ValueType.Real8:	valueStack.Push(Int32Value.Conv_I4((Real8Value)val1)); break;
+			default:				valueStack.Push(Int32Value.CreateUnknown()); break;
 			}
 		}
 
-		void emulate_Conv_U8(Instruction instr) {
-			var val1 = valueStack.pop();
+		void Emulate_Conv_U8(Instruction instr) {
+			var val1 = valueStack.Pop();
 			switch (val1.valueType) {
-			case ValueType.Int32:	valueStack.push(Int64Value.Conv_U8((Int32Value)val1)); break;
-			case ValueType.Int64:	valueStack.push(Int64Value.Conv_U8((Int64Value)val1)); break;
-			case ValueType.Real8:	valueStack.push(Int64Value.Conv_U8((Real8Value)val1)); break;
-			default:				valueStack.push(Int64Value.createUnknown()); break;
+			case ValueType.Int32:	valueStack.Push(Int64Value.Conv_U8((Int32Value)val1)); break;
+			case ValueType.Int64:	valueStack.Push(Int64Value.Conv_U8((Int64Value)val1)); break;
+			case ValueType.Real8:	valueStack.Push(Int64Value.Conv_U8((Real8Value)val1)); break;
+			default:				valueStack.Push(Int64Value.CreateUnknown()); break;
 			}
 		}
 
-		void emulate_Conv_I8(Instruction instr) {
-			var val1 = valueStack.pop();
+		void Emulate_Conv_I8(Instruction instr) {
+			var val1 = valueStack.Pop();
 			switch (val1.valueType) {
-			case ValueType.Int32:	valueStack.push(Int64Value.Conv_I8((Int32Value)val1)); break;
-			case ValueType.Int64:	valueStack.push(Int64Value.Conv_I8((Int64Value)val1)); break;
-			case ValueType.Real8:	valueStack.push(Int64Value.Conv_I8((Real8Value)val1)); break;
-			default:				valueStack.push(Int64Value.createUnknown()); break;
+			case ValueType.Int32:	valueStack.Push(Int64Value.Conv_I8((Int32Value)val1)); break;
+			case ValueType.Int64:	valueStack.Push(Int64Value.Conv_I8((Int64Value)val1)); break;
+			case ValueType.Real8:	valueStack.Push(Int64Value.Conv_I8((Real8Value)val1)); break;
+			default:				valueStack.Push(Int64Value.CreateUnknown()); break;
 			}
 		}
 
-		void emulate_Add(Instruction instr) {
-			var val2 = valueStack.pop();
-			var val1 = valueStack.pop();
+		void Emulate_Add(Instruction instr) {
+			var val2 = valueStack.Pop();
+			var val1 = valueStack.Pop();
 
-			if (val1.isInt32() && val2.isInt32())
-				valueStack.push(Int32Value.Add((Int32Value)val1, (Int32Value)val2));
-			else if (val1.isInt64() && val2.isInt64())
-				valueStack.push(Int64Value.Add((Int64Value)val1, (Int64Value)val2));
-			else if (val1.isReal8() && val2.isReal8())
-				valueStack.push(Real8Value.Add((Real8Value)val1, (Real8Value)val2));
+			if (val1.IsInt32() && val2.IsInt32())
+				valueStack.Push(Int32Value.Add((Int32Value)val1, (Int32Value)val2));
+			else if (val1.IsInt64() && val2.IsInt64())
+				valueStack.Push(Int64Value.Add((Int64Value)val1, (Int64Value)val2));
+			else if (val1.IsReal8() && val2.IsReal8())
+				valueStack.Push(Real8Value.Add((Real8Value)val1, (Real8Value)val2));
 			else
-				valueStack.pushUnknown();
+				valueStack.PushUnknown();
 		}
 
-		void emulate_Sub(Instruction instr) {
-			var val2 = valueStack.pop();
-			var val1 = valueStack.pop();
+		void Emulate_Sub(Instruction instr) {
+			var val2 = valueStack.Pop();
+			var val1 = valueStack.Pop();
 
-			if (val1.isInt32() && val2.isInt32())
-				valueStack.push(Int32Value.Sub((Int32Value)val1, (Int32Value)val2));
-			else if (val1.isInt64() && val2.isInt64())
-				valueStack.push(Int64Value.Sub((Int64Value)val1, (Int64Value)val2));
-			else if (val1.isReal8() && val2.isReal8())
-				valueStack.push(Real8Value.Sub((Real8Value)val1, (Real8Value)val2));
+			if (val1.IsInt32() && val2.IsInt32())
+				valueStack.Push(Int32Value.Sub((Int32Value)val1, (Int32Value)val2));
+			else if (val1.IsInt64() && val2.IsInt64())
+				valueStack.Push(Int64Value.Sub((Int64Value)val1, (Int64Value)val2));
+			else if (val1.IsReal8() && val2.IsReal8())
+				valueStack.Push(Real8Value.Sub((Real8Value)val1, (Real8Value)val2));
 			else
-				valueStack.pushUnknown();
+				valueStack.PushUnknown();
 		}
 
-		void emulate_Mul(Instruction instr) {
-			var val2 = valueStack.pop();
-			var val1 = valueStack.pop();
+		void Emulate_Mul(Instruction instr) {
+			var val2 = valueStack.Pop();
+			var val1 = valueStack.Pop();
 
-			if (val1.isInt32() && val2.isInt32())
-				valueStack.push(Int32Value.Mul((Int32Value)val1, (Int32Value)val2));
-			else if (val1.isInt64() && val2.isInt64())
-				valueStack.push(Int64Value.Mul((Int64Value)val1, (Int64Value)val2));
-			else if (val1.isReal8() && val2.isReal8())
-				valueStack.push(Real8Value.Mul((Real8Value)val1, (Real8Value)val2));
+			if (val1.IsInt32() && val2.IsInt32())
+				valueStack.Push(Int32Value.Mul((Int32Value)val1, (Int32Value)val2));
+			else if (val1.IsInt64() && val2.IsInt64())
+				valueStack.Push(Int64Value.Mul((Int64Value)val1, (Int64Value)val2));
+			else if (val1.IsReal8() && val2.IsReal8())
+				valueStack.Push(Real8Value.Mul((Real8Value)val1, (Real8Value)val2));
 			else
-				valueStack.pushUnknown();
+				valueStack.PushUnknown();
 		}
 
-		void emulate_Div(Instruction instr) {
-			var val2 = valueStack.pop();
-			var val1 = valueStack.pop();
+		void Emulate_Div(Instruction instr) {
+			var val2 = valueStack.Pop();
+			var val1 = valueStack.Pop();
 
-			if (val1.isInt32() && val2.isInt32())
-				valueStack.push(Int32Value.Div((Int32Value)val1, (Int32Value)val2));
-			else if (val1.isInt64() && val2.isInt64())
-				valueStack.push(Int64Value.Div((Int64Value)val1, (Int64Value)val2));
-			else if (val1.isReal8() && val2.isReal8())
-				valueStack.push(Real8Value.Div((Real8Value)val1, (Real8Value)val2));
+			if (val1.IsInt32() && val2.IsInt32())
+				valueStack.Push(Int32Value.Div((Int32Value)val1, (Int32Value)val2));
+			else if (val1.IsInt64() && val2.IsInt64())
+				valueStack.Push(Int64Value.Div((Int64Value)val1, (Int64Value)val2));
+			else if (val1.IsReal8() && val2.IsReal8())
+				valueStack.Push(Real8Value.Div((Real8Value)val1, (Real8Value)val2));
 			else
-				valueStack.pushUnknown();
+				valueStack.PushUnknown();
 		}
 
-		void emulate_Div_Un(Instruction instr) {
-			var val2 = valueStack.pop();
-			var val1 = valueStack.pop();
+		void Emulate_Div_Un(Instruction instr) {
+			var val2 = valueStack.Pop();
+			var val1 = valueStack.Pop();
 
-			if (val1.isInt32() && val2.isInt32())
-				valueStack.push(Int32Value.Div_Un((Int32Value)val1, (Int32Value)val2));
-			else if (val1.isInt64() && val2.isInt64())
-				valueStack.push(Int64Value.Div_Un((Int64Value)val1, (Int64Value)val2));
+			if (val1.IsInt32() && val2.IsInt32())
+				valueStack.Push(Int32Value.Div_Un((Int32Value)val1, (Int32Value)val2));
+			else if (val1.IsInt64() && val2.IsInt64())
+				valueStack.Push(Int64Value.Div_Un((Int64Value)val1, (Int64Value)val2));
 			else
-				valueStack.pushUnknown();
+				valueStack.PushUnknown();
 		}
 
-		void emulate_Rem(Instruction instr) {
-			var val2 = valueStack.pop();
-			var val1 = valueStack.pop();
+		void Emulate_Rem(Instruction instr) {
+			var val2 = valueStack.Pop();
+			var val1 = valueStack.Pop();
 
-			if (val1.isInt32() && val2.isInt32())
-				valueStack.push(Int32Value.Rem((Int32Value)val1, (Int32Value)val2));
-			else if (val1.isInt64() && val2.isInt64())
-				valueStack.push(Int64Value.Rem((Int64Value)val1, (Int64Value)val2));
-			else if (val1.isReal8() && val2.isReal8())
-				valueStack.push(Real8Value.Rem((Real8Value)val1, (Real8Value)val2));
+			if (val1.IsInt32() && val2.IsInt32())
+				valueStack.Push(Int32Value.Rem((Int32Value)val1, (Int32Value)val2));
+			else if (val1.IsInt64() && val2.IsInt64())
+				valueStack.Push(Int64Value.Rem((Int64Value)val1, (Int64Value)val2));
+			else if (val1.IsReal8() && val2.IsReal8())
+				valueStack.Push(Real8Value.Rem((Real8Value)val1, (Real8Value)val2));
 			else
-				valueStack.pushUnknown();
+				valueStack.PushUnknown();
 		}
 
-		void emulate_Rem_Un(Instruction instr) {
-			var val2 = valueStack.pop();
-			var val1 = valueStack.pop();
+		void Emulate_Rem_Un(Instruction instr) {
+			var val2 = valueStack.Pop();
+			var val1 = valueStack.Pop();
 
-			if (val1.isInt32() && val2.isInt32())
-				valueStack.push(Int32Value.Rem_Un((Int32Value)val1, (Int32Value)val2));
-			else if (val1.isInt64() && val2.isInt64())
-				valueStack.push(Int64Value.Rem_Un((Int64Value)val1, (Int64Value)val2));
+			if (val1.IsInt32() && val2.IsInt32())
+				valueStack.Push(Int32Value.Rem_Un((Int32Value)val1, (Int32Value)val2));
+			else if (val1.IsInt64() && val2.IsInt64())
+				valueStack.Push(Int64Value.Rem_Un((Int64Value)val1, (Int64Value)val2));
 			else
-				valueStack.pushUnknown();
+				valueStack.PushUnknown();
 		}
 
-		void emulate_Neg(Instruction instr) {
-			var val1 = valueStack.pop();
+		void Emulate_Neg(Instruction instr) {
+			var val1 = valueStack.Pop();
 
-			if (val1.isInt32())
-				valueStack.push(Int32Value.Neg((Int32Value)val1));
-			else if (val1.isInt64())
-				valueStack.push(Int64Value.Neg((Int64Value)val1));
-			else if (val1.isReal8())
-				valueStack.push(Real8Value.Neg((Real8Value)val1));
+			if (val1.IsInt32())
+				valueStack.Push(Int32Value.Neg((Int32Value)val1));
+			else if (val1.IsInt64())
+				valueStack.Push(Int64Value.Neg((Int64Value)val1));
+			else if (val1.IsReal8())
+				valueStack.Push(Real8Value.Neg((Real8Value)val1));
 			else
-				valueStack.pushUnknown();
+				valueStack.PushUnknown();
 		}
 
-		void emulate_And(Instruction instr) {
-			var val2 = valueStack.pop();
-			var val1 = valueStack.pop();
+		void Emulate_And(Instruction instr) {
+			var val2 = valueStack.Pop();
+			var val1 = valueStack.Pop();
 
-			if (val1.isInt32() && val2.isInt32())
-				valueStack.push(Int32Value.And((Int32Value)val1, (Int32Value)val2));
-			else if (val1.isInt64() && val2.isInt64())
-				valueStack.push(Int64Value.And((Int64Value)val1, (Int64Value)val2));
+			if (val1.IsInt32() && val2.IsInt32())
+				valueStack.Push(Int32Value.And((Int32Value)val1, (Int32Value)val2));
+			else if (val1.IsInt64() && val2.IsInt64())
+				valueStack.Push(Int64Value.And((Int64Value)val1, (Int64Value)val2));
 			else
-				valueStack.pushUnknown();
+				valueStack.PushUnknown();
 		}
 
-		void emulate_Or(Instruction instr) {
-			var val2 = valueStack.pop();
-			var val1 = valueStack.pop();
+		void Emulate_Or(Instruction instr) {
+			var val2 = valueStack.Pop();
+			var val1 = valueStack.Pop();
 
-			if (val1.isInt32() && val2.isInt32())
-				valueStack.push(Int32Value.Or((Int32Value)val1, (Int32Value)val2));
-			else if (val1.isInt64() && val2.isInt64())
-				valueStack.push(Int64Value.Or((Int64Value)val1, (Int64Value)val2));
+			if (val1.IsInt32() && val2.IsInt32())
+				valueStack.Push(Int32Value.Or((Int32Value)val1, (Int32Value)val2));
+			else if (val1.IsInt64() && val2.IsInt64())
+				valueStack.Push(Int64Value.Or((Int64Value)val1, (Int64Value)val2));
 			else
-				valueStack.pushUnknown();
+				valueStack.PushUnknown();
 		}
 
-		void emulate_Xor(Instruction instr) {
-			var val2 = valueStack.pop();
-			var val1 = valueStack.pop();
+		void Emulate_Xor(Instruction instr) {
+			var val2 = valueStack.Pop();
+			var val1 = valueStack.Pop();
 
-			if (val1.isInt32() && val2.isInt32())
-				valueStack.push(Int32Value.Xor((Int32Value)val1, (Int32Value)val2));
-			else if (val1.isInt64() && val2.isInt64())
-				valueStack.push(Int64Value.Xor((Int64Value)val1, (Int64Value)val2));
+			if (val1.IsInt32() && val2.IsInt32())
+				valueStack.Push(Int32Value.Xor((Int32Value)val1, (Int32Value)val2));
+			else if (val1.IsInt64() && val2.IsInt64())
+				valueStack.Push(Int64Value.Xor((Int64Value)val1, (Int64Value)val2));
 			else
-				valueStack.pushUnknown();
+				valueStack.PushUnknown();
 		}
 
-		void emulate_Not(Instruction instr) {
-			var val1 = valueStack.pop();
+		void Emulate_Not(Instruction instr) {
+			var val1 = valueStack.Pop();
 
-			if (val1.isInt32())
-				valueStack.push(Int32Value.Not((Int32Value)val1));
-			else if (val1.isInt64())
-				valueStack.push(Int64Value.Not((Int64Value)val1));
+			if (val1.IsInt32())
+				valueStack.Push(Int32Value.Not((Int32Value)val1));
+			else if (val1.IsInt64())
+				valueStack.Push(Int64Value.Not((Int64Value)val1));
 			else
-				valueStack.pushUnknown();
+				valueStack.PushUnknown();
 		}
 
-		void emulate_Shl(Instruction instr) {
-			var val2 = valueStack.pop();
-			var val1 = valueStack.pop();
+		void Emulate_Shl(Instruction instr) {
+			var val2 = valueStack.Pop();
+			var val1 = valueStack.Pop();
 
-			if (val1.isInt32() && val2.isInt32())
-				valueStack.push(Int32Value.Shl((Int32Value)val1, (Int32Value)val2));
-			else if (val1.isInt64() && val2.isInt32())
-				valueStack.push(Int64Value.Shl((Int64Value)val1, (Int32Value)val2));
+			if (val1.IsInt32() && val2.IsInt32())
+				valueStack.Push(Int32Value.Shl((Int32Value)val1, (Int32Value)val2));
+			else if (val1.IsInt64() && val2.IsInt32())
+				valueStack.Push(Int64Value.Shl((Int64Value)val1, (Int32Value)val2));
 			else
-				valueStack.pushUnknown();
+				valueStack.PushUnknown();
 		}
 
-		void emulate_Shr(Instruction instr) {
-			var val2 = valueStack.pop();
-			var val1 = valueStack.pop();
+		void Emulate_Shr(Instruction instr) {
+			var val2 = valueStack.Pop();
+			var val1 = valueStack.Pop();
 
-			if (val1.isInt32() && val2.isInt32())
-				valueStack.push(Int32Value.Shr((Int32Value)val1, (Int32Value)val2));
-			else if (val1.isInt64() && val2.isInt32())
-				valueStack.push(Int64Value.Shr((Int64Value)val1, (Int32Value)val2));
+			if (val1.IsInt32() && val2.IsInt32())
+				valueStack.Push(Int32Value.Shr((Int32Value)val1, (Int32Value)val2));
+			else if (val1.IsInt64() && val2.IsInt32())
+				valueStack.Push(Int64Value.Shr((Int64Value)val1, (Int32Value)val2));
 			else
-				valueStack.pushUnknown();
+				valueStack.PushUnknown();
 		}
 
-		void emulate_Shr_Un(Instruction instr) {
-			var val2 = valueStack.pop();
-			var val1 = valueStack.pop();
+		void Emulate_Shr_Un(Instruction instr) {
+			var val2 = valueStack.Pop();
+			var val1 = valueStack.Pop();
 
-			if (val1.isInt32() && val2.isInt32())
-				valueStack.push(Int32Value.Shr_Un((Int32Value)val1, (Int32Value)val2));
-			else if (val1.isInt64() && val2.isInt32())
-				valueStack.push(Int64Value.Shr_Un((Int64Value)val1, (Int32Value)val2));
+			if (val1.IsInt32() && val2.IsInt32())
+				valueStack.Push(Int32Value.Shr_Un((Int32Value)val1, (Int32Value)val2));
+			else if (val1.IsInt64() && val2.IsInt32())
+				valueStack.Push(Int64Value.Shr_Un((Int64Value)val1, (Int32Value)val2));
 			else
-				valueStack.pushUnknown();
+				valueStack.PushUnknown();
 		}
 
-		void emulate_Ceq(Instruction instr) {
-			var val2 = valueStack.pop();
-			var val1 = valueStack.pop();
+		void Emulate_Ceq(Instruction instr) {
+			var val2 = valueStack.Pop();
+			var val1 = valueStack.Pop();
 
-			if (val1.isInt32() && val2.isInt32())
-				valueStack.push(Int32Value.Ceq((Int32Value)val1, (Int32Value)val2));
-			else if (val1.isInt64() && val2.isInt64())
-				valueStack.push(Int64Value.Ceq((Int64Value)val1, (Int64Value)val2));
-			else if (val1.isNull() && val2.isNull())
-				valueStack.push(Int32Value.one);
+			if (val1.IsInt32() && val2.IsInt32())
+				valueStack.Push(Int32Value.Ceq((Int32Value)val1, (Int32Value)val2));
+			else if (val1.IsInt64() && val2.IsInt64())
+				valueStack.Push(Int64Value.Ceq((Int64Value)val1, (Int64Value)val2));
+			else if (val1.IsNull() && val2.IsNull())
+				valueStack.Push(Int32Value.one);
 			else
-				valueStack.push(Int32Value.createUnknownBool());
+				valueStack.Push(Int32Value.CreateUnknownBool());
 		}
 
-		void emulate_Cgt(Instruction instr) {
-			var val2 = valueStack.pop();
-			var val1 = valueStack.pop();
+		void Emulate_Cgt(Instruction instr) {
+			var val2 = valueStack.Pop();
+			var val1 = valueStack.Pop();
 
-			if (val1.isInt32() && val2.isInt32())
-				valueStack.push(Int32Value.Cgt((Int32Value)val1, (Int32Value)val2));
-			else if (val1.isInt64() && val2.isInt64())
-				valueStack.push(Int64Value.Cgt((Int64Value)val1, (Int64Value)val2));
+			if (val1.IsInt32() && val2.IsInt32())
+				valueStack.Push(Int32Value.Cgt((Int32Value)val1, (Int32Value)val2));
+			else if (val1.IsInt64() && val2.IsInt64())
+				valueStack.Push(Int64Value.Cgt((Int64Value)val1, (Int64Value)val2));
 			else
-				valueStack.push(Int32Value.createUnknownBool());
+				valueStack.Push(Int32Value.CreateUnknownBool());
 		}
 
-		void emulate_Cgt_Un(Instruction instr) {
-			var val2 = valueStack.pop();
-			var val1 = valueStack.pop();
+		void Emulate_Cgt_Un(Instruction instr) {
+			var val2 = valueStack.Pop();
+			var val1 = valueStack.Pop();
 
-			if (val1.isInt32() && val2.isInt32())
-				valueStack.push(Int32Value.Cgt_Un((Int32Value)val1, (Int32Value)val2));
-			else if (val1.isInt64() && val2.isInt64())
-				valueStack.push(Int64Value.Cgt_Un((Int64Value)val1, (Int64Value)val2));
+			if (val1.IsInt32() && val2.IsInt32())
+				valueStack.Push(Int32Value.Cgt_Un((Int32Value)val1, (Int32Value)val2));
+			else if (val1.IsInt64() && val2.IsInt64())
+				valueStack.Push(Int64Value.Cgt_Un((Int64Value)val1, (Int64Value)val2));
 			else
-				valueStack.push(Int32Value.createUnknownBool());
+				valueStack.Push(Int32Value.CreateUnknownBool());
 		}
 
-		void emulate_Clt(Instruction instr) {
-			var val2 = valueStack.pop();
-			var val1 = valueStack.pop();
+		void Emulate_Clt(Instruction instr) {
+			var val2 = valueStack.Pop();
+			var val1 = valueStack.Pop();
 
-			if (val1.isInt32() && val2.isInt32())
-				valueStack.push(Int32Value.Clt((Int32Value)val1, (Int32Value)val2));
-			else if (val1.isInt64() && val2.isInt64())
-				valueStack.push(Int64Value.Clt((Int64Value)val1, (Int64Value)val2));
+			if (val1.IsInt32() && val2.IsInt32())
+				valueStack.Push(Int32Value.Clt((Int32Value)val1, (Int32Value)val2));
+			else if (val1.IsInt64() && val2.IsInt64())
+				valueStack.Push(Int64Value.Clt((Int64Value)val1, (Int64Value)val2));
 			else
-				valueStack.push(Int32Value.createUnknownBool());
+				valueStack.Push(Int32Value.CreateUnknownBool());
 		}
 
-		void emulate_Clt_Un(Instruction instr) {
-			var val2 = valueStack.pop();
-			var val1 = valueStack.pop();
+		void Emulate_Clt_Un(Instruction instr) {
+			var val2 = valueStack.Pop();
+			var val1 = valueStack.Pop();
 
-			if (val1.isInt32() && val2.isInt32())
-				valueStack.push(Int32Value.Clt_Un((Int32Value)val1, (Int32Value)val2));
-			else if (val1.isInt64() && val2.isInt64())
-				valueStack.push(Int64Value.Clt_Un((Int64Value)val1, (Int64Value)val2));
+			if (val1.IsInt32() && val2.IsInt32())
+				valueStack.Push(Int32Value.Clt_Un((Int32Value)val1, (Int32Value)val2));
+			else if (val1.IsInt64() && val2.IsInt64())
+				valueStack.Push(Int64Value.Clt_Un((Int64Value)val1, (Int64Value)val2));
 			else
-				valueStack.push(Int32Value.createUnknownBool());
+				valueStack.Push(Int32Value.CreateUnknownBool());
 		}
 
-		void emulate_Unbox_Any(Instruction instr) {
-			var val1 = valueStack.pop();
-			if (val1.isBoxed())
-				valueStack.push(((BoxedValue)val1).value);
+		void Emulate_Unbox_Any(Instruction instr) {
+			var val1 = valueStack.Pop();
+			if (val1.IsBoxed())
+				valueStack.Push(((BoxedValue)val1).value);
 			else
-				valueStack.pushUnknown();
+				valueStack.PushUnknown();
 		}
 
-		void emulate_Starg(Parameter arg) {
-			setArg(arg == null ? -1 : arg.Index, valueStack.pop());
+		void Emulate_Starg(Parameter arg) {
+			SetArg(arg == null ? -1 : arg.Index, valueStack.Pop());
 		}
 
-		void emulate_Stloc(Local local) {
-			emulate_Stloc(local == null ? -1 : local.Index);
+		void Emulate_Stloc(Local local) {
+			Emulate_Stloc(local == null ? -1 : local.Index);
 		}
 
-		void emulate_Stloc(int index) {
-			setLocal(index, valueStack.pop());
+		void Emulate_Stloc(int index) {
+			SetLocal(index, valueStack.Pop());
 		}
 
-		void emulate_Ldarga(Parameter arg) {
-			valueStack.pushUnknown();
-			makeArgUnknown(arg);
+		void Emulate_Ldarga(Parameter arg) {
+			valueStack.PushUnknown();
+			MakeArgUnknown(arg);
 		}
 
-		void emulate_Ldloca(Local local) {
-			emulate_Ldloca(local == null ? -1 : local.Index);
+		void Emulate_Ldloca(Local local) {
+			Emulate_Ldloca(local == null ? -1 : local.Index);
 		}
 
-		void emulate_Ldloca(int index) {
-			valueStack.pushUnknown();
-			setLocal(index, getUnknownLocal(index));
+		void Emulate_Ldloca(int index) {
+			valueStack.PushUnknown();
+			SetLocal(index, GetUnknownLocal(index));
 		}
 
-		void emulate_Call(Instruction instr) {
-			emulate_Call(instr, (IMethod)instr.Operand);
+		void Emulate_Call(Instruction instr) {
+			Emulate_Call(instr, (IMethod)instr.Operand);
 		}
 
-		void emulate_Callvirt(Instruction instr) {
-			emulate_Call(instr, (IMethod)instr.Operand);
+		void Emulate_Callvirt(Instruction instr) {
+			Emulate_Call(instr, (IMethod)instr.Operand);
 		}
 
-		void emulate_Call(Instruction instr, IMethod method) {
+		void Emulate_Call(Instruction instr, IMethod method) {
 			int pushes, pops;
 			instr.CalculateStackUsage(out pushes, out pops);
-			valueStack.pop(pops);
+			valueStack.Pop(pops);
 			if (pushes == 1)
-				valueStack.push(getUnknownValue(method.MethodSig.GetRetType()));
+				valueStack.Push(GetUnknownValue(method.MethodSig.GetRetType()));
 			else
-				valueStack.push(pushes);
+				valueStack.Push(pushes);
 		}
 
-		void emulate_Castclass(Instruction instr) {
-			var val1 = valueStack.pop();
+		void Emulate_Castclass(Instruction instr) {
+			var val1 = valueStack.Pop();
 
-			if (val1.isNull())
-				valueStack.push(val1);
+			if (val1.IsNull())
+				valueStack.Push(val1);
 			else
-				valueStack.pushUnknown();
+				valueStack.PushUnknown();
 		}
 
-		void emulate_Isinst(Instruction instr) {
-			var val1 = valueStack.pop();
+		void Emulate_Isinst(Instruction instr) {
+			var val1 = valueStack.Pop();
 
-			if (val1.isNull())
-				valueStack.push(val1);
+			if (val1.IsNull())
+				valueStack.Push(val1);
 			else
-				valueStack.pushUnknown();
+				valueStack.PushUnknown();
 		}
 
-		void emulate_Ldfld(Instruction instr) {
-			var val1 = valueStack.pop();
-			emulateLoadField(instr.Operand as IField);
+		void Emulate_Ldfld(Instruction instr) {
+			var val1 = valueStack.Pop();
+			EmulateLoadField(instr.Operand as IField);
 		}
 
-		void emulate_Ldsfld(Instruction instr) {
-			emulateLoadField(instr.Operand as IField);
+		void Emulate_Ldsfld(Instruction instr) {
+			EmulateLoadField(instr.Operand as IField);
 		}
 
-		void emulateLoadField(IField field) {
+		void EmulateLoadField(IField field) {
 			if (field != null)
-				valueStack.push(getUnknownValue(field.FieldSig.GetFieldType()));
+				valueStack.Push(GetUnknownValue(field.FieldSig.GetFieldType()));
 			else
-				valueStack.pushUnknown();
+				valueStack.PushUnknown();
 		}
 
-		void emulateIntOps2() {
-			var val2 = valueStack.pop();
-			var val1 = valueStack.pop();
-			if (val1.isInt32() && val2.isInt32())
-				valueStack.push(Int32Value.createUnknown());
-			else if (val1.isInt64() && val2.isInt64())
-				valueStack.push(Int64Value.createUnknown());
+		void EmulateIntOps2() {
+			var val2 = valueStack.Pop();
+			var val1 = valueStack.Pop();
+			if (val1.IsInt32() && val2.IsInt32())
+				valueStack.Push(Int32Value.CreateUnknown());
+			else if (val1.IsInt64() && val2.IsInt64())
+				valueStack.Push(Int64Value.CreateUnknown());
 			else
-				valueStack.pushUnknown();
+				valueStack.PushUnknown();
 		}
 	}
 }

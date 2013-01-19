@@ -38,10 +38,10 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				this.field = field;
 				this.elementType = ((SZArraySig)field.FieldType).Next.GetElementType();
 				this.arrayInitField = arrayInitField;
-				this.array = createArray(elementType, arrayInitField.InitialValue);
+				this.array = CreateArray(elementType, arrayInitField.InitialValue);
 			}
 
-			static Array createArray(ElementType etype, byte[] data) {
+			static Array CreateArray(ElementType etype, byte[] data) {
 				switch (etype) {
 				case ElementType.Boolean:
 				case ElementType.I1:
@@ -66,7 +66,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				}
 			}
 
-			public uint readArrayElement(int index) {
+			public uint ReadArrayElement(int index) {
 				switch (elementType) {
 				case ElementType.Boolean:
 				case ElementType.I1:
@@ -96,27 +96,27 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			this.module = module;
 		}
 
-		public void init(ISimpleDeobfuscator simpleDeobfuscator) {
-			initializeArrays(simpleDeobfuscator, DotNetUtils.getModuleTypeCctor(module));
+		public void Initialize(ISimpleDeobfuscator simpleDeobfuscator) {
+			InitializeArrays(simpleDeobfuscator, DotNetUtils.GetModuleTypeCctor(module));
 		}
 
-		void initializeArrays(ISimpleDeobfuscator simpleDeobfuscator, MethodDef method) {
+		void InitializeArrays(ISimpleDeobfuscator simpleDeobfuscator, MethodDef method) {
 			if (method == null || method.Body == null)
 				return;
-			while (initializeArrays2(simpleDeobfuscator, method)) {
+			while (InitializeArrays2(simpleDeobfuscator, method)) {
 			}
 		}
 
-		bool initializeArrays2(ISimpleDeobfuscator simpleDeobfuscator, MethodDef method) {
+		bool InitializeArrays2(ISimpleDeobfuscator simpleDeobfuscator, MethodDef method) {
 			bool foundField = false;
-			simpleDeobfuscator.deobfuscate(method, true);
+			simpleDeobfuscator.Deobfuscate(method, true);
 			var instructions = method.Body.Instructions;
 			for (int i = 0; i < instructions.Count; i++) {
 				var ldci4 = instructions[i];
 				if (!ldci4.IsLdcI4())
 					continue;
 				i++;
-				var instrs = DotNetUtils.getInstructions(instructions, i, OpCodes.Newarr, OpCodes.Dup, OpCodes.Ldtoken, OpCodes.Call, OpCodes.Stsfld);
+				var instrs = DotNetUtils.GetInstructions(instructions, i, OpCodes.Newarr, OpCodes.Dup, OpCodes.Ldtoken, OpCodes.Call, OpCodes.Stsfld);
 				if (instrs == null)
 					continue;
 
@@ -135,32 +135,32 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				if (etype < ElementType.Boolean || etype > ElementType.U4)
 					continue;
 
-				if (fieldToInfo.find(targetField) == null) {
-					fieldToInfo.add(targetField, new FieldInfo(targetField, arrayInitField));
+				if (fieldToInfo.Find(targetField) == null) {
+					fieldToInfo.Add(targetField, new FieldInfo(targetField, arrayInitField));
 					foundField = true;
 				}
 			}
 			return foundField;
 		}
 
-		public FieldInfo getFieldInfo(IField fieldRef) {
+		public FieldInfo GetFieldInfo(IField fieldRef) {
 			if (fieldRef == null)
 				return null;
-			return fieldToInfo.find(fieldRef);
+			return fieldToInfo.Find(fieldRef);
 		}
 
-		public IEnumerable<FieldDef> cleanUp() {
+		public IEnumerable<FieldDef> CleanUp() {
 			var removedFields = new List<FieldDef>();
-			var moduleCctor = DotNetUtils.getModuleTypeCctor(module);
+			var moduleCctor = DotNetUtils.GetModuleTypeCctor(module);
 			if (moduleCctor == null)
 				return removedFields;
 			var moduleCctorBlocks = new Blocks(moduleCctor);
 
-			var keep = findFieldsToKeep();
-			foreach (var fieldInfo in fieldToInfo.getValues()) {
+			var keep = FindFieldsToKeep();
+			foreach (var fieldInfo in fieldToInfo.GetValues()) {
 				if (keep.ContainsKey(fieldInfo))
 					continue;
-				if (removeInitCode(moduleCctorBlocks, fieldInfo)) {
+				if (RemoveInitCode(moduleCctorBlocks, fieldInfo)) {
 					removedFields.Add(fieldInfo.field);
 					removedFields.Add(fieldInfo.arrayInitField);
 				}
@@ -171,18 +171,18 @@ namespace de4dot.code.deobfuscators.DeepSea {
 
 			IList<Instruction> allInstructions;
 			IList<ExceptionHandler> allExceptionHandlers;
-			moduleCctorBlocks.getCode(out allInstructions, out allExceptionHandlers);
-			DotNetUtils.restoreBody(moduleCctorBlocks.Method, allInstructions, allExceptionHandlers);
+			moduleCctorBlocks.GetCode(out allInstructions, out allExceptionHandlers);
+			DotNetUtils.RestoreBody(moduleCctorBlocks.Method, allInstructions, allExceptionHandlers);
 			return removedFields;
 		}
 
-		bool removeInitCode(Blocks blocks, FieldInfo info) {
+		bool RemoveInitCode(Blocks blocks, FieldInfo info) {
 			bool removedSomething = false;
-			foreach (var block in blocks.MethodBlocks.getAllBlocks()) {
+			foreach (var block in blocks.MethodBlocks.GetAllBlocks()) {
 				var instrs = block.Instructions;
 				for (int i = 0; i < instrs.Count - 5; i++) {
 					var ldci4 = instrs[i];
-					if (!ldci4.isLdcI4())
+					if (!ldci4.IsLdcI4())
 						continue;
 					if (instrs[i + 1].OpCode.Code != Code.Newarr)
 						continue;
@@ -204,7 +204,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 						continue;
 					if (stsfld.Operand != info.field)
 						continue;
-					block.remove(i, 6);
+					block.Remove(i, 6);
 					i--;
 					removedSomething = true;
 				}
@@ -212,11 +212,11 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return removedSomething;
 		}
 
-		Dictionary<FieldInfo, bool> findFieldsToKeep() {
+		Dictionary<FieldInfo, bool> FindFieldsToKeep() {
 			var keep = new Dictionary<FieldInfo, bool>();
 			foreach (var type in module.GetTypes()) {
 				foreach (var method in type.Methods) {
-					if (type == DotNetUtils.getModuleType(module) && method.Name == ".cctor")
+					if (type == DotNetUtils.GetModuleType(module) && method.Name == ".cctor")
 						continue;
 					if (method.Body == null)
 						continue;
@@ -225,7 +225,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 						var field = instr.Operand as IField;
 						if (field == null)
 							continue;
-						var fieldInfo = fieldToInfo.find(field);
+						var fieldInfo = fieldToInfo.Find(field);
 						if (fieldInfo == null)
 							continue;
 						keep[fieldInfo] = true;

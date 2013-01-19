@@ -24,7 +24,7 @@ namespace de4dot.code.deobfuscators {
 				var dotNetDir = peImage.ImageNTHeaders.OptionalHeader.DataDirectories[14];
 				if (dotNetDir.VirtualAddress != 0 && dotNetDir.Size >= 0x48) {
 					dnFile = DotNetFile.Load(peImage, false);
-					dotNetSection = findSection(dotNetDir.VirtualAddress);
+					dotNetSection = FindSection(dotNetDir.VirtualAddress);
 				}
 				return dnFile;
 			}
@@ -59,21 +59,21 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		public MyPEImage(IPEImage peImage) {
-			initialize(peImage);
+			Initialize(peImage);
 		}
 
 		public MyPEImage(byte[] peImageData) {
 			this.ownPeImage = true;
 			this.peImageData = peImageData;
-			initialize(new PEImage(peImageData));
+			Initialize(new PEImage(peImageData));
 		}
 
-		void initialize(IPEImage peImage) {
+		void Initialize(IPEImage peImage) {
 			this.peImage = peImage;
 			this.peStream = peImage.CreateFullStream();
 		}
 
-		ImageSectionHeader findSection(RVA rva) {
+		ImageSectionHeader FindSection(RVA rva) {
 			foreach (var section in peImage.ImageSectionHeaders) {
 				if (section.VirtualAddress <= rva && rva < section.VirtualAddress + Math.Max(section.VirtualSize, section.SizeOfRawData))
 					return section;
@@ -81,7 +81,7 @@ namespace de4dot.code.deobfuscators {
 			return null;
 		}
 
-		public ImageSectionHeader findSection(string name) {
+		public ImageSectionHeader FindSection(string name) {
 			foreach (var section in peImage.ImageSectionHeaders) {
 				if (section.DisplayName == name)
 					return section;
@@ -89,7 +89,7 @@ namespace de4dot.code.deobfuscators {
 			return null;
 		}
 
-		public void readMethodTableRowTo(DumpedMethod dm, uint rid) {
+		public void ReadMethodTableRowTo(DumpedMethod dm, uint rid) {
 			dm.token = 0x06000000 + rid;
 			var row = DotNetFile.MetaData.TablesStream.ReadMethodRow(rid);
 			if (row == null)
@@ -102,107 +102,107 @@ namespace de4dot.code.deobfuscators {
 			dm.mdParamList = row.ParamList;
 		}
 
-		public void updateMethodHeaderInfo(DumpedMethod dm, MethodBodyHeader mbHeader) {
+		public void UpdateMethodHeaderInfo(DumpedMethod dm, MethodBodyHeader mbHeader) {
 			dm.mhFlags = mbHeader.flags;
 			dm.mhMaxStack = mbHeader.maxStack;
 			dm.mhCodeSize = dm.code == null ? 0 : (uint)dm.code.Length;
 			dm.mhLocalVarSigTok = mbHeader.localVarSigTok;
 		}
 
-		public uint rvaToOffset(uint rva) {
+		public uint RvaToOffset(uint rva) {
 			return (uint)peImage.ToFileOffset((RVA)rva);
 		}
 
-		static bool isInside(ImageSectionHeader section, uint offset, uint length) {
+		static bool IsInside(ImageSectionHeader section, uint offset, uint length) {
 			return offset >= section.PointerToRawData && offset + length <= section.PointerToRawData + section.SizeOfRawData;
 		}
 
-		public void writeUInt32(uint rva, uint data) {
-			offsetWriteUInt32(rvaToOffset(rva), data);
+		public void WriteUInt32(uint rva, uint data) {
+			OffsetWriteUInt32(RvaToOffset(rva), data);
 		}
 
-		public void writeUInt16(uint rva, ushort data) {
-			offsetWriteUInt16(rvaToOffset(rva), data);
+		public void WriteUInt16(uint rva, ushort data) {
+			OffsetWriteUInt16(RvaToOffset(rva), data);
 		}
 
-		public byte readByte(uint rva) {
-			return offsetReadByte(rvaToOffset(rva));
+		public byte ReadByte(uint rva) {
+			return OffsetReadByte(RvaToOffset(rva));
 		}
 
-		public int readInt32(uint rva) {
-			return (int)offsetReadUInt32(rvaToOffset(rva));
+		public int ReadInt32(uint rva) {
+			return (int)OffsetReadUInt32(RvaToOffset(rva));
 		}
 
-		public ushort readUInt16(uint rva) {
-			return offsetReadUInt16(rvaToOffset(rva));
+		public ushort ReadUInt16(uint rva) {
+			return OffsetReadUInt16(RvaToOffset(rva));
 		}
 
-		public byte[] readBytes(uint rva, int size) {
-			return offsetReadBytes(rvaToOffset(rva), size);
+		public byte[] ReadBytes(uint rva, int size) {
+			return OffsetReadBytes(RvaToOffset(rva), size);
 		}
 
-		public void offsetWriteUInt32(uint offset, uint val) {
+		public void OffsetWriteUInt32(uint offset, uint val) {
 			peImageData[offset + 0] = (byte)val;
 			peImageData[offset + 1] = (byte)(val >> 8);
 			peImageData[offset + 2] = (byte)(val >> 16);
 			peImageData[offset + 3] = (byte)(val >> 24);
 		}
 
-		public void offsetWriteUInt16(uint offset, ushort val) {
+		public void OffsetWriteUInt16(uint offset, ushort val) {
 			peImageData[offset + 0] = (byte)val;
 			peImageData[offset + 1] = (byte)(val >> 8);
 		}
 
-		public uint offsetReadUInt32(uint offset) {
+		public uint OffsetReadUInt32(uint offset) {
 			peStream.Position = offset;
 			return peStream.ReadUInt32();
 		}
 
-		public ushort offsetReadUInt16(uint offset) {
+		public ushort OffsetReadUInt16(uint offset) {
 			peStream.Position = offset;
 			return peStream.ReadUInt16();
 		}
 
-		public byte offsetReadByte(uint offset) {
+		public byte OffsetReadByte(uint offset) {
 			peStream.Position = offset;
 			return peStream.ReadByte();
 		}
 
-		public byte[] offsetReadBytes(uint offset, int size) {
+		public byte[] OffsetReadBytes(uint offset, int size) {
 			peStream.Position = offset;
 			return peStream.ReadBytes(size);
 		}
 
-		public void offsetWrite(uint offset, byte[] data) {
+		public void OffsetWrite(uint offset, byte[] data) {
 			Array.Copy(data, 0, peImageData, offset, data.Length);
 		}
 
-		bool intersect(uint offset1, uint length1, uint offset2, uint length2) {
+		bool Intersect(uint offset1, uint length1, uint offset2, uint length2) {
 			return !(offset1 + length1 <= offset2 || offset2 + length2 <= offset1);
 		}
 
-		bool intersect(uint offset, uint length, IFileSection location) {
-			return intersect(offset, length, (uint)location.StartOffset, (uint)(location.EndOffset - location.StartOffset));
+		bool Intersect(uint offset, uint length, IFileSection location) {
+			return Intersect(offset, length, (uint)location.StartOffset, (uint)(location.EndOffset - location.StartOffset));
 		}
 
-		public bool dotNetSafeWriteOffset(uint offset, byte[] data) {
+		public bool DotNetSafeWriteOffset(uint offset, byte[] data) {
 			if (DotNetFile != null) {
 				uint length = (uint)data.Length;
 
-				if (!isInside(dotNetSection, offset, length))
+				if (!IsInside(dotNetSection, offset, length))
 					return false;
-				if (intersect(offset, length, DotNetFile.MetaData.ImageCor20Header))
+				if (Intersect(offset, length, DotNetFile.MetaData.ImageCor20Header))
 					return false;
-				if (intersect(offset, length, DotNetFile.MetaData.MetaDataHeader))
+				if (Intersect(offset, length, DotNetFile.MetaData.MetaDataHeader))
 					return false;
 			}
 
-			offsetWrite(offset, data);
+			OffsetWrite(offset, data);
 			return true;
 		}
 
-		public bool dotNetSafeWrite(uint rva, byte[] data) {
-			return dotNetSafeWriteOffset((uint)peImage.ToFileOffset((RVA)rva), data);
+		public bool DotNetSafeWrite(uint rva, byte[] data) {
+			return DotNetSafeWriteOffset((uint)peImage.ToFileOffset((RVA)rva), data);
 		}
 
 		public void Dispose() {

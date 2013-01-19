@@ -32,7 +32,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 
 		public DeobfuscatorInfo()
 			: base(DEFAULT_REGEX) {
-			stringCodePage = new IntOption(null, makeArgName("cp"), "String code page", 936);
+			stringCodePage = new IntOption(null, MakeArgName("cp"), "String code page", 936);
 		}
 
 		public override string Name {
@@ -43,7 +43,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			get { return THE_TYPE; }
 		}
 
-		public override IDeobfuscator createDeobfuscator() {
+		public override IDeobfuscator CreateDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
 				RenameResourcesInCode = false,
 				ValidNameRegex = validNameRegex.get(),
@@ -51,7 +51,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			});
 		}
 
-		protected override IEnumerable<Option> getOptionsInternal() {
+		protected override IEnumerable<Option> GetOptionsInternal() {
 			return new List<Option>() {
 				stringCodePage,
 			};
@@ -86,7 +86,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			StringFeatures = StringFeatures.AllowStaticDecryption | StringFeatures.AllowDynamicDecryption;
 		}
 
-		protected override int detectInternal() {
+		protected override int DetectInternal() {
 			int val = 0;
 
 			if (mainType.Detected)
@@ -95,29 +95,29 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			return val;
 		}
 
-		protected override void scanForObfuscator() {
+		protected override void ScanForObfuscator() {
 			mainType = new MainType(module);
-			mainType.find();
+			mainType.Find();
 		}
 
-		public override bool getDecryptedModule(int count, ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
+		public override bool GetDecryptedModule(int count, ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
 			if (count != 0 || !mainType.Detected)
 				return false;
 
-			var fileData = DeobUtils.readModule(module);
+			var fileData = DeobUtils.ReadModule(module);
 			decrypterInfo = new DecrypterInfo(mainType, fileData);
 			var methodsDecrypter = new MethodsDecrypter(decrypterInfo);
 
-			if (!methodsDecrypter.decrypt(ref dumpedMethods))
+			if (!methodsDecrypter.Decrypt(ref dumpedMethods))
 				return false;
 
 			newFileData = fileData;
 			return true;
 		}
 
-		public override IDeobfuscator moduleReloaded(ModuleDefMD module) {
+		public override IDeobfuscator ModuleReloaded(ModuleDefMD module) {
 			var newOne = new Deobfuscator(options);
-			newOne.setModule(module);
+			newOne.SetModule(module);
 			newOne.mainType = new MainType(module, mainType);
 			newOne.decrypterInfo = decrypterInfo;
 			decrypterInfo = null;
@@ -126,38 +126,38 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			return newOne;
 		}
 
-		void freePEImage() {
+		void FreePEImage() {
 			if (decrypterInfo != null)
 				decrypterInfo.Dispose();
 			decrypterInfo = null;
 		}
 
-		public override void deobfuscateBegin() {
-			base.deobfuscateBegin();
+		public override void DeobfuscateBegin() {
+			base.DeobfuscateBegin();
 
 			stringDecrypter = new StringDecrypter(decrypterInfo);
-			stringDecrypter.find();
+			stringDecrypter.Find();
 			if (stringDecrypter.Detected) {
-				stringDecrypter.initialize(getEncoding(options.StringCodePage));
-				staticStringInliner.add(stringDecrypter.Method, (method, gim, args) => stringDecrypter.decrypt((uint)args[0]));
-				DeobfuscatedFile.stringDecryptersAdded();
+				stringDecrypter.Initialize(GetEncoding(options.StringCodePage));
+				staticStringInliner.Add(stringDecrypter.Method, (method, gim, args) => stringDecrypter.Decrypt((uint)args[0]));
+				DeobfuscatedFile.StringDecryptersAdded();
 			}
 			else
-				freePEImage();
+				FreePEImage();
 
 			foreach (var method in mainType.InitMethods)
-				addCctorInitCallToBeRemoved(method);
-			addTypeToBeRemoved(mainType.Type, "Obfuscator type");
-			removeDuplicateEmbeddedResources();
-			removeInvalidResources();
+				AddCctorInitCallToBeRemoved(method);
+			AddTypeToBeRemoved(mainType.Type, "Obfuscator type");
+			RemoveDuplicateEmbeddedResources();
+			RemoveInvalidResources();
 		}
 
-		public override void deobfuscateEnd() {
-			freePEImage();
-			base.deobfuscateEnd();
+		public override void DeobfuscateEnd() {
+			FreePEImage();
+			base.DeobfuscateEnd();
 		}
 
-		static Encoding getEncoding(int cp) {
+		static Encoding GetEncoding(int cp) {
 			try {
 				return Encoding.GetEncoding(cp);
 			}
@@ -196,7 +196,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			}
 		}
 
-		void removeDuplicateEmbeddedResources() {
+		void RemoveDuplicateEmbeddedResources() {
 			var resources = new Dictionary<ResourceKey, List<EmbeddedResource>>();
 			foreach (var tmp in module.Resources) {
 				var rsrc = tmp as EmbeddedResource;
@@ -229,22 +229,22 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				foreach (var rsrc in list) {
 					if (rsrc == resourceToKeep)
 						continue;
-					addResourceToBeRemoved(rsrc, string.Format("Duplicate of resource {0}", Utils.toCsharpString(resourceToKeep.Name)));
+					AddResourceToBeRemoved(rsrc, string.Format("Duplicate of resource {0}", Utils.ToCsharpString(resourceToKeep.Name)));
 				}
 			}
 		}
 
-		void removeInvalidResources() {
+		void RemoveInvalidResources() {
 			foreach (var tmp in module.Resources) {
 				var resource = tmp as EmbeddedResource;
 				if (resource == null)
 					continue;
 				if (resource.Offset == null || (resource.Data.FileOffset == 0 && resource.Data.Length == 0))
-					addResourceToBeRemoved(resource, "Invalid resource");
+					AddResourceToBeRemoved(resource, "Invalid resource");
 			}
 		}
 
-		public override IEnumerable<int> getStringDecrypterMethods() {
+		public override IEnumerable<int> GetStringDecrypterMethods() {
 			var list = new List<int>();
 			if (stringDecrypter != null && stringDecrypter.Detected)
 				list.Add(stringDecrypter.Method.MDToken.ToInt32());
@@ -253,7 +253,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 
 		protected override void Dispose(bool disposing) {
 			if (disposing)
-				freePEImage();
+				FreePEImage();
 			base.Dispose(disposing);
 		}
 	}

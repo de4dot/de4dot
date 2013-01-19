@@ -45,14 +45,14 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 
 		public ApplicationModeDecrypter(ModuleDefMD module) {
 			this.module = module;
-			find();
+			Find();
 		}
 
-		void find() {
+		void Find() {
 			var cflowDeobfuscator = new CflowDeobfuscator(new MethodCallInliner(true));
 
 			foreach (var type in module.Types) {
-				if (DotNetUtils.getPInvokeMethod(type, "kernel32", "CloseHandle") == null)
+				if (DotNetUtils.GetPInvokeMethod(type, "kernel32", "CloseHandle") == null)
 					continue;
 
 				var resolver = new AssemblyResolver(type, cflowDeobfuscator);

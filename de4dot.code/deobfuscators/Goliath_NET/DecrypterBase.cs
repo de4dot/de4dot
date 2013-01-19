@@ -57,7 +57,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 		}
 
 		public TypeDef DelegateInitType {
-			get { return delegateInitType ?? findDelegateInitType();}
+			get { return delegateInitType ?? FindDelegateInitType();}
 		}
 
 		public TypeDef DelegateType {
@@ -67,11 +67,11 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 		public IEnumerable<TypeDef> DecrypterTypes {
 			get {
 				var types = new TypeDefDict<TypeDef>();
-				foreach (var info in decrypterMethods.getValues()) {
+				foreach (var info in decrypterMethods.GetValues()) {
 					if (info.referenced)
-						types.add(info.method.DeclaringType, info.method.DeclaringType);
+						types.Add(info.method.DeclaringType, info.method.DeclaringType);
 				}
-				return types.getValues();
+				return types.GetValues();
 			}
 		}
 
@@ -79,8 +79,8 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			this.module = module;
 		}
 
-		protected Info getInfo(MethodDef method) {
-			var info = decrypterMethods.find(method);
+		protected Info GetInfo(MethodDef method) {
+			var info = decrypterMethods.Find(method);
 			if (info == null)
 				return null;
 
@@ -88,7 +88,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			return info;
 		}
 
-		public void find() {
+		public void Find() {
 			foreach (var tmp in module.Resources) {
 				var resource = tmp as EmbeddedResource;
 				if (resource == null)
@@ -96,11 +96,11 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 				if (!resource.Name.String.EndsWith(".resources", StringComparison.Ordinal))
 					continue;
 				string ns, name;
-				splitTypeName(resource.Name.String.Substring(0, resource.Name.String.Length - 10), out ns, out name);
+				SplitTypeName(resource.Name.String.Substring(0, resource.Name.String.Length - 10), out ns, out name);
 				var type = new TypeRefUser(module, ns, name, module).Resolve();
 				if (type == null)
 					continue;
-				if (!checkDecrypterType(type))
+				if (!CheckDecrypterType(type))
 					continue;
 
 				encryptedResource = resource;
@@ -109,9 +109,9 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			}
 		}
 
-		protected abstract bool checkDecrypterType(TypeDef type);
+		protected abstract bool CheckDecrypterType(TypeDef type);
 
-		void splitTypeName(string fullName, out string ns, out string name) {
+		void SplitTypeName(string fullName, out string ns, out string name) {
 			int index = fullName.LastIndexOf('.');
 			if (index < 0) {
 				ns = "";
@@ -123,11 +123,11 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			}
 		}
 
-		public void initialize() {
+		public void Initialize() {
 			if (encryptedResource == null)
 				return;
 
-			decryptedReader = new BinaryReader(new MemoryStream(decrypt(encryptedResource.GetResourceData())));
+			decryptedReader = new BinaryReader(new MemoryStream(Decrypt(encryptedResource.GetResourceData())));
 
 			delegateType = null;
 			foreach (var type in module.GetTypes()) {
@@ -138,16 +138,16 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 				if (type.Fields.Count != 1)
 					continue;
 				var field = type.Fields[0];
-				var tmpDelegateType = DotNetUtils.getType(module, field.FieldType);
+				var tmpDelegateType = DotNetUtils.GetType(module, field.FieldType);
 				if (tmpDelegateType == null)
 					continue;
 
-				if (!checkDelegateType(tmpDelegateType))
+				if (!CheckDelegateType(tmpDelegateType))
 					continue;
 				if (delegateType != null && delegateType != tmpDelegateType)
 					continue;
 
-				if (!checkCctor(cctor))
+				if (!CheckCctor(cctor))
 					continue;
 
 				delegateType = tmpDelegateType;
@@ -162,16 +162,16 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 						continue;
 					if (sig.RetType.GetElementType() == ElementType.Void)
 						continue;
-					var info = getDecrypterInfo(method, field);
+					var info = GetDecrypterInfo(method, field);
 					if (info == null)
 						continue;
 
-					decrypterMethods.add(info.method, info);
+					decrypterMethods.Add(info.method, info);
 				}
 			}
 		}
 
-		Info getDecrypterInfo(MethodDef method, FieldDef delegateField) {
+		Info GetDecrypterInfo(MethodDef method, FieldDef delegateField) {
 			try {
 				int index = 0;
 				var instrs = method.Body.Instructions;
@@ -204,14 +204,14 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			}
 		}
 
-		bool checkCctor(MethodDef cctor) {
-			var ldtokenType = getLdtokenType(cctor);
+		bool CheckCctor(MethodDef cctor) {
+			var ldtokenType = GetLdtokenType(cctor);
 			if (!new SigComparer().Equals(ldtokenType, cctor.DeclaringType))
 				return false;
 
 			MethodDef initMethod = null;
-			foreach (var method in DotNetUtils.getCalledMethods(module, cctor)) {
-				if (DotNetUtils.isMethod(method, "System.Void", "(System.Type)")) {
+			foreach (var method in DotNetUtils.GetCalledMethods(module, cctor)) {
+				if (DotNetUtils.IsMethod(method, "System.Void", "(System.Type)")) {
 					initMethod = method;
 					break;
 				}
@@ -222,7 +222,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			return true;
 		}
 
-		static ITypeDefOrRef getLdtokenType(MethodDef method) {
+		static ITypeDefOrRef GetLdtokenType(MethodDef method) {
 			if (method == null || method.Body == null)
 				return null;
 			foreach (var instr in method.Body.Instructions) {
@@ -233,18 +233,18 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			return null;
 		}
 
-		bool checkDelegateType(TypeDef type) {
-			if (!DotNetUtils.derivesFromDelegate(type))
+		bool CheckDelegateType(TypeDef type) {
+			if (!DotNetUtils.DerivesFromDelegate(type))
 				return false;
 			var invoke = type.FindMethod("Invoke");
 			if (invoke == null)
 				return false;
-			return checkDelegateInvokeMethod(invoke);
+			return CheckDelegateInvokeMethod(invoke);
 		}
 
-		protected abstract bool checkDelegateInvokeMethod(MethodDef invokeMethod);
+		protected abstract bool CheckDelegateInvokeMethod(MethodDef invokeMethod);
 
-		byte[] decrypt(byte[] encryptedData) {
+		byte[] Decrypt(byte[] encryptedData) {
 			const int KEY_LEN = 0x100;
 			if (encryptedData.Length < KEY_LEN)
 				throw new ApplicationException("Invalid encrypted data length");
@@ -265,7 +265,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			return decryptedData;
 		}
 
-		TypeDef findDelegateInitType() {
+		TypeDef FindDelegateInitType() {
 			if (delegateType == null)
 				return null;
 
@@ -276,7 +276,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 				foreach (var method in type.Methods) {
 					if (!method.IsStatic || method.IsPrivate || method.Body == null)
 						continue;
-					var ldtokenType = getLdtokenType(method);
+					var ldtokenType = GetLdtokenType(method);
 					if (ldtokenType == null)
 						continue;
 					if (!new SigComparer().Equals(ldtokenType, delegateType))
@@ -290,9 +290,9 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			return null;
 		}
 
-		public IEnumerable<MethodDef> getMethods() {
+		public IEnumerable<MethodDef> GetMethods() {
 			var list = new List<MethodDef>(decrypterMethods.Count);
-			foreach (var info in decrypterMethods.getValues())
+			foreach (var info in decrypterMethods.GetValues())
 				list.Add(info.method);
 			return list;
 		}

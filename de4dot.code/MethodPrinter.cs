@@ -41,13 +41,13 @@ namespace de4dot.code {
 		Dictionary<Instruction, ExInfo> exInfos = new Dictionary<Instruction, ExInfo>();
 		ExInfo lastExInfo;
 
-		public void print(LoggerEvent loggerEvent, IList<Instruction> allInstructions, IList<ExceptionHandler> allExceptionHandlers) {
+		public void Print(LoggerEvent loggerEvent, IList<Instruction> allInstructions, IList<ExceptionHandler> allExceptionHandlers) {
 			try {
 				this.loggerEvent = loggerEvent;
 				this.allInstructions = allInstructions;
 				this.allExceptionHandlers = allExceptionHandlers;
 				lastExInfo = new ExInfo();
-				print();
+				Print();
 			}
 			finally {
 				this.allInstructions = null;
@@ -59,27 +59,27 @@ namespace de4dot.code {
 			}
 		}
 
-		void initTargets() {
+		void InitTargets() {
 			foreach (var instr in allInstructions) {
 				switch (instr.OpCode.OperandType) {
 				case OperandType.ShortInlineBrTarget:
 				case OperandType.InlineBrTarget:
-					setTarget(instr.Operand as Instruction);
+					SetTarget(instr.Operand as Instruction);
 					break;
 
 				case OperandType.InlineSwitch:
 					foreach (var targetInstr in (Instruction[])instr.Operand)
-						setTarget(targetInstr);
+						SetTarget(targetInstr);
 					break;
 				}
 			}
 
 			foreach (var ex in allExceptionHandlers) {
-				setTarget(ex.TryStart);
-				setTarget(ex.TryEnd);
-				setTarget(ex.FilterStart);
-				setTarget(ex.HandlerStart);
-				setTarget(ex.HandlerEnd);
+				SetTarget(ex.TryStart);
+				SetTarget(ex.TryEnd);
+				SetTarget(ex.FilterStart);
+				SetTarget(ex.HandlerStart);
+				SetTarget(ex.HandlerEnd);
 			}
 
 			var sortedTargets = new List<Instruction>(targets.Keys);
@@ -88,27 +88,27 @@ namespace de4dot.code {
 				labels[sortedTargets[i]] = string.Format("label_{0}", i);
 		}
 
-		void setTarget(Instruction instr) {
+		void SetTarget(Instruction instr) {
 			if (instr != null)
 				targets[instr] = true;
 		}
 
-		void initExHandlers() {
+		void InitExHandlers() {
 			foreach (var ex in allExceptionHandlers) {
 				if (ex.TryStart != null) {
-					getExInfo(ex.TryStart).tryStarts.Add(ex);
-					getExInfo(ex.TryEnd).tryEnds.Add(ex);
+					GetExInfo(ex.TryStart).tryStarts.Add(ex);
+					GetExInfo(ex.TryEnd).tryEnds.Add(ex);
 				}
 				if (ex.FilterStart != null)
-					getExInfo(ex.FilterStart).filterStarts.Add(ex);
+					GetExInfo(ex.FilterStart).filterStarts.Add(ex);
 				if (ex.HandlerStart != null) {
-					getExInfo(ex.HandlerStart).handlerStarts.Add(ex);
-					getExInfo(ex.HandlerEnd).handlerEnds.Add(ex);
+					GetExInfo(ex.HandlerStart).handlerStarts.Add(ex);
+					GetExInfo(ex.HandlerEnd).handlerEnds.Add(ex);
 				}
 			}
 		}
 
-		ExInfo getExInfo(Instruction instruction) {
+		ExInfo GetExInfo(Instruction instruction) {
 			if (instruction == null)
 				return lastExInfo;
 			ExInfo exInfo;
@@ -117,49 +117,49 @@ namespace de4dot.code {
 			return exInfo;
 		}
 
-		void print() {
-			initTargets();
-			initExHandlers();
+		void Print() {
+			InitTargets();
+			InitExHandlers();
 
-			Logger.Instance.indent();
+			Logger.Instance.Indent();
 			foreach (var instr in allInstructions) {
 				if (targets.ContainsKey(instr)) {
-					Logger.Instance.deIndent();
-					Logger.log(loggerEvent, "{0}:", getLabel(instr));
-					Logger.Instance.indent();
+					Logger.Instance.DeIndent();
+					Logger.Log(loggerEvent, "{0}:", GetLabel(instr));
+					Logger.Instance.Indent();
 				}
 				ExInfo exInfo;
 				if (exInfos.TryGetValue(instr, out exInfo))
-					printExInfo(exInfo);
+					PrintExInfo(exInfo);
 				var instrString = instr.OpCode.Name;
-				var operandString = getOperandString(instr);
+				var operandString = GetOperandString(instr);
 				var memberRef = instr.Operand as ITokenOperand;
 				if (operandString == "")
-					Logger.log(loggerEvent, "{0}", instrString);
+					Logger.Log(loggerEvent, "{0}", instrString);
 				else if (memberRef != null)
-					Logger.log(loggerEvent, "{0,-9} {1} // {2:X8}", instrString, Utils.removeNewlines(operandString), memberRef.MDToken.ToUInt32());
+					Logger.Log(loggerEvent, "{0,-9} {1} // {2:X8}", instrString, Utils.RemoveNewlines(operandString), memberRef.MDToken.ToUInt32());
 				else
-					Logger.log(loggerEvent, "{0,-9} {1}", instrString, Utils.removeNewlines(operandString));
+					Logger.Log(loggerEvent, "{0,-9} {1}", instrString, Utils.RemoveNewlines(operandString));
 			}
-			printExInfo(lastExInfo);
-			Logger.Instance.deIndent();
+			PrintExInfo(lastExInfo);
+			Logger.Instance.DeIndent();
 		}
 
-		string getOperandString(Instruction instr) {
+		string GetOperandString(Instruction instr) {
 			if (instr.Operand is Instruction)
-				return getLabel((Instruction)instr.Operand);
+				return GetLabel((Instruction)instr.Operand);
 			else if (instr.Operand is Instruction[]) {
 				var sb = new StringBuilder();
 				var targets = (Instruction[])instr.Operand;
 				for (int i = 0; i < targets.Length; i++) {
 					if (i > 0)
 						sb.Append(',');
-					sb.Append(getLabel(targets[i]));
+					sb.Append(GetLabel(targets[i]));
 				}
 				return sb.ToString();
 			}
 			else if (instr.Operand is string)
-				return Utils.toCsharpString((string)instr.Operand);
+				return Utils.ToCsharpString((string)instr.Operand);
 			else if (instr.Operand is Parameter) {
 				var arg = (Parameter)instr.Operand;
 				var s = InstructionPrinter.GetOperandString(instr);
@@ -171,36 +171,36 @@ namespace de4dot.code {
 				return InstructionPrinter.GetOperandString(instr);
 		}
 
-		void printExInfo(ExInfo exInfo) {
-			Logger.Instance.deIndent();
+		void PrintExInfo(ExInfo exInfo) {
+			Logger.Instance.DeIndent();
 			foreach (var ex in exInfo.tryStarts)
-				Logger.log(loggerEvent, "// try start: {0}", getExceptionString(ex));
+				Logger.Log(loggerEvent, "// try start: {0}", GetExceptionString(ex));
 			foreach (var ex in exInfo.tryEnds)
-				Logger.log(loggerEvent, "// try end: {0}", getExceptionString(ex));
+				Logger.Log(loggerEvent, "// try end: {0}", GetExceptionString(ex));
 			foreach (var ex in exInfo.filterStarts)
-				Logger.log(loggerEvent, "// filter start: {0}", getExceptionString(ex));
+				Logger.Log(loggerEvent, "// filter start: {0}", GetExceptionString(ex));
 			foreach (var ex in exInfo.handlerStarts)
-				Logger.log(loggerEvent, "// handler start: {0}", getExceptionString(ex));
+				Logger.Log(loggerEvent, "// handler start: {0}", GetExceptionString(ex));
 			foreach (var ex in exInfo.handlerEnds)
-				Logger.log(loggerEvent, "// handler end: {0}", getExceptionString(ex));
-			Logger.Instance.indent();
+				Logger.Log(loggerEvent, "// handler end: {0}", GetExceptionString(ex));
+			Logger.Instance.Indent();
 		}
 
-		string getExceptionString(ExceptionHandler ex) {
+		string GetExceptionString(ExceptionHandler ex) {
 			var sb = new StringBuilder();
 			if (ex.TryStart != null)
-				sb.Append(string.Format("TRY: {0}-{1}", getLabel(ex.TryStart), getLabel(ex.TryEnd)));
+				sb.Append(string.Format("TRY: {0}-{1}", GetLabel(ex.TryStart), GetLabel(ex.TryEnd)));
 			if (ex.FilterStart != null)
-				sb.Append(string.Format(", FILTER: {0}", getLabel(ex.FilterStart)));
+				sb.Append(string.Format(", FILTER: {0}", GetLabel(ex.FilterStart)));
 			if (ex.HandlerStart != null)
-				sb.Append(string.Format(", HANDLER: {0}-{1}", getLabel(ex.HandlerStart), getLabel(ex.HandlerEnd)));
+				sb.Append(string.Format(", HANDLER: {0}-{1}", GetLabel(ex.HandlerStart), GetLabel(ex.HandlerEnd)));
 			sb.Append(string.Format(", TYPE: {0}", ex.HandlerType));
 			if (ex.CatchType != null)
 				sb.Append(string.Format(", CATCH: {0}", ex.CatchType));
 			return sb.ToString();
 		}
 
-		string getLabel(Instruction instr) {
+		string GetLabel(Instruction instr) {
 			if (instr == null)
 				return "<end>";
 			return labels[instr];

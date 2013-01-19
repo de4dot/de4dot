@@ -41,13 +41,13 @@ namespace de4dot.code.deobfuscators.MPRESS {
 			get { return THE_TYPE; }
 		}
 
-		public override IDeobfuscator createDeobfuscator() {
+		public override IDeobfuscator CreateDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
 				ValidNameRegex = validNameRegex.get(),
 			});
 		}
 
-		protected override IEnumerable<Option> getOptionsInternal() {
+		protected override IEnumerable<Option> GetOptionsInternal() {
 			return new List<Option>() {
 			};
 		}
@@ -85,7 +85,7 @@ namespace de4dot.code.deobfuscators.MPRESS {
 			this.options = options;
 		}
 
-		protected override int detectInternal() {
+		protected override int DetectInternal() {
 			int val = 0;
 
 			if (version != Version.Unknown)
@@ -94,8 +94,8 @@ namespace de4dot.code.deobfuscators.MPRESS {
 			return val;
 		}
 
-		protected override void scanForObfuscator() {
-			version = detectVersion();
+		protected override void ScanForObfuscator() {
+			version = DetectVersion();
 			switch (version) {
 			case Version.V0x: obfuscatorName += " v0.71 - v0.99"; break;
 			case Version.V1x_217: obfuscatorName += " v1.x - v2.17"; break;
@@ -138,14 +138,14 @@ namespace de4dot.code.deobfuscators.MPRESS {
 			new MethodInfo("System.Int32", "(System.Byte[],System.Byte[],System.Int32)"),
 			new MethodInfo("System.Int32", "(System.String[])"),
 		};
-		Version detectVersion() {
+		Version DetectVersion() {
 			var ep = module.EntryPoint;
 			if (ep == null || ep.Body == null)
 				return Version.Unknown;
 			var type = ep.DeclaringType;
 			if (type == null)
 				return Version.Unknown;
-			if (!new FieldTypes(type).exactly(requiredFields))
+			if (!new FieldTypes(type).Exactly(requiredFields))
 				return Version.Unknown;
 			if (module.Types.Count != 2)
 				return Version.Unknown;
@@ -154,12 +154,12 @@ namespace de4dot.code.deobfuscators.MPRESS {
 			if (module.Types[0].Methods.Count != 0)
 				return Version.Unknown;
 
-			if (checkMethods(type, methods_v0x))
+			if (CheckMethods(type, methods_v0x))
 				return Version.V0x;
-			if (checkMethods(type, methods_v1x)) {
-				var lfMethod = DotNetUtils.getMethod(type, "System.Boolean", "(System.String,System.Byte[]&)");
+			if (CheckMethods(type, methods_v1x)) {
+				var lfMethod = DotNetUtils.GetMethod(type, "System.Boolean", "(System.String,System.Byte[]&)");
 				if (lfMethod != null) {
-					if (DeobUtils.hasInteger(lfMethod, (int)Machine.AMD64))
+					if (DeobUtils.HasInteger(lfMethod, (int)Machine.AMD64))
 						return Version.V218;
 					return Version.V1x_217;
 				}
@@ -167,20 +167,20 @@ namespace de4dot.code.deobfuscators.MPRESS {
 			return Version.Unknown;
 		}
 
-		static bool checkMethods(TypeDef type, MethodInfo[] requiredMethods) {
+		static bool CheckMethods(TypeDef type, MethodInfo[] requiredMethods) {
 			var methods = new List<MethodDef>(type.Methods);
 			foreach (var info in requiredMethods) {
-				if (!checkMethod(methods, info))
+				if (!CheckMethod(methods, info))
 					return false;
 			}
 			return methods.Count == 0;
 		}
 
-		static bool checkMethod(List<MethodDef> methods, MethodInfo info) {
+		static bool CheckMethod(List<MethodDef> methods, MethodInfo info) {
 			foreach (var method in methods) {
 				if (info.name != null && info.name != method.Name)
 					continue;
-				if (!DotNetUtils.isMethod(method, info.returnType, info.parameters))
+				if (!DotNetUtils.IsMethod(method, info.returnType, info.parameters))
 					continue;
 
 				methods.Remove(method);
@@ -189,11 +189,11 @@ namespace de4dot.code.deobfuscators.MPRESS {
 			return false;
 		}
 
-		public override bool getDecryptedModule(int count, ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
+		public override bool GetDecryptedModule(int count, ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
 			if (count != 0 || version == Version.Unknown)
 				return false;
 
-			byte[] fileData = ModuleBytes ?? DeobUtils.readModule(module);
+			byte[] fileData = ModuleBytes ?? DeobUtils.ReadModule(module);
 			byte[] decompressed;
 			using (var peImage = new MyPEImage(fileData)) {
 				var section = peImage.Sections[peImage.Sections.Count - 1];
@@ -205,8 +205,8 @@ namespace de4dot.code.deobfuscators.MPRESS {
 				switch (version) {
 				case Version.V0x:
 					compressedLen = fileData.Length - (int)offset;
-					compressed = peImage.offsetReadBytes(offset, compressedLen);
-					decompressed = Lzmat.decompress_old(compressed);
+					compressed = peImage.OffsetReadBytes(offset, compressedLen);
+					decompressed = Lzmat.DecompressOld(compressed);
 					if (decompressed == null)
 						throw new ApplicationException("LZMAT decompression failed");
 					break;
@@ -215,12 +215,12 @@ namespace de4dot.code.deobfuscators.MPRESS {
 				case Version.V218:
 					if (peImage.PEImage.ImageNTHeaders.FileHeader.Machine == Machine.AMD64 && version == Version.V218)
 						offset = section.PointerToRawData + section.VirtualSize;
-					int decompressedLen = (int)peImage.offsetReadUInt32(offset);
+					int decompressedLen = (int)peImage.OffsetReadUInt32(offset);
 					compressedLen = fileData.Length - (int)offset - 4;
-					compressed = peImage.offsetReadBytes(offset + 4, compressedLen);
+					compressed = peImage.OffsetReadBytes(offset + 4, compressedLen);
 					decompressed = new byte[decompressedLen];
 					uint decompressedLen2;
-					if (Lzmat.decompress(decompressed, out decompressedLen2, compressed) != LzmatStatus.OK)
+					if (Lzmat.Decompress(decompressed, out decompressedLen2, compressed) != LzmatStatus.OK)
 						throw new ApplicationException("LZMAT decompression failed");
 					break;
 
@@ -233,19 +233,19 @@ namespace de4dot.code.deobfuscators.MPRESS {
 			return true;
 		}
 
-		public override IDeobfuscator moduleReloaded(ModuleDefMD module) {
+		public override IDeobfuscator ModuleReloaded(ModuleDefMD module) {
 			var newOne = new Deobfuscator(options);
-			newOne.setModule(module);
+			newOne.SetModule(module);
 			return newOne;
 		}
 
-		public override void deobfuscateBegin() {
-			base.deobfuscateBegin();
+		public override void DeobfuscateBegin() {
+			base.DeobfuscateBegin();
 
-			fixInvalidMvid();
+			FixInvalidMvid();
 		}
 
-		void fixInvalidMvid() {
+		void FixInvalidMvid() {
 			if (module.Mvid == Guid.Empty) {
 				var hash = new SHA1Managed().ComputeHash(Encoding.UTF8.GetBytes(module.ToString()));
 				var guid = new Guid(BitConverter.ToInt32(hash, 0),
@@ -258,7 +258,7 @@ namespace de4dot.code.deobfuscators.MPRESS {
 			}
 		}
 
-		public override IEnumerable<int> getStringDecrypterMethods() {
+		public override IEnumerable<int> GetStringDecrypterMethods() {
 			return new List<int>();
 		}
 	}

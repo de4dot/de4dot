@@ -36,30 +36,30 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			: base(module) {
 		}
 
-		public bool isProxyTargetMethod(IMethod method) {
-			return proxyTargetMethods.find(method);
+		public bool IsProxyTargetMethod(IMethod method) {
+			return proxyTargetMethods.Find(method);
 		}
 
-		public void findDelegateCreator() {
+		public void FindDelegateCreator() {
 			foreach (var type in module.Types) {
-				var creatorMethod = checkType(type);
+				var creatorMethod = CheckType(type);
 				if (creatorMethod == null)
 					continue;
 
-				setDelegateCreatorMethod(creatorMethod);
+				SetDelegateCreatorMethod(creatorMethod);
 				return;
 			}
 		}
 
-		static MethodDef checkType(TypeDef type) {
+		static MethodDef CheckType(TypeDef type) {
 			if (type.Fields.Count != 1)
 				return null;
 			if (type.Fields[0].FieldSig.GetFieldType().GetFullName() != "System.Reflection.Module")
 				return null;
-			return checkMethods(type);
+			return CheckMethods(type);
 		}
 
-		static MethodDef checkMethods(TypeDef type) {
+		static MethodDef CheckMethods(TypeDef type) {
 			if (type.Methods.Count != 3)
 				return null;
 
@@ -67,11 +67,11 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			foreach (var method in type.Methods) {
 				if (method.Name == ".cctor")
 					continue;
-				if (DotNetUtils.isMethod(method, "System.Void", "(System.Int32)")) {
+				if (DotNetUtils.IsMethod(method, "System.Void", "(System.Int32)")) {
 					creatorMethod = method;
 					continue;
 				}
-				if (DotNetUtils.isMethod(method, "System.MulticastDelegate", "(System.Type,System.Reflection.MethodInfo,System.Int32)"))
+				if (DotNetUtils.IsMethod(method, "System.MulticastDelegate", "(System.Type,System.Reflection.MethodInfo,System.Int32)"))
 					continue;
 
 				return null;
@@ -79,7 +79,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			return creatorMethod;
 		}
 
-		protected override object checkCctor(ref TypeDef type, MethodDef cctor) {
+		protected override object CheckCctor(ref TypeDef type, MethodDef cctor) {
 			var instrs = cctor.Body.Instructions;
 			if (instrs.Count != 3)
 				return null;
@@ -89,7 +89,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			var call = instrs[1];
 			if (call.OpCode.Code != Code.Call)
 				return null;
-			if (!isDelegateCreatorMethod(call.Operand as MethodDef))
+			if (!IsDelegateCreatorMethod(call.Operand as MethodDef))
 				return null;
 			int rid = ldci4.GetLdcI4Value();
 			if (cctor.DeclaringType.Rid != rid)
@@ -97,22 +97,22 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			return rid;
 		}
 
-		protected override void getCallInfo(object context, FieldDef field, out IMethod calledMethod, out OpCode callOpcode) {
+		protected override void GetCallInfo(object context, FieldDef field, out IMethod calledMethod, out OpCode callOpcode) {
 			uint rid = 0;
 			foreach (var c in field.Name.String)
-				rid = (rid << 4) + (uint)hexToInt((char)((byte)c + 0x2F));
+				rid = (rid << 4) + (uint)HexToInt((char)((byte)c + 0x2F));
 			rid &= 0x00FFFFFF;
 			calledMethod = module.ResolveMemberRef(rid);
-			var calledMethodDef = DotNetUtils.getMethod2(module, calledMethod);
+			var calledMethodDef = DotNetUtils.GetMethod2(module, calledMethod);
 			if (calledMethodDef != null) {
 				proxyMethodsType = calledMethodDef.DeclaringType;
-				proxyTargetMethods.add(calledMethodDef, true);
+				proxyTargetMethods.Add(calledMethodDef, true);
 				calledMethod = calledMethodDef;
 			}
 			callOpcode = OpCodes.Call;
 		}
 
-		static int hexToInt(char c) {
+		static int HexToInt(char c) {
 			if ('0' <= c && c <= '9')
 				return c - '0';
 			if ('a' <= c && c <= 'f')

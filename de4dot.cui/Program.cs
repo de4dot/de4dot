@@ -33,9 +33,9 @@ namespace de4dot.cui {
 	}
 
 	class Program {
-		static IList<IDeobfuscatorInfo> deobfuscatorInfos = createDeobfuscatorInfos();
+		static IList<IDeobfuscatorInfo> deobfuscatorInfos = CreateDeobfuscatorInfos();
 
-		static IList<IDeobfuscatorInfo> createDeobfuscatorInfos() {
+		static IList<IDeobfuscatorInfo> CreateDeobfuscatorInfos() {
 			return new List<IDeobfuscatorInfo> {
 				new de4dot.code.deobfuscators.Unknown.DeobfuscatorInfo(),
 				new de4dot.code.deobfuscators.Agile_NET.DeobfuscatorInfo(),
@@ -61,7 +61,7 @@ namespace de4dot.cui {
 			};
 		}
 
-		public static int main(string[] args) {
+		public static int Main2(string[] args) {
 			int exitCode = 0;
 
 			const string showAllMessagesEnvName = "SHOWALLMESSAGES";
@@ -69,7 +69,7 @@ namespace de4dot.cui {
 				if (Console.OutputEncoding.IsSingleByte)
 					Console.OutputEncoding = new UTF8Encoding(false);
 
-				Logger.Instance.CanIgnoreMessages = !hasEnv(showAllMessagesEnvName);
+				Logger.Instance.CanIgnoreMessages = !HasEnv(showAllMessagesEnvName);
 
 				Logger.n("");
 				Logger.n("de4dot v{0} Copyright (C) 2011-2013 de4dot@gmail.com", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
@@ -77,8 +77,8 @@ namespace de4dot.cui {
 				Logger.n("");
 
 				var options = new FilesDeobfuscator.Options();
-				parseCommandLine(args, options);
-				new FilesDeobfuscator(options).doIt();
+				ParseCommandLine(args, options);
+				new FilesDeobfuscator(options).DoIt();
 			}
 			catch (ExitException ex) {
 				exitCode = ex.code;
@@ -88,8 +88,8 @@ namespace de4dot.cui {
 				exitCode = 1;
 			}
 			catch (Exception ex) {
-				if (printFullStackTrace()) {
-					printStackTrace(ex);
+				if (PrintFullStackTrace()) {
+					PrintStackTrace(ex);
 					Logger.Instance.LogErrorDontIgnore("\nTry the latest version before reporting this problem!");
 				}
 				else {
@@ -109,7 +109,7 @@ namespace de4dot.cui {
 				Logger.n("Use -v/-vv option or set environment variable {0}=1 to see all messages", showAllMessagesEnvName);
 			}
 
-			if (isN00bUser()) {
+			if (IsN00bUser()) {
 				Console.Error.WriteLine("\n\nPress any key to exit...\n");
 				try {
 					Console.ReadKey(true);
@@ -121,16 +121,16 @@ namespace de4dot.cui {
 			return exitCode;
 		}
 
-		static bool printFullStackTrace() {
+		static bool PrintFullStackTrace() {
 			if (!Logger.Instance.IgnoresEvent(LoggerEvent.Verbose))
 				return true;
-			if (hasEnv("STACKTRACE"))
+			if (HasEnv("STACKTRACE"))
 				return true;
 
 			return false;
 		}
 
-		static bool hasEnv(string name) {
+		static bool HasEnv(string name) {
 			foreach (var tmp in Environment.GetEnvironmentVariables().Keys) {
 				var env = tmp as string;
 				if (env == null)
@@ -141,17 +141,17 @@ namespace de4dot.cui {
 			return false;
 		}
 
-		static bool isN00bUser() {
-			if (hasEnv("VisualStudioDir"))
+		static bool IsN00bUser() {
+			if (HasEnv("VisualStudioDir"))
 				return false;
-			return hasEnv("windir") && !hasEnv("PROMPT");
+			return HasEnv("windir") && !HasEnv("PROMPT");
 		}
 
-		public static void printStackTrace(Exception ex) {
-			printStackTrace(ex, LoggerEvent.Error);
+		public static void PrintStackTrace(Exception ex) {
+			PrintStackTrace(ex, LoggerEvent.Error);
 		}
 
-		public static void printStackTrace(Exception ex, LoggerEvent loggerEvent) {
+		public static void PrintStackTrace(Exception ex, LoggerEvent loggerEvent) {
 			var line = new string('-', 78);
 			Logger.Instance.Log(false, null, loggerEvent, "\n\n");
 			Logger.Instance.Log(false, null, loggerEvent, line);
@@ -165,14 +165,14 @@ namespace de4dot.cui {
 			Logger.Instance.Log(false, null, loggerEvent, line);
 		}
 
-		static void parseCommandLine(string[] args, FilesDeobfuscator.Options options) {
-			new CommandLineParser(deobfuscatorInfos, options).parse(args);
+		static void ParseCommandLine(string[] args, FilesDeobfuscator.Options options) {
+			new CommandLineParser(deobfuscatorInfos, options).Parse(args);
 
 			Logger.vv("Args:");
-			Logger.Instance.indent();
+			Logger.Instance.Indent();
 			foreach (var arg in args)
-				Logger.vv("{0}", Utils.toCsharpString(arg));
-			Logger.Instance.deIndent();
+				Logger.vv("{0}", Utils.ToCsharpString(arg));
+			Logger.Instance.DeIndent();
 		}
 	}
 }

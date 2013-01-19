@@ -22,7 +22,7 @@ using dnlib.DotNet;
 
 namespace de4dot.code.deobfuscators.DeepSea {
 	static class DsInlinedMethodsFinder {
-		public static List<MethodDef> find(ModuleDefMD module, IEnumerable<MethodDef> notInlinedMethods) {
+		public static List<MethodDef> Find(ModuleDefMD module, IEnumerable<MethodDef> notInlinedMethods) {
 			var notInlinedMethodsDict = new Dictionary<MethodDef, bool>();
 			foreach (var method in notInlinedMethods)
 				notInlinedMethodsDict[method] = true;
@@ -31,7 +31,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 
 			foreach (var type in module.GetTypes()) {
 				foreach (var method in type.Methods) {
-					if (!notInlinedMethodsDict.ContainsKey(method) && DsMethodCallInliner.canInline(method))
+					if (!notInlinedMethodsDict.ContainsKey(method) && DsMethodCallInliner.CanInline(method))
 						inlinedMethods.Add(method);
 				}
 			}

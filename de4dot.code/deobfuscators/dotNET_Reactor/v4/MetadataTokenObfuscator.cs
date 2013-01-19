@@ -36,10 +36,10 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 
 		public MetadataTokenObfuscator(ModuleDefMD module) {
 			this.module = module;
-			find();
+			Find();
 		}
 
-		void find() {
+		void Find() {
 			foreach (var type in module.Types) {
 				var fields = type.Fields;
 				if (fields.Count != 1)
@@ -72,11 +72,11 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			}
 		}
 
-		public void deobfuscate(Blocks blocks) {
+		public void Deobfuscate(Blocks blocks) {
 			if (type == null)
 				return;
 
-			foreach (var block in blocks.MethodBlocks.getAllBlocks()) {
+			foreach (var block in blocks.MethodBlocks.GetAllBlocks()) {
 				var instrs = block.Instructions;
 				for (int i = 0; i < instrs.Count - 1; i++) {
 					var instr = instrs[i];
@@ -90,7 +90,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 						continue;
 					if (!new SigComparer().Equals(type, method.DeclaringType))
 						continue;
-					var methodDef = DotNetUtils.getMethod(module, method);
+					var methodDef = DotNetUtils.GetMethod(module, method);
 					if (methodDef == null)
 						continue;
 					if (methodDef != typeMethod && methodDef != fieldMethod)

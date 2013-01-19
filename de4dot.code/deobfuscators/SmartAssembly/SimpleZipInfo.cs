@@ -23,13 +23,13 @@ using de4dot.blocks;
 namespace de4dot.code.deobfuscators.SmartAssembly {
 	class SimpleZipInfo {
 
-		public static bool isSimpleZipDecryptMethod_QuickCheck(ModuleDefMD module, IMethod method, out MethodDef simpleZipTypeMethod) {
+		public static bool IsSimpleZipDecryptMethod_QuickCheck(ModuleDefMD module, IMethod method, out MethodDef simpleZipTypeMethod) {
 			simpleZipTypeMethod = null;
 
-			if (!DotNetUtils.isMethod(method, "System.Byte[]", "(System.Byte[])"))
+			if (!DotNetUtils.IsMethod(method, "System.Byte[]", "(System.Byte[])"))
 				return false;
 
-			var methodDef = DotNetUtils.getMethod(DotNetUtils.getType(module, method.DeclaringType), method);
+			var methodDef = DotNetUtils.GetMethod(DotNetUtils.GetType(module, method.DeclaringType), method);
 			if (methodDef == null)
 				return false;
 

@@ -49,8 +49,8 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			this.module = module;
 		}
 
-		public void find() {
-			checkMethod(DotNetUtils.getModuleTypeCctor(module));
+		public void Find() {
+			CheckMethod(DotNetUtils.GetModuleTypeCctor(module));
 		}
 
 		static string[] ilpLocals = new string[] {
@@ -58,16 +58,16 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			"System.IntPtr",
 			"System.Object[]",
 		};
-		bool checkMethod(MethodDef cctor) {
+		bool CheckMethod(MethodDef cctor) {
 			if (cctor == null || cctor.Body == null)
 				return false;
-			if (!new LocalTypes(cctor).exactly(ilpLocals))
+			if (!new LocalTypes(cctor).Exactly(ilpLocals))
 				return false;
 
 			var type = cctor.DeclaringType;
-			var methods = getPinvokeMethods(type, "Protect");
+			var methods = GetPinvokeMethods(type, "Protect");
 			if (methods.Count == 0)
-				methods = getPinvokeMethods(type, "P0");
+				methods = GetPinvokeMethods(type, "P0");
 			if (methods.Count != 2)
 				return false;
 			if (type.Fields.Count != 1)
@@ -75,7 +75,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 
 			var theField = type.Fields[0];
 			var theDelegate = theField.FieldType.TryGetTypeDef();
-			if (theDelegate == null || !DotNetUtils.derivesFromDelegate(theDelegate))
+			if (theDelegate == null || !DotNetUtils.DerivesFromDelegate(theDelegate))
 				return false;
 
 			protectMethods = methods;
@@ -84,7 +84,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			return true;
 		}
 
-		static List<MethodDef> getPinvokeMethods(TypeDef type, string name) {
+		static List<MethodDef> GetPinvokeMethods(TypeDef type, string name) {
 			var list = new List<MethodDef>();
 			foreach (var method in type.Methods) {
 				if (method.ImplMap != null && method.ImplMap.Name == name)
@@ -93,8 +93,8 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			return list;
 		}
 
-		public void cleanUp() {
-			var cctor = DotNetUtils.getModuleTypeCctor(module);
+		public void CleanUp() {
+			var cctor = DotNetUtils.GetModuleTypeCctor(module);
 			if (cctor != null) {
 				cctor.Body.InitLocals = false;
 				cctor.Body.Variables.Clear();

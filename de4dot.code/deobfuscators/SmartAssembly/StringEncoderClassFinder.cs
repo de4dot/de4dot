@@ -48,50 +48,50 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			this.simpleDeobfuscator = simpleDeobfuscator;
 		}
 
-		TypeDef getType(ITypeDefOrRef typeRef) {
-			return DotNetUtils.getType(module, typeRef);
+		TypeDef GetType(ITypeDefOrRef typeRef) {
+			return DotNetUtils.GetType(module, typeRef);
 		}
 
-		public void find() {
-			findHouseOfCardsStrings_v2();
+		public void Find() {
+			FindHouseOfCardsStrings_v2();
 			if (stringsEncoderInfos.Count == 0)
-				findHouseOfCardsStrings_v1();
+				FindHouseOfCardsStrings_v1();
 
-			findStringDecrypterClasses();
+			FindStringDecrypterClasses();
 		}
 
 		// Finds SmartAssembly.HouseOfCards.Strings. It's the class that creates the string
 		// decrypter delegates.
-		void findHouseOfCardsStrings_v2() {
+		void FindHouseOfCardsStrings_v2() {
 			foreach (var type in module.Types) {
 				if (type.Methods.Count != 1)
 					continue;
-				foreach (var method in DotNetUtils.findMethods(type.Methods, "System.Void", new string[] { "System.Type" })) {
-					if (checkDelegateCreatorMethod(type, method))
+				foreach (var method in DotNetUtils.FindMethods(type.Methods, "System.Void", new string[] { "System.Type" })) {
+					if (CheckDelegateCreatorMethod(type, method))
 						break;
 				}
 			}
 		}
 
-		void findHouseOfCardsStrings_v1() {
+		void FindHouseOfCardsStrings_v1() {
 			foreach (var type in module.Types) {
 				if (type.Methods.Count != 1)
 					continue;
-				foreach (var method in DotNetUtils.findMethods(type.Methods, "System.Void", new string[] { })) {
-					if (checkDelegateCreatorMethod(type, method))
+				foreach (var method in DotNetUtils.FindMethods(type.Methods, "System.Void", new string[] { })) {
+					if (CheckDelegateCreatorMethod(type, method))
 						break;
 				}
 			}
 		}
 
-		bool checkDelegateCreatorMethod(TypeDef type, MethodDef method) {
-			simpleDeobfuscator.deobfuscate(method);
+		bool CheckDelegateCreatorMethod(TypeDef type, MethodDef method) {
+			simpleDeobfuscator.Deobfuscate(method);
 
-			var getStringDelegate = findGetStringDelegate(method);
+			var getStringDelegate = FindGetStringDelegate(method);
 			if (getStringDelegate == null)
 				return false;
 
-			var stringDecrypterClass = findStringDecrypterClass(method);
+			var stringDecrypterClass = FindStringDecrypterClass(method);
 			if (stringDecrypterClass == null)
 				return false;
 
@@ -106,7 +106,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 		}
 
 		// Finds the SmartAssembly.Delegates.GetString delegate
-		TypeDef findGetStringDelegate(MethodDef stringsCreateDelegateMethod) {
+		TypeDef FindGetStringDelegate(MethodDef stringsCreateDelegateMethod) {
 			if (!stringsCreateDelegateMethod.HasBody)
 				return null;
 
@@ -116,11 +116,11 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				var typeToken = ldtoken.Operand as ITypeDefOrRef;
 				if (typeToken == null)
 					continue;
-				var delegateType = getType(typeToken);
-				if (!DotNetUtils.derivesFromDelegate(delegateType))
+				var delegateType = GetType(typeToken);
+				if (!DotNetUtils.DerivesFromDelegate(delegateType))
 					continue;
 				var invoke = delegateType.FindMethod("Invoke");
-				if (invoke == null || !DotNetUtils.isMethod(invoke, "System.String", "(System.Int32)"))
+				if (invoke == null || !DotNetUtils.IsMethod(invoke, "System.String", "(System.Int32)"))
 					continue;
 
 				return delegateType;
@@ -132,7 +132,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 		// Finds the SmartAssembly.StringsEncoding.Strings class. This class decrypts the
 		// strings in the resources. It gets called by the SmartAssembly.Delegates.GetString
 		// delegate instances which were created by SmartAssembly.HouseOfCards.Strings.
-		TypeDef findStringDecrypterClass(MethodDef stringsCreateDelegateMethod) {
+		TypeDef FindStringDecrypterClass(MethodDef stringsCreateDelegateMethod) {
 			if (!stringsCreateDelegateMethod.HasBody)
 				return null;
 
@@ -142,10 +142,10 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				var typeToken = ldtoken.Operand as ITypeDefOrRef;
 				if (typeToken == null)
 					continue;
-				var type = getType(typeToken);
-				if (type == null || DotNetUtils.derivesFromDelegate(type))
+				var type = GetType(typeToken);
+				if (type == null || DotNetUtils.DerivesFromDelegate(type))
 					continue;
-				if (!couldBeStringDecrypterClass(type))
+				if (!CouldBeStringDecrypterClass(type))
 					continue;
 
 				return type;
@@ -154,13 +154,13 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return null;
 		}
 
-		void findStringDecrypterClasses() {
+		void FindStringDecrypterClasses() {
 			var foundClasses = new Dictionary<TypeDef, bool>();
 			foreach (var info in stringsEncoderInfos)
 				foundClasses[info.StringDecrypterClass] = true;
 
 			foreach (var type in module.Types) {
-				if (!foundClasses.ContainsKey(type) && couldBeStringDecrypterClass(type)) {
+				if (!foundClasses.ContainsKey(type) && CouldBeStringDecrypterClass(type)) {
 					stringsEncoderInfos.Add(new StringsEncoderInfo {
 						StringsType = null,
 						GetStringDelegate = null,
@@ -181,24 +181,24 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			"System.Byte[]",
 			"System.Int32",
 		};
-		bool couldBeStringDecrypterClass(TypeDef type) {
+		bool CouldBeStringDecrypterClass(TypeDef type) {
 			var fields = new FieldTypes(type);
-			if (fields.exists("System.Collections.Hashtable") ||
-				fields.exists("System.Collections.Generic.Dictionary`2<System.Int32,System.String>") ||
-				fields.exactly(fields3x)) {
+			if (fields.Exists("System.Collections.Hashtable") ||
+				fields.Exists("System.Collections.Generic.Dictionary`2<System.Int32,System.String>") ||
+				fields.Exactly(fields3x)) {
 				if (type.FindStaticConstructor() == null)
 					return false;
 			}
-			else if (fields.exactly(fields1x) || fields.exactly(fields2x)) {
+			else if (fields.Exactly(fields1x) || fields.Exactly(fields2x)) {
 			}
 			else
 				return false;
 
-			var methods = new List<MethodDef>(DotNetUtils.getNormalMethods(type));
+			var methods = new List<MethodDef>(DotNetUtils.GetNormalMethods(type));
 			if (methods.Count != 1)
 				return false;
 			var method = methods[0];
-			if (!DotNetUtils.isMethod(method, "System.String", "(System.Int32)"))
+			if (!DotNetUtils.IsMethod(method, "System.String", "(System.Int32)"))
 				return false;
 			if (!method.IsStatic || !method.HasBody)
 				return false;

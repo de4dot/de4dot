@@ -27,19 +27,19 @@ namespace de4dot.code.renamer {
 		Dictionary<MTypeDef, bool> results = new Dictionary<MTypeDef, bool>();
 
 		public DerivedFrom(string className) {
-			addName(className);
+			AddName(className);
 		}
 
 		public DerivedFrom(string[] classNames) {
 			foreach (var className in classNames)
-				addName(className);
+				AddName(className);
 		}
 
-		void addName(string className) {
+		void AddName(string className) {
 			classNames[className] = true;
 		}
 
-		public bool check(MTypeDef type) {
+		public bool Check(MTypeDef type) {
 			if (results.ContainsKey(type))
 				return results[type];
 
@@ -53,7 +53,7 @@ namespace de4dot.code.renamer {
 					val = false;
 			}
 			else
-				val = check(type.baseType.typeDef);
+				val = Check(type.baseType.typeDef);
 
 			results[type] = val;
 			return val;

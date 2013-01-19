@@ -42,19 +42,19 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			this.module = module;
 		}
 
-		public void find() {
+		public void Find() {
 			foreach (var type in module.Types) {
-				if (isResourceType(type, "System.Resources.ResourceManager"))
+				if (IsResourceType(type, "System.Resources.ResourceManager"))
 					resourceManagerType = type;
-				else if (isResourceType(type, "System.ComponentModel.ComponentResourceManager"))
+				else if (IsResourceType(type, "System.ComponentModel.ComponentResourceManager"))
 					componentResourceManagerType = type;
 			}
 
-			initializeCtors(resourceManagerType, resourceManagerCtors);
-			initializeCtors(componentResourceManagerType, componentManagerCtors);
+			InitializeCtors(resourceManagerType, resourceManagerCtors);
+			InitializeCtors(componentResourceManagerType, componentManagerCtors);
 		}
 
-		void initializeCtors(TypeDef manager, MethodDefAndDeclaringTypeDict<IMethod> ctors) {
+		void InitializeCtors(TypeDef manager, MethodDefAndDeclaringTypeDict<IMethod> ctors) {
 			if (manager == null)
 				return;
 
@@ -64,11 +64,11 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 
 				var newCtor = new MemberRefUser(module, ctor.Name, ctor.MethodSig.Clone(), manager.BaseType);
 				module.UpdateRowId(newCtor);
-				ctors.add(ctor, newCtor);
+				ctors.Add(ctor, newCtor);
 			}
 		}
 
-		static bool isResourceType(TypeDef type, string baseTypeName) {
+		static bool IsResourceType(TypeDef type, string baseTypeName) {
 			if (type.BaseType == null || type.BaseType.FullName != baseTypeName)
 				return false;
 			if (type.HasProperties || type.HasEvents || type.HasFields)
@@ -76,13 +76,13 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			if (type.Interfaces.Count > 0)
 				return false;
 			var method = type.FindMethod("GetResourceFileName");
-			if (!DotNetUtils.isMethod(method, "System.String", "(System.Globalization.CultureInfo)"))
+			if (!DotNetUtils.IsMethod(method, "System.String", "(System.Globalization.CultureInfo)"))
 				return false;
 
 			return true;
 		}
 
-		public void renameResources() {
+		public void RenameResources() {
 			if (resourceManagerType == null && componentResourceManagerType == null)
 				return;
 
@@ -102,19 +102,19 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			}
 
 			foreach (var type in module.GetTypes()) {
-				rename(numToResource, "", type.FullName);
-				rename(numToResource, "", type.FullName + ".g");
-				rename(numToResource, type.Namespace.String, type.Name.String);
-				rename(numToResource, type.Namespace.String, type.Name.String + ".g");
+				Rename(numToResource, "", type.FullName);
+				Rename(numToResource, "", type.FullName + ".g");
+				Rename(numToResource, type.Namespace.String, type.Name.String);
+				Rename(numToResource, type.Namespace.String, type.Name.String + ".g");
 			}
 
 			if (module.Assembly != null)
-				rename(numToResource, "", module.Assembly.Name.String + ".g");
+				Rename(numToResource, "", module.Assembly.Name.String + ".g");
 		}
 
-		static void rename(Dictionary<uint, Resource> numToResource, string ns, string name) {
+		static void Rename(Dictionary<uint, Resource> numToResource, string ns, string name) {
 			var resourceName = name + ".resources";
-			uint hash = getResourceHash(resourceName);
+			uint hash = GetResourceHash(resourceName);
 			Resource resource;
 			if (!numToResource.TryGetValue(hash, out resource))
 				return;
@@ -133,28 +133,28 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 				return;
 
 			Logger.v("Restoring resource name: '{0}' => '{1}'",
-								Utils.removeNewlines(resource.Name),
-								Utils.removeNewlines(newName));
+								Utils.RemoveNewlines(resource.Name),
+								Utils.RemoveNewlines(newName));
 			resource.Name = newName;
 			numToResource.Remove(hash);
 		}
 
-		static uint getResourceHash(string name) {
+		static uint GetResourceHash(string name) {
 			uint hash = 0;
 			foreach (var c in name)
-				hash = ror(hash ^ c, 1);
+				hash = Ror(hash ^ c, 1);
 			return hash;
 		}
 
-		static uint ror(uint val, int n) {
+		static uint Ror(uint val, int n) {
 			return (val << (32 - n)) + (val >> n);
 		}
 
-		public void deobfuscate(Blocks blocks) {
+		public void Deobfuscate(Blocks blocks) {
 			if (resourceManagerType == null && componentResourceManagerType == null)
 				return;
 
-			foreach (var block in blocks.MethodBlocks.getAllBlocks()) {
+			foreach (var block in blocks.MethodBlocks.GetAllBlocks()) {
 				var instrs = block.Instructions;
 				for (int i = 0; i < instrs.Count; i++) {
 					var instr = instrs[i];
@@ -163,9 +163,9 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 					var ctor = instr.Operand as IMethod;
 					if (ctor == null)
 						continue;
-					var newCtor = resourceManagerCtors.find(ctor);
+					var newCtor = resourceManagerCtors.Find(ctor);
 					if (newCtor == null)
-						newCtor = componentManagerCtors.find(ctor);
+						newCtor = componentManagerCtors.Find(ctor);
 					if (newCtor == null)
 						continue;
 					instr.Operand = newCtor;

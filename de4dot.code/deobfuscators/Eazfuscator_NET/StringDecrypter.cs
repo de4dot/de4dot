@@ -69,11 +69,11 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				foreach (var method in type.Methods) {
 					if (method.IsStatic || method.Body == null || method.IsPrivate || method.GenericParameters.Count > 0)
 						continue;
-					if (DotNetUtils.isMethod(method, "System.Int16", "()"))
+					if (DotNetUtils.IsMethod(method, "System.Int16", "()"))
 						readInt16Method = method;
-					else if (DotNetUtils.isMethod(method, "System.Int32", "()"))
+					else if (DotNetUtils.IsMethod(method, "System.Int32", "()"))
 						readInt32Method = method;
-					else if (DotNetUtils.isMethod(method, "System.Byte[]", "(System.Int32)"))
+					else if (DotNetUtils.IsMethod(method, "System.Byte[]", "(System.Int32)"))
 						readBytesMethod = method;
 				}
 			}
@@ -117,7 +117,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			this.decrypterType = decrypterType;
 		}
 
-		static bool checkIfV32OrLater(TypeDef type) {
+		static bool CheckIfV32OrLater(TypeDef type) {
 			int numInts = 0;
 			foreach (var field in type.Fields) {
 				if (field.FieldSig.GetFieldType().GetElementType() == ElementType.I4)
@@ -126,18 +126,18 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return numInts >= 2;
 		}
 
-		public void find() {
+		public void Find() {
 			foreach (var type in module.Types) {
-				if (!checkType(type))
+				if (!CheckType(type))
 					continue;
 
 				foreach (var method in type.Methods) {
-					if (!checkDecrypterMethod(method))
+					if (!CheckDecrypterMethod(method))
 						continue;
 
 					stringType = type;
 					stringMethod = method;
-					isV32OrLater = checkIfV32OrLater(stringType);
+					isV32OrLater = CheckIfV32OrLater(stringType);
 					return;
 				}
 			}
@@ -147,15 +147,15 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			"System.Byte[]",
 			"System.Int16",
 		};
-		bool checkType(TypeDef type) {
-			if (!new FieldTypes(type).all(requiredFieldTypes))
+		bool CheckType(TypeDef type) {
+			if (!new FieldTypes(type).All(requiredFieldTypes))
 				return false;
 			if (type.NestedTypes.Count == 0) {
-				return DotNetUtils.findFieldType(type, "System.IO.BinaryReader", true) != null &&
-					DotNetUtils.findFieldType(type, "System.Collections.Generic.Dictionary`2<System.Int32,System.String>", true) != null;
+				return DotNetUtils.FindFieldType(type, "System.IO.BinaryReader", true) != null &&
+					DotNetUtils.FindFieldType(type, "System.Collections.Generic.Dictionary`2<System.Int32,System.String>", true) != null;
 			}
 			else if (type.NestedTypes.Count == 3) {
-				streamHelperType = findStreamHelperType(type);
+				streamHelperType = FindStreamHelperType(type);
 				return streamHelperType != null;
 			}
 			else if (type.NestedTypes.Count == 1) {
@@ -169,14 +169,14 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			"System.IO.Stream",
 			"System.Byte[]",
 		};
-		static StreamHelperType findStreamHelperType(TypeDef type) {
+		static StreamHelperType FindStreamHelperType(TypeDef type) {
 			foreach (var field in type.Fields) {
 				var nested = field.FieldSig.GetFieldType().TryGetTypeDef();
 				if (nested == null)
 					continue;
 				if (nested.DeclaringType != type)
 					continue;
-				if (!new FieldTypes(nested).exactly(streamHelperTypeFields))
+				if (!new FieldTypes(nested).Exactly(streamHelperTypeFields))
 					continue;
 				var streamHelperType = new StreamHelperType(nested);
 				if (!streamHelperType.Detected)
@@ -196,12 +196,12 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			"System.Reflection.Assembly",
 			"System.String",
 		};
-		static bool checkDecrypterMethod(MethodDef method) {
+		static bool CheckDecrypterMethod(MethodDef method) {
 			if (method == null || !method.IsStatic || method.Body == null)
 				return false;
-			if (!DotNetUtils.isMethod(method, "System.String", "(System.Int32)"))
+			if (!DotNetUtils.IsMethod(method, "System.String", "(System.Int32)"))
 				return false;
-			if (!new LocalTypes(method).all(requiredLocalTypes))
+			if (!new LocalTypes(method).All(requiredLocalTypes))
 				return false;
 
 			foreach (var instr in method.Body.Instructions) {
@@ -214,11 +214,11 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return false;
 		}
 
-		public void initialize(ISimpleDeobfuscator simpleDeobfuscator) {
+		public void Initialize(ISimpleDeobfuscator simpleDeobfuscator) {
 			if (stringType == null)
 				return;
 
-			if (!findConstants(simpleDeobfuscator)) {
+			if (!FindConstants(simpleDeobfuscator)) {
 				if (encryptedResource == null)
 					Logger.w("Could not find encrypted resource. Strings cannot be decrypted.");
 				else
@@ -227,58 +227,58 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			}
 		}
 
-		bool findConstants(ISimpleDeobfuscator simpleDeobfuscator) {
+		bool FindConstants(ISimpleDeobfuscator simpleDeobfuscator) {
 			dynocode = new Dynocode(simpleDeobfuscator);
-			simpleDeobfuscator.deobfuscate(stringMethod);
+			simpleDeobfuscator.Deobfuscate(stringMethod);
 			stringMethodConsts = new EfConstantsReader(stringMethod);
 
-			if (!findResource(stringMethod))
+			if (!FindResource(stringMethod))
 				return false;
 
-			checkMinus2 = isV32OrLater || DeobUtils.hasInteger(stringMethod, -2);
-			usePublicKeyToken = callsGetPublicKeyToken(stringMethod);
+			checkMinus2 = isV32OrLater || DeobUtils.HasInteger(stringMethod, -2);
+			usePublicKeyToken = CallsGetPublicKeyToken(stringMethod);
 
-			var int64Method = findInt64Method(stringMethod);
+			var int64Method = FindInt64Method(stringMethod);
 			if (int64Method != null)
 				decrypterType.Type = int64Method.DeclaringType;
 
-			if (!findShorts())
+			if (!FindShorts())
 				return false;
-			if (!findInt3())
+			if (!FindInt3())
 				return false;
-			if (!findInt4())
+			if (!FindInt4())
 				return false;
-			if (checkMinus2 && !findInt5())
+			if (checkMinus2 && !FindInt5())
 				return false;
-			dataDecrypterType = findDataDecrypterType(stringMethod);
+			dataDecrypterType = FindDataDecrypterType(stringMethod);
 			if (dataDecrypterType == null)
 				return false;
 
 			if (isV32OrLater) {
 				bool initializedAll;
-				int index = findInitIntsIndex(stringMethod, out initializedAll);
+				int index = FindInitIntsIndex(stringMethod, out initializedAll);
 
 				var cctor = stringType.FindStaticConstructor();
 				if (!initializedAll && cctor != null) {
-					simpleDeobfuscator.deobfuscate(cctor);
-					if (!findIntsCctor(cctor))
+					simpleDeobfuscator.Deobfuscate(cctor);
+					if (!FindIntsCctor(cctor))
 						return false;
 				}
 
-				if (decrypterType.Detected && !decrypterType.initialize())
+				if (decrypterType.Detected && !decrypterType.Initialize())
 					return false;
 
-				if (!findInts(index))
+				if (!FindInts(index))
 					return false;
 			}
 
-			initializeFlags();
-			initialize();
+			InitializeFlags();
+			Initialize();
 
 			return true;
 		}
 
-		void initializeFlags() {
+		void InitializeFlags() {
 			if (!isV32OrLater) {
 				rldFlag = 0x40000000;
 				bytesFlag = 0x80000000;
@@ -288,19 +288,19 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			var instrs = stringMethod.Body.Instructions;
 			for (int i = 0; i < instrs.Count; i++) {
 				var ldci4 = instrs[i];
-				if (!stringMethodConsts.isLoadConstantInt32(ldci4))
+				if (!stringMethodConsts.IsLoadConstantInt32(ldci4))
 					continue;
 				int index = i, tmp;
-				if (!stringMethodConsts.getInt32(ref index, out tmp) || !isFlagsMask(tmp))
+				if (!stringMethodConsts.GetInt32(ref index, out tmp) || !IsFlagsMask(tmp))
 					continue;
-				if (findFlags(i))
+				if (FindFlags(i))
 					return;
 			}
 
 			throw new ApplicationException("Could not find string decrypter flags");
 		}
 
-		static bool isFlagsMask(int value) {
+		static bool IsFlagsMask(int value) {
 			return value == 0x1FFFFFFF || value == 0x0FFFFFFF;
 		}
 
@@ -315,8 +315,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			}
 		}
 
-		bool findFlags(int index) {
-			var flags = findFlags2(index);
+		bool FindFlags(int index) {
+			var flags = FindFlags2(index);
 			if (flags == null)
 				return false;
 
@@ -327,23 +327,23 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return true;
 		}
 
-		List<FlagsInfo> findFlags2(int index) {
+		List<FlagsInfo> FindFlags2(int index) {
 			var flags = new List<FlagsInfo>(3);
 			for (int i = index - 1; i >= 0; i--) {
 				var instr = stringMethod.Body.Instructions[i];
 				if (instr.OpCode.FlowControl != FlowControl.Next)
 					break;
-				if (!stringMethodConsts.isLoadConstantInt32(instr))
+				if (!stringMethodConsts.IsLoadConstantInt32(instr))
 					continue;
 				int index2 = i, value;
-				if (!stringMethodConsts.getInt32(ref index2, out value))
+				if (!stringMethodConsts.GetInt32(ref index2, out value))
 					continue;
 				if ((uint)value != 0x80000000 && value != 0x40000000 && value != 0x20000000)
 					continue;
-				var local = getFlagsLocal(stringMethod, index2);
+				var local = GetFlagsLocal(stringMethod, index2);
 				if (local == null)
 					continue;
-				int offset = getFlagsOffset(stringMethod, index2, local);
+				int offset = GetFlagsOffset(stringMethod, index2, local);
 				if (offset < 0)
 					continue;
 
@@ -357,7 +357,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return null;
 		}
 
-		static int getFlagsOffset(MethodDef method, int index, Local local) {
+		static int GetFlagsOffset(MethodDef method, int index, Local local) {
 			var instrs = method.Body.Instructions;
 			for (; index < instrs.Count; index++) {
 				var ldloc = instrs[index];
@@ -371,7 +371,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return -1;
 		}
 
-		static Local getFlagsLocal(MethodDef method, int index) {
+		static Local GetFlagsLocal(MethodDef method, int index) {
 			var instrs = method.Body.Instructions;
 			if (index + 5 >= instrs.Count)
 				return null;
@@ -391,7 +391,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return stloc.GetLocal(method.Body.Variables);
 		}
 
-		void initialize() {
+		void Initialize() {
 			reader = new BinaryReader(encryptedResource.GetResourceStream());
 			short len = (short)(reader.ReadInt16() ^ s1);
 			if (len != 0)
@@ -400,7 +400,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				keyLen = reader.ReadInt16() ^ s2;
 		}
 
-		public string decrypt(int val) {
+		public string Decrypt(int val) {
 			validStringDecrypterValue = val;
 			while (true) {
 				int offset = magic1 ^ i3 ^ val ^ i6;
@@ -424,7 +424,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				}
 
 				var bytes = reader.ReadBytes(flags & 0x1FFFFFFF);
-				decrypt1(bytes, tmpKey);
+				Decrypt1(bytes, tmpKey);
 				var pkt = PublicKeyBase.ToPublicKeyToken(module.Assembly.PublicKey);
 				if (usePublicKeyToken && !PublicKeyBase.IsNullOrEmpty2(pkt)) {
 					for (int i = 0; i < bytes.Length; i++)
@@ -474,14 +474,14 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return dst;
 		}
 
-		static void decrypt1(byte[] dest, byte[] key) {
+		static void Decrypt1(byte[] dest, byte[] key) {
 			byte b = (byte)((key[1] + 7) ^ (dest.Length + 11));
 			uint lcg = (uint)((key[0] | (key[2] << 8)) + (b << 3));
 			b += 3;
 			ushort xn = 0;
 			for (int i = 0; i < dest.Length; i++) {
 				if ((i & 1) == 0) {
-					lcg = lcgNext(lcg);
+					lcg = LcgNext(lcg);
 					xn = (ushort)(lcg >> 16);
 				}
 				byte tmp = dest[i];
@@ -491,25 +491,25 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			}
 		}
 
-		static uint lcgNext(uint lcg) {
+		static uint LcgNext(uint lcg) {
 			return lcg * 214013 + 2531011;
 		}
 
-		bool findResource(MethodDef method) {
-			encryptedResource = findResourceFromCodeString(method) ??
-								findResourceFromStringBuilder(method);
+		bool FindResource(MethodDef method) {
+			encryptedResource = FindResourceFromCodeString(method) ??
+								FindResourceFromStringBuilder(method);
 			return encryptedResource != null;
 		}
 
-		EmbeddedResource findResourceFromCodeString(MethodDef method) {
-			return DotNetUtils.getResource(module, DotNetUtils.getCodeStrings(method)) as EmbeddedResource;
+		EmbeddedResource FindResourceFromCodeString(MethodDef method) {
+			return DotNetUtils.GetResource(module, DotNetUtils.GetCodeStrings(method)) as EmbeddedResource;
 		}
 
-		EmbeddedResource findResourceFromStringBuilder(MethodDef method) {
-			int startIndex = EfUtils.findOpCodeIndex(method, 0, Code.Newobj, "System.Void System.Text.StringBuilder::.ctor()");
+		EmbeddedResource FindResourceFromStringBuilder(MethodDef method) {
+			int startIndex = EfUtils.FindOpCodeIndex(method, 0, Code.Newobj, "System.Void System.Text.StringBuilder::.ctor()");
 			if (startIndex < 0)
 				return null;
-			int endIndex = EfUtils.findOpCodeIndex(method, startIndex, Code.Call, "System.String System.Text.StringBuilder::ToString()");
+			int endIndex = EfUtils.FindOpCodeIndex(method, startIndex, Code.Call, "System.String System.Text.StringBuilder::ToString()");
 			if (endIndex < 0)
 				return null;
 
@@ -522,9 +522,9 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					sb.Append((char)(val >> shift));
 					shift = 0;
 				}
-				if (stringMethodConsts.isLoadConstantInt32(instr)) {
+				if (stringMethodConsts.IsLoadConstantInt32(instr)) {
 					int tmp;
-					if (!stringMethodConsts.getInt32(ref i, out tmp))
+					if (!stringMethodConsts.GetInt32(ref i, out tmp))
 						break;
 					if (i >= endIndex)
 						break;
@@ -539,17 +539,17 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				}
 			}
 
-			return DotNetUtils.getResource(module, sb.ToString()) as EmbeddedResource;
+			return DotNetUtils.GetResource(module, sb.ToString()) as EmbeddedResource;
 		}
 
-		static MethodDef findInt64Method(MethodDef method) {
+		static MethodDef FindInt64Method(MethodDef method) {
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Call)
 					continue;
 				var calledMethod = instr.Operand as MethodDef;
 				if (calledMethod == null)
 					continue;
-				if (!DotNetUtils.isMethod(calledMethod, "System.Int64", "()"))
+				if (!DotNetUtils.IsMethod(calledMethod, "System.Int64", "()"))
 					continue;
 
 				return calledMethod;
@@ -557,14 +557,14 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return null;
 		}
 
-		static TypeDef findDataDecrypterType(MethodDef method) {
+		static TypeDef FindDataDecrypterType(MethodDef method) {
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Call)
 					continue;
 				var calledMethod = instr.Operand as MethodDef;
 				if (calledMethod == null)
 					continue;
-				if (!DotNetUtils.isMethod(calledMethod, "System.Byte[]", "(System.Byte[],System.Byte[])"))
+				if (!DotNetUtils.IsMethod(calledMethod, "System.Byte[]", "(System.Byte[],System.Byte[])"))
 					continue;
 
 				return calledMethod.DeclaringType;
@@ -572,26 +572,26 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return null;
 		}
 
-		bool findShorts() {
+		bool FindShorts() {
 			int index = 0;
-			if (!findShort(ref index, ref s1))
+			if (!FindShort(ref index, ref s1))
 				return false;
-			if (!findShort(ref index, ref s2))
+			if (!FindShort(ref index, ref s2))
 				return false;
-			if (!findShort(ref index, ref s3))
+			if (!FindShort(ref index, ref s3))
 				return false;
 
 			return true;
 		}
 
-		bool findShort(ref int index, ref short s) {
-			if (!findCallReadInt16(ref index))
+		bool FindShort(ref int index, ref short s) {
+			if (!FindCallReadInt16(ref index))
 				return false;
 			index++;
-			return stringMethodConsts.getInt16(ref index, out s);
+			return stringMethodConsts.GetInt16(ref index, out s);
 		}
 
-		bool findInts(int index) {
+		bool FindInts(int index) {
 			if (index < 0)
 				return false;
 
@@ -600,7 +600,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 
 			var emu = new InstructionEmulator(stringMethod);
 			foreach (var kv in stringMethodConsts.Locals32)
-				emu.setLocal(kv.Key, new Int32Value(kv.Value));
+				emu.SetLocal(kv.Key, new Int32Value(kv.Value));
 
 			var fields = new Dictionary<FieldDef, int?>();
 			for (int i = index; i < instrs.Count - 2; i++) {
@@ -613,7 +613,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					if (field == null || field.DeclaringType != stringMethod.DeclaringType || field.FieldType.GetElementType() != ElementType.I4)
 						goto default;
 					fields[field] = null;
-					emu.push(new Int32Value(i1));
+					emu.Push(new Int32Value(i1));
 					break;
 
 				case Code.Stsfld:
@@ -622,8 +622,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 						goto default;
 					if (fields.ContainsKey(field) && fields[field] == null)
 						goto default;
-					var val = emu.pop() as Int32Value;
-					if (val == null || !val.allBitsValid())
+					var val = emu.Pop() as Int32Value;
+					if (val == null || !val.AllBitsValid())
 						fields[field] = null;
 					else
 						fields[field] = val.value;
@@ -633,18 +633,18 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					var method = instr.Operand as MethodDef;
 					if (!decrypterType.Detected || method != decrypterType.Int64Method)
 						goto done;
-					emu.push(new Int64Value((long)decrypterType.getMagic()));
+					emu.Push(new Int64Value((long)decrypterType.GetMagic()));
 					break;
 
 				case Code.Newobj:
-					if (!emulateDynocode(emu, ref i))
+					if (!EmulateDynocode(emu, ref i))
 						goto default;
 					break;
 
 				default:
 					if (instr.OpCode.FlowControl != FlowControl.Next)
 						goto done;
-					emu.emulate(instr);
+					emu.Emulate(instr);
 					break;
 				}
 			}
@@ -660,7 +660,7 @@ done: ;
 			return false;
 		}
 
-		bool emulateDynocode(InstructionEmulator emu, ref int index) {
+		bool EmulateDynocode(InstructionEmulator emu, ref int index) {
 			var instrs = stringMethod.Body.Instructions;
 			var instr = instrs[index];
 
@@ -674,38 +674,38 @@ done: ;
 			if (!ldloc.IsLdloc() || instrs[index + 4].OpCode.Code != Code.Stfld)
 				return false;
 
-			var initValue = emu.getLocal(ldloc.GetLocal(stringMethod.Body.Variables)) as Int32Value;
-			if (initValue == null || !initValue.allBitsValid())
+			var initValue = emu.GetLocal(ldloc.GetLocal(stringMethod.Body.Variables)) as Int32Value;
+			if (initValue == null || !initValue.AllBitsValid())
 				return false;
 
-			int leaveIndex = findLeave(instrs, index);
+			int leaveIndex = FindLeave(instrs, index);
 			if (leaveIndex < 0)
 				return false;
 			var afterLoop = instrs[leaveIndex].Operand as Instruction;
 			if (afterLoop == null)
 				return false;
 			int newIndex = instrs.IndexOf(afterLoop);
-			var loopLocal = getDCLoopLocal(index, newIndex);
+			var loopLocal = GetDCLoopLocal(index, newIndex);
 			if (loopLocal == null)
 				return false;
-			var initValue2 = emu.getLocal(loopLocal) as Int32Value;
-			if (initValue2 == null || !initValue2.allBitsValid())
+			var initValue2 = emu.GetLocal(loopLocal) as Int32Value;
+			if (initValue2 == null || !initValue2.AllBitsValid())
 				return false;
 
-			var dcGen = dynocode.getDynocodeGenerator(ctor.DeclaringType);
+			var dcGen = dynocode.GetDynocodeGenerator(ctor.DeclaringType);
 			if (dcGen == null)
 				return false;
 			int loopLocalValue = initValue2.value;
-			foreach (var val in dcGen.getValues(initValue.value))
+			foreach (var val in dcGen.GetValues(initValue.value))
 				loopLocalValue ^= val;
 
-			emu.setLocal(loopLocal, new Int32Value(loopLocalValue));
-			emu.emulate(instr);
+			emu.SetLocal(loopLocal, new Int32Value(loopLocalValue));
+			emu.Emulate(instr);
 			index = newIndex - 1;
 			return true;
 		}
 
-		Local getDCLoopLocal(int start, int end) {
+		Local GetDCLoopLocal(int start, int end) {
 			var instrs = stringMethod.Body.Instructions;
 			for (int i = start; i < end - 1; i++) {
 				if (instrs[i].OpCode.Code != Code.Xor)
@@ -718,7 +718,7 @@ done: ;
 			return null;
 		}
 
-		static int findLeave(IList<Instruction> instrs, int index) {
+		static int FindLeave(IList<Instruction> instrs, int index) {
 			for (int i = index; i < instrs.Count; i++) {
 				if (instrs[i].OpCode.Code == Code.Leave_S || instrs[i].OpCode.Code == Code.Leave)
 					return i;
@@ -726,7 +726,7 @@ done: ;
 			return -1;
 		}
 
-		static int findInitIntsIndex(MethodDef method, out bool initializedAll) {
+		static int FindInitIntsIndex(MethodDef method, out bool initializedAll) {
 			initializedAll = false;
 
 			var instrs = method.Body.Instructions;
@@ -761,27 +761,27 @@ done: ;
 			return -1;
 		}
 
-		bool findIntsCctor(MethodDef cctor) {
+		bool FindIntsCctor(MethodDef cctor) {
 			int index = 0;
-			if (!findCallGetFrame(cctor, ref index))
-				return findIntsCctor2(cctor);
+			if (!FindCallGetFrame(cctor, ref index))
+				return FindIntsCctor2(cctor);
 
 			int tmp1, tmp2, tmp3 = 0;
 			var constantsReader = new EfConstantsReader(cctor);
-			if (!constantsReader.getNextInt32(ref index, out tmp1))
+			if (!constantsReader.GetNextInt32(ref index, out tmp1))
 				return false;
-			if (tmp1 == 0 && !constantsReader.getNextInt32(ref index, out tmp1))
+			if (tmp1 == 0 && !constantsReader.GetNextInt32(ref index, out tmp1))
 				return false;
-			if (!constantsReader.getNextInt32(ref index, out tmp2))
+			if (!constantsReader.GetNextInt32(ref index, out tmp2))
 				return false;
-			if (tmp2 == 0 && !constantsReader.getNextInt32(ref index, out tmp2))
+			if (tmp2 == 0 && !constantsReader.GetNextInt32(ref index, out tmp2))
 				return false;
 
 			index = 0;
 			var instrs = cctor.Body.Instructions;
 			while (index < instrs.Count) {
 				int tmp4;
-				if (!constantsReader.getNextInt32(ref index, out tmp4))
+				if (!constantsReader.GetNextInt32(ref index, out tmp4))
 					break;
 				if (index < instrs.Count && instrs[index].IsLdloc())
 					tmp3 = tmp4;
@@ -792,13 +792,13 @@ done: ;
 		}
 
 		// Compact Framework doesn't have StackFrame
-		bool findIntsCctor2(MethodDef cctor) {
+		bool FindIntsCctor2(MethodDef cctor) {
 			int index = 0;
 			var instrs = cctor.Body.Instructions;
 			var constantsReader = new EfConstantsReader(cctor);
 			while (index >= 0) {
 				int val;
-				if (!constantsReader.getNextInt32(ref index, out val))
+				if (!constantsReader.GetNextInt32(ref index, out val))
 					break;
 				if (index < instrs.Count && instrs[index].OpCode.Code == Code.Add) {
 					i1 = val;
@@ -809,14 +809,14 @@ done: ;
 			return false;
 		}
 
-		bool findInt3() {
+		bool FindInt3() {
 			if (!isV32OrLater)
-				return findInt3Old();
-			return findInt3New();
+				return FindInt3Old();
+			return FindInt3New();
 		}
 
 		// <= 3.1
-		bool findInt3Old() {
+		bool FindInt3Old() {
 			var instrs = stringMethod.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 4; i++) {
 				var ldarg0 = instrs[i];
@@ -829,7 +829,7 @@ done: ;
 
 				int index = i + 1;
 				int value;
-				if (!stringMethodConsts.getInt32(ref index, out value))
+				if (!stringMethodConsts.GetInt32(ref index, out value))
 					continue;
 				if (index >= instrs.Count)
 					continue;
@@ -845,7 +845,7 @@ done: ;
 		}
 
 		// 3.2+
-		bool findInt3New() {
+		bool FindInt3New() {
 			var instrs = stringMethod.Body.Instructions;
 			for (int i = 0; i < instrs.Count; i++) {
 				int index = i;
@@ -855,7 +855,7 @@ done: ;
 					continue;
 
 				int value;
-				if (!stringMethodConsts.getInt32(ref index, out value))
+				if (!stringMethodConsts.GetInt32(ref index, out value))
 					continue;
 
 				if (index + 3 >= instrs.Count)
@@ -871,7 +871,7 @@ done: ;
 					continue;
 
 				i3 = value;
-				if (!findInt6(index++))
+				if (!FindInt6(index++))
 					return false;
 				return true;
 			}
@@ -880,42 +880,42 @@ done: ;
 		}
 
 		// v3.3.134+
-		bool findInt6(int index) {
-			index = getNextLdci4InSameBlock(index);
+		bool FindInt6(int index) {
+			index = GetNextLdci4InSameBlock(index);
 			if (index < 0)
 				return true;
 
-			return stringMethodConsts.getNextInt32(ref index, out i6);
+			return stringMethodConsts.GetNextInt32(ref index, out i6);
 		}
 
-		bool findInt4() {
+		bool FindInt4() {
 			int index = 0;
-			if (!findCallReadInt32(ref index))
+			if (!FindCallReadInt32(ref index))
 				return false;
-			if (!stringMethodConsts.getNextInt32(ref index, out i4))
+			if (!stringMethodConsts.GetNextInt32(ref index, out i4))
 				return false;
 
 			return true;
 		}
 
-		int getNextLdci4InSameBlock(int index) {
+		int GetNextLdci4InSameBlock(int index) {
 			var instrs = stringMethod.Body.Instructions;
 			for (int i = index; i < instrs.Count; i++) {
 				var instr = instrs[i];
 				if (instr.OpCode.FlowControl != FlowControl.Next)
 					return -1;
-				if (stringMethodConsts.isLoadConstantInt32(instr))
+				if (stringMethodConsts.IsLoadConstantInt32(instr))
 					return i;
 			}
 
 			return -1;
 		}
 
-		bool findInt5() {
+		bool FindInt5() {
 			int index = -1;
 			while (true) {
 				index++;
-				if (!findCallReadBytes(ref index))
+				if (!FindCallReadBytes(ref index))
 					return false;
 				if (index <= 0)
 					continue;
@@ -924,37 +924,37 @@ done: ;
 					continue;
 				if (ldci4.GetLdcI4Value() != 4)
 					continue;
-				if (!stringMethodConsts.getNextInt32(ref index, out i5))
+				if (!stringMethodConsts.GetNextInt32(ref index, out i5))
 					return false;
 
 				return true;
 			}
 		}
 
-		static bool callsGetPublicKeyToken(MethodDef method) {
+		static bool CallsGetPublicKeyToken(MethodDef method) {
 			int index = 0;
-			return findCall(method, ref index, "System.Byte[] System.Reflection.AssemblyName::GetPublicKeyToken()");
+			return FindCall(method, ref index, "System.Byte[] System.Reflection.AssemblyName::GetPublicKeyToken()");
 		}
 
-		bool findCallReadInt16(ref int index) {
-			return findCall(stringMethod, ref index, streamHelperType == null ? "System.Int16 System.IO.BinaryReader::ReadInt16()" : streamHelperType.readInt16Method.FullName);
+		bool FindCallReadInt16(ref int index) {
+			return FindCall(stringMethod, ref index, streamHelperType == null ? "System.Int16 System.IO.BinaryReader::ReadInt16()" : streamHelperType.readInt16Method.FullName);
 		}
 
-		bool findCallReadInt32(ref int index) {
-			return findCall(stringMethod, ref index, streamHelperType == null ? "System.Int32 System.IO.BinaryReader::ReadInt32()" : streamHelperType.readInt32Method.FullName);
+		bool FindCallReadInt32(ref int index) {
+			return FindCall(stringMethod, ref index, streamHelperType == null ? "System.Int32 System.IO.BinaryReader::ReadInt32()" : streamHelperType.readInt32Method.FullName);
 		}
 
-		bool findCallReadBytes(ref int index) {
-			return findCall(stringMethod, ref index, streamHelperType == null ? "System.Byte[] System.IO.BinaryReader::ReadBytes(System.Int32)" : streamHelperType.readBytesMethod.FullName);
+		bool FindCallReadBytes(ref int index) {
+			return FindCall(stringMethod, ref index, streamHelperType == null ? "System.Byte[] System.IO.BinaryReader::ReadBytes(System.Int32)" : streamHelperType.readBytesMethod.FullName);
 		}
 
-		static bool findCallGetFrame(MethodDef method, ref int index) {
-			return findCall(method, ref index, "System.Diagnostics.StackFrame System.Diagnostics.StackTrace::GetFrame(System.Int32)");
+		static bool FindCallGetFrame(MethodDef method, ref int index) {
+			return FindCall(method, ref index, "System.Diagnostics.StackFrame System.Diagnostics.StackTrace::GetFrame(System.Int32)");
 		}
 
-		static bool findCall(MethodDef method, ref int index, string methodFullName) {
+		static bool FindCall(MethodDef method, ref int index, string methodFullName) {
 			for (; index < method.Body.Instructions.Count; index++) {
-				if (!findCallvirt(method, ref index))
+				if (!FindCallvirt(method, ref index))
 					return false;
 
 				var calledMethod = method.Body.Instructions[index].Operand as IMethod;
@@ -968,7 +968,7 @@ done: ;
 			return false;
 		}
 
-		static bool findCallvirt(MethodDef method, ref int index) {
+		static bool FindCallvirt(MethodDef method, ref int index) {
 			var instrs = method.Body.Instructions;
 			for (; index < instrs.Count; index++) {
 				var instr = instrs[index];

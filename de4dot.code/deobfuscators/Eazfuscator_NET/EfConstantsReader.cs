@@ -24,17 +24,17 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 	class EfConstantsReader : ConstantsReader {
 		public EfConstantsReader(MethodDef method)
 			: base(method) {
-			initialize();
+			Initialize();
 		}
 
-		void initialize() {
-			findConstants();
+		void Initialize() {
+			FindConstants();
 		}
 
-		void findConstants() {
+		void FindConstants() {
 			for (int index = 0; index < instructions.Count; ) {
 				int value;
-				if (!getInt32(ref index, out value))
+				if (!GetInt32(ref index, out value))
 					break;
 				var stloc = instructions[index];
 				if (!stloc.IsStloc())

@@ -29,22 +29,22 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators {
 	static class DeobUtils {
-		public static void decryptAndAddResources(ModuleDef module, string encryptedName, Func<byte[]> decryptResource) {
-			Logger.v("Decrypting resources, name: {0}", Utils.toCsharpString(encryptedName));
+		public static void DecryptAndAddResources(ModuleDef module, string encryptedName, Func<byte[]> decryptResource) {
+			Logger.v("Decrypting resources, name: {0}", Utils.ToCsharpString(encryptedName));
 			var decryptedResourceData = decryptResource();
 			if (decryptedResourceData == null)
 				throw new ApplicationException("decryptedResourceData is null");
 			var resourceModule = ModuleDefMD.Load(decryptedResourceData);
 
-			Logger.Instance.indent();
+			Logger.Instance.Indent();
 			foreach (var rsrc in resourceModule.Resources) {
-				Logger.v("Adding decrypted resource {0}", Utils.toCsharpString(rsrc.Name));
+				Logger.v("Adding decrypted resource {0}", Utils.ToCsharpString(rsrc.Name));
 				module.Resources.Add(rsrc);
 			}
-			Logger.Instance.deIndent();
+			Logger.Instance.DeIndent();
 		}
 
-		public static T lookup<T>(ModuleDefMD module, T def, string errorMessage) where T : class, ICodedToken {
+		public static T Lookup<T>(ModuleDefMD module, T def, string errorMessage) where T : class, ICodedToken {
 			if (def == null)
 				return null;
 			var newDef = module.ResolveToken(def.MDToken.Raw) as T;
@@ -53,11 +53,11 @@ namespace de4dot.code.deobfuscators {
 			return newDef;
 		}
 
-		public static byte[] readModule(ModuleDef module) {
-			return Utils.readFile(module.Location);
+		public static byte[] ReadModule(ModuleDef module) {
+			return Utils.ReadFile(module.Location);
 		}
 
-		public static bool isCode(short[] nativeCode, byte[] code) {
+		public static bool IsCode(short[] nativeCode, byte[] code) {
 			if (nativeCode.Length != code.Length)
 				return false;
 			for (int i = 0; i < nativeCode.Length; i++) {
@@ -69,19 +69,19 @@ namespace de4dot.code.deobfuscators {
 			return true;
 		}
 
-		public static byte[] md5Sum(byte[] data) {
+		public static byte[] Md5Sum(byte[] data) {
 			return MD5.Create().ComputeHash(data);
 		}
 
-		public static byte[] sha1Sum(byte[] data) {
+		public static byte[] Sha1Sum(byte[] data) {
 			return SHA1.Create().ComputeHash(data);
 		}
 
-		public static byte[] sha256Sum(byte[] data) {
+		public static byte[] Sha256Sum(byte[] data) {
 			return SHA256.Create().ComputeHash(data);
 		}
 
-		public static byte[] aesDecrypt(byte[] data, byte[] key, byte[] iv) {
+		public static byte[] AesDecrypt(byte[] data, byte[] key, byte[] iv) {
 			using (var aes = new RijndaelManaged { Mode = CipherMode.CBC }) {
 				using (var transform = aes.CreateDecryptor(key, iv)) {
 					return transform.TransformFinalBlock(data, 0, data.Length);
@@ -89,7 +89,7 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
-		public static byte[] des3Decrypt(byte[] data, byte[] key, byte[] iv) {
+		public static byte[] Des3Decrypt(byte[] data, byte[] key, byte[] iv) {
 			using (var des3 = TripleDES.Create()) {
 				using (var transform = des3.CreateDecryptor(key, iv)) {
 					return transform.TransformFinalBlock(data, 0, data.Length);
@@ -97,7 +97,7 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
-		public static byte[] desDecrypt(byte[] data, int start, int len, byte[] key, byte[] iv) {
+		public static byte[] DesDecrypt(byte[] data, int start, int len, byte[] key, byte[] iv) {
 			using (var des = new DESCryptoServiceProvider()) {
 				using (var transform = des.CreateDecryptor(key, iv)) {
 					return transform.TransformFinalBlock(data, start, len);
@@ -106,7 +106,7 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		// Code converted from C implementation @ http://en.wikipedia.org/wiki/XXTEA (btea() func)
-		public static void xxteaDecrypt(uint[] v, uint[] key) {
+		public static void XxteaDecrypt(uint[] v, uint[] key) {
 			const uint DELTA = 0x9E3779B9;
 			int n = v.Length;
 			uint rounds = (uint)(6 + 52 / n);
@@ -127,7 +127,7 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		// Code converted from C implementation @ http://en.wikipedia.org/wiki/XTEA (decipher() func)
-		public static void xteaDecrypt(ref uint v0, ref uint v1, uint[] key, int rounds) {
+		public static void XteaDecrypt(ref uint v0, ref uint v1, uint[] key, int rounds) {
 			const uint delta = 0x9E3779B9;
 			uint sum = (uint)(delta * rounds);
 			for (int i = 0; i < rounds; i++) {
@@ -137,7 +137,7 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
-		public static string getExtension(ModuleKind kind) {
+		public static string GetExtension(ModuleKind kind) {
 			switch (kind) {
 			case ModuleKind.Dll:
 				return ".dll";
@@ -150,19 +150,19 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
-		public static byte[] inflate(byte[] data, bool noHeader) {
-			return inflate(data, 0, data.Length, noHeader);
+		public static byte[] Inflate(byte[] data, bool noHeader) {
+			return Inflate(data, 0, data.Length, noHeader);
 		}
 
-		public static byte[] inflate(byte[] data, int start, int len, bool noHeader) {
-			return inflate(data, start, len, new Inflater(noHeader));
+		public static byte[] Inflate(byte[] data, int start, int len, bool noHeader) {
+			return Inflate(data, start, len, new Inflater(noHeader));
 		}
 
-		public static byte[] inflate(byte[] data, Inflater inflater) {
-			return inflate(data, 0, data.Length, inflater);
+		public static byte[] Inflate(byte[] data, Inflater inflater) {
+			return Inflate(data, 0, data.Length, inflater);
 		}
 
-		public static byte[] inflate(byte[] data, int start, int len, Inflater inflater) {
+		public static byte[] Inflate(byte[] data, int start, int len, Inflater inflater) {
 			var buffer = new byte[0x1000];
 			var memStream = new MemoryStream();
 			inflater.SetInput(data, start, len);
@@ -175,7 +175,7 @@ namespace de4dot.code.deobfuscators {
 			return memStream.ToArray();
 		}
 
-		public static byte[] gunzip(Stream input, int decompressedSize) {
+		public static byte[] Gunzip(Stream input, int decompressedSize) {
 			using (var gzip = new GZipStream(input, CompressionMode.Decompress)) {
 				var decompressed = new byte[decompressedSize];
 				if (gzip.Read(decompressed, 0, decompressedSize) != decompressedSize)
@@ -184,16 +184,16 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
-		public static EmbeddedResource getEmbeddedResourceFromCodeStrings(ModuleDef module, MethodDef method) {
-			foreach (var s in DotNetUtils.getCodeStrings(method)) {
-				var resource = DotNetUtils.getResource(module, s) as EmbeddedResource;
+		public static EmbeddedResource GetEmbeddedResourceFromCodeStrings(ModuleDef module, MethodDef method) {
+			foreach (var s in DotNetUtils.GetCodeStrings(method)) {
+				var resource = DotNetUtils.GetResource(module, s) as EmbeddedResource;
 				if (resource != null)
 					return resource;
 			}
 			return null;
 		}
 
-		public static int readVariableLengthInt32(byte[] data, ref int index) {
+		public static int ReadVariableLengthInt32(byte[] data, ref int index) {
 			byte b = data[index++];
 			if ((b & 0x80) == 0)
 				return b;
@@ -205,15 +205,15 @@ namespace de4dot.code.deobfuscators {
 					data[index++];
 		}
 
-		public static bool hasInteger(MethodDef method, uint value) {
-			return hasInteger(method, (int)value);
+		public static bool HasInteger(MethodDef method, uint value) {
+			return HasInteger(method, (int)value);
 		}
 
-		public static bool hasInteger(MethodDef method, int value) {
-			return indexOfLdci4Instruction(method, value) >= 0;
+		public static bool HasInteger(MethodDef method, int value) {
+			return IndexOfLdci4Instruction(method, value) >= 0;
 		}
 
-		public static int indexOfLdci4Instruction(MethodDef method, int value) {
+		public static int IndexOfLdci4Instruction(MethodDef method, int value) {
 			if (method == null || method.Body == null)
 				return -1;
 			var instrs = method.Body.Instructions;
@@ -227,8 +227,8 @@ namespace de4dot.code.deobfuscators {
 			return -1;
 		}
 
-		public static IEnumerable<MethodDef> getInitCctors(ModuleDef module, int maxCctors) {
-			var cctor = DotNetUtils.getModuleTypeCctor(module);
+		public static IEnumerable<MethodDef> GetInitCctors(ModuleDef module, int maxCctors) {
+			var cctor = DotNetUtils.GetModuleTypeCctor(module);
 			if (cctor != null)
 				yield return cctor;
 
@@ -251,7 +251,7 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
-		public static List<MethodDef> getAllResolveHandlers(MethodDef method) {
+		public static List<MethodDef> GetAllResolveHandlers(MethodDef method) {
 			var list = new List<MethodDef>();
 			if (method == null || method.Body == null)
 				return list;
@@ -261,15 +261,15 @@ namespace de4dot.code.deobfuscators {
 				var handler = instr.Operand as MethodDef;
 				if (handler == null)
 					continue;
-				if (!DotNetUtils.isMethod(handler, "System.Reflection.Assembly", "(System.Object,System.ResolveEventArgs)"))
+				if (!DotNetUtils.IsMethod(handler, "System.Reflection.Assembly", "(System.Object,System.ResolveEventArgs)"))
 					continue;
 				list.Add(handler);
 			}
 			return list;
 		}
 
-		public static MethodDef getResolveMethod(MethodDef method) {
-			var handlers = DeobUtils.getAllResolveHandlers(method);
+		public static MethodDef GetResolveMethod(MethodDef method) {
+			var handlers = DeobUtils.GetAllResolveHandlers(method);
 			if (handlers.Count == 0)
 				return null;
 			return handlers[0];

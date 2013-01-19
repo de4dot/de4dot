@@ -34,7 +34,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			this.simpleDeobfuscator = simpleDeobfuscator;
 		}
 
-		public ResourceDecrypter create() {
+		public ResourceDecrypter Create() {
 			return new ResourceDecrypter(module, simpleDeobfuscator);
 		}
 	}
@@ -51,7 +51,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		}
 
 		interface IDecrypter {
-			byte[] decrypt(byte[] encryptedData);
+			byte[] Decrypt(byte[] encryptedData);
 		}
 
 		// v3.0
@@ -62,20 +62,20 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				this.module = module;
 			}
 
-			public byte[] decrypt(byte[] encryptedData) {
+			public byte[] Decrypt(byte[] encryptedData) {
 				byte[] key, iv;
 				var reader = new BinaryReader(new MemoryStream(encryptedData));
-				bool isCompressed = getHeaderData(reader, out key, out iv);
-				var data = DeobUtils.desDecrypt(encryptedData,
+				bool isCompressed = GetHeaderData(reader, out key, out iv);
+				var data = DeobUtils.DesDecrypt(encryptedData,
 										(int)reader.BaseStream.Position,
 										(int)(reader.BaseStream.Length - reader.BaseStream.Position),
 										key, iv);
 				if (isCompressed)
-					data = DeobUtils.inflate(data, true);
+					data = DeobUtils.Inflate(data, true);
 				return data;
 			}
 
-			bool getHeaderData(BinaryReader reader, out byte[] key, out byte[] iv) {
+			bool GetHeaderData(BinaryReader reader, out byte[] key, out byte[] iv) {
 				iv = reader.ReadBytes(reader.ReadByte());
 				bool hasEmbeddedKey = reader.ReadBoolean();
 				if (hasEmbeddedKey)
@@ -98,17 +98,17 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				this.module = module;
 			}
 
-			public byte[] decrypt(byte[] encryptedData) {
+			public byte[] Decrypt(byte[] encryptedData) {
 				int index = 0;
 				byte[] key, iv;
-				bool isCompressed = getKeyIv(getHeaderData(encryptedData, ref index), out key, out iv);
-				var data = DeobUtils.desDecrypt(encryptedData, index, encryptedData.Length - index, key, iv);
+				bool isCompressed = GetKeyIv(GetHeaderData(encryptedData, ref index), out key, out iv);
+				var data = DeobUtils.DesDecrypt(encryptedData, index, encryptedData.Length - index, key, iv);
 				if (isCompressed)
-					data = DeobUtils.inflate(data, true);
+					data = DeobUtils.Inflate(data, true);
 				return data;
 			}
 
-			byte[] getHeaderData(byte[] encryptedData, ref int index) {
+			byte[] GetHeaderData(byte[] encryptedData, ref int index) {
 				bool xorDecrypt = encryptedData[index++] != 0;
 				var headerData = new byte[BitConverter.ToUInt16(encryptedData, index)];
 				Array.Copy(encryptedData, index + 2, headerData, 0, headerData.Length);
@@ -124,7 +124,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				return headerData;
 			}
 
-			bool getKeyIv(byte[] headerData, out byte[] key, out byte[] iv) {
+			bool GetKeyIv(byte[] headerData, out byte[] key, out byte[] iv) {
 				var reader = new BinaryReader(new MemoryStream(headerData));
 
 				// 3.0 - 3.5 don't have this field
@@ -157,20 +157,20 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 			public Decrypter3(ModuleDefMD module, MethodDef decryptMethod) {
 				this.module = module;
-				this.inflater = InflaterCreator.create(decryptMethod, true);
+				this.inflater = InflaterCreator.Create(decryptMethod, true);
 			}
 
-			public byte[] decrypt(byte[] encryptedData) {
+			public byte[] Decrypt(byte[] encryptedData) {
 				int index = 0;
 				byte[] key, iv;
-				bool isCompressed = getKeyIv(getHeaderData(encryptedData, ref index), out key, out iv);
-				var data = DeobUtils.desDecrypt(encryptedData, index, encryptedData.Length - index, key, iv);
+				bool isCompressed = GetKeyIv(GetHeaderData(encryptedData, ref index), out key, out iv);
+				var data = DeobUtils.DesDecrypt(encryptedData, index, encryptedData.Length - index, key, iv);
 				if (isCompressed)
-					data = DeobUtils.inflate(data, inflater);
+					data = DeobUtils.Inflate(data, inflater);
 				return data;
 			}
 
-			byte[] getHeaderData(byte[] encryptedData, ref int index) {
+			byte[] GetHeaderData(byte[] encryptedData, ref int index) {
 				bool xorDecrypt = encryptedData[index++] != 0;
 				var headerData = new byte[BitConverter.ToUInt16(encryptedData, index)];
 				Array.Copy(encryptedData, index + 2, headerData, 0, headerData.Length);
@@ -186,7 +186,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				return headerData;
 			}
 
-			bool getKeyIv(byte[] headerData, out byte[] key, out byte[] iv) {
+			bool GetKeyIv(byte[] headerData, out byte[] key, out byte[] iv) {
 				var reader = new BinaryReader(new MemoryStream(headerData));
 
 				var license = reader.ReadString();
@@ -214,14 +214,14 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 					return;
 				if (decryptMethod == null) {
 					decryptMethod = value;
-					simpleDeobfuscator.deobfuscate(decryptMethod);
+					simpleDeobfuscator.Deobfuscate(decryptMethod);
 				}
 				else if (decryptMethod != value)
 					throw new ApplicationException("Found another decrypter method");
 			}
 		}
 
-		public static MethodDef findDecrypterMethod(MethodDef method) {
+		public static MethodDef FindDecrypterMethod(MethodDef method) {
 			if (method == null || method.Body == null)
 				return null;
 
@@ -231,7 +231,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				var calledMethod = instr.Operand as MethodDef;
 				if (calledMethod == null || !calledMethod.IsStatic || calledMethod.Body == null)
 					continue;
-				if (!DotNetUtils.isMethod(calledMethod, "System.IO.MemoryStream", "(System.IO.Stream)"))
+				if (!DotNetUtils.IsMethod(calledMethod, "System.IO.MemoryStream", "(System.IO.Stream)"))
 					continue;
 
 				return calledMethod;
@@ -240,21 +240,21 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return null;
 		}
 
-		public byte[] decrypt(byte[] encryptedData) {
+		public byte[] Decrypt(byte[] encryptedData) {
 			if (decrypter == null)
-				decrypter = createDecrypter(encryptedData);
-			return decrypter.decrypt(encryptedData);
+				decrypter = CreateDecrypter(encryptedData);
+			return decrypter.Decrypt(encryptedData);
 		}
 
-		IDecrypter createDecrypter(byte[] encryptedData) {
-			if (decryptMethod != null && DeobUtils.hasInteger(decryptMethod, 6))
+		IDecrypter CreateDecrypter(byte[] encryptedData) {
+			if (decryptMethod != null && DeobUtils.HasInteger(decryptMethod, 6))
 				return new Decrypter3(module, decryptMethod);
-			if (isV30(encryptedData))
+			if (IsV30(encryptedData))
 				return new Decrypter1(module);
 			return new Decrypter2(module);
 		}
 
-		static bool isV30(byte[] data) {
+		static bool IsV30(byte[] data) {
 			return data.Length > 10 && data[0] == 8 && data[9] <= 1 && data[10] == 8;
 		}
 	}

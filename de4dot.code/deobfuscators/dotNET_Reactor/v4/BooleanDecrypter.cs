@@ -54,7 +54,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			this.encryptedResource = new EncryptedResource(module, oldOne.encryptedResource);
 		}
 
-		public void find() {
+		public void Find() {
 			var additionalTypes = new string[] {
 				"System.Boolean",
 			};
@@ -64,9 +64,9 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				foreach (var method in type.Methods) {
 					if (!method.IsStatic || !method.HasBody)
 						continue;
-					if (!DotNetUtils.isMethod(method, "System.Boolean", "(System.Int32)"))
+					if (!DotNetUtils.IsMethod(method, "System.Boolean", "(System.Int32)"))
 						continue;
-					if (!encryptedResource.couldBeResourceDecrypter(method, additionalTypes))
+					if (!encryptedResource.CouldBeResourceDecrypter(method, additionalTypes))
 						continue;
 
 					encryptedResource.Method = method;
@@ -75,20 +75,20 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			}
 		}
 
-		public void init(byte[] fileData, ISimpleDeobfuscator simpleDeobfuscator) {
+		public void Initialize(byte[] fileData, ISimpleDeobfuscator simpleDeobfuscator) {
 			if (encryptedResource.Method == null)
 				return;
 			this.fileData = fileData;
 
-			encryptedResource.init(simpleDeobfuscator);
+			encryptedResource.Initialize(simpleDeobfuscator);
 			if (!encryptedResource.FoundResource)
 				return;
 
-			Logger.v("Adding boolean decrypter. Resource: {0}", Utils.toCsharpString(encryptedResource.Resource.Name));
-			decryptedData = encryptedResource.decrypt();
+			Logger.v("Adding boolean decrypter. Resource: {0}", Utils.ToCsharpString(encryptedResource.Resource.Name));
+			decryptedData = encryptedResource.Decrypt();
 		}
 
-		public bool decrypt(int offset) {
+		public bool Decrypt(int offset) {
 			uint byteOffset = BitConverter.ToUInt32(decryptedData, offset);
 			return fileData[byteOffset] == 0x80;
 		}

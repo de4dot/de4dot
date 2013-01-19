@@ -42,33 +42,33 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			this.deob = deob;
 		}
 
-		public void find() {
-			if (find(module.EntryPoint))
+		public void Find() {
+			if (Find(module.EntryPoint))
 				return;
-			if (find(DotNetUtils.getModuleTypeCctor(module)))
+			if (Find(DotNetUtils.GetModuleTypeCctor(module)))
 				return;
 		}
 
-		bool find(MethodDef methodToCheck) {
+		bool Find(MethodDef methodToCheck) {
 			if (methodToCheck == null)
 				return false;
-			foreach (var method in DotNetUtils.getCalledMethods(module, methodToCheck)) {
+			foreach (var method in DotNetUtils.GetCalledMethods(module, methodToCheck)) {
 				var type = method.DeclaringType;
 
-				if (!method.IsStatic || !DotNetUtils.isMethod(method, "System.Void", "()"))
+				if (!method.IsStatic || !DotNetUtils.IsMethod(method, "System.Void", "()"))
 					continue;
-				if (DotNetUtils.getPInvokeMethod(type, "kernel32", "LoadLibrary") == null)
+				if (DotNetUtils.GetPInvokeMethod(type, "kernel32", "LoadLibrary") == null)
 					continue;
-				if (DotNetUtils.getPInvokeMethod(type, "kernel32", "GetProcAddress") == null)
+				if (DotNetUtils.GetPInvokeMethod(type, "kernel32", "GetProcAddress") == null)
 					continue;
-				deobfuscate(method);
-				if (!containsString(method, "debugger is activ") &&
-					!containsString(method, "debugger is running") &&
-					!containsString(method, "Debugger detected") &&
-					!containsString(method, "Debugger was detected") &&
-					!containsString(method, "{0} was detected") &&
-					!containsString(method, "run under") &&
-					!containsString(method, "run with"))
+				Deobfuscate(method);
+				if (!ContainsString(method, "debugger is activ") &&
+					!ContainsString(method, "debugger is running") &&
+					!ContainsString(method, "Debugger detected") &&
+					!ContainsString(method, "Debugger was detected") &&
+					!ContainsString(method, "{0} was detected") &&
+					!ContainsString(method, "run under") &&
+					!ContainsString(method, "run with"))
 					continue;
 
 				antiDebuggerType = type;
@@ -79,13 +79,13 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return false;
 		}
 
-		void deobfuscate(MethodDef method) {
-			simpleDeobfuscator.deobfuscate(method);
-			simpleDeobfuscator.decryptStrings(method, deob);
+		void Deobfuscate(MethodDef method) {
+			simpleDeobfuscator.Deobfuscate(method);
+			simpleDeobfuscator.DecryptStrings(method, deob);
 		}
 
-		bool containsString(MethodDef method, string part) {
-			foreach (var s in DotNetUtils.getCodeStrings(method)) {
+		bool ContainsString(MethodDef method, string part) {
+			foreach (var s in DotNetUtils.GetCodeStrings(method)) {
 				if (s.Contains(part))
 					return true;
 			}

@@ -41,31 +41,31 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 
 		public TamperDetection(ModuleDefMD module) {
 			this.module = module;
-			frameworkType = DotNetUtils.getFrameworkType(module);
+			frameworkType = DotNetUtils.GetFrameworkType(module);
 		}
 
-		public void find() {
-			if (find(module.EntryPoint))
+		public void Find() {
+			if (Find(module.EntryPoint))
 				return;
-			if (find(DotNetUtils.getModuleTypeCctor(module)))
+			if (Find(DotNetUtils.GetModuleTypeCctor(module)))
 				return;
 		}
 
-		bool find(MethodDef methodToCheck) {
+		bool Find(MethodDef methodToCheck) {
 			if (methodToCheck == null)
 				return false;
 
-			foreach (var method in DotNetUtils.getCalledMethods(module, methodToCheck)) {
+			foreach (var method in DotNetUtils.GetCalledMethods(module, methodToCheck)) {
 				bool result = false;
 				switch (frameworkType) {
 				case FrameworkType.Desktop:
-					result = findDesktop(method);
+					result = FindDesktop(method);
 					break;
 				case FrameworkType.Silverlight:
-					result = findSilverlight(method);
+					result = FindSilverlight(method);
 					break;
 				case FrameworkType.CompactFramework:
-					result = findCompactFramework(method);
+					result = FindCompactFramework(method);
 					break;
 				}
 				if (!result)
@@ -79,16 +79,16 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return false;
 		}
 
-		bool findDesktop(MethodDef method) {
+		bool FindDesktop(MethodDef method) {
 			var type = method.DeclaringType;
 
-			if (!method.IsStatic || !DotNetUtils.isMethod(method, "System.Void", "()"))
+			if (!method.IsStatic || !DotNetUtils.IsMethod(method, "System.Void", "()"))
 				return false;
 			if (type.Methods.Count < 3 || type.Methods.Count > 24)
 				return false;
-			if (DotNetUtils.getPInvokeMethod(type, "mscoree", "StrongNameSignatureVerificationEx") != null) {
+			if (DotNetUtils.GetPInvokeMethod(type, "mscoree", "StrongNameSignatureVerificationEx") != null) {
 			}
-			else if (DotNetUtils.getPInvokeMethod(type, "mscoree", "CLRCreateInstance") != null) {
+			else if (DotNetUtils.GetPInvokeMethod(type, "mscoree", "CLRCreateInstance") != null) {
 				if (type.NestedTypes.Count != 3)
 					return false;
 				if (!type.NestedTypes[0].IsInterface || !type.NestedTypes[1].IsInterface || !type.NestedTypes[2].IsInterface)
@@ -107,22 +107,22 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			"System.Reflection.AssemblyName",
 			"System.String",
 		};
-		bool findSilverlight(MethodDef method) {
-			if (!new LocalTypes(method).exactly(requiredLocals_sl))
+		bool FindSilverlight(MethodDef method) {
+			if (!new LocalTypes(method).Exactly(requiredLocals_sl))
 				return false;
-			if (!DotNetUtils.callsMethod(method, "System.Int32 System.String::get_Length()"))
+			if (!DotNetUtils.CallsMethod(method, "System.Int32 System.String::get_Length()"))
 				return false;
-			if (!DotNetUtils.callsMethod(method, "System.Byte[] System.Convert::FromBase64String(System.String)"))
+			if (!DotNetUtils.CallsMethod(method, "System.Byte[] System.Convert::FromBase64String(System.String)"))
 				return false;
-			if (!DotNetUtils.callsMethod(method, "System.Reflection.Assembly System.Reflection.Assembly::GetExecutingAssembly()"))
+			if (!DotNetUtils.CallsMethod(method, "System.Reflection.Assembly System.Reflection.Assembly::GetExecutingAssembly()"))
 				return false;
-			if (!DotNetUtils.callsMethod(method, "System.String System.Reflection.Assembly::get_FullName()"))
+			if (!DotNetUtils.CallsMethod(method, "System.String System.Reflection.Assembly::get_FullName()"))
 				return false;
-			if (!DotNetUtils.callsMethod(method, "System.Byte[] System.Reflection.AssemblyName::GetPublicKeyToken()"))
+			if (!DotNetUtils.CallsMethod(method, "System.Byte[] System.Reflection.AssemblyName::GetPublicKeyToken()"))
 				return false;
-			if (DotNetUtils.callsMethod(method, "System.String", "(System.Reflection.Assembly)")) {
+			if (DotNetUtils.CallsMethod(method, "System.String", "(System.Reflection.Assembly)")) {
 			}
-			else if (DotNetUtils.callsMethod(method, "System.String System.Reflection.AssemblyName::get_Name()")) {
+			else if (DotNetUtils.CallsMethod(method, "System.String System.Reflection.AssemblyName::get_Name()")) {
 			}
 			else
 				return false;
@@ -136,21 +136,21 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			"System.Int32",
 			"System.String",
 		};
-		bool findCompactFramework(MethodDef method) {
-			if (!new LocalTypes(method).exactly(requiredLocals_cf))
+		bool FindCompactFramework(MethodDef method) {
+			if (!new LocalTypes(method).Exactly(requiredLocals_cf))
 				return false;
-			if (!DotNetUtils.callsMethod(method, "System.Int32 System.String::get_Length()"))
+			if (!DotNetUtils.CallsMethod(method, "System.Int32 System.String::get_Length()"))
 				return false;
-			if (!DotNetUtils.callsMethod(method, "System.Byte[] System.Convert::FromBase64String(System.String)"))
+			if (!DotNetUtils.CallsMethod(method, "System.Byte[] System.Convert::FromBase64String(System.String)"))
 				return false;
-			if (!DotNetUtils.callsMethod(method, "System.Reflection.Assembly System.Reflection.Assembly::GetExecutingAssembly()"))
+			if (!DotNetUtils.CallsMethod(method, "System.Reflection.Assembly System.Reflection.Assembly::GetExecutingAssembly()"))
 				return false;
 
-			if (DotNetUtils.callsMethod(method, "System.Byte[]", "(System.Reflection.Assembly)") &&
-				DotNetUtils.callsMethod(method, "System.String", "(System.Reflection.Assembly)")) {
+			if (DotNetUtils.CallsMethod(method, "System.Byte[]", "(System.Reflection.Assembly)") &&
+				DotNetUtils.CallsMethod(method, "System.String", "(System.Reflection.Assembly)")) {
 			}
-			else if (DotNetUtils.callsMethod(method, "System.Reflection.AssemblyName System.Reflection.Assembly::GetName()") &&
-					DotNetUtils.callsMethod(method, "System.Byte[] System.Reflection.AssemblyName::GetPublicKeyToken()")) {
+			else if (DotNetUtils.CallsMethod(method, "System.Reflection.AssemblyName System.Reflection.Assembly::GetName()") &&
+					DotNetUtils.CallsMethod(method, "System.Byte[] System.Reflection.AssemblyName::GetPublicKeyToken()")) {
 			}
 			else
 				return false;

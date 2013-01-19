@@ -27,7 +27,7 @@ namespace de4dot.blocks.cflow {
 		List<int> allDeadInstructions = new List<int>();
 		InstructionExpressionFinder instructionExpressionFinder = new InstructionExpressionFinder();
 
-		protected override bool deobfuscate(Block block) {
+		protected override bool Deobfuscate(Block block) {
 			allDeadInstructions.Clear();
 
 			bool changed = false;
@@ -56,10 +56,10 @@ namespace de4dot.blocks.cflow {
 				case Code.Leave_S:
 				case Code.Endfinally:
 				case Code.Pop:
-					instructionExpressionFinder.init(block, false);
-					if (!instructionExpressionFinder.find(i))
+					instructionExpressionFinder.Initialize(block, false);
+					if (!instructionExpressionFinder.Find(i))
 						continue;
-					if (!okInstructions(block, instructionExpressionFinder.DeadInstructions))
+					if (!OkInstructions(block, instructionExpressionFinder.DeadInstructions))
 						continue;
 					allDeadInstructions.AddRange(instructionExpressionFinder.DeadInstructions);
 					break;
@@ -70,14 +70,14 @@ namespace de4dot.blocks.cflow {
 			}
 
 			if (allDeadInstructions.Count > 0) {
-				block.remove(allDeadInstructions);
+				block.Remove(allDeadInstructions);
 				changed = true;
 			}
 
 			return changed;
 		}
 
-		bool okInstructions(Block block, IEnumerable<int> indexes) {
+		bool OkInstructions(Block block, IEnumerable<int> indexes) {
 			foreach (var index in indexes) {
 				var instr = block.Instructions[index];
 				switch (instr.OpCode.Code) {
@@ -318,27 +318,27 @@ namespace de4dot.blocks.cflow {
 				get { return deadInstructions; }
 			}
 
-			public void init(Block block, bool methodHasReturnValue) {
+			public void Initialize(Block block, bool methodHasReturnValue) {
 				deadInstructions.Clear();
 				this.block = block;
 				this.methodHasReturnValue = methodHasReturnValue;
 			}
 
-			public bool find(int index) {
-				return find(ref index, true);
+			public bool Find(int index) {
+				return Find(ref index, true);
 			}
 
-			bool find(ref int index, bool addIt) {
+			bool Find(ref int index, bool addIt) {
 				if (index < 0)
 					return false;
 
 				var startInstr = block.Instructions[index];
 				int startInstrPushes, startInstrPops;
-				calculateStackUsage(startInstr.Instruction, false, out startInstrPushes, out startInstrPops);
+				CalculateStackUsage(startInstr.Instruction, false, out startInstrPushes, out startInstrPops);
 
 				// Don't add it if it clears the stack (eg. leave)
 				if (addIt && startInstrPops >= 0)
-					addIndex(index);
+					AddIndex(index);
 
 				if (startInstrPops == 0)
 					return true;
@@ -349,19 +349,19 @@ namespace de4dot.blocks.cflow {
 						break;
 
 					int pushes, pops;
-					calculateStackUsage(instr.Instruction, methodHasReturnValue, out pushes, out pops);
+					CalculateStackUsage(instr.Instruction, methodHasReturnValue, out pushes, out pops);
 					if (pops < 0)
 						break;	// eg. leave
 					index--;
 
 					if (pops > 0) {	// if instr uses any args
 						bool otherExpr = pops > 0 && pushes == 0;
-						if (!find(ref index, addIt && !otherExpr))
+						if (!Find(ref index, addIt && !otherExpr))
 							break;
 					}
 					else if (pushes != 0 || pops != 0) {
 						if (addIt)
-							addIndex(index);
+							AddIndex(index);
 					}
 					if (pushes > 0 && startInstrPops >= 0) {
 						if (pushes > startInstrPops)
@@ -373,12 +373,12 @@ namespace de4dot.blocks.cflow {
 				return startInstrPops <= 0;
 			}
 
-			void addIndex(int index) {
+			void AddIndex(int index) {
 				deadInstructions.Add(index);
 			}
 		}
 
-		static void calculateStackUsage(Instruction instr, bool methodHasReturnValue, out int pushes, out int pops) {
+		static void CalculateStackUsage(Instruction instr, bool methodHasReturnValue, out int pushes, out int pops) {
 			instr.CalculateStackUsage(false, out pushes, out pops);
 		}
 	}

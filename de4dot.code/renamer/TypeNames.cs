@@ -30,10 +30,10 @@ namespace de4dot.code.renamer {
 		protected Dictionary<string, string> fullNameToShortName;
 		protected Dictionary<string, string> fullNameToShortNamePrefix;
 
-		public string create(TypeSig typeRef) {
+		public string Create(TypeSig typeRef) {
 			typeRef = typeRef.RemovePinnedAndModifiers();
 			if (typeRef == null)
-				return unknownNameCreator.create();
+				return unknownNameCreator.Create();
 			var gis = typeRef as GenericInstSig;
 			if (gis != null) {
 				if (gis.FullName == "System.Nullable`1" &&
@@ -42,18 +42,18 @@ namespace de4dot.code.renamer {
 				}
 			}
 
-			string prefix = getPrefix(typeRef);
+			string prefix = GetPrefix(typeRef);
 
 			var elementType = typeRef.ScopeType;
-			if (elementType == null && isFnPtrSig(typeRef))
-				return fnPtrNameCreator.create();
-			if (isGenericParam(elementType))
-				return genericParamNameCreator.create();
+			if (elementType == null && IsFnPtrSig(typeRef))
+				return fnPtrNameCreator.Create();
+			if (IsGenericParam(elementType))
+				return genericParamNameCreator.Create();
 
 			NameCreator nc;
 			var typeFullName = typeRef.FullName;
 			if (typeNames.TryGetValue(typeFullName, out nc))
-				return nc.create();
+				return nc.Create();
 
 			var fullName = elementType == null ? typeRef.FullName : elementType.FullName;
 			string shortName;
@@ -68,10 +68,10 @@ namespace de4dot.code.renamer {
 					shortName = shortName.Substring(0, index);
 			}
 
-			return addTypeName(typeFullName, shortName, prefix).create();
+			return AddTypeName(typeFullName, shortName, prefix).Create();
 		}
 
-		bool isFnPtrSig(TypeSig sig) {
+		bool IsFnPtrSig(TypeSig sig) {
 			while (sig != null) {
 				if (sig is FnPtrSig)
 					return true;
@@ -80,7 +80,7 @@ namespace de4dot.code.renamer {
 			return false;
 		}
 
-		bool isGenericParam(ITypeDefOrRef tdr) {
+		bool IsGenericParam(ITypeDefOrRef tdr) {
 			var ts = tdr as TypeSpec;
 			if (ts == null)
 				return false;
@@ -88,7 +88,7 @@ namespace de4dot.code.renamer {
 			return sig is GenericSig;
 		}
 
-		static string getPrefix(TypeSig typeRef) {
+		static string GetPrefix(TypeSig typeRef) {
 			string prefix = "";
 			while (typeRef != null) {
 				if (typeRef.IsPointer)
@@ -98,8 +98,8 @@ namespace de4dot.code.renamer {
 			return prefix;
 		}
 
-		protected INameCreator addTypeName(string fullName, string newName, string prefix) {
-			newName = fixName(prefix, newName);
+		protected INameCreator AddTypeName(string fullName, string newName, string prefix) {
+			newName = FixName(prefix, newName);
 
 			var name2 = " " + newName;
 			NameCreator nc;
@@ -110,23 +110,23 @@ namespace de4dot.code.renamer {
 			return nc;
 		}
 
-		protected abstract string fixName(string prefix, string name);
+		protected abstract string FixName(string prefix, string name);
 
-		public virtual TypeNames merge(TypeNames other) {
+		public virtual TypeNames Merge(TypeNames other) {
 			foreach (var pair in other.typeNames) {
 				NameCreator nc;
 				if (typeNames.TryGetValue(pair.Key, out nc))
-					nc.merge(pair.Value);
+					nc.Merge(pair.Value);
 				else
-					typeNames[pair.Key] = pair.Value.clone();
+					typeNames[pair.Key] = pair.Value.Clone();
 			}
-			genericParamNameCreator.merge(other.genericParamNameCreator);
-			fnPtrNameCreator.merge(other.fnPtrNameCreator);
-			unknownNameCreator.merge(other.unknownNameCreator);
+			genericParamNameCreator.Merge(other.genericParamNameCreator);
+			fnPtrNameCreator.Merge(other.fnPtrNameCreator);
+			unknownNameCreator.Merge(other.unknownNameCreator);
 			return this;
 		}
 
-		protected static string upperFirst(string s) {
+		protected static string UpperFirst(string s) {
 			if (string.IsNullOrEmpty(s))
 				return string.Empty;
 			return s.Substring(0, 1).ToUpperInvariant() + s.Substring(1);
@@ -180,7 +180,7 @@ namespace de4dot.code.renamer {
 			fullNameToShortNamePrefix = ourFullNameToShortNamePrefix;
 		}
 
-		static string lowerLeadingChars(string name) {
+		static string LowerLeadingChars(string name) {
 			var s = "";
 			for (int i = 0; i < name.Length; i++) {
 				char c = char.ToLowerInvariant(name[i]);
@@ -191,11 +191,11 @@ namespace de4dot.code.renamer {
 			return s;
 		}
 
-		protected override string fixName(string prefix, string name) {
-			name = lowerLeadingChars(name);
+		protected override string FixName(string prefix, string name) {
+			name = LowerLeadingChars(name);
 			if (prefix == "")
 				return name;
-			return prefix + upperFirst(name);
+			return prefix + UpperFirst(name);
 		}
 	}
 
@@ -208,8 +208,8 @@ namespace de4dot.code.renamer {
 			fullNameToShortNamePrefix = ourFullNameToShortNamePrefix;
 		}
 
-		protected override string fixName(string prefix, string name) {
-			return prefix.ToUpperInvariant() + upperFirst(name);
+		protected override string FixName(string prefix, string name) {
+			return prefix.ToUpperInvariant() + UpperFirst(name);
 		}
 	}
 }

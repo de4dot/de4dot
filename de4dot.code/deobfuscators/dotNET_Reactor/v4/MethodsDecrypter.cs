@@ -70,7 +70,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			this.xorKey = oldOne.xorKey;
 		}
 
-		public void find() {
+		public void Find() {
 			var additionalTypes = new string[] {
 				"System.IntPtr",
 //				"System.Reflection.Assembly",		//TODO: Not in unknown DNR version with jitter support
@@ -85,27 +85,27 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				if (typesLeft-- <= 0)
 					break;
 
-				foreach (var method in DotNetUtils.getCalledMethods(module, cctor)) {
+				foreach (var method in DotNetUtils.GetCalledMethods(module, cctor)) {
 					if (!checkedMethods.ContainsKey(method)) {
 						checkedMethods[method] = false;
 						if (method.DeclaringType.BaseType == null || method.DeclaringType.BaseType.FullName != "System.Object")
 							continue;
-						if (!DotNetUtils.isMethod(method, "System.Void", "()"))
+						if (!DotNetUtils.IsMethod(method, "System.Void", "()"))
 							continue;
-						if (!encryptedResource.couldBeResourceDecrypter(method, additionalTypes))
+						if (!encryptedResource.CouldBeResourceDecrypter(method, additionalTypes))
 							continue;
 						checkedMethods[method] = true;
 					}
 					else if (!checkedMethods[method])
 						continue;
-					callCounter.add(method);
+					callCounter.Add(method);
 				}
 			}
 
-			encryptedResource.Method = (MethodDef)callCounter.most();
+			encryptedResource.Method = (MethodDef)callCounter.Most();
 		}
 
-		void xorEncrypt(byte[] data) {
+		void XorEncrypt(byte[] data) {
 			if (xorKey == 0)
 				return;
 
@@ -123,19 +123,19 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 
 		static short[] nativeLdci4 = new short[] { 0x55, 0x8B, 0xEC, 0xB8, -1, -1, -1, -1, 0x5D, 0xC3 };
 		static short[] nativeLdci4_0 = new short[] { 0x55, 0x8B, 0xEC, 0x33, 0xC0, 0x5D, 0xC3 };
-		public bool decrypt(MyPEImage peImage, ISimpleDeobfuscator simpleDeobfuscator, ref DumpedMethods dumpedMethods, Dictionary<uint, byte[]> tokenToNativeCode, bool unpackedNativeFile) {
+		public bool Decrypt(MyPEImage peImage, ISimpleDeobfuscator simpleDeobfuscator, ref DumpedMethods dumpedMethods, Dictionary<uint, byte[]> tokenToNativeCode, bool unpackedNativeFile) {
 			if (encryptedResource.Method == null)
 				return false;
 
-			encryptedResource.init(simpleDeobfuscator);
+			encryptedResource.Initialize(simpleDeobfuscator);
 			if (!encryptedResource.FoundResource)
 				return false;
-			var methodsData = encryptedResource.decrypt();
+			var methodsData = encryptedResource.Decrypt();
 
-			bool hooksJitter = findDnrCompileMethod(encryptedResource.Method.DeclaringType) != null;
+			bool hooksJitter = FindDnrCompileMethod(encryptedResource.Method.DeclaringType) != null;
 
-			xorKey = getXorKey();
-			xorEncrypt(methodsData);
+			xorKey = GetXorKey();
+			XorEncrypt(methodsData);
 
 			var methodsDataReader = MemoryImageStream.Create(methodsData);
 			int patchCount = methodsDataReader.ReadInt32();
@@ -149,11 +149,11 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				patchCount = methodsDataReader.ReadInt32();
 				mode = methodsDataReader.ReadInt32();
 
-				patchDwords(peImage, methodsDataReader, patchCount);
+				PatchDwords(peImage, methodsDataReader, patchCount);
 				while (methodsDataReader.Position < methodsData.Length - 1) {
 					uint token = methodsDataReader.ReadUInt32();
 					int numDwords = methodsDataReader.ReadInt32();
-					patchDwords(peImage, methodsDataReader, numDwords / 2);
+					PatchDwords(peImage, methodsDataReader, numDwords / 2);
 				}
 			}
 			else if (!hooksJitter || mode == 1) {
@@ -162,7 +162,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				// If it's .NET 1.x, then offsets are used, not RVAs.
 				bool useOffsets = unpackedNativeFile && module.IsClr1x;
 
-				patchDwords(peImage, methodsDataReader, patchCount);
+				PatchDwords(peImage, methodsDataReader, patchCount);
 				while (methodsDataReader.Position < methodsData.Length - 1) {
 					uint rva = methodsDataReader.ReadUInt32();
 					uint token = methodsDataReader.ReadUInt32();	// token, unknown, or index
@@ -170,9 +170,9 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 					if (size > 0) {
 						var newData = methodsDataReader.ReadBytes(size);
 						if (useOffsets)
-							peImage.dotNetSafeWriteOffset(rva, newData);
+							peImage.DotNetSafeWriteOffset(rva, newData);
 						else
-							peImage.dotNetSafeWrite(rva, newData);
+							peImage.DotNetSafeWrite(rva, newData);
 					}
 				}
 			}
@@ -183,19 +183,19 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				var rvaToIndex = new Dictionary<uint, int>((int)methodDef.Rows);
 				uint offset = (uint)methodDef.StartOffset;
 				for (int i = 0; i < methodDef.Rows; i++) {
-					uint rva = peImage.offsetReadUInt32(offset);
+					uint rva = peImage.OffsetReadUInt32(offset);
 					offset += methodDef.RowSize;
 					if (rva == 0)
 						continue;
 
-					if ((peImage.readByte(rva) & 3) == 2)
+					if ((peImage.ReadByte(rva) & 3) == 2)
 						rva++;
 					else
-						rva += (uint)(4 * (peImage.readByte(rva + 1) >> 4));
+						rva += (uint)(4 * (peImage.ReadByte(rva + 1) >> 4));
 					rvaToIndex[rva] = i;
 				}
 
-				patchDwords(peImage, methodsDataReader, patchCount);
+				PatchDwords(peImage, methodsDataReader, patchCount);
 				int count = methodsDataReader.ReadInt32();
 				dumpedMethods = new DumpedMethods();
 				while (methodsDataReader.Position < methodsData.Length - 1) {
@@ -220,7 +220,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 
 						// Convert return true / false methods. The others are converted to
 						// throw 0xDEADCODE.
-						if (DeobUtils.isCode(nativeLdci4, methodData)) {
+						if (DeobUtils.IsCode(nativeLdci4, methodData)) {
 							uint val = BitConverter.ToUInt32(methodData, 4);
 							// ldc.i4 XXXXXXXXh / ret
 							methodData = new byte[] { 0x20, 0, 0, 0, 0, 0x2A };
@@ -229,7 +229,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 							methodData[3] = (byte)(val >> 16);
 							methodData[4] = (byte)(val >> 24);
 						}
-						else if (DeobUtils.isCode(nativeLdci4_0, methodData)) {
+						else if (DeobUtils.IsCode(nativeLdci4_0, methodData)) {
 							// ldc.i4.0 / ret
 							methodData = new byte[] { 0x16, 0x2A };
 						}
@@ -242,31 +242,31 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 					}
 
 					var dm = new DumpedMethod();
-					peImage.readMethodTableRowTo(dm, MDToken.ToRID(methodToken));
+					peImage.ReadMethodTableRowTo(dm, MDToken.ToRID(methodToken));
 					dm.code = methodData;
 
 					var codeReader = peImage.Reader;
-					codeReader.Position = peImage.rvaToOffset(dm.mdRVA);
+					codeReader.Position = peImage.RvaToOffset(dm.mdRVA);
 					byte[] code;
-					var mbHeader = MethodBodyParser.parseMethodBody(codeReader, out code, out dm.extraSections);
-					peImage.updateMethodHeaderInfo(dm, mbHeader);
+					var mbHeader = MethodBodyParser.ParseMethodBody(codeReader, out code, out dm.extraSections);
+					peImage.UpdateMethodHeaderInfo(dm, mbHeader);
 
-					dumpedMethods.add(dm);
+					dumpedMethods.Add(dm);
 				}
 			}
 
 			return true;
 		}
 
-		static void patchDwords(MyPEImage peImage, IBinaryReader reader, int count) {
+		static void PatchDwords(MyPEImage peImage, IBinaryReader reader, int count) {
 			for (int i = 0; i < count; i++) {
 				uint rva = reader.ReadUInt32();
 				uint data = reader.ReadUInt32();
-				peImage.dotNetSafeWrite(rva, BitConverter.GetBytes(data));
+				peImage.DotNetSafeWrite(rva, BitConverter.GetBytes(data));
 			}
 		}
 
-		long getXorKey() {
+		long GetXorKey() {
 			var instructions = encryptedResource.Method.Body.Instructions;
 			for (int i = 0; i < instructions.Count - 1; i++) {
 				if (instructions[i].OpCode.Code != Code.Ldind_I8)
@@ -280,7 +280,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			return 0;
 		}
 
-		public void reloaded() {
+		public void Reloaded() {
 			foreach (var pair in tokenToNativeMethod) {
 				int token = (int)pair.Key;
 				var method = module.ResolveToken(token) as MethodDef;
@@ -291,7 +291,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			tokenToNativeMethod = null;
 		}
 
-		public void prepareEncryptNativeMethods(ModuleWriterBase moduleWriter) {
+		public void PrepareEncryptNativeMethods(ModuleWriterBase moduleWriter) {
 			if (methodToNativeMethod.Count == 0)
 				return;
 
@@ -312,7 +312,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			encryptedResource.Resource.Data = MemoryImageStream.Create(new byte[len]);
 		}
 
-		public void encryptNativeMethods(ModuleWriterBase moduleWriter) {
+		public void EncryptNativeMethods(ModuleWriterBase moduleWriter) {
 			if (validNativeMethods == null || validNativeMethods.Count == 0)
 				return;
 
@@ -355,22 +355,22 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			var resourceData = resourceChunk.Data;
 
 			var encrypted = stream.ToArray();
-			xorEncrypt(encrypted);
+			XorEncrypt(encrypted);
 
-			encrypted = encryptedResource.encrypt(encrypted);
+			encrypted = encryptedResource.Encrypt(encrypted);
 			if (encrypted.Length != resourceData.Length)
 				Logger.e("Encrypted native methods array is not same size as original array");
 			Array.Copy(encrypted, resourceData, resourceData.Length);
 		}
 
-		public static MethodDef findDnrCompileMethod(TypeDef type) {
+		public static MethodDef FindDnrCompileMethod(TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
 				var sig = method.MethodSig;
 				if (sig == null || sig.Params.Count != 6)
 					continue;
-				if (!DotNetUtils.isMethod(method, "System.UInt32", "(System.UInt64&,System.IntPtr,System.IntPtr,System.UInt32,System.IntPtr&,System.UInt32&)"))
+				if (!DotNetUtils.IsMethod(method, "System.UInt32", "(System.UInt64&,System.IntPtr,System.IntPtr,System.UInt32,System.IntPtr&,System.UInt32&)"))
 					continue;
 				return method;
 			}

@@ -35,11 +35,11 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			this.resourceResolverInfo = resourceResolverInfo;
 		}
 
-		public bool canDecryptResource() {
-			return assemblyResolver.canDecryptResource(resourceResolverInfo.ResourceInfo);
+		public bool CanDecryptResource() {
+			return assemblyResolver.CanDecryptResource(resourceResolverInfo.ResourceInfo);
 		}
 
-		public EmbeddedAssemblyInfo mergeResources() {
+		public EmbeddedAssemblyInfo MergeResources() {
 			if (mergedIt)
 				return null;
 
@@ -47,7 +47,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			if (info == null)
 				return null;
 
-			DeobUtils.decryptAndAddResources(module, info.resourceName, () => assemblyResolver.removeDecryptedResource(info));
+			DeobUtils.DecryptAndAddResources(module, info.resourceName, () => assemblyResolver.RemoveDecryptedResource(info));
 			mergedIt = true;
 			return info;
 		}

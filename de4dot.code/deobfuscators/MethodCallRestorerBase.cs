@@ -43,66 +43,66 @@ namespace de4dot.code.deobfuscators {
 			this.builder = new MemberRefBuilder(module);
 		}
 
-		public void createGetManifestResourceStream1(MethodDef oldMethod) {
+		public void CreateGetManifestResourceStream1(MethodDef oldMethod) {
 			if (oldMethod == null)
 				return;
-			var assemblyType = builder.type("System.Reflection", "Assembly", builder.CorLib);
-			var streamType = builder.type("System.IO", "Stream", builder.CorLib);
-			var newMethod = builder.instanceMethod("GetManifestResourceStream", assemblyType.TypeDefOrRef, streamType, builder.String);
-			add(oldMethod, newMethod, OpCodes.Callvirt);
+			var assemblyType = builder.Type("System.Reflection", "Assembly", builder.CorLib);
+			var streamType = builder.Type("System.IO", "Stream", builder.CorLib);
+			var newMethod = builder.InstanceMethod("GetManifestResourceStream", assemblyType.TypeDefOrRef, streamType, builder.String);
+			Add(oldMethod, newMethod, OpCodes.Callvirt);
 		}
 
-		public void createGetManifestResourceStream2(MethodDef oldMethod) {
+		public void CreateGetManifestResourceStream2(MethodDef oldMethod) {
 			if (oldMethod == null)
 				return;
-			var assemblyType = builder.type("System.Reflection", "Assembly", builder.CorLib);
-			var typeType = builder.type("System", "Type", builder.CorLib);
-			var streamType = builder.type("System.IO", "Stream", builder.CorLib);
-			var newMethod = builder.instanceMethod("GetManifestResourceStream", assemblyType.TypeDefOrRef, streamType, typeType, builder.String);
-			add(oldMethod, newMethod, OpCodes.Callvirt);
+			var assemblyType = builder.Type("System.Reflection", "Assembly", builder.CorLib);
+			var typeType = builder.Type("System", "Type", builder.CorLib);
+			var streamType = builder.Type("System.IO", "Stream", builder.CorLib);
+			var newMethod = builder.InstanceMethod("GetManifestResourceStream", assemblyType.TypeDefOrRef, streamType, typeType, builder.String);
+			Add(oldMethod, newMethod, OpCodes.Callvirt);
 		}
 
-		public void createGetManifestResourceNames(MethodDef oldMethod) {
+		public void CreateGetManifestResourceNames(MethodDef oldMethod) {
 			if (oldMethod == null)
 				return;
-			var assemblyType = builder.type("System.Reflection", "Assembly", builder.CorLib);
-			var stringArrayType = builder.array(builder.String);
-			var newMethod = builder.instanceMethod("GetManifestResourceNames", assemblyType.TypeDefOrRef, stringArrayType);
-			add(oldMethod, newMethod, OpCodes.Callvirt);
+			var assemblyType = builder.Type("System.Reflection", "Assembly", builder.CorLib);
+			var stringArrayType = builder.Array(builder.String);
+			var newMethod = builder.InstanceMethod("GetManifestResourceNames", assemblyType.TypeDefOrRef, stringArrayType);
+			Add(oldMethod, newMethod, OpCodes.Callvirt);
 		}
 
-		public void createBitmapCtor(MethodDef oldMethod) {
+		public void CreateBitmapCtor(MethodDef oldMethod) {
 			if (oldMethod == null)
 				return;
-			var bitmapType = builder.type("System.Drawing", "Bitmap", "System.Drawing");
-			var typeType = builder.type("System", "Type", builder.CorLib);
-			var newMethod = builder.instanceMethod(".ctor", bitmapType.TypeDefOrRef, builder.Void, typeType, builder.String);
-			add(oldMethod, newMethod, OpCodes.Newobj);
+			var bitmapType = builder.Type("System.Drawing", "Bitmap", "System.Drawing");
+			var typeType = builder.Type("System", "Type", builder.CorLib);
+			var newMethod = builder.InstanceMethod(".ctor", bitmapType.TypeDefOrRef, builder.Void, typeType, builder.String);
+			Add(oldMethod, newMethod, OpCodes.Newobj);
 		}
 
-		public void createIconCtor(MethodDef oldMethod) {
+		public void CreateIconCtor(MethodDef oldMethod) {
 			if (oldMethod == null)
 				return;
-			var iconType = builder.type("System.Drawing", "Icon", "System.Drawing");
-			var typeType = builder.type("System", "Type", builder.CorLib);
-			var newMethod = builder.instanceMethod(".ctor", iconType.TypeDefOrRef, builder.Void, typeType, builder.String);
-			add(oldMethod, newMethod, OpCodes.Newobj);
+			var iconType = builder.Type("System.Drawing", "Icon", "System.Drawing");
+			var typeType = builder.Type("System", "Type", builder.CorLib);
+			var newMethod = builder.InstanceMethod(".ctor", iconType.TypeDefOrRef, builder.Void, typeType, builder.String);
+			Add(oldMethod, newMethod, OpCodes.Newobj);
 		}
 
-		protected void add(MethodDef oldMethod, IMethod newMethod) {
-			add(oldMethod, newMethod, OpCodes.Callvirt);
+		protected void Add(MethodDef oldMethod, IMethod newMethod) {
+			Add(oldMethod, newMethod, OpCodes.Callvirt);
 		}
 
-		protected void add(MethodDef oldMethod, IMethod newMethod, OpCode opCode) {
+		protected void Add(MethodDef oldMethod, IMethod newMethod, OpCode opCode) {
 			if (oldMethod == null)
 				return;
-			oldToNewMethod.add(oldMethod, new NewMethodInfo(opCode, newMethod));
+			oldToNewMethod.Add(oldMethod, new NewMethodInfo(opCode, newMethod));
 		}
 
-		public void deobfuscate(Blocks blocks) {
+		public void Deobfuscate(Blocks blocks) {
 			if (oldToNewMethod.Count == 0)
 				return;
-			foreach (var block in blocks.MethodBlocks.getAllBlocks()) {
+			foreach (var block in blocks.MethodBlocks.GetAllBlocks()) {
 				var instrs = block.Instructions;
 				for (int i = 0; i < instrs.Count; i++) {
 					var call = instrs[i];
@@ -112,7 +112,7 @@ namespace de4dot.code.deobfuscators {
 					if (calledMethod == null)
 						continue;
 
-					var newMethodInfo = oldToNewMethod.find(calledMethod);
+					var newMethodInfo = oldToNewMethod.Find(calledMethod);
 					if (newMethodInfo == null)
 						continue;
 

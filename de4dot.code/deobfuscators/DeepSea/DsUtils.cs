@@ -24,27 +24,27 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.DeepSea {
 	static class DsUtils {
-		public static IList<object> getArgValues(IList<Instruction> instrs, int index) {
-			return getArgValues(DotNetUtils.getArgPushes(instrs, index));
+		public static IList<object> GetArgValues(IList<Instruction> instrs, int index) {
+			return GetArgValues(DotNetUtils.GetArgPushes(instrs, index));
 		}
 
-		public static IList<object> getArgValues(IList<Instruction> argInstrs) {
+		public static IList<object> GetArgValues(IList<Instruction> argInstrs) {
 			if (argInstrs == null)
 				return null;
 			var args = new List<object>(argInstrs.Count);
 			foreach (var argInstr in argInstrs) {
 				object arg;
-				getArgValue(argInstr, out arg);
+				GetArgValue(argInstr, out arg);
 				args.Add(arg);
 			}
 			return args;
 		}
 
-		public static bool getArgValue(MethodDef method, int index, out object arg) {
-			return getArgValue(method.Body.Instructions[index], out arg);
+		public static bool GetArgValue(MethodDef method, int index, out object arg) {
+			return GetArgValue(method.Body.Instructions[index], out arg);
 		}
 
-		public static bool getArgValue(Instruction instr, out object arg) {
+		public static bool GetArgValue(Instruction instr, out object arg) {
 			switch (instr.OpCode.Code) {
 			case Code.Ldc_I4_S: arg = (int)(sbyte)instr.Operand; return true;
 			case Code.Ldc_I4_M1: arg = -1; return true;

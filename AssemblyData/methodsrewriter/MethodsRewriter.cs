@@ -62,16 +62,16 @@ namespace AssemblyData.methodsrewriter {
 				}
 			}
 
-			public MethodBase getNext() {
+			public MethodBase GetNext() {
 				return methods[next++ % methods.Count];
 			}
 		}
 
-		public MethodBase getMethod(Module module) {
+		public MethodBase GetMethod(Module module) {
 			MethodsModule methodsModule;
 			if (!moduleToMethods.TryGetValue(module, out methodsModule))
 				moduleToMethods[module] = methodsModule = new MethodsModule(module);
-			return methodsModule.getNext();
+			return methodsModule.GetNext();
 		}
 	}
 
@@ -112,20 +112,20 @@ namespace AssemblyData.methodsrewriter {
 				this.rewrittenMethodName = rewrittenMethodName;
 			}
 
-			public bool isRewrittenMethod(string name) {
+			public bool IsRewrittenMethod(string name) {
 				return name == rewrittenMethodName;
 			}
 
-			public bool isDelegateMethod(string name) {
+			public bool IsDelegateMethod(string name) {
 				return name == delegateMethodName;
 			}
 		}
 
-		public Type getDelegateType(MethodBase methodBase) {
+		public Type GetDelegateType(MethodBase methodBase) {
 			return realMethodToNewMethod[methodBase].delegateType;
 		}
 
-		public RewrittenMethod createDelegate(MethodBase realMethod) {
+		public RewrittenMethod CreateDelegate(MethodBase realMethod) {
 			var newMethodInfo = realMethodToNewMethod[realMethod];
 			if (newMethodInfo.rewrittenMethod != null)
 				return newMethodInfo.rewrittenMethod;
@@ -135,7 +135,7 @@ namespace AssemblyData.methodsrewriter {
 
 			ilg.Emit(ROpCodes.Ldarg_0);
 			ilg.Emit(ROpCodes.Ldc_I4, newMethodInfo.delegateIndex);
-			ilg.Emit(ROpCodes.Call, GetType().GetMethod("rtGetDelegateInstance", BindingFlags.DeclaredOnly | BindingFlags.NonPublic | BindingFlags.Instance));
+			ilg.Emit(ROpCodes.Call, GetType().GetMethod("RtGetDelegateInstance", BindingFlags.DeclaredOnly | BindingFlags.NonPublic | BindingFlags.Instance));
 			ilg.Emit(ROpCodes.Castclass, newMethodInfo.delegateType);
 
 			var args = newMethodInfo.oldMethod.GetParameters();
@@ -156,7 +156,7 @@ namespace AssemblyData.methodsrewriter {
 			var flags = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance;
 			var invokeMethod = newMethodInfo.delegateType.GetMethod("Invoke", flags);
 			ilg.Emit(ROpCodes.Call, invokeMethod);
-			if (ResolverUtils.getReturnType(newMethodInfo.oldMethod) == typeof(void))
+			if (ResolverUtils.GetReturnType(newMethodInfo.oldMethod) == typeof(void))
 				ilg.Emit(ROpCodes.Ldnull);
 			ilg.Emit(ROpCodes.Ret);
 
@@ -164,50 +164,50 @@ namespace AssemblyData.methodsrewriter {
 			return newMethodInfo.rewrittenMethod;
 		}
 
-		public void setCaller(RewrittenMethod rewrittenMethod, MethodBase caller) {
+		public void SetCaller(RewrittenMethod rewrittenMethod, MethodBase caller) {
 			if (caller == null)
 				return;
-			var newMethodInfo = getNewMethodInfo(rewrittenMethod.Method.Name);
+			var newMethodInfo = GetNewMethodInfo(rewrittenMethod.Method.Name);
 			newStackMethodDict[newMethodInfo] = caller;
 		}
 
-		string getDelegateMethodName(MethodBase method) {
+		string GetDelegateMethodName(MethodBase method) {
 			string name = null;
 			do {
-				name = string.Format(" {0} {1:X8} DMN {2:X8} ", method.Name, method.MetadataToken, Utils.getRandomUint());
+				name = string.Format(" {0} {1:X8} DMN {2:X8} ", method.Name, method.MetadataToken, Utils.GetRandomUint());
 			} while (delegateNameToNewMethodInfo.ContainsKey(name));
 			return name;
 		}
 
-		public void createMethod(MethodBase realMethod) {
+		public void CreateMethod(MethodBase realMethod) {
 			if (realMethodToNewMethod.ContainsKey(realMethod))
 				return;
-			var newMethodInfo = new NewMethodInfo(realMethod, newMethodInfos.Count, getDelegateMethodName(realMethod), getDelegateMethodName(realMethod));
+			var newMethodInfo = new NewMethodInfo(realMethod, newMethodInfos.Count, GetDelegateMethodName(realMethod), GetDelegateMethodName(realMethod));
 			newMethodInfos.Add(newMethodInfo);
 			delegateNameToNewMethodInfo[newMethodInfo.delegateMethodName] = newMethodInfo;
 			delegateNameToNewMethodInfo[newMethodInfo.rewrittenMethodName] = newMethodInfo;
 			realMethodToNewMethod[realMethod] = newMethodInfo;
 
-			var moduleInfo = Resolver.loadAssembly(realMethod.Module);
-			var methodInfo = moduleInfo.getMethod(realMethod);
-			if (!methodInfo.hasInstructions())
+			var moduleInfo = Resolver.LoadAssembly(realMethod.Module);
+			var methodInfo = moduleInfo.GetMethod(realMethod);
+			if (!methodInfo.HasInstructions())
 				throw new ApplicationException(string.Format("Method {0} ({1:X8}) has no body", methodInfo.methodDef, methodInfo.methodDef.MDToken.Raw));
 
 			var codeGenerator = new CodeGenerator(this, newMethodInfo.delegateMethodName);
-			codeGenerator.setMethodInfo(methodInfo);
+			codeGenerator.SetMethodInfo(methodInfo);
 			newMethodInfo.delegateType = codeGenerator.DelegateType;
 
 			var blocks = new Blocks(methodInfo.methodDef);
-			foreach (var block in blocks.MethodBlocks.getAllBlocks())
-				update(block, newMethodInfo);
+			foreach (var block in blocks.MethodBlocks.GetAllBlocks())
+				Update(block, newMethodInfo);
 
 			IList<Instruction> allInstructions;
 			IList<ExceptionHandler> allExceptionHandlers;
-			blocks.getCode(out allInstructions, out allExceptionHandlers);
-			newMethodInfo.delegateInstance = codeGenerator.generate(allInstructions, allExceptionHandlers);
+			blocks.GetCode(out allInstructions, out allExceptionHandlers);
+			newMethodInfo.delegateInstance = codeGenerator.Generate(allInstructions, allExceptionHandlers);
 		}
 
-		static Instruction create(OpCode opcode, object operand) {
+		static Instruction Create(OpCode opcode, object operand) {
 			return new Instruction {
 				OpCode = opcode,
 				Operand = operand,
@@ -215,17 +215,17 @@ namespace AssemblyData.methodsrewriter {
 		}
 
 		// Inserts ldarg THIS, and returns number of instructions inserted at 'i'
-		int insertLoadThis(Block block, int i) {
-			block.insert(i, create(OpCodes.Ldarg, new Operand(Operand.Type.ThisArg)));
+		int InsertLoadThis(Block block, int i) {
+			block.Insert(i, Create(OpCodes.Ldarg, new Operand(Operand.Type.ThisArg)));
 			return 1;
 		}
 
-		int insertCallOurMethod(Block block, int i, string methodName) {
-			block.insert(i, create(OpCodes.Call, new Operand(Operand.Type.OurMethod, methodName)));
+		int InsertCallOurMethod(Block block, int i, string methodName) {
+			block.Insert(i, Create(OpCodes.Call, new Operand(Operand.Type.OurMethod, methodName)));
 			return 1;
 		}
 
-		void update(Block block, NewMethodInfo currentMethodInfo) {
+		void Update(Block block, NewMethodInfo currentMethodInfo) {
 			var instrs = block.Instructions;
 			for (int i = 0; i < instrs.Count; i++) {
 				var instr = instrs[i];
@@ -233,14 +233,14 @@ namespace AssemblyData.methodsrewriter {
 					var ctor = (IMethod)instr.Operand;
 					var ctorTypeFullName = ctor.DeclaringType.FullName;
 					if (ctorTypeFullName == "System.Diagnostics.StackTrace") {
-						insertLoadThis(block, i + 1);
-						insertCallOurMethod(block, i + 2, "static_rtFixStackTrace");
+						InsertLoadThis(block, i + 1);
+						InsertCallOurMethod(block, i + 2, "static_RtFixStackTrace");
 						i += 2;
 						continue;
 					}
 					else if (ctorTypeFullName == "System.Diagnostics.StackFrame") {
-						insertLoadThis(block, i + 1);
-						insertCallOurMethod(block, i + 2, "static_rtFixStackFrame");
+						InsertLoadThis(block, i + 1);
+						InsertCallOurMethod(block, i + 2, "static_RtFixStackFrame");
 						i += 2;
 						continue;
 					}
@@ -251,67 +251,67 @@ namespace AssemblyData.methodsrewriter {
 					if (calledMethod.DeclaringType.DefinitionAssembly.IsCorLib()) {
 						var calledMethodFullName = calledMethod.FullName;
 						if (calledMethodFullName == "System.Reflection.Assembly System.Reflection.Assembly::GetAssembly(System.Type)") {
-							block.replace(i, 1, OpCodes.Nop.ToInstruction());
-							insertLoadThis(block, i + 1);
-							insertCallOurMethod(block, i + 2, "static_rtGetAssembly_TypeArg");
+							block.Replace(i, 1, OpCodes.Nop.ToInstruction());
+							InsertLoadThis(block, i + 1);
+							InsertCallOurMethod(block, i + 2, "static_RtGetAssembly_TypeArg");
 							i += 2;
 							continue;
 						}
 						else if (calledMethodFullName == "System.Reflection.Assembly System.Reflection.Assembly::GetCallingAssembly()" ||
 								calledMethodFullName == "System.Reflection.Assembly System.Reflection.Assembly::GetEntryAssembly()" ||
 								calledMethodFullName == "System.Reflection.Assembly System.Reflection.Assembly::GetExecutingAssembly()") {
-							block.replace(i, 1, OpCodes.Nop.ToInstruction());
-							insertLoadThis(block, i + 1);
-							block.insert(i + 2, OpCodes.Ldc_I4.ToInstruction(currentMethodInfo.delegateIndex));
-							insertCallOurMethod(block, i + 3, "rtGetAssembly");
+							block.Replace(i, 1, OpCodes.Nop.ToInstruction());
+							InsertLoadThis(block, i + 1);
+							block.Insert(i + 2, OpCodes.Ldc_I4.ToInstruction(currentMethodInfo.delegateIndex));
+							InsertCallOurMethod(block, i + 3, "RtGetAssembly");
 							i += 3;
 							continue;
 						}
 					}
 
-					var method = Resolver.getMethod((IMethod)instr.Operand);
+					var method = Resolver.GetMethod((IMethod)instr.Operand);
 					if (method != null) {
-						createMethod(method.methodBase);
+						CreateMethod(method.methodBase);
 						var newMethodInfo = realMethodToNewMethod[method.methodBase];
 
-						block.replace(i, 1, OpCodes.Nop.ToInstruction());
+						block.Replace(i, 1, OpCodes.Nop.ToInstruction());
 						int n = i + 1;
 
 						// Pop all pushed args to a temp array
-						var mparams = getParameters(method.methodDef);
+						var mparams = GetParameters(method.methodDef);
 						if (mparams.Count > 0) {
-							block.insert(n++, OpCodes.Ldc_I4.ToInstruction(mparams.Count));
+							block.Insert(n++, OpCodes.Ldc_I4.ToInstruction(mparams.Count));
 							var objectType = method.methodDef.DeclaringType.Module.CorLibTypes.Object;
-							block.insert(n++, OpCodes.Newarr.ToInstruction(objectType));
-							block.insert(n++, create(OpCodes.Stloc, new Operand(Operand.Type.TempObjArray)));
+							block.Insert(n++, OpCodes.Newarr.ToInstruction(objectType));
+							block.Insert(n++, Create(OpCodes.Stloc, new Operand(Operand.Type.TempObjArray)));
 
 							for (int j = mparams.Count - 1; j >= 0; j--) {
 								var argType = mparams[j];
 								if (argType.RemovePinnedAndModifiers().IsValueType)
-									block.insert(n++, OpCodes.Box.ToInstruction(((TypeDefOrRefSig)argType).TypeDefOrRef));
-								block.insert(n++, create(OpCodes.Stloc, new Operand(Operand.Type.TempObj)));
-								block.insert(n++, create(OpCodes.Ldloc, new Operand(Operand.Type.TempObjArray)));
-								block.insert(n++, OpCodes.Ldc_I4.ToInstruction(j));
-								block.insert(n++, create(OpCodes.Ldloc, new Operand(Operand.Type.TempObj)));
-								block.insert(n++, OpCodes.Stelem_Ref.ToInstruction());
+									block.Insert(n++, OpCodes.Box.ToInstruction(((TypeDefOrRefSig)argType).TypeDefOrRef));
+								block.Insert(n++, Create(OpCodes.Stloc, new Operand(Operand.Type.TempObj)));
+								block.Insert(n++, Create(OpCodes.Ldloc, new Operand(Operand.Type.TempObjArray)));
+								block.Insert(n++, OpCodes.Ldc_I4.ToInstruction(j));
+								block.Insert(n++, Create(OpCodes.Ldloc, new Operand(Operand.Type.TempObj)));
+								block.Insert(n++, OpCodes.Stelem_Ref.ToInstruction());
 							}
 						}
 
 						// Push delegate instance
-						insertLoadThis(block, n++);
-						block.insert(n++, OpCodes.Ldc_I4.ToInstruction(newMethodInfo.delegateIndex));
-						insertCallOurMethod(block, n++, "rtGetDelegateInstance");
-						block.insert(n++, create(OpCodes.Castclass, new Operand(Operand.Type.ReflectionType, newMethodInfo.delegateType)));
+						InsertLoadThis(block, n++);
+						block.Insert(n++, OpCodes.Ldc_I4.ToInstruction(newMethodInfo.delegateIndex));
+						InsertCallOurMethod(block, n++, "RtGetDelegateInstance");
+						block.Insert(n++, Create(OpCodes.Castclass, new Operand(Operand.Type.ReflectionType, newMethodInfo.delegateType)));
 
 						// Push all popped args
 						if (mparams.Count > 0) {
 							for (int j = 0; j < mparams.Count; j++) {
-								block.insert(n++, create(OpCodes.Ldloc, new Operand(Operand.Type.TempObjArray)));
-								block.insert(n++, OpCodes.Ldc_I4.ToInstruction(j));
-								block.insert(n++, OpCodes.Ldelem_Ref.ToInstruction());
+								block.Insert(n++, Create(OpCodes.Ldloc, new Operand(Operand.Type.TempObjArray)));
+								block.Insert(n++, OpCodes.Ldc_I4.ToInstruction(j));
+								block.Insert(n++, OpCodes.Ldelem_Ref.ToInstruction());
 								var argType = mparams[j];
 								if (argType.RemovePinnedAndModifiers().IsValueType)
-									block.insert(n++, OpCodes.Unbox_Any.ToInstruction(((TypeDefOrRefSig)argType).TypeDefOrRef));
+									block.Insert(n++, OpCodes.Unbox_Any.ToInstruction(((TypeDefOrRefSig)argType).TypeDefOrRef));
 								else {
 									// Don't cast it to its correct type. This will sometimes cause
 									// an exception in some EF obfuscated assembly since we'll be
@@ -322,8 +322,8 @@ namespace AssemblyData.methodsrewriter {
 							}
 						}
 
-						insertLoadThis(block, n++);
-						block.insert(n++, create(OpCodes.Call, new Operand(Operand.Type.NewMethod, method.methodBase)));
+						InsertLoadThis(block, n++);
+						block.Insert(n++, Create(OpCodes.Call, new Operand(Operand.Type.NewMethod, method.methodBase)));
 						i = n - 1;
 						continue;
 					}
@@ -331,48 +331,48 @@ namespace AssemblyData.methodsrewriter {
 			}
 		}
 
-		static IList<TypeSig> getParameters(MethodDef method) {
+		static IList<TypeSig> GetParameters(MethodDef method) {
 			var list = new List<TypeSig>(method.Parameters.Count);
 			for (int i = 0; i < method.Parameters.Count; i++)
 				list.Add(method.Parameters[i].Type);
 			return list;
 		}
 
-		static FieldInfo getStackTraceStackFramesField() {
+		static FieldInfo GgetStackTraceStackFramesField() {
 			var flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
-			return ResolverUtils.getFieldThrow(typeof(StackTrace), typeof(StackFrame[]), flags, "Could not find StackTrace's frames (StackFrame[]) field");
+			return ResolverUtils.GetFieldThrow(typeof(StackTrace), typeof(StackFrame[]), flags, "Could not find StackTrace's frames (StackFrame[]) field");
 		}
 
-		static FieldInfo getStackFrameMethodField() {
+		static FieldInfo GetStackFrameMethodField() {
 			var flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
-			return ResolverUtils.getFieldThrow(typeof(StackFrame), typeof(MethodBase), flags, "Could not find StackFrame's method (MethodBase) field");
+			return ResolverUtils.GetFieldThrow(typeof(StackFrame), typeof(MethodBase), flags, "Could not find StackFrame's method (MethodBase) field");
 		}
 
-		static void writeMethodBase(StackFrame frame, MethodBase method) {
-			var methodField = getStackFrameMethodField();
+		static void WriteMethodBase(StackFrame frame, MethodBase method) {
+			var methodField = GetStackFrameMethodField();
 			methodField.SetValue(frame, method);
 			if (frame.GetMethod() != method)
 				throw new ApplicationException(string.Format("Could not set new method: {0}", method));
 		}
 
-		NewMethodInfo getNewMethodInfo(string name) {
+		NewMethodInfo GetNewMethodInfo(string name) {
 			NewMethodInfo info;
 			delegateNameToNewMethodInfo.TryGetValue(name, out info);
 			return info;
 		}
 
 		// Called after the StackTrace ctor has been called.
-		static StackTrace static_rtFixStackTrace(StackTrace stackTrace, MethodsRewriter self) {
-			return self.rtFixStackTrace(stackTrace);
+		static StackTrace static_RtFixStackTrace(StackTrace stackTrace, MethodsRewriter self) {
+			return self.RtFixStackTrace(stackTrace);
 		}
 
-		StackTrace rtFixStackTrace(StackTrace stackTrace) {
-			var framesField = getStackTraceStackFramesField();
+		StackTrace RtFixStackTrace(StackTrace stackTrace) {
+			var framesField = GgetStackTraceStackFramesField();
 			var frames = (StackFrame[])framesField.GetValue(stackTrace);
 
 			var newFrames = new List<StackFrame>(frames.Length);
 			foreach (var frame in frames) {
-				fixStackFrame(frame);
+				FixStackFrame(frame);
 				newFrames.Add(frame);
 			}
 
@@ -380,52 +380,52 @@ namespace AssemblyData.methodsrewriter {
 			return stackTrace;
 		}
 
-		static StackFrame static_rtFixStackFrame(StackFrame stackFrame, MethodsRewriter self) {
-			return self.rtFixStackFrame(stackFrame);
+		static StackFrame static_RtFixStackFrame(StackFrame stackFrame, MethodsRewriter self) {
+			return self.RtFixStackFrame(stackFrame);
 		}
 
-		StackFrame rtFixStackFrame(StackFrame frame) {
-			fixStackFrame(frame);
+		StackFrame RtFixStackFrame(StackFrame frame) {
+			FixStackFrame(frame);
 			return frame;
 		}
 
-		void fixStackFrame(StackFrame frame) {
+		void FixStackFrame(StackFrame frame) {
 			var method = frame.GetMethod();
-			var info = getNewMethodInfo(method.Name);
+			var info = GetNewMethodInfo(method.Name);
 			if (info == null)
 				return;
 
 			MethodBase stackMethod;
 			if (newStackMethodDict.TryGetValue(info, out stackMethod)) {
-				writeMethodBase(frame, stackMethod);
+				WriteMethodBase(frame, stackMethod);
 			}
-			else if (info.isRewrittenMethod(method.Name)) {
+			else if (info.IsRewrittenMethod(method.Name)) {
 				// Write random method from the same module
-				writeMethodBase(frame, methodsFinder.getMethod(info.oldMethod.Module));
+				WriteMethodBase(frame, methodsFinder.GetMethod(info.oldMethod.Module));
 			}
-			else if (info.isDelegateMethod(method.Name)) {
+			else if (info.IsDelegateMethod(method.Name)) {
 				// Write original method
-				writeMethodBase(frame, info.oldMethod);
+				WriteMethodBase(frame, info.oldMethod);
 			}
 			else
 				throw new ApplicationException("BUG: Shouldn't be here");
 		}
 
 		// Called when the code calls GetCallingAssembly(), GetEntryAssembly(), or GetExecutingAssembly()
-		Assembly rtGetAssembly(int delegateIndex) {
+		Assembly RtGetAssembly(int delegateIndex) {
 			return newMethodInfos[delegateIndex].oldMethod.Module.Assembly;
 		}
 
 		// Called when the code calls GetAssembly(Type)
-		static Assembly static_rtGetAssembly_TypeArg(Type type, MethodsRewriter self) {
-			return self.rtGetAssembly_TypeArg(type);
+		static Assembly static_RtGetAssembly_TypeArg(Type type, MethodsRewriter self) {
+			return self.RtGetAssembly_TypeArg(type);
 		}
 
-		Assembly rtGetAssembly_TypeArg(Type type) {
+		Assembly RtGetAssembly_TypeArg(Type type) {
 			return Assembly.GetAssembly(type);
 		}
 
-		Delegate rtGetDelegateInstance(int delegateIndex) {
+		Delegate RtGetDelegateInstance(int delegateIndex) {
 			return newMethodInfos[delegateIndex].delegateInstance;
 		}
 	}

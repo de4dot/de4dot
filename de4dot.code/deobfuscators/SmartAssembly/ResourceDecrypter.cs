@@ -35,14 +35,14 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			get { return resourceDecrypterInfo != null && resourceDecrypterInfo.CanDecrypt; }
 		}
 
-		public byte[] decrypt(EmbeddedResource resource) {
+		public byte[] Decrypt(EmbeddedResource resource) {
 			if (!CanDecrypt)
 				throw new ApplicationException("Can't decrypt resources");
 			var encryptedData = resource.GetResourceData();
-			return decrypt(encryptedData);
+			return Decrypt(encryptedData);
 		}
 
-		byte[] decrypt(byte[] encryptedData) {
+		byte[] Decrypt(byte[] encryptedData) {
 			var reader = new BinaryReader(new MemoryStream(encryptedData));
 			int headerMagic = reader.ReadInt32();
 			if (headerMagic == 0x04034B50)
@@ -80,7 +80,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 					provider.Key = resourceDecrypterInfo.DES_Key;
 					provider.IV  = resourceDecrypterInfo.DES_IV;
 					using (var transform = provider.CreateDecryptor()) {
-						return decrypt(transform.TransformFinalBlock(encryptedData, 4, encryptedData.Length - 4));
+						return Decrypt(transform.TransformFinalBlock(encryptedData, 4, encryptedData.Length - 4));
 					}
 				}
 
@@ -91,7 +91,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 					provider.Key = resourceDecrypterInfo.AES_Key;
 					provider.IV  = resourceDecrypterInfo.AES_IV;
 					using (var transform = provider.CreateDecryptor()) {
-						return decrypt(transform.TransformFinalBlock(encryptedData, 4, encryptedData.Length - 4));
+						return Decrypt(transform.TransformFinalBlock(encryptedData, 4, encryptedData.Length - 4));
 					}
 				}
 

@@ -29,18 +29,18 @@ namespace de4dot.blocks.cflow {
 			this.inlineInstanceMethods = inlineInstanceMethods;
 		}
 
-		protected override bool deobfuscateInternal() {
+		protected override bool DeobfuscateInternal() {
 			bool changed = false;
 			var instructions = block.Instructions;
 			for (int i = 0; i < instructions.Count; i++) {
 				var instr = instructions[i].Instruction;
 				if (instr.OpCode.Code == Code.Call)
-					changed |= inlineMethod(instr, i);
+					changed |= InlineMethod(instr, i);
 			}
 			return changed;
 		}
 
-		protected virtual bool canInline(MethodDef method) {
+		protected virtual bool CanInline(MethodDef method) {
 			if (method.GenericParameters.Count > 0)
 				return false;
 			if (method == blocks.Method)
@@ -55,19 +55,19 @@ namespace de4dot.blocks.cflow {
 			return inlineInstanceMethods;
 		}
 
-		bool inlineMethod(Instruction callInstr, int instrIndex) {
+		bool InlineMethod(Instruction callInstr, int instrIndex) {
 			var methodToInline = callInstr.Operand as MethodDef;
 			if (methodToInline == null)
 				return false;
 
-			if (!canInline(methodToInline))
+			if (!CanInline(methodToInline))
 				return false;
 			var body = methodToInline.Body;
 			if (body == null)
 				return false;
 
 			int index = 0;
-			var instr = DotNetUtils.getInstruction(body.Instructions, ref index);
+			var instr = DotNetUtils.GetInstruction(body.Instructions, ref index);
 			if (instr == null)
 				return false;
 
@@ -83,7 +83,7 @@ namespace de4dot.blocks.cflow {
 			case Code.Call:
 			case Code.Callvirt:
 			case Code.Newobj:
-				return inlineOtherMethod(instrIndex, methodToInline, instr, index);
+				return InlineOtherMethod(instrIndex, methodToInline, instr, index);
 
 			case Code.Ldc_I4:
 			case Code.Ldc_I4_0:
@@ -106,17 +106,17 @@ namespace de4dot.blocks.cflow {
 			case Code.Ldtoken:
 			case Code.Ldsfld:
 			case Code.Ldsflda:
-				return inlineLoadMethod(instrIndex, methodToInline, instr, index);
+				return InlineLoadMethod(instrIndex, methodToInline, instr, index);
 
 			default:
 				return false;
 			}
 		}
 
-		protected override bool isCompatibleType(int paramIndex, IType origType, IType newType) {
+		protected override bool IsCompatibleType(int paramIndex, IType origType, IType newType) {
 			if (new SigComparer(SigComparerOptions.IgnoreModifiers).Equals(origType, newType))
 				return true;
-			if (isValueType(newType) || isValueType(origType))
+			if (IsValueType(newType) || IsValueType(origType))
 				return false;
 			return newType.FullName == "System.Object";
 		}

@@ -52,12 +52,12 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 				this.vmAssemblyRef = module.ResolveAssemblyRef(oldOne.vmAssemblyRef.Rid);
 		}
 
-		public void find() {
-			resource = findCsvmResource();
-			vmAssemblyRef = findVmAssemblyRef();
+		public void Find() {
+			resource = FindCsvmResource();
+			vmAssemblyRef = FindVmAssemblyRef();
 		}
 
-		AssemblyRef findVmAssemblyRef() {
+		AssemblyRef FindVmAssemblyRef() {
 			foreach (var memberRef in module.GetMemberRefs()) {
 				var sig = memberRef.MethodSig;
 				if (sig == null)
@@ -74,17 +74,17 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			return null;
 		}
 
-		EmbeddedResource findCsvmResource() {
-			return DotNetUtils.getResource(module, "_CSVM") as EmbeddedResource;
+		EmbeddedResource FindCsvmResource() {
+			return DotNetUtils.GetResource(module, "_CSVM") as EmbeddedResource;
 		}
 
-		public bool restore() {
+		public bool Restore() {
 			if (!Detected)
 				return true;
 
 			int oldIndent = Logger.Instance.IndentLevel;
 			try {
-				restore2();
+				Restore2();
 				return true;
 			}
 			catch {
@@ -95,66 +95,66 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			}
 		}
 
-		void restore2() {
+		void Restore2() {
 			Logger.v("Restoring CSVM methods");
-			Logger.Instance.indent();
+			Logger.Instance.Indent();
 
-			var opcodeDetector = getVmOpCodeHandlerDetector();
-			var csvmMethods = new CsvmDataReader(resource.Data).read();
+			var opcodeDetector = GetVmOpCodeHandlerDetector();
+			var csvmMethods = new CsvmDataReader(resource.Data).Read();
 			var converter = new CsvmToCilMethodConverter(deobfuscatorContext, module, opcodeDetector);
 			var methodPrinter = new MethodPrinter();
 			foreach (var csvmMethod in csvmMethods) {
 				var cilMethod = module.ResolveToken(csvmMethod.Token) as MethodDef;
 				if (cilMethod == null)
 					throw new ApplicationException(string.Format("Could not find method {0:X8}", csvmMethod.Token));
-				converter.convert(cilMethod, csvmMethod);
+				converter.Convert(cilMethod, csvmMethod);
 				Logger.v("Restored method {0:X8}", cilMethod.MDToken.ToInt32());
-				printMethod(methodPrinter, cilMethod);
+				PrintMethod(methodPrinter, cilMethod);
 			}
-			Logger.Instance.deIndent();
+			Logger.Instance.DeIndent();
 		}
 
-		static void printMethod(MethodPrinter methodPrinter, MethodDef method) {
+		static void PrintMethod(MethodPrinter methodPrinter, MethodDef method) {
 			const LoggerEvent dumpLogLevel = LoggerEvent.Verbose;
 			if (Logger.Instance.IgnoresEvent(dumpLogLevel))
 				return;
 
-			Logger.Instance.indent();
+			Logger.Instance.Indent();
 
 			Logger.v("Locals:");
-			Logger.Instance.indent();
+			Logger.Instance.Indent();
 			for (int i = 0; i < method.Body.Variables.Count; i++)
 				Logger.v("#{0}: {1}", i, method.Body.Variables[i].Type);
-			Logger.Instance.deIndent();
+			Logger.Instance.DeIndent();
 
 			Logger.v("Code:");
-			Logger.Instance.indent();
-			methodPrinter.print(dumpLogLevel, method.Body.Instructions, method.Body.ExceptionHandlers);
-			Logger.Instance.deIndent();
+			Logger.Instance.Indent();
+			methodPrinter.Print(dumpLogLevel, method.Body.Instructions, method.Body.ExceptionHandlers);
+			Logger.Instance.DeIndent();
 
-			Logger.Instance.deIndent();
+			Logger.Instance.DeIndent();
 		}
 
-		VmOpCodeHandlerDetector getVmOpCodeHandlerDetector() {
+		VmOpCodeHandlerDetector GetVmOpCodeHandlerDetector() {
 			var vmFilename = vmAssemblyRef.Name + ".dll";
 			var vmModulePath = Path.Combine(Path.GetDirectoryName(module.Location), vmFilename);
 			Logger.v("CSVM filename: {0}", vmFilename);
 
 			var dataKey = "cs cached VmOpCodeHandlerDetector";
-			var dict = (Dictionary<string, VmOpCodeHandlerDetector>)deobfuscatorContext.getData(dataKey);
+			var dict = (Dictionary<string, VmOpCodeHandlerDetector>)deobfuscatorContext.GetData(dataKey);
 			if (dict == null)
-				deobfuscatorContext.setData(dataKey, dict = new Dictionary<string, VmOpCodeHandlerDetector>(StringComparer.OrdinalIgnoreCase));
+				deobfuscatorContext.SetData(dataKey, dict = new Dictionary<string, VmOpCodeHandlerDetector>(StringComparer.OrdinalIgnoreCase));
 			VmOpCodeHandlerDetector detector;
 			if (dict.TryGetValue(vmModulePath, out detector))
 				return detector;
 			dict[vmModulePath] = detector = new VmOpCodeHandlerDetector(ModuleDefMD.Load(vmModulePath));
 
-			detector.findHandlers();
+			detector.FindHandlers();
 			Logger.v("CSVM opcodes:");
-			Logger.Instance.indent();
+			Logger.Instance.Indent();
 			for (int i = 0; i < detector.Handlers.Count; i++)
 				Logger.v("{0:X4}: {1}", i, detector.Handlers[i].Name);
-			Logger.Instance.deIndent();
+			Logger.Instance.DeIndent();
 
 			return detector;
 		}

@@ -30,18 +30,18 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		IDecrypter decrypter;
 
 		interface IDecrypter {
-			void initialize(byte[] methodsData);
-			bool decrypt(IBinaryReader fileDataReader, DumpedMethod dm);
+			void Initialize(byte[] methodsData);
+			bool Decrypt(IBinaryReader fileDataReader, DumpedMethod dm);
 		}
 
 		class Decrypter : IDecrypter {
 			IBinaryReader methodsDataReader;
 
-			public virtual void initialize(byte[] methodsData) {
+			public virtual void Initialize(byte[] methodsData) {
 				methodsDataReader = MemoryImageStream.Create(methodsData);
 			}
 
-			public virtual bool decrypt(IBinaryReader fileDataReader, DumpedMethod dm) {
+			public virtual bool Decrypt(IBinaryReader fileDataReader, DumpedMethod dm) {
 				if (fileDataReader.ReadByte() != 0x2A)
 					return false;	// Not a RET
 				methodsDataReader.Position = fileDataReader.ReadCompressedUInt32();
@@ -49,15 +49,15 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				dm.mhCodeSize = methodsDataReader.ReadCompressedUInt32();
 				dm.code = methodsDataReader.ReadBytes((int)dm.mhCodeSize);
 				if ((dm.mhFlags & 8) != 0)
-					dm.extraSections = MethodBodyParser.readExtraSections(methodsDataReader);
+					dm.extraSections = MethodBodyParser.ReadExtraSections(methodsDataReader);
 
-				if (!decryptCode(dm))
+				if (!DecryptCode(dm))
 					return false;
 
 				return true;
 			}
 
-			protected virtual bool decryptCode(DumpedMethod dm) {
+			protected virtual bool DecryptCode(DumpedMethod dm) {
 				return true;
 			}
 		}
@@ -65,16 +65,16 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		class DecrypterV5 : Decrypter {
 			byte[] decryptKey;
 
-			public override void initialize(byte[] methodsData) {
-				var data = DeobUtils.inflate(methodsData, true);
+			public override void Initialize(byte[] methodsData) {
+				var data = DeobUtils.Inflate(methodsData, true);
 				decryptKey = BitConverter.GetBytes(BitConverter.ToUInt32(data, 0));
 
 				var newMethodsData = new byte[data.Length - 4];
 				Array.Copy(data, 4, newMethodsData, 0, newMethodsData.Length);
-				base.initialize(newMethodsData);
+				base.Initialize(newMethodsData);
 			}
 
-			protected override bool decryptCode(DumpedMethod dm) {
+			protected override bool DecryptCode(DumpedMethod dm) {
 				var code = dm.code;
 				for (int i = 0; i < code.Length; i++) {
 					for (int j = 0; j < 4 && i + j < code.Length; j++)
@@ -97,7 +97,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			this.mainType = mainType;
 		}
 
-		public void find() {
+		public void Find() {
 			if (!mainType.Detected)
 				return;
 
@@ -120,7 +120,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			}
 		}
 
-		public bool decrypt(byte[] fileData, ref DumpedMethods dumpedMethods) {
+		public bool Decrypt(byte[] fileData, ref DumpedMethods dumpedMethods) {
 			if (decrypter == null)
 				return false;
 
@@ -128,13 +128,13 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				if (peImage.Sections.Count <= 0)
 					return false;
 
-				var methodsData = findMethodsData(peImage, fileData);
+				var methodsData = FindMethodsData(peImage, fileData);
 				if (methodsData == null)
 					return false;
 
-				decrypter.initialize(methodsData);
+				decrypter.Initialize(methodsData);
 
-				dumpedMethods = createDumpedMethods(peImage, fileData, methodsData);
+				dumpedMethods = CreateDumpedMethods(peImage, fileData, methodsData);
 				if (dumpedMethods == null)
 					return false;
 			}
@@ -142,7 +142,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return true;
 		}
 
-		DumpedMethods createDumpedMethods(MyPEImage peImage, byte[] fileData, byte[] methodsData) {
+		DumpedMethods CreateDumpedMethods(MyPEImage peImage, byte[] fileData, byte[] methodsData) {
 			var dumpedMethods = new DumpedMethods();
 
 			var methodsDataReader = MemoryImageStream.Create(methodsData);
@@ -152,12 +152,12 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			for (uint rid = 1; rid <= methodDef.Rows; rid++) {
 				var dm = new DumpedMethod();
 
-				peImage.readMethodTableRowTo(dm, rid);
+				peImage.ReadMethodTableRowTo(dm, rid);
 				if (dm.mdRVA == 0)
 					continue;
-				uint bodyOffset = peImage.rvaToOffset(dm.mdRVA);
+				uint bodyOffset = peImage.RvaToOffset(dm.mdRVA);
 
-				byte b = peImage.offsetReadByte(bodyOffset);
+				byte b = peImage.OffsetReadByte(bodyOffset);
 				uint codeOffset;
 				if ((b & 3) == 2) {
 					if (b != 2)
@@ -169,20 +169,20 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 					codeOffset = bodyOffset + 1;
 				}
 				else {
-					if (peImage.offsetReadUInt32(bodyOffset + 4) != 0)
+					if (peImage.OffsetReadUInt32(bodyOffset + 4) != 0)
 						continue;	// not zero byte code size
 
-					dm.mhFlags = peImage.offsetReadUInt16(bodyOffset);
-					dm.mhMaxStack = peImage.offsetReadUInt16(bodyOffset + 2);
-					dm.mhLocalVarSigTok = peImage.offsetReadUInt32(bodyOffset + 8);
+					dm.mhFlags = peImage.OffsetReadUInt16(bodyOffset);
+					dm.mhMaxStack = peImage.OffsetReadUInt16(bodyOffset + 2);
+					dm.mhLocalVarSigTok = peImage.OffsetReadUInt32(bodyOffset + 8);
 					codeOffset = bodyOffset + (uint)(dm.mhFlags >> 12) * 4;
 				}
 				fileDataReader.Position = codeOffset;
 
-				if (!decrypter.decrypt(fileDataReader, dm))
+				if (!decrypter.Decrypt(fileDataReader, dm))
 					continue;
 
-				dumpedMethods.add(dm);
+				dumpedMethods.Add(dm);
 			}
 
 			return dumpedMethods;
@@ -192,7 +192,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		static byte[] initializeMethodEnd = new byte[] {
 			0x33, 0xC0, 0x40, 0x5E, 0x5F, 0x5A, 0x59, 0x5B, 0xC9, 0xC2,
 		};
-		byte[] findMethodsData(MyPEImage peImage, byte[] fileData) {
+		byte[] FindMethodsData(MyPEImage peImage, byte[] fileData) {
 			var section = peImage.Sections[0];
 
 			var reader = MemoryImageStream.Create(fileData);
@@ -200,8 +200,8 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			const int RVA_EXECUTIVE_OFFSET = 1 * 4;
 			const int ENC_CODE_OFFSET = 6 * 4;
 			int lastOffset = Math.Min(fileData.Length, (int)(section.PointerToRawData + section.SizeOfRawData));
-			for (int offset = getStartOffset(peImage); offset < lastOffset; ) {
-				offset = findSig(fileData, offset, lastOffset, initializeMethodEnd);
+			for (int offset = GetStartOffset(peImage); offset < lastOffset; ) {
+				offset = FindSig(fileData, offset, lastOffset, initializeMethodEnd);
 				if (offset < 0)
 					return null;
 				offset += initializeMethodEnd.Length;
@@ -234,27 +234,27 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return null;
 		}
 
-		int getStartOffset(MyPEImage peImage) {
+		int GetStartOffset(MyPEImage peImage) {
 			int minOffset = int.MaxValue;
 			foreach (var rva in mainType.Rvas) {
-				int rvaOffs = (int)peImage.rvaToOffset((uint)rva);
+				int rvaOffs = (int)peImage.RvaToOffset((uint)rva);
 				if (rvaOffs < minOffset)
 					minOffset = rvaOffs;
 			}
 			return minOffset == int.MaxValue ? 0 : minOffset;
 		}
 
-		static int findSig(byte[] fileData, int offset, int lastOffset, byte[] sig) {
+		static int FindSig(byte[] fileData, int offset, int lastOffset, byte[] sig) {
 			for (int i = offset; i < lastOffset - sig.Length + 1; i++) {
 				if (fileData[i] != sig[0])
 					continue;
-				if (compare(fileData, i + 1, sig, 1, sig.Length - 1))
+				if (Compare(fileData, i + 1, sig, 1, sig.Length - 1))
 					return i;
 			}
 			return -1;
 		}
 
-		static bool compare(byte[] a1, int i1, byte[] a2, int i2, int len) {
+		static bool Compare(byte[] a1, int i1, byte[] a2, int i2, int len) {
 			for (int i = 0; i < len; i++) {
 				if (a1[i1++] != a2[i2++])
 					return false;

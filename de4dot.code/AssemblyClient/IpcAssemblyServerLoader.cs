@@ -42,13 +42,13 @@ namespace de4dot.code.AssemblyClient {
 		}
 
 		protected IpcAssemblyServerLoader(ServerClrVersion serverVersion) {
-			assemblyServerFilename = getServerName(serverVersion);
-			ipcName = Utils.randomName(15, 20);
-			ipcUri = Utils.randomName(15, 20);
+			assemblyServerFilename = GetServerName(serverVersion);
+			ipcName = Utils.RandomName(15, 20);
+			ipcUri = Utils.RandomName(15, 20);
 			url = string.Format("ipc://{0}/{1}", ipcName, ipcUri);
 		}
 
-		static string getServerName(ServerClrVersion serverVersion) {
+		static string GetServerName(ServerClrVersion serverVersion) {
 			if (serverVersion == ServerClrVersion.CLR_ANY_ANYCPU)
 				serverVersion = IntPtr.Size == 4 ? ServerClrVersion.CLR_ANY_x86 : ServerClrVersion.CLR_ANY_x64;
 			switch (serverVersion) {
@@ -62,13 +62,13 @@ namespace de4dot.code.AssemblyClient {
 			}
 		}
 
-		public void loadServer() {
-			loadServer(Utils.getPathOfOurFile(assemblyServerFilename));
+		public void LoadServer() {
+			LoadServer(Utils.GetPathOfOurFile(assemblyServerFilename));
 		}
 
-		public abstract void loadServer(string filename);
+		public abstract void LoadServer(string filename);
 
-		public IAssemblyService createService() {
+		public IAssemblyService CreateService() {
 			return (IAssemblyService)Activator.GetObject(typeof(AssemblyService), url);
 		}
 

@@ -72,7 +72,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 		SigType sigType;
 
 		interface IDecrypter {
-			MethodBodyHeader decrypt(MethodInfo methodInfo, out byte[] code, out byte[] extraSections);
+			MethodBodyHeader Decrypt(MethodInfo methodInfo, out byte[] code, out byte[] extraSections);
 		}
 
 		abstract class DecrypterBase : IDecrypter {
@@ -84,13 +84,13 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 				this.peImage = peImage;
 				this.codeHeader = codeHeader;
 				var mdDir = peImage.Cor20Header.MetaData;
-				endOfMetadata = peImage.rvaToOffset((uint)mdDir.VirtualAddress + mdDir.Size);
+				endOfMetadata = peImage.RvaToOffset((uint)mdDir.VirtualAddress + mdDir.Size);
 			}
 
-			public abstract MethodBodyHeader decrypt(MethodInfo methodInfo, out byte[] code, out byte[] extraSections);
+			public abstract MethodBodyHeader Decrypt(MethodInfo methodInfo, out byte[] code, out byte[] extraSections);
 
-			protected MethodBodyHeader getCodeBytes(byte[] methodBody, out byte[] code, out byte[] extraSections) {
-				return MethodBodyParser.parseMethodBody(MemoryImageStream.Create(methodBody), out code, out extraSections);
+			protected MethodBodyHeader GetCodeBytes(byte[] methodBody, out byte[] code, out byte[] extraSections) {
+				return MethodBodyParser.ParseMethodBody(MemoryImageStream.Create(methodBody), out code, out extraSections);
 			}
 		}
 
@@ -104,10 +104,10 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 				this.blowfish = new CsBlowfish(key);
 			}
 
-			public MethodBodyHeader decrypt(uint bodyOffset, out byte[] code, out byte[] extraSections) {
+			public MethodBodyHeader Decrypt(uint bodyOffset, out byte[] code, out byte[] extraSections) {
 				peImage.Reader.Position = bodyOffset;
-				var mbHeader = MethodBodyParser.parseMethodBody(peImage.Reader, out code, out extraSections);
-				blowfish.decrypt(code);
+				var mbHeader = MethodBodyParser.ParseMethodBody(peImage.Reader, out code, out extraSections);
+				blowfish.Decrypt(code);
 				return mbHeader;
 			}
 		}
@@ -118,9 +118,9 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 				: base(peImage, codeHeader) {
 			}
 
-			public override MethodBodyHeader decrypt(MethodInfo methodInfo, out byte[] code, out byte[] extraSections) {
-				peImage.Reader.Position = peImage.rvaToOffset(methodInfo.codeOffs);
-				return MethodBodyParser.parseMethodBody(peImage.Reader, out code, out extraSections);
+			public override MethodBodyHeader Decrypt(MethodInfo methodInfo, out byte[] code, out byte[] extraSections) {
+				peImage.Reader.Position = peImage.RvaToOffset(methodInfo.codeOffs);
+				return MethodBodyParser.ParseMethodBody(peImage.Reader, out code, out extraSections);
 			}
 		}
 
@@ -130,9 +130,9 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 				: base(peImage, codeHeader) {
 			}
 
-			public override MethodBodyHeader decrypt(MethodInfo methodInfo, out byte[] code, out byte[] extraSections) {
+			public override MethodBodyHeader Decrypt(MethodInfo methodInfo, out byte[] code, out byte[] extraSections) {
 				peImage.Reader.Position = endOfMetadata + methodInfo.codeOffs;
-				return MethodBodyParser.parseMethodBody(peImage.Reader, out code, out extraSections);
+				return MethodBodyParser.ParseMethodBody(peImage.Reader, out code, out extraSections);
 			}
 		}
 
@@ -142,14 +142,14 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 				: base(peImage, codeHeader) {
 			}
 
-			public override MethodBodyHeader decrypt(MethodInfo methodInfo, out byte[] code, out byte[] extraSections) {
-				var data = peImage.offsetReadBytes(endOfMetadata + methodInfo.codeOffs, (int)methodInfo.codeSize);
+			public override MethodBodyHeader Decrypt(MethodInfo methodInfo, out byte[] code, out byte[] extraSections) {
+				var data = peImage.OffsetReadBytes(endOfMetadata + methodInfo.codeOffs, (int)methodInfo.codeSize);
 				for (int i = 0; i < data.Length; i++) {
 					byte b = data[i];
 					b ^= codeHeader.decryptionKey[(methodInfo.codeOffs - 0x28 + i) % 16];
 					data[i] = b;
 				}
-				return getCodeBytes(data, out code, out extraSections);
+				return GetCodeBytes(data, out code, out extraSections);
 			}
 		}
 
@@ -162,15 +162,15 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 				this.codeHeaderSize = codeHeaderSize;
 			}
 
-			public override MethodBodyHeader decrypt(MethodInfo methodInfo, out byte[] code, out byte[] extraSections) {
-				byte[] data = peImage.offsetReadBytes(endOfMetadata + methodInfo.codeOffs, (int)methodInfo.codeSize);
+			public override MethodBodyHeader Decrypt(MethodInfo methodInfo, out byte[] code, out byte[] extraSections) {
+				byte[] data = peImage.OffsetReadBytes(endOfMetadata + methodInfo.codeOffs, (int)methodInfo.codeSize);
 				for (int i = 0; i < data.Length; i++) {
 					byte b = data[i];
 					b ^= codeHeader.decryptionKey[(methodInfo.codeOffs - codeHeaderSize + i) % 16];
 					b ^= codeHeader.decryptionKey[(methodInfo.codeOffs - codeHeaderSize + i + 7) % 16];
 					data[i] = b;
 				}
-				return getCodeBytes(data, out code, out extraSections);
+				return GetCodeBytes(data, out code, out extraSections);
 			}
 		}
 
@@ -181,17 +181,17 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			public ProDecrypter(MyPEImage peImage, CodeHeader codeHeader)
 				: base(peImage, codeHeader) {
 				for (int i = 0; i < 4; i++)
-					key[i] = be_readUInt32(codeHeader.decryptionKey, i * 4);
+					key[i] = ReadUInt32_be(codeHeader.decryptionKey, i * 4);
 			}
 
-			public override MethodBodyHeader decrypt(MethodInfo methodInfo, out byte[] code, out byte[] extraSections) {
-				byte[] data = peImage.offsetReadBytes(endOfMetadata + methodInfo.codeOffs, (int)methodInfo.codeSize);
+			public override MethodBodyHeader Decrypt(MethodInfo methodInfo, out byte[] code, out byte[] extraSections) {
+				byte[] data = peImage.OffsetReadBytes(endOfMetadata + methodInfo.codeOffs, (int)methodInfo.codeSize);
 
 				int numQwords = (int)(methodInfo.codeSize / 8);
 				for (int i = 0; i < numQwords; i++) {
 					int offset = i * 8;
-					uint q0 = be_readUInt32(data, offset);
-					uint q1 = be_readUInt32(data, offset + 4);
+					uint q0 = ReadUInt32_be(data, offset);
+					uint q1 = ReadUInt32_be(data, offset + 4);
 
 					const uint magic = 0x9E3779B8;
 					uint val = 0xC6EF3700;	// magic * 0x20
@@ -201,21 +201,21 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 						val -= magic;
 					}
 
-					be_writeUInt32(data, offset, q0);
-					be_writeUInt32(data, offset + 4, q1);
+					WriteUInt32_be(data, offset, q0);
+					WriteUInt32_be(data, offset + 4, q1);
 				}
 
-				return getCodeBytes(data, out code, out extraSections);
+				return GetCodeBytes(data, out code, out extraSections);
 			}
 
-			static uint be_readUInt32(byte[] data, int offset) {
+			static uint ReadUInt32_be(byte[] data, int offset) {
 				return (uint)((data[offset] << 24) +
 						(data[offset + 1] << 16) +
 						(data[offset + 2] << 8) +
 						data[offset + 3]);
 			}
 
-			static void be_writeUInt32(byte[] data, int offset, uint value) {
+			static void WriteUInt32_be(byte[] data, int offset, uint value) {
 				data[offset] = (byte)(value >> 24);
 				data[offset + 1] = (byte)(value >> 16);
 				data[offset + 2] = (byte)(value >> 8);
@@ -224,9 +224,9 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 		}
 
 		interface ICsHeader {
-			IDecrypter createDecrypter();
-			List<MethodInfo> getMethodInfos(uint codeHeaderOffset);
-			void patchMethodTable(MDTable methodDefTable, IList<MethodInfo> methodInfos);
+			IDecrypter CreateDecrypter();
+			List<MethodInfo> GetMethodInfos(uint codeHeaderOffset);
+			void PatchMethodTable(MDTable methodDefTable, IList<MethodInfo> methodInfos);
 		}
 
 		abstract class CsHeaderBase : ICsHeader {
@@ -238,42 +238,42 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 				this.codeHeaderSize = codeHeaderSize;
 			}
 
-			public abstract IDecrypter createDecrypter();
+			public abstract IDecrypter CreateDecrypter();
 
-			public virtual void patchMethodTable(MDTable methodDefTable, IList<MethodInfo> methodInfos) {
+			public virtual void PatchMethodTable(MDTable methodDefTable, IList<MethodInfo> methodInfos) {
 			}
 
-			public abstract List<MethodInfo> getMethodInfos(uint codeHeaderOffset);
+			public abstract List<MethodInfo> GetMethodInfos(uint codeHeaderOffset);
 
-			protected List<MethodInfo> getMethodInfos1(uint codeHeaderOffset) {
+			protected List<MethodInfo> GetMethodInfos1(uint codeHeaderOffset) {
 				uint offset = codeHeaderOffset + methodsDecrypter.codeHeader.totalCodeSize + codeHeaderSize;
 				var methodInfos = new List<MethodInfo>((int)methodsDecrypter.codeHeader.numMethods);
 				for (int i = 0; i < (int)methodsDecrypter.codeHeader.numMethods; i++, offset += 4) {
-					uint codeOffs = methodsDecrypter.peImage.offsetReadUInt32(offset);
+					uint codeOffs = methodsDecrypter.peImage.OffsetReadUInt32(offset);
 					methodInfos.Add(new MethodInfo(codeOffs, 0, 0, 0));
 				}
 				return methodInfos;
 			}
 
-			protected List<MethodInfo> getMethodInfos2(uint codeHeaderOffset) {
+			protected List<MethodInfo> GetMethodInfos2(uint codeHeaderOffset) {
 				uint offset = codeHeaderOffset + methodsDecrypter.codeHeader.totalCodeSize + codeHeaderSize;
 				var methodInfos = new List<MethodInfo>((int)methodsDecrypter.codeHeader.numMethods);
 				for (int i = 0; i < (int)methodsDecrypter.codeHeader.numMethods; i++, offset += 8) {
-					uint codeOffs = methodsDecrypter.peImage.offsetReadUInt32(offset);
-					uint codeSize = methodsDecrypter.peImage.offsetReadUInt32(offset + 4);
+					uint codeOffs = methodsDecrypter.peImage.OffsetReadUInt32(offset);
+					uint codeSize = methodsDecrypter.peImage.OffsetReadUInt32(offset + 4);
 					methodInfos.Add(new MethodInfo(codeOffs, codeSize, 0, 0));
 				}
 				return methodInfos;
 			}
 
-			protected List<MethodInfo> getMethodInfos4(uint codeHeaderOffset) {
+			protected List<MethodInfo> GetMethodInfos4(uint codeHeaderOffset) {
 				uint offset = codeHeaderOffset + methodsDecrypter.codeHeader.totalCodeSize + codeHeaderSize;
 				var methodInfos = new List<MethodInfo>((int)methodsDecrypter.codeHeader.numMethods);
 				for (int i = 0; i < (int)methodsDecrypter.codeHeader.numMethods; i++, offset += 16) {
-					uint codeOffs = methodsDecrypter.peImage.offsetReadUInt32(offset);
-					uint codeSize = methodsDecrypter.peImage.offsetReadUInt32(offset + 4);
-					uint flags = methodsDecrypter.peImage.offsetReadUInt32(offset + 8);
-					uint localVarSigTok = methodsDecrypter.peImage.offsetReadUInt32(offset + 12);
+					uint codeOffs = methodsDecrypter.peImage.OffsetReadUInt32(offset);
+					uint codeSize = methodsDecrypter.peImage.OffsetReadUInt32(offset + 4);
+					uint flags = methodsDecrypter.peImage.OffsetReadUInt32(offset + 8);
+					uint localVarSigTok = methodsDecrypter.peImage.OffsetReadUInt32(offset + 12);
 					methodInfos.Add(new MethodInfo(codeOffs, codeSize, flags, localVarSigTok));
 				}
 				return methodInfos;
@@ -286,12 +286,12 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 				: base(methodsDecrypter, 0x28) {
 			}
 
-			public override IDecrypter createDecrypter() {
+			public override IDecrypter CreateDecrypter() {
 				return new Decrypter30(methodsDecrypter.peImage, methodsDecrypter.codeHeader);
 			}
 
-			public override List<MethodInfo> getMethodInfos(uint codeHeaderOffset) {
-				return getMethodInfos1(codeHeaderOffset);
+			public override List<MethodInfo> GetMethodInfos(uint codeHeaderOffset) {
+				return GetMethodInfos1(codeHeaderOffset);
 			}
 		}
 
@@ -301,12 +301,12 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 				: base(methodsDecrypter, 0x28) {
 			}
 
-			public override IDecrypter createDecrypter() {
+			public override IDecrypter CreateDecrypter() {
 				return new Decrypter40(methodsDecrypter.peImage, methodsDecrypter.codeHeader);
 			}
 
-			public override List<MethodInfo> getMethodInfos(uint codeHeaderOffset) {
-				return getMethodInfos1(codeHeaderOffset);
+			public override List<MethodInfo> GetMethodInfos(uint codeHeaderOffset) {
+				return GetMethodInfos1(codeHeaderOffset);
 			}
 		}
 
@@ -316,12 +316,12 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 				: base(methodsDecrypter, 0x28) {
 			}
 
-			public override IDecrypter createDecrypter() {
+			public override IDecrypter CreateDecrypter() {
 				return new Decrypter45(methodsDecrypter.peImage, methodsDecrypter.codeHeader);
 			}
 
-			public override List<MethodInfo> getMethodInfos(uint codeHeaderOffset) {
-				return getMethodInfos2(codeHeaderOffset);
+			public override List<MethodInfo> GetMethodInfos(uint codeHeaderOffset) {
+				return GetMethodInfos2(codeHeaderOffset);
 			}
 		}
 
@@ -331,8 +331,8 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 				: base(methodsDecrypter, codeHeaderSize) {
 			}
 
-			public override IDecrypter createDecrypter() {
-				switch (getSigType(methodsDecrypter.codeHeader.signature)) {
+			public override IDecrypter CreateDecrypter() {
+				switch (GetSigType(methodsDecrypter.codeHeader.signature)) {
 				case SigType.Normal:
 					return new Decrypter5(methodsDecrypter.peImage, methodsDecrypter.codeHeader, codeHeaderSize);
 
@@ -345,21 +345,21 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 				}
 			}
 
-			public override List<MethodInfo> getMethodInfos(uint codeHeaderOffset) {
+			public override List<MethodInfo> GetMethodInfos(uint codeHeaderOffset) {
 				if (codeHeaderSize == 0x28)
-					return getMethodInfos2(codeHeaderOffset);
-				return getMethodInfos4(codeHeaderOffset);
+					return GetMethodInfos2(codeHeaderOffset);
+				return GetMethodInfos4(codeHeaderOffset);
 			}
 
-			public override void patchMethodTable(MDTable methodDefTable, IList<MethodInfo> methodInfos) {
+			public override void PatchMethodTable(MDTable methodDefTable, IList<MethodInfo> methodInfos) {
 				uint offset = (uint)methodDefTable.StartOffset - methodDefTable.RowSize;
 				foreach (var methodInfo in methodInfos) {
 					offset += methodDefTable.RowSize;
 					if (methodInfo.flags == 0 || methodInfo.codeOffs == 0)
 						continue;
-					uint rva = methodsDecrypter.peImage.offsetReadUInt32(offset);
-					methodsDecrypter.peImage.writeUInt16(rva, (ushort)methodInfo.flags);
-					methodsDecrypter.peImage.writeUInt32(rva + 8, methodInfo.localVarSigTok);
+					uint rva = methodsDecrypter.peImage.OffsetReadUInt32(offset);
+					methodsDecrypter.peImage.WriteUInt16(rva, (ushort)methodInfo.flags);
+					methodsDecrypter.peImage.WriteUInt32(rva + 8, methodInfo.localVarSigTok);
 				}
 			}
 		}
@@ -374,14 +374,14 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			V52,	// 5.2+ (or maybe 5.1+)
 		}
 
-		List<CsHeaderVersion> getCsHeaderVersions(uint codeHeaderOffset, MDTable methodDefTable) {
+		List<CsHeaderVersion> GetCsHeaderVersions(uint codeHeaderOffset, MDTable methodDefTable) {
 			if (sigType == SigType.Old)
 				return new List<CsHeaderVersion> { CsHeaderVersion.V10 };
-			if (!isOldHeader(methodDefTable))
+			if (!IsOldHeader(methodDefTable))
 				return new List<CsHeaderVersion> { CsHeaderVersion.V52 };
-			if (csRtType.isAtLeastVersion50())
+			if (csRtType.IsAtLeastVersion50())
 				return new List<CsHeaderVersion> { CsHeaderVersion.V50 };
-			if (isCsHeader40(codeHeaderOffset)) {
+			if (IsCsHeader40(codeHeaderOffset)) {
 				return new List<CsHeaderVersion> {
 					CsHeaderVersion.V40,
 					CsHeaderVersion.V30,
@@ -393,12 +393,12 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			};
 		}
 
-		bool isCsHeader40(uint codeHeaderOffset) {
+		bool IsCsHeader40(uint codeHeaderOffset) {
 			try {
 				uint offset = codeHeaderOffset + codeHeader.totalCodeSize + 0x28;
 				uint prevCodeOffs = 0;
 				for (int i = 0; i < (int)codeHeader.numMethods; i++, offset += 4) {
-					uint codeOffs = peImage.offsetReadUInt32(offset);
+					uint codeOffs = peImage.OffsetReadUInt32(offset);
 					if (prevCodeOffs != 0 && codeOffs != 0 && codeOffs < prevCodeOffs)
 						return false;
 					if (codeOffs != 0)
@@ -412,16 +412,16 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			}
 		}
 
-		bool isOldHeader(MDTable methodDefTable) {
+		bool IsOldHeader(MDTable methodDefTable) {
 			if (methodDefTable.RowSize != codeHeader.methodDefElemSize)
 				return true;
-			if ((uint)methodDefTable.StartOffset - peImage.rvaToOffset((uint)peImage.Cor20Header.MetaData.VirtualAddress) != codeHeader.methodDefTableOffset)
+			if ((uint)methodDefTable.StartOffset - peImage.RvaToOffset((uint)peImage.Cor20Header.MetaData.VirtualAddress) != codeHeader.methodDefTableOffset)
 				return true;
 
 			return false;
 		}
 
-		ICsHeader createCsHeader(CsHeaderVersion version) {
+		ICsHeader CreateCsHeader(CsHeaderVersion version) {
 			switch (version) {
 			case CsHeaderVersion.V30: return new CsHeader30(this);
 			case CsHeaderVersion.V40: return new CsHeader40(this);
@@ -438,19 +438,19 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			Error,
 		}
 
-		public bool decrypt(MyPEImage peImage, ModuleDefMD module, CliSecureRtType csRtType, ref DumpedMethods dumpedMethods) {
+		public bool Decrypt(MyPEImage peImage, ModuleDefMD module, CliSecureRtType csRtType, ref DumpedMethods dumpedMethods) {
 			this.peImage = peImage;
 			this.csRtType = csRtType;
 			this.module = module;
 
-			switch (decrypt2(ref dumpedMethods)) {
+			switch (Decrypt2(ref dumpedMethods)) {
 			case DecryptResult.Decrypted: return true;
 			case DecryptResult.NotEncrypted: return false;
 
 			case DecryptResult.Error:
 				Logger.n("Using dynamic method decryption");
-				byte[] moduleCctorBytes = getModuleCctorBytes(csRtType);
-				dumpedMethods = de4dot.code.deobfuscators.MethodsDecrypter.decrypt(module, moduleCctorBytes);
+				byte[] moduleCctorBytes = GetModuleCctorBytes(csRtType);
+				dumpedMethods = de4dot.code.deobfuscators.MethodsDecrypter.Decrypt(module, moduleCctorBytes);
 				return true;
 
 			default:
@@ -458,7 +458,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			}
 		}
 
-		static byte[] getModuleCctorBytes(CliSecureRtType csRtType) {
+		static byte[] GetModuleCctorBytes(CliSecureRtType csRtType) {
 			var initMethod = csRtType.InitializeMethod;
 			if (initMethod == null)
 				return null;
@@ -473,24 +473,24 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			return moduleCctorBytes;
 		}
 
-		static uint getCodeHeaderOffset(MyPEImage peImage) {
-			return peImage.rvaToOffset((uint)peImage.Cor20Header.MetaData.VirtualAddress + peImage.Cor20Header.MetaData.Size);
+		static uint GetCodeHeaderOffset(MyPEImage peImage) {
+			return peImage.RvaToOffset((uint)peImage.Cor20Header.MetaData.VirtualAddress + peImage.Cor20Header.MetaData.Size);
 		}
 
 		static string[] sections = new string[] {
 			".text", ".rsrc", ".data", ".rdata",
 		};
-		static uint getOldCodeHeaderOffset(MyPEImage peImage) {
-			var sect = getLastOf(peImage, sections);
+		static uint GetOldCodeHeaderOffset(MyPEImage peImage) {
+			var sect = GetLastOf(peImage, sections);
 			if (sect == null || sect.VirtualSize < 0x100)
 				return 0;
-			return peImage.rvaToOffset((uint)sect.VirtualAddress + sect.VirtualSize - 0x100);
+			return peImage.RvaToOffset((uint)sect.VirtualAddress + sect.VirtualSize - 0x100);
 		}
 
-		static ImageSectionHeader getLastOf(MyPEImage peImage, string[] sections) {
+		static ImageSectionHeader GetLastOf(MyPEImage peImage, string[] sections) {
 			ImageSectionHeader sect = null;
 			foreach (var name in sections) {
-				var sect2 = peImage.findSection(name);
+				var sect2 = peImage.FindSection(name);
 				if (sect2 == null)
 					continue;
 				if (sect == null || sect2.VirtualAddress > sect.VirtualAddress)
@@ -499,19 +499,19 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			return sect;
 		}
 
-		DecryptResult decrypt2(ref DumpedMethods dumpedMethods) {
-			uint codeHeaderOffset = initializeCodeHeader();
+		DecryptResult Decrypt2(ref DumpedMethods dumpedMethods) {
+			uint codeHeaderOffset = InitializeCodeHeader();
 			if (sigType == SigType.Unknown)
 				return DecryptResult.NotEncrypted;
 
 			var methodDefTable = peImage.DotNetFile.MetaData.TablesStream.MethodTable;
 
-			foreach (var version in getCsHeaderVersions(codeHeaderOffset, methodDefTable)) {
+			foreach (var version in GetCsHeaderVersions(codeHeaderOffset, methodDefTable)) {
 				try {
 					if (version == CsHeaderVersion.V10)
-						decryptMethodsOld(methodDefTable, ref dumpedMethods);
+						DecryptMethodsOld(methodDefTable, ref dumpedMethods);
 					else
-						decryptMethods(codeHeaderOffset, methodDefTable, createCsHeader(version), ref dumpedMethods);
+						DecryptMethods(codeHeaderOffset, methodDefTable, CreateCsHeader(version), ref dumpedMethods);
 					return DecryptResult.Decrypted;
 				}
 				catch {
@@ -521,23 +521,23 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			return DecryptResult.Error;
 		}
 
-		uint initializeCodeHeader() {
-			uint codeHeaderOffset = getCodeHeaderOffset(peImage);
-			readCodeHeader(codeHeaderOffset);
-			sigType = getSigType(codeHeader.signature);
+		uint InitializeCodeHeader() {
+			uint codeHeaderOffset = GetCodeHeaderOffset(peImage);
+			ReadCodeHeader(codeHeaderOffset);
+			sigType = GetSigType(codeHeader.signature);
 
 			if (sigType == SigType.Unknown) {
-				codeHeaderOffset = getOldCodeHeaderOffset(peImage);
+				codeHeaderOffset = GetOldCodeHeaderOffset(peImage);
 				if (codeHeaderOffset != 0) {
-					readCodeHeader(codeHeaderOffset);
-					sigType = getSigType(codeHeader.signature);
+					ReadCodeHeader(codeHeaderOffset);
+					sigType = GetSigType(codeHeader.signature);
 				}
 			}
 
 			return codeHeaderOffset;
 		}
 
-		void decryptMethodsOld(MDTable methodDefTable, ref DumpedMethods dumpedMethods) {
+		void DecryptMethodsOld(MDTable methodDefTable, ref DumpedMethods dumpedMethods) {
 			dumpedMethods = new DumpedMethods();
 			var decrypter = new Decrypter10(peImage, codeHeader.decryptionKey);
 			for (uint rid = 1; rid <= methodDefTable.Rows; rid++) {
@@ -547,74 +547,74 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 				if (method == null || method.DeclaringType == module.GlobalType)
 					continue;
 
-				peImage.readMethodTableRowTo(dm, rid);
+				peImage.ReadMethodTableRowTo(dm, rid);
 				if (dm.mdRVA == 0)
 					continue;
-				uint bodyOffset = peImage.rvaToOffset(dm.mdRVA);
+				uint bodyOffset = peImage.RvaToOffset(dm.mdRVA);
 
-				var mbHeader = decrypter.decrypt(bodyOffset, out dm.code, out dm.extraSections);
-				peImage.updateMethodHeaderInfo(dm, mbHeader);
+				var mbHeader = decrypter.Decrypt(bodyOffset, out dm.code, out dm.extraSections);
+				peImage.UpdateMethodHeaderInfo(dm, mbHeader);
 
-				dumpedMethods.add(dm);
+				dumpedMethods.Add(dm);
 			}
 		}
 
-		void decryptMethods(uint codeHeaderOffset, MDTable methodDefTable, ICsHeader csHeader, ref DumpedMethods dumpedMethods) {
-			var methodInfos = csHeader.getMethodInfos(codeHeaderOffset);
-			csHeader.patchMethodTable(methodDefTable, methodInfos);
+		void DecryptMethods(uint codeHeaderOffset, MDTable methodDefTable, ICsHeader csHeader, ref DumpedMethods dumpedMethods) {
+			var methodInfos = csHeader.GetMethodInfos(codeHeaderOffset);
+			csHeader.PatchMethodTable(methodDefTable, methodInfos);
 
 			dumpedMethods = new DumpedMethods();
-			decrypter = csHeader.createDecrypter();
+			decrypter = csHeader.CreateDecrypter();
 			for (uint rid = 1; rid <= (uint)methodInfos.Count; rid++) {
 				var methodInfo = methodInfos[(int)rid - 1];
 				if (methodInfo.codeOffs == 0)
 					continue;
 
 				var dm = new DumpedMethod();
-				peImage.readMethodTableRowTo(dm, rid);
+				peImage.ReadMethodTableRowTo(dm, rid);
 
-				var mbHeader = decrypter.decrypt(methodInfo, out dm.code, out dm.extraSections);
-				peImage.updateMethodHeaderInfo(dm, mbHeader);
+				var mbHeader = decrypter.Decrypt(methodInfo, out dm.code, out dm.extraSections);
+				peImage.UpdateMethodHeaderInfo(dm, mbHeader);
 
-				dumpedMethods.add(dm);
+				dumpedMethods.Add(dm);
 			}
 		}
 
-		void readCodeHeader(uint offset) {
-			codeHeader.signature = peImage.offsetReadBytes(offset, 16);
-			codeHeader.decryptionKey = peImage.offsetReadBytes(offset + 0x10, 16);
-			codeHeader.totalCodeSize = peImage.offsetReadUInt32(offset + 0x20);
-			codeHeader.numMethods = peImage.offsetReadUInt32(offset + 0x24);
-			codeHeader.methodDefTableOffset = peImage.offsetReadUInt32(offset + 0x28);
-			codeHeader.methodDefElemSize = peImage.offsetReadUInt32(offset + 0x2C);
+		void ReadCodeHeader(uint offset) {
+			codeHeader.signature = peImage.OffsetReadBytes(offset, 16);
+			codeHeader.decryptionKey = peImage.OffsetReadBytes(offset + 0x10, 16);
+			codeHeader.totalCodeSize = peImage.OffsetReadUInt32(offset + 0x20);
+			codeHeader.numMethods = peImage.OffsetReadUInt32(offset + 0x24);
+			codeHeader.methodDefTableOffset = peImage.OffsetReadUInt32(offset + 0x28);
+			codeHeader.methodDefElemSize = peImage.OffsetReadUInt32(offset + 0x2C);
 		}
 
-		static SigType getSigType(byte[] sig) {
-			if (Utils.compare(sig, normalSignature))
+		static SigType GetSigType(byte[] sig) {
+			if (Utils.Compare(sig, normalSignature))
 				return SigType.Normal;
-			else if (Utils.compare(sig, proSignature))
+			else if (Utils.Compare(sig, proSignature))
 				return SigType.Pro;
-			else if (Utils.compare(sig, oldSignature))
+			else if (Utils.Compare(sig, oldSignature))
 				return SigType.Old;
 			return SigType.Unknown;
 		}
 
-		static bool isValidSignature(byte[] signature) {
-			return getSigType(signature) != SigType.Unknown;
+		static bool IsValidSignature(byte[] signature) {
+			return GetSigType(signature) != SigType.Unknown;
 		}
 
-		public static bool detect(MyPEImage peImage) {
+		public static bool Detect(MyPEImage peImage) {
 			try {
-				uint codeHeaderOffset = getCodeHeaderOffset(peImage);
-				if (isValidSignature(peImage.offsetReadBytes(codeHeaderOffset, 16)))
+				uint codeHeaderOffset = GetCodeHeaderOffset(peImage);
+				if (IsValidSignature(peImage.OffsetReadBytes(codeHeaderOffset, 16)))
 					return true;
 			}
 			catch {
 			}
 
 			try {
-				uint codeHeaderOffset = getOldCodeHeaderOffset(peImage);
-				if (codeHeaderOffset != 0 && isValidSignature(peImage.offsetReadBytes(codeHeaderOffset, 16)))
+				uint codeHeaderOffset = GetOldCodeHeaderOffset(peImage);
+				if (codeHeaderOffset != 0 && IsValidSignature(peImage.OffsetReadBytes(codeHeaderOffset, 16)))
 					return true;
 			}
 			catch {

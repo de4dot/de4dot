@@ -25,13 +25,13 @@ namespace de4dot.code.AssemblyClient {
 	class SameAppDomainAssemblyServerLoader : IAssemblyServerLoader {
 		IAssemblyService service;
 
-		public void loadServer() {
+		public void LoadServer() {
 			if (service != null)
 				throw new ApplicationException("Server already loaded");
 			service = new AssemblyService();
 		}
 
-		public IAssemblyService createService() {
+		public IAssemblyService CreateService() {
 			return service;
 		}
 

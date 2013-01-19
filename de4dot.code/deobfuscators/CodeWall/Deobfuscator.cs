@@ -32,8 +32,8 @@ namespace de4dot.code.deobfuscators.CodeWall {
 
 		public DeobfuscatorInfo()
 			: base(DEFAULT_REGEX) {
-			dumpEmbeddedAssemblies = new BoolOption(null, makeArgName("embedded"), "Dump embedded assemblies", true);
-			decryptMainAsm = new BoolOption(null, makeArgName("decrypt-main"), "Decrypt main embedded assembly", true);
+			dumpEmbeddedAssemblies = new BoolOption(null, MakeArgName("embedded"), "Dump embedded assemblies", true);
+			decryptMainAsm = new BoolOption(null, MakeArgName("decrypt-main"), "Decrypt main embedded assembly", true);
 		}
 
 		public override string Name {
@@ -44,7 +44,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			get { return THE_TYPE; }
 		}
 
-		public override IDeobfuscator createDeobfuscator() {
+		public override IDeobfuscator CreateDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
 				ValidNameRegex = validNameRegex.get(),
 				DumpEmbeddedAssemblies = dumpEmbeddedAssemblies.get(),
@@ -52,7 +52,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			});
 		}
 
-		protected override IEnumerable<Option> getOptionsInternal() {
+		protected override IEnumerable<Option> GetOptionsInternal() {
 			return new List<Option>() {
 				dumpEmbeddedAssemblies,
 				decryptMainAsm,
@@ -89,11 +89,11 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			this.options = options;
 		}
 
-		protected override int detectInternal() {
+		protected override int DetectInternal() {
 			int val = 0;
 
-			int sum = toInt32(methodsDecrypter.Detected) +
-					toInt32(stringDecrypter.Detected);
+			int sum = ToInt32(methodsDecrypter.Detected) +
+					ToInt32(stringDecrypter.Detected);
 			if (sum > 0)
 				val += 100 + 10 * (sum - 1);
 
@@ -106,17 +106,17 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			return val;
 		}
 
-		protected override void scanForObfuscator() {
+		protected override void ScanForObfuscator() {
 			methodsDecrypter = new MethodsDecrypter(module);
-			methodsDecrypter.find();
+			methodsDecrypter.Find();
 			stringDecrypter = new StringDecrypter(module);
-			stringDecrypter.find();
-			var version = detectVersion();
+			stringDecrypter.Find();
+			var version = DetectVersion();
 			if (version != null)
 				obfuscatorName = DeobfuscatorInfo.THE_NAME + " " + version;
 		}
 
-		string detectVersion() {
+		string DetectVersion() {
 			if (stringDecrypter.Detected) {
 				switch (stringDecrypter.TheVersion) {
 				case StringDecrypter.Version.V30: return "v3.0 - v3.5";
@@ -136,9 +136,9 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			CanGetMainAssembly = 2,
 		}
 		DecryptState decryptState = DecryptState.CanDecryptMethods | DecryptState.CanGetMainAssembly;
-		public override bool getDecryptedModule(int count, ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
+		public override bool GetDecryptedModule(int count, ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
 			if ((decryptState & DecryptState.CanDecryptMethods) != 0) {
-				if (decryptModule(ref newFileData, ref dumpedMethods)) {
+				if (DecryptModule(ref newFileData, ref dumpedMethods)) {
 					ModuleBytes = newFileData;
 					decryptState &= ~DecryptState.CanDecryptMethods;
 					return true;
@@ -146,7 +146,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			}
 
 			if (options.DecryptMainAsm && (decryptState & DecryptState.CanGetMainAssembly) != 0) {
-				newFileData = getMainAssemblyBytes();
+				newFileData = GetMainAssemblyBytes();
 				if (newFileData != null) {
 					ModuleBytes = newFileData;
 					decryptState &= ~DecryptState.CanGetMainAssembly;
@@ -158,13 +158,13 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			return false;
 		}
 
-		bool decryptModule(ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
+		bool DecryptModule(ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
 			if (!methodsDecrypter.Detected)
 				return false;
 
-			byte[] fileData = ModuleBytes ?? DeobUtils.readModule(module);
+			byte[] fileData = ModuleBytes ?? DeobUtils.ReadModule(module);
 			using (var peImage = new MyPEImage(fileData)) {
-				if (!methodsDecrypter.decrypt(peImage, ref dumpedMethods))
+				if (!methodsDecrypter.Decrypt(peImage, ref dumpedMethods))
 					return false;
 			}
 
@@ -172,10 +172,10 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			return true;
 		}
 
-		byte[] getMainAssemblyBytes() {
+		byte[] GetMainAssemblyBytes() {
 			try {
-				initializeStringDecrypter();
-				initializeAssemblyDecrypter();
+				InitializeStringDecrypter();
+				InitializeAssemblyDecrypter();
 			}
 			catch {
 				return null;
@@ -184,80 +184,80 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			var asm = module.Assembly;
 			if (asm == null || assemblyDecrypter == null)
 				return null;
-			var asmInfo = assemblyDecrypter.findMain(asm.FullName) ?? assemblyDecrypter.findMain();
+			var asmInfo = assemblyDecrypter.FindMain(asm.FullName) ?? assemblyDecrypter.FindMain();
 			if (asmInfo == null)
 				return null;
 
-			assemblyDecrypter.remove(asmInfo);
+			assemblyDecrypter.Remove(asmInfo);
 			return asmInfo.data;
 		}
 
-		public override IDeobfuscator moduleReloaded(ModuleDefMD module) {
+		public override IDeobfuscator ModuleReloaded(ModuleDefMD module) {
 			var newOne = new Deobfuscator(options);
-			newOne.setModule(module);
+			newOne.SetModule(module);
 			newOne.methodsDecrypter = new MethodsDecrypter(module);
-			newOne.methodsDecrypter.find();
+			newOne.methodsDecrypter.Find();
 			newOne.stringDecrypter = new StringDecrypter(module);
-			newOne.stringDecrypter.find();
+			newOne.stringDecrypter.Find();
 			newOne.assemblyDecrypter = assemblyDecrypter;
 			newOne.ModuleBytes = ModuleBytes;
 			newOne.decryptState = decryptState;
 			return newOne;
 		}
 
-		public override void deobfuscateBegin() {
-			base.deobfuscateBegin();
+		public override void DeobfuscateBegin() {
+			base.DeobfuscateBegin();
 
-			initializeStringDecrypter();
-			initializeAssemblyDecrypter();
-			dumpEmbeddedAssemblies();
+			InitializeStringDecrypter();
+			InitializeAssemblyDecrypter();
+			DumpEmbeddedAssemblies();
 		}
 
 		bool hasInitializedStringDecrypter = false;
-		void initializeStringDecrypter() {
+		void InitializeStringDecrypter() {
 			if (hasInitializedStringDecrypter)
 				return;
-			stringDecrypter.initialize(DeobfuscatedFile);
+			stringDecrypter.Initialize(DeobfuscatedFile);
 			foreach (var info in stringDecrypter.Infos)
-				staticStringInliner.add(info.Method, (method, gim, args) => stringDecrypter.decrypt(method, (int)args[0], (int)args[1], (int)args[2]));
-			DeobfuscatedFile.stringDecryptersAdded();
+				staticStringInliner.Add(info.Method, (method, gim, args) => stringDecrypter.Decrypt(method, (int)args[0], (int)args[1], (int)args[2]));
+			DeobfuscatedFile.StringDecryptersAdded();
 			hasInitializedStringDecrypter = true;
 		}
 
-		void initializeAssemblyDecrypter() {
+		void InitializeAssemblyDecrypter() {
 			if (!options.DumpEmbeddedAssemblies || assemblyDecrypter != null)
 				return;
 			assemblyDecrypter = new AssemblyDecrypter(module, DeobfuscatedFile, this);
-			assemblyDecrypter.find();
+			assemblyDecrypter.Find();
 		}
 
-		void dumpEmbeddedAssemblies() {
+		void DumpEmbeddedAssemblies() {
 			if (assemblyDecrypter == null)
 				return;
 			foreach (var info in assemblyDecrypter.AssemblyInfos) {
 				var asmName = info.assemblySimpleName;
 				if (info.isEntryPointAssembly)
 					asmName += "_real";
-				DeobfuscatedFile.createAssemblyFile(info.data, asmName, info.extension);
+				DeobfuscatedFile.CreateAssemblyFile(info.data, asmName, info.extension);
 			}
 		}
 
-		public override void deobfuscateMethodEnd(Blocks blocks) {
-			methodsDecrypter.deobfuscate(blocks);
-			base.deobfuscateMethodEnd(blocks);
+		public override void DeobfuscateMethodEnd(Blocks blocks) {
+			methodsDecrypter.Deobfuscate(blocks);
+			base.DeobfuscateMethodEnd(blocks);
 		}
 
-		public override void deobfuscateEnd() {
+		public override void DeobfuscateEnd() {
 			if (CanRemoveStringDecrypterType) {
 				foreach (var info in stringDecrypter.Infos) {
-					addResourceToBeRemoved(info.Resource, "Encrypted strings");
-					addTypeToBeRemoved(info.Type, "String decrypter type");
+					AddResourceToBeRemoved(info.Resource, "Encrypted strings");
+					AddTypeToBeRemoved(info.Type, "String decrypter type");
 				}
 			}
-			base.deobfuscateEnd();
+			base.DeobfuscateEnd();
 		}
 
-		public override IEnumerable<int> getStringDecrypterMethods() {
+		public override IEnumerable<int> GetStringDecrypterMethods() {
 			var list = new List<int>();
 			foreach (var info in stringDecrypter.Infos)
 				list.Add(info.Method.MDToken.ToInt32());

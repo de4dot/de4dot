@@ -34,7 +34,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			this.peImage = new MyPEImage(peImage);
 		}
 
-		public byte[] unpack() {
+		public byte[] Unpack() {
 			if (peImage.PEImage.Win32Resources == null)
 				return null;
 			var dataEntry = peImage.PEImage.Win32Resources.Find(10, "__", 0);
@@ -43,15 +43,15 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 
 			var encryptedData = dataEntry.Data.ReadAllBytes();
 
-			var keyData = getKeyData();
+			var keyData = GetKeyData();
 			if (keyData == null)
 				return null;
 			var decrypter = new NativeFileDecrypter(keyData);
-			decrypter.decrypt(encryptedData, 0, encryptedData.Length);
+			decrypter.Decrypt(encryptedData, 0, encryptedData.Length);
 
 			byte[] inflatedData;
 			if (isNet1x)
-				inflatedData = DeobUtils.inflate(encryptedData, false);
+				inflatedData = DeobUtils.Inflate(encryptedData, false);
 			else {
 				int inflatedSize = BitConverter.ToInt32(encryptedData, 0);
 				inflatedData = new byte[inflatedSize];
@@ -68,12 +68,12 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 
 			// DNR v4.5
 			if (BitConverter.ToInt16(inflatedData, loaderHeaderSizeV45) == 0x5A4D)
-				return unpackLoader(inflatedData);
+				return UnpackLoader(inflatedData);
 
 			return null;
 		}
 
-		static byte[] unpackLoader(byte[] loaderData) {
+		static byte[] UnpackLoader(byte[] loaderData) {
 			var loaderBytes = new byte[loaderData.Length - loaderHeaderSizeV45];
 			Array.Copy(loaderData, loaderHeaderSizeV45, loaderBytes, 0, loaderBytes.Length);
 
@@ -126,16 +126,16 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			/* 12 */ 0xB8, -1, -1, -1, -1,		// mov     eax, offset XXXXXXXX
 			/* 17 */ 0xE8, -1, -1, -1, -1,		// call    YYYYYYYY
 		};
-		byte[] getKeyData() {
+		byte[] GetKeyData() {
 			isNet1x = false;
 			for (int i = 0; i < baseOffsets.Length; i++) {
-				var code = peImage.offsetReadBytes(baseOffsets[i], decryptMethodPattern.Length);
-				if (DeobUtils.isCode(decryptMethodPattern, code))
-					return getKeyData(baseOffsets[i]);
+				var code = peImage.OffsetReadBytes(baseOffsets[i], decryptMethodPattern.Length);
+				if (DeobUtils.IsCode(decryptMethodPattern, code))
+					return GetKeyData(baseOffsets[i]);
 			}
 
-			var net1xCode = peImage.offsetReadBytes(0x207E0, startMethodNet1xPattern.Length);
-			if (DeobUtils.isCode(startMethodNet1xPattern, net1xCode)) {
+			var net1xCode = peImage.OffsetReadBytes(0x207E0, startMethodNet1xPattern.Length);
+			if (DeobUtils.IsCode(startMethodNet1xPattern, net1xCode)) {
 				isNet1x = true;
 				return new byte[6] { 0x34, 0x38, 0x63, 0x65, 0x7A, 0x35 };
 			}
@@ -143,14 +143,14 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			return null;
 		}
 
-		byte[] getKeyData(uint baseOffset) {
+		byte[] GetKeyData(uint baseOffset) {
 			return new byte[6] {
-				peImage.offsetReadByte(baseOffset + 5),
-				peImage.offsetReadByte(baseOffset + 0xF),
-				peImage.offsetReadByte(baseOffset + 0x58),
-				peImage.offsetReadByte(baseOffset + 0x6D),
-				peImage.offsetReadByte(baseOffset + 0x98),
-				peImage.offsetReadByte(baseOffset + 0xA6),
+				peImage.OffsetReadByte(baseOffset + 5),
+				peImage.OffsetReadByte(baseOffset + 0xF),
+				peImage.OffsetReadByte(baseOffset + 0x58),
+				peImage.OffsetReadByte(baseOffset + 0x6D),
+				peImage.OffsetReadByte(baseOffset + 0x98),
+				peImage.OffsetReadByte(baseOffset + 0xA6),
 			};
 		}
 	}

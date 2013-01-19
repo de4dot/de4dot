@@ -50,38 +50,38 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			this.module = module;
 		}
 
-		public void find() {
+		public void Find() {
 			TypeDef type;
 			MethodDef method;
-			if (!findStringDecrypterType(out type, out method))
+			if (!FindStringDecrypterType(out type, out method))
 				return;
 
 			stringDecrypterType = type;
 			stringDecrypterMethod = method;
 		}
 
-		public void init(ResourceDecrypter resourceDecrypter) {
+		public void Initialize(ResourceDecrypter resourceDecrypter) {
 			if (decryptedData != null || stringDecrypterType == null)
 				return;
 
-			var resourceName = getResourceName();
-			stringResource = DotNetUtils.getResource(module, resourceName) as EmbeddedResource;
+			var resourceName = GetResourceName();
+			stringResource = DotNetUtils.GetResource(module, resourceName) as EmbeddedResource;
 			if (stringResource == null)
 				return;
-			Logger.v("Adding string decrypter. Resource: {0}", Utils.toCsharpString(stringResource.Name));
+			Logger.v("Adding string decrypter. Resource: {0}", Utils.ToCsharpString(stringResource.Name));
 
-			decryptedData = resourceDecrypter.decrypt(stringResource.GetResourceStream());
+			decryptedData = resourceDecrypter.Decrypt(stringResource.GetResourceStream());
 		}
 
-		string getResourceName() {
+		string GetResourceName() {
 			var defaultName = module.Assembly.Name.String + module.Assembly.Name.String;
 
 			var cctor = stringDecrypterType.FindStaticConstructor();
 			if (cctor == null)
 				return defaultName;
 
-			foreach (var s in DotNetUtils.getCodeStrings(cctor)) {
-				if (DotNetUtils.getResource(module, s) != null)
+			foreach (var s in DotNetUtils.GetCodeStrings(cctor)) {
+				if (DotNetUtils.GetResource(module, s) != null)
 					return s;
 				try {
 					return Encoding.UTF8.GetString(Convert.FromBase64String(s));
@@ -93,12 +93,12 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return defaultName;
 		}
 
-		public string decrypt(int index) {
-			int len = DeobUtils.readVariableLengthInt32(decryptedData, ref index);
+		public string Decrypt(int index) {
+			int len = DeobUtils.ReadVariableLengthInt32(decryptedData, ref index);
 			return Encoding.Unicode.GetString(decryptedData, index, len);
 		}
 
-		bool findStringDecrypterType(out TypeDef theType, out MethodDef theMethod) {
+		bool FindStringDecrypterType(out TypeDef theType, out MethodDef theMethod) {
 			theType = null;
 			theMethod = null;
 
@@ -107,7 +107,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 					continue;
 				if (type.Fields.Count != 1)
 					continue;
-				if (DotNetUtils.findFieldType(type, "System.Byte[]", true) == null)
+				if (DotNetUtils.FindFieldType(type, "System.Byte[]", true) == null)
 					continue;
 				if (type.Methods.Count != 2 && type.Methods.Count != 3)
 					continue;
@@ -118,7 +118,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				foreach (var m in type.Methods) {
 					if (m.Name == ".ctor" || m.Name == ".cctor")
 						continue;
-					if (DotNetUtils.isMethod(m, "System.String", "(System.Int32)")) {
+					if (DotNetUtils.IsMethod(m, "System.String", "(System.Int32)")) {
 						method = m;
 						continue;
 					}

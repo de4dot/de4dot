@@ -38,96 +38,96 @@ namespace de4dot.code.resources {
 			get { return dict.Count; }
 		}
 
-		public BuiltInResourceData createNull() {
+		public BuiltInResourceData CreateNull() {
 			return new BuiltInResourceData(ResourceTypeCode.Null, null);
 		}
 
-		public BuiltInResourceData create(string value) {
+		public BuiltInResourceData Create(string value) {
 			return new BuiltInResourceData(ResourceTypeCode.String, value);
 		}
 
-		public BuiltInResourceData create(bool value) {
+		public BuiltInResourceData Create(bool value) {
 			return new BuiltInResourceData(ResourceTypeCode.Boolean, value);
 		}
 
-		public BuiltInResourceData create(char value) {
+		public BuiltInResourceData Create(char value) {
 			return new BuiltInResourceData(ResourceTypeCode.Char, value);
 		}
 
-		public BuiltInResourceData create(byte value) {
+		public BuiltInResourceData Create(byte value) {
 			return new BuiltInResourceData(ResourceTypeCode.Byte, value);
 		}
 
-		public BuiltInResourceData create(sbyte value) {
+		public BuiltInResourceData Create(sbyte value) {
 			return new BuiltInResourceData(ResourceTypeCode.SByte, value);
 		}
 
-		public BuiltInResourceData create(short value) {
+		public BuiltInResourceData Create(short value) {
 			return new BuiltInResourceData(ResourceTypeCode.Int16, value);
 		}
 
-		public BuiltInResourceData create(ushort value) {
+		public BuiltInResourceData Create(ushort value) {
 			return new BuiltInResourceData(ResourceTypeCode.UInt16, value);
 		}
 
-		public BuiltInResourceData create(int value) {
+		public BuiltInResourceData Create(int value) {
 			return new BuiltInResourceData(ResourceTypeCode.Int32, value);
 		}
 
-		public BuiltInResourceData create(uint value) {
+		public BuiltInResourceData Create(uint value) {
 			return new BuiltInResourceData(ResourceTypeCode.UInt32, value);
 		}
 
-		public BuiltInResourceData create(long value) {
+		public BuiltInResourceData Create(long value) {
 			return new BuiltInResourceData(ResourceTypeCode.Int64, value);
 		}
 
-		public BuiltInResourceData create(ulong value) {
+		public BuiltInResourceData Create(ulong value) {
 			return new BuiltInResourceData(ResourceTypeCode.UInt64, value);
 		}
 
-		public BuiltInResourceData create(float value) {
+		public BuiltInResourceData Create(float value) {
 			return new BuiltInResourceData(ResourceTypeCode.Single, value);
 		}
 
-		public BuiltInResourceData create(double value) {
+		public BuiltInResourceData Create(double value) {
 			return new BuiltInResourceData(ResourceTypeCode.Double, value);
 		}
 
-		public BuiltInResourceData create(decimal value) {
+		public BuiltInResourceData Create(decimal value) {
 			return new BuiltInResourceData(ResourceTypeCode.Decimal, value);
 		}
 
-		public BuiltInResourceData create(DateTime value) {
+		public BuiltInResourceData Create(DateTime value) {
 			return new BuiltInResourceData(ResourceTypeCode.DateTime, value);
 		}
 
-		public BuiltInResourceData create(TimeSpan value) {
+		public BuiltInResourceData Create(TimeSpan value) {
 			return new BuiltInResourceData(ResourceTypeCode.TimeSpan, value);
 		}
 
-		public BuiltInResourceData create(byte[] value) {
+		public BuiltInResourceData Create(byte[] value) {
 			return new BuiltInResourceData(ResourceTypeCode.ByteArray, value);
 		}
 
-		public CharArrayResourceData create(char[] value) {
-			return new CharArrayResourceData(createUserResourceType(CharArrayResourceData.typeName), value);
+		public CharArrayResourceData Create(char[] value) {
+			return new CharArrayResourceData(CreateUserResourceType(CharArrayResourceData.typeName), value);
 		}
 
-		public IconResourceData createIcon(byte[] value) {
-			return new IconResourceData(createUserResourceType(IconResourceData.typeName), value);
+		public IconResourceData CreateIcon(byte[] value) {
+			return new IconResourceData(CreateUserResourceType(IconResourceData.typeName), value);
 		}
 
-		public ImageResourceData createImage(byte[] value) {
-			return new ImageResourceData(createUserResourceType(ImageResourceData.typeName), value);
+		public ImageResourceData CreateImage(byte[] value) {
+			return new ImageResourceData(CreateUserResourceType(ImageResourceData.typeName), value);
 		}
 
-		public BinaryResourceData createSerialized(byte[] value) {
+		public BinaryResourceData CreateSerialized(byte[] value) {
 			string assemblyName, typeName;
-			if (!getSerializedTypeAndAssemblyName(value, out assemblyName, out typeName))
+			if (!GetSerializedTypeAndAssemblyName(value, out assemblyName, out typeName))
 				throw new ApplicationException("Could not get serialized type name");
 			string fullName = string.Format("{0},{1}", typeName, assemblyName);
-			return new BinaryResourceData(createUserResourceType(fullName), value);
+			return new BinaryResourceData(CreateUserResourceType(fullName), value);
 		}
 
 		class MyBinder : SerializationBinder {
@@ -144,7 +144,7 @@ namespace de4dot.code.resources {
 			}
 		}
 
-		bool getSerializedTypeAndAssemblyName(byte[] value, out string assemblyName, out string typeName) {
+		bool GetSerializedTypeAndAssemblyName(byte[] value, out string assemblyName, out string typeName) {
 			try {
 				var formatter = new BinaryFormatter();
 				formatter.Binder = new MyBinder();
@@ -163,19 +163,19 @@ namespace de4dot.code.resources {
 			return false;
 		}
 
-		public UserResourceType createUserResourceType(string fullName) {
+		public UserResourceType CreateUserResourceType(string fullName) {
 			UserResourceType type;
 			if (dict.TryGetValue(fullName, out type))
 				return type;
 
-			var newFullName = getRealTypeFullName(fullName);
+			var newFullName = GetRealTypeFullName(fullName);
 			type = new UserResourceType(newFullName, ResourceTypeCode.UserTypes + dict.Count);
 			dict[fullName] = type;
 			dict[newFullName] = type;
 			return type;
 		}
 
-		static void splitTypeFullName(string fullName, out string typeName, out string assemblyName) {
+		static void SplitTypeFullName(string fullName, out string typeName, out string assemblyName) {
 			int index = fullName.IndexOf(',');
 			if (index < 0) {
 				typeName = fullName;
@@ -187,28 +187,28 @@ namespace de4dot.code.resources {
 			}
 		}
 
-		string getRealTypeFullName(string fullName) {
+		string GetRealTypeFullName(string fullName) {
 			var newFullName = fullName;
 
 			string typeName, assemblyName;
-			splitTypeFullName(fullName, out typeName, out assemblyName);
+			SplitTypeFullName(fullName, out typeName, out assemblyName);
 			if (!string.IsNullOrEmpty(assemblyName))
-				assemblyName = getRealAssemblyName(assemblyName);
+				assemblyName = GetRealAssemblyName(assemblyName);
 			if (!string.IsNullOrEmpty(assemblyName))
 				newFullName = string.Format("{0}, {1}", typeName, assemblyName);
 
 			return newFullName;
 		}
 
-		string getRealAssemblyName(string assemblyName) {
+		string GetRealAssemblyName(string assemblyName) {
 			string newAsmName;
 			if (!asmNameToAsmFullName.TryGetValue(assemblyName, out newAsmName))
-				asmNameToAsmFullName[assemblyName] = newAsmName = tryGetRealAssemblyName(assemblyName);
+				asmNameToAsmFullName[assemblyName] = newAsmName = TryGetRealAssemblyName(assemblyName);
 			return newAsmName;
 		}
 
-		string tryGetRealAssemblyName(string assemblyName) {
-			var simpleName = Utils.getAssemblySimpleName(assemblyName);
+		string TryGetRealAssemblyName(string assemblyName) {
+			var simpleName = Utils.GetAssemblySimpleName(assemblyName);
 
 			var asmRef = module.GetAssemblyRef(simpleName);
 			if (asmRef != null)
@@ -218,7 +218,7 @@ namespace de4dot.code.resources {
 			return asm == null ? null : asm.FullName;
 		}
 
-		public List<UserResourceType> getSortedTypes() {
+		public List<UserResourceType> GetSortedTypes() {
 			var list = new List<UserResourceType>(dict.Values);
 			list.Sort((a, b) => ((int)a.Code).CompareTo((int)b.Code));
 			return list;

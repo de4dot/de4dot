@@ -49,39 +49,39 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 
 		public ResourceDecrypter(ModuleDefMD module, ResourceDecrypter oldOne) {
 			this.module = module;
-			rsrcType = lookup(oldOne.rsrcType, "Could not find rsrcType");
-			rsrcRrrMethod = lookup(oldOne.rsrcRrrMethod, "Could not find rsrcRrrMethod");
-			rsrcResolveMethod = lookup(oldOne.rsrcResolveMethod, "Could not find rsrcResolveMethod");
+			rsrcType = Lookup(oldOne.rsrcType, "Could not find rsrcType");
+			rsrcRrrMethod = Lookup(oldOne.rsrcRrrMethod, "Could not find rsrcRrrMethod");
+			rsrcResolveMethod = Lookup(oldOne.rsrcResolveMethod, "Could not find rsrcResolveMethod");
 		}
 
-		T lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
-			return DeobUtils.lookup(module, def, errorMessage);
+		T Lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
+			return DeobUtils.Lookup(module, def, errorMessage);
 		}
 
-		public void find() {
-			findResourceType();
+		public void Find() {
+			FindResourceType();
 		}
 
 		static readonly string[] requiredFields = new string[] {
 			"System.Reflection.Assembly",
 			"System.String[]",
 		};
-		void findResourceType() {
-			var cctor = DotNetUtils.getModuleTypeCctor(module);
+		void FindResourceType() {
+			var cctor = DotNetUtils.GetModuleTypeCctor(module);
 			if (cctor == null)
 				return;
 
-			foreach (var calledMethod in DotNetUtils.getCalledMethods(module, cctor)) {
+			foreach (var calledMethod in DotNetUtils.GetCalledMethods(module, cctor)) {
 				if (!calledMethod.IsStatic || calledMethod.Body == null)
 					continue;
-				if (!DotNetUtils.isMethod(calledMethod, "System.Void", "()"))
+				if (!DotNetUtils.IsMethod(calledMethod, "System.Void", "()"))
 					continue;
 				var type = calledMethod.DeclaringType;
-				if (!new FieldTypes(type).exactly(requiredFields))
+				if (!new FieldTypes(type).Exactly(requiredFields))
 					continue;
 
-				var resolveHandler = DotNetUtils.getMethod(type, "System.Reflection.Assembly", "(System.Object,System.ResolveEventArgs)");
-				var decryptMethod = DotNetUtils.getMethod(type, "System.Byte[]", "(System.IO.Stream)");
+				var resolveHandler = DotNetUtils.GetMethod(type, "System.Reflection.Assembly", "(System.Object,System.ResolveEventArgs)");
+				var decryptMethod = DotNetUtils.GetMethod(type, "System.Byte[]", "(System.IO.Stream)");
 				if (resolveHandler == null || !resolveHandler.IsStatic)
 					continue;
 				if (decryptMethod == null || !decryptMethod.IsStatic)
@@ -94,17 +94,17 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			}
 		}
 
-		public EmbeddedResource mergeResources() {
+		public EmbeddedResource MergeResources() {
 			if (rsrcResolveMethod == null)
 				return null;
-			var resource = DotNetUtils.getResource(module, DotNetUtils.getCodeStrings(rsrcResolveMethod)) as EmbeddedResource;
+			var resource = DotNetUtils.GetResource(module, DotNetUtils.GetCodeStrings(rsrcResolveMethod)) as EmbeddedResource;
 			if (resource == null)
 				return null;
-			DeobUtils.decryptAndAddResources(module, resource.Name.String, () => decryptResource(resource));
+			DeobUtils.DecryptAndAddResources(module, resource.Name.String, () => DecryptResource(resource));
 			return resource;
 		}
 
-		byte[] decryptResource(EmbeddedResource resource) {
+		byte[] DecryptResource(EmbeddedResource resource) {
 			var reader = resource.Data;
 			reader.Position = 0;
 			var key = reader.ReadString();

@@ -42,23 +42,23 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			this.module = module;
 		}
 
-		public bool find() {
-			if (checkCalledMethods(DotNetUtils.getModuleTypeCctor(module)))
+		public bool Find() {
+			if (CheckCalledMethods(DotNetUtils.GetModuleTypeCctor(module)))
 				return true;
-			if (checkCalledMethods(module.EntryPoint))
+			if (CheckCalledMethods(module.EntryPoint))
 				return true;
 			return false;
 		}
 
-		bool checkCalledMethods(MethodDef checkMethod) {
+		bool CheckCalledMethods(MethodDef checkMethod) {
 			if (checkMethod == null)
 				return false;
-			foreach (var method in DotNetUtils.getCalledMethods(module, checkMethod)) {
+			foreach (var method in DotNetUtils.GetCalledMethods(module, checkMethod)) {
 				if (method.Name == ".cctor" || method.Name == ".ctor")
 					continue;
-				if (!method.IsStatic || !DotNetUtils.isMethod(method, "System.Void", "()"))
+				if (!method.IsStatic || !DotNetUtils.IsMethod(method, "System.Void", "()"))
 					continue;
-				if (checkMemoryManagerType(method.DeclaringType, method)) {
+				if (CheckMemoryManagerType(method.DeclaringType, method)) {
 					memoryManagerType = method.DeclaringType;
 					attachAppMethod = method;
 					return true;
@@ -68,7 +68,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return false;
 		}
 
-		bool checkMemoryManagerType(TypeDef type, MethodDef method) {
+		bool CheckMemoryManagerType(TypeDef type, MethodDef method) {
 			// Only two fields: itself and a long
 			int fields = 0;
 			foreach (var field in type.Fields) {
@@ -77,7 +77,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 					fields++;
 					continue;
 				}
-				if (DotNetUtils.derivesFromDelegate(DotNetUtils.getType(module, field.FieldType)))
+				if (DotNetUtils.DerivesFromDelegate(DotNetUtils.GetType(module, field.FieldType)))
 					continue;
 
 				return false;
@@ -85,7 +85,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			if (fields != 2)
 				return false;
 
-			if (DotNetUtils.getPInvokeMethod(type, "kernel32", "SetProcessWorkingSetSize") == null)
+			if (DotNetUtils.GetPInvokeMethod(type, "kernel32", "SetProcessWorkingSetSize") == null)
 				return false;
 
 			return true;

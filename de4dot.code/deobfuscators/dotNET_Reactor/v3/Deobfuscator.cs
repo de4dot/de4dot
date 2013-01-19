@@ -40,11 +40,11 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 
 		public DeobfuscatorInfo()
 			: base(DEFAULT_REGEX) {
-			restoreTypes = new BoolOption(null, makeArgName("types"), "Restore types (object -> real type)", true);
-			inlineMethods = new BoolOption(null, makeArgName("inline"), "Inline short methods", true);
-			removeInlinedMethods = new BoolOption(null, makeArgName("remove-inlined"), "Remove inlined methods", true);
-			removeNamespaces = new BoolOption(null, makeArgName("ns1"), "Clear namespace if there's only one class in it", true);
-			removeAntiStrongName = new BoolOption(null, makeArgName("sn"), "Remove anti strong name code", true);
+			restoreTypes = new BoolOption(null, MakeArgName("types"), "Restore types (object -> real type)", true);
+			inlineMethods = new BoolOption(null, MakeArgName("inline"), "Inline short methods", true);
+			removeInlinedMethods = new BoolOption(null, MakeArgName("remove-inlined"), "Remove inlined methods", true);
+			removeNamespaces = new BoolOption(null, MakeArgName("ns1"), "Clear namespace if there's only one class in it", true);
+			removeAntiStrongName = new BoolOption(null, MakeArgName("sn"), "Remove anti strong name code", true);
 		}
 
 		public override string Name {
@@ -55,7 +55,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			get { return THE_TYPE; }
 		}
 
-		public override IDeobfuscator createDeobfuscator() {
+		public override IDeobfuscator CreateDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
 				ValidNameRegex = validNameRegex.get(),
 				RestoreTypes = restoreTypes.get(),
@@ -66,7 +66,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			});
 		}
 
-		protected override IEnumerable<Option> getOptionsInternal() {
+		protected override IEnumerable<Option> GetOptionsInternal() {
 			return new List<Option>() {
 				restoreTypes,
 				inlineMethods,
@@ -125,9 +125,9 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 				this.RenamingOptions &= ~RenamingOptions.RemoveNamespaceIfOneType;
 		}
 
-		public override byte[] unpackNativeFile(IPEImage peImage) {
+		public override byte[] UnpackNativeFile(IPEImage peImage) {
 			var unpacker = new ApplicationModeUnpacker(peImage);
-			var data = unpacker.unpack();
+			var data = unpacker.Unpack();
 			if (data == null)
 				return null;
 
@@ -137,205 +137,205 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			return data;
 		}
 
-		bool needsPatching() {
+		bool NeedsPatching() {
 			return decrypterType.LinkedResource != null || nativeLibSaver.Resource != null;
 		}
 
-		public override bool getDecryptedModule(int count, ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
-			if (count != 0 || !needsPatching())
+		public override bool GetDecryptedModule(int count, ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
+			if (count != 0 || !NeedsPatching())
 				return false;
 
-			var fileData = ModuleBytes ?? DeobUtils.readModule(module);
-			if (!decrypterType.patch(fileData))
+			var fileData = ModuleBytes ?? DeobUtils.ReadModule(module);
+			if (!decrypterType.Patch(fileData))
 				return false;
 
 			newFileData = fileData;
 			return true;
 		}
 
-		public override IDeobfuscator moduleReloaded(ModuleDefMD module) {
+		public override IDeobfuscator ModuleReloaded(ModuleDefMD module) {
 			var newOne = new Deobfuscator(options);
-			newOne.setModule(module);
+			newOne.SetModule(module);
 			newOne.decrypterType = new DecrypterType(module, decrypterType);
 			newOne.nativeLibSaver = new NativeLibSaver(module, nativeLibSaver);
 			return newOne;
 		}
 
-		public override void init(ModuleDefMD module) {
-			base.init(module);
+		public override void Initialize(ModuleDefMD module) {
+			base.Initialize(module);
 		}
 
 		static Regex isRandomName = new Regex(@"^[A-Z]{30,40}$");
 		static Regex isRandomNameMembers = new Regex(@"^[a-zA-Z0-9]{9,11}$");	// methods, fields, props, events
 		static Regex isRandomNameTypes = new Regex(@"^[a-zA-Z0-9]{18,19}(?:`\d+)?$");	// types, namespaces
 
-		bool checkValidName(string name, Regex regex) {
+		bool CheckValidName(string name, Regex regex) {
 			if (isRandomName.IsMatch(name))
 				return false;
 			if (regex.IsMatch(name)) {
-				if (RandomNameChecker.isRandom(name))
+				if (RandomNameChecker.IsRandom(name))
 					return false;
-				if (!RandomNameChecker.isNonRandom(name))
+				if (!RandomNameChecker.IsNonRandom(name))
 					return false;
 			}
-			return checkValidName(name);
+			return CheckValidName(name);
 		}
 
-		public override bool isValidNamespaceName(string ns) {
+		public override bool IsValidNamespaceName(string ns) {
 			if (ns == null)
 				return false;
 			if (ns.Contains("."))
-				return base.isValidNamespaceName(ns);
-			return checkValidName(ns, isRandomNameTypes);
+				return base.IsValidNamespaceName(ns);
+			return CheckValidName(ns, isRandomNameTypes);
 		}
 
-		public override bool isValidTypeName(string name) {
-			return name != null && checkValidName(name, isRandomNameTypes);
+		public override bool IsValidTypeName(string name) {
+			return name != null && CheckValidName(name, isRandomNameTypes);
 		}
 
-		public override bool isValidMethodName(string name) {
-			return name != null && checkValidName(name, isRandomNameMembers);
+		public override bool IsValidMethodName(string name) {
+			return name != null && CheckValidName(name, isRandomNameMembers);
 		}
 
-		public override bool isValidPropertyName(string name) {
-			return name != null && checkValidName(name, isRandomNameMembers);
+		public override bool IsValidPropertyName(string name) {
+			return name != null && CheckValidName(name, isRandomNameMembers);
 		}
 
-		public override bool isValidEventName(string name) {
-			return name != null && checkValidName(name, isRandomNameMembers);
+		public override bool IsValidEventName(string name) {
+			return name != null && CheckValidName(name, isRandomNameMembers);
 		}
 
-		public override bool isValidFieldName(string name) {
-			return name != null && checkValidName(name, isRandomNameMembers);
+		public override bool IsValidFieldName(string name) {
+			return name != null && CheckValidName(name, isRandomNameMembers);
 		}
 
-		public override bool isValidGenericParamName(string name) {
-			return name != null && checkValidName(name, isRandomNameMembers);
+		public override bool IsValidGenericParamName(string name) {
+			return name != null && CheckValidName(name, isRandomNameMembers);
 		}
 
-		public override bool isValidMethodArgName(string name) {
-			return name != null && checkValidName(name, isRandomNameMembers);
+		public override bool IsValidMethodArgName(string name) {
+			return name != null && CheckValidName(name, isRandomNameMembers);
 		}
 
-		public override bool isValidMethodReturnArgName(string name) {
-			return string.IsNullOrEmpty(name) || checkValidName(name, isRandomNameMembers);
+		public override bool IsValidMethodReturnArgName(string name) {
+			return string.IsNullOrEmpty(name) || CheckValidName(name, isRandomNameMembers);
 		}
 
-		public override bool isValidResourceKeyName(string name) {
-			return name != null && checkValidName(name, isRandomNameMembers);
+		public override bool IsValidResourceKeyName(string name) {
+			return name != null && CheckValidName(name, isRandomNameMembers);
 		}
 
-		protected override int detectInternal() {
+		protected override int DetectInternal() {
 			int val = 0;
 
-			int sum = toInt32(unpackedNativeFile) +
-					toInt32(decrypterType.Detected) +
-					toInt32(nativeLibSaver.Detected);
+			int sum = ToInt32(unpackedNativeFile) +
+					ToInt32(decrypterType.Detected) +
+					ToInt32(nativeLibSaver.Detected);
 			if (sum > 0)
 				val += 100 + 10 * (sum - 1);
 
 			return val;
 		}
 
-		protected override void scanForObfuscator() {
+		protected override void ScanForObfuscator() {
 			decrypterType = new DecrypterType(module);
-			decrypterType.find();
+			decrypterType.Find();
 			nativeLibSaver = new NativeLibSaver(module);
-			nativeLibSaver.find();
-			obfuscatorName = detectVersion();
+			nativeLibSaver.Find();
+			obfuscatorName = DetectVersion();
 			if (unpackedNativeFile)
 				obfuscatorName += " (native)";
 		}
 
-		string detectVersion() {
+		string DetectVersion() {
 			return DeobfuscatorInfo.THE_NAME + " 3.x";
 		}
 
-		public override void deobfuscateBegin() {
-			base.deobfuscateBegin();
+		public override void DeobfuscateBegin() {
+			base.DeobfuscateBegin();
 
 			antiStrongName = new AntiStrongName();
 
-			staticStringInliner.add(decrypterType.StringDecrypter1, (method2, gim, args) => {
-				return decrypterType.decrypt1((string)args[0]);
+			staticStringInliner.Add(decrypterType.StringDecrypter1, (method2, gim, args) => {
+				return decrypterType.Decrypt1((string)args[0]);
 			});
-			staticStringInliner.add(decrypterType.StringDecrypter2, (method2, gim, args) => {
-				return decrypterType.decrypt2((string)args[0]);
+			staticStringInliner.Add(decrypterType.StringDecrypter2, (method2, gim, args) => {
+				return decrypterType.Decrypt2((string)args[0]);
 			});
-			DeobfuscatedFile.stringDecryptersAdded();
+			DeobfuscatedFile.StringDecryptersAdded();
 
 			libAssemblyResolver = new LibAssemblyResolver(module);
-			libAssemblyResolver.find(DeobfuscatedFile, this);
+			libAssemblyResolver.Find(DeobfuscatedFile, this);
 
 			if (Operations.DecryptStrings == OpDecryptString.None)
 				canRemoveDecrypterType = false;
 
-			removeInitCall(nativeLibSaver.InitMethod);
-			addResourceToBeRemoved(nativeLibSaver.Resource, "Native lib resource");
-			addTypeToBeRemoved(nativeLibSaver.Type, "Native lib saver type");
+			RemoveInitCall(nativeLibSaver.InitMethod);
+			AddResourceToBeRemoved(nativeLibSaver.Resource, "Native lib resource");
+			AddTypeToBeRemoved(nativeLibSaver.Type, "Native lib saver type");
 
 			foreach (var initMethod in decrypterType.InitMethods)
-				removeInitCall(initMethod);
+				RemoveInitCall(initMethod);
 
-			dumpUnpackedFiles();
-			dumpResourceFiles();
+			DumpUnpackedFiles();
+			DumpResourceFiles();
 
 			startedDeobfuscating = true;
 		}
 
-		void removeInitCall(MethodDef initMethod) {
-			addCctorInitCallToBeRemoved(initMethod);
-			addCtorInitCallToBeRemoved(initMethod);
+		void RemoveInitCall(MethodDef initMethod) {
+			AddCctorInitCallToBeRemoved(initMethod);
+			AddCtorInitCallToBeRemoved(initMethod);
 		}
 
-		void dumpUnpackedFiles() {
+		void DumpUnpackedFiles() {
 			foreach (var unpackedFile in unpackedFiles)
-				DeobfuscatedFile.createAssemblyFile(unpackedFile.data,
+				DeobfuscatedFile.CreateAssemblyFile(unpackedFile.data,
 							Win32Path.GetFileNameWithoutExtension(unpackedFile.filename),
 							Win32Path.GetExtension(unpackedFile.filename));
 		}
 
-		void dumpResourceFiles() {
+		void DumpResourceFiles() {
 			foreach (var resource in libAssemblyResolver.Resources) {
 				var mod = ModuleDefMD.Load(resource.Data.ReadAllBytes());
-				addResourceToBeRemoved(resource, string.Format("Embedded assembly: {0}", mod.Assembly.FullName));
-				DeobfuscatedFile.createAssemblyFile(resource.GetResourceData(),
-							Utils.getAssemblySimpleName(mod.Assembly.FullName),
-							DeobUtils.getExtension(mod.Kind));
+				AddResourceToBeRemoved(resource, string.Format("Embedded assembly: {0}", mod.Assembly.FullName));
+				DeobfuscatedFile.CreateAssemblyFile(resource.GetResourceData(),
+							Utils.GetAssemblySimpleName(mod.Assembly.FullName),
+							DeobUtils.GetExtension(mod.Kind));
 			}
-			removeInitCall(libAssemblyResolver.InitMethod);
-			addCallToBeRemoved(module.EntryPoint, libAssemblyResolver.InitMethod);
-			addTypeToBeRemoved(libAssemblyResolver.Type, "Assembly resolver type (library mode)");
+			RemoveInitCall(libAssemblyResolver.InitMethod);
+			AddCallToBeRemoved(module.EntryPoint, libAssemblyResolver.InitMethod);
+			AddTypeToBeRemoved(libAssemblyResolver.Type, "Assembly resolver type (library mode)");
 		}
 
-		public override void deobfuscateMethodEnd(Blocks blocks) {
+		public override void DeobfuscateMethodEnd(Blocks blocks) {
 			if (options.RemoveAntiStrongName) {
-				if (antiStrongName.remove(blocks))
+				if (antiStrongName.Remove(blocks))
 					Logger.v("Removed Anti Strong Name code");
 			}
-			base.deobfuscateMethodEnd(blocks);
+			base.DeobfuscateMethodEnd(blocks);
 		}
 
-		public override void deobfuscateEnd() {
-			removeInlinedMethods();
+		public override void DeobfuscateEnd() {
+			RemoveInlinedMethods();
 			if (options.RestoreTypes)
-				new TypesRestorer(module).deobfuscate();
+				new TypesRestorer(module).Deobfuscate();
 
-			if (canRemoveDecrypterType && !isTypeCalled(decrypterType.Type)) {
-				addTypeToBeRemoved(decrypterType.Type, "Decrypter type");
-				addResourceToBeRemoved(decrypterType.LinkedResource, "Native lib linked resource");
+			if (canRemoveDecrypterType && !IsTypeCalled(decrypterType.Type)) {
+				AddTypeToBeRemoved(decrypterType.Type, "Decrypter type");
+				AddResourceToBeRemoved(decrypterType.LinkedResource, "Native lib linked resource");
 			}
 
-			base.deobfuscateEnd();
+			base.DeobfuscateEnd();
 		}
 
-		void removeInlinedMethods() {
+		void RemoveInlinedMethods() {
 			if (!options.InlineMethods || !options.RemoveInlinedMethods)
 				return;
-			findAndRemoveInlinedMethods();
+			FindAndRemoveInlinedMethods();
 		}
 
-		public override IEnumerable<int> getStringDecrypterMethods() {
+		public override IEnumerable<int> GetStringDecrypterMethods() {
 			var list = new List<int>();
 			foreach (var method in decrypterType.StringDecrypters)
 				list.Add(method.MDToken.ToInt32());

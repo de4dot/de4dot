@@ -28,18 +28,18 @@ namespace AssemblyData {
 	}
 
 	public interface IAssemblyService {
-		void doNothing();
-		void exit();
+		void DoNothing();
+		void Exit();
 
-		void loadAssembly(string filename);
+		void LoadAssembly(string filename);
 
-		void setStringDecrypterType(StringDecrypterType type);
-		int defineStringDecrypter(int methodToken);
-		object[] decryptStrings(int stringDecrypterMethod, object[] args, int callerToken);
+		void SetStringDecrypterType(StringDecrypterType type);
+		int DefineStringDecrypter(int methodToken);
+		object[] DecryptStrings(int stringDecrypterMethod, object[] args, int callerToken);
 
-		void installCompileMethod(DecryptMethodsInfo decryptMethodsInfo);
-		void loadObfuscator(string filename);
-		bool canDecryptMethods();
-		DumpedMethods decryptMethods();
+		void InstallCompileMethod(DecryptMethodsInfo decryptMethodsInfo);
+		void LoadObfuscator(string filename);
+		bool CanDecryptMethods();
+		DumpedMethods DecryptMethods();
 	}
 }

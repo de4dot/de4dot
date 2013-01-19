@@ -24,7 +24,7 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 	static class EfUtils {
-		public static int findOpCodeIndex(MethodDef method, int index, Code code) {
+		public static int FindOpCodeIndex(MethodDef method, int index, Code code) {
 			for (; index < method.Body.Instructions.Count; index++) {
 				var instr = method.Body.Instructions[index];
 				if (instr.OpCode.Code != code)
@@ -35,9 +35,9 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return -1;
 		}
 
-		public static int findOpCodeIndex(MethodDef method, int index, Code code, string operandString) {
+		public static int FindOpCodeIndex(MethodDef method, int index, Code code, string operandString) {
 			while (index < method.Body.Instructions.Count) {
-				index = findOpCodeIndex(method, index, code);
+				index = FindOpCodeIndex(method, index, code);
 				if (index < 0)
 					break;
 				var instr = method.Body.Instructions[index];
@@ -49,7 +49,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return -1;
 		}
 
-		public static Instruction getNextStore(MethodDef method, ref int index) {
+		public static Instruction GetNextStore(MethodDef method, ref int index) {
 			for (; index < method.Body.Instructions.Count; index++) {
 				var instr = method.Body.Instructions[index];
 

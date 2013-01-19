@@ -33,44 +33,44 @@ namespace de4dot.blocks {
 			this.exceptionHandlers = exceptionHandlers;
 			this.branches = new Dictionary<int, List<int>>();
 
-			createInstrToIndex();
-			createBranches();
-			createExceptionBranches();
+			CreateInstrToIndex();
+			CreateBranches();
+			CreateExceptionBranches();
 		}
 
-		void createInstrToIndex() {
+		void CreateInstrToIndex() {
 			instrToIndex = new Dictionary<Instruction, int>();
 
 			for (int i = 0; i < instructions.Count; i++)
 				instrToIndex[instructions[i]] = i;
 		}
 
-		List<int> getBranchTargetList(int index) {
+		List<int> GetBranchTargetList(int index) {
 			List<int> targetsList;
 			if (!branches.TryGetValue(index, out targetsList))
 				branches[index] = targetsList = new List<int>();
 			return targetsList;
 		}
 
-		void markAsBranchTarget(Instruction instr) {
+		void MarkAsBranchTarget(Instruction instr) {
 			if (instr == null)
 				return;
 
 			int index = instrToIndex[instr];
-			getBranchTargetList(index);	// Just create the list
+			GetBranchTargetList(index);	// Just create the list
 		}
 
-		void createExceptionBranches() {
+		void CreateExceptionBranches() {
 			foreach (var eh in exceptionHandlers) {
-				markAsBranchTarget(eh.TryStart);
-				markAsBranchTarget(eh.TryEnd);
-				markAsBranchTarget(eh.FilterStart);
-				markAsBranchTarget(eh.HandlerStart);
-				markAsBranchTarget(eh.HandlerEnd);
+				MarkAsBranchTarget(eh.TryStart);
+				MarkAsBranchTarget(eh.TryEnd);
+				MarkAsBranchTarget(eh.FilterStart);
+				MarkAsBranchTarget(eh.HandlerStart);
+				MarkAsBranchTarget(eh.HandlerEnd);
 			}
 		}
 
-		void createBranches() {
+		void CreateBranches() {
 			for (int i = 0; i < instructions.Count; i++) {
 				var instr = instructions[i];
 
@@ -113,13 +113,13 @@ namespace de4dot.blocks {
 						targets.Add(i + 1);
 					for (int j = 0; j < targets.Count; j++) {
 						int targetIndex = targets[j];
-						getBranchTargetList(targetIndex).Add(i);
+						GetBranchTargetList(targetIndex).Add(i);
 					}
 				}
 			}
 		}
 
-		void findBlocks(List<Block> instrToBlock, List<Block> allBlocks) {
+		void FindBlocks(List<Block> instrToBlock, List<Block> allBlocks) {
 			Block block = null;
 			for (var i = 0; i < instructions.Count; i++) {
 				List<int> branchSources;
@@ -128,7 +128,7 @@ namespace de4dot.blocks {
 					allBlocks.Add(block);
 				}
 
-				block.add(new Instr(this.instructions[i]));
+				block.Add(new Instr(this.instructions[i]));
 				instrToBlock.Add(block);
 			}
 		}
@@ -136,7 +136,7 @@ namespace de4dot.blocks {
 		// Fix all branches so they now point to a Block, and not an Instruction. The
 		// block's Targets field is updated, not the Instruction's Operand field.
 		// Also update Block.FallThrough with next Block if last instr falls through.
-		void fixBranchTargets(List<Block> instrToBlock, List<Block> allBlocks) {
+		void FixBranchTargets(List<Block> instrToBlock, List<Block> allBlocks) {
 			for (var i = 0; i < allBlocks.Count; i++) {
 				var block = allBlocks[i];
 				var lastInstr = block.LastInstr;
@@ -160,15 +160,15 @@ namespace de4dot.blocks {
 					break;
 				}
 
-				if (i + 1 < allBlocks.Count && Instr.isFallThrough(lastInstr.OpCode))
+				if (i + 1 < allBlocks.Count && Instr.IsFallThrough(lastInstr.OpCode))
 					block.FallThrough = allBlocks[i + 1];
 			}
 		}
 
 		// Updates the sources field of each block
-		void fixBlockSources(List<Block> allBlocks) {
+		void FixBlockSources(List<Block> allBlocks) {
 			foreach (var block in allBlocks) {
-				block.updateSources();
+				block.UpdateSources();
 			}
 		}
 
@@ -195,7 +195,7 @@ namespace de4dot.blocks {
 			}
 		}
 
-		List<List<ExceptionHandler>> getSortedExceptionInfos() {
+		List<List<ExceptionHandler>> GetSortedExceptionInfos() {
 			var exInfos = new Dictionary<EHInfo, List<ExceptionHandler>>();
 			foreach (var eh in exceptionHandlers) {
 				List<ExceptionHandler> handlers;
@@ -220,8 +220,8 @@ namespace de4dot.blocks {
 
 				// Same start instruction. The nested one is the one that ends earliest,
 				// so it should be sorted before the outer one.
-				ai = getInstrIndex(a[0].TryEnd);
-				bi = getInstrIndex(b[0].TryEnd);
+				ai = GetInstrIndex(a[0].TryEnd);
+				bi = GetInstrIndex(b[0].TryEnd);
 				if (ai < bi) return -1;
 				if (ai > bi) return 1;
 
@@ -245,7 +245,7 @@ namespace de4dot.blocks {
 
 			List<BaseBlockInfo> blocksLeft = new List<BaseBlockInfo>();
 
-			public void add(BaseBlock bb, int start, int end) {
+			public void Add(BaseBlock bb, int start, int end) {
 				if (start < 0 || end < 0 || end < start)
 					throw new ApplicationException("Invalid start and/or end index");
 				if (blocksLeft.Count != 0) {
@@ -256,7 +256,7 @@ namespace de4dot.blocks {
 				blocksLeft.Add(new BaseBlockInfo(start, end, bb));
 			}
 
-			int findStart(int instrIndex) {
+			int FindStart(int instrIndex) {
 				for (int i = 0; i < blocksLeft.Count; i++) {
 					if (blocksLeft[i].startInstr == instrIndex)
 						return i;
@@ -264,7 +264,7 @@ namespace de4dot.blocks {
 				throw new ApplicationException("Could not find start BaseBlockInfo");
 			}
 
-			int findEnd(int instrIndex) {
+			int FindEnd(int instrIndex) {
 				for (int i = 0; i < blocksLeft.Count; i++) {
 					if (blocksLeft[i].endInstr == instrIndex)
 						return i;
@@ -272,14 +272,14 @@ namespace de4dot.blocks {
 				throw new ApplicationException("Could not find end BaseBlockInfo");
 			}
 
-			List<BaseBlock> getBlocks(int startInstr, int endInstr, out int startIndex, out int endIndex) {
+			List<BaseBlock> GetBlocks(int startInstr, int endInstr, out int startIndex, out int endIndex) {
 				if (endInstr < startInstr || startInstr < 0 || endInstr < 0)
 					throw new ApplicationException("Invalid startInstr and/or endInstr");
 
 				var rv = new List<BaseBlock>();
 
-				startIndex = findStart(startInstr);
-				endIndex = findEnd(endInstr);
+				startIndex = FindStart(startInstr);
+				endIndex = FindEnd(endInstr);
 
 				for (int i = startIndex; i <= endIndex; i++)
 					rv.Add(blocksLeft[i].baseBlock);
@@ -288,13 +288,13 @@ namespace de4dot.blocks {
 			}
 
 			// Replace the BaseBlocks with a new BaseBlock, returning the old ones.
-			public List<BaseBlock> replace(int startInstr, int endInstr, ScopeBlock bb) {
+			public List<BaseBlock> Replace(int startInstr, int endInstr, ScopeBlock bb) {
 				if (endInstr < startInstr)
 					return new List<BaseBlock>();
 
 				int startIndex, endIndex;
-				var rv = getBlocks(startInstr, endInstr, out startIndex, out endIndex);
-				updateParent(rv, bb);
+				var rv = GetBlocks(startInstr, endInstr, out startIndex, out endIndex);
+				UpdateParent(rv, bb);
 
 				var bbi = new BaseBlockInfo(blocksLeft[startIndex].startInstr, blocksLeft[endIndex].endInstr, bb);
 				blocksLeft.RemoveRange(startIndex, endIndex - startIndex + 1);
@@ -303,78 +303,78 @@ namespace de4dot.blocks {
 				return rv;
 			}
 
-			public List<BaseBlock> getBlocks(ScopeBlock parent) {
+			public List<BaseBlock> GetBlocks(ScopeBlock parent) {
 				if (blocksLeft.Count == 0)
 					return new List<BaseBlock>();
 				int startIndex, endIndex;
-				var lb = getBlocks(0, blocksLeft[blocksLeft.Count - 1].endInstr, out startIndex, out endIndex);
-				return updateParent(lb, parent);
+				var lb = GetBlocks(0, blocksLeft[blocksLeft.Count - 1].endInstr, out startIndex, out endIndex);
+				return UpdateParent(lb, parent);
 			}
 
-			List<BaseBlock> updateParent(List<BaseBlock> lb, ScopeBlock parent) {
+			List<BaseBlock> UpdateParent(List<BaseBlock> lb, ScopeBlock parent) {
 				foreach (var bb in lb)
 					bb.Parent = parent;
 				return lb;
 			}
 		}
 
-		BaseBlocksList createBaseBlockList(List<Block> allBlocks, List<List<ExceptionHandler>> exSorted) {
+		BaseBlocksList CreateBaseBlockList(List<Block> allBlocks, List<List<ExceptionHandler>> exSorted) {
 			var bbl = new BaseBlocksList();
 			foreach (var block in allBlocks) {
 				int start = instrToIndex[block.FirstInstr.Instruction];
 				int end = instrToIndex[block.LastInstr.Instruction];
-				bbl.add(block, start, end);
+				bbl.Add(block, start, end);
 			}
 
 			foreach (var exHandlers in exSorted) {
 				var tryBlock = new TryBlock();
 				var tryStart = instrToIndex[exHandlers[0].TryStart];
-				var tryEnd = getInstrIndex(exHandlers[0].TryEnd) - 1;
-				tryBlock.BaseBlocks = bbl.replace(tryStart, tryEnd, tryBlock);
+				var tryEnd = GetInstrIndex(exHandlers[0].TryEnd) - 1;
+				tryBlock.BaseBlocks = bbl.Replace(tryStart, tryEnd, tryBlock);
 
 				foreach (var exHandler in exHandlers) {
 					var tryHandlerBlock = new TryHandlerBlock(exHandler);
-					tryBlock.addTryHandler(tryHandlerBlock);
+					tryBlock.AddTryHandler(tryHandlerBlock);
 
 					int filterStart = -1, handlerStart = -1, handlerEnd = -1;
 
 					if (exHandler.FilterStart != null) {
 						filterStart = instrToIndex[exHandler.FilterStart];
 						var end = instrToIndex[exHandler.HandlerStart] - 1;
-						tryHandlerBlock.FilterHandlerBlock.BaseBlocks = bbl.replace(filterStart, end, tryHandlerBlock.FilterHandlerBlock);
+						tryHandlerBlock.FilterHandlerBlock.BaseBlocks = bbl.Replace(filterStart, end, tryHandlerBlock.FilterHandlerBlock);
 					}
 
 					handlerStart = instrToIndex[exHandler.HandlerStart];
-					handlerEnd = getInstrIndex(exHandler.HandlerEnd) - 1;
-					tryHandlerBlock.HandlerBlock.BaseBlocks = bbl.replace(handlerStart, handlerEnd, tryHandlerBlock.HandlerBlock);
+					handlerEnd = GetInstrIndex(exHandler.HandlerEnd) - 1;
+					tryHandlerBlock.HandlerBlock.BaseBlocks = bbl.Replace(handlerStart, handlerEnd, tryHandlerBlock.HandlerBlock);
 
-					tryHandlerBlock.BaseBlocks = bbl.replace(filterStart == -1 ? handlerStart : filterStart, handlerEnd, tryHandlerBlock);
+					tryHandlerBlock.BaseBlocks = bbl.Replace(filterStart == -1 ? handlerStart : filterStart, handlerEnd, tryHandlerBlock);
 				}
 			}
 
 			return bbl;
 		}
 
-		int getInstrIndex(Instruction instruction) {
+		int GetInstrIndex(Instruction instruction) {
 			if (instruction == null)
 				return instructions.Count;
 			return instrToIndex[instruction];
 		}
 
-		public MethodBlocks parse() {
+		public MethodBlocks Parse() {
 			var instrToBlock = new List<Block>(instructions.Count);
 			var allBlocks = new List<Block>();
-			findBlocks(instrToBlock, allBlocks);
-			fixBranchTargets(instrToBlock, allBlocks);
-			fixBlockSources(allBlocks);
-			var exSorted = getSortedExceptionInfos();
-			var bbl = createBaseBlockList(allBlocks, exSorted);
+			FindBlocks(instrToBlock, allBlocks);
+			FixBranchTargets(instrToBlock, allBlocks);
+			FixBlockSources(allBlocks);
+			var exSorted = GetSortedExceptionInfos();
+			var bbl = CreateBaseBlockList(allBlocks, exSorted);
 
 			foreach (var block in allBlocks)
-				block.removeLastBr();
+				block.RemoveLastBr();
 
 			var mb = new MethodBlocks();
-			mb.BaseBlocks = bbl.getBlocks(mb);
+			mb.BaseBlocks = bbl.GetBlocks(mb);
 			return mb;
 		}
 	}

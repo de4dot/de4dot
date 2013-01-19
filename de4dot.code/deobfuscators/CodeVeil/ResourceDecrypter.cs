@@ -77,17 +77,17 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			this.module = module;
 		}
 
-		public void initialize() {
+		public void Initialize() {
 			methodsRestorer = new MethodCallRestorerBase(module);
-			findEncryptedResourceStreamType();
-			findEncryptedResourceSet();
-			findEncryptedResourceReader();
-			findResType();
-			findResourceFlags();
-			findResourceEnumerator();
+			FindEncryptedResourceStreamType();
+			FindEncryptedResourceSet();
+			FindEncryptedResourceReader();
+			FindResType();
+			FindResourceFlags();
+			FindResourceEnumerator();
 		}
 
-		void findResourceEnumerator() {
+		void FindResourceEnumerator() {
 			if (encryptedResourceReaderType == null)
 				return;
 
@@ -102,9 +102,9 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 					continue;
 				if (type.BaseType == null || type.BaseType.FullName != "System.Object")
 					continue;
-				if (!hasInterface(type, "System.Collections.IDictionaryEnumerator"))
+				if (!HasInterface(type, "System.Collections.IDictionaryEnumerator"))
 					continue;
-				if (!new FieldTypes(type).all(resourceEnumeratorType_fields))
+				if (!new FieldTypes(type).All(resourceEnumeratorType_fields))
 					continue;
 				var ctor = type.FindMethod(".ctor");
 				if (ctor == null)
@@ -120,7 +120,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			}
 		}
 
-		void findResourceFlags() {
+		void FindResourceFlags() {
 			if (resTypeCtor == null)
 				return;
 			var sig = resTypeCtor.MethodSig;
@@ -138,7 +138,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			"System.Object",
 			"System.String",
 		};
-		void findResType() {
+		void FindResType() {
 			if (encryptedResourceReaderTypeDict == null)
 				return;
 			var type = encryptedResourceReaderTypeDict.GenericArguments[1].TryGetTypeDef();
@@ -164,25 +164,25 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			"System.IO.BinaryReader",
 			"System.Runtime.Serialization.Formatters.Binary.BinaryFormatter",
 		};
-		void findEncryptedResourceReader() {
-			var type = getTypeFromCode(encryptedResourceSet_GetDefaultReader);
+		void FindEncryptedResourceReader() {
+			var type = GetTypeFromCode(encryptedResourceSet_GetDefaultReader);
 			if (type == null)
 				return;
-			if (type.BaseType == null || !hasInterface(type, "System.Resources.IResourceReader"))
+			if (type.BaseType == null || !HasInterface(type, "System.Resources.IResourceReader"))
 				return;
-			if (!new FieldTypes(type).all(encryptedResourceReaderType_fields))
+			if (!new FieldTypes(type).All(encryptedResourceReaderType_fields))
 				return;
-			var dictType = getDlxResDict(type);
+			var dictType = GetDlxResDict(type);
 			if (dictType == null)
 				return;
-			if (findXxteaMethod(type) == null)
+			if (FindXxteaMethod(type) == null)
 				return;
 
 			encryptedResourceReaderType = type;
 			encryptedResourceReaderTypeDict = dictType;
 		}
 
-		static bool hasInterface(TypeDef type, string interfaceFullName) {
+		static bool HasInterface(TypeDef type, string interfaceFullName) {
 			foreach (var iface in type.Interfaces) {
 				if (iface.Interface.FullName == interfaceFullName)
 					return true;
@@ -190,7 +190,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return false;
 		}
 
-		static GenericInstSig getDlxResDict(TypeDef type) {
+		static GenericInstSig GetDlxResDict(TypeDef type) {
 			foreach (var field in type.Fields) {
 				var fieldType = field.FieldSig.GetFieldType().ToGenericInstSig();
 				if (fieldType == null)
@@ -208,7 +208,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return null;
 		}
 
-		static TypeDef getTypeFromCode(MethodDef method) {
+		static TypeDef GetTypeFromCode(MethodDef method) {
 			if (method == null || method.Body == null)
 				return null;
 			foreach (var instr in method.Body.Instructions) {
@@ -222,17 +222,17 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return null;
 		}
 
-		void findEncryptedResourceSet() {
+		void FindEncryptedResourceSet() {
 			foreach (var type in module.Types) {
 				if (type.Namespace != "")
 					continue;
 				if (type.BaseType == null || type.BaseType.FullName != "System.Resources.ResourceSet")
 					continue;
 				var ctor = type.FindMethod(".ctor");
-				if (!DotNetUtils.isMethod(ctor, "System.Void", "(System.Resources.IResourceReader)"))
+				if (!DotNetUtils.IsMethod(ctor, "System.Void", "(System.Resources.IResourceReader)"))
 					continue;
 				var method = type.FindMethod("GetDefaultReader");
-				if (!DotNetUtils.isMethod(method, "System.Type", "()"))
+				if (!DotNetUtils.IsMethod(method, "System.Type", "()"))
 					continue;
 				if (method.Body == null || method.IsStatic || !method.IsVirtual)
 					continue;
@@ -253,45 +253,45 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			"System.IO.Stream",
 			"System.UInt32[]",
 		};
-		void findEncryptedResourceStreamType() {
+		void FindEncryptedResourceStreamType() {
 			foreach (var type in module.Types) {
 				if (type.Namespace != "")
 					continue;
 				if (type.BaseType == null || type.BaseType.FullName != "System.IO.Stream")
 					continue;
 				var ctor = type.FindMethod(".ctor");
-				if (!DotNetUtils.isMethod(ctor, "System.Void", "(System.IO.Stream)"))
+				if (!DotNetUtils.IsMethod(ctor, "System.Void", "(System.IO.Stream)"))
 					continue;
-				if (!new FieldTypes(type).all(encryptedResourceStreamType_fields))
+				if (!new FieldTypes(type).All(encryptedResourceStreamType_fields))
 					continue;
-				if (findXxteaMethod(type) == null)
+				if (FindXxteaMethod(type) == null)
 					continue;
 
 				MethodDef getManifestResourceStreamMethodTmp1, getManifestResourceStreamMethodTmp2;
-				if (!findManifestResourceStreamMethods(type, out getManifestResourceStreamMethodTmp1, out getManifestResourceStreamMethodTmp2))
+				if (!FindManifestResourceStreamMethods(type, out getManifestResourceStreamMethodTmp1, out getManifestResourceStreamMethodTmp2))
 					continue;
 
-				methodsRestorer.createGetManifestResourceStream1(getManifestResourceStreamMethodTmp1);
-				methodsRestorer.createGetManifestResourceStream2(getManifestResourceStreamMethodTmp2);
+				methodsRestorer.CreateGetManifestResourceStream1(getManifestResourceStreamMethodTmp1);
+				methodsRestorer.CreateGetManifestResourceStream2(getManifestResourceStreamMethodTmp2);
 				encryptedResourceStreamType = type;
 				return;
 			}
 		}
 
-		static MethodDef findXxteaMethod(TypeDef type) {
+		static MethodDef FindXxteaMethod(TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (!method.IsPrivate || method.IsStatic || method.Body == null)
 					continue;
-				if (DotNetUtils.isMethod(method, "System.Void", "(System.UInt32[],System.UInt32[])")) {
-					if (!DeobUtils.hasInteger(method, 0x9E3779B9))
+				if (DotNetUtils.IsMethod(method, "System.Void", "(System.UInt32[],System.UInt32[])")) {
+					if (!DeobUtils.HasInteger(method, 0x9E3779B9))
 						continue;
 				}
-				else if (DotNetUtils.isMethod(method, "System.Void", "(System.UInt32[],System.UInt32[],System.UInt32,System.UInt32,System.UInt32,System.UInt32,System.UInt32,System.UInt32,System.UInt32,System.UInt32,System.UInt32)")) {
+				else if (DotNetUtils.IsMethod(method, "System.Void", "(System.UInt32[],System.UInt32[],System.UInt32,System.UInt32,System.UInt32,System.UInt32,System.UInt32,System.UInt32,System.UInt32,System.UInt32,System.UInt32)")) {
 					// Here if 5.0. 0x9E3779B9 is passed to it as the last arg.
 				}
 				else
 					continue;
-				if (!DeobUtils.hasInteger(method, 52))
+				if (!DeobUtils.HasInteger(method, 52))
 					continue;
 
 				return method;
@@ -299,44 +299,44 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return null;
 		}
 
-		static bool findManifestResourceStreamMethods(TypeDef type, out MethodDef getManifestResourceStreamMethodTmp1, out MethodDef getManifestResourceStreamMethodTmp2) {
+		static bool FindManifestResourceStreamMethods(TypeDef type, out MethodDef getManifestResourceStreamMethodTmp1, out MethodDef getManifestResourceStreamMethodTmp2) {
 			getManifestResourceStreamMethodTmp1 = null;
 			getManifestResourceStreamMethodTmp2 = null;
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
-				if (DotNetUtils.isMethod(method, "System.IO.Stream", "(System.Reflection.Assembly,System.String)"))
+				if (DotNetUtils.IsMethod(method, "System.IO.Stream", "(System.Reflection.Assembly,System.String)"))
 					getManifestResourceStreamMethodTmp1 = method;
-				else if (DotNetUtils.isMethod(method, "System.IO.Stream", "(System.Reflection.Assembly,System.Type,System.String)"))
+				else if (DotNetUtils.IsMethod(method, "System.IO.Stream", "(System.Reflection.Assembly,System.Type,System.String)"))
 					getManifestResourceStreamMethodTmp2 = method;
 			}
 			return getManifestResourceStreamMethodTmp1 != null && getManifestResourceStreamMethodTmp2 != null;
 		}
 
-		public void decrypt() {
+		public void Decrypt() {
 			for (int i = 0; i < module.Resources.Count; i++) {
 				var resource = module.Resources[i] as EmbeddedResource;
 				if (resource == null)
 					continue;
 
-				var decrypted = decrypt(resource.Data);
+				var decrypted = Decrypt(resource.Data);
 				if (decrypted == null)
 					continue;
 
-				Logger.v("Decrypted resource {0}", Utils.toCsharpString(resource.Name));
+				Logger.v("Decrypted resource {0}", Utils.ToCsharpString(resource.Name));
 				module.Resources[i] = new EmbeddedResource(resource.Name, decrypted, resource.Attributes);
 			}
 		}
 
-		byte[] decrypt(IBinaryReader reader) {
+		byte[] Decrypt(IBinaryReader reader) {
 			try {
 				reader.Position = 0;
 				uint sig = reader.ReadUInt32();
 				reader.Position = 0;
 				if (sig == 0xBEEFCACE)
-					return decryptBeefcace(reader);
+					return DecryptBeefcace(reader);
 				if (sig == 0x58455245)
-					return decryptErex(reader);
+					return DecryptErex(reader);
 				return null;
 			}
 			catch (InvalidDataException) {
@@ -348,20 +348,20 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			}
 		}
 
-		byte[] decryptBeefcace(IBinaryReader reader) {
+		byte[] DecryptBeefcace(IBinaryReader reader) {
 			var resourceReader = new ResourceReader(reader);
-			return new ResourceConverter(module, resourceReader.read()).convert();
+			return new ResourceConverter(module, resourceReader.Read()).Convert();
 		}
 
-		byte[] decryptErex(IBinaryReader reader) {
-			return new ErexResourceReader(reader).decrypt();
+		byte[] DecryptErex(IBinaryReader reader) {
+			return new ErexResourceReader(reader).Decrypt();
 		}
 
-		public void deobfuscate(Blocks blocks) {
+		public void Deobfuscate(Blocks blocks) {
 			if (encryptedResourceStreamType == null)
 				return;
 
-			methodsRestorer.deobfuscate(blocks);
+			methodsRestorer.Deobfuscate(blocks);
 		}
 	}
 }

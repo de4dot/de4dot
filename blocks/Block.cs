@@ -52,7 +52,7 @@ namespace de4dot.blocks {
 		public Instr FirstInstr {
 			get {
 				if (instructions.Count == 0)
-					add(new Instr(OpCodes.Nop.ToInstruction()));
+					Add(new Instr(OpCodes.Nop.ToInstruction()));
 				return instructions[0];
 			}
 		}
@@ -60,16 +60,16 @@ namespace de4dot.blocks {
 		public Instr LastInstr {
 			get {
 				if (instructions.Count == 0)
-					add(new Instr(OpCodes.Nop.ToInstruction()));
+					Add(new Instr(OpCodes.Nop.ToInstruction()));
 				return instructions[instructions.Count - 1];
 			}
 		}
 
-		public void add(Instr instr) {
+		public void Add(Instr instr) {
 			instructions.Add(instr);
 		}
 
-		public void insert(int index, Instruction instr) {
+		public void Insert(int index, Instruction instr) {
 			instructions.Insert(index, new Instr(instr));
 		}
 
@@ -78,8 +78,8 @@ namespace de4dot.blocks {
 		}
 
 		// If last instr is a br/br.s, removes it and replaces it with a fall through
-		public void removeLastBr() {
-			if (!LastInstr.isBr())
+		public void RemoveLastBr() {
+			if (!LastInstr.IsBr())
 				return;
 
 			if (fallThrough != null || (LastInstr.Operand != null && (targets == null || targets.Count != 1)))
@@ -89,111 +89,111 @@ namespace de4dot.blocks {
 			instructions.RemoveAt(instructions.Count - 1);
 		}
 
-		public void replace(int index, int num, Instruction instruction) {
+		public void Replace(int index, int num, Instruction instruction) {
 			if (num <= 0)
 				throw new ArgumentOutOfRangeException("num");
-			remove(index, num);
+			Remove(index, num);
 			instructions.Insert(index, new Instr(instruction));
 		}
 
-		public void remove(int index, int num) {
+		public void Remove(int index, int num) {
 			if (index + num > instructions.Count)
 				throw new ApplicationException("Overflow");
-			if (num > 0 && index + num == instructions.Count && LastInstr.isConditionalBranch())
-				disconnectFromFallThroughAndTargets();
+			if (num > 0 && index + num == instructions.Count && LastInstr.IsConditionalBranch())
+				DisconnectFromFallThroughAndTargets();
 			instructions.RemoveRange(index, num);
 		}
 
-		public void remove(IEnumerable<int> indexes) {
-			var instrsToDelete = new List<int>(Utils.unique(indexes));
+		public void Remove(IEnumerable<int> indexes) {
+			var instrsToDelete = new List<int>(Utils.Unique(indexes));
 			instrsToDelete.Sort();
 			instrsToDelete.Reverse();
 			foreach (var index in instrsToDelete)
-				remove(index, 1);
+				Remove(index, 1);
 		}
 
 		// Replace the last instructions with a branch to target
-		public void replaceLastInstrsWithBranch(int numInstrs, Block target) {
+		public void ReplaceLastInstrsWithBranch(int numInstrs, Block target) {
 			if (numInstrs < 0 || numInstrs > instructions.Count)
 				throw new ApplicationException("Invalid numInstrs to replace with branch");
 			if (target == null)
 				throw new ApplicationException("Invalid new target, it's null");
 
-			disconnectFromFallThroughAndTargets();
+			DisconnectFromFallThroughAndTargets();
 			if (numInstrs > 0)
 				instructions.RemoveRange(instructions.Count - numInstrs, numInstrs);
 			fallThrough = target;
 			target.sources.Add(this);
 		}
 
-		public void replaceLastNonBranchWithBranch(int numInstrs, Block target) {
-			if (LastInstr.isBr())
+		public void ReplaceLastNonBranchWithBranch(int numInstrs, Block target) {
+			if (LastInstr.IsBr())
 				numInstrs++;
-			replaceLastInstrsWithBranch(numInstrs, target);
+			ReplaceLastInstrsWithBranch(numInstrs, target);
 		}
 
-		public void replaceBccWithBranch(bool isTaken) {
+		public void ReplaceBccWithBranch(bool isTaken) {
 			Block target = isTaken ? targets[0] : fallThrough;
-			replaceLastInstrsWithBranch(1, target);
+			ReplaceLastInstrsWithBranch(1, target);
 		}
 
-		public void replaceSwitchWithBranch(Block target) {
+		public void ReplaceSwitchWithBranch(Block target) {
 			if (LastInstr.OpCode.Code != Code.Switch)
 				throw new ApplicationException("Last instruction is not a switch");
-			replaceLastInstrsWithBranch(1, target);
+			ReplaceLastInstrsWithBranch(1, target);
 		}
 
-		public void setNewFallThrough(Block newFallThrough) {
-			disconnectFromFallThrough();
+		public void SetNewFallThrough(Block newFallThrough) {
+			DisconnectFromFallThrough();
 			fallThrough = newFallThrough;
 			newFallThrough.sources.Add(this);
 		}
 
-		public void setNewTarget(int index, Block newTarget) {
-			disconnectFromBlock(targets[index]);
+		public void SetNewTarget(int index, Block newTarget) {
+			DisconnectFromBlock(targets[index]);
 			targets[index] = newTarget;
 			newTarget.sources.Add(this);
 		}
 
-		public void removeDeadBlock() {
+		public void RemoveDeadBlock() {
 			if (sources.Count != 0)
 				throw new ApplicationException("Trying to remove a non-dead block");
-			removeGuaranteedDeadBlock();
+			RemoveGuaranteedDeadBlock();
 		}
 
 		// Removes a block that has been guaranteed to be dead. This method won't verify
 		// that it really is dead.
-		public void removeGuaranteedDeadBlock() {
-			disconnectFromFallThroughAndTargets();
+		public void RemoveGuaranteedDeadBlock() {
+			DisconnectFromFallThroughAndTargets();
 			Parent = null;
 		}
 
-		void disconnectFromFallThroughAndTargets() {
-			disconnectFromFallThrough();
-			disconnectFromTargets();
+		void DisconnectFromFallThroughAndTargets() {
+			DisconnectFromFallThrough();
+			DisconnectFromTargets();
 		}
 
-		void disconnectFromFallThrough() {
+		void DisconnectFromFallThrough() {
 			if (fallThrough != null) {
-				disconnectFromBlock(fallThrough);
+				DisconnectFromBlock(fallThrough);
 				fallThrough = null;
 			}
 		}
 
-		void disconnectFromTargets() {
+		void DisconnectFromTargets() {
 			if (targets != null) {
 				foreach (var target in targets)
-					disconnectFromBlock(target);
+					DisconnectFromBlock(target);
 				targets = null;
 			}
 		}
 
-		void disconnectFromBlock(Block target) {
+		void DisconnectFromBlock(Block target) {
 			if (!target.sources.Remove(this))
 				throw new ApplicationException("Could not remove the block from its target block");
 		}
 
-		public int countTargets() {
+		public int CountTargets() {
 			int count = fallThrough != null ? 1 : 0;
 			if (targets != null)
 				count += targets.Count;
@@ -201,8 +201,8 @@ namespace de4dot.blocks {
 		}
 
 		// Returns the target iff it has only ONE target. Else it returns null.
-		public Block getOnlyTarget() {
-			if (countTargets() != 1)
+		public Block GetOnlyTarget() {
+			if (CountTargets() != 1)
 				return null;
 			if (fallThrough != null)
 				return fallThrough;
@@ -210,7 +210,7 @@ namespace de4dot.blocks {
 		}
 
 		// Returns all targets. FallThrough (if not null) is always returned first!
-		public IEnumerable<Block> getTargets() {
+		public IEnumerable<Block> GetTargets() {
 			if (fallThrough != null)
 				yield return fallThrough;
 			if (targets != null) {
@@ -220,52 +220,52 @@ namespace de4dot.blocks {
 		}
 
 		// Returns true iff other is the only block in Sources
-		public bool isOnlySource(Block other) {
+		public bool IsOnlySource(Block other) {
 			return sources.Count == 1 && sources[0] == other;
 		}
 
 		// Returns true if we can merge other with this
-		public bool canMerge(Block other) {
-			return canAppend(other) && other.isOnlySource(this);
+		public bool CanMerge(Block other) {
+			return CanAppend(other) && other.IsOnlySource(this);
 		}
 
 		// Merge two blocks into one
-		public void merge(Block other) {
-			if (!canMerge(other))
+		public void Merge(Block other) {
+			if (!CanMerge(other))
 				throw new ApplicationException("Can't merge the two blocks!");
-			append(other);
-			other.disconnectFromFallThroughAndTargets();
+			Append(other);
+			other.DisconnectFromFallThroughAndTargets();
 			other.Parent = null;
 		}
 
-		public bool canAppend(Block other) {
-			if (other == null || other == this || getOnlyTarget() != other)
+		public bool CanAppend(Block other) {
+			if (other == null || other == this || GetOnlyTarget() != other)
 				return false;
 			// If it's eg. a leave, then don't merge them since it clears the stack.
-			return LastInstr.isBr() || Instr.isFallThrough(LastInstr.OpCode);
+			return LastInstr.IsBr() || Instr.IsFallThrough(LastInstr.OpCode);
 		}
 
-		public void append(Block other) {
-			if (!canAppend(other))
+		public void Append(Block other) {
+			if (!CanAppend(other))
 				throw new ApplicationException("Can't append the block!");
 
-			removeLastBr();		// Get rid of last br/br.s if present
+			RemoveLastBr();		// Get rid of last br/br.s if present
 
 			var newInstructions = new List<Instr>(instructions.Count + other.instructions.Count);
-			addInstructions(newInstructions, instructions, false);
-			addInstructions(newInstructions, other.instructions, true);
+			AddInstructions(newInstructions, instructions, false);
+			AddInstructions(newInstructions, other.instructions, true);
 			instructions = newInstructions;
 
-			disconnectFromFallThroughAndTargets();
+			DisconnectFromFallThroughAndTargets();
 			if (other.targets != null)
 				targets = new List<Block>(other.targets);
 			else
 				targets = null;
 			fallThrough = other.fallThrough;
-			updateSources();
+			UpdateSources();
 		}
 
-		void addInstructions(IList<Instr> dest, IList<Instr> instrs, bool clone) {
+		void AddInstructions(IList<Instr> dest, IList<Instr> instrs, bool clone) {
 			for (int i = 0; i < instrs.Count; i++) {
 				var instr = instrs[i];
 				if (instr.OpCode != OpCodes.Nop)
@@ -275,7 +275,7 @@ namespace de4dot.blocks {
 
 		// Update each target's Sources property. Must only be called if this isn't in the
 		// Sources list!
-		public void updateSources() {
+		public void UpdateSources() {
 			if (fallThrough != null)
 				fallThrough.sources.Add(this);
 			if (targets != null) {
@@ -285,30 +285,30 @@ namespace de4dot.blocks {
 		}
 
 		// Returns true if it falls through
-		public bool isFallThrough() {
+		public bool IsFallThrough() {
 			return targets == null && fallThrough != null;
 		}
 
-		public bool canFlipConditionalBranch() {
-			return LastInstr.canFlipConditionalBranch();
+		public bool CanFlipConditionalBranch() {
+			return LastInstr.CanFlipConditionalBranch();
 		}
 
-		public void flipConditionalBranch() {
+		public void FlipConditionalBranch() {
 			if (fallThrough == null || targets == null || targets.Count != 1)
 				throw new ApplicationException("Invalid bcc block state");
-			LastInstr.flipConditonalBranch();
+			LastInstr.FlipConditonalBranch();
 			var oldFallThrough = fallThrough;
 			fallThrough = targets[0];
 			targets[0] = oldFallThrough;
 		}
 
 		// Returns true if it's a conditional branch
-		public bool isConditionalBranch() {
-			return LastInstr.isConditionalBranch();
+		public bool IsConditionalBranch() {
+			return LastInstr.IsConditionalBranch();
 		}
 
-		public bool isNopBlock() {
-			if (!isFallThrough())
+		public bool IsNopBlock() {
+			if (!IsFallThrough())
 				return false;
 			foreach (var instr in instructions) {
 				if (instr.OpCode.Code != Code.Nop)

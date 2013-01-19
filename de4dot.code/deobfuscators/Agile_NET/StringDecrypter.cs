@@ -48,16 +48,16 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 
 		public StringDecrypter(ModuleDefMD module, StringDecrypter oldOne) {
 			this.module = module;
-			stringDecrypterType = lookup(oldOne.stringDecrypterType, "Could not find stringDecrypterType");
-			stringDecrypterMethod = lookup(oldOne.stringDecrypterMethod, "Could not find stringDecrypterMethod");
+			stringDecrypterType = Lookup(oldOne.stringDecrypterType, "Could not find stringDecrypterType");
+			stringDecrypterMethod = Lookup(oldOne.stringDecrypterMethod, "Could not find stringDecrypterMethod");
 			stringDecrypterKey = oldOne.stringDecrypterKey;
 		}
 
-		T lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
-			return DeobUtils.lookup(module, def, errorMessage);
+		T Lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
+			return DeobUtils.Lookup(module, def, errorMessage);
 		}
 
-		public void find() {
+		public void Find() {
 			stringDecrypterKey = new byte[1] { 0xFF };
 			foreach (var type in module.Types) {
 				if (type.FullName == "<D234>" || type.FullName == "<ClassD234>") {
@@ -73,7 +73,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			}
 		}
 
-		public string decrypt(string es) {
+		public string Decrypt(string es) {
 			if (stringDecrypterKey == null)
 				throw new ApplicationException("Trying to decrypt strings when stringDecrypterKey is null (could not find it!)");
 			char[] buf = new char[es.Length];

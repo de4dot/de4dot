@@ -28,7 +28,7 @@ namespace AssemblyData.methodsrewriter {
 		static Dictionary<string, AssemblyResolver> assemblyResolvers = new Dictionary<string, AssemblyResolver>(StringComparer.Ordinal);
 		static Dictionary<Module, MModule> modules = new Dictionary<Module, MModule>();
 
-		public static MModule loadAssembly(Module module) {
+		public static MModule LoadAssembly(Module module) {
 			MModule info;
 			if (modules.TryGetValue(module, out info))
 				return info;
@@ -38,7 +38,7 @@ namespace AssemblyData.methodsrewriter {
 			return info;
 		}
 
-		static MModule getModule(ModuleDef moduleDef) {
+		static MModule GetModule(ModuleDef moduleDef) {
 			foreach (var mm in modules.Values) {
 				if (mm.moduleDef == moduleDef)
 					return mm;
@@ -46,7 +46,7 @@ namespace AssemblyData.methodsrewriter {
 			return null;
 		}
 
-		static MModule getModule(AssemblyRef asmRef) {
+		static MModule GetModule(AssemblyRef asmRef) {
 			foreach (var mm in modules.Values) {
 				var asm = mm.moduleDef.Assembly;
 				if (asm != null && asm.FullName == asmRef.FullName)
@@ -55,83 +55,83 @@ namespace AssemblyData.methodsrewriter {
 			return null;
 		}
 
-		public static MModule getModule(IScope scope) {
+		public static MModule GetModule(IScope scope) {
 			if (scope.ScopeType == ScopeType.ModuleDef)
-				return getModule((ModuleDef)scope);
+				return GetModule((ModuleDef)scope);
 			else if (scope.ScopeType == ScopeType.AssemblyRef)
-				return getModule((AssemblyRef)scope);
+				return GetModule((AssemblyRef)scope);
 
 			return null;
 		}
 
-		public static MType getType(IType typeRef) {
+		public static MType GetType(IType typeRef) {
 			if (typeRef == null)
 				return null;
-			var module = getModule(typeRef.Scope);
+			var module = GetModule(typeRef.Scope);
 			if (module != null)
-				return module.getType(typeRef);
+				return module.GetType(typeRef);
 			return null;
 		}
 
-		public static MMethod getMethod(IMethod methodRef) {
+		public static MMethod GetMethod(IMethod methodRef) {
 			if (methodRef == null)
 				return null;
-			var module = getModule(methodRef.DeclaringType.Scope);
+			var module = GetModule(methodRef.DeclaringType.Scope);
 			if (module != null)
-				return module.getMethod(methodRef);
+				return module.GetMethod(methodRef);
 			return null;
 		}
 
-		public static MField getField(IField fieldRef) {
+		public static MField GetField(IField fieldRef) {
 			if (fieldRef == null)
 				return null;
-			var module = getModule(fieldRef.DeclaringType.Scope);
+			var module = GetModule(fieldRef.DeclaringType.Scope);
 			if (module != null)
-				return module.getField(fieldRef);
+				return module.GetField(fieldRef);
 			return null;
 		}
 
-		public static object getRtObject(ITokenOperand memberRef) {
+		public static object GetRtObject(ITokenOperand memberRef) {
 			if (memberRef == null)
 				return null;
 			var tdr = memberRef as ITypeDefOrRef;
 			if (tdr != null)
-				return getRtType(tdr);
+				return GetRtType(tdr);
 			var field = memberRef as IField;
 			if (field != null && field.FieldSig != null)
-				return getRtField(field);
+				return GetRtField(field);
 			var method = memberRef as IMethod;
 			if (method != null && method.MethodSig != null)
-				return getRtMethod(method);
+				return GetRtMethod(method);
 
 			throw new ApplicationException(string.Format("Unknown MemberRef: {0}", memberRef));
 		}
 
-		public static Type getRtType(IType typeRef) {
-			var mtype = getType(typeRef);
+		public static Type GetRtType(IType typeRef) {
+			var mtype = GetType(typeRef);
 			if (mtype != null)
 				return mtype.type;
 
-			return Resolver.resolve(typeRef);
+			return Resolver.Resolve(typeRef);
 		}
 
-		public static FieldInfo getRtField(IField fieldRef) {
-			var mfield = getField(fieldRef);
+		public static FieldInfo GetRtField(IField fieldRef) {
+			var mfield = GetField(fieldRef);
 			if (mfield != null)
 				return mfield.fieldInfo;
 
-			return Resolver.resolve(fieldRef);
+			return Resolver.Resolve(fieldRef);
 		}
 
-		public static MethodBase getRtMethod(IMethod methodRef) {
-			var mmethod = getMethod(methodRef);
+		public static MethodBase GetRtMethod(IMethod methodRef) {
+			var mmethod = GetMethod(methodRef);
 			if (mmethod != null)
 				return mmethod.methodBase;
 
-			return Resolver.resolve(methodRef);
+			return Resolver.Resolve(methodRef);
 		}
 
-		static AssemblyResolver getAssemblyResolver(ITypeDefOrRef type) {
+		static AssemblyResolver GetAssemblyResolver(ITypeDefOrRef type) {
 			var asmName = type.DefinitionAssembly.FullName;
 			AssemblyResolver resolver;
 			if (!assemblyResolvers.TryGetValue(asmName, out resolver))
@@ -139,38 +139,38 @@ namespace AssemblyData.methodsrewriter {
 			return resolver;
 		}
 
-		static Type resolve(IType typeRef) {
+		static Type Resolve(IType typeRef) {
 			if (typeRef == null)
 				return null;
 			var scopeType = typeRef.ScopeType;
-			var resolver = getAssemblyResolver(scopeType);
-			var resolvedType = resolver.resolve(scopeType);
+			var resolver = GetAssemblyResolver(scopeType);
+			var resolvedType = resolver.Resolve(scopeType);
 			if (resolvedType != null)
-				return fixType(typeRef, resolvedType);
+				return FixType(typeRef, resolvedType);
 			throw new ApplicationException(string.Format("Could not resolve type {0} ({1:X8}) in assembly {2}", typeRef, typeRef.MDToken.Raw, resolver));
 		}
 
-		static FieldInfo resolve(IField fieldRef) {
+		static FieldInfo Resolve(IField fieldRef) {
 			if (fieldRef == null)
 				return null;
-			var resolver = getAssemblyResolver(fieldRef.DeclaringType);
-			var fieldInfo = resolver.resolve(fieldRef);
+			var resolver = GetAssemblyResolver(fieldRef.DeclaringType);
+			var fieldInfo = resolver.Resolve(fieldRef);
 			if (fieldInfo != null)
 				return fieldInfo;
 			throw new ApplicationException(string.Format("Could not resolve field {0} ({1:X8}) in assembly {2}", fieldRef, fieldRef.MDToken.Raw, resolver));
 		}
 
-		static MethodBase resolve(IMethod methodRef) {
+		static MethodBase Resolve(IMethod methodRef) {
 			if (methodRef == null)
 				return null;
-			var resolver = getAssemblyResolver(methodRef.DeclaringType);
-			var methodBase = resolver.resolve(methodRef);
+			var resolver = GetAssemblyResolver(methodRef.DeclaringType);
+			var methodBase = resolver.Resolve(methodRef);
 			if (methodBase != null)
 				return methodBase;
 			throw new ApplicationException(string.Format("Could not resolve method {0} ({1:X8}) in assembly {2}", methodRef, methodRef.MDToken.Raw, resolver));
 		}
 
-		static Type fixType(IType typeRef, Type type) {
+		static Type FixType(IType typeRef, Type type) {
 			var sig = typeRef as TypeSig;
 			if (sig == null) {
 				var ts = typeRef as TypeSpec;
@@ -203,7 +203,7 @@ namespace AssemblyData.methodsrewriter {
 						var arg = git.GenericArguments[i];
 						if (!(arg is GenericSig))
 							isGenericTypeDef = false;
-						args[i] = Resolver.resolve(arg);
+						args[i] = Resolver.Resolve(arg);
 					}
 					if (!isGenericTypeDef)
 						type = type.MakeGenericType(args);

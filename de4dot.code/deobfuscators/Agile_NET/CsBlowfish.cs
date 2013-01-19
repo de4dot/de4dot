@@ -26,7 +26,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			: base(key) {
 		}
 
-		protected override void encrypt(ref uint rxl, ref uint rxr) {
+		protected override void Encrypt(ref uint rxl, ref uint rxr) {
 			uint xl = rxl, xr = rxr;
 			for (int i = 0; i < 16; i++) {
 				xl ^= P[i];
@@ -38,7 +38,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			rxl = xr ^ P[17];
 		}
 
-		protected override void decrypt(ref uint rxl, ref uint rxr) {
+		protected override void Decrypt(ref uint rxl, ref uint rxr) {
 			uint xl = rxl, xr = rxr;
 			for (int i = 17; i >= 2; i--) {
 				xl ^= P[i];

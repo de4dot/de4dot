@@ -24,7 +24,7 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 	interface IDynocodeGenerator {
-		IEnumerable<int> getValues(int input);
+		IEnumerable<int> GetValues(int input);
 	}
 
 	// Something added in EF 3.5 which they call Dynocode. The string decrypter can now
@@ -43,7 +43,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			public int magic6;
 			public int magic7;
 
-			public IEnumerable<int> getValues(int input) {
+			public IEnumerable<int> GetValues(int input) {
 				yield return magic1;
 				yield return magic2;
 				yield return input ^ magic3;
@@ -57,7 +57,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		class DCGen2 : IDynocodeGenerator {
 			public int magic1;
 
-			public IEnumerable<int> getValues(int input) {
+			public IEnumerable<int> GetValues(int input) {
 				int x = 0;
 				int y = 1;
 				while (true) {
@@ -76,9 +76,9 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			public int magic2;
 			public DCGen2 dc2;
 
-			public IEnumerable<int> getValues(int input) {
+			public IEnumerable<int> GetValues(int input) {
 				int i = 7;
-				foreach (var val in dc2.getValues(input)) {
+				foreach (var val in dc2.GetValues(input)) {
 					int x = val ^ input;
 					if ((x % 4) == 0)
 						x ^= magic1;
@@ -102,7 +102,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			this.simpleDeobfuscator = simpleDeobfuscator;
 		}
 
-		public IDynocodeGenerator getDynocodeGenerator(TypeDef type) {
+		public IDynocodeGenerator GetDynocodeGenerator(TypeDef type) {
 			if (type == null)
 				return null;
 			var dt = type.DeclaringType;
@@ -113,44 +113,44 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				return dcGen;
 
 			if (dt.NestedTypes.Count == 1)
-				dcGen = getDCGen1(type);
+				dcGen = GetDCGen1(type);
 			else if (dt.NestedTypes.Count == 2)
-				dcGen = getDCGen3(type);
+				dcGen = GetDCGen3(type);
 
 			typeToDCGen[type] = dcGen;
 
 			return dcGen;
 		}
 
-		DCGen1 getDCGen1(TypeDef type) {
-			var method = getMoveNext(type);
+		DCGen1 GetDCGen1(TypeDef type) {
+			var method = GetMoveNext(type);
 			if (method == null)
 				return null;
-			simpleDeobfuscator.deobfuscate(method);
-			var swLabels = getSwitchLabels(method);
+			simpleDeobfuscator.Deobfuscate(method);
+			var swLabels = GetSwitchLabels(method);
 			if (swLabels == null || swLabels.Count < 7)
 				return null;
 
 			var dcGen = new DCGen1();
-			if (!getMagicDC1(method, swLabels[0], out dcGen.magic1))
+			if (!GetMagicDC1(method, swLabels[0], out dcGen.magic1))
 				return null;
-			if (!getMagicDC1(method, swLabels[1], out dcGen.magic2))
+			if (!GetMagicDC1(method, swLabels[1], out dcGen.magic2))
 				return null;
-			if (!getMagicXorDC1(method, swLabels[2], out dcGen.magic3))
+			if (!GetMagicXorDC1(method, swLabels[2], out dcGen.magic3))
 				return null;
-			if (!getMagicDC1(method, swLabels[3], out dcGen.magic4))
+			if (!GetMagicDC1(method, swLabels[3], out dcGen.magic4))
 				return null;
-			if (!getMagicDC1(method, swLabels[4], out dcGen.magic5))
+			if (!GetMagicDC1(method, swLabels[4], out dcGen.magic5))
 				return null;
-			if (!getMagicDC1(method, swLabels[5], out dcGen.magic6))
+			if (!GetMagicDC1(method, swLabels[5], out dcGen.magic6))
 				return null;
-			if (!getMagicXorDC1(method, swLabels[6], out dcGen.magic7))
+			if (!GetMagicXorDC1(method, swLabels[6], out dcGen.magic7))
 				return null;
 
 			return dcGen;
 		}
 
-		static IList<Instruction> getSwitchLabels(MethodDef method) {
+		static IList<Instruction> GetSwitchLabels(MethodDef method) {
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Switch)
 					continue;
@@ -159,7 +159,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return null;
 		}
 
-		static bool getMagicDC1(MethodDef method, Instruction target, out int magic) {
+		static bool GetMagicDC1(MethodDef method, Instruction target, out int magic) {
 			magic = 0;
 			var instrs = method.Body.Instructions;
 			int index = instrs.IndexOf(target);
@@ -187,7 +187,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return false;
 		}
 
-		static bool getMagicXorDC1(MethodDef method, Instruction target, out int magic) {
+		static bool GetMagicXorDC1(MethodDef method, Instruction target, out int magic) {
 			magic = 0;
 			var instrs = method.Body.Instructions;
 			int index = instrs.IndexOf(target);
@@ -212,26 +212,26 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return false;
 		}
 
-		DCGen3 getDCGen3(TypeDef type) {
-			var method = getMoveNext(type);
+		DCGen3 GetDCGen3(TypeDef type) {
+			var method = GetMoveNext(type);
 			if (method == null)
 				return null;
-			simpleDeobfuscator.deobfuscate(method);
+			simpleDeobfuscator.Deobfuscate(method);
 
 			var dcGen = new DCGen3();
 			int index = 0;
-			if (!getMagicDC3(method, ref index, out dcGen.magic1))
+			if (!GetMagicDC3(method, ref index, out dcGen.magic1))
 				return null;
-			if (!getMagicDC3(method, ref index, out dcGen.magic2))
+			if (!GetMagicDC3(method, ref index, out dcGen.magic2))
 				return null;
 
 			var dt = type.DeclaringType;
-			dcGen.dc2 = getDCGen2(dt.NestedTypes[0] == type ? dt.NestedTypes[1] : dt.NestedTypes[0]);
+			dcGen.dc2 = GetDCGen2(dt.NestedTypes[0] == type ? dt.NestedTypes[1] : dt.NestedTypes[0]);
 
 			return dcGen;
 		}
 
-		static bool getMagicDC3(MethodDef method, ref int index, out int magic) {
+		static bool GetMagicDC3(MethodDef method, ref int index, out int magic) {
 			var instrs = method.Body.Instructions;
 			for (int i = index; i < instrs.Count - 2; i++) {
 				var ldci4 = instrs[i];
@@ -251,21 +251,21 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return false;
 		}
 
-		DCGen2 getDCGen2(TypeDef type) {
-			var method = getMoveNext(type);
+		DCGen2 GetDCGen2(TypeDef type) {
+			var method = GetMoveNext(type);
 			if (method == null)
 				return null;
-			simpleDeobfuscator.deobfuscate(method);
+			simpleDeobfuscator.Deobfuscate(method);
 
 			var dcGen = new DCGen2();
 			int index = 0;
-			if (!getMagicDC3(method, ref index, out dcGen.magic1))
+			if (!GetMagicDC3(method, ref index, out dcGen.magic1))
 				return null;
 
 			return dcGen;
 		}
 
-		static MethodDef getMoveNext(TypeDef type) {
+		static MethodDef GetMoveNext(TypeDef type) {
 			foreach (var m in type.Methods) {
 				if (!m.IsVirtual)
 					continue;
@@ -279,7 +279,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					continue;
 				if (m.Name != "MoveNext")
 					continue;
-				if (!DotNetUtils.isMethod(m, "System.Boolean", "()"))
+				if (!DotNetUtils.IsMethod(m, "System.Boolean", "()"))
 					continue;
 				return m;
 			}
