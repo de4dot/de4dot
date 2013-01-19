@@ -22,7 +22,7 @@ using dnlib.DotNet.Emit;
 
 namespace de4dot.code.deobfuscators.Confuser {
 	static class ConstantsDecrypterUtils {
-		public static FieldDef findDictField(MethodDef method, TypeDef declaringType) {
+		public static FieldDef FindDictField(MethodDef method, TypeDef declaringType) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 1; i++) {
 				var newobj = instrs[i];
@@ -46,7 +46,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return null;
 		}
 
-		public static FieldDef findDataField(MethodDef method, TypeDef declaringType) {
+		public static FieldDef FindDataField(MethodDef method, TypeDef declaringType) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 1; i++) {
 				var callvirt = instrs[i];
@@ -70,15 +70,15 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return null;
 		}
 
-		public static FieldDef findStreamField(MethodDef method, TypeDef declaringType) {
-			return findStreamField(method, declaringType, "System.IO.Stream");
+		public static FieldDef FindStreamField(MethodDef method, TypeDef declaringType) {
+			return FindStreamField(method, declaringType, "System.IO.Stream");
 		}
 
-		public static FieldDef findMemoryStreamField(MethodDef method, TypeDef declaringType) {
-			return findStreamField(method, declaringType, "System.IO.MemoryStream");
+		public static FieldDef FindMemoryStreamField(MethodDef method, TypeDef declaringType) {
+			return FindStreamField(method, declaringType, "System.IO.MemoryStream");
 		}
 
-		public static FieldDef findStreamField(MethodDef method, TypeDef declaringType, string fieldTypeName) {
+		public static FieldDef FindStreamField(MethodDef method, TypeDef declaringType, string fieldTypeName) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 1; i++) {
 				var newobj = instrs[i];

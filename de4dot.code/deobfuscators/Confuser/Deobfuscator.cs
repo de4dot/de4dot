@@ -34,9 +34,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		public DeobfuscatorInfo()
 			: base() {
-			removeAntiDebug = new BoolOption(null, makeArgName("antidb"), "Remove anti debug code", true);
-			removeAntiDump = new BoolOption(null, makeArgName("antidump"), "Remove anti dump code", true);
-			decryptMainAsm = new BoolOption(null, makeArgName("decrypt-main"), "Decrypt main embedded assembly", true);
+			removeAntiDebug = new BoolOption(null, MakeArgName("antidb"), "Remove anti debug code", true);
+			removeAntiDump = new BoolOption(null, MakeArgName("antidump"), "Remove anti dump code", true);
+			decryptMainAsm = new BoolOption(null, MakeArgName("decrypt-main"), "Decrypt main embedded assembly", true);
 		}
 
 		public override string Name {
@@ -47,7 +47,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			get { return THE_TYPE; }
 		}
 
-		public override IDeobfuscator createDeobfuscator() {
+		public override IDeobfuscator CreateDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
 				ValidNameRegex = validNameRegex.get(),
 				RemoveAntiDebug = removeAntiDebug.get(),
@@ -56,7 +56,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			});
 		}
 
-		protected override IEnumerable<Option> getOptionsInternal() {
+		protected override IEnumerable<Option> GetOptionsInternal() {
 			return new List<Option>() {
 				removeAntiDebug,
 				removeAntiDump,
@@ -128,88 +128,88 @@ namespace de4dot.code.deobfuscators.Confuser {
 			StringFeatures = StringFeatures.AllowStaticDecryption | StringFeatures.AllowDynamicDecryption;
 		}
 
-		protected override int detectInternal() {
+		protected override int DetectInternal() {
 			int val = 0;
 
-			int sum = toInt32(jitMethodsDecrypter != null ? jitMethodsDecrypter.Detected : false) +
-					toInt32(memoryMethodsDecrypter != null ? memoryMethodsDecrypter.Detected : false) +
-					toInt32(proxyCallFixer != null ? proxyCallFixer.Detected : false) +
-					toInt32(antiDebugger != null ? antiDebugger.Detected : false) +
-					toInt32(antiDumping != null ? antiDumping.Detected : false) +
-					toInt32(resourceDecrypter != null ? resourceDecrypter.Detected : false) +
-					toInt32(constantsDecrypterV18 != null ? constantsDecrypterV18.Detected : false) +
-					toInt32(constantsDecrypterV15 != null ? constantsDecrypterV15.Detected : false) +
-					toInt32(constantsDecrypterV17 != null ? constantsDecrypterV17.Detected : false) +
-					toInt32(stringDecrypter != null ? stringDecrypter.Detected : false) +
-					toInt32(unpacker != null ? unpacker.Detected : false);
+			int sum = ToInt32(jitMethodsDecrypter != null ? jitMethodsDecrypter.Detected : false) +
+					ToInt32(memoryMethodsDecrypter != null ? memoryMethodsDecrypter.Detected : false) +
+					ToInt32(proxyCallFixer != null ? proxyCallFixer.Detected : false) +
+					ToInt32(antiDebugger != null ? antiDebugger.Detected : false) +
+					ToInt32(antiDumping != null ? antiDumping.Detected : false) +
+					ToInt32(resourceDecrypter != null ? resourceDecrypter.Detected : false) +
+					ToInt32(constantsDecrypterV18 != null ? constantsDecrypterV18.Detected : false) +
+					ToInt32(constantsDecrypterV15 != null ? constantsDecrypterV15.Detected : false) +
+					ToInt32(constantsDecrypterV17 != null ? constantsDecrypterV17.Detected : false) +
+					ToInt32(stringDecrypter != null ? stringDecrypter.Detected : false) +
+					ToInt32(unpacker != null ? unpacker.Detected : false);
 			if (sum > 0)
 				val += 100 + 10 * (sum - 1);
 
 			return val;
 		}
 
-		protected override void scanForObfuscator() {
-			removeObfuscatorAttribute();
+		protected override void ScanForObfuscator() {
+			RemoveObfuscatorAttribute();
 			jitMethodsDecrypter = new JitMethodsDecrypter(module, DeobfuscatedFile);
 			try {
-				jitMethodsDecrypter.find();
+				jitMethodsDecrypter.Find();
 			}
 			catch {
 			}
 			if (jitMethodsDecrypter.Detected) {
-				initializeObfuscatorName();
+				InitializeObfuscatorName();
 				return;
 			}
 			memoryMethodsDecrypter = new MemoryMethodsDecrypter(module, DeobfuscatedFile);
-			memoryMethodsDecrypter.find();
+			memoryMethodsDecrypter.Find();
 			if (memoryMethodsDecrypter.Detected) {
-				initializeObfuscatorName();
+				InitializeObfuscatorName();
 				return;
 			}
-			initTheRest(null);
+			InitializeTheRest(null);
 		}
 
-		void initTheRest(Deobfuscator oldOne) {
+		void InitializeTheRest(Deobfuscator oldOne) {
 			resourceDecrypter = new ResourceDecrypter(module, DeobfuscatedFile);
-			resourceDecrypter.find();
+			resourceDecrypter.Find();
 
-			constantsDecrypterV18 = new ConstantsDecrypterV18(module, getFileData(), DeobfuscatedFile);
-			constantsDecrypterV17 = new ConstantsDecrypterV17(module, getFileData(), DeobfuscatedFile);
-			constantsDecrypterV15 = new ConstantsDecrypterV15(module, getFileData(), DeobfuscatedFile);
+			constantsDecrypterV18 = new ConstantsDecrypterV18(module, GetFileData(), DeobfuscatedFile);
+			constantsDecrypterV17 = new ConstantsDecrypterV17(module, GetFileData(), DeobfuscatedFile);
+			constantsDecrypterV15 = new ConstantsDecrypterV15(module, GetFileData(), DeobfuscatedFile);
 			do {
-				constantsDecrypterV18.find();
+				constantsDecrypterV18.Find();
 				if (constantsDecrypterV18.Detected) {
-					initializeConstantsDecrypterV18();
+					InitializeConstantsDecrypterV18();
 					break;
 				}
-				constantsDecrypterV17.find();
+				constantsDecrypterV17.Find();
 				if (constantsDecrypterV17.Detected) {
-					initializeConstantsDecrypterV17();
+					InitializeConstantsDecrypterV17();
 					break;
 				}
-				constantsDecrypterV15.find();
+				constantsDecrypterV15.Find();
 				if (constantsDecrypterV15.Detected) {
-					initializeConstantsDecrypterV15();
+					InitializeConstantsDecrypterV15();
 					break;
 				}
 			} while (false);
 
-			proxyCallFixer = new ProxyCallFixer(module, getFileData());
-			proxyCallFixer.findDelegateCreator(DeobfuscatedFile);
+			proxyCallFixer = new ProxyCallFixer(module, GetFileData());
+			proxyCallFixer.FindDelegateCreator(DeobfuscatedFile);
 			antiDebugger = new AntiDebugger(module);
-			antiDebugger.find();
+			antiDebugger.Find();
 			antiDumping = new AntiDumping(module);
-			antiDumping.find(DeobfuscatedFile);
+			antiDumping.Find(DeobfuscatedFile);
 			stringDecrypter = new StringDecrypter(module);
-			stringDecrypter.find(DeobfuscatedFile);
-			initializeStringDecrypter();
+			stringDecrypter.Find(DeobfuscatedFile);
+			InitializeStringDecrypter();
 			unpacker = new Unpacker(module, oldOne == null ? null : oldOne.unpacker);
-			unpacker.find(DeobfuscatedFile, this);
-			initializeObfuscatorName();
+			unpacker.Find(DeobfuscatedFile, this);
+			InitializeObfuscatorName();
 		}
 
-		void initializeObfuscatorName() {
-			var versionString = getVersionString();
+		void InitializeObfuscatorName() {
+			var versionString = GetVersionString();
 			if (string.IsNullOrEmpty(versionString))
 				obfuscatorName = DeobfuscatorInfo.THE_NAME;
 			else
@@ -217,7 +217,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		const bool useAttributeVersion = true;
-		string getVersionString() {
+		string GetVersionString() {
 			var versionProviders = new IVersionProvider[] {
 				jitMethodsDecrypter,
 				memoryMethodsDecrypter,
@@ -237,23 +237,23 @@ namespace de4dot.code.deobfuscators.Confuser {
 				if (versionProvider == null)
 					continue;
 				int minRev, maxRev;
-				if (versionProvider.getRevisionRange(out minRev, out maxRev)) {
+				if (versionProvider.GetRevisionRange(out minRev, out maxRev)) {
 					if (maxRev == int.MaxValue)
 						Logger.v("r{0}-latest : {1}", minRev, versionProvider.GetType().Name);
 					else
 						Logger.v("r{0}-r{1} : {2}", minRev, maxRev, versionProvider.GetType().Name);
-					vd.addRevs(minRev, maxRev);
+					vd.AddRevs(minRev, maxRev);
 				}
 			}
 			if (useAttributeVersion)
-				vd.setVersion(approxVersion);
-			return vd.getVersionString();
+				vd.SetVersion(approxVersion);
+			return vd.GetVersionString();
 		}
 
-		byte[] getFileData() {
+		byte[] GetFileData() {
 			if (ModuleBytes != null)
 				return ModuleBytes;
-			return ModuleBytes = DeobUtils.readModule(module);
+			return ModuleBytes = DeobUtils.ReadModule(module);
 		}
 
 		[Flags]
@@ -263,22 +263,22 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 		DecryptState decryptState = DecryptState.CanDecryptMethods | DecryptState.CanUnpack;
 		bool hasUnpacked = false;
-		public override bool getDecryptedModule(int count, ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
+		public override bool GetDecryptedModule(int count, ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
 			hasUnpacked = false;
-			byte[] fileData = getFileData();
+			byte[] fileData = GetFileData();
 
 			using (var peImage = new MyPEImage(fileData)) {
 				if ((decryptState & DecryptState.CanDecryptMethods) != 0) {
 					bool decrypted = false;
 					if (jitMethodsDecrypter != null && jitMethodsDecrypter.Detected) {
-						jitMethodsDecrypter.initialize();
-						if (!jitMethodsDecrypter.decrypt(peImage, fileData, ref dumpedMethods))
+						jitMethodsDecrypter.Initialize();
+						if (!jitMethodsDecrypter.Decrypt(peImage, fileData, ref dumpedMethods))
 							return false;
 						decrypted = true;
 					}
 					else if (memoryMethodsDecrypter != null && memoryMethodsDecrypter.Detected) {
-						memoryMethodsDecrypter.initialize();
-						if (!memoryMethodsDecrypter.decrypt(peImage, fileData))
+						memoryMethodsDecrypter.Initialize();
+						if (!memoryMethodsDecrypter.Decrypt(peImage, fileData))
 							return false;
 						decrypted = true;
 					}
@@ -297,18 +297,18 @@ namespace de4dot.code.deobfuscators.Confuser {
 				if (unpacker != null && unpacker.Detected) {
 					if (options.DecryptMainAsm) {
 						decryptState |= DecryptState.CanDecryptMethods | DecryptState.CanUnpack;
-						var mainInfo = unpacker.unpackMainAssembly(true);
+						var mainInfo = unpacker.UnpackMainAssembly(true);
 						newFileData = mainInfo.data;
 						realAssemblyInfo = mainInfo.realAssemblyInfo;
-						embeddedAssemblyInfos.AddRange(unpacker.getEmbeddedAssemblyInfos());
+						embeddedAssemblyInfos.AddRange(unpacker.GetEmbeddedAssemblyInfos());
 						ModuleBytes = newFileData;
 						hasUnpacked = true;
 						return true;
 					}
 					else {
 						decryptState &= ~DecryptState.CanUnpack;
-						mainAsmInfo = unpacker.unpackMainAssembly(false);
-						embeddedAssemblyInfos.AddRange(unpacker.getEmbeddedAssemblyInfos());
+						mainAsmInfo = unpacker.UnpackMainAssembly(false);
+						embeddedAssemblyInfos.AddRange(unpacker.GetEmbeddedAssemblyInfos());
 						return false;
 					}
 				}
@@ -317,7 +317,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		public override IDeobfuscator moduleReloaded(ModuleDefMD module) {
+		public override IDeobfuscator ModuleReloaded(ModuleDefMD module) {
 			if (module.Assembly != null)
 				realAssemblyInfo = null;
 			if (realAssemblyInfo != null) {
@@ -329,19 +329,19 @@ namespace de4dot.code.deobfuscators.Confuser {
 			}
 
 			var newOne = new Deobfuscator(options);
-			DeobfuscatedFile.setDeobfuscator(newOne);
+			DeobfuscatedFile.SetDeobfuscator(newOne);
 			newOne.realAssemblyInfo = realAssemblyInfo;
 			newOne.decryptState = decryptState;
 			newOne.DeobfuscatedFile = DeobfuscatedFile;
 			newOne.ModuleBytes = ModuleBytes;
 			newOne.embeddedAssemblyInfos.AddRange(embeddedAssemblyInfos);
-			newOne.setModule(module);
-			newOne.removeObfuscatorAttribute();
+			newOne.SetModule(module);
+			newOne.RemoveObfuscatorAttribute();
 			newOne.jitMethodsDecrypter = hasUnpacked ? new JitMethodsDecrypter(module, DeobfuscatedFile) :
 						new JitMethodsDecrypter(module, DeobfuscatedFile, jitMethodsDecrypter);
 			if ((newOne.decryptState & DecryptState.CanDecryptMethods) != 0) {
 				try {
-					newOne.jitMethodsDecrypter.find();
+					newOne.jitMethodsDecrypter.Find();
 				}
 				catch {
 				}
@@ -351,185 +351,185 @@ namespace de4dot.code.deobfuscators.Confuser {
 			newOne.memoryMethodsDecrypter = hasUnpacked ? new MemoryMethodsDecrypter(module, DeobfuscatedFile) :
 						new MemoryMethodsDecrypter(module, DeobfuscatedFile, memoryMethodsDecrypter);
 			if ((newOne.decryptState & DecryptState.CanDecryptMethods) != 0) {
-				newOne.memoryMethodsDecrypter.find();
+				newOne.memoryMethodsDecrypter.Find();
 				if (newOne.memoryMethodsDecrypter.Detected)
 					return newOne;
 			}
-			newOne.initTheRest(this);
+			newOne.InitializeTheRest(this);
 			return newOne;
 		}
 
-		public override void deobfuscateBegin() {
-			base.deobfuscateBegin();
+		public override void DeobfuscateBegin() {
+			base.DeobfuscateBegin();
 
 			Logger.v("Detected {0}", obfuscatorName);
 
-			initializeConstantsDecrypterV18();
-			initializeConstantsDecrypterV17();
-			initializeConstantsDecrypterV15();
-			initializeStringDecrypter();
+			InitializeConstantsDecrypterV18();
+			InitializeConstantsDecrypterV17();
+			InitializeConstantsDecrypterV15();
+			InitializeStringDecrypter();
 
 			if (jitMethodsDecrypter != null) {
-				addModuleCctorInitCallToBeRemoved(jitMethodsDecrypter.InitMethod);
-				addTypeToBeRemoved(jitMethodsDecrypter.Type, "Method decrypter (JIT) type");
+				AddModuleCctorInitCallToBeRemoved(jitMethodsDecrypter.InitMethod);
+				AddTypeToBeRemoved(jitMethodsDecrypter.Type, "Method decrypter (JIT) type");
 			}
 
 			if (memoryMethodsDecrypter != null) {
-				addModuleCctorInitCallToBeRemoved(memoryMethodsDecrypter.InitMethod);
-				addTypeToBeRemoved(memoryMethodsDecrypter.Type, "Method decrypter (memory) type");
+				AddModuleCctorInitCallToBeRemoved(memoryMethodsDecrypter.InitMethod);
+				AddTypeToBeRemoved(memoryMethodsDecrypter.Type, "Method decrypter (memory) type");
 			}
 
 			if (options.RemoveAntiDebug && antiDebugger != null) {
-				addModuleCctorInitCallToBeRemoved(antiDebugger.InitMethod);
-				addTypeToBeRemoved(antiDebugger.Type, "Anti debugger type");
-				if (antiDebugger.Type == DotNetUtils.getModuleType(module))
-					addMethodToBeRemoved(antiDebugger.InitMethod, "Anti debugger method");
+				AddModuleCctorInitCallToBeRemoved(antiDebugger.InitMethod);
+				AddTypeToBeRemoved(antiDebugger.Type, "Anti debugger type");
+				if (antiDebugger.Type == DotNetUtils.GetModuleType(module))
+					AddMethodToBeRemoved(antiDebugger.InitMethod, "Anti debugger method");
 			}
 
 			if (options.RemoveAntiDump && antiDumping != null) {
-				addModuleCctorInitCallToBeRemoved(antiDumping.InitMethod);
-				addTypeToBeRemoved(antiDumping.Type, "Anti dumping type");
+				AddModuleCctorInitCallToBeRemoved(antiDumping.InitMethod);
+				AddTypeToBeRemoved(antiDumping.Type, "Anti dumping type");
 			}
 
 			if (proxyCallFixer != null)
-				proxyCallFixer.find();
+				proxyCallFixer.Find();
 
-			removeInvalidResources();
-			dumpEmbeddedAssemblies();
+			RemoveInvalidResources();
+			DumpEmbeddedAssemblies();
 
 			startedDeobfuscating = true;
 		}
 
-		void dumpEmbeddedAssemblies() {
+		void DumpEmbeddedAssemblies() {
 			if (mainAsmInfo != null) {
 				var asm = module.Assembly;
 				var name = (asm == null ? module.Name : asm.Name).String;
-				DeobfuscatedFile.createAssemblyFile(mainAsmInfo.data, name + "_real", mainAsmInfo.extension);
-				addResourceToBeRemoved(mainAsmInfo.resource, string.Format("Embedded assembly: {0}", mainAsmInfo.asmFullName));
+				DeobfuscatedFile.CreateAssemblyFile(mainAsmInfo.data, name + "_real", mainAsmInfo.extension);
+				AddResourceToBeRemoved(mainAsmInfo.resource, string.Format("Embedded assembly: {0}", mainAsmInfo.asmFullName));
 			}
 			foreach (var info in embeddedAssemblyInfos) {
 				if (module.Assembly == null || info.asmFullName != module.Assembly.FullName)
-					DeobfuscatedFile.createAssemblyFile(info.data, info.asmSimpleName, info.extension);
-				addResourceToBeRemoved(info.resource, string.Format("Embedded assembly: {0}", info.asmFullName));
+					DeobfuscatedFile.CreateAssemblyFile(info.data, info.asmSimpleName, info.extension);
+				AddResourceToBeRemoved(info.resource, string.Format("Embedded assembly: {0}", info.asmFullName));
 			}
 			embeddedAssemblyInfos.Clear();
 		}
 
-		void removeInvalidResources() {
+		void RemoveInvalidResources() {
 			foreach (var rsrc in module.Resources) {
 				var resource = rsrc as EmbeddedResource;
 				if (resource == null)
 					continue;
 				if (resource.Offset != 0xFFFFFFFF)
 					continue;
-				addResourceToBeRemoved(resource, "Invalid resource");
+				AddResourceToBeRemoved(resource, "Invalid resource");
 			}
 		}
 
 		bool hasInitializedStringDecrypter = false;
-		void initializeStringDecrypter() {
+		void InitializeStringDecrypter() {
 			if (hasInitializedStringDecrypter || (stringDecrypter== null || !stringDecrypter.Detected))
 				return;
 			hasInitializedStringDecrypter = true;
 
-			decryptResources();
-			stringDecrypter.initialize();
-			staticStringInliner.add(stringDecrypter.Method, (method, gim, args) => stringDecrypter.decrypt(staticStringInliner.Method, (int)args[0]));
-			DeobfuscatedFile.stringDecryptersAdded();
+			DecryptResources();
+			stringDecrypter.Initialize();
+			staticStringInliner.Add(stringDecrypter.Method, (method, gim, args) => stringDecrypter.Decrypt(staticStringInliner.Method, (int)args[0]));
+			DeobfuscatedFile.StringDecryptersAdded();
 		}
 
 		bool hasInitializedConstantsDecrypter = false;
-		void initializeConstantsDecrypterV18() {
+		void InitializeConstantsDecrypterV18() {
 			if (hasInitializedConstantsDecrypter || (constantsDecrypterV18 == null || !constantsDecrypterV18.Detected))
 				return;
 			hasInitializedConstantsDecrypter = true;
 
-			decryptResources();
-			constantsDecrypterV18.initialize();
+			DecryptResources();
+			constantsDecrypterV18.Initialize();
 			int32ValueInliner = new Int32ValueInliner();
 			int64ValueInliner = new Int64ValueInliner();
 			singleValueInliner = new SingleValueInliner();
 			doubleValueInliner = new DoubleValueInliner();
 			foreach (var info in constantsDecrypterV18.Decrypters) {
-				staticStringInliner.add(info.method, (method, gim, args) => constantsDecrypterV18.decryptString(method, gim, (uint)args[0], (ulong)args[1]));
-				int32ValueInliner.add(info.method, (method, gim, args) => constantsDecrypterV18.decryptInt32(method, gim, (uint)args[0], (ulong)args[1]));
-				int64ValueInliner.add(info.method, (method, gim, args) => constantsDecrypterV18.decryptInt64(method, gim, (uint)args[0], (ulong)args[1]));
-				singleValueInliner.add(info.method, (method, gim, args) => constantsDecrypterV18.decryptSingle(method, gim, (uint)args[0], (ulong)args[1]));
-				doubleValueInliner.add(info.method, (method, gim, args) => constantsDecrypterV18.decryptDouble(method, gim, (uint)args[0], (ulong)args[1]));
+				staticStringInliner.Add(info.method, (method, gim, args) => constantsDecrypterV18.DecryptString(method, gim, (uint)args[0], (ulong)args[1]));
+				int32ValueInliner.Add(info.method, (method, gim, args) => constantsDecrypterV18.DecryptInt32(method, gim, (uint)args[0], (ulong)args[1]));
+				int64ValueInliner.Add(info.method, (method, gim, args) => constantsDecrypterV18.DecryptInt64(method, gim, (uint)args[0], (ulong)args[1]));
+				singleValueInliner.Add(info.method, (method, gim, args) => constantsDecrypterV18.DecryptSingle(method, gim, (uint)args[0], (ulong)args[1]));
+				doubleValueInliner.Add(info.method, (method, gim, args) => constantsDecrypterV18.DecryptDouble(method, gim, (uint)args[0], (ulong)args[1]));
 			}
-			DeobfuscatedFile.stringDecryptersAdded();
-			addTypesToBeRemoved(constantsDecrypterV18.Types, "Constants decrypter type");
-			addFieldsToBeRemoved(constantsDecrypterV18.Fields, "Constants decrypter field");
-			addMethodToBeRemoved(constantsDecrypterV18.NativeMethod, "Constants decrypter native method");
-			addResourceToBeRemoved(constantsDecrypterV18.Resource, "Encrypted constants");
+			DeobfuscatedFile.StringDecryptersAdded();
+			AddTypesToBeRemoved(constantsDecrypterV18.Types, "Constants decrypter type");
+			AddFieldsToBeRemoved(constantsDecrypterV18.Fields, "Constants decrypter field");
+			AddMethodToBeRemoved(constantsDecrypterV18.NativeMethod, "Constants decrypter native method");
+			AddResourceToBeRemoved(constantsDecrypterV18.Resource, "Encrypted constants");
 		}
 
 		bool hasInitializedConstantsDecrypter15 = false;
-		void initializeConstantsDecrypterV15() {
-			initialize(constantsDecrypterV15, ref hasInitializedConstantsDecrypter15);
+		void InitializeConstantsDecrypterV15() {
+			Initialize(constantsDecrypterV15, ref hasInitializedConstantsDecrypter15);
 		}
 
 		bool hasInitializedConstantsDecrypter17 = false;
-		void initializeConstantsDecrypterV17() {
-			initialize(constantsDecrypterV17, ref hasInitializedConstantsDecrypter17);
+		void InitializeConstantsDecrypterV17() {
+			Initialize(constantsDecrypterV17, ref hasInitializedConstantsDecrypter17);
 		}
 
-		void initialize(ConstantsDecrypterBase constDecrypter, ref bool hasInitialized) {
+		void Initialize(ConstantsDecrypterBase constDecrypter, ref bool hasInitialized) {
 			if (hasInitialized || (constDecrypter == null || !constDecrypter.Detected))
 				return;
 			hasInitializedConstantsDecrypter15 = true;
 
-			decryptResources();
-			constDecrypter.initialize();
+			DecryptResources();
+			constDecrypter.Initialize();
 			int32ValueInliner = new Int32ValueInliner();
 			int64ValueInliner = new Int64ValueInliner();
 			singleValueInliner = new SingleValueInliner();
 			doubleValueInliner = new DoubleValueInliner();
 			foreach (var info in constDecrypter.DecrypterInfos) {
-				staticStringInliner.add(info.decryptMethod, (method, gim, args) => constDecrypter.decryptString(staticStringInliner.Method, method, args));
-				int32ValueInliner.add(info.decryptMethod, (method, gim, args) => constDecrypter.decryptInt32(int32ValueInliner.Method, method, args));
-				int64ValueInliner.add(info.decryptMethod, (method, gim, args) => constDecrypter.decryptInt64(int64ValueInliner.Method, method, args));
-				singleValueInliner.add(info.decryptMethod, (method, gim, args) => constDecrypter.decryptSingle(singleValueInliner.Method, method, args));
-				doubleValueInliner.add(info.decryptMethod, (method, gim, args) => constDecrypter.decryptDouble(doubleValueInliner.Method, method, args));
+				staticStringInliner.Add(info.decryptMethod, (method, gim, args) => constDecrypter.DecryptString(staticStringInliner.Method, method, args));
+				int32ValueInliner.Add(info.decryptMethod, (method, gim, args) => constDecrypter.DecryptInt32(int32ValueInliner.Method, method, args));
+				int64ValueInliner.Add(info.decryptMethod, (method, gim, args) => constDecrypter.DecryptInt64(int64ValueInliner.Method, method, args));
+				singleValueInliner.Add(info.decryptMethod, (method, gim, args) => constDecrypter.DecryptSingle(singleValueInliner.Method, method, args));
+				doubleValueInliner.Add(info.decryptMethod, (method, gim, args) => constDecrypter.DecryptDouble(doubleValueInliner.Method, method, args));
 			}
 			int32ValueInliner.RemoveUnbox = true;
 			int64ValueInliner.RemoveUnbox = true;
 			singleValueInliner.RemoveUnbox = true;
 			doubleValueInliner.RemoveUnbox = true;
-			DeobfuscatedFile.stringDecryptersAdded();
-			addFieldsToBeRemoved(constDecrypter.Fields, "Constants decrypter field");
-			var moduleType = DotNetUtils.getModuleType(module);
+			DeobfuscatedFile.StringDecryptersAdded();
+			AddFieldsToBeRemoved(constDecrypter.Fields, "Constants decrypter field");
+			var moduleType = DotNetUtils.GetModuleType(module);
 			foreach (var info in constDecrypter.DecrypterInfos) {
 				if (info.decryptMethod.DeclaringType == moduleType)
-					addMethodToBeRemoved(info.decryptMethod, "Constants decrypter method");
+					AddMethodToBeRemoved(info.decryptMethod, "Constants decrypter method");
 				else
-					addTypeToBeRemoved(info.decryptMethod.DeclaringType, "Constants decrypter type");
+					AddTypeToBeRemoved(info.decryptMethod.DeclaringType, "Constants decrypter type");
 			}
-			addMethodToBeRemoved(constDecrypter.NativeMethod, "Constants decrypter native method");
-			addResourceToBeRemoved(constDecrypter.Resource, "Encrypted constants");
+			AddMethodToBeRemoved(constDecrypter.NativeMethod, "Constants decrypter native method");
+			AddResourceToBeRemoved(constDecrypter.Resource, "Encrypted constants");
 		}
 
-		void decryptResources() {
-			var rsrc = resourceDecrypter.mergeResources();
+		void DecryptResources() {
+			var rsrc = resourceDecrypter.MergeResources();
 			if (rsrc == null)
 				return;
-			addResourceToBeRemoved(rsrc, "Encrypted resources");
-			addMethodToBeRemoved(resourceDecrypter.Handler, "Resource decrypter handler");
-			addFieldsToBeRemoved(resourceDecrypter.Fields, "Resource decrypter field");
+			AddResourceToBeRemoved(rsrc, "Encrypted resources");
+			AddMethodToBeRemoved(resourceDecrypter.Handler, "Resource decrypter handler");
+			AddFieldsToBeRemoved(resourceDecrypter.Fields, "Resource decrypter field");
 		}
 
-		void removeObfuscatorAttribute() {
+		void RemoveObfuscatorAttribute() {
 			foreach (var type in module.Types) {
 				if (type.FullName == "ConfusedByAttribute") {
-					setConfuserVersion(type);
-					addAttributeToBeRemoved(type, "Obfuscator attribute");
+					SetConfuserVersion(type);
+					AddAttributeToBeRemoved(type, "Obfuscator attribute");
 					break;
 				}
 			}
 		}
 
-		void setConfuserVersion(TypeDef type) {
-			var s = DotNetUtils.getCustomArgAsString(getModuleAttribute(type) ?? getAssemblyAttribute(type), 0);
+		void SetConfuserVersion(TypeDef type) {
+			var s = DotNetUtils.GetCustomArgAsString(GetModuleAttribute(type) ?? GetAssemblyAttribute(type), 0);
 			if (s == null)
 				return;
 			var val = System.Text.RegularExpressions.Regex.Match(s, @"^Confuser v(\d+)\.(\d+)\.(\d+)\.(\d+)$");
@@ -541,42 +541,42 @@ namespace de4dot.code.deobfuscators.Confuser {
 										int.Parse(val.Groups[4].ToString()));
 		}
 
-		public override void deobfuscateMethodEnd(Blocks blocks) {
+		public override void DeobfuscateMethodEnd(Blocks blocks) {
 			if (proxyCallFixer != null)
-				proxyCallFixer.deobfuscate(blocks);
-			resourceDecrypter.deobfuscate(blocks);
-			unpacker.deobfuscate(blocks);
+				proxyCallFixer.Deobfuscate(blocks);
+			resourceDecrypter.Deobfuscate(blocks);
+			unpacker.Deobfuscate(blocks);
 			if (int32ValueInliner != null) {
-				int32ValueInliner.decrypt(blocks);
-				int64ValueInliner.decrypt(blocks);
-				singleValueInliner.decrypt(blocks);
-				doubleValueInliner.decrypt(blocks);
+				int32ValueInliner.Decrypt(blocks);
+				int64ValueInliner.Decrypt(blocks);
+				singleValueInliner.Decrypt(blocks);
+				doubleValueInliner.Decrypt(blocks);
 			}
-			base.deobfuscateMethodEnd(blocks);
+			base.DeobfuscateMethodEnd(blocks);
 		}
 
-		public override void deobfuscateEnd() {
+		public override void DeobfuscateEnd() {
 			if (proxyCallFixer != null) {
-				if (removeProxyDelegates(proxyCallFixer))
-					addFieldsToBeRemoved(proxyCallFixer.Fields, "Proxy delegate instance field");
-				proxyCallFixer.cleanUp();
+				if (RemoveProxyDelegates(proxyCallFixer))
+					AddFieldsToBeRemoved(proxyCallFixer.Fields, "Proxy delegate instance field");
+				proxyCallFixer.CleanUp();
 			}
 			if (constantsDecrypterV18 != null)
-				constantsDecrypterV18.cleanUp();
+				constantsDecrypterV18.CleanUp();
 
 			if (CanRemoveStringDecrypterType) {
 				if (stringDecrypter != null) {
-					addMethodToBeRemoved(stringDecrypter.Method, "String decrypter method");
-					addResourceToBeRemoved(stringDecrypter.Resource, "Encrypted strings");
+					AddMethodToBeRemoved(stringDecrypter.Method, "String decrypter method");
+					AddResourceToBeRemoved(stringDecrypter.Resource, "Encrypted strings");
 				}
 			}
 
 			module.IsILOnly = true;
 
-			base.deobfuscateEnd();
+			base.DeobfuscateEnd();
 		}
 
-		public override IEnumerable<int> getStringDecrypterMethods() {
+		public override IEnumerable<int> GetStringDecrypterMethods() {
 			var list = new List<int>();
 			if (stringDecrypter != null && stringDecrypter.Method != null)
 				list.Add(stringDecrypter.Method.MDToken.ToInt32());

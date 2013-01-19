@@ -65,28 +65,28 @@ namespace de4dot.code.deobfuscators.Confuser {
 				this.version = version;
 			}
 
-			public string decryptString(uint magic1, ulong magic2) {
-				return Encoding.UTF8.GetString(decrypt(magic1, magic2));
+			public string DecryptString(uint magic1, ulong magic2) {
+				return Encoding.UTF8.GetString(Decrypt(magic1, magic2));
 			}
 
-			public int decryptInt32(uint magic1, ulong magic2) {
-				return BitConverter.ToInt32(decrypt(magic1, magic2), 0);
+			public int DecryptInt32(uint magic1, ulong magic2) {
+				return BitConverter.ToInt32(Decrypt(magic1, magic2), 0);
 			}
 
-			public long decryptInt64(uint magic1, ulong magic2) {
-				return BitConverter.ToInt64(decrypt(magic1, magic2), 0);
+			public long DecryptInt64(uint magic1, ulong magic2) {
+				return BitConverter.ToInt64(Decrypt(magic1, magic2), 0);
 			}
 
-			public float decryptSingle(uint magic1, ulong magic2) {
-				return BitConverter.ToSingle(decrypt(magic1, magic2), 0);
+			public float DecryptSingle(uint magic1, ulong magic2) {
+				return BitConverter.ToSingle(Decrypt(magic1, magic2), 0);
 			}
 
-			public double decryptDouble(uint magic1, ulong magic2) {
-				return BitConverter.ToDouble(decrypt(magic1, magic2), 0);
+			public double DecryptDouble(uint magic1, ulong magic2) {
+				return BitConverter.ToDouble(Decrypt(magic1, magic2), 0);
 			}
 
-			byte[] decrypt(uint magic1, ulong magic2) {
-				ulong info = hash(method.DeclaringType.MDToken.ToUInt32() * magic1) ^ magic2;
+			byte[] Decrypt(uint magic1, ulong magic2) {
+				ulong info = Hash(method.DeclaringType.MDToken.ToUInt32() * magic1) ^ magic2;
 				int offset = (int)(info >> 32);
 				int len = (int)info;
 				var decrypted = new byte[len];
@@ -96,22 +96,22 @@ namespace de4dot.code.deobfuscators.Confuser {
 				return decrypted;
 			}
 
-			ulong hash(uint magic) {
+			ulong Hash(uint magic) {
 				switch (version) {
 				case ConfuserVersion.v18_r75367_normal:
 				case ConfuserVersion.v18_r75367_dynamic:
 				case ConfuserVersion.v18_r75367_native:
-					return hash1(key0l ^ magic);
+					return Hash1(key0l ^ magic);
 				case ConfuserVersion.v18_r75369_normal:
 				case ConfuserVersion.v18_r75369_dynamic:
 				case ConfuserVersion.v18_r75369_native:
-					return hash1(key0l * magic);
+					return Hash1(key0l * magic);
 				default:
 					throw new ApplicationException("Invalid version");
 				}
 			}
 
-			ulong hash1(ulong h0) {
+			ulong Hash1(ulong h0) {
 				ulong h1 = key1l;
 				ulong h2 = key2l;
 				h1 *= h0;
@@ -132,7 +132,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		public IEnumerable<TypeDef> Types {
 			get {
 				var types = new List<TypeDef>();
-				foreach (var info in decrypters.getValues())
+				foreach (var info in decrypters.GetValues())
 					types.Add(info.method.DeclaringType);
 				return types;
 			}
@@ -156,7 +156,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		public IEnumerable<DecrypterInfo> Decrypters {
-			get { return decrypters.getValues(); }
+			get { return decrypters.GetValues(); }
 		}
 
 		public bool Detected {
@@ -169,78 +169,78 @@ namespace de4dot.code.deobfuscators.Confuser {
 			this.simpleDeobfuscator = simpleDeobfuscator;
 		}
 
-		public void find() {
-			var cctor = DotNetUtils.getModuleTypeCctor(module);
+		public void Find() {
+			var cctor = DotNetUtils.GetModuleTypeCctor(module);
 			if (cctor == null)
 				return;
-			simpleDeobfuscator.deobfuscate(cctor, true);
+			simpleDeobfuscator.Deobfuscate(cctor, true);
 
-			if ((dictField = ConstantsDecrypterUtils.findDictField(cctor, cctor.DeclaringType)) == null)
+			if ((dictField = ConstantsDecrypterUtils.FindDictField(cctor, cctor.DeclaringType)) == null)
 				return;
-			if ((dataField = ConstantsDecrypterUtils.findDataField(cctor, cctor.DeclaringType)) == null)
+			if ((dataField = ConstantsDecrypterUtils.FindDataField(cctor, cctor.DeclaringType)) == null)
 				return;
 
-			nativeMethod = findNativeMethod(cctor, cctor.DeclaringType);
+			nativeMethod = FindNativeMethod(cctor, cctor.DeclaringType);
 
-			var method = getDecryptMethod();
+			var method = GetDecryptMethod();
 			if (method == null)
 				return;
-			simpleDeobfuscator.deobfuscate(method);
+			simpleDeobfuscator.Deobfuscate(method);
 			var info = new DecrypterInfo(this, method, ConfuserVersion.Unknown);
-			if (findKeys_v18_r75367(info))
-				initVersion(cctor, ConfuserVersion.v18_r75367_normal, ConfuserVersion.v18_r75367_dynamic, ConfuserVersion.v18_r75367_native);
-			else if (findKeys_v18_r75369(info))
-				initVersion(cctor, ConfuserVersion.v18_r75369_normal, ConfuserVersion.v18_r75369_dynamic, ConfuserVersion.v18_r75369_native);
+			if (FindKeys_v18_r75367(info))
+				InitVersion(cctor, ConfuserVersion.v18_r75367_normal, ConfuserVersion.v18_r75367_dynamic, ConfuserVersion.v18_r75367_native);
+			else if (FindKeys_v18_r75369(info))
+				InitVersion(cctor, ConfuserVersion.v18_r75369_normal, ConfuserVersion.v18_r75369_dynamic, ConfuserVersion.v18_r75369_native);
 			else
 				return;
 
 			installMethod = cctor;
 		}
 
-		void initVersion(MethodDef installMethod, ConfuserVersion normal, ConfuserVersion dynamic, ConfuserVersion native) {
+		void InitVersion(MethodDef installMethod, ConfuserVersion normal, ConfuserVersion dynamic, ConfuserVersion native) {
 			if (nativeMethod != null)
 				version = native;
-			else if (DeobUtils.hasInteger(installMethod, 0x10000))
+			else if (DeobUtils.HasInteger(installMethod, 0x10000))
 				version = normal;
 			else
 				version = dynamic;
 		}
 
-		public void initialize() {
+		public void Initialize() {
 			if (installMethod == null)
 				return;
 
-			if (!findKeys())
+			if (!FindKeys())
 				throw new ApplicationException("Could not find keys");
 
-			if ((resource = findResource(key0)) == null)
+			if ((resource = FindResource(key0)) == null)
 				throw new ApplicationException("Could not find resource");
-			constants = decryptResource(resource.GetResourceData());
+			constants = DecryptResource(resource.GetResourceData());
 
-			findDecrypters();
+			FindDecrypters();
 		}
 
-		EmbeddedResource findResource(uint magic) {
+		EmbeddedResource FindResource(uint magic) {
 			var name = Encoding.UTF8.GetString(BitConverter.GetBytes(magic));
-			return DotNetUtils.getResource(module, name) as EmbeddedResource;
+			return DotNetUtils.GetResource(module, name) as EmbeddedResource;
 		}
 
-		bool findKeys() {
-			if (!findKey0(installMethod, out key0))
+		bool FindKeys() {
+			if (!FindKey0(installMethod, out key0))
 				return false;
-			if (!findKey0d(installMethod, out key0d))
+			if (!FindKey0d(installMethod, out key0d))
 				return false;
 
 			return true;
 		}
 
-		static bool findKey0(MethodDef method, out uint key) {
+		static bool FindKey0(MethodDef method, out uint key) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count; i++) {
-				int index = ConfuserUtils.findCallMethod(instrs, i, Code.Call, "System.Text.Encoding System.Text.Encoding::get_UTF8()");
+				int index = ConfuserUtils.FindCallMethod(instrs, i, Code.Call, "System.Text.Encoding System.Text.Encoding::get_UTF8()");
 				if (index < 0)
 					break;
-				int index2 = ConfuserUtils.findCallMethod(instrs, i, Code.Call, "System.Byte[] System.BitConverter::GetBytes(System.Int32)");
+				int index2 = ConfuserUtils.FindCallMethod(instrs, i, Code.Call, "System.Byte[] System.BitConverter::GetBytes(System.Int32)");
 				if (index2 - index != 2)
 					continue;
 				var ldci4 = instrs[index + 1];
@@ -255,13 +255,13 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		static bool findKey0d(MethodDef method, out uint key) {
+		static bool FindKey0d(MethodDef method, out uint key) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count; i++) {
-				int index = ConfuserUtils.findCallMethod(instrs, i, Code.Callvirt, "System.Reflection.Module System.Reflection.MemberInfo::get_Module()");
+				int index = ConfuserUtils.FindCallMethod(instrs, i, Code.Callvirt, "System.Reflection.Module System.Reflection.MemberInfo::get_Module()");
 				if (index < 0)
 					break;
-				int index2 = ConfuserUtils.findCallMethod(instrs, i, Code.Callvirt, "System.Int32 System.Reflection.MemberInfo::get_MetadataToken()");
+				int index2 = ConfuserUtils.FindCallMethod(instrs, i, Code.Callvirt, "System.Int32 System.Reflection.MemberInfo::get_MetadataToken()");
 				if (index2 - index != 3)
 					continue;
 				var ldci4 = instrs[index + 1];
@@ -278,7 +278,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		static MethodDef findNativeMethod(MethodDef method, TypeDef declaringType) {
+		static MethodDef FindNativeMethod(MethodDef method, TypeDef declaringType) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count; i++) {
 				if (!instrs[i].IsLdloc())
@@ -289,7 +289,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				var calledMethod = call.Operand as MethodDef;
 				if (calledMethod == null || !calledMethod.IsStatic || !calledMethod.IsNative)
 					continue;
-				if (!DotNetUtils.isMethod(calledMethod, "System.Int32", "(System.Int32)"))
+				if (!DotNetUtils.IsMethod(calledMethod, "System.Int32", "(System.Int32)"))
 					continue;
 
 				return calledMethod;
@@ -297,26 +297,26 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return null;
 		}
 
-		MethodDef getDecryptMethod() {
+		MethodDef GetDecryptMethod() {
 			foreach (var type in module.Types) {
 				if (type.Attributes != (TypeAttributes.Abstract | TypeAttributes.Sealed))
 					continue;
-				if (!checkMethods(type.Methods))
+				if (!CheckMethods(type.Methods))
 					continue;
 				foreach (var method in type.Methods) {
-					if (isDecryptMethodSignature(method))
+					if (IsDecryptMethodSignature(method))
 						return method;
 				}
 			}
 			return null;
 		}
 
-		static bool checkMethods(IEnumerable<MethodDef> methods) {
+		static bool CheckMethods(IEnumerable<MethodDef> methods) {
 			int numMethods = 0;
 			foreach (var method in methods) {
 				if (method.Name == ".ctor" || method.Name == ".cctor")
 					return false;
-				if (!isDecryptMethodSignature(method))
+				if (!IsDecryptMethodSignature(method))
 					return false;
 
 				numMethods++;
@@ -324,7 +324,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return numMethods > 0;
 		}
 
-		static bool isDecryptMethodSignature(MethodDef method) {
+		static bool IsDecryptMethodSignature(MethodDef method) {
 			if (method == null || method.Body == null)
 				return false;
 			if (method.Attributes != (MethodAttributes.Static | MethodAttributes.HideBySig | MethodAttributes.CompilerControlled))
@@ -345,68 +345,68 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return true;
 		}
 
-		void findDecrypters() {
+		void FindDecrypters() {
 			foreach (var type in module.Types) {
 				if (type.Attributes != (TypeAttributes.Abstract | TypeAttributes.Sealed))
 					continue;
-				if (!checkMethods(type.Methods))
+				if (!CheckMethods(type.Methods))
 					continue;
 				foreach (var method in type.Methods) {
-					var info = createDecrypterInfo(method);
+					var info = CreateDecrypterInfo(method);
 					if (info != null)
-						decrypters.add(info.method, info);
+						decrypters.Add(info.method, info);
 				}
 			}
 		}
 
-		DecrypterInfo createDecrypterInfo(MethodDef method) {
-			if (!isDecryptMethodSignature(method))
+		DecrypterInfo CreateDecrypterInfo(MethodDef method) {
+			if (!IsDecryptMethodSignature(method))
 				return null;
 
-			simpleDeobfuscator.deobfuscate(method);
+			simpleDeobfuscator.Deobfuscate(method);
 			var info = new DecrypterInfo(this, method, version);
-			if (!findKeys(info))
+			if (!FindKeys(info))
 				return null;
 
 			return info;
 		}
 
-		bool findKeys(DecrypterInfo info) {
+		bool FindKeys(DecrypterInfo info) {
 			switch (version) {
 			case ConfuserVersion.v18_r75367_normal:
 			case ConfuserVersion.v18_r75367_dynamic:
 			case ConfuserVersion.v18_r75367_native:
-				return findKeys_v18_r75367(info);
+				return FindKeys_v18_r75367(info);
 			case ConfuserVersion.v18_r75369_normal:
 			case ConfuserVersion.v18_r75369_dynamic:
 			case ConfuserVersion.v18_r75369_native:
-				return findKeys_v18_r75369(info);
+				return FindKeys_v18_r75369(info);
 			default:
 				throw new ApplicationException("Invalid version");
 			}
 		}
 
-		static bool findKeys_v18_r75367(DecrypterInfo info) {
-			if (!findLKeys_v18_r75367(info))
+		static bool FindKeys_v18_r75367(DecrypterInfo info) {
+			if (!FindLKeys_v18_r75367(info))
 				return false;
-			if (!findKey0_v18_r75367(info))
+			if (!FindKey0_v18_r75367(info))
 				return false;
-			if (!findKey0d_v18_r75367(info))
-				return false;
-			return true;
-		}
-
-		static bool findKeys_v18_r75369(DecrypterInfo info) {
-			if (!findLKeys_v18_r75369(info))
-				return false;
-			if (!findKey0_v18_r75369(info))
-				return false;
-			if (!findKey0d_v18_r75367(info))
+			if (!FindKey0d_v18_r75367(info))
 				return false;
 			return true;
 		}
 
-		static bool findLKeys_v18_r75367(DecrypterInfo info) {
+		static bool FindKeys_v18_r75369(DecrypterInfo info) {
+			if (!FindLKeys_v18_r75369(info))
+				return false;
+			if (!FindKey0_v18_r75369(info))
+				return false;
+			if (!FindKey0d_v18_r75367(info))
+				return false;
+			return true;
+		}
+
+		static bool FindLKeys_v18_r75367(DecrypterInfo info) {
 			var instrs = info.method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 10; i++) {
 				var ldci4_1 = instrs[i];
@@ -443,7 +443,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		static bool findKey0_v18_r75367(DecrypterInfo info) {
+		static bool FindKey0_v18_r75367(DecrypterInfo info) {
 			var instrs = info.method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 4; i++) {
 				if (instrs[i].OpCode.Code != Code.Xor)
@@ -464,13 +464,13 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		static bool findKey0d_v18_r75367(DecrypterInfo info) {
+		static bool FindKey0d_v18_r75367(DecrypterInfo info) {
 			var instrs = info.method.Body.Instructions;
 			for (int i = 0; i < instrs.Count; i++) {
-				int index = ConfuserUtils.findCallMethod(instrs, i, Code.Callvirt, "System.Int32 System.Reflection.MemberInfo::get_MetadataToken()");
+				int index = ConfuserUtils.FindCallMethod(instrs, i, Code.Callvirt, "System.Int32 System.Reflection.MemberInfo::get_MetadataToken()");
 				if (index < 0)
 					break;
-				int index2 = ConfuserUtils.findCallMethod(instrs, index, Code.Call, "System.Byte[] System.BitConverter::GetBytes(System.Int32)");
+				int index2 = ConfuserUtils.FindCallMethod(instrs, index, Code.Call, "System.Byte[] System.BitConverter::GetBytes(System.Int32)");
 				if (index2 < 0)
 					break;
 				if (index2 - index != 3)
@@ -487,7 +487,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		static bool findLKeys_v18_r75369(DecrypterInfo info) {
+		static bool FindLKeys_v18_r75369(DecrypterInfo info) {
 			var instrs = info.method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 8; i++) {
 				var ldci8_1 = instrs[i];
@@ -520,7 +520,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		static bool findKey0_v18_r75369(DecrypterInfo info) {
+		static bool FindKey0_v18_r75369(DecrypterInfo info) {
 			var instrs = info.method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 4; i++) {
 				if (!instrs[i].IsLdloc())
@@ -541,36 +541,36 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		byte[] decryptResource(byte[] encrypted) {
+		byte[] DecryptResource(byte[] encrypted) {
 			switch (version) {
 			case ConfuserVersion.v18_r75367_normal:
 			case ConfuserVersion.v18_r75369_normal:
-				return decryptResource_v18_r75367_normal(encrypted);
+				return DecryptResource_v18_r75367_normal(encrypted);
 
 			case ConfuserVersion.v18_r75367_dynamic:
 			case ConfuserVersion.v18_r75369_dynamic:
-				return decryptResource_v18_r75367_dynamic(encrypted);
+				return DecryptResource_v18_r75367_dynamic(encrypted);
 
 			case ConfuserVersion.v18_r75367_native:
 			case ConfuserVersion.v18_r75369_native:
-				return decryptResource_v18_r75367_native(encrypted);
+				return DecryptResource_v18_r75367_native(encrypted);
 
 			default:
 				throw new ApplicationException("Unknown version");
 			}
 		}
 
-		byte[] getSigKey() {
+		byte[] GetSigKey() {
 			return module.ReadBlob(key0d ^ installMethod.MDToken.ToUInt32());
 		}
 
-		byte[] decryptResource_v18_r75367_normal(byte[] encrypted) {
-			var key = getSigKey();
-			var decrypted = ConfuserUtils.decrypt(BitConverter.ToUInt32(key, 12) * (uint)key0, encrypted);
-			return DeobUtils.inflate(DeobUtils.aesDecrypt(decrypted, key, DeobUtils.md5Sum(key)), true);
+		byte[] DecryptResource_v18_r75367_normal(byte[] encrypted) {
+			var key = GetSigKey();
+			var decrypted = ConfuserUtils.Decrypt(BitConverter.ToUInt32(key, 12) * (uint)key0, encrypted);
+			return DeobUtils.Inflate(DeobUtils.AesDecrypt(decrypted, key, DeobUtils.Md5Sum(key)), true);
 		}
 
-		static int getDynamicStartIndex(IList<Instruction> instrs, int ldlocIndex) {
+		static int GetDynamicStartIndex(IList<Instruction> instrs, int ldlocIndex) {
 			for (int i = ldlocIndex - 1; i >= 0; i--) {
 				if (instrs[i].OpCode.FlowControl != FlowControl.Next)
 					return i + 1;
@@ -578,7 +578,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return 0;
 		}
 
-		int getDynamicEndIndex(int startIndex, Local local) {
+		int GetDynamicEndIndex(int startIndex, Local local) {
 			if (startIndex < 0)
 				return -1;
 			var instrs = installMethod.Body.Instructions;
@@ -590,10 +590,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return -1;
 		}
 
-		Local getDynamicLocal(out int instrIndex) {
+		Local GetDynamicLocal(out int instrIndex) {
 			var instrs = installMethod.Body.Instructions;
 			for (int i = 0; i < instrs.Count; i++) {
-				i = ConfuserUtils.findCallMethod(instrs, i, Code.Callvirt, "System.Void System.IO.BinaryWriter::Write(System.Byte)");
+				i = ConfuserUtils.FindCallMethod(instrs, i, Code.Callvirt, "System.Void System.IO.BinaryWriter::Write(System.Byte)");
 				if (i < 0)
 					break;
 				int index = i - 2;
@@ -612,24 +612,24 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return null;
 		}
 
-		byte[] decryptResource_v18_r75367_dynamic(byte[] encrypted) {
+		byte[] DecryptResource_v18_r75367_dynamic(byte[] encrypted) {
 			int ldlocIndex;
-			var local = getDynamicLocal(out ldlocIndex);
+			var local = GetDynamicLocal(out ldlocIndex);
 			if (local == null)
 				throw new ApplicationException("Could not find local");
 
 			var instrs = installMethod.Body.Instructions;
-			int startIndex = getDynamicStartIndex(instrs, ldlocIndex);
-			int endIndex = getDynamicEndIndex(startIndex, local);
+			int startIndex = GetDynamicStartIndex(instrs, ldlocIndex);
+			int endIndex = GetDynamicEndIndex(startIndex, local);
 			if (endIndex < 0)
 				throw new ApplicationException("Could not find endIndex");
 
 			var constReader = new ConstantsReader(installMethod);
 
-			return decryptResource(encrypted, magic => {
-				constReader.setConstantInt32(local, magic);
+			return DecryptResource(encrypted, magic => {
+				constReader.SetConstantInt32(local, magic);
 				int index = startIndex, result;
-				if (!constReader.getNextInt32(ref index, out result))
+				if (!constReader.GetNextInt32(ref index, out result))
 					throw new ApplicationException("Could not get constant");
 				if (index != endIndex)
 					throw new ApplicationException("Wrong constant");
@@ -637,16 +637,16 @@ namespace de4dot.code.deobfuscators.Confuser {
 			});
 		}
 
-		byte[] decryptResource_v18_r75367_native(byte[] encrypted) {
+		byte[] DecryptResource_v18_r75367_native(byte[] encrypted) {
 			using (var x86Emu = new x86Emulator(fileData))
-				return decryptResource(encrypted, magic => (byte)x86Emu.emulate((uint)nativeMethod.RVA, magic));
+				return DecryptResource(encrypted, magic => (byte)x86Emu.Emulate((uint)nativeMethod.RVA, magic));
 		}
 
-		byte[] decryptResource(byte[] encrypted, Func<uint, byte> decryptFunc) {
-			var key = getSigKey();
+		byte[] DecryptResource(byte[] encrypted, Func<uint, byte> decryptFunc) {
+			var key = GetSigKey();
 
-			var decrypted = DeobUtils.aesDecrypt(encrypted, key, DeobUtils.md5Sum(key));
-			decrypted = DeobUtils.inflate(decrypted, true);
+			var decrypted = DeobUtils.AesDecrypt(encrypted, key, DeobUtils.Md5Sum(key));
+			decrypted = DeobUtils.Inflate(decrypted, true);
 
 			var reader = MemoryImageStream.Create(decrypted);
 			var result = new MemoryStream();
@@ -659,7 +659,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return result.ToArray();
 		}
 
-		static bool verifyGenericArg(MethodSpec gim, ElementType etype) {
+		static bool VerifyGenericArg(MethodSpec gim, ElementType etype) {
 			if (gim == null)
 				return false;
 			var gims = gim.GenericInstMethodSig;
@@ -668,42 +668,42 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return gims.GenericArguments[0].GetElementType() == etype;
 		}
 
-		public string decryptString(MethodDef method, MethodSpec gim, uint magic1, ulong magic2) {
-			if (!verifyGenericArg(gim, ElementType.String))
+		public string DecryptString(MethodDef method, MethodSpec gim, uint magic1, ulong magic2) {
+			if (!VerifyGenericArg(gim, ElementType.String))
 				return null;
-			var info = decrypters.find(method);
-			return info.decryptString(magic1, magic2);
+			var info = decrypters.Find(method);
+			return info.DecryptString(magic1, magic2);
 		}
 
-		public object decryptInt32(MethodDef method, MethodSpec gim, uint magic1, ulong magic2) {
-			if (!verifyGenericArg(gim, ElementType.I4))
+		public object DecryptInt32(MethodDef method, MethodSpec gim, uint magic1, ulong magic2) {
+			if (!VerifyGenericArg(gim, ElementType.I4))
 				return null;
-			var info = decrypters.find(method);
-			return info.decryptInt32(magic1, magic2);
+			var info = decrypters.Find(method);
+			return info.DecryptInt32(magic1, magic2);
 		}
 
-		public object decryptInt64(MethodDef method, MethodSpec gim, uint magic1, ulong magic2) {
-			if (!verifyGenericArg(gim, ElementType.I8))
+		public object DecryptInt64(MethodDef method, MethodSpec gim, uint magic1, ulong magic2) {
+			if (!VerifyGenericArg(gim, ElementType.I8))
 				return null;
-			var info = decrypters.find(method);
-			return info.decryptInt64(magic1, magic2);
+			var info = decrypters.Find(method);
+			return info.DecryptInt64(magic1, magic2);
 		}
 
-		public object decryptSingle(MethodDef method, MethodSpec gim, uint magic1, ulong magic2) {
-			if (!verifyGenericArg(gim, ElementType.R4))
+		public object DecryptSingle(MethodDef method, MethodSpec gim, uint magic1, ulong magic2) {
+			if (!VerifyGenericArg(gim, ElementType.R4))
 				return null;
-			var info = decrypters.find(method);
-			return info.decryptSingle(magic1, magic2);
+			var info = decrypters.Find(method);
+			return info.DecryptSingle(magic1, magic2);
 		}
 
-		public object decryptDouble(MethodDef method, MethodSpec gim, uint magic1, ulong magic2) {
-			if (!verifyGenericArg(gim, ElementType.R8))
+		public object DecryptDouble(MethodDef method, MethodSpec gim, uint magic1, ulong magic2) {
+			if (!VerifyGenericArg(gim, ElementType.R8))
 				return null;
-			var info = decrypters.find(method);
-			return info.decryptDouble(magic1, magic2);
+			var info = decrypters.Find(method);
+			return info.DecryptDouble(magic1, magic2);
 		}
 
-		public void cleanUp() {
+		public void CleanUp() {
 			if (installMethod == null)
 				return;
 
@@ -712,7 +712,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			installMethod.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
 		}
 
-		public bool getRevisionRange(out int minRev, out int maxRev) {
+		public bool GetRevisionRange(out int minRev, out int maxRev) {
 			switch (version) {
 			case ConfuserVersion.Unknown:
 				minRev = maxRev = 0;

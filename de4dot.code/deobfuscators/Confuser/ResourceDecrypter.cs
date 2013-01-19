@@ -61,49 +61,49 @@ namespace de4dot.code.deobfuscators.Confuser {
 			this.simpleDeobfuscator = simpleDeobfuscator;
 		}
 
-		public void find() {
-			if (checkMethod(DotNetUtils.getModuleTypeCctor(module)))
+		public void Find() {
+			if (CheckMethod(DotNetUtils.GetModuleTypeCctor(module)))
 				return;
 		}
 
-		bool checkMethod(MethodDef method) {
+		bool CheckMethod(MethodDef method) {
 			if (method == null || method.Body == null)
 				return false;
-			if (!DotNetUtils.callsMethod(method, "System.Void System.AppDomain::add_ResourceResolve(System.ResolveEventHandler)"))
+			if (!DotNetUtils.CallsMethod(method, "System.Void System.AppDomain::add_ResourceResolve(System.ResolveEventHandler)"))
 				return false;
-			simpleDeobfuscator.deobfuscate(method, true);
+			simpleDeobfuscator.Deobfuscate(method, true);
 			fields.Clear();
 
-			var tmpHandler = getHandler(method);
+			var tmpHandler = GetHandler(method);
 			if (tmpHandler == null || tmpHandler.DeclaringType != method.DeclaringType)
 				return false;
 
-			var tmpResource = findResource(tmpHandler);
+			var tmpResource = FindResource(tmpHandler);
 			if (tmpResource == null)
 				return false;
 
-			simpleDeobfuscator.deobfuscate(tmpHandler, true);
+			simpleDeobfuscator.Deobfuscate(tmpHandler, true);
 			ConfuserVersion tmpVersion = ConfuserVersion.Unknown;
-			if (DotNetUtils.callsMethod(tmpHandler, "System.Object System.AppDomain::GetData(System.String)")) {
-				if (!DotNetUtils.callsMethod(tmpHandler, "System.Void System.Buffer::BlockCopy(System.Array,System.Int32,System.Array,System.Int32,System.Int32)")) {
-					if (!findKey0Key1_v14_r55802(tmpHandler, out key0, out key1))
+			if (DotNetUtils.CallsMethod(tmpHandler, "System.Object System.AppDomain::GetData(System.String)")) {
+				if (!DotNetUtils.CallsMethod(tmpHandler, "System.Void System.Buffer::BlockCopy(System.Array,System.Int32,System.Array,System.Int32,System.Int32)")) {
+					if (!FindKey0Key1_v14_r55802(tmpHandler, out key0, out key1))
 						return false;
 					tmpVersion = ConfuserVersion.v14_r55802;
 				}
-				else if (findKey0_v17_r73404(tmpHandler, out key0) && findKey1_v17_r73404(tmpHandler, out key1))
+				else if (FindKey0_v17_r73404(tmpHandler, out key0) && FindKey1_v17_r73404(tmpHandler, out key1))
 					tmpVersion = ConfuserVersion.v17_r73404;
 				else
 					return false;
 			}
 			else {
-				if (addFields(findFields(tmpHandler, method.DeclaringType)) != 1)
+				if (AddFields(FindFields(tmpHandler, method.DeclaringType)) != 1)
 					return false;
 
-				if (findKey0_v17_r73404(tmpHandler, out key0) && findKey1_v17_r73404(tmpHandler, out key1))
+				if (FindKey0_v17_r73404(tmpHandler, out key0) && FindKey1_v17_r73404(tmpHandler, out key1))
 					tmpVersion = ConfuserVersion.v17_r73822;
-				else if (findKey0_v18_r75367(tmpHandler, out key0) && findKey1_v17_r73404(tmpHandler, out key1))
+				else if (FindKey0_v18_r75367(tmpHandler, out key0) && FindKey1_v17_r73404(tmpHandler, out key1))
 					tmpVersion = ConfuserVersion.v18_r75367;
-				else if (findKey0_v18_r75369(tmpHandler, out key0) && findKey1_v18_r75369(tmpHandler, out key1))
+				else if (FindKey0_v18_r75369(tmpHandler, out key0) && FindKey1_v18_r75369(tmpHandler, out key1))
 					tmpVersion = ConfuserVersion.v18_r75369;
 				else
 					return false;
@@ -116,7 +116,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return true;
 		}
 
-		static MethodDef getHandler(MethodDef method) {
+		static MethodDef GetHandler(MethodDef method) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 2; i++) {
 				var ldftn = instrs[i];
@@ -144,16 +144,16 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return null;
 		}
 
-		int addFields(IEnumerable<FieldDef> moreFields) {
+		int AddFields(IEnumerable<FieldDef> moreFields) {
 			int count = 0;
 			foreach (var field in moreFields) {
-				if (addField(field))
+				if (AddField(field))
 					count++;
 			}
 			return count;
 		}
 
-		bool addField(FieldDef field) {
+		bool AddField(FieldDef field) {
 			if (field == null)
 				return false;
 			if (fields.ContainsKey(field))
@@ -162,7 +162,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return true;
 		}
 
-		static IEnumerable<FieldDef> findFields(MethodDef method, TypeDef declaringType) {
+		static IEnumerable<FieldDef> FindFields(MethodDef method, TypeDef declaringType) {
 			var fields = new List<FieldDef>();
 			foreach (var instr in method.Body.Instructions) {
 				var field = instr.Operand as FieldDef;
@@ -172,14 +172,14 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return fields;
 		}
 
-		EmbeddedResource findResource(MethodDef method) {
-			return DotNetUtils.getResource(module, DotNetUtils.getCodeStrings(method)) as EmbeddedResource;
+		EmbeddedResource FindResource(MethodDef method) {
+			return DotNetUtils.GetResource(module, DotNetUtils.GetCodeStrings(method)) as EmbeddedResource;
 		}
 
-		static bool findKey0_v18_r75367(MethodDef method, out byte key0) {
+		static bool FindKey0_v18_r75367(MethodDef method, out byte key0) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count; i++) {
-				i = ConfuserUtils.findCallMethod(instrs, i, Code.Callvirt, "System.Int32 System.IO.Stream::Read(System.Byte[],System.Int32,System.Int32)");
+				i = ConfuserUtils.FindCallMethod(instrs, i, Code.Callvirt, "System.Int32 System.IO.Stream::Read(System.Byte[],System.Int32,System.Int32)");
 				if (i < 0)
 					break;
 				if (i + 3 >= instrs.Count)
@@ -201,10 +201,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		static bool findKey0_v18_r75369(MethodDef method, out byte key0) {
+		static bool FindKey0_v18_r75369(MethodDef method, out byte key0) {
 			var instrs = method.Body.Instructions;
 			for (int index = 0; index < instrs.Count; index++) {
-				index = ConfuserUtils.findCallMethod(instrs, index, Code.Callvirt, "System.Int32 System.IO.Stream::Read(System.Byte[],System.Int32,System.Int32)");
+				index = ConfuserUtils.FindCallMethod(instrs, index, Code.Callvirt, "System.Int32 System.IO.Stream::Read(System.Byte[],System.Int32,System.Int32)");
 				if (index < 0)
 					break;
 
@@ -230,7 +230,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		static bool findKey1_v18_r75369(MethodDef method, out byte key1) {
+		static bool FindKey1_v18_r75369(MethodDef method, out byte key1) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 4; i++) {
 				int index = i;
@@ -255,7 +255,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		static bool findKey0Key1_v14_r55802(MethodDef method, out byte key0, out byte key1) {
+		static bool FindKey0Key1_v14_r55802(MethodDef method, out byte key0, out byte key1) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 5; i++) {
 				if (!instrs[i].IsLdcI4())
@@ -282,10 +282,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		static bool findKey0_v17_r73404(MethodDef method, out byte key) {
+		static bool FindKey0_v17_r73404(MethodDef method, out byte key) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 3; i++) {
-				int index = ConfuserUtils.findCallMethod(instrs, i, Code.Callvirt, "System.Byte[] System.IO.BinaryReader::ReadBytes(System.Int32)");
+				int index = ConfuserUtils.FindCallMethod(instrs, i, Code.Callvirt, "System.Byte[] System.IO.BinaryReader::ReadBytes(System.Int32)");
 				if (index < 0)
 					break;
 				if (index + 3 >= instrs.Count)
@@ -306,7 +306,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		static bool findKey1_v17_r73404(MethodDef method, out byte key) {
+		static bool FindKey1_v17_r73404(MethodDef method, out byte key) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 3; i++) {
 				var ldci4_1 = instrs[i];
@@ -327,40 +327,40 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		public EmbeddedResource mergeResources() {
+		public EmbeddedResource MergeResources() {
 			if (resource == null)
 				return null;
-			DeobUtils.decryptAndAddResources(module, resource.Name.String, () => decryptResource());
+			DeobUtils.DecryptAndAddResources(module, resource.Name.String, () => DecryptResource());
 			var tmpResource = resource;
 			resource = null;
 			return tmpResource;
 		}
 
-		byte[] decryptResource() {
+		byte[] DecryptResource() {
 			switch (version) {
-			case ConfuserVersion.v14_r55802: return decrypt_v14_r55802();
-			case ConfuserVersion.v17_r73404: return decrypt_v17_r73404();
-			case ConfuserVersion.v17_r73822: return decrypt_v17_r73404();
-			case ConfuserVersion.v18_r75367: return decrypt_v18_r75367();
-			case ConfuserVersion.v18_r75369: return decrypt_v18_r75367();
+			case ConfuserVersion.v14_r55802: return Decrypt_v14_r55802();
+			case ConfuserVersion.v17_r73404: return Decrypt_v17_r73404();
+			case ConfuserVersion.v17_r73822: return Decrypt_v17_r73404();
+			case ConfuserVersion.v18_r75367: return Decrypt_v18_r75367();
+			case ConfuserVersion.v18_r75369: return Decrypt_v18_r75367();
 			default: throw new ApplicationException("Unknown version");
 			}
 		}
 
-		byte[] decrypt_v14_r55802() {
-			var reader = new BinaryReader(new MemoryStream(DeobUtils.inflate(resource.GetResourceData(), true)));
+		byte[] Decrypt_v14_r55802() {
+			var reader = new BinaryReader(new MemoryStream(DeobUtils.Inflate(resource.GetResourceData(), true)));
 			var encypted = reader.ReadBytes(reader.ReadInt32());
 			if ((encypted.Length & 1) != 0)
 				throw new ApplicationException("Invalid resource data length");
 			var decrypted = new byte[encypted.Length / 2];
 			for (int i = 0; i < decrypted.Length; i++)
 				decrypted[i] = (byte)((encypted[i * 2 + 1] ^ key0) * key1 + (encypted[i * 2] ^ key0));
-			reader = new BinaryReader(new MemoryStream(DeobUtils.inflate(decrypted, true)));
+			reader = new BinaryReader(new MemoryStream(DeobUtils.Inflate(decrypted, true)));
 			return reader.ReadBytes(reader.ReadInt32());
 		}
 
-		byte[] decrypt_v17_r73404() {
-			var reader = new BinaryReader(new MemoryStream(DeobUtils.inflate(resource.GetResourceData(), true)));
+		byte[] Decrypt_v17_r73404() {
+			var reader = new BinaryReader(new MemoryStream(DeobUtils.Inflate(resource.GetResourceData(), true)));
 			var decrypted = reader.ReadBytes(reader.ReadInt32());
 			byte k = key0;
 			for (int i = 0; i < decrypted.Length; i++) {
@@ -370,24 +370,24 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return decrypted;
 		}
 
-		byte[] decrypt_v18_r75367() {
+		byte[] Decrypt_v18_r75367() {
 			var encrypted = resource.GetResourceData();
 			byte k = key0;
 			for (int i = 0; i < encrypted.Length; i++) {
 				encrypted[i] ^= k;
 				k *= key1;
 			}
-			var reader = new BinaryReader(new MemoryStream(DeobUtils.inflate(encrypted, true)));
+			var reader = new BinaryReader(new MemoryStream(DeobUtils.Inflate(encrypted, true)));
 			return reader.ReadBytes(reader.ReadInt32());
 		}
 
-		public void deobfuscate(Blocks blocks) {
+		public void Deobfuscate(Blocks blocks) {
 			if (blocks.Method != installMethod)
 				return;
-			ConfuserUtils.removeResourceHookCode(blocks, handler);
+			ConfuserUtils.RemoveResourceHookCode(blocks, handler);
 		}
 
-		public bool getRevisionRange(out int minRev, out int maxRev) {
+		public bool GetRevisionRange(out int minRev, out int maxRev) {
 			switch (version) {
 			case ConfuserVersion.Unknown:
 				minRev = maxRev = 0;

@@ -126,20 +126,20 @@ namespace de4dot.code.deobfuscators.Confuser {
 			this.reader = peImage.Reader;
 		}
 
-		public uint emulate(uint rva, uint arg) {
-			return emulate(rva, new uint[] { arg });
+		public uint Emulate(uint rva, uint arg) {
+			return Emulate(rva, new uint[] { arg });
 		}
 
-		public uint emulate(uint rva, uint[] args) {
-			initialize(args);
+		public uint Emulate(uint rva, uint[] args) {
+			Initialize(args);
 
-			reader.Position = peImage.rvaToOffset(rva);
+			reader.Position = peImage.RvaToOffset(rva);
 			byte[] prolog, epilog;
-			if (isBytes(prolog1)) {
+			if (IsBytes(prolog1)) {
 				prolog = prolog1;
 				epilog = epilog1;
 			}
-			else if (isBytes(prolog2)) {
+			else if (IsBytes(prolog2)) {
 				prolog = prolog2;
 				epilog = epilog2;
 			}
@@ -147,20 +147,20 @@ namespace de4dot.code.deobfuscators.Confuser {
 				throw new ApplicationException(string.Format("Missing prolog @ RVA {0:X8}", rva));
 			reader.Position += prolog.Length;
 
-			while (!isBytes(epilog))
-				emulate();
+			while (!IsBytes(epilog))
+				Emulate();
 
 			return regs[0];
 		}
 
-		void initialize(uint[] args) {
+		void Initialize(uint[] args) {
 			this.args = args;
 			nextArgIndex = 0;
 			for (int i = 0; i < regs.Length; i++)
 				regs[i] = 0;
 		}
 
-		bool isBytes(IList<byte> bytes) {
+		bool IsBytes(IList<byte> bytes) {
 			long oldPos = reader.Position;
 			bool result = true;
 			for (int i = 0; i < bytes.Count; i++) {
@@ -173,57 +173,57 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return result;
 		}
 
-		void emulate() {
-			var instr = decode();
+		void Emulate() {
+			var instr = Decode();
 			switch (instr.opCode) {
 			case OpCode.Add_RI:
 			case OpCode.Add_RR:
-				writeReg(instr.op1, readOp(instr.op1) + readOp(instr.op2));
+				WriteReg(instr.op1, ReadOp(instr.op1) + ReadOp(instr.op2));
 				break;
 
 			case OpCode.Mov_RI:
 			case OpCode.Mov_RR:
-				writeReg(instr.op1, readOp(instr.op2));
+				WriteReg(instr.op1, ReadOp(instr.op2));
 				break;
 
 			case OpCode.Neg_R:
-				writeReg(instr.op1, (uint)-(int)readOp(instr.op1));
+				WriteReg(instr.op1, (uint)-(int)ReadOp(instr.op1));
 				break;
 
 			case OpCode.Not_R:
-				writeReg(instr.op1, ~readOp(instr.op1));
+				WriteReg(instr.op1, ~ReadOp(instr.op1));
 				break;
 
 			case OpCode.Pop_R:
-				writeReg(instr.op1, getNextArg());
+				WriteReg(instr.op1, GetNextArg());
 				break;
 
 			case OpCode.Sub_RI:
 			case OpCode.Sub_RR:
-				writeReg(instr.op1, readOp(instr.op1) - readOp(instr.op2));
+				WriteReg(instr.op1, ReadOp(instr.op1) - ReadOp(instr.op2));
 				break;
 
 			case OpCode.Xor_RI:
 			case OpCode.Xor_RR:
-				writeReg(instr.op1, readOp(instr.op1) ^ readOp(instr.op2));
+				WriteReg(instr.op1, ReadOp(instr.op1) ^ ReadOp(instr.op2));
 				break;
 
 			default: throw new NotSupportedException();
 			}
 		}
 
-		uint getNextArg() {
+		uint GetNextArg() {
 			if (nextArgIndex >= args.Length)
 				throw new ApplicationException("No more args");
 			return args[nextArgIndex++];
 		}
 
-		void writeReg(IOperand op, uint val) {
+		void WriteReg(IOperand op, uint val) {
 			var regOp = (RegOperand)op;
 			regs[regOp.reg] = val;
 		}
 
-		uint readOp(IOperand op) {
+		uint ReadOp(IOperand op) {
 			var regOp = op as RegOperand;
 			if (regOp != null)
 				return regs[regOp.reg];
@@ -235,19 +235,19 @@ namespace de4dot.code.deobfuscators.Confuser {
 			throw new NotSupportedException();
 		}
 
-		Instruction decode() {
+		Instruction Decode() {
 			byte opc = reader.ReadByte();
 			switch (opc) {
 			case 0x01:	// ADD Ed,Gd
-				parseModRM();
+				ParseModRM();
 				return new Instruction(OpCode.Add_RR, new RegOperand(rm), new RegOperand(reg));
 
 			case 0x29:	// SUB Ed,Gd
-				parseModRM();
+				ParseModRM();
 				return new Instruction(OpCode.Sub_RR, new RegOperand(rm), new RegOperand(reg));
 
 			case 0x31:	// XOR Ed,Gd
-				parseModRM();
+				ParseModRM();
 				return new Instruction(OpCode.Xor_RR, new RegOperand(rm), new RegOperand(reg));
 
 			case 0x58:	// POP EAX
@@ -261,7 +261,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				return new Instruction(OpCode.Pop_R, new RegOperand(opc - 0x58));
 
 			case 0x81:	// Grp1 Ed,Id
-				parseModRM();
+				ParseModRM();
 				switch (reg) {
 				case 0: return new Instruction(OpCode.Add_RI, new RegOperand(rm), new ImmOperand(reader.ReadInt32()));
 				case 5: return new Instruction(OpCode.Sub_RI, new RegOperand(rm), new ImmOperand(reader.ReadInt32()));
@@ -270,7 +270,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				}
 
 			case 0x89:	// MOV Ed,Gd
-				parseModRM();
+				ParseModRM();
 				return new Instruction(OpCode.Mov_RR, new RegOperand(rm), new RegOperand(reg));
 
 			case 0xB8:	// MOV EAX,Id
@@ -284,7 +284,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				return new Instruction(OpCode.Mov_RI, new RegOperand(opc - 0xB8), new ImmOperand(reader.ReadInt32()));
 
 			case 0xF7:	// Grp3 Ev
-				parseModRM();
+				ParseModRM();
 				switch (reg) {
 				case 2: return new Instruction(OpCode.Not_R, new RegOperand(rm));
 				case 3: return new Instruction(OpCode.Neg_R, new RegOperand(rm));
@@ -295,7 +295,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			}
 		}
 
-		void parseModRM() {
+		void ParseModRM() {
 			modRM = reader.ReadByte();
 			mod = (byte)((modRM >> 6) & 7);
 			reg = (byte)((modRM >> 3) & 7);

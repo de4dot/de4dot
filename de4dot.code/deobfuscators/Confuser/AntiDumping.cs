@@ -55,12 +55,12 @@ namespace de4dot.code.deobfuscators.Confuser {
 			this.module = module;
 		}
 
-		public void find(ISimpleDeobfuscator simpleDeobfuscator) {
-			if (checkMethod(simpleDeobfuscator, DotNetUtils.getModuleTypeCctor(module)))
+		public void Find(ISimpleDeobfuscator simpleDeobfuscator) {
+			if (CheckMethod(simpleDeobfuscator, DotNetUtils.GetModuleTypeCctor(module)))
 				return;
 		}
 
-		bool checkMethod(ISimpleDeobfuscator simpleDeobfuscator, MethodDef method) {
+		bool CheckMethod(ISimpleDeobfuscator simpleDeobfuscator, MethodDef method) {
 			if (method == null || method.Body == null)
 				return false;
 
@@ -72,14 +72,14 @@ namespace de4dot.code.deobfuscators.Confuser {
 					continue;
 				if (calledMethod == null || !calledMethod.IsStatic)
 					continue;
-				if (!DotNetUtils.isMethod(calledMethod, "System.Void", "()"))
+				if (!DotNetUtils.IsMethod(calledMethod, "System.Void", "()"))
 					continue;
 				var type = calledMethod.DeclaringType;
 				if (type.NestedTypes.Count > 0)
 					continue;
 
-				simpleDeobfuscator.deobfuscate(calledMethod, true);
-				if (checkType(type, calledMethod)) {
+				simpleDeobfuscator.Deobfuscate(calledMethod, true);
+				if (CheckType(type, calledMethod)) {
 					initMethod = calledMethod;
 					return true;
 				}
@@ -87,52 +87,52 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		bool checkType(TypeDef type, MethodDef initMethod) {
-			return checkType_v14_r58564(type, initMethod) ||
-				checkType_v14_r58852(type, initMethod);
+		bool CheckType(TypeDef type, MethodDef initMethod) {
+			return CheckType_v14_r58564(type, initMethod) ||
+				CheckType_v14_r58852(type, initMethod);
 		}
 
-		bool checkType_v14_r58564(TypeDef type, MethodDef initMethod) {
-			var virtualProtect = DotNetUtils.getPInvokeMethod(type, "VirtualProtect");
+		bool CheckType_v14_r58564(TypeDef type, MethodDef initMethod) {
+			var virtualProtect = DotNetUtils.GetPInvokeMethod(type, "VirtualProtect");
 			if (virtualProtect == null)
 				return false;
-			if (!DotNetUtils.callsMethod(initMethod, "System.IntPtr System.Runtime.InteropServices.Marshal::GetHINSTANCE(System.Reflection.Module)"))
+			if (!DotNetUtils.CallsMethod(initMethod, "System.IntPtr System.Runtime.InteropServices.Marshal::GetHINSTANCE(System.Reflection.Module)"))
 				return false;
-			if (ConfuserUtils.countCalls(initMethod, virtualProtect) != 3)
+			if (ConfuserUtils.CountCalls(initMethod, virtualProtect) != 3)
 				return false;
-			if (!DeobUtils.hasInteger(initMethod, 224))
+			if (!DeobUtils.HasInteger(initMethod, 224))
 				return false;
-			if (!DeobUtils.hasInteger(initMethod, 240))
+			if (!DeobUtils.HasInteger(initMethod, 240))
 				return false;
-			if (!DeobUtils.hasInteger(initMethod, 267))
+			if (!DeobUtils.HasInteger(initMethod, 267))
 				return false;
 
 			version = ConfuserVersion.v14_r58564;
 			return true;
 		}
 
-		bool checkType_v14_r58852(TypeDef type, MethodDef initMethod) {
-			var virtualProtect = DotNetUtils.getPInvokeMethod(type, "VirtualProtect");
+		bool CheckType_v14_r58852(TypeDef type, MethodDef initMethod) {
+			var virtualProtect = DotNetUtils.GetPInvokeMethod(type, "VirtualProtect");
 			if (virtualProtect == null)
 				return false;
-			if (!DotNetUtils.callsMethod(initMethod, "System.IntPtr System.Runtime.InteropServices.Marshal::GetHINSTANCE(System.Reflection.Module)"))
+			if (!DotNetUtils.CallsMethod(initMethod, "System.IntPtr System.Runtime.InteropServices.Marshal::GetHINSTANCE(System.Reflection.Module)"))
 				return false;
-			int virtualProtectCalls = ConfuserUtils.countCalls(initMethod, virtualProtect);
+			int virtualProtectCalls = ConfuserUtils.CountCalls(initMethod, virtualProtect);
 			if (virtualProtectCalls != 14 && virtualProtectCalls != 16)
 				return false;
-			if (!DeobUtils.hasInteger(initMethod, 0x3C))
+			if (!DeobUtils.HasInteger(initMethod, 0x3C))
 				return false;
-			if (!DeobUtils.hasInteger(initMethod, 0x6c64746e))
+			if (!DeobUtils.HasInteger(initMethod, 0x6c64746e))
 				return false;
-			if (!DeobUtils.hasInteger(initMethod, 0x6c642e6c))
+			if (!DeobUtils.HasInteger(initMethod, 0x6c642e6c))
 				return false;
-			if (!DeobUtils.hasInteger(initMethod, 0x6f43744e))
+			if (!DeobUtils.HasInteger(initMethod, 0x6f43744e))
 				return false;
-			if (!DeobUtils.hasInteger(initMethod, 0x6e69746e))
+			if (!DeobUtils.HasInteger(initMethod, 0x6e69746e))
 				return false;
-			int locallocs = ConfuserUtils.countOpCode(initMethod, Code.Localloc);
+			int locallocs = ConfuserUtils.CountOpCode(initMethod, Code.Localloc);
 
-			if (DeobUtils.hasInteger(initMethod, 0x18))
+			if (DeobUtils.HasInteger(initMethod, 0x18))
 				version = ConfuserVersion.v14_r58852;
 			else if (virtualProtectCalls == 16)
 				version = ConfuserVersion.v16_r69339;
@@ -140,9 +140,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 				if (locallocs == 2)
 					version = ConfuserVersion.v17_r74708;
 				else if (locallocs == 1) {
-					if (DotNetUtils.hasString(initMethod, "<Unknown>"))
+					if (DotNetUtils.HasString(initMethod, "<Unknown>"))
 						version = ConfuserVersion.v18_r75257;
-					else if (isRev75725(initMethod))
+					else if (IsRev75725(initMethod))
 						version = ConfuserVersion.v19_r75725;
 					else
 						version = ConfuserVersion.v19_r76186;
@@ -156,7 +156,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return true;
 		}
 
-		static bool isRev75725(MethodDef method) {
+		static bool IsRev75725(MethodDef method) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 9; i++) {
 				if (!instrs[i].IsLdcI4() || instrs[i].GetLdcI4Value() != 8)
@@ -197,7 +197,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		public bool getRevisionRange(out int minRev, out int maxRev) {
+		public bool GetRevisionRange(out int minRev, out int maxRev) {
 			switch (version) {
 			case ConfuserVersion.Unknown:
 				minRev = maxRev = 0;

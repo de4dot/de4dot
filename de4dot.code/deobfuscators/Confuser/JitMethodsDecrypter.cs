@@ -65,15 +65,15 @@ namespace de4dot.code.deobfuscators.Confuser {
 				this.version = other.version;
 		}
 
-		protected override bool checkType(TypeDef type, MethodDef initMethod) {
+		protected override bool CheckType(TypeDef type, MethodDef initMethod) {
 			if (type == null)
 				return false;
 
-			compileMethod = findCompileMethod(type);
+			compileMethod = FindCompileMethod(type);
 			if (compileMethod == null)
 				return false;
 
-			decryptMethod = findDecryptMethod(type);
+			decryptMethod = FindDecryptMethod(type);
 			if (decryptMethod == null)
 				return false;
 
@@ -89,7 +89,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				break;
 
 			case 38:
-				switch (countInt32s(compileMethod, 0xFF)) {
+				switch (CountInt32s(compileMethod, 0xFF)) {
 				case 2: theVersion = ConfuserVersion.v17_r73477; break;
 				case 4: theVersion = ConfuserVersion.v17_r73479; break;
 				default: return false;
@@ -97,20 +97,20 @@ namespace de4dot.code.deobfuscators.Confuser {
 				break;
 
 			case 39:
-				if (!DotNetUtils.callsMethod(initMethod, "System.Void System.Console::WriteLine(System.Char)")) {
-					if (DotNetUtils.callsMethod(decryptMethod, "System.Security.Cryptography.Rijndael System.Security.Cryptography.Rijndael::Create()"))
+				if (!DotNetUtils.CallsMethod(initMethod, "System.Void System.Console::WriteLine(System.Char)")) {
+					if (DotNetUtils.CallsMethod(decryptMethod, "System.Security.Cryptography.Rijndael System.Security.Cryptography.Rijndael::Create()"))
 						theVersion = ConfuserVersion.v17_r74021;
 					else
 						theVersion = ConfuserVersion.v18_r75291;
 				}
-				else if (DotNetUtils.callsMethod(decryptMethod, "System.Security.Cryptography.Rijndael System.Security.Cryptography.Rijndael::Create()"))
+				else if (DotNetUtils.CallsMethod(decryptMethod, "System.Security.Cryptography.Rijndael System.Security.Cryptography.Rijndael::Create()"))
 					theVersion = ConfuserVersion.v18_r75257;
 				else
 					theVersion = ConfuserVersion.v18_r75288;
 				break;
 
 			case 27:
-				if (DotNetUtils.callsMethod(initMethod, "System.Int32 System.String::get_Length()"))
+				if (DotNetUtils.CallsMethod(initMethod, "System.Int32 System.String::get_Length()"))
 					theVersion = ConfuserVersion.v18_r75402;
 				else
 					theVersion = ConfuserVersion.v19_r75725;
@@ -121,7 +121,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			}
 
 			if (theVersion >= ConfuserVersion.v17_r73477) {
-				hookConstructStr = findHookConstructStr(type);
+				hookConstructStr = FindHookConstructStr(type);
 				if (hookConstructStr == null)
 					return false;
 			}
@@ -130,7 +130,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return true;
 		}
 
-		static int countInt32s(MethodDef method, int val) {
+		static int CountInt32s(MethodDef method, int val) {
 			int count = 0;
 			foreach (var instr in method.Body.Instructions) {
 				if (!instr.IsLdcI4())
@@ -141,7 +141,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return count;
 		}
 
-		static MethodDef findCompileMethod(TypeDef type) {
+		static MethodDef FindCompileMethod(TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
@@ -164,7 +164,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return null;
 		}
 
-		static MethodDef findHookConstructStr(TypeDef type) {
+		static MethodDef FindHookConstructStr(TypeDef type) {
 			foreach (var nested in type.NestedTypes) {
 				if (nested.Fields.Count != 8 && nested.Fields.Count != 10)
 					continue;
@@ -189,79 +189,79 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return null;
 		}
 
-		public void initialize() {
+		public void Initialize() {
 			if (initMethod == null)
 				return;
-			if (!initializeKeys())
+			if (!InitializeKeys())
 				throw new ApplicationException("Could not find all decryption keys");
-			if (!initializeMethodDataIndexes(compileMethod))
+			if (!InitializeMethodDataIndexes(compileMethod))
 				throw new ApplicationException("Could not find MethodData indexes");
 		}
 
-		bool initializeKeys() {
+		bool InitializeKeys() {
 			switch (version) {
-			case ConfuserVersion.v17_r73404: return initializeKeys_v17_r73404();
-			case ConfuserVersion.v17_r73430: return initializeKeys_v17_r73404();
-			case ConfuserVersion.v17_r73477: return initializeKeys_v17_r73404();
-			case ConfuserVersion.v17_r73479: return initializeKeys_v17_r73404();
-			case ConfuserVersion.v17_r74021: return initializeKeys_v17_r73404();
-			case ConfuserVersion.v18_r75257: return initializeKeys_v17_r73404();
-			case ConfuserVersion.v18_r75288: return initializeKeys_v17_r73404();
-			case ConfuserVersion.v18_r75291: return initializeKeys_v17_r73404();
-			case ConfuserVersion.v18_r75402: return initializeKeys_v18_r75402();
-			case ConfuserVersion.v19_r75725: return initializeKeys_v18_r75402();
+			case ConfuserVersion.v17_r73404: return InitializeKeys_v17_r73404();
+			case ConfuserVersion.v17_r73430: return InitializeKeys_v17_r73404();
+			case ConfuserVersion.v17_r73477: return InitializeKeys_v17_r73404();
+			case ConfuserVersion.v17_r73479: return InitializeKeys_v17_r73404();
+			case ConfuserVersion.v17_r74021: return InitializeKeys_v17_r73404();
+			case ConfuserVersion.v18_r75257: return InitializeKeys_v17_r73404();
+			case ConfuserVersion.v18_r75288: return InitializeKeys_v17_r73404();
+			case ConfuserVersion.v18_r75291: return InitializeKeys_v17_r73404();
+			case ConfuserVersion.v18_r75402: return InitializeKeys_v18_r75402();
+			case ConfuserVersion.v19_r75725: return InitializeKeys_v18_r75402();
 			default: throw new ApplicationException("Invalid version");
 			}
 		}
 
-		bool initializeKeys_v17_r73404() {
-			simpleDeobfuscator.deobfuscate(initMethod);
-			if (!findLKey0(initMethod, out lkey0))
+		bool InitializeKeys_v17_r73404() {
+			simpleDeobfuscator.Deobfuscate(initMethod);
+			if (!FindLKey0(initMethod, out lkey0))
 				return false;
-			if (!findKey0_v16_r71742(initMethod, out key0))
+			if (!FindKey0_v16_r71742(initMethod, out key0))
 				return false;
-			if (!findKey1(initMethod, out key1))
+			if (!FindKey1(initMethod, out key1))
 				return false;
-			if (!findKey2Key3(initMethod, out key2, out key3))
-				return false;
-
-			simpleDeobfuscator.deobfuscate(decryptMethod);
-			if (!findKey6(decryptMethod, out key6))
+			if (!FindKey2Key3(initMethod, out key2, out key3))
 				return false;
 
-			return true;
-		}
-
-		bool initializeKeys_v18_r75402() {
-			simpleDeobfuscator.deobfuscate(initMethod);
-			if (!findLKey0(initMethod, out lkey0))
-				return false;
-			if (!findKey0_v16_r71742(initMethod, out key0))
-				return false;
-			if (!findKey1(initMethod, out key1))
-				return false;
-			if (!findKey2Key3(initMethod, out key2, out key3))
-				return false;
-
-			simpleDeobfuscator.deobfuscate(compileMethod);
-			if (!findKey4(compileMethod, out key4))
-				return false;
-
-			simpleDeobfuscator.deobfuscate(hookConstructStr);
-			if (!findKey5(hookConstructStr, out key5))
-				return false;
-
-			simpleDeobfuscator.deobfuscate(decryptMethod);
-			if (!findKey6(decryptMethod, out key6))
+			simpleDeobfuscator.Deobfuscate(decryptMethod);
+			if (!FindKey6(decryptMethod, out key6))
 				return false;
 
 			return true;
 		}
 
-		static bool findKey4(MethodDef method, out uint key) {
+		bool InitializeKeys_v18_r75402() {
+			simpleDeobfuscator.Deobfuscate(initMethod);
+			if (!FindLKey0(initMethod, out lkey0))
+				return false;
+			if (!FindKey0_v16_r71742(initMethod, out key0))
+				return false;
+			if (!FindKey1(initMethod, out key1))
+				return false;
+			if (!FindKey2Key3(initMethod, out key2, out key3))
+				return false;
+
+			simpleDeobfuscator.Deobfuscate(compileMethod);
+			if (!FindKey4(compileMethod, out key4))
+				return false;
+
+			simpleDeobfuscator.Deobfuscate(hookConstructStr);
+			if (!FindKey5(hookConstructStr, out key5))
+				return false;
+
+			simpleDeobfuscator.Deobfuscate(decryptMethod);
+			if (!FindKey6(decryptMethod, out key6))
+				return false;
+
+			return true;
+		}
+
+		static bool FindKey4(MethodDef method, out uint key) {
 			var instrs = method.Body.Instructions;
 			for (int index = 0; index < instrs.Count; index++) {
-				index = ConfuserUtils.findCallMethod(instrs, index, Code.Call, "System.Void System.Runtime.InteropServices.Marshal::Copy(System.Byte[],System.Int32,System.IntPtr,System.Int32)");
+				index = ConfuserUtils.FindCallMethod(instrs, index, Code.Call, "System.Void System.Runtime.InteropServices.Marshal::Copy(System.Byte[],System.Int32,System.IntPtr,System.Int32)");
 				if (index < 0)
 					break;
 				if (index + 2 >= instrs.Count)
@@ -280,7 +280,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		static bool findKey5(MethodDef method, out uint key) {
+		static bool FindKey5(MethodDef method, out uint key) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i + 4 < instrs.Count; i++) {
 				int index = i;
@@ -305,50 +305,50 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		bool initializeMethodDataIndexes(MethodDef compileMethod) {
+		bool InitializeMethodDataIndexes(MethodDef compileMethod) {
 			switch (version) {
 			case ConfuserVersion.v17_r73404: return true;
 			case ConfuserVersion.v17_r73430: return true;
-			case ConfuserVersion.v17_r73477: return initializeMethodDataIndexes_v17_r73477(compileMethod);
-			case ConfuserVersion.v17_r73479: return initializeMethodDataIndexes_v17_r73477(compileMethod);
-			case ConfuserVersion.v17_r74021: return initializeMethodDataIndexes_v17_r73477(compileMethod);
-			case ConfuserVersion.v18_r75257: return initializeMethodDataIndexes_v17_r73477(compileMethod);
-			case ConfuserVersion.v18_r75288: return initializeMethodDataIndexes_v17_r73477(compileMethod);
-			case ConfuserVersion.v18_r75291: return initializeMethodDataIndexes_v17_r73477(compileMethod);
-			case ConfuserVersion.v18_r75402: return initializeMethodDataIndexes_v17_r73477(compileMethod);
-			case ConfuserVersion.v19_r75725: return initializeMethodDataIndexes_v17_r73477(compileMethod);
+			case ConfuserVersion.v17_r73477: return InitializeMethodDataIndexes_v17_r73477(compileMethod);
+			case ConfuserVersion.v17_r73479: return InitializeMethodDataIndexes_v17_r73477(compileMethod);
+			case ConfuserVersion.v17_r74021: return InitializeMethodDataIndexes_v17_r73477(compileMethod);
+			case ConfuserVersion.v18_r75257: return InitializeMethodDataIndexes_v17_r73477(compileMethod);
+			case ConfuserVersion.v18_r75288: return InitializeMethodDataIndexes_v17_r73477(compileMethod);
+			case ConfuserVersion.v18_r75291: return InitializeMethodDataIndexes_v17_r73477(compileMethod);
+			case ConfuserVersion.v18_r75402: return InitializeMethodDataIndexes_v17_r73477(compileMethod);
+			case ConfuserVersion.v19_r75725: return InitializeMethodDataIndexes_v17_r73477(compileMethod);
 			default: throw new ApplicationException("Invalid version");
 			}
 		}
 
-		bool initializeMethodDataIndexes_v17_r73477(MethodDef method) {
-			simpleDeobfuscator.deobfuscate(method);
-			var methodDataType = findFirstThreeIndexes(method, out methodDataIndexes.maxStack, out methodDataIndexes.ehs, out methodDataIndexes.options);
+		bool InitializeMethodDataIndexes_v17_r73477(MethodDef method) {
+			simpleDeobfuscator.Deobfuscate(method);
+			var methodDataType = FindFirstThreeIndexes(method, out methodDataIndexes.maxStack, out methodDataIndexes.ehs, out methodDataIndexes.options);
 			if (methodDataType == null)
 				return false;
 
-			if (!findLocalVarSigTokIndex(method, methodDataType, out methodDataIndexes.localVarSigTok))
+			if (!FindLocalVarSigTokIndex(method, methodDataType, out methodDataIndexes.localVarSigTok))
 				return false;
 
-			if (!findCodeSizeIndex(method, methodDataType, out methodDataIndexes.codeSize))
+			if (!FindCodeSizeIndex(method, methodDataType, out methodDataIndexes.codeSize))
 				return false;
 
 			return true;
 		}
 
-		static TypeDef findFirstThreeIndexes(MethodDef method, out int maxStackIndex, out int ehsIndex, out int optionsIndex) {
+		static TypeDef FindFirstThreeIndexes(MethodDef method, out int maxStackIndex, out int ehsIndex, out int optionsIndex) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count; i++) {
-				int index1 = findLdfldStind(instrs, i, false, true);
+				int index1 = FindLdfldStind(instrs, i, false, true);
 				if (index1 < 0)
 					break;
 				i = index1;
 
-				int index2 = findLdfldStind(instrs, index1 + 1, true, true);
+				int index2 = FindLdfldStind(instrs, index1 + 1, true, true);
 				if (index2 < 0)
 					continue;
 
-				int index3 = findLdfldStind(instrs, index2 + 1, true, false);
+				int index3 = FindLdfldStind(instrs, index2 + 1, true, false);
 				if (index3 < 0)
 					continue;
 
@@ -360,9 +360,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 				if (field1.DeclaringType != field2.DeclaringType || field1.DeclaringType != field3.DeclaringType)
 					continue;
 
-				maxStackIndex = getInstanceFieldIndex(field1);
-				ehsIndex = getInstanceFieldIndex(field2);
-				optionsIndex = getInstanceFieldIndex(field3);
+				maxStackIndex = GetInstanceFieldIndex(field1);
+				ehsIndex = GetInstanceFieldIndex(field2);
+				optionsIndex = GetInstanceFieldIndex(field3);
 				return field1.DeclaringType;
 			}
 
@@ -372,7 +372,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return null;
 		}
 
-		static bool findLocalVarSigTokIndex(MethodDef method, TypeDef methodDataType, out int localVarSigTokIndex) {
+		static bool FindLocalVarSigTokIndex(MethodDef method, TypeDef methodDataType, out int localVarSigTokIndex) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 1; i++) {
 				var ldfld = instrs[i];
@@ -389,7 +389,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				if (calledMethod == null || !calledMethod.IsStatic || calledMethod.DeclaringType != method.DeclaringType)
 					continue;
 
-				localVarSigTokIndex = getInstanceFieldIndex(field);
+				localVarSigTokIndex = GetInstanceFieldIndex(field);
 				return true;
 			}
 
@@ -397,7 +397,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		static bool findCodeSizeIndex(MethodDef method, TypeDef methodDataType, out int codeSizeIndex) {
+		static bool FindCodeSizeIndex(MethodDef method, TypeDef methodDataType, out int codeSizeIndex) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 1; i++) {
 				var ldfld = instrs[i];
@@ -410,7 +410,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				if (instrs[i+1].OpCode.Code != Code.Stfld)
 					continue;
 
-				codeSizeIndex = getInstanceFieldIndex(field);
+				codeSizeIndex = GetInstanceFieldIndex(field);
 				return true;
 			}
 
@@ -418,7 +418,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		static int getInstanceFieldIndex(FieldDef field) {
+		static int GetInstanceFieldIndex(FieldDef field) {
 			int i = 0;
 			foreach (var f in field.DeclaringType.Fields) {
 				if (f.IsStatic)
@@ -430,7 +430,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			throw new ApplicationException("Could not find field");
 		}
 
-		static int findLdfldStind(IList<Instruction> instrs, int index, bool onlyInBlock, bool checkStindi4) {
+		static int FindLdfldStind(IList<Instruction> instrs, int index, bool onlyInBlock, bool checkStindi4) {
 			for (int i = index; i < instrs.Count - 1; i++) {
 				var ldfld = instrs[i];
 				if (onlyInBlock && ldfld.OpCode.FlowControl != FlowControl.Next)
@@ -448,106 +448,106 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return -1;
 		}
 
-		public bool decrypt(MyPEImage peImage, byte[] fileData, ref DumpedMethods dumpedMethods) {
+		public bool Decrypt(MyPEImage peImage, byte[] fileData, ref DumpedMethods dumpedMethods) {
 			if (initMethod == null)
 				return false;
 
 			switch (version) {
-			case ConfuserVersion.v17_r73404: return decrypt_v17_r73404(peImage, fileData, ref dumpedMethods);
-			case ConfuserVersion.v17_r73430: return decrypt_v17_r73404(peImage, fileData, ref dumpedMethods);
-			case ConfuserVersion.v17_r73477: return decrypt_v17_r73477(peImage, fileData, ref dumpedMethods);
-			case ConfuserVersion.v17_r73479: return decrypt_v17_r73479(peImage, fileData, ref dumpedMethods);
-			case ConfuserVersion.v17_r74021: return decrypt_v17_r73479(peImage, fileData, ref dumpedMethods);
-			case ConfuserVersion.v18_r75257: return decrypt_v17_r73479(peImage, fileData, ref dumpedMethods);
-			case ConfuserVersion.v18_r75288: return decrypt_v17_r73479(peImage, fileData, ref dumpedMethods);
-			case ConfuserVersion.v18_r75291: return decrypt_v17_r73479(peImage, fileData, ref dumpedMethods);
-			case ConfuserVersion.v18_r75402: return decrypt_v18_r75402(peImage, fileData, ref dumpedMethods);
-			case ConfuserVersion.v19_r75725: return decrypt_v18_r75402(peImage, fileData, ref dumpedMethods);
+			case ConfuserVersion.v17_r73404: return Decrypt_v17_r73404(peImage, fileData, ref dumpedMethods);
+			case ConfuserVersion.v17_r73430: return Decrypt_v17_r73404(peImage, fileData, ref dumpedMethods);
+			case ConfuserVersion.v17_r73477: return Decrypt_v17_r73477(peImage, fileData, ref dumpedMethods);
+			case ConfuserVersion.v17_r73479: return Decrypt_v17_r73479(peImage, fileData, ref dumpedMethods);
+			case ConfuserVersion.v17_r74021: return Decrypt_v17_r73479(peImage, fileData, ref dumpedMethods);
+			case ConfuserVersion.v18_r75257: return Decrypt_v17_r73479(peImage, fileData, ref dumpedMethods);
+			case ConfuserVersion.v18_r75288: return Decrypt_v17_r73479(peImage, fileData, ref dumpedMethods);
+			case ConfuserVersion.v18_r75291: return Decrypt_v17_r73479(peImage, fileData, ref dumpedMethods);
+			case ConfuserVersion.v18_r75402: return Decrypt_v18_r75402(peImage, fileData, ref dumpedMethods);
+			case ConfuserVersion.v19_r75725: return Decrypt_v18_r75402(peImage, fileData, ref dumpedMethods);
 			default: throw new ApplicationException("Unknown version");
 			}
 		}
 
-		bool decrypt_v17_r73404(MyPEImage peImage, byte[] fileData, ref DumpedMethods dumpedMethods) {
-			methodsData = decryptMethodsData_v17_r73404(peImage);
-			dumpedMethods = decrypt_v17_r73404(peImage, fileData);
+		bool Decrypt_v17_r73404(MyPEImage peImage, byte[] fileData, ref DumpedMethods dumpedMethods) {
+			methodsData = DecryptMethodsData_v17_r73404(peImage);
+			dumpedMethods = Decrypt_v17_r73404(peImage, fileData);
 			return dumpedMethods != null;
 		}
 
-		DumpedMethods decrypt_v17_r73404(MyPEImage peImage, byte[] fileData) {
+		DumpedMethods Decrypt_v17_r73404(MyPEImage peImage, byte[] fileData) {
 			var dumpedMethods = new DumpedMethods();
 
 			var methodDef = peImage.DotNetFile.MetaData.TablesStream.MethodTable;
 			for (uint rid = 1; rid <= methodDef.Rows; rid++) {
 				var dm = new DumpedMethod();
-				peImage.readMethodTableRowTo(dm, rid);
+				peImage.ReadMethodTableRowTo(dm, rid);
 
 				if (dm.mdRVA == 0)
 					continue;
-				uint bodyOffset = peImage.rvaToOffset(dm.mdRVA);
+				uint bodyOffset = peImage.RvaToOffset(dm.mdRVA);
 
-				if (!isEncryptedMethod(fileData, (int)bodyOffset))
+				if (!IsEncryptedMethod(fileData, (int)bodyOffset))
 					continue;
 
 				int key = BitConverter.ToInt32(fileData, (int)bodyOffset + 6);
 				int mdOffs = BitConverter.ToInt32(fileData, (int)bodyOffset + 2) ^ key;
 				int len = BitConverter.ToInt32(fileData, (int)bodyOffset + 11) ^ ~key;
-				var codeData = decryptMethodData_v17_r73404(methodsData, mdOffs + 2, (uint)key, len);
+				var codeData = DecryptMethodData_v17_r73404(methodsData, mdOffs + 2, (uint)key, len);
 
 				var reader = MemoryImageStream.Create(codeData);
-				var mbHeader = MethodBodyParser.parseMethodBody(reader, out dm.code, out dm.extraSections);
+				var mbHeader = MethodBodyParser.ParseMethodBody(reader, out dm.code, out dm.extraSections);
 				if (reader.Position != reader.Length)
 					throw new ApplicationException("Invalid method data");
 
-				peImage.updateMethodHeaderInfo(dm, mbHeader);
+				peImage.UpdateMethodHeaderInfo(dm, mbHeader);
 
-				dumpedMethods.add(dm);
+				dumpedMethods.Add(dm);
 			}
 
 			return dumpedMethods;
 		}
 
-		bool decrypt_v17_r73477(MyPEImage peImage, byte[] fileData, ref DumpedMethods dumpedMethods) {
-			methodsData = decryptMethodsData_v17_r73404(peImage);
-			dumpedMethods = decrypt_v17_r73477(peImage, fileData);
+		bool Decrypt_v17_r73477(MyPEImage peImage, byte[] fileData, ref DumpedMethods dumpedMethods) {
+			methodsData = DecryptMethodsData_v17_r73404(peImage);
+			dumpedMethods = Decrypt_v17_r73477(peImage, fileData);
 			return dumpedMethods != null;
 		}
 
-		DumpedMethods decrypt_v17_r73477(MyPEImage peImage, byte[] fileData) {
-			return decrypt(peImage, fileData, new DecryptMethodData_v17_r73477());
+		DumpedMethods Decrypt_v17_r73477(MyPEImage peImage, byte[] fileData) {
+			return Decrypt(peImage, fileData, new DecryptMethodData_v17_r73477());
 		}
 
-		bool decrypt_v17_r73479(MyPEImage peImage, byte[] fileData, ref DumpedMethods dumpedMethods) {
-			methodsData = decryptMethodsData_v17_r73404(peImage);
-			dumpedMethods = decrypt_v17_r73479(peImage, fileData);
+		bool Decrypt_v17_r73479(MyPEImage peImage, byte[] fileData, ref DumpedMethods dumpedMethods) {
+			methodsData = DecryptMethodsData_v17_r73404(peImage);
+			dumpedMethods = Decrypt_v17_r73479(peImage, fileData);
 			return dumpedMethods != null;
 		}
 
-		DumpedMethods decrypt_v17_r73479(MyPEImage peImage, byte[] fileData) {
-			return decrypt(peImage, fileData, new DecryptMethodData_v17_r73479());
+		DumpedMethods Decrypt_v17_r73479(MyPEImage peImage, byte[] fileData) {
+			return Decrypt(peImage, fileData, new DecryptMethodData_v17_r73479());
 		}
 
-		bool decrypt_v18_r75402(MyPEImage peImage, byte[] fileData, ref DumpedMethods dumpedMethods) {
+		bool Decrypt_v18_r75402(MyPEImage peImage, byte[] fileData, ref DumpedMethods dumpedMethods) {
 			if (peImage.OptionalHeader.CheckSum == 0)
 				return false;
-			methodsData = decryptMethodsData_v17_r73404(peImage);
-			dumpedMethods = decrypt_v18_r75402(peImage, fileData);
+			methodsData = DecryptMethodsData_v17_r73404(peImage);
+			dumpedMethods = Decrypt_v18_r75402(peImage, fileData);
 			return dumpedMethods != null;
 		}
 
-		DumpedMethods decrypt_v18_r75402(MyPEImage peImage, byte[] fileData) {
-			return decrypt(peImage, fileData, new DecryptMethodData_v18_r75402(this));
+		DumpedMethods Decrypt_v18_r75402(MyPEImage peImage, byte[] fileData) {
+			return Decrypt(peImage, fileData, new DecryptMethodData_v18_r75402(this));
 		}
 
 		abstract class DecryptMethodData {
-			public abstract void decrypt(byte[] fileData, int offset, uint k1, int size, out uint[] methodData, out byte[] codeData);
+			public abstract void Decrypt(byte[] fileData, int offset, uint k1, int size, out uint[] methodData, out byte[] codeData);
 
-			public bool isCodeFollowedByExtraSections(uint options) {
+			public bool IsCodeFollowedByExtraSections(uint options) {
 				return (options >> 8) == 0;
 			}
 		}
 
 		class DecryptMethodData_v17_r73477 : DecryptMethodData {
-			public override void decrypt(byte[] fileData, int offset, uint k1, int size, out uint[] methodData, out byte[] codeData) {
+			public override void Decrypt(byte[] fileData, int offset, uint k1, int size, out uint[] methodData, out byte[] codeData) {
 				var data = new byte[size];
 				Array.Copy(fileData, offset, data, 0, data.Length);
 				var key = BitConverter.GetBytes(k1);
@@ -562,7 +562,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		class DecryptMethodData_v17_r73479 : DecryptMethodData {
-			public override void decrypt(byte[] fileData, int offset, uint k1, int size, out uint[] methodData, out byte[] codeData) {
+			public override void Decrypt(byte[] fileData, int offset, uint k1, int size, out uint[] methodData, out byte[] codeData) {
 				var data = new byte[size];
 				Array.Copy(fileData, offset, data, 0, data.Length);
 				uint k = k1;
@@ -585,7 +585,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				this.jitDecrypter = jitDecrypter;
 			}
 
-			public override void decrypt(byte[] fileData, int offset, uint k1, int size, out uint[] methodData, out byte[] codeData) {
+			public override void Decrypt(byte[] fileData, int offset, uint k1, int size, out uint[] methodData, out byte[] codeData) {
 				var data = new byte[size];
 				Array.Copy(fileData, offset, data, 0, data.Length);
 				uint k2 = jitDecrypter.key4 * k1;
@@ -601,19 +601,19 @@ namespace de4dot.code.deobfuscators.Confuser {
 			}
 		}
 
-		DumpedMethods decrypt(MyPEImage peImage, byte[] fileData, DecryptMethodData decrypter) {
+		DumpedMethods Decrypt(MyPEImage peImage, byte[] fileData, DecryptMethodData decrypter) {
 			var dumpedMethods = new DumpedMethods();
 
 			var methodDef = peImage.DotNetFile.MetaData.TablesStream.MethodTable;
 			for (uint rid = 1; rid <= methodDef.Rows; rid++) {
 				var dm = new DumpedMethod();
-				peImage.readMethodTableRowTo(dm, rid);
+				peImage.ReadMethodTableRowTo(dm, rid);
 
 				if (dm.mdRVA == 0)
 					continue;
-				uint bodyOffset = peImage.rvaToOffset(dm.mdRVA);
+				uint bodyOffset = peImage.RvaToOffset(dm.mdRVA);
 
-				if (!isEncryptedMethod(fileData, (int)bodyOffset))
+				if (!IsEncryptedMethod(fileData, (int)bodyOffset))
 					continue;
 
 				int key = BitConverter.ToInt32(fileData, (int)bodyOffset + 6);
@@ -622,7 +622,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				int methodDataOffset = mdOffs + 2;
 				uint[] methodData;
 				byte[] codeData;
-				decrypter.decrypt(methodsData, methodDataOffset, (uint)key, len, out methodData, out codeData);
+				decrypter.Decrypt(methodsData, methodDataOffset, (uint)key, len, out methodData, out codeData);
 
 				dm.mhFlags = 0x03;
 				int maxStack = (int)methodData[methodDataIndexes.maxStack];
@@ -635,12 +635,12 @@ namespace de4dot.code.deobfuscators.Confuser {
 				int codeSize = (int)methodData[methodDataIndexes.codeSize];
 
 				var codeDataReader = MemoryImageStream.Create(codeData);
-				if (decrypter.isCodeFollowedByExtraSections(options)) {
+				if (decrypter.IsCodeFollowedByExtraSections(options)) {
 					dm.code = codeDataReader.ReadBytes(codeSize);
-					dm.extraSections = readExceptionHandlers(codeDataReader, numExceptions);
+					dm.extraSections = ReadExceptionHandlers(codeDataReader, numExceptions);
 				}
 				else {
-					dm.extraSections = readExceptionHandlers(codeDataReader, numExceptions);
+					dm.extraSections = ReadExceptionHandlers(codeDataReader, numExceptions);
 					dm.code = codeDataReader.ReadBytes(codeSize);
 				}
 				if (codeDataReader.Position != codeDataReader.Length)
@@ -658,20 +658,20 @@ namespace de4dot.code.deobfuscators.Confuser {
 					dm.mhFlags |= 0x10;	// Set 'init locals'
 				dm.mhFlags |= (ushort)(options & 0x10);	// copy 'init locals' bit
 
-				dumpedMethods.add(dm);
+				dumpedMethods.Add(dm);
 			}
 
 			return dumpedMethods;
 		}
 
-		static bool isEncryptedMethod(byte[] fileData, int offset) {
+		static bool IsEncryptedMethod(byte[] fileData, int offset) {
 			return fileData[offset] == 0x46 &&
 				fileData[offset + 1] == 0x21 &&
 				fileData[offset + 10] == 0x20 &&
 				fileData[offset + 15] == 0x26;
 		}
 
-		static byte[] readExceptionHandlers(IBinaryReader reader, int numExceptions) {
+		static byte[] ReadExceptionHandlers(IBinaryReader reader, int numExceptions) {
 			if (numExceptions == 0)
 				return null;
 
@@ -694,7 +694,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return memStream.ToArray();
 		}
 
-		byte[] decryptMethodData_v17_r73404(byte[] fileData, int offset, uint k1, int size) {
+		byte[] DecryptMethodData_v17_r73404(byte[] fileData, int offset, uint k1, int size) {
 			var data = new byte[size];
 			var kbytes = BitConverter.GetBytes(k1);
 			for (int i = 0; i < size; i++)
@@ -718,7 +718,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			}
 		}
 
-		public override bool getRevisionRange(out int minRev, out int maxRev) {
+		public override bool GetRevisionRange(out int minRev, out int maxRev) {
 			switch (version) {
 			case ConfuserVersion.Unknown:
 				minRev = maxRev = 0;

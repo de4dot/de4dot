@@ -19,6 +19,6 @@
 
 namespace de4dot.code.deobfuscators.Confuser {
 	interface IVersionProvider {
-		bool getRevisionRange(out int minRev, out int maxRev);
+		bool GetRevisionRange(out int minRev, out int maxRev);
 	}
 }

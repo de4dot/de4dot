@@ -69,28 +69,28 @@ namespace de4dot.code.deobfuscators.Confuser {
 			"System.IO.Compression.DeflateStream",
 			"System.Reflection.Assembly",
 		};
-		public void find() {
-			var type = DotNetUtils.getModuleType(module);
+		public void Find() {
+			var type = DotNetUtils.GetModuleType(module);
 			if (type == null)
 				return;
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
-				if (!DotNetUtils.isMethod(method, "System.Object", "(System.UInt32)"))
+				if (!DotNetUtils.IsMethod(method, "System.Object", "(System.UInt32)"))
 					continue;
 
 				DecrypterInfo info = new DecrypterInfo();
 				var localTypes = new LocalTypes(method);
-				if (localTypes.all(requiredLocals1)) {
-					if (localTypes.exists("System.Collections.BitArray"))	// or System.Random
+				if (localTypes.All(requiredLocals1)) {
+					if (localTypes.Exists("System.Collections.BitArray"))	// or System.Random
 						version = ConfuserVersion.v15_r60785_normal;
-					else if (DeobUtils.hasInteger(method, 0x100) &&
-							DeobUtils.hasInteger(method, 0x10000) &&
-							DeobUtils.hasInteger(method, 0xFFFF))
+					else if (DeobUtils.HasInteger(method, 0x100) &&
+							DeobUtils.HasInteger(method, 0x10000) &&
+							DeobUtils.HasInteger(method, 0xFFFF))
 						version = ConfuserVersion.v17_r73404_normal;
-					else if (DotNetUtils.callsMethod(method, "System.String System.Text.Encoding::GetString(System.Byte[])")) {
-						if (findInstruction(method.Body.Instructions, 0, Code.Conv_I8) >= 0) {
-							if (DotNetUtils.callsMethod(method, "System.Void System.Console::WriteLine()"))
+					else if (DotNetUtils.CallsMethod(method, "System.String System.Text.Encoding::GetString(System.Byte[])")) {
+						if (FindInstruction(method.Body.Instructions, 0, Code.Conv_I8) >= 0) {
+							if (DotNetUtils.CallsMethod(method, "System.Void System.Console::WriteLine()"))
 								version = ConfuserVersion.v15_r60785_dynamic;
 							else
 								version = ConfuserVersion.v17_r72989_dynamic;
@@ -98,8 +98,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 						else
 							version = ConfuserVersion.v17_r73740_dynamic;
 					}
-					else if (DotNetUtils.callsMethod(method, "System.String System.Text.Encoding::GetString(System.Byte[],System.Int32,System.Int32)")) {
-						if ((nativeMethod = findNativeMethod(method)) == null)
+					else if (DotNetUtils.CallsMethod(method, "System.String System.Text.Encoding::GetString(System.Byte[],System.Int32,System.Int32)")) {
+						if ((nativeMethod = FindNativeMethod(method)) == null)
 							version = ConfuserVersion.v17_r73764_dynamic;
 						else
 							version = ConfuserVersion.v17_r73764_native;
@@ -107,18 +107,18 @@ namespace de4dot.code.deobfuscators.Confuser {
 					else
 						continue;
 				}
-				else if (localTypes.all(requiredLocals2)) {
-					if (DeobUtils.hasInteger(method, 0x100) &&
-						DeobUtils.hasInteger(method, 0x10000) &&
-						DeobUtils.hasInteger(method, 0xFFFF))
+				else if (localTypes.All(requiredLocals2)) {
+					if (DeobUtils.HasInteger(method, 0x100) &&
+						DeobUtils.HasInteger(method, 0x10000) &&
+						DeobUtils.HasInteger(method, 0xFFFF))
 						version = ConfuserVersion.v17_r73822_normal;
-					else if (DotNetUtils.callsMethod(method, "System.Int32 System.Object::GetHashCode()")) {
-						if ((nativeMethod = findNativeMethod(method)) == null)
+					else if (DotNetUtils.CallsMethod(method, "System.Int32 System.Object::GetHashCode()")) {
+						if ((nativeMethod = FindNativeMethod(method)) == null)
 							version = ConfuserVersion.v17_r74021_dynamic;
 						else
 							version = ConfuserVersion.v17_r74021_native;
 					}
-					else if ((nativeMethod = findNativeMethod(method)) == null)
+					else if ((nativeMethod = FindNativeMethod(method)) == null)
 						version = ConfuserVersion.v17_r73822_dynamic;
 					else
 						version = ConfuserVersion.v17_r73822_native;
@@ -128,32 +128,32 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 				info.decryptMethod = method;
 				theDecrypterInfo = info;
-				add(info);
+				Add(info);
 				break;
 			}
 		}
 
-		public override void initialize() {
-			if ((resource = findResource(theDecrypterInfo.decryptMethod)) == null)
+		public override void Initialize() {
+			if ((resource = FindResource(theDecrypterInfo.decryptMethod)) == null)
 				throw new ApplicationException("Could not find encrypted consts resource");
 
-			initializeDecrypterInfos();
-			if (!initializeFields(theDecrypterInfo))
+			InitializeDecrypterInfos();
+			if (!InitializeFields(theDecrypterInfo))
 				throw new ApplicationException("Could not find all fields");
 
-			setConstantsData(DeobUtils.inflate(resource.GetResourceData(), true));
+			SetConstantsData(DeobUtils.Inflate(resource.GetResourceData(), true));
 		}
 
-		bool initializeFields(DecrypterInfo info) {
+		bool InitializeFields(DecrypterInfo info) {
 			switch (version) {
 			case ConfuserVersion.v17_r73822_normal:
 			case ConfuserVersion.v17_r73822_dynamic:
 			case ConfuserVersion.v17_r73822_native:
 			case ConfuserVersion.v17_r74021_dynamic:
 			case ConfuserVersion.v17_r74021_native:
-				if (!add(ConstantsDecrypterUtils.findDictField(info.decryptMethod, info.decryptMethod.DeclaringType)))
+				if (!Add(ConstantsDecrypterUtils.FindDictField(info.decryptMethod, info.decryptMethod.DeclaringType)))
 					return false;
-				if (!add(ConstantsDecrypterUtils.findMemoryStreamField(info.decryptMethod, info.decryptMethod.DeclaringType)))
+				if (!Add(ConstantsDecrypterUtils.FindMemoryStreamField(info.decryptMethod, info.decryptMethod.DeclaringType)))
 					return false;
 				break;
 
@@ -164,8 +164,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return true;
 		}
 
-		protected override byte[] decryptData(DecrypterInfo info, MethodDef caller, object[] args, out byte typeCode) {
-			uint offs = info.calcHash(caller.MDToken.ToUInt32()) ^ (uint)args[0];
+		protected override byte[] DecryptData(DecrypterInfo info, MethodDef caller, object[] args, out byte typeCode) {
+			uint offs = info.CalcHash(caller.MDToken.ToUInt32()) ^ (uint)args[0];
 			reader.Position = offs;
 			typeCode = reader.ReadByte();
 			if (typeCode != info.int32Type && typeCode != info.int64Type &&
@@ -174,28 +174,28 @@ namespace de4dot.code.deobfuscators.Confuser {
 				throw new ApplicationException("Invalid type code");
 
 			var encrypted = reader.ReadBytes(reader.ReadInt32());
-			return decryptConstant(info, encrypted, offs);
+			return DecryptConstant(info, encrypted, offs);
 		}
 
-		byte[] decryptConstant(DecrypterInfo info, byte[] encrypted, uint offs) {
+		byte[] DecryptConstant(DecrypterInfo info, byte[] encrypted, uint offs) {
 			switch (version) {
-			case ConfuserVersion.v15_r60785_normal: return decryptConstant_v15_r60785_normal(info, encrypted, offs);
-			case ConfuserVersion.v15_r60785_dynamic: return decryptConstant_v15_r60785_dynamic(info, encrypted, offs);
-			case ConfuserVersion.v17_r72989_dynamic: return decryptConstant_v15_r60785_dynamic(info, encrypted, offs);
-			case ConfuserVersion.v17_r73404_normal: return decryptConstant_v17_r73404_normal(info, encrypted, offs);
-			case ConfuserVersion.v17_r73740_dynamic: return decryptConstant_v17_r73740_dynamic(info, encrypted, offs, 0);
-			case ConfuserVersion.v17_r73764_dynamic: return decryptConstant_v17_r73740_dynamic(info, encrypted, offs, 0);
-			case ConfuserVersion.v17_r73764_native: return decryptConstant_v17_r73764_native(info, encrypted, offs, 0);
-			case ConfuserVersion.v17_r73822_normal: return decryptConstant_v17_r73404_normal(info, encrypted, offs);
-			case ConfuserVersion.v17_r73822_dynamic: return decryptConstant_v17_r73740_dynamic(info, encrypted, offs, 0);
-			case ConfuserVersion.v17_r73822_native: return decryptConstant_v17_r73764_native(info, encrypted, offs, 0);
-			case ConfuserVersion.v17_r74021_dynamic: return decryptConstant_v17_r73740_dynamic(info, encrypted, offs, 0);
-			case ConfuserVersion.v17_r74021_native: return decryptConstant_v17_r73764_native(info, encrypted, offs, 0);
+			case ConfuserVersion.v15_r60785_normal: return DecryptConstant_v15_r60785_normal(info, encrypted, offs);
+			case ConfuserVersion.v15_r60785_dynamic: return DecryptConstant_v15_r60785_dynamic(info, encrypted, offs);
+			case ConfuserVersion.v17_r72989_dynamic: return DecryptConstant_v15_r60785_dynamic(info, encrypted, offs);
+			case ConfuserVersion.v17_r73404_normal: return DecryptConstant_v17_r73404_normal(info, encrypted, offs);
+			case ConfuserVersion.v17_r73740_dynamic: return DecryptConstant_v17_r73740_dynamic(info, encrypted, offs, 0);
+			case ConfuserVersion.v17_r73764_dynamic: return DecryptConstant_v17_r73740_dynamic(info, encrypted, offs, 0);
+			case ConfuserVersion.v17_r73764_native: return DecryptConstant_v17_r73764_native(info, encrypted, offs, 0);
+			case ConfuserVersion.v17_r73822_normal: return DecryptConstant_v17_r73404_normal(info, encrypted, offs);
+			case ConfuserVersion.v17_r73822_dynamic: return DecryptConstant_v17_r73740_dynamic(info, encrypted, offs, 0);
+			case ConfuserVersion.v17_r73822_native: return DecryptConstant_v17_r73764_native(info, encrypted, offs, 0);
+			case ConfuserVersion.v17_r74021_dynamic: return DecryptConstant_v17_r73740_dynamic(info, encrypted, offs, 0);
+			case ConfuserVersion.v17_r74021_native: return DecryptConstant_v17_r73764_native(info, encrypted, offs, 0);
 			default: throw new ApplicationException("Invalid version");
 			}
 		}
 
-		byte[] decryptConstant_v15_r60785_normal(DecrypterInfo info, byte[] encrypted, uint offs) {
+		byte[] DecryptConstant_v15_r60785_normal(DecrypterInfo info, byte[] encrypted, uint offs) {
 			var rand = new Random((int)(info.key0 ^ offs));
 			var decrypted = new byte[encrypted.Length];
 			rand.NextBytes(decrypted);
@@ -204,30 +204,30 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return decrypted;
 		}
 
-		byte[] decryptConstant_v15_r60785_dynamic(DecrypterInfo info, byte[] encrypted, uint offs) {
+		byte[] DecryptConstant_v15_r60785_dynamic(DecrypterInfo info, byte[] encrypted, uint offs) {
 			var instrs = info.decryptMethod.Body.Instructions;
-			int startIndex = getDynamicStartIndex_v15_r60785(instrs);
-			int endIndex = getDynamicEndIndex_v15_r60785(instrs, startIndex);
+			int startIndex = GetDynamicStartIndex_v15_r60785(instrs);
+			int endIndex = GetDynamicEndIndex_v15_r60785(instrs, startIndex);
 			if (endIndex < 0)
 				throw new ApplicationException("Could not find start/endIndex");
 
 			var dataReader = MemoryImageStream.Create(encrypted);
 			var decrypted = new byte[dataReader.ReadInt32()];
 			var constReader = new Arg64ConstantsReader(instrs, false);
-			ConfuserUtils.decryptCompressedInt32Data(constReader, startIndex, endIndex, dataReader, decrypted);
+			ConfuserUtils.DecryptCompressedInt32Data(constReader, startIndex, endIndex, dataReader, decrypted);
 			return decrypted;
 		}
 
-		static int getDynamicStartIndex_v15_r60785(IList<Instruction> instrs) {
-			int index = findInstruction(instrs, 0, Code.Conv_I8);
+		static int GetDynamicStartIndex_v15_r60785(IList<Instruction> instrs) {
+			int index = FindInstruction(instrs, 0, Code.Conv_I8);
 			if (index < 0)
 				return -1;
-			if (findInstruction(instrs, index + 1, Code.Conv_I8) >= 0)
+			if (FindInstruction(instrs, index + 1, Code.Conv_I8) >= 0)
 				return -1;
 			return index;
 		}
 
-		static int getDynamicEndIndex_v15_r60785(IList<Instruction> instrs, int index) {
+		static int GetDynamicEndIndex_v15_r60785(IList<Instruction> instrs, int index) {
 			if (index < 0)
 				return -1;
 			for (int i = index; i < instrs.Count; i++) {
@@ -240,7 +240,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return -1;
 		}
 
-		static int findInstruction(IList<Instruction> instrs, int index, Code code) {
+		static int FindInstruction(IList<Instruction> instrs, int index, Code code) {
 			for (int i = index; i < instrs.Count; i++) {
 				if (instrs[i].OpCode.Code == code)
 					return i;
@@ -248,11 +248,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return -1;
 		}
 
-		byte[] decryptConstant_v17_r73404_normal(DecrypterInfo info, byte[] encrypted, uint offs) {
-			return ConfuserUtils.decrypt(info.key0 ^ offs, encrypted);
+		byte[] DecryptConstant_v17_r73404_normal(DecrypterInfo info, byte[] encrypted, uint offs) {
+			return ConfuserUtils.Decrypt(info.key0 ^ offs, encrypted);
 		}
 
-		public override bool getRevisionRange(out int minRev, out int maxRev) {
+		public override bool GetRevisionRange(out int minRev, out int maxRev) {
 			switch (version) {
 			case ConfuserVersion.Unknown:
 				minRev = maxRev = 0;

@@ -36,7 +36,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			this.realAssembly = realAssembly;
 			this.entryPointToken = entryPointToken;
 			this.kind = kind;
-			this.moduleName = realAssembly.Name.String + DeobUtils.getExtension(kind);
+			this.moduleName = realAssembly.Name.String + DeobUtils.GetExtension(kind);
 		}
 	}
 
@@ -53,9 +53,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 			this.resource = resource;
 			this.data = data;
 			this.asmFullName = asmFullName;
-			this.asmSimpleName = Utils.getAssemblySimpleName(asmFullName);
+			this.asmSimpleName = Utils.GetAssemblySimpleName(asmFullName);
 			this.kind = kind;
-			this.extension = DeobUtils.getExtension(kind);
+			this.extension = DeobUtils.GetExtension(kind);
 		}
 
 		public override string ToString() {
@@ -106,31 +106,31 @@ namespace de4dot.code.deobfuscators.Confuser {
 			"System.IO.BinaryReader",
 			"System.IO.Stream",
 		};
-		public void find(ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
+		public void Find(ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
 			var entryPoint = module.EntryPoint;
 			if (entryPoint == null)
 				return;
-			if (!new LocalTypes(entryPoint).all(requiredEntryPointLocals))
+			if (!new LocalTypes(entryPoint).All(requiredEntryPointLocals))
 				return;
 			var type = entryPoint.DeclaringType;
-			if (!new FieldTypes(type).all(requiredFields))
+			if (!new FieldTypes(type).All(requiredFields))
 				return;
 
 			bool use7zip = type.NestedTypes.Count == 6;
 			MethodDef decyptMethod;
 			if (use7zip)
-				decyptMethod = findDecryptMethod_7zip(type);
+				decyptMethod = FindDecryptMethod_7zip(type);
 			else
-				decyptMethod = findDecryptMethod_inflate(type);
+				decyptMethod = FindDecryptMethod_inflate(type);
 			if (decyptMethod == null)
 				return;
 
 			ConfuserVersion theVersion = ConfuserVersion.Unknown;
 			var decryptLocals = new LocalTypes(decyptMethod);
-			if (decryptLocals.exists("System.IO.MemoryStream")) {
-				if (DotNetUtils.callsMethod(entryPoint, "System.Void", "(System.String,System.Byte[])"))
+			if (decryptLocals.Exists("System.IO.MemoryStream")) {
+				if (DotNetUtils.CallsMethod(entryPoint, "System.Void", "(System.String,System.Byte[])"))
 					theVersion = ConfuserVersion.v10_r42915;
-				else if (DotNetUtils.callsMethod(entryPoint, "System.Void", "(System.Security.Permissions.PermissionState)"))
+				else if (DotNetUtils.CallsMethod(entryPoint, "System.Void", "(System.Security.Permissions.PermissionState)"))
 					theVersion = ConfuserVersion.v10_r48717;
 				else
 					theVersion = ConfuserVersion.v14_r57778;
@@ -142,10 +142,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 			if (cctor == null)
 				return;
 
-			if ((asmResolverMethod = findAssemblyResolverMethod(entryPoint.DeclaringType)) != null) {
+			if ((asmResolverMethod = FindAssemblyResolverMethod(entryPoint.DeclaringType)) != null) {
 				theVersion = ConfuserVersion.v14_r58802;
-				simpleDeobfuscator.deobfuscate(asmResolverMethod);
-				if (!findKey1(asmResolverMethod, out key1))
+				simpleDeobfuscator.Deobfuscate(asmResolverMethod);
+				if (!FindKey1(asmResolverMethod, out key1))
 					return;
 			}
 
@@ -157,23 +157,23 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			case ConfuserVersion.v14_r58564:
 			case ConfuserVersion.v14_r58802:
-				simpleDeobfuscator.deobfuscate(decyptMethod);
-				if (findKey0_v14_r58564(decyptMethod, out key0))
+				simpleDeobfuscator.Deobfuscate(decyptMethod);
+				if (FindKey0_v14_r58564(decyptMethod, out key0))
 					break;
-				if (findKey0_v14_r58852(decyptMethod, out key0)) {
-					if (!decryptLocals.exists("System.Security.Cryptography.RijndaelManaged")) {
+				if (FindKey0_v14_r58852(decyptMethod, out key0)) {
+					if (!decryptLocals.Exists("System.Security.Cryptography.RijndaelManaged")) {
 						theVersion = ConfuserVersion.v14_r58852;
 						break;
 					}
 					if (use7zip) {
-						if (new LocalTypes(decyptMethod).exists("System.IO.MemoryStream"))
+						if (new LocalTypes(decyptMethod).Exists("System.IO.MemoryStream"))
 							theVersion = ConfuserVersion.v17_r75076;
 						else if (module.Name == "Stub.exe")
 							theVersion = ConfuserVersion.v18_r75184;
 						else
 							theVersion = ConfuserVersion.v18_r75367;
 					}
-					else if (isDecryptMethod_v17_r73404(decyptMethod))
+					else if (IsDecryptMethod_v17_r73404(decyptMethod))
 						theVersion = ConfuserVersion.v17_r73404;
 					else
 						theVersion = ConfuserVersion.v15_r60785;
@@ -185,44 +185,44 @@ namespace de4dot.code.deobfuscators.Confuser {
 				throw new ApplicationException("Invalid version");
 			}
 
-			simpleDeobfuscator.deobfuscate(cctor);
-			simpleDeobfuscator.decryptStrings(cctor, deob);
+			simpleDeobfuscator.Deobfuscate(cctor);
+			simpleDeobfuscator.DecryptStrings(cctor, deob);
 
-			if (findEntryPointToken(simpleDeobfuscator, cctor, entryPoint, out entryPointToken) && !use7zip) {
-				if (DotNetUtils.callsMethod(asmResolverMethod, "System.Void", "(System.String)"))
+			if (FindEntryPointToken(simpleDeobfuscator, cctor, entryPoint, out entryPointToken) && !use7zip) {
+				if (DotNetUtils.CallsMethod(asmResolverMethod, "System.Void", "(System.String)"))
 					theVersion = ConfuserVersion.v17_r73477;
 				else
 					theVersion = ConfuserVersion.v17_r73566;
 			}
 
-			mainAsmResource = findResource(cctor);
+			mainAsmResource = FindResource(cctor);
 			if (mainAsmResource == null)
 				throw new ApplicationException("Could not find main assembly resource");
 			version = theVersion;
 		}
 
-		bool findEntryPointToken(ISimpleDeobfuscator simpleDeobfuscator, MethodDef cctor, MethodDef entryPoint, out uint token) {
+		bool FindEntryPointToken(ISimpleDeobfuscator simpleDeobfuscator, MethodDef cctor, MethodDef entryPoint, out uint token) {
 			token = 0;
 			ulong @base;
-			if (!findBase(cctor, out @base))
+			if (!FindBase(cctor, out @base))
 				return false;
 
-			var modPowMethod = DotNetUtils.getMethod(cctor.DeclaringType, "System.UInt64", "(System.UInt64,System.UInt64,System.UInt64)");
+			var modPowMethod = DotNetUtils.GetMethod(cctor.DeclaringType, "System.UInt64", "(System.UInt64,System.UInt64,System.UInt64)");
 			if (modPowMethod == null)
 				throw new ApplicationException("Could not find modPow()");
 
-			simpleDeobfuscator.deobfuscate(entryPoint);
+			simpleDeobfuscator.Deobfuscate(entryPoint);
 			ulong mod;
-			if (!findMod(entryPoint, out mod))
+			if (!FindMod(entryPoint, out mod))
 				throw new ApplicationException("Could not find modulus");
 
-			token = 0x06000000 | (uint)modPow(@base, 0x47, mod);
+			token = 0x06000000 | (uint)ModPow(@base, 0x47, mod);
 			if ((token >> 24) != 0x06)
 				throw new ApplicationException("Illegal entry point token");
 			return true;
 		}
 
-		static ulong modPow(ulong @base, ulong pow, ulong mod) {
+		static ulong ModPow(ulong @base, ulong pow, ulong mod) {
 			ulong m = 1;
 			while (pow > 0) {
 				if ((pow & 1) != 0)
@@ -233,7 +233,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return m;
 		}
 
-		static bool findMod(MethodDef method, out ulong mod) {
+		static bool FindMod(MethodDef method, out ulong mod) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 1; i++) {
 				var ldci8 = instrs[i];
@@ -246,7 +246,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				var calledMethod = call.Operand as IMethod;
 				if (calledMethod == null)
 					continue;
-				if (!DotNetUtils.isMethod(calledMethod, "System.UInt64", "(System.UInt64,System.UInt64,System.UInt64)"))
+				if (!DotNetUtils.IsMethod(calledMethod, "System.UInt64", "(System.UInt64,System.UInt64,System.UInt64)"))
 					continue;
 
 				mod = (ulong)(long)ldci8.Operand;
@@ -256,7 +256,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		static bool findBase(MethodDef method, out ulong @base) {
+		static bool FindBase(MethodDef method, out ulong @base) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 2; i++) {
 				var ldci8 = instrs[i];
@@ -278,13 +278,13 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		static bool isDecryptMethod_v17_r73404(MethodDef method) {
+		static bool IsDecryptMethod_v17_r73404(MethodDef method) {
 			var instrs = method.Body.Instructions;
 			if (instrs.Count < 4)
 				return false;
 			if (!instrs[0].IsLdarg())
 				return false;
-			if (!isCallorNewobj(instrs[1]) && !isCallorNewobj(instrs[2]))
+			if (!IsCallorNewobj(instrs[1]) && !IsCallorNewobj(instrs[2]))
 				return false;
 			var stloc = instrs[3];
 			if (!stloc.IsStloc())
@@ -296,15 +296,15 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return true;
 		}
 
-		static bool isCallorNewobj(Instruction instr) {
+		static bool IsCallorNewobj(Instruction instr) {
 			return instr.OpCode.Code == Code.Call || instr.OpCode.Code == Code.Newobj;
 		}
 
-		static MethodDef findAssemblyResolverMethod(TypeDef type) {
+		static MethodDef FindAssemblyResolverMethod(TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
-				if (!DotNetUtils.isMethod(method, "System.Reflection.Assembly", "(System.Object,System.ResolveEventArgs)"))
+				if (!DotNetUtils.IsMethod(method, "System.Reflection.Assembly", "(System.Object,System.ResolveEventArgs)"))
 					continue;
 
 				return method;
@@ -312,7 +312,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return null;
 		}
 
-		static bool findKey0_v14_r58564(MethodDef method, out uint key) {
+		static bool FindKey0_v14_r58564(MethodDef method, out uint key) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 2; i++) {
 				if (instrs[i].OpCode.Code != Code.Xor)
@@ -330,7 +330,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		static bool findKey0_v14_r58852(MethodDef method, out uint key) {
+		static bool FindKey0_v14_r58852(MethodDef method, out uint key) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 3; i++) {
 				var ldci4_1 = instrs[i];
@@ -351,7 +351,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		static bool findKey1(MethodDef method, out uint key) {
+		static bool FindKey1(MethodDef method, out uint key) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 4; i++) {
 				if (instrs[i].OpCode.Code != Code.Ldelem_U1)
@@ -373,21 +373,21 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		EmbeddedResource findResource(MethodDef method) {
-			return DotNetUtils.getResource(module, DotNetUtils.getCodeStrings(method)) as EmbeddedResource;
+		EmbeddedResource FindResource(MethodDef method) {
+			return DotNetUtils.GetResource(module, DotNetUtils.GetCodeStrings(method)) as EmbeddedResource;
 		}
 
 		static string[] requiredDecryptLocals_inflate = new string[] {
 			"System.Byte[]",
 			"System.IO.Compression.DeflateStream",
 		};
-		static MethodDef findDecryptMethod_inflate(TypeDef type) {
+		static MethodDef FindDecryptMethod_inflate(TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
-				if (!DotNetUtils.isMethod(method, "System.Byte[]", "(System.Byte[])"))
+				if (!DotNetUtils.IsMethod(method, "System.Byte[]", "(System.Byte[])"))
 					continue;
-				if (!new LocalTypes(method).all(requiredDecryptLocals_inflate))
+				if (!new LocalTypes(method).All(requiredDecryptLocals_inflate))
 					continue;
 
 				return method;
@@ -402,13 +402,13 @@ namespace de4dot.code.deobfuscators.Confuser {
 			"System.Security.Cryptography.CryptoStream",
 			"System.Security.Cryptography.RijndaelManaged",
 		};
-		static MethodDef findDecryptMethod_7zip(TypeDef type) {
+		static MethodDef FindDecryptMethod_7zip(TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
-				if (!DotNetUtils.isMethod(method, "System.Byte[]", "(System.Byte[])"))
+				if (!DotNetUtils.IsMethod(method, "System.Byte[]", "(System.Byte[])"))
 					continue;
-				if (!new LocalTypes(method).all(requiredDecryptLocals_7zip))
+				if (!new LocalTypes(method).All(requiredDecryptLocals_7zip))
 					continue;
 
 				return method;
@@ -416,14 +416,14 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return null;
 		}
 
-		public EmbeddedAssemblyInfo unpackMainAssembly(bool createAssembly) {
+		public EmbeddedAssemblyInfo UnpackMainAssembly(bool createAssembly) {
 			if (mainAsmResource == null)
 				return null;
-			var info = createEmbeddedAssemblyInfo(mainAsmResource, decrypt(mainAsmResource));
+			var info = CreateEmbeddedAssemblyInfo(mainAsmResource, Decrypt(mainAsmResource));
 
 			var asm = module.Assembly;
 			if (createAssembly && asm != null && entryPointToken != 0 && info.kind == ModuleKind.NetModule) {
-				info.extension = DeobUtils.getExtension(module.Kind);
+				info.extension = DeobUtils.GetExtension(module.Kind);
 				info.kind = module.Kind;
 
 				var realAsm = module.UpdateRowId(new AssemblyDefUser(asm.Name, new Version(0, 0, 0, 0)));
@@ -437,14 +437,14 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return info;
 		}
 
-		public List<EmbeddedAssemblyInfo> getEmbeddedAssemblyInfos() {
+		public List<EmbeddedAssemblyInfo> GetEmbeddedAssemblyInfos() {
 			var infos = new List<EmbeddedAssemblyInfo>();
 			foreach (var rsrc in module.Resources) {
 				var resource = rsrc as EmbeddedResource;
 				if (resource == null || resource == mainAsmResource)
 					continue;
 				try {
-					infos.Add(createEmbeddedAssemblyInfo(resource, decrypt(resource)));
+					infos.Add(CreateEmbeddedAssemblyInfo(resource, Decrypt(resource)));
 				}
 				catch {
 				}
@@ -452,45 +452,45 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return infos;
 		}
 
-		static EmbeddedAssemblyInfo createEmbeddedAssemblyInfo(EmbeddedResource resource, byte[] data) {
+		static EmbeddedAssemblyInfo CreateEmbeddedAssemblyInfo(EmbeddedResource resource, byte[] data) {
 			var mod = ModuleDefMD.Load(data);
 			var asmFullName = mod.Assembly != null ? mod.Assembly.FullName : mod.Name.String;
 			return new EmbeddedAssemblyInfo(resource, data, asmFullName, mod.Kind);
 		}
 
-		byte[] decrypt(EmbeddedResource resource) {
+		byte[] Decrypt(EmbeddedResource resource) {
 			var data = resource.GetResourceData();
 			switch (version) {
-			case ConfuserVersion.v10_r42915: return decrypt_v10_r42915(data);
-			case ConfuserVersion.v10_r48717: return decrypt_v10_r42915(data);
-			case ConfuserVersion.v14_r57778: return decrypt_v10_r42915(data);
-			case ConfuserVersion.v14_r58564: return decrypt_v14_r58564(data);
-			case ConfuserVersion.v14_r58802: return decrypt_v14_r58564(data);
-			case ConfuserVersion.v14_r58852: return decrypt_v14_r58852(data);
-			case ConfuserVersion.v15_r60785: return decrypt_v15_r60785(data);
-			case ConfuserVersion.v17_r73404: return decrypt_v17_r73404(data);
-			case ConfuserVersion.v17_r73477: return decrypt_v17_r73404(data);
-			case ConfuserVersion.v17_r73566: return decrypt_v17_r73404(data);
-			case ConfuserVersion.v17_r75076: return decrypt_v17_r75076(data);
-			case ConfuserVersion.v18_r75184: return decrypt_v17_r75076(data);
-			case ConfuserVersion.v18_r75367: return decrypt_v17_r75076(data);
+			case ConfuserVersion.v10_r42915: return Decrypt_v10_r42915(data);
+			case ConfuserVersion.v10_r48717: return Decrypt_v10_r42915(data);
+			case ConfuserVersion.v14_r57778: return Decrypt_v10_r42915(data);
+			case ConfuserVersion.v14_r58564: return Decrypt_v14_r58564(data);
+			case ConfuserVersion.v14_r58802: return Decrypt_v14_r58564(data);
+			case ConfuserVersion.v14_r58852: return Decrypt_v14_r58852(data);
+			case ConfuserVersion.v15_r60785: return Decrypt_v15_r60785(data);
+			case ConfuserVersion.v17_r73404: return Decrypt_v17_r73404(data);
+			case ConfuserVersion.v17_r73477: return Decrypt_v17_r73404(data);
+			case ConfuserVersion.v17_r73566: return Decrypt_v17_r73404(data);
+			case ConfuserVersion.v17_r75076: return Decrypt_v17_r75076(data);
+			case ConfuserVersion.v18_r75184: return Decrypt_v17_r75076(data);
+			case ConfuserVersion.v18_r75367: return Decrypt_v17_r75076(data);
 			default: throw new ApplicationException("Unknown version");
 			}
 		}
 
-		byte[] decrypt_v10_r42915(byte[] data) {
+		byte[] Decrypt_v10_r42915(byte[] data) {
 			for (int i = 0; i < data.Length; i++)
 				data[i] ^= (byte)(i ^ key0);
-			return DeobUtils.inflate(data, true);
+			return DeobUtils.Inflate(data, true);
 		}
 
-		byte[] decrypt_v14_r58564(byte[] data) {
-			var reader = new BinaryReader(new MemoryStream(decrypt_v10_r42915(data)));
+		byte[] Decrypt_v14_r58564(byte[] data) {
+			var reader = new BinaryReader(new MemoryStream(Decrypt_v10_r42915(data)));
 			return reader.ReadBytes(reader.ReadInt32());
 		}
 
-		byte[] decrypt_v14_r58852(byte[] data) {
-			var reader = new BinaryReader(new MemoryStream(DeobUtils.inflate(data, true)));
+		byte[] Decrypt_v14_r58852(byte[] data) {
+			var reader = new BinaryReader(new MemoryStream(DeobUtils.Inflate(data, true)));
 			data = reader.ReadBytes(reader.ReadInt32());
 			for (int i = 0; i < data.Length; i++) {
 				if ((i & 1) == 0)
@@ -502,15 +502,15 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return data;
 		}
 
-		byte[] decrypt_v15_r60785(byte[] data) {
-			var reader = new BinaryReader(new MemoryStream(DeobUtils.inflate(data, true)));
+		byte[] Decrypt_v15_r60785(byte[] data) {
+			var reader = new BinaryReader(new MemoryStream(DeobUtils.Inflate(data, true)));
 			byte[] key, iv;
-			data = decrypt_v15_r60785(reader, out key, out iv);
-			reader = new BinaryReader(new MemoryStream(DeobUtils.aesDecrypt(data, key, iv)));
+			data = Decrypt_v15_r60785(reader, out key, out iv);
+			reader = new BinaryReader(new MemoryStream(DeobUtils.AesDecrypt(data, key, iv)));
 			return reader.ReadBytes(reader.ReadInt32());
 		}
 
-		byte[] decrypt_v15_r60785(BinaryReader reader, out byte[] key, out byte[] iv) {
+		byte[] Decrypt_v15_r60785(BinaryReader reader, out byte[] key, out byte[] iv) {
 			var encrypted = reader.ReadBytes(reader.ReadInt32());
 			iv = reader.ReadBytes(reader.ReadInt32());
 			key = reader.ReadBytes(reader.ReadInt32());
@@ -523,22 +523,22 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return encrypted;
 		}
 
-		byte[] decrypt_v17_r73404(byte[] data) {
+		byte[] Decrypt_v17_r73404(byte[] data) {
 			var reader = new BinaryReader(new MemoryStream(data));
 			byte[] key, iv;
-			data = decrypt_v15_r60785(reader, out key, out iv);
-			reader = new BinaryReader(new MemoryStream(DeobUtils.inflate(DeobUtils.aesDecrypt(data, key, iv), true)));
+			data = Decrypt_v15_r60785(reader, out key, out iv);
+			reader = new BinaryReader(new MemoryStream(DeobUtils.Inflate(DeobUtils.AesDecrypt(data, key, iv), true)));
 			return reader.ReadBytes(reader.ReadInt32());
 		}
 
-		byte[] decrypt_v17_r75076(byte[] data) {
+		byte[] Decrypt_v17_r75076(byte[] data) {
 			var reader = new BinaryReader(new MemoryStream(data));
 			byte[] key, iv;
-			data = decrypt_v15_r60785(reader, out key, out iv);
-			return sevenzipDecompress(DeobUtils.aesDecrypt(data, key, iv));
+			data = Decrypt_v15_r60785(reader, out key, out iv);
+			return SevenzipDecompress(DeobUtils.AesDecrypt(data, key, iv));
 		}
 
-		static byte[] sevenzipDecompress(byte[] data) {
+		static byte[] SevenzipDecompress(byte[] data) {
 			var reader = new BinaryReader(new MemoryStream(data));
 			int totalSize = reader.ReadInt32();
 			var props = reader.ReadBytes(5);
@@ -552,15 +552,15 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return decompressed;
 		}
 
-		public void deobfuscate(Blocks blocks) {
+		public void Deobfuscate(Blocks blocks) {
 			if (asmResolverMethod == null)
 				return;
-			if (blocks.Method != DotNetUtils.getModuleTypeCctor(module))
+			if (blocks.Method != DotNetUtils.GetModuleTypeCctor(module))
 				return;
-			ConfuserUtils.removeResourceHookCode(blocks, asmResolverMethod);
+			ConfuserUtils.RemoveResourceHookCode(blocks, asmResolverMethod);
 		}
 
-		public bool getRevisionRange(out int minRev, out int maxRev) {
+		public bool GetRevisionRange(out int minRev, out int maxRev) {
 			switch (version) {
 			case ConfuserVersion.Unknown:
 				minRev = maxRev = 0;

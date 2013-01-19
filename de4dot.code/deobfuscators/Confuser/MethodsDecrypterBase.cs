@@ -57,20 +57,20 @@ namespace de4dot.code.deobfuscators.Confuser {
 			this.module = module;
 			this.simpleDeobfuscator = simpleDeobfuscator;
 			if (other != null)
-				this.initMethod = lookup(other.initMethod, "Could not find initMethod");
+				this.initMethod = Lookup(other.initMethod, "Could not find initMethod");
 		}
 
-		T lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
-			return DeobUtils.lookup(module, def, errorMessage);
+		T Lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
+			return DeobUtils.Lookup(module, def, errorMessage);
 		}
 
-		public abstract bool getRevisionRange(out int minRev, out int maxRev);
+		public abstract bool GetRevisionRange(out int minRev, out int maxRev);
 
-		public void find() {
-			find(DotNetUtils.getModuleTypeCctor(module));
+		public void Find() {
+			Find(DotNetUtils.GetModuleTypeCctor(module));
 		}
 
-		bool find(MethodDef method) {
+		bool Find(MethodDef method) {
 			if (method == null || method.Body == null)
 				return false;
 			foreach (var instr in method.Body.Instructions) {
@@ -85,9 +85,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 				catch {
 					continue;
 				}
-				if (!DotNetUtils.isMethod(calledMethod, "System.Void", "()"))
+				if (!DotNetUtils.IsMethod(calledMethod, "System.Void", "()"))
 					continue;
-				if (!checkType(calledMethod.DeclaringType, calledMethod))
+				if (!CheckType(calledMethod.DeclaringType, calledMethod))
 					continue;
 
 				initMethod = calledMethod;
@@ -96,13 +96,13 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		protected abstract bool checkType(TypeDef type, MethodDef initMethod);
+		protected abstract bool CheckType(TypeDef type, MethodDef initMethod);
 
-		protected static MethodDef findDecryptMethod(TypeDef type) {
+		protected static MethodDef FindDecryptMethod(TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
-				if (!DotNetUtils.isMethod(method, "System.Byte[]", "(System.Byte[],System.Byte[],System.Byte[])"))
+				if (!DotNetUtils.IsMethod(method, "System.Byte[]", "(System.Byte[],System.Byte[],System.Byte[])"))
 					continue;
 
 				return method;
@@ -110,10 +110,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return null;
 		}
 
-		protected static bool findLKey0(MethodDef method, out ulong key) {
+		protected static bool FindLKey0(MethodDef method, out ulong key) {
 			var instrs = method.Body.Instructions;
 			for (int index = 0; index < instrs.Count; index++) {
-				index = findCallvirtReadUInt64(instrs, index);
+				index = FindCallvirtReadUInt64(instrs, index);
 				if (index < 0)
 					break;
 				if (index + 1 >= instrs.Count)
@@ -130,10 +130,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		protected static bool findKey0_v16_r71742(MethodDef method, out uint key) {
+		protected static bool FindKey0_v16_r71742(MethodDef method, out uint key) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i + 5 < instrs.Count; i++) {
-				i = findCallvirtReadUInt32(instrs, i);
+				i = FindCallvirtReadUInt32(instrs, i);
 				if (i < 0)
 					break;
 
@@ -161,10 +161,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		protected static bool findKey0_v14_r58564(MethodDef method, out uint key) {
+		protected static bool FindKey0_v14_r58564(MethodDef method, out uint key) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i + 5 < instrs.Count; i++) {
-				i = ConfuserUtils.findCallMethod(instrs, i, Code.Callvirt, "System.Int32 System.IO.BinaryReader::ReadInt32()");
+				i = ConfuserUtils.FindCallMethod(instrs, i, Code.Callvirt, "System.Int32 System.IO.BinaryReader::ReadInt32()");
 				if (i < 0)
 					break;
 
@@ -192,22 +192,22 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		protected static bool findKey1(MethodDef method, out uint key) {
+		protected static bool FindKey1(MethodDef method, out uint key) {
 			var instrs = method.Body.Instructions;
 			for (int index = 0; index < instrs.Count; index++) {
-				index = findCallvirtReadUInt32(instrs, index);
+				index = FindCallvirtReadUInt32(instrs, index);
 				if (index < 0)
 					break;
 				if (index == 0)
 					continue;
 				int i = index - 1;
-				if (!checkCallvirtReadUInt32(instrs, ref i))
+				if (!CheckCallvirtReadUInt32(instrs, ref i))
 					continue;
-				if (!checkCallvirtReadUInt32(instrs, ref i))
+				if (!CheckCallvirtReadUInt32(instrs, ref i))
 					continue;
-				if (!checkCallvirtReadUInt32(instrs, ref i))
+				if (!CheckCallvirtReadUInt32(instrs, ref i))
 					continue;
-				if (!checkCallvirtReadUInt32(instrs, ref i))
+				if (!CheckCallvirtReadUInt32(instrs, ref i))
 					continue;
 
 				if (i + 1 >= instrs.Count)
@@ -226,13 +226,13 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		static bool checkCallvirtReadUInt32(IList<Instruction> instrs, ref int index) {
+		static bool CheckCallvirtReadUInt32(IList<Instruction> instrs, ref int index) {
 			if (index + 2 >= instrs.Count)
 				return false;
 
 			if (!instrs[index].IsLdloc())
 				return false;
-			if (!ConfuserUtils.isCallMethod(instrs[index + 1], Code.Callvirt, "System.UInt32 System.IO.BinaryReader::ReadUInt32()"))
+			if (!ConfuserUtils.IsCallMethod(instrs[index + 1], Code.Callvirt, "System.UInt32 System.IO.BinaryReader::ReadUInt32()"))
 				return false;
 			if (!instrs[index + 2].IsStloc() && instrs[index + 2].OpCode.Code != Code.Pop)
 				return false;
@@ -241,13 +241,13 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return true;
 		}
 
-		protected static bool findKey2Key3(MethodDef method, out uint key2, out uint key3) {
+		protected static bool FindKey2Key3(MethodDef method, out uint key2, out uint key3) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count; i++) {
 				int index = i;
-				if (!findKey2OrKey3(instrs, ref index, out key2))
+				if (!FindKey2OrKey3(instrs, ref index, out key2))
 					continue;
-				if (!findKey2OrKey3(instrs, ref index, out key3))
+				if (!FindKey2OrKey3(instrs, ref index, out key3))
 					continue;
 
 				return true;
@@ -258,7 +258,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		static bool findKey2OrKey3(IList<Instruction> instrs, ref int index, out uint key) {
+		static bool FindKey2OrKey3(IList<Instruction> instrs, ref int index, out uint key) {
 			key = 0;
 			if (index + 6 >= instrs.Count)
 				return false;
@@ -267,14 +267,14 @@ namespace de4dot.code.deobfuscators.Confuser {
 				return false;
 			if (!instrs[i++].IsLdloc())
 				return false;
-			if (!ConfuserUtils.isCallMethod(instrs[i++], Code.Callvirt, "System.Int32 System.IO.BinaryReader::ReadInt32()"))
+			if (!ConfuserUtils.IsCallMethod(instrs[i++], Code.Callvirt, "System.Int32 System.IO.BinaryReader::ReadInt32()"))
 				return false;
 			var ldci4 = instrs[i++];
 			if (!ldci4.IsLdcI4())
 				return false;
 			if (instrs[i++].OpCode.Code != Code.Xor)
 				return false;
-			if (!ConfuserUtils.isCallMethod(instrs[i++], Code.Callvirt, "System.Byte[] System.IO.BinaryReader::ReadBytes(System.Int32)"))
+			if (!ConfuserUtils.IsCallMethod(instrs[i++], Code.Callvirt, "System.Byte[] System.IO.BinaryReader::ReadBytes(System.Int32)"))
 				return false;
 			if (!instrs[i++].IsStloc())
 				return false;
@@ -284,7 +284,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return true;
 		}
 
-		protected static bool findKey6(MethodDef method, out uint key) {
+		protected static bool FindKey6(MethodDef method, out uint key) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i + 4 < instrs.Count; i++) {
 				int index = i;
@@ -310,19 +310,19 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		protected static int findCallvirtReadUInt32(IList<Instruction> instrs, int index) {
-			return ConfuserUtils.findCallMethod(instrs, index, Code.Callvirt, "System.UInt32 System.IO.BinaryReader::ReadUInt32()");
+		protected static int FindCallvirtReadUInt32(IList<Instruction> instrs, int index) {
+			return ConfuserUtils.FindCallMethod(instrs, index, Code.Callvirt, "System.UInt32 System.IO.BinaryReader::ReadUInt32()");
 		}
 
-		static int findCallvirtReadUInt64(IList<Instruction> instrs, int index) {
-			return ConfuserUtils.findCallMethod(instrs, index, Code.Callvirt, "System.UInt64 System.IO.BinaryReader::ReadUInt64()");
+		static int FindCallvirtReadUInt64(IList<Instruction> instrs, int index) {
+			return ConfuserUtils.FindCallMethod(instrs, index, Code.Callvirt, "System.UInt64 System.IO.BinaryReader::ReadUInt64()");
 		}
 
-		protected byte[] decryptMethodsData_v17_r73404(MyPEImage peImage) {
-			return decryptMethodsData_v16_r71742(peImage, getEncryptedHeaderOffset_vXX(peImage.Sections));
+		protected byte[] DecryptMethodsData_v17_r73404(MyPEImage peImage) {
+			return DecryptMethodsData_v16_r71742(peImage, GetEncryptedHeaderOffset_vXX(peImage.Sections));
 		}
 
-		protected byte[] decryptMethodsData_v16_r71742(MyPEImage peImage, uint encryptedHeaderOffset) {
+		protected byte[] DecryptMethodsData_v16_r71742(MyPEImage peImage, uint encryptedHeaderOffset) {
 			uint mdRva = peImage.OptionalHeader.CheckSum ^ (uint)key0;
 			if ((RVA)mdRva != peImage.Cor20Header.MetaData.VirtualAddress)
 				throw new ApplicationException("Invalid metadata rva");
@@ -333,16 +333,16 @@ namespace de4dot.code.deobfuscators.Confuser {
 			reader.ReadInt32();	// strong name len
 			var iv = reader.ReadBytes(reader.ReadInt32() ^ (int)key2);
 			var encrypted = reader.ReadBytes(reader.ReadInt32() ^ (int)key3);
-			var streamsBuffer = getStreamsBuffer(peImage);
-			if (checkSum != calcChecksum(streamsBuffer))
+			var streamsBuffer = GetStreamsBuffer(peImage);
+			if (checkSum != CalcChecksum(streamsBuffer))
 				throw new ApplicationException("Invalid checksum. File has been modified.");
-			var decrypted = decrypt(encrypted, iv, streamsBuffer);
+			var decrypted = Decrypt(encrypted, iv, streamsBuffer);
 			if (BitConverter.ToInt16(decrypted, 0) != 0x6FD6)
 				throw new ApplicationException("Invalid magic");
 			return decrypted;
 		}
 
-		protected uint getEncryptedHeaderOffset_v16_r71742(IList<ImageSectionHeader> sections) {
+		protected uint GetEncryptedHeaderOffset_v16_r71742(IList<ImageSectionHeader> sections) {
 			for (int i = sections.Count - 1; i >= 0; i--) {
 				var section = sections[i];
 				if (section.DisplayName == ".confuse")
@@ -351,16 +351,16 @@ namespace de4dot.code.deobfuscators.Confuser {
 			throw new ApplicationException("Could not find encrypted section");
 		}
 
-		uint getEncryptedHeaderOffset_vXX(IList<ImageSectionHeader> sections) {
+		uint GetEncryptedHeaderOffset_vXX(IList<ImageSectionHeader> sections) {
 			for (int i = sections.Count - 1; i >= 0; i--) {
 				var section = sections[i];
-				if (getSectionNameHash(section) == (uint)key1)
+				if (GetSectionNameHash(section) == (uint)key1)
 					return section.PointerToRawData;
 			}
 			throw new ApplicationException("Could not find encrypted section");
 		}
 
-		static byte[] getStreamsBuffer(MyPEImage peImage) {
+		static byte[] GetStreamsBuffer(MyPEImage peImage) {
 			var memStream = new MemoryStream();
 			var writer = new BinaryWriter(memStream);
 			var reader = peImage.Reader;
@@ -371,20 +371,20 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return memStream.ToArray();
 		}
 
-		protected static ulong calcChecksum(byte[] data) {
-			var sum = DeobUtils.md5Sum(data);
+		protected static ulong CalcChecksum(byte[] data) {
+			var sum = DeobUtils.Md5Sum(data);
 			return BitConverter.ToUInt64(sum, 0) ^ BitConverter.ToUInt64(sum, 8);
 		}
 
-		static uint getSectionNameHash(ImageSectionHeader section) {
+		static uint GetSectionNameHash(ImageSectionHeader section) {
 			uint hash = 0;
 			foreach (var c in section.Name)
 				hash += c;
 			return hash;
 		}
 
-		protected byte[] decrypt(byte[] encrypted, byte[] iv, byte[] streamsBuffer) {
-			var decrypted = DeobUtils.aesDecrypt(encrypted, DeobUtils.sha256Sum(streamsBuffer), iv);
+		protected byte[] Decrypt(byte[] encrypted, byte[] iv, byte[] streamsBuffer) {
+			var decrypted = DeobUtils.AesDecrypt(encrypted, DeobUtils.Sha256Sum(streamsBuffer), iv);
 			var sha = SHA512.Create();
 			var hash = sha.ComputeHash(streamsBuffer);
 			for (int i = 0; i < decrypted.Length; i += 64) {

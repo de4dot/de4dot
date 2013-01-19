@@ -54,7 +54,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				this.stringDecrypter = stringDecrypter;
 			}
 
-			public abstract string decrypt(MethodDef caller, int magic);
+			public abstract string Decrypt(MethodDef caller, int magic);
 		}
 
 		class Decrypter_v10_r42915 : Decrypter {
@@ -69,7 +69,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				this.key = key;
 			}
 
-			public override string decrypt(MethodDef caller, int magic) {
+			public override string Decrypt(MethodDef caller, int magic) {
 				var reader = stringDecrypter.reader;
 				reader.Position = (caller.MDToken.ToInt32() ^ magic) - stringDecrypter.magic1;
 				int len = reader.ReadInt32() ^ (int)~stringDecrypter.magic2;
@@ -93,7 +93,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				: base(stringDecrypter) {
 			}
 
-			public override string decrypt(MethodDef caller, int magic) {
+			public override string Decrypt(MethodDef caller, int magic) {
 				var reader = stringDecrypter.reader;
 				reader.Position = (caller.MDToken.ToInt32() ^ magic) - stringDecrypter.magic1;
 				int len = reader.ReadInt32() ^ (int)~stringDecrypter.magic2;
@@ -101,7 +101,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 				var instrs = stringDecrypter.decryptMethod.Body.Instructions;
 				constReader = new PolyConstantsReader(instrs, false);
-				int polyIndex = ConfuserUtils.findCallMethod(instrs, 0, Code.Callvirt, "System.Int64 System.IO.BinaryReader::ReadInt64()");
+				int polyIndex = ConfuserUtils.FindCallMethod(instrs, 0, Code.Callvirt, "System.Int64 System.IO.BinaryReader::ReadInt64()");
 				if (polyIndex < 0)
 					throw new ApplicationException("Could not find start of decrypt code");
 
@@ -110,7 +110,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 					constReader.Arg = reader.ReadInt64();
 					int index = polyIndex;
 					long val;
-					if (!constReader.getInt64(ref index, out val) || instrs[index].OpCode.Code != Code.Conv_I8)
+					if (!constReader.GetInt64(ref index, out val) || instrs[index].OpCode.Code != Code.Conv_I8)
 						throw new ApplicationException("Could not get string int64 value");
 					Array.Copy(BitConverter.GetBytes(val ^ rand.Next()), 0, decrypted, i, Math.Min(8, len - i));
 				}
@@ -124,39 +124,39 @@ namespace de4dot.code.deobfuscators.Confuser {
 				: base(stringDecrypter) {
 			}
 
-			public override string decrypt(MethodDef caller, int magic) {
+			public override string Decrypt(MethodDef caller, int magic) {
 				var reader = stringDecrypter.reader;
 				reader.Position = (caller.MDToken.ToInt32() ^ magic) - stringDecrypter.magic1;
 				int len = reader.ReadInt32() ^ (int)~stringDecrypter.magic2;
 				var decrypted = new byte[len];
 
 				int startIndex, endIndex;
-				if (!findPolyStartEndIndexes(out startIndex, out endIndex))
+				if (!FindPolyStartEndIndexes(out startIndex, out endIndex))
 					throw new ApplicationException("Could not get start/end indexes");
 
 				var constReader = new Arg64ConstantsReader(stringDecrypter.decryptMethod.Body.Instructions, false);
-				ConfuserUtils.decryptCompressedInt32Data(constReader, startIndex, endIndex, reader, decrypted);
+				ConfuserUtils.DecryptCompressedInt32Data(constReader, startIndex, endIndex, reader, decrypted);
 				return Encoding.Unicode.GetString(decrypted);
 			}
 
-			bool findPolyStartEndIndexes(out int startIndex, out int endIndex) {
+			bool FindPolyStartEndIndexes(out int startIndex, out int endIndex) {
 				startIndex = 0;
 				endIndex = 0;
 
-				var local = findLocal(stringDecrypter.decryptMethod);
+				var local = FindLocal(stringDecrypter.decryptMethod);
 				if (local == null)
 					return false;
 
-				if ((endIndex = findEndIndex(stringDecrypter.decryptMethod)) < 0)
+				if ((endIndex = FindEndIndex(stringDecrypter.decryptMethod)) < 0)
 					return false;
 
-				if ((startIndex = findStartIndex(stringDecrypter.decryptMethod, endIndex)) < 0)
+				if ((startIndex = FindStartIndex(stringDecrypter.decryptMethod, endIndex)) < 0)
 					return false;
 
 				return true;
 			}
 
-			static Local findLocal(MethodDef method) {
+			static Local FindLocal(MethodDef method) {
 				var instrs = method.Body.Instructions;
 				for (int i = 0; i < instrs.Count - 3; i++) {
 					if (instrs[i].OpCode.Code != Code.And)
@@ -172,7 +172,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				return null;
 			}
 
-			static int findEndIndex(MethodDef method) {
+			static int FindEndIndex(MethodDef method) {
 				var instrs = method.Body.Instructions;
 				for (int i = 0; i < instrs.Count - 5; i++) {
 					if (instrs[i].OpCode.Code != Code.Conv_U1)
@@ -192,7 +192,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				return -1;
 			}
 
-			static int findStartIndex(MethodDef method, int endIndex) {
+			static int FindStartIndex(MethodDef method, int endIndex) {
 				var instrs = method.Body.Instructions;
 				for (int i = endIndex; i >= 0; i--) {
 					var instr = instrs[i];
@@ -217,7 +217,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				: base(instrs, emulateConvInstrs) {
 			}
 
-			protected override bool processInstructionInt64(ref int index, Stack<ConstantInfo<long>> stack) {
+			protected override bool ProcessInstructionInt64(ref int index, Stack<ConstantInfo<long>> stack) {
 				int i = index;
 
 				if (instructions[i].IsLdloc()) {
@@ -259,52 +259,52 @@ namespace de4dot.code.deobfuscators.Confuser {
 			"System.IO.BinaryReader",
 			"System.Reflection.Assembly",
 		};
-		public void find(ISimpleDeobfuscator simpleDeobfuscator) {
-			var type = DotNetUtils.getModuleType(module);
+		public void Find(ISimpleDeobfuscator simpleDeobfuscator) {
+			var type = DotNetUtils.GetModuleType(module);
 			if (type == null)
 				return;
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
-				if (!DotNetUtils.isMethod(method, "System.String", "(System.Int32)"))
+				if (!DotNetUtils.IsMethod(method, "System.String", "(System.Int32)"))
 					continue;
 				var localTypes = new LocalTypes(method);
-				if (!localTypes.all(requiredLocals))
+				if (!localTypes.All(requiredLocals))
 					continue;
 
-				simpleDeobfuscator.deobfuscate(method);
+				simpleDeobfuscator.Deobfuscate(method);
 
 				bool foundOldMagic1;
-				if (findMagic1(method, out magic1))
+				if (FindMagic1(method, out magic1))
 					foundOldMagic1 = true;
-				else if (findNewMagic1(method, out magic1))
+				else if (FindNewMagic1(method, out magic1))
 					foundOldMagic1 = false;
 				else
 					continue;
-				if (!findMagic2(method, out magic2))
+				if (!FindMagic2(method, out magic2))
 					continue;
 
 				version = ConfuserVersion.Unknown;
-				if (DotNetUtils.callsMethod(method, "System.Text.Encoding System.Text.Encoding::get_UTF8()")) {
+				if (DotNetUtils.CallsMethod(method, "System.Text.Encoding System.Text.Encoding::get_UTF8()")) {
 					if (foundOldMagic1) {
-						if (DotNetUtils.callsMethod(method, "System.Object System.AppDomain::GetData(System.String)"))
+						if (DotNetUtils.CallsMethod(method, "System.Object System.AppDomain::GetData(System.String)"))
 							version = ConfuserVersion.v13_r55604_safe;
 						else
 							version = ConfuserVersion.v10_r42915;
 					}
 					else {
-						if (!findSafeKey1(method, out key1))
+						if (!FindSafeKey1(method, out key1))
 							continue;
 						version = ConfuserVersion.v14_r58802_safe;
 					}
 				}
-				else if (!localTypes.exists("System.Random")) {
+				else if (!localTypes.Exists("System.Random")) {
 					if (foundOldMagic1)
 						version = ConfuserVersion.v11_r49299;
 					else
 						version = ConfuserVersion.v14_r58802_dynamic;
 				}
-				else if (localTypes.exists("System.Collections.Generic.Dictionary`2<System.Int32,System.String>"))
+				else if (localTypes.Exists("System.Collections.Generic.Dictionary`2<System.Int32,System.String>"))
 					version = ConfuserVersion.v10_r48832;
 				if (version == ConfuserVersion.Unknown)
 					continue;
@@ -314,14 +314,14 @@ namespace de4dot.code.deobfuscators.Confuser {
 			}
 		}
 
-		EmbeddedResource findResource(MethodDef method) {
-			return DotNetUtils.getResource(module, DotNetUtils.getCodeStrings(method)) as EmbeddedResource;
+		EmbeddedResource FindResource(MethodDef method) {
+			return DotNetUtils.GetResource(module, DotNetUtils.GetCodeStrings(method)) as EmbeddedResource;
 		}
 
-		static bool findMagic1(MethodDef method, out uint magic) {
+		static bool FindMagic1(MethodDef method, out uint magic) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count; i++) {
-				int index = ConfuserUtils.findCallMethod(instrs, i, Code.Callvirt, "System.Byte[] System.IO.BinaryReader::ReadBytes(System.Int32)");
+				int index = ConfuserUtils.FindCallMethod(instrs, i, Code.Callvirt, "System.Byte[] System.IO.BinaryReader::ReadBytes(System.Int32)");
 				if (index < 0)
 					break;
 				if (index < 4)
@@ -345,7 +345,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		static bool findNewMagic1(MethodDef method, out uint magic) {
+		static bool FindNewMagic1(MethodDef method, out uint magic) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 4; i++) {
 				if (instrs[i].OpCode.Code != Code.Ldarg_0)
@@ -367,10 +367,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		static bool findMagic2(MethodDef method, out uint magic) {
+		static bool FindMagic2(MethodDef method, out uint magic) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count; i++) {
-				int index = ConfuserUtils.findCallMethod(instrs, i, Code.Callvirt, "System.UInt32 System.IO.BinaryReader::ReadUInt32()");
+				int index = ConfuserUtils.FindCallMethod(instrs, i, Code.Callvirt, "System.UInt32 System.IO.BinaryReader::ReadUInt32()");
 				if (index < 0)
 					break;
 				if (index + 4 >= instrs.Count)
@@ -393,10 +393,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		static bool findSafeKey1(MethodDef method, out uint key) {
+		static bool FindSafeKey1(MethodDef method, out uint key) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count; i++) {
-				int index = ConfuserUtils.findCallMethod(instrs, i, Code.Newobj, "System.Void System.Random::.ctor(System.Int32)");
+				int index = ConfuserUtils.FindCallMethod(instrs, i, Code.Newobj, "System.Void System.Random::.ctor(System.Int32)");
 				if (index < 0)
 					break;
 				if (index == 0)
@@ -413,14 +413,14 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		public void initialize() {
+		public void Initialize() {
 			if (decryptMethod == null)
 				return;
 
-			resource = findResource(decryptMethod);
+			resource = FindResource(decryptMethod);
 			if (resource == null)
 				throw new ApplicationException("Could not find encrypted strings resource");
-			reader = MemoryImageStream.Create(DeobUtils.inflate(resource.GetResourceData(), true));
+			reader = MemoryImageStream.Create(DeobUtils.Inflate(resource.GetResourceData(), true));
 
 			switch (version) {
 			case ConfuserVersion.v10_r42915:
@@ -446,11 +446,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 			}
 		}
 
-		public string decrypt(MethodDef caller, int magic) {
-			return decrypter.decrypt(caller, magic);
+		public string Decrypt(MethodDef caller, int magic) {
+			return decrypter.Decrypt(caller, magic);
 		}
 
-		public bool getRevisionRange(out int minRev, out int maxRev) {
+		public bool GetRevisionRange(out int minRev, out int maxRev) {
 			switch (version) {
 			case ConfuserVersion.Unknown:
 				minRev = maxRev = 0;

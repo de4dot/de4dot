@@ -38,17 +38,17 @@ namespace de4dot.code.deobfuscators.Confuser {
 			this.doubleValueInliner = doubleValueInliner;
 		}
 
-		public void deobfuscateBegin(Blocks blocks) {
+		public void DeobfuscateBegin(Blocks blocks) {
 			this.blocks = blocks;
 		}
 
-		public bool deobfuscate(List<Block> allBlocks) {
+		public bool Deobfuscate(List<Block> allBlocks) {
 			bool modified = false;
 			foreach (var block in allBlocks) {
-				modified |= int32ValueInliner.decrypt(blocks.Method, allBlocks) != 0;
-				modified |= int64ValueInliner.decrypt(blocks.Method, allBlocks) != 0;
-				modified |= singleValueInliner.decrypt(blocks.Method, allBlocks) != 0;
-				modified |= doubleValueInliner.decrypt(blocks.Method, allBlocks) != 0;
+				modified |= int32ValueInliner.Decrypt(blocks.Method, allBlocks) != 0;
+				modified |= int64ValueInliner.Decrypt(blocks.Method, allBlocks) != 0;
+				modified |= singleValueInliner.Decrypt(blocks.Method, allBlocks) != 0;
+				modified |= doubleValueInliner.Decrypt(blocks.Method, allBlocks) != 0;
 			}
 			return modified;
 		}

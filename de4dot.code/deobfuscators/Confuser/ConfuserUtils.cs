@@ -26,9 +26,9 @@ using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Confuser {
 	static class ConfuserUtils {
-		public static int findCallMethod(IList<Instruction> instrs, int index, Code callCode, string methodFullName) {
+		public static int FindCallMethod(IList<Instruction> instrs, int index, Code callCode, string methodFullName) {
 			for (int i = index; i < instrs.Count; i++) {
-				if (!isCallMethod(instrs[i], callCode, methodFullName))
+				if (!IsCallMethod(instrs[i], callCode, methodFullName))
 					continue;
 
 				return i;
@@ -36,9 +36,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return -1;
 		}
 
-		public static int findCallMethod(IList<Instr> instrs, int index, Code callCode, string methodFullName) {
+		public static int FindCallMethod(IList<Instr> instrs, int index, Code callCode, string methodFullName) {
 			for (int i = index; i < instrs.Count; i++) {
-				if (!isCallMethod(instrs[i].Instruction, callCode, methodFullName))
+				if (!IsCallMethod(instrs[i].Instruction, callCode, methodFullName))
 					continue;
 
 				return i;
@@ -46,24 +46,24 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return -1;
 		}
 
-		public static bool isCallMethod(Instruction instr, Code callCode, string methodFullName) {
+		public static bool IsCallMethod(Instruction instr, Code callCode, string methodFullName) {
 			if (instr.OpCode.Code != callCode)
 				return false;
 			var calledMethod = instr.Operand as IMethod;
 			return calledMethod != null && calledMethod.FullName == methodFullName;
 		}
 
-		public static bool removeResourceHookCode(Blocks blocks, MethodDef handler) {
-			return removeResolveHandlerCode(blocks, handler, "System.Void System.AppDomain::add_ResourceResolve(System.ResolveEventHandler)");
+		public static bool RemoveResourceHookCode(Blocks blocks, MethodDef handler) {
+			return RemoveResolveHandlerCode(blocks, handler, "System.Void System.AppDomain::add_ResourceResolve(System.ResolveEventHandler)");
 		}
 
-		public static bool removeAssemblyHookCode(Blocks blocks, MethodDef handler) {
-			return removeResolveHandlerCode(blocks, handler, "System.Void System.AppDomain::add_AssemblyResolve(System.ResolveEventHandler)");
+		public static bool RemoveAssemblyHookCode(Blocks blocks, MethodDef handler) {
+			return RemoveResolveHandlerCode(blocks, handler, "System.Void System.AppDomain::add_AssemblyResolve(System.ResolveEventHandler)");
 		}
 
-		static bool removeResolveHandlerCode(Blocks blocks, MethodDef handler, string installHandlerMethod) {
+		static bool RemoveResolveHandlerCode(Blocks blocks, MethodDef handler, string installHandlerMethod) {
 			bool modified = false;
-			foreach (var block in blocks.MethodBlocks.getAllBlocks()) {
+			foreach (var block in blocks.MethodBlocks.GetAllBlocks()) {
 				var instrs = block.Instructions;
 				for (int i = 0; i < instrs.Count - 4; i++) {
 					var call = instrs[i];
@@ -96,19 +96,19 @@ namespace de4dot.code.deobfuscators.Confuser {
 					if (calledMethod == null || calledMethod.FullName != installHandlerMethod)
 						continue;
 
-					block.remove(i, 5);
+					block.Remove(i, 5);
 					modified = true;
 				}
 			}
 			return modified;
 		}
 
-		public static byte[] decryptCompressedInt32Data(Arg64ConstantsReader constReader, int exprStart, int exprEnd, IBinaryReader reader, byte[] decrypted) {
+		public static byte[] DecryptCompressedInt32Data(Arg64ConstantsReader constReader, int exprStart, int exprEnd, IBinaryReader reader, byte[] decrypted) {
 			for (int i = 0; i < decrypted.Length; i++) {
 				constReader.Arg = reader.Read7BitEncodedInt32();
 				int index = exprStart;
 				long result;
-				if (!constReader.getInt64(ref index, out result) || index != exprEnd)
+				if (!constReader.GetInt64(ref index, out result) || index != exprEnd)
 					throw new ApplicationException("Could not decrypt integer");
 				decrypted[i] = (byte)result;
 			}
@@ -116,11 +116,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		static readonly byte[] defaultDecryptKey = new byte[1];
-		public static byte[] decrypt(uint seed, byte[] encrypted) {
-			return decrypt(seed, encrypted, defaultDecryptKey);
+		public static byte[] Decrypt(uint seed, byte[] encrypted) {
+			return Decrypt(seed, encrypted, defaultDecryptKey);
 		}
 
-		public static byte[] decrypt(uint seed, byte[] encrypted, byte[] key) {
+		public static byte[] Decrypt(uint seed, byte[] encrypted, byte[] key) {
 			var decrypted = new byte[encrypted.Length];
 			ushort _m = (ushort)(seed >> 16);
 			ushort _c = (ushort)seed;
@@ -133,7 +133,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return decrypted;
 		}
 
-		public static int countCalls(MethodDef method, string methodFullName) {
+		public static int CountCalls(MethodDef method, string methodFullName) {
 			if (method == null || method.Body == null)
 				return 0;
 			int count = 0;
@@ -147,7 +147,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return count;
 		}
 
-		public static int countCalls(MethodDef method, MethodDef calledMethod) {
+		public static int CountCalls(MethodDef method, MethodDef calledMethod) {
 			if (method == null || method.Body == null)
 				return 0;
 			int count = 0;
@@ -160,7 +160,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return count;
 		}
 
-		public static int countOpCode(MethodDef method, Code code) {
+		public static int CountOpCode(MethodDef method, Code code) {
 			if (method == null || method.Body == null)
 				return 0;
 

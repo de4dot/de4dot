@@ -24,42 +24,42 @@ using de4dot.blocks.cflow;
 
 namespace de4dot.code.deobfuscators.Confuser {
 	class ConstantsFolder : BlockDeobfuscator {
-		protected override bool deobfuscate(Block block) {
+		protected override bool Deobfuscate(Block block) {
 			bool modified = false;
 
 			var instrs = block.Instructions;
-			var constantsReader = createConstantsReader(instrs);
+			var constantsReader = CreateConstantsReader(instrs);
 			for (int i = 0; i < instrs.Count; i++) {
 				int index = 0;
 				Instruction newInstr = null;
 				var instr = instrs[i];
-				if (constantsReader.isLoadConstantInt32(instr.Instruction)) {
+				if (constantsReader.IsLoadConstantInt32(instr.Instruction)) {
 					index = i;
 					int val;
-					if (!constantsReader.getInt32(ref index, out val))
+					if (!constantsReader.GetInt32(ref index, out val))
 						continue;
 					newInstr = Instruction.CreateLdcI4(val);
 				}
-				else if (constantsReader.isLoadConstantInt64(instr.Instruction)) {
+				else if (constantsReader.IsLoadConstantInt64(instr.Instruction)) {
 					index = i;
 					long val;
-					if (!constantsReader.getInt64(ref index, out val))
+					if (!constantsReader.GetInt64(ref index, out val))
 						continue;
 					newInstr = Instruction.Create(OpCodes.Ldc_I8, val);
 				}
-				else if (constantsReader.isLoadConstantDouble(instr.Instruction)) {
+				else if (constantsReader.IsLoadConstantDouble(instr.Instruction)) {
 					index = i;
 					double val;
-					if (!constantsReader.getDouble(ref index, out val))
+					if (!constantsReader.GetDouble(ref index, out val))
 						continue;
 					newInstr = Instruction.Create(OpCodes.Ldc_R8, val);
 				}
 
 				if (newInstr != null && index - i > 1) {
-					block.insert(index++, Instruction.Create(OpCodes.Pop));
-					block.insert(index++, newInstr);
+					block.Insert(index++, Instruction.Create(OpCodes.Pop));
+					block.Insert(index++, newInstr);
 					i = index - 1;
-					constantsReader = createConstantsReader(instrs);
+					constantsReader = CreateConstantsReader(instrs);
 					modified = true;
 					continue;
 				}
@@ -101,8 +101,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 						break;
 					}
 					if (newInstr != null) {
-						block.replace(i, 2, newInstr);
-						constantsReader = createConstantsReader(instrs);
+						block.Replace(i, 2, newInstr);
+						constantsReader = CreateConstantsReader(instrs);
 						modified = true;
 						continue;
 					}
@@ -112,7 +112,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return modified;
 		}
 
-		static ConstantsReader createConstantsReader(IList<Instr> instrs) {
+		static ConstantsReader CreateConstantsReader(IList<Instr> instrs) {
 			return new ConstantsReader(instrs, false);
 		}
 	}

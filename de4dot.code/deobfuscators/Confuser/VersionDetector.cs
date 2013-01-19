@@ -76,7 +76,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			}
 		}
 
-		public void addRevs(int min, int max) {
+		public void AddRevs(int min, int max) {
 			if (min < 0 || max < 0 || min > max)
 				throw new ArgumentOutOfRangeException();
 			if (!revToVersion.ContainsKey(min) || (max != int.MaxValue && !revToVersion.ContainsKey(max)))
@@ -88,7 +88,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				maxRev = max;
 		}
 
-		public void setVersion(Version version) {
+		public void SetVersion(Version version) {
 			if (version == null)
 				return;
 			int minRev = int.MaxValue, maxRev = int.MinValue;
@@ -104,10 +104,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 				return;
 			if (maxRev == revs[revs.Length - 1])
 				maxRev = int.MaxValue;
-			addRevs(minRev, maxRev);
+			AddRevs(minRev, maxRev);
 		}
 
-		public string getVersionString() {
+		public string GetVersionString() {
 			if (minRev > maxRev || minRev < 0)
 				return null;
 			var minVersion = revToVersion[minRev];
@@ -130,7 +130,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		public override string ToString() {
-			return getVersionString() ?? "<no version>";
+			return GetVersionString() ?? "<no version>";
 		}
 	}
 }

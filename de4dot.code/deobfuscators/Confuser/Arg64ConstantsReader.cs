@@ -37,7 +37,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			: base(instrs, emulateConvInstrs) {
 		}
 
-		protected override bool processInstructionInt64(ref int index, Stack<ConstantInfo<long>> stack) {
+		protected override bool ProcessInstructionInt64(ref int index, Stack<ConstantInfo<long>> stack) {
 			if (!firstTime)
 				return false;
 			firstTime = false;
