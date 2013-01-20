@@ -19,6 +19,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
+using SevenZip.Compression.LZMA;
 using dnlib.IO;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
@@ -170,6 +172,85 @@ namespace de4dot.code.deobfuscators.Confuser {
 					count++;
 			}
 			return count;
+		}
+
+		public static byte[] SevenZipDecompress(byte[] data) {
+			var reader = new BinaryReader(new MemoryStream(data));
+			var props = reader.ReadBytes(5);
+			var decoder = new Decoder();
+			decoder.SetDecoderProperties(props);
+			long totalSize = reader.ReadInt64();
+			long compressedSize = data.Length - props.Length - 8;
+			var decompressed = new byte[totalSize];
+			decoder.Code(reader.BaseStream, new MemoryStream(decompressed, true), compressedSize, totalSize, null);
+			return decompressed;
+		}
+
+		// Finds the Lzma type by finding an instruction that allocates a new Lzma.Decoder
+		public static TypeDef FindLzmaType(MethodDef method) {
+			if (method == null || method.Body == null)
+				return null;
+
+			foreach (var instr in method.Body.Instructions) {
+				if (instr.OpCode.Code != Code.Newobj)
+					continue;
+				var ctor = instr.Operand as MethodDef;
+				if (ctor == null)
+					continue;
+				var ctorType = ctor.DeclaringType;
+				if (ctorType == null)
+					continue;
+				if (!IsLzmaType(ctorType.DeclaringType))
+					continue;
+
+				return ctorType.DeclaringType;
+			}
+
+			return null;
+		}
+
+		static bool IsLzmaType(TypeDef type) {
+			if (type == null)
+				return false;
+
+			if (type.NestedTypes.Count != 6)
+				return false;
+			if (!CheckLzmaMethods(type))
+				return false;
+			if (FindLzmaOutWindowType(type.NestedTypes) == null)
+				return false;
+
+			return true;
+		}
+
+		static bool CheckLzmaMethods(TypeDef type) {
+			int methods = 0;
+			foreach (var m in type.Methods) {
+				if (m.IsStaticConstructor)
+					continue;
+				if (m.IsInstanceConstructor) {
+					if (m.MethodSig.GetParamCount() != 0)
+						return false;
+					continue;
+				}
+				if (!DotNetUtils.IsMethod(m, "System.UInt32", "(System.UInt32)"))
+					return false;
+				methods++;
+			}
+			return methods == 1;
+		}
+
+		static readonly string[] outWindowFields = new string[] {
+			"System.Byte[]",
+			"System.UInt32",
+			"System.IO.Stream",
+		};
+		static TypeDef FindLzmaOutWindowType(IEnumerable<TypeDef> types) {
+			foreach (var type in types) {
+				if (new FieldTypes(type).Exactly(outWindowFields))
+					return type;
+			}
+			return null;
 		}
 	}
 }

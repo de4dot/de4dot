@@ -461,6 +461,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			AddTypesToBeRemoved(constantsDecrypterV18.Types, "Constants decrypter type");
 			AddFieldsToBeRemoved(constantsDecrypterV18.Fields, "Constants decrypter field");
 			AddMethodToBeRemoved(constantsDecrypterV18.NativeMethod, "Constants decrypter native method");
+			AddTypeToBeRemoved(constantsDecrypterV18.LzmaType, "LZMA type");
 			AddResourceToBeRemoved(constantsDecrypterV18.Resource, "Encrypted constants");
 		}
 
@@ -516,6 +517,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			AddResourceToBeRemoved(rsrc, "Encrypted resources");
 			AddMethodToBeRemoved(resourceDecrypter.Handler, "Resource decrypter handler");
 			AddFieldsToBeRemoved(resourceDecrypter.Fields, "Resource decrypter field");
+			AddTypeToBeRemoved(resourceDecrypter.LzmaType, "LZMA type");
 		}
 
 		void RemoveObfuscatorAttribute() {

@@ -86,6 +86,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v17_r75076,
 			v18_r75184,
 			v18_r75367,
+			v19_r77172,
 		}
 
 		public bool Detected {
@@ -170,8 +171,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 							theVersion = ConfuserVersion.v17_r75076;
 						else if (module.Name == "Stub.exe")
 							theVersion = ConfuserVersion.v18_r75184;
-						else
+						else if (!IsGetLenToPosStateMethodPrivate(type))
 							theVersion = ConfuserVersion.v18_r75367;
+						else
+							theVersion = ConfuserVersion.v19_r77172;
 					}
 					else if (IsDecryptMethod_v17_r73404(decyptMethod))
 						theVersion = ConfuserVersion.v17_r73404;
@@ -199,6 +202,15 @@ namespace de4dot.code.deobfuscators.Confuser {
 			if (mainAsmResource == null)
 				throw new ApplicationException("Could not find main assembly resource");
 			version = theVersion;
+		}
+
+		static bool IsGetLenToPosStateMethodPrivate(TypeDef type) {
+			foreach (var m in type.Methods) {
+				if (!DotNetUtils.IsMethod(m, "System.UInt32", "(System.UInt32)"))
+					continue;
+				return m.IsPrivate;
+			}
+			return false;
 		}
 
 		bool FindEntryPointToken(ISimpleDeobfuscator simpleDeobfuscator, MethodDef cctor, MethodDef entryPoint, out uint token) {
@@ -474,6 +486,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v17_r75076: return Decrypt_v17_r75076(data);
 			case ConfuserVersion.v18_r75184: return Decrypt_v17_r75076(data);
 			case ConfuserVersion.v18_r75367: return Decrypt_v17_r75076(data);
+			case ConfuserVersion.v19_r77172: return Decrypt_v17_r75076(data);
 			default: throw new ApplicationException("Unknown version");
 			}
 		}
@@ -535,10 +548,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 			var reader = new BinaryReader(new MemoryStream(data));
 			byte[] key, iv;
 			data = Decrypt_v15_r60785(reader, out key, out iv);
-			return SevenzipDecompress(DeobUtils.AesDecrypt(data, key, iv));
+			return SevenZipDecompress(DeobUtils.AesDecrypt(data, key, iv));
 		}
 
-		static byte[] SevenzipDecompress(byte[] data) {
+		static byte[] SevenZipDecompress(byte[] data) {
 			var reader = new BinaryReader(new MemoryStream(data));
 			int totalSize = reader.ReadInt32();
 			var props = reader.ReadBytes(5);
@@ -628,6 +641,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			case ConfuserVersion.v18_r75367:
 				minRev = 75367;
+				maxRev = 77124;
+				return true;
+
+			case ConfuserVersion.v19_r77172:
+				minRev = 77172;
 				maxRev = int.MaxValue;
 				return true;
 

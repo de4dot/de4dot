@@ -30,6 +30,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		ISimpleDeobfuscator simpleDeobfuscator;
 		MethodDef handler;
 		MethodDef installMethod;
+		TypeDef lzmaType;
 		EmbeddedResource resource;
 		Dictionary<FieldDef, bool> fields = new Dictionary<FieldDef, bool>();
 		byte key0, key1;
@@ -42,6 +43,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v17_r73822,
 			v18_r75367,
 			v18_r75369,
+			v19_r77172,
 		}
 
 		public IEnumerable<FieldDef> Fields {
@@ -50,6 +52,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		public MethodDef Handler {
 			get { return handler; }
+		}
+
+		public TypeDef LzmaType {
+			get { return lzmaType; }
 		}
 
 		public bool Detected {
@@ -103,8 +109,13 @@ namespace de4dot.code.deobfuscators.Confuser {
 					tmpVersion = ConfuserVersion.v17_r73822;
 				else if (FindKey0_v18_r75367(tmpHandler, out key0) && FindKey1_v17_r73404(tmpHandler, out key1))
 					tmpVersion = ConfuserVersion.v18_r75367;
-				else if (FindKey0_v18_r75369(tmpHandler, out key0) && FindKey1_v18_r75369(tmpHandler, out key1))
-					tmpVersion = ConfuserVersion.v18_r75369;
+				else if (FindKey0_v18_r75369(tmpHandler, out key0) && FindKey1_v18_r75369(tmpHandler, out key1)) {
+					lzmaType = ConfuserUtils.FindLzmaType(tmpHandler);
+					if (lzmaType == null)
+						tmpVersion = ConfuserVersion.v18_r75369;
+					else
+						tmpVersion = ConfuserVersion.v19_r77172;
+				}
 				else
 					return false;
 			}
@@ -343,6 +354,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v17_r73822: return Decrypt_v17_r73404();
 			case ConfuserVersion.v18_r75367: return Decrypt_v18_r75367();
 			case ConfuserVersion.v18_r75369: return Decrypt_v18_r75367();
+			case ConfuserVersion.v19_r77172: return Decrypt_v19_r77172();
 			default: throw new ApplicationException("Unknown version");
 			}
 		}
@@ -381,6 +393,17 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return reader.ReadBytes(reader.ReadInt32());
 		}
 
+		byte[] Decrypt_v19_r77172() {
+			var encrypted = resource.GetResourceData();
+			byte k = key0;
+			for (int i = 0; i < encrypted.Length; i++) {
+				encrypted[i] ^= k;
+				k *= key1;
+			}
+			var reader = new BinaryReader(new MemoryStream(ConfuserUtils.SevenZipDecompress(encrypted)));
+			return reader.ReadBytes(reader.ReadInt32());
+		}
+
 		public void Deobfuscate(Blocks blocks) {
 			if (blocks.Method != installMethod)
 				return;
@@ -415,6 +438,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			case ConfuserVersion.v18_r75369:
 				minRev = 75369;
+				maxRev = 77124;
+				return true;
+
+			case ConfuserVersion.v19_r77172:
+				minRev = 77172;
 				maxRev = int.MaxValue;
 				return true;
 

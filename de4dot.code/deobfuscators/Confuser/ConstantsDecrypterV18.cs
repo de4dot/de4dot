@@ -38,6 +38,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		MethodDefAndDeclaringTypeDict<DecrypterInfo> decrypters = new MethodDefAndDeclaringTypeDict<DecrypterInfo>();
 		uint key0, key0d;
 		MethodDef nativeMethod;
+		TypeDef lzmaType;
 		EmbeddedResource resource;
 		byte[] constants;
 		ConfuserVersion version = ConfuserVersion.Unknown;
@@ -50,6 +51,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v18_r75369_normal,
 			v18_r75369_dynamic,
 			v18_r75369_native,
+			v19_r77172_normal,
+			v19_r77172_dynamic,
+			v19_r77172_native,
 		}
 
 		public class DecrypterInfo {
@@ -105,6 +109,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 				case ConfuserVersion.v18_r75369_normal:
 				case ConfuserVersion.v18_r75369_dynamic:
 				case ConfuserVersion.v18_r75369_native:
+				case ConfuserVersion.v19_r77172_normal:
+				case ConfuserVersion.v19_r77172_dynamic:
+				case ConfuserVersion.v19_r77172_native:
 					return Hash1(key0l * magic);
 				default:
 					throw new ApplicationException("Invalid version");
@@ -151,6 +158,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 			get { return nativeMethod; }
 		}
 
+		public TypeDef LzmaType {
+			get { return lzmaType; }
+		}
+
 		public EmbeddedResource Resource {
 			get { return resource; }
 		}
@@ -177,7 +188,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			if ((dictField = ConstantsDecrypterUtils.FindDictField(cctor, cctor.DeclaringType)) == null)
 				return;
-			if ((dataField = ConstantsDecrypterUtils.FindDataField(cctor, cctor.DeclaringType)) == null)
+
+			if ((dataField = ConstantsDecrypterUtils.FindDataField_v18_r75367(cctor, cctor.DeclaringType)) == null &&
+				(dataField = ConstantsDecrypterUtils.FindDataField_v19_r77172(cctor, cctor.DeclaringType)) == null)
 				return;
 
 			nativeMethod = FindNativeMethod(cctor, cctor.DeclaringType);
@@ -189,8 +202,13 @@ namespace de4dot.code.deobfuscators.Confuser {
 			var info = new DecrypterInfo(this, method, ConfuserVersion.Unknown);
 			if (FindKeys_v18_r75367(info))
 				InitVersion(cctor, ConfuserVersion.v18_r75367_normal, ConfuserVersion.v18_r75367_dynamic, ConfuserVersion.v18_r75367_native);
-			else if (FindKeys_v18_r75369(info))
-				InitVersion(cctor, ConfuserVersion.v18_r75369_normal, ConfuserVersion.v18_r75369_dynamic, ConfuserVersion.v18_r75369_native);
+			else if (FindKeys_v18_r75369(info)) {
+				lzmaType = ConfuserUtils.FindLzmaType(cctor);
+				if (lzmaType == null)
+					InitVersion(cctor, ConfuserVersion.v18_r75369_normal, ConfuserVersion.v18_r75369_dynamic, ConfuserVersion.v18_r75369_native);
+				else
+					InitVersion(cctor, ConfuserVersion.v19_r77172_normal, ConfuserVersion.v19_r77172_dynamic, ConfuserVersion.v19_r77172_native);
+			}
 			else
 				return;
 
@@ -380,6 +398,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v18_r75369_normal:
 			case ConfuserVersion.v18_r75369_dynamic:
 			case ConfuserVersion.v18_r75369_native:
+			case ConfuserVersion.v19_r77172_normal:
+			case ConfuserVersion.v19_r77172_dynamic:
+			case ConfuserVersion.v19_r77172_native:
 				return FindKeys_v18_r75369(info);
 			default:
 				throw new ApplicationException("Invalid version");
@@ -541,18 +562,27 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
+		byte[] Decompress(byte[] compressed) {
+			if (lzmaType != null)
+				return ConfuserUtils.SevenZipDecompress(compressed);
+			return DeobUtils.Inflate(compressed, true);
+		}
+
 		byte[] DecryptResource(byte[] encrypted) {
 			switch (version) {
 			case ConfuserVersion.v18_r75367_normal:
 			case ConfuserVersion.v18_r75369_normal:
+			case ConfuserVersion.v19_r77172_normal:
 				return DecryptResource_v18_r75367_normal(encrypted);
 
 			case ConfuserVersion.v18_r75367_dynamic:
 			case ConfuserVersion.v18_r75369_dynamic:
+			case ConfuserVersion.v19_r77172_dynamic:
 				return DecryptResource_v18_r75367_dynamic(encrypted);
 
 			case ConfuserVersion.v18_r75367_native:
 			case ConfuserVersion.v18_r75369_native:
+			case ConfuserVersion.v19_r77172_native:
 				return DecryptResource_v18_r75367_native(encrypted);
 
 			default:
@@ -567,7 +597,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		byte[] DecryptResource_v18_r75367_normal(byte[] encrypted) {
 			var key = GetSigKey();
 			var decrypted = ConfuserUtils.Decrypt(BitConverter.ToUInt32(key, 12) * (uint)key0, encrypted);
-			return DeobUtils.Inflate(DeobUtils.AesDecrypt(decrypted, key, DeobUtils.Md5Sum(key)), true);
+			return Decompress(DeobUtils.AesDecrypt(decrypted, key, DeobUtils.Md5Sum(key)));
 		}
 
 		static int GetDynamicStartIndex(IList<Instruction> instrs, int ldlocIndex) {
@@ -645,9 +675,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		byte[] DecryptResource(byte[] encrypted, Func<uint, byte> decryptFunc) {
 			var key = GetSigKey();
 
-			var decrypted = DeobUtils.AesDecrypt(encrypted, key, DeobUtils.Md5Sum(key));
-			decrypted = DeobUtils.Inflate(decrypted, true);
-
+			byte[] decrypted = DecryptAndDecompress(encrypted, key);
 			var reader = MemoryImageStream.Create(decrypted);
 			var result = new MemoryStream();
 			var writer = new BinaryWriter(result);
@@ -657,6 +685,16 @@ namespace de4dot.code.deobfuscators.Confuser {
 			}
 
 			return result.ToArray();
+		}
+
+		byte[] DecryptAndDecompress(byte[] encrypted, byte[] key) {
+			byte[] iv = DeobUtils.Md5Sum(key);
+			try {
+				return Decompress(DeobUtils.AesDecrypt(encrypted, key, iv));
+			}
+			catch {
+				return DeobUtils.AesDecrypt(Decompress(encrypted), key, iv);
+			}
 		}
 
 		static bool VerifyGenericArg(MethodSpec gim, ElementType etype) {
@@ -729,6 +767,13 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v18_r75369_dynamic:
 			case ConfuserVersion.v18_r75369_native:
 				minRev = 75369;
+				maxRev = 77124;
+				return true;
+
+			case ConfuserVersion.v19_r77172_normal:
+			case ConfuserVersion.v19_r77172_dynamic:
+			case ConfuserVersion.v19_r77172_native:
+				minRev = 77172;
 				maxRev = int.MaxValue;
 				return true;
 

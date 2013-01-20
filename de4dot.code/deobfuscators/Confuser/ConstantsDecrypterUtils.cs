@@ -46,7 +46,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return null;
 		}
 
-		public static FieldDef FindDataField(MethodDef method, TypeDef declaringType) {
+		public static FieldDef FindDataField_v18_r75367(MethodDef method, TypeDef declaringType) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 1; i++) {
 				var callvirt = instrs[i];
@@ -54,6 +54,31 @@ namespace de4dot.code.deobfuscators.Confuser {
 					continue;
 				var calledMethod = callvirt.Operand as IMethod;
 				if (calledMethod == null || calledMethod.FullName != "System.Byte[] System.IO.MemoryStream::ToArray()")
+					continue;
+
+				var stsfld = instrs[i + 1];
+				if (stsfld.OpCode.Code != Code.Stsfld)
+					continue;
+				var field = stsfld.Operand as FieldDef;
+				if (field == null || field.DeclaringType != declaringType)
+					continue;
+				if (field.FieldType.FullName != "System.Byte[]")
+					continue;
+
+				return field;
+			}
+			return null;
+		}
+
+		// Normal ("safe") mode only (not dynamic or native)
+		public static FieldDef FindDataField_v19_r77172(MethodDef method, TypeDef declaringType) {
+			var instrs = method.Body.Instructions;
+			for (int i = 0; i < instrs.Count - 1; i++) {
+				var ldloc = instrs[i];
+				if (!ldloc.IsLdloc())
+					continue;
+				var local = ldloc.GetLocal(method.Body.Variables);
+				if (local == null || local.Type.GetFullName() != "System.Byte[]")
 					continue;
 
 				var stsfld = instrs[i + 1];
