@@ -54,6 +54,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v19_r77172_normal,
 			v19_r77172_dynamic,
 			v19_r77172_native,
+			v19_r78056_normal,
+			v19_r78056_dynamic,
+			v19_r78056_native,
 		}
 
 		public class DecrypterInfo {
@@ -112,6 +115,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 				case ConfuserVersion.v19_r77172_normal:
 				case ConfuserVersion.v19_r77172_dynamic:
 				case ConfuserVersion.v19_r77172_native:
+				case ConfuserVersion.v19_r78056_normal:
+				case ConfuserVersion.v19_r78056_dynamic:
+				case ConfuserVersion.v19_r78056_native:
 					return Hash1(key0l * magic);
 				default:
 					throw new ApplicationException("Invalid version");
@@ -206,8 +212,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 				lzmaType = ConfuserUtils.FindLzmaType(cctor);
 				if (lzmaType == null)
 					InitVersion(cctor, ConfuserVersion.v18_r75369_normal, ConfuserVersion.v18_r75369_dynamic, ConfuserVersion.v18_r75369_native);
-				else
+				else if (!DotNetUtils.CallsMethod(method, "System.Void System.Threading.Monitor::Exit(System.Object)"))
 					InitVersion(cctor, ConfuserVersion.v19_r77172_normal, ConfuserVersion.v19_r77172_dynamic, ConfuserVersion.v19_r77172_native);
+				else
+					InitVersion(cctor, ConfuserVersion.v19_r78056_normal, ConfuserVersion.v19_r78056_dynamic, ConfuserVersion.v19_r78056_native);
 			}
 			else
 				return;
@@ -401,6 +409,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v19_r77172_normal:
 			case ConfuserVersion.v19_r77172_dynamic:
 			case ConfuserVersion.v19_r77172_native:
+			case ConfuserVersion.v19_r78056_normal:
+			case ConfuserVersion.v19_r78056_dynamic:
+			case ConfuserVersion.v19_r78056_native:
 				return FindKeys_v18_r75369(info);
 			default:
 				throw new ApplicationException("Invalid version");
@@ -573,16 +584,19 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v18_r75367_normal:
 			case ConfuserVersion.v18_r75369_normal:
 			case ConfuserVersion.v19_r77172_normal:
+			case ConfuserVersion.v19_r78056_normal:
 				return DecryptResource_v18_r75367_normal(encrypted);
 
 			case ConfuserVersion.v18_r75367_dynamic:
 			case ConfuserVersion.v18_r75369_dynamic:
 			case ConfuserVersion.v19_r77172_dynamic:
+			case ConfuserVersion.v19_r78056_dynamic:
 				return DecryptResource_v18_r75367_dynamic(encrypted);
 
 			case ConfuserVersion.v18_r75367_native:
 			case ConfuserVersion.v18_r75369_native:
 			case ConfuserVersion.v19_r77172_native:
+			case ConfuserVersion.v19_r78056_native:
 				return DecryptResource_v18_r75367_native(encrypted);
 
 			default:
@@ -774,6 +788,13 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v19_r77172_dynamic:
 			case ConfuserVersion.v19_r77172_native:
 				minRev = 77172;
+				maxRev = 77501;
+				return true;
+
+			case ConfuserVersion.v19_r78056_normal:
+			case ConfuserVersion.v19_r78056_dynamic:
+			case ConfuserVersion.v19_r78056_native:
+				minRev = 78056;
 				maxRev = int.MaxValue;
 				return true;
 
