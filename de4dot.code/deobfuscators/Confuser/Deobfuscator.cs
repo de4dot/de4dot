@@ -371,12 +371,12 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			if (jitMethodsDecrypter != null) {
 				AddModuleCctorInitCallToBeRemoved(jitMethodsDecrypter.InitMethod);
-				AddTypeToBeRemoved(jitMethodsDecrypter.Type, "Method decrypter (JIT) type");
+				AddTypeToBeRemoved(jitMethodsDecrypter.Type, "Methods decrypter (JIT) type");
 			}
 
 			if (memoryMethodsDecrypter != null) {
 				AddModuleCctorInitCallToBeRemoved(memoryMethodsDecrypter.InitMethod);
-				AddTypeToBeRemoved(memoryMethodsDecrypter.Type, "Method decrypter (memory) type");
+				AddTypeToBeRemoved(memoryMethodsDecrypter.Type, "Methods decrypter (memory) type");
 			}
 
 			if (options.RemoveAntiDebug && antiDebugger != null) {
