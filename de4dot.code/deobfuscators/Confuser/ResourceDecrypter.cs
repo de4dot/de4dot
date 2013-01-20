@@ -347,6 +347,21 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return tmpResource;
 		}
 
+		byte[] Decompress(byte[] compressed) {
+			if (lzmaType != null)
+				return ConfuserUtils.SevenZipDecompress(compressed);
+			return DeobUtils.Inflate(compressed, true);
+		}
+
+		byte[] DecryptXor(byte[] data) {
+			byte k = key0;
+			for (int i = 0; i < data.Length; i++) {
+				data[i] ^= k;
+				k *= key1;
+			}
+			return data;
+		}
+
 		byte[] DecryptResource() {
 			switch (version) {
 			case ConfuserVersion.v14_r55802: return Decrypt_v14_r55802();
@@ -354,53 +369,31 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v17_r73822: return Decrypt_v17_r73404();
 			case ConfuserVersion.v18_r75367: return Decrypt_v18_r75367();
 			case ConfuserVersion.v18_r75369: return Decrypt_v18_r75367();
-			case ConfuserVersion.v19_r77172: return Decrypt_v19_r77172();
+			case ConfuserVersion.v19_r77172: return Decrypt_v18_r75367();
 			default: throw new ApplicationException("Unknown version");
 			}
 		}
 
 		byte[] Decrypt_v14_r55802() {
-			var reader = new BinaryReader(new MemoryStream(DeobUtils.Inflate(resource.GetResourceData(), true)));
+			var reader = new BinaryReader(new MemoryStream(Decompress(resource.GetResourceData())));
 			var encypted = reader.ReadBytes(reader.ReadInt32());
 			if ((encypted.Length & 1) != 0)
 				throw new ApplicationException("Invalid resource data length");
 			var decrypted = new byte[encypted.Length / 2];
 			for (int i = 0; i < decrypted.Length; i++)
 				decrypted[i] = (byte)((encypted[i * 2 + 1] ^ key0) * key1 + (encypted[i * 2] ^ key0));
-			reader = new BinaryReader(new MemoryStream(DeobUtils.Inflate(decrypted, true)));
+			reader = new BinaryReader(new MemoryStream(Decompress(decrypted)));
 			return reader.ReadBytes(reader.ReadInt32());
 		}
 
 		byte[] Decrypt_v17_r73404() {
-			var reader = new BinaryReader(new MemoryStream(DeobUtils.Inflate(resource.GetResourceData(), true)));
-			var decrypted = reader.ReadBytes(reader.ReadInt32());
-			byte k = key0;
-			for (int i = 0; i < decrypted.Length; i++) {
-				decrypted[i] ^= k;
-				k *= key1;
-			}
-			return decrypted;
+			var reader = new BinaryReader(new MemoryStream(Decompress(resource.GetResourceData())));
+			return DecryptXor(reader.ReadBytes(reader.ReadInt32()));
 		}
 
 		byte[] Decrypt_v18_r75367() {
-			var encrypted = resource.GetResourceData();
-			byte k = key0;
-			for (int i = 0; i < encrypted.Length; i++) {
-				encrypted[i] ^= k;
-				k *= key1;
-			}
-			var reader = new BinaryReader(new MemoryStream(DeobUtils.Inflate(encrypted, true)));
-			return reader.ReadBytes(reader.ReadInt32());
-		}
-
-		byte[] Decrypt_v19_r77172() {
-			var encrypted = resource.GetResourceData();
-			byte k = key0;
-			for (int i = 0; i < encrypted.Length; i++) {
-				encrypted[i] ^= k;
-				k *= key1;
-			}
-			var reader = new BinaryReader(new MemoryStream(ConfuserUtils.SevenZipDecompress(encrypted)));
+			var encrypted = DecryptXor(resource.GetResourceData());
+			var reader = new BinaryReader(new MemoryStream(Decompress(encrypted)));
 			return reader.ReadBytes(reader.ReadInt32());
 		}
 
