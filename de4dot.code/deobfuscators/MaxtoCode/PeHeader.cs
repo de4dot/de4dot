@@ -18,6 +18,7 @@
 */
 
 using System;
+using dnlib.PE;
 
 namespace de4dot.code.deobfuscators.MaxtoCode {
 	enum EncryptionVersion {
@@ -28,6 +29,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		V4,
 		V5,
 		V6,
+		V7,
 	}
 
 	class PeHeader {
@@ -56,6 +58,10 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			case EncryptionVersion.V6:
 				xorKey = 0x7ABA931;
 				break;
+
+			case EncryptionVersion.V7:
+				xorKey = 0x8ABA931;
+				break;
 			}
 
 			headerData = peImage.OffsetReadBytes(headerOffset, 0x1000);
@@ -81,13 +87,26 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				return version;
 
 			var section = peImage.FindSection(".rsrc");
-			if (section == null)
-				return EncryptionVersion.Unknown;
+			if (section != null) {
+				version = GetHeaderOffsetAndVersion(section, peImage, out headerOffset);
+				if (version != EncryptionVersion.Unknown)
+					return version;
+			}
 
+			foreach (var section2 in peImage.Sections) {
+				version = GetHeaderOffsetAndVersion(section2, peImage, out headerOffset);
+				if (version != EncryptionVersion.Unknown)
+					return version;
+			}
+
+			return EncryptionVersion.Unknown;
+		}
+
+		static EncryptionVersion GetHeaderOffsetAndVersion(ImageSectionHeader section, MyPEImage peImage, out uint headerOffset) {
 			headerOffset = section.PointerToRawData;
 			uint end = section.PointerToRawData + section.SizeOfRawData - 0x1000 + 1;
 			while (headerOffset < end) {
-				version = GetVersion(peImage, headerOffset);
+				var version = GetVersion(peImage, headerOffset);
 				if (version != EncryptionVersion.Unknown)
 					return version;
 				headerOffset++;
