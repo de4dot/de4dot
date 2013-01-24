@@ -28,6 +28,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		public static readonly EncryptionInfo[] Rva900h = new EncryptionInfo[] {
 			// PE header timestamp
 			// 462FA2D2 = Wed, 25 Apr 2007 18:49:54 (3.20)
+			// 471299D3 = Sun, 14 Oct 2007 22:36:03 (3.22)
 			new EncryptionInfo {
 				MagicLo = 0xA098B387,
 				MagicHi = 0x1E8EBCA3,
@@ -76,6 +77,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				Version = EncryptionVersion.V4,
 			},
 			// 4F8E262C = Wed, 18 Apr 2012 02:25:48
+			// 4FBE81DE = Thu, 24 May 2012 18:45:50
 			new EncryptionInfo {
 				MagicLo = 0xBA983B87,
 				MagicHi = 0xF28EDDA3,
@@ -87,10 +89,17 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				MagicHi = 0xF28ECDA3,
 				Version = EncryptionVersion.V6,
 			},
+			// 50D367A5 = Mon, 12 Nov 2012 06:25:00
+			new EncryptionInfo {
+				MagicLo = 0x8A683B87,
+				MagicHi = 0x828ECDA3,
+				Version = EncryptionVersion.V7,
+			},
 		};
 
 		public static readonly EncryptionInfo[] McKey8C0h = new EncryptionInfo[] {
 			// 462FA2D2 = Wed, 25 Apr 2007 18:49:54 (3.20)
+			// 471299D3 = Sun, 14 Oct 2007 22:36:03 (3.22)
 			new EncryptionInfo {
 				MagicLo = 0x6AA13B13,
 				MagicHi = 0xD72B991F,
@@ -133,6 +142,12 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				MagicLo = 0xAA731B13,
 				MagicHi = 0xD723891F,
 				Version = EncryptionVersion.V5,
+			},
+			// 50D367A5 = Mon, 12 Nov 2012 06:25:00
+			new EncryptionInfo {
+				MagicLo = 0x8A731B13,
+				MagicHi = 0x8723891F,
+				Version = EncryptionVersion.V7,
 			},
 		};
 	}
