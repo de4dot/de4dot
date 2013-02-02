@@ -60,6 +60,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v18_r75369_native,
 			v19_r76101_normal,
 			v19_r76101_native,
+			v19_r78363_normal,
+			v19_r78363_native,
 		}
 
 		enum ProxyCreatorType {
@@ -235,12 +237,14 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v18_r75367_normal:
 			case ConfuserVersion.v18_r75369_normal:
 			case ConfuserVersion.v19_r76101_normal:
+			case ConfuserVersion.v19_r78363_normal:
 				GetCallInfo_v18_r75367_normal(info, creatorInfo, out calledMethod, out callOpcode);
 				break;
 
 			case ConfuserVersion.v18_r75367_native:
 			case ConfuserVersion.v18_r75369_native:
 			case ConfuserVersion.v19_r76101_native:
+			case ConfuserVersion.v19_r78363_native:
 				GetCallInfo_v18_r75367_native(info, creatorInfo, out calledMethod, out callOpcode);
 				break;
 
@@ -476,7 +480,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 				else
 					continue;
 
-				var proxyType = GetProxyCreatorType(method);
+				int tmpVer;
+				var proxyType = GetProxyCreatorType(method, simpleDeobfuscator, out tmpVer);
 				if (proxyType == ProxyCreatorType.None)
 					continue;
 
@@ -507,10 +512,18 @@ namespace de4dot.code.deobfuscators.Confuser {
 						theVersion = proxyType != ProxyCreatorType.CallOrCallvirt || callvirtChar == 9 ? ConfuserVersion.v18_r75367_native : ConfuserVersion.v18_r75369_native;
 					else if (FindMagic_v18_r75367(method, out magic))
 						theVersion = proxyType != ProxyCreatorType.CallOrCallvirt || callvirtChar == 9 ? ConfuserVersion.v18_r75367_normal : ConfuserVersion.v18_r75369_normal;
-					else if (FindMagic_v19_r76101(method, out magic))
-						theVersion = ConfuserVersion.v19_r76101_normal;
-					else if ((nativeMethod = FindNativeMethod_v19_r76101(method)) != null)
-						theVersion = ConfuserVersion.v19_r76101_native;
+					else if (FindMagic_v19_r76101(method, out magic)) {
+						if (tmpVer == 1)
+							theVersion = ConfuserVersion.v19_r76101_normal;
+						else if (tmpVer == 2)
+							theVersion = ConfuserVersion.v19_r78363_normal;
+					}
+					else if ((nativeMethod = FindNativeMethod_v19_r76101(method)) != null) {
+						if (tmpVer == 1)
+							theVersion = ConfuserVersion.v19_r76101_native;
+						else if (tmpVer == 2)
+							theVersion = ConfuserVersion.v19_r78363_native;
+					}
 					else {
 						if (proxyType == ProxyCreatorType.CallOrCallvirt && !DotNetUtils.CallsMethod(method, "System.Int32 System.String::get_Length()"))
 							theVersion = ConfuserVersion.v11_r50378;
@@ -798,7 +811,27 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		static ProxyCreatorType GetProxyCreatorType(MethodDef method) {
+		static ProxyCreatorType GetProxyCreatorType(MethodDef method, ISimpleDeobfuscator simpleDeobfuscator, out int version) {
+			var type = GetProxyCreatorTypeV1(method);
+			if (type != ProxyCreatorType.None) {
+				version = 1;
+				return type;
+			}
+
+			simpleDeobfuscator.Deobfuscate(method);
+
+			type = GetProxyCreatorTypeV2(method);
+			if (type != ProxyCreatorType.None) {
+				version = 2;
+				return type;
+			}
+
+			version = 0;
+			return ProxyCreatorType.None;
+		}
+
+		// <= 1.9 r78342 (refs to System.Reflection.Emit.OpCodes)
+		static ProxyCreatorType GetProxyCreatorTypeV1(MethodDef method) {
 			foreach (var instr in method.Body.Instructions) {
 				var field = instr.Operand as IField;
 				if (field == null)
@@ -813,6 +846,41 @@ namespace de4dot.code.deobfuscators.Confuser {
 				}
 			}
 			return ProxyCreatorType.None;
+		}
+
+		// >= 1.9 r78363 (no refs to System.Reflection.Emit.OpCodes)
+		static ProxyCreatorType GetProxyCreatorTypeV2(MethodDef method) {
+			if (!DeobUtils.HasInteger(method, 0x2A))
+				return ProxyCreatorType.None;
+			if (CheckCtorProxyTypeV2(method))
+				return ProxyCreatorType.Newobj;
+			if (CheckCallProxyTypeV2(method))
+				return ProxyCreatorType.CallOrCallvirt;
+			return ProxyCreatorType.None;
+		}
+
+		static bool CheckCtorProxyTypeV2(MethodDef method) {
+			var instrs = method.Body.Instructions;
+			for (int i = 0; i < instrs.Count; i++) {
+				var ldci4 = instrs[i];
+				if (!ldci4.IsLdcI4() || ldci4.GetLdcI4Value() != 2)
+					continue;
+				if (instrs[i + 1].OpCode.Code != Code.Mul)
+					continue;
+				ldci4 = instrs[i + 2];
+				if (!ldci4.IsLdcI4() || ldci4.GetLdcI4Value() != 0x73)
+					continue;
+				if (instrs[i + 3].OpCode.Code != Code.Stelem_I1)
+					continue;
+
+				return true;
+			}
+			return false;
+		}
+
+		static bool CheckCallProxyTypeV2(MethodDef method) {
+			return DeobUtils.HasInteger(method, 0x28) &&
+				DeobUtils.HasInteger(method, 0x6F);
 		}
 
 		public new void Find() {
@@ -1116,6 +1184,12 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v19_r76101_normal:
 			case ConfuserVersion.v19_r76101_native:
 				minRev = 76101;
+				maxRev = 78342;
+				return true;
+
+			case ConfuserVersion.v19_r78363_normal:
+			case ConfuserVersion.v19_r78363_native:
+				minRev = 78363;
 				maxRev = int.MaxValue;
 				return true;
 

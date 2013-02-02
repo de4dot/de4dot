@@ -40,6 +40,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v17_r74021_normal,
 			v17_r74021_safe,
 			v19_r76119_safe,
+			v19_r78363_normal,
+			v19_r78363_safe,
 		}
 
 		public MethodDef InitMethod {
@@ -135,8 +137,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			var antiDebugMethod = GetAntiDebugMethod(type, initMethod);
 			if (antiDebugMethod == null)
 				return false;
-			if (!DotNetUtils.HasString(antiDebugMethod, "Debugger detected (Managed)"))
-				return false;
+			bool hasDebuggerStrings = DotNetUtils.HasString(antiDebugMethod, "Debugger detected (Managed)");
 
 			if (DotNetUtils.CallsMethod(initMethod, "System.Void System.Threading.Thread::.ctor(System.Threading.ParameterizedThreadStart)")) {
 				int failFastCalls = ConfuserUtils.CountCalls(antiDebugMethod, "System.Void System.Environment::FailFast(System.String)");
@@ -147,11 +148,15 @@ namespace de4dot.code.deobfuscators.Confuser {
 					return false;
 
 				if (!DotNetUtils.CallsMethod(antiDebugMethod, "System.Void System.Threading.Thread::.ctor(System.Threading.ParameterizedThreadStart)")) {
+					if (!hasDebuggerStrings)
+						return false;
 					if (ConfuserUtils.CountCalls(antiDebugMethod, ntQueryInformationProcess) != 2)
 						return false;
 					version = ConfuserVersion.v16_r61954_normal;
 				}
 				else if (failFastCalls == 8) {
+					if (!hasDebuggerStrings)
+						return false;
 					if (ConfuserUtils.CountCalls(antiDebugMethod, ntQueryInformationProcess) != 2)
 						return false;
 					version = ConfuserVersion.v17_r73822_normal;
@@ -161,12 +166,17 @@ namespace de4dot.code.deobfuscators.Confuser {
 						return false;
 					if (ConfuserUtils.CountCalls(antiDebugMethod, ntQueryInformationProcess) != 0)
 						return false;
-					version = ConfuserVersion.v17_r74021_normal;
+					if (hasDebuggerStrings)
+						version = ConfuserVersion.v17_r74021_normal;
+					else
+						version = ConfuserVersion.v19_r78363_normal;
 				}
 				else
 					return false;
 			}
 			else if (!DotNetUtils.CallsMethod(initMethod, "System.Void System.Threading.ThreadStart::.ctor(System.Object,System.IntPtr)")) {
+				if (!hasDebuggerStrings)
+					return false;
 				if (!DotNetUtils.CallsMethod(initMethod, "System.Void System.Diagnostics.Process::EnterDebugMode()"))
 					return false;
 				if (!CheckProfilerStrings1(antiDebugMethod))
@@ -174,6 +184,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 				version = ConfuserVersion.v14_r57588_normal;
 			}
 			else {
+				if (!hasDebuggerStrings)
+					return false;
 				if (!DotNetUtils.CallsMethod(initMethod, "System.Void System.Diagnostics.Process::EnterDebugMode()"))
 					return false;
 				if (!CheckProfilerStrings1(antiDebugMethod))
@@ -204,9 +216,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 				var antiDebugMethod = GetAntiDebugMethod(type, initMethod);
 				if (antiDebugMethod == null)
 					return false;
-				if (!DotNetUtils.HasString(antiDebugMethod, "Debugger detected (Managed)") &&
-					!DotNetUtils.HasString(antiDebugMethod, "Debugger is detected (Managed)"))
-					return false;
+				bool hasDebuggerStrings = DotNetUtils.HasString(antiDebugMethod, "Debugger detected (Managed)") ||
+						DotNetUtils.HasString(antiDebugMethod, "Debugger is detected (Managed)");
 				if (!DotNetUtils.CallsMethod(initMethod, "System.Void System.Threading.Thread::.ctor(System.Threading.ParameterizedThreadStart)"))
 					return false;
 				if (ConfuserUtils.CountCalls(antiDebugMethod, ntQueryInformationProcess) != 0)
@@ -218,14 +229,19 @@ namespace de4dot.code.deobfuscators.Confuser {
 				if (failFastCalls != 2)
 					return false;
 
-				if (!DotNetUtils.CallsMethod(antiDebugMethod, "System.Void System.Threading.Thread::.ctor(System.Threading.ParameterizedThreadStart)"))
-					version = ConfuserVersion.v16_r61954_safe;
-				else if (DotNetUtils.GetPInvokeMethod(type, "IsDebuggerPresent") == null)
-					version = ConfuserVersion.v17_r73822_safe;
-				else if (CheckProfilerStrings1(initMethod))
-					version = ConfuserVersion.v17_r74021_safe;
-				else
-					version = ConfuserVersion.v19_r76119_safe;
+				if (hasDebuggerStrings) {
+					if (!DotNetUtils.CallsMethod(antiDebugMethod, "System.Void System.Threading.Thread::.ctor(System.Threading.ParameterizedThreadStart)"))
+						version = ConfuserVersion.v16_r61954_safe;
+					else if (DotNetUtils.GetPInvokeMethod(type, "IsDebuggerPresent") == null)
+						version = ConfuserVersion.v17_r73822_safe;
+					else if (CheckProfilerStrings1(initMethod))
+						version = ConfuserVersion.v17_r74021_safe;
+					else
+						version = ConfuserVersion.v19_r76119_safe;
+				}
+				else {
+					version = ConfuserVersion.v19_r78363_safe;
+				}
 			}
 
 			return true;
@@ -259,6 +275,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			case ConfuserVersion.v19_r76119_safe:
 				minRev = 76119;
+				maxRev = 78342;
+				return true;
+
+			case ConfuserVersion.v19_r78363_safe:
+				minRev = 78363;
 				maxRev = int.MaxValue;
 				return true;
 
@@ -284,6 +305,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			case ConfuserVersion.v17_r74021_normal:
 				minRev = 74021;
+				maxRev = 78342;
+				return true;
+
+			case ConfuserVersion.v19_r78363_normal:
+				minRev = 78363;
 				maxRev = int.MaxValue;
 				return true;
 
