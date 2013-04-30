@@ -39,7 +39,7 @@ namespace de4dot.blocks.cflow {
 			Write = 2,
 		}
 
-		public bool ExecuteOnNoChange { get; set; }
+		public bool ExecuteIfNotModified { get; set; }
 
 		public void DeobfuscateBegin(Blocks blocks) {
 			this.blocks = blocks;
@@ -123,7 +123,7 @@ namespace de4dot.blocks.cflow {
 		}
 
 		bool RemoveDeadStores() {
-			bool changed = false;
+			bool modified = false;
 			foreach (var block in allBlocks) {
 				var instructions = block.Instructions;
 				for (int i = 0; i < instructions.Count; i++) {
@@ -148,11 +148,11 @@ namespace de4dot.blocks.cflow {
 					if (!deadLocals[local.Index])
 						continue;
 					instructions[i] = new Instr(OpCodes.Pop.ToInstruction());
-					changed = true;
+					modified = true;
 				}
 			}
 
-			return changed;
+			return modified;
 		}
 	}
 }

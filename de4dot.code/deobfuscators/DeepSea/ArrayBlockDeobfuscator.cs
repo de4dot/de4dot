@@ -64,31 +64,31 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		}
 
 		protected override bool Deobfuscate(Block block) {
-			bool changed = false;
+			bool modified = false;
 
 			constantsReader = null;
 			var instrs = block.Instructions;
 			for (int i = 0; i < instrs.Count; i++) {
 				bool ch = Deobfuscate1(block, i);
 				if (ch) {
-					changed = true;
+					modified = true;
 					continue;
 				}
 
 				ch = Deobfuscate2(block, i);
 				if (ch) {
-					changed = true;
+					modified = true;
 					continue;
 				}
 
 				ch = Deobfuscate3(block, i);
 				if (ch) {
-					changed = true;
+					modified = true;
 					continue;
 				}
 			}
 
-			return changed;
+			return modified;
 		}
 
 		static bool IsLdelem(ArrayBlockState.FieldInfo info, Code code) {

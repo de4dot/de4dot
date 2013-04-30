@@ -30,7 +30,7 @@ namespace de4dot.blocks.cflow {
 		protected override bool Deobfuscate(Block block) {
 			allDeadInstructions.Clear();
 
-			bool changed = false;
+			bool modified = false;
 			var instructions = block.Instructions;
 			for (int i = 0; i < instructions.Count; i++) {
 				var instr = instructions[i];
@@ -71,10 +71,10 @@ namespace de4dot.blocks.cflow {
 
 			if (allDeadInstructions.Count > 0) {
 				block.Remove(allDeadInstructions);
-				changed = true;
+				modified = true;
 			}
 
-			return changed;
+			return modified;
 		}
 
 		bool OkInstructions(Block block, IEnumerable<int> indexes) {

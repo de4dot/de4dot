@@ -30,14 +30,14 @@ namespace de4dot.blocks.cflow {
 		}
 
 		protected override bool DeobfuscateInternal() {
-			bool changed = false;
+			bool modified = false;
 			var instructions = block.Instructions;
 			for (int i = 0; i < instructions.Count; i++) {
 				var instr = instructions[i].Instruction;
 				if (instr.OpCode.Code == Code.Call)
-					changed |= InlineMethod(instr, i);
+					modified |= InlineMethod(instr, i);
 			}
-			return changed;
+			return modified;
 		}
 
 		protected virtual bool CanInline(MethodDef method) {

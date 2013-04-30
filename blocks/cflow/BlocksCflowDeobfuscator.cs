@@ -37,13 +37,13 @@ namespace de4dot.blocks.cflow {
 		}
 
 		void Initialize() {
-			ourBlocksDeobfuscators.Add(new BlockCflowDeobfuscator { ExecuteOnNoChange = false });
-			ourBlocksDeobfuscators.Add(new SwitchCflowDeobfuscator { ExecuteOnNoChange = false });
-			ourBlocksDeobfuscators.Add(new DeadStoreRemover { ExecuteOnNoChange = false });
-			ourBlocksDeobfuscators.Add(new DeadCodeRemover { ExecuteOnNoChange = false });
-			ourBlocksDeobfuscators.Add(new ConstantsFolder { ExecuteOnNoChange = true });
-			ourBlocksDeobfuscators.Add(new StLdlocFixer { ExecuteOnNoChange = true });
-			ourBlocksDeobfuscators.Add(new DupBlockCflowDeobfuscator { ExecuteOnNoChange = true });
+			ourBlocksDeobfuscators.Add(new BlockCflowDeobfuscator { ExecuteIfNotModified = false });
+			ourBlocksDeobfuscators.Add(new SwitchCflowDeobfuscator { ExecuteIfNotModified = false });
+			ourBlocksDeobfuscators.Add(new DeadStoreRemover { ExecuteIfNotModified = false });
+			ourBlocksDeobfuscators.Add(new DeadCodeRemover { ExecuteIfNotModified = false });
+			ourBlocksDeobfuscators.Add(new ConstantsFolder { ExecuteIfNotModified = true });
+			ourBlocksDeobfuscators.Add(new StLdlocFixer { ExecuteIfNotModified = true });
+			ourBlocksDeobfuscators.Add(new DupBlockCflowDeobfuscator { ExecuteIfNotModified = true });
 		}
 
 		public void Add(IEnumerable<IBlocksDeobfuscator> blocksDeobfuscators) {
@@ -61,7 +61,7 @@ namespace de4dot.blocks.cflow {
 		}
 
 		public void Deobfuscate() {
-			bool changed;
+			bool modified;
 			int iterations = -1;
 
 			DeobfuscateBegin(userBlocksDeobfuscators);
@@ -69,20 +69,20 @@ namespace de4dot.blocks.cflow {
 
 			do {
 				iterations++;
-				changed = false;
+				modified = false;
 				RemoveDeadBlocks();
 				MergeBlocks();
 
 				blocks.MethodBlocks.GetAllBlocks(allBlocks);
 
 				if (iterations == 0)
-					changed |= FixDotfuscatorLoop();
+					modified |= FixDotfuscatorLoop();
 
-				changed |= Deobfuscate(userBlocksDeobfuscators, allBlocks);
-				changed |= Deobfuscate(ourBlocksDeobfuscators, allBlocks);
-				changed |= DeobfuscateNoChange(changed, userBlocksDeobfuscators, allBlocks);
-				changed |= DeobfuscateNoChange(changed, ourBlocksDeobfuscators, allBlocks);
-			} while (changed);
+				modified |= Deobfuscate(userBlocksDeobfuscators, allBlocks);
+				modified |= Deobfuscate(ourBlocksDeobfuscators, allBlocks);
+				modified |= DeobfuscateIfNotModified(modified, userBlocksDeobfuscators, allBlocks);
+				modified |= DeobfuscateIfNotModified(modified, ourBlocksDeobfuscators, allBlocks);
+			} while (modified);
 		}
 
 		void DeobfuscateBegin(IEnumerable<IBlocksDeobfuscator> bds) {
@@ -91,24 +91,24 @@ namespace de4dot.blocks.cflow {
 		}
 
 		bool Deobfuscate(IEnumerable<IBlocksDeobfuscator> bds, List<Block> allBlocks) {
-			bool changed = false;
+			bool modified = false;
 			foreach (var bd in bds) {
-				if (bd.ExecuteOnNoChange)
+				if (bd.ExecuteIfNotModified)
 					continue;
-				changed |= bd.Deobfuscate(allBlocks);
+				modified |= bd.Deobfuscate(allBlocks);
 			}
-			return changed;
+			return modified;
 		}
 
-		bool DeobfuscateNoChange(bool changed, IEnumerable<IBlocksDeobfuscator> bds, List<Block> allBlocks) {
+		bool DeobfuscateIfNotModified(bool modified, IEnumerable<IBlocksDeobfuscator> bds, List<Block> allBlocks) {
 			foreach (var bd in bds) {
-				if (changed)
+				if (modified)
 					break;
-				if (!bd.ExecuteOnNoChange)
+				if (!bd.ExecuteIfNotModified)
 					continue;
-				changed |= bd.Deobfuscate(allBlocks);
+				modified |= bd.Deobfuscate(allBlocks);
 			}
-			return changed;
+			return modified;
 		}
 
 		// Hack for old Dotfuscator
@@ -127,7 +127,7 @@ namespace de4dot.blocks.cflow {
 				pop
 				...
 			*/
-			bool changed = false;
+			bool modified = false;
 			foreach (var block in allBlocks) {
 				if (block.Instructions.Count != 5)
 					continue;
@@ -154,9 +154,9 @@ namespace de4dot.blocks.cflow {
 				if (next.FirstInstr.OpCode.Code != Code.Pop)
 					continue;
 				block.ReplaceLastInstrsWithBranch(5, next);
-				changed = true;
+				modified = true;
 			}
-			return changed;
+			return modified;
 		}
 
 		bool RemoveDeadBlocks() {
@@ -164,10 +164,10 @@ namespace de4dot.blocks.cflow {
 		}
 
 		bool MergeBlocks() {
-			bool changed = false;
+			bool modified = false;
 			foreach (var scopeBlock in GetAllScopeBlocks(blocks.MethodBlocks))
-				changed |= scopeBlock.MergeBlocks() > 0;
-			return changed;
+				modified |= scopeBlock.MergeBlocks() > 0;
+			return modified;
 		}
 
 		IEnumerable<ScopeBlock> GetAllScopeBlocks(ScopeBlock scopeBlock) {

@@ -37,16 +37,16 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		}
 
 		protected override bool DeobfuscateInternal() {
-			bool changed = false;
+			bool modified = false;
 
 			var instructions = block.Instructions;
 			for (int i = 0; i < instructions.Count; i++) {
 				var instr = instructions[i].Instruction;
 				if (instr.OpCode.Code == Code.Call)
-					changed |= InlineMethod(instr, i);
+					modified |= InlineMethod(instr, i);
 			}
 
-			return changed;
+			return modified;
 		}
 
 		bool InlineMethod(Instruction callInstr, int instrIndex) {

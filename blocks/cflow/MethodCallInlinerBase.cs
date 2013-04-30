@@ -31,7 +31,7 @@ namespace de4dot.blocks.cflow {
 		int iteration;
 		AccessChecker accessChecker;
 
-		public bool ExecuteOnNoChange { get; set; }
+		public bool ExecuteIfNotModified { get; set; }
 
 		public void DeobfuscateBegin(Blocks blocks) {
 			this.blocks = blocks;
@@ -42,12 +42,12 @@ namespace de4dot.blocks.cflow {
 			if (iteration++ >= MAX_ITERATIONS)
 				return false;
 
-			bool changed = false;
+			bool modified = false;
 			foreach (var block in allBlocks) {
 				this.block = block;
-				changed |= DeobfuscateInternal();
+				modified |= DeobfuscateInternal();
 			}
-			return changed;
+			return modified;
 		}
 
 		protected abstract bool DeobfuscateInternal();
