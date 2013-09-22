@@ -29,7 +29,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		SingleValueInliner singleValueInliner;
 		DoubleValueInliner doubleValueInliner;
 
-		public bool ExecuteOnNoChange { get; set; }
+		public bool ExecuteIfNotModified { get; set; }
 
 		public ConstantsInliner(Int32ValueInliner int32ValueInliner, Int64ValueInliner int64ValueInliner, SingleValueInliner singleValueInliner, DoubleValueInliner doubleValueInliner) {
 			this.int32ValueInliner = int32ValueInliner;

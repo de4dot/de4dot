@@ -112,11 +112,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 		public override IEnumerable<IBlocksDeobfuscator> BlocksDeobfuscators {
 			get {
 				var list = new List<IBlocksDeobfuscator>();
-				list.Add(new ConstantsFolder { ExecuteOnNoChange = true });
+				list.Add(new ConstantsFolder { ExecuteIfNotModified = true });
 
 				// Add this one last so all cflow is deobfuscated whenever it executes
 				if (!startedDeobfuscating && int32ValueInliner != null)
-					list.Add(new ConstantsInliner(int32ValueInliner, int64ValueInliner, singleValueInliner, doubleValueInliner) { ExecuteOnNoChange = true });
+					list.Add(new ConstantsInliner(int32ValueInliner, int64ValueInliner, singleValueInliner, doubleValueInliner) { ExecuteIfNotModified = true });
 
 				return list;
 			}
