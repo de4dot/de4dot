@@ -809,14 +809,16 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v19_r78056_dynamic:
 			case ConfuserVersion.v19_r78056_native:
 				minRev = 78056;
-				maxRev = 78342;
+				// r78964 removed code that made it impossible to differentiate it from this
+				// version. All we know is that it can't be r78363-r78963.
+				maxRev = int.MaxValue;
 				return true;
 
 			case ConfuserVersion.v19_r78363_normal:
 			case ConfuserVersion.v19_r78363_dynamic:
 			case ConfuserVersion.v19_r78363_native:
 				minRev = 78363;
-				maxRev = int.MaxValue;
+				maxRev = 78963;
 				return true;
 
 			default: throw new ApplicationException("Invalid version");
