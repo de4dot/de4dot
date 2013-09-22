@@ -69,7 +69,7 @@ namespace de4dot.code {
 			var dm = GetDumpedMethod(rid);
 			if (dm == null)
 				return null;
-			return MethodBodyReader.Create(module, dm.code, dm.extraSections, parameters, dm.mhFlags, dm.mhMaxStack, dm.mhCodeSize, dm.mhLocalVarSigTok);
+			return MethodBodyReader.CreateCilBody(module, dm.code, dm.extraSections, parameters, dm.mhFlags, dm.mhMaxStack, dm.mhCodeSize, dm.mhLocalVarSigTok);
 		}
 	}
 }

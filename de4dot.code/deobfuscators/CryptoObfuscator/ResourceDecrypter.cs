@@ -185,7 +185,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			bitwiseNotEncryptedFlag = 4;
 		}
 
-		static bool checkFlipBits(MethodDef method) {
+		static bool CheckFlipBits(MethodDef method) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 1; i++) {
 				var ldloc = instrs[i];
@@ -231,7 +231,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				constants.Add(flagValue);
 			}
 
-			flipFlagsBits = checkFlipBits(method);
+			flipFlagsBits = CheckFlipBits(method);
 			skipBytes = GetHeaderSkipBytes(method);
 
 			switch (frameworkType) {

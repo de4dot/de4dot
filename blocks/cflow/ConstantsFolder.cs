@@ -35,7 +35,7 @@ namespace de4dot.blocks.cflow {
 		}
 
 		protected override bool Deobfuscate(Block block) {
-			bool changed = false;
+			bool modified = false;
 
 			instructionEmulator.Initialize(blocks);
 			var instrs = block.Instructions;
@@ -49,7 +49,7 @@ namespace de4dot.blocks.cflow {
 				case Code.Ldarg_2:
 				case Code.Ldarg_3:
 				case Code.Ldarg_S:
-					changed |= FixLoadInstruction(block, i, instructionEmulator.GetArg(instr.Instruction.GetParameter(args)));
+					modified |= FixLoadInstruction(block, i, instructionEmulator.GetArg(instr.Instruction.GetParameter(args)));
 					break;
 
 				case Code.Ldloc:
@@ -58,7 +58,7 @@ namespace de4dot.blocks.cflow {
 				case Code.Ldloc_2:
 				case Code.Ldloc_3:
 				case Code.Ldloc_S:
-					changed |= FixLoadInstruction(block, i, instructionEmulator.GetLocal(instr.Instruction.GetLocal(blocks.Locals)));
+					modified |= FixLoadInstruction(block, i, instructionEmulator.GetLocal(instr.Instruction.GetLocal(blocks.Locals)));
 					break;
 
 				case Code.Ldarga:
@@ -81,7 +81,7 @@ namespace de4dot.blocks.cflow {
 				}
 			}
 
-			return changed;
+			return modified;
 		}
 
 		bool FixLoadInstruction(Block block, int index, Value value) {

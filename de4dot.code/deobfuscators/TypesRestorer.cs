@@ -171,10 +171,10 @@ namespace de4dot.code.deobfuscators {
 
 		void DeobfuscateLoop() {
 			for (int i = 0; i < 10; i++) {
-				bool changed = false;
-				changed |= DeobfuscateFields();
-				changed |= DeobfuscateMethods();
-				if (!changed)
+				bool modified = false;
+				modified |= DeobfuscateFields();
+				modified |= DeobfuscateMethods();
+				if (!modified)
 					break;
 			}
 		}
@@ -223,7 +223,7 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		bool DeobfuscateMethods() {
-			bool changed = false;
+			bool modified = false;
 			foreach (var method in allMethods) {
 				methodReturnInfo = new TypeInfo<Parameter>(method.Parameters.ReturnParameter);
 				DeobfuscateMethod(method);
@@ -231,18 +231,18 @@ namespace de4dot.code.deobfuscators {
 				if (methodReturnInfo.UpdateNewType(module)) {
 					GetUpdatedMethod(method).newReturnType = methodReturnInfo.newType;
 					method.MethodSig.RetType = methodReturnInfo.newType;
-					changed = true;
+					modified = true;
 				}
 
 				foreach (var info in argInfos.Values) {
 					if (info.UpdateNewType(module)) {
 						GetUpdatedMethod(method).newArgTypes[info.arg.Index] = info.newType;
 						info.arg.Type = info.newType;
-						changed = true;
+						modified = true;
 					}
 				}
 			}
-			return changed;
+			return modified;
 		}
 
 		static int SortTypeInfos(TypeInfo<Parameter> a, TypeInfo<Parameter> b) {
@@ -537,19 +537,19 @@ namespace de4dot.code.deobfuscators {
 				}
 			}
 
-			bool changed = false;
+			bool modified = false;
 			var removeThese = new List<FieldDef>();
 			foreach (var info in fieldWrites.Values) {
 				if (info.UpdateNewType(module)) {
 					removeThese.Add(info.arg);
 					GetUpdatedField(info.arg).newFieldType = info.newType;
 					info.arg.FieldSig.Type = info.newType;
-					changed = true;
+					modified = true;
 				}
 			}
 			foreach (var field in removeThese)
 				fieldWrites.Remove(field);
-			return changed;
+			return modified;
 		}
 
 		TypeSig GetLoadedType(IGenericParameterProvider gpp, MethodDef method, IList<Instruction> instructions, int instrIndex, out bool wasNewobj) {

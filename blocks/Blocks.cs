@@ -238,7 +238,7 @@ namespace de4dot.blocks {
 				return;
 
 			for (int i = 0; i < 10; i++) {
-				bool changed = false;
+				bool modified = false;
 
 				foreach (var block in allBlocks) {
 					Block nopBlockTarget;
@@ -246,7 +246,7 @@ namespace de4dot.blocks {
 					nopBlockTarget = GetNopBlockTarget(nopBlocks, block, block.FallThrough);
 					if (nopBlockTarget != null) {
 						block.SetNewFallThrough(nopBlockTarget);
-						changed = true;
+						modified = true;
 					}
 
 					if (block.Targets != null) {
@@ -255,12 +255,12 @@ namespace de4dot.blocks {
 							if (nopBlockTarget == null)
 								continue;
 							block.SetNewTarget(targetIndex, nopBlockTarget);
-							changed = true;
+							modified = true;
 						}
 					}
 				}
 
-				if (!changed)
+				if (!modified)
 					break;
 			}
 

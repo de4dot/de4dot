@@ -32,7 +32,7 @@ namespace de4dot.blocks.cflow {
 		}
 
 		protected override bool Deobfuscate(Block block) {
-			bool changed = false;
+			bool modified = false;
 			var instructions = block.Instructions;
 			for (int i = 0; i < instructions.Count; i++) {
 				var instr = instructions[i];
@@ -56,7 +56,7 @@ namespace de4dot.blocks.cflow {
 						break;
 					instructions[i] = new Instr(OpCodes.Dup.ToInstruction());
 					instructions[i + 1] = instr;
-					changed = true;
+					modified = true;
 					break;
 
 				default:
@@ -64,7 +64,7 @@ namespace de4dot.blocks.cflow {
 				}
 			}
 
-			return changed;
+			return modified;
 		}
 	}
 }

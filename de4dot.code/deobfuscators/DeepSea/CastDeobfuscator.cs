@@ -71,7 +71,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			}
 		}
 
-		public bool ExecuteOnNoChange {
+		public bool ExecuteIfNotModified {
 			get { return true; }
 		}
 
@@ -83,7 +83,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			if (!Initialize(allBlocks))
 				return false;
 
-			bool changed = false;
+			bool modified = false;
 
 			var indexesToRemove = new List<int>();
 			foreach (var block in allBlocks) {
@@ -113,7 +113,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				}
 				if (indexesToRemove.Count > 0) {
 					block.Remove(indexesToRemove);
-					changed = true;
+					modified = true;
 				}
 			}
 
@@ -123,7 +123,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				info.local.Type = info.CastType.ToTypeSig();
 			}
 
-			if (changed) {
+			if (modified) {
 				foreach (var block in allBlocks) {
 					var instrs = block.Instructions;
 					for (int i = 0; i < instrs.Count - 1; i++) {
@@ -154,7 +154,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				}
 			}
 
-			return changed;
+			return modified;
 		}
 
 		bool AddCast(Block block, int castIndex, int index, TypeSig type) {

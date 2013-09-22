@@ -103,46 +103,46 @@ namespace de4dot.blocks.cflow {
 		}
 
 		bool DeobfuscateTOS(Block switchBlock) {
-			bool changed = false;
+			bool modified = false;
 			if (switchBlock.Targets == null)
-				return changed;
+				return modified;
 			var targets = new List<Block>(switchBlock.Targets);
 
-			changed |= DeobfuscateTOS(targets, switchBlock.FallThrough, switchBlock);
+			modified |= DeobfuscateTOS(targets, switchBlock.FallThrough, switchBlock);
 
-			return changed;
+			return modified;
 		}
 
 		bool DeobfuscateLdloc(Block switchBlock) {
-			bool changed = false;
+			bool modified = false;
 
 			var switchVariable = Instr.GetLocalVar(blocks.Locals, switchBlock.Instructions[0]);
 			if (switchVariable == null)
-				return changed;
+				return modified;
 
 			if (switchBlock.Targets == null)
-				return changed;
+				return modified;
 			var targets = new List<Block>(switchBlock.Targets);
 
-			changed |= DeobfuscateLdloc(targets, switchBlock.FallThrough, switchBlock, switchVariable);
+			modified |= DeobfuscateLdloc(targets, switchBlock.FallThrough, switchBlock, switchVariable);
 
-			return changed;
+			return modified;
 		}
 
 		bool DeobfuscateStLdloc(Block switchBlock) {
-			bool changed = false;
+			bool modified = false;
 
 			var switchVariable = Instr.GetLocalVar(blocks.Locals, switchBlock.Instructions[0]);
 			if (switchVariable == null)
-				return changed;
+				return modified;
 
 			if (switchBlock.Targets == null)
-				return changed;
+				return modified;
 			var targets = new List<Block>(switchBlock.Targets);
 
-			changed |= DeobfuscateStLdloc(targets, switchBlock.FallThrough, switchBlock);
+			modified |= DeobfuscateStLdloc(targets, switchBlock.FallThrough, switchBlock);
 
-			return changed;
+			return modified;
 		}
 
 		// Switch deobfuscation when block uses stloc N, ldloc N to load switch constant
@@ -154,7 +154,7 @@ namespace de4dot.blocks.cflow {
 		//		ldloc N
 		//		switch (......)
 		bool DeobfuscateStLdloc(IList<Block> switchTargets, Block switchFallThrough, Block block) {
-			bool changed = false;
+			bool modified = false;
 			foreach (var source in new List<Block>(block.Sources)) {
 				if (!isBranchBlock(source))
 					continue;
@@ -166,9 +166,9 @@ namespace de4dot.blocks.cflow {
 					continue;
 				source.ReplaceLastNonBranchWithBranch(0, target);
 				source.Add(new Instr(OpCodes.Pop.ToInstruction()));
-				changed = true;
+				modified = true;
 			}
-			return changed;
+			return modified;
 		}
 
 		// Switch deobfuscation when block uses ldloc N to load switch constant
@@ -180,7 +180,7 @@ namespace de4dot.blocks.cflow {
 		//		ldloc N
 		//		switch (......)
 		bool DeobfuscateLdloc(IList<Block> switchTargets, Block switchFallThrough, Block block, Local switchVariable) {
-			bool changed = false;
+			bool modified = false;
 			foreach (var source in new List<Block>(block.Sources)) {
 				if (isBranchBlock(source)) {
 					instructionEmulator.Initialize(blocks);
@@ -190,7 +190,7 @@ namespace de4dot.blocks.cflow {
 					if (target == null)
 						continue;
 					source.ReplaceLastNonBranchWithBranch(0, target);
-					changed = true;
+					modified = true;
 				}
 				else if (IsBccBlock(source)) {
 					instructionEmulator.Initialize(blocks);
@@ -201,15 +201,15 @@ namespace de4dot.blocks.cflow {
 						continue;
 					if (source.Targets[0] == block) {
 						source.SetNewTarget(0, target);
-						changed = true;
+						modified = true;
 					}
 					if (source.FallThrough == block) {
 						source.SetNewFallThrough(target);
-						changed = true;
+						modified = true;
 					}
 				}
 			}
-			return changed;
+			return modified;
 		}
 
 		// Switch deobfuscation when block has switch contant on TOS:
@@ -219,7 +219,7 @@ namespace de4dot.blocks.cflow {
 		//	swblk:
 		//		switch (......)
 		bool DeobfuscateTOS(IList<Block> switchTargets, Block switchFallThrough, Block block) {
-			bool changed = false;
+			bool modified = false;
 			foreach (var source in new List<Block>(block.Sources)) {
 				if (!isBranchBlock(source))
 					continue;
@@ -228,15 +228,15 @@ namespace de4dot.blocks.cflow {
 
 				var target = GetSwitchTarget(switchTargets, switchFallThrough, instructionEmulator.Pop());
 				if (target == null) {
-					changed |= DeobfuscateTos_Ldloc(switchTargets, switchFallThrough, source);
+					modified |= DeobfuscateTos_Ldloc(switchTargets, switchFallThrough, source);
 				}
 				else {
 					source.ReplaceLastNonBranchWithBranch(0, target);
 					source.Add(new Instr(OpCodes.Pop.ToInstruction()));
-					changed = true;
+					modified = true;
 				}
 			}
-			return changed;
+			return modified;
 		}
 
 		//		ldloc N
@@ -314,7 +314,7 @@ namespace de4dot.blocks.cflow {
 			if (!EmulateGetTarget(switchBlock, out target) || target != null)
 				return false;
 
-			bool changed = false;
+			bool modified = false;
 
 			foreach (var source in new List<Block>(switchBlock.Sources)) {
 				if (!source.CanAppend(switchBlock))
@@ -323,14 +323,14 @@ namespace de4dot.blocks.cflow {
 					continue;
 
 				source.Append(switchBlock);
-				changed = true;
+				modified = true;
 			}
 
-			return changed;
+			return modified;
 		}
 
 		bool DeobfuscateType2(Block switchBlock) {
-			bool changed = false;
+			bool modified = false;
 
 			var bccSources = new List<Block>();
 			foreach (var source in new List<Block>(switchBlock.Sources)) {
@@ -344,7 +344,7 @@ namespace de4dot.blocks.cflow {
 					continue;
 
 				source.Append(switchBlock);
-				changed = true;
+				modified = true;
 			}
 
 			foreach (var bccSource in bccSources) {
@@ -361,10 +361,10 @@ namespace de4dot.blocks.cflow {
 				bccSource.SetNewTarget(0, newTarget);
 				newFallThrough.SetNewFallThrough(oldFallThrough);
 				newTarget.SetNewFallThrough(oldTarget);
-				changed = true;
+				modified = true;
 			}
 
-			return changed;
+			return modified;
 		}
 
 		static Block CreateBlock(Dictionary<Local, int> consts, Block fallThrough) {
@@ -462,7 +462,7 @@ namespace de4dot.blocks.cflow {
 			//		switch
 			// Inline common into blk1 and blk2.
 
-			bool changed = false;
+			bool modified = false;
 
 			foreach (var commonSource in new List<Block>(switchBlock.Sources)) {
 				if (commonSource.Instructions.Count != 1)
@@ -472,12 +472,12 @@ namespace de4dot.blocks.cflow {
 				foreach (var blk in new List<Block>(commonSource.Sources)) {
 					if (blk.CanAppend(commonSource)) {
 						blk.Append(commonSource);
-						changed = true;
+						modified = true;
 					}
 				}
 			}
 
-			return changed;
+			return modified;
 		}
 	}
 }

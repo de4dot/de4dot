@@ -25,7 +25,7 @@ namespace de4dot.blocks.cflow {
 		protected List<Block> allBlocks;
 		protected Blocks blocks;
 
-		public bool ExecuteOnNoChange { get; set; }
+		public bool ExecuteIfNotModified { get; set; }
 
 		public virtual void DeobfuscateBegin(Blocks blocks) {
 			this.blocks = blocks;
@@ -34,16 +34,16 @@ namespace de4dot.blocks.cflow {
 		public bool Deobfuscate(List<Block> allBlocks) {
 			Initialize(allBlocks);
 
-			bool changed = false;
+			bool modified = false;
 			foreach (var block in allBlocks) {
 				try {
-					changed |= Deobfuscate(block);
+					modified |= Deobfuscate(block);
 				}
 				catch (NullReferenceException) {
 					// Here if eg. invalid metadata token in a call instruction (operand is null)
 				}
 			}
-			return changed;
+			return modified;
 		}
 
 		protected virtual void Initialize(List<Block> allBlocks) {
