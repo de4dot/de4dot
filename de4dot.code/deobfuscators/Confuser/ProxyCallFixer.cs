@@ -34,6 +34,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		byte[] fileData;
 		x86Emulator x86emu;
 		ushort callvirtChar;
+		bool foundNewobjProxy;
 
 		enum ConfuserVersion {
 			Unknown,
@@ -62,6 +63,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v19_r76101_native,
 			v19_r78363_normal,
 			v19_r78363_native,
+			v19_r78963_normal_Newobj,
+			v19_r78963_native_Newobj,
 		}
 
 		enum ProxyCreatorType {
@@ -238,6 +241,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v18_r75369_normal:
 			case ConfuserVersion.v19_r76101_normal:
 			case ConfuserVersion.v19_r78363_normal:
+			case ConfuserVersion.v19_r78963_normal_Newobj:
 				GetCallInfo_v18_r75367_normal(info, creatorInfo, out calledMethod, out callOpcode);
 				break;
 
@@ -245,6 +249,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v18_r75369_native:
 			case ConfuserVersion.v19_r76101_native:
 			case ConfuserVersion.v19_r78363_native:
+			case ConfuserVersion.v19_r78963_native_Newobj:
 				GetCallInfo_v18_r75367_native(info, creatorInfo, out calledMethod, out callOpcode);
 				break;
 
@@ -484,6 +489,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 				var proxyType = GetProxyCreatorType(method, simpleDeobfuscator, out tmpVer);
 				if (proxyType == ProxyCreatorType.None)
 					continue;
+				if (proxyType == ProxyCreatorType.Newobj)
+					foundNewobjProxy = true;
 
 				simpleDeobfuscator.Deobfuscate(method);
 				MethodDef nativeMethod = null;
@@ -512,18 +519,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 						theVersion = proxyType != ProxyCreatorType.CallOrCallvirt || callvirtChar == 9 ? ConfuserVersion.v18_r75367_native : ConfuserVersion.v18_r75369_native;
 					else if (FindMagic_v18_r75367(method, out magic))
 						theVersion = proxyType != ProxyCreatorType.CallOrCallvirt || callvirtChar == 9 ? ConfuserVersion.v18_r75367_normal : ConfuserVersion.v18_r75369_normal;
-					else if (FindMagic_v19_r76101(method, out magic)) {
-						if (tmpVer == 1)
-							theVersion = ConfuserVersion.v19_r76101_normal;
-						else if (tmpVer == 2)
-							theVersion = ConfuserVersion.v19_r78363_normal;
-					}
-					else if ((nativeMethod = FindNativeMethod_v19_r76101(method)) != null) {
-						if (tmpVer == 1)
-							theVersion = ConfuserVersion.v19_r76101_native;
-						else if (tmpVer == 2)
-							theVersion = ConfuserVersion.v19_r78363_native;
-					}
+					else if (FindMagic_v19_r76101(method, out magic))
+						CommonCheckVersion19(method, true, tmpVer, ref theVersion);
+					else if ((nativeMethod = FindNativeMethod_v19_r76101(method)) != null)
+						CommonCheckVersion19(method, false, tmpVer, ref theVersion);
 					else {
 						if (proxyType == ProxyCreatorType.CallOrCallvirt && !DotNetUtils.CallsMethod(method, "System.Int32 System.String::get_Length()"))
 							theVersion = ConfuserVersion.v11_r50378;
@@ -563,6 +562,22 @@ namespace de4dot.code.deobfuscators.Confuser {
 				methodToInfo.Add(method, new ProxyCreatorInfo(method, proxyType, theVersion, magic, nativeMethod, callvirtChar));
 				version = (ConfuserVersion)Math.Max((int)version, (int)theVersion);
 			}
+		}
+
+		static bool CommonCheckVersion19(MethodDef method, bool isNormal, int tmpProxyVer, ref ConfuserVersion theVersion) {
+			if (tmpProxyVer == 1) {
+				theVersion = isNormal ? ConfuserVersion.v19_r76101_normal : ConfuserVersion.v19_r76101_native;
+				return true;
+			}
+			else if (tmpProxyVer == 2) {
+				if (!CheckCtorProxyType_v19_r78963(method))
+					theVersion = isNormal ? ConfuserVersion.v19_r78363_normal : ConfuserVersion.v19_r78363_native;
+				else
+					theVersion = isNormal ? ConfuserVersion.v19_r78963_normal_Newobj : ConfuserVersion.v19_r78963_native_Newobj;
+				return true;
+			}
+
+			return false;
 		}
 
 		static bool HasFieldReference(MethodDef method, string fieldFullName) {
@@ -861,7 +876,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		static bool CheckCtorProxyTypeV2(MethodDef method) {
 			var instrs = method.Body.Instructions;
-			for (int i = 0; i < instrs.Count; i++) {
+			for (int i = 0; i < instrs.Count - 3; i++) {
 				var ldci4 = instrs[i];
 				if (!ldci4.IsLdcI4() || ldci4.GetLdcI4Value() != 2)
 					continue;
@@ -881,6 +896,24 @@ namespace de4dot.code.deobfuscators.Confuser {
 		static bool CheckCallProxyTypeV2(MethodDef method) {
 			return DeobUtils.HasInteger(method, 0x28) &&
 				DeobUtils.HasInteger(method, 0x6F);
+		}
+
+		// r78963 adds a 'castclass' opcode to the generated code. This code assumes
+		// CheckCtorProxyTypeV2() has returned true.
+		static bool CheckCtorProxyType_v19_r78963(MethodDef method) {
+			var instrs = method.Body.Instructions;
+			for (int i = 0; i < instrs.Count - 2; i++) {
+				if (instrs[i].OpCode.Code != Code.Add)
+					continue;
+				var ldci4 = instrs[i + 1];
+				if (!ldci4.IsLdcI4() || ldci4.GetLdcI4Value() != 0x74)
+					continue;
+				if (instrs[i + 2].OpCode.Code != Code.Stelem_I1)
+					continue;
+
+				return true;
+			}
+			return false;
 		}
 
 		public new void Find() {
@@ -1190,6 +1223,18 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v19_r78363_normal:
 			case ConfuserVersion.v19_r78363_native:
 				minRev = 78363;
+				// We can only detect the r78963 version if a method ctor proxy is used.
+				// If it's not used, then maxRev must be the same maxRev as in the next case.
+				// If a method ctor proxy is found, then we know that rev <= 78962.
+				if (foundNewobjProxy)
+					maxRev = 78962;
+				else
+					maxRev = int.MaxValue;
+				return true;
+
+			case ConfuserVersion.v19_r78963_normal_Newobj:
+			case ConfuserVersion.v19_r78963_native_Newobj:
+				minRev = 78963;
 				maxRev = int.MaxValue;
 				return true;
 
