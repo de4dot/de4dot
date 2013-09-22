@@ -60,6 +60,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v19_r78363_normal,
 			v19_r78363_dynamic,
 			v19_r78363_native,
+			v19_r79630_normal,
+			v19_r79630_dynamic,
+			v19_r79630_native,
 		}
 
 		public class DecrypterInfo {
@@ -124,6 +127,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 				case ConfuserVersion.v19_r78363_normal:
 				case ConfuserVersion.v19_r78363_dynamic:
 				case ConfuserVersion.v19_r78363_native:
+				case ConfuserVersion.v19_r79630_normal:
+				case ConfuserVersion.v19_r79630_dynamic:
+				case ConfuserVersion.v19_r79630_native:
 					return Hash1(key0l * magic);
 				default:
 					throw new ApplicationException("Invalid version");
@@ -220,10 +226,18 @@ namespace de4dot.code.deobfuscators.Confuser {
 					InitVersion(cctor, ConfuserVersion.v18_r75369_normal, ConfuserVersion.v18_r75369_dynamic, ConfuserVersion.v18_r75369_native);
 				else if (!DotNetUtils.CallsMethod(method, "System.Void System.Threading.Monitor::Exit(System.Object)"))
 					InitVersion(cctor, ConfuserVersion.v19_r77172_normal, ConfuserVersion.v19_r77172_dynamic, ConfuserVersion.v19_r77172_native);
-				else if (!DotNetUtils.CallsMethod(method, "System.Void System.Diagnostics.StackFrame::.ctor(System.Int32)"))
-					InitVersion(cctor, ConfuserVersion.v19_r78056_normal, ConfuserVersion.v19_r78056_dynamic, ConfuserVersion.v19_r78056_native);
-				else
+				else if (DotNetUtils.CallsMethod(method, "System.Void System.Diagnostics.StackFrame::.ctor(System.Int32)"))
 					InitVersion(cctor, ConfuserVersion.v19_r78363_normal, ConfuserVersion.v19_r78363_dynamic, ConfuserVersion.v19_r78363_native);
+				else {
+					int index1 = ConfuserUtils.FindCallMethod(cctor.Body.Instructions, 0, Code.Callvirt, "System.Reflection.Module System.Reflection.MemberInfo::get_Module()");
+					int index2 = ConfuserUtils.FindCallMethod(cctor.Body.Instructions, 0, Code.Callvirt, "System.Int32 System.Reflection.MemberInfo::get_MetadataToken()");
+					if (index1 < 0 || index2 < 0) {
+					}
+					if (index2 - index1 == 3)
+						InitVersion(cctor, ConfuserVersion.v19_r78056_normal, ConfuserVersion.v19_r78056_dynamic, ConfuserVersion.v19_r78056_native);
+					else if (index2 - index1 == -4)
+						InitVersion(cctor, ConfuserVersion.v19_r79630_normal, ConfuserVersion.v19_r79630_dynamic, ConfuserVersion.v19_r79630_native);
+				}
 			}
 			else
 				return;
@@ -296,12 +310,26 @@ namespace de4dot.code.deobfuscators.Confuser {
 				if (index < 0)
 					break;
 				int index2 = ConfuserUtils.FindCallMethod(instrs, i, Code.Callvirt, "System.Int32 System.Reflection.MemberInfo::get_MetadataToken()");
-				if (index2 - index != 3)
+				int ldci4Index;
+				switch (index2 - index) {
+				case 3:
+					// rev <= r79440
+					ldci4Index = index + 1;
+					break;
+
+				case -4:
+					// rev >= r79630
+					ldci4Index = index2 - 2;
+					break;
+
+				default:
 					continue;
-				var ldci4 = instrs[index + 1];
+				}
+
+				var ldci4 = instrs[ldci4Index];
 				if (!ldci4.IsLdcI4())
 					continue;
-				if (!instrs[index + 2].IsLdloc())
+				if (!instrs[ldci4Index + 1].IsLdloc())
 					continue;
 
 				key = (uint)ldci4.GetLdcI4Value();
@@ -423,6 +451,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v19_r78363_normal:
 			case ConfuserVersion.v19_r78363_dynamic:
 			case ConfuserVersion.v19_r78363_native:
+			case ConfuserVersion.v19_r79630_normal:
+			case ConfuserVersion.v19_r79630_dynamic:
+			case ConfuserVersion.v19_r79630_native:
 				return FindKeys_v18_r75369(info);
 			default:
 				throw new ApplicationException("Invalid version");
@@ -597,6 +628,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v19_r77172_normal:
 			case ConfuserVersion.v19_r78056_normal:
 			case ConfuserVersion.v19_r78363_normal:
+			case ConfuserVersion.v19_r79630_normal:
 				return DecryptResource_v18_r75367_normal(encrypted);
 
 			case ConfuserVersion.v18_r75367_dynamic:
@@ -604,6 +636,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v19_r77172_dynamic:
 			case ConfuserVersion.v19_r78056_dynamic:
 			case ConfuserVersion.v19_r78363_dynamic:
+			case ConfuserVersion.v19_r79630_dynamic:
 				return DecryptResource_v18_r75367_dynamic(encrypted);
 
 			case ConfuserVersion.v18_r75367_native:
@@ -611,6 +644,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v19_r77172_native:
 			case ConfuserVersion.v19_r78056_native:
 			case ConfuserVersion.v19_r78363_native:
+			case ConfuserVersion.v19_r79630_native:
 				return DecryptResource_v18_r75367_native(encrypted);
 
 			default:
@@ -811,7 +845,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				minRev = 78056;
 				// r78964 removed code that made it impossible to differentiate it from this
 				// version. All we know is that it can't be r78363-r78963.
-				maxRev = int.MaxValue;
+				maxRev = 79440;
 				return true;
 
 			case ConfuserVersion.v19_r78363_normal:
@@ -819,6 +853,13 @@ namespace de4dot.code.deobfuscators.Confuser {
 			case ConfuserVersion.v19_r78363_native:
 				minRev = 78363;
 				maxRev = 78963;
+				return true;
+
+			case ConfuserVersion.v19_r79630_normal:
+			case ConfuserVersion.v19_r79630_dynamic:
+			case ConfuserVersion.v19_r79630_native:
+				minRev = 79630;
+				maxRev = int.MaxValue;
 				return true;
 
 			default: throw new ApplicationException("Invalid version");
