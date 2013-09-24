@@ -144,7 +144,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			stringDecrypter.Find();
 			tamperDetection = new TamperDetection(module);
 			tamperDetection.Find();
-			constantsDecrypter = new ConstantsDecrypter(module);
+			constantsDecrypter = new ConstantsDecrypter(module, initializedDataCreator);
 			constantsDecrypter.Find();
 			foundObfuscatorUserString = Utils.StartsWith(module.ReadUserString(0x70000001), "\u0011\"3D9B94A98B-76A8-4810-B1A0-4BE7C4F9C98D", StringComparison.Ordinal);
 		}
@@ -245,6 +245,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				int64ValueInliner.Decrypt(blocks);
 				singleValueInliner.Decrypt(blocks);
 				doubleValueInliner.Decrypt(blocks);
+				constantsDecrypter.Deobfuscate(blocks);
 			}
 			base.DeobfuscateMethodEnd(blocks);
 		}

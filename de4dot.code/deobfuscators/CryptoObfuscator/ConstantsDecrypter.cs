@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.Text;
 using dnlib.IO;
 using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CryptoObfuscator {
@@ -32,6 +33,8 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		MethodDef methodI8;
 		MethodDef methodR4;
 		MethodDef methodR8;
+		MethodDef methodArray;
+		InitializedDataCreator initializedDataCreator;
 		EmbeddedResource encryptedResource;
 		byte[] constantsData;
 
@@ -63,8 +66,9 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			get { return decrypterType != null; }
 		}
 
-		public ConstantsDecrypter(ModuleDefMD module) {
+		public ConstantsDecrypter(ModuleDefMD module, InitializedDataCreator initializedDataCreator) {
 			this.module = module;
+			this.initializedDataCreator = initializedDataCreator;
 		}
 
 		public void Find() {
@@ -98,9 +102,11 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			methodI8 = DotNetUtils.GetMethod(type, "System.Int64", "(System.Int32)");
 			methodR4 = DotNetUtils.GetMethod(type, "System.Single", "(System.Int32)");
 			methodR8 = DotNetUtils.GetMethod(type, "System.Double", "(System.Int32)");
+			methodArray = DotNetUtils.GetMethod(type, "System.Void", "(System.Array,System.Int32)");
 
 			return methodI4 != null && methodI8 != null &&
-				methodR4 != null && methodR8 != null;
+				methodR4 != null && methodR8 != null &&
+				methodArray != null;
 		}
 
 		public void Initialize(ResourceDecrypter resourceDecrypter) {
@@ -126,6 +132,80 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 
 		public double DecryptDouble(int index) {
 			return BitConverter.ToDouble(constantsData, index);
+		}
+
+		struct ArrayInfo {
+			public CorLibTypeSig arrayType;
+			public int start, len;
+			public int arySize, index;
+
+			public ArrayInfo(int start, int len, CorLibTypeSig arrayType, int arySize, int index) {
+				this.start = start;
+				this.len = len;
+				this.arrayType = arrayType;
+				this.arySize = arySize;
+				this.index = index;
+			}
+		}
+
+		public void Deobfuscate(Blocks blocks) {
+			var infos = new List<ArrayInfo>();
+			foreach (var block in blocks.MethodBlocks.GetAllBlocks()) {
+				var instrs = block.Instructions;
+				infos.Clear();
+
+				for (int i = 0; i < instrs.Count - 5; i++) {
+					int index = i;
+
+					var ldci4_arySize = instrs[index++];
+					if (!ldci4_arySize.IsLdcI4())
+						continue;
+
+					var newarr = instrs[index++];
+					if (newarr.OpCode.Code != Code.Newarr)
+						continue;
+					var arrayType = module.CorLibTypes.GetCorLibTypeSig(newarr.Operand as ITypeDefOrRef);
+					if (arrayType == null)
+						continue;
+
+					if (instrs[index++].OpCode.Code != Code.Dup)
+						continue;
+
+					var ldci4_index = instrs[index++];
+					if (!ldci4_index.IsLdcI4())
+						continue;
+
+					var call = instrs[index++];
+					if (call.OpCode.Code != Code.Call && call.OpCode.Code != Code.Callvirt)
+						continue;
+					if (!MethodEqualityComparer.CompareDeclaringTypes.Equals(call.Operand as IMethod, methodArray))
+						continue;
+
+					if (arrayType.ElementType.GetPrimitiveSize() == -1) {
+						Logger.w("Can't decrypt non-primitive type array in method {0:X8}", blocks.Method.MDToken.ToInt32());
+						continue;
+					}
+
+					infos.Add(new ArrayInfo(i, index - i, arrayType, ldci4_arySize.GetLdcI4Value(),
+								ldci4_index.GetLdcI4Value()));
+				}
+
+				infos.Reverse();
+				foreach (var info in infos) {
+					var elemSize = info.arrayType.ElementType.GetPrimitiveSize();
+					var decrypted = DecryptArray(info);
+					initializedDataCreator.AddInitializeArrayCode(block, info.start, info.len, info.arrayType.ToTypeDefOrRef(), decrypted);
+					Logger.v("Decrypted {0} array: {1} elements", info.arrayType.ToString(), decrypted.Length / elemSize);
+				}
+			}
+		}
+
+		byte[] DecryptArray(ArrayInfo aryInfo) {
+			var ary = new byte[aryInfo.arySize * aryInfo.arrayType.ElementType.GetPrimitiveSize()];
+			int dataIndex = aryInfo.index;
+			int len = DeobUtils.ReadVariableLengthInt32(constantsData, ref dataIndex);
+			Buffer.BlockCopy(constantsData, dataIndex, ary, 0, len);
+			return ary;
 		}
 	}
 }
