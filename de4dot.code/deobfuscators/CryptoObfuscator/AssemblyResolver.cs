@@ -30,6 +30,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		TypeDef resolverType;
 		MethodDef resolverMethod;
 		List<AssemblyInfo> assemblyInfos = new List<AssemblyInfo>();
+		string asmSeparator;
 
 		public class AssemblyInfo {
 			public string assemblyName;
@@ -86,6 +87,8 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				return false;
 			if (!CheckInitMethod(initMethod))
 				return false;
+			if ((asmSeparator = FindAssemblySeparator(initMethod)) == null)
+				return false;
 
 			List<AssemblyInfo> newAssemblyInfos = null;
 			foreach (var s in DotNetUtils.GetCodeStrings(initMethod)) {
@@ -134,7 +137,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			var sb = new StringBuilder(s.Length);
 			foreach (var c in s)
 				sb.Append((char)~c);
-			var tmpAssemblyInfos = sb.ToString().Split(new string[] { "##" }, StringSplitOptions.RemoveEmptyEntries);
+			var tmpAssemblyInfos = sb.ToString().Split(new string[] { asmSeparator }, StringSplitOptions.RemoveEmptyEntries);
 			if (tmpAssemblyInfos.Length == 0 || (tmpAssemblyInfos.Length & 1) == 1)
 				return null;
 
@@ -150,6 +153,25 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			}
 
 			return newAssemblyInfos;
+		}
+
+		string FindAssemblySeparator(MethodDef initMethod) {
+			if (!initMethod.HasBody)
+				return null;
+
+			foreach (var instr in initMethod.Body.Instructions) {
+				if (instr.OpCode.Code != Code.Newarr)
+					continue;
+				var op = module.CorLibTypes.GetCorLibTypeSig(instr.Operand as ITypeDefOrRef);
+				if (op == null)
+					continue;
+				if (op.ElementType == ElementType.String)
+					return "##";
+				if (op.ElementType == ElementType.Char)
+					return "`";
+			}
+
+			return null;
 		}
 	}
 }
