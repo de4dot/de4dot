@@ -1232,6 +1232,8 @@ namespace de4dot.code.renamer {
 				}
 			}
 			var overrideMethod = method.MethodDef.Overrides[0].MethodDeclaration;
+			if (overrideMethod.DeclaringType == null)
+				return "";
 			var name = overrideMethod.DeclaringType.FullName.Replace('/', '.');
 			name = removeGenericsArityRegex.Replace(name, "");
 			return name + ".";
