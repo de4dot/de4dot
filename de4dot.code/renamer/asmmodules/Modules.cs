@@ -61,17 +61,25 @@ namespace de4dot.code.renamer.asmmodules {
 				moduleHash.Add(module);
 			}
 
-			string GetModuleKey(Module module) {
+			static string GetModuleKey(Module module) {
 				if (module.ModuleDefMD.Assembly != null)
-					return module.ModuleDefMD.Assembly.ToString();
+					return GetAssemblyName(module.ModuleDefMD.Assembly);
 				return Utils.GetBaseName(module.ModuleDefMD.Location);
 			}
 
-			public ModuleHash Lookup(string assemblyName) {
+			public ModuleHash Lookup(IAssembly asm) {
 				ModuleHash moduleHash;
-				if (assemblyHash.TryGetValue(assemblyName, out moduleHash))
+				if (assemblyHash.TryGetValue(GetAssemblyName(asm), out moduleHash))
 					return moduleHash;
 				return null;
+			}
+
+			static string GetAssemblyName(IAssembly asm) {
+				if (asm == null)
+					return string.Empty;
+				if (PublicKeyBase.IsNullOrEmpty2(asm.PublicKeyOrToken))
+					return asm.Name;
+				return asm.FullName;
 			}
 		}
 
@@ -402,7 +410,7 @@ namespace de4dot.code.renamer.asmmodules {
 				var asm = type.Module.Assembly;
 				if (asm == null)
 					return null;
-				var moduleHash = assemblyHash.Lookup(asm.FullName);
+				var moduleHash = assemblyHash.Lookup(asm);
 				if (moduleHash == null)
 					return null;
 				var module = moduleHash.Lookup(scope.ScopeName);
@@ -415,7 +423,7 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 
 		IEnumerable<Module> FindModules(AssemblyRef assemblyRef) {
-			var moduleHash = assemblyHash.Lookup(assemblyRef.FullName);
+			var moduleHash = assemblyHash.Lookup(assemblyRef);
 			if (moduleHash != null)
 				return moduleHash.Modules;
 			return null;
