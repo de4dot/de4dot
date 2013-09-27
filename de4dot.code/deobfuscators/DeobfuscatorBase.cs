@@ -181,6 +181,10 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		public virtual void DeobfuscateEnd() {
+			// Make sure the TypeDefCache isn't enabled while we modify types or remove stuff
+			bool cacheState = module.EnableTypeDefFindCache;
+			module.EnableTypeDefFindCache = false;
+
 			if (CanRemoveTypes) {
 				RemoveTypesWithInvalidBaseTypes();
 
@@ -195,6 +199,8 @@ namespace de4dot.code.deobfuscators {
 
 			RestoreBaseType();
 			FixMDHeaderVersion();
+
+			module.EnableTypeDefFindCache = cacheState;
 		}
 
 		static bool IsTypeWithInvalidBaseType(TypeDef moduleType, TypeDef type) {
