@@ -131,6 +131,7 @@
     <Compile Include="deobfuscators\CryptoObfuscator\CoUtils.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\Deobfuscator.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\InlinedMethodTypes.cs" />
+    <Compile Include="deobfuscators\CryptoObfuscator\LdnullFixer.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\MethodBodyReader.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\MethodsDecrypter.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\ProxyCallFixer.cs" />

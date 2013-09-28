@@ -32,12 +32,14 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		BoolOption removeTamperProtection;
 		BoolOption decryptConstants;
 		BoolOption inlineMethods;
+		BoolOption fixLdnull;
 
 		public DeobfuscatorInfo()
 			: base(DEFAULT_REGEX) {
 			removeTamperProtection = new BoolOption(null, MakeArgName("tamper"), "Remove tamper protection code", true);
 			decryptConstants = new BoolOption(null, MakeArgName("consts"), "Decrypt constants", true);
 			inlineMethods = new BoolOption(null, MakeArgName("inline"), "Inline short methods", true);
+			fixLdnull = new BoolOption(null, MakeArgName("ldnull"), "Restore ldnull instructions", true);
 		}
 
 		public override string Name {
@@ -54,6 +56,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				RemoveTamperProtection = removeTamperProtection.get(),
 				DecryptConstants = decryptConstants.get(),
 				InlineMethods = inlineMethods.get(),
+				FixLdnull = fixLdnull.get(),
 			});
 		}
 
@@ -62,6 +65,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				removeTamperProtection,
 				decryptConstants,
 				inlineMethods,
+				fixLdnull,
 			};
 		}
 	}
@@ -93,6 +97,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			public bool RemoveTamperProtection { get; set; }
 			public bool DecryptConstants { get; set; }
 			public bool InlineMethods { get; set; }
+			public bool FixLdnull { get; set; }
 		}
 
 		public override string Type {
@@ -275,13 +280,14 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		}
 
 		public override void DeobfuscateEnd() {
+			if (options.FixLdnull)
+				new LdnullFixer(module, inlinedMethodTypes).Restore();
 			RemoveProxyDelegates(proxyCallFixer);
 			if (CanRemoveStringDecrypterType) {
 				AddResourceToBeRemoved(stringDecrypter.Resource, "Encrypted strings");
 				AddTypeToBeRemoved(stringDecrypter.Type, "String decrypter type");
 			}
-			if (options.InlineMethods)
-				AddTypesToBeRemoved(inlinedMethodTypes.Types, "Inlined methods types");
+			AddTypesToBeRemoved(inlinedMethodTypes.Types, "Inlined methods type");
 			base.DeobfuscateEnd();
 		}
 

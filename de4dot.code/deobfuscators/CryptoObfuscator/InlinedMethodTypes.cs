@@ -39,7 +39,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			}
 		}
 
-		bool IsValidType(TypeDef type) {
+		static bool IsValidType(TypeDef type) {
 			if (type == null)
 				return false;
 
@@ -62,13 +62,25 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return true;
 		}
 
-		public bool IsValidMethodType(TypeDef type) {
+		public static bool IsValidMethodType(TypeDef type) {
 			if (!IsValidType(type))
 				return false;
 
 			if (type.HasFields)
 				return false;
 			if (type.Methods.Count != 1)
+				return false;
+
+			return true;
+		}
+
+		public static bool IsValidFieldType(TypeDef type) {
+			if (!IsValidType(type))
+				return false;
+
+			if (type.HasMethods)
+				return false;
+			if (type.Fields.Count != 1)
 				return false;
 
 			return true;

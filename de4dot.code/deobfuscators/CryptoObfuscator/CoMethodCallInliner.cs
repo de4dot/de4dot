@@ -37,7 +37,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				return false;
 			if (method.HasGenericParameters)
 				return false;
-			if (!inlinedMethodTypes.IsValidMethodType(method.DeclaringType))
+			if (!InlinedMethodTypes.IsValidMethodType(method.DeclaringType))
 				return false;
 
 			return true;
