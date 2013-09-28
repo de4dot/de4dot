@@ -752,10 +752,21 @@ namespace de4dot.code {
 		}
 		Dictionary<MethodDef, SimpleDeobFlags> simpleDeobfuscatorFlags = new Dictionary<MethodDef, SimpleDeobFlags>();
 		bool Check(MethodDef method, SimpleDeobFlags flag) {
+			if (method == null)
+				return false;
 			SimpleDeobFlags oldFlags;
 			simpleDeobfuscatorFlags.TryGetValue(method, out oldFlags);
 			simpleDeobfuscatorFlags[method] = oldFlags | flag;
 			return (oldFlags & flag) == flag;
+		}
+		bool Clear(MethodDef method, SimpleDeobFlags flag) {
+			if (method == null)
+				return false;
+			SimpleDeobFlags oldFlags;
+			if (!simpleDeobfuscatorFlags.TryGetValue(method, out oldFlags))
+				return false;
+			simpleDeobfuscatorFlags[method] = oldFlags & ~flag;
+			return true;
 		}
 
 		void Deobfuscate(MethodDef method, string msg, Action<Blocks> handler) {
@@ -784,12 +795,16 @@ namespace de4dot.code {
 			Logger.Instance.DeIndent();
 		}
 
+		void ISimpleDeobfuscator.MethodModified(MethodDef method) {
+			Clear(method, SimpleDeobFlags.HasDeobfuscated);
+		}
+
 		void ISimpleDeobfuscator.Deobfuscate(MethodDef method) {
 			((ISimpleDeobfuscator)this).Deobfuscate(method, false);
 		}
 
 		void ISimpleDeobfuscator.Deobfuscate(MethodDef method, bool force) {
-			if (!force && Check(method, SimpleDeobFlags.HasDeobfuscated))
+			if (method == null || !force && Check(method, SimpleDeobFlags.HasDeobfuscated))
 				return;
 
 			Deobfuscate(method, "Deobfuscating control flow", (blocks) => {

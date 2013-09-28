@@ -21,6 +21,7 @@ using dnlib.DotNet;
 
 namespace de4dot.code.deobfuscators {
 	public interface ISimpleDeobfuscator {
+		void MethodModified(MethodDef method);
 		void Deobfuscate(MethodDef method);
 		void Deobfuscate(MethodDef method, bool force);
 		void DecryptStrings(MethodDef method, IDeobfuscator deob);
