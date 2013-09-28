@@ -112,7 +112,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return null;
 		}
 
-		public void Decrypt(ResourceDecrypter resourceDecrypter) {
+		public void Decrypt(ResourceDecrypter resourceDecrypter, ISimpleDeobfuscator simpleDeobfuscator) {
 			if (decryptMethod == null)
 				return;
 
@@ -129,13 +129,13 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				uint codeOffset = reader.ReadUInt32();
 				var origOffset = reader.Position;
 				reader.Position = codeOffset;
-				Decrypt(reader, delegateTypeToken);
+				Decrypt(reader, delegateTypeToken, simpleDeobfuscator);
 				reader.Position = origOffset;
 			}
 			Logger.Instance.DeIndent();
 		}
 
-		void Decrypt(IBinaryReader reader, int delegateTypeToken) {
+		void Decrypt(IBinaryReader reader, int delegateTypeToken, ISimpleDeobfuscator simpleDeobfuscator) {
 			var delegateType = module.ResolveToken(delegateTypeToken) as TypeDef;
 			if (delegateType == null)
 				throw new ApplicationException("Couldn't find delegate type");
@@ -162,6 +162,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 					encMethod.Body.Variables.Count,
 					encMethod.Body.ExceptionHandlers.Count);
 			delegateTypes.Add(delegateType);
+			simpleDeobfuscator.MethodModified(encMethod);
 		}
 
 		bool GetTokens(TypeDef delegateType, out int delegateToken, out int encMethodToken, out int encDeclaringTypeToken) {

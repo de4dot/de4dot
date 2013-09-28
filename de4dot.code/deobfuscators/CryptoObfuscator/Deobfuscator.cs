@@ -221,7 +221,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				DeobfuscatedFile.StringDecryptersAdded();
 			}
 
-			methodsDecrypter.Decrypt(resourceDecrypter);
+			methodsDecrypter.Decrypt(resourceDecrypter, DeobfuscatedFile);
 
 			if (methodsDecrypter.Detected) {
 				if (!assemblyResolver.Detected)
