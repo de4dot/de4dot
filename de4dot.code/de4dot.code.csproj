@@ -126,9 +126,11 @@
     <Compile Include="deobfuscators\CRC32.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\AntiDebugger.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\AssemblyResolver.cs" />
+    <Compile Include="deobfuscators\CryptoObfuscator\CoMethodCallInliner.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\ConstantsDecrypter.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\CoUtils.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\Deobfuscator.cs" />
+    <Compile Include="deobfuscators\CryptoObfuscator\InlinedMethodTypes.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\MethodBodyReader.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\MethodsDecrypter.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\ProxyCallFixer.cs" />

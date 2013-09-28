@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using dnlib.DotNet;
 using de4dot.blocks;
+using de4dot.blocks.cflow;
 
 namespace de4dot.code.deobfuscators.CryptoObfuscator {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
@@ -30,11 +31,13 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		const string DEFAULT_REGEX = @"!^(get_|set_|add_|remove_)?[A-Z]{1,3}(?:`\d+)?$&!^(get_|set_|add_|remove_)?c[0-9a-f]{32}(?:`\d+)?$&" + DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
 		BoolOption removeTamperProtection;
 		BoolOption decryptConstants;
+		BoolOption inlineMethods;
 
 		public DeobfuscatorInfo()
 			: base(DEFAULT_REGEX) {
 			removeTamperProtection = new BoolOption(null, MakeArgName("tamper"), "Remove tamper protection code", true);
 			decryptConstants = new BoolOption(null, MakeArgName("consts"), "Decrypt constants", true);
+			inlineMethods = new BoolOption(null, MakeArgName("inline"), "Inline short methods", true);
 		}
 
 		public override string Name {
@@ -50,6 +53,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				ValidNameRegex = validNameRegex.get(),
 				RemoveTamperProtection = removeTamperProtection.get(),
 				DecryptConstants = decryptConstants.get(),
+				InlineMethods = inlineMethods.get(),
 			});
 		}
 
@@ -57,6 +61,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return new List<Option>() {
 				removeTamperProtection,
 				decryptConstants,
+				inlineMethods,
 			};
 		}
 	}
@@ -67,6 +72,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		bool foundCryptoObfuscatorAttribute = false;
 		bool foundObfuscatedSymbols = false;
 		bool foundObfuscatorUserString = false;
+		bool startedDeobfuscating = false;
 
 		MethodsDecrypter methodsDecrypter;
 		ProxyCallFixer proxyCallFixer;
@@ -81,10 +87,12 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		Int64ValueInliner int64ValueInliner;
 		SingleValueInliner singleValueInliner;
 		DoubleValueInliner doubleValueInliner;
+		InlinedMethodTypes inlinedMethodTypes;
 
 		internal class Options : OptionsBase {
 			public bool RemoveTamperProtection { get; set; }
 			public bool DecryptConstants { get; set; }
+			public bool InlineMethods { get; set; }
 		}
 
 		public override string Type {
@@ -97,6 +105,19 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 
 		public override string Name {
 			get { return obfuscatorName; }
+		}
+
+		protected override bool CanInlineMethods {
+			get { return startedDeobfuscating ? options.InlineMethods : true; }
+		}
+
+		public override IEnumerable<IBlocksDeobfuscator> BlocksDeobfuscators {
+			get {
+				var list = new List<IBlocksDeobfuscator>();
+				if (CanInlineMethods)
+					list.Add(new CoMethodCallInliner(inlinedMethodTypes));
+				return list;
+			}
 		}
 
 		public Deobfuscator(Options options)
@@ -136,6 +157,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			if (CheckCryptoObfuscator())
 				foundObfuscatedSymbols = true;
 
+			inlinedMethodTypes = new InlinedMethodTypes();
 			methodsDecrypter = new MethodsDecrypter(module);
 			methodsDecrypter.Find();
 			proxyCallFixer = new ProxyCallFixer(module);
@@ -236,6 +258,8 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			proxyCallFixer.Find();
 
 			DumpEmbeddedAssemblies();
+
+			startedDeobfuscating = true;
 		}
 
 		public override void DeobfuscateMethodEnd(Blocks blocks) {
@@ -256,6 +280,8 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				AddResourceToBeRemoved(stringDecrypter.Resource, "Encrypted strings");
 				AddTypeToBeRemoved(stringDecrypter.Type, "String decrypter type");
 			}
+			if (options.InlineMethods)
+				AddTypesToBeRemoved(inlinedMethodTypes.Types, "Inlined methods types");
 			base.DeobfuscateEnd();
 		}
 
