@@ -142,7 +142,9 @@ namespace de4dot.blocks.cflow {
 			if (instr == null || loadIndex != methodArgsCount - popLastArgs)
 				return null;
 
-			if (instr.OpCode.Code == Code.Call || instr.OpCode.Code == Code.Callvirt) {
+			switch (instr.OpCode.Code) {
+			case Code.Call:
+			case Code.Callvirt:
 				if (foundLdarga)
 					return null;
 				var callInstr = instr;
@@ -160,8 +162,8 @@ namespace de4dot.blocks.cflow {
 					return null;
 
 				return new InstructionPatcher(patchIndex, instrIndex, callInstr);
-			}
-			else if (instr.OpCode.Code == Code.Newobj) {
+
+			case Code.Newobj:
 				if (foundLdarga)
 					return null;
 				var newobjInstr = instr;
@@ -185,20 +187,30 @@ namespace de4dot.blocks.cflow {
 					return null;
 
 				return new InstructionPatcher(patchIndex, instrIndex, newobjInstr);
-			}
-			else if (instr.OpCode.Code == Code.Ldfld || instr.OpCode.Code == Code.Ldflda ||
-					instr.OpCode.Code == Code.Ldftn || instr.OpCode.Code == Code.Ldvirtftn) {
+
+			case Code.Ldfld:
+			case Code.Ldflda:
+			case Code.Ldftn:
+			case Code.Ldvirtftn:
+			case Code.Ldlen:
+			case Code.Initobj:
+			case Code.Isinst:
+			case Code.Castclass:
+			case Code.Newarr:
+			case Code.Ldtoken:
+			case Code.Unbox_Any:
 				var ldInstr = instr;
 				if (methodArgsCount != 1)
 					return null;
 
-				if (!HasAccessTo(instr.Operand))
+				if (instr.OpCode.OperandType != OperandType.InlineNone && !HasAccessTo(instr.Operand))
 					return null;
 
 				return new InstructionPatcher(patchIndex, instrIndex, ldInstr);
-			}
 
-			return null;
+			default:
+				return null;
+			}
 		}
 
 		bool HasAccessTo(object operand) {
