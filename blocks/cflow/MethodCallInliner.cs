@@ -71,6 +71,7 @@ namespace de4dot.blocks.cflow {
 			if (instr == null)
 				return false;
 
+			bool inlinedMethod;
 			switch (instr.OpCode.Code) {
 			case Code.Ldarg:
 			case Code.Ldarg_S:
@@ -83,7 +84,8 @@ namespace de4dot.blocks.cflow {
 			case Code.Call:
 			case Code.Callvirt:
 			case Code.Newobj:
-				return InlineOtherMethod(instrIndex, methodToInline, instr, index);
+				inlinedMethod = InlineOtherMethod(instrIndex, methodToInline, instr, index);
+				break;
 
 			case Code.Ldc_I4:
 			case Code.Ldc_I4_0:
@@ -106,11 +108,18 @@ namespace de4dot.blocks.cflow {
 			case Code.Ldtoken:
 			case Code.Ldsfld:
 			case Code.Ldsflda:
-				return InlineLoadMethod(instrIndex, methodToInline, instr, index);
+				inlinedMethod = InlineLoadMethod(instrIndex, methodToInline, instr, index);
+				break;
 
 			default:
-				return false;
+				inlinedMethod = false;
+				break;
 			}
+			OnInlinedMethod(methodToInline, inlinedMethod);
+			return inlinedMethod;
+		}
+
+		protected virtual void OnInlinedMethod(MethodDef methodToInline, bool inlinedMethod) {
 		}
 
 		protected override bool IsCompatibleType(int paramIndex, IType origType, IType newType) {
