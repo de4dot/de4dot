@@ -67,7 +67,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			this.module = module;
 		}
 
-		public void Find() {
+		public void Find(ISimpleDeobfuscator simpleDeobfuscator) {
 			var cctor = DotNetUtils.GetModuleTypeCctor(module);
 			if (cctor == null)
 				return;
@@ -77,14 +77,15 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 					continue;
 				if (!method.IsStatic || !DotNetUtils.IsMethod(method, "System.Void", "()"))
 					continue;
-				if (CheckType(method.DeclaringType, method))
+				if (CheckType(method.DeclaringType, method, simpleDeobfuscator))
 					break;
 			}
 		}
 
-		bool CheckType(TypeDef type, MethodDef initMethod) {
+		bool CheckType(TypeDef type, MethodDef initMethod, ISimpleDeobfuscator simpleDeobfuscator) {
 			if (DotNetUtils.FindFieldType(type, "System.Collections.Hashtable", true) == null)
 				return false;
+			simpleDeobfuscator.Deobfuscate(initMethod);
 			if (!CheckInitMethod(initMethod))
 				return false;
 			if ((asmSeparator = FindAssemblySeparator(initMethod)) == null)

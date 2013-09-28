@@ -210,7 +210,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			resourceResolver = new ResourceResolver(module, resourceDecrypter);
 			assemblyResolver = new AssemblyResolver(module);
 			resourceResolver.Find();
-			assemblyResolver.Find();
+			assemblyResolver.Find(DeobfuscatedFile);
 
 			DecryptResources();
 			stringDecrypter.Initialize(resourceDecrypter);
@@ -225,7 +225,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 
 			if (methodsDecrypter.Detected) {
 				if (!assemblyResolver.Detected)
-					assemblyResolver.Find();
+					assemblyResolver.Find(DeobfuscatedFile);
 				if (!tamperDetection.Detected)
 					tamperDetection.Find();
 			}
