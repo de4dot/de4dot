@@ -17,14 +17,14 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-namespace AssemblyData {
-	public enum AssemblyServiceType {
-		StringDecrypter,
-		MethodDecrypter,
-	}
+using de4dot.blocks;
+using de4dot.mdecrypt;
 
-	public interface IAssemblyService {
-		void DoNothing();
-		void Exit();
+namespace AssemblyData {
+	public interface IMethodDecrypterService : IAssemblyService {
+		void InstallCompileMethod(DecryptMethodsInfo decryptMethodsInfo);
+		void LoadObfuscator(string filename);
+		bool CanDecryptMethods();
+		DumpedMethods DecryptMethods();
 	}
 }

@@ -42,7 +42,10 @@
     <Compile Include="DelegateStringDecrypter.cs" />
     <Compile Include="EmuStringDecrypter.cs" />
     <Compile Include="IAssemblyService.cs" />
+    <Compile Include="IMethodDecrypterService.cs" />
     <Compile Include="IStringDecrypter.cs" />
+    <Compile Include="IStringDecrypterService.cs" />
+    <Compile Include="MethodDecrypterService.cs" />
     <Compile Include="methodsrewriter\AssemblyResolver.cs" />
     <Compile Include="methodsrewriter\CodeGenerator.cs" />
     <Compile Include="methodsrewriter\IMethodsRewriter.cs" />
@@ -58,6 +61,7 @@
     <Compile Include="methodsrewriter\TypeResolver.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SimpleData.cs" />
+    <Compile Include="StringDecrypterService.cs" />
     <Compile Include="Utils.cs" />
   </ItemGroup>
   <ItemGroup>

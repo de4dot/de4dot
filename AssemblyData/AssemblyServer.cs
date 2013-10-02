@@ -27,12 +27,13 @@ using AssemblyData;
 namespace AssemblyServer {
 	public static class Start {
 		public static int Main2(string[] args) {
-			if (args.Length != 2)
+			if (args.Length != 3)
 				Environment.Exit(1);
-			var channelName = args[0];
-			var uri = args[1];
+			var serviceType = (AssemblyServiceType)Int32.Parse(args[0]);
+			var channelName = args[1];
+			var uri = args[2];
 
-			var service = new AssemblyService();
+			var service = (AssemblyService)AssemblyService.Create(serviceType);
 			StartServer(service, channelName, uri);
 			service.WaitExit();
 			return 0;

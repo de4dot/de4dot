@@ -35,8 +35,12 @@ namespace de4dot.code.AssemblyClient {
 			get { return service; }
 		}
 
-		public AssemblyClient()
-			: this(new NewProcessAssemblyServerLoader()) {
+		public IStringDecrypterService StringDecrypterService {
+			get { return (IStringDecrypterService)service; }
+		}
+
+		public IMethodDecrypterService MethodDecrypterService {
+			get { return (IMethodDecrypterService)service; }
 		}
 
 		public AssemblyClient(IAssemblyServerLoader loader) {

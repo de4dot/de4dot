@@ -19,12 +19,17 @@
 
 using System;
 using System.Threading;
+using AssemblyData;
 
 namespace de4dot.code.AssemblyClient {
 	// Starts the server in a new app domain.
 	sealed class NewAppDomainAssemblyServerLoader : IpcAssemblyServerLoader {
 		AppDomain appDomain;
 		Thread thread;
+
+		public NewAppDomainAssemblyServerLoader(AssemblyServiceType serviceType)
+			: base(serviceType) {
+		}
 
 		public override void LoadServer(string filename) {
 			if (appDomain != null)
@@ -33,7 +38,9 @@ namespace de4dot.code.AssemblyClient {
 			appDomain = AppDomain.CreateDomain(Utils.RandomName(15, 20));
 			thread = new Thread(new ThreadStart(() => {
 				try {
-					appDomain.ExecuteAssembly(filename, null, new string[] { ipcName, ipcUri });
+					appDomain.ExecuteAssembly(filename, null, new string[] {
+						((int)serviceType).ToString(), ipcName, ipcUri
+					});
 				}
 				catch (NullReferenceException) {
 					// Here if appDomain was set to null by Dispose() before this thread started

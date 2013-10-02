@@ -18,13 +18,15 @@
 */
 
 namespace AssemblyData {
-	public enum AssemblyServiceType {
-		StringDecrypter,
-		MethodDecrypter,
+	public enum StringDecrypterType {
+		Delegate,
+		Emulate,
 	}
 
-	public interface IAssemblyService {
-		void DoNothing();
-		void Exit();
+	public interface IStringDecrypterService : IAssemblyService {
+		void LoadAssembly(string filename);
+		void SetStringDecrypterType(StringDecrypterType type);
+		int DefineStringDecrypter(int methodToken);
+		object[] DecryptStrings(int stringDecrypterMethod, object[] args, int callerToken);
 	}
 }

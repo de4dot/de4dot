@@ -89,7 +89,7 @@ namespace de4dot.code {
 			foreach (var methodToken in methodTokens) {
 				if (methodTokenToId.ContainsKey(methodToken))
 					continue;
-				methodTokenToId[methodToken] = assemblyClient.Service.DefineStringDecrypter(methodToken);
+				methodTokenToId[methodToken] = assemblyClient.StringDecrypterService.DefineStringDecrypter(methodToken);
 			}
 		}
 
@@ -117,7 +117,7 @@ namespace de4dot.code {
 					AssemblyData.SimpleData.Pack(list[i].args);
 					args[i] = list[i].args;
 				}
-				var decryptedStrings = assemblyClient.Service.DecryptStrings(methodId, args, Method.MDToken.ToInt32());
+				var decryptedStrings = assemblyClient.StringDecrypterService.DecryptStrings(methodId, args, Method.MDToken.ToInt32());
 				if (decryptedStrings.Length != args.Length)
 					throw new ApplicationException("Invalid decrypted strings array length");
 				AssemblyData.SimpleData.Unpack(decryptedStrings);

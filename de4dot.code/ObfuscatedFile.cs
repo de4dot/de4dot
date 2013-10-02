@@ -26,6 +26,7 @@ using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using dnlib.DotNet.Writer;
 using dnlib.PE;
+using AssemblyData;
 using de4dot.code.deobfuscators;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
@@ -375,9 +376,9 @@ namespace de4dot.code {
 				CheckSupportedStringDecrypter(StringFeatures.AllowDynamicDecryption);
 				var newProcFactory = assemblyClientFactory as NewProcessAssemblyClientFactory;
 				if (newProcFactory != null)
-					assemblyClient = newProcFactory.Create(module);
+					assemblyClient = newProcFactory.Create(AssemblyServiceType.StringDecrypter, module);
 				else
-					assemblyClient = assemblyClientFactory.Create();
+					assemblyClient = assemblyClientFactory.Create(AssemblyServiceType.StringDecrypter);
 				assemblyClient.Connect();
 				break;
 
@@ -432,12 +433,12 @@ namespace de4dot.code {
 				return;
 
 			assemblyClient.WaitConnected();
-			assemblyClient.Service.LoadAssembly(options.Filename);
+			assemblyClient.StringDecrypterService.LoadAssembly(options.Filename);
 
 			if (options.StringDecrypterType == DecrypterType.Delegate)
-				assemblyClient.Service.SetStringDecrypterType(AssemblyData.StringDecrypterType.Delegate);
+				assemblyClient.StringDecrypterService.SetStringDecrypterType(AssemblyData.StringDecrypterType.Delegate);
 			else if (options.StringDecrypterType == DecrypterType.Emulate)
-				assemblyClient.Service.SetStringDecrypterType(AssemblyData.StringDecrypterType.Emulate);
+				assemblyClient.StringDecrypterService.SetStringDecrypterType(AssemblyData.StringDecrypterType.Emulate);
 			else
 				throw new ApplicationException(string.Format("Invalid string decrypter type '{0}'", options.StringDecrypterType));
 

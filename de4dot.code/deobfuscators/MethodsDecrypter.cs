@@ -18,6 +18,7 @@
 */
 
 using dnlib.DotNet;
+using AssemblyData;
 using de4dot.code.AssemblyClient;
 using de4dot.blocks;
 using de4dot.mdecrypt;
@@ -29,14 +30,14 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		public static DumpedMethods Decrypt(ServerClrVersion serverVersion, string filename, byte[] moduleCctorBytes) {
-			using (var client = new NewProcessAssemblyClientFactory(serverVersion).Create()) {
+			using (var client = new NewProcessAssemblyClientFactory(serverVersion).Create(AssemblyServiceType.MethodDecrypter)) {
 				client.Connect();
 				client.WaitConnected();
 				var info = new DecryptMethodsInfo();
 				info.moduleCctorBytes = moduleCctorBytes;
-				client.Service.InstallCompileMethod(info);
-				client.Service.LoadObfuscator(filename);
-				return client.Service.DecryptMethods();
+				client.MethodDecrypterService.InstallCompileMethod(info);
+				client.MethodDecrypterService.LoadObfuscator(filename);
+				return client.MethodDecrypterService.DecryptMethods();
 			}
 		}
 	}
