@@ -335,9 +335,9 @@
       <Project>{FBD84077-9D35-41FE-89DF-8D79EFE0B595}</Project>
       <Name>AssemblyData</Name>
     </ProjectReference>
-    <ProjectReference Include="..\blocks\blocks.csproj">
+    <ProjectReference Include="..\de4dot.blocks\de4dot.blocks.csproj">
       <Project>{045B96F2-AF80-4C4C-8D27-E38635AC705E}</Project>
-      <Name>blocks</Name>
+      <Name>de4dot.blocks</Name>
     </ProjectReference>
     <ProjectReference Include="..\de4dot.mdecrypt\de4dot.mdecrypt.csproj">
       <Project>{5C93C5E2-196F-4877-BF65-96FEBFCEFCA1}</Project>

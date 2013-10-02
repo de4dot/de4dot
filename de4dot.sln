@@ -17,7 +17,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssemblyServer", "AssemblyS
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssemblyServer-x64", "AssemblyServer-x64\AssemblyServer-x64.csproj", "{F458A89A-AEAB-4965-AA4D-393C9F7411D0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "blocks", "blocks\blocks.csproj", "{045B96F2-AF80-4C4C-8D27-E38635AC705E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "de4dot.blocks", "de4dot.blocks\de4dot.blocks.csproj", "{045B96F2-AF80-4C4C-8D27-E38635AC705E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "de4dot.cui", "de4dot.cui\de4dot.cui.csproj", "{879E4A7E-C320-42D2-8275-4F1E44CE64AA}"
 EndProject

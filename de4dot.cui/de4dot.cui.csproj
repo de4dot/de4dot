@@ -43,9 +43,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\blocks\blocks.csproj">
+    <ProjectReference Include="..\de4dot.blocks\de4dot.blocks.csproj">
       <Project>{045B96F2-AF80-4C4C-8D27-E38635AC705E}</Project>
-      <Name>blocks</Name>
+      <Name>de4dot.blocks</Name>
     </ProjectReference>
     <ProjectReference Include="..\de4dot.code\de4dot.code.csproj">
       <Project>{4D10B9EB-3BF1-4D61-A389-CB019E8C9622}</Project>

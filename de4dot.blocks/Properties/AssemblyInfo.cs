@@ -20,11 +20,11 @@
 using System.Reflection;
 using System.Runtime.InteropServices;
 
-[assembly: AssemblyTitle("blocks")]
+[assembly: AssemblyTitle("de4dot.blocks")]
 [assembly: AssemblyDescription("Modifies dnlib MethodDef bodies")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("blocks")]
+[assembly: AssemblyProduct("de4dot.blocks")]
 [assembly: AssemblyCopyright("Copyright (C) 2011-2013 de4dot@gmail.com")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
