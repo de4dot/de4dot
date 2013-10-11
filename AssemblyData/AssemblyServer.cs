@@ -29,7 +29,7 @@ namespace AssemblyServer {
 		public static int Main2(string[] args) {
 			if (args.Length != 3)
 				Environment.Exit(1);
-			var serviceType = (AssemblyServiceType)Int32.Parse(args[0]);
+			var serviceType = (AssemblyServiceType)int.Parse(args[0]);
 			var channelName = args[1];
 			var uri = args[2];
 
