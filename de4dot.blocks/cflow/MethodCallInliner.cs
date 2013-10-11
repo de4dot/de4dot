@@ -55,6 +55,10 @@ namespace de4dot.blocks.cflow {
 			return inlineInstanceMethods;
 		}
 
+		protected virtual Instruction GetFirstInstruction(IList<Instruction> instrs, ref int index) {
+			return DotNetUtils.GetInstruction(instrs, ref index);
+		}
+
 		bool InlineMethod(Instruction callInstr, int instrIndex) {
 			var methodToInline = callInstr.Operand as MethodDef;
 			if (methodToInline == null)
@@ -67,7 +71,7 @@ namespace de4dot.blocks.cflow {
 				return false;
 
 			int index = 0;
-			var instr = DotNetUtils.GetInstruction(body.Instructions, ref index);
+			var instr = GetFirstInstruction(body.Instructions, ref index);
 			if (instr == null)
 				return false;
 
