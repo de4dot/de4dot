@@ -26,6 +26,7 @@ using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using dnlib.DotNet.Writer;
 using de4dot.blocks;
+using de4dot.blocks.cflow;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
@@ -140,6 +141,15 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 
 		protected override bool CanInlineMethods {
 			get { return startedDeobfuscating ? options.InlineMethods : true; }
+		}
+
+		public override IEnumerable<IBlocksDeobfuscator> BlocksDeobfuscators {
+			get {
+				var list = new List<IBlocksDeobfuscator>();
+				if (CanInlineMethods)
+					list.Add(new DnrMethodCallInliner());
+				return list;
+			}
 		}
 
 		public Deobfuscator(Options options)
@@ -333,8 +343,12 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			}
 
 			var compileMethod = MethodsDecrypter.FindDnrCompileMethod(methodsDecrypter.Method.DeclaringType);
-			if (compileMethod == null)
-				return DeobfuscatorInfo.THE_NAME + " < 4.0";
+			if (compileMethod == null) {
+				DeobfuscatedFile.Deobfuscate(methodsDecrypter.Method);
+				if (!MethodsDecrypter.IsNewer45Decryption(methodsDecrypter.Method))
+					return DeobfuscatorInfo.THE_NAME + " < 4.0";
+				return DeobfuscatorInfo.THE_NAME + " 4.5+";
+			}
 			DeobfuscatedFile.Deobfuscate(compileMethod);
 			bool compileMethodHasConstant_0x70000000 = DeobUtils.HasInteger(compileMethod, 0x70000000);	// 4.0-4.1
 			DeobfuscatedFile.Deobfuscate(methodsDecrypter.Method);
@@ -346,11 +360,27 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				return DeobfuscatorInfo.THE_NAME + " 4.0";
 			}
 			if (!hasCorEnableProfilingString) {
-				// 4.x or 4.5
+				// 4.x or 4.5 - 4.6
 				bool callsReverse = DotNetUtils.CallsMethod(methodsDecrypter.Method, "System.Void System.Array::Reverse(System.Array)");
 				if (!callsReverse)
-					return DeobfuscatorInfo.THE_NAME + " 4.x";
-				return DeobfuscatorInfo.THE_NAME + " 4.5";
+					return DeobfuscatorInfo.THE_NAME + " 4.0 - 4.4";
+
+				int numIntPtrSizeCompares = CountCompareSystemIntPtrSize(methodsDecrypter.Method);
+				if (module.IsClr40) {
+					switch (numIntPtrSizeCompares) {
+					case 9: return DeobfuscatorInfo.THE_NAME + " 4.5";
+					case 10:return DeobfuscatorInfo.THE_NAME + " 4.6";
+					}
+				}
+				else {
+					switch (numIntPtrSizeCompares) {
+					case 8: return DeobfuscatorInfo.THE_NAME + " 4.5";
+					case 9: return DeobfuscatorInfo.THE_NAME + " 4.6";
+					}
+				}
+
+				// Should never be reached unless it's a new version
+				return DeobfuscatorInfo.THE_NAME + " 4.5+";
 			}
 
 			// 4.2-4.4
@@ -362,6 +392,29 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			if (localTypes.Exists("System.Object"))
 				return DeobfuscatorInfo.THE_NAME + " 4.4";
 			return DeobfuscatorInfo.THE_NAME + " 4.3";
+		}
+
+		static int CountCompareSystemIntPtrSize(MethodDef method) {
+			if (method == null || method.Body == null)
+				return 0;
+			int count = 0;
+			var instrs = method.Body.Instructions;
+			for (int i = 1; i < instrs.Count - 1; i++) {
+				var ldci4 = instrs[i];
+				if (!ldci4.IsLdcI4() || ldci4.GetLdcI4Value() != 4)
+					continue;
+				if (!instrs[i + 1].IsConditionalBranch())
+					continue;
+				var call = instrs[i - 1];
+				if (call.OpCode.Code != Code.Call)
+					continue;
+				var calledMethod = call.Operand as MemberRef;
+				if (calledMethod == null || calledMethod.FullName != "System.Int32 System.IntPtr::get_Size()")
+					continue;
+
+				count++;
+			}
+			return count;
 		}
 
 		static bool FindString(MethodDef method, string s) {
