@@ -204,7 +204,6 @@ namespace de4dot.code.deobfuscators.Rummage {
 				"System.Int64",
 			};
 			static readonly string[] requiredLocals = new string[] {
-				"System.Boolean",
 				"System.Byte[]",
 				"System.Int32",
 				"System.IO.FileStream",

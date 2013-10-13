@@ -88,7 +88,7 @@ namespace de4dot.code.deobfuscators.Rummage {
 			string version;
 			switch (stringDecrypter.Version) {
 			case RummageVersion.V1_1_445: version = "v1.1 - v2.0"; break;
-			case RummageVersion.V2_1_729: version = "v2.1 - v2.2"; break;
+			case RummageVersion.V2_1_729: version = "v2.1+"; break;
 			default: version = null; break;
 			}
 			if (version != null)
