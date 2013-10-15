@@ -73,14 +73,22 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 					continue;
 
 				simpleDeobfuscator.Deobfuscate(method);
-				var instructions = method.Body.Instructions;
-				for (int i = 0; i <= instructions.Count - 3; i++) {
-					var ldci4 = method.Body.Instructions[i];
+				var instrs = method.Body.Instructions;
+				for (int i = 0; i < instrs.Count - 3; i++) {
+					var ldarg = instrs[i];
+					if (!ldarg.IsLdarg() || ldarg.GetParameterIndex() != 0)
+						continue;
+					var callvirt = instrs[i + 1];
+					if (callvirt.OpCode.Code != Code.Callvirt)
+						continue;
+					var calledMethod = callvirt.Operand as MemberRef;
+					if (calledMethod == null || calledMethod.FullName != "System.Char[] System.String::ToCharArray()")
+						continue;
+					var stloc = instrs[i + 2];
+					if (!stloc.IsStloc())
+						continue;
+					var ldci4 = instrs[i + 3];
 					if (!ldci4.IsLdcI4())
-						continue;
-					if (instructions[i + 1].OpCode.Code != Code.Ldarg_1)
-						continue;
-					if (instructions[i + 2].OpCode.Code != Code.Add)
 						continue;
 
 					var info = new StringDecrypterInfo(method, ldci4.GetLdcI4Value());
