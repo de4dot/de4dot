@@ -297,8 +297,8 @@ namespace de4dot.blocks.cflow {
 			case Code.Ldc_I8:	valueStack.Push(new Int64Value((long)instr.Operand)); break;
 			case Code.Ldc_R4:	valueStack.Push(new Real8Value((float)instr.Operand)); break;
 			case Code.Ldc_R8:	valueStack.Push(new Real8Value((double)instr.Operand)); break;
-			case Code.Ldc_I4_0:	valueStack.Push(Int32Value.zero); break;
-			case Code.Ldc_I4_1:	valueStack.Push(Int32Value.one); break;
+			case Code.Ldc_I4_0:	valueStack.Push(Int32Value.Zero); break;
+			case Code.Ldc_I4_1:	valueStack.Push(Int32Value.One); break;
 			case Code.Ldc_I4_2:	valueStack.Push(new Int32Value(2)); break;
 			case Code.Ldc_I4_3:	valueStack.Push(new Int32Value(3)); break;
 			case Code.Ldc_I4_4:	valueStack.Push(new Int32Value(4)); break;
@@ -347,29 +347,29 @@ namespace de4dot.blocks.cflow {
 			case Code.Castclass: Emulate_Castclass(instr); break;
 			case Code.Isinst:	Emulate_Isinst(instr); break;
 
-			case Code.Add_Ovf:	EmulateIntOps2(); break;
-			case Code.Add_Ovf_Un: EmulateIntOps2(); break;
-			case Code.Sub_Ovf:	EmulateIntOps2(); break;
-			case Code.Sub_Ovf_Un: EmulateIntOps2(); break;
-			case Code.Mul_Ovf:	EmulateIntOps2(); break;
-			case Code.Mul_Ovf_Un: EmulateIntOps2(); break;
+			case Code.Add_Ovf:	Emulate_Add_Ovf(instr); break;
+			case Code.Add_Ovf_Un: Emulate_Add_Ovf_Un(instr); break;
+			case Code.Sub_Ovf:	Emulate_Sub_Ovf(instr); break;
+			case Code.Sub_Ovf_Un: Emulate_Sub_Ovf_Un(instr); break;
+			case Code.Mul_Ovf:	Emulate_Mul_Ovf(instr); break;
+			case Code.Mul_Ovf_Un: Emulate_Mul_Ovf_Un(instr); break;
 
-			case Code.Conv_Ovf_I1:
-			case Code.Conv_Ovf_I1_Un: valueStack.Pop(); valueStack.Push(Int32Value.CreateUnknown()); break;
-			case Code.Conv_Ovf_I2:
-			case Code.Conv_Ovf_I2_Un: valueStack.Pop(); valueStack.Push(Int32Value.CreateUnknown()); break;
-			case Code.Conv_Ovf_I4:
-			case Code.Conv_Ovf_I4_Un: valueStack.Pop(); valueStack.Push(Int32Value.CreateUnknown()); break;
-			case Code.Conv_Ovf_I8:
-			case Code.Conv_Ovf_I8_Un: valueStack.Pop(); valueStack.Push(Int64Value.CreateUnknown()); break;
-			case Code.Conv_Ovf_U1:
-			case Code.Conv_Ovf_U1_Un: valueStack.Pop(); valueStack.Push(Int32Value.CreateUnknownUInt8()); break;
-			case Code.Conv_Ovf_U2:
-			case Code.Conv_Ovf_U2_Un: valueStack.Pop(); valueStack.Push(Int32Value.CreateUnknownUInt16()); break;
-			case Code.Conv_Ovf_U4:
-			case Code.Conv_Ovf_U4_Un: valueStack.Pop(); valueStack.Push(Int32Value.CreateUnknown()); break;
-			case Code.Conv_Ovf_U8:
-			case Code.Conv_Ovf_U8_Un: valueStack.Pop(); valueStack.Push(Int64Value.CreateUnknown()); break;
+			case Code.Conv_Ovf_I1:		Emulate_Conv_Ovf_I1(instr); break;
+			case Code.Conv_Ovf_I1_Un:	Emulate_Conv_Ovf_I1_Un(instr); break;
+			case Code.Conv_Ovf_I2:		Emulate_Conv_Ovf_I2(instr); break;
+			case Code.Conv_Ovf_I2_Un:	Emulate_Conv_Ovf_I2_Un(instr); break;
+			case Code.Conv_Ovf_I4:		Emulate_Conv_Ovf_I4(instr); break;
+			case Code.Conv_Ovf_I4_Un:	Emulate_Conv_Ovf_I4_Un(instr); break;
+			case Code.Conv_Ovf_I8:		Emulate_Conv_Ovf_I8(instr); break;
+			case Code.Conv_Ovf_I8_Un:	Emulate_Conv_Ovf_I8_Un(instr); break;
+			case Code.Conv_Ovf_U1:		Emulate_Conv_Ovf_U1(instr); break;
+			case Code.Conv_Ovf_U1_Un:	Emulate_Conv_Ovf_U1_Un(instr); break;
+			case Code.Conv_Ovf_U2:		Emulate_Conv_Ovf_U2(instr); break;
+			case Code.Conv_Ovf_U2_Un:	Emulate_Conv_Ovf_U2_Un(instr); break;
+			case Code.Conv_Ovf_U4:		Emulate_Conv_Ovf_U4(instr); break;
+			case Code.Conv_Ovf_U4_Un:	Emulate_Conv_Ovf_U4_Un(instr); break;
+			case Code.Conv_Ovf_U8:		Emulate_Conv_Ovf_U8(instr); break;
+			case Code.Conv_Ovf_U8_Un:	Emulate_Conv_Ovf_U8_Un(instr); break;
 
 			case Code.Ldelem_I1: valueStack.Pop(2); valueStack.Push(Int32Value.CreateUnknown()); break;
 			case Code.Ldelem_I2: valueStack.Pop(2); valueStack.Push(Int32Value.CreateUnknown()); break;
@@ -595,6 +595,166 @@ namespace de4dot.blocks.cflow {
 			}
 		}
 
+		void Emulate_Conv_Ovf_I1(Instruction instr) {
+			var val1 = valueStack.Pop();
+			switch (val1.valueType) {
+			case ValueType.Int32:	valueStack.Push(Int32Value.Conv_Ovf_I1((Int32Value)val1)); break;
+			case ValueType.Int64:	valueStack.Push(Int64Value.Conv_Ovf_I1((Int64Value)val1)); break;
+			case ValueType.Real8:	valueStack.Push(Real8Value.Conv_Ovf_I1((Real8Value)val1)); break;
+			default:				valueStack.Push(Int32Value.CreateUnknown()); break;
+			}
+		}
+
+		void Emulate_Conv_Ovf_I1_Un(Instruction instr) {
+			var val1 = valueStack.Pop();
+			switch (val1.valueType) {
+			case ValueType.Int32:	valueStack.Push(Int32Value.Conv_Ovf_I1_Un((Int32Value)val1)); break;
+			case ValueType.Int64:	valueStack.Push(Int64Value.Conv_Ovf_I1_Un((Int64Value)val1)); break;
+			case ValueType.Real8:	valueStack.Push(Real8Value.Conv_Ovf_I1_Un((Real8Value)val1)); break;
+			default:				valueStack.Push(Int32Value.CreateUnknown()); break;
+			}
+		}
+
+		void Emulate_Conv_Ovf_I2(Instruction instr) {
+			var val1 = valueStack.Pop();
+			switch (val1.valueType) {
+			case ValueType.Int32:	valueStack.Push(Int32Value.Conv_Ovf_I2((Int32Value)val1)); break;
+			case ValueType.Int64:	valueStack.Push(Int64Value.Conv_Ovf_I2((Int64Value)val1)); break;
+			case ValueType.Real8:	valueStack.Push(Real8Value.Conv_Ovf_I2((Real8Value)val1)); break;
+			default:				valueStack.Push(Int32Value.CreateUnknown()); break;
+			}
+		}
+
+		void Emulate_Conv_Ovf_I2_Un(Instruction instr) {
+			var val1 = valueStack.Pop();
+			switch (val1.valueType) {
+			case ValueType.Int32:	valueStack.Push(Int32Value.Conv_Ovf_I2_Un((Int32Value)val1)); break;
+			case ValueType.Int64:	valueStack.Push(Int64Value.Conv_Ovf_I2_Un((Int64Value)val1)); break;
+			case ValueType.Real8:	valueStack.Push(Real8Value.Conv_Ovf_I2_Un((Real8Value)val1)); break;
+			default:				valueStack.Push(Int32Value.CreateUnknown()); break;
+			}
+		}
+
+		void Emulate_Conv_Ovf_I4(Instruction instr) {
+			var val1 = valueStack.Pop();
+			switch (val1.valueType) {
+			case ValueType.Int32:	valueStack.Push(Int32Value.Conv_Ovf_I4((Int32Value)val1)); break;
+			case ValueType.Int64:	valueStack.Push(Int64Value.Conv_Ovf_I4((Int64Value)val1)); break;
+			case ValueType.Real8:	valueStack.Push(Real8Value.Conv_Ovf_I4((Real8Value)val1)); break;
+			default:				valueStack.Push(Int32Value.CreateUnknown()); break;
+			}
+		}
+
+		void Emulate_Conv_Ovf_I4_Un(Instruction instr) {
+			var val1 = valueStack.Pop();
+			switch (val1.valueType) {
+			case ValueType.Int32:	valueStack.Push(Int32Value.Conv_Ovf_I4_Un((Int32Value)val1)); break;
+			case ValueType.Int64:	valueStack.Push(Int64Value.Conv_Ovf_I4_Un((Int64Value)val1)); break;
+			case ValueType.Real8:	valueStack.Push(Real8Value.Conv_Ovf_I4_Un((Real8Value)val1)); break;
+			default:				valueStack.Push(Int32Value.CreateUnknown()); break;
+			}
+		}
+
+		void Emulate_Conv_Ovf_I8(Instruction instr) {
+			var val1 = valueStack.Pop();
+			switch (val1.valueType) {
+			case ValueType.Int32:	valueStack.Push(Int32Value.Conv_Ovf_I8((Int32Value)val1)); break;
+			case ValueType.Int64:	valueStack.Push(Int64Value.Conv_Ovf_I8((Int64Value)val1)); break;
+			case ValueType.Real8:	valueStack.Push(Real8Value.Conv_Ovf_I8((Real8Value)val1)); break;
+			default:				valueStack.Push(Int64Value.CreateUnknown()); break;
+			}
+		}
+
+		void Emulate_Conv_Ovf_I8_Un(Instruction instr) {
+			var val1 = valueStack.Pop();
+			switch (val1.valueType) {
+			case ValueType.Int32:	valueStack.Push(Int32Value.Conv_Ovf_I8_Un((Int32Value)val1)); break;
+			case ValueType.Int64:	valueStack.Push(Int64Value.Conv_Ovf_I8_Un((Int64Value)val1)); break;
+			case ValueType.Real8:	valueStack.Push(Real8Value.Conv_Ovf_I8_Un((Real8Value)val1)); break;
+			default:				valueStack.Push(Int64Value.CreateUnknown()); break;
+			}
+		}
+
+		void Emulate_Conv_Ovf_U1(Instruction instr) {
+			var val1 = valueStack.Pop();
+			switch (val1.valueType) {
+			case ValueType.Int32:	valueStack.Push(Int32Value.Conv_Ovf_U1((Int32Value)val1)); break;
+			case ValueType.Int64:	valueStack.Push(Int64Value.Conv_Ovf_U1((Int64Value)val1)); break;
+			case ValueType.Real8:	valueStack.Push(Real8Value.Conv_Ovf_U1((Real8Value)val1)); break;
+			default:				valueStack.Push(Int32Value.CreateUnknownUInt8()); break;
+			}
+		}
+
+		void Emulate_Conv_Ovf_U1_Un(Instruction instr) {
+			var val1 = valueStack.Pop();
+			switch (val1.valueType) {
+			case ValueType.Int32:	valueStack.Push(Int32Value.Conv_Ovf_U1_Un((Int32Value)val1)); break;
+			case ValueType.Int64:	valueStack.Push(Int64Value.Conv_Ovf_U1_Un((Int64Value)val1)); break;
+			case ValueType.Real8:	valueStack.Push(Real8Value.Conv_Ovf_U1_Un((Real8Value)val1)); break;
+			default:				valueStack.Push(Int32Value.CreateUnknownUInt8()); break;
+			}
+		}
+
+		void Emulate_Conv_Ovf_U2(Instruction instr) {
+			var val1 = valueStack.Pop();
+			switch (val1.valueType) {
+			case ValueType.Int32:	valueStack.Push(Int32Value.Conv_Ovf_U2((Int32Value)val1)); break;
+			case ValueType.Int64:	valueStack.Push(Int64Value.Conv_Ovf_U2((Int64Value)val1)); break;
+			case ValueType.Real8:	valueStack.Push(Real8Value.Conv_Ovf_U2((Real8Value)val1)); break;
+			default:				valueStack.Push(Int32Value.CreateUnknownUInt16()); break;
+			}
+		}
+
+		void Emulate_Conv_Ovf_U2_Un(Instruction instr) {
+			var val1 = valueStack.Pop();
+			switch (val1.valueType) {
+			case ValueType.Int32:	valueStack.Push(Int32Value.Conv_Ovf_U2_Un((Int32Value)val1)); break;
+			case ValueType.Int64:	valueStack.Push(Int64Value.Conv_Ovf_U2_Un((Int64Value)val1)); break;
+			case ValueType.Real8:	valueStack.Push(Real8Value.Conv_Ovf_U2_Un((Real8Value)val1)); break;
+			default:				valueStack.Push(Int32Value.CreateUnknownUInt16()); break;
+			}
+		}
+
+		void Emulate_Conv_Ovf_U4(Instruction instr) {
+			var val1 = valueStack.Pop();
+			switch (val1.valueType) {
+			case ValueType.Int32:	valueStack.Push(Int32Value.Conv_Ovf_U4((Int32Value)val1)); break;
+			case ValueType.Int64:	valueStack.Push(Int64Value.Conv_Ovf_U4((Int64Value)val1)); break;
+			case ValueType.Real8:	valueStack.Push(Real8Value.Conv_Ovf_U4((Real8Value)val1)); break;
+			default:				valueStack.Push(Int32Value.CreateUnknown()); break;
+			}
+		}
+
+		void Emulate_Conv_Ovf_U4_Un(Instruction instr) {
+			var val1 = valueStack.Pop();
+			switch (val1.valueType) {
+			case ValueType.Int32:	valueStack.Push(Int32Value.Conv_Ovf_U4_Un((Int32Value)val1)); break;
+			case ValueType.Int64:	valueStack.Push(Int64Value.Conv_Ovf_U4_Un((Int64Value)val1)); break;
+			case ValueType.Real8:	valueStack.Push(Real8Value.Conv_Ovf_U4_Un((Real8Value)val1)); break;
+			default:				valueStack.Push(Int32Value.CreateUnknown()); break;
+			}
+		}
+
+		void Emulate_Conv_Ovf_U8(Instruction instr) {
+			var val1 = valueStack.Pop();
+			switch (val1.valueType) {
+			case ValueType.Int32:	valueStack.Push(Int32Value.Conv_Ovf_U8((Int32Value)val1)); break;
+			case ValueType.Int64:	valueStack.Push(Int64Value.Conv_Ovf_U8((Int64Value)val1)); break;
+			case ValueType.Real8:	valueStack.Push(Real8Value.Conv_Ovf_U8((Real8Value)val1)); break;
+			default:				valueStack.Push(Int64Value.CreateUnknown()); break;
+			}
+		}
+
+		void Emulate_Conv_Ovf_U8_Un(Instruction instr) {
+			var val1 = valueStack.Pop();
+			switch (val1.valueType) {
+			case ValueType.Int32:	valueStack.Push(Int32Value.Conv_Ovf_U8_Un((Int32Value)val1)); break;
+			case ValueType.Int64:	valueStack.Push(Int64Value.Conv_Ovf_U8_Un((Int64Value)val1)); break;
+			case ValueType.Real8:	valueStack.Push(Real8Value.Conv_Ovf_U8_Un((Real8Value)val1)); break;
+			default:				valueStack.Push(Int64Value.CreateUnknown()); break;
+			}
+		}
+
 		void Emulate_Add(Instruction instr) {
 			var val2 = valueStack.Pop();
 			var val1 = valueStack.Pop();
@@ -702,6 +862,78 @@ namespace de4dot.blocks.cflow {
 				valueStack.PushUnknown();
 		}
 
+		void Emulate_Add_Ovf(Instruction instr) {
+			var val2 = valueStack.Pop();
+			var val1 = valueStack.Pop();
+
+			if (val1.IsInt32() && val2.IsInt32())
+				valueStack.Push(Int32Value.Add_Ovf((Int32Value)val1, (Int32Value)val2));
+			else if (val1.IsInt64() && val2.IsInt64())
+				valueStack.Push(Int64Value.Add_Ovf((Int64Value)val1, (Int64Value)val2));
+			else
+				valueStack.PushUnknown();
+		}
+
+		void Emulate_Add_Ovf_Un(Instruction instr) {
+			var val2 = valueStack.Pop();
+			var val1 = valueStack.Pop();
+
+			if (val1.IsInt32() && val2.IsInt32())
+				valueStack.Push(Int32Value.Add_Ovf_Un((Int32Value)val1, (Int32Value)val2));
+			else if (val1.IsInt64() && val2.IsInt64())
+				valueStack.Push(Int64Value.Add_Ovf_Un((Int64Value)val1, (Int64Value)val2));
+			else
+				valueStack.PushUnknown();
+		}
+
+		void Emulate_Sub_Ovf(Instruction instr) {
+			var val2 = valueStack.Pop();
+			var val1 = valueStack.Pop();
+
+			if (val1.IsInt32() && val2.IsInt32())
+				valueStack.Push(Int32Value.Sub_Ovf((Int32Value)val1, (Int32Value)val2));
+			else if (val1.IsInt64() && val2.IsInt64())
+				valueStack.Push(Int64Value.Sub_Ovf((Int64Value)val1, (Int64Value)val2));
+			else
+				valueStack.PushUnknown();
+		}
+
+		void Emulate_Sub_Ovf_Un(Instruction instr) {
+			var val2 = valueStack.Pop();
+			var val1 = valueStack.Pop();
+
+			if (val1.IsInt32() && val2.IsInt32())
+				valueStack.Push(Int32Value.Sub_Ovf_Un((Int32Value)val1, (Int32Value)val2));
+			else if (val1.IsInt64() && val2.IsInt64())
+				valueStack.Push(Int64Value.Sub_Ovf_Un((Int64Value)val1, (Int64Value)val2));
+			else
+				valueStack.PushUnknown();
+		}
+
+		void Emulate_Mul_Ovf(Instruction instr) {
+			var val2 = valueStack.Pop();
+			var val1 = valueStack.Pop();
+
+			if (val1.IsInt32() && val2.IsInt32())
+				valueStack.Push(Int32Value.Mul_Ovf((Int32Value)val1, (Int32Value)val2));
+			else if (val1.IsInt64() && val2.IsInt64())
+				valueStack.Push(Int64Value.Mul_Ovf((Int64Value)val1, (Int64Value)val2));
+			else
+				valueStack.PushUnknown();
+		}
+
+		void Emulate_Mul_Ovf_Un(Instruction instr) {
+			var val2 = valueStack.Pop();
+			var val1 = valueStack.Pop();
+
+			if (val1.IsInt32() && val2.IsInt32())
+				valueStack.Push(Int32Value.Mul_Ovf_Un((Int32Value)val1, (Int32Value)val2));
+			else if (val1.IsInt64() && val2.IsInt64())
+				valueStack.Push(Int64Value.Mul_Ovf_Un((Int64Value)val1, (Int64Value)val2));
+			else
+				valueStack.PushUnknown();
+		}
+
 		void Emulate_And(Instruction instr) {
 			var val2 = valueStack.Pop();
 			var val1 = valueStack.Pop();
@@ -794,7 +1026,7 @@ namespace de4dot.blocks.cflow {
 			else if (val1.IsInt64() && val2.IsInt64())
 				valueStack.Push(Int64Value.Ceq((Int64Value)val1, (Int64Value)val2));
 			else if (val1.IsNull() && val2.IsNull())
-				valueStack.Push(Int32Value.one);
+				valueStack.Push(Int32Value.One);
 			else
 				valueStack.Push(Int32Value.CreateUnknownBool());
 		}

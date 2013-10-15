@@ -49,5 +49,69 @@ namespace de4dot.blocks.cflow {
 		public static Real8Value Neg(Real8Value a) {
 			return new Real8Value(-a.value);
 		}
+
+		public static Int32Value Conv_Ovf_I1(Real8Value a) {
+			return Int32Value.CreateUnknown();
+		}
+
+		public static Int32Value Conv_Ovf_I1_Un(Real8Value a) {
+			return Int32Value.CreateUnknown();
+		}
+
+		public static Int32Value Conv_Ovf_I2(Real8Value a) {
+			return Int32Value.CreateUnknown();
+		}
+
+		public static Int32Value Conv_Ovf_I2_Un(Real8Value a) {
+			return Int32Value.CreateUnknown();
+		}
+
+		public static Int32Value Conv_Ovf_I4(Real8Value a) {
+			return Int32Value.CreateUnknown();
+		}
+
+		public static Int32Value Conv_Ovf_I4_Un(Real8Value a) {
+			return Int32Value.CreateUnknown();
+		}
+
+		public static Int64Value Conv_Ovf_I8(Real8Value a) {
+			return Int64Value.CreateUnknown();
+		}
+
+		public static Int64Value Conv_Ovf_I8_Un(Real8Value a) {
+			return Int64Value.CreateUnknown();
+		}
+
+		public static Int32Value Conv_Ovf_U1(Real8Value a) {
+			return Int32Value.CreateUnknownUInt8();
+		}
+
+		public static Int32Value Conv_Ovf_U1_Un(Real8Value a) {
+			return Int32Value.CreateUnknownUInt8();
+		}
+
+		public static Int32Value Conv_Ovf_U2(Real8Value a) {
+			return Int32Value.CreateUnknownUInt16();
+		}
+
+		public static Int32Value Conv_Ovf_U2_Un(Real8Value a) {
+			return Int32Value.CreateUnknownUInt16();
+		}
+
+		public static Int32Value Conv_Ovf_U4(Real8Value a) {
+			return Int32Value.CreateUnknown();
+		}
+
+		public static Int32Value Conv_Ovf_U4_Un(Real8Value a) {
+			return Int32Value.CreateUnknown();
+		}
+
+		public static Int64Value Conv_Ovf_U8(Real8Value a) {
+			return Int64Value.CreateUnknown();
+		}
+
+		public static Int64Value Conv_Ovf_U8_Un(Real8Value a) {
+			return Int64Value.CreateUnknown();
+		}
 	}
 }
