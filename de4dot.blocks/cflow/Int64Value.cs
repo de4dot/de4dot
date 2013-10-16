@@ -25,23 +25,23 @@ namespace de4dot.blocks.cflow {
 		public static readonly Int64Value One = new Int64Value(1);
 
 		internal const ulong NO_UNKNOWN_BITS = ulong.MaxValue;
-		public readonly long value;
-		public readonly ulong validMask;
+		public readonly long Value;
+		public readonly ulong ValidMask;
 
 		public Int64Value(long value)
 			: base(ValueType.Int64) {
-			this.value = value;
-			this.validMask = NO_UNKNOWN_BITS;
+			this.Value = value;
+			this.ValidMask = NO_UNKNOWN_BITS;
 		}
 
 		public Int64Value(long value, ulong validMask)
 			: base(ValueType.Int64) {
-			this.value = value;
-			this.validMask = validMask;
+			this.Value = value;
+			this.ValidMask = validMask;
 		}
 
 		bool HasUnknownBits() {
-			return validMask != NO_UNKNOWN_BITS;
+			return ValidMask != NO_UNKNOWN_BITS;
 		}
 
 		public bool AllBitsValid() {
@@ -49,7 +49,7 @@ namespace de4dot.blocks.cflow {
 		}
 
 		bool IsBitValid(int n) {
-			return IsBitValid(validMask, n);
+			return IsBitValid(ValidMask, n);
 		}
 
 		static bool IsBitValid(ulong validMask, int n) {
@@ -57,7 +57,7 @@ namespace de4dot.blocks.cflow {
 		}
 
 		bool AreBitsValid(ulong bitsToTest) {
-			return (validMask & bitsToTest) == bitsToTest;
+			return (ValidMask & bitsToTest) == bitsToTest;
 		}
 
 		public static Int64Value CreateUnknown() {
@@ -69,11 +69,11 @@ namespace de4dot.blocks.cflow {
 		}
 
 		public bool IsNonZero() {
-			return ((ulong)value & validMask) != 0;
+			return ((ulong)Value & ValidMask) != 0;
 		}
 
 		public bool HasValue(long value) {
-			return AllBitsValid() && this.value == value;
+			return AllBitsValid() && this.Value == value;
 		}
 
 		public bool HasValue(ulong value) {
@@ -81,8 +81,8 @@ namespace de4dot.blocks.cflow {
 		}
 
 		public static Int64Value Conv_U8(Int32Value a) {
-			long value = (long)(ulong)(uint)a.value;
-			ulong validMask = a.validMask | (NO_UNKNOWN_BITS << 32);
+			long value = (long)(ulong)(uint)a.Value;
+			ulong validMask = a.ValidMask | (NO_UNKNOWN_BITS << 32);
 			return new Int64Value(value, validMask);
 		}
 
@@ -91,12 +91,12 @@ namespace de4dot.blocks.cflow {
 		}
 
 		public static Int64Value Conv_U8(Real8Value a) {
-			return new Int64Value((long)(ulong)a.value);
+			return new Int64Value((long)(ulong)a.Value);
 		}
 
 		public static Int64Value Conv_I8(Int32Value a) {
-			long value = a.value;
-			ulong validMask = a.validMask;
+			long value = a.Value;
+			ulong validMask = a.ValidMask;
 			if (IsBitValid(validMask, 31))
 				validMask |= NO_UNKNOWN_BITS << 32;
 			else
@@ -109,11 +109,11 @@ namespace de4dot.blocks.cflow {
 		}
 
 		public static Int64Value Conv_I8(Real8Value a) {
-			return new Int64Value((long)a.value);
+			return new Int64Value((long)a.Value);
 		}
 
 		bool CheckSign(ulong mask) {
-			return ((ulong)value & mask) == 0 || ((ulong)value & mask) == mask;
+			return ((ulong)Value & mask) == 0 || ((ulong)Value & mask) == mask;
 		}
 
 		public static Int32Value Conv_Ovf_I1(Int64Value a) {
@@ -125,7 +125,7 @@ namespace de4dot.blocks.cflow {
 
 		public static Int32Value Conv_Ovf_I1_Un(Int64Value a) {
 			if (!a.AreBitsValid(NO_UNKNOWN_BITS << 7) ||
-				(ulong)a.value > (ulong)sbyte.MaxValue)
+				(ulong)a.Value > (ulong)sbyte.MaxValue)
 				return Int32Value.CreateUnknown();
 			return Int32Value.Conv_I1(a);
 		}
@@ -139,7 +139,7 @@ namespace de4dot.blocks.cflow {
 
 		public static Int32Value Conv_Ovf_I2_Un(Int64Value a) {
 			if (!a.AreBitsValid(NO_UNKNOWN_BITS << 15) ||
-				(ulong)a.value > (ulong)short.MaxValue)
+				(ulong)a.Value > (ulong)short.MaxValue)
 				return Int32Value.CreateUnknown();
 			return Int32Value.Conv_I2(a);
 		}
@@ -153,7 +153,7 @@ namespace de4dot.blocks.cflow {
 
 		public static Int32Value Conv_Ovf_I4_Un(Int64Value a) {
 			if (!a.AreBitsValid(NO_UNKNOWN_BITS << 31) ||
-				(ulong)a.value > (ulong)int.MaxValue)
+				(ulong)a.Value > (ulong)int.MaxValue)
 				return Int32Value.CreateUnknown();
 			return Int32Value.Conv_I4(a);
 		}
@@ -163,55 +163,55 @@ namespace de4dot.blocks.cflow {
 		}
 
 		public static Int64Value Conv_Ovf_I8_Un(Int64Value a) {
-			if (!IsBitValid(a.validMask, 63) || a.value < 0)
+			if (!IsBitValid(a.ValidMask, 63) || a.Value < 0)
 				return CreateUnknown();
 			return a;
 		}
 
 		public static Int32Value Conv_Ovf_U1(Int64Value a) {
 			if (!a.AreBitsValid(NO_UNKNOWN_BITS << 7) ||
-				a.value < 0 || a.value > byte.MaxValue)
+				a.Value < 0 || a.Value > byte.MaxValue)
 				return Int32Value.CreateUnknownUInt8();
 			return Int32Value.Conv_U1(a);
 		}
 
 		public static Int32Value Conv_Ovf_U1_Un(Int64Value a) {
 			if (!a.AreBitsValid(NO_UNKNOWN_BITS << 8) ||
-				(ulong)a.value > byte.MaxValue)
+				(ulong)a.Value > byte.MaxValue)
 				return Int32Value.CreateUnknownUInt8();
 			return Int32Value.Conv_U1(a);
 		}
 
 		public static Int32Value Conv_Ovf_U2(Int64Value a) {
 			if (!a.AreBitsValid(NO_UNKNOWN_BITS << 15) ||
-				a.value < 0 || a.value > ushort.MaxValue)
+				a.Value < 0 || a.Value > ushort.MaxValue)
 				return Int32Value.CreateUnknownUInt16();
 			return Int32Value.Conv_U2(a);
 		}
 
 		public static Int32Value Conv_Ovf_U2_Un(Int64Value a) {
 			if (!a.AreBitsValid(NO_UNKNOWN_BITS << 16) ||
-				(ulong)a.value > ushort.MaxValue)
+				(ulong)a.Value > ushort.MaxValue)
 				return Int32Value.CreateUnknownUInt16();
 			return Int32Value.Conv_U2(a);
 		}
 
 		public static Int32Value Conv_Ovf_U4(Int64Value a) {
 			if (!a.AreBitsValid(NO_UNKNOWN_BITS << 31) ||
-				a.value < 0 || a.value > uint.MaxValue)
+				a.Value < 0 || a.Value > uint.MaxValue)
 				return Int32Value.CreateUnknown();
 			return Int32Value.Conv_U4(a);
 		}
 
 		public static Int32Value Conv_Ovf_U4_Un(Int64Value a) {
 			if (!a.AreBitsValid(NO_UNKNOWN_BITS << 32) ||
-				(ulong)a.value > uint.MaxValue)
+				(ulong)a.Value > uint.MaxValue)
 				return Int32Value.CreateUnknown();
 			return Int32Value.Conv_U4(a);
 		}
 
 		public static Int64Value Conv_Ovf_U8(Int64Value a) {
-			if (!IsBitValid(a.validMask, 63) || a.value < 0)
+			if (!IsBitValid(a.ValidMask, 63) || a.Value < 0)
 				return CreateUnknown();
 			return a;
 		}
@@ -222,15 +222,15 @@ namespace de4dot.blocks.cflow {
 
 		public static Int64Value Add(Int64Value a, Int64Value b) {
 			if (a.AllBitsValid() && b.AllBitsValid())
-				return new Int64Value(a.value + b.value);
+				return new Int64Value(a.Value + b.Value);
 			if (ReferenceEquals(a, b))
-				return new Int64Value(a.value << 1, (a.validMask << 1) | 1);
+				return new Int64Value(a.Value << 1, (a.ValidMask << 1) | 1);
 			return CreateUnknown();
 		}
 
 		public static Int64Value Sub(Int64Value a, Int64Value b) {
 			if (a.AllBitsValid() && b.AllBitsValid())
-				return new Int64Value(a.value - b.value);
+				return new Int64Value(a.Value - b.Value);
 			if (ReferenceEquals(a, b))
 				return Zero;
 			return CreateUnknown();
@@ -238,7 +238,7 @@ namespace de4dot.blocks.cflow {
 
 		public static Int64Value Mul(Int64Value a, Int64Value b) {
 			if (a.AllBitsValid() && b.AllBitsValid())
-				return new Int64Value(a.value * b.value);
+				return new Int64Value(a.Value * b.Value);
 			if (a.IsZero() || b.IsZero())
 				return Zero;
 			if (a.HasValue(1))
@@ -251,7 +251,7 @@ namespace de4dot.blocks.cflow {
 		public static Int64Value Div(Int64Value a, Int64Value b) {
 			if (a.AllBitsValid() && b.AllBitsValid()) {
 				try {
-					return new Int64Value(a.value / b.value);
+					return new Int64Value(a.Value / b.Value);
 				}
 				catch (ArithmeticException) {
 					return CreateUnknown();
@@ -267,7 +267,7 @@ namespace de4dot.blocks.cflow {
 		public static Int64Value Div_Un(Int64Value a, Int64Value b) {
 			if (a.AllBitsValid() && b.AllBitsValid()) {
 				try {
-					return new Int64Value((long)((ulong)a.value / (ulong)b.value));
+					return new Int64Value((long)((ulong)a.Value / (ulong)b.Value));
 				}
 				catch (ArithmeticException) {
 					return CreateUnknown();
@@ -283,7 +283,7 @@ namespace de4dot.blocks.cflow {
 		public static Int64Value Rem(Int64Value a, Int64Value b) {
 			if (a.AllBitsValid() && b.AllBitsValid()) {
 				try {
-					return new Int64Value(a.value % b.value);
+					return new Int64Value(a.Value % b.Value);
 				}
 				catch (ArithmeticException) {
 					return CreateUnknown();
@@ -297,7 +297,7 @@ namespace de4dot.blocks.cflow {
 		public static Int64Value Rem_Un(Int64Value a, Int64Value b) {
 			if (a.AllBitsValid() && b.AllBitsValid()) {
 				try {
-					return new Int64Value((long)((ulong)a.value % (ulong)b.value));
+					return new Int64Value((long)((ulong)a.Value % (ulong)b.Value));
 				}
 				catch (ArithmeticException) {
 					return CreateUnknown();
@@ -310,14 +310,14 @@ namespace de4dot.blocks.cflow {
 
 		public static Int64Value Neg(Int64Value a) {
 			if (a.AllBitsValid())
-				return new Int64Value(-a.value);
+				return new Int64Value(-a.Value);
 			return CreateUnknown();
 		}
 
 		public static Int64Value Add_Ovf(Int64Value a, Int64Value b) {
 			if (a.AllBitsValid() && b.AllBitsValid()) {
 				try {
-					return new Int64Value(checked(a.value + b.value));
+					return new Int64Value(checked(a.Value + b.Value));
 				}
 				catch (OverflowException) {
 				}
@@ -327,7 +327,7 @@ namespace de4dot.blocks.cflow {
 
 		public static Int64Value Add_Ovf_Un(Int64Value a, Int64Value b) {
 			if (a.AllBitsValid() && b.AllBitsValid()) {
-				ulong aa = (ulong)a.value, bb = (ulong)b.value;
+				ulong aa = (ulong)a.Value, bb = (ulong)b.Value;
 				try {
 					return new Int64Value((long)checked(aa + bb));
 				}
@@ -340,7 +340,7 @@ namespace de4dot.blocks.cflow {
 		public static Int64Value Sub_Ovf(Int64Value a, Int64Value b) {
 			if (a.AllBitsValid() && b.AllBitsValid()) {
 				try {
-					return new Int64Value(checked(a.value - b.value));
+					return new Int64Value(checked(a.Value - b.Value));
 				}
 				catch (OverflowException) {
 				}
@@ -350,7 +350,7 @@ namespace de4dot.blocks.cflow {
 
 		public static Int64Value Sub_Ovf_Un(Int64Value a, Int64Value b) {
 			if (a.AllBitsValid() && b.AllBitsValid()) {
-				ulong aa = (ulong)a.value, bb = (ulong)b.value;
+				ulong aa = (ulong)a.Value, bb = (ulong)b.Value;
 				try {
 					return new Int64Value((long)checked(aa - bb));
 				}
@@ -363,7 +363,7 @@ namespace de4dot.blocks.cflow {
 		public static Int64Value Mul_Ovf(Int64Value a, Int64Value b) {
 			if (a.AllBitsValid() && b.AllBitsValid()) {
 				try {
-					return new Int64Value(checked(a.value * b.value));
+					return new Int64Value(checked(a.Value * b.Value));
 				}
 				catch (OverflowException) {
 				}
@@ -373,7 +373,7 @@ namespace de4dot.blocks.cflow {
 
 		public static Int64Value Mul_Ovf_Un(Int64Value a, Int64Value b) {
 			if (a.AllBitsValid() && b.AllBitsValid()) {
-				ulong aa = (ulong)a.value, bb = (ulong)b.value;
+				ulong aa = (ulong)a.Value, bb = (ulong)b.Value;
 				try {
 					return new Int64Value((long)checked(aa * bb));
 				}
@@ -384,65 +384,65 @@ namespace de4dot.blocks.cflow {
 		}
 
 		public static Int64Value And(Int64Value a, Int64Value b) {
-			long av = a.value, bv = b.value;
-			ulong am = a.validMask, bm = b.validMask;
+			long av = a.Value, bv = b.Value;
+			ulong am = a.ValidMask, bm = b.ValidMask;
 			return new Int64Value(av & bv, (am & bm) | (((ulong)av & am) ^ am) | (((ulong)bv & bm) ^ bm));
 		}
 
 		public static Int64Value Or(Int64Value a, Int64Value b) {
-			long av = a.value, bv = b.value;
-			ulong am = a.validMask, bm = b.validMask;
+			long av = a.Value, bv = b.Value;
+			ulong am = a.ValidMask, bm = b.ValidMask;
 			return new Int64Value(av | bv, (am & bm) | ((ulong)av & am) | ((ulong)bv & bm));
 		}
 
 		public static Int64Value Xor(Int64Value a, Int64Value b) {
 			if (ReferenceEquals(a, b))
 				return Zero;
-			long av = a.value, bv = b.value;
-			ulong am = a.validMask, bm = b.validMask;
+			long av = a.Value, bv = b.Value;
+			ulong am = a.ValidMask, bm = b.ValidMask;
 			return new Int64Value(av ^ bv, am & bm);
 		}
 
 		public static Int64Value Not(Int64Value a) {
-			return new Int64Value(~a.value, a.validMask);
+			return new Int64Value(~a.Value, a.ValidMask);
 		}
 
 		public static Int64Value Shl(Int64Value a, Int32Value b) {
 			if (b.HasUnknownBits())
 				return CreateUnknown();
-			if (b.value == 0)
+			if (b.Value == 0)
 				return a;
-			if (b.value < 0 || b.value >= sizeof(long) * 8)
+			if (b.Value < 0 || b.Value >= sizeof(long) * 8)
 				return CreateUnknown();
-			int shift = b.value;
-			ulong validMask = (a.validMask << shift) | (ulong.MaxValue >> (sizeof(long) * 8 - shift));
-			return new Int64Value(a.value << shift, validMask);
+			int shift = b.Value;
+			ulong validMask = (a.ValidMask << shift) | (ulong.MaxValue >> (sizeof(long) * 8 - shift));
+			return new Int64Value(a.Value << shift, validMask);
 		}
 
 		public static Int64Value Shr(Int64Value a, Int32Value b) {
 			if (b.HasUnknownBits())
 				return CreateUnknown();
-			if (b.value == 0)
+			if (b.Value == 0)
 				return a;
-			if (b.value < 0 || b.value >= sizeof(long) * 8)
+			if (b.Value < 0 || b.Value >= sizeof(long) * 8)
 				return CreateUnknown();
-			int shift = b.value;
-			ulong validMask = a.validMask >> shift;
+			int shift = b.Value;
+			ulong validMask = a.ValidMask >> shift;
 			if (a.IsBitValid(sizeof(long) * 8 - 1))
 				validMask |= (ulong.MaxValue << (sizeof(long) * 8 - shift));
-			return new Int64Value(a.value >> shift, validMask);
+			return new Int64Value(a.Value >> shift, validMask);
 		}
 
 		public static Int64Value Shr_Un(Int64Value a, Int32Value b) {
 			if (b.HasUnknownBits())
 				return CreateUnknown();
-			if (b.value == 0)
+			if (b.Value == 0)
 				return a;
-			if (b.value < 0 || b.value >= sizeof(long) * 8)
+			if (b.Value < 0 || b.Value >= sizeof(long) * 8)
 				return CreateUnknown();
-			int shift = b.value;
-			ulong validMask = (a.validMask >> shift) | (ulong.MaxValue << (sizeof(long) * 8 - shift));
-			return new Int64Value((long)((ulong)a.value >> shift), validMask);
+			int shift = b.Value;
+			ulong validMask = (a.ValidMask >> shift) | (ulong.MaxValue << (sizeof(long) * 8 - shift));
+			return new Int64Value((long)((ulong)a.Value >> shift), validMask);
 		}
 
 		static Int32Value Create(Bool3 b) {
@@ -475,27 +475,27 @@ namespace de4dot.blocks.cflow {
 
 		public static Bool3 CompareEq(Int64Value a, Int64Value b) {
 			if (a.AllBitsValid() && b.AllBitsValid())
-				return a.value == b.value ? Bool3.True : Bool3.False;
+				return a.Value == b.Value ? Bool3.True : Bool3.False;
 			if (ReferenceEquals(a, b))
 				return Bool3.True;
-			if (((ulong)a.value & a.validMask & b.validMask) != ((ulong)b.value & a.validMask & b.validMask))
+			if (((ulong)a.Value & a.ValidMask & b.ValidMask) != ((ulong)b.Value & a.ValidMask & b.ValidMask))
 				return Bool3.False;
 			return Bool3.Unknown;
 		}
 
 		public static Bool3 CompareNeq(Int64Value a, Int64Value b) {
 			if (a.AllBitsValid() && b.AllBitsValid())
-				return a.value != b.value ? Bool3.True : Bool3.False;
+				return a.Value != b.Value ? Bool3.True : Bool3.False;
 			if (ReferenceEquals(a, b))
 				return Bool3.False;
-			if (((ulong)a.value & a.validMask & b.validMask) != ((ulong)b.value & a.validMask & b.validMask))
+			if (((ulong)a.Value & a.ValidMask & b.ValidMask) != ((ulong)b.Value & a.ValidMask & b.ValidMask))
 				return Bool3.True;
 			return Bool3.Unknown;
 		}
 
 		public static Bool3 CompareGt(Int64Value a, Int64Value b) {
 			if (a.AllBitsValid() && b.AllBitsValid())
-				return a.value > b.value ? Bool3.True : Bool3.False;
+				return a.Value > b.Value ? Bool3.True : Bool3.False;
 			if (a.HasValue(long.MinValue))
 				return Bool3.False;	// min > x => false
 			if (b.HasValue(long.MaxValue))
@@ -505,7 +505,7 @@ namespace de4dot.blocks.cflow {
 
 		public static Bool3 CompareGt_Un(Int64Value a, Int64Value b) {
 			if (a.AllBitsValid() && b.AllBitsValid())
-				return (ulong)a.value > (ulong)b.value ? Bool3.True : Bool3.False;
+				return (ulong)a.Value > (ulong)b.Value ? Bool3.True : Bool3.False;
 			if (a.HasValue(ulong.MinValue))
 				return Bool3.False;	// min > x => false
 			if (b.HasValue(ulong.MaxValue))
@@ -515,7 +515,7 @@ namespace de4dot.blocks.cflow {
 
 		public static Bool3 CompareGe(Int64Value a, Int64Value b) {
 			if (a.AllBitsValid() && b.AllBitsValid())
-				return a.value >= b.value ? Bool3.True : Bool3.False;
+				return a.Value >= b.Value ? Bool3.True : Bool3.False;
 			if (a.HasValue(long.MaxValue))
 				return Bool3.True;	// max >= x => true
 			if (b.HasValue(long.MinValue))
@@ -525,7 +525,7 @@ namespace de4dot.blocks.cflow {
 
 		public static Bool3 CompareGe_Un(Int64Value a, Int64Value b) {
 			if (a.AllBitsValid() && b.AllBitsValid())
-				return (ulong)a.value >= (ulong)b.value ? Bool3.True : Bool3.False;
+				return (ulong)a.Value >= (ulong)b.Value ? Bool3.True : Bool3.False;
 			if (a.HasValue(ulong.MaxValue))
 				return Bool3.True;	// max >= x => true
 			if (b.HasValue(ulong.MinValue))
@@ -535,7 +535,7 @@ namespace de4dot.blocks.cflow {
 
 		public static Bool3 CompareLe(Int64Value a, Int64Value b) {
 			if (a.AllBitsValid() && b.AllBitsValid())
-				return a.value <= b.value ? Bool3.True : Bool3.False;
+				return a.Value <= b.Value ? Bool3.True : Bool3.False;
 			if (a.HasValue(long.MinValue))
 				return Bool3.True;	// min <= x => true
 			if (b.HasValue(long.MaxValue))
@@ -545,7 +545,7 @@ namespace de4dot.blocks.cflow {
 
 		public static Bool3 CompareLe_Un(Int64Value a, Int64Value b) {
 			if (a.AllBitsValid() && b.AllBitsValid())
-				return (ulong)a.value <= (ulong)b.value ? Bool3.True : Bool3.False;
+				return (ulong)a.Value <= (ulong)b.Value ? Bool3.True : Bool3.False;
 			if (a.HasValue(ulong.MinValue))
 				return Bool3.True;	// min <= x => true
 			if (b.HasValue(ulong.MaxValue))
@@ -555,7 +555,7 @@ namespace de4dot.blocks.cflow {
 
 		public static Bool3 CompareLt(Int64Value a, Int64Value b) {
 			if (a.AllBitsValid() && b.AllBitsValid())
-				return a.value < b.value ? Bool3.True : Bool3.False;
+				return a.Value < b.Value ? Bool3.True : Bool3.False;
 			if (a.HasValue(long.MaxValue))
 				return Bool3.False;	// max < x => false
 			if (b.HasValue(long.MinValue))
@@ -565,7 +565,7 @@ namespace de4dot.blocks.cflow {
 
 		public static Bool3 CompareLt_Un(Int64Value a, Int64Value b) {
 			if (a.AllBitsValid() && b.AllBitsValid())
-				return (ulong)a.value < (ulong)b.value ? Bool3.True : Bool3.False;
+				return (ulong)a.Value < (ulong)b.Value ? Bool3.True : Bool3.False;
 			if (a.HasValue(ulong.MaxValue))
 				return Bool3.False;	// max < x => false
 			if (b.HasValue(ulong.MinValue))
@@ -575,24 +575,24 @@ namespace de4dot.blocks.cflow {
 
 		public static Bool3 CompareTrue(Int64Value a) {
 			if (a.AllBitsValid())
-				return a.value != 0 ? Bool3.True : Bool3.False;
-			if (((ulong)a.value & a.validMask) != 0)
+				return a.Value != 0 ? Bool3.True : Bool3.False;
+			if (((ulong)a.Value & a.ValidMask) != 0)
 				return Bool3.True;
 			return Bool3.Unknown;
 		}
 
 		public static Bool3 CompareFalse(Int64Value a) {
 			if (a.AllBitsValid())
-				return a.value == 0 ? Bool3.True : Bool3.False;
-			if (((ulong)a.value & a.validMask) != 0)
+				return a.Value == 0 ? Bool3.True : Bool3.False;
+			if (((ulong)a.Value & a.ValidMask) != 0)
 				return Bool3.False;
 			return Bool3.Unknown;
 		}
 
 		public override string ToString() {
 			if (AllBitsValid())
-				return value.ToString();
-			return string.Format("0x{0:X8}L({1:X8})", value, validMask);
+				return Value.ToString();
+			return string.Format("0x{0:X8}L({1:X8})", Value, ValidMask);
 		}
 	}
 }

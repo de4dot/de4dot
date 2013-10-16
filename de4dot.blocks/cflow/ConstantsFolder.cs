@@ -89,14 +89,14 @@ namespace de4dot.blocks.cflow {
 				var intValue = (Int32Value)value;
 				if (!intValue.AllBitsValid())
 					return false;
-				block.Instructions[index] = new Instr(Instruction.CreateLdcI4(intValue.value));
+				block.Instructions[index] = new Instr(Instruction.CreateLdcI4(intValue.Value));
 				return true;
 			}
 			else if (value.IsInt64()) {
 				var intValue = (Int64Value)value;
 				if (!intValue.AllBitsValid())
 					return false;
-				block.Instructions[index] = new Instr(OpCodes.Ldc_I8.ToInstruction(intValue.value));
+				block.Instructions[index] = new Instr(OpCodes.Ldc_I8.ToInstruction(intValue.Value));
 				return true;
 			}
 			return false;

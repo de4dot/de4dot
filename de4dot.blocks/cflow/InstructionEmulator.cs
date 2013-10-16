@@ -141,7 +141,7 @@ namespace de4dot.blocks.cflow {
 
 			case ElementType.R4:
 				if (value.IsReal8())
-					return new Real8Value((float)((Real8Value)value).value);
+					return new Real8Value((float)((Real8Value)value).Value);
 				return new UnknownValue();
 
 			case ElementType.R8:

@@ -626,7 +626,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					if (val == null || !val.AllBitsValid())
 						fields[field] = null;
 					else
-						fields[field] = val.value;
+						fields[field] = val.Value;
 					break;
 
 				case Code.Call:
@@ -695,8 +695,8 @@ done: ;
 			var dcGen = dynocode.GetDynocodeGenerator(ctor.DeclaringType);
 			if (dcGen == null)
 				return false;
-			int loopLocalValue = initValue2.value;
-			foreach (var val in dcGen.GetValues(initValue.value))
+			int loopLocalValue = initValue2.Value;
+			foreach (var val in dcGen.GetValues(initValue.Value))
 				loopLocalValue ^= val;
 
 			emu.SetLocal(loopLocal, new Int32Value(loopLocalValue));

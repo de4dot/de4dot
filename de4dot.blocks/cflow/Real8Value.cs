@@ -19,35 +19,35 @@
 
 namespace de4dot.blocks.cflow {
 	public class Real8Value : Value {
-		public readonly double value;
+		public readonly double Value;
 
 		public Real8Value(double value)
 			: base(ValueType.Real8) {
-			this.value = value;
+			this.Value = value;
 		}
 
 		public static Real8Value Add(Real8Value a, Real8Value b) {
-			return new Real8Value(a.value + b.value);
+			return new Real8Value(a.Value + b.Value);
 		}
 
 		public static Real8Value Sub(Real8Value a, Real8Value b) {
-			return new Real8Value(a.value - b.value);
+			return new Real8Value(a.Value - b.Value);
 		}
 
 		public static Real8Value Mul(Real8Value a, Real8Value b) {
-			return new Real8Value(a.value * b.value);
+			return new Real8Value(a.Value * b.Value);
 		}
 
 		public static Real8Value Div(Real8Value a, Real8Value b) {
-			return new Real8Value(a.value / b.value);
+			return new Real8Value(a.Value / b.Value);
 		}
 
 		public static Real8Value Rem(Real8Value a, Real8Value b) {
-			return new Real8Value(a.value % b.value);
+			return new Real8Value(a.Value % b.Value);
 		}
 
 		public static Real8Value Neg(Real8Value a) {
-			return new Real8Value(-a.value);
+			return new Real8Value(-a.Value);
 		}
 
 		public static Int32Value Conv_Ovf_I1(Real8Value a) {
