@@ -91,6 +91,8 @@ namespace de4dot.blocks.cflow {
 		}
 
 		public static Int64Value Conv_U8(Real8Value a) {
+			if (!a.IsValid)
+				return CreateUnknown();
 			return new Int64Value((long)(ulong)a.Value);
 		}
 
@@ -109,6 +111,8 @@ namespace de4dot.blocks.cflow {
 		}
 
 		public static Int64Value Conv_I8(Real8Value a) {
+			if (!a.IsValid)
+				return CreateUnknown();
 			return new Int64Value((long)a.Value);
 		}
 

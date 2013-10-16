@@ -20,34 +20,88 @@
 namespace de4dot.blocks.cflow {
 	public class Real8Value : Value {
 		public readonly double Value;
+		public readonly bool IsValid;
 
 		public Real8Value(double value)
 			: base(ValueType.Real8) {
 			this.Value = value;
+			this.IsValid = true;
+		}
+
+		public Real8Value(double value, bool isValid)
+			: base(ValueType.Real8) {
+			this.Value = value;
+			this.IsValid = isValid;
+		}
+
+		public static Real8Value CreateUnknown() {
+			return new Real8Value(0, false);
+		}
+
+		public Real8Value ToSingle() {
+			if (!IsValid)
+				return CreateUnknown();
+			return new Real8Value((float)Value);
 		}
 
 		public static Real8Value Add(Real8Value a, Real8Value b) {
+			if (!a.IsValid || !b.IsValid)
+				return CreateUnknown();
 			return new Real8Value(a.Value + b.Value);
 		}
 
 		public static Real8Value Sub(Real8Value a, Real8Value b) {
+			if (!a.IsValid || !b.IsValid)
+				return CreateUnknown();
 			return new Real8Value(a.Value - b.Value);
 		}
 
 		public static Real8Value Mul(Real8Value a, Real8Value b) {
+			if (!a.IsValid || !b.IsValid)
+				return CreateUnknown();
 			return new Real8Value(a.Value * b.Value);
 		}
 
 		public static Real8Value Div(Real8Value a, Real8Value b) {
+			if (!a.IsValid || !b.IsValid)
+				return CreateUnknown();
 			return new Real8Value(a.Value / b.Value);
 		}
 
 		public static Real8Value Rem(Real8Value a, Real8Value b) {
+			if (!a.IsValid || !b.IsValid)
+				return CreateUnknown();
 			return new Real8Value(a.Value % b.Value);
 		}
 
 		public static Real8Value Neg(Real8Value a) {
+			if (!a.IsValid)
+				return CreateUnknown();
 			return new Real8Value(-a.Value);
+		}
+
+		public static Real8Value Add_Ovf(Real8Value a, Real8Value b) {
+			return CreateUnknown();
+		}
+
+		public static Real8Value Add_Ovf_Un(Real8Value a, Real8Value b) {
+			return CreateUnknown();
+		}
+
+		public static Real8Value Sub_Ovf(Real8Value a, Real8Value b) {
+			return CreateUnknown();
+		}
+
+		public static Real8Value Sub_Ovf_Un(Real8Value a, Real8Value b) {
+			return CreateUnknown();
+		}
+
+		public static Real8Value Mul_Ovf(Real8Value a, Real8Value b) {
+			return CreateUnknown();
+		}
+
+		public static Real8Value Mul_Ovf_Un(Real8Value a, Real8Value b) {
+			return CreateUnknown();
 		}
 
 		public static Int32Value Conv_Ovf_I1(Real8Value a) {

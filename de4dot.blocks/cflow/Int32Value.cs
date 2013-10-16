@@ -131,6 +131,8 @@ namespace de4dot.blocks.cflow {
 		}
 
 		public static Int32Value Conv_U1(Real8Value a) {
+			if (!a.IsValid)
+				return CreateUnknownUInt8();
 			return new Int32Value((int)(byte)a.Value);
 		}
 
@@ -152,6 +154,8 @@ namespace de4dot.blocks.cflow {
 		}
 
 		public static Int32Value Conv_I1(Real8Value a) {
+			if (!a.IsValid)
+				return CreateUnknown();
 			return new Int32Value((int)(sbyte)a.Value);
 		}
 
@@ -170,6 +174,8 @@ namespace de4dot.blocks.cflow {
 		}
 
 		public static Int32Value Conv_U2(Real8Value a) {
+			if (!a.IsValid)
+				return CreateUnknownUInt16();
 			return new Int32Value((int)(ushort)a.Value);
 		}
 
@@ -191,6 +197,8 @@ namespace de4dot.blocks.cflow {
 		}
 
 		public static Int32Value Conv_I2(Real8Value a) {
+			if (!a.IsValid)
+				return CreateUnknown();
 			return new Int32Value((int)(short)a.Value);
 		}
 
@@ -203,6 +211,8 @@ namespace de4dot.blocks.cflow {
 		}
 
 		public static Int32Value Conv_U4(Real8Value a) {
+			if (!a.IsValid)
+				return CreateUnknown();
 			return new Int32Value((int)(uint)a.Value);
 		}
 
@@ -215,6 +225,8 @@ namespace de4dot.blocks.cflow {
 		}
 
 		public static Int32Value Conv_I4(Real8Value a) {
+			if (!a.IsValid)
+				return CreateUnknown();
 			return new Int32Value((int)a.Value);
 		}
 

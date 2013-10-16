@@ -141,7 +141,7 @@ namespace de4dot.blocks.cflow {
 
 			case ElementType.R4:
 				if (value.IsReal8())
-					return new Real8Value((float)((Real8Value)value).Value);
+					return ((Real8Value)value).ToSingle();
 				return new UnknownValue();
 
 			case ElementType.R8:
@@ -870,6 +870,8 @@ namespace de4dot.blocks.cflow {
 				valueStack.Push(Int32Value.Add_Ovf((Int32Value)val1, (Int32Value)val2));
 			else if (val1.IsInt64() && val2.IsInt64())
 				valueStack.Push(Int64Value.Add_Ovf((Int64Value)val1, (Int64Value)val2));
+			else if (val1.IsReal8() && val2.IsReal8())
+				valueStack.Push(Real8Value.Add_Ovf((Real8Value)val1, (Real8Value)val2));
 			else
 				valueStack.PushUnknown();
 		}
@@ -882,6 +884,8 @@ namespace de4dot.blocks.cflow {
 				valueStack.Push(Int32Value.Add_Ovf_Un((Int32Value)val1, (Int32Value)val2));
 			else if (val1.IsInt64() && val2.IsInt64())
 				valueStack.Push(Int64Value.Add_Ovf_Un((Int64Value)val1, (Int64Value)val2));
+			else if (val1.IsReal8() && val2.IsReal8())
+				valueStack.Push(Real8Value.Add_Ovf_Un((Real8Value)val1, (Real8Value)val2));
 			else
 				valueStack.PushUnknown();
 		}
@@ -894,6 +898,8 @@ namespace de4dot.blocks.cflow {
 				valueStack.Push(Int32Value.Sub_Ovf((Int32Value)val1, (Int32Value)val2));
 			else if (val1.IsInt64() && val2.IsInt64())
 				valueStack.Push(Int64Value.Sub_Ovf((Int64Value)val1, (Int64Value)val2));
+			else if (val1.IsReal8() && val2.IsReal8())
+				valueStack.Push(Real8Value.Sub_Ovf((Real8Value)val1, (Real8Value)val2));
 			else
 				valueStack.PushUnknown();
 		}
@@ -906,6 +912,8 @@ namespace de4dot.blocks.cflow {
 				valueStack.Push(Int32Value.Sub_Ovf_Un((Int32Value)val1, (Int32Value)val2));
 			else if (val1.IsInt64() && val2.IsInt64())
 				valueStack.Push(Int64Value.Sub_Ovf_Un((Int64Value)val1, (Int64Value)val2));
+			else if (val1.IsReal8() && val2.IsReal8())
+				valueStack.Push(Real8Value.Sub_Ovf_Un((Real8Value)val1, (Real8Value)val2));
 			else
 				valueStack.PushUnknown();
 		}
@@ -918,6 +926,8 @@ namespace de4dot.blocks.cflow {
 				valueStack.Push(Int32Value.Mul_Ovf((Int32Value)val1, (Int32Value)val2));
 			else if (val1.IsInt64() && val2.IsInt64())
 				valueStack.Push(Int64Value.Mul_Ovf((Int64Value)val1, (Int64Value)val2));
+			else if (val1.IsReal8() && val2.IsReal8())
+				valueStack.Push(Real8Value.Mul_Ovf((Real8Value)val1, (Real8Value)val2));
 			else
 				valueStack.PushUnknown();
 		}
@@ -930,6 +940,8 @@ namespace de4dot.blocks.cflow {
 				valueStack.Push(Int32Value.Mul_Ovf_Un((Int32Value)val1, (Int32Value)val2));
 			else if (val1.IsInt64() && val2.IsInt64())
 				valueStack.Push(Int64Value.Mul_Ovf_Un((Int64Value)val1, (Int64Value)val2));
+			else if (val1.IsReal8() && val2.IsReal8())
+				valueStack.Push(Real8Value.Mul_Ovf_Un((Real8Value)val1, (Real8Value)val2));
 			else
 				valueStack.PushUnknown();
 		}
