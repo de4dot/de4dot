@@ -167,5 +167,11 @@ namespace de4dot.blocks.cflow {
 		public static Int64Value Conv_Ovf_U8_Un(Real8Value a) {
 			return Int64Value.CreateUnknown();
 		}
+
+		public override string ToString() {
+			if (!IsValid)
+				return "<INVALID_REAL8>";
+			return Value.ToString();
+		}
 	}
 }
