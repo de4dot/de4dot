@@ -556,7 +556,7 @@ namespace de4dot.blocks.cflow {
 			return new Int32Value((int)((uint)a.Value >> shift), validMask);
 		}
 
-		static Int32Value create(Bool3 b) {
+		static Int32Value Create(Bool3 b) {
 			switch (b) {
 			case Bool3.False:	return Zero;
 			case Bool3.True:	return One;
@@ -565,23 +565,23 @@ namespace de4dot.blocks.cflow {
 		}
 
 		public static Int32Value Ceq(Int32Value a, Int32Value b) {
-			return create(CompareEq(a, b));
+			return Create(CompareEq(a, b));
 		}
 
 		public static Int32Value Cgt(Int32Value a, Int32Value b) {
-			return create(CompareGt(a, b));
+			return Create(CompareGt(a, b));
 		}
 
 		public static Int32Value Cgt_Un(Int32Value a, Int32Value b) {
-			return create(CompareGt_Un(a, b));
+			return Create(CompareGt_Un(a, b));
 		}
 
 		public static Int32Value Clt(Int32Value a, Int32Value b) {
-			return create(CompareLt(a, b));
+			return Create(CompareLt(a, b));
 		}
 
 		public static Int32Value Clt_Un(Int32Value a, Int32Value b) {
-			return create(CompareLt_Un(a, b));
+			return Create(CompareLt_Un(a, b));
 		}
 
 		public static Bool3 CompareEq(Int32Value a, Int32Value b) {
