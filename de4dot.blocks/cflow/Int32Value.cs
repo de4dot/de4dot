@@ -81,7 +81,7 @@ namespace de4dot.blocks.cflow {
 		}
 
 		public bool IsNonZero() {
-			return (Value & ValidMask) != 0;
+			return ((uint)Value & ValidMask) != 0;
 		}
 
 		public bool HasValue(int value) {
@@ -589,7 +589,7 @@ namespace de4dot.blocks.cflow {
 				return a.Value == b.Value ? Bool3.True : Bool3.False;
 			if (ReferenceEquals(a, b))
 				return Bool3.True;
-			if ((a.Value & a.ValidMask & b.ValidMask) != (b.Value & a.ValidMask & b.ValidMask))
+			if (((uint)a.Value & a.ValidMask & b.ValidMask) != ((uint)b.Value & a.ValidMask & b.ValidMask))
 				return Bool3.False;
 			return Bool3.Unknown;
 		}
@@ -599,7 +599,7 @@ namespace de4dot.blocks.cflow {
 				return a.Value != b.Value ? Bool3.True : Bool3.False;
 			if (ReferenceEquals(a, b))
 				return Bool3.False;
-			if ((a.Value & a.ValidMask & b.ValidMask) != (b.Value & a.ValidMask & b.ValidMask))
+			if (((uint)a.Value & a.ValidMask & b.ValidMask) != ((uint)b.Value & a.ValidMask & b.ValidMask))
 				return Bool3.True;
 			return Bool3.Unknown;
 		}
@@ -687,7 +687,7 @@ namespace de4dot.blocks.cflow {
 		public static Bool3 CompareTrue(Int32Value a) {
 			if (a.AllBitsValid())
 				return a.Value != 0 ? Bool3.True : Bool3.False;
-			if ((a.Value & a.ValidMask) != 0)
+			if (((uint)a.Value & a.ValidMask) != 0)
 				return Bool3.True;
 			return Bool3.Unknown;
 		}
@@ -695,7 +695,7 @@ namespace de4dot.blocks.cflow {
 		public static Bool3 CompareFalse(Int32Value a) {
 			if (a.AllBitsValid())
 				return a.Value == 0 ? Bool3.True : Bool3.False;
-			if ((a.Value & a.ValidMask) != 0)
+			if (((uint)a.Value & a.ValidMask) != 0)
 				return Bool3.False;
 			return Bool3.Unknown;
 		}
