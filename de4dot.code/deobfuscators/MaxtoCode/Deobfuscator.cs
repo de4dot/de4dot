@@ -106,7 +106,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 
 			var fileData = DeobUtils.ReadModule(module);
 			decrypterInfo = new DecrypterInfo(mainType, fileData);
-			var methodsDecrypter = new MethodsDecrypter(decrypterInfo);
+			var methodsDecrypter = new MethodsDecrypter(module, decrypterInfo);
 
 			if (!methodsDecrypter.Decrypt(ref dumpedMethods))
 				return false;

@@ -30,6 +30,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		V5,
 		V6,
 		V7,
+		V8,
 	}
 
 	class PeHeader {
@@ -44,6 +45,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		public PeHeader(MainType mainType, MyPEImage peImage) {
 			uint headerOffset;
 			version = GetHeaderOffsetAndVersion(peImage, out headerOffset);
+			headerData = peImage.OffsetReadBytes(headerOffset, 0x1000);
 
 			switch (version) {
 			case EncryptionVersion.V1:
@@ -62,9 +64,20 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			case EncryptionVersion.V7:
 				xorKey = 0x8ABA931;
 				break;
-			}
 
-			headerData = peImage.OffsetReadBytes(headerOffset, 0x1000);
+			case EncryptionVersion.V8:
+				if (CheckMcKeyRva(peImage, 0x99BA9A13))
+					break;
+				if (CheckMcKeyRva(peImage, 0x18ABA931))
+					break;
+				break;
+			}
+		}
+
+		bool CheckMcKeyRva(MyPEImage peImage, uint newXorKey) {
+			xorKey = newXorKey;
+			uint rva = GetMcKeyRva();
+			return (rva & 0xFFF) == 0 && peImage.FindSection((RVA)rva) != null;
 		}
 
 		public uint GetMcKeyRva() {
