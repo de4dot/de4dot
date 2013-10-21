@@ -255,15 +255,25 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 					}
 				}
 
+				Dictionary<uint, DecryptedMethodInfo> savedInfos = null;
 				foreach (var decrypter in decrypters) {
 					try {
-						if (InitializeInfos2(decrypter))
-							return true;
+						if (InitializeInfos2(decrypter)) {
+							if (savedInfos != null) {
+								Logger.w("Decryption probably failed. Make sure the correct MaxtoCode runtime file is present.");
+								break;
+							}
+							savedInfos = infos;
+							infos = new Dictionary<uint, DecryptedMethodInfo>();
+						}
 					}
 					catch {
 					}
 				}
-				return false;
+				if (savedInfos == null)
+					return false;
+				infos = savedInfos;
+				return true;
 			}
 
 			IDecrypter GetCorrectDecrypter(uint timeStamp) {
