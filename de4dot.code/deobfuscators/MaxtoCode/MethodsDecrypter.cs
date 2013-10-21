@@ -284,6 +284,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				var encryptedDataInfos = new byte[numEncryptedDataInfos][];
 
 				uint offset = 8;
+				infos.Clear();
 				for (int i = 0; i < numMethods; i++, offset += structSize) {
 					uint methodBodyRva = ReadEncryptedUInt32(offset);
 					uint totalSize = ReadEncryptedUInt32(offset + 4);
