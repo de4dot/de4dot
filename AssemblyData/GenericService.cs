@@ -22,7 +22,6 @@ using System.Reflection;
 
 namespace AssemblyData {
 	class GenericService : AssemblyService, IGenericService {
-		Assembly userServiceAssembly;
 		IUserGenericService userGenericService;
 
 		public override void Exit() {
@@ -32,8 +31,7 @@ namespace AssemblyData {
 			base.Exit();
 		}
 
-		public void LoadUserService(string asmPath, Type createServiceType, object createMethodArgs) {
-			userServiceAssembly = Assembly.LoadFile(asmPath);
+		public void LoadUserService(Type createServiceType, object createMethodArgs) {
 			var createServiceMethod = GetCreateUserServiceMethod(createServiceType);
 			userGenericService = createServiceMethod.Invoke(null, null) as IUserGenericService;
 			if (userGenericService == null)

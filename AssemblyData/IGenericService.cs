@@ -24,7 +24,7 @@ namespace AssemblyData {
 	}
 
 	public interface IGenericService : IAssemblyService {
-		void LoadUserService(string asmPath, Type createServiceType, object createMethodArgs);
+		void LoadUserService(Type createServiceType, object createMethodArgs);
 		void LoadAssembly(string filename);
 		object SendMessage(int msg, object[] args);
 	}
