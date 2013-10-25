@@ -271,6 +271,7 @@
     <Compile Include="deobfuscators\Xenocode\Deobfuscator.cs" />
     <Compile Include="deobfuscators\Xenocode\StringDecrypter.cs" />
     <Compile Include="DumpedMethodsRestorer.cs" />
+    <Compile Include="HandleProcessCorruptedStateExceptionsAttribute.cs" />
     <Compile Include="IDeobfuscatorContext.cs" />
     <Compile Include="IObfuscatedFile.cs" />
     <Compile Include="Logger.cs" />
