@@ -338,7 +338,7 @@ namespace AssemblyData.methodsrewriter {
 			return list;
 		}
 
-		static FieldInfo GgetStackTraceStackFramesField() {
+		static FieldInfo GetStackTraceStackFramesField() {
 			var flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
 			return ResolverUtils.GetFieldThrow(typeof(StackTrace), typeof(StackFrame[]), flags, "Could not find StackTrace's frames (StackFrame[]) field");
 		}
@@ -367,7 +367,7 @@ namespace AssemblyData.methodsrewriter {
 		}
 
 		StackTrace RtFixStackTrace(StackTrace stackTrace) {
-			var framesField = GgetStackTraceStackFramesField();
+			var framesField = GetStackTraceStackFramesField();
 			var frames = (StackFrame[])framesField.GetValue(stackTrace);
 
 			var newFrames = new List<StackFrame>(frames.Length);
