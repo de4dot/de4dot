@@ -43,6 +43,10 @@ namespace de4dot.code.AssemblyClient {
 			get { return (IMethodDecrypterService)service; }
 		}
 
+		public IGenericService GenericService {
+			get { return (IGenericService)service; }
+		}
+
 		public AssemblyClient(IAssemblyServerLoader loader) {
 			this.loader = loader;
 		}

@@ -35,6 +35,9 @@ namespace AssemblyData {
 			case AssemblyServiceType.MethodDecrypter:
 				return new MethodDecrypterService();
 
+			case AssemblyServiceType.Generic:
+				return new GenericService();
+
 			default:
 				throw new ArgumentException("Invalid assembly service type");
 			}
@@ -48,6 +51,9 @@ namespace AssemblyData {
 			case AssemblyServiceType.MethodDecrypter:
 				return typeof(MethodDecrypterService);
 
+			case AssemblyServiceType.Generic:
+				return typeof(GenericService);
+
 			default:
 				throw new ArgumentException("Invalid assembly service type");
 			}
@@ -56,7 +62,7 @@ namespace AssemblyData {
 		public void DoNothing() {
 		}
 
-		public void Exit() {
+		public virtual void Exit() {
 			exitEvent.Set();
 		}
 

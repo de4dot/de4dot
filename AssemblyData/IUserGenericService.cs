@@ -18,15 +18,11 @@
 */
 
 using System;
-using AssemblyData;
+using System.Reflection;
 
-namespace de4dot.code.AssemblyClient {
-	public interface IAssemblyClient : IDisposable {
-		IAssemblyService Service { get; }
-		IStringDecrypterService StringDecrypterService { get; }
-		IMethodDecrypterService MethodDecrypterService { get; }
-		IGenericService GenericService { get; }
-		void Connect();
-		void WaitConnected();
+namespace AssemblyData {
+	public interface IUserGenericService : IDisposable {
+		void AssemblyLoaded(Assembly assembly);
+		object HandleMessage(int msg, object[] args);
 	}
 }

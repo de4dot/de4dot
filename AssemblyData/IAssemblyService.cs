@@ -21,6 +21,7 @@ namespace AssemblyData {
 	public enum AssemblyServiceType {
 		StringDecrypter,
 		MethodDecrypter,
+		Generic,
 	}
 
 	public interface IAssemblyService {

@@ -41,10 +41,13 @@
     <Compile Include="AssemblyService.cs" />
     <Compile Include="DelegateStringDecrypter.cs" />
     <Compile Include="EmuStringDecrypter.cs" />
+    <Compile Include="GenericService.cs" />
     <Compile Include="IAssemblyService.cs" />
+    <Compile Include="IGenericService.cs" />
     <Compile Include="IMethodDecrypterService.cs" />
     <Compile Include="IStringDecrypter.cs" />
     <Compile Include="IStringDecrypterService.cs" />
+    <Compile Include="IUserGenericService.cs" />
     <Compile Include="MethodDecrypterService.cs" />
     <Compile Include="methodsrewriter\AssemblyResolver.cs" />
     <Compile Include="methodsrewriter\CodeGenerator.cs" />
