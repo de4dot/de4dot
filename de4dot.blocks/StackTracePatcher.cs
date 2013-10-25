@@ -25,12 +25,12 @@ namespace de4dot.blocks {
 	public class StackTracePatcher {
 		static readonly FieldInfo methodField;
 		static readonly FieldInfo framesField;
-		static readonly FieldInfo iMethodsToSkip;
+		static readonly FieldInfo methodsToSkipField;
 
 		static StackTracePatcher() {
 			methodField = GetStackFrameMethodField();
 			framesField = GetStackTraceStackFramesField();
-			iMethodsToSkip = GetMethodsToSkip();
+			methodsToSkipField = GetMethodsToSkipField();
 		}
 
 		static FieldInfo GetStackFrameMethodField() {
@@ -43,7 +43,7 @@ namespace de4dot.blocks {
 			return GetFieldThrow(typeof(StackTrace), typeof(StackFrame[]), flags, "Could not find StackTrace's frames (StackFrame[]) field");
 		}
 
-		static FieldInfo GetMethodsToSkip() {
+		static FieldInfo GetMethodsToSkipField() {
 			var flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
 			return GetFieldThrow(typeof(StackTrace), "m_iMethodsToSkip", flags, "Could not find StackTrace's iMethodsToSkip field");
 		}
@@ -81,7 +81,7 @@ namespace de4dot.blocks {
 		public static StackTrace WriteStackFrame(StackTrace stackTrace, int frameNo, MethodBase newMethod) {
 			var framesField = GetStackTraceStackFramesField();
 			var frames = (StackFrame[])framesField.GetValue(stackTrace);
-			int numFramesToSkip = (int)iMethodsToSkip.GetValue(stackTrace);
+			int numFramesToSkip = (int)methodsToSkipField.GetValue(stackTrace);
 			WriteMethodBase(frames[numFramesToSkip + frameNo], newMethod);
 			return stackTrace;
 		}
