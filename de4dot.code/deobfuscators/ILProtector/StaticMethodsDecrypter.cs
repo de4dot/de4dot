@@ -22,16 +22,9 @@ using System.Collections.Generic;
 using System.IO;
 using dnlib.IO;
 using dnlib.DotNet;
-using dnlib.DotNet.Emit;
-using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.ILProtector {
-	class MethodsDecrypter {
-		ModuleDefMD module;
-		MainType mainType;
-		EmbeddedResource methodsResource;
-		Dictionary<int, MethodInfo2> methodInfos = new Dictionary<int, MethodInfo2>();
-		List<TypeDef> delegateTypes = new List<TypeDef>();
+	class StaticMethodsDecrypter : MethodsDecrypterBase {
 		IDecrypter decrypter;
 
 		interface IDecrypter {
@@ -153,13 +146,13 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			}
 		}
 
-		// 1.0.6
+		// 1.0.6 - 1.0.7.0
 		class DecrypterV106 : DecrypterBase {
 			byte[] decryptionKey6;
 			byte[] decryptionKey7;
 
 			DecrypterV106(byte[] key0, byte[] key6, byte[] key7, int startOffset) {
-				this.ilpVersion = "1.0.6";
+				this.ilpVersion = "1.0.6 - 1.0.7.0";
 				this.startOffset = startOffset;
 				this.decryptionKey = key0;
 				this.decryptionKey6 = key6;
@@ -185,7 +178,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 
 					var key0 = DeobUtils.Sha1Sum(sha1Data);			// 1.0.6.0
 					var key6 = GetKey(reader, key0, keyXorOffs6);	// 1.0.6.6
-					var key7 = GetKey(reader, key0, keyXorOffs7);	// 1.0.6.7
+					var key7 = GetKey(reader, key0, keyXorOffs7);	// 1.0.6.7 - 1.0.7.0
 					return new DecrypterV106(key0, key6, key7, encryptedOffs);
 				}
 				catch (IOException) {
@@ -232,29 +225,6 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			}
 		}
 
-		class MethodInfo2 {
-			public int id;
-			public int offset;
-			public byte[] data;
-			public MethodInfo2(int id, int offset, int size) {
-				this.id = id;
-				this.offset = offset;
-				this.data = new byte[size];
-			}
-
-			public override string ToString() {
-				return string.Format("{0} {1:X8} 0x{2:X}", id, offset, data.Length);
-			}
-		}
-
-		public EmbeddedResource Resource {
-			get { return methodsResource; }
-		}
-
-		public IEnumerable<TypeDef> DelegateTypes {
-			get { return delegateTypes; }
-		}
-
 		public string Version {
 			get { return decrypter == null ? null : decrypter.Version; }
 		}
@@ -263,9 +233,8 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			get { return methodsResource != null; }
 		}
 
-		public MethodsDecrypter(ModuleDefMD module, MainType mainType) {
-			this.module = module;
-			this.mainType = mainType;
+		public StaticMethodsDecrypter(ModuleDefMD module, MainType mainType)
+			: base(module, mainType) {
 		}
 
 		public void Find() {
@@ -300,108 +269,35 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			return decrypter != null;
 		}
 
-		public void Decrypt() {
+		protected override void DecryptInternal() {
 			if (methodsResource == null || decrypter == null)
 				return;
 
 			foreach (var info in ReadMethodInfos(decrypter.GetMethodsData(methodsResource)))
 				methodInfos[info.id] = info;
-
-			RestoreMethods();
 		}
 
-		static MethodInfo2[] ReadMethodInfos(byte[] data) {
+		static DecryptedMethodInfo[] ReadMethodInfos(byte[] data) {
+			var toOffset = new Dictionary<DecryptedMethodInfo, int>();
 			var reader = MemoryImageStream.Create(data);
 			int numMethods = (int)reader.Read7BitEncodedUInt32();
 			int totalCodeSize = (int)reader.Read7BitEncodedUInt32();
-			var methodInfos = new MethodInfo2[numMethods];
+			var methodInfos = new DecryptedMethodInfo[numMethods];
 			int offset = 0;
 			for (int i = 0; i < numMethods; i++) {
 				int id = (int)reader.Read7BitEncodedUInt32();
 				int size = (int)reader.Read7BitEncodedUInt32();
-				methodInfos[i] = new MethodInfo2(id, offset, size);
+				var info = new DecryptedMethodInfo(id, size);
+				methodInfos[i] = info;
+				toOffset[info] = offset;
 				offset += size;
 			}
 			long dataOffset = reader.Position;
 			foreach (var info in methodInfos) {
-				reader.Position = dataOffset + info.offset;
+				reader.Position = dataOffset + toOffset[info];
 				reader.Read(info.data, 0, info.data.Length);
 			}
 			return methodInfos;
-		}
-
-		void RestoreMethods() {
-			if (methodInfos.Count == 0)
-				return;
-
-			Logger.v("Restoring {0} methods", methodInfos.Count);
-			Logger.Instance.Indent();
-			foreach (var type in module.GetTypes()) {
-				foreach (var method in type.Methods) {
-					if (method.Body == null)
-						continue;
-
-					if (RestoreMethod(method)) {
-						Logger.v("Restored method {0} ({1:X8}). Instrs:{2}, Locals:{3}, Exceptions:{4}",
-							Utils.RemoveNewlines(method.FullName),
-							method.MDToken.ToInt32(),
-							method.Body.Instructions.Count,
-							method.Body.Variables.Count,
-							method.Body.ExceptionHandlers.Count);
-					}
-				}
-			}
-			Logger.Instance.DeIndent();
-			if (methodInfos.Count != 0)
-				Logger.w("{0} methods weren't restored", methodInfos.Count);
-		}
-
-		const int INVALID_METHOD_ID = -1;
-		bool RestoreMethod(MethodDef method) {
-			int methodId = GetMethodId(method);
-			if (methodId == INVALID_METHOD_ID)
-				return false;
-
-			var parameters = method.Parameters;
-			var methodInfo = methodInfos[methodId];
-			methodInfos.Remove(methodId);
-			var methodReader = new MethodReader(module, methodInfo.data, parameters);
-			methodReader.Read();
-
-			RestoreMethod(method, methodReader);
-			delegateTypes.Add(methodReader.DelegateType);
-
-			return true;
-		}
-
-		static void RestoreMethod(MethodDef method, MethodReader methodReader) {
-			// body.MaxStackSize = <let dnlib calculate this>
-			method.Body.InitLocals = methodReader.InitLocals;
-			methodReader.RestoreMethod(method);
-		}
-
-		int GetMethodId(MethodDef method) {
-			if (method == null || method.Body == null)
-				return INVALID_METHOD_ID;
-
-			var instrs = method.Body.Instructions;
-			for (int i = 0; i < instrs.Count - 1; i++) {
-				var ldsfld = instrs[i];
-				if (ldsfld.OpCode.Code != Code.Ldsfld)
-					continue;
-
-				var ldci4 = instrs[i + 1];
-				if (!ldci4.IsLdcI4())
-					continue;
-
-				var field = ldsfld.Operand as FieldDef;
-				if (field == null || field != mainType.InvokerInstanceField)
-					continue;
-
-				return ldci4.GetLdcI4Value();
-			}
-
-			return INVALID_METHOD_ID;
 		}
 	}
 }

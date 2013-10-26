@@ -160,6 +160,11 @@
     <Compile Include="deobfuscators\Dotfuscator\Deobfuscator.cs" />
     <Compile Include="deobfuscators\Dotfuscator\StringDecrypter.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\Dynocode.cs" />
+    <Compile Include="deobfuscators\ILProtector\DecryptedMethodInfo.cs" />
+    <Compile Include="deobfuscators\ILProtector\DynamicMethodsDecrypter.cs" />
+    <Compile Include="deobfuscators\ILProtector\DynamicMethodsDecrypterService.cs" />
+    <Compile Include="deobfuscators\ILProtector\DynamicMethodsRestorer.cs" />
+    <Compile Include="deobfuscators\ILProtector\MethodsDecrypterBase.cs" />
     <Compile Include="deobfuscators\MyPEImage.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v3\AntiStrongName.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v3\ApplicationModeDecrypter.cs" />
@@ -211,7 +216,7 @@
     <Compile Include="deobfuscators\ILProtector\Deobfuscator.cs" />
     <Compile Include="deobfuscators\ILProtector\MainType.cs" />
     <Compile Include="deobfuscators\ILProtector\MethodReader.cs" />
-    <Compile Include="deobfuscators\ILProtector\MethodsDecrypter.cs" />
+    <Compile Include="deobfuscators\ILProtector\StaticMethodsDecrypter.cs" />
     <Compile Include="deobfuscators\InitializedDataCreator.cs" />
     <Compile Include="deobfuscators\InlinedMethodsFinder.cs" />
     <Compile Include="deobfuscators\ISimpleDeobfuscator.cs" />
