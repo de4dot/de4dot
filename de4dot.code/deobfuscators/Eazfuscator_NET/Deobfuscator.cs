@@ -159,6 +159,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				AddTypesToBeRemoved(stringDecrypter.DynocodeTypes, "Dynocode type");
 				AddResourceToBeRemoved(stringDecrypter.Resource, "Encrypted strings");
 			}
+			stringDecrypter.CloseServer();
+
 			AddTypeToBeRemoved(assemblyResolver.Type, "Assembly resolver type");
 			AddTypeToBeRemoved(assemblyResolver.OtherType, "Assembly resolver other type");
 			AddTypeToBeRemoved(resourceResolver.Type, "Resource resolver type");
@@ -212,6 +214,14 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			IList<ExceptionHandler> allExceptionHandlers;
 			blocks.GetCode(out allInstructions, out allExceptionHandlers);
 			DotNetUtils.RestoreBody(cctor, allInstructions, allExceptionHandlers);
+		}
+
+		protected override void Dispose(bool disposing) {
+			if (disposing) {
+				if (stringDecrypter != null)
+					stringDecrypter.Dispose();
+			}
+			base.Dispose(disposing);
 		}
 
 		public override IEnumerable<int> GetStringDecrypterMethods() {
