@@ -85,7 +85,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 		ResourceDecrypter resourceDecrypter;
 
 		StackFrameHelper stackFrameHelper;
-		vm.Csvm csvm;
+		vm.v1.Csvm csvm;
 
 		internal class Options : OptionsBase {
 			public bool DecryptMethods { get; set; }
@@ -185,7 +185,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			resourceDecrypter.Find();
 			proxyCallFixer = new ProxyCallFixer(module);
 			proxyCallFixer.FindDelegateCreator();
-			csvm = new vm.Csvm(DeobfuscatedFile.DeobfuscatorContext, module);
+			csvm = new vm.v1.Csvm(DeobfuscatedFile.DeobfuscatorContext, module);
 			csvm.Find();
 		}
 
@@ -227,7 +227,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			newOne.stringDecrypter = new StringDecrypter(module, stringDecrypter);
 			newOne.resourceDecrypter = new ResourceDecrypter(module, resourceDecrypter);
 			newOne.proxyCallFixer = new ProxyCallFixer(module, proxyCallFixer);
-			newOne.csvm = new vm.Csvm(DeobfuscatedFile.DeobfuscatorContext, module, csvm);
+			newOne.csvm = new vm.v1.Csvm(DeobfuscatedFile.DeobfuscatorContext, module, csvm);
 			return newOne;
 		}
 

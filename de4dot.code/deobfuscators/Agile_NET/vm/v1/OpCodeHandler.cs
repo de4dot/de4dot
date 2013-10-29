@@ -24,7 +24,7 @@ using de4dot.blocks;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
-namespace de4dot.code.deobfuscators.Agile_NET.vm {
+namespace de4dot.code.deobfuscators.Agile_NET.vm.v1 {
 	partial class OpCodeHandler {
 		public string Name { get; set; }
 		public OpCodeHandlerSigInfo OpCodeHandlerSigInfo { get; set; }

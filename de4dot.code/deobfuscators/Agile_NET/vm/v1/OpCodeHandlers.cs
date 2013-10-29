@@ -17,7 +17,7 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-namespace de4dot.code.deobfuscators.Agile_NET.vm {
+namespace de4dot.code.deobfuscators.Agile_NET.vm.v1 {
 	static partial class OpCodeHandlers {
 		public static readonly OpCodeHandler[][] opcodeHandlers = new OpCodeHandler[][] {
 			new OpCodeHandler[] {

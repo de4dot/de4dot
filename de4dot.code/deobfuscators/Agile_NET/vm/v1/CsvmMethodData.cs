@@ -19,7 +19,7 @@
 
 using System;
 
-namespace de4dot.code.deobfuscators.Agile_NET.vm {
+namespace de4dot.code.deobfuscators.Agile_NET.vm.v1 {
 	class CsvmMethodData {
 		public Guid Guid { get; set; }
 		public int Token { get; set; }

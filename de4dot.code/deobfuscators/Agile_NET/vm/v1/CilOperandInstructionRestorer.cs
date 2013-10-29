@@ -21,7 +21,7 @@ using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
-namespace de4dot.code.deobfuscators.Agile_NET.vm {
+namespace de4dot.code.deobfuscators.Agile_NET.vm.v1 {
 	// Tries to restore the operands of the following CIL instructions:
 	//	ldelema
 	//	ldobj

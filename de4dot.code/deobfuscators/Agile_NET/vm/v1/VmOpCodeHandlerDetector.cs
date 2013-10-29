@@ -24,7 +24,7 @@ using dnlib.DotNet.Emit;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
 
-namespace de4dot.code.deobfuscators.Agile_NET.vm {
+namespace de4dot.code.deobfuscators.Agile_NET.vm.v1 {
 	class OpCodeHandlerSigInfo {
 		public object[] RequiredFieldTypes { get; set; }
 		public string[] ExecuteMethodLocals { get; set; }
