@@ -32,7 +32,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = ".NET Reactor";
 		public const string THE_TYPE = "dr4";
-		const string DEFAULT_REGEX = DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
+		const string DEFAULT_REGEX = @"!^[A-Za-z0-9]{2,3}$&" + DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
 		BoolOption decryptMethods;
 		BoolOption decryptBools;
 		BoolOption restoreTypes;
@@ -366,16 +366,23 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 					return DeobfuscatorInfo.THE_NAME + " 4.0 - 4.4";
 
 				int numIntPtrSizeCompares = CountCompareSystemIntPtrSize(methodsDecrypter.Method);
+				bool hasSymmetricAlgorithm = new LocalTypes(methodsDecrypter.Method).Exists("System.Security.Cryptography.SymmetricAlgorithm");
 				if (module.IsClr40) {
 					switch (numIntPtrSizeCompares) {
 					case 9: return DeobfuscatorInfo.THE_NAME + " 4.5";
-					case 10:return DeobfuscatorInfo.THE_NAME + " 4.6";
+					case 10:
+						if (!hasSymmetricAlgorithm)
+							return DeobfuscatorInfo.THE_NAME + " 4.6";
+						return DeobfuscatorInfo.THE_NAME + " 4.7";
 					}
 				}
 				else {
 					switch (numIntPtrSizeCompares) {
 					case 8: return DeobfuscatorInfo.THE_NAME + " 4.5";
-					case 9: return DeobfuscatorInfo.THE_NAME + " 4.6";
+					case 9:
+						if (!hasSymmetricAlgorithm)
+							return DeobfuscatorInfo.THE_NAME + " 4.6";
+						return DeobfuscatorInfo.THE_NAME + " 4.7";
 					}
 				}
 
