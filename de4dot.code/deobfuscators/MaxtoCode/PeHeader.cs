@@ -70,6 +70,8 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 					break;
 				if (CheckMcKeyRva(peImage, 0x18ABA931))
 					break;
+				if (CheckMcKeyRva(peImage, 0x18ABA933))
+					break;
 				break;
 			}
 		}
