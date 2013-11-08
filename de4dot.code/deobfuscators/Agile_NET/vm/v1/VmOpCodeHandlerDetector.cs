@@ -214,7 +214,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v1 {
 			opCodeHandlers = new List<OpCodeHandler>();
 			var detected = new List<OpCodeHandler>();
 
-			foreach (var handlersList in OpCodeHandlers.opcodeHandlers) {
+			foreach (var handlersList in OpCodeHandlers.Handlers) {
 				opCodeHandlers.Clear();
 
 				foreach (var handlerType in handlerTypes) {

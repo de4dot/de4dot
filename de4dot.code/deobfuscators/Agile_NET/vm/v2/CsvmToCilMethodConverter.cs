@@ -22,9 +22,8 @@ using System.Collections.Generic;
 using System.IO;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
-using de4dot.blocks;
 
-namespace de4dot.code.deobfuscators.Agile_NET.vm.v1 {
+namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 	class CsvmToCilMethodConverter : CsvmToCilMethodConverterBase {
 		VmOpCodeHandlerDetector opCodeDetector;
 
@@ -36,15 +35,28 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v1 {
 		protected override List<Instruction> ReadInstructions(MethodDef cilMethod, CsvmMethodData csvmMethod) {
 			var reader = new BinaryReader(new MemoryStream(csvmMethod.Instructions));
 			var instrs = new List<Instruction>();
+			var handlerInfoReader = new OpCodeHandlerInfoReader(module);
+
+			int numVmInstrs = reader.ReadInt32();
+			var vmInstrs = new ushort[numVmInstrs];
+			for (int i = 0; i < numVmInstrs; i++)
+				vmInstrs[i] = reader.ReadUInt16();
+
 			uint offset = 0;
-			while (reader.BaseStream.Position < reader.BaseStream.Length) {
-				int vmOpCode = reader.ReadUInt16();
-				var instr = opCodeDetector.Handlers[vmOpCode].Read(reader, module);
-				instr.Offset = offset;
-				offset += (uint)GetInstructionSize(instr);
-				SetCilToVmIndex(instr, instrs.Count);
-				SetVmIndexToCil(instr, instrs.Count);
-				instrs.Add(instr);
+			for (int vmInstrIndex = 0; vmInstrIndex < numVmInstrs; vmInstrIndex++) {
+				var composite = opCodeDetector.Handlers[vmInstrs[vmInstrIndex]];
+				var handlerInfos = composite.OpCodeHandlerInfos;
+				if (handlerInfos.Count == 0)
+					handlerInfos = new List<OpCodeHandlerInfo>() { new OpCodeHandlerInfo(HandlerTypeCode.Nop, null) };
+				for (int hi = 0; hi < handlerInfos.Count; hi++) {
+					var instr = handlerInfoReader.Read(handlerInfos[hi].TypeCode, reader);
+					instr.Offset = offset;
+					offset += (uint)GetInstructionSize(instr);
+					SetCilToVmIndex(instr, vmInstrIndex);
+					if (hi == 0)
+						SetVmIndexToCil(instr, vmInstrIndex);
+					instrs.Add(instr);
+				}
 			}
 			return instrs;
 		}

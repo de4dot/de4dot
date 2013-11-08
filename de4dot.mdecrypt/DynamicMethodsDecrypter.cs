@@ -20,11 +20,20 @@
 using System;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 using System.Reflection;
+using System.Security;
 using dnlib.DotNet;
 using dnlib.DotNet.MD;
+using dnlib.PE;
 using de4dot.blocks;
+
+namespace System.Runtime.ExceptionServices {
+	[AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
+	class HandleProcessCorruptedStateExceptionsAttribute : Attribute {
+	}
+}
 
 namespace de4dot.mdecrypt {
 	public class DynamicMethodsDecrypter {
@@ -131,6 +140,9 @@ namespace de4dot.mdecrypt {
 
 		[DllImport("kernel32")]
 		static extern IntPtr VirtualAlloc(IntPtr lpAddress, UIntPtr dwSize, uint flAllocationType, uint flProtect);
+
+		[DllImport("kernel32")]
+		static extern bool GetModuleHandleEx(uint dwFlags, IntPtr lpModuleName, out IntPtr phModule);
 
 		delegate IntPtr GetJit();
 		delegate int CompileMethod(IntPtr jitter, IntPtr comp, IntPtr info, uint flags, IntPtr nativeEntry, IntPtr nativeSizeOfCode, out bool handled);
@@ -364,13 +376,15 @@ namespace de4dot.mdecrypt {
 				// We're not decrypting methods
 
 				var info2 = (CORINFO_METHOD_INFO*)info;
-				if (info2->scope != moduleToDecryptScope) {
+				if (info2->scope != moduleToDecryptScope ||
+					decryptMethodsInfo.moduleCctorBytes == null ||
+					moduleCctorCodeRva == 0) {
 					handled = false;
 					return 0;
 				}
 
 				uint codeRva = (uint)((byte*)info2->ILCode - (byte*)hInstModule);
-				if (decryptMethodsInfo.moduleCctorBytes != null && moduleCctorCodeRva != 0 && moduleCctorCodeRva == codeRva) {
+				if (moduleCctorCodeRva == codeRva) {
 					fixed (byte* newIlCodeBytes = &decryptMethodsInfo.moduleCctorBytes[0]) {
 						WriteCompileMethod(origCompileMethod);
 						info2->ILCode = new IntPtr(newIlCodeBytes);
@@ -553,30 +567,78 @@ namespace de4dot.mdecrypt {
 			if (hasInstalledCompileMethod2)
 				return;
 
-			if (!PatchDword(*(IntPtr*)jitterVtbl, 0x30000, origCompileMethod, ourCompileMethodInfo.ptrInDll))
+			if (!PatchCM(*(IntPtr*)jitterVtbl, origCompileMethod, ourCompileMethodInfo.ptrInDll))
 				throw new ApplicationException("Couldn't patch compileMethod");
 
 			hasInstalledCompileMethod2 = true;
 			return;
 		}
 
-		unsafe bool PatchDword(IntPtr addr, int size, IntPtr origValue, IntPtr newValue) {
-			addr = new IntPtr(addr.ToInt64() & ~0xFFF);
-			var endAddr = new IntPtr(addr.ToInt64() + size);
-			for (; addr.ToPointer() < endAddr.ToPointer(); addr = new IntPtr(addr.ToInt64() + 0x1000)) {
-				try {
-					for (int i = 0; i < 0x1000; i += IntPtr.Size) {
-						var addr2 = (IntPtr*)((byte*)addr + i);
-						if (*addr2 == origValue) {
-							*addr2 = newValue;
-							return true;
+		static IntPtr GetModuleHandle(IntPtr addr) {
+			IntPtr hModule;
+			if (!GetModuleHandleEx(4, addr, out hModule))
+				throw new ApplicationException("GetModuleHandleEx() failed");
+			return hModule;
+		}
+
+		static unsafe bool PatchCM(IntPtr addr, IntPtr origValue, IntPtr newValue) {
+			var baseAddr = GetModuleHandle(addr);
+			IntPtr patchAddr;
+			using (var peImage = new PEImage(baseAddr))
+				patchAddr = FindCMAddress(peImage, baseAddr, origValue);
+			if (patchAddr == IntPtr.Zero)
+				return false;
+
+			*(IntPtr*)patchAddr = newValue;
+			return true;
+		}
+
+		[HandleProcessCorruptedStateExceptions, SecurityCritical]	// Req'd on .NET 4.0
+		static unsafe IntPtr FindCMAddress(PEImage peImage, IntPtr baseAddr, IntPtr origValue) {
+			const int offset1_CLR2 = 0x78;
+			const int offset1_CLR4 = 0x74;
+			int offset1 = Environment.Version.Major == 2 ? offset1_CLR2 : offset1_CLR4;
+
+			const int offset2_CLR2 = 0x10;
+			const int offset2_CLR4 = 0x28;
+			int offset2 = Environment.Version.Major == 2 ? offset2_CLR2 : offset2_CLR4;
+
+			foreach (var section in peImage.ImageSectionHeaders) {
+				const uint RW = 0x80000000 | 0x40000000;
+				if ((section.Characteristics & RW) != RW)
+					continue;
+
+				byte* p = (byte*)baseAddr + (uint)section.VirtualAddress + ((section.VirtualSize + IntPtr.Size - 1) & ~(IntPtr.Size - 1)) - IntPtr.Size;
+				for (; p >= (byte*)baseAddr; p -= IntPtr.Size) {
+					try {
+						byte* p2 = (byte*)*(IntPtr**)p;
+						if ((ulong)p2 >= 0x10000) {
+							p2 += offset1;
+							if (*(IntPtr*)p2 == origValue)
+								return new IntPtr(p2);
 						}
 					}
-				}
-				catch {
+					catch {
+					}
+					try {
+						byte* p2 = (byte*)*(IntPtr**)p;
+						if ((ulong)p2 >= 0x10000) {
+							p2 += offset2;
+							if (*(IntPtr*)p2 == origValue)
+								return new IntPtr(p2);
+						}
+					}
+					catch {
+					}
+					try {
+						if (*(IntPtr*)p == origValue)
+							return new IntPtr(p);
+					}
+					catch {
+					}
 				}
 			}
-			return false;
+			return IntPtr.Zero;
 		}
 	}
 }

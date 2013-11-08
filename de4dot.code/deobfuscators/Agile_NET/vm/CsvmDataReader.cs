@@ -24,7 +24,7 @@ using dnlib.IO;
 using dnlib.DotNet;
 using de4dot.blocks;
 
-namespace de4dot.code.deobfuscators.Agile_NET.vm.v1 {
+namespace de4dot.code.deobfuscators.Agile_NET.vm {
 	class CsvmDataReader {
 		IBinaryReader reader;
 

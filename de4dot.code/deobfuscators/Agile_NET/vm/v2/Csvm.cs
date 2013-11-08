@@ -23,7 +23,7 @@ using System.IO;
 using dnlib.DotNet;
 using de4dot.blocks;
 
-namespace de4dot.code.deobfuscators.Agile_NET.vm.v1 {
+namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 	class Csvm {
 		IDeobfuscatorContext deobfuscatorContext;
 		ModuleDefMD module;
@@ -96,11 +96,12 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v1 {
 		}
 
 		void Restore2() {
-			Logger.v("Restoring CSVM methods");
+			Logger.n("Restoring CSVM methods");
 			Logger.Instance.Indent();
 
 			var opcodeDetector = GetVmOpCodeHandlerDetector();
 			var csvmMethods = new CsvmDataReader(resource.Data).Read();
+
 			var converter = new CsvmToCilMethodConverter(deobfuscatorContext, module, opcodeDetector);
 			var methodPrinter = new MethodPrinter();
 			foreach (var csvmMethod in csvmMethods) {
@@ -112,6 +113,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v1 {
 				PrintMethod(methodPrinter, cilMethod);
 			}
 			Logger.Instance.DeIndent();
+			Logger.n("Restored {0} CSVM methods", csvmMethods.Count);
 		}
 
 		static void PrintMethod(MethodPrinter methodPrinter, MethodDef method) {
@@ -140,7 +142,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v1 {
 			var vmModulePath = Path.Combine(Path.GetDirectoryName(module.Location), vmFilename);
 			Logger.v("CSVM filename: {0}", vmFilename);
 
-			var dataKey = "cs cached VmOpCodeHandlerDetector v1";
+			var dataKey = "cs cached VmOpCodeHandlerDetector v2";
 			var dict = (Dictionary<string, VmOpCodeHandlerDetector>)deobfuscatorContext.GetData(dataKey);
 			if (dict == null)
 				deobfuscatorContext.SetData(dataKey, dict = new Dictionary<string, VmOpCodeHandlerDetector>(StringComparer.OrdinalIgnoreCase));
@@ -150,10 +152,10 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v1 {
 			dict[vmModulePath] = detector = new VmOpCodeHandlerDetector(ModuleDefMD.Load(vmModulePath));
 
 			detector.FindHandlers();
-			Logger.v("CSVM opcodes:");
+			Logger.v("CSVM opcodes: {0}", detector.Handlers.Count);
 			Logger.Instance.Indent();
 			for (int i = 0; i < detector.Handlers.Count; i++)
-				Logger.v("{0:X4}: {1}", i, detector.Handlers[i].Name);
+				Logger.v("{0:X4}: {1}", i, detector.Handlers[i]);
 			Logger.Instance.DeIndent();
 
 			return detector;

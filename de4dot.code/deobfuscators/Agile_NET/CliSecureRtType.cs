@@ -88,19 +88,6 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 		static readonly string[] requiredFields1 = new string[] {
 			"System.Boolean",
 		};
-		static readonly string[] requiredFields2 = new string[] {
-			"System.Boolean",
-			"System.Reflection.Assembly",
-		};
-		static readonly string[] requiredFields3 = new string[] {
-			"System.Boolean",
-			"System.Byte[]",
-		};
-		static readonly string[] requiredFields4 = new string[] {
-			"System.Boolean",
-			"System.Reflection.Assembly",
-			"System.Byte[]",
-		};
 		bool Find2() {
 			foreach (var cctor in DeobUtils.GetInitCctors(module, 3)) {
 				foreach (var calledMethod in DotNetUtils.GetCalledMethods(module, cctor)) {
@@ -108,8 +95,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 					if (type.IsPublic)
 						continue;
 					var fieldTypes = new FieldTypes(type);
-					if (!fieldTypes.Exactly(requiredFields1) && !fieldTypes.Exactly(requiredFields2) &&
-						!fieldTypes.Exactly(requiredFields3) && !fieldTypes.Exactly(requiredFields4))
+					if (!fieldTypes.All(requiredFields1))
 						continue;
 					if (!HasInitializeMethod(type, "_Initialize") && !HasInitializeMethod(type, "_Initialize64"))
 						continue;
@@ -126,11 +112,19 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			return false;
 		}
 
+		static string[] requiredFields6 = new string[] {
+			"System.Byte[]",
+		};
+		static string[] requiredFields7 = new string[] {
+			"System.Byte[]",
+			"System.Collections.Hashtable",
+		};
 		bool Find3() {
 			foreach (var type in module.Types) {
-				if (type.Fields.Count != 1)
+				if (type.Fields.Count < 1 || type.Fields.Count > 2)
 					continue;
-				if (type.Fields[0].FieldSig.GetFieldType().GetFullName() != "System.Byte[]")
+				var fieldTypes = new FieldTypes(type);
+				if (!fieldTypes.Exactly(requiredFields6) && !fieldTypes.Exactly(requiredFields7))
 					continue;
 				if (type.Methods.Count != 2)
 					continue;

@@ -21,11 +21,9 @@ using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
-namespace de4dot.code.deobfuscators.Agile_NET.vm.v1 {
+namespace de4dot.code.deobfuscators.Agile_NET.vm {
 	// Tries to restore the operands of the following CIL instructions:
-	//	ldelema
-	//	ldobj
-	//	stobj
+	//	ldelema, ldelem.*, stelem.*, ldobj, stobj
 	class CilOperandInstructionRestorer {
 		MethodDef method;
 
@@ -42,10 +40,66 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v1 {
 				if (instr.Operand != null)
 					continue;
 
-				TypeSig operandType = null;
+				TypeSig operandType = null, operandTypeTmp;
+				OpCode newOpCode = null;
+				SZArraySig arrayType;
 				switch (instr.OpCode.Code) {
+				case Code.Ldelem:
+					arrayType = MethodStack.GetLoadedType(method, instrs, i, 1) as SZArraySig;
+					if (arrayType == null)
+						break;
+					operandTypeTmp = arrayType.Next;
+					if (operandTypeTmp == null)
+						newOpCode = OpCodes.Ldelem_Ref;
+					else {
+						switch (operandTypeTmp.ElementType) {
+						case ElementType.I:  newOpCode = OpCodes.Ldelem_I; break;
+						case ElementType.I1: newOpCode = OpCodes.Ldelem_I1; break;
+						case ElementType.I2: newOpCode = OpCodes.Ldelem_I2; break;
+						case ElementType.I4: newOpCode = OpCodes.Ldelem_I4; break;
+						case ElementType.I8: newOpCode = OpCodes.Ldelem_I8; break;
+						case ElementType.U:  newOpCode = OpCodes.Ldelem_I; break;
+						case ElementType.U1: newOpCode = OpCodes.Ldelem_U1; break;
+						case ElementType.U2: newOpCode = OpCodes.Ldelem_U2; break;
+						case ElementType.U4: newOpCode = OpCodes.Ldelem_U4; break;
+						case ElementType.U8: newOpCode = OpCodes.Ldelem_I8; break;
+						case ElementType.R4: newOpCode = OpCodes.Ldelem_R4; break;
+						case ElementType.R8: newOpCode = OpCodes.Ldelem_R8; break;
+						default:             newOpCode = OpCodes.Ldelem_Ref; break;
+						//TODO: Ldelem
+						}
+					}
+					break;
+
+				case Code.Stelem:
+					arrayType = MethodStack.GetLoadedType(method, instrs, i, 2) as SZArraySig;
+					if (arrayType == null)
+						break;
+					operandTypeTmp = arrayType.Next;
+					if (operandTypeTmp == null)
+						newOpCode = OpCodes.Stelem_Ref;
+					else {
+						switch (operandTypeTmp.ElementType) {
+						case ElementType.U:
+						case ElementType.I:  newOpCode = OpCodes.Stelem_I; break;
+						case ElementType.U1:
+						case ElementType.I1: newOpCode = OpCodes.Stelem_I1; break;
+						case ElementType.U2:
+						case ElementType.I2: newOpCode = OpCodes.Stelem_I2; break;
+						case ElementType.U4:
+						case ElementType.I4: newOpCode = OpCodes.Stelem_I4; break;
+						case ElementType.U8:
+						case ElementType.I8: newOpCode = OpCodes.Stelem_I8; break;
+						case ElementType.R4: newOpCode = OpCodes.Stelem_R4; break;
+						case ElementType.R8: newOpCode = OpCodes.Stelem_R8; break;
+						default: newOpCode = OpCodes.Stelem_Ref; break;
+						//TODO: Stelem
+						}
+					}
+					break;
+
 				case Code.Ldelema:
-					var arrayType = MethodStack.GetLoadedType(method, instrs, i, 1) as SZArraySig;
+					arrayType = MethodStack.GetLoadedType(method, instrs, i, 1) as SZArraySig;
 					if (arrayType == null)
 						break;
 					operandType = arrayType.Next;
@@ -64,12 +118,14 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v1 {
 				default:
 					continue;
 				}
-				if (!IsValidType(operandType)) {
+				if (newOpCode == null && !IsValidType(operandType)) {
 					atLeastOneFailed = true;
 					continue;
 				}
 
 				instr.Operand = operandType.ToTypeDefOrRef();
+				if (newOpCode != null)
+					instr.OpCode = newOpCode;
 			}
 
 			return !atLeastOneFailed;
