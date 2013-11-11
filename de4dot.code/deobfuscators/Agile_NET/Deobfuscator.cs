@@ -167,8 +167,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 					ToInt32(stringDecrypter.Detected) +
 					ToInt32(proxyCallFixer.Detected) +
 					ToInt32(resourceDecrypter.Detected) +
-					ToInt32(csvmV1.Detected) +
-					ToInt32(csvmV2.Detected);
+					ToInt32(csvmV1.Detected || csvmV2.Detected);
 			if (sum > 0)
 				val += 100 + 10 * (sum - 1);
 			if (cliSecureAttributes.Count != 0)
