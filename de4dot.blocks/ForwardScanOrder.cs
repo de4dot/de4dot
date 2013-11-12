@@ -100,25 +100,38 @@ namespace de4dot.blocks {
 			return false;
 		}
 
-		void ScanBaseBlock(BaseBlock bb, int stackStart) {
-			if (blockInfos.ContainsKey(bb) || !scopeBlock.IsOurBaseBlock(bb))
-				return;
-
-			var blockInfo = new BlockInfo(bb, stackStart);
-			blockInfos[bb] = blockInfo;
-
-			var block = bb as Block;
-			if (block == null) {	// i.e., if try, filter, or handler block
-				// It's not important to know the exact values, so we set them both to 0.
-				// Compilers must make sure the stack is empty when entering a try block.
-				blockInfo.stackStart = blockInfo.stackEnd = 0;
-				return;
+		struct ScanBaseBlockState {
+			public BaseBlock bb;
+			public int stackStart;
+			public ScanBaseBlockState(BaseBlock bb, int stackStart) {
+				this.bb = bb;
+				this.stackStart = stackStart;
 			}
+		}
+		Stack<ScanBaseBlockState> scanBaseBlockStack = new Stack<ScanBaseBlockState>();
+		void ScanBaseBlock(BaseBlock bbx, int stackStartx) {
+			scanBaseBlockStack.Push(new ScanBaseBlockState(bbx, stackStartx));
+			while (scanBaseBlockStack.Count > 0) {
+				var state = scanBaseBlockStack.Pop();
+				if (blockInfos.ContainsKey(state.bb) || !scopeBlock.IsOurBaseBlock(state.bb))
+					continue;
 
-			blockInfo.CalculateStackUsage();
+				var blockInfo = new BlockInfo(state.bb, state.stackStart);
+				blockInfos[state.bb] = blockInfo;
 
-			foreach (var target in block.GetTargets())
-				ScanBaseBlock(target, blockInfo.stackEnd);
+				var block = state.bb as Block;
+				if (block == null) {	// i.e., if try, filter, or handler block
+					// It's not important to know the exact values, so we set them both to 0.
+					// Compilers must make sure the stack is empty when entering a try block.
+					blockInfo.stackStart = blockInfo.stackEnd = 0;
+					continue;
+				}
+
+				blockInfo.CalculateStackUsage();
+
+				foreach (var target in block.GetTargets())
+					scanBaseBlockStack.Push(new ScanBaseBlockState(target, blockInfo.stackEnd));
+			}
 		}
 
 		void CreateNewList() {

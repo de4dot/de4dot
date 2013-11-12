@@ -170,38 +170,60 @@ namespace de4dot.blocks {
 					dest.Add(block);
 			}
 
+			struct VisitState {
+				public BlockInfo Info;
+				public List<BaseBlock> Targets;
+				public int TargetIndex;
+				public BlockInfo TargetInfo;
+				public VisitState(BlockInfo info) {
+					this.Info = info;
+					this.Targets = null;
+					this.TargetIndex = 0;
+					this.TargetInfo = null;
+				}
+			}
+			Stack<VisitState> visitStateStack = new Stack<VisitState>();
 			void Visit(BlockInfo info) {
-				if (info.baseBlock == firstBlock)
+				// This method used to be recursive but to prevent stack overflows,
+				// it's not recursive anymore.
+
+				VisitState state = new VisitState(info);
+recursive_call:
+				if (state.Info.baseBlock == firstBlock)
 					throw new ApplicationException("Can't visit firstBlock");
-				stack.Push(info);
-				info.onStack = true;
-				info.dfsNumber = dfsNumber;
-				info.low = dfsNumber;
+				stack.Push(state.Info);
+				state.Info.onStack = true;
+				state.Info.dfsNumber = dfsNumber;
+				state.Info.low = dfsNumber;
 				dfsNumber++;
 
-				foreach (var tmp in GetTargets(info.baseBlock)) {
-					var targetInfo = GetInfo(tmp);
-					if (targetInfo == null)
+				state.Targets = GetTargets(state.Info.baseBlock);
+				state.TargetIndex = 0;
+return_to_caller:
+				for (; state.TargetIndex < state.Targets.Count; state.TargetIndex++) {
+					state.TargetInfo = GetInfo(state.Targets[state.TargetIndex]);
+					if (state.TargetInfo == null)
 						continue;
-					if (targetInfo.baseBlock == firstBlock)
+					if (state.TargetInfo.baseBlock == firstBlock)
 						continue;
 
-					if (!targetInfo.Visited()) {
-						Visit(targetInfo);
-						info.low = Math.Min(info.low, targetInfo.low);
+					if (!state.TargetInfo.Visited()) {
+						visitStateStack.Push(state);
+						state = new VisitState(state.TargetInfo);
+						goto recursive_call;
 					}
-					else if (targetInfo.onStack)
-						info.low = Math.Min(info.low, targetInfo.dfsNumber);
+					else if (state.TargetInfo.onStack)
+						state.Info.low = Math.Min(state.Info.low, state.TargetInfo.dfsNumber);
 				}
 
-				if (info.low != info.dfsNumber)
-					return;
+				if (state.Info.low != state.Info.dfsNumber)
+					goto return_from_method;
 				var sccBlocks = new List<BaseBlock>();
 				while (true) {
 					var poppedInfo = stack.Pop();
 					poppedInfo.onStack = false;
 					sccBlocks.Add(poppedInfo.baseBlock);
-					if (ReferenceEquals(info, poppedInfo))
+					if (ReferenceEquals(state.Info, poppedInfo))
 						break;
 				}
 				if (sccBlocks.Count > 1) {
@@ -213,6 +235,14 @@ namespace de4dot.blocks {
 				else {
 					sorted.Insert(0, sccBlocks[0]);
 				}
+
+return_from_method:
+				if (visitStateStack.Count == 0)
+					return;
+				state = visitStateStack.Pop();
+				state.Info.low = Math.Min(state.Info.low, state.TargetInfo.low);
+				state.TargetIndex++;
+				goto return_to_caller;
 			}
 
 			void SortLoopBlock(List<BaseBlock> list) {
