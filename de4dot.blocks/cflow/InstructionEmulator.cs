@@ -34,19 +34,24 @@ namespace de4dot.blocks.cflow {
 		MethodDef prev_method;
 		List<Value> cached_args = new List<Value>();
 		List<Value> cached_locals = new List<Value>();
+		List<Value> cached_zeroed_locals = new List<Value>();
 
 		public InstructionEmulator() {
 		}
 
 		public InstructionEmulator(MethodDef method) {
-			Initialize(method);
+			Initialize(method, false);
 		}
 
-		public void Initialize(Blocks blocks) {
-			Initialize(blocks.Method);
+		public void Initialize(Blocks blocks, bool emulateFromFirstInstruction) {
+			Initialize(blocks.Method, emulateFromFirstInstruction);
 		}
 
 		public void Initialize(MethodDef method) {
+			Initialize(method, false);
+		}
+
+		public void Initialize(MethodDef method, bool emulateFromFirstInstruction) {
 			this.parameterDefs = method.Parameters;
 			this.localDefs = method.Body.Variables;
 			valueStack.Initialize();
@@ -60,14 +65,17 @@ namespace de4dot.blocks.cflow {
 					cached_args.Add(GetUnknownValue(parameterDefs[i].Type));
 
 				cached_locals.Clear();
-				for (int i = 0; i < localDefs.Count; i++)
+				cached_zeroed_locals.Clear();
+				for (int i = 0; i < localDefs.Count; i++) {
 					cached_locals.Add(GetUnknownValue(localDefs[i].Type));
+					cached_zeroed_locals.Add(GetDefaultValue(localDefs[i].Type));
+				}
 			}
 
 			args.Clear();
 			args.AddRange(cached_args);
 			locals.Clear();
-			locals.AddRange(cached_locals);
+			locals.AddRange(method.Body.InitLocals && emulateFromFirstInstruction ? cached_zeroed_locals : cached_locals);
 		}
 
 		public void SetProtected(Value value) {
@@ -91,6 +99,25 @@ namespace de4dot.blocks.cflow {
 			case ElementType.U4: return Int32Value.CreateUnknown();
 			case ElementType.I8: return Int64Value.CreateUnknown();
 			case ElementType.U8: return Int64Value.CreateUnknown();
+			}
+			return new UnknownValue();
+		}
+
+		static Value GetDefaultValue(TypeSig type) {
+			if (type == null)
+				return new UnknownValue();
+			switch (type.ElementType) {
+			case ElementType.Boolean:
+			case ElementType.I1:
+			case ElementType.U1:
+			case ElementType.I2:
+			case ElementType.U2:
+			case ElementType.I4:
+			case ElementType.U4:
+				return Int32Value.zero;
+			case ElementType.I8:
+			case ElementType.U8:
+				return Int64Value.zero;
 			}
 			return new UnknownValue();
 		}

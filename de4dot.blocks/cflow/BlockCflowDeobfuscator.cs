@@ -35,7 +35,7 @@ namespace de4dot.blocks.cflow {
 			this.block = block;
 			if (!block.LastInstr.IsConditionalBranch() && block.LastInstr.OpCode.Code != Code.Switch)
 				return false;
-			instructionEmulator.Initialize(blocks);
+			instructionEmulator.Initialize(blocks, allBlocks[0] == block);
 
 			var instructions = block.Instructions;
 			if (instructions.Count == 0)
