@@ -109,8 +109,8 @@ namespace de4dot.blocks {
 			}
 		}
 		Stack<ScanBaseBlockState> scanBaseBlockStack = new Stack<ScanBaseBlockState>();
-		void ScanBaseBlock(BaseBlock bbx, int stackStartx) {
-			scanBaseBlockStack.Push(new ScanBaseBlockState(bbx, stackStartx));
+		void ScanBaseBlock(BaseBlock bb, int stackStart) {
+			scanBaseBlockStack.Push(new ScanBaseBlockState(bb, stackStart));
 			while (scanBaseBlockStack.Count > 0) {
 				var state = scanBaseBlockStack.Pop();
 				if (blockInfos.ContainsKey(state.bb) || !scopeBlock.IsOurBaseBlock(state.bb))
