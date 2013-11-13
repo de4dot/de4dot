@@ -595,13 +595,7 @@ namespace de4dot.mdecrypt {
 
 		[HandleProcessCorruptedStateExceptions, SecurityCritical]	// Req'd on .NET 4.0
 		static unsafe IntPtr FindCMAddress(PEImage peImage, IntPtr baseAddr, IntPtr origValue) {
-			const int offset1_CLR2 = 0x78;
-			const int offset1_CLR4 = 0x74;
-			int offset1 = Environment.Version.Major == 2 ? offset1_CLR2 : offset1_CLR4;
-
-			const int offset2_CLR2 = 0x10;
-			const int offset2_CLR4 = 0x28;
-			int offset2 = Environment.Version.Major == 2 ? offset2_CLR2 : offset2_CLR4;
+			int offset = Environment.Version.Major == 2 ? 0x10 : 0x28;
 
 			foreach (var section in peImage.ImageSectionHeaders) {
 				const uint RW = 0x80000000 | 0x40000000;
@@ -613,9 +607,10 @@ namespace de4dot.mdecrypt {
 					try {
 						byte* p2 = (byte*)*(IntPtr**)p;
 						if ((ulong)p2 >= 0x10000) {
-							p2 += offset1;
-							if (*(IntPtr*)p2 == origValue)
-								return new IntPtr(p2);
+							if (*(IntPtr*)(p2 + 0x74) == origValue)
+								return new IntPtr(p2 + 0x74);
+							if (*(IntPtr*)(p2 + 0x78) == origValue)
+								return new IntPtr(p2 + 0x78);
 						}
 					}
 					catch {
@@ -623,7 +618,7 @@ namespace de4dot.mdecrypt {
 					try {
 						byte* p2 = (byte*)*(IntPtr**)p;
 						if ((ulong)p2 >= 0x10000) {
-							p2 += offset2;
+							p2 += offset;
 							if (*(IntPtr*)p2 == origValue)
 								return new IntPtr(p2);
 						}
