@@ -765,9 +765,14 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			var peImage = decrypterInfo.peImage;
 			var fileData = decrypterInfo.fileData;
 
+			uint decryptedResources = peHeader.ReadUInt32(0xFE8) ^ mcKey.ReadUInt32(0);
 			uint resourceRva = peHeader.GetRva(0x0E10, mcKey.ReadUInt32(0x00A0));
-			uint resourceSize = peHeader.ReadUInt32(0x0E14) ^ mcKey.ReadUInt32(0x00AA);
-			if (resourceRva == 0 || resourceSize == 0)
+			int resourceSize = (int)(peHeader.ReadUInt32(0x0E14) ^ mcKey.ReadUInt32(0x00AA));
+			if (decryptedResources == 1) {
+				Logger.v("Resources have already been decrypted");
+				return;
+			}
+			if (resourceRva == 0 || resourceSize <= 0)
 				return;
 			if (resourceRva != (uint)peImage.Cor20Header.Resources.VirtualAddress ||
 				resourceSize != peImage.Cor20Header.Resources.Size) {
