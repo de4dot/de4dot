@@ -170,28 +170,28 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			void InitializeDecrypter() {
 				switch (GetVersion()) {
 				case EncryptionVersion.V1:
-					decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt1_v1, Decrypt4_v1, Decrypt2_v1, Decrypt3_v1, Decrypt5, Decrypt6, Decrypt7 }));
-					decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt4_v1, Decrypt1_v1, Decrypt2_v1, Decrypt3_v1, Decrypt5, Decrypt6, Decrypt7 }));
+					decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt1_v1, Decrypt4_v1, Decrypt2_v1, Decrypt3_v1, Decrypt5, Decrypt6, Decrypt7 }, new uint[] { 0x462FA2D2 }));
+					decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt4_v1, Decrypt1_v1, Decrypt2_v1, Decrypt3_v1, Decrypt5, Decrypt6, Decrypt7 }, new uint[] { 0x471299D3 }));
 					break;
 
-				case EncryptionVersion.V2: decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt3_v1, Decrypt2_v1, Decrypt1_v1, Decrypt4_v1, Decrypt5, Decrypt6, Decrypt7 })); break;
-				case EncryptionVersion.V3: decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt1_v1, Decrypt2_v1, Decrypt3_v1, Decrypt4_v1, Decrypt5, Decrypt6, Decrypt7 })); break;
-				case EncryptionVersion.V4: decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt2_v1, Decrypt1_v1, Decrypt3_v1, Decrypt4_v1, Decrypt5, Decrypt6, Decrypt7 })); break;
+				case EncryptionVersion.V2: decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt3_v1, Decrypt2_v1, Decrypt1_v1, Decrypt4_v1, Decrypt5, Decrypt6, Decrypt7 }, new uint[] { 0x482384FB, 0x4A5EEC64, 0x4BD6F703, 0x4C6220EC, 0x4C622357, 0x4C6E4605, 0x4D0E220D, 0x4DC2FC75, 0x4DC2FE0C, 0x4DFA3D5D })); break;
+				case EncryptionVersion.V3: decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt1_v1, Decrypt2_v1, Decrypt3_v1, Decrypt4_v1, Decrypt5, Decrypt6, Decrypt7 }, new uint[] { 0x4ECF2195, 0x4ED76740, 0x4EE1FAD1 })); break;
+				case EncryptionVersion.V4: decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt2_v1, Decrypt1_v1, Decrypt3_v1, Decrypt4_v1, Decrypt5, Decrypt6, Decrypt7 }, new uint[] { 0x4F832868, 0x4F8C86BE, 0x4F9447DB, 0x4FDEF2FF })); break;
 
 				case EncryptionVersion.V5:
-					decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt4_v1, Decrypt2_v1, Decrypt3_v1, Decrypt1_v1, Decrypt5, Decrypt6, Decrypt7 }));
-					decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt4_v2, Decrypt2_v2, Decrypt3_v2, Decrypt1_v2, Decrypt6, Decrypt7, Decrypt5 }));
-					decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt4_v3, Decrypt2_v3, Decrypt3_v3, Decrypt1_v3, Decrypt6, Decrypt7, Decrypt5 }));
+					decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt4_v1, Decrypt2_v1, Decrypt3_v1, Decrypt1_v1, Decrypt5, Decrypt6, Decrypt7 }, new uint[] { 0x4F8E262C, 0x4F966B0B, 0x4FAB3CCF }));
+					decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt4_v2, Decrypt2_v2, Decrypt3_v2, Decrypt1_v2, Decrypt6, Decrypt7, Decrypt5 }, new uint[] { 0x4FC7459E, 0x4FCEBD7B }));
+					decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt4_v3, Decrypt2_v3, Decrypt3_v3, Decrypt1_v3, Decrypt6, Decrypt7, Decrypt5 }, new uint[] { 0x4FBE81DE }));
 					break;
 
-				case EncryptionVersion.V6: decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt4_v4, Decrypt2_v4, Decrypt3_v4, Decrypt1_v4, Decrypt6, Decrypt7, Decrypt5 })); break;
-				case EncryptionVersion.V7: decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt4_v5, Decrypt2_v5, Decrypt3_v5, Decrypt1_v5, Decrypt6, Decrypt8_v5, Decrypt9_v5, Decrypt7, Decrypt5 })); break;
+				case EncryptionVersion.V6: decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt4_v4, Decrypt2_v4, Decrypt3_v4, Decrypt1_v4, Decrypt6, Decrypt7, Decrypt5 }, new uint[] { 0x50A0963C })); break;
+				case EncryptionVersion.V7: decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt4_v5, Decrypt2_v5, Decrypt3_v5, Decrypt1_v5, Decrypt6, Decrypt8_v5, Decrypt9_v5, Decrypt7, Decrypt5 }, new uint[] { 0x50D367A5 })); break;
 
 				case EncryptionVersion.V8:
 					decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt4_v6, Decrypt2_v2, Decrypt3_v6, Decrypt1_v6, Decrypt6, Decrypt8_v6, Decrypt9_v6, Decrypt7, Decrypt10, Decrypt5 }, new uint[] { 0x5166DB4F, 0x51927495 }));
 					decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt4_v7, Decrypt2_v2, Decrypt3_v6, Decrypt1_v7, Decrypt6, Decrypt8_v7, Decrypt9_v7, Decrypt7, Decrypt5 }, new uint[] { 0x51413D68 }));
 					decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt4_v7, Decrypt2_v2, Decrypt3_v6, Decrypt1_v7, Decrypt6, Decrypt8_v8, Decrypt9_v8, Decrypt7, Decrypt5 }, new uint[] { 0x513D7124, 0x51413BD8 }));
-					decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt4_v5, Decrypt2_v2, Decrypt3_v6, Decrypt1_v9, Decrypt6, Decrypt8_v8, Decrypt9_v9, Decrypt7, Decrypt5 }, new uint[] { 0x513D4492 }));
+					decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt4_v5, Decrypt2_v2, Decrypt3_v6, Decrypt1_v9, Decrypt6, Decrypt8_v8, Decrypt9_v9, Decrypt7, Decrypt5 }, new uint[] { 0x513D4492, 0x5113E277 }));
 					decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt3_v6, Decrypt2_v2, Decrypt4_v8, Decrypt1_v10, Decrypt8_v9, Decrypt9_v10, Decrypt6, Decrypt7, Decrypt5 }, new uint[] { 0x526BDD12 }));
 					decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt1_v10, Decrypt4_v8, Decrypt2_v2, Decrypt3_v6, Decrypt6, Decrypt8_v9, Decrypt9_v10, Decrypt7, Decrypt5 }, new uint[] { 0x526BC020 }));
 					break;
@@ -244,8 +244,8 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			}
 
 			bool InitializeInfos2() {
-				if (decrypters.Count > 1) {
-					uint rtTimeStamp = GetRuntimeTimeStamp();
+				uint rtTimeStamp = GetRuntimeTimeStamp();
+				if (rtTimeStamp != 0) {
 					var decrypter = GetCorrectDecrypter(rtTimeStamp);
 					if (decrypter != null) {
 						try {
