@@ -229,6 +229,11 @@ namespace de4dot.cui {
 				catch (EndOfStreamException) {
 					return false;
 				}
+				catch (IOException) {
+					if (isFromPossibleFiles)
+						Logger.Instance.Log(false, null, LoggerEvent.Warning, "The file isn't a .NET PE file: {0}", file.Filename);
+					return false;	// Not a .NET file
+				}
 				catch (Exception ex) {
 					Logger.Instance.Log(false, null, LoggerEvent.Warning, "Could not load file ({0}): {1}", ex.GetType(), file.Filename);
 					return false;
