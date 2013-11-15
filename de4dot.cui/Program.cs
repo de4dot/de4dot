@@ -61,7 +61,7 @@ namespace de4dot.cui {
 			};
 		}
 
-		public static int Main2(string[] args) {
+		public static int Main(string[] args) {
 			int exitCode = 0;
 
 			const string showAllMessagesEnvName = "SHOWALLMESSAGES";

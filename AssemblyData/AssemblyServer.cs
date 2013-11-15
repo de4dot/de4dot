@@ -26,7 +26,7 @@ using AssemblyData;
 
 namespace AssemblyServer {
 	public static class Start {
-		public static int Main2(string[] args) {
+		public static int Main(string[] args) {
 			if (args.Length != 3)
 				Environment.Exit(1);
 			var serviceType = (AssemblyServiceType)int.Parse(args[0]);
