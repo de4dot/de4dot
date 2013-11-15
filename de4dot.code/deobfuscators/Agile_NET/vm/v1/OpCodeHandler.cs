@@ -24,12 +24,12 @@ using de4dot.blocks;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
-namespace de4dot.code.deobfuscators.Agile_NET.vm {
+namespace de4dot.code.deobfuscators.Agile_NET.vm.v1 {
 	partial class OpCodeHandler {
 		public string Name { get; set; }
 		public OpCodeHandlerSigInfo OpCodeHandlerSigInfo { get; set; }
 		public Predicate<UnknownHandlerInfo> Check { get; set; }
-		public Func<BinaryReader, Instruction> Read { get; set; }
+		public Func<BinaryReader, IInstructionOperandResolver, Instruction> Read { get; set; }
 
 		public bool Detect(UnknownHandlerInfo info) {
 			var sigInfo = OpCodeHandlerSigInfo;
@@ -68,7 +68,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 	}
 
 	static partial class OpCodeHandlers {
-		static Instruction arithmetic_read(BinaryReader reader) {
+		static Instruction arithmetic_read(BinaryReader reader, IInstructionOperandResolver resolver) {
 			switch (reader.ReadByte()) {
 			case 0: return OpCodes.Add.ToInstruction();
 			case 1: return OpCodes.Add_Ovf.ToInstruction();
@@ -91,25 +91,22 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			return DotNetUtils.CallsMethod(info.ExecuteMethod, "System.Type System.Reflection.Module::ResolveType(System.Int32)");
 		}
 
-		static Instruction newarr_read(BinaryReader reader) {
-			return new Instruction {
-				OpCode = OpCodes.Newarr,
-				Operand = new TokenOperand(reader.ReadInt32()),
-			};
+		static Instruction newarr_read(BinaryReader reader, IInstructionOperandResolver resolver) {
+			return new Instruction(OpCodes.Newarr, resolver.ResolveToken(reader.ReadUInt32()));
 		}
 
-		static Instruction box_read(BinaryReader reader) {
+		static Instruction box_read(BinaryReader reader, IInstructionOperandResolver resolver) {
 			var instr = new Instruction();
 			switch (reader.ReadByte()) {
 			case 0: instr.OpCode = OpCodes.Box; break;
 			case 1: instr.OpCode = OpCodes.Unbox_Any; break;
 			default: throw new ApplicationException("Invalid opcode");
 			}
-			instr.Operand = new TokenOperand(reader.ReadInt32());
+			instr.Operand = resolver.ResolveToken(reader.ReadUInt32());
 			return instr;
 		}
 
-		static Instruction call_read(BinaryReader reader) {
+		static Instruction call_read(BinaryReader reader, IInstructionOperandResolver resolver) {
 			var instr = new Instruction();
 			switch (reader.ReadByte()) {
 			case 0: instr.OpCode = OpCodes.Newobj; break;
@@ -117,22 +114,22 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			case 2: instr.OpCode = OpCodes.Callvirt; break;
 			default: throw new ApplicationException("Invalid opcode");
 			}
-			instr.Operand = new TokenOperand(reader.ReadInt32());
+			instr.Operand = resolver.ResolveToken(reader.ReadUInt32());
 			return instr;
 		}
 
-		static Instruction cast_read(BinaryReader reader) {
+		static Instruction cast_read(BinaryReader reader, IInstructionOperandResolver resolver) {
 			var instr = new Instruction();
 			switch (reader.ReadByte()) {
 			case 0: instr.OpCode = OpCodes.Castclass; break;
 			case 1: instr.OpCode = OpCodes.Isinst; break;
 			default: throw new ApplicationException("Invalid opcode");
 			}
-			instr.Operand = new TokenOperand(reader.ReadInt32());
+			instr.Operand = resolver.ResolveToken(reader.ReadUInt32());
 			return instr;
 		}
 
-		static Instruction compare_read(BinaryReader reader) {
+		static Instruction compare_read(BinaryReader reader, IInstructionOperandResolver resolver) {
 			int type = reader.ReadByte();
 			Instruction instr = new Instruction();
 			switch (type) {
@@ -205,7 +202,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			new InstructionInfo1 { Type = 11, Second = true, Third = true, OpCode = OpCodes.Conv_Ovf_U_Un },
 			new InstructionInfo1 { Type = 12, Second = true, Third = true, OpCode = OpCodes.Conv_R_Un },
 		};
-		static Instruction convert_read(BinaryReader reader) {
+		static Instruction convert_read(BinaryReader reader, IInstructionOperandResolver resolver) {
 			byte type = reader.ReadByte();
 			bool second = reader.ReadBoolean();
 			bool third = reader.ReadBoolean();
@@ -215,7 +212,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 				if (type != info.Type || info.Second != second || info.Third != third)
 					continue;
 
-				instr = new Instruction { OpCode = info.OpCode };
+				instr = new Instruction(info.OpCode);
 				break;
 			}
 			if (instr == null)
@@ -224,7 +221,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			return instr;
 		}
 
-		static Instruction dup_read(BinaryReader reader) {
+		static Instruction dup_read(BinaryReader reader, IInstructionOperandResolver resolver) {
 			switch (reader.ReadByte()) {
 			case 0: return OpCodes.Dup.ToInstruction();
 			case 1: return OpCodes.Pop.ToInstruction();
@@ -262,7 +259,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			new InstructionInfo2 { First = true, Second = true, Value = 28, OpCode = OpCodes.Ldelem_Ref },
 			new InstructionInfo2 { First = true, Second = false, Value = 0, OpCode = OpCodes.Ldelem },
 		};
-		static Instruction ldelem_read(BinaryReader reader) {
+		static Instruction ldelem_read(BinaryReader reader, IInstructionOperandResolver resolver) {
 			Instruction instr = null;
 			bool first = reader.ReadBoolean();
 			bool second = reader.ReadBoolean();
@@ -274,9 +271,9 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 					continue;
 
 				if (second)
-					instr = new Instruction { OpCode = info.OpCode };
+					instr = new Instruction(info.OpCode);
 				else
-					instr = new Instruction { OpCode = info.OpCode, Operand = new TokenOperand(value) };
+					instr = new Instruction(info.OpCode, resolver.ResolveToken((uint)value));
 				break;
 			}
 			if (instr == null)
@@ -289,29 +286,26 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			return DotNetUtils.CallsMethod(info.ExecuteMethod, "System.Reflection.MethodInfo System.Type::GetMethod(System.String,System.Reflection.BindingFlags)");
 		}
 
-		static Instruction endfinally_read(BinaryReader reader) {
+		static Instruction endfinally_read(BinaryReader reader, IInstructionOperandResolver resolver) {
 			return OpCodes.Endfinally.ToInstruction();
 		}
 
-		static Instruction ldfld_read(BinaryReader reader) {
-			var instr = new Instruction();
-			switch (reader.ReadByte()) {
-			case 0: instr.Operand = new LoadFieldOperand(reader.ReadInt32()); break;
-			case 1: instr.Operand = new LoadFieldAddressOperand(reader.ReadInt32()); break;
-			case 2: instr.Operand = new StoreFieldOperand(reader.ReadInt32()); break;
+		static Instruction ldfld_read(BinaryReader reader, IInstructionOperandResolver resolver) {
+			byte b = reader.ReadByte();
+			var field = resolver.ResolveToken(reader.ReadUInt32()) as IField;
+			switch (b) {
+			case 0: return new Instruction(null, new FieldInstructionOperand(OpCodes.Ldsfld, OpCodes.Ldfld, field));
+			case 1: return new Instruction(null, new FieldInstructionOperand(OpCodes.Ldsflda, OpCodes.Ldflda, field));
+			case 2: return new Instruction(null, new FieldInstructionOperand(OpCodes.Stsfld, OpCodes.Stfld, field));
 			default: throw new ApplicationException("Invalid opcode");
 			}
-			return instr;
 		}
 
-		static Instruction initobj_read(BinaryReader reader) {
-			return new Instruction {
-				OpCode = OpCodes.Initobj,
-				Operand = new TokenOperand(reader.ReadInt32()),
-			};
+		static Instruction initobj_read(BinaryReader reader, IInstructionOperandResolver resolver) {
+			return new Instruction(OpCodes.Initobj, resolver.ResolveToken(reader.ReadUInt32()));
 		}
 
-		static Instruction ldloc_read(BinaryReader reader) {
+		static Instruction ldloc_read(BinaryReader reader, IInstructionOperandResolver resolver) {
 			bool isLdarg = reader.ReadBoolean();
 			ushort index = reader.ReadUInt16();
 
@@ -328,7 +322,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			return instr;
 		}
 
-		static Instruction ldloca_read(BinaryReader reader) {
+		static Instruction ldloca_read(BinaryReader reader, IInstructionOperandResolver resolver) {
 			Instruction instr = new Instruction();
 			if (reader.ReadBoolean()) {
 				instr.OpCode = OpCodes.Ldarga;
@@ -342,25 +336,19 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			return instr;
 		}
 
-		static Instruction ldelema_read(BinaryReader reader) {
-			return new Instruction {
-				OpCode = OpCodes.Ldelema,
-				Operand = null,
-			};
+		static Instruction ldelema_read(BinaryReader reader, IInstructionOperandResolver resolver) {
+			return new Instruction(OpCodes.Ldelema, null);
 		}
 
-		static Instruction ldlen_read(BinaryReader reader) {
+		static Instruction ldlen_read(BinaryReader reader, IInstructionOperandResolver resolver) {
 			return OpCodes.Ldlen.ToInstruction();
 		}
 
-		static Instruction ldobj_read(BinaryReader reader) {
-			return new Instruction {
-				OpCode = OpCodes.Ldobj,
-				Operand = null,
-			};
+		static Instruction ldobj_read(BinaryReader reader, IInstructionOperandResolver resolver) {
+			return new Instruction(OpCodes.Ldobj, null);
 		}
 
-		static Instruction ldstr_read(BinaryReader reader) {
+		static Instruction ldstr_read(BinaryReader reader, IInstructionOperandResolver resolver) {
 			return OpCodes.Ldstr.ToInstruction(reader.ReadString());
 		}
 
@@ -368,11 +356,8 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			return DotNetUtils.CallsMethod(info.ExecuteMethod, "System.Reflection.MemberInfo System.Reflection.Module::ResolveMember(System.Int32)");
 		}
 
-		static Instruction ldtoken_read(BinaryReader reader) {
-			return new Instruction {
-				OpCode = OpCodes.Ldtoken,
-				Operand = new TokenOperand(reader.ReadInt32()),
-			};
+		static Instruction ldtoken_read(BinaryReader reader, IInstructionOperandResolver resolver) {
+			return new Instruction(OpCodes.Ldtoken, resolver.ResolveToken(reader.ReadUInt32()));
 		}
 
 		static bool leave_check(UnknownHandlerInfo info) {
@@ -381,15 +366,12 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 				!DotNetUtils.CallsMethod(info.ExecuteMethod, "System.Reflection.MemberInfo System.Reflection.Module::ResolveMember(System.Int32)");
 		}
 
-		static Instruction leave_read(BinaryReader reader) {
+		static Instruction leave_read(BinaryReader reader, IInstructionOperandResolver resolver) {
 			int displacement = reader.ReadInt32();
-			return new Instruction {
-				OpCode = OpCodes.Leave,
-				Operand = new TargetDisplOperand(displacement),
-			};
+			return new Instruction(OpCodes.Leave, new TargetDisplOperand(displacement));
 		}
 
-		static Instruction ldc_read(BinaryReader reader) {
+		static Instruction ldc_read(BinaryReader reader, IInstructionOperandResolver resolver) {
 			switch ((ElementType)reader.ReadByte()) {
 			case ElementType.I4: return Instruction.CreateLdcI4(reader.ReadInt32());
 			case ElementType.I8: return OpCodes.Ldc_I8.ToInstruction(reader.ReadInt64());
@@ -400,29 +382,24 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			}
 		}
 
-		static Instruction ldftn_read(BinaryReader reader) {
+		static Instruction ldftn_read(BinaryReader reader, IInstructionOperandResolver resolver) {
 			byte code = reader.ReadByte();
-			int token = reader.ReadInt32();
+			uint token = reader.ReadUInt32();
 
-			Instruction instr;
 			switch (code) {
 			case 0:
-				instr = new Instruction { OpCode = OpCodes.Ldftn, Operand = new TokenOperand(token) };
-				break;
+				return new Instruction(OpCodes.Ldftn, resolver.ResolveToken(token));
 
 			case 1:
 				reader.ReadInt32();	// token of newobj .ctor
-				instr = new Instruction { OpCode = OpCodes.Ldvirtftn, Operand = new TokenOperand(token) };
-				break;
+				return new Instruction(OpCodes.Ldvirtftn, resolver.ResolveToken(token));
 
 			default:
 				throw new ApplicationException("Invalid opcode");
 			}
-
-			return instr;
 		}
 
-		static Instruction logical_read(BinaryReader reader) {
+		static Instruction logical_read(BinaryReader reader, IInstructionOperandResolver resolver) {
 			switch (reader.ReadByte()) {
 			case 0: return OpCodes.And.ToInstruction();
 			case 1: return OpCodes.Or.ToInstruction();
@@ -448,7 +425,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			return false;
 		}
 
-		static Instruction nop_read(BinaryReader reader) {
+		static Instruction nop_read(BinaryReader reader, IInstructionOperandResolver resolver) {
 			return OpCodes.Nop.ToInstruction();
 		}
 
@@ -456,7 +433,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			return DotNetUtils.CallsMethod(info.ExecuteMethod, "System.Reflection.MethodBase System.Reflection.Module::ResolveMethod(System.Int32)");
 		}
 
-		static Instruction ret_read(BinaryReader reader) {
+		static Instruction ret_read(BinaryReader reader, IInstructionOperandResolver resolver) {
 			reader.ReadInt32();	// token of current method
 			return OpCodes.Ret.ToInstruction();
 		}
@@ -465,11 +442,11 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			return info.ExecuteMethod.Body.Variables.Count == 0;
 		}
 
-		static Instruction rethrow_read(BinaryReader reader) {
+		static Instruction rethrow_read(BinaryReader reader, IInstructionOperandResolver resolver) {
 			return OpCodes.Rethrow.ToInstruction();
 		}
 
-		static Instruction stloc_read(BinaryReader reader) {
+		static Instruction stloc_read(BinaryReader reader, IInstructionOperandResolver resolver) {
 			bool isStarg = reader.ReadBoolean();
 			ushort index = reader.ReadUInt16();
 
@@ -487,33 +464,27 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			return instr;
 		}
 
-		static Instruction stobj_read(BinaryReader reader) {
-			return new Instruction {
-				OpCode = OpCodes.Stobj,
-				Operand = null,
-			};
+		static Instruction stobj_read(BinaryReader reader, IInstructionOperandResolver resolver) {
+			return new Instruction(OpCodes.Stobj, null);
 		}
 
-		static Instruction switch_read(BinaryReader reader) {
+		static Instruction switch_read(BinaryReader reader, IInstructionOperandResolver resolver) {
 			int numTargets = reader.ReadInt32();
 			int[] targetDispls = new int[numTargets];
 			for (int i = 0; i < targetDispls.Length; i++)
 				targetDispls[i] = reader.ReadInt32();
-			return new Instruction {
-				OpCode = OpCodes.Switch,
-				Operand = new SwitchTargetDisplOperand(targetDispls),
-			};
+			return new Instruction(OpCodes.Switch, new SwitchTargetDisplOperand(targetDispls));
 		}
 
 		static bool throw_check(UnknownHandlerInfo info) {
 			return !DotNetUtils.CallsMethod(info.ExecuteMethod, "System.Reflection.MethodInfo System.Type::GetMethod(System.String,System.Reflection.BindingFlags)");
 		}
 
-		static Instruction throw_read(BinaryReader reader) {
+		static Instruction throw_read(BinaryReader reader, IInstructionOperandResolver resolver) {
 			return OpCodes.Throw.ToInstruction();
 		}
 
-		static Instruction neg_read(BinaryReader reader) {
+		static Instruction neg_read(BinaryReader reader, IInstructionOperandResolver resolver) {
 			switch (reader.ReadByte()) {
 			case 0: return OpCodes.Neg.ToInstruction();
 			case 1: return OpCodes.Not.ToInstruction();

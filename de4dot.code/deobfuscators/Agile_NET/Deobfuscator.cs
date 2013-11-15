@@ -85,7 +85,8 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 		ResourceDecrypter resourceDecrypter;
 
 		StackFrameHelper stackFrameHelper;
-		vm.Csvm csvm;
+		vm.v1.Csvm csvmV1;
+		vm.v2.Csvm csvmV2;
 
 		internal class Options : OptionsBase {
 			public bool DecryptMethods { get; set; }
@@ -166,7 +167,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 					ToInt32(stringDecrypter.Detected) +
 					ToInt32(proxyCallFixer.Detected) +
 					ToInt32(resourceDecrypter.Detected) +
-					ToInt32(csvm.Detected);
+					ToInt32(csvmV1.Detected || csvmV2.Detected);
 			if (sum > 0)
 				val += 100 + 10 * (sum - 1);
 			if (cliSecureAttributes.Count != 0)
@@ -185,8 +186,10 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			resourceDecrypter.Find();
 			proxyCallFixer = new ProxyCallFixer(module);
 			proxyCallFixer.FindDelegateCreator();
-			csvm = new vm.Csvm(DeobfuscatedFile.DeobfuscatorContext, module);
-			csvm.Find();
+			csvmV1 = new vm.v1.Csvm(DeobfuscatedFile.DeobfuscatorContext, module);
+			csvmV1.Find();
+			csvmV2 = new vm.v2.Csvm(DeobfuscatedFile.DeobfuscatorContext, module);
+			csvmV2.Find();
 		}
 
 		void FindCliSecureAttribute() {
@@ -227,7 +230,8 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			newOne.stringDecrypter = new StringDecrypter(module, stringDecrypter);
 			newOne.resourceDecrypter = new ResourceDecrypter(module, resourceDecrypter);
 			newOne.proxyCallFixer = new ProxyCallFixer(module, proxyCallFixer);
-			newOne.csvm = new vm.Csvm(DeobfuscatedFile.DeobfuscatorContext, module, csvm);
+			newOne.csvmV1 = new vm.v1.Csvm(DeobfuscatedFile.DeobfuscatorContext, module, csvmV1);
+			newOne.csvmV2 = new vm.v2.Csvm(DeobfuscatedFile.DeobfuscatorContext, module, csvmV2);
 			return newOne;
 		}
 
@@ -270,9 +274,11 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 				FindPossibleNamesToRemove(cliSecureRtType.LoadMethod);
 			}
 
-			if (options.RestoreVmCode) {
-				if (csvm.Restore())
-					AddResourceToBeRemoved(csvm.Resource, "CSVM data resource");
+			if (options.RestoreVmCode && (csvmV1.Detected || csvmV2.Detected)) {
+				if (csvmV1.Detected && csvmV1.Restore())
+					AddResourceToBeRemoved(csvmV1.Resource, "CSVM data resource");
+				else if (csvmV2.Detected && csvmV2.Restore())
+					AddResourceToBeRemoved(csvmV2.Resource, "CSVM data resource");
 				else {
 					Logger.e("Couldn't restore VM methods. Use --dont-rename or it will not run");
 					PreserveTokensAndTypes();

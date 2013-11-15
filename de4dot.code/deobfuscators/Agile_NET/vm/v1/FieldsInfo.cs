@@ -21,7 +21,7 @@ using System;
 using System.Collections.Generic;
 using dnlib.DotNet;
 
-namespace de4dot.code.deobfuscators.Agile_NET.vm {
+namespace de4dot.code.deobfuscators.Agile_NET.vm.v1 {
 	class FieldsInfo {
 		public static readonly object EnumType = new object();
 		Dictionary<string, int> fieldTypes = new Dictionary<string, int>(StringComparer.Ordinal);

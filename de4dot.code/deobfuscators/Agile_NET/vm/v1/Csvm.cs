@@ -23,7 +23,7 @@ using System.IO;
 using dnlib.DotNet;
 using de4dot.blocks;
 
-namespace de4dot.code.deobfuscators.Agile_NET.vm {
+namespace de4dot.code.deobfuscators.Agile_NET.vm.v1 {
 	class Csvm {
 		IDeobfuscatorContext deobfuscatorContext;
 		ModuleDefMD module;
@@ -140,7 +140,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			var vmModulePath = Path.Combine(Path.GetDirectoryName(module.Location), vmFilename);
 			Logger.v("CSVM filename: {0}", vmFilename);
 
-			var dataKey = "cs cached VmOpCodeHandlerDetector";
+			var dataKey = "cs cached VmOpCodeHandlerDetector v1";
 			var dict = (Dictionary<string, VmOpCodeHandlerDetector>)deobfuscatorContext.GetData(dataKey);
 			if (dict == null)
 				deobfuscatorContext.SetData(dataKey, dict = new Dictionary<string, VmOpCodeHandlerDetector>(StringComparer.OrdinalIgnoreCase));

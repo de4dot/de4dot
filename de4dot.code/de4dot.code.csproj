@@ -67,16 +67,36 @@
     <Compile Include="deobfuscators\Agile_NET\StackFrameHelper.cs" />
     <Compile Include="deobfuscators\Agile_NET\StringDecrypter.cs" />
     <Compile Include="deobfuscators\Agile_NET\vm\CilOperandInstructionRestorer.cs" />
-    <Compile Include="deobfuscators\Agile_NET\vm\Csvm.cs" />
     <Compile Include="deobfuscators\Agile_NET\vm\CsvmDataReader.cs" />
     <Compile Include="deobfuscators\Agile_NET\vm\CsvmMethodData.cs" />
-    <Compile Include="deobfuscators\Agile_NET\vm\CsvmToCilMethodConverter.cs" />
-    <Compile Include="deobfuscators\Agile_NET\vm\FieldsInfo.cs" />
-    <Compile Include="deobfuscators\Agile_NET\vm\OpCodeHandler.cs" />
-    <Compile Include="deobfuscators\Agile_NET\vm\OpCodeHandlers.cs" />
-    <Compile Include="deobfuscators\Agile_NET\vm\UnknownHandlerInfo.cs" />
-    <Compile Include="deobfuscators\Agile_NET\vm\VmOpCodeHandlerDetector.cs" />
-    <Compile Include="deobfuscators\Agile_NET\vm\VmOperands.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\CsvmToCilMethodConverterBase.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v1\Csvm.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v1\CsvmToCilMethodConverter.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v1\FieldsInfo.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v1\OpCodeHandler.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v1\OpCodeHandlers.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v1\UnknownHandlerInfo.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v1\VmOpCodeHandlerDetector.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\CompositeHandlerDetector.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\CompositeOpCodeHandler.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\Csvm.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\CsvmInfo.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\CsvmResources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>CsvmResources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\CsvmToCilMethodConverter.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\HandlerTypeCode.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\MethodFinder.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\MethodSigInfoCreator.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\OpCodeHandler.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\OpCodeHandlerInfo.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\OpCodeHandlerInfoReader.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\OpCodeHandlerInfos.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\VmOpCode.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\VmOpCodeHandlerDetector.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\VmOperand.cs" />
     <Compile Include="deobfuscators\ArrayFinder.cs" />
     <Compile Include="deobfuscators\Babel_NET\AssemblyResolver.cs" />
     <Compile Include="deobfuscators\Babel_NET\BabelInflater.cs" />
@@ -240,6 +260,7 @@
     <Compile Include="deobfuscators\MethodStack.cs" />
     <Compile Include="deobfuscators\MPRESS\Deobfuscator.cs" />
     <Compile Include="deobfuscators\MPRESS\Lzmat.cs" />
+    <Compile Include="deobfuscators\NullStream.cs" />
     <Compile Include="deobfuscators\Operations.cs" />
     <Compile Include="deobfuscators\ProxyCallFixerBase.cs" />
     <Compile Include="deobfuscators\QuickLZ.cs" />
@@ -357,6 +378,12 @@
       <Project>{FDFC1237-143F-4919-8318-4926901F4639}</Project>
       <Name>dnlib</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="deobfuscators\Agile_NET\vm\v2\CsvmResources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>CsvmResources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
