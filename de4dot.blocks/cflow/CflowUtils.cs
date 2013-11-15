@@ -25,7 +25,7 @@ namespace de4dot.blocks.cflow {
 			if (!intValue.AllBitsValid())
 				return null;
 
-			int index = intValue.value;
+			int index = intValue.Value;
 			if (targets == null || index < 0 || index >= targets.Count)
 				return fallThrough;
 			else

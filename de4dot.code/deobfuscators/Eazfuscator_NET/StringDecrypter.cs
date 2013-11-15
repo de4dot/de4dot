@@ -626,7 +626,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					if (val == null || !val.AllBitsValid())
 						fields[field] = null;
 					else
-						fields[field] = val.value;
+						fields[field] = val.Value;
 					break;
 
 				case Code.Call:

@@ -86,7 +86,7 @@ namespace de4dot.code.deobfuscators {
 				var intValue = resultValueArray[i] as Int32Value;
 				if (intValue == null || !intValue.AllBitsValid())
 					return null;
-				resultArray[i] = (byte)intValue.value;
+				resultArray[i] = (byte)intValue.Value;
 			}
 			return resultArray;
 		}
@@ -99,7 +99,7 @@ namespace de4dot.code.deobfuscators {
 				var intValue = resultValueArray[i] as Int32Value;
 				if (intValue == null || !intValue.AllBitsValid())
 					return null;
-				resultArray[i] = (short)intValue.value;
+				resultArray[i] = (short)intValue.Value;
 			}
 			return resultArray;
 		}
@@ -112,7 +112,7 @@ namespace de4dot.code.deobfuscators {
 				var intValue = resultValueArray[i] as Int32Value;
 				if (intValue == null || !intValue.AllBitsValid())
 					return null;
-				resultArray[i] = (int)intValue.value;
+				resultArray[i] = (int)intValue.Value;
 			}
 			return resultArray;
 		}
@@ -168,8 +168,8 @@ namespace de4dot.code.deobfuscators {
 					var index = emulator.Pop() as Int32Value;
 					var array = emulator.Pop();
 					if (ReferenceEquals(array, theArray) && index != null && index.AllBitsValid()) {
-						if (0 <= index.value && index.value < resultValueArray.Length)
-							resultValueArray[index.value] = value;
+						if (0 <= index.Value && index.Value < resultValueArray.Length)
+							resultValueArray[index.Value] = value;
 					}
 				}
 				else

@@ -126,7 +126,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				emulator.Push(new Int32Value(offset));
 				foreach (var instr in OffsetCalcInstructions)
 					emulator.Emulate(instr);
-				return ((Int32Value)emulator.Pop()).value;
+				return ((Int32Value)emulator.Pop()).Value;
 			}
 
 			public string Decrypt(object[] args) {
@@ -348,7 +348,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 					case Code.Newarr:
 						var arrayType = (ITypeDefOrRef)instr.Operand;
-						int arrayCount = ((Int32Value)emulator.Pop()).value;
+						int arrayCount = ((Int32Value)emulator.Pop()).Value;
 						if (arrayType.FullName == "System.Char")
 							emulator.Push(new UserValue(new char[arrayCount]));
 						else
@@ -362,7 +362,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 						break;
 
 					case Code.Ldelem_U1:
-						arrayIndex = ((Int32Value)emulator.Pop()).value;
+						arrayIndex = ((Int32Value)emulator.Pop()).Value;
 						array = (Value)emulator.Pop();
 						if (array is UserValue)
 							emulator.Push(new Int32Value(((byte[])((UserValue)array).obj)[arrayIndex]));
@@ -372,22 +372,22 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 					case Code.Stelem_I1:
 						value = emulator.Pop();
-						arrayIndex = ((Int32Value)emulator.Pop()).value;
+						arrayIndex = ((Int32Value)emulator.Pop()).Value;
 						array = (Value)emulator.Pop();
 						if (array is UserValue)
-							((byte[])((UserValue)array).obj)[arrayIndex] = (byte)((Int32Value)value).value;
+							((byte[])((UserValue)array).obj)[arrayIndex] = (byte)((Int32Value)value).Value;
 						break;
 
 					case Code.Stelem_I2:
 						value = emulator.Pop();
-						arrayIndex = ((Int32Value)emulator.Pop()).value;
+						arrayIndex = ((Int32Value)emulator.Pop()).Value;
 						array = (Value)emulator.Pop();
 						if (array is UserValue)
-							((char[])((UserValue)array).obj)[arrayIndex] = (char)((Int32Value)value).value;
+							((char[])((UserValue)array).obj)[arrayIndex] = (char)((Int32Value)value).Value;
 						break;
 
 					case Code.Ldelem_Ref:
-						arrayIndex = ((Int32Value)emulator.Pop()).value;
+						arrayIndex = ((Int32Value)emulator.Pop()).Value;
 						array = (Value)emulator.Pop();
 						var userValue = array as UserValue;
 						if (userValue != null && userValue.obj is string[])
@@ -451,7 +451,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 			object CreateDNLibOperand(OpCode opcode, Value op) {
 				if (op is Int32Value)
-					return ((Int32Value)op).value;
+					return ((Int32Value)op).Value;
 				if (op is StringValue)
 					return ((StringValue)op).value;
 				return null;

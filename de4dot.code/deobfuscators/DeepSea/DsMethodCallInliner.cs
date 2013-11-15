@@ -191,8 +191,8 @@ namespace de4dot.code.deobfuscators.DeepSea {
 					if (value == null || !value.AllBitsValid())
 						return false;
 					var targets = (Instruction[])instr.Operand;
-					if (value.value >= 0 && value.value < targets.Length)
-						index = instrs.IndexOf(targets[value.value]);
+					if (value.Value >= 0 && value.Value < targets.Length)
+						index = instrs.IndexOf(targets[value.Value]);
 					else
 						index++;
 					break;
