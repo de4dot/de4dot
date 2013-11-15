@@ -179,15 +179,6 @@
     <Compile Include="deobfuscators\DeobUtils.cs" />
     <Compile Include="deobfuscators\Dotfuscator\Deobfuscator.cs" />
     <Compile Include="deobfuscators\Dotfuscator\StringDecrypter.cs" />
-    <Compile Include="deobfuscators\Eazfuscator_NET\DynamicDynocodeIterator.cs" />
-    <Compile Include="deobfuscators\Eazfuscator_NET\DynocodeService.cs" />
-    <Compile Include="deobfuscators\dotNET_Reactor\v4\DnrMethodCallInliner.cs" />
-    <Compile Include="deobfuscators\ILProtector\DecryptedMethodInfo.cs" />
-    <Compile Include="deobfuscators\ILProtector\DynamicMethodsDecrypter.cs" />
-    <Compile Include="deobfuscators\ILProtector\DynamicMethodsDecrypterService.cs" />
-    <Compile Include="deobfuscators\ILProtector\DynamicMethodsRestorer.cs" />
-    <Compile Include="deobfuscators\ILProtector\MethodsDecrypterBase.cs" />
-    <Compile Include="deobfuscators\MyPEImage.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v3\AntiStrongName.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v3\ApplicationModeDecrypter.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v3\ApplicationModeUnpacker.cs" />
@@ -202,6 +193,7 @@
     <Compile Include="deobfuscators\dotNET_Reactor\v4\AssemblyResolver.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v4\BooleanDecrypter.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v4\Deobfuscator.cs" />
+    <Compile Include="deobfuscators\dotNET_Reactor\v4\DnrMethodCallInliner.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v4\EmptyClass.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v4\EncryptedResource.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v4\MetadataTokenObfuscator.cs" />
@@ -215,6 +207,8 @@
     <Compile Include="deobfuscators\Eazfuscator_NET\CodeCompilerMethodCallRestorer.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\DecrypterType.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\Deobfuscator.cs" />
+    <Compile Include="deobfuscators\Eazfuscator_NET\DynamicDynocodeIterator.cs" />
+    <Compile Include="deobfuscators\Eazfuscator_NET\DynocodeService.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\EfConstantsReader.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\EfUtils.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\ResourceMethodsRestorer.cs" />
@@ -235,9 +229,14 @@
     <Compile Include="deobfuscators\IDeobfuscatedFile.cs" />
     <Compile Include="deobfuscators\IDeobfuscator.cs" />
     <Compile Include="deobfuscators\IDeobfuscatorInfo.cs" />
+    <Compile Include="deobfuscators\ILProtector\DecryptedMethodInfo.cs" />
     <Compile Include="deobfuscators\ILProtector\Deobfuscator.cs" />
+    <Compile Include="deobfuscators\ILProtector\DynamicMethodsDecrypter.cs" />
+    <Compile Include="deobfuscators\ILProtector\DynamicMethodsDecrypterService.cs" />
+    <Compile Include="deobfuscators\ILProtector\DynamicMethodsRestorer.cs" />
     <Compile Include="deobfuscators\ILProtector\MainType.cs" />
     <Compile Include="deobfuscators\ILProtector\MethodReader.cs" />
+    <Compile Include="deobfuscators\ILProtector\MethodsDecrypterBase.cs" />
     <Compile Include="deobfuscators\ILProtector\StaticMethodsDecrypter.cs" />
     <Compile Include="deobfuscators\InitializedDataCreator.cs" />
     <Compile Include="deobfuscators\InlinedMethodsFinder.cs" />
@@ -260,6 +259,7 @@
     <Compile Include="deobfuscators\MethodStack.cs" />
     <Compile Include="deobfuscators\MPRESS\Deobfuscator.cs" />
     <Compile Include="deobfuscators\MPRESS\Lzmat.cs" />
+    <Compile Include="deobfuscators\MyPEImage.cs" />
     <Compile Include="deobfuscators\NullStream.cs" />
     <Compile Include="deobfuscators\Operations.cs" />
     <Compile Include="deobfuscators\ProxyCallFixerBase.cs" />
