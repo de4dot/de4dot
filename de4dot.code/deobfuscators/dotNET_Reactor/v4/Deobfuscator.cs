@@ -369,6 +369,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				bool hasSymmetricAlgorithm = new LocalTypes(methodsDecrypter.Method).Exists("System.Security.Cryptography.SymmetricAlgorithm");
 				if (module.IsClr40) {
 					switch (numIntPtrSizeCompares) {
+					case 7:
 					case 9: return DeobfuscatorInfo.THE_NAME + " 4.5";
 					case 10:
 						if (!hasSymmetricAlgorithm)
@@ -378,6 +379,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				}
 				else {
 					switch (numIntPtrSizeCompares) {
+					case 6:
 					case 8: return DeobfuscatorInfo.THE_NAME + " 4.5";
 					case 9:
 						if (!hasSymmetricAlgorithm)
