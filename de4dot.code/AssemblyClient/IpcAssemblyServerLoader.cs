@@ -35,13 +35,15 @@ namespace de4dot.code.AssemblyClient {
 		readonly string assemblyServerFilename;
 		protected string ipcName;
 		protected string ipcUri;
+		protected AssemblyServiceType serviceType;
 		string url;
 
-		protected IpcAssemblyServerLoader()
-			: this(ServerClrVersion.CLR_ANY_ANYCPU) {
+		protected IpcAssemblyServerLoader(AssemblyServiceType serviceType)
+			: this(serviceType, ServerClrVersion.CLR_ANY_ANYCPU) {
 		}
 
-		protected IpcAssemblyServerLoader(ServerClrVersion serverVersion) {
+		protected IpcAssemblyServerLoader(AssemblyServiceType serviceType, ServerClrVersion serverVersion) {
+			this.serviceType = serviceType;
 			assemblyServerFilename = GetServerName(serverVersion);
 			ipcName = Utils.RandomName(15, 20);
 			ipcUri = Utils.RandomName(15, 20);
@@ -69,7 +71,7 @@ namespace de4dot.code.AssemblyClient {
 		public abstract void LoadServer(string filename);
 
 		public IAssemblyService CreateService() {
-			return (IAssemblyService)Activator.GetObject(typeof(AssemblyService), url);
+			return (IAssemblyService)Activator.GetObject(AssemblyService.GetType(serviceType), url);
 		}
 
 		public abstract void Dispose();

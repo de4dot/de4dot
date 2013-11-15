@@ -24,11 +24,16 @@ namespace de4dot.code.AssemblyClient {
 	// Starts the server in the current app domain.
 	class SameAppDomainAssemblyServerLoader : IAssemblyServerLoader {
 		IAssemblyService service;
+		AssemblyServiceType serviceType;
+
+		public SameAppDomainAssemblyServerLoader(AssemblyServiceType serviceType) {
+			this.serviceType = serviceType;
+		}
 
 		public void LoadServer() {
 			if (service != null)
 				throw new ApplicationException("Server already loaded");
-			service = new AssemblyService();
+			service = AssemblyService.Create(serviceType);
 		}
 
 		public IAssemblyService CreateService() {

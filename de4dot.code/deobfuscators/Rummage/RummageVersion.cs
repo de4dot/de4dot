@@ -21,6 +21,6 @@ namespace de4dot.code.deobfuscators.Rummage {
 	enum RummageVersion {
 		Unknown,
 		V1_1_445,	// 1.1.445.2781 - 2.0.640.3707
-		V2_1_729,	// 2.1.729.3909 - 2.2.750.3964
+		V2_1_729,	// 2.1.729.3909 - 3.1.1016.4804
 	}
 }

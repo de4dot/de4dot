@@ -26,6 +26,7 @@ using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using dnlib.DotNet.Writer;
 using dnlib.PE;
+using AssemblyData;
 using de4dot.code.deobfuscators;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
@@ -375,9 +376,9 @@ namespace de4dot.code {
 				CheckSupportedStringDecrypter(StringFeatures.AllowDynamicDecryption);
 				var newProcFactory = assemblyClientFactory as NewProcessAssemblyClientFactory;
 				if (newProcFactory != null)
-					assemblyClient = newProcFactory.Create(module);
+					assemblyClient = newProcFactory.Create(AssemblyServiceType.StringDecrypter, module);
 				else
-					assemblyClient = assemblyClientFactory.Create();
+					assemblyClient = assemblyClientFactory.Create(AssemblyServiceType.StringDecrypter);
 				assemblyClient.Connect();
 				break;
 
@@ -432,12 +433,12 @@ namespace de4dot.code {
 				return;
 
 			assemblyClient.WaitConnected();
-			assemblyClient.Service.LoadAssembly(options.Filename);
+			assemblyClient.StringDecrypterService.LoadAssembly(options.Filename);
 
 			if (options.StringDecrypterType == DecrypterType.Delegate)
-				assemblyClient.Service.SetStringDecrypterType(AssemblyData.StringDecrypterType.Delegate);
+				assemblyClient.StringDecrypterService.SetStringDecrypterType(AssemblyData.StringDecrypterType.Delegate);
 			else if (options.StringDecrypterType == DecrypterType.Emulate)
-				assemblyClient.Service.SetStringDecrypterType(AssemblyData.StringDecrypterType.Emulate);
+				assemblyClient.StringDecrypterService.SetStringDecrypterType(AssemblyData.StringDecrypterType.Emulate);
 			else
 				throw new ApplicationException(string.Format("Invalid string decrypter type '{0}'", options.StringDecrypterType));
 
@@ -752,10 +753,21 @@ namespace de4dot.code {
 		}
 		Dictionary<MethodDef, SimpleDeobFlags> simpleDeobfuscatorFlags = new Dictionary<MethodDef, SimpleDeobFlags>();
 		bool Check(MethodDef method, SimpleDeobFlags flag) {
+			if (method == null)
+				return false;
 			SimpleDeobFlags oldFlags;
 			simpleDeobfuscatorFlags.TryGetValue(method, out oldFlags);
 			simpleDeobfuscatorFlags[method] = oldFlags | flag;
 			return (oldFlags & flag) == flag;
+		}
+		bool Clear(MethodDef method, SimpleDeobFlags flag) {
+			if (method == null)
+				return false;
+			SimpleDeobFlags oldFlags;
+			if (!simpleDeobfuscatorFlags.TryGetValue(method, out oldFlags))
+				return false;
+			simpleDeobfuscatorFlags[method] = oldFlags & ~flag;
+			return true;
 		}
 
 		void Deobfuscate(MethodDef method, string msg, Action<Blocks> handler) {
@@ -784,12 +796,16 @@ namespace de4dot.code {
 			Logger.Instance.DeIndent();
 		}
 
+		void ISimpleDeobfuscator.MethodModified(MethodDef method) {
+			Clear(method, SimpleDeobFlags.HasDeobfuscated);
+		}
+
 		void ISimpleDeobfuscator.Deobfuscate(MethodDef method) {
 			((ISimpleDeobfuscator)this).Deobfuscate(method, false);
 		}
 
 		void ISimpleDeobfuscator.Deobfuscate(MethodDef method, bool force) {
-			if (!force && Check(method, SimpleDeobFlags.HasDeobfuscated))
+			if (method == null || (!force && Check(method, SimpleDeobFlags.HasDeobfuscated)))
 				return;
 
 			Deobfuscate(method, "Deobfuscating control flow", (blocks) => {

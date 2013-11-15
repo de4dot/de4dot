@@ -154,7 +154,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 		public override void DeobfuscateBegin() {
 			base.DeobfuscateBegin();
 
-			methodCallInliner.Initialize();
+			methodCallInliner.Initialize(DeobfuscatedFile);
 
 			if (options.RestoreResourceNames) {
 				resourceNamesRestorer = new ResourceNamesRestorer(module);

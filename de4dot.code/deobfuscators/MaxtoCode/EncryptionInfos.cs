@@ -95,6 +95,28 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				MagicHi = 0x828ECDA3,
 				Version = EncryptionVersion.V7,
 			},
+			// 513D4492
+			// 51413BD8
+			// 51413D68
+			// 5166DB4F
+			new EncryptionInfo {
+				MagicLo = 0x1A683B87,
+				MagicHi = 0x128ECDA3,
+				Version = EncryptionVersion.V8,
+			},
+			// 51927495
+			new EncryptionInfo {
+				MagicLo = 0x7A643B87,
+				MagicHi = 0x624ECDA3,
+				Version = EncryptionVersion.V8,
+			},
+			// 526BC020
+			// 526BDD12
+			new EncryptionInfo {
+				MagicLo = 0x9A683B87,
+				MagicHi = 0x928ECDA3,
+				Version = EncryptionVersion.V8,
+			},
 		};
 
 		public static readonly EncryptionInfo[] McKey8C0h = new EncryptionInfo[] {
@@ -148,6 +170,23 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				MagicLo = 0x8A731B13,
 				MagicHi = 0x8723891F,
 				Version = EncryptionVersion.V7,
+			},
+			// 513D4492
+			// 51413BD8
+			// 51413D68
+			// 5166DB4F
+			// 526BC020
+			// 526BDD12
+			new EncryptionInfo {
+				MagicLo = 0x1A731B13,
+				MagicHi = 0x1723891F,
+				Version = EncryptionVersion.V8,
+			},
+			// 51927495
+			new EncryptionInfo {
+				MagicLo = 0x7A731B13,
+				MagicHi = 0x1723891F,
+				Version = EncryptionVersion.V8,
 			},
 		};
 	}

@@ -50,9 +50,11 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 
 				var getStream2 = GetTheOnlyMethod(type, "System.IO.Stream", "(System.Reflection.Assembly,System.Type,System.String)");
 				var getNames = GetTheOnlyMethod(type, "System.String[]", "(System.Reflection.Assembly)");
+				var getRefAsms = GetTheOnlyMethod(type, "System.Reflection.AssemblyName[]", "(System.Reflection.Assembly)");
 				var bitmapCtor = GetTheOnlyMethod(type, "System.Drawing.Bitmap", "(System.Type,System.String)");
 				var iconCtor = GetTheOnlyMethod(type, "System.Drawing.Icon", "(System.Type,System.String)");
-				if (getStream2 == null && getNames == null && bitmapCtor == null && iconCtor == null)
+				if (getStream2 == null && getNames == null && getRefAsms == null &&
+					bitmapCtor == null && iconCtor == null)
 					continue;
 
 				var resource = FindGetManifestResourceStreamTypeResource(type, simpleDeobfuscator, deob);
@@ -62,6 +64,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				getManifestResourceStreamType = type;
 				CreateGetManifestResourceStream2(getStream2);
 				CreateGetManifestResourceNames(getNames);
+				CreateGetReferencedAssemblies(getRefAsms);
 				CreateBitmapCtor(bitmapCtor);
 				CreateIconCtor(iconCtor);
 				getManifestResourceStreamTypeResource = resource;

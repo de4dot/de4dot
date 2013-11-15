@@ -21,15 +21,19 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using dnlib.DotNet;
 using dnlib.IO;
+using dnlib.PE;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.MaxtoCode {
 	// Decrypts methods, resources and strings (#US heap)
 	class MethodsDecrypter {
+		ModuleDef module;
 		DecrypterInfo decrypterInfo;
 
 		class MethodInfos {
+			ModuleDef module;
 			MainType mainType;
 			MyPEImage peImage;
 			PeHeader peHeader;
@@ -43,16 +47,6 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			const int ENCRYPTED_DATA_INFO_SIZE = 0x13;
 
 			delegate byte[] DecryptFunc(byte[] encrypted);
-			readonly DecryptFunc[] decryptHandlersV1a;
-			readonly DecryptFunc[] decryptHandlersV1b;
-			readonly DecryptFunc[] decryptHandlersV2;
-			readonly DecryptFunc[] decryptHandlersV3;
-			readonly DecryptFunc[] decryptHandlersV4;
-			readonly DecryptFunc[] decryptHandlersV5a;
-			readonly DecryptFunc[] decryptHandlersV5b;
-			readonly DecryptFunc[] decryptHandlersV5c;
-			readonly DecryptFunc[] decryptHandlersV6;
-			readonly DecryptFunc[] decryptHandlersV7;
 
 			public class DecryptedMethodInfo {
 				public uint bodyRva;
@@ -64,22 +58,12 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				}
 			}
 
-			public MethodInfos(MainType mainType, MyPEImage peImage, PeHeader peHeader, McKey mcKey) {
+			public MethodInfos(ModuleDef module, MainType mainType, MyPEImage peImage, PeHeader peHeader, McKey mcKey) {
+				this.module = module;
 				this.mainType = mainType;
 				this.peImage = peImage;
 				this.peHeader = peHeader;
 				this.mcKey = mcKey;
-
-				decryptHandlersV1a = new DecryptFunc[] { Decrypt1_v1, Decrypt4_v1, Decrypt2_v1, Decrypt3_v1, Decrypt5, Decrypt6, Decrypt7 };
-				decryptHandlersV1b = new DecryptFunc[] { Decrypt4_v1, Decrypt1_v1, Decrypt2_v1, Decrypt3_v1, Decrypt5, Decrypt6, Decrypt7 };
-				decryptHandlersV2 = new DecryptFunc[] { Decrypt3_v1, Decrypt2_v1, Decrypt1_v1, Decrypt4_v1, Decrypt5, Decrypt6, Decrypt7 };
-				decryptHandlersV3 = new DecryptFunc[] { Decrypt1_v1, Decrypt2_v1, Decrypt3_v1, Decrypt4_v1, Decrypt5, Decrypt6, Decrypt7 };
-				decryptHandlersV4 = new DecryptFunc[] { Decrypt2_v1, Decrypt1_v1, Decrypt3_v1, Decrypt4_v1, Decrypt5, Decrypt6, Decrypt7 };
-				decryptHandlersV5a = new DecryptFunc[] { Decrypt4_v1, Decrypt2_v1, Decrypt3_v1, Decrypt1_v1, Decrypt5, Decrypt6, Decrypt7 };
-				decryptHandlersV5b = new DecryptFunc[] { Decrypt4_v2, Decrypt2_v2, Decrypt3_v2, Decrypt1_v2, Decrypt6, Decrypt7, Decrypt5 };
-				decryptHandlersV5c = new DecryptFunc[] { Decrypt4_v3, Decrypt2_v3, Decrypt3_v3, Decrypt1_v3, Decrypt6, Decrypt7, Decrypt5 };
-				decryptHandlersV6 = new DecryptFunc[] { Decrypt4_v4, Decrypt2_v4, Decrypt3_v4, Decrypt1_v4, Decrypt6, Decrypt7, Decrypt5 };
-				decryptHandlersV7 = new DecryptFunc[] { Decrypt4_v5, Decrypt2_v5, Decrypt3_v5, Decrypt1_v5, Decrypt6, Decrypt8_v5, Decrypt9_v5, Decrypt7, Decrypt5 };
 
 				structSize = GetStructSize(mcKey);
 
@@ -152,13 +136,20 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 
 			interface IDecrypter {
 				byte[] Decrypt(int type, byte[] encrypted);
+				bool HasTimeStamp(uint timeStamp);
 			}
 
 			class Decrypter : IDecrypter {
 				DecryptFunc[] decrypterHandlers;
+				uint[] timeStamps;
 
-				public Decrypter(DecryptFunc[] decrypterHandlers) {
+				public Decrypter(DecryptFunc[] decrypterHandlers)
+					: this(decrypterHandlers, null) {
+				}
+
+				public Decrypter(DecryptFunc[] decrypterHandlers, uint[] timeStamps) {
 					this.decrypterHandlers = decrypterHandlers;
+					this.timeStamps = timeStamps ?? new uint[0];
 				}
 
 				public byte[] Decrypt(int type, byte[] encrypted) {
@@ -166,27 +157,44 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 						return decrypterHandlers[type - 1](encrypted);
 					throw new ApplicationException(string.Format("Invalid encryption type: {0:X2}", type));
 				}
+
+				public bool HasTimeStamp(uint timeStamp) {
+					foreach (var ts in timeStamps) {
+						if (timeStamp == ts)
+							return true;
+					}
+					return false;
+				}
 			}
 
 			void InitializeDecrypter() {
 				switch (GetVersion()) {
 				case EncryptionVersion.V1:
-					decrypters.Add(new Decrypter(decryptHandlersV1a));
-					decrypters.Add(new Decrypter(decryptHandlersV1b));
+					decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt1_v1, Decrypt4_v1, Decrypt2_v1, Decrypt3_v1, Decrypt5, Decrypt6, Decrypt7 }, new uint[] { 0x462FA2D2 }));
+					decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt4_v1, Decrypt1_v1, Decrypt2_v1, Decrypt3_v1, Decrypt5, Decrypt6, Decrypt7 }, new uint[] { 0x471299D3 }));
 					break;
 
-				case EncryptionVersion.V2: decrypters.Add(new Decrypter(decryptHandlersV2)); break;
-				case EncryptionVersion.V3: decrypters.Add(new Decrypter(decryptHandlersV3)); break;
-				case EncryptionVersion.V4: decrypters.Add(new Decrypter(decryptHandlersV4)); break;
+				case EncryptionVersion.V2: decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt3_v1, Decrypt2_v1, Decrypt1_v1, Decrypt4_v1, Decrypt5, Decrypt6, Decrypt7 }, new uint[] { 0x482384FB, 0x4A5EEC64, 0x4BD6F703, 0x4C6220EC, 0x4C622357, 0x4C6E4605, 0x4D0E220D, 0x4DC2FC75, 0x4DC2FE0C, 0x4DFA3D5D })); break;
+				case EncryptionVersion.V3: decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt1_v1, Decrypt2_v1, Decrypt3_v1, Decrypt4_v1, Decrypt5, Decrypt6, Decrypt7 }, new uint[] { 0x4ECF2195, 0x4ED76740, 0x4EE1FAD1 })); break;
+				case EncryptionVersion.V4: decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt2_v1, Decrypt1_v1, Decrypt3_v1, Decrypt4_v1, Decrypt5, Decrypt6, Decrypt7 }, new uint[] { 0x4F832868, 0x4F8C86BE, 0x4F9447DB, 0x4FDEF2FF })); break;
 
 				case EncryptionVersion.V5:
-					decrypters.Add(new Decrypter(decryptHandlersV5a));
-					decrypters.Add(new Decrypter(decryptHandlersV5b));
-					decrypters.Add(new Decrypter(decryptHandlersV5c));
+					decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt4_v1, Decrypt2_v1, Decrypt3_v1, Decrypt1_v1, Decrypt5, Decrypt6, Decrypt7 }, new uint[] { 0x4F8E262C, 0x4F966B0B, 0x4FAB3CCF }));
+					decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt4_v2, Decrypt2_v2, Decrypt3_v2, Decrypt1_v2, Decrypt6, Decrypt7, Decrypt5 }, new uint[] { 0x4FC7459E, 0x4FCEBD7B }));
+					decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt4_v3, Decrypt2_v3, Decrypt3_v3, Decrypt1_v3, Decrypt6, Decrypt7, Decrypt5 }, new uint[] { 0x4FBE81DE }));
 					break;
 
-				case EncryptionVersion.V6: decrypters.Add(new Decrypter(decryptHandlersV6)); break;
-				case EncryptionVersion.V7: decrypters.Add(new Decrypter(decryptHandlersV7)); break;
+				case EncryptionVersion.V6: decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt4_v4, Decrypt2_v4, Decrypt3_v4, Decrypt1_v4, Decrypt6, Decrypt7, Decrypt5 }, new uint[] { 0x50A0963C })); break;
+				case EncryptionVersion.V7: decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt4_v5, Decrypt2_v5, Decrypt3_v5, Decrypt1_v5, Decrypt6, Decrypt8_v5, Decrypt9_v5, Decrypt7, Decrypt5 }, new uint[] { 0x50D367A5 })); break;
+
+				case EncryptionVersion.V8:
+					decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt4_v6, Decrypt2_v2, Decrypt3_v6, Decrypt1_v6, Decrypt6, Decrypt8_v6, Decrypt9_v6, Decrypt7, Decrypt10, Decrypt5 }, new uint[] { 0x5166DB4F, 0x51927495 }));
+					decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt4_v7, Decrypt2_v2, Decrypt3_v6, Decrypt1_v7, Decrypt6, Decrypt8_v7, Decrypt9_v7, Decrypt7, Decrypt5 }, new uint[] { 0x51413D68 }));
+					decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt4_v7, Decrypt2_v2, Decrypt3_v6, Decrypt1_v7, Decrypt6, Decrypt8_v8, Decrypt9_v8, Decrypt7, Decrypt5 }, new uint[] { 0x513D7124, 0x51413BD8 }));
+					decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt4_v5, Decrypt2_v2, Decrypt3_v6, Decrypt1_v9, Decrypt6, Decrypt8_v8, Decrypt9_v9, Decrypt7, Decrypt5 }, new uint[] { 0x513D4492, 0x5113E277 }));
+					decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt3_v6, Decrypt2_v2, Decrypt4_v8, Decrypt1_v10, Decrypt8_v9, Decrypt9_v10, Decrypt6, Decrypt7, Decrypt5 }, new uint[] { 0x526BDD12 }));
+					decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt1_v10, Decrypt4_v8, Decrypt2_v2, Decrypt3_v6, Decrypt6, Decrypt8_v9, Decrypt9_v10, Decrypt7, Decrypt5 }, new uint[] { 0x526BC020 }));
+					break;
 
 				case EncryptionVersion.Unknown:
 				default:
@@ -200,16 +208,82 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 					throw new ApplicationException("Could not decrypt methods");
 			}
 
+			uint GetRuntimeTimeStamp() {
+				string path = module.Location;
+				if (string.IsNullOrEmpty(path))
+					return 0;
+
+				try {
+					var rtNames = new List<string>();
+					foreach (var rtModRef in mainType.RuntimeModuleRefs) {
+						string dllName = rtModRef.Name;
+						if (!dllName.ToUpperInvariant().EndsWith(".DLL"))
+							dllName += ".dll";
+						rtNames.Add(dllName);
+					}
+					if (rtNames.Count == 0)
+						return 0;
+
+					for (var di = new DirectoryInfo(Path.GetDirectoryName(path)); di != null; di = di.Parent) {
+						foreach (var dllName in rtNames) {
+							try {
+								using (var peImage = new PEImage(Path.Combine(di.FullName, dllName))) {
+									if (peImage.ImageNTHeaders.FileHeader.Machine == Machine.I386)
+										return peImage.ImageNTHeaders.FileHeader.TimeDateStamp;
+								}
+							}
+							catch {
+							}
+						}
+					}
+				}
+				catch {
+				}
+
+				return 0;
+			}
+
 			bool InitializeInfos2() {
+				uint rtTimeStamp = GetRuntimeTimeStamp();
+				if (rtTimeStamp != 0) {
+					var decrypter = GetCorrectDecrypter(rtTimeStamp);
+					if (decrypter != null) {
+						try {
+							if (InitializeInfos2(decrypter))
+								return true;
+						}
+						catch {
+						}
+					}
+				}
+
+				Dictionary<uint, DecryptedMethodInfo> savedInfos = null;
 				foreach (var decrypter in decrypters) {
 					try {
-						if (InitializeInfos2(decrypter))
-							return true;
+						if (InitializeInfos2(decrypter)) {
+							if (savedInfos != null) {
+								Logger.w("Decryption probably failed. Make sure the correct MaxtoCode runtime file is present.");
+								break;
+							}
+							savedInfos = infos;
+							infos = new Dictionary<uint, DecryptedMethodInfo>();
+						}
 					}
 					catch {
 					}
 				}
-				return false;
+				if (savedInfos == null)
+					return false;
+				infos = savedInfos;
+				return true;
+			}
+
+			IDecrypter GetCorrectDecrypter(uint timeStamp) {
+				foreach (var decrypter in decrypters) {
+					if (decrypter.HasTimeStamp(timeStamp))
+						return decrypter;
+				}
+				return null;
 			}
 
 			bool InitializeInfos2(IDecrypter decrypter) {
@@ -222,6 +296,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				var encryptedDataInfos = new byte[numEncryptedDataInfos][];
 
 				uint offset = 8;
+				infos.Clear();
 				for (int i = 0; i < numMethods; i++, offset += structSize) {
 					uint methodBodyRva = ReadEncryptedUInt32(offset);
 					uint totalSize = ReadEncryptedUInt32(offset + 4);
@@ -313,6 +388,22 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				return Decrypt1(encrypted, 9, 9, 0x500);
 			}
 
+			byte[] Decrypt1_v6(byte[] encrypted) {
+				return Decrypt1(encrypted, 0x27, 0x27, 0x100);
+			}
+
+			byte[] Decrypt1_v7(byte[] encrypted) {
+				return Decrypt1(encrypted, 0x1D, 0x1D, 0x400);
+			}
+
+			byte[] Decrypt1_v9(byte[] encrypted) {
+				return Decrypt1(encrypted, 9, 0x13, 0x400);
+			}
+
+			byte[] Decrypt1_v10(byte[] encrypted) {
+				return Decrypt1(encrypted, 0x11, 0x11, 0x400);
+			}
+
 			byte[] Decrypt1(byte[] encrypted, int keyStart, int keyReset, int keyEnd) {
 				var decrypted = new byte[encrypted.Length];
 				for (int i = 0, ki = keyStart; i < decrypted.Length; i++) {
@@ -386,6 +477,10 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				return Decrypt3(encrypted, 0x015E + 7);
 			}
 
+			byte[] Decrypt3_v6(byte[] encrypted) {
+				return Decrypt3(encrypted, 0x015E + 0x7F);
+			}
+
 			static readonly byte[] decrypt3Shifts = new byte[16] { 5, 11, 14, 21, 6, 20, 17, 29, 4, 10, 3, 2, 7, 1, 26, 18 };
 			byte[] Decrypt3(byte[] encrypted, int offset) {
 				if ((encrypted.Length & 7) != 0)
@@ -435,6 +530,18 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				return Decrypt4(encrypted, 0x15, 0x15, 0x100);
 			}
 
+			byte[] Decrypt4_v6(byte[] encrypted) {
+				return Decrypt4(encrypted, 0x63, 0x63, 0x150);
+			}
+
+			byte[] Decrypt4_v7(byte[] encrypted) {
+				return Decrypt4(encrypted, 0x0B, 0x0B, 0x100);
+			}
+
+			byte[] Decrypt4_v8(byte[] encrypted) {
+				return Decrypt4(encrypted, 9, 9, 0x100);
+			}
+
 			byte[] Decrypt4(byte[] encrypted, int keyStart, int keyReset, int keyEnd) {
 				var decrypted = new byte[encrypted.Length / 3 * 2 + 1];
 
@@ -476,6 +583,22 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				return Decrypt8(encrypted, 7, 7, 0x600);
 			}
 
+			byte[] Decrypt8_v6(byte[] encrypted) {
+				return Decrypt8(encrypted, 0x1B, 0x1B, 0x100);
+			}
+
+			byte[] Decrypt8_v7(byte[] encrypted) {
+				return Decrypt8(encrypted, 0x0D, 0x0D, 0x600);
+			}
+
+			byte[] Decrypt8_v8(byte[] encrypted) {
+				return Decrypt8(encrypted, 0x11, 0x11, 0x600);
+			}
+
+			byte[] Decrypt8_v9(byte[] encrypted) {
+				return Decrypt8(encrypted, 0xA, 0xA, 0x600);
+			}
+
 			byte[] Decrypt8(byte[] encrypted, int keyStart, int keyReset, int keyEnd) {
 				var decrypted = new byte[encrypted.Length];
 				int ki = keyStart;
@@ -491,6 +614,26 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 
 			byte[] Decrypt9_v5(byte[] encrypted) {
 				return Decrypt9(encrypted, 0x11, 0x11, 0x610);
+			}
+
+			byte[] Decrypt9_v6(byte[] encrypted) {
+				return Decrypt9(encrypted, 0x2E, 0x2E, 0x310);
+			}
+
+			byte[] Decrypt9_v7(byte[] encrypted) {
+				return Decrypt9(encrypted, 0x28, 0x28, 0x510);
+			}
+
+			byte[] Decrypt9_v8(byte[] encrypted) {
+				return Decrypt9(encrypted, 0x2C, 0x2C, 0x510);
+			}
+
+			byte[] Decrypt9_v9(byte[] encrypted) {
+				return Decrypt9(encrypted, 0x10, 0x10, 0x510);
+			}
+
+			byte[] Decrypt9_v10(byte[] encrypted) {
+				return Decrypt9(encrypted, 5, 5, 0x510);
 			}
 
 			byte[] Decrypt9(byte[] encrypted, int keyStart, int keyReset, int keyEnd) {
@@ -527,6 +670,31 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				return decrypted;
 			}
 
+			byte[] Decrypt10(byte[] encrypted) {
+				byte[] enc = (byte[])encrypted.Clone();
+				byte[] dest = new byte[enc.Length];
+				int halfSize = enc.Length / 2;
+
+				byte b = enc[0];
+				b ^= 0xA1;
+				dest[0] = b;
+
+				b = enc[enc.Length - 1];
+				b ^= 0x1A;
+				dest[enc.Length - 1] = b;
+
+				enc[0] = dest[0];
+				enc[enc.Length - 1] = b;
+
+				for (int i = 1; i < halfSize; i++)
+					dest[i] = (byte)(enc[i] ^ dest[i - 1]);
+
+				for (int i = enc.Length - 2; i >= halfSize; i--)
+					dest[i] = (byte)(enc[i] ^ dest[i + 1]);
+
+				return dest;
+			}
+
 			byte[] blowfishKey;
 			byte[] GetBlowfishKey() {
 				if (blowfishKey != null)
@@ -546,7 +714,8 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			}
 		}
 
-		public MethodsDecrypter(DecrypterInfo decrypterInfo) {
+		public MethodsDecrypter(ModuleDef module, DecrypterInfo decrypterInfo) {
+			this.module = module;
 			this.decrypterInfo = decrypterInfo;
 		}
 
@@ -565,7 +734,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			var dumpedMethods = new DumpedMethods();
 
 			var peImage = decrypterInfo.peImage;
-			var methodInfos = new MethodInfos(decrypterInfo.mainType, peImage, decrypterInfo.peHeader, decrypterInfo.mcKey);
+			var methodInfos = new MethodInfos(module, decrypterInfo.mainType, peImage, decrypterInfo.peHeader, decrypterInfo.mcKey);
 			methodInfos.InitializeInfos();
 
 			var methodDef = peImage.DotNetFile.MetaData.TablesStream.MethodTable;
@@ -596,9 +765,14 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			var peImage = decrypterInfo.peImage;
 			var fileData = decrypterInfo.fileData;
 
+			uint decryptedResources = peHeader.ReadUInt32(0xFE8) ^ mcKey.ReadUInt32(0);
 			uint resourceRva = peHeader.GetRva(0x0E10, mcKey.ReadUInt32(0x00A0));
-			uint resourceSize = peHeader.ReadUInt32(0x0E14) ^ mcKey.ReadUInt32(0x00AA);
-			if (resourceRva == 0 || resourceSize == 0)
+			int resourceSize = (int)(peHeader.ReadUInt32(0x0E14) ^ mcKey.ReadUInt32(0x00AA));
+			if (decryptedResources == 1) {
+				Logger.v("Resources have already been decrypted");
+				return;
+			}
+			if (resourceRva == 0 || resourceSize <= 0)
 				return;
 			if (resourceRva != (uint)peImage.Cor20Header.Resources.VirtualAddress ||
 				resourceSize != peImage.Cor20Header.Resources.Size) {

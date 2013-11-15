@@ -64,8 +64,8 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				return false;
 			var instr = instructions[emulateIndex];
 			var targets = (Instruction[])instr.Operand;
-			if (switchIndex.value >= 0 && switchIndex.value < targets.Length)
-				emulateIndex = instructions.IndexOf(targets[switchIndex.value]);
+			if (switchIndex.Value >= 0 && switchIndex.Value < targets.Length)
+				emulateIndex = instructions.IndexOf(targets[switchIndex.Value]);
 			else
 				emulateIndex++;
 			return true;
@@ -221,7 +221,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 					var retValue2 = (Int32Value)retValue;
 					if (!retValue2.AllBitsValid())
 						return false;
-					newValue = retValue2.value;
+					newValue = retValue2.Value;
 					return true;
 
 				default:

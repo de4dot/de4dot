@@ -52,12 +52,12 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			return CheckCanInline(method);
 		}
 
-		public void Initialize() {
+		public void Initialize(ISimpleDeobfuscator simpleDeobfuscator) {
 			InitializeMethodsTypes();
-			RestoreMethodBodies();
+			RestoreMethodBodies(simpleDeobfuscator);
 		}
 
-		void RestoreMethodBodies() {
+		void RestoreMethodBodies(ISimpleDeobfuscator simpleDeobfuscator) {
 			var methodToOrigMethods = new MethodDefAndDeclaringTypeDict<List<MethodDef>>();
 			foreach (var t in module.Types) {
 				var types = new List<TypeDef>(AllTypesHelper.Types(new List<TypeDef> { t }));
@@ -95,6 +95,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 							calledMethod.MDToken.ToInt32());
 				DotNetUtils.CopyBodyFromTo(calledMethod, method);
 				classMethods.Add(calledMethod, method);
+				simpleDeobfuscator.MethodModified(method);
 			}
 		}
 

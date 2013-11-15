@@ -17,29 +17,15 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using dnlib.DotNet;
-using de4dot.blocks;
-using de4dot.mdecrypt;
-
 namespace AssemblyData {
-	public enum StringDecrypterType {
-		Delegate,
-		Emulate,
+	public enum AssemblyServiceType {
+		StringDecrypter,
+		MethodDecrypter,
+		Generic,
 	}
 
 	public interface IAssemblyService {
 		void DoNothing();
 		void Exit();
-
-		void LoadAssembly(string filename);
-
-		void SetStringDecrypterType(StringDecrypterType type);
-		int DefineStringDecrypter(int methodToken);
-		object[] DecryptStrings(int stringDecrypterMethod, object[] args, int callerToken);
-
-		void InstallCompileMethod(DecryptMethodsInfo decryptMethodsInfo);
-		void LoadObfuscator(string filename);
-		bool CanDecryptMethods();
-		DumpedMethods DecryptMethods();
 	}
 }

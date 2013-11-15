@@ -1,0 +1,101 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{045B96F2-AF80-4C4C-8D27-E38635AC705E}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>de4dot.blocks</RootNamespace>
+    <AssemblyName>de4dot.blocks</AssemblyName>
+    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\de4dot.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\Debug\bin\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\Release\bin\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="BaseBlock.cs" />
+    <Compile Include="Block.cs" />
+    <Compile Include="Blocks.cs" />
+    <Compile Include="BlocksSorter.cs" />
+    <Compile Include="cflow\BlockCflowDeobfuscator.cs" />
+    <Compile Include="cflow\BlockDeobfuscator.cs" />
+    <Compile Include="cflow\BlocksCflowDeobfuscator.cs" />
+    <Compile Include="cflow\BranchEmulator.cs" />
+    <Compile Include="cflow\CachedCflowDeobfuscator.cs" />
+    <Compile Include="cflow\CflowDeobfuscator.cs" />
+    <Compile Include="cflow\CflowUtils.cs" />
+    <Compile Include="cflow\ConstantsFolder.cs" />
+    <Compile Include="cflow\DeadCodeRemover.cs" />
+    <Compile Include="cflow\DeadStoreRemover.cs" />
+    <Compile Include="cflow\DupBlockDeobfuscator.cs" />
+    <Compile Include="cflow\IBlocksDeobfuscator.cs" />
+    <Compile Include="cflow\ICflowDeobfuscator.cs" />
+    <Compile Include="cflow\InstructionEmulator.cs" />
+    <Compile Include="cflow\Int32Value.cs" />
+    <Compile Include="cflow\Int64Value.cs" />
+    <Compile Include="cflow\MethodCallInliner.cs" />
+    <Compile Include="cflow\MethodCallInlinerBase.cs" />
+    <Compile Include="cflow\Real8Value.cs" />
+    <Compile Include="cflow\StLdlocFixer.cs" />
+    <Compile Include="cflow\SwitchCflowDeobfuscator.cs" />
+    <Compile Include="cflow\Value.cs" />
+    <Compile Include="cflow\ValueStack.cs" />
+    <Compile Include="CodeGenerator.cs" />
+    <Compile Include="DeadBlocksRemover.cs" />
+    <Compile Include="DotNetUtils.cs" />
+    <Compile Include="DumpedMethod.cs" />
+    <Compile Include="DumpedMethods.cs" />
+    <Compile Include="FilterHandlerBlock.cs" />
+    <Compile Include="ForwardScanOrder.cs" />
+    <Compile Include="GenericArgsSubstitutor.cs" />
+    <Compile Include="HandlerBlock.cs" />
+    <Compile Include="Instr.cs" />
+    <Compile Include="InstructionListParser.cs" />
+    <Compile Include="MemberDefDict.cs" />
+    <Compile Include="MethodBlocks.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ScopeBlock.cs" />
+    <Compile Include="StackTracePatcher.cs" />
+    <Compile Include="TryBlock.cs" />
+    <Compile Include="TryHandlerBlock.cs" />
+    <Compile Include="Utils.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\dnlib\src\dnlib.csproj">
+      <Project>{FDFC1237-143F-4919-8318-4926901F4639}</Project>
+      <Name>dnlib</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

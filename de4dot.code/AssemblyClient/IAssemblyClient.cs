@@ -23,6 +23,9 @@ using AssemblyData;
 namespace de4dot.code.AssemblyClient {
 	public interface IAssemblyClient : IDisposable {
 		IAssemblyService Service { get; }
+		IStringDecrypterService StringDecrypterService { get; }
+		IMethodDecrypterService MethodDecrypterService { get; }
+		IGenericService GenericService { get; }
 		void Connect();
 		void WaitConnected();
 	}

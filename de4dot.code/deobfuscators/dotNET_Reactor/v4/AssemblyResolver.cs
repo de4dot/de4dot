@@ -87,7 +87,6 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			var resolverLocals = new string[] {
 				"System.Byte[]",
 				"System.Reflection.Assembly",
-				"System.Security.Cryptography.MD5",
 				"System.String",
 				"System.IO.BinaryReader",
 				"System.IO.Stream",

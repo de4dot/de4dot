@@ -27,7 +27,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "MaxtoCode";
 		public const string THE_TYPE = "mc";
-		const string DEFAULT_REGEX = @"!^[oO01l]+$&" + DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
+		const string DEFAULT_REGEX = @"!^[oO01l]+$&!^[A-F0-9]{20,}$&" + DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
 		IntOption stringCodePage;
 
 		public DeobfuscatorInfo()
@@ -106,7 +106,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 
 			var fileData = DeobUtils.ReadModule(module);
 			decrypterInfo = new DecrypterInfo(mainType, fileData);
-			var methodsDecrypter = new MethodsDecrypter(decrypterInfo);
+			var methodsDecrypter = new MethodsDecrypter(module, decrypterInfo);
 
 			if (!methodsDecrypter.Decrypt(ref dumpedMethods))
 				return false;

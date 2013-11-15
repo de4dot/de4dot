@@ -27,7 +27,7 @@ using de4dot.blocks;
 using de4dot.blocks.cflow;
 
 namespace de4dot.code.deobfuscators.Eazfuscator_NET {
-	class StringDecrypter {
+	class StringDecrypter : IDisposable {
 		ModuleDefMD module;
 		TypeDef stringType;
 		MethodDef stringMethod;
@@ -47,7 +47,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		EfConstantsReader stringMethodConsts;
 		bool isV32OrLater;
 		int? validStringDecrypterValue;
-		Dynocode dynocode;
+		DynamicDynocodeIterator dynocode;
 
 		class StreamHelperType {
 			public TypeDef type;
@@ -228,7 +228,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		}
 
 		bool FindConstants(ISimpleDeobfuscator simpleDeobfuscator) {
-			dynocode = new Dynocode(simpleDeobfuscator);
+			dynocode = new DynamicDynocodeIterator();
 			simpleDeobfuscator.Deobfuscate(stringMethod);
 			stringMethodConsts = new EfConstantsReader(stringMethod);
 
@@ -626,7 +626,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					if (val == null || !val.AllBitsValid())
 						fields[field] = null;
 					else
-						fields[field] = val.value;
+						fields[field] = val.Value;
 					break;
 
 				case Code.Call:
@@ -671,7 +671,11 @@ done: ;
 			if (index + 4 >= instrs.Count)
 				return false;
 			var ldloc = instrs[index + 3];
-			if (!ldloc.IsLdloc() || instrs[index + 4].OpCode.Code != Code.Stfld)
+			var stfld = instrs[index + 4];
+			if (!ldloc.IsLdloc() || stfld.OpCode.Code != Code.Stfld)
+				return false;
+			var enumerableField = stfld.Operand as FieldDef;
+			if (enumerableField == null)
 				return false;
 
 			var initValue = emu.GetLocal(ldloc.GetLocal(stringMethod.Body.Variables)) as Int32Value;
@@ -692,17 +696,44 @@ done: ;
 			if (initValue2 == null || !initValue2.AllBitsValid())
 				return false;
 
-			var dcGen = dynocode.GetDynocodeGenerator(ctor.DeclaringType);
-			if (dcGen == null)
+			int loopStart = GetIndexOfCall(instrs, index, leaveIndex, "System.Int32 System.Collections.Generic.IEnumerator`1<System.Int32>::get_Current()");
+			int loopEnd = GetIndexOfCall(instrs, loopStart, leaveIndex, "System.Boolean System.Collections.IEnumerator::MoveNext()");
+			if (loopStart < 0 || loopEnd < 0)
 				return false;
-			int loopLocalValue = initValue2.value;
-			foreach (var val in dcGen.GetValues(initValue.value))
-				loopLocalValue ^= val;
+			loopStart++;
+			loopEnd--;
 
-			emu.SetLocal(loopLocal, new Int32Value(loopLocalValue));
-			emu.Emulate(instr);
+			dynocode.Initialize(module);
+			var ctorArg = emu.Pop() as Int32Value;
+			if (ctorArg == null || !ctorArg.AllBitsValid())
+				return false;
+			dynocode.CreateEnumerable(ctor, new object[] { ctorArg.Value });
+			dynocode.WriteEnumerableField(enumerableField.MDToken.ToUInt32(), initValue.Value);
+			dynocode.CreateEnumerator();
+			foreach (var val in dynocode) {
+				emu.Push(new Int32Value(val));
+				for (int i = loopStart; i < loopEnd; i++)
+					emu.Emulate(instrs[i]);
+			}
+
 			index = newIndex - 1;
 			return true;
+		}
+
+		static int GetIndexOfCall(IList<Instruction> instrs, int startIndex, int endIndex, string fullMethodName) {
+			if (startIndex < 0 || endIndex < 0)
+				return -1;
+			for (int i = startIndex; i < endIndex; i++) {
+				var instr = instrs[i];
+				if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt)
+					continue;
+				var method = instr.Operand as IMethod;
+				if (method == null || method.FullName != fullMethodName)
+					continue;
+
+				return i;
+			}
+			return -1;
 		}
 
 		Local GetDCLoopLocal(int start, int end) {
@@ -979,6 +1010,16 @@ done: ;
 			}
 
 			return false;
+		}
+
+		public void Dispose() {
+			CloseServer();
+		}
+
+		public void CloseServer() {
+			if (dynocode != null)
+				dynocode.Dispose();
+			dynocode = null;
 		}
 	}
 }

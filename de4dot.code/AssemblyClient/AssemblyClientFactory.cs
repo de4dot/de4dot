@@ -18,21 +18,22 @@
 */
 
 using dnlib.DotNet;
+using AssemblyData;
 
 namespace de4dot.code.AssemblyClient {
 	public interface IAssemblyClientFactory {
-		IAssemblyClient Create();
+		IAssemblyClient Create(AssemblyServiceType serviceType);
 	}
 
 	public class SameAppDomainAssemblyClientFactory : IAssemblyClientFactory {
-		public IAssemblyClient Create() {
-			return new AssemblyClient(new SameAppDomainAssemblyServerLoader());
+		public IAssemblyClient Create(AssemblyServiceType serviceType) {
+			return new AssemblyClient(new SameAppDomainAssemblyServerLoader(serviceType));
 		}
 	}
 
 	public class NewAppDomainAssemblyClientFactory : IAssemblyClientFactory {
-		public IAssemblyClient Create() {
-			return new AssemblyClient(new NewAppDomainAssemblyServerLoader());
+		public IAssemblyClient Create(AssemblyServiceType serviceType) {
+			return new AssemblyClient(new NewAppDomainAssemblyServerLoader(serviceType));
 		}
 	}
 
@@ -47,12 +48,12 @@ namespace de4dot.code.AssemblyClient {
 			this.serverVersion = serverVersion;
 		}
 
-		public IAssemblyClient Create(ModuleDef module) {
-			return new AssemblyClient(new NewProcessAssemblyServerLoader(GetServerClrVersion(module)));
+		public IAssemblyClient Create(AssemblyServiceType serviceType, ModuleDef module) {
+			return new AssemblyClient(new NewProcessAssemblyServerLoader(serviceType, GetServerClrVersion(module)));
 		}
 
-		public IAssemblyClient Create() {
-			return new AssemblyClient(new NewProcessAssemblyServerLoader(serverVersion));
+		public IAssemblyClient Create(AssemblyServiceType serviceType) {
+			return new AssemblyClient(new NewProcessAssemblyServerLoader(serviceType, serverVersion));
 		}
 
 		internal static ServerClrVersion GetServerClrVersion(ModuleDef module) {

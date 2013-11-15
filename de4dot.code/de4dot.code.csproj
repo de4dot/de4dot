@@ -24,6 +24,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -34,6 +35,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject />
@@ -72,16 +74,36 @@
     <Compile Include="deobfuscators\Agile_NET\StackFrameHelper.cs" />
     <Compile Include="deobfuscators\Agile_NET\StringDecrypter.cs" />
     <Compile Include="deobfuscators\Agile_NET\vm\CilOperandInstructionRestorer.cs" />
-    <Compile Include="deobfuscators\Agile_NET\vm\Csvm.cs" />
     <Compile Include="deobfuscators\Agile_NET\vm\CsvmDataReader.cs" />
     <Compile Include="deobfuscators\Agile_NET\vm\CsvmMethodData.cs" />
-    <Compile Include="deobfuscators\Agile_NET\vm\CsvmToCilMethodConverter.cs" />
-    <Compile Include="deobfuscators\Agile_NET\vm\FieldsInfo.cs" />
-    <Compile Include="deobfuscators\Agile_NET\vm\OpCodeHandler.cs" />
-    <Compile Include="deobfuscators\Agile_NET\vm\OpCodeHandlers.cs" />
-    <Compile Include="deobfuscators\Agile_NET\vm\UnknownHandlerInfo.cs" />
-    <Compile Include="deobfuscators\Agile_NET\vm\VmOpCodeHandlerDetector.cs" />
-    <Compile Include="deobfuscators\Agile_NET\vm\VmOperands.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\CsvmToCilMethodConverterBase.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v1\Csvm.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v1\CsvmToCilMethodConverter.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v1\FieldsInfo.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v1\OpCodeHandler.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v1\OpCodeHandlers.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v1\UnknownHandlerInfo.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v1\VmOpCodeHandlerDetector.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\CompositeHandlerDetector.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\CompositeOpCodeHandler.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\Csvm.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\CsvmInfo.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\CsvmResources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>CsvmResources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\CsvmToCilMethodConverter.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\HandlerTypeCode.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\MethodFinder.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\MethodSigInfoCreator.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\OpCodeHandler.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\OpCodeHandlerInfo.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\OpCodeHandlerInfoReader.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\OpCodeHandlerInfos.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\VmOpCode.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\VmOpCodeHandlerDetector.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\VmOperand.cs" />
     <Compile Include="deobfuscators\ArrayFinder.cs" />
     <Compile Include="deobfuscators\Babel_NET\AssemblyResolver.cs" />
     <Compile Include="deobfuscators\Babel_NET\BabelInflater.cs" />
@@ -155,9 +177,12 @@
     <Compile Include="deobfuscators\CRC32.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\AntiDebugger.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\AssemblyResolver.cs" />
+    <Compile Include="deobfuscators\CryptoObfuscator\CoMethodCallInliner.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\ConstantsDecrypter.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\CoUtils.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\Deobfuscator.cs" />
+    <Compile Include="deobfuscators\CryptoObfuscator\InlinedMethodTypes.cs" />
+    <Compile Include="deobfuscators\CryptoObfuscator\LdnullFixer.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\MethodBodyReader.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\MethodsDecrypter.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\ProxyCallFixer.cs" />
@@ -183,7 +208,14 @@
     <Compile Include="deobfuscators\DeobUtils.cs" />
     <Compile Include="deobfuscators\Dotfuscator\Deobfuscator.cs" />
     <Compile Include="deobfuscators\Dotfuscator\StringDecrypter.cs" />
-    <Compile Include="deobfuscators\Eazfuscator_NET\Dynocode.cs" />
+    <Compile Include="deobfuscators\Eazfuscator_NET\DynamicDynocodeIterator.cs" />
+    <Compile Include="deobfuscators\Eazfuscator_NET\DynocodeService.cs" />
+    <Compile Include="deobfuscators\dotNET_Reactor\v4\DnrMethodCallInliner.cs" />
+    <Compile Include="deobfuscators\ILProtector\DecryptedMethodInfo.cs" />
+    <Compile Include="deobfuscators\ILProtector\DynamicMethodsDecrypter.cs" />
+    <Compile Include="deobfuscators\ILProtector\DynamicMethodsDecrypterService.cs" />
+    <Compile Include="deobfuscators\ILProtector\DynamicMethodsRestorer.cs" />
+    <Compile Include="deobfuscators\ILProtector\MethodsDecrypterBase.cs" />
     <Compile Include="deobfuscators\MyPEImage.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v3\AntiStrongName.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v3\ApplicationModeDecrypter.cs" />
@@ -235,7 +267,7 @@
     <Compile Include="deobfuscators\ILProtector\Deobfuscator.cs" />
     <Compile Include="deobfuscators\ILProtector\MainType.cs" />
     <Compile Include="deobfuscators\ILProtector\MethodReader.cs" />
-    <Compile Include="deobfuscators\ILProtector\MethodsDecrypter.cs" />
+    <Compile Include="deobfuscators\ILProtector\StaticMethodsDecrypter.cs" />
     <Compile Include="deobfuscators\InitializedDataCreator.cs" />
     <Compile Include="deobfuscators\InlinedMethodsFinder.cs" />
     <Compile Include="deobfuscators\ISimpleDeobfuscator.cs" />
@@ -257,6 +289,7 @@
     <Compile Include="deobfuscators\MethodStack.cs" />
     <Compile Include="deobfuscators\MPRESS\Deobfuscator.cs" />
     <Compile Include="deobfuscators\MPRESS\Lzmat.cs" />
+    <Compile Include="deobfuscators\NullStream.cs" />
     <Compile Include="deobfuscators\Operations.cs" />
     <Compile Include="deobfuscators\ProxyCallFixerBase.cs" />
     <Compile Include="deobfuscators\QuickLZ.cs" />
@@ -297,6 +330,7 @@
     <Compile Include="deobfuscators\Xenocode\Deobfuscator.cs" />
     <Compile Include="deobfuscators\Xenocode\StringDecrypter.cs" />
     <Compile Include="DumpedMethodsRestorer.cs" />
+    <Compile Include="HandleProcessCorruptedStateExceptionsAttribute.cs" />
     <Compile Include="IDeobfuscatorContext.cs" />
     <Compile Include="IObfuscatedFile.cs" />
     <Compile Include="Logger.cs" />
@@ -361,9 +395,9 @@
       <Project>{FBD84077-9D35-41FE-89DF-8D79EFE0B595}</Project>
       <Name>AssemblyData</Name>
     </ProjectReference>
-    <ProjectReference Include="..\blocks\blocks.csproj">
+    <ProjectReference Include="..\de4dot.blocks\de4dot.blocks.csproj">
       <Project>{045B96F2-AF80-4C4C-8D27-E38635AC705E}</Project>
-      <Name>blocks</Name>
+      <Name>de4dot.blocks</Name>
     </ProjectReference>
     <ProjectReference Include="..\de4dot.mdecrypt\de4dot.mdecrypt.csproj">
       <Project>{5C93C5E2-196F-4877-BF65-96FEBFCEFCA1}</Project>
@@ -373,6 +407,12 @@
       <Project>{FDFC1237-143F-4919-8318-4926901F4639}</Project>
       <Name>dnlib</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="deobfuscators\Agile_NET\vm\v2\CsvmResources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>CsvmResources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

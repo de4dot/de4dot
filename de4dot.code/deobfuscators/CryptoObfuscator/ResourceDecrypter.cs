@@ -48,17 +48,11 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 
 		void Find(ISimpleDeobfuscator simpleDeobfuscator) {
 			switch (frameworkType) {
-			case FrameworkType.Desktop:
-				if (!module.IsClr1x)
-					FindDesktopOrCompactFramework();
-				else
-					FindDesktopOrCompactFrameworkV1();
-				break;
-
 			case FrameworkType.Silverlight:
 				FindSilverlight();
 				break;
 
+			case FrameworkType.Desktop:
 			case FrameworkType.CompactFramework:
 				if (!module.IsClr1x) {
 					if (FindDesktopOrCompactFramework())
@@ -243,11 +237,9 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 						return true;
 					}
 				}
-				else {
-					if (constants.Count == 1) {
-						desEncryptedFlag = (byte)constants[0];
-						return true;
-					}
+				if (constants.Count == 1) {
+					desEncryptedFlag = (byte)constants[0];
+					return true;
 				}
 				break;
 
@@ -301,6 +293,8 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				if (DotNetUtils.IsMethod(method, "System.Byte[]", "(System.IO.Stream)"))
 					yield return method;
 				else if (DotNetUtils.IsMethod(method, "System.Byte[]", "(System.Int64,System.IO.Stream)"))
+					yield return method;
+				else if (DotNetUtils.IsMethod(method, "System.Byte[]", "(System.Int64,System.IO.Stream,System.UInt32)"))
 					yield return method;
 				else if (DotNetUtils.IsMethod(method, "System.Byte[]", "(System.Int32,System.IO.Stream)"))
 					yield return method;

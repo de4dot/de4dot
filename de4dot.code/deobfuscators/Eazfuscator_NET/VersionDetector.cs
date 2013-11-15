@@ -722,7 +722,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					decryptStringMethod.Body.ExceptionHandlers.Count >= 2 &&
 					new LocalTypes(decryptStringMethod).All(locals35) &&
 					CheckTypeFields2(fields35)) {
-					return "3.5 - 3.6";
+					return "3.5 - 4.0";
 				}
 			}
 
