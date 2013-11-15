@@ -53,15 +53,20 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			CheckMethod(DotNetUtils.GetModuleTypeCctor(module));
 		}
 
-		static string[] ilpLocals = new string[] {
+		static string[] ilpLocalsV1x = new string[] {
 			"System.Boolean",
 			"System.IntPtr",
 			"System.Object[]",
 		};
+		static string[] ilpLocalsV2x = new string[] {
+			"System.IntPtr",
+		};
 		bool CheckMethod(MethodDef cctor) {
 			if (cctor == null || cctor.Body == null)
 				return false;
-			if (!new LocalTypes(cctor).Exactly(ilpLocals))
+			var localTypes = new LocalTypes(cctor);
+			if (!localTypes.Exactly(ilpLocalsV1x) &&
+				!localTypes.Exactly(ilpLocalsV2x))
 				return false;
 
 			var type = cctor.DeclaringType;
@@ -70,18 +75,29 @@ namespace de4dot.code.deobfuscators.ILProtector {
 				methods = GetPinvokeMethods(type, "P0");
 			if (methods.Count != 2)
 				return false;
-			if (type.Fields.Count != 1)
+			if (type.Fields.Count < 1 || type.Fields.Count > 2)
 				return false;
 
-			var theField = type.Fields[0];
-			var theDelegate = theField.FieldType.TryGetTypeDef();
-			if (theDelegate == null || !DotNetUtils.DerivesFromDelegate(theDelegate))
+			if (!GetDelegate(type, out invokerInstanceField, out invokerDelegate))
 				return false;
 
 			protectMethods = methods;
-			invokerDelegate = theDelegate;
-			invokerInstanceField = theField;
 			return true;
+		}
+
+		bool GetDelegate(TypeDef type, out FieldDef field, out TypeDef del) {
+			foreach (var fld in type.Fields) {
+				var theDelegate = fld.FieldType.TryGetTypeDef();
+				if (theDelegate != null && DotNetUtils.DerivesFromDelegate(theDelegate)) {
+					field = fld;
+					del = theDelegate;
+					return true;
+				}
+			}
+
+			field = null;
+			del = null;
+			return false;
 		}
 
 		static List<MethodDef> GetPinvokeMethods(TypeDef type, string name) {

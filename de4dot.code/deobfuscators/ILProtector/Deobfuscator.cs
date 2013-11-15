@@ -56,7 +56,8 @@ namespace de4dot.code.deobfuscators.ILProtector {
 		string obfuscatorName = DeobfuscatorInfo.THE_NAME;
 
 		MainType mainType;
-		MethodsDecrypter methodsDecrypter;
+		StaticMethodsDecrypter staticMethodsDecrypter;
+		DynamicMethodsRestorer dynamicMethodsRestorer;
 
 		internal class Options : OptionsBase {
 		}
@@ -85,31 +86,43 @@ namespace de4dot.code.deobfuscators.ILProtector {
 		protected override void ScanForObfuscator() {
 			mainType = new MainType(module);
 			mainType.Find();
-			methodsDecrypter = new MethodsDecrypter(module, mainType);
-			if (mainType.Detected)
-				methodsDecrypter.Find();
 
-			if (mainType.Detected && methodsDecrypter.Detected && methodsDecrypter.Version != null)
-				obfuscatorName += " " + methodsDecrypter.Version;
+			staticMethodsDecrypter = new StaticMethodsDecrypter(module, mainType);
+			if (mainType.Detected)
+				staticMethodsDecrypter.Find();
+
+			if (mainType.Detected && !staticMethodsDecrypter.Detected)
+				dynamicMethodsRestorer = new DynamicMethodsRestorer(module, mainType);
+
+			if (mainType.Detected && staticMethodsDecrypter.Detected && staticMethodsDecrypter.Version != null)
+				obfuscatorName += " " + staticMethodsDecrypter.Version;
 		}
 
 		public override void DeobfuscateBegin() {
 			base.DeobfuscateBegin();
 
 			if (mainType.Detected) {
-				if (methodsDecrypter.Detected) {
-					methodsDecrypter.Decrypt();
-					AddTypesToBeRemoved(methodsDecrypter.DelegateTypes, "Obfuscator method delegate type");
-					AddResourceToBeRemoved(methodsDecrypter.Resource, "Encrypted methods resource");
-					AddTypeToBeRemoved(mainType.InvokerDelegate, "Invoker delegate type");
-					AddFieldToBeRemoved(mainType.InvokerInstanceField, "Invoker delegate instance field");
-					foreach (var pm in mainType.ProtectMethods)
-						AddMethodToBeRemoved(pm, "Obfuscator 'Protect' init method");
-					mainType.CleanUp();
+				if (staticMethodsDecrypter.Detected) {
+					staticMethodsDecrypter.Decrypt();
+					RemoveObfuscatorJunk(staticMethodsDecrypter);
+				}
+				else if (dynamicMethodsRestorer != null) {
+					dynamicMethodsRestorer.Decrypt();
+					RemoveObfuscatorJunk(dynamicMethodsRestorer);
 				}
 				else
 					Logger.w("New ILProtector version. Can't decrypt methods (yet)");
 			}
+		}
+
+		void RemoveObfuscatorJunk(MethodsDecrypterBase methodsDecrypter) {
+			AddTypesToBeRemoved(methodsDecrypter.DelegateTypes, "Obfuscator method delegate type");
+			AddResourceToBeRemoved(methodsDecrypter.Resource, "Encrypted methods resource");
+			AddTypeToBeRemoved(mainType.InvokerDelegate, "Invoker delegate type");
+			AddFieldToBeRemoved(mainType.InvokerInstanceField, "Invoker delegate instance field");
+			foreach (var pm in mainType.ProtectMethods)
+				AddMethodToBeRemoved(pm, "Obfuscator 'Protect' init method");
+			mainType.CleanUp();
 		}
 
 		public override IEnumerable<int> GetStringDecrypterMethods() {
