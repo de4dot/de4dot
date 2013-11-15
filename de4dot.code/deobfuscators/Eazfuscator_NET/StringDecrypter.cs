@@ -707,8 +707,8 @@ done: ;
 			var ctorArg = emu.Pop() as Int32Value;
 			if (ctorArg == null || !ctorArg.AllBitsValid())
 				return false;
-			dynocode.CreateEnumerable(ctor, new object[] { ctorArg.value });
-			dynocode.WriteEnumerableField(enumerableField.MDToken.ToUInt32(), initValue.value);
+			dynocode.CreateEnumerable(ctor, new object[] { ctorArg.Value });
+			dynocode.WriteEnumerableField(enumerableField.MDToken.ToUInt32(), initValue.Value);
 			dynocode.CreateEnumerator();
 			foreach (var val in dynocode) {
 				emu.Push(new Int32Value(val));

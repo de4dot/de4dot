@@ -114,10 +114,10 @@ namespace de4dot.blocks.cflow {
 			case ElementType.U2:
 			case ElementType.I4:
 			case ElementType.U4:
-				return Int32Value.zero;
+				return Int32Value.Zero;
 			case ElementType.I8:
 			case ElementType.U8:
-				return Int64Value.zero;
+				return Int64Value.Zero;
 			}
 			return new UnknownValue();
 		}
