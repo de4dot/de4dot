@@ -71,6 +71,15 @@ namespace de4dot.code.deobfuscators {
 			Add(oldMethod, newMethod, OpCodes.Callvirt);
 		}
 
+		public void CreateGetReferencedAssemblies(MethodDef oldMethod) {
+			if (oldMethod == null)
+				return;
+			var assemblyType = builder.Type("System.Reflection", "Assembly", builder.CorLib);
+			var asmNameArray = builder.Array(builder.Type("System.Reflection", "AssemblyName", builder.CorLib));
+			var newMethod = builder.InstanceMethod("GetReferencedAssemblies", assemblyType.TypeDefOrRef, asmNameArray);
+			Add(oldMethod, newMethod, OpCodes.Callvirt);
+		}
+
 		public void CreateBitmapCtor(MethodDef oldMethod) {
 			if (oldMethod == null)
 				return;

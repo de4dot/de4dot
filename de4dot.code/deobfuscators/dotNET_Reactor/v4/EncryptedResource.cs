@@ -91,7 +91,8 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			if (!localTypes.All(requiredTypes))
 				return false;
 			if (!localTypes.Exists("System.Security.Cryptography.RijndaelManaged") &&
-				!localTypes.Exists("System.Security.Cryptography.AesManaged"))
+				!localTypes.Exists("System.Security.Cryptography.AesManaged") &&
+				!localTypes.Exists("System.Security.Cryptography.SymmetricAlgorithm"))
 				return false;
 
 			if (checkResource && FindMethodsDecrypterResource(method) == null)

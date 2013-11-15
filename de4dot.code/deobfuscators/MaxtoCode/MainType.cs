@@ -27,6 +27,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		ModuleDefMD module;
 		TypeDef mcType;
 		bool isOld;
+		ModuleRef runtimeModule1, runtimeModule2;
 
 		public bool IsOld {
 			get { return isOld; }
@@ -46,6 +47,15 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 						list.Add(method);
 				}
 				return list;
+			}
+		}
+
+		public IEnumerable<ModuleRef> RuntimeModuleRefs {
+			get {
+				if (runtimeModule1 != null)
+					yield return runtimeModule1;
+				if (runtimeModule2 != null)
+					yield return runtimeModule2;
 			}
 		}
 
@@ -80,9 +90,8 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				if (!DotNetUtils.IsMethod(method, "System.Void", "()"))
 					continue;
 
-				ModuleRef module1, module2;
 				bool isOldTmp;
-				if (!CheckType(method.DeclaringType, out module1, out module2, out isOldTmp))
+				if (!CheckType(method.DeclaringType, out runtimeModule1, out runtimeModule2, out isOldTmp))
 					continue;
 
 				mcType = method.DeclaringType;

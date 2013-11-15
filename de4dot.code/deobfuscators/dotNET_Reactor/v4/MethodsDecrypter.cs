@@ -121,8 +121,8 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			}
 		}
 
-		static short[] nativeLdci4 = new short[] { 0x55, 0x8B, 0xEC, 0xB8, -1, -1, -1, -1, 0x5D, 0xC3 };
-		static short[] nativeLdci4_0 = new short[] { 0x55, 0x8B, 0xEC, 0x33, 0xC0, 0x5D, 0xC3 };
+		readonly static short[] nativeLdci4 = new short[] { 0x55, 0x8B, 0xEC, 0xB8, -1, -1, -1, -1, 0x5D, 0xC3 };
+		readonly static short[] nativeLdci4_0 = new short[] { 0x55, 0x8B, 0xEC, 0x33, 0xC0, 0x5D, 0xC3 };
 		public bool Decrypt(MyPEImage peImage, ISimpleDeobfuscator simpleDeobfuscator, ref DumpedMethods dumpedMethods, Dictionary<uint, byte[]> tokenToNativeCode, bool unpackedNativeFile) {
 			if (encryptedResource.Method == null)
 				return false;
@@ -157,27 +157,29 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				}
 			}
 			else if (!hooksJitter || mode == 1) {
-				// DNR 3.9.8.0, 4.0, 4.1, 4.2, 4.3, 4.4
-
-				// If it's .NET 1.x, then offsets are used, not RVAs.
-				bool useOffsets = unpackedNativeFile && module.IsClr1x;
+				// DNR 3.9.8.0, 4.0+
 
 				PatchDwords(peImage, methodsDataReader, patchCount);
+				bool oldCode = !IsNewer45Decryption(encryptedResource.Method);
 				while (methodsDataReader.Position < methodsData.Length - 1) {
 					uint rva = methodsDataReader.ReadUInt32();
-					uint token = methodsDataReader.ReadUInt32();	// token, unknown, or index
-					int size = methodsDataReader.ReadInt32();
-					if (size > 0) {
-						var newData = methodsDataReader.ReadBytes(size);
-						if (useOffsets)
-							peImage.DotNetSafeWriteOffset(rva, newData);
-						else
-							peImage.DotNetSafeWrite(rva, newData);
+					int size;
+					if (oldCode) {
+						methodsDataReader.ReadUInt32();	// token, unknown, or index
+						size = methodsDataReader.ReadInt32();
 					}
+					else
+						size = methodsDataReader.ReadInt32() * 4;
+
+					var newData = methodsDataReader.ReadBytes(size);
+					if (unpackedNativeFile)
+						peImage.DotNetSafeWriteOffset(rva, newData);
+					else
+						peImage.DotNetSafeWrite(rva, newData);
 				}
 			}
 			else {
-				// DNR 4.0 - 4.5 (jitter is hooked)
+				// DNR 4.0+ (jitter is hooked)
 
 				var methodDef = peImage.DotNetFile.MetaData.TablesStream.MethodTable;
 				var rvaToIndex = new Dictionary<uint, int>((int)methodDef.Rows);
@@ -256,6 +258,33 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			}
 
 			return true;
+		}
+
+		public static bool IsNewer45Decryption(MethodDef method) {
+			if (method == null || method.Body == null)
+				return false;
+
+			var instrs = method.Body.Instructions;
+			for (int i = 0; i < instrs.Count - 4; i++) {
+				var ldci4 = instrs[i];
+				if (!ldci4.IsLdcI4() || ldci4.GetLdcI4Value() != 4)
+					continue;
+				if (instrs[i + 1].OpCode.Code != Code.Mul)
+					continue;
+				ldci4 = instrs[i + 2];
+				if (!ldci4.IsLdcI4() || ldci4.GetLdcI4Value() != 4)
+					continue;
+				if (instrs[i + 3].OpCode.Code != Code.Ldloca_S && instrs[i + 3].OpCode.Code != Code.Ldloca)
+					continue;
+				var call = instrs[i + 4];
+				if (call.OpCode.Code != Code.Call)
+					continue;
+				if (!DotNetUtils.IsPinvokeMethod(call.Operand as MethodDef, "kernel32", "VirtualProtect"))
+					continue;
+
+				return true;
+			}
+			return false;
 		}
 
 		static void PatchDwords(MyPEImage peImage, IBinaryReader reader, int count) {
@@ -363,6 +392,12 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			Array.Copy(encrypted, resourceData, resourceData.Length);
 		}
 
+		enum CompileMethodType {
+			Unknown,
+			V1,	// <= DNR 4.5.0.0 (2012-11-06 <= endDate < 2013-01-31)
+			V2,	// >= DNR 4.5.0.0 (2012-11-06 < startDate <= 2013-01-31)
+		}
+
 		public static MethodDef FindDnrCompileMethod(TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic || method.Body == null)
@@ -370,11 +405,19 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				var sig = method.MethodSig;
 				if (sig == null || sig.Params.Count != 6)
 					continue;
-				if (!DotNetUtils.IsMethod(method, "System.UInt32", "(System.UInt64&,System.IntPtr,System.IntPtr,System.UInt32,System.IntPtr&,System.UInt32&)"))
+				if (GetCompileMethodType(method) == CompileMethodType.Unknown)
 					continue;
 				return method;
 			}
 			return null;
+		}
+
+		static CompileMethodType GetCompileMethodType(MethodDef method) {
+			if (DotNetUtils.IsMethod(method, "System.UInt32", "(System.UInt64&,System.IntPtr,System.IntPtr,System.UInt32,System.IntPtr&,System.UInt32&)"))
+				return CompileMethodType.V1;
+			if (DotNetUtils.IsMethod(method, "System.UInt32", "(System.IntPtr,System.IntPtr,System.IntPtr,System.UInt32,System.IntPtr,System.UInt32&)"))
+				return CompileMethodType.V2;
+			return CompileMethodType.Unknown;
 		}
 	}
 }

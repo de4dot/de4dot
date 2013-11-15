@@ -73,7 +73,7 @@ namespace de4dot.code.deobfuscators {
 			this.peStream = peImage.CreateFullStream();
 		}
 
-		ImageSectionHeader FindSection(RVA rva) {
+		public ImageSectionHeader FindSection(RVA rva) {
 			foreach (var section in peImage.ImageSectionHeaders) {
 				if (section.VirtualAddress <= rva && rva < section.VirtualAddress + Math.Max(section.VirtualSize, section.SizeOfRawData))
 					return section;
