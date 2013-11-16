@@ -237,6 +237,7 @@
     <Compile Include="deobfuscators\ILProtector\MainType.cs" />
     <Compile Include="deobfuscators\ILProtector\MethodReader.cs" />
     <Compile Include="deobfuscators\ILProtector\MethodsDecrypterBase.cs" />
+    <Compile Include="deobfuscators\ILProtector\RuntimeFileInfo.cs" />
     <Compile Include="deobfuscators\ILProtector\StaticMethodsDecrypter.cs" />
     <Compile Include="deobfuscators\InitializedDataCreator.cs" />
     <Compile Include="deobfuscators\InlinedMethodsFinder.cs" />
