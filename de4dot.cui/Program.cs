@@ -96,7 +96,7 @@ namespace de4dot.cui {
 					Logger.Instance.LogErrorDontIgnore("\n\n");
 					Logger.Instance.LogErrorDontIgnore("Hmmmm... something didn't work. Try the latest version.");
 				}
-				Logger.Instance.LogErrorDontIgnore("Send a link to the installer or a zip file of all files to de4dot@gmail.com");
+				Logger.Instance.LogErrorDontIgnore("Email me all files / installer: de4dot@gmail.com");
 				exitCode = 1;
 			}
 
