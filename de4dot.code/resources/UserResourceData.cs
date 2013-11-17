@@ -52,6 +52,10 @@ namespace de4dot.code.resources {
 		public override void WriteData(BinaryWriter writer, IFormatter formatter) {
 			formatter.Serialize(writer.BaseStream, data);
 		}
+
+		public override string ToString() {
+			return string.Format("char[]: Length: {0}", data.Length);
+		}
 	}
 
 	class IconResourceData : UserResourceData {
@@ -65,6 +69,10 @@ namespace de4dot.code.resources {
 
 		public override void WriteData(BinaryWriter writer, IFormatter formatter) {
 			formatter.Serialize(writer.BaseStream, icon);
+		}
+
+		public override string ToString() {
+			return string.Format("Icon: {0}", icon);
 		}
 	}
 
@@ -80,6 +88,10 @@ namespace de4dot.code.resources {
 		public override void WriteData(BinaryWriter writer, IFormatter formatter) {
 			formatter.Serialize(writer.BaseStream, bitmap);
 		}
+
+		public override string ToString() {
+			return "Bitmap";
+		}
 	}
 
 	class BinaryResourceData : UserResourceData {
@@ -92,6 +104,10 @@ namespace de4dot.code.resources {
 
 		public override void WriteData(BinaryWriter writer, IFormatter formatter) {
 			writer.Write(data);
+		}
+
+		public override string ToString() {
+			return string.Format("Binary: Length: {0}", data.Length);
 		}
 	}
 }

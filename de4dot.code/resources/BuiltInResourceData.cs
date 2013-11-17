@@ -118,5 +118,39 @@ namespace de4dot.code.resources {
 				throw new ApplicationException("Unknown resource type code");
 			}
 		}
+
+		public override string ToString() {
+			switch (code) {
+			case ResourceTypeCode.Null:
+				return "NULL";
+
+			case ResourceTypeCode.String:
+			case ResourceTypeCode.Boolean:
+			case ResourceTypeCode.Char:
+			case ResourceTypeCode.Byte:
+			case ResourceTypeCode.SByte:
+			case ResourceTypeCode.Int16:
+			case ResourceTypeCode.UInt16:
+			case ResourceTypeCode.Int32:
+			case ResourceTypeCode.UInt32:
+			case ResourceTypeCode.Int64:
+			case ResourceTypeCode.UInt64:
+			case ResourceTypeCode.Single:
+			case ResourceTypeCode.Double:
+			case ResourceTypeCode.Decimal:
+			case ResourceTypeCode.DateTime:
+			case ResourceTypeCode.TimeSpan:
+				return string.Format("{0}: '{1}'", code, data);
+
+			case ResourceTypeCode.ByteArray:
+				var ary = data as byte[];
+				if (ary != null)
+					return string.Format("{0}: Length: {1}", code, ary.Length);
+				return string.Format("{0}: '{1}'", code, data);
+
+			default:
+				return string.Format("{0}: '{1}'", code, data);
+			}
+		}
 	}
 }
