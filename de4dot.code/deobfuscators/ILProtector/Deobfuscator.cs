@@ -118,11 +118,16 @@ namespace de4dot.code.deobfuscators.ILProtector {
 				else if (dynamicMethodsRestorer != null) {
 					Logger.v("Runtime file versions:");
 					Logger.Instance.Indent();
+					bool emailMe = false;
 					foreach (var info in mainType.RuntimeFileInfos) {
 						var version = info.GetVersion();
+						emailMe |= version == null && System.IO.File.Exists(info.PathName);
+						emailMe |= version != null && version == new Version(1, 0, 7, 0);
 						Logger.v("Version: {0} ({1})", version == null ? "UNKNOWN" : version.ToString(), info.PathName);
 					}
 					Logger.Instance.DeIndent();
+					if (emailMe)
+						Logger.n("**** Email me this program! de4dot@gmail.com");
 
 					dynamicMethodsRestorer.Decrypt();
 					RemoveObfuscatorJunk(dynamicMethodsRestorer);

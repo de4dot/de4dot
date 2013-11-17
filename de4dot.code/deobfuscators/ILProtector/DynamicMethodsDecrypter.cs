@@ -159,13 +159,13 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			public abstract byte[] Decrypt(int methodId, uint rid);
 		}
 
-		// 1.0.7.1 - 1.0.8.0
-		class DecrypterV1_0_7_1 : DecrypterBase {
+		// 1.0.7.0 - 1.0.8.0
+		class DecrypterV1_0_7_0 : DecrypterBase {
 			DecryptMethod decryptMethod;
 
 			unsafe delegate bool DecryptMethod(int appDomainId, int asmHashCode, int methodId, out byte* pMethodCode, out int methodSize);
 
-			public DecrypterV1_0_7_1(DynamicMethodsDecrypter dmd, FieldDef delegateField)
+			public DecrypterV1_0_7_0(DynamicMethodsDecrypter dmd, FieldDef delegateField)
 				: base(dmd) {
 				IntPtr addr = GetDelegateAddress(delegateField);
 				decryptMethod = (DecryptMethod)Marshal.GetDelegateForFunctionPointer(addr, typeof(DecryptMethod));
@@ -348,7 +348,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			if (delegateField == null)
 				return null;
 
-			return new DecrypterV1_0_7_1(this, delegateField);
+			return new DecrypterV1_0_7_0(this, delegateField);
 		}
 
 		IDecrypter CreateDecrypterV2_0_0_0() {
