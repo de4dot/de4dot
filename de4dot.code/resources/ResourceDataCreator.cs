@@ -117,15 +117,15 @@ namespace de4dot.code.resources {
 		}
 
 		public CharArrayResourceData Create(char[] value) {
-			return new CharArrayResourceData(CreateUserResourceType(CharArrayResourceData.typeName), value);
+			return new CharArrayResourceData(CreateUserResourceType(CharArrayResourceData.ReflectionTypeName), value);
 		}
 
 		public IconResourceData CreateIcon(byte[] value) {
-			return new IconResourceData(CreateUserResourceType(IconResourceData.typeName), value);
+			return new IconResourceData(CreateUserResourceType(IconResourceData.ReflectionTypeName), value);
 		}
 
 		public ImageResourceData CreateImage(byte[] value) {
-			return new ImageResourceData(CreateUserResourceType(ImageResourceData.typeName), value);
+			return new ImageResourceData(CreateUserResourceType(ImageResourceData.ReflectionTypeName), value);
 		}
 
 		public BinaryResourceData CreateSerialized(byte[] value) {
