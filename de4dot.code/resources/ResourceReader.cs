@@ -34,17 +34,15 @@ namespace de4dot.code.resources {
 	}
 
 	struct ResourceReader {
-		ModuleDefMD module;
 		IBinaryReader reader;
 		ResourceDataCreator resourceDataCreator;
 
-		ResourceReader(ModuleDefMD module, IBinaryReader reader) {
-			this.module = module;
+		ResourceReader(ModuleDef module, IBinaryReader reader) {
 			this.reader = reader;
 			this.resourceDataCreator = new ResourceDataCreator(module);
 		}
 
-		public static ResourceElementSet Read(ModuleDefMD module, IBinaryReader reader) {
+		public static ResourceElementSet Read(ModuleDef module, IBinaryReader reader) {
 			return new ResourceReader(module, reader).Read();
 		}
 

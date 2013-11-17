@@ -26,12 +26,14 @@ using dnlib.DotNet;
 
 namespace de4dot.code.resources {
 	class ResourceDataCreator {
-		ModuleDefMD module;
-		Dictionary<string, UserResourceType> dict = new Dictionary<string, UserResourceType>(StringComparer.Ordinal);
-		Dictionary<string, string> asmNameToAsmFullName = new Dictionary<string, string>(StringComparer.Ordinal);
+		readonly ModuleDef module;
+		readonly ModuleDefMD moduleMD;
+		readonly Dictionary<string, UserResourceType> dict = new Dictionary<string, UserResourceType>(StringComparer.Ordinal);
+		readonly Dictionary<string, string> asmNameToAsmFullName = new Dictionary<string, string>(StringComparer.Ordinal);
 
-		public ResourceDataCreator(ModuleDefMD module) {
+		public ResourceDataCreator(ModuleDef module) {
 			this.module = module;
+			this.moduleMD = module as ModuleDefMD;
 		}
 
 		public int Count {
@@ -210,9 +212,11 @@ namespace de4dot.code.resources {
 		string TryGetRealAssemblyName(string assemblyName) {
 			var simpleName = Utils.GetAssemblySimpleName(assemblyName);
 
-			var asmRef = module.GetAssemblyRef(simpleName);
-			if (asmRef != null)
-				return asmRef.FullName;
+			if (moduleMD != null) {
+				var asmRef = moduleMD.GetAssemblyRef(simpleName);
+				if (asmRef != null)
+					return asmRef.FullName;
+			}
 
 			var asm = TheAssemblyResolver.Instance.Resolve(new AssemblyNameInfo(simpleName), module);
 			return asm == null ? null : asm.FullName;
