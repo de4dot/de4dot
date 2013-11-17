@@ -37,6 +37,7 @@ namespace de4dot.code.resources {
 		DateTime,
 		TimeSpan,
 		ByteArray = 0x20,
+		Stream = 0x21,
 		UserTypes = 0x40,
 	}
 }

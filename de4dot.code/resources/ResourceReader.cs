@@ -139,6 +139,7 @@ namespace de4dot.code.resources {
 			case ResourceTypeCode.DateTime: return resourceDataCreator.Create(new DateTime(reader.ReadInt64()));
 			case ResourceTypeCode.TimeSpan: return resourceDataCreator.Create(new TimeSpan(reader.ReadInt64()));
 			case ResourceTypeCode.ByteArray: return resourceDataCreator.Create(reader.ReadBytes(reader.ReadInt32()));
+			case ResourceTypeCode.Stream: return resourceDataCreator.CreateStream(reader.ReadBytes(reader.ReadInt32()));
 			default:
 				int userTypeIndex = (int)(code - (uint)ResourceTypeCode.UserTypes);
 				if (userTypeIndex < 0 || userTypeIndex >= userTypes.Count)

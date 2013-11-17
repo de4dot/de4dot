@@ -109,6 +109,7 @@ namespace de4dot.code.resources {
 				break;
 
 			case ResourceTypeCode.ByteArray:
+			case ResourceTypeCode.Stream:
 				var ary = (byte[])data;
 				writer.Write(ary.Length);
 				writer.Write(ary);
@@ -143,6 +144,7 @@ namespace de4dot.code.resources {
 				return string.Format("{0}: '{1}'", code, data);
 
 			case ResourceTypeCode.ByteArray:
+			case ResourceTypeCode.Stream:
 				var ary = data as byte[];
 				if (ary != null)
 					return string.Format("{0}: Length: {1}", code, ary.Length);

@@ -112,6 +112,10 @@ namespace de4dot.code.resources {
 			return new BuiltInResourceData(ResourceTypeCode.ByteArray, value);
 		}
 
+		public BuiltInResourceData CreateStream(byte[] value) {
+			return new BuiltInResourceData(ResourceTypeCode.Stream, value);
+		}
+
 		public CharArrayResourceData Create(char[] value) {
 			return new CharArrayResourceData(CreateUserResourceType(CharArrayResourceData.typeName), value);
 		}
