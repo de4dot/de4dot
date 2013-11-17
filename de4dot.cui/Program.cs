@@ -101,7 +101,10 @@ namespace de4dot.cui {
 			}
 
 			if (Logger.Instance.NumIgnoredMessages > 0) {
-				Logger.n("Ignored {0} warnings/errors", Logger.Instance.NumIgnoredMessages);
+				if (Logger.Instance.NumIgnoredMessages == 1)
+					Logger.n("Ignored {0} warning/error", Logger.Instance.NumIgnoredMessages);
+				else
+					Logger.n("Ignored {0} warnings/errors", Logger.Instance.NumIgnoredMessages);
 				Logger.n("Use -v/-vv option or set environment variable {0}=1 to see all messages", showAllMessagesEnvName);
 			}
 
