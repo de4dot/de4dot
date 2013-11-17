@@ -247,9 +247,10 @@ namespace de4dot.cui {
 			fileOptions.Add(new OneArgOption("o", null, "Name of output file", "file", (val) => {
 				if (newFileOptions == null)
 					ExitError("Missing input file");
-				if (string.Equals(Utils.GetFullPath(newFileOptions.Filename), Utils.GetFullPath(val), StringComparison.OrdinalIgnoreCase))
-					ExitError(string.Format("Output file can't be same as input file ({0})", val));
-				newFileOptions.NewFilename = val;
+				var newFilename = Utils.GetFullPath(val);
+				if (string.Equals(Utils.GetFullPath(newFileOptions.Filename), newFilename, StringComparison.OrdinalIgnoreCase))
+					ExitError(string.Format("Output file can't be same as input file ({0})", newFilename));
+				newFileOptions.NewFilename = newFilename;
 			}));
 			fileOptions.Add(new OneArgOption("p", null, "Obfuscator type (see below)", "type", (val) => {
 				if (newFileOptions == null)

@@ -62,7 +62,7 @@ namespace de4dot.cui {
 			};
 		}
 
-		public static int Main2(string[] args) {
+		public static int Main(string[] args) {
 			int exitCode = 0;
 
 			const string showAllMessagesEnvName = "SHOWALLMESSAGES";
@@ -96,17 +96,16 @@ namespace de4dot.cui {
 				else {
 					Logger.Instance.LogErrorDontIgnore("\n\n");
 					Logger.Instance.LogErrorDontIgnore("Hmmmm... something didn't work. Try the latest version.");
-					Logger.Instance.LogErrorDontIgnore("    EX: {0} : message: {1}", ex.GetType(), ex.Message);
-					Logger.Instance.LogErrorDontIgnore("If it's a supported obfuscator, it could be a bug or a new obfuscator version.");
-					Logger.Instance.LogErrorDontIgnore("If it's an unsupported obfuscator, make sure the methods are decrypted!");
 				}
-				Logger.Instance.LogErrorDontIgnore("Send bug reports to de4dot@gmail.com or go to https://bitbucket.org/0xd4d/de4dot/issues");
-				Logger.Instance.LogErrorDontIgnore("I will need the original files, so email me a link to the installer or a zip/rar file.");
+				Logger.Instance.LogErrorDontIgnore("Email me all files / installer: de4dot@gmail.com");
 				exitCode = 1;
 			}
 
 			if (Logger.Instance.NumIgnoredMessages > 0) {
-				Logger.n("Ignored {0} warnings/errors", Logger.Instance.NumIgnoredMessages);
+				if (Logger.Instance.NumIgnoredMessages == 1)
+					Logger.n("Ignored {0} warning/error", Logger.Instance.NumIgnoredMessages);
+				else
+					Logger.n("Ignored {0} warnings/errors", Logger.Instance.NumIgnoredMessages);
 				Logger.n("Use -v/-vv option or set environment variable {0}=1 to see all messages", showAllMessagesEnvName);
 			}
 

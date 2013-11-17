@@ -41,7 +41,7 @@ namespace de4dot.code.resources {
 	}
 
 	class CharArrayResourceData : UserResourceData {
-		public static readonly string typeName = "System.Char[],mscorlib";
+		public static readonly string ReflectionTypeName = "System.Char[],mscorlib";
 		char[] data;
 
 		public CharArrayResourceData(UserResourceType type, char[] data)
@@ -52,10 +52,14 @@ namespace de4dot.code.resources {
 		public override void WriteData(BinaryWriter writer, IFormatter formatter) {
 			formatter.Serialize(writer.BaseStream, data);
 		}
+
+		public override string ToString() {
+			return string.Format("char[]: Length: {0}", data.Length);
+		}
 	}
 
 	class IconResourceData : UserResourceData {
-		public static readonly string typeName = "System.Drawing.Icon,System.Drawing";
+		public static readonly string ReflectionTypeName = "System.Drawing.Icon,System.Drawing";
 		Icon icon;
 
 		public IconResourceData(UserResourceType type, byte[] data)
@@ -66,10 +70,14 @@ namespace de4dot.code.resources {
 		public override void WriteData(BinaryWriter writer, IFormatter formatter) {
 			formatter.Serialize(writer.BaseStream, icon);
 		}
+
+		public override string ToString() {
+			return string.Format("Icon: {0}", icon);
+		}
 	}
 
 	class ImageResourceData : UserResourceData {
-		public static readonly string typeName = "System.Drawing.Bitmap,System.Drawing";
+		public static readonly string ReflectionTypeName = "System.Drawing.Bitmap,System.Drawing";
 		Bitmap bitmap;
 
 		public ImageResourceData(UserResourceType type, byte[] data)
@@ -79,6 +87,10 @@ namespace de4dot.code.resources {
 
 		public override void WriteData(BinaryWriter writer, IFormatter formatter) {
 			formatter.Serialize(writer.BaseStream, bitmap);
+		}
+
+		public override string ToString() {
+			return "Bitmap";
 		}
 	}
 
@@ -92,6 +104,10 @@ namespace de4dot.code.resources {
 
 		public override void WriteData(BinaryWriter writer, IFormatter formatter) {
 			writer.Write(data);
+		}
+
+		public override string ToString() {
+			return string.Format("Binary: Length: {0}", data.Length);
 		}
 	}
 }

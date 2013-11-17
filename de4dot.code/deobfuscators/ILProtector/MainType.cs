@@ -25,12 +25,12 @@ using de4dot.blocks;
 namespace de4dot.code.deobfuscators.ILProtector {
 	class MainType {
 		ModuleDefMD module;
-		List<MethodDef> protectMethods;
+		List<RuntimeFileInfo> runtimeFileInfos;
 		TypeDef invokerDelegate;
 		FieldDef invokerInstanceField;
 
-		public IEnumerable<MethodDef> ProtectMethods {
-			get { return protectMethods; }
+		public List<RuntimeFileInfo> RuntimeFileInfos {
+			get { return runtimeFileInfos; }
 		}
 
 		public TypeDef InvokerDelegate {
@@ -42,7 +42,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 		}
 
 		public bool Detected {
-			get { return protectMethods != null; }
+			get { return runtimeFileInfos != null; }
 		}
 
 		public MainType(ModuleDefMD module) {
@@ -81,7 +81,9 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			if (!GetDelegate(type, out invokerInstanceField, out invokerDelegate))
 				return false;
 
-			protectMethods = methods;
+			runtimeFileInfos = new List<RuntimeFileInfo>(methods.Count);
+			foreach (var method in methods)
+				runtimeFileInfos.Add(new RuntimeFileInfo(method));
 			return true;
 		}
 
@@ -107,6 +109,17 @@ namespace de4dot.code.deobfuscators.ILProtector {
 					list.Add(method);
 			}
 			return list;
+		}
+
+		public string GetRuntimeVersionString() {
+			if (runtimeFileInfos == null)
+				return null;
+			foreach (var info in runtimeFileInfos) {
+				var version = info.GetVersion();
+				if (version != null)
+					return version.ToString();
+			}
+			return null;
 		}
 
 		public void CleanUp() {

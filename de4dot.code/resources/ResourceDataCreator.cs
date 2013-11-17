@@ -26,12 +26,14 @@ using dnlib.DotNet;
 
 namespace de4dot.code.resources {
 	class ResourceDataCreator {
-		ModuleDefMD module;
-		Dictionary<string, UserResourceType> dict = new Dictionary<string, UserResourceType>(StringComparer.Ordinal);
-		Dictionary<string, string> asmNameToAsmFullName = new Dictionary<string, string>(StringComparer.Ordinal);
+		readonly ModuleDef module;
+		readonly ModuleDefMD moduleMD;
+		readonly Dictionary<string, UserResourceType> dict = new Dictionary<string, UserResourceType>(StringComparer.Ordinal);
+		readonly Dictionary<string, string> asmNameToAsmFullName = new Dictionary<string, string>(StringComparer.Ordinal);
 
-		public ResourceDataCreator(ModuleDefMD module) {
+		public ResourceDataCreator(ModuleDef module) {
 			this.module = module;
+			this.moduleMD = module as ModuleDefMD;
 		}
 
 		public int Count {
@@ -110,16 +112,20 @@ namespace de4dot.code.resources {
 			return new BuiltInResourceData(ResourceTypeCode.ByteArray, value);
 		}
 
+		public BuiltInResourceData CreateStream(byte[] value) {
+			return new BuiltInResourceData(ResourceTypeCode.Stream, value);
+		}
+
 		public CharArrayResourceData Create(char[] value) {
-			return new CharArrayResourceData(CreateUserResourceType(CharArrayResourceData.typeName), value);
+			return new CharArrayResourceData(CreateUserResourceType(CharArrayResourceData.ReflectionTypeName), value);
 		}
 
 		public IconResourceData CreateIcon(byte[] value) {
-			return new IconResourceData(CreateUserResourceType(IconResourceData.typeName), value);
+			return new IconResourceData(CreateUserResourceType(IconResourceData.ReflectionTypeName), value);
 		}
 
 		public ImageResourceData CreateImage(byte[] value) {
-			return new ImageResourceData(CreateUserResourceType(ImageResourceData.typeName), value);
+			return new ImageResourceData(CreateUserResourceType(ImageResourceData.ReflectionTypeName), value);
 		}
 
 		public BinaryResourceData CreateSerialized(byte[] value) {
@@ -210,9 +216,11 @@ namespace de4dot.code.resources {
 		string TryGetRealAssemblyName(string assemblyName) {
 			var simpleName = Utils.GetAssemblySimpleName(assemblyName);
 
-			var asmRef = module.GetAssemblyRef(simpleName);
-			if (asmRef != null)
-				return asmRef.FullName;
+			if (moduleMD != null) {
+				var asmRef = moduleMD.GetAssemblyRef(simpleName);
+				if (asmRef != null)
+					return asmRef.FullName;
+			}
 
 			var asm = TheAssemblyResolver.Instance.Resolve(new AssemblyNameInfo(simpleName), module);
 			return asm == null ? null : asm.FullName;

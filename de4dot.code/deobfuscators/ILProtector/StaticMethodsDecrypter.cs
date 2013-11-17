@@ -146,13 +146,13 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			}
 		}
 
-		// 1.0.6 - 1.0.7.0
+		// 1.0.6.x
 		class DecrypterV106 : DecrypterBase {
 			byte[] decryptionKey6;
 			byte[] decryptionKey7;
 
 			DecrypterV106(byte[] key0, byte[] key6, byte[] key7, int startOffset) {
-				this.ilpVersion = "1.0.6 - 1.0.7.0";
+				this.ilpVersion = "1.0.6.x";
 				this.startOffset = startOffset;
 				this.decryptionKey = key0;
 				this.decryptionKey6 = key6;
@@ -178,7 +178,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 
 					var key0 = DeobUtils.Sha1Sum(sha1Data);			// 1.0.6.0
 					var key6 = GetKey(reader, key0, keyXorOffs6);	// 1.0.6.6
-					var key7 = GetKey(reader, key0, keyXorOffs7);	// 1.0.6.7 - 1.0.7.0
+					var key7 = GetKey(reader, key0, keyXorOffs7);	// 1.0.6.7
 					return new DecrypterV106(key0, key6, key7, encryptedOffs);
 				}
 				catch (IOException) {

@@ -23,6 +23,7 @@ using System.Text.RegularExpressions;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using de4dot.code.renamer.asmmodules;
+using de4dot.code.resources;
 using de4dot.blocks;
 
 namespace de4dot.code.renamer {
@@ -187,12 +188,47 @@ namespace de4dot.code.renamer {
 		public Renamer(IDeobfuscatorContext deobfuscatorContext, IEnumerable<IObfuscatedFile> files, RenamerFlags flags) {
 			RenamerFlags = flags;
 
+			WarnIfXaml(files);
+
 			modules = new Modules(deobfuscatorContext);
 			isDelegateClass = new DerivedFrom(delegateClasses);
 			mergeStateHelper = new MergeStateHelper(memberInfos);
 
 			foreach (var file in files)
 				modules.Add(new Module(file));
+		}
+
+		static void WarnIfXaml(IEnumerable<IObfuscatedFile> files) {
+			foreach (var file in files) {
+				foreach (var tmp in file.ModuleDefMD.Resources) {
+					var rsrc = tmp as EmbeddedResource;
+					if (rsrc == null)
+						continue;
+					if (UTF8String.IsNullOrEmpty(rsrc.Name))
+						continue;
+					if (!rsrc.Name.String.EndsWith(".g.resources"))
+						continue;
+					if (!HasXamlFiles(file.ModuleDefMD, rsrc))
+						continue;
+
+					Logger.w("File '{0}' contains XAML which isn't supported. Use --dont-rename.", file.Filename);
+					return;
+				}
+			}
+		}
+
+		static bool HasXamlFiles(ModuleDef module, EmbeddedResource rsrc) {
+			try {
+				rsrc.Data.Position = 0;
+				var rsrcSet = ResourceReader.Read(module, rsrc.Data);
+				foreach (var elem in rsrcSet.ResourceElements) {
+					if (elem.Name.EndsWith(".baml"))
+						return true;
+				}
+			}
+			catch {
+			}
+			return false;
 		}
 
 		public void Rename() {

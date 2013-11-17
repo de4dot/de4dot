@@ -94,8 +94,17 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			if (mainType.Detected && !staticMethodsDecrypter.Detected)
 				dynamicMethodsRestorer = new DynamicMethodsRestorer(module, mainType);
 
-			if (mainType.Detected && staticMethodsDecrypter.Detected && staticMethodsDecrypter.Version != null)
-				obfuscatorName += " " + staticMethodsDecrypter.Version;
+			if (mainType.Detected) {
+				if (staticMethodsDecrypter.Detected)
+					UpdateObfuscatorNameWith(staticMethodsDecrypter.Version);
+				else
+					UpdateObfuscatorNameWith(mainType.GetRuntimeVersionString());
+			}
+		}
+
+		void UpdateObfuscatorNameWith(string version) {
+			if (!string.IsNullOrEmpty(version))
+				obfuscatorName += " " + version;
 		}
 
 		public override void DeobfuscateBegin() {
@@ -107,6 +116,19 @@ namespace de4dot.code.deobfuscators.ILProtector {
 					RemoveObfuscatorJunk(staticMethodsDecrypter);
 				}
 				else if (dynamicMethodsRestorer != null) {
+					Logger.v("Runtime file versions:");
+					Logger.Instance.Indent();
+					bool emailMe = false;
+					foreach (var info in mainType.RuntimeFileInfos) {
+						var version = info.GetVersion();
+						emailMe |= version == null && System.IO.File.Exists(info.PathName);
+						emailMe |= version != null && version == new Version(1, 0, 7, 0);
+						Logger.v("Version: {0} ({1})", version == null ? "UNKNOWN" : version.ToString(), info.PathName);
+					}
+					Logger.Instance.DeIndent();
+					if (emailMe)
+						Logger.n("**** Email me this program! de4dot@gmail.com");
+
 					dynamicMethodsRestorer.Decrypt();
 					RemoveObfuscatorJunk(dynamicMethodsRestorer);
 				}
@@ -120,8 +142,8 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			AddResourceToBeRemoved(methodsDecrypter.Resource, "Encrypted methods resource");
 			AddTypeToBeRemoved(mainType.InvokerDelegate, "Invoker delegate type");
 			AddFieldToBeRemoved(mainType.InvokerInstanceField, "Invoker delegate instance field");
-			foreach (var pm in mainType.ProtectMethods)
-				AddMethodToBeRemoved(pm, "Obfuscator 'Protect' init method");
+			foreach (var info in mainType.RuntimeFileInfos)
+				AddMethodToBeRemoved(info.ProtectMethod, "Obfuscator 'Protect' init method");
 			mainType.CleanUp();
 		}
 

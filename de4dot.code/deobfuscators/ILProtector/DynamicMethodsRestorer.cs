@@ -19,6 +19,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using dnlib.DotNet;
 using AssemblyData;
 using de4dot.code.AssemblyClient;
@@ -31,6 +32,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 		}
 
 		protected override void DecryptInternal() {
+			CheckRuntimeFiles();
 			IList<DecryptedMethodInfo> decryptedData;
 			var serverVersion = NewProcessAssemblyClientFactory.GetServerClrVersion(module);
 			using (var client = new NewProcessAssemblyClientFactory(serverVersion).Create(AssemblyServiceType.Generic)) {
@@ -47,6 +49,13 @@ namespace de4dot.code.deobfuscators.ILProtector {
 
 			foreach (var info in decryptedData)
 				methodInfos[info.id] = info;
+		}
+
+		void CheckRuntimeFiles() {
+			foreach (var info in mainType.RuntimeFileInfos) {
+				if (!File.Exists(info.PathName))
+					Logger.w(string.Format("ILProtector runtime file '{0}' is missing.", info.PathName));
+			}
 		}
 
 		IList<int> GetMethodIds() {
