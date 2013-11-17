@@ -311,6 +311,7 @@
     <Compile Include="NameRegexes.cs" />
     <Compile Include="ObfuscatedFile.cs" />
     <Compile Include="Option.cs" />
+    <Compile Include="PrintNewTokens.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="renamer\asmmodules\EventDef.cs" />
     <Compile Include="renamer\asmmodules\FieldDef.cs" />
