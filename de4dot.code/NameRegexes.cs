@@ -55,6 +55,10 @@ namespace de4dot.code {
 		public bool DefaultValue { get; set; }
 		public const char regexSeparatorChar = '&';
 
+		public IList<NameRegex> Regexes {
+			get { return regexes; }
+		}
+
 		public NameRegexes()
 			: this("") {
 		}
