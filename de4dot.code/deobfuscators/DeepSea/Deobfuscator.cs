@@ -56,14 +56,14 @@ namespace de4dot.code.deobfuscators.DeepSea {
 
 		public override IDeobfuscator CreateDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
-				ValidNameRegex = validNameRegex.get(),
-				InlineMethods = inlineMethods.get(),
-				RemoveInlinedMethods = removeInlinedMethods.get(),
-				DecryptResources = decryptResources.get(),
-				DumpEmbeddedAssemblies = dumpEmbeddedAssemblies.get(),
-				RestoreFields = restoreFields.get(),
-				RenameResourceKeys = renameResourceKeys.get(),
-				CastDeobfuscation = castDeobfuscation.get(),
+				ValidNameRegex = validNameRegex.Get(),
+				InlineMethods = inlineMethods.Get(),
+				RemoveInlinedMethods = removeInlinedMethods.Get(),
+				DecryptResources = decryptResources.Get(),
+				DumpEmbeddedAssemblies = dumpEmbeddedAssemblies.Get(),
+				RestoreFields = restoreFields.Get(),
+				RenameResourceKeys = renameResourceKeys.Get(),
+				CastDeobfuscation = castDeobfuscation.Get(),
 			});
 		}
 

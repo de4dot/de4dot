@@ -66,16 +66,16 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 
 		public override IDeobfuscator CreateDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
-				ValidNameRegex = validNameRegex.get(),
-				DecryptMethods = decryptMethods.get(),
-				DecryptBools = decryptBools.get(),
-				RestoreTypes = restoreTypes.get(),
-				InlineMethods = inlineMethods.get(),
-				RemoveInlinedMethods = removeInlinedMethods.get(),
-				DumpEmbeddedAssemblies = dumpEmbeddedAssemblies.get(),
-				DecryptResources = decryptResources.get(),
-				RemoveNamespaces = removeNamespaces.get(),
-				RemoveAntiStrongName = removeAntiStrongName.get(),
+				ValidNameRegex = validNameRegex.Get(),
+				DecryptMethods = decryptMethods.Get(),
+				DecryptBools = decryptBools.Get(),
+				RestoreTypes = restoreTypes.Get(),
+				InlineMethods = inlineMethods.Get(),
+				RemoveInlinedMethods = removeInlinedMethods.Get(),
+				DumpEmbeddedAssemblies = dumpEmbeddedAssemblies.Get(),
+				DecryptResources = decryptResources.Get(),
+				RemoveNamespaces = removeNamespaces.Get(),
+				RemoveAntiStrongName = removeAntiStrongName.Get(),
 			});
 		}
 

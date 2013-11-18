@@ -51,10 +51,10 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 
 		public override IDeobfuscator CreateDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
-				ValidNameRegex = validNameRegex.get(),
-				RemoveAutomatedErrorReporting = removeAutomatedErrorReporting.get(),
-				RemoveTamperProtection = removeTamperProtection.get(),
-				RemoveMemoryManager = removeMemoryManager.get(),
+				ValidNameRegex = validNameRegex.Get(),
+				RemoveAutomatedErrorReporting = removeAutomatedErrorReporting.Get(),
+				RemoveTamperProtection = removeTamperProtection.Get(),
+				RemoveMemoryManager = removeMemoryManager.Get(),
 			});
 		}
 

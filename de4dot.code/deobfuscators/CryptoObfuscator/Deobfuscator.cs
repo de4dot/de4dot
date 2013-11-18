@@ -52,11 +52,11 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 
 		public override IDeobfuscator CreateDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
-				ValidNameRegex = validNameRegex.get(),
-				RemoveTamperProtection = removeTamperProtection.get(),
-				DecryptConstants = decryptConstants.get(),
-				InlineMethods = inlineMethods.get(),
-				FixLdnull = fixLdnull.get(),
+				ValidNameRegex = validNameRegex.Get(),
+				RemoveTamperProtection = removeTamperProtection.Get(),
+				DecryptConstants = decryptConstants.Get(),
+				InlineMethods = inlineMethods.Get(),
+				FixLdnull = fixLdnull.Get(),
 			});
 		}
 

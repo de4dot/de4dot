@@ -40,7 +40,7 @@ namespace de4dot.code.deobfuscators.Xenocode {
 
 		public override IDeobfuscator CreateDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
-				ValidNameRegex = validNameRegex.get(),
+				ValidNameRegex = validNameRegex.Get(),
 			});
 		}
 	}

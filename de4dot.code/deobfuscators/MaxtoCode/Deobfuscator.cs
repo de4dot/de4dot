@@ -46,8 +46,8 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		public override IDeobfuscator CreateDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
 				RenameResourcesInCode = false,
-				ValidNameRegex = validNameRegex.get(),
-				StringCodePage = stringCodePage.get(),
+				ValidNameRegex = validNameRegex.Get(),
+				StringCodePage = stringCodePage.Get(),
 			});
 		}
 

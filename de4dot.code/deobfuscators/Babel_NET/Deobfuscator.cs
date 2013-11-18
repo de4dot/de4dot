@@ -55,13 +55,13 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 		public override IDeobfuscator CreateDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
-				ValidNameRegex = validNameRegex.get(),
-				InlineMethods = inlineMethods.get(),
-				RemoveInlinedMethods = removeInlinedMethods.get(),
-				DecryptMethods = decryptMethods.get(),
-				DecryptResources = decryptResources.get(),
-				DecryptConstants = decryptConstants.get(),
-				DumpEmbeddedAssemblies = dumpEmbeddedAssemblies.get(),
+				ValidNameRegex = validNameRegex.Get(),
+				InlineMethods = inlineMethods.Get(),
+				RemoveInlinedMethods = removeInlinedMethods.Get(),
+				DecryptMethods = decryptMethods.Get(),
+				DecryptResources = decryptResources.Get(),
+				DecryptConstants = decryptConstants.Get(),
+				DumpEmbeddedAssemblies = dumpEmbeddedAssemblies.Get(),
 			});
 		}
 

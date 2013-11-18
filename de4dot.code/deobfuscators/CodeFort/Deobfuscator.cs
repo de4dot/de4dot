@@ -44,8 +44,8 @@ namespace de4dot.code.deobfuscators.CodeFort {
 
 		public override IDeobfuscator CreateDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
-				ValidNameRegex = validNameRegex.get(),
-				DumpEmbeddedAssemblies = dumpEmbeddedAssemblies.get(),
+				ValidNameRegex = validNameRegex.Get(),
+				DumpEmbeddedAssemblies = dumpEmbeddedAssemblies.Get(),
 			});
 		}
 

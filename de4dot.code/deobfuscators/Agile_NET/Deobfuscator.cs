@@ -54,12 +54,12 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 
 		public override IDeobfuscator CreateDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
-				ValidNameRegex = validNameRegex.get(),
-				DecryptMethods = decryptMethods.get(),
-				DecryptResources = decryptResources.get(),
-				RemoveStackFrameHelper = removeStackFrameHelper.get(),
-				RestoreVmCode = restoreVmCode.get(),
-				SetInitLocals = setInitLocals.get(),
+				ValidNameRegex = validNameRegex.Get(),
+				DecryptMethods = decryptMethods.Get(),
+				DecryptResources = decryptResources.Get(),
+				RemoveStackFrameHelper = removeStackFrameHelper.Get(),
+				RestoreVmCode = restoreVmCode.Get(),
+				SetInitLocals = setInitLocals.Get(),
 			});
 		}
 

@@ -50,11 +50,11 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 
 		public override IDeobfuscator CreateDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
-				ValidNameRegex = validNameRegex.get(),
-				InlineMethods = inlineMethods.get(),
-				RemoveInlinedMethods = removeInlinedMethods.get(),
-				RemoveNamespaces = removeNamespaces.get(),
-				RestoreResourceNames = restoreResourceNames.get(),
+				ValidNameRegex = validNameRegex.Get(),
+				InlineMethods = inlineMethods.Get(),
+				RemoveInlinedMethods = removeInlinedMethods.Get(),
+				RemoveNamespaces = removeNamespaces.Get(),
+				RestoreResourceNames = restoreResourceNames.Get(),
 			});
 		}
 

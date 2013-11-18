@@ -54,13 +54,13 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 		public override IDeobfuscator CreateDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
 				RenameResourcesInCode = false,
-				ValidNameRegex = validNameRegex.get(),
-				InlineMethods = inlineMethods.get(),
-				RemoveInlinedMethods = removeInlinedMethods.get(),
-				RestoreLocals = restoreLocals.get(),
-				DecryptIntegers = decryptIntegers.get(),
-				DecryptArrays = decryptArrays.get(),
-				RemoveAntiStrongName = removeAntiStrongName.get(),
+				ValidNameRegex = validNameRegex.Get(),
+				InlineMethods = inlineMethods.Get(),
+				RemoveInlinedMethods = removeInlinedMethods.Get(),
+				RestoreLocals = restoreLocals.Get(),
+				DecryptIntegers = decryptIntegers.Get(),
+				DecryptArrays = decryptArrays.Get(),
+				RemoveAntiStrongName = removeAntiStrongName.Get(),
 			});
 		}
 

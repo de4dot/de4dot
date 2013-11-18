@@ -42,7 +42,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 
 		public override IDeobfuscator CreateDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
-				ValidNameRegex = validNameRegex.get(),
+				ValidNameRegex = validNameRegex.Get(),
 			});
 		}
 
