@@ -25,7 +25,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "Goliath.NET";
 		public const string THE_TYPE = "go";
-		const string DEFAULT_REGEX = @"!^[A-Za-z]{1,2}(?:`\d+)?$&" + DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
+		const string DEFAULT_REGEX = @"!^[A-Za-z]{1,2}(?:`\d+)?$&" + DeobfuscatorBase.DEFAULT_ASIAN_VALID_NAME_REGEX;
 		BoolOption inlineMethods;
 		BoolOption removeInlinedMethods;
 		BoolOption restoreLocals;

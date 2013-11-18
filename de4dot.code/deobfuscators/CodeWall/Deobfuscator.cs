@@ -26,7 +26,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "CodeWall";
 		public const string THE_TYPE = "cw";
-		const string DEFAULT_REGEX = @"!^[0-9A-F]{32}$&!^[_<>{}$.`-]$&" + DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
+		const string DEFAULT_REGEX = @"!^[0-9A-F]{32}$&!^[_<>{}$.`-]$&" + DeobfuscatorBase.DEFAULT_ASIAN_VALID_NAME_REGEX;
 		BoolOption dumpEmbeddedAssemblies;
 		BoolOption decryptMainAsm;
 

@@ -26,6 +26,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "DeepSea";
 		public const string THE_TYPE = "ds";
+		const string DEFAULT_REGEX = DeobfuscatorBase.DEFAULT_ASIAN_VALID_NAME_REGEX;
 		BoolOption inlineMethods;
 		BoolOption removeInlinedMethods;
 		BoolOption decryptResources;
@@ -35,7 +36,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		BoolOption castDeobfuscation;
 
 		public DeobfuscatorInfo()
-			: base() {
+			: base(DEFAULT_REGEX) {
 			inlineMethods = new BoolOption(null, MakeArgName("inline"), "Inline short methods", true);
 			removeInlinedMethods = new BoolOption(null, MakeArgName("remove-inlined"), "Remove inlined methods", true);
 			decryptResources = new BoolOption(null, MakeArgName("rsrc"), "Decrypt resources", true);

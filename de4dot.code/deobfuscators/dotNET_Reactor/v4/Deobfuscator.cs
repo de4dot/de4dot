@@ -32,7 +32,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = ".NET Reactor";
 		public const string THE_TYPE = "dr4";
-		const string DEFAULT_REGEX = @"!^[A-Za-z0-9]{2,3}$&" + DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
+		const string DEFAULT_REGEX = @"!^[A-Za-z0-9]{2,3}$&" + DeobfuscatorBase.DEFAULT_ASIAN_VALID_NAME_REGEX;
 		BoolOption decryptMethods;
 		BoolOption decryptBools;
 		BoolOption restoreTypes;
