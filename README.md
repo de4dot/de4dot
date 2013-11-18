@@ -26,7 +26,6 @@ Here's a pseudo random list of the things it will do depending on what obfuscato
 * Fixes some peverify errors. Many of the obfuscators are buggy and create unverifiable code by mistake.
 * Restore the types of method parameters and fields
 
-
 Supported obfuscators/packers
 =============================
 
@@ -51,6 +50,13 @@ Supported obfuscators/packers
 * Xenocode
 
 Some of the above obfuscators are rarely used (eg. Goliath.NET), so they have had much less testing. Help me out by reporting bugs or problems you find.
+
+Warning
+=======
+
+Sometimes the obfuscated assembly and all its dependencies are loaded into memory for execution. Use a safe sandbox environment if you suspect the assembly or assemblies to be malware.
+
+Even if the current version of de4dot doesn't load a certain assembly into memory for execution, a future version might.
 
 How to use de4dot
 =================
@@ -166,13 +172,13 @@ The default regexes should be enough, except possibly the one that is used when 
 
 Eg., currently the following is the default regex used when Dotfuscator is detected
 
-    !^[a-z][a-z0-9]{0,2}$&!^A_[0-9]+$&^[a-zA-Z_<{$][a-zA-Z_0-9<>{}$.`-]*$
+    !^[a-z][a-z0-9]{0,2}$&!^A_[0-9]+$&^[\u2E80-\u9FFFa-zA-Z_<{$][\u2E80-\u9FFFa-zA-Z_0-9<>{}$.`-]*$
 
-As you can see, it's not just one regex, it's more than one. Each is separated by `&` and each regex can be negated by using `!` in front of it. To show it more clearly, these regexes are used:
+As you can see, it's not just one regex, it's more than one. Each one is separated by `&` and each regex can be negated by using `!` in front of it. To show it more clearly, these regexes are used:
 
     (negated) ^[a-z][a-z0-9]{0,2}$
     (negated) ^A_[0-9]+$
-    ^[a-zA-Z_<{$][a-zA-Z_0-9<>{}$.`-]*$
+    ^[\u2E80-\u9FFFa-zA-Z_<{$][\u2E80-\u9FFFa-zA-Z_0-9<>{}$.`-]*$
 
 To change the regex(es), you must know the short type name of the obfuscator (see help screen). Eg. it's `sa` if it's SmartAssembly, and `un` if it's an unsupported/unknown obfuscator. The option to use is `--TYPE-name` (eg. `--sa-name` for SmartAssembly and `--un-name` for unknown/unsupported obfuscators):
 
@@ -182,78 +188,3 @@ Other options
 -------------
 
 Start `de4dot` without any arguments and it will show all options.
-
-Tiny FAQ
-========
-
-Is this a cracker only tool?
-----------------------------
-
-Of course. Not. Here's some legitimate uses of this software:
-
-* Malware analysis
-
-Many malware try to protect against analysis. They think obfuscating the code makes it hard. Mistake no. 1 was to use .NET.
-
-* Speed up a program / use less memory
-
-Unless only symbol renaming was used, the obfuscated assembly is usually slower and requires more memory at runtime compared to the original assembly. By unpacking and deobfuscating it, the program's memory usage and speed will be almost identical to the original program.
-
-* Make the assembly compatible with mono
-
-Most obfuscators don't support mono, even if the original assembly does. By unpacking and deobfuscating it, mono support will be restored.
-
-* You lost your source code and only have the obfuscated .NET assemblies
-
-By unpacking and deobfuscating your assemblies, you can then use any .NET decompiler (eg. the open source ILSpy) to get back your source code.
-
-* Obfuscator created unverifiable code but code must be verifiable
-
-Some of the obfuscators are buggy and create unverifiable code due to bugs in the software. Some of these errors are fixed by de4dot.
-
-
-I've "protected" my app with some obfuscator but I just found out about de4dot. Is .NET obfuscation useless?
-------------------------------------------------------------------------------------------------------------
-
-Yes. It's simply way too easy to restore most of these "protections".
-
-
-What do you think of these obfuscators? They're good, right?
-------------------------------------------------------------
-
-:D
-
-Speaking from experience with a lot of obfuscators, I can say that their protection is really weak. You see the same weak "protection" in pretty much every obfuscator. Copying ideas from other obfuscators seems to be their best skill.
-
-99% of the people working for these companies have absolutely no experience in reverse engineering. If you have no experience in what is a good or a bad protection, it's very unlikely that you're able to write a good protection.
-
-To show you an example, most obfuscators can encrypt all the strings in your assemblies. What they fail to tell you is that it's child's play to decrypt the strings. Here's an example from SecureTeam's Agile.NET (aka CliSecure). de4dot's Agile.NET string decrypter code is only 85 lines long, and that includes the GPLv3 comment at the top of the file and the code that detects the string decrypter in the assembly!
-
-The actual string decrypter code is 4 lines long, and it's a simple XOR loop! When Agile.NET (aka CliSecure) encrypts your strings, it replaces the original strings with an XOR'd copy, and adds a call to their string decrypter. This decrypter merely XOR's every character and returns the decrypted string. Here's the string decrypter code de4dot uses:
-
-    :::C#
-    public string decrypt(string es) {
-    	char[] buf = new char[es.Length];
-    	for (int i = 0; i < es.Length; i++)
-    		buf[i] = (char)(es[i] ^ stringDecrypterKey[i % stringDecrypterKey.Length]);
-    	return new string(buf);
-    }
-
-Your code might look like this:
-
-    :::C#
-    string myString = "Hello World";
-
-and the obfuscator (eg. Agile.NET / CliSecure) will replace that with something similar to this:
-
-    :::C#
-    string myString = DecryptClass.decrypt("AoF41Fk5422");
-
-Yes, Agile.NET's string encryption feature really is this bad! I bet you that none of their customers knows about this. And SecureTeam sure wants to keep it that way. :)
-
-Even though most of the other obfuscators' string encryption feature isn't as bad as Agile.NET's string encryption, they still have one thing in common: it's very easy to decrypt the strings again.
-
-I must use .NET so what's the best protection?
-----------------------------------------------
-
-If you don't count "don't distribute it" as a solution, the best obfuscator feature is symbol renaming. It's impossible to restore the symbols unless they're part of the assembly. All of the other "protections" are 100% reversible.
