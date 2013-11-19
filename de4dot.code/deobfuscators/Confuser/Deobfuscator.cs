@@ -28,12 +28,13 @@ namespace de4dot.code.deobfuscators.Confuser {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "Confuser";
 		public const string THE_TYPE = "cr";
+		const string DEFAULT_REGEX = DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
 		BoolOption removeAntiDebug;
 		BoolOption removeAntiDump;
 		BoolOption decryptMainAsm;
 
 		public DeobfuscatorInfo()
-			: base() {
+			: base(DEFAULT_REGEX) {
 			removeAntiDebug = new BoolOption(null, MakeArgName("antidb"), "Remove anti debug code", true);
 			removeAntiDump = new BoolOption(null, MakeArgName("antidump"), "Remove anti dump code", true);
 			decryptMainAsm = new BoolOption(null, MakeArgName("decrypt-main"), "Decrypt main embedded assembly", true);
@@ -49,10 +50,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		public override IDeobfuscator CreateDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
-				ValidNameRegex = validNameRegex.get(),
-				RemoveAntiDebug = removeAntiDebug.get(),
-				RemoveAntiDump = removeAntiDump.get(),
-				DecryptMainAsm = decryptMainAsm.get(),
+				ValidNameRegex = validNameRegex.Get(),
+				RemoveAntiDebug = removeAntiDebug.Get(),
+				RemoveAntiDump = removeAntiDump.Get(),
+				DecryptMainAsm = decryptMainAsm.Get(),
 			});
 		}
 
