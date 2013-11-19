@@ -24,7 +24,8 @@ namespace de4dot.code.deobfuscators.Xenocode {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "Xenocode";
 		public const string THE_TYPE = "xc";
-		const string DEFAULT_REGEX = @"!^[oO01l]{4,}$&!^(get_|set_|add_|remove_|_)?[x_][a-f0-9]{16,}$&" + DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
+		const string DEFAULT_REGEX = @"!^[oO01l]{4,}$&!^(get_|set_|add_|remove_|_)?[x_][a-f0-9]{16,}$&" + DeobfuscatorBase.DEFAULT_ASIAN_VALID_NAME_REGEX;
+
 		public DeobfuscatorInfo()
 			: base(DEFAULT_REGEX) {
 		}
@@ -39,7 +40,7 @@ namespace de4dot.code.deobfuscators.Xenocode {
 
 		public override IDeobfuscator CreateDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
-				ValidNameRegex = validNameRegex.get(),
+				ValidNameRegex = validNameRegex.Get(),
 			});
 		}
 	}

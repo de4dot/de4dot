@@ -26,7 +26,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "CodeFort";
 		public const string THE_TYPE = "cf";
-		const string DEFAULT_REGEX = @"!^[a-zA-Z]{1,3}$&!^[_<>{}$.`-]$&" + DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
+		const string DEFAULT_REGEX = @"!^[a-zA-Z]{1,3}$&!^[_<>{}$.`-]$&" + DeobfuscatorBase.DEFAULT_ASIAN_VALID_NAME_REGEX;
 		BoolOption dumpEmbeddedAssemblies;
 
 		public DeobfuscatorInfo()
@@ -44,8 +44,8 @@ namespace de4dot.code.deobfuscators.CodeFort {
 
 		public override IDeobfuscator CreateDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
-				ValidNameRegex = validNameRegex.get(),
-				DumpEmbeddedAssemblies = dumpEmbeddedAssemblies.get(),
+				ValidNameRegex = validNameRegex.Get(),
+				DumpEmbeddedAssemblies = dumpEmbeddedAssemblies.Get(),
 			});
 		}
 

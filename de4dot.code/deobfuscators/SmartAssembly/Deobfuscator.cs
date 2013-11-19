@@ -29,12 +29,13 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "SmartAssembly";
 		public const string THE_TYPE = "sa";
+		const string DEFAULT_REGEX = DeobfuscatorBase.DEFAULT_ASIAN_VALID_NAME_REGEX;
 		BoolOption removeAutomatedErrorReporting;
 		BoolOption removeTamperProtection;
 		BoolOption removeMemoryManager;
 
 		public DeobfuscatorInfo()
-			: base() {
+			: base(DEFAULT_REGEX) {
 			removeAutomatedErrorReporting = new BoolOption(null, MakeArgName("error"), "Remove automated error reporting code", true);
 			removeTamperProtection = new BoolOption(null, MakeArgName("tamper"), "Remove tamper protection code", true);
 			removeMemoryManager = new BoolOption(null, MakeArgName("memory"), "Remove memory manager code", true);
@@ -50,10 +51,10 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 
 		public override IDeobfuscator CreateDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
-				ValidNameRegex = validNameRegex.get(),
-				RemoveAutomatedErrorReporting = removeAutomatedErrorReporting.get(),
-				RemoveTamperProtection = removeTamperProtection.get(),
-				RemoveMemoryManager = removeMemoryManager.get(),
+				ValidNameRegex = validNameRegex.Get(),
+				RemoveAutomatedErrorReporting = removeAutomatedErrorReporting.Get(),
+				RemoveTamperProtection = removeTamperProtection.Get(),
+				RemoveMemoryManager = removeMemoryManager.Get(),
 			});
 		}
 

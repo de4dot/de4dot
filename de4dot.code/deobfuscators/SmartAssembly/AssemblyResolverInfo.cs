@@ -101,7 +101,8 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 		}
 
 		protected override bool CheckResolverType(TypeDef type) {
-			if (DotNetUtils.FindFieldType(type, "System.Collections.Hashtable", true) != null)
+			if (DotNetUtils.FindFieldType(type, "System.Collections.Hashtable", true) != null ||
+				DotNetUtils.FindFieldType(type, "System.Collections.Generic.Dictionary`2<System.String,System.Reflection.Assembly>", true) != null)
 				return true;
 
 			foreach (var field in type.Fields) {

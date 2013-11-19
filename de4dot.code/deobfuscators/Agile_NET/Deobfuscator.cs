@@ -28,7 +28,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "Agile.NET";
 		public const string THE_TYPE = "an";
-		const string DEFAULT_REGEX = @"[a-zA-Z_0-9>}$]$";
+		const string DEFAULT_REGEX = DeobfuscatorBase.DEFAULT_ASIAN_VALID_NAME_REGEX;
 		BoolOption decryptMethods;
 		BoolOption decryptResources;
 		BoolOption removeStackFrameHelper;
@@ -54,12 +54,12 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 
 		public override IDeobfuscator CreateDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
-				ValidNameRegex = validNameRegex.get(),
-				DecryptMethods = decryptMethods.get(),
-				DecryptResources = decryptResources.get(),
-				RemoveStackFrameHelper = removeStackFrameHelper.get(),
-				RestoreVmCode = restoreVmCode.get(),
-				SetInitLocals = setInitLocals.get(),
+				ValidNameRegex = validNameRegex.Get(),
+				DecryptMethods = decryptMethods.Get(),
+				DecryptResources = decryptResources.Get(),
+				RemoveStackFrameHelper = removeStackFrameHelper.Get(),
+				RestoreVmCode = restoreVmCode.Get(),
+				SetInitLocals = setInitLocals.Get(),
 			});
 		}
 

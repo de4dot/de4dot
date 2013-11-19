@@ -27,6 +27,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "Babel .NET";
 		public const string THE_TYPE = "bl";
+		const string DEFAULT_REGEX = DeobfuscatorBase.DEFAULT_ASIAN_VALID_NAME_REGEX;
 		BoolOption inlineMethods;
 		BoolOption removeInlinedMethods;
 		BoolOption decryptMethods;
@@ -35,7 +36,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		BoolOption dumpEmbeddedAssemblies;
 
 		public DeobfuscatorInfo()
-			: base() {
+			: base(DEFAULT_REGEX) {
 			inlineMethods = new BoolOption(null, MakeArgName("inline"), "Inline short methods", true);
 			removeInlinedMethods = new BoolOption(null, MakeArgName("remove-inlined"), "Remove inlined methods", true);
 			decryptMethods = new BoolOption(null, MakeArgName("methods"), "Decrypt methods", true);
@@ -54,13 +55,13 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 		public override IDeobfuscator CreateDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
-				ValidNameRegex = validNameRegex.get(),
-				InlineMethods = inlineMethods.get(),
-				RemoveInlinedMethods = removeInlinedMethods.get(),
-				DecryptMethods = decryptMethods.get(),
-				DecryptResources = decryptResources.get(),
-				DecryptConstants = decryptConstants.get(),
-				DumpEmbeddedAssemblies = dumpEmbeddedAssemblies.get(),
+				ValidNameRegex = validNameRegex.Get(),
+				InlineMethods = inlineMethods.Get(),
+				RemoveInlinedMethods = removeInlinedMethods.Get(),
+				DecryptMethods = decryptMethods.Get(),
+				DecryptResources = decryptResources.Get(),
+				DecryptConstants = decryptConstants.Get(),
+				DumpEmbeddedAssemblies = dumpEmbeddedAssemblies.Get(),
 			});
 		}
 

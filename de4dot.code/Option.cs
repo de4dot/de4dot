@@ -91,7 +91,7 @@ namespace de4dot.code {
 			return true;
 		}
 
-		public bool get() {
+		public bool Get() {
 			return val;
 		}
 	}
@@ -118,7 +118,7 @@ namespace de4dot.code {
 			return true;
 		}
 
-		public int get() {
+		public int Get() {
 			return val;
 		}
 	}
@@ -141,7 +141,7 @@ namespace de4dot.code {
 			return true;
 		}
 
-		public string get() {
+		public string Get() {
 			return val;
 		}
 	}
@@ -172,7 +172,7 @@ namespace de4dot.code {
 			return true;
 		}
 
-		public NameRegexes get() {
+		public NameRegexes Get() {
 			return val;
 		}
 	}
@@ -201,7 +201,7 @@ namespace de4dot.code {
 			return true;
 		}
 
-		public Regex get() {
+		public Regex Get() {
 			return val;
 		}
 	}
@@ -231,7 +231,7 @@ namespace de4dot.code {
 			return true;
 		}
 
-		public bool get() {
+		public bool Get() {
 			return triggered;
 		}
 	}

@@ -26,6 +26,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "DeepSea";
 		public const string THE_TYPE = "ds";
+		const string DEFAULT_REGEX = DeobfuscatorBase.DEFAULT_ASIAN_VALID_NAME_REGEX;
 		BoolOption inlineMethods;
 		BoolOption removeInlinedMethods;
 		BoolOption decryptResources;
@@ -35,7 +36,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		BoolOption castDeobfuscation;
 
 		public DeobfuscatorInfo()
-			: base() {
+			: base(DEFAULT_REGEX) {
 			inlineMethods = new BoolOption(null, MakeArgName("inline"), "Inline short methods", true);
 			removeInlinedMethods = new BoolOption(null, MakeArgName("remove-inlined"), "Remove inlined methods", true);
 			decryptResources = new BoolOption(null, MakeArgName("rsrc"), "Decrypt resources", true);
@@ -55,14 +56,14 @@ namespace de4dot.code.deobfuscators.DeepSea {
 
 		public override IDeobfuscator CreateDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
-				ValidNameRegex = validNameRegex.get(),
-				InlineMethods = inlineMethods.get(),
-				RemoveInlinedMethods = removeInlinedMethods.get(),
-				DecryptResources = decryptResources.get(),
-				DumpEmbeddedAssemblies = dumpEmbeddedAssemblies.get(),
-				RestoreFields = restoreFields.get(),
-				RenameResourceKeys = renameResourceKeys.get(),
-				CastDeobfuscation = castDeobfuscation.get(),
+				ValidNameRegex = validNameRegex.Get(),
+				InlineMethods = inlineMethods.Get(),
+				RemoveInlinedMethods = removeInlinedMethods.Get(),
+				DecryptResources = decryptResources.Get(),
+				DumpEmbeddedAssemblies = dumpEmbeddedAssemblies.Get(),
+				RestoreFields = restoreFields.Get(),
+				RenameResourceKeys = renameResourceKeys.Get(),
+				CastDeobfuscation = castDeobfuscation.Get(),
 			});
 		}
 

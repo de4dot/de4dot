@@ -31,7 +31,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = ".NET Reactor";
 		public const string THE_TYPE = "dr3";
-		const string DEFAULT_REGEX = DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
+		const string DEFAULT_REGEX = DeobfuscatorBase.DEFAULT_ASIAN_VALID_NAME_REGEX;
 		BoolOption restoreTypes;
 		BoolOption inlineMethods;
 		BoolOption removeInlinedMethods;
@@ -57,12 +57,12 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 
 		public override IDeobfuscator CreateDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
-				ValidNameRegex = validNameRegex.get(),
-				RestoreTypes = restoreTypes.get(),
-				InlineMethods = inlineMethods.get(),
-				RemoveInlinedMethods = removeInlinedMethods.get(),
-				RemoveNamespaces = removeNamespaces.get(),
-				RemoveAntiStrongName = removeAntiStrongName.get(),
+				ValidNameRegex = validNameRegex.Get(),
+				RestoreTypes = restoreTypes.Get(),
+				InlineMethods = inlineMethods.Get(),
+				RemoveInlinedMethods = removeInlinedMethods.Get(),
+				RemoveNamespaces = removeNamespaces.Get(),
+				RemoveAntiStrongName = removeAntiStrongName.Get(),
 			});
 		}
 

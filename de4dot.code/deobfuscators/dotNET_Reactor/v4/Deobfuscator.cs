@@ -32,7 +32,8 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = ".NET Reactor";
 		public const string THE_TYPE = "dr4";
-		const string DEFAULT_REGEX = @"!^[A-Za-z0-9]{2,3}$&" + DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
+		public const string SHORT_NAME_REGEX = @"!^[A-Za-z0-9]{2,3}$";
+		const string DEFAULT_REGEX = DeobfuscatorBase.DEFAULT_ASIAN_VALID_NAME_REGEX;
 		BoolOption decryptMethods;
 		BoolOption decryptBools;
 		BoolOption restoreTypes;
@@ -42,6 +43,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		BoolOption decryptResources;
 		BoolOption removeNamespaces;
 		BoolOption removeAntiStrongName;
+		BoolOption renameShort;
 
 		public DeobfuscatorInfo()
 			: base(DEFAULT_REGEX) {
@@ -54,6 +56,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			decryptResources = new BoolOption(null, MakeArgName("rsrc"), "Decrypt resources", true);
 			removeNamespaces = new BoolOption(null, MakeArgName("ns1"), "Clear namespace if there's only one class in it", true);
 			removeAntiStrongName = new BoolOption(null, MakeArgName("sn"), "Remove anti strong name code", true);
+			renameShort = new BoolOption(null, MakeArgName("sname"), "Rename short names", false);
 		}
 
 		public override string Name {
@@ -66,16 +69,17 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 
 		public override IDeobfuscator CreateDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
-				ValidNameRegex = validNameRegex.get(),
-				DecryptMethods = decryptMethods.get(),
-				DecryptBools = decryptBools.get(),
-				RestoreTypes = restoreTypes.get(),
-				InlineMethods = inlineMethods.get(),
-				RemoveInlinedMethods = removeInlinedMethods.get(),
-				DumpEmbeddedAssemblies = dumpEmbeddedAssemblies.get(),
-				DecryptResources = decryptResources.get(),
-				RemoveNamespaces = removeNamespaces.get(),
-				RemoveAntiStrongName = removeAntiStrongName.get(),
+				ValidNameRegex = validNameRegex.Get(),
+				DecryptMethods = decryptMethods.Get(),
+				DecryptBools = decryptBools.Get(),
+				RestoreTypes = restoreTypes.Get(),
+				InlineMethods = inlineMethods.Get(),
+				RemoveInlinedMethods = removeInlinedMethods.Get(),
+				DumpEmbeddedAssemblies = dumpEmbeddedAssemblies.Get(),
+				DecryptResources = decryptResources.Get(),
+				RemoveNamespaces = removeNamespaces.Get(),
+				RemoveAntiStrongName = removeAntiStrongName.Get(),
+				RenameShort = renameShort.Get(),
 			});
 		}
 
@@ -90,6 +94,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				decryptResources,
 				removeNamespaces,
 				removeAntiStrongName,
+				renameShort,
 			};
 		}
 	}
@@ -125,6 +130,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			public bool DecryptResources { get; set; }
 			public bool RemoveNamespaces { get; set; }
 			public bool RemoveAntiStrongName { get; set; }
+			public bool RenameShort { get; set; }
 		}
 
 		public override string Type {
@@ -160,6 +166,8 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				this.RenamingOptions |= RenamingOptions.RemoveNamespaceIfOneType;
 			else
 				this.RenamingOptions &= ~RenamingOptions.RemoveNamespaceIfOneType;
+			if (options.RenameShort)
+				options.ValidNameRegex.Regexes.Insert(0, new NameRegex(DeobfuscatorInfo.SHORT_NAME_REGEX));
 		}
 
 		public override byte[] UnpackNativeFile(IPEImage peImage) {

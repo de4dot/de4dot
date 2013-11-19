@@ -26,6 +26,7 @@ namespace de4dot.code.deobfuscators.Rummage {
 		public const string THE_NAME = "Rummage";
 		public const string THE_TYPE = "rm";
 		const string DEFAULT_REGEX = @"!.";
+
 		public DeobfuscatorInfo()
 			: base(DEFAULT_REGEX) {
 		}
@@ -40,7 +41,7 @@ namespace de4dot.code.deobfuscators.Rummage {
 
 		public override IDeobfuscator CreateDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
-				ValidNameRegex = validNameRegex.get(),
+				ValidNameRegex = validNameRegex.Get(),
 			});
 		}
 	}

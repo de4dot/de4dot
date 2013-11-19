@@ -27,7 +27,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "MaxtoCode";
 		public const string THE_TYPE = "mc";
-		const string DEFAULT_REGEX = @"!^[oO01l]+$&!^[A-F0-9]{20,}$&" + DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
+		const string DEFAULT_REGEX = @"!^[oO01l]+$&!^[A-F0-9]{20,}$&" + DeobfuscatorBase.DEFAULT_ASIAN_VALID_NAME_REGEX;
 		IntOption stringCodePage;
 
 		public DeobfuscatorInfo()
@@ -46,8 +46,8 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		public override IDeobfuscator CreateDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
 				RenameResourcesInCode = false,
-				ValidNameRegex = validNameRegex.get(),
-				StringCodePage = stringCodePage.get(),
+				ValidNameRegex = validNameRegex.Get(),
+				StringCodePage = stringCodePage.Get(),
 			});
 		}
 

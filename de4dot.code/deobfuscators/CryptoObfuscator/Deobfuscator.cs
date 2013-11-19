@@ -28,7 +28,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "Crypto Obfuscator";
 		public const string THE_TYPE = "co";
-		const string DEFAULT_REGEX = @"!^(get_|set_|add_|remove_)?[A-Z]{1,3}(?:`\d+)?$&!^(get_|set_|add_|remove_)?c[0-9a-f]{32}(?:`\d+)?$&" + DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
+		const string DEFAULT_REGEX = @"!^(get_|set_|add_|remove_)?[A-Z]{1,3}(?:`\d+)?$&!^(get_|set_|add_|remove_)?c[0-9a-f]{32}(?:`\d+)?$&" + DeobfuscatorBase.DEFAULT_ASIAN_VALID_NAME_REGEX;
 		BoolOption removeTamperProtection;
 		BoolOption decryptConstants;
 		BoolOption inlineMethods;
@@ -52,11 +52,11 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 
 		public override IDeobfuscator CreateDeobfuscator() {
 			return new Deobfuscator(new Deobfuscator.Options {
-				ValidNameRegex = validNameRegex.get(),
-				RemoveTamperProtection = removeTamperProtection.get(),
-				DecryptConstants = decryptConstants.get(),
-				InlineMethods = inlineMethods.get(),
-				FixLdnull = fixLdnull.get(),
+				ValidNameRegex = validNameRegex.Get(),
+				RemoveTamperProtection = removeTamperProtection.Get(),
+				DecryptConstants = decryptConstants.Get(),
+				InlineMethods = inlineMethods.Get(),
+				FixLdnull = fixLdnull.Get(),
 			});
 		}
 
