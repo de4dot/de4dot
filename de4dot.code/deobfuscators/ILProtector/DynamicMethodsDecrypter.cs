@@ -336,15 +336,15 @@ namespace de4dot.code.deobfuscators.ILProtector {
 		}
 
 		IDecrypter CreateDecrypter() {
-			return CreateDecrypterV1_0_7_1() ??
+			return CreateDecrypterV1_0_7_0() ??
 				CreateDecrypterV2_0_0_0() ??
 				CreateDecrypterV2_0_8_0() ??
 				CreateDecrypterV2_0_8_5() ??
 				CreateDecrypterV2_0_9_0();
 		}
 
-		IDecrypter CreateDecrypterV1_0_7_1() {
-			var delegateField = FindDelegateFieldV1_0_7_1(protectMainType);
+		IDecrypter CreateDecrypterV1_0_7_0() {
+			var delegateField = FindDelegateFieldV1_0_7_0(protectMainType);
 			if (delegateField == null)
 				return null;
 
@@ -425,7 +425,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			return FindDelegateField(module.GlobalType, "System.Delegate", "(System.Int32)");
 		}
 
-		static FieldDef FindDelegateFieldV1_0_7_1(TypeDef mainType) {
+		static FieldDef FindDelegateFieldV1_0_7_0(TypeDef mainType) {
 			return FindDelegateField(mainType, "System.Boolean", "(System.Int32,System.Int32,System.Int32,System.Byte*&,System.Int32&)");
 		}
 
