@@ -117,7 +117,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			return instance.GetType().GetField(name).GetValue(instance);
 		}
 
-		static System.Collections.IList toList(object obj) {
+		static System.Collections.IList ToList(object obj) {
 			return (System.Collections.IList)obj;
 		}
 
@@ -126,7 +126,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			var moduleBuilder = asmBuilder.DefineDynamicModule("mod");
 			var serializedTypes = new SerializedTypes(moduleBuilder);
 			var allTypes = serializedTypes.Deserialize(serializedData);
-			asmTypes = toList(ReadField(allTypes, "Types"));
+			asmTypes = ToList(ReadField(allTypes, "Types"));
 
 			mainAsmPassword = FindMainAssemblyPassword();
 			embedPassword = FindEmbedPassword();
