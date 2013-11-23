@@ -45,11 +45,11 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 			uint offset = 0;
 			for (int vmInstrIndex = 0; vmInstrIndex < numVmInstrs; vmInstrIndex++) {
 				var composite = opCodeDetector.Handlers[vmInstrs[vmInstrIndex]];
-				var handlerInfos = composite.OpCodeHandlerInfos;
+				IList<HandlerTypeCode> handlerInfos = composite.HandlerTypeCodes;
 				if (handlerInfos.Count == 0)
-					handlerInfos = new List<OpCodeHandlerInfo>() { new OpCodeHandlerInfo(HandlerTypeCode.Nop, null) };
+					handlerInfos = new HandlerTypeCode[] { HandlerTypeCode.Nop };
 				for (int hi = 0; hi < handlerInfos.Count; hi++) {
-					var instr = handlerInfoReader.Read(handlerInfos[hi].TypeCode, reader);
+					var instr = handlerInfoReader.Read(handlerInfos[hi], reader);
 					instr.Offset = offset;
 					offset += (uint)GetInstructionSize(instr);
 					SetCilToVmIndex(instr, vmInstrIndex);
@@ -58,6 +58,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 					instrs.Add(instr);
 				}
 			}
+
 			return instrs;
 		}
 	}
