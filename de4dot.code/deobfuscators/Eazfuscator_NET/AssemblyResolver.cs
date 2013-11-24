@@ -186,7 +186,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				return method;
 			}
 
-			throw new ApplicationException("Could not find decrypt method");
+			return null;
 		}
 
 		void UpdateDecrypterType() {
@@ -228,10 +228,12 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			if (!CreateAssemblyInfos())
 				throw new ApplicationException("Could not initialize assembly infos");
 
-			simpleDeobfuscator.Deobfuscate(decryptMethod);
-			simpleDeobfuscator.DecryptStrings(decryptMethod, deob);
-			if (!CreateDecryptKey())
-				throw new ApplicationException("Could not initialize decryption key");
+			if (decryptMethod != null) {
+				simpleDeobfuscator.Deobfuscate(decryptMethod);
+				simpleDeobfuscator.DecryptStrings(decryptMethod, deob);
+				if (!CreateDecryptKey())
+					throw new ApplicationException("Could not initialize decryption key");
+			}
 		}
 
 		void FindOtherType() {
@@ -274,6 +276,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				return true;
 			}
 
+			decryptKey = null;
 			return false;
 		}
 
