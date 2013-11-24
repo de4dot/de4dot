@@ -82,6 +82,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 				{ new Version(2, 0, 9, 0),	new PatchInfo(0x00023360, new PatchData(0x000056F2, nops6)) },
 				{ new Version(2, 0, 10, 0), new PatchInfo(0x00023B30, new PatchData(0x00005B12, nops6)) },
 				{ new Version(2, 0, 11, 0), new PatchInfo(0x000207C0, new PatchData(0x00018432, nops6)) },
+				{ new Version(2, 0, 11, 1), new PatchInfo(0x000207C0, new PatchData(0x00018432, nops6)) },
 			};
 			static readonly Dictionary<Version, PatchInfo> patchInfos64 = new Dictionary<Version, PatchInfo> {
 				{ new Version(2, 0, 8, 0),	new PatchInfo(0x00026090, new PatchData(0x00005E0C, nops6)) },
@@ -89,6 +90,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 				{ new Version(2, 0, 9, 0),	new PatchInfo(0x00028B00, new PatchData(0x00005F70, nops6)) },
 				{ new Version(2, 0, 10, 0), new PatchInfo(0x00029630, new PatchData(0x00006510, nops6)) },
 				{ new Version(2, 0, 11, 0), new PatchInfo(0x000257C0, new PatchData(0x0001C9A0, nops6)) },
+				{ new Version(2, 0, 11, 1), new PatchInfo(0x000257C0, new PatchData(0x0001C9A0, nops6)) },
 			};
 
 			[DllImport("kernel32")]
