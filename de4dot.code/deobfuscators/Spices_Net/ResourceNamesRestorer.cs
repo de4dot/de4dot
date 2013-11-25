@@ -29,6 +29,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 		TypeDef componentResourceManagerType;
 		MethodDefAndDeclaringTypeDict<IMethod> resourceManagerCtors = new MethodDefAndDeclaringTypeDict<IMethod>();
 		MethodDefAndDeclaringTypeDict<IMethod> componentManagerCtors = new MethodDefAndDeclaringTypeDict<IMethod>();
+		Dictionary<TypeDef, bool> callsResourceManager = new Dictionary<TypeDef, bool>();
 
 		public TypeDef ResourceManagerType {
 			get { return resourceManagerType; }
@@ -101,23 +102,68 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 				numToResource[extNum] = resource;
 			}
 
-			foreach (var type in module.GetTypes()) {
-				Rename(numToResource, "", type.FullName);
-				Rename(numToResource, "", type.FullName + ".g");
-				Rename(numToResource, type.Namespace.String, type.Name.String);
-				Rename(numToResource, type.Namespace.String, type.Name.String + ".g");
+			if (module.Assembly != null)
+				Rename(numToResource, "", module.Assembly.Name + ".g");
+
+			foreach (var type in callsResourceManager.Keys)
+				Rename(numToResource, type);
+
+			if (numToResource.Count != 0) {
+				foreach (var type in module.GetTypes()) {
+					if (numToResource.Count == 0)
+						break;
+					if (!IsWinFormType(type))
+						continue;
+					Rename(numToResource, type);
+				}
 			}
 
-			if (module.Assembly != null)
-				Rename(numToResource, "", module.Assembly.Name.String + ".g");
+			if (numToResource.Count != 0) {
+				foreach (var type in module.GetTypes()) {
+					if (numToResource.Count == 0)
+						break;
+					Rename(numToResource, type);
+				}
+			}
+
+			if (numToResource.Count != 0)
+				Logger.e("Couldn't restore all renamed resource names");
 		}
 
-		static void Rename(Dictionary<uint, Resource> numToResource, string ns, string name) {
+		static bool IsWinFormType(TypeDef type) {
+			for (int i = 0; i < 100; i++) {
+				var baseType = type.BaseType;
+				if (baseType == null)
+					break;
+				if (baseType.FullName == "System.Object" ||
+					baseType.FullName == "System.ValueType")
+					return false;
+				// Speed up common cases
+				if (baseType.FullName == "System.Windows.Forms.Control" ||
+					baseType.FullName == "System.Windows.Forms.Form" ||
+					baseType.FullName == "System.Windows.Forms.UserControl")
+					return true;
+				var resolvedBaseType = baseType.ResolveTypeDef();
+				if (resolvedBaseType == null)
+					break;
+				type = resolvedBaseType;
+			}
+			return false;
+		}
+
+		static bool Rename(Dictionary<uint, Resource> numToResource, TypeDef type) {
+			return Rename(numToResource, "", type.FullName) ||
+					Rename(numToResource, "", type.FullName + ".g") ||
+					Rename(numToResource, type.Namespace, type.Name) ||
+					Rename(numToResource, type.Namespace, type.Name + ".g");
+		}
+
+		static bool Rename(Dictionary<uint, Resource> numToResource, string ns, string name) {
 			var resourceName = name + ".resources";
 			uint hash = GetResourceHash(resourceName);
 			Resource resource;
 			if (!numToResource.TryGetValue(hash, out resource))
-				return;
+				return false;
 
 			int index = resource.Name.String.LastIndexOf('.');
 			string resourceNamespace, newName;
@@ -130,13 +176,14 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 				newName = resourceNamespace + "." + resourceName;
 			}
 			if (resourceNamespace != ns)
-				return;
+				return false;
 
 			Logger.v("Restoring resource name: '{0}' => '{1}'",
 								Utils.RemoveNewlines(resource.Name),
 								Utils.RemoveNewlines(newName));
 			resource.Name = newName;
 			numToResource.Remove(hash);
+			return true;
 		}
 
 		static uint GetResourceHash(string name) {
@@ -169,6 +216,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 					if (newCtor == null)
 						continue;
 					instr.Operand = newCtor;
+					callsResourceManager[blocks.Method.DeclaringType] = true;
 				}
 			}
 		}

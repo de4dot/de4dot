@@ -159,7 +159,6 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			if (options.RestoreResourceNames) {
 				resourceNamesRestorer = new ResourceNamesRestorer(module);
 				resourceNamesRestorer.Find();
-				resourceNamesRestorer.RenameResources();
 			}
 
 			stringDecrypter.Initialize();
@@ -184,6 +183,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			RemoveInlinedMethods();
 
 			if (options.RestoreResourceNames) {
+				resourceNamesRestorer.RenameResources();
 				AddTypeToBeRemoved(resourceNamesRestorer.ResourceManagerType, "Obfuscator ResourceManager type");
 				AddTypeToBeRemoved(resourceNamesRestorer.ComponentResourceManagerType, "Obfuscator ComponentResourceManager type");
 			}
