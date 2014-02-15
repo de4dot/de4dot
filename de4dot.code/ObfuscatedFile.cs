@@ -595,9 +595,6 @@ namespace de4dot.code {
 				try {
 					Deobfuscate(method, cflowDeobfuscator, methodPrinter, isVerbose, isVV);
 				}
-				catch (ApplicationException) {
-					throw;
-				}
 				catch (Exception ex) {
 					if (!CanLoadMethodBody(method)) {
 						if (isVerbose)
