@@ -37,6 +37,8 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			get { return delegateTypes; }
 		}
 
+		public bool MethodReaderHasDelegateTypeFlag { get; set; }
+
 		public MethodsDecrypterBase(ModuleDefMD module, MainType mainType) {
 			this.module = module;
 			this.mainType = mainType;
@@ -84,10 +86,12 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			var methodInfo = methodInfos[methodId.Value];
 			methodInfos.Remove(methodId.Value);
 			var methodReader = new MethodReader(module, methodInfo.data, parameters);
+			methodReader.HasDelegateTypeFlag = MethodReaderHasDelegateTypeFlag;
 			methodReader.Read();
 
 			RestoreMethod(method, methodReader);
-			delegateTypes.Add(methodReader.DelegateType);
+			if (methodReader.DelegateType != null)
+				delegateTypes.Add(methodReader.DelegateType);
 
 			return true;
 		}

@@ -31,6 +31,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 		ModuleDefMD module;
 		MethodFlags flags;
 		TypeDef delegateType;
+		bool hasDelegateTypeFlag;
 
 		[Flags]
 		enum MethodFlags {
@@ -38,6 +39,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			HasLocals = 2,
 			HasInstructions = 4,
 			HasExceptionHandlers = 8,
+			HasDelegateType = 0x10,
 		}
 
 		public TypeDef DelegateType {
@@ -60,6 +62,15 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			get { return (flags & MethodFlags.HasExceptionHandlers) != 0; }
 		}
 
+		bool HasDelegateType {
+			get { return !hasDelegateTypeFlag || (flags & MethodFlags.HasDelegateType) != 0; }
+		}
+
+		public bool HasDelegateTypeFlag {
+			get { return hasDelegateTypeFlag; }
+			set { hasDelegateTypeFlag = value; }
+		}
+
 		public MethodReader(ModuleDefMD module, byte[] data, IList<Parameter> parameters)
 			: base(MemoryImageStream.Create(data), parameters) {
 			this.module = module;
@@ -67,9 +78,11 @@ namespace de4dot.code.deobfuscators.ILProtector {
 
 		public void Read() {
 			flags = (MethodFlags)reader.ReadByte();
-			delegateType = Resolve<TypeDef>(ReadTypeToken());
-			if (!DotNetUtils.DerivesFromDelegate(delegateType))
-				throw new ApplicationException("Invalid delegate type");
+			if (HasDelegateType) {
+				delegateType = Resolve<TypeDef>(ReadTypeToken());
+				if (!DotNetUtils.DerivesFromDelegate(delegateType))
+					throw new ApplicationException("Invalid delegate type");
+			}
 			if (HasLocals)
 				ReadLocals((int)reader.Read7BitEncodedUInt32());
 			if (HasInstructions)
