@@ -81,7 +81,6 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 				return;
 
 			deobfuscator = new MyDeobfuscator(module);
-
 			var csvmInfo = new CsvmInfo(module);
 			csvmInfo.Initialize();
 			var vmHandlerTypes = FindVmHandlerTypes();
@@ -90,9 +89,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 
 			var composites = CreateCompositeOpCodeHandlers(csvmInfo, vmHandlerTypes);
 			foreach (var handlerInfos in OpCodeHandlerInfos.HandlerInfos) {
-				var otherHandlers = CreateOtherHandlers(csvmInfo, handlerInfos);
-
-				if (!DetectCompositeHandlers(composites, otherHandlers))
+				if (!DetectCompositeHandlers(composites, handlerInfos))
 					continue;
 
 				vmOpCodes = CreateVmOpCodes(composites);
@@ -105,12 +102,12 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 		static List<VmOpCode> CreateVmOpCodes(IList<CompositeOpCodeHandler> composites) {
 			var list = new List<VmOpCode>(composites.Count);
 			foreach (var composite in composites)
-				list.Add(new VmOpCode(composite.OpCodeHandlerInfos));
+				list.Add(new VmOpCode(composite.TypeCodes));
 			return list;
 		}
 
-		bool DetectCompositeHandlers(IEnumerable<CompositeOpCodeHandler> composites, List<OpCodeHandler> otherHandlers) {
-			var detector = new CompositeHandlerDetector(otherHandlers);
+		bool DetectCompositeHandlers(IEnumerable<CompositeOpCodeHandler> composites, IList<MethodSigInfo> handlerInfos) {
+			var detector = new CompositeHandlerDetector(handlerInfos);
 			foreach (var composite in composites) {
 				if (!detector.FindHandlers(composite))
 					return false;
@@ -128,15 +125,18 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 		List<CompositeOpCodeHandler> CreateCompositeOpCodeHandlers(CsvmInfo csvmInfo, List<TypeDef> handlers) {
 			var list = new List<CompositeOpCodeHandler>(handlers.Count);
 
-			foreach (var handler in handlers) {
-				var execHandler = new HandlerMethod(GetExecMethod(handler));
-				list.Add(new CompositeOpCodeHandler(handler, execHandler));
-			}
+			var sigCreator = CreateSigCreator(csvmInfo);
+			foreach (var handler in handlers)
+				list.Add(new CompositeOpCodeHandler(sigCreator.Create(GetExecMethod(handler))));
 
 			return list;
 		}
 
 		MethodDef GetExecMethod(TypeDef type) {
+			return GetExecMethod(deobfuscator, type);
+		}
+
+		static MethodDef GetExecMethod(MyDeobfuscator deobfuscator, TypeDef type) {
 			MethodDef readMethod, execMethod;
 			GetReadAndExecMethods(type, out readMethod, out execMethod);
 			deobfuscator.Deobfuscate(execMethod);
@@ -144,8 +144,8 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 			return execMethod;
 		}
 
-		static MethodSigInfoCreator CreateMethodSigInfoCreator(CsvmInfo csvmInfo) {
-			var creator = new MethodSigInfoCreator();
+		static SigCreator CreateSigCreator(CsvmInfo csvmInfo) {
+			var creator = new SigCreator();
 
 			creator.AddId(csvmInfo.LogicalOpShrUn, 1);
 			creator.AddId(csvmInfo.LogicalOpShl, 2);
@@ -183,7 +183,18 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 			creator.AddId(csvmInfo.LocalsGet, 30);
 			creator.AddId(csvmInfo.LocalsSet, 31);
 
+			AddTypeId(creator, csvmInfo.LogicalOpShrUn, 32);
+			AddTypeId(creator, csvmInfo.CompareLt, 33);
+			AddTypeId(creator, csvmInfo.ArithmeticSubOvfUn, 34);
+			AddTypeId(creator, csvmInfo.UnaryNot, 35);
+			AddTypeId(creator, csvmInfo.ArgsGet, 36);
+
 			return creator;
+		}
+
+		static void AddTypeId(SigCreator creator, MethodDef method, int id) {
+			if (method != null)
+				creator.AddId(method.DeclaringType, id);
 		}
 
 		static void GetReadAndExecMethods(TypeDef handler, out MethodDef readMethod, out MethodDef execMethod) {
@@ -267,29 +278,6 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 
 				list.Add(type);
 			}
-
-			return list;
-		}
-
-		List<OpCodeHandler> CreateOtherHandlers(CsvmInfo csvmInfo, IList<OpCodeHandlerInfo> handlerInfos) {
-			var list = new List<OpCodeHandler>(NUM_HANDLERS);
-
-			foreach (var type in GetVmHandlerTypes(csvmInfo.VmHandlerBaseType)) {
-				if (list.Count == NUM_HANDLERS)
-					break;
-
-				var execHandler = new PrimitiveHandlerMethod(GetExecMethod(type));
-				execHandler.Sig = CreateMethodSigInfoCreator(csvmInfo).Create(execHandler.Blocks);
-
-				var finder = new MethodFinder(handlerInfos, execHandler);
-				var handler = finder.FindHandler();
-				if (handler == null)
-					continue;
-
-				list.Add(handler);
-			}
-
-			list.Sort((a, b) => a.OpCodeHandlerInfo.Name.ToUpperInvariant().CompareTo(b.OpCodeHandlerInfo.Name.ToUpperInvariant()));
 
 			return list;
 		}

@@ -581,6 +581,23 @@ namespace de4dot.mdecrypt {
 			return hModule;
 		}
 
+		class PatchInfo {
+			public int RVA;
+			public byte[] Data;
+			public byte[] Orig;
+
+			public PatchInfo(int rva, byte[] data, byte[] orig) {
+				this.RVA = rva;
+				this.Data = data;
+				this.Orig = orig;
+			}
+		}
+		static readonly PatchInfo[] patches = new PatchInfo[] {
+			new PatchInfo(0x000110A5, new byte[] { 0x33, 0xC0, 0xC2, 0x04, 0x00 }, new byte[] { 0xE9, 0x36, 0x3A, 0x00, 0x00 }),
+			new PatchInfo(0x000110AF, new byte[] { 0x33, 0xC0, 0xC2, 0x04, 0x00 }, new byte[] { 0xE9, 0x4C, 0x3C, 0x00, 0x00 }),
+			new PatchInfo(0x000110AA, new byte[] { 0x33, 0xC0, 0xC2, 0x04, 0x00 }, new byte[] { 0xE9, 0xF1, 0x3A, 0x00, 0x00 }),
+		};
+
 		static unsafe bool PatchCM(IntPtr addr, IntPtr origValue, IntPtr newValue) {
 			var baseAddr = GetModuleHandle(addr);
 			IntPtr patchAddr;
@@ -590,6 +607,45 @@ namespace de4dot.mdecrypt {
 				return false;
 
 			*(IntPtr*)patchAddr = newValue;
+			PatchRT(baseAddr);
+			return true;
+		}
+
+		[HandleProcessCorruptedStateExceptions, SecurityCritical]	// Req'd on .NET 4.0
+		static unsafe bool PatchRT(IntPtr baseAddr) {
+			foreach (var info in patches) {
+				try {
+					var addr = new IntPtr(baseAddr.ToInt64() + info.RVA);
+
+					var data = new byte[info.Orig.Length];
+					Marshal.Copy(addr, data, 0, data.Length);
+					if (!Equals(data, info.Orig))
+						continue;
+
+					uint oldProtect;
+					if (!VirtualProtect(addr, info.Data.Length, PAGE_EXECUTE_READWRITE, out oldProtect))
+						throw new ApplicationException("Could not enable write access");
+					Marshal.Copy(info.Data, 0, addr, info.Data.Length);
+					VirtualProtect(addr, info.Data.Length, oldProtect, out oldProtect);
+					return true;
+				}
+				catch {
+				}
+			}
+			return false;
+		}
+
+		static bool Equals(byte[] a, byte[] b) {
+			if (a == b)
+				return true;
+			if (a == null || b == null)
+				return false;
+			if (a.Length != b.Length)
+				return false;
+			for (int i = 0; i < a.Length; i++) {
+				if (a[i] != b[i])
+					return false;
+			}
 			return true;
 		}
 

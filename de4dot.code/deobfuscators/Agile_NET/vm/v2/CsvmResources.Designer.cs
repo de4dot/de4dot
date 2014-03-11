@@ -63,9 +63,9 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
-        internal static byte[] CSVM1_v2 {
+        internal static byte[] CSVM1 {
             get {
-                object obj = ResourceManager.GetObject("CSVM1_v2", resourceCulture);
+                object obj = ResourceManager.GetObject("CSVM1", resourceCulture);
                 return ((byte[])(obj));
             }
         }
@@ -73,9 +73,9 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
-        internal static byte[] CSVM2_v2 {
+        internal static byte[] CSVM2 {
             get {
-                object obj = ResourceManager.GetObject("CSVM2_v2", resourceCulture);
+                object obj = ResourceManager.GetObject("CSVM2", resourceCulture);
                 return ((byte[])(obj));
             }
         }
@@ -83,9 +83,19 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
-        internal static byte[] CSVM3_v2 {
+        internal static byte[] CSVM3 {
             get {
-                object obj = ResourceManager.GetObject("CSVM3_v2", resourceCulture);
+                object obj = ResourceManager.GetObject("CSVM3", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] CSVM4 {
+            get {
+                object obj = ResourceManager.GetObject("CSVM4", resourceCulture);
                 return ((byte[])(obj));
             }
         }

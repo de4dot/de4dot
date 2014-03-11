@@ -594,43 +594,77 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 		}
 
 		public bool FindUnaryOpsMethods() {
-			UnaryNot = FindUnaryOpMethod(Code.Not);
-			UnaryNeg = FindUnaryOpMethod(Code.Neg);
-			return UnaryNot != null && UnaryNeg != null;
+			UnaryNot = FindUnaryOpMethod1(Code.Not);
+			UnaryNeg = FindUnaryOpMethod1(Code.Neg);
+			if (UnaryNot != null && UnaryNeg != null)
+				return true;
+
+			return FindUnaryOpMethod2();
 		}
 
-		MethodDef FindUnaryOpMethod(Code code) {
+		MethodDef FindUnaryOpMethod1(Code code) {
 			foreach (var type in module.Types) {
 				if (type.BaseType != VmHandlerBaseType)
 					continue;
 				if (type.Methods.Count != 4)
 					continue;
-				foreach (var method in type.Methods) {
-					if (!method.HasBody || !method.IsStatic)
-						continue;
-					if (!DotNetUtils.IsMethod(method, "System.Object", "(System.Object)"))
-						continue;
-					if (CountThrows(method) != 1)
-						continue;
-					var instrs = method.Body.Instructions;
-					for (int i = 0; i < instrs.Count - 4; i++) {
-						var ldarg = instrs[i];
-						if (!ldarg.IsLdarg() || ldarg.GetParameterIndex() != 0)
-							continue;
-						if (!CheckUnboxAny(instrs[i + 1], ElementType.I4))
-							continue;
-						if (instrs[i + 2].OpCode.Code != code)
-							continue;
-						if (!CheckBox(instrs[i + 3], ElementType.I4))
-							continue;
-						if (!instrs[i + 4].IsStloc())
-							continue;
-
-						return method;
-					}
-				}
+				var method = FindUnaryMethod(type, code);
+				if (method != null)
+					return method;
 			}
 			return null;
+		}
+
+		bool FindUnaryOpMethod2() {
+			foreach (var type in module.Types) {
+				if (type.BaseType == null || type.BaseType.FullName != "System.Object")
+					continue;
+				if (type.Methods.Count != 3)
+					continue;
+
+				UnaryNot = FindUnaryMethod(type, Code.Not);
+				UnaryNeg = FindUnaryMethod(type, Code.Neg);
+				if (UnaryNot != null && UnaryNeg != null)
+					return true;
+			}
+			return false;
+		}
+
+		MethodDef FindUnaryMethod(TypeDef type, Code code) {
+			foreach (var method in type.Methods) {
+				if (!IsUnsaryMethod(method, code))
+					continue;
+
+				return method;
+			}
+			return null;
+		}
+
+		bool IsUnsaryMethod(MethodDef method, Code code) {
+			if (!method.HasBody || !method.IsStatic)
+				return false;
+			if (!DotNetUtils.IsMethod(method, "System.Object", "(System.Object)"))
+				return false;
+			if (CountThrows(method) != 1)
+				return false;
+			var instrs = method.Body.Instructions;
+			for (int i = 0; i < instrs.Count - 4; i++) {
+				var ldarg = instrs[i];
+				if (!ldarg.IsLdarg() || ldarg.GetParameterIndex() != 0)
+					continue;
+				if (!CheckUnboxAny(instrs[i + 1], ElementType.I4))
+					continue;
+				if (instrs[i + 2].OpCode.Code != code)
+					continue;
+				if (!CheckBox(instrs[i + 3], ElementType.I4))
+					continue;
+				if (!instrs[i + 4].IsStloc())
+					continue;
+
+				return true;
+			}
+
+			return false;
 		}
 
 		static int CountThrows(MethodDef method) {

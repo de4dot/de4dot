@@ -112,6 +112,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v1 {
 				PrintMethod(methodPrinter, cilMethod);
 			}
 			Logger.Instance.DeIndent();
+			Logger.n("Restored {0} CSVM methods", csvmMethods.Count);
 		}
 
 		static void PrintMethod(MethodPrinter methodPrinter, MethodDef method) {
