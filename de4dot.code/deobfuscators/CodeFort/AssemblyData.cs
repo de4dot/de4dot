@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2013 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -382,7 +382,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 				this.type = type;
 			}
 
-			public void add(string propertyName, object value) {
+			public void Add(string propertyName, object value) {
 				var prop = type.GetProperty(propertyName);
 				if (prop == null)
 					throw new ApplicationException(string.Format("Could not find property {0} (type {1})", propertyName, type));
@@ -415,9 +415,9 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			var dcAttr = Type.GetType("System.Runtime.Serialization.DataContractAttribute," + serializationAssemblyname);
 			var ctor = dcAttr.GetConstructor(Type.EmptyTypes);
 			var propCreator = new PropertyInfoCreator(dcAttr);
-			propCreator.add("Namespace", ns);
-			propCreator.add("Name", name);
-			propCreator.add("IsReference", isReference);
+			propCreator.Add("Namespace", ns);
+			propCreator.Add("Name", name);
+			propCreator.Add("IsReference", isReference);
 			return new CustomAttributeBuilder(ctor, new object[0], propCreator.Properties, propCreator.Values);
 		}
 
@@ -425,7 +425,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			var emAttr = Type.GetType("System.Runtime.Serialization.EnumMemberAttribute," + serializationAssemblyname);
 			var ctor = emAttr.GetConstructor(Type.EmptyTypes);
 			var propCreator = new PropertyInfoCreator(emAttr);
-			propCreator.add("Value", value);
+			propCreator.Add("Value", value);
 			return new CustomAttributeBuilder(ctor, new object[0], propCreator.Properties, propCreator.Values);
 		}
 
@@ -433,8 +433,8 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			var dmAttr = Type.GetType("System.Runtime.Serialization.DataMemberAttribute," + serializationAssemblyname);
 			var ctor = dmAttr.GetConstructor(Type.EmptyTypes);
 			var propCreator = new PropertyInfoCreator(dmAttr);
-			propCreator.add("Name", name);
-			propCreator.add("EmitDefaultValue", emitDefaultValue);
+			propCreator.Add("Name", name);
+			propCreator.Add("EmitDefaultValue", emitDefaultValue);
 			return new CustomAttributeBuilder(ctor, new object[0], propCreator.Properties, propCreator.Values);
 		}
 

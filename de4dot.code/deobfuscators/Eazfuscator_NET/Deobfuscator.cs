@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2013 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -28,7 +28,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "Eazfuscator.NET";
 		public const string THE_TYPE = "ef";
-		const string DEFAULT_REGEX = @"!^#=&!^dje_.+_ejd$&" + DeobfuscatorBase.DEFAULT_ASIAN_VALID_NAME_REGEX;
+		const string DEFAULT_REGEX = @"!^[a-zA-Z]$&!^#=&!^dje_.+_ejd$&" + DeobfuscatorBase.DEFAULT_ASIAN_VALID_NAME_REGEX;
 		public DeobfuscatorInfo()
 			: base(DEFAULT_REGEX) {
 		}

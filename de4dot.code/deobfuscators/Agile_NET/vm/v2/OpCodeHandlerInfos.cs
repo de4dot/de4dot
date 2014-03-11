@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2013 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -23,75 +23,61 @@ using System.IO;
 
 namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 	static class OpCodeHandlerInfos {
-		enum OpCodeHandlersFileVersion : int {
-			V1 = 1,
-		}
-
-		public static void Write(BinaryWriter writer, IList<OpCodeHandlerInfo> handlerInfos) {
-			WriteV1(writer, handlerInfos);
-		}
-
-		public static void WriteV1(BinaryWriter writer, IList<OpCodeHandlerInfo> handlerInfos) {
-			writer.Write((int)OpCodeHandlersFileVersion.V1);
+		public static void Write(BinaryWriter writer, List<MethodSigInfo> handlerInfos) {
+			writer.Write(1);
 			writer.Write(handlerInfos.Count);
 			foreach (var handler in handlerInfos) {
 				writer.Write((int)handler.TypeCode);
-				var infos = handler.ExecSig.BlockInfos;
-				writer.Write(infos.Count);
-				foreach (var info in infos) {
-					if (info.Hash == null)
-						writer.Write(0);
-					else {
-						writer.Write(info.Hash.Length);
-						writer.Write(info.Hash);
-					}
+				writer.Write(handler.BlockSigInfos.Count);
+				foreach (var info in handler.BlockSigInfos) {
 					writer.Write(info.Targets.Count);
 					foreach (var target in info.Targets)
 						writer.Write(target);
+					writer.Write(info.Hashes.Count);
+					foreach (var hash in info.Hashes)
+						writer.Write((uint)hash);
+					writer.Write(info.HasFallThrough);
+					writer.Write(info.EndsInRet);
 				}
 			}
 		}
 
-		public static List<OpCodeHandlerInfo> Read(BinaryReader reader) {
-			switch ((OpCodeHandlersFileVersion)reader.ReadInt32()) {
-			case OpCodeHandlersFileVersion.V1: return ReadV1(reader);
-			default: throw new ApplicationException("Invalid file version");
-			}
-		}
-
-		static List<OpCodeHandlerInfo> ReadV1(BinaryReader reader) {
+		public static List<MethodSigInfo> Read(BinaryReader reader) {
+			if (reader.ReadInt32() != 1)
+				throw new InvalidDataException();
 			int numHandlers = reader.ReadInt32();
-			var list = new List<OpCodeHandlerInfo>(numHandlers);
+			var list = new List<MethodSigInfo>(numHandlers);
 			for (int i = 0; i < numHandlers; i++) {
 				var typeCode = (HandlerTypeCode)reader.ReadInt32();
-				int numInfos = reader.ReadInt32();
-				var sigInfo = new MethodSigInfo();
-				for (int j = 0; j < numInfos; j++) {
-					var info = new BlockInfo();
-
-					info.Hash = reader.ReadBytes(reader.ReadInt32());
-					if (info.Hash.Length == 0)
-						info.Hash = null;
-
+				int numBlocks = reader.ReadInt32();
+				var blocks = new List<BlockSigInfo>(numBlocks);
+				for (int j = 0; j < numBlocks; j++) {
 					int numTargets = reader.ReadInt32();
+					var targets = new List<int>(numTargets);
 					for (int k = 0; k < numTargets; k++)
-						info.Targets.Add(reader.ReadInt32());
-
-					sigInfo.BlockInfos.Add(info);
+						targets.Add(reader.ReadInt32());
+					var numHashes = reader.ReadInt32();
+					var hashes = new List<BlockElementHash>(numHashes);
+					for (int k = 0; k < numHashes; k++)
+						hashes.Add((BlockElementHash)reader.ReadInt32());
+					var block = new BlockSigInfo(hashes, targets);
+					block.HasFallThrough = reader.ReadBoolean();
+					block.EndsInRet = reader.ReadBoolean();
+					blocks.Add(block);
 				}
-
-				list.Add(new OpCodeHandlerInfo(typeCode, sigInfo));
+				list.Add(new MethodSigInfo(blocks, typeCode));
 			}
 			return list;
 		}
 
-		public static readonly IList<OpCodeHandlerInfo>[] HandlerInfos = new IList<OpCodeHandlerInfo>[] {
-			ReadOpCodeHandlerInfos(CsvmResources.CSVM1_v2),
-			ReadOpCodeHandlerInfos(CsvmResources.CSVM2_v2),
-			ReadOpCodeHandlerInfos(CsvmResources.CSVM3_v2),
+		public static readonly IList<MethodSigInfo>[] HandlerInfos = new IList<MethodSigInfo>[] {
+			ReadOpCodeHandlerInfos(CsvmResources.CSVM1),
+			ReadOpCodeHandlerInfos(CsvmResources.CSVM2),
+			ReadOpCodeHandlerInfos(CsvmResources.CSVM3),
+			ReadOpCodeHandlerInfos(CsvmResources.CSVM4),
 		};
 
-		static IList<OpCodeHandlerInfo> ReadOpCodeHandlerInfos(byte[] data) {
+		static IList<MethodSigInfo> ReadOpCodeHandlerInfos(byte[] data) {
 			return OpCodeHandlerInfos.Read(new BinaryReader(new MemoryStream(data)));
 		}
 	}

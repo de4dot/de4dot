@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2013 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -53,6 +53,8 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 						newOpCode = OpCodes.Ldelem_Ref;
 					else {
 						switch (operandTypeTmp.ElementType) {
+						case ElementType.Boolean: newOpCode = OpCodes.Ldelem_I1; break;
+						case ElementType.Char: newOpCode = OpCodes.Ldelem_U2; break;
 						case ElementType.I:  newOpCode = OpCodes.Ldelem_I; break;
 						case ElementType.I1: newOpCode = OpCodes.Ldelem_I1; break;
 						case ElementType.I2: newOpCode = OpCodes.Ldelem_I2; break;
@@ -82,8 +84,10 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 						switch (operandTypeTmp.ElementType) {
 						case ElementType.U:
 						case ElementType.I:  newOpCode = OpCodes.Stelem_I; break;
+						case ElementType.Boolean:
 						case ElementType.U1:
 						case ElementType.I1: newOpCode = OpCodes.Stelem_I1; break;
+						case ElementType.Char:
 						case ElementType.U2:
 						case ElementType.I2: newOpCode = OpCodes.Stelem_I2; break;
 						case ElementType.U4:

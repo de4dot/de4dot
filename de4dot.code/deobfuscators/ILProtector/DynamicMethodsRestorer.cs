@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2013 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -42,6 +42,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 				client.GenericService.LoadUserService(typeof(DynamicMethodsDecrypterService), null);
 				client.GenericService.LoadAssembly(module.Location);
 				decryptedData = client.GenericService.SendMessage(DynamicMethodsDecrypterService.MSG_DECRYPT_METHODS, new object[] { GetMethodIds() }) as IList<DecryptedMethodInfo>;
+				MethodReaderHasDelegateTypeFlag = (bool)client.GenericService.SendMessage(DynamicMethodsDecrypterService.MSG_HAS_DELEGATE_TYPE_FLAG, new object[0]);
 			}
 
 			if (decryptedData == null)

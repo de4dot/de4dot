@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2013 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -18,7 +18,7 @@
 */
 
 namespace de4dot.code.deobfuscators {
-	class CRC32 {
+	struct CRC32 {
 		static readonly uint[] table = new uint[256] {
 			0x00000000, 0x77073096, 0xEE0E612C, 0x990951BA,
 			0x076DC419, 0x706AF48F, 0xE963A535, 0x9E6495A3,
@@ -85,6 +85,131 @@ namespace de4dot.code.deobfuscators {
 			0xB3667A2E, 0xC4614AB8, 0x5D681B02, 0x2A6F2B94,
 			0xB40BBE37, 0xC30C8EA1, 0x5A05DF1B, 0x2D02EF8D,
 		};
+
+		uint checkSum;
+
+		public void Initialize() {
+			this.checkSum = uint.MaxValue;
+		}
+
+		public void Hash(byte[] data) {
+			if (data == null)
+				return;
+			foreach (var b in data) {
+				int i = (byte)(checkSum ^ b);
+				checkSum = (checkSum >> 8) ^ table[i];
+			}
+		}
+
+		public void Hash(sbyte a) {
+			int i = (byte)(checkSum ^ a);
+			checkSum = (checkSum >> 8) ^ table[i];
+		}
+
+		public void Hash(byte a) {
+			int i = (byte)(checkSum ^ a);
+			checkSum = (checkSum >> 8) ^ table[i];
+		}
+
+		public void Hash(short a) {
+			int i = (byte)(checkSum ^ (byte)a);
+			checkSum = (checkSum >> 8) ^ table[i];
+
+			i = (byte)(checkSum ^ (byte)(a >> 8));
+			checkSum = (checkSum >> 8) ^ table[i];
+		}
+
+		public void Hash(ushort a) {
+			int i = (byte)(checkSum ^ (byte)a);
+			checkSum = (checkSum >> 8) ^ table[i];
+
+			i = (byte)(checkSum ^ (byte)(a >> 8));
+			checkSum = (checkSum >> 8) ^ table[i];
+		}
+
+		public void Hash(int a) {
+			int i = (byte)(checkSum ^ (byte)a);
+			checkSum = (checkSum >> 8) ^ table[i];
+
+			i = (byte)(checkSum ^ (byte)(a >> 8));
+			checkSum = (checkSum >> 8) ^ table[i];
+
+			i = (byte)(checkSum ^ (byte)(a >> 16));
+			checkSum = (checkSum >> 8) ^ table[i];
+
+			i = (byte)(checkSum ^ (byte)(a >> 24));
+			checkSum = (checkSum >> 8) ^ table[i];
+		}
+
+		public void Hash(uint a) {
+			int i = (byte)(checkSum ^ (byte)a);
+			checkSum = (checkSum >> 8) ^ table[i];
+
+			i = (byte)(checkSum ^ (byte)(a >> 8));
+			checkSum = (checkSum >> 8) ^ table[i];
+
+			i = (byte)(checkSum ^ (byte)(a >> 16));
+			checkSum = (checkSum >> 8) ^ table[i];
+
+			i = (byte)(checkSum ^ (byte)(a >> 24));
+			checkSum = (checkSum >> 8) ^ table[i];
+		}
+
+		public void Hash(long a) {
+			int i = (byte)(checkSum ^ (byte)a);
+			checkSum = (checkSum >> 8) ^ table[i];
+
+			i = (byte)(checkSum ^ (byte)(a >> 8));
+			checkSum = (checkSum >> 8) ^ table[i];
+
+			i = (byte)(checkSum ^ (byte)(a >> 16));
+			checkSum = (checkSum >> 8) ^ table[i];
+
+			i = (byte)(checkSum ^ (byte)(a >> 24));
+			checkSum = (checkSum >> 8) ^ table[i];
+
+			i = (byte)(checkSum ^ (byte)(a >> 32));
+			checkSum = (checkSum >> 8) ^ table[i];
+
+			i = (byte)(checkSum ^ (byte)(a >> 40));
+			checkSum = (checkSum >> 8) ^ table[i];
+
+			i = (byte)(checkSum ^ (byte)(a >> 48));
+			checkSum = (checkSum >> 8) ^ table[i];
+
+			i = (byte)(checkSum ^ (byte)(a >> 56));
+			checkSum = (checkSum >> 8) ^ table[i];
+		}
+
+		public void Hash(ulong a) {
+			int i = (byte)(checkSum ^ (byte)a);
+			checkSum = (checkSum >> 8) ^ table[i];
+
+			i = (byte)(checkSum ^ (byte)(a >> 8));
+			checkSum = (checkSum >> 8) ^ table[i];
+
+			i = (byte)(checkSum ^ (byte)(a >> 16));
+			checkSum = (checkSum >> 8) ^ table[i];
+
+			i = (byte)(checkSum ^ (byte)(a >> 24));
+			checkSum = (checkSum >> 8) ^ table[i];
+
+			i = (byte)(checkSum ^ (byte)(a >> 32));
+			checkSum = (checkSum >> 8) ^ table[i];
+
+			i = (byte)(checkSum ^ (byte)(a >> 40));
+			checkSum = (checkSum >> 8) ^ table[i];
+
+			i = (byte)(checkSum ^ (byte)(a >> 48));
+			checkSum = (checkSum >> 8) ^ table[i];
+
+			i = (byte)(checkSum ^ (byte)(a >> 56));
+			checkSum = (checkSum >> 8) ^ table[i];
+		}
+
+		public uint GetHash() {
+			return ~checkSum;
+		}
 
 		public static uint CheckSum(byte[] data) {
 			if (data == null)

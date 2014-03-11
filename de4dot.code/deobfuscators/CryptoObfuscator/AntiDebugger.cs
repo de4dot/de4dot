@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2013 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -68,7 +68,9 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 					!ContainsString(method, "Debugger was detected") &&
 					!ContainsString(method, "{0} was detected") &&
 					!ContainsString(method, "run under") &&
-					!ContainsString(method, "run with"))
+					!ContainsString(method, "run with") &&
+					!ContainsString(method, "started under") &&
+					!ContainsString(method, "{0} detected"))
 					continue;
 
 				antiDebuggerType = type;

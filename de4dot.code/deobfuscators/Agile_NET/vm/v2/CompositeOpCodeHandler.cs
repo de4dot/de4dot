@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2013 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -23,45 +23,17 @@ using dnlib.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
-	class HandlerMethod {
-		public MethodDef Method { get; private set; }
-		public Blocks Blocks { get; private set; }
-
-		public HandlerMethod(MethodDef method) {
-			this.Method = method;
-			this.Blocks = new Blocks(method);
-		}
-	}
-
-	class PrimitiveHandlerMethod : HandlerMethod {
-		public MethodSigInfo Sig { get; set; }
-
-		public PrimitiveHandlerMethod(MethodDef method)
-			: base(method) {
-		}
-	}
-
 	class CompositeOpCodeHandler {
-		public TypeDef HandlerType { get; private set; }
-		public HandlerMethod ExecMethod { get; private set; }
-		public List<OpCodeHandlerInfo> OpCodeHandlerInfos { get; private set; }
+		public List<BlockSigInfo> BlockSigInfos { get; private set; }
+		public List<HandlerTypeCode> TypeCodes { get; private set; }
 
-		public CompositeOpCodeHandler(TypeDef handlerType, HandlerMethod execMethod) {
-			this.HandlerType = handlerType;
-			this.ExecMethod = execMethod;
-			this.OpCodeHandlerInfos = new List<OpCodeHandlerInfo>();
+		public CompositeOpCodeHandler(List<BlockSigInfo> blockSigInfos) {
+			this.BlockSigInfos = blockSigInfos;
+			this.TypeCodes = new List<HandlerTypeCode>();
 		}
 
 		public override string ToString() {
-			if (OpCodeHandlerInfos.Count == 0)
-				return "<nothing>";
-			var sb = new StringBuilder();
-			foreach (var handler in OpCodeHandlerInfos) {
-				if (sb.Length != 0)
-					sb.Append(", ");
-				sb.Append(handler.Name);
-			}
-			return sb.ToString();
+			return OpCodeHandlerInfo.GetCompositeName(TypeCodes);
 		}
 	}
 }

@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2013 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -19,24 +19,35 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 	class OpCodeHandlerInfo {
 		public HandlerTypeCode TypeCode { get; private set; }
 		public string Name { get; private set; }
-		public MethodSigInfo ExecSig { get; private set; }
 
-		public OpCodeHandlerInfo(HandlerTypeCode typeCode, MethodSigInfo execSig) {
+		public OpCodeHandlerInfo(HandlerTypeCode typeCode) {
 			this.TypeCode = typeCode;
 			this.Name = GetHandlerName(typeCode);
-			this.ExecSig = execSig;
 		}
 
 		public override string ToString() {
 			return Name;
 		}
 
-		static string GetHandlerName(HandlerTypeCode code) {
+		public static string GetCompositeName(IList<HandlerTypeCode> typeCodes) {
+			if (typeCodes.Count == 0)
+				return "<nothing>";
+			var sb = new StringBuilder();
+			foreach (var typeCode in typeCodes) {
+				if (sb.Length != 0)
+					sb.Append(", ");
+				sb.Append(GetHandlerName(typeCode));
+			}
+			return sb.ToString();
+		}
+
+		public static string GetHandlerName(HandlerTypeCode code) {
 			switch (code) {
 			case HandlerTypeCode.Add:			return "add";
 			case HandlerTypeCode.Add_Ovf:		return "add.ovf";

@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2013 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -594,9 +594,6 @@ namespace de4dot.code {
 				int oldIndentLevel = Logger.Instance.IndentLevel;
 				try {
 					Deobfuscate(method, cflowDeobfuscator, methodPrinter, isVerbose, isVV);
-				}
-				catch (ApplicationException) {
-					throw;
 				}
 				catch (Exception ex) {
 					if (!CanLoadMethodBody(method)) {

@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2013 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -722,7 +722,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					decryptStringMethod.Body.ExceptionHandlers.Count >= 2 &&
 					new LocalTypes(decryptStringMethod).All(locals35) &&
 					CheckTypeFields2(fields35)) {
-					return "3.5 - 4.0";
+					return "3.5 - 4.1";
 				}
 			}
 

@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2013 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -25,9 +25,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("AssemblyServer-CLR20-x64")]
-[assembly: AssemblyCopyright("Copyright (C) 2011-2013 de4dot@gmail.com")]
+[assembly: AssemblyCopyright("Copyright (C) 2011-2014 de4dot@gmail.com")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 [assembly: ComVisible(false)]
-[assembly: AssemblyVersion("3.0.2.3405")]
-[assembly: AssemblyFileVersion("3.0.2.3405")]
+[assembly: AssemblyVersion("3.0.3.3405")]
+[assembly: AssemblyFileVersion("3.0.3.3405")]

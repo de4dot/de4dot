@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2013 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -36,6 +36,8 @@ namespace de4dot.code.deobfuscators.ILProtector {
 		public IEnumerable<TypeDef> DelegateTypes {
 			get { return delegateTypes; }
 		}
+
+		public bool MethodReaderHasDelegateTypeFlag { get; set; }
 
 		public MethodsDecrypterBase(ModuleDefMD module, MainType mainType) {
 			this.module = module;
@@ -84,10 +86,12 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			var methodInfo = methodInfos[methodId.Value];
 			methodInfos.Remove(methodId.Value);
 			var methodReader = new MethodReader(module, methodInfo.data, parameters);
+			methodReader.HasDelegateTypeFlag = MethodReaderHasDelegateTypeFlag;
 			methodReader.Read();
 
 			RestoreMethod(method, methodReader);
-			delegateTypes.Add(methodReader.DelegateType);
+			if (methodReader.DelegateType != null)
+				delegateTypes.Add(methodReader.DelegateType);
 
 			return true;
 		}

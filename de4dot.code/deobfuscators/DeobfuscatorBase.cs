@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2013 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -54,6 +54,7 @@ namespace de4dot.code.deobfuscators {
 		protected InitializedDataCreator initializedDataCreator;
 		bool keepTypes;
 		MetaDataFlags? mdFlags;
+		Dictionary<object, bool> objectsThatMustBeKept = new Dictionary<object, bool>();
 
 		protected byte[] ModuleBytes {
 			get { return moduleBytes; }
@@ -187,6 +188,8 @@ namespace de4dot.code.deobfuscators {
 			module.EnableTypeDefFindCache = false;
 
 			if (CanRemoveTypes) {
+				InitializeObjectsToKeepFromVTableFixups();
+
 				RemoveTypesWithInvalidBaseTypes();
 
 				DeleteEmptyCctors();
@@ -202,6 +205,26 @@ namespace de4dot.code.deobfuscators {
 			FixMDHeaderVersion();
 
 			module.EnableTypeDefFindCache = cacheState;
+		}
+
+		void InitializeObjectsToKeepFromVTableFixups() {
+			var fixups = module.VTableFixups;
+			if (fixups == null || fixups.VTables.Count == 0)
+				return;
+
+			foreach (var vtable in fixups) {
+				if (vtable == null)
+					continue;
+				foreach (var method in vtable) {
+					if (method == null)
+						continue;
+					objectsThatMustBeKept[method] = true;
+				}
+			}
+		}
+
+		bool MustKeepObject(object o) {
+			return o != null && objectsThatMustBeKept.ContainsKey(o);
 		}
 
 		static bool IsTypeWithInvalidBaseType(TypeDef moduleType, TypeDef type) {
@@ -233,7 +256,7 @@ namespace de4dot.code.deobfuscators {
 		void RemoveTypesWithInvalidBaseTypes() {
 			var moduleType = DotNetUtils.GetModuleType(module);
 			foreach (var type in module.GetTypes()) {
-				if (!IsTypeWithInvalidBaseType(moduleType, type))
+				if (!IsTypeWithInvalidBaseType(moduleType, type) || MustKeepObject(type))
 					continue;
 				AddTypeToBeRemoved(type, "Invalid type with no base type (anti-reflection)");
 			}
@@ -412,7 +435,7 @@ namespace de4dot.code.deobfuscators {
 			var emptyCctorsToRemove = new List<MethodDef>();
 			foreach (var type in module.GetTypes()) {
 				var cctor = type.FindStaticConstructor();
-				if (cctor != null && DotNetUtils.IsEmpty(cctor))
+				if (cctor != null && DotNetUtils.IsEmpty(cctor) && !MustKeepObject(cctor))
 					emptyCctorsToRemove.Add(cctor);
 			}
 
@@ -442,7 +465,7 @@ namespace de4dot.code.deobfuscators {
 			Logger.Instance.Indent();
 			foreach (var info in methodsToRemove) {
 				var method = info.obj;
-				if (method == null)
+				if (method == null || MustKeepObject(method))
 					continue;
 				var type = method.DeclaringType;
 				if (type == null)
@@ -465,7 +488,7 @@ namespace de4dot.code.deobfuscators {
 			Logger.Instance.Indent();
 			foreach (var info in fieldsToRemove) {
 				var field = info.obj;
-				if (field == null)
+				if (field == null || MustKeepObject(field))
 					continue;
 				var type = field.DeclaringType;
 				if (type == null)
@@ -490,7 +513,7 @@ namespace de4dot.code.deobfuscators {
 			var moduleType = DotNetUtils.GetModuleType(module);
 			foreach (var info in typesToRemove) {
 				var typeDef = info.obj;
-				if (typeDef == null || typeDef == moduleType)
+				if (typeDef == null || typeDef == moduleType || MustKeepObject(typeDef))
 					continue;
 				bool removed;
 				if (typeDef.DeclaringType != null)
@@ -566,7 +589,7 @@ namespace de4dot.code.deobfuscators {
 			Logger.Instance.Indent();
 			foreach (var info in resourcesToRemove) {
 				var resource = info.obj;
-				if (resource == null)
+				if (resource == null || MustKeepObject(resource))
 					continue;
 				if (module.Resources.Remove(resource))
 					Logger.v("Removed resource {0} (reason: {1})", Utils.ToCsharpString(resource.Name), info.reason);

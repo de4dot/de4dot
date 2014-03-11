@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2013 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -85,8 +85,8 @@ namespace AssemblyData {
 			try {
 				assembly = assemblyResolver.Load(filename);
 			}
-			catch (BadImageFormatException) {
-				throw new ApplicationException(string.Format("Could not load assembly {0}. Maybe it's 32-bit or 64-bit only?", filename));
+			catch (BadImageFormatException ex) {
+				throw new ApplicationException(string.Format("Could not load assembly {0}. Maybe it's 32-bit or 64-bit only?", filename), ex);
 			}
 		}
 	}

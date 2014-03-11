@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2013 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -31,6 +31,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 		ModuleDefMD module;
 		MethodFlags flags;
 		TypeDef delegateType;
+		bool hasDelegateTypeFlag;
 
 		[Flags]
 		enum MethodFlags {
@@ -38,6 +39,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			HasLocals = 2,
 			HasInstructions = 4,
 			HasExceptionHandlers = 8,
+			HasDelegateType = 0x10,
 		}
 
 		public TypeDef DelegateType {
@@ -60,6 +62,15 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			get { return (flags & MethodFlags.HasExceptionHandlers) != 0; }
 		}
 
+		bool HasDelegateType {
+			get { return !hasDelegateTypeFlag || (flags & MethodFlags.HasDelegateType) != 0; }
+		}
+
+		public bool HasDelegateTypeFlag {
+			get { return hasDelegateTypeFlag; }
+			set { hasDelegateTypeFlag = value; }
+		}
+
 		public MethodReader(ModuleDefMD module, byte[] data, IList<Parameter> parameters)
 			: base(MemoryImageStream.Create(data), parameters) {
 			this.module = module;
@@ -67,9 +78,11 @@ namespace de4dot.code.deobfuscators.ILProtector {
 
 		public void Read() {
 			flags = (MethodFlags)reader.ReadByte();
-			delegateType = Resolve<TypeDef>(ReadTypeToken());
-			if (!DotNetUtils.DerivesFromDelegate(delegateType))
-				throw new ApplicationException("Invalid delegate type");
+			if (HasDelegateType) {
+				delegateType = Resolve<TypeDef>(ReadTypeToken());
+				if (!DotNetUtils.DerivesFromDelegate(delegateType))
+					throw new ApplicationException("Invalid delegate type");
+			}
 			if (HasLocals)
 				ReadLocals((int)reader.Read7BitEncodedUInt32());
 			if (HasInstructions)
@@ -104,29 +117,29 @@ namespace de4dot.code.deobfuscators.ILProtector {
 
 		TypeSig ReadType() {
 			switch ((ElementType)reader.ReadByte()) {
-			case ElementType.Void: return module.CorLibTypes.Void;
-			case ElementType.Boolean: return module.CorLibTypes.Boolean;
-			case ElementType.Char: return module.CorLibTypes.Char;
-			case ElementType.I1: return module.CorLibTypes.SByte;
-			case ElementType.U1: return module.CorLibTypes.Byte;
-			case ElementType.I2: return module.CorLibTypes.Int16;
-			case ElementType.U2: return module.CorLibTypes.UInt16;
-			case ElementType.I4: return module.CorLibTypes.Int32;
-			case ElementType.U4: return module.CorLibTypes.UInt32;
-			case ElementType.I8: return module.CorLibTypes.Int64;
-			case ElementType.U8: return module.CorLibTypes.UInt64;
-			case ElementType.R4: return module.CorLibTypes.Single;
-			case ElementType.R8: return module.CorLibTypes.Double;
-			case ElementType.String: return module.CorLibTypes.String;
-			case ElementType.Ptr: return new PtrSig(ReadType());
-			case ElementType.ByRef: return new ByRefSig(ReadType());
-			case ElementType.TypedByRef: return module.CorLibTypes.TypedReference;
-			case ElementType.I: return module.CorLibTypes.IntPtr;
-			case ElementType.U: return module.CorLibTypes.UIntPtr;
-			case ElementType.Object: return module.CorLibTypes.Object;
-			case ElementType.SZArray: return new SZArraySig(ReadType());
-			case ElementType.Sentinel: ReadType(); return new SentinelSig();
-			case ElementType.Pinned: return new PinnedSig(ReadType());
+			case ElementType.Void:		return module.CorLibTypes.Void;
+			case ElementType.Boolean:	return module.CorLibTypes.Boolean;
+			case ElementType.Char:		return module.CorLibTypes.Char;
+			case ElementType.I1:		return module.CorLibTypes.SByte;
+			case ElementType.U1:		return module.CorLibTypes.Byte;
+			case ElementType.I2:		return module.CorLibTypes.Int16;
+			case ElementType.U2:		return module.CorLibTypes.UInt16;
+			case ElementType.I4:		return module.CorLibTypes.Int32;
+			case ElementType.U4:		return module.CorLibTypes.UInt32;
+			case ElementType.I8:		return module.CorLibTypes.Int64;
+			case ElementType.U8:		return module.CorLibTypes.UInt64;
+			case ElementType.R4:		return module.CorLibTypes.Single;
+			case ElementType.R8:		return module.CorLibTypes.Double;
+			case ElementType.String:	return module.CorLibTypes.String;
+			case ElementType.Ptr:		return new PtrSig(ReadType());
+			case ElementType.ByRef:		return new ByRefSig(ReadType());
+			case ElementType.TypedByRef:return module.CorLibTypes.TypedReference;
+			case ElementType.I:			return module.CorLibTypes.IntPtr;
+			case ElementType.U:			return module.CorLibTypes.UIntPtr;
+			case ElementType.Object:	return module.CorLibTypes.Object;
+			case ElementType.SZArray:	return new SZArraySig(ReadType());
+			case ElementType.Sentinel:	ReadType(); return new SentinelSig();
+			case ElementType.Pinned:	return new PinnedSig(ReadType());
 
 			case ElementType.ValueType:
 			case ElementType.Class:

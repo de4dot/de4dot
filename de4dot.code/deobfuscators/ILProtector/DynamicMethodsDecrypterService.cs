@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2013 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -26,9 +26,11 @@ using AssemblyData;
 namespace de4dot.code.deobfuscators.ILProtector {
 	sealed class DynamicMethodsDecrypterService : IUserGenericService {
 		public const int MSG_DECRYPT_METHODS = 0;
+		public const int MSG_HAS_DELEGATE_TYPE_FLAG = 1;
 
 		Module reflObfModule;
 		ModuleDefMD obfModule;
+		bool hasDelegateTypeFlag;
 
 		[CreateUserGenericService]
 		public static IUserGenericService Create() {
@@ -51,6 +53,9 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			case MSG_DECRYPT_METHODS:
 				return DecryptMethods(args[0] as IList<int>);
 
+			case MSG_HAS_DELEGATE_TYPE_FLAG:
+				return hasDelegateTypeFlag;
+
 			default:
 				throw new ApplicationException(string.Format("Invalid msg: {0:X8}", msg));
 			}
@@ -64,6 +69,8 @@ namespace de4dot.code.deobfuscators.ILProtector {
 
 				for (int i = 0; i < methodIds.Count; i += 2)
 					infos.Add(decrypter.Decrypt(methodIds[i], (uint)methodIds[i + 1]));
+
+				hasDelegateTypeFlag = decrypter.MethodReaderHasDelegateTypeFlag;
 
 				return infos;
 			}

@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2013 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -268,7 +268,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				if (!ldci4.IsLdcI4())
 					continue;
 				int loopCount = ldci4.GetLdcI4Value();
-				if (loopCount < 2 || loopCount > 3)
+				if (loopCount < 2 || loopCount > 4)
 					continue;
 				var blt = instrs[i + 1];
 				if (blt.OpCode.Code != Code.Blt && blt.OpCode.Code != Code.Blt_S && blt.OpCode.Code != Code.Clt)

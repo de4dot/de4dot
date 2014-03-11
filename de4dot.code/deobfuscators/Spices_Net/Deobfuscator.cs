@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2013 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -159,7 +159,6 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			if (options.RestoreResourceNames) {
 				resourceNamesRestorer = new ResourceNamesRestorer(module);
 				resourceNamesRestorer.Find();
-				resourceNamesRestorer.RenameResources();
 			}
 
 			stringDecrypter.Initialize();
@@ -184,6 +183,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			RemoveInlinedMethods();
 
 			if (options.RestoreResourceNames) {
+				resourceNamesRestorer.RenameResources();
 				AddTypeToBeRemoved(resourceNamesRestorer.ResourceManagerType, "Obfuscator ResourceManager type");
 				AddTypeToBeRemoved(resourceNamesRestorer.ComponentResourceManagerType, "Obfuscator ComponentResourceManager type");
 			}

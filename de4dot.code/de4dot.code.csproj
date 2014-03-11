@@ -95,12 +95,10 @@
     </Compile>
     <Compile Include="deobfuscators\Agile_NET\vm\v2\CsvmToCilMethodConverter.cs" />
     <Compile Include="deobfuscators\Agile_NET\vm\v2\HandlerTypeCode.cs" />
-    <Compile Include="deobfuscators\Agile_NET\vm\v2\MethodFinder.cs" />
-    <Compile Include="deobfuscators\Agile_NET\vm\v2\MethodSigInfoCreator.cs" />
-    <Compile Include="deobfuscators\Agile_NET\vm\v2\OpCodeHandler.cs" />
     <Compile Include="deobfuscators\Agile_NET\vm\v2\OpCodeHandlerInfo.cs" />
     <Compile Include="deobfuscators\Agile_NET\vm\v2\OpCodeHandlerInfoReader.cs" />
     <Compile Include="deobfuscators\Agile_NET\vm\v2\OpCodeHandlerInfos.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\SigCreator.cs" />
     <Compile Include="deobfuscators\Agile_NET\vm\v2\VmOpCode.cs" />
     <Compile Include="deobfuscators\Agile_NET\vm\v2\VmOpCodeHandlerDetector.cs" />
     <Compile Include="deobfuscators\Agile_NET\vm\VmOperand.cs" />
