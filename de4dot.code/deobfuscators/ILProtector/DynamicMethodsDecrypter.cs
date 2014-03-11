@@ -38,6 +38,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 		FieldInfo invokerFieldInfo;
 		ModuleDefMD moduleProtect;
 		IDecrypter decrypter;
+		bool methodReaderHasDelegateTypeFlag;
 
 		interface IDecrypter {
 			byte[] Decrypt(int methodId, uint rid);
@@ -82,6 +83,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 				{ new Version(2, 0, 9, 0),	new PatchInfo(0x00023360, new PatchData(0x000056F2, nops6)) },
 				{ new Version(2, 0, 10, 0), new PatchInfo(0x00023B30, new PatchData(0x00005B12, nops6)) },
 				{ new Version(2, 0, 11, 0), new PatchInfo(0x000207C0, new PatchData(0x00018432, nops6)) },
+				{ new Version(2, 0, 11, 1), new PatchInfo(0x000207C0, new PatchData(0x00018432, nops6)) },
 			};
 			static readonly Dictionary<Version, PatchInfo> patchInfos64 = new Dictionary<Version, PatchInfo> {
 				{ new Version(2, 0, 8, 0),	new PatchInfo(0x00026090, new PatchData(0x00005E0C, nops6)) },
@@ -89,6 +91,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 				{ new Version(2, 0, 9, 0),	new PatchInfo(0x00028B00, new PatchData(0x00005F70, nops6)) },
 				{ new Version(2, 0, 10, 0), new PatchInfo(0x00029630, new PatchData(0x00006510, nops6)) },
 				{ new Version(2, 0, 11, 0), new PatchInfo(0x000257C0, new PatchData(0x0001C9A0, nops6)) },
+				{ new Version(2, 0, 11, 1), new PatchInfo(0x000257C0, new PatchData(0x0001C9A0, nops6)) },
 			};
 
 			[DllImport("kernel32")]
@@ -267,7 +270,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			}
 		}
 
-		// 2.0.9.0 - 2.0.11.0
+		// 2.0.9.0 - 2.0.11.1
 		class DecrypterV2_0_9_0 : DecrypterBase {
 			DecryptMethod decryptMethod;
 			byte[] decryptedData;
@@ -295,6 +298,112 @@ namespace de4dot.code.deobfuscators.ILProtector {
 				Marshal.Copy(new IntPtr(pMethodCode), decryptedData, 0, decryptedData.Length);
 				return true;
 			}
+		}
+
+		abstract class DecrypterBaseV2_0_12_x : IDecrypter {
+			protected readonly DynamicMethodsDecrypter dmd;
+			protected byte[] currentILBytes;
+			byte[] decryptedData;
+			readonly Delegate invoker;
+			protected readonly IntPtr pGetILBytes;
+			protected readonly IntPtr pDecryptCallback;
+
+			protected unsafe DecrypterBaseV2_0_12_x(DynamicMethodsDecrypter dmd) {
+				this.dmd = dmd;
+				this.invoker = (Delegate)dmd.invokerFieldInfo.GetValue(null);
+
+				byte* p = (byte*)GetStateAddr(invoker.Target);
+				p += IntPtr.Size * 3;
+				p = *(byte**)p;
+				p += 8 + IntPtr.Size * 8;
+				p = *(byte**)p;
+				p += IntPtr.Size * 3;
+				p = *(byte**)p;
+				pGetILBytes = new IntPtr(p + IntPtr.Size * 39);
+				pDecryptCallback = new IntPtr(p + IntPtr.Size * 40);
+			}
+
+			IntPtr GetStateAddr(object obj) {
+				var flags = BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+				foreach (var fi in obj.GetType().GetFields(flags)) {
+					if (fi.FieldType == typeof(IntPtr))
+						return (IntPtr)fi.GetValue(obj);
+				}
+				throw new ApplicationException("Could not find an IntPtr field");
+			}
+
+			public byte[] Decrypt(int methodId, uint rid) {
+				decryptedData = null;
+				currentILBytes = dmd.reflectionModule.ResolveMethod(0x06000000 + (int)rid).GetMethodBody().GetILAsByteArray();
+
+				invoker.DynamicInvoke(new object[1] { methodId });
+				return decryptedData;
+			}
+
+			protected unsafe void SaveDecryptedData(byte* pMethodCode, int methodSize) {
+				decryptedData = new byte[methodSize];
+				Marshal.Copy(new IntPtr(pMethodCode), decryptedData, 0, decryptedData.Length);
+			}
+		}
+
+		// 2.0.12.0 - 2.0.12.2
+		class DecrypterV2_0_12_0 : DecrypterBaseV2_0_12_x {
+			readonly GetCallerMethodAsILByteArrayDelegate getCallerMethodAsILByteArrayDelegate;
+			readonly DecryptCallbackDelegate decryptCallbackDelegate;
+
+			[return: MarshalAs(UnmanagedType.SafeArray)]
+			delegate byte[] GetCallerMethodAsILByteArrayDelegate(IntPtr a, int skipFrames);
+			unsafe delegate bool DecryptCallbackDelegate(IntPtr a, byte* pMethodCode, int methodSize, int methodId);
+
+			public unsafe DecrypterV2_0_12_0(DynamicMethodsDecrypter dmd)
+				: base(dmd) {
+				getCallerMethodAsILByteArrayDelegate = GetCallerMethodAsILByteArray;
+				decryptCallbackDelegate = MyDecryptCallback;
+
+				*(IntPtr*)pGetILBytes = Marshal.GetFunctionPointerForDelegate(getCallerMethodAsILByteArrayDelegate);
+				*(IntPtr*)pDecryptCallback = Marshal.GetFunctionPointerForDelegate(decryptCallbackDelegate);
+			}
+
+			byte[] GetCallerMethodAsILByteArray(IntPtr a, int skipFrames) {
+				return currentILBytes;
+			}
+
+			unsafe bool MyDecryptCallback(IntPtr a, byte* pMethodCode, int methodSize, int methodId) {
+				SaveDecryptedData(pMethodCode, methodSize);
+				return true;
+			}
+		}
+
+		// 2.0.12.3
+		class DecrypterV2_0_12_3 : DecrypterBaseV2_0_12_x {
+			readonly GetCallerMethodAsILByteArrayDelegate getCallerMethodAsILByteArrayDelegate;
+			readonly DecryptCallbackDelegate decryptCallbackDelegate;
+
+			[return: MarshalAs(UnmanagedType.SafeArray)]
+			delegate byte[] GetCallerMethodAsILByteArrayDelegate(IntPtr a, int skipFrames, IntPtr c, IntPtr d);
+			unsafe delegate bool DecryptCallbackDelegate(IntPtr a, byte* pMethodCode, int methodSize, int methodId, IntPtr e);
+
+			public unsafe DecrypterV2_0_12_3(DynamicMethodsDecrypter dmd)
+				: base(dmd) {
+				getCallerMethodAsILByteArrayDelegate = GetCallerMethodAsILByteArray;
+				decryptCallbackDelegate = MyDecryptCallback;
+
+				*(IntPtr*)pGetILBytes = Marshal.GetFunctionPointerForDelegate(getCallerMethodAsILByteArrayDelegate);
+				*(IntPtr*)pDecryptCallback = Marshal.GetFunctionPointerForDelegate(decryptCallbackDelegate);
+			}
+
+			byte[] GetCallerMethodAsILByteArray(IntPtr a, int skipFrames, IntPtr c, IntPtr d) {
+				return currentILBytes;
+			}
+
+			unsafe bool MyDecryptCallback(IntPtr a, byte* pMethodCode, int methodSize, int methodId, IntPtr e) {
+				SaveDecryptedData(pMethodCode, methodSize);
+				return true;
+			}
+		}
+
+		public bool MethodReaderHasDelegateTypeFlag {
+			get { return methodReaderHasDelegateTypeFlag; }
 		}
 
 		public DynamicMethodsDecrypter(ModuleDefMD module, Module reflectionModule) {
@@ -336,11 +445,22 @@ namespace de4dot.code.deobfuscators.ILProtector {
 		}
 
 		IDecrypter CreateDecrypter() {
-			return CreateDecrypterV1_0_7_0() ??
-				CreateDecrypterV2_0_0_0() ??
-				CreateDecrypterV2_0_8_0() ??
-				CreateDecrypterV2_0_8_5() ??
-				CreateDecrypterV2_0_9_0();
+			var version = reflectionProtectModule.Assembly.GetName().Version;
+			if (reflectionProtectModule.Assembly.GetName().Version < new Version(2, 0, 12, 0)) {
+				return CreateDecrypterV1_0_7_0() ??
+					CreateDecrypterV2_0_0_0() ??
+					CreateDecrypterV2_0_8_0() ??
+					CreateDecrypterV2_0_8_5() ??
+					CreateDecrypterV2_0_9_0();
+			}
+
+			methodReaderHasDelegateTypeFlag = true;
+			if (version < new Version(2, 0, 12, 3))
+				return CreateDecrypterV2_0_12_0();
+			if (version < new Version(2, 0, 12, 4))
+				return CreateDecrypterV2_0_12_3();
+
+			return null;
 		}
 
 		IDecrypter CreateDecrypterV1_0_7_0() {
@@ -381,6 +501,14 @@ namespace de4dot.code.deobfuscators.ILProtector {
 				return null;
 
 			return new DecrypterV2_0_9_0(this, delegateField);
+		}
+
+		IDecrypter CreateDecrypterV2_0_12_0() {
+			return new DecrypterV2_0_12_0(this);
+		}
+
+		IDecrypter CreateDecrypterV2_0_12_3() {
+			return new DecrypterV2_0_12_3(this);
 		}
 
 		static readonly byte[] ilpPublicKeyToken = new byte[8] { 0x20, 0x12, 0xD3, 0xC0, 0x55, 0x1F, 0xE0, 0x3D };

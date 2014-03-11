@@ -42,6 +42,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 				client.GenericService.LoadUserService(typeof(DynamicMethodsDecrypterService), null);
 				client.GenericService.LoadAssembly(module.Location);
 				decryptedData = client.GenericService.SendMessage(DynamicMethodsDecrypterService.MSG_DECRYPT_METHODS, new object[] { GetMethodIds() }) as IList<DecryptedMethodInfo>;
+				MethodReaderHasDelegateTypeFlag = (bool)client.GenericService.SendMessage(DynamicMethodsDecrypterService.MSG_HAS_DELEGATE_TYPE_FLAG, new object[0]);
 			}
 
 			if (decryptedData == null)
