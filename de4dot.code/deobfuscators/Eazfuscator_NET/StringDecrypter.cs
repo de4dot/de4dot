@@ -696,8 +696,8 @@ done: ;
 			if (initValue2 == null || !initValue2.AllBitsValid())
 				return false;
 
-			int loopStart = GetIndexOfCall(instrs, index, leaveIndex, "System.Int32 System.Collections.Generic.IEnumerator`1<System.Int32>::get_Current()");
-			int loopEnd = GetIndexOfCall(instrs, loopStart, leaveIndex, "System.Boolean System.Collections.IEnumerator::MoveNext()");
+			int loopStart = GetIndexOfCall(instrs, index, leaveIndex, "System.Int32", "()");
+			int loopEnd = GetIndexOfCall(instrs, loopStart, leaveIndex, "System.Boolean", "()");
 			if (loopStart < 0 || loopEnd < 0)
 				return false;
 			loopStart++;
@@ -720,7 +720,7 @@ done: ;
 			return true;
 		}
 
-		static int GetIndexOfCall(IList<Instruction> instrs, int startIndex, int endIndex, string fullMethodName) {
+		static int GetIndexOfCall(IList<Instruction> instrs, int startIndex, int endIndex, string returnType, string parameters) {
 			if (startIndex < 0 || endIndex < 0)
 				return -1;
 			for (int i = startIndex; i < endIndex; i++) {
@@ -728,7 +728,7 @@ done: ;
 				if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt)
 					continue;
 				var method = instr.Operand as IMethod;
-				if (method == null || method.FullName != fullMethodName)
+				if (!DotNetUtils.IsMethod(method, returnType, parameters))
 					continue;
 
 				return i;

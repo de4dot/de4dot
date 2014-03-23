@@ -722,10 +722,82 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					decryptStringMethod.Body.ExceptionHandlers.Count >= 2 &&
 					new LocalTypes(decryptStringMethod).All(locals35) &&
 					CheckTypeFields2(fields35)) {
-					return "3.5 - 4.1";
+					return "3.5 - 4.2";
+				}
+
+				/////////////////////////////////////////////////////////////////
+				/////////////////////////////////////////////////////////////////
+				/////////////////////////////////////////////////////////////////
+
+				var fields43 = new string[] {
+					GetNestedTypeName(0),
+					GetNestedTypeName(1),
+					"System.Byte[]",
+					"System.Int16",
+					"System.Int32",
+					"System.Byte[]",
+					"System.Int32",
+					"System.Int32",
+					GetNestedTypeName(2),
+				};
+				var locals43 = CreateLocalsArray(
+					"System.Boolean",
+					"System.Byte",
+					"System.Byte[]",
+					"System.Char[]",
+					FindEnumeratorName(decryptStringMethod),
+					GetNestedTypeName(0),
+					"System.Diagnostics.StackFrame",
+					"System.Diagnostics.StackTrace",
+					"System.Int16",
+					"System.Int32",
+					"System.Int64",
+					"System.IO.Stream",
+					"System.Reflection.Assembly",
+					"System.Reflection.AssemblyName",
+					"System.Reflection.MethodBase",
+					"System.String",
+					"System.Text.StringBuilder",
+					"System.Type"
+				);
+				var olocals43 = CreateLocalsArray(
+					"System.Int32"
+				);
+				if (otherMethods.Count == 1 &&
+					decryptStringType.NestedTypes.Count == 3 &&
+					DotNetUtils.IsMethod(otherMethods[0], "System.Void", "(System.Byte[],System.Int32,System.Byte[])") &&
+					otherMethods[0].IsPrivate &&
+					otherMethods[0].IsStatic &&
+					new LocalTypes(otherMethods[0]).Exactly(olocals43) &&
+					decryptStringMethod.IsNoInlining &&
+					decryptStringMethod.IsAssembly &&
+					!decryptStringMethod.IsSynchronized &&
+					decryptStringMethod.Body.MaxStack >= 1 &&
+					decryptStringMethod.Body.MaxStack <= 8 &&
+					decryptStringMethod.Body.ExceptionHandlers.Count >= 2 &&
+					new LocalTypes(decryptStringMethod).All(locals43) &&
+					CheckTypeFields2(fields43)) {
+					return "4.3";
 				}
 			}
 
+			return null;
+		}
+
+		static string FindEnumeratorName(MethodDef method) {
+			foreach (var local in method.Body.Variables) {
+				var gis = local.Type as GenericInstSig;
+				if (gis == null)
+					continue;
+				if (gis.FullName == "System.Collections.Generic.IEnumerator`1<System.Int32>")
+					continue;
+				if (gis.GenericArguments.Count != 1)
+					continue;
+				if (gis.GenericArguments[0].GetFullName() != "System.Int32")
+					continue;
+
+				return gis.FullName;
+			}
 			return null;
 		}
 
