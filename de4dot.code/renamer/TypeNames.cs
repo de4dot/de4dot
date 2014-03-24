@@ -44,7 +44,7 @@ namespace de4dot.code.renamer {
 
 			string prefix = GetPrefix(typeRef);
 
-			var elementType = typeRef.ScopeType;
+			var elementType = Renamer.GetScopeType(typeRef);
 			if (elementType == null && IsFnPtrSig(typeRef))
 				return fnPtrNameCreator.Create();
 			if (IsGenericParam(elementType))
