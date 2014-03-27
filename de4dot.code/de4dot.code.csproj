@@ -66,6 +66,7 @@
     <Compile Include="deobfuscators\Agile_NET\ResourceDecrypter.cs" />
     <Compile Include="deobfuscators\Agile_NET\StackFrameHelper.cs" />
     <Compile Include="deobfuscators\Agile_NET\StringDecrypter.cs" />
+    <Compile Include="deobfuscators\Agile_NET\StringDecrypterInfo.cs" />
     <Compile Include="deobfuscators\Agile_NET\vm\CilOperandInstructionRestorer.cs" />
     <Compile Include="deobfuscators\Agile_NET\vm\CsvmDataReader.cs" />
     <Compile Include="deobfuscators\Agile_NET\vm\CsvmMethodData.cs" />

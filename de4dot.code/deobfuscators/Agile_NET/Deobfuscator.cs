@@ -180,7 +180,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			FindCliSecureAttribute();
 			cliSecureRtType = new CliSecureRtType(module);
 			cliSecureRtType.Find(ModuleBytes);
-			stringDecrypter = new StringDecrypter(module, cliSecureRtType.StringDecrypterMethod);
+			stringDecrypter = new StringDecrypter(module, cliSecureRtType.StringDecrypterInfos);
 			stringDecrypter.Find();
 			resourceDecrypter = new ResourceDecrypter(module);
 			resourceDecrypter.Find();
@@ -246,7 +246,8 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			base.DeobfuscateBegin();
 
 			cliSecureRtType.FindStringDecrypterMethod();
-			stringDecrypter.Method = cliSecureRtType.StringDecrypterMethod;
+			stringDecrypter.AddDecrypterInfos(cliSecureRtType.StringDecrypterInfos);
+			stringDecrypter.Initialize();
 
 			AddAttributesToBeRemoved(cliSecureAttributes, "Obfuscator attribute");
 
@@ -265,7 +266,8 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 
 			proxyCallFixer.Find();
 
-			staticStringInliner.Add(stringDecrypter.Method, (method, gim, args) => stringDecrypter.Decrypt((string)args[0]));
+			foreach (var info in stringDecrypter.StringDecrypterInfos)
+				staticStringInliner.Add(info.Method, (method, gim, args) => stringDecrypter.Decrypt((string)args[0]));
 			DeobfuscatedFile.StringDecryptersAdded();
 
 			if (options.DecryptMethods) {
@@ -295,6 +297,8 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 		}
 
 		public override void DeobfuscateMethodEnd(Blocks blocks) {
+			if (Operations.DecryptStrings != OpDecryptString.None)
+				stringDecrypter.Deobfuscate(blocks);
 			proxyCallFixer.Deobfuscate(blocks);
 			RemoveStackFrameHelperCode(blocks);
 			base.DeobfuscateMethodEnd(blocks);
@@ -310,8 +314,14 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			}
 			if (CanRemoveStringDecrypterType) {
 				AddTypeToBeRemoved(stringDecrypter.Type, "String decrypter type");
+				foreach (var info in stringDecrypter.StringDecrypterInfos) {
+					if (info.Method.DeclaringType != cliSecureRtType.Type)
+						AddMethodToBeRemoved(info.Method, "String decrypter method");
+					if (info.Field != null && info.Field.DeclaringType != stringDecrypter.Type)
+						AddFieldToBeRemoved(info.Field, "String decrypter field");
+				}
 				if (options.DecryptMethods)
-					AddTypeToBeRemoved(cliSecureRtType.Type, "Obfuscator type");
+					AddTypeToBeRemoved(cliSecureRtType.Type ?? stringDecrypter.KeyArrayFieldType, "Obfuscator type");
 			}
 			if (options.DecryptMethods) {
 				AddResources("Obfuscator protection files");
@@ -327,8 +337,8 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 
 		public override IEnumerable<int> GetStringDecrypterMethods() {
 			var list = new List<int>();
-			if (stringDecrypter.Method != null)
-				list.Add(stringDecrypter.Method.MDToken.ToInt32());
+			foreach (var info in stringDecrypter.StringDecrypterInfos)
+				list.Add(info.Method.MDToken.ToInt32());
 			return list;
 		}
 
