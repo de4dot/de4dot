@@ -75,6 +75,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 			ReadOpCodeHandlerInfos(CsvmResources.CSVM2),
 			ReadOpCodeHandlerInfos(CsvmResources.CSVM3),
 			ReadOpCodeHandlerInfos(CsvmResources.CSVM4),
+			ReadOpCodeHandlerInfos(CsvmResources.CSVM5),
 		};
 
 		static IList<MethodSigInfo> ReadOpCodeHandlerInfos(byte[] data) {

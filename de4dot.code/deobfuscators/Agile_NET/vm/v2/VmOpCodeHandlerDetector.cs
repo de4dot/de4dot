@@ -254,7 +254,8 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 				if (cctor == null)
 					continue;
 				requiredFields[0] = type.FullName;
-				if (!new FieldTypes(type).Exactly(requiredFields))
+				var fieldTypes = new FieldTypes(type);
+				if (!fieldTypes.All(requiredFields))
 					continue;
 
 				cflowDeobfuscator.Deobfuscate(cctor);
