@@ -80,7 +80,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		}
 
 		public int? ValidStringDecrypterValue {
-			get { return validStringDecrypterValue;}
+			get { return validStringDecrypterValue; }
 		}
 
 		public TypeDef Type {
