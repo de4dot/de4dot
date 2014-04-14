@@ -159,6 +159,8 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 					accessedArrayField |= f == keyArrayField;
 					if (f == null || f == keyArrayField || f == foundField)
 						continue;
+					if (DotNetUtils.DerivesFromDelegate(f.DeclaringType))
+						continue;
 					if (f.FieldSig.GetFieldType().GetFullName() != "System.Collections.Hashtable" ||
 						foundField != null)
 						goto exit;
