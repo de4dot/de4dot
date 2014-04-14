@@ -73,7 +73,7 @@ namespace de4dot.cui {
 
 				Logger.n("");
 				Logger.n("de4dot v{0} Copyright (C) 2011-2014 de4dot@gmail.com", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
-				Logger.n("Latest version and source code: https://bitbucket.org/0xd4d/de4dot");
+				Logger.n("Latest version and source code: https://github.com/0xd4d/de4dot");
 				Logger.n("");
 
 				var options = new FilesDeobfuscator.Options();
