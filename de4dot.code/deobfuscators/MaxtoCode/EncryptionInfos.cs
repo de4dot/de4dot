@@ -113,7 +113,9 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			// 526BC020
 			// 526BDD12
 			// 5296E242
+			// 52B2B2A3
 			// 52B3043C
+			// 53172907
 			// 531729C4
 			new EncryptionInfo {
 				MagicLo = 0x9A683B87,
@@ -181,7 +183,9 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			// 526BC020
 			// 526BDD12
 			// 5296E242
+			// 52B2B2A3
 			// 52B3043C
+			// 53172907
 			// 531729C4
 			new EncryptionInfo {
 				MagicLo = 0x1A731B13,
