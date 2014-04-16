@@ -157,7 +157,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				foreach (var method in GetDecrypterMethods(type)) {
 					if (method == null)
 						continue;
-					if (!new LocalTypes(method).Exactly(requiredLocals_sl))
+					if (!new LocalTypes(method).All(requiredLocals_sl))
 						continue;
 
 					resourceDecrypterType = type;
