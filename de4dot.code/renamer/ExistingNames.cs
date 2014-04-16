@@ -62,6 +62,8 @@ namespace de4dot.code.renamer {
 		}
 
 		public void Merge(ExistingNames other) {
+			if (this == other)
+				return;
 			foreach (var key in other.allNames.Keys)
 				allNames[key] = true;
 		}

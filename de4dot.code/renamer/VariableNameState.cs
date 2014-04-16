@@ -61,6 +61,8 @@ namespace de4dot.code.renamer {
 		}
 
 		public VariableNameState Merge(VariableNameState other) {
+			if (this == other)
+				return this;
 			existingVariableNames.Merge(other.existingVariableNames);
 			existingMethodNames.Merge(other.existingMethodNames);
 			existingPropertyNames.Merge(other.existingPropertyNames);

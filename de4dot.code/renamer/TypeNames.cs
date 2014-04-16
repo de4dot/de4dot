@@ -113,6 +113,8 @@ namespace de4dot.code.renamer {
 		protected abstract string FixName(string prefix, string name);
 
 		public virtual TypeNames Merge(TypeNames other) {
+			if (this == other)
+				return this;
 			foreach (var pair in other.typeNames) {
 				NameCreator nc;
 				if (typeNames.TryGetValue(pair.Key, out nc))
