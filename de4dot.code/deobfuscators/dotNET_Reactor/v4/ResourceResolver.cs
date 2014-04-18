@@ -70,21 +70,37 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 					if (!DotNetUtils.IsMethod(method, "System.Reflection.Assembly", "(System.Object,System.ResolveEventArgs)") &&
 						!DotNetUtils.IsMethod(method, "System.Reflection.Assembly", "(System.Object,System.Object)"))
 						continue;
-					if (!encryptedResource.CouldBeResourceDecrypter(method, additionalTypes, false))
+					var initMethod = GetResourceDecrypterInitMethod(method, additionalTypes, false);
+					if (initMethod == null)
 						continue;
 
-					encryptedResource.Method = method;
+					encryptedResource.Method = initMethod;
 					return;
 				}
 			}
 		}
 
+		MethodDef GetResourceDecrypterInitMethod(MethodDef method, string[] additionalTypes, bool checkResource) {
+			if (encryptedResource.CouldBeResourceDecrypter(method, additionalTypes, checkResource))
+				return method;
+
+			foreach (var calledMethod in DotNetUtils.GetCalledMethods(module, method)) {
+				if (!DotNetUtils.IsMethod(calledMethod, "System.Void", "()"))
+					continue;
+				if (encryptedResource.CouldBeResourceDecrypter(calledMethod, additionalTypes, checkResource))
+					return calledMethod;
+			}
+
+			return null;
+		}
+
 		bool CheckFields(IList<FieldDef> fields) {
-			if (fields.Count != 3)
+			if (fields.Count != 3 && fields.Count != 4)
 				return false;
 
+			int numBools = fields.Count == 3 ? 1 : 2;
 			var fieldTypes = new FieldTypes(fields);
-			if (fieldTypes.Count("System.Boolean") != 1)
+			if (fieldTypes.Count("System.Boolean") != numBools)
 				return false;
 			if (fieldTypes.Count("System.Object") == 2)
 				return true;
