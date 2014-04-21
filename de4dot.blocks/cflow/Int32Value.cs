@@ -556,7 +556,7 @@ namespace de4dot.blocks.cflow {
 			return new Int32Value((int)((uint)a.Value >> shift), validMask);
 		}
 
-		static Int32Value Create(Bool3 b) {
+		public static Int32Value Create(Bool3 b) {
 			switch (b) {
 			case Bool3.False:	return Zero;
 			case Bool3.True:	return One;
