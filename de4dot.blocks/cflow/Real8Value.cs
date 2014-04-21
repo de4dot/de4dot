@@ -168,6 +168,86 @@ namespace de4dot.blocks.cflow {
 			return Int64Value.CreateUnknown();
 		}
 
+		public static Int32Value Ceq(Real8Value a, Real8Value b) {
+			return Int32Value.Create(CompareEq(a, b));
+		}
+
+		public static Int32Value Cgt(Real8Value a, Real8Value b) {
+			return Int32Value.Create(CompareGt(a, b));
+		}
+
+		public static Int32Value Cgt_Un(Real8Value a, Real8Value b) {
+			return Int32Value.Create(CompareGt_Un(a, b));
+		}
+
+		public static Int32Value Clt(Real8Value a, Real8Value b) {
+			return Int32Value.Create(CompareLt(a, b));
+		}
+
+		public static Int32Value Clt_Un(Real8Value a, Real8Value b) {
+			return Int32Value.Create(CompareLt_Un(a, b));
+		}
+
+		public static Bool3 CompareEq(Real8Value a, Real8Value b) {
+			if (a.IsValid && b.IsValid)
+				return a.Value == b.Value ? Bool3.True : Bool3.False;
+			return Bool3.Unknown;
+		}
+
+		public static Bool3 CompareNeq(Real8Value a, Real8Value b) {
+			if (a.IsValid && b.IsValid)
+				return a.Value != b.Value ? Bool3.True : Bool3.False;
+			return Bool3.Unknown;
+		}
+
+		public static Bool3 CompareGt(Real8Value a, Real8Value b) {
+			if (a.IsValid && b.IsValid)
+				return a.Value > b.Value ? Bool3.True : Bool3.False;
+			return Bool3.Unknown;
+		}
+
+		public static Bool3 CompareGt_Un(Real8Value a, Real8Value b) {
+			return Bool3.Unknown;	//TODO:
+		}
+
+		public static Bool3 CompareGe(Real8Value a, Real8Value b) {
+			if (a.IsValid && b.IsValid)
+				return a.Value >= b.Value ? Bool3.True : Bool3.False;
+			return Bool3.Unknown;
+		}
+
+		public static Bool3 CompareGe_Un(Real8Value a, Real8Value b) {
+			return Bool3.Unknown;	//TODO:
+		}
+
+		public static Bool3 CompareLe(Real8Value a, Real8Value b) {
+			if (a.IsValid && b.IsValid)
+				return a.Value <= b.Value ? Bool3.True : Bool3.False;
+			return Bool3.Unknown;
+		}
+
+		public static Bool3 CompareLe_Un(Real8Value a, Real8Value b) {
+			return Bool3.Unknown;	//TODO:
+		}
+
+		public static Bool3 CompareLt(Real8Value a, Real8Value b) {
+			if (a.IsValid && b.IsValid)
+				return a.Value < b.Value ? Bool3.True : Bool3.False;
+			return Bool3.Unknown;
+		}
+
+		public static Bool3 CompareLt_Un(Real8Value a, Real8Value b) {
+			return Bool3.Unknown;	//TODO:
+		}
+
+		public static Bool3 CompareTrue(Real8Value a) {
+			return Bool3.Unknown;
+		}
+
+		public static Bool3 CompareFalse(Real8Value a) {
+			return Bool3.Unknown;
+		}
+
 		public override string ToString() {
 			if (!IsValid)
 				return "<INVALID_REAL8>";

@@ -1068,6 +1068,8 @@ namespace de4dot.blocks.cflow {
 				valueStack.Push(Int32Value.Ceq((Int32Value)val1, (Int32Value)val2));
 			else if (val1.IsInt64() && val2.IsInt64())
 				valueStack.Push(Int64Value.Ceq((Int64Value)val1, (Int64Value)val2));
+			else if (val1.IsReal8() && val2.IsReal8())
+				valueStack.Push(Real8Value.Ceq((Real8Value)val1, (Real8Value)val2));
 			else if (val1.IsNull() && val2.IsNull())
 				valueStack.Push(Int32Value.One);
 			else
@@ -1082,6 +1084,8 @@ namespace de4dot.blocks.cflow {
 				valueStack.Push(Int32Value.Cgt((Int32Value)val1, (Int32Value)val2));
 			else if (val1.IsInt64() && val2.IsInt64())
 				valueStack.Push(Int64Value.Cgt((Int64Value)val1, (Int64Value)val2));
+			else if (val1.IsReal8() && val2.IsReal8())
+				valueStack.Push(Real8Value.Cgt((Real8Value)val1, (Real8Value)val2));
 			else
 				valueStack.Push(Int32Value.CreateUnknownBool());
 		}
@@ -1094,6 +1098,8 @@ namespace de4dot.blocks.cflow {
 				valueStack.Push(Int32Value.Cgt_Un((Int32Value)val1, (Int32Value)val2));
 			else if (val1.IsInt64() && val2.IsInt64())
 				valueStack.Push(Int64Value.Cgt_Un((Int64Value)val1, (Int64Value)val2));
+			else if (val1.IsReal8() && val2.IsReal8())
+				valueStack.Push(Real8Value.Cgt_Un((Real8Value)val1, (Real8Value)val2));
 			else
 				valueStack.Push(Int32Value.CreateUnknownBool());
 		}
@@ -1106,6 +1112,8 @@ namespace de4dot.blocks.cflow {
 				valueStack.Push(Int32Value.Clt((Int32Value)val1, (Int32Value)val2));
 			else if (val1.IsInt64() && val2.IsInt64())
 				valueStack.Push(Int64Value.Clt((Int64Value)val1, (Int64Value)val2));
+			else if (val1.IsReal8() && val2.IsReal8())
+				valueStack.Push(Real8Value.Clt((Real8Value)val1, (Real8Value)val2));
 			else
 				valueStack.Push(Int32Value.CreateUnknownBool());
 		}
@@ -1118,6 +1126,8 @@ namespace de4dot.blocks.cflow {
 				valueStack.Push(Int32Value.Clt_Un((Int32Value)val1, (Int32Value)val2));
 			else if (val1.IsInt64() && val2.IsInt64())
 				valueStack.Push(Int64Value.Clt_Un((Int64Value)val1, (Int64Value)val2));
+			else if (val1.IsReal8() && val2.IsReal8())
+				valueStack.Push(Real8Value.Clt_Un((Real8Value)val1, (Real8Value)val2));
 			else
 				valueStack.Push(Int32Value.CreateUnknownBool());
 		}
