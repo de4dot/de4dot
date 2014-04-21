@@ -433,9 +433,9 @@ namespace de4dot.blocks.cflow {
 
 			case Code.Unbox:
 
-			case Code.Conv_R_Un:
-			case Code.Conv_R4:
-			case Code.Conv_R8:
+			case Code.Conv_R_Un:Emulate_Conv_R_Un(instr); break;
+			case Code.Conv_R4:	Emulate_Conv_R4(instr); break;
+			case Code.Conv_R8:	Emulate_Conv_R8(instr); break;
 
 			case Code.Arglist:
 			case Code.Beq:
@@ -783,6 +783,36 @@ namespace de4dot.blocks.cflow {
 			case ValueType.Int64:	valueStack.Push(Int64Value.Conv_Ovf_U8_Un((Int64Value)val1)); break;
 			case ValueType.Real8:	valueStack.Push(Real8Value.Conv_Ovf_U8_Un((Real8Value)val1)); break;
 			default:				valueStack.Push(Int64Value.CreateUnknown()); break;
+			}
+		}
+
+		void Emulate_Conv_R_Un(Instruction instr) {
+			var val1 = valueStack.Pop();
+			switch (val1.valueType) {
+			case ValueType.Int32:	valueStack.Push(Int32Value.Conv_R_Un((Int32Value)val1)); break;
+			case ValueType.Int64:	valueStack.Push(Int64Value.Conv_R_Un((Int64Value)val1)); break;
+			case ValueType.Real8:	valueStack.Push(Real8Value.Conv_R_Un((Real8Value)val1)); break;
+			default:				valueStack.Push(Real8Value.CreateUnknown()); break;
+			}
+		}
+
+		void Emulate_Conv_R4(Instruction instr) {
+			var val1 = valueStack.Pop();
+			switch (val1.valueType) {
+			case ValueType.Int32:	valueStack.Push(Int32Value.Conv_R4((Int32Value)val1)); break;
+			case ValueType.Int64:	valueStack.Push(Int64Value.Conv_R4((Int64Value)val1)); break;
+			case ValueType.Real8:	valueStack.Push(Real8Value.Conv_R4((Real8Value)val1)); break;
+			default:				valueStack.Push(Real8Value.CreateUnknown()); break;
+			}
+		}
+
+		void Emulate_Conv_R8(Instruction instr) {
+			var val1 = valueStack.Pop();
+			switch (val1.valueType) {
+			case ValueType.Int32:	valueStack.Push(Int32Value.Conv_R8((Int32Value)val1)); break;
+			case ValueType.Int64:	valueStack.Push(Int64Value.Conv_R8((Int64Value)val1)); break;
+			case ValueType.Real8:	valueStack.Push(Real8Value.Conv_R8((Real8Value)val1)); break;
+			default:				valueStack.Push(Real8Value.CreateUnknown()); break;
 			}
 		}
 

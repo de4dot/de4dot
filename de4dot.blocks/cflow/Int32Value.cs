@@ -331,6 +331,24 @@ namespace de4dot.blocks.cflow {
 			return new Int64Value((long)(uint)a.Value, a.ValidMask | (Int64Value.NO_UNKNOWN_BITS << 32));
 		}
 
+		public static Real8Value Conv_R_Un(Int32Value a) {
+			if (a.AllBitsValid())
+				return new Real8Value((float)(uint)a.Value);
+			return Real8Value.CreateUnknown();
+		}
+
+		public static Real8Value Conv_R4(Int32Value a) {
+			if (a.AllBitsValid())
+				return new Real8Value((float)(int)a.Value);
+			return Real8Value.CreateUnknown();
+		}
+
+		public static Real8Value Conv_R8(Int32Value a) {
+			if (a.AllBitsValid())
+				return new Real8Value((double)(int)a.Value);
+			return Real8Value.CreateUnknown();
+		}
+
 		public static Int32Value Add(Int32Value a, Int32Value b) {
 			if (a.AllBitsValid() && b.AllBitsValid())
 				return new Int32Value(a.Value + b.Value);

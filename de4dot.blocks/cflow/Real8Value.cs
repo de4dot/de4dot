@@ -168,6 +168,20 @@ namespace de4dot.blocks.cflow {
 			return Int64Value.CreateUnknown();
 		}
 
+		public static Real8Value Conv_R_Un(Real8Value a) {
+			return CreateUnknown();
+		}
+
+		public static Real8Value Conv_R4(Real8Value a) {
+			if (a.IsValid)
+				return new Real8Value((float)a.Value);
+			return CreateUnknown();
+		}
+
+		public static Real8Value Conv_R8(Real8Value a) {
+			return a;
+		}
+
 		public static Int32Value Ceq(Real8Value a, Real8Value b) {
 			return Int32Value.Create(CompareEq(a, b));
 		}
