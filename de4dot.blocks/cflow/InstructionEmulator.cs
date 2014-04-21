@@ -52,8 +52,12 @@ namespace de4dot.blocks.cflow {
 		}
 
 		public void Initialize(MethodDef method, bool emulateFromFirstInstruction) {
-			this.parameterDefs = method.Parameters;
-			this.localDefs = method.Body.Variables;
+			Initialize(method, method.Parameters, method.Body.Variables, method.Body.InitLocals, emulateFromFirstInstruction);
+		}
+
+		public void Initialize(MethodDef method, IList<Parameter> methodParameters, IList<Local> methodLocals, bool initLocals, bool emulateFromFirstInstruction) {
+			this.parameterDefs = methodParameters;
+			this.localDefs = methodLocals;
 			valueStack.Initialize();
 			protectedStackValues.Clear();
 
@@ -75,7 +79,7 @@ namespace de4dot.blocks.cflow {
 			args.Clear();
 			args.AddRange(cached_args);
 			locals.Clear();
-			locals.AddRange(method.Body.InitLocals && emulateFromFirstInstruction ? cached_zeroed_locals : cached_locals);
+			locals.AddRange(initLocals && emulateFromFirstInstruction ? cached_zeroed_locals : cached_locals);
 		}
 
 		public void SetProtected(Value value) {
