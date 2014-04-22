@@ -333,6 +333,9 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				break;
 			}
 
+			if (methodsDecrypter.DecrypterTypeVersion != DnrDecrypterType.V1)
+				return DeobfuscatorInfo.THE_NAME;
+
 			if (methodsDecrypter.Method == null) {
 				if (minVer >= 3800)
 					return DeobfuscatorInfo.THE_NAME + " >= 3.8";

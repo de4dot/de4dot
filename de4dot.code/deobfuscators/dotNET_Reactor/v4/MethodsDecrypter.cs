@@ -57,6 +57,10 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			get { return encryptedResource.Resource; }
 		}
 
+		public DnrDecrypterType DecrypterTypeVersion {
+			get { return encryptedResource.GuessDecrypterType(); }
+		}
+
 		public MethodsDecrypter(ModuleDefMD module) {
 			this.module = module;
 			this.encryptedResource = new EncryptedResource(module);
@@ -301,10 +305,10 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				if (instructions[i].OpCode.Code != Code.Ldind_I8)
 					continue;
 				var ldci4 = instructions[i + 1];
-				if (!ldci4.IsLdcI4())
-					continue;
-
-				return ldci4.GetLdcI4Value();
+				if (ldci4.IsLdcI4())
+					return ldci4.GetLdcI4Value();
+				if (ldci4.OpCode.Code == Code.Ldc_I8)
+					return (long)ldci4.Operand;
 			}
 			return 0;
 		}
