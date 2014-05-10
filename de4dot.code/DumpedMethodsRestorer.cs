@@ -61,13 +61,13 @@ namespace de4dot.code {
 			return false;
 		}
 
-		public bool GetMethodBody(uint rid, RVA rva, IList<Parameter> parameters, out MethodBody methodBody) {
+		public bool GetMethodBody(uint rid, RVA rva, IList<Parameter> parameters, GenericParamContext gpContext, out MethodBody methodBody) {
 			var dm = GetDumpedMethod(rid);
 			if (dm == null) {
 				methodBody = null;
 				return false;
 			}
-			methodBody = MethodBodyReader.CreateCilBody(module, dm.code, dm.extraSections, parameters, dm.mhFlags, dm.mhMaxStack, dm.mhCodeSize, dm.mhLocalVarSigTok);
+			methodBody = MethodBodyReader.CreateCilBody(module, dm.code, dm.extraSections, parameters, dm.mhFlags, dm.mhMaxStack, dm.mhCodeSize, dm.mhLocalVarSigTok, gpContext);
 			return true;
 		}
 	}

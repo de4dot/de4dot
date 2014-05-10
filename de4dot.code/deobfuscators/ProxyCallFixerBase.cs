@@ -155,14 +155,15 @@ namespace de4dot.code.deobfuscators {
 			});
 		}
 
-		protected static bool FixProxyCalls(Dictionary<Block, List<RemoveInfo>> removeInfos) {
+		protected bool FixProxyCalls(MethodDef method, Dictionary<Block, List<RemoveInfo>> removeInfos) {
+			var gpContext = GenericParamContext.Create(method);
 			foreach (var block in removeInfos.Keys) {
 				var list = removeInfos[block];
 				var removeIndexes = new List<int>(list.Count);
 				foreach (var info in list) {
 					if (info.IsCall) {
 						var opcode = info.DelegateInfo.callOpcode;
-						var newInstr = Instruction.Create(opcode, info.DelegateInfo.methodRef);
+						var newInstr = Instruction.Create(opcode, ReResolve(info.DelegateInfo.methodRef, gpContext));
 						block.Replace(info.Index, 1, newInstr);
 					}
 					else
@@ -173,6 +174,12 @@ namespace de4dot.code.deobfuscators {
 			}
 
 			return removeInfos.Count > 0;
+		}
+
+		IMethod ReResolve(IMethod method, GenericParamContext gpContext) {
+			if (method.IsMethodSpec || method.IsMemberRef)
+				method = module.ResolveToken(method.MDToken.Raw, gpContext) as IMethod ?? method;
+			return method;
 		}
 	}
 
@@ -279,7 +286,7 @@ namespace de4dot.code.deobfuscators {
 				}
 			}
 
-			return FixProxyCalls(removeInfos);
+			return FixProxyCalls(blocks.Method, removeInfos);
 		}
 
 		protected virtual BlockInstr FindProxyCall(DelegateInfo di, Block block, int index) {
@@ -481,7 +488,7 @@ namespace de4dot.code.deobfuscators {
 				}
 			}
 
-			return FixProxyCalls(removeInfos);
+			return FixProxyCalls(blocks.Method, removeInfos);
 		}
 	}
 

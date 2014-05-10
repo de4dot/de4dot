@@ -28,6 +28,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 	class MethodBodyReader : MethodBodyReaderBase {
 		ModuleDefMD module;
 		ushort maxStackSize;
+		GenericParamContext gpContext;
 
 		public MethodBodyReader(ModuleDefMD module, IBinaryReader reader)
 			: base(reader) {
@@ -35,6 +36,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		}
 
 		public void Read(MethodDef method) {
+			this.gpContext = GenericParamContext.Create(method);
 			this.parameters = method.Parameters;
 			SetLocals(GetLocals(method));
 
@@ -58,15 +60,15 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		}
 
 		protected override IField ReadInlineField(Instruction instr) {
-			return module.ResolveToken(reader.ReadUInt32()) as IField;
+			return module.ResolveToken(reader.ReadUInt32(), gpContext) as IField;
 		}
 
 		protected override IMethod ReadInlineMethod(Instruction instr) {
-			return module.ResolveToken(reader.ReadUInt32()) as IMethod;
+			return module.ResolveToken(reader.ReadUInt32(), gpContext) as IMethod;
 		}
 
 		protected override MethodSig ReadInlineSig(Instruction instr) {
-			var sas = module.ResolveStandAloneSig(MDToken.ToRID(reader.ReadUInt32()));
+			var sas = module.ResolveStandAloneSig(MDToken.ToRID(reader.ReadUInt32()), gpContext);
 			return sas == null ? null : sas.MethodSig;
 		}
 
@@ -75,11 +77,11 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		}
 
 		protected override ITokenOperand ReadInlineTok(Instruction instr) {
-			return module.ResolveToken(reader.ReadUInt32()) as ITokenOperand;
+			return module.ResolveToken(reader.ReadUInt32(), gpContext) as ITokenOperand;
 		}
 
 		protected override ITypeDefOrRef ReadInlineType(Instruction instr) {
-			return module.ResolveToken(reader.ReadUInt32()) as ITypeDefOrRef;
+			return module.ResolveToken(reader.ReadUInt32(), gpContext) as ITypeDefOrRef;
 		}
 
 		void ReadExceptionHandlers(int numExceptionHandlers) {
@@ -101,7 +103,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 
 			switch (eh.HandlerType) {
 			case ExceptionHandlerType.Catch:
-				eh.CatchType = module.ResolveToken(reader.ReadUInt32()) as ITypeDefOrRef;
+				eh.CatchType = module.ResolveToken(reader.ReadUInt32(), gpContext) as ITypeDefOrRef;
 				break;
 
 			case ExceptionHandlerType.Filter:

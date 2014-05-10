@@ -32,6 +32,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 		MethodFlags flags;
 		TypeDef delegateType;
 		bool hasDelegateTypeFlag;
+		GenericParamContext gpContext;
 
 		[Flags]
 		enum MethodFlags {
@@ -76,7 +77,8 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			this.module = module;
 		}
 
-		public void Read() {
+		public void Read(MethodDef method) {
+			gpContext = GenericParamContext.Create(method);
 			flags = (MethodFlags)reader.ReadByte();
 			if (HasDelegateType) {
 				delegateType = Resolve<TypeDef>(ReadTypeToken());
@@ -108,7 +110,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 		}
 
 		T Resolve<T>(int token) {
-			return (T)module.ResolveToken(token);
+			return (T)module.ResolveToken(token, gpContext);
 		}
 
 		int ReadTypeToken() {
@@ -182,7 +184,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			var token = reader.ReadUInt32();
 			if (MDToken.ToTable(token) != Table.StandAloneSig)
 				return null;
-			var sas = module.ResolveStandAloneSig(MDToken.ToRID(token));
+			var sas = module.ResolveStandAloneSig(MDToken.ToRID(token), gpContext);
 			return sas == null ? null : sas.MethodSig;
 		}
 
