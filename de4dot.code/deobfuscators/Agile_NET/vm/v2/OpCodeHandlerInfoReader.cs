@@ -27,9 +27,11 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 	class OpCodeHandlerInfoReader {
 		IInstructionOperandResolver resolver;
 		Dictionary<HandlerTypeCode, Func<BinaryReader, Instruction>> readHandlers;
+		readonly GenericParamContext gpContext;
 
-		public OpCodeHandlerInfoReader(IInstructionOperandResolver resolver) {
+		public OpCodeHandlerInfoReader(IInstructionOperandResolver resolver, GenericParamContext gpContext) {
 			this.resolver = resolver;
+			this.gpContext = gpContext;
 			this.readHandlers = new Dictionary<HandlerTypeCode, Func<BinaryReader, Instruction>> {
 				{ HandlerTypeCode.Add,			Handler_Add },
 				{ HandlerTypeCode.Add_Ovf,		Handler_Add_Ovf },
@@ -176,7 +178,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 		}
 
 		Instruction Handler_Box(BinaryReader reader) {
-			var type = resolver.ResolveToken(reader.ReadUInt32()) as ITypeDefOrRef;
+			var type = resolver.ResolveToken(reader.ReadUInt32(), gpContext) as ITypeDefOrRef;
 			return OpCodes.Box.ToInstruction(type);
 		}
 
@@ -193,17 +195,17 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 		}
 
 		Instruction Handler_Call(BinaryReader reader) {
-			var method = resolver.ResolveToken(reader.ReadUInt32()) as IMethod;
+			var method = resolver.ResolveToken(reader.ReadUInt32(), gpContext) as IMethod;
 			return OpCodes.Call.ToInstruction(method);
 		}
 
 		Instruction Handler_Callvirt(BinaryReader reader) {
-			var method = resolver.ResolveToken(reader.ReadUInt32()) as IMethod;
+			var method = resolver.ResolveToken(reader.ReadUInt32(), gpContext) as IMethod;
 			return OpCodes.Callvirt.ToInstruction(method);
 		}
 
 		Instruction Handler_Castclass(BinaryReader reader) {
-			var type = resolver.ResolveToken(reader.ReadUInt32()) as ITypeDefOrRef;
+			var type = resolver.ResolveToken(reader.ReadUInt32(), gpContext) as ITypeDefOrRef;
 			return OpCodes.Castclass.ToInstruction(type);
 		}
 
@@ -312,12 +314,12 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 		}
 
 		Instruction Handler_Initobj(BinaryReader reader) {
-			var type = resolver.ResolveToken(reader.ReadUInt32()) as ITypeDefOrRef;
+			var type = resolver.ResolveToken(reader.ReadUInt32(), gpContext) as ITypeDefOrRef;
 			return OpCodes.Initobj.ToInstruction(type);
 		}
 
 		Instruction Handler_Isinst(BinaryReader reader) {
-			var type = resolver.ResolveToken(reader.ReadUInt32()) as ITypeDefOrRef;
+			var type = resolver.ResolveToken(reader.ReadUInt32(), gpContext) as ITypeDefOrRef;
 			return OpCodes.Isinst.ToInstruction(type);
 		}
 
@@ -349,17 +351,17 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 		}
 
 		Instruction Handler_Ldfld_Ldsfld(BinaryReader reader) {
-			var field = resolver.ResolveToken(reader.ReadUInt32()) as IField;
+			var field = resolver.ResolveToken(reader.ReadUInt32(), gpContext) as IField;
 			return new Instruction(null, new FieldInstructionOperand(OpCodes.Ldsfld, OpCodes.Ldfld, field));
 		}
 
 		Instruction Handler_Ldflda_Ldsflda(BinaryReader reader) {
-			var field = resolver.ResolveToken(reader.ReadUInt32()) as IField;
+			var field = resolver.ResolveToken(reader.ReadUInt32(), gpContext) as IField;
 			return new Instruction(null, new FieldInstructionOperand(OpCodes.Ldsflda, OpCodes.Ldflda, field));
 		}
 
 		Instruction Handler_Ldftn(BinaryReader reader) {
-			var method = resolver.ResolveToken(reader.ReadUInt32()) as IMethod;
+			var method = resolver.ResolveToken(reader.ReadUInt32(), gpContext) as IMethod;
 			return OpCodes.Ldftn.ToInstruction(method);
 		}
 
@@ -384,12 +386,12 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 		}
 
 		Instruction Handler_Ldtoken(BinaryReader reader) {
-			var member = resolver.ResolveToken(reader.ReadUInt32()) as ITokenOperand;
+			var member = resolver.ResolveToken(reader.ReadUInt32(), gpContext) as ITokenOperand;
 			return OpCodes.Ldtoken.ToInstruction(member);
 		}
 
 		Instruction Handler_Ldvirtftn(BinaryReader reader) {
-			var method = resolver.ResolveToken(reader.ReadUInt32()) as IMethod;
+			var method = resolver.ResolveToken(reader.ReadUInt32(), gpContext) as IMethod;
 			reader.ReadUInt32();
 			return OpCodes.Ldvirtftn.ToInstruction(method);
 		}
@@ -415,12 +417,12 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 		}
 
 		Instruction Handler_Newarr(BinaryReader reader) {
-			var type = resolver.ResolveToken(reader.ReadUInt32()) as ITypeDefOrRef;
+			var type = resolver.ResolveToken(reader.ReadUInt32(), gpContext) as ITypeDefOrRef;
 			return OpCodes.Newarr.ToInstruction(type);
 		}
 
 		Instruction Handler_Newobj(BinaryReader reader) {
-			var method = resolver.ResolveToken(reader.ReadUInt32()) as IMethod;
+			var method = resolver.ResolveToken(reader.ReadUInt32(), gpContext) as IMethod;
 			return OpCodes.Newobj.ToInstruction(method);
 		}
 
@@ -449,7 +451,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 		}
 
 		Instruction Handler_Ret(BinaryReader reader) {
-			var method = resolver.ResolveToken(reader.ReadUInt32()) as IMethod;
+			var method = resolver.ResolveToken(reader.ReadUInt32(), gpContext) as IMethod;
 			return OpCodes.Ret.ToInstruction();
 		}
 
@@ -478,7 +480,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 		}
 
 		Instruction Handler_Stfld_Stsfld(BinaryReader reader) {
-			var field = resolver.ResolveToken(reader.ReadUInt32()) as IField;
+			var field = resolver.ResolveToken(reader.ReadUInt32(), gpContext) as IField;
 			return new Instruction(null, new FieldInstructionOperand(OpCodes.Stsfld, OpCodes.Stfld, field));
 		}
 
@@ -517,7 +519,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 		}
 
 		Instruction Handler_Unbox_Any(BinaryReader reader) {
-			var type = resolver.ResolveToken(reader.ReadUInt32()) as ITypeDefOrRef;
+			var type = resolver.ResolveToken(reader.ReadUInt32(), gpContext) as ITypeDefOrRef;
 			return OpCodes.Unbox_Any.ToInstruction(type);
 		}
 

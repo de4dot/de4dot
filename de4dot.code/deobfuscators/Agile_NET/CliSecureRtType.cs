@@ -29,7 +29,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 		TypeDef cliSecureRtType;
 		MethodDef postInitializeMethod;
 		MethodDef initializeMethod;
-		MethodDef stringDecrypterMethod;
+		Dictionary<StringDecrypterInfo, bool> stringDecrypterInfos = new Dictionary<StringDecrypterInfo, bool>();
 		MethodDef loadMethod;
 		bool foundSig;
 
@@ -41,8 +41,8 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			get { return cliSecureRtType; }
 		}
 
-		public MethodDef StringDecrypterMethod {
-			get { return stringDecrypterMethod; }
+		public IEnumerable<StringDecrypterInfo> StringDecrypterInfos {
+			get { return stringDecrypterInfos.Keys; }
 		}
 
 		public MethodDef PostInitializeMethod {
@@ -66,7 +66,11 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			cliSecureRtType = Lookup(oldOne.cliSecureRtType, "Could not find CliSecureRt type");
 			postInitializeMethod = Lookup(oldOne.postInitializeMethod, "Could not find postInitializeMethod method");
 			initializeMethod = Lookup(oldOne.initializeMethod, "Could not find initializeMethod method");
-			stringDecrypterMethod = Lookup(oldOne.stringDecrypterMethod, "Could not find stringDecrypterMethod method");
+			foreach (var info in oldOne.stringDecrypterInfos.Keys) {
+				var m = Lookup(info.Method, "Could not find string decrypter method");
+				var f = Lookup(info.Field, "Could not find string decrypter field");
+				stringDecrypterInfos[new StringDecrypterInfo(m, f)] = true;
+			}
 			loadMethod = Lookup(oldOne.loadMethod, "Could not find loadMethod method");
 			foundSig = oldOne.foundSig;
 		}
@@ -100,16 +104,25 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 					if (!HasInitializeMethod(type, "_Initialize") && !HasInitializeMethod(type, "_Initialize64"))
 						continue;
 
-					stringDecrypterMethod = FindStringDecrypterMethod(type);
 					initializeMethod = calledMethod;
 					postInitializeMethod = FindMethod(type, "System.Void", "PostInitialize", "()");
 					loadMethod = FindMethod(type, "System.IntPtr", "Load", "()");
 					cliSecureRtType = type;
+					FindStringDecrypters();
 					return true;
 				}
 			}
 
 			return false;
+		}
+
+		void FindStringDecrypters() {
+			AddStringDecrypterMethod(FindStringDecrypterMethod(cliSecureRtType));
+		}
+
+		void AddStringDecrypterMethod(MethodDef method) {
+			if (method != null)
+				stringDecrypterInfos[new StringDecrypterInfo(method)] = true;
 		}
 
 		static string[] requiredFields6 = new string[] {
@@ -134,7 +147,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 				if (cs == null)
 					continue;
 
-				stringDecrypterMethod = cs;
+				AddStringDecrypterMethod(cs);
 				cliSecureRtType = type;
 				return true;
 			}
@@ -208,7 +221,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 					continue;
 
 				cliSecureRtType = type;
-				stringDecrypterMethod = cs;
+				AddStringDecrypterMethod(cs);
 				return;
 			}
 		}

@@ -76,6 +76,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			if (type == null)
 				return;
 
+			var gpContext = GenericParamContext.Create(blocks.Method);
 			foreach (var block in blocks.MethodBlocks.GetAllBlocks()) {
 				var instrs = block.Instructions;
 				for (int i = 0; i < instrs.Count - 1; i++) {
@@ -98,7 +99,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 
 					uint token = (uint)(int)instrs[i].Operand;
 					instrs[i] = new Instr(OpCodes.Nop.ToInstruction());
-					instrs[i + 1] = new Instr(new Instruction(OpCodes.Ldtoken, module.ResolveToken(token) as ITokenOperand));
+					instrs[i + 1] = new Instr(new Instruction(OpCodes.Ldtoken, module.ResolveToken(token, gpContext) as ITokenOperand));
 				}
 			}
 		}

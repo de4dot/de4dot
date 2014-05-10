@@ -157,7 +157,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				foreach (var method in GetDecrypterMethods(type)) {
 					if (method == null)
 						continue;
-					if (!new LocalTypes(method).Exactly(requiredLocals_sl))
+					if (!new LocalTypes(method).All(requiredLocals_sl))
 						continue;
 
 					resourceDecrypterType = type;
@@ -180,6 +180,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		}
 
 		static bool CheckFlipBits(MethodDef method) {
+			int nots = 0;
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 1; i++) {
 				var ldloc = instrs[i];
@@ -189,14 +190,11 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				if (local == null || local.Type.GetElementType().GetPrimitiveSize() < 0)
 					continue;
 
-				var not = instrs[i + 1];
-				if (not.OpCode.Code != Code.Not)
-					continue;
-
-				return true;
+				if (instrs[i + 1].OpCode.Code == Code.Not)
+					nots++;
 			}
 
-			return false;
+			return (nots & 1) == 1;
 		}
 
 		bool UpdateFlags(MethodDef method, ISimpleDeobfuscator simpleDeobfuscator) {

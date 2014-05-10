@@ -17,6 +17,7 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Collections.Generic;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
@@ -83,12 +84,40 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			return true;
 		}
 
-		public void RenameResources() {
-			if (resourceManagerType == null && componentResourceManagerType == null)
-				return;
+		class ResourceDictionary {
+			struct Key {
+				public readonly uint hash;
+				public readonly string ns;
+				public Key(uint hash, string ns) {
+					this.hash = hash;
+					this.ns = ns;
+				}
 
-			var numToResource = new Dictionary<uint, Resource>(module.Resources.Count);
-			foreach (var resource in module.Resources) {
+				public override int GetHashCode() {
+					return (int)(hash ^ ns.GetHashCode());
+				}
+
+				public override bool Equals(object obj) {
+					if (!(obj is Key))
+						return false;
+					var other = (Key)obj;
+					return hash == other.hash &&
+						ns == other.ns;
+				}
+
+				public override string ToString() {
+					if (ns == string.Empty)
+						return string.Format("{0}", hash);
+					return string.Format("{0}.{1}", ns, hash);
+				}
+			}
+			Dictionary<Key, Resource> resources = new Dictionary<Key, Resource>();
+
+			public int Count {
+				get { return resources.Count; }
+			}
+
+			public bool Add(Resource resource) {
 				var name = resource.Name.String;
 				int index = name.LastIndexOf('.');
 				string ext;
@@ -98,35 +127,55 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 					ext = name.Substring(index + 1);
 				uint extNum;
 				if (!uint.TryParse(ext, out extNum))
-					continue;
-				numToResource[extNum] = resource;
+					return false;
+				var ns = index < 0 ? string.Empty : name.Substring(0, index);
+
+				resources.Add(new Key(extNum, ns), resource);
+				return true;
 			}
 
+			public Resource GetAndRemove(uint hash, string ns) {
+				var key = new Key(hash, ns);
+				Resource resource;
+				if (resources.TryGetValue(key, out resource))
+					resources.Remove(key);
+				return resource;
+			}
+		}
+
+		public void RenameResources() {
+			if (resourceManagerType == null && componentResourceManagerType == null)
+				return;
+
+			var rsrcDict = new ResourceDictionary();
+			foreach (var resource in module.Resources)
+				rsrcDict.Add(resource);
+
 			if (module.Assembly != null)
-				Rename(numToResource, "", module.Assembly.Name + ".g");
+				Rename(rsrcDict, "", module.Assembly.Name + ".g");
 
 			foreach (var type in callsResourceManager.Keys)
-				Rename(numToResource, type);
+				Rename(rsrcDict, type);
 
-			if (numToResource.Count != 0) {
+			if (rsrcDict.Count != 0) {
 				foreach (var type in module.GetTypes()) {
-					if (numToResource.Count == 0)
+					if (rsrcDict.Count == 0)
 						break;
 					if (!IsWinFormType(type))
 						continue;
-					Rename(numToResource, type);
+					Rename(rsrcDict, type);
 				}
 			}
 
-			if (numToResource.Count != 0) {
+			if (rsrcDict.Count != 0) {
 				foreach (var type in module.GetTypes()) {
-					if (numToResource.Count == 0)
+					if (rsrcDict.Count == 0)
 						break;
-					Rename(numToResource, type);
+					Rename(rsrcDict, type);
 				}
 			}
 
-			if (numToResource.Count != 0)
+			if (rsrcDict.Count != 0)
 				Logger.e("Couldn't restore all renamed resource names");
 		}
 
@@ -151,18 +200,17 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			return false;
 		}
 
-		static bool Rename(Dictionary<uint, Resource> numToResource, TypeDef type) {
-			return Rename(numToResource, "", type.FullName) ||
-					Rename(numToResource, "", type.FullName + ".g") ||
-					Rename(numToResource, type.Namespace, type.Name) ||
-					Rename(numToResource, type.Namespace, type.Name + ".g");
+		static bool Rename(ResourceDictionary rsrcDict, TypeDef type) {
+			if (!IsWinFormType(type) && Rename(rsrcDict, "", type.FullName))
+				return true;
+			return Rename(rsrcDict, type.Namespace, type.Name);
 		}
 
-		static bool Rename(Dictionary<uint, Resource> numToResource, string ns, string name) {
+		static bool Rename(ResourceDictionary rsrcDict, string ns, string name) {
 			var resourceName = name + ".resources";
 			uint hash = GetResourceHash(resourceName);
-			Resource resource;
-			if (!numToResource.TryGetValue(hash, out resource))
+			var resource = rsrcDict.GetAndRemove(hash, ns);
+			if (resource == null)
 				return false;
 
 			int index = resource.Name.String.LastIndexOf('.');
@@ -176,13 +224,12 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 				newName = resourceNamespace + "." + resourceName;
 			}
 			if (resourceNamespace != ns)
-				return false;
+				throw new ApplicationException("Invalid resource namespace");
 
 			Logger.v("Restoring resource name: '{0}' => '{1}'",
 								Utils.RemoveNewlines(resource.Name),
 								Utils.RemoveNewlines(newName));
 			resource.Name = newName;
-			numToResource.Remove(hash);
 			return true;
 		}
 

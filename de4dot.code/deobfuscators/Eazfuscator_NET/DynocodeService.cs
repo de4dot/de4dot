@@ -31,8 +31,10 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		public const int MSG_CALL_MOVE_NEXT = 4;
 
 		Module reflObfModule;
-		IEnumerable<int> ienumerable = null;
-		IEnumerator<int> ienumerator = null;
+		object ienumerable = null;
+		object ienumerator = null;
+		MethodInfo mi_get_Current;
+		MethodInfo mi_MoveNext;
 
 		[CreateUserGenericService]
 		public static IUserGenericService Create() {
@@ -72,7 +74,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			var ctor = reflObfModule.ResolveMethod((int)ctorToken) as ConstructorInfo;
 			if (ctor == null)
 				throw new ApplicationException(string.Format("Invalid ctor with token: {0:X8}", ctorToken));
-			ienumerable = (IEnumerable<int>)ctor.Invoke(args);
+			ienumerable = ctor.Invoke(args);
 		}
 
 		void WriteEnumerableField(uint fieldToken, object value) {
@@ -83,15 +85,74 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		}
 
 		void CreateEnumerator() {
-			ienumerator = ienumerable.GetEnumerator();
+			foreach (var method in ienumerable.GetType().GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)) {
+				if (method.GetParameters().Length != 0)
+					continue;
+				var retType = method.ReturnType;
+				if (!retType.IsGenericType)
+					continue;
+				var genArgs = retType.GetGenericArguments();
+				if (genArgs.Length != 1)
+					continue;
+				if (genArgs[0] != typeof(int))
+					continue;
+				if (!FindEnumeratorMethods(retType))
+					continue;
+
+				ienumerator = method.Invoke(ienumerable, null);
+				return;
+			}
+
+			throw new ApplicationException("No GetEnumerator() method found");
+		}
+
+		bool FindEnumeratorMethods(Type type) {
+			mi_get_Current = null;
+			mi_MoveNext = null;
+
+			foreach (var method in ienumerable.GetType().GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)) {
+				if (Is_get_Current(method)) {
+					if (mi_get_Current != null)
+						return false;
+					mi_get_Current = method;
+					continue;
+				}
+
+				if (Is_MoveNext(method)) {
+					if (mi_MoveNext != null)
+						return false;
+					mi_MoveNext = method;
+					continue;
+				}
+			}
+
+			return mi_get_Current != null && mi_MoveNext != null;
+		}
+
+		static bool Is_get_Current(MethodInfo method) {
+			if (method.GetParameters().Length != 0)
+				return false;
+			if (method.ReturnType != typeof(int))
+				return false;
+
+			return true;
+		}
+
+		static bool Is_MoveNext(MethodInfo method) {
+			if (method.GetParameters().Length != 0)
+				return false;
+			if (method.ReturnType != typeof(bool))
+				return false;
+
+			return true;
 		}
 
 		int CallGetCurrent() {
-			return ienumerator.Current;
+			return (int)mi_get_Current.Invoke(ienumerator, null);
 		}
 
 		bool CallMoveNext() {
-			return ienumerator.MoveNext();
+			return (bool)mi_MoveNext.Invoke(ienumerator, null);
 		}
 
 		public void Dispose() {

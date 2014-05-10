@@ -17,6 +17,8 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
+using System.Runtime.Remoting;
 using dnlib.DotNet;
 using AssemblyData;
 using de4dot.code.AssemblyClient;
@@ -30,6 +32,20 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		public static DumpedMethods Decrypt(ServerClrVersion serverVersion, string filename, byte[] moduleCctorBytes) {
+			Exception lastEx = null;
+			for (int i = 0; i < 5; i++) {
+				try {
+					return Decrypt2(serverVersion, filename, moduleCctorBytes);
+				}
+				catch (RemotingException ex) {
+					lastEx = ex;
+					continue;
+				}
+			}
+			throw lastEx;
+		}
+
+		static DumpedMethods Decrypt2(ServerClrVersion serverVersion, string filename, byte[] moduleCctorBytes) {
 			using (var client = new NewProcessAssemblyClientFactory(serverVersion).Create(AssemblyServiceType.MethodDecrypter)) {
 				client.Connect();
 				client.WaitConnected();

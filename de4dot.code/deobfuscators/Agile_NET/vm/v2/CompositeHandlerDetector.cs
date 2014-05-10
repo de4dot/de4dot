@@ -53,10 +53,10 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 			public readonly int BlockIndex;
 			public int HashIndex;
 
-			public HandlerState(List<BlockSigInfo> blockSigInfos, int blockIndex, int instructionIndex) {
+			public HandlerState(List<BlockSigInfo> blockSigInfos, int blockIndex, int hashIndex) {
 				this.BlockSigInfos = blockSigInfos;
 				this.BlockIndex = blockIndex;
-				this.HashIndex = instructionIndex;
+				this.HashIndex = hashIndex;
 			}
 
 			public HandlerState Clone() {
@@ -164,6 +164,8 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 				}
 			}
 
+			if (nextState == null && findState.VisitedCompositeBlocks.Count != findState.CompositeState.BlockSigInfos.Count)
+				nextState = GetNextHandlerState(ref findState);
 			if (nextState == null) {
 				if (findState.VisitedCompositeBlocks.Count != findState.CompositeState.BlockSigInfos.Count)
 					return false;
@@ -179,6 +181,16 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 					findState.VisitedCompositeBlocks.Remove(findState.CompositeState.BlockIndex);
 				return true;
 			}
+		}
+
+		static HandlerState? GetNextHandlerState(ref FindHandlerState findState) {
+			for (int i = 0; i < findState.CompositeState.BlockSigInfos.Count; i++) {
+				if (findState.VisitedCompositeBlocks.ContainsKey(i))
+					continue;
+				return new HandlerState(findState.CompositeState.BlockSigInfos, i, 0);
+			}
+
+			return null;
 		}
 
 		static bool Compare(ref HandlerState handler, ref HandlerState composite) {

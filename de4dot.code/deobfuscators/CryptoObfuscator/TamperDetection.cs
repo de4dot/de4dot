@@ -84,7 +84,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 
 			if (!method.IsStatic || !DotNetUtils.IsMethod(method, "System.Void", "()"))
 				return false;
-			if (type.Methods.Count < 3 || type.Methods.Count > 27)
+			if (type.Methods.Count < 3 || type.Methods.Count > 31)
 				return false;
 			if (DotNetUtils.GetPInvokeMethod(type, "mscoree", "StrongNameSignatureVerificationEx") != null) {
 			}

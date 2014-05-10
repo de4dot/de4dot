@@ -285,7 +285,42 @@ namespace de4dot.code.renamer.asmmodules {
 		void Add(DeclSecurity decl) {
 			if (decl == null)
 				return;
+			Add(decl.SecurityAttributes);
 			Add(decl.CustomAttributes);
+		}
+
+		void Add(IEnumerable<SecurityAttribute> secAttrs) {
+			if (secAttrs == null)
+				return;
+			foreach (var secAttr in secAttrs)
+				Add(secAttr);
+		}
+
+		void Add(SecurityAttribute secAttr) {
+			if (secAttr == null)
+				return;
+			Add(secAttr.AttributeType);
+			Add(secAttr.NamedArguments);
+		}
+
+		void Add(ITypeDefOrRef tdr) {
+			var td = tdr as TypeDef;
+			if (td != null) {
+				Add(td);
+				return;
+			}
+
+			var tr = tdr as TypeRef;
+			if (tr != null) {
+				Add(tr);
+				return;
+			}
+
+			var ts = tdr as TypeSpec;
+			if (ts != null) {
+				Add(ts);
+				return;
+			}
 		}
 
 		void Add(IEnumerable<EventDef> eds) {
@@ -326,6 +361,7 @@ namespace de4dot.code.renamer.asmmodules {
 			Add(fd.CustomAttributes);
 			Add(fd.Signature);
 			Add(fd.DeclaringType);
+			Add(fd.MarshalType);
 		}
 
 		void Add(IEnumerable<GenericParam> gps) {
@@ -489,6 +525,22 @@ namespace de4dot.code.renamer.asmmodules {
 				return;
 			Add(pd.DeclaringMethod);
 			Add(pd.CustomAttributes);
+			Add(pd.MarshalType);
+		}
+
+		void Add(MarshalType mt) {
+			if (mt == null)
+				return;
+
+			switch (mt.NativeType) {
+			case NativeType.SafeArray:
+				Add(((SafeArrayMarshalType)mt).UserDefinedSubType);
+				break;
+
+			case NativeType.CustomMarshaler:
+				Add(((CustomMarshalType)mt).CustomMarshaler);
+				break;
+			}
 		}
 
 		void Add(IEnumerable<MethodOverride> mos) {

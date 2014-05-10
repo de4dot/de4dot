@@ -28,7 +28,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 		MethodDef strongNameCheckMethod;
 
 		public bool Detected {
-			get { return strongNameType != null;}
+			get { return strongNameType != null; }
 		}
 
 		public TypeDef Type {

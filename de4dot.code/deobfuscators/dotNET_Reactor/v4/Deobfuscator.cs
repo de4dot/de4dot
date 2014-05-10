@@ -333,6 +333,9 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				break;
 			}
 
+			if (methodsDecrypter.DecrypterTypeVersion != DnrDecrypterType.V1)
+				return DeobfuscatorInfo.THE_NAME;
+
 			if (methodsDecrypter.Method == null) {
 				if (minVer >= 3800)
 					return DeobfuscatorInfo.THE_NAME + " >= 3.8";
@@ -361,6 +364,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			bool compileMethodHasConstant_0x70000000 = DeobUtils.HasInteger(compileMethod, 0x70000000);	// 4.0-4.1
 			DeobfuscatedFile.Deobfuscate(methodsDecrypter.Method);
 			bool hasCorEnableProfilingString = FindString(methodsDecrypter.Method, "Cor_Enable_Profiling");	// 4.1-4.4
+			bool hasCatchString = FindString(methodsDecrypter.Method, "catch: ");	// <= 4.7
 
 			if (compileMethodHasConstant_0x70000000) {
 				if (hasCorEnableProfilingString)
@@ -368,7 +372,6 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				return DeobfuscatorInfo.THE_NAME + " 4.0";
 			}
 			if (!hasCorEnableProfilingString) {
-				// 4.x or 4.5 - 4.6
 				bool callsReverse = DotNetUtils.CallsMethod(methodsDecrypter.Method, "System.Void System.Array::Reverse(System.Array)");
 				if (!callsReverse)
 					return DeobfuscatorInfo.THE_NAME + " 4.0 - 4.4";
@@ -382,7 +385,9 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 					case 10:
 						if (!hasSymmetricAlgorithm)
 							return DeobfuscatorInfo.THE_NAME + " 4.6";
-						return DeobfuscatorInfo.THE_NAME + " 4.7";
+						if (hasCatchString)
+							return DeobfuscatorInfo.THE_NAME + " 4.7";
+						return DeobfuscatorInfo.THE_NAME + " 4.8";
 					}
 				}
 				else {
@@ -392,7 +397,9 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 					case 9:
 						if (!hasSymmetricAlgorithm)
 							return DeobfuscatorInfo.THE_NAME + " 4.6";
-						return DeobfuscatorInfo.THE_NAME + " 4.7";
+						if (hasCatchString)
+							return DeobfuscatorInfo.THE_NAME + " 4.7";
+						return DeobfuscatorInfo.THE_NAME + " 4.8";
 					}
 				}
 

@@ -33,11 +33,13 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 		public MyDeobfuscator(ModuleDefMD module) {
 			cliSecureRtType = new CliSecureRtType(module);
 			cliSecureRtType.Find(null);
-			stringDecrypter = new StringDecrypter(module, cliSecureRtType.StringDecrypterMethod);
+			stringDecrypter = new StringDecrypter(module, cliSecureRtType.StringDecrypterInfos);
 			stringDecrypter.Find();
 			cliSecureRtType.FindStringDecrypterMethod();
-			stringDecrypter.Method = cliSecureRtType.StringDecrypterMethod;
-			staticStringInliner.Add(stringDecrypter.Method, (method, gim, args) => stringDecrypter.Decrypt((string)args[0]));
+			stringDecrypter.AddDecrypterInfos(cliSecureRtType.StringDecrypterInfos);
+			stringDecrypter.Initialize();
+			foreach (var info in stringDecrypter.StringDecrypterInfos)
+				staticStringInliner.Add(info.Method, (method, gim, args) => stringDecrypter.Decrypt((string)args[0]));
 		}
 
 		void RestoreMethod(Blocks blocks) {
@@ -252,7 +254,8 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 				if (cctor == null)
 					continue;
 				requiredFields[0] = type.FullName;
-				if (!new FieldTypes(type).Exactly(requiredFields))
+				var fieldTypes = new FieldTypes(type);
+				if (!fieldTypes.All(requiredFields))
 					continue;
 
 				cflowDeobfuscator.Deobfuscate(cctor);

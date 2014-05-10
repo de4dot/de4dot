@@ -52,8 +52,12 @@ namespace de4dot.blocks.cflow {
 		}
 
 		public void Initialize(MethodDef method, bool emulateFromFirstInstruction) {
-			this.parameterDefs = method.Parameters;
-			this.localDefs = method.Body.Variables;
+			Initialize(method, method.Parameters, method.Body.Variables, method.Body.InitLocals, emulateFromFirstInstruction);
+		}
+
+		public void Initialize(MethodDef method, IList<Parameter> methodParameters, IList<Local> methodLocals, bool initLocals, bool emulateFromFirstInstruction) {
+			this.parameterDefs = methodParameters;
+			this.localDefs = methodLocals;
 			valueStack.Initialize();
 			protectedStackValues.Clear();
 
@@ -75,7 +79,7 @@ namespace de4dot.blocks.cflow {
 			args.Clear();
 			args.AddRange(cached_args);
 			locals.Clear();
-			locals.AddRange(method.Body.InitLocals && emulateFromFirstInstruction ? cached_zeroed_locals : cached_locals);
+			locals.AddRange(initLocals && emulateFromFirstInstruction ? cached_zeroed_locals : cached_locals);
 		}
 
 		public void SetProtected(Value value) {
@@ -429,9 +433,9 @@ namespace de4dot.blocks.cflow {
 
 			case Code.Unbox:
 
-			case Code.Conv_R_Un:
-			case Code.Conv_R4:
-			case Code.Conv_R8:
+			case Code.Conv_R_Un:Emulate_Conv_R_Un(instr); break;
+			case Code.Conv_R4:	Emulate_Conv_R4(instr); break;
+			case Code.Conv_R8:	Emulate_Conv_R8(instr); break;
 
 			case Code.Arglist:
 			case Code.Beq:
@@ -782,6 +786,36 @@ namespace de4dot.blocks.cflow {
 			}
 		}
 
+		void Emulate_Conv_R_Un(Instruction instr) {
+			var val1 = valueStack.Pop();
+			switch (val1.valueType) {
+			case ValueType.Int32:	valueStack.Push(Int32Value.Conv_R_Un((Int32Value)val1)); break;
+			case ValueType.Int64:	valueStack.Push(Int64Value.Conv_R_Un((Int64Value)val1)); break;
+			case ValueType.Real8:	valueStack.Push(Real8Value.Conv_R_Un((Real8Value)val1)); break;
+			default:				valueStack.Push(Real8Value.CreateUnknown()); break;
+			}
+		}
+
+		void Emulate_Conv_R4(Instruction instr) {
+			var val1 = valueStack.Pop();
+			switch (val1.valueType) {
+			case ValueType.Int32:	valueStack.Push(Int32Value.Conv_R4((Int32Value)val1)); break;
+			case ValueType.Int64:	valueStack.Push(Int64Value.Conv_R4((Int64Value)val1)); break;
+			case ValueType.Real8:	valueStack.Push(Real8Value.Conv_R4((Real8Value)val1)); break;
+			default:				valueStack.Push(Real8Value.CreateUnknown()); break;
+			}
+		}
+
+		void Emulate_Conv_R8(Instruction instr) {
+			var val1 = valueStack.Pop();
+			switch (val1.valueType) {
+			case ValueType.Int32:	valueStack.Push(Int32Value.Conv_R8((Int32Value)val1)); break;
+			case ValueType.Int64:	valueStack.Push(Int64Value.Conv_R8((Int64Value)val1)); break;
+			case ValueType.Real8:	valueStack.Push(Real8Value.Conv_R8((Real8Value)val1)); break;
+			default:				valueStack.Push(Real8Value.CreateUnknown()); break;
+			}
+		}
+
 		void Emulate_Add(Instruction instr) {
 			var val2 = valueStack.Pop();
 			var val1 = valueStack.Pop();
@@ -1064,6 +1098,8 @@ namespace de4dot.blocks.cflow {
 				valueStack.Push(Int32Value.Ceq((Int32Value)val1, (Int32Value)val2));
 			else if (val1.IsInt64() && val2.IsInt64())
 				valueStack.Push(Int64Value.Ceq((Int64Value)val1, (Int64Value)val2));
+			else if (val1.IsReal8() && val2.IsReal8())
+				valueStack.Push(Real8Value.Ceq((Real8Value)val1, (Real8Value)val2));
 			else if (val1.IsNull() && val2.IsNull())
 				valueStack.Push(Int32Value.One);
 			else
@@ -1078,6 +1114,8 @@ namespace de4dot.blocks.cflow {
 				valueStack.Push(Int32Value.Cgt((Int32Value)val1, (Int32Value)val2));
 			else if (val1.IsInt64() && val2.IsInt64())
 				valueStack.Push(Int64Value.Cgt((Int64Value)val1, (Int64Value)val2));
+			else if (val1.IsReal8() && val2.IsReal8())
+				valueStack.Push(Real8Value.Cgt((Real8Value)val1, (Real8Value)val2));
 			else
 				valueStack.Push(Int32Value.CreateUnknownBool());
 		}
@@ -1090,6 +1128,8 @@ namespace de4dot.blocks.cflow {
 				valueStack.Push(Int32Value.Cgt_Un((Int32Value)val1, (Int32Value)val2));
 			else if (val1.IsInt64() && val2.IsInt64())
 				valueStack.Push(Int64Value.Cgt_Un((Int64Value)val1, (Int64Value)val2));
+			else if (val1.IsReal8() && val2.IsReal8())
+				valueStack.Push(Real8Value.Cgt_Un((Real8Value)val1, (Real8Value)val2));
 			else
 				valueStack.Push(Int32Value.CreateUnknownBool());
 		}
@@ -1102,6 +1142,8 @@ namespace de4dot.blocks.cflow {
 				valueStack.Push(Int32Value.Clt((Int32Value)val1, (Int32Value)val2));
 			else if (val1.IsInt64() && val2.IsInt64())
 				valueStack.Push(Int64Value.Clt((Int64Value)val1, (Int64Value)val2));
+			else if (val1.IsReal8() && val2.IsReal8())
+				valueStack.Push(Real8Value.Clt((Real8Value)val1, (Real8Value)val2));
 			else
 				valueStack.Push(Int32Value.CreateUnknownBool());
 		}
@@ -1114,6 +1156,8 @@ namespace de4dot.blocks.cflow {
 				valueStack.Push(Int32Value.Clt_Un((Int32Value)val1, (Int32Value)val2));
 			else if (val1.IsInt64() && val2.IsInt64())
 				valueStack.Push(Int64Value.Clt_Un((Int64Value)val1, (Int64Value)val2));
+			else if (val1.IsReal8() && val2.IsReal8())
+				valueStack.Push(Real8Value.Clt_Un((Real8Value)val1, (Real8Value)val2));
 			else
 				valueStack.Push(Int32Value.CreateUnknownBool());
 		}

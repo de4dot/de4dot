@@ -174,9 +174,9 @@ namespace de4dot.blocks {
 		public static bool IsPinvokeMethod(MethodDef method, string dll, string funcName) {
 			if (method == null)
 				return false;
-			if (method.ImplMap == null || method.ImplMap.Name.String != funcName)
+			if (method.ImplMap == null)
 				return false;
-			return GetDllName(dll).Equals(GetDllName(method.ImplMap.Module.Name.String), StringComparison.OrdinalIgnoreCase);
+			return method.ImplMap.IsPinvokeMethod(dll, funcName);
 		}
 
 		public static MethodDef GetMethod(ModuleDefMD module, IMethod method) {

@@ -35,7 +35,8 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 		protected override List<Instruction> ReadInstructions(MethodDef cilMethod, CsvmMethodData csvmMethod) {
 			var reader = new BinaryReader(new MemoryStream(csvmMethod.Instructions));
 			var instrs = new List<Instruction>();
-			var handlerInfoReader = new OpCodeHandlerInfoReader(module);
+			var gpContext = GenericParamContext.Create(cilMethod);
+			var handlerInfoReader = new OpCodeHandlerInfoReader(module, gpContext);
 
 			int numVmInstrs = reader.ReadInt32();
 			var vmInstrs = new ushort[numVmInstrs];

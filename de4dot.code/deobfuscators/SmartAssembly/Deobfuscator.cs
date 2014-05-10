@@ -239,7 +239,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 
 				var attrs2 = new Dictionary<TypeDef, bool>();
 				foreach (var cattr in cattrs) {
-					if (!DotNetUtils.IsMethod(cattr.Constructor as IMethod, "System.Void", "(System.Int32)"))
+					if (!DotNetUtils.IsMethod(cattr.Constructor, "System.Void", "(System.Int32)"))
 						continue;
 					var attrType = cattr.AttributeType as TypeDef;
 					if (attrType == null)

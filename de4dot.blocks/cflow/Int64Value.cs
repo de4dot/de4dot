@@ -224,6 +224,24 @@ namespace de4dot.blocks.cflow {
 			return a;
 		}
 
+		public static Real8Value Conv_R_Un(Int64Value a) {
+			if (a.AllBitsValid())
+				return new Real8Value((float)(ulong)a.Value);
+			return Real8Value.CreateUnknown();
+		}
+
+		public static Real8Value Conv_R4(Int64Value a) {
+			if (a.AllBitsValid())
+				return new Real8Value((float)(long)a.Value);
+			return Real8Value.CreateUnknown();
+		}
+
+		public static Real8Value Conv_R8(Int64Value a) {
+			if (a.AllBitsValid())
+				return new Real8Value((double)(long)a.Value);
+			return Real8Value.CreateUnknown();
+		}
+
 		public static Int64Value Add(Int64Value a, Int64Value b) {
 			if (a.AllBitsValid() && b.AllBitsValid())
 				return new Int64Value(a.Value + b.Value);
@@ -449,32 +467,24 @@ namespace de4dot.blocks.cflow {
 			return new Int64Value((long)((ulong)a.Value >> shift), validMask);
 		}
 
-		static Int32Value Create(Bool3 b) {
-			switch (b) {
-			case Bool3.False:	return Int32Value.Zero;
-			case Bool3.True:	return Int32Value.One;
-			default:			return Int32Value.CreateUnknownBool();
-			}
-		}
-
 		public static Int32Value Ceq(Int64Value a, Int64Value b) {
-			return Create(CompareEq(a, b));
+			return Int32Value.Create(CompareEq(a, b));
 		}
 
 		public static Int32Value Cgt(Int64Value a, Int64Value b) {
-			return Create(CompareGt(a, b));
+			return Int32Value.Create(CompareGt(a, b));
 		}
 
 		public static Int32Value Cgt_Un(Int64Value a, Int64Value b) {
-			return Create(CompareGt_Un(a, b));
+			return Int32Value.Create(CompareGt_Un(a, b));
 		}
 
 		public static Int32Value Clt(Int64Value a, Int64Value b) {
-			return Create(CompareLt(a, b));
+			return Int32Value.Create(CompareLt(a, b));
 		}
 
 		public static Int32Value Clt_Un(Int64Value a, Int64Value b) {
-			return Create(CompareLt_Un(a, b));
+			return Int32Value.Create(CompareLt_Un(a, b));
 		}
 
 		public static Bool3 CompareEq(Int64Value a, Int64Value b) {

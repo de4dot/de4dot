@@ -232,13 +232,14 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			if (numLocals < 0)
 				throw new ApplicationException("Invalid number of locals");
 
+			var gpContext = GenericParamContext.Create(cilMethod);
 			for (int i = 0; i < numLocals; i++)
-				locals.Add(new Local(ReadTypeRef(reader)));
+				locals.Add(new Local(ReadTypeRef(reader, gpContext)));
 
 			return locals;
 		}
 
-		TypeSig ReadTypeRef(BinaryReader reader) {
+		TypeSig ReadTypeRef(BinaryReader reader, GenericParamContext gpContext) {
 			var etype = (ElementType)reader.ReadInt32();
 			switch (etype) {
 			case ElementType.Void: return module.CorLibTypes.Void;
@@ -263,12 +264,12 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			case ElementType.ValueType:
 			case ElementType.Var:
 			case ElementType.MVar:
-				return (module.ResolveToken(reader.ReadUInt32()) as ITypeDefOrRef).ToTypeSig();
+				return (module.ResolveToken(reader.ReadUInt32(), gpContext) as ITypeDefOrRef).ToTypeSig();
 
 			case ElementType.GenericInst:
 				etype = (ElementType)reader.ReadInt32();
 				if (etype == ElementType.ValueType)
-					return (module.ResolveToken(reader.ReadUInt32()) as ITypeDefOrRef).ToTypeSig();
+					return (module.ResolveToken(reader.ReadUInt32(), gpContext) as ITypeDefOrRef).ToTypeSig();
 				// ElementType.Class
 				return module.CorLibTypes.Object;
 
@@ -299,6 +300,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			if (numExceptions < 0)
 				throw new ApplicationException("Invalid number of exception handlers");
 
+			var gpContext = GenericParamContext.Create(cilMethod);
 			for (int i = 0; i < numExceptions; i++) {
 				var eh = new ExceptionHandler((ExceptionHandlerType)reader.ReadInt32());
 				eh.TryStart = GetInstruction(reader.ReadInt32());
@@ -306,7 +308,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 				eh.HandlerStart = GetInstruction(reader.ReadInt32());
 				eh.HandlerEnd = GetInstructionEnd(reader.ReadInt32());
 				if (eh.HandlerType == ExceptionHandlerType.Catch)
-					eh.CatchType = module.ResolveToken(reader.ReadUInt32()) as ITypeDefOrRef;
+					eh.CatchType = module.ResolveToken(reader.ReadUInt32(), gpContext) as ITypeDefOrRef;
 				else if (eh.HandlerType == ExceptionHandlerType.Filter)
 					eh.FilterStart = GetInstruction(reader.ReadInt32());
 

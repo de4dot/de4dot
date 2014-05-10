@@ -57,7 +57,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 		}
 
 		public TypeDef DelegateInitType {
-			get { return delegateInitType ?? FindDelegateInitType();}
+			get { return delegateInitType ?? FindDelegateInitType(); }
 		}
 
 		public TypeDef DelegateType {

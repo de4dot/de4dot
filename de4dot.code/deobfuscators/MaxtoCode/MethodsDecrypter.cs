@@ -194,6 +194,10 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 					decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt4_v5, Decrypt2_v2, Decrypt3_v6, Decrypt1_v9, Decrypt6, Decrypt8_v8, Decrypt9_v9, Decrypt7, Decrypt5 }, new uint[] { 0x513D4492, 0x5113E277 }));
 					decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt3_v6, Decrypt2_v2, Decrypt4_v8, Decrypt1_v10, Decrypt8_v9, Decrypt9_v10, Decrypt6, Decrypt7, Decrypt5 }, new uint[] { 0x526BDD12 }));
 					decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt1_v10, Decrypt4_v8, Decrypt2_v2, Decrypt3_v6, Decrypt6, Decrypt8_v9, Decrypt9_v10, Decrypt7, Decrypt5 }, new uint[] { 0x526BC020 }));
+					decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt3_v7, Decrypt2_v6, Decrypt4_v9, Decrypt1_v11, Decrypt8_v10, Decrypt11_v1, Decrypt6, Decrypt7, Decrypt5 }, new uint[] { 0x5296E242, 0x52B3043C }));
+					decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt4_v10, Decrypt1_v12, Decrypt3_v8, Decrypt2_v7, Decrypt6, Decrypt8_v11, Decrypt9_v11, Decrypt7, Decrypt5 }, new uint[] { 0x531729C4 }));
+					decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt1_v13, Decrypt4_v11, Decrypt2_v8, Decrypt3_v9, Decrypt6, Decrypt8_v11, Decrypt9_v12, Decrypt7, Decrypt5 }, new uint[] { 0x52B2B2A3 }));
+					decrypters.Add(new Decrypter(new DecryptFunc[] { Decrypt2_v9, Decrypt3_v10, Decrypt1_v10, Decrypt4_v12, Decrypt8_v12, Decrypt9_v13, Decrypt6, Decrypt7, Decrypt5 }, new uint[] { 0x53172907 }));
 					break;
 
 				case EncryptionVersion.Unknown:
@@ -404,6 +408,18 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				return Decrypt1(encrypted, 0x11, 0x11, 0x400);
 			}
 
+			byte[] Decrypt1_v11(byte[] encrypted) {
+				return Decrypt1(encrypted, 0x13, 0x13, 0x400);
+			}
+
+			byte[] Decrypt1_v12(byte[] encrypted) {
+				return Decrypt1(encrypted, 0x12, 0x12, 0x200);
+			}
+
+			byte[] Decrypt1_v13(byte[] encrypted) {
+				return Decrypt1(encrypted, 0x11, 0x11, 0x200);
+			}
+
 			byte[] Decrypt1(byte[] encrypted, int keyStart, int keyReset, int keyEnd) {
 				var decrypted = new byte[encrypted.Length];
 				for (int i = 0, ki = keyStart; i < decrypted.Length; i++) {
@@ -432,6 +448,22 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 
 			byte[] Decrypt2_v5(byte[] encrypted) {
 				return Decrypt2(encrypted, 0x00FA + 0x63);
+			}
+
+			byte[] Decrypt2_v6(byte[] encrypted) {
+				return Decrypt2(encrypted, 0x00FA + 0x0B);
+			}
+
+			byte[] Decrypt2_v7(byte[] encrypted) {
+				return Decrypt2(encrypted, 0x00FA + 0x0E);
+			}
+
+			byte[] Decrypt2_v8(byte[] encrypted) {
+				return Decrypt2(encrypted, 0x00FA + 0x0D);
+			}
+
+			byte[] Decrypt2_v9(byte[] encrypted) {
+				return Decrypt2(encrypted, 0x00FA + 0x0C);
 			}
 
 			byte[] Decrypt2(byte[] encrypted, int offset) {
@@ -479,6 +511,22 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 
 			byte[] Decrypt3_v6(byte[] encrypted) {
 				return Decrypt3(encrypted, 0x015E + 0x7F);
+			}
+
+			byte[] Decrypt3_v7(byte[] encrypted) {
+				return Decrypt3(encrypted, 0x015E + 0x0D);
+			}
+
+			byte[] Decrypt3_v8(byte[] encrypted) {
+				return Decrypt3(encrypted, 0x015E + 0x0F);
+			}
+
+			byte[] Decrypt3_v9(byte[] encrypted) {
+				return Decrypt3(encrypted, 0x015E + 0x12);
+			}
+
+			byte[] Decrypt3_v10(byte[] encrypted) {
+				return Decrypt3(encrypted, 0x015E + 0x0E);
 			}
 
 			static readonly byte[] decrypt3Shifts = new byte[16] { 5, 11, 14, 21, 6, 20, 17, 29, 4, 10, 3, 2, 7, 1, 26, 18 };
@@ -542,6 +590,22 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				return Decrypt4(encrypted, 9, 9, 0x100);
 			}
 
+			byte[] Decrypt4_v9(byte[] encrypted) {
+				return Decrypt4(encrypted, 0x0B, 0x0B, 0x150);
+			}
+
+			byte[] Decrypt4_v10(byte[] encrypted) {
+				return Decrypt4(encrypted, 0x10, 0x10, 0x120);
+			}
+
+			byte[] Decrypt4_v11(byte[] encrypted) {
+				return Decrypt4(encrypted, 0x0F, 0x0E, 0x120);
+			}
+
+			byte[] Decrypt4_v12(byte[] encrypted) {
+				return Decrypt4(encrypted, 0x0C, 0x0C, 0x150);
+			}
+
 			byte[] Decrypt4(byte[] encrypted, int keyStart, int keyReset, int keyEnd) {
 				var decrypted = new byte[encrypted.Length / 3 * 2 + 1];
 
@@ -599,6 +663,18 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				return Decrypt8(encrypted, 0xA, 0xA, 0x600);
 			}
 
+			byte[] Decrypt8_v10(byte[] encrypted) {
+				return Decrypt8(encrypted, 0x14, 0x14, 0x600);
+			}
+
+			byte[] Decrypt8_v11(byte[] encrypted) {
+				return Decrypt8(encrypted, 0x19, 0x19, 0x500);
+			}
+
+			byte[] Decrypt8_v12(byte[] encrypted) {
+				return Decrypt8(encrypted, 0x14, 0x14, 0x600);
+			}
+
 			byte[] Decrypt8(byte[] encrypted, int keyStart, int keyReset, int keyEnd) {
 				var decrypted = new byte[encrypted.Length];
 				int ki = keyStart;
@@ -633,6 +709,18 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			}
 
 			byte[] Decrypt9_v10(byte[] encrypted) {
+				return Decrypt9(encrypted, 5, 5, 0x510);
+			}
+
+			byte[] Decrypt9_v11(byte[] encrypted) {
+				return Decrypt9(encrypted, 0x19, 0x19, 0x500);
+			}
+
+			byte[] Decrypt9_v12(byte[] encrypted) {
+				return Decrypt9(encrypted, 0x19, 0x19, 0x500);
+			}
+
+			byte[] Decrypt9_v13(byte[] encrypted) {
 				return Decrypt9(encrypted, 5, 5, 0x510);
 			}
 
@@ -691,6 +779,38 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 
 				for (int i = enc.Length - 2; i >= halfSize; i--)
 					dest[i] = (byte)(enc[i] ^ dest[i + 1]);
+
+				return dest;
+			}
+
+			byte[] Decrypt11_v1(byte[] encrypted) {
+				return Decrypt11(encrypted, 5, 5, 0x510);
+			}
+
+			byte[] Decrypt11(byte[] encrypted, int keyStart, int keyReset, int keyEnd) {
+				byte[] dest = new byte[encrypted.Length];
+
+				for (int i = 0, ki = keyStart; i < encrypted.Length; i++, ki++) {
+					if (ki >= keyEnd)
+						ki = keyStart;
+
+					byte b;
+					switch (i % 3) {
+					case 0:
+						dest[i] = (byte)(encrypted[i] ^ mcKey.ReadByte(ki));
+						break;
+
+					case 1:
+						b = (byte)(encrypted[i] ^ mcKey.ReadByte(ki));
+						dest[i] = (byte)((b << 4) | (b >> 4));
+						break;
+
+					case 2:
+						b = encrypted[i];
+						dest[i] = (byte)((b << 4) | (b >> 4));
+						break;
+					}
+				}
 
 				return dest;
 			}

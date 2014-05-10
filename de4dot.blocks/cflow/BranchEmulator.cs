@@ -95,6 +95,8 @@ namespace de4dot.blocks.cflow {
 				return EmulateBranch(2, Int32Value.CompareEq((Int32Value)val1, (Int32Value)val2));
 			else if (val1.IsInt64() && val2.IsInt64())
 				return EmulateBranch(2, Int64Value.CompareEq((Int64Value)val1, (Int64Value)val2));
+			else if (val1.IsReal8() && val2.IsReal8())
+				return EmulateBranch(2, Real8Value.CompareEq((Real8Value)val1, (Real8Value)val2));
 			else if (val1.IsNull() && val2.IsNull())
 				return EmulateBranch(2, true);
 			else
@@ -109,6 +111,8 @@ namespace de4dot.blocks.cflow {
 				return EmulateBranch(2, Int32Value.CompareNeq((Int32Value)val1, (Int32Value)val2));
 			else if (val1.IsInt64() && val2.IsInt64())
 				return EmulateBranch(2, Int64Value.CompareNeq((Int64Value)val1, (Int64Value)val2));
+			else if (val1.IsReal8() && val2.IsReal8())
+				return EmulateBranch(2, Real8Value.CompareNeq((Real8Value)val1, (Real8Value)val2));
 			else if (val1.IsNull() && val2.IsNull())
 				return EmulateBranch(2, false);
 			else
@@ -123,6 +127,8 @@ namespace de4dot.blocks.cflow {
 				return EmulateBranch(2, Int32Value.CompareGe((Int32Value)val1, (Int32Value)val2));
 			else if (val1.IsInt64() && val2.IsInt64())
 				return EmulateBranch(2, Int64Value.CompareGe((Int64Value)val1, (Int64Value)val2));
+			else if (val1.IsReal8() && val2.IsReal8())
+				return EmulateBranch(2, Real8Value.CompareGe((Real8Value)val1, (Real8Value)val2));
 			else
 				return false;
 		}
@@ -135,6 +141,8 @@ namespace de4dot.blocks.cflow {
 				return EmulateBranch(2, Int32Value.CompareGe_Un((Int32Value)val1, (Int32Value)val2));
 			else if (val1.IsInt64() && val2.IsInt64())
 				return EmulateBranch(2, Int64Value.CompareGe_Un((Int64Value)val1, (Int64Value)val2));
+			else if (val1.IsReal8() && val2.IsReal8())
+				return EmulateBranch(2, Real8Value.CompareGe_Un((Real8Value)val1, (Real8Value)val2));
 			else
 				return false;
 		}
@@ -147,6 +155,8 @@ namespace de4dot.blocks.cflow {
 				return EmulateBranch(2, Int32Value.CompareGt((Int32Value)val1, (Int32Value)val2));
 			else if (val1.IsInt64() && val2.IsInt64())
 				return EmulateBranch(2, Int64Value.CompareGt((Int64Value)val1, (Int64Value)val2));
+			else if (val1.IsReal8() && val2.IsReal8())
+				return EmulateBranch(2, Real8Value.CompareGt((Real8Value)val1, (Real8Value)val2));
 			else
 				return false;
 		}
@@ -159,6 +169,8 @@ namespace de4dot.blocks.cflow {
 				return EmulateBranch(2, Int32Value.CompareGt_Un((Int32Value)val1, (Int32Value)val2));
 			else if (val1.IsInt64() && val2.IsInt64())
 				return EmulateBranch(2, Int64Value.CompareGt_Un((Int64Value)val1, (Int64Value)val2));
+			else if (val1.IsReal8() && val2.IsReal8())
+				return EmulateBranch(2, Real8Value.CompareGt_Un((Real8Value)val1, (Real8Value)val2));
 			else
 				return false;
 		}
@@ -171,6 +183,8 @@ namespace de4dot.blocks.cflow {
 				return EmulateBranch(2, Int32Value.CompareLe((Int32Value)val1, (Int32Value)val2));
 			else if (val1.IsInt64() && val2.IsInt64())
 				return EmulateBranch(2, Int64Value.CompareLe((Int64Value)val1, (Int64Value)val2));
+			else if (val1.IsReal8() && val2.IsReal8())
+				return EmulateBranch(2, Real8Value.CompareLe((Real8Value)val1, (Real8Value)val2));
 			else
 				return false;
 		}
@@ -183,6 +197,8 @@ namespace de4dot.blocks.cflow {
 				return EmulateBranch(2, Int32Value.CompareLe_Un((Int32Value)val1, (Int32Value)val2));
 			else if (val1.IsInt64() && val2.IsInt64())
 				return EmulateBranch(2, Int64Value.CompareLe_Un((Int64Value)val1, (Int64Value)val2));
+			else if (val1.IsReal8() && val2.IsReal8())
+				return EmulateBranch(2, Real8Value.CompareLe_Un((Real8Value)val1, (Real8Value)val2));
 			else
 				return false;
 		}
@@ -195,6 +211,8 @@ namespace de4dot.blocks.cflow {
 				return EmulateBranch(2, Int32Value.CompareLt((Int32Value)val1, (Int32Value)val2));
 			else if (val1.IsInt64() && val2.IsInt64())
 				return EmulateBranch(2, Int64Value.CompareLt((Int64Value)val1, (Int64Value)val2));
+			else if (val1.IsReal8() && val2.IsReal8())
+				return EmulateBranch(2, Real8Value.CompareLt((Real8Value)val1, (Real8Value)val2));
 			else
 				return false;
 		}
@@ -207,6 +225,8 @@ namespace de4dot.blocks.cflow {
 				return EmulateBranch(2, Int32Value.CompareLt_Un((Int32Value)val1, (Int32Value)val2));
 			else if (val1.IsInt64() && val2.IsInt64())
 				return EmulateBranch(2, Int64Value.CompareLt_Un((Int64Value)val1, (Int64Value)val2));
+			else if (val1.IsReal8() && val2.IsReal8())
+				return EmulateBranch(2, Real8Value.CompareLt_Un((Real8Value)val1, (Real8Value)val2));
 			else
 				return false;
 		}
@@ -218,6 +238,8 @@ namespace de4dot.blocks.cflow {
 				return EmulateBranch(1, Int32Value.CompareFalse((Int32Value)val1));
 			else if (val1.IsInt64())
 				return EmulateBranch(1, Int64Value.CompareFalse((Int64Value)val1));
+			else if (val1.IsReal8())
+				return EmulateBranch(1, Real8Value.CompareFalse((Real8Value)val1));
 			else if (val1.IsNull())
 				return EmulateBranch(1, true);
 			else if (val1.IsObject() || val1.IsString())
@@ -233,6 +255,8 @@ namespace de4dot.blocks.cflow {
 				return EmulateBranch(1, Int32Value.CompareTrue((Int32Value)val1));
 			else if (val1.IsInt64())
 				return EmulateBranch(1, Int64Value.CompareTrue((Int64Value)val1));
+			else if (val1.IsReal8())
+				return EmulateBranch(1, Real8Value.CompareTrue((Real8Value)val1));
 			else if (val1.IsNull())
 				return EmulateBranch(1, false);
 			else if (val1.IsObject() || val1.IsString())

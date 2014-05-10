@@ -81,7 +81,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 			foreach (var type in module.Types) {
 				if (!type.IsPublic || !type.IsAbstract)
 					continue;
-				if (type.HasFields || type.HasProperties || type.HasEvents)
+				if (type.HasProperties || type.HasEvents)
 					continue;
 				if (type.BaseType == null || type.BaseType.FullName != "System.Object")
 					continue;
