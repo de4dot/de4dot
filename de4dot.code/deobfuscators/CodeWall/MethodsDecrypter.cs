@@ -71,7 +71,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 
 			bool decrypted = false;
 
-			var methodDef = peImage.DotNetFile.MetaData.TablesStream.MethodTable;
+			var methodDef = peImage.MetaData.TablesStream.MethodTable;
 			for (uint rid = 1; rid <= methodDef.Rows; rid++) {
 				var dm = new DumpedMethod();
 				peImage.ReadMethodTableRowTo(dm, rid);

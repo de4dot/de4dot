@@ -185,7 +185,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			else {
 				// DNR 4.0+ (jitter is hooked)
 
-				var methodDef = peImage.DotNetFile.MetaData.TablesStream.MethodTable;
+				var methodDef = peImage.MetaData.TablesStream.MethodTable;
 				var rvaToIndex = new Dictionary<uint, int>((int)methodDef.Rows);
 				uint offset = (uint)methodDef.StartOffset;
 				for (int i = 0; i < methodDef.Rows; i++) {

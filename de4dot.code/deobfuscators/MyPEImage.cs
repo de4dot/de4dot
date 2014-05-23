@@ -10,28 +10,28 @@ namespace de4dot.code.deobfuscators {
 		IPEImage peImage;
 		byte[] peImageData;
 		IImageStream peStream;
-		DotNetFile dnFile;
+		IMetaData metaData;
 		bool dnFileInitialized;
 		ImageSectionHeader dotNetSection;
 		bool ownPeImage;
 
-		public DotNetFile DotNetFile {
+		public IMetaData MetaData {
 			get {
 				if (dnFileInitialized)
-					return dnFile;
+					return metaData;
 				dnFileInitialized = true;
 
 				var dotNetDir = peImage.ImageNTHeaders.OptionalHeader.DataDirectories[14];
 				if (dotNetDir.VirtualAddress != 0 && dotNetDir.Size >= 0x48) {
-					dnFile = DotNetFile.Load(peImage, false);
+					metaData = MetaDataCreator.CreateMetaData(peImage, false);
 					dotNetSection = FindSection(dotNetDir.VirtualAddress);
 				}
-				return dnFile;
+				return metaData;
 			}
 		}
 
 		public ImageCor20Header Cor20Header {
-			get { return DotNetFile.MetaData.ImageCor20Header; }
+			get { return MetaData.ImageCor20Header; }
 		}
 
 		public IBinaryReader Reader {
@@ -91,7 +91,7 @@ namespace de4dot.code.deobfuscators {
 
 		public void ReadMethodTableRowTo(DumpedMethod dm, uint rid) {
 			dm.token = 0x06000000 + rid;
-			var row = DotNetFile.MetaData.TablesStream.ReadMethodRow(rid);
+			var row = MetaData.TablesStream.ReadMethodRow(rid);
 			if (row == null)
 				throw new ArgumentException("Invalid Method rid");
 			dm.mdRVA = row.RVA;
@@ -186,14 +186,14 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		public bool DotNetSafeWriteOffset(uint offset, byte[] data) {
-			if (DotNetFile != null) {
+			if (MetaData != null) {
 				uint length = (uint)data.Length;
 
 				if (!IsInside(dotNetSection, offset, length))
 					return false;
-				if (Intersect(offset, length, DotNetFile.MetaData.ImageCor20Header))
+				if (Intersect(offset, length, MetaData.ImageCor20Header))
 					return false;
-				if (Intersect(offset, length, DotNetFile.MetaData.MetaDataHeader))
+				if (Intersect(offset, length, MetaData.MetaDataHeader))
 					return false;
 			}
 
@@ -207,15 +207,15 @@ namespace de4dot.code.deobfuscators {
 
 		public void Dispose() {
 			if (ownPeImage) {
-				if (dnFile != null)
-					dnFile.Dispose();
+				if (metaData != null)
+					metaData.Dispose();
 				if (peImage != null)
 					peImage.Dispose();
 			}
 			if (peStream != null)
 				peStream.Dispose();
 
-			dnFile = null;
+			metaData = null;
 			peImage = null;
 			peStream = null;
 		}

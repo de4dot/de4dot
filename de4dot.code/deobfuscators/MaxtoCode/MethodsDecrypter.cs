@@ -857,7 +857,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			var methodInfos = new MethodInfos(module, decrypterInfo.mainType, peImage, decrypterInfo.peHeader, decrypterInfo.mcKey);
 			methodInfos.InitializeInfos();
 
-			var methodDef = peImage.DotNetFile.MetaData.TablesStream.MethodTable;
+			var methodDef = peImage.MetaData.TablesStream.MethodTable;
 			for (uint rid = 1; rid <= methodDef.Rows; rid++) {
 				var dm = new DumpedMethod();
 				peImage.ReadMethodTableRowTo(dm, rid);
@@ -916,7 +916,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			uint usHeapSize = peHeader.ReadUInt32(0x0E04) ^ mcKey.ReadUInt32(0x0082);
 			if (usHeapRva == 0 || usHeapSize == 0)
 				return;
-			var usHeap = peImage.DotNetFile.MetaData.USStream;
+			var usHeap = peImage.MetaData.USStream;
 			if (usHeap.StartOffset == 0 ||	// Start offset is 0 if it's not present in the file
 				peImage.RvaToOffset(usHeapRva) != (uint)usHeap.StartOffset ||
 				usHeapSize != (uint)(usHeap.EndOffset - usHeap.StartOffset)) {

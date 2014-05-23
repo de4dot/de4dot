@@ -504,7 +504,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			if (sigType == SigType.Unknown)
 				return DecryptResult.NotEncrypted;
 
-			var methodDefTable = peImage.DotNetFile.MetaData.TablesStream.MethodTable;
+			var methodDefTable = peImage.MetaData.TablesStream.MethodTable;
 
 			foreach (var version in GetCsHeaderVersions(codeHeaderOffset, methodDefTable)) {
 				try {
