@@ -309,6 +309,9 @@ namespace de4dot.cui {
 				catch (IOException) {
 					return new List<string>();
 				}
+				catch (System.Security.SecurityException) {
+					return new List<string>();
+				}
 				return RecursiveAdd(searchDir, fsinfos);
 			}
 
