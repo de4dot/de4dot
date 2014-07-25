@@ -3,6 +3,8 @@ Description
 
 de4dot is an open source (GPLv3) .NET deobfuscator and unpacker written in C#. It will try its best to restore a packed and obfuscated assembly to almost the original assembly. Most of the obfuscation can be completely restored (eg. string encryption), but symbol renaming is impossible to restore since the original names aren't (usually) part of the obfuscated assembly.
 
+It uses [dnlib](https://github.com/0xd4d/dnlib/) to read and write assemblies so make sure you get it or it won't compile.
+
 Features
 ========
 
