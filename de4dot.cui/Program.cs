@@ -90,13 +90,12 @@ namespace de4dot.cui {
 			catch (Exception ex) {
 				if (PrintFullStackTrace()) {
 					PrintStackTrace(ex);
-					Logger.Instance.LogErrorDontIgnore("\nTry the latest version before reporting this problem!");
+					Logger.Instance.LogErrorDontIgnore("\nTry the latest version!");
 				}
 				else {
 					Logger.Instance.LogErrorDontIgnore("\n\n");
 					Logger.Instance.LogErrorDontIgnore("Hmmmm... something didn't work. Try the latest version.");
 				}
-				Logger.Instance.LogErrorDontIgnore("Email me all files / installer: de4dot@gmail.com");
 				exitCode = 1;
 			}
 
