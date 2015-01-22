@@ -519,6 +519,7 @@ namespace de4dot.blocks {
 	}
 
 	sealed class FieldRefKey : IFieldRefKey {
+		static SigComparerOptions SIG_COMPARER_FLAGS = SigComparerOptions.PrivateScopeFieldIsComparable;
 		readonly IField fieldRef;
 
 		public IField FieldRef {
@@ -530,14 +531,14 @@ namespace de4dot.blocks {
 		}
 
 		public override int GetHashCode() {
-			return new SigComparer().GetHashCode(fieldRef);
+			return new SigComparer(SIG_COMPARER_FLAGS).GetHashCode(fieldRef);
 		}
 
 		public override bool Equals(object obj) {
 			var other = obj as FieldRefKey;
 			if (other == null)
 				return false;
-			return new SigComparer().Equals(fieldRef, other.fieldRef);
+			return new SigComparer(SIG_COMPARER_FLAGS).Equals(fieldRef, other.fieldRef);
 		}
 
 		public override string ToString() {
@@ -546,6 +547,7 @@ namespace de4dot.blocks {
 	}
 
 	sealed class MethodRefKey : IMethodRefKey {
+		static SigComparerOptions SIG_COMPARER_FLAGS = SigComparerOptions.PrivateScopeMethodIsComparable;
 		readonly IMethod methodRef;
 
 		public IMethod MethodRef {
@@ -557,14 +559,14 @@ namespace de4dot.blocks {
 		}
 
 		public override int GetHashCode() {
-			return new SigComparer().GetHashCode(methodRef);
+			return new SigComparer(SIG_COMPARER_FLAGS).GetHashCode(methodRef);
 		}
 
 		public override bool Equals(object obj) {
 			var other = obj as MethodRefKey;
 			if (other == null)
 				return false;
-			return new SigComparer().Equals(methodRef, other.methodRef);
+			return new SigComparer(SIG_COMPARER_FLAGS).Equals(methodRef, other.methodRef);
 		}
 
 		public override string ToString() {
@@ -573,6 +575,7 @@ namespace de4dot.blocks {
 	}
 
 	sealed class FieldRefAndDeclaringTypeKey : IFieldRefKey {
+		static SigComparerOptions SIG_COMPARER_FLAGS = SigComparerOptions.CompareMethodFieldDeclaringType | SigComparerOptions.PrivateScopeFieldIsComparable;
 		readonly IField fieldRef;
 
 		public IField FieldRef {
@@ -584,14 +587,14 @@ namespace de4dot.blocks {
 		}
 
 		public override int GetHashCode() {
-			return new SigComparer(SigComparerOptions.CompareMethodFieldDeclaringType).GetHashCode(fieldRef);
+			return new SigComparer(SIG_COMPARER_FLAGS).GetHashCode(fieldRef);
 		}
 
 		public override bool Equals(object obj) {
 			var other = obj as FieldRefAndDeclaringTypeKey;
 			if (other == null)
 				return false;
-			return new SigComparer(SigComparerOptions.CompareMethodFieldDeclaringType).Equals(fieldRef, other.fieldRef);
+			return new SigComparer(SIG_COMPARER_FLAGS).Equals(fieldRef, other.fieldRef);
 		}
 
 		public override string ToString() {
@@ -600,6 +603,7 @@ namespace de4dot.blocks {
 	}
 
 	sealed class MethodRefAndDeclaringTypeKey : IMethodRefKey {
+		static SigComparerOptions SIG_COMPARER_FLAGS = SigComparerOptions.CompareMethodFieldDeclaringType | SigComparerOptions.PrivateScopeMethodIsComparable;
 		readonly IMethod methodRef;
 
 		public IMethod MethodRef {
@@ -611,14 +615,14 @@ namespace de4dot.blocks {
 		}
 
 		public override int GetHashCode() {
-			return new SigComparer(SigComparerOptions.CompareMethodFieldDeclaringType).GetHashCode(methodRef);
+			return new SigComparer(SIG_COMPARER_FLAGS).GetHashCode(methodRef);
 		}
 
 		public override bool Equals(object obj) {
 			var other = obj as MethodRefAndDeclaringTypeKey;
 			if (other == null)
 				return false;
-			return new SigComparer(SigComparerOptions.CompareMethodFieldDeclaringType).Equals(methodRef, other.methodRef);
+			return new SigComparer(SIG_COMPARER_FLAGS).Equals(methodRef, other.methodRef);
 		}
 
 		public override string ToString() {
