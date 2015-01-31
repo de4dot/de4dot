@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -18,22 +18,22 @@
 */
 
 using System;
-using Mono.Cecil;
+using dnlib.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 	// Finds the type that saves the native lib (if in resources) to disk
 	class NativeLibSaver {
-		ModuleDefinition module;
-		TypeDefinition nativeLibCallerType;
-		MethodDefinition initMethod;
+		ModuleDefMD module;
+		TypeDef nativeLibCallerType;
+		MethodDef initMethod;
 		Resource nativeFileResource;
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return nativeLibCallerType; }
 		}
 
-		public MethodDefinition InitMethod {
+		public MethodDef InitMethod {
 			get { return initMethod; }
 		}
 
@@ -45,36 +45,36 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			get { return nativeLibCallerType != null; }
 		}
 
-		public NativeLibSaver(ModuleDefinition module) {
+		public NativeLibSaver(ModuleDefMD module) {
 			this.module = module;
 		}
 
-		public NativeLibSaver(ModuleDefinition module, NativeLibSaver oldOne) {
+		public NativeLibSaver(ModuleDefMD module, NativeLibSaver oldOne) {
 			this.module = module;
-			this.nativeLibCallerType = lookup(oldOne.nativeLibCallerType, "Could not find nativeLibCallerType");
-			this.initMethod = lookup(oldOne.initMethod, "Could not find initMethod");
+			this.nativeLibCallerType = Lookup(oldOne.nativeLibCallerType, "Could not find nativeLibCallerType");
+			this.initMethod = Lookup(oldOne.initMethod, "Could not find initMethod");
 			if (oldOne.nativeFileResource != null) {
-				this.nativeFileResource = DotNetUtils.getResource(module, oldOne.nativeFileResource.Name);
+				this.nativeFileResource = DotNetUtils.GetResource(module, oldOne.nativeFileResource.Name.String);
 				if (this.nativeFileResource == null)
 					throw new ApplicationException("Could not find nativeFileResource");
 			}
 		}
 
-		T lookup<T>(T def, string errorMessage) where T : MemberReference {
-			return DeobUtils.lookup(module, def, errorMessage);
+		T Lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
+			return DeobUtils.Lookup(module, def, errorMessage);
 		}
 
-		public void find() {
-			foreach (var info in DotNetUtils.getCalledMethods(module, DotNetUtils.getModuleTypeCctor(module))) {
-				if (!DotNetUtils.isMethod(info.Item2, "System.Void", "()"))
+		public void Find() {
+			foreach (var calledMethod in DotNetUtils.GetCalledMethods(module, DotNetUtils.GetModuleTypeCctor(module))) {
+				if (!DotNetUtils.IsMethod(calledMethod, "System.Void", "()"))
 					continue;
-				if (info.Item1.FullName != "<PrivateImplementationDetails>{F1C5056B-0AFC-4423-9B83-D13A26B48869}")
+				if (calledMethod.DeclaringType.FullName != "<PrivateImplementationDetails>{F1C5056B-0AFC-4423-9B83-D13A26B48869}")
 					continue;
 
-				nativeLibCallerType = info.Item1;
-				initMethod = info.Item2;
-				foreach (var s in DotNetUtils.getCodeStrings(initMethod)) {
-					nativeFileResource = DotNetUtils.getResource(module, s);
+				nativeLibCallerType = calledMethod.DeclaringType;
+				initMethod = calledMethod;
+				foreach (var s in DotNetUtils.GetCodeStrings(initMethod)) {
+					nativeFileResource = DotNetUtils.GetResource(module, s);
 					if (nativeFileResource != null)
 						break;
 				}

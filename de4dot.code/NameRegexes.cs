@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -39,7 +39,7 @@ namespace de4dot.code {
 		}
 
 		// Returns true if the regex matches. Use MatchValue to get result.
-		public bool isMatch(string s) {
+		public bool IsMatch(string s) {
 			return regex.IsMatch(s);
 		}
 
@@ -55,11 +55,19 @@ namespace de4dot.code {
 		public bool DefaultValue { get; set; }
 		public const char regexSeparatorChar = '&';
 
-		public NameRegexes(string regex = "") {
-			set(regex);
+		public IList<NameRegex> Regexes {
+			get { return regexes; }
 		}
 
-		public void set(string regexesString) {
+		public NameRegexes()
+			: this("") {
+		}
+
+		public NameRegexes(string regex) {
+			Set(regex);
+		}
+
+		public void Set(string regexesString) {
 			regexes = new List<NameRegex>();
 			if (regexesString != "") {
 				foreach (var regex in regexesString.Split(new char[] { regexSeparatorChar }))
@@ -67,9 +75,9 @@ namespace de4dot.code {
 			}
 		}
 
-		public bool isMatch(string s) {
+		public bool IsMatch(string s) {
 			foreach (var regex in regexes) {
-				if (regex.isMatch(s))
+				if (regex.IsMatch(s))
 					return regex.MatchValue;
 			}
 

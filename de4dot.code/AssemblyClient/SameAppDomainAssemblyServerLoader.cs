@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -24,14 +24,19 @@ namespace de4dot.code.AssemblyClient {
 	// Starts the server in the current app domain.
 	class SameAppDomainAssemblyServerLoader : IAssemblyServerLoader {
 		IAssemblyService service;
+		AssemblyServiceType serviceType;
 
-		public void loadServer() {
-			if (service != null)
-				throw new ApplicationException("Server already loaded");
-			service = new AssemblyService();
+		public SameAppDomainAssemblyServerLoader(AssemblyServiceType serviceType) {
+			this.serviceType = serviceType;
 		}
 
-		public IAssemblyService createService() {
+		public void LoadServer() {
+			if (service != null)
+				throw new ApplicationException("Server already loaded");
+			service = AssemblyService.Create(serviceType);
+		}
+
+		public IAssemblyService CreateService() {
 			return service;
 		}
 

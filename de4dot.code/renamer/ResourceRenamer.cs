@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -19,8 +19,8 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 using de4dot.code.renamer.asmmodules;
 
@@ -33,14 +33,18 @@ namespace de4dot.code.renamer {
 			this.module = module;
 		}
 
-		public void rename(List<TypeInfo> renamedTypes) {
+		public void Rename(List<TypeInfo> renamedTypes) {
 			// Rename the longest names first. Otherwise eg. b.g.resources could be renamed
 			// Class0.g.resources instead of Class1.resources when b.g was renamed Class1.
-			renamedTypes.Sort((a, b) => Utils.compareInt32(b.oldFullName.Length, a.oldFullName.Length));
+			renamedTypes.Sort((a, b) => {
+				if (b.oldFullName.Length != a.oldFullName.Length)
+					return b.oldFullName.Length.CompareTo(a.oldFullName.Length);
+				return b.oldFullName.CompareTo(a.oldFullName);
+			});
 
-			nameToResource = new Dictionary<string, Resource>(module.ModuleDefinition.Resources.Count * 3, StringComparer.Ordinal);
-			foreach (var resource in module.ModuleDefinition.Resources) {
-				var name = resource.Name;
+			nameToResource = new Dictionary<string, Resource>(module.ModuleDefMD.Resources.Count * 3, StringComparer.Ordinal);
+			foreach (var resource in module.ModuleDefMD.Resources) {
+				var name = resource.Name.String;
 				nameToResource[name] = resource;
 				if (name.EndsWith(".g.resources"))
 					nameToResource[name.Substring(0, name.Length - 12)] = resource;
@@ -49,16 +53,16 @@ namespace de4dot.code.renamer {
 					nameToResource[name.Substring(0, index)] = resource;
 			}
 
-			renameResourceNamesInCode(renamedTypes);
-			renameResources(renamedTypes);
+			RenameResourceNamesInCode(renamedTypes);
+			RenameResources(renamedTypes);
 		}
 
-		void renameResourceNamesInCode(List<TypeInfo> renamedTypes) {
+		void RenameResourceNamesInCode(List<TypeInfo> renamedTypes) {
 			var oldNameToTypeInfo = new Dictionary<string, TypeInfo>(StringComparer.Ordinal);
 			foreach (var info in renamedTypes)
 				oldNameToTypeInfo[info.oldFullName] = info;
 
-			foreach (var method in module.getAllMethods()) {
+			foreach (var method in module.GetAllMethods()) {
 				if (!method.HasBody)
 					continue;
 				var instrs = method.Body.Instructions;
@@ -77,33 +81,33 @@ namespace de4dot.code.renamer {
 					TypeInfo typeInfo;
 					if (!oldNameToTypeInfo.TryGetValue(codeString, out typeInfo))
 						continue;
-					var newName = typeInfo.type.TypeDefinition.FullName;
+					var newName = typeInfo.type.TypeDef.FullName;
 
 					bool renameCodeString = module.ObfuscatedFile.RenameResourcesInCode ||
-											isCallingResourceManagerCtor(instrs, i, typeInfo);
+											IsCallingResourceManagerCtor(instrs, i, typeInfo);
 					if (!renameCodeString)
-						Log.v("Possible resource name in code: '{0}' => '{1}' in method {2}", Utils.removeNewlines(codeString), newName, Utils.removeNewlines(method));
+						Logger.v("Possible resource name in code: '{0}' => '{1}' in method {2}", Utils.RemoveNewlines(codeString), newName, Utils.RemoveNewlines(method));
 					else {
 						instr.Operand = newName;
-						Log.v("Renamed resource string in code: '{0}' => '{1}' ({2})", Utils.removeNewlines(codeString), newName, Utils.removeNewlines(method));
+						Logger.v("Renamed resource string in code: '{0}' => '{1}' ({2})", Utils.RemoveNewlines(codeString), newName, Utils.RemoveNewlines(method));
 					}
 				}
 			}
 		}
 
-		static bool isCallingResourceManagerCtor(IList<Instruction> instrs, int ldstrIndex, TypeInfo typeInfo) {
+		static bool IsCallingResourceManagerCtor(IList<Instruction> instrs, int ldstrIndex, TypeInfo typeInfo) {
 			try {
 				int index = ldstrIndex + 1;
 
 				var ldtoken = instrs[index++];
 				if (ldtoken.OpCode.Code != Code.Ldtoken)
 					return false;
-				if (!MemberReferenceHelper.compareTypes(typeInfo.type.TypeDefinition, ldtoken.Operand as TypeReference))
+				if (!new SigComparer().Equals(typeInfo.type.TypeDef, ldtoken.Operand as ITypeDefOrRef))
 					return false;
 
-				if (!checkCalledMethod(instrs[index++], "System.Type", "(System.RuntimeTypeHandle)"))
+				if (!CheckCalledMethod(instrs[index++], "System.Type", "(System.RuntimeTypeHandle)"))
 					return false;
-				if (!checkCalledMethod(instrs[index++], "System.Reflection.Assembly", "()"))
+				if (!CheckCalledMethod(instrs[index++], "System.Reflection.Assembly", "()"))
 					return false;
 
 				var newobj = instrs[index++];
@@ -122,10 +126,10 @@ namespace de4dot.code.renamer {
 			}
 		}
 
-		static bool checkCalledMethod(Instruction instr, string returnType, string parameters) {
+		static bool CheckCalledMethod(Instruction instr, string returnType, string parameters) {
 			if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt)
 				return false;
-			return DotNetUtils.isMethod(instr.Operand as MethodReference, returnType, parameters);
+			return DotNetUtils.IsMethod(instr.Operand as IMethod, returnType, parameters);
 		}
 
 		class RenameInfo {
@@ -142,7 +146,7 @@ namespace de4dot.code.renamer {
 			}
 		}
 
-		void renameResources(List<TypeInfo> renamedTypes) {
+		void RenameResources(List<TypeInfo> renamedTypes) {
 			var newNames = new Dictionary<Resource, RenameInfo>();
 			foreach (var info in renamedTypes) {
 				var oldFullName = info.oldFullName;
@@ -151,11 +155,11 @@ namespace de4dot.code.renamer {
 					continue;
 				if (newNames.ContainsKey(resource))
 					continue;
-				var newTypeName = info.type.TypeDefinition.FullName;
-				var newName = newTypeName + resource.Name.Substring(oldFullName.Length);
+				var newTypeName = info.type.TypeDef.FullName;
+				var newName = newTypeName + resource.Name.String.Substring(oldFullName.Length);
 				newNames[resource] = new RenameInfo(resource, info, newName);
 
-				Log.v("Renamed resource in resources: {0} => {1}", Utils.removeNewlines(resource.Name), newName);
+				Logger.v("Renamed resource in resources: {0} => {1}", Utils.RemoveNewlines(resource.Name), newName);
 				resource.Name = newName;
 			}
 		}

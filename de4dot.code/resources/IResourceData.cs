@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -23,6 +23,6 @@ using System.Runtime.Serialization;
 namespace de4dot.code.resources {
 	interface IResourceData {
 		ResourceTypeCode Code { get; }
-		void writeData(BinaryWriter writer, IFormatter formatter);
+		void WriteData(BinaryWriter writer, IFormatter formatter);
 	}
 }

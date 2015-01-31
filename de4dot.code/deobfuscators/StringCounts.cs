@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -19,8 +19,8 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 
 namespace de4dot.code.deobfuscators {
 	class StringCounts {
@@ -34,29 +34,31 @@ namespace de4dot.code.deobfuscators {
 			get { return strings.Count; }
 		}
 
-		public void add(string s) {
+		public void Add(string s) {
 			int count;
 			strings.TryGetValue(s, out count);
 			strings[s] = count + 1;
 		}
 
-		public bool exists(string s) {
+		public bool Exists(string s) {
+			if (s == null)
+				return false;
 			return strings.ContainsKey(s);
 		}
 
-		public bool all(IList<string> list) {
+		public bool All(IList<string> list) {
 			foreach (var s in list) {
-				if (!exists(s))
+				if (!Exists(s))
 					return false;
 			}
 			return true;
 		}
 
-		public bool exactly(IList<string> list) {
-			return list.Count == strings.Count && all(list);
+		public bool Exactly(IList<string> list) {
+			return list.Count == strings.Count && All(list);
 		}
 
-		public int count(string s) {
+		public int Count(string s) {
 			int count;
 			strings.TryGetValue(s, out count);
 			return count;
@@ -64,37 +66,40 @@ namespace de4dot.code.deobfuscators {
 	}
 
 	class FieldTypes : StringCounts {
-		public FieldTypes(TypeDefinition type) {
-			init(type.Fields);
+		public FieldTypes(TypeDef type) {
+			Initialize(type.Fields);
 		}
 
-		public FieldTypes(IEnumerable<FieldDefinition> fields) {
-			init(fields);
+		public FieldTypes(IEnumerable<FieldDef> fields) {
+			Initialize(fields);
 		}
 
-		void init(IEnumerable<FieldDefinition> fields) {
+		void Initialize(IEnumerable<FieldDef> fields) {
 			if (fields == null)
 				return;
-			foreach (var field in fields)
-				add(field.FieldType.FullName);
+			foreach (var field in fields) {
+				var type = field.FieldSig.GetFieldType();
+				if (type != null)
+					Add(type.FullName);
+			}
 		}
 	}
 
 	class LocalTypes : StringCounts {
-		public LocalTypes(MethodDefinition method) {
+		public LocalTypes(MethodDef method) {
 			if (method != null && method.Body != null)
-				init(method.Body.Variables);
+				Initialize(method.Body.Variables);
 		}
 
-		public LocalTypes(IEnumerable<VariableDefinition> locals) {
-			init(locals);
+		public LocalTypes(IEnumerable<Local> locals) {
+			Initialize(locals);
 		}
 
-		void init(IEnumerable<VariableDefinition> locals) {
+		void Initialize(IEnumerable<Local> locals) {
 			if (locals == null)
 				return;
 			foreach (var local in locals)
-				add(local.VariableType.FullName);
+				Add(local.Type.FullName);
 		}
 	}
 }

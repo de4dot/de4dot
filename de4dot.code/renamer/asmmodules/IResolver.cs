@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -17,12 +17,12 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.Cecil;
+using dnlib.DotNet;
 
 namespace de4dot.code.renamer.asmmodules {
 	interface IResolver {
-		TypeDef resolve(TypeReference typeReference);
-		MethodDef resolve(MethodReference methodReference);
-		FieldDef resolve(FieldReference fieldReference);
+		MTypeDef ResolveType(ITypeDefOrRef typeRef);
+		MMethodDef ResolveMethod(IMethodDefOrRef methodRef);
+		MFieldDef ResolveField(MemberRef fieldRef);
 	}
 }

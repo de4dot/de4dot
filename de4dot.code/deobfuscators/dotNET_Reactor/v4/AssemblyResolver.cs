@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -19,8 +19,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
-using Mono.Cecil;
+using dnlib.DotNet;
+using dnlib.IO;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
@@ -34,70 +34,68 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		}
 
 		public override string ToString() {
-			return string.Format("{0} (rsrc: {1})", name, Utils.toCsharpString(resource.Name));
+			return string.Format("{0} (rsrc: {1})", name, Utils.ToCsharpString(resource.Name));
 		}
 	}
 
 	class AssemblyResolver {
-		ModuleDefinition module;
-		TypeDefinition assemblyResolverType;
-		MethodDefinition assemblyResolverInitMethod;
-		MethodDefinition assemblyResolverMethod;
+		ModuleDefMD module;
+		TypeDef assemblyResolverType;
+		MethodDef assemblyResolverInitMethod;
+		MethodDef assemblyResolverMethod;
 
 		public bool Detected {
 			get { return assemblyResolverType != null; }
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return assemblyResolverType; }
 		}
 
-		public MethodDefinition InitMethod {
+		public MethodDef InitMethod {
 			get { return assemblyResolverInitMethod; }
 		}
 
-		public AssemblyResolver(ModuleDefinition module) {
+		public AssemblyResolver(ModuleDefMD module) {
 			this.module = module;
 		}
 
-		public AssemblyResolver(ModuleDefinition module, AssemblyResolver oldOne) {
+		public AssemblyResolver(ModuleDefMD module, AssemblyResolver oldOne) {
 			this.module = module;
-			this.assemblyResolverType = lookup(oldOne.assemblyResolverType, "Could not find assembly resolver type");
-			this.assemblyResolverMethod = lookup(oldOne.assemblyResolverMethod, "Could not find assembly resolver method");
-			this.assemblyResolverInitMethod = lookup(oldOne.assemblyResolverInitMethod, "Could not find assembly resolver init method");
+			this.assemblyResolverType = Lookup(oldOne.assemblyResolverType, "Could not find assembly resolver type");
+			this.assemblyResolverMethod = Lookup(oldOne.assemblyResolverMethod, "Could not find assembly resolver method");
+			this.assemblyResolverInitMethod = Lookup(oldOne.assemblyResolverInitMethod, "Could not find assembly resolver init method");
 		}
 
-		T lookup<T>(T def, string errorMessage) where T : MemberReference {
-			return DeobUtils.lookup(module, def, errorMessage);
+		T Lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
+			return DeobUtils.Lookup(module, def, errorMessage);
 		}
 
-		public void find(ISimpleDeobfuscator simpleDeobfuscator) {
-			if (checkMethod(simpleDeobfuscator, module.EntryPoint))
+		public void Find(ISimpleDeobfuscator simpleDeobfuscator) {
+			if (CheckMethod(simpleDeobfuscator, module.EntryPoint))
 				return;
 			if (module.EntryPoint != null) {
-				if (checkMethod(simpleDeobfuscator, DotNetUtils.getMethod(module.EntryPoint.DeclaringType, ".cctor")))
+				if (CheckMethod(simpleDeobfuscator, module.EntryPoint.DeclaringType.FindStaticConstructor()))
 					return;
 			}
 		}
 
-		bool checkMethod(ISimpleDeobfuscator simpleDeobfuscator, MethodDefinition methodToCheck) {
+		bool CheckMethod(ISimpleDeobfuscator simpleDeobfuscator, MethodDef methodToCheck) {
 			if (methodToCheck == null)
 				return false;
 
 			var resolverLocals = new string[] {
 				"System.Byte[]",
 				"System.Reflection.Assembly",
-				"System.Security.Cryptography.MD5",
 				"System.String",
 				"System.IO.BinaryReader",
 				"System.IO.Stream",
 			};
 
-			simpleDeobfuscator.deobfuscate(methodToCheck);
-			foreach (var tuple in DotNetUtils.getCalledMethods(module, methodToCheck)) {
-				var type = tuple.Item1;
-				var method = tuple.Item2;
-				if (!DotNetUtils.isMethod(method, "System.Void", "()"))
+			simpleDeobfuscator.Deobfuscate(methodToCheck);
+			foreach (var method in DotNetUtils.GetCalledMethods(module, methodToCheck)) {
+				var type = method.DeclaringType;
+				if (!DotNetUtils.IsMethod(method, "System.Void", "()"))
 					continue;
 				if (!method.IsStatic)
 					continue;
@@ -108,15 +106,15 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 					continue;
 				if (type.HasEvents || type.HasProperties)
 					continue;
-				if (!checkFields(type.Fields))
+				if (!CheckFields(type.Fields))
 					continue;
 
-				var resolverMethod = findAssemblyResolveMethod(type);
+				var resolverMethod = FindAssemblyResolveMethod(type);
 				if (resolverMethod == null)
 					continue;
 
 				var localTypes = new LocalTypes(resolverMethod);
-				if (!localTypes.all(resolverLocals))
+				if (!localTypes.All(resolverLocals))
 					continue;
 
 				assemblyResolverType = type;
@@ -128,51 +126,51 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			return false;
 		}
 
-		static bool checkFields(IList<FieldDefinition> fields) {
+		static bool CheckFields(IList<FieldDef> fields) {
 			if (fields.Count != 2)
 				return false;
 
 			var fieldTypes = new FieldTypes(fields);
-			return fieldTypes.count("System.Boolean") == 1 &&
-				(fieldTypes.count("System.Collections.Hashtable") == 1 ||
-				 fieldTypes.count("System.Object") == 1);
+			return fieldTypes.Count("System.Boolean") == 1 &&
+				(fieldTypes.Count("System.Collections.Hashtable") == 1 ||
+				 fieldTypes.Count("System.Object") == 1);
 		}
 
-		static MethodDefinition findAssemblyResolveMethod(TypeDefinition type) {
+		static MethodDef FindAssemblyResolveMethod(TypeDef type) {
 			foreach (var method in type.Methods) {
-				if (DotNetUtils.isMethod(method, "System.Reflection.Assembly", "(System.Object,System.ResolveEventArgs)"))
+				if (DotNetUtils.IsMethod(method, "System.Reflection.Assembly", "(System.Object,System.ResolveEventArgs)"))
 					return method;
 			}
 			foreach (var method in type.Methods) {
-				if (DotNetUtils.isMethod(method, "System.Reflection.Assembly", "(System.Object,System.Object)"))
+				if (DotNetUtils.IsMethod(method, "System.Reflection.Assembly", "(System.Object,System.Object)"))
 					return method;
 			}
 			return null;
 		}
 
-		public List<ResourceInfo> getEmbeddedAssemblies(ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
+		public List<ResourceInfo> GetEmbeddedAssemblies(ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
 			var infos = new List<ResourceInfo>();
 			if (assemblyResolverMethod == null)
 				return infos;
-			simpleDeobfuscator.deobfuscate(assemblyResolverMethod);
-			simpleDeobfuscator.decryptStrings(assemblyResolverMethod, deob);
+			simpleDeobfuscator.Deobfuscate(assemblyResolverMethod);
+			simpleDeobfuscator.DecryptStrings(assemblyResolverMethod, deob);
 
-			foreach (var resourcePrefix in DotNetUtils.getCodeStrings(assemblyResolverMethod))
-				infos.AddRange(getResourceInfos(resourcePrefix));
+			foreach (var resourcePrefix in DotNetUtils.GetCodeStrings(assemblyResolverMethod))
+				infos.AddRange(GetResourceInfos(resourcePrefix));
 
 			return infos;
 		}
 
-		List<ResourceInfo> getResourceInfos(string prefix) {
+		List<ResourceInfo> GetResourceInfos(string prefix) {
 			var infos = new List<ResourceInfo>();
 
-			foreach (var resource in findResources(prefix))
-				infos.Add(new ResourceInfo(resource, getAssemblyName(resource)));
+			foreach (var resource in FindResources(prefix))
+				infos.Add(new ResourceInfo(resource, GetAssemblyName(resource)));
 
 			return infos;
 		}
 
-		List<EmbeddedResource> findResources(string prefix) {
+		List<EmbeddedResource> FindResources(string prefix) {
 			var result = new List<EmbeddedResource>();
 
 			if (string.IsNullOrEmpty(prefix))
@@ -182,7 +180,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				var resource = rsrc as EmbeddedResource;
 				if (resource == null)
 					continue;
-				if (!Utils.StartsWith(resource.Name, prefix, StringComparison.Ordinal))
+				if (!Utils.StartsWith(resource.Name.String, prefix, StringComparison.Ordinal))
 					continue;
 
 				result.Add(resource);
@@ -192,13 +190,13 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		}
 
 		static int unknownNameCounter = 0;
-		static string getAssemblyName(EmbeddedResource resource) {
+		static string GetAssemblyName(EmbeddedResource resource) {
 			try {
-				var resourceModule = ModuleDefinition.ReadModule(new MemoryStream(resource.GetResourceData()));
-				return resourceModule.Assembly.Name.FullName;
+				var resourceModule = ModuleDefMD.Load(resource.Data.ReadAllBytes());
+				return resourceModule.Assembly.FullName;
 			}
 			catch {
-				return string.Format("unknown_name_{0}", unknownNameCounter);
+				return string.Format("unknown_name_{0}", unknownNameCounter++);
 			}
 		}
 	}

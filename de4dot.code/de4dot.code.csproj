@@ -12,7 +12,6 @@
     <AssemblyName>de4dot.code</AssemblyName>
     <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <TargetFrameworkProfile />
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\de4dot.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
@@ -21,28 +20,27 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\Debug\</OutputPath>
+    <OutputPath>..\Debug\bin\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>..\Release\</OutputPath>
+    <OutputPath>..\Release\bin\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ICSharpCode.SharpZipLib">
-      <HintPath>..\ICSharpCode.SharpZipLib.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Runtime.Remoting" />
@@ -57,97 +55,166 @@
     <Compile Include="AssemblyClient\NewAppDomainAssemblyServerLoader.cs" />
     <Compile Include="AssemblyClient\NewProcessAssemblyServerLoader.cs" />
     <Compile Include="AssemblyClient\SameAppDomainAssemblyServerLoader.cs" />
+    <Compile Include="AssemblyModule.cs" />
     <Compile Include="AssemblyResolver.cs" />
+    <Compile Include="DeobfuscatorContext.cs" />
+    <Compile Include="deobfuscators\Agile_NET\CliSecureRtType.cs" />
+    <Compile Include="deobfuscators\Agile_NET\CsBlowfish.cs" />
+    <Compile Include="deobfuscators\Agile_NET\Deobfuscator.cs" />
+    <Compile Include="deobfuscators\Agile_NET\MethodsDecrypter.cs" />
+    <Compile Include="deobfuscators\Agile_NET\ProxyCallFixer.cs" />
+    <Compile Include="deobfuscators\Agile_NET\ResourceDecrypter.cs" />
+    <Compile Include="deobfuscators\Agile_NET\StackFrameHelper.cs" />
+    <Compile Include="deobfuscators\Agile_NET\StringDecrypter.cs" />
+    <Compile Include="deobfuscators\Agile_NET\StringDecrypterInfo.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\CilOperandInstructionRestorer.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\CsvmDataReader.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\CsvmMethodData.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\CsvmToCilMethodConverterBase.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v1\Csvm.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v1\CsvmToCilMethodConverter.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v1\FieldsInfo.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v1\OpCodeHandler.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v1\OpCodeHandlers.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v1\UnknownHandlerInfo.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v1\VmOpCodeHandlerDetector.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\CompositeHandlerDetector.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\CompositeOpCodeHandler.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\Csvm.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\CsvmInfo.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\CsvmResources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>CsvmResources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\CsvmToCilMethodConverter.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\HandlerTypeCode.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\OpCodeHandlerInfo.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\OpCodeHandlerInfoReader.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\OpCodeHandlerInfos.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\SigCreator.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\VmOpCode.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\v2\VmOpCodeHandlerDetector.cs" />
+    <Compile Include="deobfuscators\Agile_NET\vm\VmOperand.cs" />
     <Compile Include="deobfuscators\ArrayFinder.cs" />
     <Compile Include="deobfuscators\Babel_NET\AssemblyResolver.cs" />
+    <Compile Include="deobfuscators\Babel_NET\BabelInflater.cs" />
+    <Compile Include="deobfuscators\Babel_NET\BabelMethodCallInliner.cs" />
     <Compile Include="deobfuscators\Babel_NET\BabelUtils.cs" />
     <Compile Include="deobfuscators\Babel_NET\ConstantsDecrypter.cs" />
     <Compile Include="deobfuscators\Babel_NET\Deobfuscator.cs" />
     <Compile Include="deobfuscators\Babel_NET\ImageReader.cs" />
+    <Compile Include="deobfuscators\Babel_NET\InflaterCreator.cs" />
     <Compile Include="deobfuscators\Babel_NET\MemberReferenceConverter.cs" />
     <Compile Include="deobfuscators\Babel_NET\MethodBodyReader.cs" />
     <Compile Include="deobfuscators\Babel_NET\MethodReferenceReader.cs" />
-    <Compile Include="deobfuscators\Babel_NET\MethodBodyReaderBase.cs" />
     <Compile Include="deobfuscators\Babel_NET\MethodsDecrypter.cs" />
-    <Compile Include="deobfuscators\Babel_NET\ProxyDelegateFinder.cs" />
+    <Compile Include="deobfuscators\Babel_NET\ProxyCallFixer.cs" />
     <Compile Include="deobfuscators\Babel_NET\ResourceDecrypter.cs" />
     <Compile Include="deobfuscators\Babel_NET\ResourceResolver.cs" />
     <Compile Include="deobfuscators\Babel_NET\StringDecrypter.cs" />
-    <Compile Include="deobfuscators\CliSecure\CliSecureRtType.cs" />
-    <Compile Include="deobfuscators\CliSecure\Deobfuscator.cs" />
-    <Compile Include="deobfuscators\CliSecure\MethodsDecrypter.cs" />
-    <Compile Include="deobfuscators\CliSecure\ProxyDelegateFinder.cs" />
-    <Compile Include="deobfuscators\CliSecure\ResourceDecrypter.cs" />
-    <Compile Include="deobfuscators\CliSecure\StackFrameHelper.cs" />
-    <Compile Include="deobfuscators\CliSecure\StringDecrypter.cs" />
+    <Compile Include="deobfuscators\Blowfish.cs" />
+    <Compile Include="deobfuscators\CodeFort\AssemblyData.cs" />
+    <Compile Include="deobfuscators\CodeFort\AssemblyDecrypter.cs" />
+    <Compile Include="deobfuscators\CodeFort\CfMethodCallInliner.cs" />
+    <Compile Include="deobfuscators\CodeFort\Deobfuscator.cs" />
+    <Compile Include="deobfuscators\CodeFort\PasswordFinder.cs" />
+    <Compile Include="deobfuscators\CodeFort\ProxyCallFixer.cs" />
+    <Compile Include="deobfuscators\CodeFort\StringDecrypter.cs" />
     <Compile Include="deobfuscators\CodeVeil\AssemblyResolver.cs" />
+    <Compile Include="deobfuscators\CodeVeil\Deobfuscator.cs" />
     <Compile Include="deobfuscators\CodeVeil\ErexResourceReader.cs" />
     <Compile Include="deobfuscators\CodeVeil\InvalidDataException.cs" />
     <Compile Include="deobfuscators\CodeVeil\InvalidMethodsFinder.cs" />
     <Compile Include="deobfuscators\CodeVeil\MainType.cs" />
     <Compile Include="deobfuscators\CodeVeil\MethodsDecrypter.cs" />
     <Compile Include="deobfuscators\CodeVeil\ObfuscatorVersion.cs" />
+    <Compile Include="deobfuscators\CodeVeil\ProxyCallFixer.cs" />
     <Compile Include="deobfuscators\CodeVeil\ResourceConverter.cs" />
     <Compile Include="deobfuscators\CodeVeil\ResourceDecrypter.cs" />
     <Compile Include="deobfuscators\CodeVeil\ResourceInfo.cs" />
     <Compile Include="deobfuscators\CodeVeil\ResourceReader.cs" />
     <Compile Include="deobfuscators\CodeVeil\StringDecrypter.cs" />
-    <Compile Include="deobfuscators\CodeVeil\Deobfuscator.cs" />
-    <Compile Include="deobfuscators\CodeVeil\ProxyDelegateFinder.cs" />
     <Compile Include="deobfuscators\CodeVeil\TamperDetection.cs" />
+    <Compile Include="deobfuscators\CodeWall\AssemblyDecrypter.cs" />
+    <Compile Include="deobfuscators\CodeWall\Deobfuscator.cs" />
+    <Compile Include="deobfuscators\CodeWall\KeyGenerator.cs" />
+    <Compile Include="deobfuscators\CodeWall\MethodsDecrypter.cs" />
+    <Compile Include="deobfuscators\CodeWall\randomc\CRandomMersenne.cs" />
+    <Compile Include="deobfuscators\CodeWall\randomc\CRandomMother.cs" />
+    <Compile Include="deobfuscators\CodeWall\StringDecrypter.cs" />
+    <Compile Include="deobfuscators\ConstantsReader.cs" />
+    <Compile Include="deobfuscators\CRC32.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\AntiDebugger.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\AssemblyResolver.cs" />
+    <Compile Include="deobfuscators\CryptoObfuscator\CoMethodCallInliner.cs" />
+    <Compile Include="deobfuscators\CryptoObfuscator\ConstantsDecrypter.cs" />
+    <Compile Include="deobfuscators\CryptoObfuscator\CoUtils.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\Deobfuscator.cs" />
-    <Compile Include="deobfuscators\CryptoObfuscator\ProxyDelegateFinder.cs" />
+    <Compile Include="deobfuscators\CryptoObfuscator\InlinedMethodTypes.cs" />
+    <Compile Include="deobfuscators\CryptoObfuscator\LdnullFixer.cs" />
+    <Compile Include="deobfuscators\CryptoObfuscator\MethodBodyReader.cs" />
+    <Compile Include="deobfuscators\CryptoObfuscator\MethodsDecrypter.cs" />
+    <Compile Include="deobfuscators\CryptoObfuscator\ProxyCallFixer.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\ResourceDecrypter.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\ResourceResolver.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\StringDecrypter.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\TamperDetection.cs" />
-    <Compile Include="deobfuscators\DeepSea\FieldsRestorer.cs" />
-    <Compile Include="deobfuscators\DeobfuscatorBase.cs" />
-    <Compile Include="deobfuscators\DeobfuscatorInfoBase.cs" />
-    <Compile Include="deobfuscators\DeobUtils.cs" />
+    <Compile Include="deobfuscators\DeepSea\ArrayBlockDeobfuscator.cs" />
+    <Compile Include="deobfuscators\DeepSea\ArrayBlockState.cs" />
     <Compile Include="deobfuscators\DeepSea\AssemblyResolver.cs" />
+    <Compile Include="deobfuscators\DeepSea\CastDeobfuscator.cs" />
+    <Compile Include="deobfuscators\DeepSea\Deobfuscator.cs" />
+    <Compile Include="deobfuscators\DeepSea\DsConstantsReader.cs" />
     <Compile Include="deobfuscators\DeepSea\DsInlinedMethodsFinder.cs" />
+    <Compile Include="deobfuscators\DeepSea\DsMethodCallInliner.cs" />
+    <Compile Include="deobfuscators\DeepSea\DsUtils.cs" />
+    <Compile Include="deobfuscators\DeepSea\FieldsRestorer.cs" />
     <Compile Include="deobfuscators\DeepSea\ResolverBase.cs" />
     <Compile Include="deobfuscators\DeepSea\ResourceResolver.cs" />
     <Compile Include="deobfuscators\DeepSea\StringDecrypter.cs" />
-    <Compile Include="deobfuscators\DeepSea\Deobfuscator.cs" />
-    <Compile Include="deobfuscators\DeepSea\MethodCallInliner.cs" />
+    <Compile Include="deobfuscators\DeobfuscatorBase.cs" />
+    <Compile Include="deobfuscators\DeobfuscatorInfoBase.cs" />
+    <Compile Include="deobfuscators\DeobUtils.cs" />
     <Compile Include="deobfuscators\Dotfuscator\Deobfuscator.cs" />
     <Compile Include="deobfuscators\Dotfuscator\StringDecrypter.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v3\AntiStrongName.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v3\ApplicationModeDecrypter.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v3\ApplicationModeUnpacker.cs" />
+    <Compile Include="deobfuscators\dotNET_Reactor\v3\AssemblyResolver.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v3\DecrypterType.cs" />
+    <Compile Include="deobfuscators\dotNET_Reactor\v3\DecryptMethod.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v3\Deobfuscator.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v3\LibAssemblyResolver.cs" />
+    <Compile Include="deobfuscators\dotNET_Reactor\v3\MemoryPatcher.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v3\NativeLibSaver.cs" />
+    <Compile Include="deobfuscators\dotNET_Reactor\v4\AntiStrongName.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v4\AssemblyResolver.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v4\BooleanDecrypter.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v4\Deobfuscator.cs" />
+    <Compile Include="deobfuscators\dotNET_Reactor\v4\DnrMethodCallInliner.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v4\EmptyClass.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v4\EncryptedResource.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v4\MetadataTokenObfuscator.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v4\MethodsDecrypter.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v4\NativeFileDecrypter.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v4\NativeImageUnpacker.cs" />
+    <Compile Include="deobfuscators\dotNET_Reactor\v4\ProxyCallFixer.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v4\ResourceResolver.cs" />
     <Compile Include="deobfuscators\dotNET_Reactor\v4\StringDecrypter.cs" />
-    <Compile Include="deobfuscators\dotNET_Reactor\v4\AntiStrongName.cs" />
-    <Compile Include="deobfuscators\dotNET_Reactor\v3\AssemblyResolver.cs" />
-    <Compile Include="deobfuscators\dotNET_Reactor\v3\DecryptMethod.cs" />
-    <Compile Include="deobfuscators\dotNET_Reactor\v3\MemoryPatcher.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\AssemblyResolver.cs" />
+    <Compile Include="deobfuscators\Eazfuscator_NET\CodeCompilerMethodCallRestorer.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\DecrypterType.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\Deobfuscator.cs" />
+    <Compile Include="deobfuscators\Eazfuscator_NET\DynamicDynocodeIterator.cs" />
+    <Compile Include="deobfuscators\Eazfuscator_NET\DynocodeService.cs" />
+    <Compile Include="deobfuscators\Eazfuscator_NET\EfConstantsReader.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\EfUtils.cs" />
-    <Compile Include="deobfuscators\Eazfuscator_NET\GetManifestResourceRestorer.cs" />
+    <Compile Include="deobfuscators\Eazfuscator_NET\ResourceMethodsRestorer.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\ResourceResolver.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\StringDecrypter.cs" />
     <Compile Include="deobfuscators\Eazfuscator_NET\VersionDetector.cs" />
     <Compile Include="deobfuscators\ExceptionLoggerRemover.cs" />
-    <Compile Include="deobfuscators\GetManifestResourceRestorerBase.cs" />
     <Compile Include="deobfuscators\Goliath_NET\ArrayDecrypter.cs" />
     <Compile Include="deobfuscators\Goliath_NET\ArrayValueInliner.cs" />
     <Compile Include="deobfuscators\Goliath_NET\DecrypterBase.cs" />
@@ -155,38 +222,61 @@
     <Compile Include="deobfuscators\Goliath_NET\IntegerDecrypter.cs" />
     <Compile Include="deobfuscators\Goliath_NET\LocalsRestorer.cs" />
     <Compile Include="deobfuscators\Goliath_NET\LogicalExpressionFixer.cs" />
-    <Compile Include="deobfuscators\Goliath_NET\ProxyDelegateFinder.cs" />
+    <Compile Include="deobfuscators\Goliath_NET\ProxyCallFixer.cs" />
     <Compile Include="deobfuscators\Goliath_NET\StringDecrypter.cs" />
     <Compile Include="deobfuscators\Goliath_NET\StrongNameChecker.cs" />
     <Compile Include="deobfuscators\IDeobfuscatedFile.cs" />
     <Compile Include="deobfuscators\IDeobfuscator.cs" />
     <Compile Include="deobfuscators\IDeobfuscatorInfo.cs" />
+    <Compile Include="deobfuscators\ILProtector\DecryptedMethodInfo.cs" />
+    <Compile Include="deobfuscators\ILProtector\Deobfuscator.cs" />
+    <Compile Include="deobfuscators\ILProtector\DynamicMethodsDecrypter.cs" />
+    <Compile Include="deobfuscators\ILProtector\DynamicMethodsDecrypterService.cs" />
+    <Compile Include="deobfuscators\ILProtector\DynamicMethodsRestorer.cs" />
+    <Compile Include="deobfuscators\ILProtector\MainType.cs" />
+    <Compile Include="deobfuscators\ILProtector\MethodReader.cs" />
+    <Compile Include="deobfuscators\ILProtector\MethodsDecrypterBase.cs" />
+    <Compile Include="deobfuscators\ILProtector\RuntimeFileInfo.cs" />
+    <Compile Include="deobfuscators\ILProtector\StaticMethodsDecrypter.cs" />
     <Compile Include="deobfuscators\InitializedDataCreator.cs" />
     <Compile Include="deobfuscators\InlinedMethodsFinder.cs" />
     <Compile Include="deobfuscators\ISimpleDeobfuscator.cs" />
+    <Compile Include="deobfuscators\MaxtoCode\CryptDecrypter.cs" />
+    <Compile Include="deobfuscators\MaxtoCode\Decrypter6.cs" />
+    <Compile Include="deobfuscators\MaxtoCode\DecrypterInfo.cs" />
     <Compile Include="deobfuscators\MaxtoCode\Deobfuscator.cs" />
-    <Compile Include="deobfuscators\MaxtoCode\FileDecrypter.cs" />
+    <Compile Include="deobfuscators\MaxtoCode\EncryptionInfos.cs" />
     <Compile Include="deobfuscators\MaxtoCode\MainType.cs" />
+    <Compile Include="deobfuscators\MaxtoCode\McKey.cs" />
+    <Compile Include="deobfuscators\MaxtoCode\MethodsDecrypter.cs" />
+    <Compile Include="deobfuscators\MaxtoCode\PeHeader.cs" />
+    <Compile Include="deobfuscators\MaxtoCode\StringDecrypter.cs" />
+    <Compile Include="deobfuscators\MemberReferenceBuilder.cs" />
+    <Compile Include="deobfuscators\MethodBodyParser.cs" />
+    <Compile Include="deobfuscators\MethodCallRestorerBase.cs" />
     <Compile Include="deobfuscators\MethodCollection.cs" />
+    <Compile Include="deobfuscators\MethodsDecrypter.cs" />
+    <Compile Include="deobfuscators\MethodStack.cs" />
+    <Compile Include="deobfuscators\MPRESS\Deobfuscator.cs" />
+    <Compile Include="deobfuscators\MPRESS\Lzmat.cs" />
+    <Compile Include="deobfuscators\MyPEImage.cs" />
+    <Compile Include="deobfuscators\NullStream.cs" />
+    <Compile Include="deobfuscators\Operations.cs" />
+    <Compile Include="deobfuscators\ProxyCallFixerBase.cs" />
     <Compile Include="deobfuscators\QuickLZ.cs" />
     <Compile Include="deobfuscators\RandomNameChecker.cs" />
+    <Compile Include="deobfuscators\Rummage\Deobfuscator.cs" />
+    <Compile Include="deobfuscators\Rummage\RummageVersion.cs" />
+    <Compile Include="deobfuscators\Rummage\StringDecrypter.cs" />
     <Compile Include="deobfuscators\Skater_NET\Deobfuscator.cs" />
     <Compile Include="deobfuscators\Skater_NET\EnumClassFinder.cs" />
     <Compile Include="deobfuscators\Skater_NET\StringDecrypter.cs" />
-    <Compile Include="deobfuscators\Spices_Net\Deobfuscator.cs" />
-    <Compile Include="deobfuscators\Spices_Net\QclzDecompressor.cs" />
-    <Compile Include="deobfuscators\Spices_Net\ResourceNamesRestorer.cs" />
-    <Compile Include="deobfuscators\Spices_Net\SpicesMethodCallInliner.cs" />
-    <Compile Include="deobfuscators\Spices_Net\StringDecrypter.cs" />
-    <Compile Include="deobfuscators\StringCounts.cs" />
-    <Compile Include="deobfuscators\Operations.cs" />
-    <Compile Include="deobfuscators\ProxyDelegateFinderBase.cs" />
     <Compile Include="deobfuscators\SmartAssembly\AssemblyResolver.cs" />
     <Compile Include="deobfuscators\SmartAssembly\AssemblyResolverInfo.cs" />
     <Compile Include="deobfuscators\SmartAssembly\AutomatedErrorReportingFinder.cs" />
     <Compile Include="deobfuscators\SmartAssembly\Deobfuscator.cs" />
     <Compile Include="deobfuscators\SmartAssembly\MemoryManagerInfo.cs" />
-    <Compile Include="deobfuscators\SmartAssembly\ProxyDelegateFinder.cs" />
+    <Compile Include="deobfuscators\SmartAssembly\ProxyCallFixer.cs" />
     <Compile Include="deobfuscators\SmartAssembly\ResolverInfoBase.cs" />
     <Compile Include="deobfuscators\SmartAssembly\ResourceDecrypter.cs" />
     <Compile Include="deobfuscators\SmartAssembly\ResourceDecrypterInfo.cs" />
@@ -197,6 +287,12 @@
     <Compile Include="deobfuscators\SmartAssembly\StringDecrypterInfo.cs" />
     <Compile Include="deobfuscators\SmartAssembly\StringEncoderClassFinder.cs" />
     <Compile Include="deobfuscators\SmartAssembly\TamperProtectionRemover.cs" />
+    <Compile Include="deobfuscators\Spices_Net\Deobfuscator.cs" />
+    <Compile Include="deobfuscators\Spices_Net\QclzDecompressor.cs" />
+    <Compile Include="deobfuscators\Spices_Net\ResourceNamesRestorer.cs" />
+    <Compile Include="deobfuscators\Spices_Net\SpicesMethodCallInliner.cs" />
+    <Compile Include="deobfuscators\Spices_Net\StringDecrypter.cs" />
+    <Compile Include="deobfuscators\StringCounts.cs" />
     <Compile Include="deobfuscators\TypesRestorer.cs" />
     <Compile Include="deobfuscators\Unknown\Deobfuscator.cs" />
     <Compile Include="deobfuscators\UnpackedFile.cs" />
@@ -204,38 +300,25 @@
     <Compile Include="deobfuscators\ValueInlinerBase.cs" />
     <Compile Include="deobfuscators\Xenocode\Deobfuscator.cs" />
     <Compile Include="deobfuscators\Xenocode\StringDecrypter.cs" />
+    <Compile Include="DumpedMethodsRestorer.cs" />
+    <Compile Include="HandleProcessCorruptedStateExceptionsAttribute.cs" />
+    <Compile Include="IDeobfuscatorContext.cs" />
     <Compile Include="IObfuscatedFile.cs" />
-    <Compile Include="Log.cs" />
-    <Compile Include="AssemblyModule.cs" />
+    <Compile Include="Logger.cs" />
+    <Compile Include="MethodPrinter.cs" />
     <Compile Include="MethodReturnValueInliner.cs" />
     <Compile Include="NameRegexes.cs" />
     <Compile Include="ObfuscatedFile.cs" />
     <Compile Include="Option.cs" />
-    <Compile Include="PE\Cor20Header.cs" />
-    <Compile Include="PE\DataDirectory.cs" />
-    <Compile Include="PE\FileHeader.cs" />
-    <Compile Include="PE\IFileLocation.cs" />
-    <Compile Include="PE\Metadata.cs" />
-    <Compile Include="PE\MetadataTables.cs" />
-    <Compile Include="PE\MetadataType.cs" />
-    <Compile Include="PE\MetadataTypeBuilder.cs" />
-    <Compile Include="PE\OptionalHeader.cs" />
-    <Compile Include="PE\PeImage.cs" />
-    <Compile Include="PE\ResourceData.cs" />
-    <Compile Include="PE\ResourceDirectory.cs" />
-    <Compile Include="PE\ResourceDirectoryEntry.cs" />
-    <Compile Include="PE\Resources.cs" />
-    <Compile Include="PE\SectionHeader.cs" />
-    <Compile Include="PE\DotNetStream.cs" />
+    <Compile Include="PrintNewTokens.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="renamer\asmmodules\EventDef.cs" />
-    <Compile Include="ExternalAssemblies.cs" />
     <Compile Include="renamer\asmmodules\FieldDef.cs" />
     <Compile Include="renamer\asmmodules\GenericParamDef.cs" />
     <Compile Include="renamer\asmmodules\IResolver.cs" />
     <Compile Include="renamer\asmmodules\MemberRefFinder.cs" />
     <Compile Include="renamer\asmmodules\MethodDef.cs" />
-    <Compile Include="renamer\asmmodules\MethodNameScopes.cs" />
+    <Compile Include="renamer\asmmodules\MethodNameGroups.cs" />
     <Compile Include="renamer\asmmodules\Module.cs" />
     <Compile Include="renamer\asmmodules\Modules.cs" />
     <Compile Include="renamer\asmmodules\ParamDef.cs" />
@@ -249,6 +332,7 @@
     <Compile Include="renamer\MemberInfos.cs" />
     <Compile Include="renamer\NameCreators.cs" />
     <Compile Include="renamer\Renamer.cs" />
+    <Compile Include="renamer\ResourceKeysRenamer.cs" />
     <Compile Include="renamer\ResourceRenamer.cs" />
     <Compile Include="renamer\TypeInfo.cs" />
     <Compile Include="renamer\TypeNames.cs" />
@@ -256,13 +340,23 @@
     <Compile Include="renamer\VariableNameState.cs" />
     <Compile Include="resources\BuiltInResourceData.cs" />
     <Compile Include="resources\IResourceData.cs" />
+    <Compile Include="resources\ResourceDataCreator.cs" />
     <Compile Include="resources\ResourceElement.cs" />
     <Compile Include="resources\ResourceElementSet.cs" />
+    <Compile Include="resources\ResourceReader.cs" />
     <Compile Include="resources\ResourceTypeCode.cs" />
-    <Compile Include="resources\ResourceDataCreator.cs" />
     <Compile Include="resources\ResourceWriter.cs" />
     <Compile Include="resources\UserResourceData.cs" />
     <Compile Include="resources\UserResourceType.cs" />
+    <Compile Include="SharpZipLib\Checksums\Adler32.cs" />
+    <Compile Include="SharpZipLib\Checksums\IChecksum.cs" />
+    <Compile Include="SharpZipLib\Main.cs" />
+    <Compile Include="SharpZipLib\SharpZipBaseException.cs" />
+    <Compile Include="SharpZipLib\Zip\Compression\Inflater.cs" />
+    <Compile Include="SharpZipLib\Zip\Compression\InflaterDynHeader.cs" />
+    <Compile Include="SharpZipLib\Zip\Compression\InflaterHuffmanTree.cs" />
+    <Compile Include="SharpZipLib\Zip\Compression\Streams\OutputWindow.cs" />
+    <Compile Include="SharpZipLib\Zip\Compression\Streams\StreamManipulator.cs" />
     <Compile Include="StringInliner.cs" />
     <Compile Include="UserException.cs" />
     <Compile Include="Utils.cs" />
@@ -273,20 +367,30 @@
       <Project>{FBD84077-9D35-41FE-89DF-8D79EFE0B595}</Project>
       <Name>AssemblyData</Name>
     </ProjectReference>
-    <ProjectReference Include="..\blocks\blocks.csproj">
+    <ProjectReference Include="..\de4dot.blocks\de4dot.blocks.csproj">
       <Project>{045B96F2-AF80-4C4C-8D27-E38635AC705E}</Project>
-      <Name>blocks</Name>
+      <Name>de4dot.blocks</Name>
     </ProjectReference>
-    <ProjectReference Include="..\cecil\Mono.Cecil.csproj">
-      <Project>{D68133BD-1E63-496E-9EDE-4FBDBF77B486}</Project>
-      <Name>Mono.Cecil</Name>
+    <ProjectReference Include="..\de4dot.mdecrypt\de4dot.mdecrypt.csproj">
+      <Project>{5C93C5E2-196F-4877-BF65-96FEBFCEFCA1}</Project>
+      <Name>de4dot.mdecrypt</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\dnlib\src\dnlib.csproj">
+      <Project>{FDFC1237-143F-4919-8318-4926901F4639}</Project>
+      <Name>dnlib</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <EmbeddedResource Include="deobfuscators\Agile_NET\vm\v2\CsvmResources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>CsvmResources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy "$(SolutionDir)LICENSE*.txt" "$(OutDir)"
-copy "$(SolutionDir)COPYING" "$(OutDir)"</PostBuildEvent>
+    <PostBuildEvent>mkdir "..\$(OutDir)..\LICENSES"
+copy "$(SolutionDir)LICENSE*.txt" "..\$(OutDir)..\LICENSES"
+copy "$(SolutionDir)COPYING" "..\$(OutDir)..\LICENSES"</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

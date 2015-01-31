@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -20,7 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using Mono.Cecil;
+using dnlib.DotNet;
 using de4dot.blocks;
 
 namespace AssemblyData.methodsrewriter {
@@ -35,10 +35,10 @@ namespace AssemblyData.methodsrewriter {
 
 		public AssemblyResolver(string asmName) {
 			assembly = Assembly.Load(new AssemblyName(asmName));
-			initTypes();
+			InitTypes();
 		}
 
-		void initTypes() {
+		void InitTypes() {
 			foreach (var type in assembly.GetTypes()) {
 				string key = (type.Namespace ?? "") + "." + type.Name;
 				List<TypeResolver> list;
@@ -48,44 +48,47 @@ namespace AssemblyData.methodsrewriter {
 			}
 		}
 
-		TypeResolver getTypeResolver(TypeReference typeReference) {
-			var key = typeReference.Namespace + "." + typeReference.Name;
+		TypeResolver GetTypeResolver(ITypeDefOrRef typeRef) {
+			if (typeRef == null)
+				return null;
+			var scopeType = typeRef.ScopeType;
+			var key = scopeType.Namespace + "." + scopeType.TypeName;
 			List<TypeResolver> list;
 			if (!types.TryGetValue(key, out list))
 				return null;
 
-			if (typeReference is TypeDefinition) {
+			if (scopeType is TypeDef) {
 				foreach (var resolver in list) {
-					if (resolver.type.MetadataToken == typeReference.MetadataToken.ToInt32())
+					if (resolver.type.MetadataToken == scopeType.MDToken.Raw)
 						return resolver;
 				}
 			}
 
 			foreach (var resolver in list) {
-				if (ResolverUtils.compareTypes(resolver.type, typeReference))
+				if (ResolverUtils.CompareTypes(resolver.type, scopeType))
 					return resolver;
 			}
 
 			return null;
 		}
 
-		public FieldInfo resolve(FieldReference fieldReference) {
-			var resolver = getTypeResolver(fieldReference.DeclaringType);
+		public FieldInfo Resolve(IField fieldRef) {
+			var resolver = GetTypeResolver(fieldRef.DeclaringType);
 			if (resolver != null)
-				return resolver.resolve(fieldReference);
-			return resolveGlobalField(fieldReference);
+				return resolver.Resolve(fieldRef);
+			return ResolveGlobalField(fieldRef);
 		}
 
-		FieldInfo resolveGlobalField(FieldReference fieldReference) {
-			initGlobalFields();
+		FieldInfo ResolveGlobalField(IField fieldRef) {
+			InitGlobalFields();
 			foreach (var globalField in globalFields) {
-				if (ResolverUtils.compareFields(globalField, fieldReference))
+				if (ResolverUtils.CompareFields(globalField, fieldRef))
 					return globalField;
 			}
 			return null;
 		}
 
-		void initGlobalFields() {
+		void InitGlobalFields() {
 			if (globalFields != null)
 				return;
 			globalFields = new List<FieldInfo>();
@@ -97,23 +100,23 @@ namespace AssemblyData.methodsrewriter {
 			}
 		}
 
-		public MethodBase resolve(MethodReference methodReference) {
-			var resolver = getTypeResolver(methodReference.DeclaringType);
+		public MethodBase Resolve(IMethod methodRef) {
+			var resolver = GetTypeResolver(methodRef.DeclaringType);
 			if (resolver != null)
-				return resolver.resolve(methodReference);
-			return resolveGlobalMethod(methodReference);
+				return resolver.Resolve(methodRef);
+			return ResolveGlobalMethod(methodRef);
 		}
 
-		MethodBase resolveGlobalMethod(MethodReference methodReference) {
-			initGlobalMethods();
+		MethodBase ResolveGlobalMethod(IMethod methodRef) {
+			InitGlobalMethods();
 			foreach (var globalMethod in globalMethods) {
-				if (ResolverUtils.compareMethods(globalMethod, methodReference))
+				if (ResolverUtils.CompareMethods(globalMethod, methodRef))
 					return globalMethod;
 			}
 			return null;
 		}
 
-		void initGlobalMethods() {
+		void InitGlobalMethods() {
 			if (globalMethods != null)
 				return;
 			globalMethods = new List<MethodBase>();
@@ -125,12 +128,13 @@ namespace AssemblyData.methodsrewriter {
 			}
 		}
 
-		public Type resolve(TypeReference typeReference) {
-			var resolver = getTypeResolver(typeReference);
+		public Type Resolve(ITypeDefOrRef typeRef) {
+			var resolver = GetTypeResolver(typeRef);
 			if (resolver != null)
 				return resolver.type;
 
-			if (typeReference.IsGenericParameter)
+			var ts = typeRef as TypeSpec;
+			if (ts != null && ts.TypeSig is GenericSig)
 				return typeof(MGenericParameter);
 
 			return null;

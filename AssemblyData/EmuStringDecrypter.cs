@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -36,26 +36,26 @@ namespace AssemblyData {
 			}
 		}
 
-		public int defineStringDecrypter(MethodInfo method) {
+		public int DefineStringDecrypter(MethodInfo method) {
 			decryptInfos.Add(new DecryptInfo(method));
 			return decryptInfos.Count - 1;
 		}
 
-		public object[] decryptStrings(int stringDecrypterMethod, object[] args, MethodBase caller) {
+		public object[] DecryptStrings(int stringDecrypterMethod, object[] args, MethodBase caller) {
 			var decryptInfo = decryptInfos[stringDecrypterMethod];
 			if (decryptInfo.decryptString == null)
-				decryptInfo.decryptString = createDecryptString(decryptInfo.method);
+				decryptInfo.decryptString = CreateDecryptString(decryptInfo.method);
 
-			methodsRewriter.setCaller(decryptInfo.decryptString, caller);
+			methodsRewriter.SetCaller(decryptInfo.decryptString, caller);
 			var result = new object[args.Length];
 			for (int i = 0; i < args.Length; i++)
 				result[i] = decryptInfo.decryptString((object[])args[i]);
 			return result;
 		}
 
-		RewrittenMethod createDecryptString(MethodInfo method) {
-			methodsRewriter.createMethod(method);
-			return methodsRewriter.createDelegate(method);
+		RewrittenMethod CreateDecryptString(MethodInfo method) {
+			methodsRewriter.CreateMethod(method);
+			return methodsRewriter.CreateDelegate(method);
 		}
 	}
 }

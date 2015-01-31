@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -20,52 +20,64 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.MyStuff;
+using dnlib.DotNet;
+using dnlib.DotNet.Writer;
 using de4dot.blocks;
 
 namespace de4dot.code {
 	class AssemblyModule {
 		string filename;
-		ModuleDefinition module;
+		ModuleDefMD module;
+		ModuleContext moduleContext;
 
-		public AssemblyModule(string filename) {
-			this.filename = Utils.getFullPath(filename);
+		public AssemblyModule(string filename, ModuleContext moduleContext) {
+			this.filename = Utils.GetFullPath(filename);
+			this.moduleContext = moduleContext;
 		}
 
-		ReaderParameters getReaderParameters() {
-			return new ReaderParameters(ReadingMode.Deferred) {
-				AssemblyResolver = AssemblyResolver.Instance
-			};
+		public ModuleDefMD Load() {
+			return SetModule(ModuleDefMD.Load(filename, moduleContext));
 		}
 
-		public ModuleDefinition load() {
-			return setModule(ModuleDefinition.ReadModule(filename, getReaderParameters()));
+		public ModuleDefMD Load(byte[] fileData) {
+			return SetModule(ModuleDefMD.Load(fileData, moduleContext));
 		}
 
-		public ModuleDefinition load(byte[] fileData) {
-			return setModule(ModuleDefinition.ReadModule(new MemoryStream(fileData), getReaderParameters()));
-		}
-
-		ModuleDefinition setModule(ModuleDefinition newModule) {
+		ModuleDefMD SetModule(ModuleDefMD newModule) {
 			module = newModule;
-			AssemblyResolver.Instance.addModule(module);
-			module.FullyQualifiedName = filename;
+			TheAssemblyResolver.Instance.AddModule(module);
+			module.EnableTypeDefFindCache = true;
+			module.Location = filename;
 			return module;
 		}
 
-		public void save(string newFilename, bool updateMaxStack, IWriterListener writerListener) {
-			var writerParams = new WriterParameters() {
-				UpdateMaxStack = updateMaxStack,
-				WriterListener = writerListener,
-			};
-			module.Write(newFilename, writerParams);
+		public void Save(string newFilename, MetaDataFlags mdFlags, IModuleWriterListener writerListener) {
+			if (module.IsILOnly) {
+				var writerOptions = new ModuleWriterOptions(module, writerListener);
+				writerOptions.MetaDataOptions.Flags |= mdFlags;
+				writerOptions.Logger = Logger.Instance;
+				module.Write(newFilename, writerOptions);
+			}
+			else {
+				var writerOptions = new NativeModuleWriterOptions(module, writerListener);
+				writerOptions.MetaDataOptions.Flags |= mdFlags;
+				writerOptions.Logger = Logger.Instance;
+				writerOptions.KeepExtraPEData = true;
+				writerOptions.KeepWin32Resources = true;
+				module.NativeWrite(newFilename, writerOptions);
+			}
 		}
 
-		public ModuleDefinition reload(byte[] newModuleData, DumpedMethods dumpedMethods) {
-			AssemblyResolver.Instance.removeModule(module);
-			DotNetUtils.typeCaches.invalidate(module);
-			return setModule(ModuleDefinition.ReadModule(new MemoryStream(newModuleData), getReaderParameters(), dumpedMethods));
+		public ModuleDefMD Reload(byte[] newModuleData, DumpedMethodsRestorer dumpedMethodsRestorer, IStringDecrypter stringDecrypter) {
+			TheAssemblyResolver.Instance.Remove(module);
+			var mod = ModuleDefMD.Load(newModuleData, moduleContext);
+			if (dumpedMethodsRestorer != null)
+				dumpedMethodsRestorer.Module = mod;
+			mod.StringDecrypter = stringDecrypter;
+			mod.MethodDecrypter = dumpedMethodsRestorer;
+			mod.TablesStream.ColumnReader = dumpedMethodsRestorer;
+			mod.TablesStream.MethodRowReader = dumpedMethodsRestorer;
+			return SetModule(mod);
 		}
 
 		public override string ToString() {

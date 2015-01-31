@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -18,23 +18,23 @@
 */
 
 using System.Reflection;
-using Mono.Cecil;
+using dnlib.DotNet;
 
 namespace AssemblyData.methodsrewriter {
 	class MMethod {
 		public MethodBase methodBase;
-		public MethodDefinition methodDefinition;
-		public MMethod(MethodBase methodBase, MethodDefinition methodDefinition) {
+		public MethodDef methodDef;
+		public MMethod(MethodBase methodBase, MethodDef methodDef) {
 			this.methodBase = methodBase;
-			this.methodDefinition = methodDefinition;
+			this.methodDef = methodDef;
 		}
 
-		public bool hasInstructions() {
-			return methodDefinition.Body != null && methodDefinition.Body.Instructions.Count != 0;
+		public bool HasInstructions() {
+			return methodDef.Body != null && methodDef.Body.Instructions.Count != 0;
 		}
 
 		public override string ToString() {
-			return methodDefinition.ToString();
+			return methodDef.ToString();
 		}
 	}
 }

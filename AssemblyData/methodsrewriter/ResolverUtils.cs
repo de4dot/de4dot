@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -20,205 +20,32 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using Mono.Cecil;
+using dnlib.DotNet;
 using de4dot.blocks;
 
 namespace AssemblyData.methodsrewriter {
 	static class ResolverUtils {
-		public static bool compareTypes(Type a, TypeReference b) {
-			if (a == null && b == null)
-				return true;
-			if (a == null || b == null)
-				return false;
-
-			var type = MemberReferenceHelper.getMemberReferenceType(b);
-			switch (type) {
-			case CecilType.ArrayType:
-				return compareArrayTypes(a, (ArrayType)b);
-			case CecilType.ByReferenceType:
-				return compareByReferenceTypes(a, (ByReferenceType)b);
-			case CecilType.FunctionPointerType:
-				return compareFunctionPointerTypes(a, (FunctionPointerType)b);
-			case CecilType.GenericInstanceType:
-				return compareGenericInstanceTypes(a, (GenericInstanceType)b);
-			case CecilType.GenericParameter:
-				return compareGenericParameters(a, (GenericParameter)b);
-			case CecilType.OptionalModifierType:
-				return compareOptionalModifierTypes(a, (OptionalModifierType)b);
-			case CecilType.PinnedType:
-				return comparePinnedTypes(a, (PinnedType)b);
-			case CecilType.PointerType:
-				return comparePointerTypes(a, (PointerType)b);
-			case CecilType.RequiredModifierType:
-				return compareRequiredModifierTypes(a, (RequiredModifierType)b);
-			case CecilType.SentinelType:
-				return compareSentinelTypes(a, (SentinelType)b);
-			case CecilType.TypeDefinition:
-				return compareTypeDefinitions(a, (TypeDefinition)b);
-			case CecilType.TypeReference:
-				return compareTypeReferences(a, (TypeReference)b);
-			default:
-				throw new ApplicationException(string.Format("Unknown cecil type {0}", type));
-			}
+		public static bool CompareTypes(Type a, IType b) {
+			return new SigComparer().Equals(a, b);
 		}
 
-		static bool compareArrayTypes(Type a, ArrayType b) {
-			if (!a.IsArray)
-				return false;
-			if (a.GetArrayRank() != b.Rank)
-				return false;
-			return compareTypes(a.GetElementType(), b.ElementType);
+		public static bool CompareFields(FieldInfo a, IField b) {
+			return new SigComparer().Equals(a, b);
 		}
 
-		static bool compareByReferenceTypes(Type a, ByReferenceType b) {
-			if (!a.IsByRef)
-				return false;
-			return compareTypes(a.GetElementType(), b.ElementType);
-		}
-
-		static bool compareFunctionPointerTypes(Type a, FunctionPointerType b) {
-			return compareTypes(a, b.ElementType);
-		}
-
-		static bool compareGenericInstanceTypes(Type a, GenericInstanceType b) {
-			if (!a.IsGenericType)
-				return false;
-
-			var aGpargs = a.GetGenericArguments();
-			var bGpargs = b.GenericArguments;
-			if (aGpargs.Length != bGpargs.Count)
-				return false;
-
-			for (int i = 0; i < aGpargs.Length; i++) {
-				var aArg = aGpargs[i];
-				var bArg = bGpargs[i];
-				if (aArg.IsGenericParameter)
-					continue;
-				if (!compareTypes(aArg, bArg))
-					return false;
-			}
-
-			return compareTypes(a, b.ElementType);
-		}
-
-		static bool compareGenericParameters(Type a, GenericParameter b) {
-			if (!a.IsGenericParameter)
-				return false;
-			if (a.GenericParameterPosition != b.Position)
-				return false;
-			return true;
-		}
-
-		static bool compareOptionalModifierTypes(Type a, OptionalModifierType b) {
-			return compareTypes(a, b.ElementType);
-		}
-
-		static bool comparePinnedTypes(Type a, PinnedType b) {
-			return compareTypes(a, b.ElementType);
-		}
-
-		static bool comparePointerTypes(Type a, PointerType b) {
-			if (!a.IsPointer)
-				return false;
-			return compareTypes(a.GetElementType(), b.ElementType);
-		}
-
-		static bool compareRequiredModifierTypes(Type a, RequiredModifierType b) {
-			return compareTypes(a, b.ElementType);
-		}
-
-		static bool compareSentinelTypes(Type a, SentinelType b) {
-			return compareTypes(a, b.ElementType);
-		}
-
-		static bool compareTypeDefinitions(Type a, TypeDefinition b) {
-			return compareTypeReferences(a, b);
-		}
-
-		static bool compareTypeReferences(Type a, TypeReference b) {
-			if (a.IsGenericParameter || a.IsPointer || a.IsByRef || a.IsArray)
-				return false;
-
-			if (a.Name != b.Name)
-				return false;
-			if ((a.Namespace ?? "") != b.Namespace)
-				return false;
-
-			var asmRef = DotNetUtils.getAssemblyNameReference(b);
-			var asmName = a.Assembly.GetName();
-			if (asmRef.Name != asmName.Name)
-				return false;
-
-			return compareTypes(a.DeclaringType, b.DeclaringType);
-		}
-
-		public static bool compareFields(FieldInfo a, FieldReference b) {
-			if (a == null && b == null)
-				return true;
-			if (a == null || b == null)
-				return false;
-
-			return a.Name == b.Name &&
-				compareTypes(a.FieldType, b.FieldType);
-		}
-
-		public static bool hasThis(MethodBase method) {
+		public static bool HasThis(MethodBase method) {
 			return (method.CallingConvention & CallingConventions.HasThis) != 0;
 		}
 
-		public static bool explicitThis(MethodBase method) {
+		public static bool ExplicitThis(MethodBase method) {
 			return (method.CallingConvention & CallingConventions.ExplicitThis) != 0;
 		}
 
-		public static bool compareMethods(MethodBase a, MethodReference b) {
-			if (a == null && b == null)
-				return true;
-			if (a == null || b == null)
-				return false;
-
-			if (a.Name != b.Name)
-				return false;
-
-			if (hasThis(a) != b.HasThis || explicitThis(a) != b.ExplicitThis)
-				return false;
-
-			CallingConventions aCallingConvention = a.CallingConvention & (CallingConventions)7;
-			switch (b.CallingConvention) {
-			case MethodCallingConvention.Default:
-				if (aCallingConvention != CallingConventions.Standard && aCallingConvention != CallingConventions.Any)
-					return false;
-				break;
-
-			case MethodCallingConvention.VarArg:
-				if (aCallingConvention != CallingConventions.VarArgs && aCallingConvention != CallingConventions.Any)
-					return false;
-				break;
-
-			default:
-				return false;
-			}
-
-			if (!compareTypes(getReturnType(a), b.MethodReturnType.ReturnType))
-				return false;
-
-			var aParams = a.GetParameters();
-			var bParams = b.Parameters;
-			if (aParams.Length != bParams.Count)
-				return false;
-			for (int i = 0; i < aParams.Length; i++) {
-				if (!compareTypes(aParams[i].ParameterType, bParams[i].ParameterType))
-					return false;
-			}
-
-			var aGparams = getGenericArguments(a);
-			var bGparams = b.GenericParameters;
-			if (aGparams.Length != bGparams.Count)
-				return false;
-
-			return true;
+		public static bool CompareMethods(MethodBase a, IMethod b) {
+			return new SigComparer().Equals(a, b);
 		}
 
-		public static Type getReturnType(MethodBase methodBase) {
+		public static Type GetReturnType(MethodBase methodBase) {
 			var methodInfo = methodBase as MethodInfo;
 			if (methodInfo != null)
 				return methodInfo.ReturnType;
@@ -230,7 +57,7 @@ namespace AssemblyData.methodsrewriter {
 			throw new ApplicationException(string.Format("Could not figure out return type: {0} ({1:X8})", methodBase, methodBase.MetadataToken));
 		}
 
-		public static Type[] getGenericArguments(MethodBase methodBase) {
+		public static Type[] GetGenericArguments(MethodBase methodBase) {
 			try {
 				return methodBase.GetGenericArguments();
 			}
@@ -239,7 +66,7 @@ namespace AssemblyData.methodsrewriter {
 			}
 		}
 
-		public static IEnumerable<MethodBase> getMethodBases(Type type, BindingFlags flags) {
+		public static IEnumerable<MethodBase> GetMethodBases(Type type, BindingFlags flags) {
 			if (type.TypeInitializer != null)
 				yield return type.TypeInitializer;
 			foreach (var ctor in type.GetConstructors(flags))
@@ -269,7 +96,7 @@ namespace AssemblyData.methodsrewriter {
 		}
 
 		static Dictionary<CachedMemberInfo, FieldInfo> cachedFieldInfos = new Dictionary<CachedMemberInfo, FieldInfo>();
-		public static FieldInfo getField(Type type, Type fieldType, BindingFlags flags) {
+		public static FieldInfo GetField(Type type, Type fieldType, BindingFlags flags) {
 			var key = new CachedMemberInfo(type, fieldType);
 			FieldInfo fieldInfo;
 			if (cachedFieldInfos.TryGetValue(key, out fieldInfo))
@@ -284,14 +111,14 @@ namespace AssemblyData.methodsrewriter {
 			return null;
 		}
 
-		public static FieldInfo getFieldThrow(Type type, Type fieldType, BindingFlags flags, string msg) {
-			var info = getField(type, fieldType, flags);
+		public static FieldInfo GetFieldThrow(Type type, Type fieldType, BindingFlags flags, string msg) {
+			var info = GetField(type, fieldType, flags);
 			if (info != null)
 				return info;
 			throw new ApplicationException(msg);
 		}
 
-		public static List<FieldInfo> getFields(Type type, Type fieldType, BindingFlags flags) {
+		public static List<FieldInfo> GetFields(Type type, Type fieldType, BindingFlags flags) {
 			var list = new List<FieldInfo>();
 			foreach (var field in type.GetFields(flags)) {
 				if (field.FieldType == fieldType)
@@ -300,17 +127,20 @@ namespace AssemblyData.methodsrewriter {
 			return list;
 		}
 
-		public static Type makeInstanceType(Type type, TypeReference typeReference) {
-			var git = typeReference as GenericInstanceType;
+		public static Type MakeInstanceType(Type type, ITypeDefOrRef typeRef) {
+			var ts = typeRef as TypeSpec;
+			if (ts == null)
+				return type;
+			var git = ts.TypeSig as GenericInstSig;
 			if (git == null)
 				return type;
 			var types = new Type[git.GenericArguments.Count];
 			bool isTypeDef = true;
 			for (int i = 0; i < git.GenericArguments.Count; i++) {
 				var arg = git.GenericArguments[i];
-				if (!(arg is GenericParameter))
+				if (!(arg is GenericSig))
 					isTypeDef = false;
-				types[i] = Resolver.getRtType(arg);
+				types[i] = Resolver.GetRtType(arg);
 			}
 			if (isTypeDef)
 				return type;

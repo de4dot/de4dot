@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -21,10 +21,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using dnlib.IO;
 
 namespace de4dot.code.deobfuscators.CodeVeil {
 	class ResourceReader {
-		BinaryReader reader;
+		IBinaryReader reader;
 		string resourceReader;
 		string resourceSet;
 
@@ -36,16 +37,11 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			get { return resourceSet; }
 		}
 
-		public ResourceReader(Stream stream) {
-			stream.Position = 0;
-			reader = new BinaryReader(stream);
-		}
-
-		public ResourceReader(BinaryReader reader) {
+		public ResourceReader(IBinaryReader reader) {
 			this.reader = reader;
 		}
 
-		public ResourceInfo[] read() {
+		public ResourceInfo[] Read() {
 			if (reader.ReadUInt32() != 0xBEEFCACE)
 				throw new InvalidDataException("Invalid magic");
 			if (reader.ReadUInt32() <= 0)
@@ -70,7 +66,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 
 			var infos = new ResourceInfo[numResources];
 			for (int i = 0; i < numResources; i++) {
-				var resourceName = readResourceName(reader, encrypted);
+				var resourceName = ReadResourceName(reader, encrypted);
 				int offset = reader.ReadInt32();
 				byte resourceFlags = reader.ReadByte();
 				int resourceLength = (resourceFlags & 0x80) == 0 ? -1 : reader.ReadInt32();
@@ -90,16 +86,16 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 					encryptedData[i] = dataReader.ReadUInt32();
 				key[2] = dataReader.ReadUInt32();
 				key[3] = dataReader.ReadUInt32();
-				DeobUtils.xxteaDecrypt(encryptedData, key);
+				DeobUtils.XxteaDecrypt(encryptedData, key);
 				byte[] decryptedData = new byte[encryptedData.Length * 4];
 				Buffer.BlockCopy(encryptedData, 0, decryptedData, 0, decryptedData.Length);
-				dataReader = new BinaryReader(new MemoryStream(decryptedData));
+				dataReader = MemoryImageStream.Create(decryptedData);
 			}
 
 			if (inflateData) {
-				var data = dataReader.ReadBytes((int)(dataReader.BaseStream.Length - dataReader.BaseStream.Position));
-				data = DeobUtils.inflate(data, true);
-				dataReader = new BinaryReader(new MemoryStream(data));
+				var data = dataReader.ReadRemainingBytes();
+				data = DeobUtils.Inflate(data, true);
+				dataReader = MemoryImageStream.Create(data);
 			}
 
 			foreach (var info in infos)
@@ -108,7 +104,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return infos;
 		}
 
-		static string readResourceName(BinaryReader reader, bool encrypted) {
+		static string ReadResourceName(IBinaryReader reader, bool encrypted) {
 			if (!encrypted)
 				return reader.ReadString();
 
@@ -117,11 +113,11 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				throw new ApplicationException("Invalid string length");
 			var sb = new StringBuilder(len);
 			for (int i = 0; i < len; i++)
-				sb.Append((char)rol3(reader.ReadChar()));
+				sb.Append((char)Rol3(reader.ReadChar()));
 			return sb.ToString();
 		}
 
-		static char rol3(char c) {
+		static char Rol3(char c) {
 			ushort s = (ushort)c;
 			return (char)((s << 3) | (s >> (16 - 3)));
 		}

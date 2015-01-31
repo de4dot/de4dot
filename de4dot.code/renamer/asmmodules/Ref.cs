@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -17,22 +17,22 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.Cecil;
+using dnlib.DotNet;
 
 namespace de4dot.code.renamer.asmmodules {
 	abstract class Ref {
-		public readonly MemberReference memberReference;
+		public readonly IMemberRef memberRef;
 		public int Index { get; set; }
-		public TypeDef Owner { get; set; }
+		public MTypeDef Owner { get; set; }
 
-		protected Ref(MemberReference memberReference, TypeDef owner, int index) {
-			this.memberReference = memberReference;
+		protected Ref(IMemberRef memberRef, MTypeDef owner, int index) {
+			this.memberRef = memberRef;
 			Owner = owner;
 			Index = index;
 		}
 
 		public override string ToString() {
-			return memberReference != null ? memberReference.ToString() : null;
+			return memberRef != null ? memberRef.ToString() : null;
 		}
 	}
 }

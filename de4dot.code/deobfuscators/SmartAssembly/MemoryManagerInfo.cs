@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -17,50 +17,49 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.Cecil;
+using dnlib.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.SmartAssembly {
 	class MemoryManagerInfo {
-		ModuleDefinition module;
-		TypeDefinition memoryManagerType;
-		MethodDefinition attachAppMethod;
+		ModuleDefMD module;
+		TypeDef memoryManagerType;
+		MethodDef attachAppMethod;
 
 		public bool Detected {
 			get { return memoryManagerType != null; }
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return memoryManagerType; }
 		}
 
-		public MethodDefinition CctorInitMethod {
+		public MethodDef CctorInitMethod {
 			get { return attachAppMethod; }
 		}
 
-		public MemoryManagerInfo(ModuleDefinition module) {
+		public MemoryManagerInfo(ModuleDefMD module) {
 			this.module = module;
 		}
 
-		public bool find() {
-			if (checkCalledMethods(DotNetUtils.getModuleTypeCctor(module)))
+		public bool Find() {
+			if (CheckCalledMethods(DotNetUtils.GetModuleTypeCctor(module)))
 				return true;
-			if (checkCalledMethods(module.EntryPoint))
+			if (CheckCalledMethods(module.EntryPoint))
 				return true;
 			return false;
 		}
 
-		bool checkCalledMethods(MethodDefinition checkMethod) {
+		bool CheckCalledMethods(MethodDef checkMethod) {
 			if (checkMethod == null)
 				return false;
-			foreach (var tuple in DotNetUtils.getCalledMethods(module, checkMethod)) {
-				var method = tuple.Item2;
+			foreach (var method in DotNetUtils.GetCalledMethods(module, checkMethod)) {
 				if (method.Name == ".cctor" || method.Name == ".ctor")
 					continue;
-				if (!method.IsStatic || !DotNetUtils.isMethod(method, "System.Void", "()"))
+				if (!method.IsStatic || !DotNetUtils.IsMethod(method, "System.Void", "()"))
 					continue;
-				if (checkMemoryManagerType(tuple.Item1, method)) {
-					memoryManagerType = tuple.Item1;
+				if (CheckMemoryManagerType(method.DeclaringType, method)) {
+					memoryManagerType = method.DeclaringType;
 					attachAppMethod = method;
 					return true;
 				}
@@ -69,16 +68,16 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return false;
 		}
 
-		bool checkMemoryManagerType(TypeDefinition type, MethodDefinition method) {
+		bool CheckMemoryManagerType(TypeDef type, MethodDef method) {
 			// Only two fields: itself and a long
 			int fields = 0;
 			foreach (var field in type.Fields) {
-				if (MemberReferenceHelper.compareTypes(field.FieldType, type) ||
+				if (new SigComparer().Equals(field.FieldType, type) ||
 					field.FieldType.FullName == "System.Int64") {
 					fields++;
 					continue;
 				}
-				if (DotNetUtils.derivesFromDelegate(DotNetUtils.getType(module, field.FieldType)))
+				if (DotNetUtils.DerivesFromDelegate(DotNetUtils.GetType(module, field.FieldType)))
 					continue;
 
 				return false;
@@ -86,7 +85,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			if (fields != 2)
 				return false;
 
-			if (DotNetUtils.getPInvokeMethod(type, "kernel32", "SetProcessWorkingSetSize") == null)
+			if (DotNetUtils.GetPInvokeMethod(type, "kernel32", "SetProcessWorkingSetSize") == null)
 				return false;
 
 			return true;

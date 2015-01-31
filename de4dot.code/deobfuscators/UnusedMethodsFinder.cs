@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -18,51 +18,51 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators {
 	class UnusedMethodsFinder {
-		ModuleDefinition module;
+		ModuleDef module;
 		MethodCollection removedMethods;
-		Dictionary<MethodDefinition, bool> possiblyUnusedMethods = new Dictionary<MethodDefinition, bool>();
-		Stack<MethodDefinition> notUnusedStack = new Stack<MethodDefinition>();
+		Dictionary<MethodDef, bool> possiblyUnusedMethods = new Dictionary<MethodDef, bool>();
+		Stack<MethodDef> notUnusedStack = new Stack<MethodDef>();
 
-		public UnusedMethodsFinder(ModuleDefinition module, IEnumerable<MethodDefinition> possiblyUnusedMethods, MethodCollection removedMethods) {
+		public UnusedMethodsFinder(ModuleDef module, IEnumerable<MethodDef> possiblyUnusedMethods, MethodCollection removedMethods) {
 			this.module = module;
 			this.removedMethods = removedMethods;
 			foreach (var method in possiblyUnusedMethods) {
-				if (method != module.EntryPoint && !removedMethods.exists(method))
+				if (method != module.ManagedEntryPoint && !removedMethods.Exists(method))
 					this.possiblyUnusedMethods[method] = true;
 			}
 		}
 
-		public IEnumerable<MethodDefinition> find() {
+		public IEnumerable<MethodDef> Find() {
 			if (possiblyUnusedMethods.Count == 0)
 				return possiblyUnusedMethods.Keys;
 
 			foreach (var type in module.GetTypes()) {
 				foreach (var method in type.Methods)
-					check(method);
+					Check(method);
 			}
 
 			while (notUnusedStack.Count > 0) {
 				var method = notUnusedStack.Pop();
 				if (!possiblyUnusedMethods.Remove(method))
 					continue;
-				check(method);
+				Check(method);
 			}
 
 			return possiblyUnusedMethods.Keys;
 		}
 
-		void check(MethodDefinition method) {
+		void Check(MethodDef method) {
 			if (method.Body == null)
 				return;
 			if (possiblyUnusedMethods.ContainsKey(method))
 				return;
-			if (removedMethods.exists(method))
+			if (removedMethods.Exists(method))
 				return;
 
 			foreach (var instr in method.Body.Instructions) {
@@ -79,7 +79,7 @@ namespace de4dot.code.deobfuscators {
 					continue;
 				}
 
-				var calledMethod = DotNetUtils.getMethod(module, instr.Operand as MethodReference);
+				var calledMethod = DotNetUtils.GetMethod2(module, instr.Operand as IMethod);
 				if (calledMethod == null)
 					continue;
 				if (possiblyUnusedMethods.ContainsKey(calledMethod))

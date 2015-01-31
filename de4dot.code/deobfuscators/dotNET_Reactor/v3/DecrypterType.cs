@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -20,26 +20,25 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Mono.Cecil;
+using dnlib.DotNet;
 using de4dot.blocks;
-using de4dot.code.PE;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 	// Find the type that decrypts strings and calls the native lib
 	class DecrypterType {
-		ModuleDefinition module;
-		TypeDefinition decrypterType;
-		MethodDefinition stringDecrypter1;
-		MethodDefinition stringDecrypter2;
-		List<MethodDefinition> initMethods = new List<MethodDefinition>();
-		List<ModuleReference> moduleReferences = new List<ModuleReference>();
+		ModuleDefMD module;
+		TypeDef decrypterType;
+		MethodDef stringDecrypter1;
+		MethodDef stringDecrypter2;
+		List<MethodDef> initMethods = new List<MethodDef>();
+		List<ModuleRef> moduleRefs = new List<ModuleRef>();
 		Resource linkedResource;
 
 		public bool Detected {
 			get { return decrypterType != null; }
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return decrypterType; }
 		}
 
@@ -47,83 +46,79 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			get { return linkedResource; }
 		}
 
-		public MethodDefinition StringDecrypter1 {
+		public MethodDef StringDecrypter1 {
 			get { return stringDecrypter1; }
 		}
 
-		public MethodDefinition StringDecrypter2 {
+		public MethodDef StringDecrypter2 {
 			get { return stringDecrypter2; }
 		}
 
-		public IEnumerable<MethodDefinition> InitMethods {
+		public IEnumerable<MethodDef> InitMethods {
 			get { return initMethods; }
 		}
 
-		public List<ModuleReference> ModuleReferences {
-			get { return moduleReferences; }
-		}
-
-		public IEnumerable<MethodDefinition> StringDecrypters {
+		public IEnumerable<MethodDef> StringDecrypters {
 			get {
-				return new List<MethodDefinition> {
+				return new List<MethodDef> {
 					stringDecrypter1,
 					stringDecrypter2,
 				};
 			}
 		}
 
-		public DecrypterType(ModuleDefinition module) {
+		public DecrypterType(ModuleDefMD module) {
 			this.module = module;
 		}
 
-		public DecrypterType(ModuleDefinition module, DecrypterType oldOne) {
+		public DecrypterType(ModuleDefMD module, DecrypterType oldOne) {
 			this.module = module;
-			this.decrypterType = lookup(oldOne.decrypterType, "Could not find decrypterType");
-			this.stringDecrypter1 = lookup(oldOne.stringDecrypter1, "Could not find stringDecrypter1");
-			this.stringDecrypter2 = lookup(oldOne.stringDecrypter2, "Could not find stringDecrypter2");
+			this.decrypterType = Lookup(oldOne.decrypterType, "Could not find decrypterType");
+			this.stringDecrypter1 = Lookup(oldOne.stringDecrypter1, "Could not find stringDecrypter1");
+			this.stringDecrypter2 = Lookup(oldOne.stringDecrypter2, "Could not find stringDecrypter2");
 			foreach (var method in oldOne.initMethods)
-				initMethods.Add(lookup(method, "Could not find initMethod"));
-			updateModuleReferences();
+				initMethods.Add(Lookup(method, "Could not find initMethod"));
+			UpdateModuleRefs();
 		}
 
-		T lookup<T>(T def, string errorMessage) where T : MemberReference {
-			return DeobUtils.lookup(module, def, errorMessage);
+		T Lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
+			return DeobUtils.Lookup(module, def, errorMessage);
 		}
 
-		public void find() {
+		public void Find() {
 			foreach (var type in module.Types) {
 				if (type.FullName != "<PrivateImplementationDetails>{B4838DC1-AC79-43d1-949F-41B518B904A8}")
 					continue;
 
 				decrypterType = type;
-				stringDecrypter1 = getStringDecrypter(type, "CS$0$0004");
-				stringDecrypter2 = getStringDecrypter(type, "CS$0$0005");
+				stringDecrypter1 = GetStringDecrypter(type, "CS$0$0004");
+				stringDecrypter2 = GetStringDecrypter(type, "CS$0$0005");
 				foreach (var method in type.Methods) {
-					if (DotNetUtils.isMethod(method, "System.Void", "()"))
+					if (DotNetUtils.IsMethod(method, "System.Void", "()"))
 						initMethods.Add(method);
 				}
-				updateModuleReferences();
+				UpdateModuleRefs();
 				return;
 			}
 		}
 
-		void updateModuleReferences() {
+		void UpdateModuleRefs() {
 			foreach (var method in decrypterType.Methods) {
-				if (method.PInvokeInfo != null) {
-					switch (method.PInvokeInfo.EntryPoint) {
+				if (method.ImplMap != null) {
+					switch (method.ImplMap.Name.String) {
 					case "nr_nli":
 					case "nr_startup":
-						moduleReferences.Add(method.PInvokeInfo.Module);
+						moduleRefs.Add(method.ImplMap.Module);
 						break;
 					}
 				}
 			}
-			updateLinkedResource();
+			UpdateLinkedResource();
 		}
 
-		void updateLinkedResource() {
-			foreach (var modref in moduleReferences) {
-				var resource = DotNetUtils.getResource(module, modref.Name) as LinkedResource;
+		void UpdateLinkedResource() {
+			foreach (var modref in moduleRefs) {
+				var resource = DotNetUtils.GetResource(module, modref.Name.String) as LinkedResource;
 				if (resource == null)
 					continue;
 
@@ -132,66 +127,67 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			}
 		}
 
-		MethodDefinition getStringDecrypter(TypeDefinition type, string name) {
-			var method = DotNetUtils.getMethod(type, name);
+		MethodDef GetStringDecrypter(TypeDef type, string name) {
+			var method = type.FindMethod(name);
 			if (method == null)
 				return null;
-			if (!DotNetUtils.isMethod(method, "System.String", "(System.String)"))
+			if (!DotNetUtils.IsMethod(method, "System.String", "(System.String)"))
 				return null;
 			return method;
 		}
 
-		public string decrypt1(string s) {
+		public string Decrypt1(string s) {
 			var sb = new StringBuilder(s.Length);
 			foreach (var c in s)
 				sb.Append((char)(0xFF - (byte)c));
 			return sb.ToString();
 		}
 
-		public string decrypt2(string s) {
+		public string Decrypt2(string s) {
 			return Encoding.Unicode.GetString(Convert.FromBase64String(s));
 		}
 
-		public bool patch(PeImage peImage) {
+		public bool Patch(byte[] peData) {
 			try {
-				return patch2(peImage);
+				using (var peImage = new MyPEImage(peData))
+					return Patch2(peImage);
 			}
 			catch {
-				Log.w("Could not patch the file");
+				Logger.w("Could not patch the file");
 				return false;
 			}
 		}
 
-		bool patch2(PeImage peImage) {
-			uint numPatches = peImage.offsetReadUInt32(peImage.ImageLength - 4);
-			uint offset = checked(peImage.ImageLength - 4 - numPatches * 8);
+		bool Patch2(MyPEImage peImage) {
+			uint numPatches = peImage.OffsetReadUInt32(peImage.Length - 4);
+			uint offset = checked(peImage.Length - 4 - numPatches * 8);
 
 			bool startedPatchingBadData = false;
 			for (uint i = 0; i < numPatches; i++, offset += 8) {
-				uint rva = getValue(peImage.offsetReadUInt32(offset));
-				var value = peImage.offsetReadUInt32(offset + 4);
+				uint rva = GetValue(peImage.OffsetReadUInt32(offset));
+				var value = peImage.OffsetReadUInt32(offset + 4);
 
 				if (value == 4) {
 					i++;
 					offset += 8;
-					rva = getValue(peImage.offsetReadUInt32(offset));
-					value = peImage.offsetReadUInt32(offset + 4);
+					rva = GetValue(peImage.OffsetReadUInt32(offset));
+					value = peImage.OffsetReadUInt32(offset + 4);
 				}
 				else
-					value = getValue(value);
+					value = GetValue(value);
 
 				// Seems there's a bug in their code where they sometimes overwrite valid data
 				// with invalid data.
 				if (startedPatchingBadData && value == 0x3115)
 					continue;
 
-				startedPatchingBadData |= !peImage.dotNetSafeWrite(rva, BitConverter.GetBytes(value));
+				startedPatchingBadData |= !peImage.DotNetSafeWrite(rva, BitConverter.GetBytes(value));
 			}
 
 			return true;
 		}
 
-		static uint getValue(uint value) {
+		static uint GetValue(uint value) {
 			const uint magic = 2749;
 			value = checked(value - magic);
 			if (value % 3 != 0)

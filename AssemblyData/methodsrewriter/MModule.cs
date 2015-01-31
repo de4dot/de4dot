@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -20,95 +20,95 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using Mono.Cecil;
+using dnlib.DotNet;
 using de4dot.blocks;
 
 namespace AssemblyData.methodsrewriter {
 	class MModule {
 		public Module module;
-		public ModuleDefinition moduleDefinition;
-		TypeDefinitionDict<MType> typeReferenceToType = new TypeDefinitionDict<MType>();
+		public ModuleDefMD moduleDef;
+		TypeDefDict<MType> typeRefToType = new TypeDefDict<MType>();
 		Dictionary<int, MType> tokenToType = new Dictionary<int, MType>();
 		Dictionary<int, MMethod> tokenToGlobalMethod;
 		Dictionary<int, MField> tokenToGlobalField;
-		TypeDefinition moduleType;
+		TypeDef moduleType;
 
-		public MModule(Module module, ModuleDefinition moduleDefinition) {
+		public MModule(Module module, ModuleDefMD moduleDef) {
 			this.module = module;
-			this.moduleDefinition = moduleDefinition;
-			initTokenToType();
+			this.moduleDef = moduleDef;
+			InitTokenToType();
 		}
 
-		void initTokenToType() {
-			moduleType = DotNetUtils.getModuleType(moduleDefinition);
-			foreach (var typeDefinition in moduleDefinition.GetTypes()) {
-				int token = typeDefinition.MetadataToken.ToInt32();
+		void InitTokenToType() {
+			moduleType = moduleDef.Types[0];
+			foreach (var typeDef in moduleDef.GetTypes()) {
+				int token = (int)typeDef.MDToken.Raw;
 				Type type;
 				try {
 					type = module.ResolveType(token);
 				}
 				catch {
 					tokenToType[token] = null;
-					typeReferenceToType.add(typeDefinition, null);
+					typeRefToType.Add(typeDef, null);
 					continue;
 				}
-				var mtype = new MType(type, typeDefinition);
+				var mtype = new MType(type, typeDef);
 				tokenToType[token] = mtype;
-				typeReferenceToType.add(typeDefinition, mtype);
+				typeRefToType.Add(typeDef, mtype);
 			}
 		}
 
-		public MType getType(TypeReference typeReference) {
-			return typeReferenceToType.find(typeReference);
+		public MType GetType(IType typeRef) {
+			return typeRefToType.Find(typeRef);
 		}
 
-		public MMethod getMethod(MethodReference methodReference) {
-			var type = getType(methodReference.DeclaringType);
+		public MMethod GetMethod(IMethod methodRef) {
+			var type = GetType(methodRef.DeclaringType);
 			if (type != null)
-				return type.getMethod(methodReference);
-			if (!MemberReferenceHelper.compareTypes(moduleType, methodReference.DeclaringType))
+				return type.GetMethod(methodRef);
+			if (!new SigComparer().Equals(moduleType, methodRef.DeclaringType))
 				return null;
 
-			initGlobalMethods();
+			InitGlobalMethods();
 			foreach (var method in tokenToGlobalMethod.Values) {
-				if (MemberReferenceHelper.compareMethodReference(methodReference, method.methodDefinition))
+				if (new SigComparer().Equals(methodRef, method.methodDef))
 					return method;
 			}
 
 			return null;
 		}
 
-		public MField getField(FieldReference fieldReference) {
-			var type = getType(fieldReference.DeclaringType);
+		public MField GetField(IField fieldRef) {
+			var type = GetType(fieldRef.DeclaringType);
 			if (type != null)
-				return type.getField(fieldReference);
-			if (!MemberReferenceHelper.compareTypes(moduleType, fieldReference.DeclaringType))
+				return type.GetField(fieldRef);
+			if (!new SigComparer().Equals(moduleType, fieldRef.DeclaringType))
 				return null;
 
-			initGlobalFields();
+			InitGlobalFields();
 			foreach (var field in tokenToGlobalField.Values) {
-				if (MemberReferenceHelper.compareFieldReference(fieldReference, field.fieldDefinition))
+				if (new SigComparer().Equals(fieldRef, field.fieldDef))
 					return field;
 			}
 
 			return null;
 		}
 
-		public MMethod getMethod(MethodBase method) {
+		public MMethod GetMethod(MethodBase method) {
 			if (method.Module != module)
 				throw new ApplicationException("Not our module");
 			if (method.DeclaringType == null)
-				return getGlobalMethod(method);
+				return GetGlobalMethod(method);
 			var type = tokenToType[method.DeclaringType.MetadataToken];
-			return type.getMethod(method.MetadataToken);
+			return type.GetMethod(method.MetadataToken);
 		}
 
-		public MMethod getGlobalMethod(MethodBase method) {
-			initGlobalMethods();
+		public MMethod GetGlobalMethod(MethodBase method) {
+			InitGlobalMethods();
 			return tokenToGlobalMethod[method.MetadataToken];
 		}
 
-		void initGlobalMethods() {
+		void InitGlobalMethods() {
 			if (tokenToGlobalMethod != null)
 				return;
 			tokenToGlobalMethod = new Dictionary<int, MMethod>();
@@ -120,12 +120,12 @@ namespace AssemblyData.methodsrewriter {
 			foreach (var m in moduleType.Methods) {
 				if (m.Name == ".cctor")	//TODO: Use module.GetMethod(token) to get .cctor method
 					continue;
-				var token = m.MetadataToken.ToInt32();
+				var token = (int)m.MDToken.Raw;
 				tokenToGlobalMethod[token] = new MMethod(tmpTokenToGlobalMethod[token], m);
 			}
 		}
 
-		void initGlobalFields() {
+		void InitGlobalFields() {
 			if (tokenToGlobalField != null)
 				return;
 			tokenToGlobalField = new Dictionary<int, MField>();
@@ -135,13 +135,13 @@ namespace AssemblyData.methodsrewriter {
 			foreach (var f in module.GetFields(flags))
 				tmpTokenToGlobalField[f.MetadataToken] = f;
 			foreach (var f in moduleType.Fields) {
-				var token = f.MetadataToken.ToInt32();
+				var token = (int)f.MDToken.Raw;
 				tokenToGlobalField[token] = new MField(tmpTokenToGlobalField[token], f);
 			}
 		}
 
 		public override string ToString() {
-			return moduleDefinition.FullyQualifiedName;
+			return moduleDef.Location;
 		}
 	}
 }

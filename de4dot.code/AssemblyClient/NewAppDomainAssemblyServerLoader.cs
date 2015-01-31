@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -19,6 +19,7 @@
 
 using System;
 using System.Threading;
+using AssemblyData;
 
 namespace de4dot.code.AssemblyClient {
 	// Starts the server in a new app domain.
@@ -26,14 +27,20 @@ namespace de4dot.code.AssemblyClient {
 		AppDomain appDomain;
 		Thread thread;
 
-		public override void loadServer(string filename) {
+		public NewAppDomainAssemblyServerLoader(AssemblyServiceType serviceType)
+			: base(serviceType) {
+		}
+
+		public override void LoadServer(string filename) {
 			if (appDomain != null)
 				throw new ApplicationException("Server is already loaded");
 
-			appDomain = AppDomain.CreateDomain(Utils.randomName(15, 20));
+			appDomain = AppDomain.CreateDomain(Utils.RandomName(15, 20));
 			thread = new Thread(new ThreadStart(() => {
 				try {
-					appDomain.ExecuteAssembly(filename, null, new string[] { ipcName, ipcUri });
+					appDomain.ExecuteAssembly(filename, null, new string[] {
+						((int)serviceType).ToString(), ipcName, ipcUri
+					});
 				}
 				catch (NullReferenceException) {
 					// Here if appDomain was set to null by Dispose() before this thread started
@@ -41,14 +48,14 @@ namespace de4dot.code.AssemblyClient {
 				catch (AppDomainUnloadedException) {
 					// Here if it was unloaded by Dispose()
 				}
-				unloadAppDomain(appDomain);
+				UnloadAppDomain(appDomain);
 				appDomain = null;
 			}));
 			thread.Start();
 		}
 
 		public override void Dispose() {
-			unloadAppDomain(appDomain);
+			UnloadAppDomain(appDomain);
 			if (thread != null) {
 				try {
 					if (!thread.Join(100))
@@ -60,11 +67,11 @@ namespace de4dot.code.AssemblyClient {
 				thread = null;
 			}
 			// It could still be loaded if the thread was aborted so do it again
-			unloadAppDomain(appDomain);
+			UnloadAppDomain(appDomain);
 			appDomain = null;
 		}
 
-		static void unloadAppDomain(AppDomain appDomain) {
+		static void UnloadAppDomain(AppDomain appDomain) {
 			if (appDomain != null) {
 				try {
 					AppDomain.Unload(appDomain);

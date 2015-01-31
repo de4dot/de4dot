@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -30,17 +30,17 @@ namespace AssemblyData {
 		List<string> assemblySearchPaths = new List<string>();
 
 		public AssemblyResolver() {
-			AppDomain.CurrentDomain.AssemblyResolve += assemblyResolve;
+			AppDomain.CurrentDomain.AssemblyResolve += AssemblyResolve;
 		}
 
-		void addAssemblySearchPath(string path) {
+		void AddAssemblySearchPath(string path) {
 			if (assemblySearchPathsDict.ContainsKey(path))
 				return;
 			assemblySearchPathsDict[path] = true;
 			assemblySearchPaths.Add(path);
 		}
 
-		Assembly get(string assemblyFullName) {
+		Assembly Get(string assemblyFullName) {
 			var asmName = new AssemblyName(assemblyFullName);
 
 			Assembly assembly;
@@ -53,8 +53,8 @@ namespace AssemblyData {
 		}
 
 		static string[] assemblyExtensions = new string[] { ".dll", ".exe" };
-		Assembly assemblyResolve(object sender, ResolveEventArgs args) {
-			var assembly = get(args.Name);
+		Assembly AssemblyResolve(object sender, ResolveEventArgs args) {
+			var assembly = Get(args.Name);
 			if (assembly != null)
 				return assembly;
 
@@ -65,8 +65,8 @@ namespace AssemblyData {
 						var filename = Path.Combine(path, asmName.Name + ext);
 						if (!new FileInfo(filename).Exists)
 							continue;
-						addConfigFile(filename + ".config");
-						return addAssembly(Assembly.LoadFile(filename));
+						AddConfigFile(filename + ".config");
+						return AddAssembly(Assembly.LoadFile(filename));
 					}
 					catch (IOException) {
 					}
@@ -86,12 +86,12 @@ namespace AssemblyData {
 			return null;
 		}
 
-		public Assembly load(string filename) {
-			addConfigFile(filename + ".config");
-			return addAssembly(loadFile(filename));
+		public Assembly Load(string filename) {
+			AddConfigFile(filename + ".config");
+			return AddAssembly(LoadFile(filename));
 		}
 
-		Assembly loadFile(string filename) {
+		Assembly LoadFile(string filename) {
 			try {
 				return Assembly.LoadFrom(filename);
 			}
@@ -101,16 +101,16 @@ namespace AssemblyData {
 			}
 		}
 
-		Assembly addAssembly(Assembly assembly) {
+		Assembly AddAssembly(Assembly assembly) {
 			var asmName = assembly.GetName();
 			assemblies[asmName.FullName] = assembly;
 			assemblies[asmName.Name] = assembly;
 			return assembly;
 		}
 
-		void addConfigFile(string configFilename) {
-			var dirName = Utils.getDirName(Utils.getFullPath(configFilename));
-			addAssemblySearchPath(dirName);
+		void AddConfigFile(string configFilename) {
+			var dirName = Utils.GetDirName(Utils.GetFullPath(configFilename));
+			AddAssemblySearchPath(dirName);
 
 			try {
 				using (var xmlStream = new FileStream(configFilename, FileMode.Open, FileAccess.Read, FileShare.Read)) {
@@ -124,7 +124,7 @@ namespace AssemblyData {
 						if (string.IsNullOrEmpty(privatePath))
 							continue;
 						foreach (var path in privatePath.Split(';'))
-							addAssemblySearchPath(Path.Combine(dirName, path));
+							AddAssemblySearchPath(Path.Combine(dirName, path));
 					}
 				}
 			}

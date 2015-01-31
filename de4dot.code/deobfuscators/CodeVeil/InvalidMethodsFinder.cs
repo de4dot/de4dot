@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -18,33 +18,37 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
+using dnlib.DotNet;
 
 namespace de4dot.code.deobfuscators.CodeVeil {
 	class InvalidMethodsFinder {
-		public static List<MethodDefinition> findAll(ModuleDefinition module) {
-			var list = new List<MethodDefinition>();
+		public static List<MethodDef> FindAll(ModuleDefMD module) {
+			var list = new List<MethodDef>();
 			foreach (var type in module.GetTypes()) {
 				foreach (var method in type.Methods) {
-					if (isInvalidMethod(method))
+					if (IsInvalidMethod(method))
 						list.Add(method);
 				}
 			}
 			return list;
 		}
 
-		public static bool isInvalidMethod(MethodDefinition method) {
-			if (method == null)
+		public static bool IsInvalidMethod(MethodDef method) {
+			if (method == null || method.IsStatic)
 				return false;
-			if (method.IsStatic)
+			var sig = method.MethodSig;
+			if (sig == null || sig.Params.Count != 0)
 				return false;
-			if (method.Parameters.Count != 0)
-				return false;
-			var retType = method.MethodReturnType.ReturnType as GenericParameter;
+			if (sig.RetType == null)
+				return true;
+			var retType = sig.RetType as GenericSig;
 			if (retType == null)
 				return false;
 
-			return retType.Owner == null;
+			if (retType.IsMethodVar)
+				return retType.Number >= sig.GenParamCount;
+			var dt = method.DeclaringType;
+			return dt == null || retType.Number >= dt.GenericParameters.Count;
 		}
 	}
 }

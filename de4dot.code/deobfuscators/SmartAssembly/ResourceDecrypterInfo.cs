@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -18,14 +18,14 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.SmartAssembly {
 	class ResourceDecrypterInfo {
-		ModuleDefinition module;
-		MethodDefinition simpleZipTypeDecryptMethod;
+		ModuleDefMD module;
+		MethodDef simpleZipTypeDecryptMethod;
 
 		public byte[] DES_Key { get; private set; }
 		public byte[] DES_IV  { get; private set; }
@@ -36,33 +36,33 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			get { return simpleZipTypeDecryptMethod != null; }
 		}
 
-		public ResourceDecrypterInfo(ModuleDefinition module) {
+		public ResourceDecrypterInfo(ModuleDefMD module) {
 			this.module = module;
 		}
 
-		public ResourceDecrypterInfo(ModuleDefinition module, MethodDefinition simpleZipTypeDecryptMethod, ISimpleDeobfuscator simpleDeobfuscator)
+		public ResourceDecrypterInfo(ModuleDefMD module, MethodDef simpleZipTypeDecryptMethod, ISimpleDeobfuscator simpleDeobfuscator)
 			: this(module) {
-			setSimpleZipType(simpleZipTypeDecryptMethod, simpleDeobfuscator);
+			SetSimpleZipType(simpleZipTypeDecryptMethod, simpleDeobfuscator);
 		}
 
-		public void setSimpleZipType(MethodDefinition method, ISimpleDeobfuscator simpleDeobfuscator) {
+		public void SetSimpleZipType(MethodDef method, ISimpleDeobfuscator simpleDeobfuscator) {
 			if (simpleZipTypeDecryptMethod != null || method == null)
 				return;
 			simpleZipTypeDecryptMethod = method;
-			init(simpleDeobfuscator, method);
+			Initialize(simpleDeobfuscator, method);
 		}
 
-		void init(ISimpleDeobfuscator simpleDeobfuscator, MethodDefinition method) {
+		void Initialize(ISimpleDeobfuscator simpleDeobfuscator, MethodDef method) {
 			var desList = new List<byte[]>(2);
 			var aesList = new List<byte[]>(2);
 
 			var instructions = method.Body.Instructions;
-			simpleDeobfuscator.deobfuscate(method);
+			simpleDeobfuscator.Deobfuscate(method);
 			for (int i = 0; i <= instructions.Count - 2; i++) {
 				var ldtoken = instructions[i];
 				if (ldtoken.OpCode.Code != Code.Ldtoken)
 					continue;
-				var field = DotNetUtils.getField(module, ldtoken.Operand as FieldReference);
+				var field = DotNetUtils.GetField(module, ldtoken.Operand as IField);
 				if (field == null)
 					continue;
 				if (field.InitialValue == null)
@@ -71,8 +71,8 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				var call = instructions[i + 1];
 				if (call.OpCode.Code != Code.Call)
 					continue;
-				var calledMethod = call.Operand as MethodReference;
-				if (!DotNetUtils.isMethod(calledMethod, "System.Void", "(System.Array,System.RuntimeFieldHandle)"))
+				var calledMethod = call.Operand as IMethod;
+				if (!DotNetUtils.IsMethod(calledMethod, "System.Void", "(System.Array,System.RuntimeFieldHandle)"))
 					continue;
 
 				if (field.InitialValue.Length == 8)

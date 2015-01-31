@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -18,23 +18,25 @@
 */
 
 using System;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using System.Collections.Generic;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.DeepSea {
 	abstract class ResolverBase {
-		protected ModuleDefinition module;
+		protected ModuleDefMD module;
 		protected ISimpleDeobfuscator simpleDeobfuscator;
 		protected IDeobfuscator deob;
-		protected MethodDefinition initMethod;
-		protected MethodDefinition resolveHandler;
+		protected MethodDef initMethod;
+		protected MethodDef resolveHandler;
+		protected FrameworkType frameworkType;
 
-		public MethodDefinition InitMethod {
+		public MethodDef InitMethod {
 			get { return initMethod; }
 		}
 
-		public MethodDefinition HandlerMethod {
+		public MethodDef HandlerMethod {
 			get { return resolveHandler; }
 		}
 
@@ -42,110 +44,139 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			get { return initMethod != null; }
 		}
 
-		public ResolverBase(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
+		public ResolverBase(ModuleDefMD module, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
 			this.module = module;
+			this.frameworkType = DotNetUtils.GetFrameworkType(module);
 			this.simpleDeobfuscator = simpleDeobfuscator;
 			this.deob = deob;
 		}
 
-		public void find() {
-			if (checkCalledMethods(DotNetUtils.getModuleTypeCctor(module)))
+		public void Find() {
+			if (CheckCalledMethods(DotNetUtils.GetModuleTypeCctor(module)))
 				return;
-			if (checkCalledMethods(module.EntryPoint))
+			if (CheckCalledMethods(module.EntryPoint))
 				return;
 		}
 
-		bool checkCalledMethods(MethodDefinition checkMethod) {
+		bool CheckCalledMethods(MethodDef checkMethod) {
 			if (checkMethod == null || checkMethod.Body == null)
 				return false;
 
-			foreach (var tuple in DotNetUtils.getCalledMethods(module, checkMethod)) {
-				var method = tuple.Item2;
+			foreach (var method in DotNetUtils.GetCalledMethods(module, checkMethod)) {
 				if (method.Name == ".cctor" || method.Name == ".ctor")
 					continue;
-				if (!method.IsStatic || !DotNetUtils.isMethod(method, "System.Void", "()"))
+				if (!method.IsStatic || !DotNetUtils.IsMethod(method, "System.Void", "()"))
 					continue;
 
-				if (checkResolverInitMethod(method))
+				if (CheckResolverInitMethod(method))
 					return true;
 			}
 
 			return false;
 		}
 
-		bool checkResolverInitMethod(MethodDefinition resolverInitMethod) {
+		bool CheckResolverInitMethod(MethodDef resolverInitMethod) {
 			if (resolverInitMethod == null || resolverInitMethod.Body == null)
 				return false;
-
-			if (!checkResolverInitMethodInternal(resolverInitMethod))
+			if (resolverInitMethod.Body.ExceptionHandlers.Count != 1)
 				return false;
 
-			var resolveHandlerMethod = getLdftnMethod(resolverInitMethod);
-			if (resolveHandlerMethod == null)
-				return false;
-
-			if (!checkHandlerMethod(resolveHandlerMethod))
-				return false;
-
-			initMethod = resolverInitMethod;
-			resolveHandler = resolveHandlerMethod;
-			return true;
+			switch (frameworkType) {
+			case FrameworkType.Silverlight:
+				return CheckResolverInitMethodSilverlight(resolverInitMethod);
+			default:
+				return CheckResolverInitMethodDesktop(resolverInitMethod);
+			}
 		}
 
-		protected abstract bool checkResolverInitMethodInternal(MethodDefinition resolverInitMethod);
+		bool CheckResolverInitMethodDesktop(MethodDef resolverInitMethod) {
+			simpleDeobfuscator.Deobfuscate(resolverInitMethod);
+			if (!CheckResolverInitMethodInternal(resolverInitMethod))
+				return false;
 
-		protected static bool checkIfCalled(MethodDefinition method, string fullName) {
-			foreach (var instr in method.Body.Instructions) {
-				if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt)
-					continue;
-				if (instr.Operand.ToString() != fullName)
+			foreach (var resolveHandlerMethod in GetLdftnMethods(resolverInitMethod)) {
+				if (!CheckHandlerMethodDesktop(resolveHandlerMethod))
 					continue;
 
+				initMethod = resolverInitMethod;
+				resolveHandler = resolveHandlerMethod;
 				return true;
 			}
 
 			return false;
 		}
 
-		MethodDefinition getLdftnMethod(MethodDefinition method) {
+		protected virtual bool CheckResolverInitMethodSilverlight(MethodDef resolverInitMethod) {
+			return false;
+		}
+
+		protected abstract bool CheckResolverInitMethodInternal(MethodDef resolverInitMethod);
+
+		IEnumerable<MethodDef> GetLdftnMethods(MethodDef method) {
+			var list = new List<MethodDef>();
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Ldftn)
 					continue;
-				var loadedMethod = instr.Operand as MethodDefinition;
+				var loadedMethod = instr.Operand as MethodDef;
 				if (loadedMethod != null)
-					return loadedMethod;
+					list.Add(loadedMethod);
 			}
-			return null;
+			return list;
 		}
 
-		bool checkHandlerMethod(MethodDefinition handler) {
+		bool CheckHandlerMethodDesktop(MethodDef handler) {
 			if (handler == null || handler.Body == null || !handler.IsStatic)
 				return false;
-			if (!DotNetUtils.isMethod(handler, "System.Reflection.Assembly", "(System.Object,System.ResolveEventArgs)"))
+			if (!DotNetUtils.IsMethod(handler, "System.Reflection.Assembly", "(System.Object,System.ResolveEventArgs)"))
 				return false;
-			return checkHandlerMethodInternal(handler);
+			return CheckHandlerMethodDesktopInternal(handler);
 		}
 
-		protected abstract bool checkHandlerMethodInternal(MethodDefinition handler);
+		protected abstract bool CheckHandlerMethodDesktopInternal(MethodDef handler);
 
-		protected static byte[] decryptResourceV3(EmbeddedResource resource) {
-			return decryptResourceV3(resource.GetResourceData());
+		// 3.0.3.41 - 3.0.4.44
+		protected static byte[] DecryptResourceV3Old(EmbeddedResource resource) {
+			return DecryptResourceV3Old(resource.GetResourceData());
 		}
 
-		protected static byte[] decryptResourceV3(byte[] data) {
-			return decryptResource(data, 1, data.Length - 1, data[0]);
+		// 3.0.3.41 - 3.0.4.44
+		protected static byte[] DecryptResourceV3Old(byte[] data) {
+			return DecryptResource(data, 0, data.Length, 0);
 		}
 
-		protected static byte[] decryptResourceV4(byte[] data, int magic) {
-			return decryptResource(data, 0, data.Length, magic);
+		protected static byte[] DecryptResourceV41SL(EmbeddedResource resource) {
+			var data = resource.GetResourceData();
+			byte k = data[0];
+			for (int i = 0; i < data.Length - 1; i++)
+				data[i + 1] ^= (byte)((k << (i & 5)) + i);
+			return InflateIfNeeded(data, 1, data.Length - 1);
 		}
 
-		protected static byte[] decryptResource(byte[] data, int start, int len, int magic) {
+		protected static byte[] DecryptResourceV3(EmbeddedResource resource) {
+			return DecryptResourceV3(resource.GetResourceData());
+		}
+
+		protected static byte[] DecryptResourceV3(byte[] data) {
+			return DecryptResource(data, 1, data.Length - 1, data[0]);
+		}
+
+		protected static byte[] DecryptResourceV4(byte[] data, int magic) {
+			return DecryptResource(data, 0, data.Length, magic);
+		}
+
+		protected static byte[] DecryptResource(byte[] data, int start, int len, int magic) {
 			for (int i = start; i < start + len; i++)
 				data[i] ^= (byte)(i - start + magic);
+			return InflateIfNeeded(data, start, len);
+		}
 
+		protected static byte[] InflateIfNeeded(byte[] data) {
+			return InflateIfNeeded(data, 0, data.Length);
+		}
+
+		protected static byte[] InflateIfNeeded(byte[] data, int start, int len) {
 			if (BitConverter.ToInt16(data, start) != 0x5A4D)
-				return DeobUtils.inflate(data, start, len, true);
+				return DeobUtils.Inflate(data, start, len, true);
 
 			var data2 = new byte[len];
 			Array.Copy(data, start, data2, 0, data2.Length);

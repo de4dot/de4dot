@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -19,28 +19,28 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Goliath_NET {
 	class ArrayValueInliner : ValueInlinerBase<byte[]> {
 		InitializedDataCreator initializedDataCreator;
-		ModuleDefinition module;
+		ModuleDefMD module;
 
-		public ArrayValueInliner(ModuleDefinition module, InitializedDataCreator initializedDataCreator) {
+		public ArrayValueInliner(ModuleDefMD module, InitializedDataCreator initializedDataCreator) {
 			this.module = module;
 			this.initializedDataCreator = initializedDataCreator;
 		}
 
-		protected override void inlineReturnValues(IList<CallResult> callResults) {
+		protected override void InlineReturnValues(IList<CallResult> callResults) {
 			foreach (var callResult in callResults) {
 				var block = callResult.block;
 				int num = callResult.callEndIndex - callResult.callStartIndex + 1;
 
 				var arrayData = (byte[])callResult.returnValue;
-				initializedDataCreator.addInitializeArrayCode(block, callResult.callStartIndex, num, module.TypeSystem.Byte, arrayData);
-				Log.v("Decrypted array: {0} bytes", arrayData.Length);
+				initializedDataCreator.AddInitializeArrayCode(block, callResult.callStartIndex, num, module.CorLibTypes.Byte.TypeDefOrRef, arrayData);
+				Logger.v("Decrypted array: {0} bytes", arrayData.Length);
 			}
 		}
 	}

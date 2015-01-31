@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -23,26 +23,26 @@ namespace de4dot.code.deobfuscators {
 	public abstract class DeobfuscatorInfoBase : IDeobfuscatorInfo {
 		protected NameRegexOption validNameRegex;
 
-		public DeobfuscatorInfoBase(string nameRegex = null) {
-			validNameRegex = new NameRegexOption(null, makeArgName("name"), "Valid name regex pattern", nameRegex ?? DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX);
+		public DeobfuscatorInfoBase(string nameRegex) {
+			validNameRegex = new NameRegexOption(null, MakeArgName("name"), "Valid name regex pattern", nameRegex ?? DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX);
 		}
 
-		protected string makeArgName(string name) {
+		protected string MakeArgName(string name) {
 			return string.Format("{0}-{1}", Type, name);
 		}
 
 		public abstract string Type { get; }
 		public abstract string Name { get; }
-		public abstract IDeobfuscator createDeobfuscator();
+		public abstract IDeobfuscator CreateDeobfuscator();
 
-		protected virtual IEnumerable<Option> getOptionsInternal() {
+		protected virtual IEnumerable<Option> GetOptionsInternal() {
 			return new List<Option>();
 		}
 
-		public IEnumerable<Option> getOptions() {
+		public IEnumerable<Option> GetOptions() {
 			var options = new List<Option>();
 			options.Add(validNameRegex);
-			options.AddRange(getOptionsInternal());
+			options.AddRange(GetOptionsInternal());
 			return options;
 		}
 	}

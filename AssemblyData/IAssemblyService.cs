@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -18,17 +18,14 @@
 */
 
 namespace AssemblyData {
-	public enum StringDecrypterType {
-		Delegate,
-		Emulate,
+	public enum AssemblyServiceType {
+		StringDecrypter,
+		MethodDecrypter,
+		Generic,
 	}
 
 	public interface IAssemblyService {
-		void doNothing();
-		void loadAssembly(string filename);
-		void setStringDecrypterType(StringDecrypterType type);
-		int defineStringDecrypter(int methodToken);
-		object[] decryptStrings(int stringDecrypterMethod, object[] args, int callerToken);
-		void exit();
+		void DoNothing();
+		void Exit();
 	}
 }

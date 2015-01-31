@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -18,43 +18,44 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
+using dnlib.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators {
 	class MethodCollection {
-		TypeDefinitionDict<bool> types = new TypeDefinitionDict<bool>();
-		MethodDefinitionAndDeclaringTypeDict<bool> methods = new MethodDefinitionAndDeclaringTypeDict<bool>();
+		TypeDefDict<bool> types = new TypeDefDict<bool>();
+		MethodDefAndDeclaringTypeDict<bool> methods = new MethodDefAndDeclaringTypeDict<bool>();
 
-		public bool exists(MethodReference method) {
+		public bool Exists(IMethod method) {
 			if (method == null)
 				return false;
-			if (method.DeclaringType != null && types.find(method.DeclaringType))
+			if (method.DeclaringType != null && types.Find(method.DeclaringType))
 				return true;
-			return methods.find(method);
+			return methods.Find(method);
 		}
 
-		public void add(MethodDefinition method) {
-			methods.add(method, true);
+		public void Add(MethodDef method) {
+			methods.Add(method, true);
 		}
 
-		public void add(IEnumerable<MethodDefinition> methods) {
+		public void Add(IEnumerable<MethodDef> methods) {
 			foreach (var method in methods)
-				add(method);
+				Add(method);
 		}
 
-		public void add(TypeDefinition type) {
-			types.add(type, true);
+		public void Add(TypeDef type) {
+			types.Add(type, true);
 		}
 
-		public void addAndNested(TypeDefinition type) {
-			foreach (var t in TypeDefinition.GetTypes(new List<TypeDefinition> { type }))
-				add(type);
+		public void AddAndNested(TypeDef type) {
+			Add(type);
+			foreach (var t in type.GetTypes())
+				Add(t);
 		}
 
-		public void addAndNested(IList<TypeDefinition> types) {
-			foreach (var type in TypeDefinition.GetTypes(types))
-				add(type);
+		public void AddAndNested(IList<TypeDef> types) {
+			foreach (var type in AllTypesHelper.Types(types))
+				Add(type);
 		}
 	}
 }

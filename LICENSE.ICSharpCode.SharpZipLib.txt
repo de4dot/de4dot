@@ -32,8 +32,3 @@
 </LICENSE>
 
 Official site: http://www.icsharpcode.net/opensource/sharpziplib/
-
-de4dot is using the library compiled by the official developers which you
-can get here (see the offical site for the source code):
-http://sourceforge.net/projects/sharpdevelop/files/SharpZipLib/0.86/SharpZipLib_0860_Bin.zip/download
-(the one compiled for .NET 2.0).

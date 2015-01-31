@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -26,6 +26,10 @@ namespace de4dot.code.resources {
 		readonly ResourceTypeCode code;
 		readonly object data;
 
+		public object Data {
+			get { return data; }
+		}
+
 		public ResourceTypeCode Code {
 			get { return code; }
 		}
@@ -35,7 +39,7 @@ namespace de4dot.code.resources {
 			this.data = data;
 		}
 
-		public void writeData(BinaryWriter writer, IFormatter formatter) {
+		public void WriteData(BinaryWriter writer, IFormatter formatter) {
 			switch (code) {
 			case ResourceTypeCode.Null:
 				return;
@@ -105,6 +109,7 @@ namespace de4dot.code.resources {
 				break;
 
 			case ResourceTypeCode.ByteArray:
+			case ResourceTypeCode.Stream:
 				var ary = (byte[])data;
 				writer.Write(ary.Length);
 				writer.Write(ary);
@@ -112,6 +117,41 @@ namespace de4dot.code.resources {
 
 			default:
 				throw new ApplicationException("Unknown resource type code");
+			}
+		}
+
+		public override string ToString() {
+			switch (code) {
+			case ResourceTypeCode.Null:
+				return "NULL";
+
+			case ResourceTypeCode.String:
+			case ResourceTypeCode.Boolean:
+			case ResourceTypeCode.Char:
+			case ResourceTypeCode.Byte:
+			case ResourceTypeCode.SByte:
+			case ResourceTypeCode.Int16:
+			case ResourceTypeCode.UInt16:
+			case ResourceTypeCode.Int32:
+			case ResourceTypeCode.UInt32:
+			case ResourceTypeCode.Int64:
+			case ResourceTypeCode.UInt64:
+			case ResourceTypeCode.Single:
+			case ResourceTypeCode.Double:
+			case ResourceTypeCode.Decimal:
+			case ResourceTypeCode.DateTime:
+			case ResourceTypeCode.TimeSpan:
+				return string.Format("{0}: '{1}'", code, data);
+
+			case ResourceTypeCode.ByteArray:
+			case ResourceTypeCode.Stream:
+				var ary = data as byte[];
+				if (ary != null)
+					return string.Format("{0}: Length: {1}", code, ary.Length);
+				return string.Format("{0}: '{1}'", code, data);
+
+			default:
+				return string.Format("{0}: '{1}'", code, data);
 			}
 		}
 	}

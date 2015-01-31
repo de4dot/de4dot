@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -20,32 +20,31 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using Mono.Cecil;
+using dnlib.DotNet;
 using de4dot.blocks;
 
 namespace AssemblyData.methodsrewriter {
 	class TypeResolver {
 		public Type type;
-		Dictionary<TypeReferenceKey, TypeInstanceResolver> typeRefToInstance = new Dictionary<TypeReferenceKey, TypeInstanceResolver>();
+		Dictionary<ITypeDefOrRef, TypeInstanceResolver> typeRefToInstance = new Dictionary<ITypeDefOrRef, TypeInstanceResolver>(TypeEqualityComparer.Instance);
 
 		public TypeResolver(Type type) {
 			this.type = type;
 		}
 
-		TypeInstanceResolver getTypeInstance(TypeReference typeReference) {
-			var key = new TypeReferenceKey(typeReference);
+		TypeInstanceResolver GetTypeInstance(ITypeDefOrRef typeRef) {
 			TypeInstanceResolver instance;
-			if (!typeRefToInstance.TryGetValue(key, out instance))
-				typeRefToInstance[key] = instance = new TypeInstanceResolver(type, typeReference);
+			if (!typeRefToInstance.TryGetValue(typeRef, out instance))
+				typeRefToInstance[typeRef] = instance = new TypeInstanceResolver(type, typeRef);
 			return instance;
 		}
 
-		public FieldInfo resolve(FieldReference fieldReference) {
-			return getTypeInstance(fieldReference.DeclaringType).resolve(fieldReference);
+		public FieldInfo Resolve(IField fieldRef) {
+			return GetTypeInstance(fieldRef.DeclaringType).Resolve(fieldRef);
 		}
 
-		public MethodBase resolve(MethodReference methodReference) {
-			return getTypeInstance(methodReference.DeclaringType).resolve(methodReference);
+		public MethodBase Resolve(IMethod methodRef) {
+			return GetTypeInstance(methodRef.DeclaringType).Resolve(methodRef);
 		}
 	}
 }

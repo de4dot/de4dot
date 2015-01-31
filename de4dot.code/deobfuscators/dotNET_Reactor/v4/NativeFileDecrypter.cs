@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -82,7 +82,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			}
 		}
 
-		public void decrypt(byte[] data, int offset, int count) {
+		public void Decrypt(byte[] data, int offset, int count) {
 			for (int i = 0; i < count; i += 1024, offset += 1024) {
 				int blockLen = Math.Min(1024, count - i);
 

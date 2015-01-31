@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -20,10 +20,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Mono.Cecil;
+using dnlib.DotNet;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
-using de4dot.code.PE;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 	class MemoryPatcher {
@@ -43,29 +42,29 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			get { return decryptMethod.Detected; }
 		}
 
-		public MemoryPatcher(TypeDefinition type, ICflowDeobfuscator cflowDeobfuscator) {
-			find(type, cflowDeobfuscator);
+		public MemoryPatcher(TypeDef type, ICflowDeobfuscator cflowDeobfuscator) {
+			Find(type, cflowDeobfuscator);
 		}
 
-		void find(TypeDefinition type, ICflowDeobfuscator cflowDeobfuscator) {
+		void Find(TypeDef type, ICflowDeobfuscator cflowDeobfuscator) {
 			var additionalTypes = new List<string> {
 				"System.IO.BinaryWriter",
 			};
 			foreach (var method in type.Methods) {
-				if (!DotNetUtils.isMethod(method, "System.Void", "(System.Int32[],System.UInt32[])"))
+				if (!DotNetUtils.IsMethod(method, "System.Void", "(System.Int32[],System.UInt32[])"))
 					continue;
-				if (!DecryptMethod.couldBeDecryptMethod(method, additionalTypes))
+				if (!DecryptMethod.CouldBeDecryptMethod(method, additionalTypes))
 					continue;
-				cflowDeobfuscator.deobfuscate(method);
-				if (!decryptMethod.getKey(method))
+				cflowDeobfuscator.Deobfuscate(method);
+				if (!decryptMethod.GetKey(method))
 					continue;
 
-				findPatchData(type, cflowDeobfuscator);
+				FindPatchData(type, cflowDeobfuscator);
 				return;
 			}
 		}
 
-		void findPatchData(TypeDefinition type, ICflowDeobfuscator cflowDeobfuscator) {
+		void FindPatchData(TypeDef type, ICflowDeobfuscator cflowDeobfuscator) {
 			var locals = new List<string> {
 				"System.Int32[]",
 				"System.UInt32[]",
@@ -73,12 +72,12 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			foreach (var method in type.Methods) {
 				if (method.Attributes != MethodAttributes.Private)
 					continue;
-				if (!DotNetUtils.isMethod(method, "System.Void", "()"))
+				if (!DotNetUtils.IsMethod(method, "System.Void", "()"))
 					continue;
-				if (!new LocalTypes(method).exactly(locals))
+				if (!new LocalTypes(method).Exactly(locals))
 					continue;
-				cflowDeobfuscator.deobfuscate(method);
-				var patchInfo = getPatchInfo(method);
+				cflowDeobfuscator.Deobfuscate(method);
+				var patchInfo = GetPatchInfo(method);
 				if (patchInfo == null)
 					continue;
 
@@ -86,25 +85,25 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			}
 		}
 
-		PatchInfo getPatchInfo(MethodDefinition method) {
+		PatchInfo GetPatchInfo(MethodDef method) {
 			int index1 = 0, index2, index3, size1, size2, size3;
-			if (!ArrayFinder.findNewarr(method, ref index1, out size1))
+			if (!ArrayFinder.FindNewarr(method, ref index1, out size1))
 				return null;
 			index2 = index1 + 1;
-			if (!ArrayFinder.findNewarr(method, ref index2, out size2))
+			if (!ArrayFinder.FindNewarr(method, ref index2, out size2))
 				return null;
 			index3 = index2 + 1;
-			if (ArrayFinder.findNewarr(method, ref index3, out size3))
+			if (ArrayFinder.FindNewarr(method, ref index3, out size3))
 				return null;
 
 			if (size1 <= 0 || size1 > 35)
 				return null;
 
-			var ary1 = ArrayFinder.getInitializedInt32Array(size1, method, ref index1);
-			var ary2 = ArrayFinder.getInitializedInt32Array(size2, method, ref index2);
+			var ary1 = ArrayFinder.GetInitializedInt32Array(size1, method, ref index1);
+			var ary2 = ArrayFinder.GetInitializedInt32Array(size2, method, ref index2);
 			if (ary1 == null || ary2 == null)
 				return null;
-			ary2 = decrypt(ary2);
+			ary2 = Decrypt(ary2);
 			if (ary2 == null || ary1.Length != ary2.Length)
 				return null;
 
@@ -114,14 +113,14 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			return new PatchInfo(ary1, ary2);
 		}
 
-		int[] decrypt(int[] data) {
+		int[] Decrypt(int[] data) {
 			var memStream = new MemoryStream();
 			var writer = new BinaryWriter(memStream);
 			foreach (var value in data)
 				writer.Write(value);
 			byte[] decrypted;
 			try {
-				decrypted = DeobUtils.aesDecrypt(memStream.ToArray(), decryptMethod.Key, decryptMethod.Iv);
+				decrypted = DeobUtils.AesDecrypt(memStream.ToArray(), decryptMethod.Key, decryptMethod.Iv);
 			}
 			catch {
 				return null;
@@ -134,11 +133,12 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			return newData;
 		}
 
-		public void patch(byte[] peImageData) {
-			var peImage = new PeImage(peImageData);
-			foreach (var info in patchInfos) {
-				for (int i = 0; i < info.offsets.Length; i++)
-					peImage.dotNetSafeWriteOffset((uint)info.offsets[i], BitConverter.GetBytes(info.values[i]));
+		public void Patch(byte[] peImageData) {
+			using (var peImage = new MyPEImage(peImageData)) {
+				foreach (var info in patchInfos) {
+					for (int i = 0; i < info.offsets.Length; i++)
+						peImage.DotNetSafeWriteOffset((uint)info.offsets[i], BitConverter.GetBytes(info.values[i]));
+				}
 			}
 		}
 	}

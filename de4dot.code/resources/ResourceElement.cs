@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -21,5 +21,9 @@ namespace de4dot.code.resources {
 	class ResourceElement {
 		public string Name { get; set; }
 		public IResourceData ResourceData { get; set; }
+
+		public override string ToString() {
+			return string.Format("N: {0}, V: {1}", Name, ResourceData);
+		}
 	}
 }

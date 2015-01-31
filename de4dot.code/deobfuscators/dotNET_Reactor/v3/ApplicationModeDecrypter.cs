@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -17,13 +17,13 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.Cecil;
+using dnlib.DotNet;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 	class ApplicationModeDecrypter {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		AssemblyResolver assemblyResolver;
 		MemoryPatcher memoryPatcher;
 
@@ -43,16 +43,16 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			get { return assemblyResolver != null; }
 		}
 
-		public ApplicationModeDecrypter(ModuleDefinition module) {
+		public ApplicationModeDecrypter(ModuleDefMD module) {
 			this.module = module;
-			find();
+			Find();
 		}
 
-		void find() {
+		void Find() {
 			var cflowDeobfuscator = new CflowDeobfuscator(new MethodCallInliner(true));
 
 			foreach (var type in module.Types) {
-				if (DotNetUtils.getPInvokeMethod(type, "kernel32", "CloseHandle") == null)
+				if (DotNetUtils.GetPInvokeMethod(type, "kernel32", "CloseHandle") == null)
 					continue;
 
 				var resolver = new AssemblyResolver(type, cflowDeobfuscator);

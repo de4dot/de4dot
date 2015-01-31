@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -18,12 +18,12 @@
 */
 
 using System;
-using Mono.Cecil;
+using dnlib.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Goliath_NET {
 	class ArrayDecrypter : DecrypterBase {
-		public ArrayDecrypter(ModuleDefinition module)
+		public ArrayDecrypter(ModuleDefMD module)
 			: base(module) {
 		}
 
@@ -31,16 +31,16 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			"System.Byte[]",
 			"System.Collections.Generic.Dictionary`2<System.Int32,System.Byte[]>",
 		};
-		protected override bool checkDecrypterType(TypeDefinition type) {
-			return new FieldTypes(type).exactly(requiredFields);
+		protected override bool CheckDecrypterType(TypeDef type) {
+			return new FieldTypes(type).Exactly(requiredFields);
 		}
 
-		protected override bool checkDelegateInvokeMethod(MethodDefinition invokeMethod) {
-			return DotNetUtils.isMethod(invokeMethod, "System.Byte[]", "(System.Int32)");
+		protected override bool CheckDelegateInvokeMethod(MethodDef invokeMethod) {
+			return DotNetUtils.IsMethod(invokeMethod, "System.Byte[]", "(System.Int32)");
 		}
 
-		public byte[] decrypt(MethodDefinition method) {
-			var info = getInfo(method);
+		public byte[] Decrypt(MethodDef method) {
+			var info = GetInfo(method);
 			decryptedReader.BaseStream.Position = info.offset;
 			return decryptedReader.ReadBytes(decryptedReader.ReadInt32());
 		}

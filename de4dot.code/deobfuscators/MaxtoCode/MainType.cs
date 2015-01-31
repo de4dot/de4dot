@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -19,45 +19,43 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
+using dnlib.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.MaxtoCode {
 	class MainType {
-		ModuleDefinition module;
-		TypeDefinition mcType;
-		ModuleReference mcModule1, mcModule2;
+		ModuleDefMD module;
+		TypeDef mcType;
 		bool isOld;
+		ModuleRef runtimeModule1, runtimeModule2;
 
 		public bool IsOld {
 			get { return isOld; }
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return mcType; }
 		}
 
-		public IEnumerable<ModuleReference> ModuleReferences {
+		public IEnumerable<MethodDef> InitMethods {
 			get {
-				var list = new List<ModuleReference>();
-				if (mcModule1 != null)
-					list.Add(mcModule1);
-				if (mcModule2 != null)
-					list.Add(mcModule2);
+				var list = new List<MethodDef>();
+				if (mcType == null)
+					return list;
+				foreach (var method in mcType.Methods) {
+					if (method.IsStatic && DotNetUtils.IsMethod(method, "System.Void", "()"))
+						list.Add(method);
+				}
 				return list;
 			}
 		}
 
-		public IEnumerable<MethodDefinition> InitMethods {
+		public IEnumerable<ModuleRef> RuntimeModuleRefs {
 			get {
-				var list = new List<MethodDefinition>();
-				if (mcType == null)
-					return list;
-				foreach (var method in mcType.Methods) {
-					if (method.IsStatic && DotNetUtils.isMethod(method, "System.Void", "()"))
-						list.Add(method);
-				}
-				return list;
+				if (runtimeModule1 != null)
+					yield return runtimeModule1;
+				if (runtimeModule2 != null)
+					yield return runtimeModule2;
 			}
 		}
 
@@ -65,96 +63,83 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			get { return mcType != null; }
 		}
 
-		public MainType(ModuleDefinition module) {
+		public MainType(ModuleDefMD module) {
 			this.module = module;
 		}
 
-		public MainType(ModuleDefinition module, MainType oldOne) {
+		public MainType(ModuleDefMD module, MainType oldOne) {
 			this.module = module;
-			this.mcType = lookup(oldOne.mcType, "Could not find main type");
-			this.mcModule1 = DeobUtils.lookup(module, oldOne.mcModule1, "Could not find MC runtime module ref #1");
-			this.mcModule2 = DeobUtils.lookup(module, oldOne.mcModule2, "Could not find MC runtime module ref #2");
+			this.mcType = Lookup(oldOne.mcType, "Could not find main type");
 		}
 
-		T lookup<T>(T def, string errorMessage) where T : MemberReference {
-			return DeobUtils.lookup(module, def, errorMessage);
+		T Lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
+			return DeobUtils.Lookup(module, def, errorMessage);
 		}
 
-		public void find() {
-			var cctor = getCctor();
-			if (cctor == null)
-				return;
+		public void Find() {
+			foreach (var cctor in DeobUtils.GetInitCctors(module, 3)) {
+				if (CheckCctor(cctor))
+					break;
+			}
+		}
 
-			foreach (var info in DotNetUtils.getCalledMethods(module, cctor)) {
-				var method = info.Item2;
+		bool CheckCctor(MethodDef cctor) {
+			foreach (var method in DotNetUtils.GetCalledMethods(module, cctor)) {
 				if (method.Name != "Startup")
 					continue;
-				if (!DotNetUtils.isMethod(method, "System.Void", "()"))
+				if (!DotNetUtils.IsMethod(method, "System.Void", "()"))
 					continue;
 
-				ModuleReference module1, module2;
 				bool isOldTmp;
-				if (!checkType(method.DeclaringType, out module1, out module2, out isOldTmp))
-					return;
+				if (!CheckType(method.DeclaringType, out runtimeModule1, out runtimeModule2, out isOldTmp))
+					continue;
 
 				mcType = method.DeclaringType;
-				mcModule1 = module1;
-				mcModule2 = module2;
 				isOld = isOldTmp;
-				break;
+				return true;
 			}
+
+			return false;
 		}
 
-		MethodDefinition getCctor() {
-			int checksLeft = 3;
-			foreach (var type in module.GetTypes()) {
-				var cctor = DotNetUtils.getMethod(type, ".cctor");
-				if (cctor != null)
-					return cctor;
-				if (!type.IsEnum && --checksLeft <= 0)
-					return null;
-			}
-			return null;
-		}
-
-		static bool checkType(TypeDefinition type, out ModuleReference module1, out ModuleReference module2, out bool isOld) {
+		static bool CheckType(TypeDef type, out ModuleRef module1, out ModuleRef module2, out bool isOld) {
 			module1 = module2 = null;
 			isOld = false;
 
-			if (DotNetUtils.getMethod(type, "Startup") == null)
+			if (type.FindMethod("Startup") == null)
 				return false;
 
-			var pinvokes = getPinvokes(type);
-			var pinvokeList = getPinvokeList(pinvokes, "CheckRuntime");
+			var pinvokes = GetPinvokes(type);
+			var pinvokeList = GetPinvokeList(pinvokes, "CheckRuntime");
 			if (pinvokeList == null)
 				return false;
-			if (getPinvokeList(pinvokes, "MainDLL") == null)
+			if (GetPinvokeList(pinvokes, "MainDLL") == null)
 				return false;
 
 			// Newer versions (3.4+ ???) also have GetModuleBase()
-			isOld = getPinvokeList(pinvokes, "GetModuleBase") == null;
+			isOld = GetPinvokeList(pinvokes, "GetModuleBase") == null;
 
-			module1 = pinvokeList[0].PInvokeInfo.Module;
-			module2 = pinvokeList[1].PInvokeInfo.Module;
+			module1 = pinvokeList[0].ImplMap.Module;
+			module2 = pinvokeList[1].ImplMap.Module;
 			return true;
 		}
 
-		static Dictionary<string, List<MethodDefinition>> getPinvokes(TypeDefinition type) {
-			var pinvokes = new Dictionary<string, List<MethodDefinition>>(StringComparer.Ordinal);
+		static Dictionary<string, List<MethodDef>> GetPinvokes(TypeDef type) {
+			var pinvokes = new Dictionary<string, List<MethodDef>>(StringComparer.Ordinal);
 			foreach (var method in type.Methods) {
-				var info = method.PInvokeInfo;
-				if (info == null || info.EntryPoint == null)
+				var info = method.ImplMap;
+				if (info == null || UTF8String.IsNullOrEmpty(info.Name))
 					continue;
-				List<MethodDefinition> list;
-				if (!pinvokes.TryGetValue(info.EntryPoint, out list))
-					pinvokes[info.EntryPoint] = list = new List<MethodDefinition>();
+				List<MethodDef> list;
+				if (!pinvokes.TryGetValue(info.Name.String, out list))
+					pinvokes[info.Name.String] = list = new List<MethodDef>();
 				list.Add(method);
 			}
 			return pinvokes;
 		}
 
-		static List<MethodDefinition> getPinvokeList(Dictionary<string, List<MethodDefinition>> pinvokes, string methodName) {
-			List<MethodDefinition> list;
+		static List<MethodDef> GetPinvokeList(Dictionary<string, List<MethodDef>> pinvokes, string methodName) {
+			List<MethodDef> list;
 			if (!pinvokes.TryGetValue(methodName, out list))
 				return null;
 			if (list.Count != 2)

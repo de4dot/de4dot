@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -23,7 +23,10 @@ using AssemblyData;
 namespace de4dot.code.AssemblyClient {
 	public interface IAssemblyClient : IDisposable {
 		IAssemblyService Service { get; }
-		void connect();
-		void waitConnected();
+		IStringDecrypterService StringDecrypterService { get; }
+		IMethodDecrypterService MethodDecrypterService { get; }
+		IGenericService GenericService { get; }
+		void Connect();
+		void WaitConnected();
 	}
 }

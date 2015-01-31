@@ -1,0 +1,9 @@
+<LICENSE>
+* Copyright 2001-2008 by Agner Fog.
+* GNU General Public License http://www.gnu.org/licenses/gpl.html
+</LICENSE>
+
+
+See these links for the original C++ code:
+	http://www.agner.org/random/
+	http://www.agner.org/random/randomc.zip

@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -17,29 +17,29 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 	// Find the class that returns a RuntimeTypeHandle/RuntimeFieldHandle. The value passed to
 	// its methods is the original metadata token, which will be different when we save the file.
 	class MetadataTokenObfuscator {
-		ModuleDefinition module;
-		TypeDefinition type;
-		MethodDefinition typeMethod;
-		MethodDefinition fieldMethod;
+		ModuleDefMD module;
+		TypeDef type;
+		MethodDef typeMethod;
+		MethodDef fieldMethod;
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return type; }
 		}
 
-		public MetadataTokenObfuscator(ModuleDefinition module) {
+		public MetadataTokenObfuscator(ModuleDefMD module) {
 			this.module = module;
-			find();
+			Find();
 		}
 
-		void find() {
+		void Find() {
 			foreach (var type in module.Types) {
 				var fields = type.Fields;
 				if (fields.Count != 1)
@@ -49,15 +49,16 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				if (type.HasProperties || type.HasEvents)
 					continue;
 
-				MethodDefinition fieldMethod = null, typeMethod = null;
+				MethodDef fieldMethod = null, typeMethod = null;
 				foreach (var method in type.Methods) {
-					if (method.Parameters.Count != 1)
+					var sig = method.MethodSig;
+					if (sig == null || sig.Params.Count != 1)
 						continue;
-					if (method.Parameters[0].ParameterType.FullName != "System.Int32")
+					if (sig.Params[0].GetElementType() != ElementType.I4)
 						continue;
-					if (method.MethodReturnType.ReturnType.FullName == "System.RuntimeTypeHandle")
+					if (sig.RetType.GetFullName() == "System.RuntimeTypeHandle")
 						typeMethod = method;
-					else if (method.MethodReturnType.ReturnType.FullName == "System.RuntimeFieldHandle")
+					else if (sig.RetType.GetFullName() == "System.RuntimeFieldHandle")
 						fieldMethod = method;
 				}
 
@@ -71,11 +72,12 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			}
 		}
 
-		public void deobfuscate(Blocks blocks) {
+		public void Deobfuscate(Blocks blocks) {
 			if (type == null)
 				return;
 
-			foreach (var block in blocks.MethodBlocks.getAllBlocks()) {
+			var gpContext = GenericParamContext.Create(blocks.Method);
+			foreach (var block in blocks.MethodBlocks.GetAllBlocks()) {
 				var instrs = block.Instructions;
 				for (int i = 0; i < instrs.Count - 1; i++) {
 					var instr = instrs[i];
@@ -84,20 +86,20 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 					var call = instrs[i + 1];
 					if (call.OpCode.Code != Code.Call)
 						continue;
-					var method = call.Operand as MethodReference;
+					var method = call.Operand as IMethod;
 					if (method == null)
 						continue;
-					if (!MemberReferenceHelper.compareTypes(type, method.DeclaringType))
+					if (!new SigComparer().Equals(type, method.DeclaringType))
 						continue;
-					var methodDef = DotNetUtils.getMethod(module, method);
+					var methodDef = DotNetUtils.GetMethod(module, method);
 					if (methodDef == null)
 						continue;
 					if (methodDef != typeMethod && methodDef != fieldMethod)
 						continue;
 
-					int token = (int)instrs[i].Operand;
-					instrs[i] = new Instr(Instruction.Create(OpCodes.Nop));
-					instrs[i + 1] = new Instr(new Instruction(OpCodes.Ldtoken, module.LookupToken(token) as MemberReference));
+					uint token = (uint)(int)instrs[i].Operand;
+					instrs[i] = new Instr(OpCodes.Nop.ToInstruction());
+					instrs[i + 1] = new Instr(new Instruction(OpCodes.Ldtoken, module.ResolveToken(token, gpContext) as ITokenOperand));
 				}
 			}
 		}

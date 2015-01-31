@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -18,44 +18,44 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
+using dnlib.DotNet;
 
 namespace de4dot.code.renamer.asmmodules {
-	class PropertyDef : Ref {
-		public MethodDef GetMethod { get; set; }
-		public MethodDef SetMethod { get; set; }
+	class MPropertyDef : Ref {
+		public MMethodDef GetMethod { get; set; }
+		public MMethodDef SetMethod { get; set; }
 
-		public PropertyDefinition PropertyDefinition {
-			get { return (PropertyDefinition)memberReference; }
+		public PropertyDef PropertyDef {
+			get { return (PropertyDef)memberRef; }
 		}
 
-		public PropertyDef(PropertyDefinition propertyDefinition, TypeDef owner, int index)
-			: base(propertyDefinition, owner, index) {
+		public MPropertyDef(PropertyDef propertyDef, MTypeDef owner, int index)
+			: base(propertyDef, owner, index) {
 		}
 
-		public IEnumerable<MethodDefinition> methodDefinitions() {
-			if (PropertyDefinition.GetMethod != null)
-				yield return PropertyDefinition.GetMethod;
-			if (PropertyDefinition.SetMethod != null)
-				yield return PropertyDefinition.SetMethod;
-			if (PropertyDefinition.OtherMethods != null) {
-				foreach (var m in PropertyDefinition.OtherMethods)
+		public IEnumerable<MethodDef> MethodDefs() {
+			if (PropertyDef.GetMethod != null)
+				yield return PropertyDef.GetMethod;
+			if (PropertyDef.SetMethod != null)
+				yield return PropertyDef.SetMethod;
+			if (PropertyDef.OtherMethods != null) {
+				foreach (var m in PropertyDef.OtherMethods)
 					yield return m;
 			}
 		}
 
-		public bool isVirtual() {
-			foreach (var method in methodDefinitions()) {
+		public bool IsVirtual() {
+			foreach (var method in MethodDefs()) {
 				if (method.IsVirtual)
 					return true;
 			}
 			return false;
 		}
 
-		public bool isItemProperty() {
-			if (GetMethod != null && GetMethod.ParamDefs.Count >= 1)
+		public bool IsItemProperty() {
+			if (GetMethod != null && GetMethod.VisibleParameterCount >= 1)
 				return true;
-			if (SetMethod != null && SetMethod.ParamDefs.Count >= 2)
+			if (SetMethod != null && SetMethod.VisibleParameterCount >= 2)
 				return true;
 			return false;
 		}

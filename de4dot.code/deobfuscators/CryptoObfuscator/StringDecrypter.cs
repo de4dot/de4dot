@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -19,26 +19,26 @@
 
 using System;
 using System.Text;
-using Mono.Cecil;
+using dnlib.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CryptoObfuscator {
 	class StringDecrypter {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		EmbeddedResource stringResource;
-		TypeDefinition stringDecrypterType;
-		MethodDefinition stringDecrypterMethod;
+		TypeDef stringDecrypterType;
+		MethodDef stringDecrypterMethod;
 		byte[] decryptedData;
 
 		public bool Detected {
 			get { return stringDecrypterType != null; }
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return stringDecrypterType; }
 		}
 
-		public MethodDefinition Method {
+		public MethodDef Method {
 			get { return stringDecrypterMethod; }
 		}
 
@@ -46,41 +46,43 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			get { return stringResource; }
 		}
 
-		public StringDecrypter(ModuleDefinition module) {
+		public StringDecrypter(ModuleDefMD module) {
 			this.module = module;
 		}
 
-		public void find() {
-			TypeDefinition type;
-			MethodDefinition method;
-			if (!findStringDecrypterType(out type, out method))
+		public void Find() {
+			TypeDef type;
+			MethodDef method;
+			if (!FindStringDecrypterType(out type, out method))
 				return;
 
 			stringDecrypterType = type;
 			stringDecrypterMethod = method;
 		}
 
-		public void init(ResourceDecrypter resourceDecrypter) {
-			if (decryptedData != null)
+		public void Initialize(ResourceDecrypter resourceDecrypter) {
+			if (decryptedData != null || stringDecrypterType == null)
 				return;
 
-			var resourceName = getResourceName();
-			stringResource = DotNetUtils.getResource(module, resourceName) as EmbeddedResource;
+			var resourceName = GetResourceName();
+			stringResource = DotNetUtils.GetResource(module, resourceName) as EmbeddedResource;
 			if (stringResource == null)
 				return;
-			Log.v("Adding string decrypter. Resource: {0}", Utils.toCsharpString(stringResource.Name));
+			Logger.v("Adding string decrypter. Resource: {0}", Utils.ToCsharpString(stringResource.Name));
 
-			decryptedData = resourceDecrypter.decrypt(stringResource.GetResourceStream());
+			decryptedData = resourceDecrypter.Decrypt(stringResource.GetResourceStream());
 		}
 
-		string getResourceName() {
-			var defaultName = module.Assembly.Name.Name + module.Assembly.Name.Name;
+		string GetResourceName() {
+			var defaultName = module.Assembly.Name.String + module.Assembly.Name.String;
 
-			var cctor = DotNetUtils.getMethod(stringDecrypterType, ".cctor");
+			var cctor = stringDecrypterType.FindStaticConstructor();
 			if (cctor == null)
 				return defaultName;
 
-			foreach (var s in DotNetUtils.getCodeStrings(cctor)) {
+			foreach (var s in DotNetUtils.GetCodeStrings(cctor)) {
+				if (DotNetUtils.GetResource(module, s) != null)
+					return s;
 				try {
 					return Encoding.UTF8.GetString(Convert.FromBase64String(s));
 				}
@@ -91,12 +93,12 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return defaultName;
 		}
 
-		public string decrypt(int index) {
-			int len = DeobUtils.readVariableLengthInt32(decryptedData, ref index);
+		public string Decrypt(int index) {
+			int len = DeobUtils.ReadVariableLengthInt32(decryptedData, ref index);
 			return Encoding.Unicode.GetString(decryptedData, index, len);
 		}
 
-		bool findStringDecrypterType(out TypeDefinition theType, out MethodDefinition theMethod) {
+		bool FindStringDecrypterType(out TypeDef theType, out MethodDef theMethod) {
 			theType = null;
 			theMethod = null;
 
@@ -105,18 +107,18 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 					continue;
 				if (type.Fields.Count != 1)
 					continue;
-				if (DotNetUtils.findFieldType(type, "System.Byte[]", true) == null)
+				if (DotNetUtils.FindFieldType(type, "System.Byte[]", true) == null)
 					continue;
-				if (type.Methods.Count != 3)
+				if (type.Methods.Count != 2 && type.Methods.Count != 3)
 					continue;
 				if (type.NestedTypes.Count > 0)
 					continue;
 
-				MethodDefinition method = null;
+				MethodDef method = null;
 				foreach (var m in type.Methods) {
 					if (m.Name == ".ctor" || m.Name == ".cctor")
 						continue;
-					if (DotNetUtils.isMethod(m, "System.String", "(System.Int32)")) {
+					if (DotNetUtils.IsMethod(m, "System.String", "(System.Int32)")) {
 						method = m;
 						continue;
 					}

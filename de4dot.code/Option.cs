@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -57,7 +57,7 @@ namespace de4dot.code {
 		}
 
 		// Returns true if the new value is set, or false on error. error string is also updated.
-		public abstract bool set(string val, out string error);
+		public abstract bool Set(string val, out string error);
 
 		public Option(string shortName, string longName, string description) {
 			if (shortName != null)
@@ -79,7 +79,7 @@ namespace de4dot.code {
 			get { return "bool"; }
 		}
 
-		public override bool set(string newVal, out string error) {
+		public override bool Set(string newVal, out string error) {
 			if (string.Equals(newVal, "false", StringComparison.OrdinalIgnoreCase) ||
 				string.Equals(newVal, "off", StringComparison.OrdinalIgnoreCase) ||
 				string.Equals(newVal, "0", StringComparison.OrdinalIgnoreCase)) {
@@ -91,7 +91,7 @@ namespace de4dot.code {
 			return true;
 		}
 
-		public bool get() {
+		public bool Get() {
 			return val;
 		}
 	}
@@ -107,7 +107,7 @@ namespace de4dot.code {
 			get { return "int"; }
 		}
 
-		public override bool set(string newVal, out string error) {
+		public override bool Set(string newVal, out string error) {
 			int newInt;
 			if (!int.TryParse(newVal, out newInt)) {
 				error = string.Format("Not an integer: '{0}'", newVal);
@@ -118,7 +118,7 @@ namespace de4dot.code {
 			return true;
 		}
 
-		public int get() {
+		public int Get() {
 			return val;
 		}
 	}
@@ -135,13 +135,13 @@ namespace de4dot.code {
 			Default = this.val = val;
 		}
 
-		public override bool set(string newVal, out string error) {
+		public override bool Set(string newVal, out string error) {
 			val = newVal;
 			error = "";
 			return true;
 		}
 
-		public string get() {
+		public string Get() {
 			return val;
 		}
 	}
@@ -158,10 +158,10 @@ namespace de4dot.code {
 			Default = this.val = new NameRegexes(val);
 		}
 
-		public override bool set(string newVal, out string error) {
+		public override bool Set(string newVal, out string error) {
 			try {
 				var regexes = new NameRegexes();
-				regexes.set(newVal);
+				regexes.Set(newVal);
 				val = regexes;
 			}
 			catch (ArgumentException) {
@@ -172,7 +172,7 @@ namespace de4dot.code {
 			return true;
 		}
 
-		public NameRegexes get() {
+		public NameRegexes Get() {
 			return val;
 		}
 	}
@@ -189,7 +189,7 @@ namespace de4dot.code {
 			Default = this.val = new Regex(val);
 		}
 
-		public override bool set(string newVal, out string error) {
+		public override bool Set(string newVal, out string error) {
 			try {
 				val = new Regex(newVal);
 			}
@@ -201,7 +201,7 @@ namespace de4dot.code {
 			return true;
 		}
 
-		public Regex get() {
+		public Regex Get() {
 			return val;
 		}
 	}
@@ -214,12 +214,16 @@ namespace de4dot.code {
 			get { return false; }
 		}
 
-		public NoArgOption(string shortName, string longName, string description, Action action = null)
+		public NoArgOption(string shortName, string longName, string description)
+			: this(shortName, longName, description, null) {
+		}
+
+		public NoArgOption(string shortName, string longName, string description, Action action)
 			: base(shortName, longName, description) {
 			this.action = action;
 		}
 
-		public override bool set(string val, out string error) {
+		public override bool Set(string val, out string error) {
 			triggered = true;
 			if (action != null)
 				action();
@@ -227,7 +231,7 @@ namespace de4dot.code {
 			return true;
 		}
 
-		public bool get() {
+		public bool Get() {
 			return triggered;
 		}
 	}
@@ -247,7 +251,7 @@ namespace de4dot.code {
 			Default = null;
 		}
 
-		public override bool set(string val, out string error) {
+		public override bool Set(string val, out string error) {
 			action(val);
 			error = "";
 			return true;

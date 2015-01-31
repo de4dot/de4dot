@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -37,6 +37,7 @@ namespace de4dot.code.resources {
 		DateTime,
 		TimeSpan,
 		ByteArray = 0x20,
+		Stream = 0x21,
 		UserTypes = 0x40,
 	}
 }

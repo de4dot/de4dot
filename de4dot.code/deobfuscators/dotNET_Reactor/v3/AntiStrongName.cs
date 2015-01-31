@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -18,23 +18,23 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 	class AntiStrongName {
-		public bool remove(Blocks blocks) {
-			var allBlocks = blocks.MethodBlocks.getAllBlocks();
+		public bool Remove(Blocks blocks) {
+			var allBlocks = blocks.MethodBlocks.GetAllBlocks();
 			foreach (var block in allBlocks) {
-				if (remove(blocks, block))
+				if (Remove(blocks, block))
 					return true;
 			}
 
 			return false;
 		}
 
-		bool remove(Blocks blocks, Block block) {
+		bool Remove(Blocks blocks, Block block) {
 			var instrs = block.Instructions;
 			const int numInstrsToRemove = 11;
 			if (instrs.Count < numInstrsToRemove)
@@ -44,25 +44,25 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 
 			if (instrs[index++].OpCode.Code != Code.Ldtoken)
 				return false;
-			if (!checkCall(instrs[index++], "System.Type System.Type::GetTypeFromHandle(System.RuntimeTypeHandle)"))
+			if (!CheckCall(instrs[index++], "System.Type System.Type::GetTypeFromHandle(System.RuntimeTypeHandle)"))
 				return false;
-			if (!checkCall(instrs[index++], "System.Reflection.Assembly System.Type::get_Assembly()"))
+			if (!CheckCall(instrs[index++], "System.Reflection.Assembly System.Type::get_Assembly()"))
 				return false;
-			if (!checkCall(instrs[index++], "System.Reflection.AssemblyName System.Reflection.Assembly::GetName()"))
+			if (!CheckCall(instrs[index++], "System.Reflection.AssemblyName System.Reflection.Assembly::GetName()"))
 				return false;
-			if (!checkCall(instrs[index++], "System.Byte[] System.Reflection.AssemblyName::GetPublicKeyToken()"))
+			if (!CheckCall(instrs[index++], "System.Byte[] System.Reflection.AssemblyName::GetPublicKeyToken()"))
 				return false;
-			if (!checkCall(instrs[index++], "System.String System.Convert::ToBase64String(System.Byte[])"))
-				return false;
-			if (instrs[index++].OpCode.Code != Code.Ldstr)
-				return false;
-			if (!checkCall(instrs[index++], "System.String", "(System.String,System.String)"))
+			if (!CheckCall(instrs[index++], "System.String System.Convert::ToBase64String(System.Byte[])"))
 				return false;
 			if (instrs[index++].OpCode.Code != Code.Ldstr)
 				return false;
-			if (!checkCall(instrs[index++], "System.Boolean System.String::op_Inequality(System.String,System.String)"))
+			if (!CheckCall(instrs[index++], "System.String", "(System.String,System.String)"))
 				return false;
-			if (!instrs[index++].isBrfalse())
+			if (instrs[index++].OpCode.Code != Code.Ldstr)
+				return false;
+			if (!CheckCall(instrs[index++], "System.Boolean System.String::op_Inequality(System.String,System.String)"))
+				return false;
+			if (!instrs[index++].IsBrfalse())
 				return false;
 
 			var badBlock = block.FallThrough;
@@ -73,43 +73,43 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			if (badBlock == goodblock) {
 				// All of the bad block was removed by the cflow deobfuscator. It was just a useless
 				// calculation (div by zero).
-				block.replaceLastInstrsWithBranch(numInstrsToRemove, goodblock);
+				block.ReplaceLastInstrsWithBranch(numInstrsToRemove, goodblock);
 			}
 			else if (badBlock.Sources.Count == 1) {
 				instrs = badBlock.Instructions;
 				if (instrs.Count != 12)
 					return false;
 				index = 0;
-				if (!instrs[index++].isLdcI4())
+				if (!instrs[index++].IsLdcI4())
 					return false;
-				if (!instrs[index].isStloc())
+				if (!instrs[index].IsStloc())
 					return false;
-				var local = Instr.getLocalVar(blocks.Locals, instrs[index++]);
+				var local = Instr.GetLocalVar(blocks.Locals, instrs[index++]);
 				if (local == null)
 					return false;
-				if (!checkLdloc(blocks.Locals, instrs[index++], local))
+				if (!CheckLdloc(blocks.Locals, instrs[index++], local))
 					return false;
-				if (!checkLdloc(blocks.Locals, instrs[index++], local))
+				if (!CheckLdloc(blocks.Locals, instrs[index++], local))
 					return false;
 				if (instrs[index++].OpCode.Code != Code.Sub)
 					return false;
 				if (instrs[index++].OpCode.Code != Code.Conv_U1)
 					return false;
-				if (!checkStloc(blocks.Locals, instrs[index++], local))
+				if (!CheckStloc(blocks.Locals, instrs[index++], local))
 					return false;
-				if (!checkLdloc(blocks.Locals, instrs[index++], local))
+				if (!CheckLdloc(blocks.Locals, instrs[index++], local))
 					return false;
-				if (!checkLdloc(blocks.Locals, instrs[index++], local))
+				if (!CheckLdloc(blocks.Locals, instrs[index++], local))
 					return false;
 				if (instrs[index++].OpCode.Code != Code.Div)
 					return false;
 				if (instrs[index++].OpCode.Code != Code.Conv_U1)
 					return false;
-				if (!checkStloc(blocks.Locals, instrs[index++], local))
+				if (!CheckStloc(blocks.Locals, instrs[index++], local))
 					return false;
 
-				block.replaceLastInstrsWithBranch(numInstrsToRemove, goodblock);
-				badBlock.Parent.removeDeadBlock(badBlock);
+				block.ReplaceLastInstrsWithBranch(numInstrsToRemove, goodblock);
+				badBlock.Parent.RemoveDeadBlock(badBlock);
 			}
 			else
 				return false;
@@ -117,36 +117,36 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			return true;
 		}
 
-		static bool checkCall(Instr instr, string methodFullname) {
+		static bool CheckCall(Instr instr, string methodFullname) {
 			if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt)
 				return false;
-			var calledMethod = instr.Operand as MethodReference;
+			var calledMethod = instr.Operand as IMethod;
 			if (calledMethod == null)
 				return false;
 			return calledMethod.ToString() == methodFullname;
 		}
 
-		static bool checkCall(Instr instr, string returnType, string parameters) {
+		static bool CheckCall(Instr instr, string returnType, string parameters) {
 			if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt)
 				return false;
-			var calledMethod = instr.Operand as MethodReference;
+			var calledMethod = instr.Operand as IMethod;
 			if (calledMethod == null)
 				return false;
-			return DotNetUtils.isMethod(calledMethod, returnType, parameters);
+			return DotNetUtils.IsMethod(calledMethod, returnType, parameters);
 		}
 
-		static bool checkLdloc(IList<VariableDefinition> locals, Instr instr, VariableDefinition local) {
-			if (!instr.isLdloc())
+		static bool CheckLdloc(IList<Local> locals, Instr instr, Local local) {
+			if (!instr.IsLdloc())
 				return false;
-			if (Instr.getLocalVar(locals, instr) != local)
+			if (Instr.GetLocalVar(locals, instr) != local)
 				return false;
 			return true;
 		}
 
-		static bool checkStloc(IList<VariableDefinition> locals, Instr instr, VariableDefinition local) {
-			if (!instr.isStloc())
+		static bool CheckStloc(IList<Local> locals, Instr instr, Local local) {
+			if (!instr.IsStloc())
 				return false;
-			if (Instr.getLocalVar(locals, instr) != local)
+			if (Instr.GetLocalVar(locals, instr) != local)
 				return false;
 			return true;
 		}

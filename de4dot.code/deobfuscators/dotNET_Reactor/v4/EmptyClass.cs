@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -17,29 +17,29 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.Cecil;
+using dnlib.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 	// Detect some empty class that is called from most .ctor's
 	class EmptyClass {
-		ModuleDefinition module;
-		MethodDefinition emptyMethod;
+		ModuleDefMD module;
+		MethodDef emptyMethod;
 
-		public MethodDefinition Method {
+		public MethodDef Method {
 			get { return emptyMethod; }
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return emptyMethod != null ? emptyMethod.DeclaringType : null; }
 		}
 
-		public EmptyClass(ModuleDefinition module) {
+		public EmptyClass(ModuleDefMD module) {
 			this.module = module;
-			init();
+			Initialize();
 		}
 
-		void init() {
+		void Initialize() {
 			var callCounter = new CallCounter();
 			int count = 0;
 			foreach (var type in module.GetTypes()) {
@@ -48,14 +48,13 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				foreach (var method in type.Methods) {
 					if (method.Name != ".ctor" && method.Name != ".cctor" && module.EntryPoint != method)
 						continue;
-					foreach (var tuple in DotNetUtils.getCalledMethods(module, method)) {
-						var calledMethod = tuple.Item2;
+					foreach (var calledMethod in DotNetUtils.GetCalledMethods(module, method)) {
 						if (!calledMethod.IsStatic || calledMethod.Body == null)
 							continue;
-						if (!DotNetUtils.isMethod(calledMethod, "System.Void", "()"))
+						if (!DotNetUtils.IsMethod(calledMethod, "System.Void", "()"))
 							continue;
-						if (isEmptyClass(calledMethod)) {
-							callCounter.add(calledMethod);
+						if (IsEmptyClass(calledMethod)) {
+							callCounter.Add(calledMethod);
 							count++;
 						}
 					}
@@ -63,13 +62,13 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			}
 
 			int numCalls;
-			var theMethod = (MethodDefinition)callCounter.most(out numCalls);
+			var theMethod = (MethodDef)callCounter.Most(out numCalls);
 			if (numCalls >= 10)
 				emptyMethod = theMethod;
 		}
 
-		bool isEmptyClass(MethodDefinition emptyMethod) {
-			if (!DotNetUtils.isEmptyObfuscated(emptyMethod))
+		bool IsEmptyClass(MethodDef emptyMethod) {
+			if (!DotNetUtils.IsEmptyObfuscated(emptyMethod))
 				return false;
 
 			var type = emptyMethod.DeclaringType;

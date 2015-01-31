@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -18,88 +18,88 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using Mono.Cecil.Metadata;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
 
 namespace de4dot.code.deobfuscators.Spices_Net {
 	class SpicesMethodCallInliner : MethodCallInliner {
-		ModuleDefinition module;
-		TypeDefinitionDict<bool> methodsTypes = new TypeDefinitionDict<bool>();
-		MethodDefinitionAndDeclaringTypeDict<MethodDefinition> classMethods = new MethodDefinitionAndDeclaringTypeDict<MethodDefinition>();
+		ModuleDefMD module;
+		TypeDefDict<bool> methodsTypes = new TypeDefDict<bool>();
+		MethodDefAndDeclaringTypeDict<MethodDef> classMethods = new MethodDefAndDeclaringTypeDict<MethodDef>();
 
-		public SpicesMethodCallInliner(ModuleDefinition module)
+		public SpicesMethodCallInliner(ModuleDefMD module)
 			: base(false) {
 			this.module = module;
 		}
 
-		protected override bool isCompatibleType(int paramIndex, TypeReference origType, TypeReference newType) {
-			if (MemberReferenceHelper.compareTypes(origType, newType))
+		protected override bool IsCompatibleType(int paramIndex, IType origType, IType newType) {
+			if (new SigComparer(SigComparerOptions.IgnoreModifiers).Equals(origType, newType))
 				return true;
 			if (paramIndex == -1) {
-				if (newType.IsValueType || origType.IsValueType)
+				if (IsValueType(newType) || IsValueType(origType))
 					return false;
 			}
-			return newType.EType == ElementType.Object;
+			return newType.FullName == "System.Object";
 		}
 
-		public bool checkCanInline(MethodDefinition method) {
-			return methodsTypes.find(method.DeclaringType);
+		public bool CheckCanInline(MethodDef method) {
+			return methodsTypes.Find(method.DeclaringType);
 		}
 
-		protected override bool canInline(MethodDefinition method) {
-			return checkCanInline(method);
+		protected override bool CanInline(MethodDef method) {
+			return CheckCanInline(method);
 		}
 
-		public void initialize() {
-			initializeMethodsTypes();
-			restoreMethodBodies();
+		public void Initialize(ISimpleDeobfuscator simpleDeobfuscator) {
+			InitializeMethodsTypes();
+			RestoreMethodBodies(simpleDeobfuscator);
 		}
 
-		void restoreMethodBodies() {
-			var methodToOrigMethods = new MethodDefinitionAndDeclaringTypeDict<List<MethodDefinition>>();
+		void RestoreMethodBodies(ISimpleDeobfuscator simpleDeobfuscator) {
+			var methodToOrigMethods = new MethodDefAndDeclaringTypeDict<List<MethodDef>>();
 			foreach (var t in module.Types) {
-				var types = new List<TypeDefinition>(TypeDefinition.GetTypes(new List<TypeDefinition> { t }));
+				var types = new List<TypeDef>(AllTypesHelper.Types(new List<TypeDef> { t }));
 				foreach (var type in types) {
-					if (methodsTypes.find(type))
+					if (methodsTypes.Find(type))
 						continue;
 					foreach (var method in type.Methods) {
 						if (method.Name == ".ctor" || method.Name == ".cctor")
 							continue;
 
-						MethodDefinition calledMethod;
-						if (!checkRestoreBody(method, out calledMethod))
+						MethodDef calledMethod;
+						if (!CheckRestoreBody(method, out calledMethod))
 							continue;
-						if (!checkSameMethods(method, calledMethod))
+						if (!CheckSameMethods(method, calledMethod))
 							continue;
-						if (!methodsTypes.find(calledMethod.DeclaringType))
+						if (!methodsTypes.Find(calledMethod.DeclaringType))
 							continue;
 						if (types.IndexOf(calledMethod.DeclaringType) < 0)
 							continue;
 
-						var list = methodToOrigMethods.find(calledMethod);
+						var list = methodToOrigMethods.Find(calledMethod);
 						if (list == null)
-							methodToOrigMethods.add(calledMethod, list = new List<MethodDefinition>());
+							methodToOrigMethods.Add(calledMethod, list = new List<MethodDef>());
 						list.Add(method);
 					}
 				}
 			}
 
-			foreach (var calledMethod in methodToOrigMethods.getKeys()) {
-				var list = methodToOrigMethods.find(calledMethod);
+			foreach (var calledMethod in methodToOrigMethods.GetKeys()) {
+				var list = methodToOrigMethods.Find(calledMethod);
 				var method = list[0];
 
-				Log.v("Restored method body {0:X8} from method {1:X8}",
-							method.MetadataToken.ToInt32(),
-							calledMethod.MetadataToken.ToInt32());
-				DotNetUtils.copyBodyFromTo(calledMethod, method);
-				classMethods.add(calledMethod, method);
+				Logger.v("Restored method body {0:X8} from method {1:X8}",
+							method.MDToken.ToInt32(),
+							calledMethod.MDToken.ToInt32());
+				DotNetUtils.CopyBodyFromTo(calledMethod, method);
+				classMethods.Add(calledMethod, method);
+				simpleDeobfuscator.MethodModified(method);
 			}
 		}
 
-		bool checkRestoreBody(MethodDefinition method, out MethodDefinition calledMethod) {
+		bool CheckRestoreBody(MethodDef method, out MethodDef calledMethod) {
 			calledMethod = null;
 			if (method.Body == null)
 				return false;
@@ -108,7 +108,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			if (method.Body.ExceptionHandlers.Count > 0)
 				return false;
 
-			if (!checkRestoreBody2(method, out calledMethod))
+			if (!CheckRestoreBody2(method, out calledMethod))
 				return false;
 			if (calledMethod == method)
 				return false;
@@ -122,20 +122,20 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			return true;
 		}
 
-		bool checkRestoreBody2(MethodDefinition instanceMethod, out MethodDefinition calledMethod) {
+		bool CheckRestoreBody2(MethodDef instanceMethod, out MethodDef calledMethod) {
 			calledMethod = null;
 
 			var instrs = instanceMethod.Body.Instructions;
 			int index;
 			for (index = 0; index < instrs.Count; index++) {
-				if (DotNetUtils.getArgIndex(instrs[index]) != index)
+				if (instrs[index].GetParameterIndex() != index)
 					break;
 			}
 			var call = instrs[index++];
 			if (call.OpCode.Code != Code.Call)
 				return false;
 
-			calledMethod = call.Operand as MethodDefinition;
+			calledMethod = call.Operand as MethodDef;
 			if (calledMethod == null)
 				return false;
 
@@ -145,14 +145,14 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			return true;
 		}
 
-		void initializeMethodsTypes() {
+		void InitializeMethodsTypes() {
 			foreach (var type in module.GetTypes()) {
-				if (checkMethodsType(type))
-					methodsTypes.add(type, true);
+				if (CheckMethodsType(type))
+					methodsTypes.Add(type, true);
 			}
 		}
 
-		static bool checkMethodsType(TypeDefinition type) {
+		static bool CheckMethodsType(TypeDef type) {
 			if (!type.IsNested)
 				return false;
 			if ((type.Attributes & ~TypeAttributes.BeforeFieldInit) != TypeAttributes.NestedAssembly)
@@ -163,17 +163,17 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 				return false;
 			if (type.IsValueType || type.IsInterface)
 				return false;
-			if (type.BaseType == null || type.BaseType.EType != ElementType.Object)
+			if (type.BaseType == null || type.BaseType.FullName != "System.Object")
 				return false;
 			if (type.Interfaces.Count > 0)
 				return false;
-			if (!checkMethods(type))
+			if (!CheckMethods(type))
 				return false;
 
 			return true;
 		}
 
-		static bool checkMethods(TypeDefinition type) {
+		static bool CheckMethods(TypeDef type) {
 			bool foundCtor = false;
 			int numMethods = 0;
 
@@ -181,14 +181,14 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 				if (method.Name == ".cctor")
 					return false;
 				if (method.Name == ".ctor") {
-					if (method.Parameters.Count != 0)
+					if (method.MethodSig.GetParamCount() != 0)
 						return false;
 					foundCtor = true;
 					continue;
 				}
 				if (method.Attributes != (MethodAttributes.Assembly | MethodAttributes.Static | MethodAttributes.HideBySig))
 					return false;
-				if (method.HasPInvokeInfo || method.PInvokeInfo != null)
+				if (method.ImplMap != null)
 					return false;
 				if (method.GenericParameters.Count > 0)
 					return false;
@@ -199,44 +199,44 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			return numMethods > 0 && foundCtor;
 		}
 
-		public List<MethodDefinition> getInlinedMethods() {
-			var list = new List<MethodDefinition>();
+		public List<MethodDef> GetInlinedMethods() {
+			var list = new List<MethodDef>();
 
-			foreach (var type in methodsTypes.getKeys())
+			foreach (var type in methodsTypes.GetKeys())
 				list.AddRange(type.Methods);
 
 			return list;
 		}
 
-		public TypeDefinitionDict<bool> getInlinedTypes(IEnumerable<MethodDefinition> unusedMethods) {
-			var unused = new MethodDefinitionAndDeclaringTypeDict<bool>();
+		public TypeDefDict<bool> GetInlinedTypes(IEnumerable<MethodDef> unusedMethods) {
+			var unused = new MethodDefAndDeclaringTypeDict<bool>();
 			foreach (var method in unusedMethods)
-				unused.add(method, true);
+				unused.Add(method, true);
 
-			var types = new TypeDefinitionDict<bool>();
-			foreach (var type in methodsTypes.getKeys()) {
-				if (checkAllMethodsUnused(unused, type))
-					types.add(type, true);
+			var types = new TypeDefDict<bool>();
+			foreach (var type in methodsTypes.GetKeys()) {
+				if (CheckAllMethodsUnused(unused, type))
+					types.Add(type, true);
 			}
 			return types;
 		}
 
-		static bool checkAllMethodsUnused(MethodDefinitionAndDeclaringTypeDict<bool> unused, TypeDefinition type) {
+		static bool CheckAllMethodsUnused(MethodDefAndDeclaringTypeDict<bool> unused, TypeDef type) {
 			foreach (var method in type.Methods) {
-				if (!unused.find(method))
+				if (!unused.Find(method))
 					return false;
 			}
 			return true;
 		}
 
-		public void deobfuscate(Blocks blocks) {
-			foreach (var block in blocks.MethodBlocks.getAllBlocks()) {
+		public void Deobfuscate(Blocks blocks) {
+			foreach (var block in blocks.MethodBlocks.GetAllBlocks()) {
 				var instrs = block.Instructions;
 				for (int i = 0; i < instrs.Count; i++) {
 					var call = instrs[i];
 					if (call.OpCode.Code != Code.Call)
 						continue;
-					var realInstanceMethod = classMethods.find(call.Operand as MethodReference);
+					var realInstanceMethod = classMethods.Find(call.Operand as IMethod);
 					if (realInstanceMethod == null)
 						continue;
 					call.Operand = realInstanceMethod;

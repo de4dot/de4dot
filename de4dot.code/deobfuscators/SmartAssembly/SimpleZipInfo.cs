@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -17,19 +17,19 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.Cecil;
+using dnlib.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.SmartAssembly {
 	class SimpleZipInfo {
 
-		public static bool isSimpleZipDecryptMethod_QuickCheck(ModuleDefinition module, MethodReference method, out MethodDefinition simpleZipTypeMethod) {
+		public static bool IsSimpleZipDecryptMethod_QuickCheck(ModuleDefMD module, IMethod method, out MethodDef simpleZipTypeMethod) {
 			simpleZipTypeMethod = null;
 
-			if (!DotNetUtils.isMethod(method, "System.Byte[]", "(System.Byte[])"))
+			if (!DotNetUtils.IsMethod(method, "System.Byte[]", "(System.Byte[])"))
 				return false;
 
-			var methodDef = DotNetUtils.getMethod(DotNetUtils.getType(module, method.DeclaringType), method);
+			var methodDef = DotNetUtils.GetMethod(DotNetUtils.GetType(module, method.DeclaringType), method);
 			if (methodDef == null)
 				return false;
 

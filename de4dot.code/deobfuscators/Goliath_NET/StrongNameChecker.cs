@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -17,46 +17,46 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Goliath_NET {
 	class StrongNameChecker {
-		ModuleDefinition module;
-		TypeDefinition strongNameType;
-		MethodDefinition strongNameCheckMethod;
+		ModuleDefMD module;
+		TypeDef strongNameType;
+		MethodDef strongNameCheckMethod;
 
 		public bool Detected {
-			get { return strongNameType != null;}
+			get { return strongNameType != null; }
 		}
 
-		public TypeDefinition Type {
+		public TypeDef Type {
 			get { return strongNameType; }
 		}
 
-		public MethodDefinition CheckerMethod {
+		public MethodDef CheckerMethod {
 			get { return strongNameCheckMethod; }
 		}
 
-		public StrongNameChecker(ModuleDefinition module) {
+		public StrongNameChecker(ModuleDefMD module) {
 			this.module = module;
 		}
 
-		public void find() {
+		public void Find() {
 			foreach (var type in module.Types) {
 				if (type.HasFields || type.HasEvents || type.HasProperties)
 					continue;
 
-				var checkMethod = getAntiTamperingDetectionMethod(type);
+				var checkMethod = GetAntiTamperingDetectionMethod(type);
 				if (checkMethod == null)
 					continue;
 
-				if (DotNetUtils.getMethod(type, "System.Byte[]", "(System.Reflection.Assembly)") == null)
+				if (DotNetUtils.GetMethod(type, "System.Byte[]", "(System.Reflection.Assembly)") == null)
 					continue;
-				if (DotNetUtils.getMethod(type, "System.String", "(System.Collections.Generic.Stack`1<System.Int32>)") == null)
+				if (DotNetUtils.GetMethod(type, "System.String", "(System.Collections.Generic.Stack`1<System.Int32>)") == null)
 					continue;
-				if (DotNetUtils.getMethod(type, "System.Int32", "(System.Int32,System.Byte[])") == null)
+				if (DotNetUtils.GetMethod(type, "System.Int32", "(System.Int32,System.Byte[])") == null)
 					continue;
 
 				strongNameType = type;
@@ -65,7 +65,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			}
 		}
 
-		MethodDefinition getAntiTamperingDetectionMethod(TypeDefinition type) {
+		MethodDef GetAntiTamperingDetectionMethod(TypeDef type) {
 			var requiredLocals = new string[] {
 				"System.Reflection.Assembly",
 				"System.Collections.Generic.Stack`1<System.Int32>",
@@ -73,11 +73,11 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
-				if (!DotNetUtils.isMethod(method, "System.Void", "(System.Type)"))
+				if (!DotNetUtils.IsMethod(method, "System.Void", "(System.Type)"))
 					continue;
-				if (!new LocalTypes(method).all(requiredLocals))
+				if (!new LocalTypes(method).All(requiredLocals))
 					continue;
-				if (!hasThrow(method))
+				if (!HasThrow(method))
 					continue;
 
 				return method;
@@ -85,7 +85,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			return null;
 		}
 
-		static bool hasThrow(MethodDefinition method) {
+		static bool HasThrow(MethodDef method) {
 			if (method == null || method.Body == null)
 				return false;
 			foreach (var instr in method.Body.Instructions) {
@@ -95,10 +95,10 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			return false;
 		}
 
-		public bool deobfuscate(Blocks blocks) {
+		public bool Deobfuscate(Blocks blocks) {
 			if (blocks.Method.Name != ".cctor" && blocks.Method.Name != ".ctor")
 				return false;
-			foreach (var block in blocks.MethodBlocks.getAllBlocks()) {
+			foreach (var block in blocks.MethodBlocks.GetAllBlocks()) {
 				var instrs = block.Instructions;
 				for (int i = 0; i < instrs.Count - 2; i++) {
 					var ldtoken = instrs[i];
@@ -108,16 +108,16 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 					var call1 = instrs[i + 1];
 					if (call1.OpCode.Code != Code.Call && call1.OpCode.Code != Code.Callvirt)
 						continue;
-					if (!DotNetUtils.isMethod(call1.Operand as MethodReference, "System.Type", "(System.RuntimeTypeHandle)"))
+					if (!DotNetUtils.IsMethod(call1.Operand as IMethod, "System.Type", "(System.RuntimeTypeHandle)"))
 						continue;
 
 					var call2 = instrs[i + 2];
 					if (call2.OpCode.Code != Code.Call && call2.OpCode.Code != Code.Callvirt)
 						continue;
-					if (!MemberReferenceHelper.compareMethodReferenceAndDeclaringType(call2.Operand as MethodReference, strongNameCheckMethod))
+					if (!MethodEqualityComparer.CompareDeclaringTypes.Equals(call2.Operand as IMethod, strongNameCheckMethod))
 						continue;
 
-					block.remove(i, 3);
+					block.Remove(i, 3);
 					return true;
 				}
 			}

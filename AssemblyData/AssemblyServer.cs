@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -26,19 +26,20 @@ using AssemblyData;
 
 namespace AssemblyServer {
 	public static class Start {
-		public static int main(string[] args) {
-			if (args.Length != 2)
+		public static int Main(string[] args) {
+			if (args.Length != 3)
 				Environment.Exit(1);
-			var channelName = args[0];
-			var uri = args[1];
+			var serviceType = (AssemblyServiceType)int.Parse(args[0]);
+			var channelName = args[1];
+			var uri = args[2];
 
-			var service = new AssemblyService();
-			startServer(service, channelName, uri);
-			service.waitExit();
+			var service = (AssemblyService)AssemblyService.Create(serviceType);
+			StartServer(service, channelName, uri);
+			service.WaitExit();
 			return 0;
 		}
 
-		static void startServer(AssemblyService service, string name, string uri) {
+		static void StartServer(AssemblyService service, string name, string uri) {
 			var props = new Hashtable();
 			props["portName"] = name;
 			var provider = new BinaryServerFormatterSinkProvider();

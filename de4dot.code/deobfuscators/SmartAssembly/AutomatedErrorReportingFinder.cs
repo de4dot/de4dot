@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -19,25 +19,25 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.SmartAssembly {
 	class AutomatedErrorReportingFinder : ExceptionLoggerRemover {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		bool enabled;
 
 		protected override bool HasExceptionLoggers {
 			get { return enabled; }
 		}
 
-		public AutomatedErrorReportingFinder(ModuleDefinition module) {
+		public AutomatedErrorReportingFinder(ModuleDefMD module) {
 			this.module = module;
 		}
 
-		protected override bool isExceptionLogger(MethodReference method) {
-			return isExceptionLoggerMethod(method);
+		protected override bool IsExceptionLogger(IMethod method) {
+			return IsExceptionLoggerMethod(method);
 		}
 
 		public void find() {
@@ -45,12 +45,12 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			if (entryPoint == null)
 				enabled = true;
 			else {
-				MethodDefinition exceptionMethod;
-				enabled = checkMethod(entryPoint, out exceptionMethod);
+				MethodDef exceptionMethod;
+				enabled = CheckMethod(entryPoint, out exceptionMethod);
 			}
 		}
 
-		bool checkMethod(MethodDefinition method, out MethodDefinition exceptionMethod) {
+		bool CheckMethod(MethodDef method, out MethodDef exceptionMethod) {
 			exceptionMethod = null;
 
 			var body = method.Body;
@@ -73,21 +73,21 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 
 			int handlerStart = instrs.IndexOf(eh.HandlerStart);
 			int handlerEnd = eh.HandlerEnd == null ? instrs.Count : instrs.IndexOf(eh.HandlerEnd);
-			exceptionMethod = DotNetUtils.getMethod(module, checkHandler(instrs, handlerStart, handlerEnd));
+			exceptionMethod = DotNetUtils.GetMethod(module, CheckHandler(instrs, handlerStart, handlerEnd));
 			if (exceptionMethod == null || !exceptionMethod.IsStatic || exceptionMethod.Body == null)
 				return false;
 
-			return isExceptionLoggerMethod(exceptionMethod);
+			return IsExceptionLoggerMethod(exceptionMethod);
 		}
 
-		MethodReference checkHandler(IList<Instruction> instrs, int start, int end) {
-			MethodReference calledMethod = null;
+		IMethod CheckHandler(IList<Instruction> instrs, int start, int end) {
+			IMethod calledMethod = null;
 			for (int i = start; i < end; i++) {
 				var instr = instrs[i];
 				if (instr.OpCode.Code == Code.Call || instr.OpCode.Code == Code.Callvirt) {
 					if (calledMethod != null)
 						return null;
-					var method = instr.Operand as MethodReference;
+					var method = instr.Operand as IMethod;
 					if (method == null)
 						return null;
 					calledMethod = method;
@@ -97,24 +97,24 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return calledMethod;
 		}
 
-		static bool isExceptionLoggerMethod(MethodReference method) {
+		static bool IsExceptionLoggerMethod(IMethod method) {
 			if (method.Name == ".ctor" || method.Name == ".cctor")
 				return false;
 
-			var parameters = method.Parameters;
-			if (parameters.Count < 1)
+			var sig = method.MethodSig;
+			if (sig == null || sig.Params.Count < 1)
 				return false;
 
-			var rtype = method.MethodReturnType.ReturnType.FullName;
-			var type0 = parameters[0].ParameterType.FullName;
-			var type1 = parameters.Count < 2 ? "" : parameters[1].ParameterType.FullName;
+			var rtype = sig.RetType.GetFullName();
+			var type0 = sig.Params[0].GetFullName();
+			var type1 = sig.Params.Count < 2 ? "" : sig.Params[1].GetFullName();
 			int index;
 			if (rtype == "System.Void") {
 				if (type0 == "System.Exception" && type1 == "System.Int32")
 					index = 2;
 				else if (type0 == "System.Object[]" && type1 == "System.Exception")
 					return true;
-				else if (parameters.Count == 2 && type0 == "System.Int32" && type1 == "System.Object[]")
+				else if (sig.Params.Count == 2 && type0 == "System.Int32" && type1 == "System.Object[]")
 					return true;
 				else if (type0 == "System.Exception")
 					index = 1;
@@ -126,7 +126,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 					index = 2;
 				else if (type0 == "System.Int32" && type1 == "System.Exception")
 					index = 2;
-				else if (parameters.Count == 2 && type0 == "System.Int32" && type1 == "System.Object[]")
+				else if (sig.Params.Count == 2 && type0 == "System.Int32" && type1 == "System.Object[]")
 					return true;
 				else if (type0 == "System.Exception")
 					index = 1;
@@ -136,11 +136,11 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			else
 				return false;
 
-			if (index + 1 == parameters.Count && parameters[index].ParameterType.FullName == "System.Object[]")
+			if (index + 1 == sig.Params.Count && sig.Params[index].GetFullName() == "System.Object[]")
 				return true;
 
-			for (int i = index; i < parameters.Count; i++) {
-				if (parameters[i].ParameterType.FullName != "System.Object")
+			for (int i = index; i < sig.Params.Count; i++) {
+				if (sig.Params[i].GetElementType() != ElementType.Object)
 					return false;
 			}
 

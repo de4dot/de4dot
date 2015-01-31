@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -18,91 +18,55 @@
 */
 
 using System;
-using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
 
 namespace AssemblyData {
-	public class AssemblyService : MarshalByRefObject, IAssemblyService {
-		IStringDecrypter stringDecrypter = null;
+	public abstract class AssemblyService : MarshalByRefObject, IAssemblyService {
 		ManualResetEvent exitEvent = new ManualResetEvent(false);
-		Assembly assembly = null;
+		protected Assembly assembly = null;
 		AssemblyResolver assemblyResolver = new AssemblyResolver();
 
-		public void doNothing() {
-		}
+		public static AssemblyService Create(AssemblyServiceType serviceType) {
+			switch (serviceType) {
+			case AssemblyServiceType.StringDecrypter:
+				return new StringDecrypterService();
 
-		void checkStringDecrypter() {
-			if (stringDecrypter == null)
-				throw new ApplicationException("setStringDecrypterType() hasn't been called yet.");
-		}
+			case AssemblyServiceType.MethodDecrypter:
+				return new MethodDecrypterService();
 
-		void checkAssembly() {
-			if (assembly == null)
-				throw new ApplicationException("loadAssembly() hasn't been called yet.");
-		}
-
-		public void loadAssembly(string filename) {
-			if (assembly != null)
-				throw new ApplicationException("Only one assembly can be explicitly loaded");
-			try {
-				assembly = assemblyResolver.load(filename);
-			}
-			catch (BadImageFormatException) {
-				throw new ApplicationException(string.Format("Could not load assembly {0}. Maybe it's 32-bit or 64-bit only?", filename));
-			}
-		}
-
-		public void setStringDecrypterType(StringDecrypterType type) {
-			if (stringDecrypter != null)
-				throw new ApplicationException("StringDecrypterType already set");
-
-			switch (type) {
-			case StringDecrypterType.Delegate:
-				stringDecrypter = new DelegateStringDecrypter();
-				break;
-
-			case StringDecrypterType.Emulate:
-				stringDecrypter = new EmuStringDecrypter();
-				break;
+			case AssemblyServiceType.Generic:
+				return new GenericService();
 
 			default:
-				throw new ApplicationException(string.Format("Unknown StringDecrypterType {0}", type));
+				throw new ArgumentException("Invalid assembly service type");
 			}
 		}
 
-		public int defineStringDecrypter(int methodToken) {
-			checkStringDecrypter();
-			var methodInfo = findMethod(methodToken);
-			if (methodInfo == null)
-				throw new ApplicationException(string.Format("Could not find method {0:X8}", methodToken));
-			if (methodInfo.ReturnType != typeof(string) && methodInfo.ReturnType != typeof(object))
-				throw new ApplicationException(string.Format("Method return type must be string or object: {0}", methodInfo));
-			return stringDecrypter.defineStringDecrypter(methodInfo);
-		}
+		public static Type GetType(AssemblyServiceType serviceType) {
+			switch (serviceType) {
+			case AssemblyServiceType.StringDecrypter:
+				return typeof(StringDecrypterService);
 
-		public object[] decryptStrings(int stringDecrypterMethod, object[] args, int callerToken) {
-			checkStringDecrypter();
-			var caller = getCaller(callerToken);
-			foreach (var arg in args)
-				SimpleData.unpack((object[])arg);
-			return SimpleData.pack(stringDecrypter.decryptStrings(stringDecrypterMethod, args, caller));
-		}
+			case AssemblyServiceType.MethodDecrypter:
+				return typeof(MethodDecrypterService);
 
-		MethodBase getCaller(int callerToken) {
-			try {
-				return assembly.GetModules()[0].ResolveMethod(callerToken);
-			}
-			catch {
-				return null;
+			case AssemblyServiceType.Generic:
+				return typeof(GenericService);
+
+			default:
+				throw new ArgumentException("Invalid assembly service type");
 			}
 		}
 
-		public void exit() {
+		public void DoNothing() {
+		}
+
+		public virtual void Exit() {
 			exitEvent.Set();
 		}
 
-		public void waitExit() {
+		public void WaitExit() {
 			exitEvent.WaitOne();
 		}
 
@@ -110,16 +74,20 @@ namespace AssemblyData {
 			return null;
 		}
 
-		MethodInfo findMethod(int methodToken) {
-			checkAssembly();
+		protected void CheckAssembly() {
+			if (assembly == null)
+				throw new ApplicationException("LoadAssembly() hasn't been called yet.");
+		}
 
-			foreach (var module in assembly.GetModules()) {
-				var method = module.ResolveMethod(methodToken) as MethodInfo;
-				if (method != null)
-					return method;
+		protected void LoadAssemblyInternal(string filename) {
+			if (assembly != null)
+				throw new ApplicationException("Only one assembly can be explicitly loaded");
+			try {
+				assembly = assemblyResolver.Load(filename);
 			}
-
-			return null;
+			catch (BadImageFormatException ex) {
+				throw new ApplicationException(string.Format("Could not load assembly {0}. Maybe it's 32-bit or 64-bit only?", filename), ex);
+			}
 		}
 	}
 }

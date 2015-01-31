@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -18,7 +18,7 @@
 */
 
 using System;
-using System.IO;
+using dnlib.IO;
 
 namespace de4dot.code.deobfuscators.CodeVeil {
 	class ResourceInfo {
@@ -26,7 +26,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		public byte flags;
 		public int offset;
 		public int length;
-		public BinaryReader dataReader;
+		public IBinaryReader dataReader;
 		public ResourceInfo(string name, byte flags, int offset, int length) {
 			this.name = name;
 			this.flags = flags;

@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -22,12 +22,16 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.IO;
 using System.Text;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dnlib.IO;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
+using CR = System.Runtime.InteropServices;
+using DR = dnlib.DotNet;
+
 namespace de4dot.code.deobfuscators.Babel_NET {
-	class ImageReader : IDisposable {
+	class ImageReader {
 		static int METHODS_SIG			= 0x0000BEBA;
 		static int METADATA_SIG			= 0x0100BEBA;
 		static int METHOD_NAMES_SIG		= 0x0200BEBA;
@@ -43,59 +47,72 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			ByRef = 4,
 		}
 
-		ModuleDefinition module;
-		BinaryReader reader;
+		ModuleDefMD module;
+		IBinaryReader reader;
 		string[] strings;
-		AssemblyNameReference[] assemblyNames;
+		AssemblyRef[] assemblyNames;
 		Dictionary<string, int> methodOffsets;
-		List<TypeReference> typeReferences;
-		MemberReferenceConverter memberReferenceConverter;
-		ExternalAssemblies externalAssemblies = new ExternalAssemblies();
+		List<TypeSig> typeRefs;
+		MemberRefConverter memberRefConverter;
+		IDeobfuscatorContext deobfuscatorContext;
 
-		public ImageReader(ModuleDefinition module, byte[] data) {
+		public ImageReader(IDeobfuscatorContext deobfuscatorContext, ModuleDefMD module, byte[] data) {
+			this.deobfuscatorContext = deobfuscatorContext;
 			this.module = module;
-			this.reader = new BinaryReader(new MemoryStream(data));
-			this.memberReferenceConverter = new MemberReferenceConverter(module);
+			this.reader = MemoryImageStream.Create(data);
+			this.memberRefConverter = new MemberRefConverter(module);
 		}
 
-		public bool initialize() {
+		public bool Initialize() {
 			if (reader.ReadInt32() != METHODS_SIG)
 				return false;
 
-			int metadataOffset = getMetadataOffset();
+			int metadataOffset = GetMetadataOffset();
 			if (metadataOffset < 0)
 				return false;
-			reader.BaseStream.Position = metadataOffset + 4;
+			long pos = metadataOffset + 4;
+			reader.Position = pos;
 			int version = reader.ReadInt16();	// major, minor
-			if (version != 0x0001)
-				return false;
-			initializeV10();
+			if (version == 0x0001) {
+				InitializeV10();
+				return true;
+			}
 
+			reader.Position = pos;
+			InitializeV55();
 			return true;
 		}
 
-		public void Dispose() {
-			externalAssemblies.unloadAll();
-		}
-
-		void initializeV10() {
+		void InitializeV10() {
 			reader.ReadInt16();
 			int methodNamesOffset = (int)reader.ReadInt64();
-			int typeReferencesOffset = (int)reader.ReadInt64();
-			int assemblyReferencesOffset = (int)reader.ReadInt64();
+			int typeRefsOffset = (int)reader.ReadInt64();
+			int assemblyRefsOffset = (int)reader.ReadInt64();
 			int stringsOffset = (int)reader.ReadInt64();
 
-			initializeStrings(stringsOffset);
-			initializeAssemblyNames(assemblyReferencesOffset);
-			initializeMethodNames(methodNamesOffset);
-			initializeTypeReferences(typeReferencesOffset);
+			InitializeStrings(stringsOffset);
+			InitializeAssemblyNames(assemblyRefsOffset);
+			InitializeMethodNames(methodNamesOffset);
+			InitializeTypeRefs(typeRefsOffset);
 		}
 
-		public void restore(string name, MethodDefinition method) {
-			var babelMethod = getMethod(name);
+		void InitializeV55() {
+			int methodNamesOffset = (int)reader.ReadInt64() ^ METADATA_SIG;
+			int typeRefsOffset = (int)reader.ReadInt64() ^ (METADATA_SIG << 1);
+			int assemblyRefsOffset = (int)reader.ReadInt64() ^ ((METADATA_SIG << 1) + 1);
+			int stringsOffset = (int)reader.ReadInt64() ^ (((METADATA_SIG << 1) + 1) << 1);
+
+			InitializeStrings(stringsOffset);
+			InitializeAssemblyNames(assemblyRefsOffset);
+			InitializeMethodNames(methodNamesOffset);
+			InitializeTypeRefs(typeRefsOffset);
+		}
+
+		public void Restore(string name, MethodDef method) {
+			var babelMethod = GetMethod(name);
 			var body = method.Body;
 
-			body.MaxStackSize = babelMethod.MaxStack;
+			body.MaxStack = babelMethod.MaxStack;
 			body.InitLocals = babelMethod.InitLocals;
 
 			body.Variables.Clear();
@@ -104,9 +121,9 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 			var toNewOperand = new Dictionary<object, object>();
 			if (babelMethod.ThisParameter != null)
-				toNewOperand[babelMethod.ThisParameter] = body.ThisParameter;
-			for (int i = 0; i < method.Parameters.Count; i++)
-				toNewOperand[babelMethod.Parameters[i]] = method.Parameters[i];
+				toNewOperand[babelMethod.ThisParameter] = method.Parameters[0];
+			for (int i = 0; i < babelMethod.Parameters.Length; i++)
+				toNewOperand[babelMethod.Parameters[i]] = method.Parameters[i + method.Parameters.MethodSigIndexBase];
 
 			body.Instructions.Clear();
 			foreach (var instr in babelMethod.Instructions) {
@@ -121,101 +138,94 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				body.ExceptionHandlers.Add(eh);
 		}
 
-		BabelMethodDefinition getMethod(string name) {
+		BabelMethodDef GetMethod(string name) {
 			int offset = methodOffsets[name];
 			methodOffsets.Remove(name);
-			reader.BaseStream.Position = offset;
-			return new MethodDefinitionReader(this, reader).read();
+			reader.Position = offset;
+			return new MethodDefReader(this, reader).Read();
 		}
 
-		public string readString() {
-			return strings[readVariableLengthInt32()];
+		public string ReadString() {
+			return strings[ReadVariableLengthInt32()];
 		}
 
-		public TypeReference readTypeReference() {
-			return typeReferences[readVariableLengthInt32()];
+		public TypeSig ReadTypeSig() {
+			return typeRefs[ReadVariableLengthInt32()];
 		}
 
-		public TypeReference[] readTypeReferences() {
-			var refs = new TypeReference[readVariableLengthInt32()];
+		public TypeSig[] ReadTypeSigs() {
+			var refs = new TypeSig[ReadVariableLengthInt32()];
 			for (int i = 0; i < refs.Length; i++)
-				refs[i] = readTypeReference();
+				refs[i] = ReadTypeSig();
 			return refs;
 		}
 
-		public FieldReference readFieldReference() {
-			var name = readString();
-			var declaringType = readTypeReference();
+		public IField ReadFieldRef() {
+			var name = ReadString();
+			var declaringType = ReadTypeSig();
 
-			var fields = getFields(resolve(declaringType), name);
+			var fields = GetFields(Resolve(declaringType), name);
 			if (fields == null || fields.Count != 1) {
 				throw new ApplicationException(string.Format("Couldn't find one field named '{0}' in type {1}",
 								name,
-								Utils.removeNewlines(declaringType)));
+								Utils.RemoveNewlines(declaringType)));
 			}
 
-			return memberReferenceConverter.convert(fields[0]);
+			return memberRefConverter.Convert(fields[0]);
 		}
 
-		static List<FieldDefinition> getFields(TypeDefinition type, string name) {
+		static List<FieldDef> GetFields(TypeDef type, string name) {
 			if (type == null)
 				return null;
-			var fields = new List<FieldDefinition>();
-			foreach (var field in type.Fields) {
-				if (field.Name == name)
-					fields.Add(field);
-			}
-			return fields;
+			return new List<FieldDef>(type.FindFields(name));
 		}
 
-		public MethodReference readMethodReference() {
-			var babelMethodRef = new MethodReferenceReader(this, reader).read();
+		public IMethod ReadMethodRef() {
+			var babelMethodRef = new MethodRefReader(this, reader).Read();
 
-			var method = getMethodReference(babelMethodRef);
+			var method = GetMethodRef(babelMethodRef);
 			if (method == null) {
 				throw new ApplicationException(string.Format("Could not find method '{0}' in type '{1}'",
-							Utils.removeNewlines(babelMethodRef.Name),
-							Utils.removeNewlines(babelMethodRef.DeclaringType)));
+							Utils.RemoveNewlines(babelMethodRef.Name),
+							Utils.RemoveNewlines(babelMethodRef.DeclaringType)));
 			}
 
-			var git = babelMethodRef.DeclaringType as GenericInstanceType;
+			var git = babelMethodRef.DeclaringType.ToGenericInstSig();
 			if (git == null)
 				return method;
 
-			var newMethod = memberReferenceConverter.copy(method);
-			newMethod.DeclaringType = babelMethodRef.DeclaringType;
-			return newMethod;
+			var mr = new MemberRefUser(module, method.Name, method.MethodSig.Clone(), babelMethodRef.DeclaringType.ToTypeDefOrRef());
+			return module.UpdateRowId(mr);
 		}
 
-		MethodReference getMethodReference(BabelMethodreference babelMethodRef) {
-			var declaringType = resolve(babelMethodRef.DeclaringType);
+		IMethod GetMethodRef(BabelMethodreference babelMethodRef) {
+			var declaringType = Resolve(babelMethodRef.DeclaringType);
 			if (declaringType == null)
 				return null;
 
-			var methods = getMethods(declaringType, babelMethodRef);
+			var methods = GetMethods(declaringType, babelMethodRef);
 			if (methods.Count != 1) {
 				throw new ApplicationException(string.Format("Couldn't find one method named '{0}' in type {1}",
 								babelMethodRef.Name,
-								Utils.removeNewlines(declaringType)));
+								Utils.RemoveNewlines(declaringType)));
 			}
 
 			return methods[0];
 		}
 
-		List<MethodReference> getMethods(TypeDefinition declaringType, BabelMethodreference babelMethodRef) {
-			var methods = new List<MethodReference>();
+		List<IMethod> GetMethods(TypeDef declaringType, BabelMethodreference babelMethodRef) {
+			var methods = new List<IMethod>();
 
-			var git = babelMethodRef.DeclaringType as GenericInstanceType;
-			IGenericInstance gim = babelMethodRef.IsGenericMethod ? babelMethodRef : null;
+			var gis = babelMethodRef.DeclaringType as GenericInstSig;
+			var gim = babelMethodRef.GenericArguments;
 			foreach (var method in declaringType.Methods) {
-				if (compareMethod(MethodReferenceInstance.make(method, git, gim), babelMethodRef)) {
+				if (CompareMethod(GenericArgsSubstitutor.Create(method, gis, gim), babelMethodRef)) {
 					if (!babelMethodRef.IsGenericMethod)
-						methods.Add(memberReferenceConverter.convert(method));
+						methods.Add(memberRefConverter.Convert(method));
 					else {
-						var gim2 = new GenericInstanceMethod(memberReferenceConverter.convert(method));
-						foreach (var arg in babelMethodRef.GenericArguments)
-							gim2.GenericArguments.Add(arg);
-						methods.Add(gim2);
+						var gim2 = new GenericInstMethodSig(babelMethodRef.GenericArguments);
+						var ms = module.UpdateRowId(new MethodSpecUser(memberRefConverter.Convert(method), gim2));
+						methods.Add(ms);
 					}
 				}
 			}
@@ -223,140 +233,135 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return methods;
 		}
 
-		bool compareMethod(MethodReference method, BabelMethodreference babelMethodRef) {
-			if (method.Parameters.Count != babelMethodRef.Parameters.Length)
+		bool CompareMethod(IMethod method, BabelMethodreference babelMethodRef) {
+			var sig = method.MethodSig;
+			if (sig.Params.Count != babelMethodRef.Parameters.Length)
 				return false;
 			if (method.Name != babelMethodRef.Name)
 				return false;
-			if (method.HasThis != babelMethodRef.HasThis)
+			if (sig.HasThis != babelMethodRef.HasThis)
 				return false;
-			if (method.GenericParameters.Count != babelMethodRef.GenericArguments.Length)
+			if (sig.GenParamCount != babelMethodRef.GenericArguments.Length)
 				return false;
 
-			if (!MemberReferenceHelper.compareTypes(method.MethodReturnType.ReturnType, babelMethodRef.ReturnType))
+			if (!new SigComparer().Equals(sig.RetType, babelMethodRef.ReturnType))
 				return false;
 
 			for (int i = 0; i < babelMethodRef.Parameters.Length; i++) {
-				if (!MemberReferenceHelper.compareTypes(method.Parameters[i].ParameterType, babelMethodRef.Parameters[i].ParameterType))
+				if (!new SigComparer().Equals(sig.Params[i], babelMethodRef.Parameters[i].Type))
 					return false;
 			}
 
 			return true;
 		}
 
-		TypeDefinition resolve(TypeReference type) {
-			if (type is TypeDefinition)
-				return (TypeDefinition)type;
+		TypeDef Resolve(TypeSig type) {
+			type = type.RemovePinnedAndModifiers();
 
-			if (type.IsGenericInstance)
-				type = ((GenericInstanceType)type).ElementType;
+			var gis = type as GenericInstSig;
+			if (gis != null)
+				type = gis.GenericType;
 
-			if (type.Module == module && isModuleAssembly(type.Scope))
-				return DotNetUtils.getType(module, type);
+			var tdrs = type as TypeDefOrRefSig;
+			if (tdrs == null)
+				return null;
 
-			return externalAssemblies.resolve(type);
+			var td = tdrs.TypeDef;
+			if (td != null)
+				return td;
+
+			var tr = tdrs.TypeRef;
+			if (tr != null)
+				return tr.Resolve();
+
+			return null;
 		}
 
-		public CallSite readCallSite() {
-			var returnType = readTypeReference();
-			var paramTypes = readTypeReferences();
-			var callingConvention = (CallingConvention)reader.ReadInt32();
+		public MethodSig ReadCallSite() {
+			var returnType = ReadTypeSig();
+			var paramTypes = ReadTypeSigs();
+			var callingConvention = (CR.CallingConvention)reader.ReadInt32();
 
-			var cs = new CallSite(returnType);
-			foreach (var paramType in paramTypes)
-				cs.Parameters.Add(new ParameterDefinition(paramType));
-			cs.CallingConvention = convertCallingConvention(callingConvention);
-
-			return cs;
+			return new MethodSig(ConvertCallingConvention(callingConvention), 0, returnType, paramTypes);
 		}
 
-		static MethodCallingConvention convertCallingConvention(CallingConvention callingConvention) {
+		static DR.CallingConvention ConvertCallingConvention(CR.CallingConvention callingConvention) {
 			switch (callingConvention) {
-			case CallingConvention.Winapi:		return MethodCallingConvention.Default;
-			case CallingConvention.Cdecl:		return MethodCallingConvention.C;
-			case CallingConvention.StdCall:		return MethodCallingConvention.StdCall;
-			case CallingConvention.ThisCall:	return MethodCallingConvention.ThisCall;
-			case CallingConvention.FastCall:	return MethodCallingConvention.FastCall;
+			case CR.CallingConvention.Winapi:	return DR.CallingConvention.Default;
+			case CR.CallingConvention.Cdecl:	return DR.CallingConvention.C;
+			case CR.CallingConvention.StdCall:	return DR.CallingConvention.StdCall;
+			case CR.CallingConvention.ThisCall:	return DR.CallingConvention.ThisCall;
+			case CR.CallingConvention.FastCall:	return DR.CallingConvention.FastCall;
 			default: throw new ApplicationException(string.Format("Unknown CallingConvention {0}", callingConvention));
 			}
 		}
 
-		void initializeStrings(int headerOffset) {
-			reader.BaseStream.Position = headerOffset;
+		void InitializeStrings(int headerOffset) {
+			reader.Position = headerOffset;
 			if (reader.ReadInt32() != STRINGS_SIG)
 				throw new ApplicationException("Invalid strings sig");
 
-			strings = new string[readVariableLengthInt32()];
+			strings = new string[ReadVariableLengthInt32()];
 			for (int i = 0; i < strings.Length; i++)
 				strings[i] = reader.ReadString();
 		}
 
-		void initializeAssemblyNames(int headerOffset) {
-			reader.BaseStream.Position = headerOffset;
+		void InitializeAssemblyNames(int headerOffset) {
+			reader.Position = headerOffset;
 			if (reader.ReadInt32() != ASSEMBLY_NAMES_SIG)
 				throw new ApplicationException("Invalid assembly names sig");
 
-			assemblyNames = new AssemblyNameReference[readVariableLengthInt32()];
+			assemblyNames = new AssemblyRef[ReadVariableLengthInt32()];
 			for (int i = 0; i < assemblyNames.Length; i++)
-				assemblyNames[i] = getModuleAssemblyReference(AssemblyNameReference.Parse(readString()));
+				assemblyNames[i] = module.UpdateRowId(new AssemblyRefUser(new AssemblyNameInfo(ReadString())));
 		}
 
-		bool isModuleAssembly(IMetadataScope scope) {
-			return DotNetUtils.isReferenceToModule(module, scope);
-		}
-
-		AssemblyNameReference getModuleAssemblyReference(AssemblyNameReference asmRef) {
-			if (isModuleAssembly(asmRef))
-				return module.Assembly.Name;
-			return memberReferenceConverter.convert(asmRef);
-		}
-
-		void initializeMethodNames(int headerOffset) {
-			reader.BaseStream.Position = headerOffset;
+		void InitializeMethodNames(int headerOffset) {
+			reader.Position = headerOffset;
 			if (reader.ReadInt32() != METHOD_NAMES_SIG)
 				throw new ApplicationException("Invalid methods sig");
 
-			int numMethods = readVariableLengthInt32();
+			int numMethods = ReadVariableLengthInt32();
 			methodOffsets = new Dictionary<string, int>(numMethods, StringComparer.Ordinal);
 			for (int i = 0; i < numMethods; i++) {
-				var methodName = readString();
-				methodOffsets[methodName] = readVariableLengthInt32();
+				var methodName = ReadString();
+				methodOffsets[methodName] = ReadVariableLengthInt32();
 			}
 		}
 
-		void initializeTypeReferences(int headerOffset) {
-			reader.BaseStream.Position = headerOffset;
+		void InitializeTypeRefs(int headerOffset) {
+			reader.Position = headerOffset;
 			if (reader.ReadInt32() != TYPEREFS_SIG)
 				throw new ApplicationException("Invalid typerefs sig");
 
 			int numTypeRefs = reader.ReadInt32();
-			typeReferences = new List<TypeReference>(numTypeRefs + 1);
-			typeReferences.Add(null);
-			var genericArgFixes = new Dictionary<GenericInstanceType, List<int>>();
+			typeRefs = new List<TypeSig>(numTypeRefs + 1);
+			typeRefs.Add(null);
+			var genericArgFixes = new Dictionary<GenericInstSig, List<int>>();
 			for (int i = 0; i < numTypeRefs; i++) {
 				TypeId typeId = (TypeId)reader.ReadByte();
 				switch (typeId) {
 				case TypeId.TypeRef:
-					typeReferences.Add(readTypeRef());
+					typeRefs.Add(ReadTypeRef());
 					break;
 
 				case TypeId.GenericInstance:
 					List<int> genericArgs;
-					var git = readGenericInstanceType(out genericArgs);
-					typeReferences.Add(git);
+					var git = ReadGenericInstanceType(out genericArgs);
+					typeRefs.Add(git);
 					genericArgFixes[git] = genericArgs;
 					break;
 
 				case TypeId.Pointer:
-					typeReferences.Add(readPointerType());
+					typeRefs.Add(ReadPointerType());
 					break;
 
 				case TypeId.Array:
-					typeReferences.Add(readArrayType());
+					typeRefs.Add(ReadArrayType());
 					break;
 
 				case TypeId.ByRef:
-					typeReferences.Add(readByReferenceType());
+					typeRefs.Add(ReadByRefType());
 					break;
 
 				default:
@@ -367,62 +372,57 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			foreach (var kv in genericArgFixes) {
 				var git = kv.Key;
 				foreach (var typeNum in kv.Value)
-					git.GenericArguments.Add(typeReferences[typeNum]);
+					git.GenericArguments.Add(typeRefs[typeNum]);
 			}
 		}
 
-		TypeReference readTypeRef() {
+		TypeSig ReadTypeRef() {
 			string ns, name;
-			parseReflectionTypeName(readString(), out ns, out name);
-			var asmRef = assemblyNames[readVariableLengthInt32()];
-			var declaringType = readTypeReference();
-			var typeReference = new TypeReference(ns, name, module, asmRef) {
-				DeclaringType = declaringType,
-			};
-			typeReference.UpdateElementType();
+			ParseReflectionTypeName(ReadString(), out ns, out name);
+			var asmRef = assemblyNames[ReadVariableLengthInt32()];
+			var declaringType = ReadTypeSig();
+			var typeRef = new TypeRefUser(module, ns, name);
+			if (declaringType != null)
+				typeRef.ResolutionScope = GetTypeRef(declaringType);
+			else
+				typeRef.ResolutionScope = asmRef;
 
-			typeReference = memberReferenceConverter.convert(typeReference);
-			typeReference.IsValueType = isValueType(typeReference);
-			return typeReference;
+			return memberRefConverter.Convert(typeRef);
 		}
 
-		bool isValueType(TypeReference typeRef) {
-			var typeDef = typeRef as TypeDefinition;
-			if (typeDef != null)
-				return typeDef.IsValueType;
-
-			if (typeRef.Module == module && isModuleAssembly(typeRef.Scope))
-				typeDef = DotNetUtils.getType(module, typeRef);
-			else 
-				typeDef = resolve(typeRef);
-			if (typeDef != null)
-				return typeDef.IsValueType;
-
-			Log.w("Could not determine whether type '{0}' is a value type", Utils.removeNewlines(typeRef));
-			return false;	// Assume it's a reference type
+		TypeRef GetTypeRef(TypeSig type) {
+			var tdr = type as TypeDefOrRefSig;
+			if (tdr == null)
+				throw new ApplicationException("Not a type ref");
+			if (tdr.TypeRef != null)
+				return tdr.TypeRef;
+			var td = tdr.TypeDef;
+			if (td != null)
+				return new Importer(module).Import(td) as TypeRef;
+			throw new ApplicationException("Not a type ref");
 		}
 
-		static void parseReflectionTypeName(string fullName, out string ns, out string name) {
-			int index = getLastChar(fullName, '.');
+		static void ParseReflectionTypeName(string fullName, out string ns, out string name) {
+			int index = GetLastChar(fullName, '.');
 			if (index < 0) {
 				ns = "";
 				name = fullName;
 			}
 			else {
-				ns = unEscape(fullName.Substring(0, index));
+				ns = UnEscape(fullName.Substring(0, index));
 				name = fullName.Substring(index + 1);
 			}
 
-			index = getLastChar(name, '+');
+			index = GetLastChar(name, '+');
 			if (index < 0)
-				name = unEscape(name);
+				name = UnEscape(name);
 			else {
 				ns = "";
-				name = unEscape(name.Substring(index + 1));
+				name = UnEscape(name.Substring(index + 1));
 			}
 		}
 
-		static int getLastChar(string name, char c) {
+		static int GetLastChar(string name, char c) {
 			if (string.IsNullOrEmpty(name))
 				return -1;
 			int index = name.Length - 1;
@@ -438,7 +438,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			}
 		}
 
-		static string unEscape(string s) {
+		static string UnEscape(string s) {
 			var sb = new StringBuilder(s.Length);
 			for (int i = 0; i < s.Length; i++) {
 				if (s[i] == '\\' && i + 1 < s.Length)
@@ -448,37 +448,49 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return sb.ToString();
 		}
 
-		GenericInstanceType readGenericInstanceType(out List<int> genericArgs) {
-			var git = new GenericInstanceType(readTypeReference());
-			int numArgs = readVariableLengthInt32();
+		GenericInstSig ReadGenericInstanceType(out List<int> genericArgs) {
+			var git = new GenericInstSig(ReadTypeSig() as ClassOrValueTypeSig);
+			int numArgs = ReadVariableLengthInt32();
 			genericArgs = new List<int>(numArgs);
 			for (int i = 0; i < numArgs; i++)
-				genericArgs.Add(readVariableLengthInt32());
+				genericArgs.Add(ReadVariableLengthInt32());
 			return git;
 		}
 
-		PointerType readPointerType() {
-			return new PointerType(readTypeReference());
+		PtrSig ReadPointerType() {
+			return new PtrSig(ReadTypeSig());
 		}
 
-		ArrayType readArrayType() {
-			return new ArrayType(readTypeReference(), readVariableLengthInt32());
+		TypeSig ReadArrayType() {
+			var typeSig = ReadTypeSig();
+			int rank = ReadVariableLengthInt32();
+			if (rank == 1)
+				return new SZArraySig(typeSig);
+			return new ArraySig(typeSig, rank);
 		}
 
-		ByReferenceType readByReferenceType() {
-			return new ByReferenceType(readTypeReference());
+		ByRefSig ReadByRefType() {
+			return new ByRefSig(ReadTypeSig());
 		}
 
-		public int readVariableLengthInt32() {
-			return DeobUtils.readVariableLengthInt32(reader);
+		public uint ReadVariableLengthUInt32() {
+			uint val;
+			reader.ReadCompressedUInt32(out val);
+			return val;
 		}
 
-		int getMetadataOffset() {
-			reader.BaseStream.Position = reader.BaseStream.Length - 4;
+		public int ReadVariableLengthInt32() {
+			uint val;
+			reader.ReadCompressedUInt32(out val);
+			return (int)val;
+		}
+
+		int GetMetadataOffset() {
+			reader.Position = reader.Length - 4;
 			for (int i = 0; i < 30; i++) {
 				if (reader.ReadInt32() == METADATA_SIG)
-					return (int)reader.BaseStream.Position - 4;
-				reader.BaseStream.Position -= 8;
+					return (int)reader.Position - 4;
+				reader.Position -= 8;
 			}
 			return -1;
 		}
