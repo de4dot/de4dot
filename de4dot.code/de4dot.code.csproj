@@ -262,6 +262,12 @@
     <Compile Include="deobfuscators\MyPEImage.cs" />
     <Compile Include="deobfuscators\NullStream.cs" />
     <Compile Include="deobfuscators\Operations.cs" />
+    <Compile Include="deobfuscators\Orange_Heap\Deobfuscator.cs" />
+    <Compile Include="deobfuscators\Orange_Heap\DeobfuscatorInfo.cs" />
+    <Compile Include="deobfuscators\Orange_Heap\StringDecrypter.cs" />
+    <Compile Include="deobfuscators\Phoenix_Protector\Deobfuscator.cs" />
+    <Compile Include="deobfuscators\Phoenix_Protector\DeobfuscatorInfo.cs" />
+    <Compile Include="deobfuscators\Phoenix_Protector\StringDecrypter.cs" />
     <Compile Include="deobfuscators\ProxyCallFixerBase.cs" />
     <Compile Include="deobfuscators\QuickLZ.cs" />
     <Compile Include="deobfuscators\RandomNameChecker.cs" />
