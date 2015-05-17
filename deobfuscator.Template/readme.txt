@@ -1,0 +1,1 @@
+This is a template deobfuscator module. Make a copy to start a new deobfuscator module with the required references etc.
