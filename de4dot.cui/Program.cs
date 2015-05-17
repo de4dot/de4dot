@@ -23,6 +23,8 @@ using System.Text;
 using dnlib.DotNet;
 using de4dot.code;
 using de4dot.code.deobfuscators;
+using System.IO;
+using System.Reflection;
 
 namespace de4dot.cui {
 	class ExitException : Exception {
@@ -35,8 +37,34 @@ namespace de4dot.cui {
 	class Program {
 		static IList<IDeobfuscatorInfo> deobfuscatorInfos = CreateDeobfuscatorInfos();
 
+		static IList<IDeobfuscatorInfo> LoadPlugin(string assembly) {
+			var plugins = new List<IDeobfuscatorInfo>();
+			try {
+				foreach (Type item in Assembly.LoadFile(assembly).GetTypes()) {
+					var interfaces = new List<Type>(item.GetInterfaces());
+					if (item.IsClass && interfaces.Contains(typeof(IDeobfuscatorInfo)))
+						plugins.Add((IDeobfuscatorInfo)Activator.CreateInstance(item));
+				}
+			}
+			catch {
+			}
+			return plugins;
+		}
+
+		public static IList<IDeobfuscatorInfo> GetPlugins(string directory, IList<IDeobfuscatorInfo> local) {
+			var plugins = new List<IDeobfuscatorInfo>(local);
+			try {
+				var files = Directory.GetFiles(directory, "deobfuscator.*.dll", SearchOption.TopDirectoryOnly);
+				foreach (var file in files)
+					plugins.AddRange(LoadPlugin(Path.GetFullPath(file)));
+			}
+			catch {
+			}
+			return plugins;
+		}
+
 		static IList<IDeobfuscatorInfo> CreateDeobfuscatorInfos() {
-			return new List<IDeobfuscatorInfo> {
+			var local = new List<IDeobfuscatorInfo> {
 				new de4dot.code.deobfuscators.Unknown.DeobfuscatorInfo(),
 				new de4dot.code.deobfuscators.Agile_NET.DeobfuscatorInfo(),
 				new de4dot.code.deobfuscators.Babel_NET.DeobfuscatorInfo(),
@@ -59,6 +87,8 @@ namespace de4dot.cui {
 				new de4dot.code.deobfuscators.Spices_Net.DeobfuscatorInfo(),
 				new de4dot.code.deobfuscators.Xenocode.DeobfuscatorInfo(),
 			};
+			string pluginDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "bin");
+			return GetPlugins(pluginDir, local);
 		}
 
 		public static int Main(string[] args) {
@@ -74,6 +104,7 @@ namespace de4dot.cui {
 				Logger.n("");
 				Logger.n("de4dot v{0} Copyright (C) 2011-2014 de4dot@gmail.com", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
 				Logger.n("Latest version and source code: https://github.com/0xd4d/de4dot");
+				Logger.n("{0} deobfuscator modules loaded!", deobfuscatorInfos.Count);
 				Logger.n("");
 
 				var options = new FilesDeobfuscator.Options();
