@@ -61,8 +61,7 @@ namespace de4dot.code.deobfuscators {
 			set { moduleBytes = value; }
 		}
 
-		public class OptionsBase : IDeobfuscatorOptions
-        {
+		public class OptionsBase : IDeobfuscatorOptions {
 			public bool RenameResourcesInCode { get; set; }
 			public NameRegexes ValidNameRegex { get; set; }
 			public bool DecryptStrings { get; set; }
