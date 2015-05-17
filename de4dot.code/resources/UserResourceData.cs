@@ -22,8 +22,7 @@ using System.IO;
 using System.Runtime.Serialization;
 
 namespace de4dot.code.resources {
-    public abstract class UserResourceData : IResourceData
-    {
+    public abstract class UserResourceData : IResourceData {
 		readonly UserResourceType type;
 
 		public string TypeName {
@@ -41,8 +40,7 @@ namespace de4dot.code.resources {
 		public abstract void WriteData(BinaryWriter writer, IFormatter formatter);
 	}
 
-    public class CharArrayResourceData : UserResourceData
-    {
+    public class CharArrayResourceData : UserResourceData {
 		public static readonly string ReflectionTypeName = "System.Char[],mscorlib";
 		char[] data;
 
@@ -60,8 +58,7 @@ namespace de4dot.code.resources {
 		}
 	}
 
-    public class IconResourceData : UserResourceData
-    {
+    public class IconResourceData : UserResourceData {
 		public static readonly string ReflectionTypeName = "System.Drawing.Icon,System.Drawing";
 		Icon icon;
 
@@ -79,8 +76,7 @@ namespace de4dot.code.resources {
 		}
 	}
 
-    public class ImageResourceData : UserResourceData
-    {
+    public class ImageResourceData : UserResourceData {
 		public static readonly string ReflectionTypeName = "System.Drawing.Bitmap,System.Drawing";
 		Bitmap bitmap;
 
@@ -98,8 +94,7 @@ namespace de4dot.code.resources {
 		}
 	}
 
-    public class BinaryResourceData : UserResourceData
-    {
+    public class BinaryResourceData : UserResourceData {
 		byte[] data;
 
 		public BinaryResourceData(UserResourceType type, byte[] data)

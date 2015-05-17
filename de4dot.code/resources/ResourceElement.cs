@@ -18,8 +18,7 @@
 */
 
 namespace de4dot.code.resources {
-    public class ResourceElement
-    {
+    public class ResourceElement {
 		public string Name { get; set; }
 		public IResourceData ResourceData { get; set; }
 

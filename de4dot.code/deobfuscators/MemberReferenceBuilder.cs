@@ -23,8 +23,7 @@ using dnlib.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators {
-    public class MemberRefBuilder
-    {
+    public class MemberRefBuilder {
 		ModuleDefMD module;
 		Dictionary<TypeSig, TypeSig> createdTypes = new Dictionary<TypeSig, TypeSig>(TypeEqualityComparer.Instance);
 

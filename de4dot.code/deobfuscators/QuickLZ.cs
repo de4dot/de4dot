@@ -12,8 +12,7 @@
 using System;
 
 namespace de4dot.code.deobfuscators {
-    public class QuickLZBase
-    {
+    public class QuickLZBase {
 		protected static uint Read32(byte[] data, int index) {
 			return BitConverter.ToUInt32(data, index);
 		}
@@ -114,8 +113,7 @@ namespace de4dot.code.deobfuscators {
 		}
 	}
 
-    public class QuickLZ : QuickLZBase
-    {
+    public class QuickLZ : QuickLZBase {
 		static int DEFAULT_QCLZ_SIG = 0x5A4C4351;	// "QCLZ"
 
 		public static bool IsCompressed(byte[] data) {

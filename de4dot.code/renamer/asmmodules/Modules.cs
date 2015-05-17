@@ -23,8 +23,7 @@ using dnlib.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.renamer.asmmodules {
-    public class Modules : IResolver
-    {
+    public class Modules : IResolver {
 		bool initializeCalled = false;
 		IDeobfuscatorContext deobfuscatorContext;
 		List<Module> modules = new List<Module>();

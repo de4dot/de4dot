@@ -23,8 +23,7 @@ using dnlib.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.renamer.asmmodules {
-    public class TypeInfo
-    {
+    public class TypeInfo {
 		public ITypeDefOrRef typeRef;
 		public MTypeDef typeDef;
 		public TypeInfo(ITypeDefOrRef typeRef, MTypeDef typeDef) {
@@ -55,8 +54,7 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 	}
 
-    public class MethodDefKey
-    {
+    public class MethodDefKey {
 		public readonly MMethodDef methodDef;
 
 		public MethodDefKey(MMethodDef methodDef) {
@@ -75,8 +73,7 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 	}
 
-    public class MethodInst
-    {
+    public class MethodInst {
 		public MMethodDef origMethodDef;
 		public IMethodDefOrRef methodRef;
 
@@ -90,8 +87,7 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 	}
 
-    public class MethodInstances
-    {
+    public class MethodInstances {
 		Dictionary<IMethodDefOrRef, List<MethodInst>> methodInstances = new Dictionary<IMethodDefOrRef, List<MethodInst>>(MethodEqualityComparer.DontCompareDeclaringTypes);
 
 		public void InitializeFrom(MethodInstances other, GenericInstSig git) {
@@ -123,8 +119,7 @@ namespace de4dot.code.renamer.asmmodules {
 	}
 
 	// Keeps track of which methods of an interface that have been implemented
-    public class InterfaceMethodInfo
-    {
+    public class InterfaceMethodInfo {
 		TypeInfo iface;
 		Dictionary<MethodDefKey, MMethodDef> ifaceMethodToClassMethod = new Dictionary<MethodDefKey, MMethodDef>();
 
@@ -180,8 +175,7 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 	}
 
-    public class InterfaceMethodInfos
-    {
+    public class InterfaceMethodInfos {
 		Dictionary<ITypeDefOrRef, InterfaceMethodInfo> interfaceMethods = new Dictionary<ITypeDefOrRef, InterfaceMethodInfo>(TypeEqualityComparer.Instance);
 
 		public IEnumerable<InterfaceMethodInfo> AllInfos {
@@ -229,8 +223,7 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 	}
 
-    public class MTypeDef : Ref
-    {
+    public class MTypeDef : Ref {
 		EventDefDict events = new EventDefDict();
 		FieldDefDict fields = new FieldDefDict();
 		MethodDefDict methods = new MethodDefDict();

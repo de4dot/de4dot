@@ -18,8 +18,7 @@
 */
 
 namespace de4dot.code.deobfuscators {
-    public class UnpackedFile
-    {
+    public class UnpackedFile {
 		public string filename;
 		public byte[] data;
 

@@ -20,8 +20,7 @@
 using dnlib.DotNet;
 
 namespace de4dot.code.renamer.asmmodules {
-    public abstract class Ref
-    {
+    public abstract class Ref {
 		public readonly IMemberRef memberRef;
 		public int Index { get; set; }
 		public MTypeDef Owner { get; set; }

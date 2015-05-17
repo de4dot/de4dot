@@ -21,8 +21,7 @@ using System.Collections.Generic;
 using dnlib.DotNet;
 
 namespace de4dot.code.renamer.asmmodules {
-    public class MMethodDef : Ref
-    {
+    public class MMethodDef : Ref {
 		IList<MGenericParamDef> genericParams;
 		IList<MParamDef> paramDefs = new List<MParamDef>();
 		MParamDef returnParamDef;

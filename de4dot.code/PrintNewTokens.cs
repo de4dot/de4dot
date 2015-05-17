@@ -22,8 +22,7 @@ using dnlib.DotNet.MD;
 using dnlib.DotNet.Writer;
 
 namespace de4dot.code {
-    public class PrintNewTokens : IModuleWriterListener
-    {
+    public class PrintNewTokens : IModuleWriterListener {
 		readonly ModuleDef module;
 		readonly IModuleWriterListener otherListener;
 

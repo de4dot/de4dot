@@ -23,8 +23,7 @@ using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
 namespace de4dot.code.deobfuscators {
-    public class StringCounts
-    {
+    public class StringCounts {
 		Dictionary<string, int> strings = new Dictionary<string, int>(StringComparer.Ordinal);
 
 		public IEnumerable<string> Strings {
@@ -66,8 +65,7 @@ namespace de4dot.code.deobfuscators {
 		}
 	}
 
-    public class FieldTypes : StringCounts
-    {
+    public class FieldTypes : StringCounts {
 		public FieldTypes(TypeDef type) {
 			Initialize(type.Fields);
 		}
@@ -87,8 +85,7 @@ namespace de4dot.code.deobfuscators {
 		}
 	}
 
-    public class LocalTypes : StringCounts
-    {
+    public class LocalTypes : StringCounts {
 		public LocalTypes(MethodDef method) {
 			if (method != null && method.Body != null)
 				Initialize(method.Body.Variables);

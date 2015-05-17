@@ -22,8 +22,7 @@ using System.Collections.Generic;
 using dnlib.DotNet;
 
 namespace de4dot.code.renamer {
-    public abstract class TypeNames
-    {
+    public abstract class TypeNames {
 		protected Dictionary<string, NameCreator> typeNames = new Dictionary<string, NameCreator>(StringComparer.Ordinal);
 		protected NameCreator genericParamNameCreator = new NameCreator("gparam_");
 		protected NameCreator fnPtrNameCreator = new NameCreator("fnptr_");
@@ -136,8 +135,7 @@ namespace de4dot.code.renamer {
 		}
 	}
 
-    public class VariableNameCreator : TypeNames
-    {
+    public class VariableNameCreator : TypeNames {
 		static Dictionary<string, string> ourFullNameToShortName;
 		static Dictionary<string, string> ourFullNameToShortNamePrefix;
 		static VariableNameCreator() {
@@ -203,8 +201,7 @@ namespace de4dot.code.renamer {
 		}
 	}
 
-    public class PropertyNameCreator : TypeNames
-    {
+    public class PropertyNameCreator : TypeNames {
 		static Dictionary<string, string> ourFullNameToShortName = new Dictionary<string, string>(StringComparer.Ordinal);
 		static Dictionary<string, string> ourFullNameToShortNamePrefix = new Dictionary<string, string>(StringComparer.Ordinal);
 

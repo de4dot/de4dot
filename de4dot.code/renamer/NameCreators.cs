@@ -22,13 +22,11 @@ using dnlib.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.renamer {
-    public interface INameCreator
-    {
+    public interface INameCreator {
 		string Create();
 	}
 
-    public class OneNameCreator : INameCreator
-    {
+    public class OneNameCreator : INameCreator {
 		string name;
 
 		public OneNameCreator(string name) {
@@ -40,8 +38,7 @@ namespace de4dot.code.renamer {
 		}
 	}
 
-    public abstract class NameCreatorCounter : INameCreator
-    {
+    public abstract class NameCreatorCounter : INameCreator {
 		protected int num;
 
 		public abstract string Create();
@@ -53,8 +50,7 @@ namespace de4dot.code.renamer {
 		}
 	}
 
-    public class GenericParamNameCreator : NameCreatorCounter
-    {
+    public class GenericParamNameCreator : NameCreatorCounter {
 		static string[] names = new string[] { "T", "U", "V", "W", "X", "Y", "Z" };
 
 		public override string Create() {
@@ -64,8 +60,7 @@ namespace de4dot.code.renamer {
 		}
 	}
 
-    public class NameCreator : NameCreatorCounter
-    {
+    public class NameCreator : NameCreatorCounter {
 		string prefix;
 
 		public NameCreator(string prefix)
@@ -87,8 +82,7 @@ namespace de4dot.code.renamer {
 	}
 
 	// Like NameCreator but don't add the counter the first time
-    public class NameCreator2 : NameCreatorCounter
-    {
+    public class NameCreator2 : NameCreatorCounter {
 		string prefix;
 		const string separator = "_";
 
@@ -112,13 +106,11 @@ namespace de4dot.code.renamer {
 		}
 	}
 
-    public interface ITypeNameCreator
-    {
+    public interface ITypeNameCreator {
 		string Create(TypeDef typeDef, string newBaseTypeName);
 	}
 
-    public class NameInfos
-    {
+    public class NameInfos {
 		IList<NameInfo> nameInfos = new List<NameInfo>();
 
 		class NameInfo {
@@ -144,8 +136,7 @@ namespace de4dot.code.renamer {
 		}
 	}
 
-    public class TypeNameCreator : ITypeNameCreator
-    {
+    public class TypeNameCreator : ITypeNameCreator {
 		ExistingNames existingNames;
 		NameCreator createUnknownTypeName;
 		NameCreator createEnumName;
@@ -214,8 +205,7 @@ namespace de4dot.code.renamer {
 		}
 	}
 
-    public class GlobalTypeNameCreator : TypeNameCreator
-    {
+    public class GlobalTypeNameCreator : TypeNameCreator {
 		public GlobalTypeNameCreator(ExistingNames existingNames)
 			: base(existingNames) {
 		}

@@ -25,8 +25,7 @@ using dnlib.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code {
-    public class DumpedMethodsRestorer : IRowReader<RawMethodRow>, IColumnReader, IMethodDecrypter
-    {
+    public class DumpedMethodsRestorer : IRowReader<RawMethodRow>, IColumnReader, IMethodDecrypter {
 		ModuleDefMD module;
 		DumpedMethods dumpedMethods;
 

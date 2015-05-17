@@ -26,8 +26,7 @@ using System.Text;
 using dnlib.DotNet;
 
 namespace de4dot.code.resources {
-    public class ResourceWriter
-    {
+    public class ResourceWriter {
 		ModuleDefMD module;
 		BinaryWriter writer;
 		ResourceElementSet resources;

@@ -25,8 +25,7 @@ using de4dot.code.AssemblyClient;
 using de4dot.blocks;
 
 namespace de4dot.code {
-    public abstract class StringInlinerBase : MethodReturnValueInliner
-    {
+    public abstract class StringInlinerBase : MethodReturnValueInliner {
 		protected override void InlineReturnValues(IList<CallResult> callResults) {
 			foreach (var callResult in callResults) {
 				var block = callResult.block;
@@ -63,8 +62,7 @@ namespace de4dot.code {
 		}
 	}
 
-    public class DynamicStringInliner : StringInlinerBase
-    {
+    public class DynamicStringInliner : StringInlinerBase {
 		IAssemblyClient assemblyClient;
 		Dictionary<int, int> methodTokenToId = new Dictionary<int, int>();
 
@@ -129,8 +127,7 @@ namespace de4dot.code {
 		}
 	}
 
-    public class StaticStringInliner : StringInlinerBase
-    {
+    public class StaticStringInliner : StringInlinerBase {
 		MethodDefAndDeclaringTypeDict<Func<MethodDef, MethodSpec, object[], string>> stringDecrypters = new MethodDefAndDeclaringTypeDict<Func<MethodDef, MethodSpec, object[], string>>();
 
 		public override bool HasHandlers {

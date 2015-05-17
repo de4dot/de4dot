@@ -23,8 +23,7 @@ using dnlib.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.renamer.asmmodules {
-    public class Module : IResolver
-    {
+    public class Module : IResolver {
 		IObfuscatedFile obfuscatedFile;
 		TypeDefDict types = new TypeDefDict();
 		MemberRefFinder memberRefFinder;
