@@ -52,7 +52,7 @@ namespace de4dot.cui {
 		}
 
 		public static IList<IDeobfuscatorInfo> GetPlugins(string directory, IList<IDeobfuscatorInfo> local) {
-			var plugins = new List<IDeobfuscatorInfo>(local);
+			var plugins = new List<IDeobfuscatorInfo>();
 			try {
 				var files = Directory.GetFiles(directory, "deobfuscator.*.dll", SearchOption.TopDirectoryOnly);
 				foreach (var file in files)
@@ -60,6 +60,7 @@ namespace de4dot.cui {
 			}
 			catch {
 			}
+			plugins.AddRange(local);
 			return plugins;
 		}
 
