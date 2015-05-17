@@ -18,7 +18,8 @@
 */
 
 namespace de4dot.code.resources {
-	enum ResourceTypeCode {
+    public enum ResourceTypeCode
+    {
 		Null,
 		String,
 		Boolean,

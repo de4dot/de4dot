@@ -21,7 +21,8 @@ using System;
 using System.Collections.Generic;
 
 namespace de4dot.code.resources {
-	class ResourceElementSet {
+    public class ResourceElementSet
+    {
 		Dictionary<string, ResourceElement> dict = new Dictionary<string, ResourceElement>(StringComparer.Ordinal);
 
 		public int Count {

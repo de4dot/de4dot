@@ -21,7 +21,8 @@ using System;
 using System.IO;
 
 namespace de4dot.code.deobfuscators {
-	class NullStream : Stream {
+    public class NullStream : Stream
+    {
 		long offset = 0;
 		long length = 0;
 

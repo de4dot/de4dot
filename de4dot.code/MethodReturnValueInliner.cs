@@ -25,7 +25,7 @@ using de4dot.blocks;
 
 namespace de4dot.code {
 	// A simple class that statically detects the values of some local variables
-	class VariableValues {
+	public class VariableValues {
 		IList<Block> allBlocks;
 		IList<Local> locals;
 		Dictionary<Local, Variable> variableToValue = new Dictionary<Local, Variable>();
@@ -140,7 +140,7 @@ namespace de4dot.code {
 		}
 	}
 
-	abstract class MethodReturnValueInliner {
+	public abstract class MethodReturnValueInliner {
 		protected List<CallResult> callResults;
 		List<Block> allBlocks;
 		MethodDef theMethod;

@@ -25,7 +25,8 @@ using de4dot.blocks;
 using de4dot.code.renamer.asmmodules;
 
 namespace de4dot.code.renamer {
-	class ResourceRenamer {
+    public class ResourceRenamer
+    {
 		Module module;
 		Dictionary<string, Resource> nameToResource;
 

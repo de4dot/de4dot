@@ -24,7 +24,8 @@ using de4dot.blocks;
 using de4dot.blocks.cflow;
 
 namespace de4dot.code.deobfuscators {
-	static class ArrayFinder {
+    public static class ArrayFinder
+    {
 		public static List<byte[]> GetArrays(MethodDef method) {
 			return GetArrays(method, null);
 		}

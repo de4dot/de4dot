@@ -27,13 +27,15 @@ using dnlib.IO;
 
 namespace de4dot.code.resources {
 	[Serializable]
-	class ResourceReaderException : Exception {
+    public class ResourceReaderException : Exception
+    {
 		public ResourceReaderException(string msg)
 			: base(msg) {
 		}
 	}
 
-	struct ResourceReader {
+    public struct ResourceReader
+    {
 		IBinaryReader reader;
 		ResourceDataCreator resourceDataCreator;
 
