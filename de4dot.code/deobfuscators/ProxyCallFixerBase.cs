@@ -24,7 +24,7 @@ using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators {
-	abstract class ProxyCallFixerBase {
+	public abstract class ProxyCallFixerBase {
 		protected ModuleDefMD module;
 		protected List<MethodDef> delegateCreatorMethods = new List<MethodDef>();
 		protected Dictionary<TypeDef, bool> delegateTypesDict = new Dictionary<TypeDef, bool>();
@@ -187,7 +187,7 @@ namespace de4dot.code.deobfuscators {
 	//		ldsfld delegate_instance
 	//		...push args...
 	//		call Invoke
-	abstract class ProxyCallFixer1 : ProxyCallFixerBase {
+	public abstract class ProxyCallFixer1 : ProxyCallFixerBase {
 		FieldDefAndDeclaringTypeDict<DelegateInfo> fieldToDelegateInfo = new FieldDefAndDeclaringTypeDict<DelegateInfo>();
 
 		protected ProxyCallFixer1(ModuleDefMD module)
@@ -375,7 +375,7 @@ namespace de4dot.code.deobfuscators {
 	// Invoke() on a delegate instance, eg.:
 	//		...push args...
 	//		call static method
-	abstract class ProxyCallFixer2 : ProxyCallFixerBase {
+	public abstract class ProxyCallFixer2 : ProxyCallFixerBase {
 		MethodDefAndDeclaringTypeDict<DelegateInfo> proxyMethodToDelegateInfo = new MethodDefAndDeclaringTypeDict<DelegateInfo>();
 
 		protected ProxyCallFixer2(ModuleDefMD module)
@@ -497,7 +497,7 @@ namespace de4dot.code.deobfuscators {
 	//		...push args...
 	//		ldsfld delegate instance
 	//		call static method
-	abstract class ProxyCallFixer3 : ProxyCallFixer1 {
+	public abstract class ProxyCallFixer3 : ProxyCallFixer1 {
 		protected ProxyCallFixer3(ModuleDefMD module)
 			: base(module) {
 		}

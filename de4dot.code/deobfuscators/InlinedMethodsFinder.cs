@@ -23,7 +23,7 @@ using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators {
-	static class InlinedMethodsFinder {
+	public static class InlinedMethodsFinder {
 		public static List<MethodDef> Find(ModuleDef module) {
 			// Not all garbage methods are inlined, possibly because we remove some code that calls
 			// the garbage method before the methods inliner has a chance to inline it. Try to find

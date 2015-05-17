@@ -22,7 +22,7 @@ using dnlib.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators {
-	class MethodCollection {
+	public class MethodCollection {
 		TypeDefDict<bool> types = new TypeDefDict<bool>();
 		MethodDefAndDeclaringTypeDict<bool> methods = new MethodDefAndDeclaringTypeDict<bool>();
 

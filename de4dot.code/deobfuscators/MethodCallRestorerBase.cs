@@ -23,7 +23,7 @@ using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators {
-	class MethodCallRestorerBase {
+	public class MethodCallRestorerBase {
 		protected MemberRefBuilder builder;
 		protected ModuleDefMD module;
 		MethodDefAndDeclaringTypeDict<NewMethodInfo> oldToNewMethod = new MethodDefAndDeclaringTypeDict<NewMethodInfo>();

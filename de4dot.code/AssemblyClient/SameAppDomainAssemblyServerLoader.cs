@@ -22,7 +22,7 @@ using AssemblyData;
 
 namespace de4dot.code.AssemblyClient {
 	// Starts the server in the current app domain.
-	class SameAppDomainAssemblyServerLoader : IAssemblyServerLoader {
+	public class SameAppDomainAssemblyServerLoader : IAssemblyServerLoader {
 		IAssemblyService service;
 		AssemblyServiceType serviceType;
 

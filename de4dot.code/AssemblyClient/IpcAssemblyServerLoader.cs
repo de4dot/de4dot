@@ -21,7 +21,7 @@ using System;
 using AssemblyData;
 
 namespace de4dot.code.AssemblyClient {
-	enum ServerClrVersion {
+	public enum ServerClrVersion {
 		CLR_ANY_ANYCPU,
 		CLR_ANY_x86,
 		CLR_ANY_x64,
@@ -31,7 +31,7 @@ namespace de4dot.code.AssemblyClient {
 		CLR_v40_x64,
 	}
 
-	abstract class IpcAssemblyServerLoader : IAssemblyServerLoader {
+	public abstract class IpcAssemblyServerLoader : IAssemblyServerLoader {
 		readonly string assemblyServerFilename;
 		protected string ipcName;
 		protected string ipcUri;

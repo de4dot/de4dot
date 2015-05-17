@@ -21,7 +21,7 @@ using System.Collections.Generic;
 using dnlib.DotNet;
 
 namespace de4dot.code.renamer.asmmodules {
-	class MPropertyDef : Ref {
+	public class MPropertyDef : Ref {
 		public MMethodDef GetMethod { get; set; }
 		public MMethodDef SetMethod { get; set; }
 

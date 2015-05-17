@@ -18,7 +18,7 @@
 */
 
 namespace de4dot.code.deobfuscators {
-	struct CRC32 {
+	public struct CRC32 {
 		static readonly uint[] table = new uint[256] {
 			0x00000000, 0x77073096, 0xEE0E612C, 0x990951BA,
 			0x076DC419, 0x706AF48F, 0xE963A535, 0x9E6495A3,

@@ -18,7 +18,7 @@
 */
 
 namespace de4dot.code {
-	static class Win32Path {
+	public static class Win32Path {
 		public static string GetFileName(string path) {
 			if (path == null)
 				return null;

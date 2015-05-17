@@ -25,7 +25,7 @@ using dnlib.DotNet.Writer;
 using de4dot.blocks;
 
 namespace de4dot.code {
-	class AssemblyModule {
+	public class AssemblyModule {
 		string filename;
 		ModuleDefMD module;
 		ModuleContext moduleContext;

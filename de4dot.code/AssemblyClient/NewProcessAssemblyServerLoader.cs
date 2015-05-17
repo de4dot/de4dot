@@ -23,7 +23,7 @@ using AssemblyData;
 
 namespace de4dot.code.AssemblyClient {
 	// Starts the server in a new process
-	class NewProcessAssemblyServerLoader : IpcAssemblyServerLoader {
+	public class NewProcessAssemblyServerLoader : IpcAssemblyServerLoader {
 		Process process;
 
 		public NewProcessAssemblyServerLoader(AssemblyServiceType serviceType)
