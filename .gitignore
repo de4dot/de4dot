@@ -6,3 +6,5 @@
 *.suo
 /Debug/
 /Release/
+/deobfuscator.*/
+!/deobfuscator.Template/
