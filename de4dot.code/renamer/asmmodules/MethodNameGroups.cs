@@ -21,7 +21,7 @@ using System;
 using System.Collections.Generic;
 
 namespace de4dot.code.renamer.asmmodules {
-	class MethodNameGroup {
+	public class MethodNameGroup {
 		List<MMethodDef> methods = new List<MMethodDef>();
 
 		public List<MMethodDef> Methods {
@@ -101,7 +101,7 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 	}
 
-	class MethodNameGroups {
+	public class MethodNameGroups {
 		Dictionary<MMethodDef, MethodNameGroup> methodGroups = new Dictionary<MMethodDef, MethodNameGroup>();
 
 		public void Same(MMethodDef a, MMethodDef b) {

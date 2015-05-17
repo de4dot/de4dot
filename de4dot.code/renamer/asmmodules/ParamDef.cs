@@ -20,7 +20,7 @@
 using dnlib.DotNet;
 
 namespace de4dot.code.renamer.asmmodules {
-	class MParamDef {
+	public class MParamDef {
 		public Parameter ParameterDef { get; set; }
 		public int Index { get; private set; }
 		public bool IsReturnParameter {

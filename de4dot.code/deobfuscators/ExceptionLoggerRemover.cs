@@ -23,7 +23,7 @@ using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators {
-	class ExceptionLoggerRemover {
+	public class ExceptionLoggerRemover {
 		MethodDefAndDeclaringTypeDict<bool> exceptionLoggerMethods = new MethodDefAndDeclaringTypeDict<bool>();
 
 		public int NumRemovedExceptionLoggers { get; set; }

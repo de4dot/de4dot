@@ -22,7 +22,7 @@ using System.Collections.Generic;
 using de4dot.code.renamer.asmmodules;
 
 namespace de4dot.code.renamer {
-	class DerivedFrom {
+	public class DerivedFrom {
 		Dictionary<string, bool> classNames = new Dictionary<string, bool>(StringComparer.Ordinal);
 		Dictionary<MTypeDef, bool> results = new Dictionary<MTypeDef, bool>();
 

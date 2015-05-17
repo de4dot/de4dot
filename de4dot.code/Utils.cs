@@ -35,7 +35,7 @@ namespace de4dot.code {
 	public delegate void Action<T1, T2>(T1 arg1, T2 arg2);
 	public delegate void Action<T1, T2, T3>(T1 arg1, T2 arg2, T3 arg3);
 
-	class Tuple<T1, T2> {
+	public class Tuple<T1, T2> {
 		public T1 Item1 { get; set; }
 		public T2 Item2 { get; set; }
 		public override bool Equals(object obj) {

@@ -21,7 +21,8 @@ using System.Collections.Generic;
 using dnlib.DotNet;
 
 namespace de4dot.code.renamer.asmmodules {
-	class MGenericParamDef : Ref {
+	public class MGenericParamDef : Ref
+    {
 		public GenericParam GenericParam {
 			get { return (GenericParam)memberRef; }
 		}

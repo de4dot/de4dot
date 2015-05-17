@@ -24,7 +24,7 @@ using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators {
-	abstract class ValueInlinerBase<TValue> : MethodReturnValueInliner {
+	public abstract class ValueInlinerBase<TValue> : MethodReturnValueInliner {
 		MethodDefAndDeclaringTypeDict<Func<MethodDef, MethodSpec, object[], object>> decrypterMethods = new MethodDefAndDeclaringTypeDict<Func<MethodDef, MethodSpec, object[], object>>();
 		bool removeUnbox = false;
 
@@ -91,7 +91,7 @@ namespace de4dot.code.deobfuscators {
 		}
 	}
 
-	class BooleanValueInliner : ValueInlinerBase<bool> {
+	public class BooleanValueInliner : ValueInlinerBase<bool> {
 		protected override void InlineReturnValues(IList<CallResult> callResults) {
 			foreach (var callResult in callResults) {
 				var block = callResult.block;
@@ -104,7 +104,7 @@ namespace de4dot.code.deobfuscators {
 		}
 	}
 
-	class Int32ValueInliner : ValueInlinerBase<int> {
+	public class Int32ValueInliner : ValueInlinerBase<int> {
 		protected override void InlineReturnValues(IList<CallResult> callResults) {
 			foreach (var callResult in callResults) {
 				var block = callResult.block;
@@ -117,7 +117,7 @@ namespace de4dot.code.deobfuscators {
 		}
 	}
 
-	class Int64ValueInliner : ValueInlinerBase<long> {
+	public class Int64ValueInliner : ValueInlinerBase<long> {
 		protected override void InlineReturnValues(IList<CallResult> callResults) {
 			foreach (var callResult in callResults) {
 				var block = callResult.block;
@@ -130,7 +130,7 @@ namespace de4dot.code.deobfuscators {
 		}
 	}
 
-	class SingleValueInliner : ValueInlinerBase<float> {
+	public class SingleValueInliner : ValueInlinerBase<float> {
 		protected override void InlineReturnValues(IList<CallResult> callResults) {
 			foreach (var callResult in callResults) {
 				var block = callResult.block;
@@ -143,7 +143,7 @@ namespace de4dot.code.deobfuscators {
 		}
 	}
 
-	class DoubleValueInliner : ValueInlinerBase<double> {
+	public class DoubleValueInliner : ValueInlinerBase<double> {
 		protected override void InlineReturnValues(IList<CallResult> callResults) {
 			foreach (var callResult in callResults) {
 				var block = callResult.block;

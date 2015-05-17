@@ -20,7 +20,7 @@
 using System;
 
 namespace de4dot.code.deobfuscators {
-	class Blowfish {
+	public class Blowfish {
 		static readonly uint[] Pboxes = new uint[18] {
 			0x243F6A88, 0x85A308D3, 0x13198A2E, 0x03707344,
 			0xA4093822, 0x299F31D0, 0x082EFA98, 0xEC4E6C89,

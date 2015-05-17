@@ -26,7 +26,7 @@ using de4dot.code.renamer.asmmodules;
 using de4dot.blocks;
 
 namespace de4dot.code.renamer {
-	class TypeInfo : MemberInfo {
+	public class TypeInfo : MemberInfo {
 		public string oldNamespace;
 		public string newNamespace;
 		public VariableNameState variableNameState = VariableNameState.Create();

@@ -25,7 +25,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 using dnlib.DotNet;
 
 namespace de4dot.code.resources {
-	class ResourceDataCreator {
+	public class ResourceDataCreator {
 		readonly ModuleDef module;
 		readonly ModuleDefMD moduleMD;
 		readonly Dictionary<string, UserResourceType> dict = new Dictionary<string, UserResourceType>(StringComparer.Ordinal);

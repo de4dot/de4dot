@@ -26,7 +26,7 @@ using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators {
-	class InitializedDataCreator {
+	public class InitializedDataCreator {
 		ModuleDef module;
 		Dictionary<long, TypeDef> sizeToArrayType = new Dictionary<long, TypeDef>();
 		TypeDef ourType;

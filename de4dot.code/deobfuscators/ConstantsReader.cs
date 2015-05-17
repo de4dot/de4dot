@@ -23,7 +23,7 @@ using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators {
-	class ConstantsReader {
+	public class ConstantsReader {
 		protected IInstructions instructions;
 		protected IList<Local> locals;
 		protected Dictionary<Local, int> localsValuesInt32 = new Dictionary<Local, int>();

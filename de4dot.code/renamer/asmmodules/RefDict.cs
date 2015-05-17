@@ -21,7 +21,7 @@ using System.Collections.Generic;
 using de4dot.blocks;
 
 namespace de4dot.code.renamer.asmmodules {
-	static class DictHelper {
+	public static class DictHelper {
 		public static IEnumerable<T> GetSorted<T>(IEnumerable<T> values) where T : Ref {
 			var list = new List<T>(values);
 			list.Sort((a, b) => a.Index.CompareTo(b.Index));
@@ -29,7 +29,7 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 	}
 
-	class TypeDefDict : TypeDefDict<MTypeDef> {
+	public class TypeDefDict : TypeDefDict<MTypeDef> {
 		public IEnumerable<MTypeDef> GetSorted() {
 			return DictHelper.GetSorted(GetValues());
 		}
@@ -39,7 +39,7 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 	}
 
-	class FieldDefDict : FieldDefDict<MFieldDef> {
+	public class FieldDefDict : FieldDefDict<MFieldDef> {
 		public IEnumerable<MFieldDef> GetSorted() {
 			return DictHelper.GetSorted(GetValues());
 		}
@@ -49,7 +49,7 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 	}
 
-	class MethodDefDict : MethodDefDict<MMethodDef> {
+	public class MethodDefDict : MethodDefDict<MMethodDef> {
 		public IEnumerable<MMethodDef> GetSorted() {
 			return DictHelper.GetSorted(GetValues());
 		}
@@ -59,7 +59,7 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 	}
 
-	class PropertyDefDict : PropertyDefDict<MPropertyDef> {
+	public class PropertyDefDict : PropertyDefDict<MPropertyDef> {
 		public IEnumerable<MPropertyDef> GetSorted() {
 			return DictHelper.GetSorted(GetValues());
 		}
@@ -69,7 +69,7 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 	}
 
-	class EventDefDict : EventDefDict<MEventDef> {
+	public class EventDefDict : EventDefDict<MEventDef> {
 		public IEnumerable<MEventDef> GetSorted() {
 			return DictHelper.GetSorted(GetValues());
 		}
