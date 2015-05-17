@@ -29,7 +29,7 @@ using de4dot.blocks;
 using de4dot.code.resources;
 
 namespace de4dot.code.renamer {
-    public class ResourceKeysRenamer {
+	public class ResourceKeysRenamer {
 		const int RESOURCE_KEY_MAX_LEN = 50;
 		const string DEFAULT_KEY_NAME = "Key";
 

@@ -20,7 +20,7 @@
 using dnlib.DotNet;
 
 namespace de4dot.code.renamer.asmmodules {
-    public class MFieldDef : Ref {
+	public class MFieldDef : Ref {
 		public FieldDef FieldDef {
 			get { return (FieldDef)memberRef; }
 		}

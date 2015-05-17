@@ -24,7 +24,7 @@ using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code {
-    public class MethodPrinter {
+	public class MethodPrinter {
 		LoggerEvent loggerEvent;
 		IList<Instruction> allInstructions;
 		IList<ExceptionHandler> allExceptionHandlers;

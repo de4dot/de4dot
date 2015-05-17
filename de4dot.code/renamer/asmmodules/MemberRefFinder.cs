@@ -24,7 +24,7 @@ using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.renamer.asmmodules {
-    public enum ObjectType {
+	public enum ObjectType {
 		Unknown,
 		EventDef,
 		FieldDef,
@@ -40,7 +40,7 @@ namespace de4dot.code.renamer.asmmodules {
 		ExportedType,
 	}
 
-    public class MemberRefFinder {
+	public class MemberRefFinder {
 		public Dictionary<CustomAttribute, bool> customAttributes = new Dictionary<CustomAttribute, bool>();
 		public Dictionary<EventDef, bool> eventDefs = new Dictionary<EventDef, bool>();
 		public Dictionary<FieldDef, bool> fieldDefs = new Dictionary<FieldDef, bool>();

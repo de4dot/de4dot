@@ -21,7 +21,7 @@ using System.Collections.Generic;
 using de4dot.code.renamer.asmmodules;
 
 namespace de4dot.code.renamer {
-    public class MemberInfo {
+	public class MemberInfo {
 		protected Ref memberRef;
 		public string oldFullName;
 		public string oldName;
@@ -50,31 +50,31 @@ namespace de4dot.code.renamer {
 		}
 	}
 
-    public class GenericParamInfo : MemberInfo {
+	public class GenericParamInfo : MemberInfo {
 		public GenericParamInfo(MGenericParamDef genericParamDef)
 			: base(genericParamDef) {
 		}
 	}
 
-    public class PropertyInfo : MemberInfo {
+	public class PropertyInfo : MemberInfo {
 		public PropertyInfo(MPropertyDef propertyDef)
 			: base(propertyDef) {
 		}
 	}
 
-    public class EventInfo : MemberInfo {
+	public class EventInfo : MemberInfo {
 		public EventInfo(MEventDef eventDef)
 			: base(eventDef) {
 		}
 	}
 
-    public class FieldInfo : MemberInfo {
+	public class FieldInfo : MemberInfo {
 		public FieldInfo(MFieldDef fieldDef)
 			: base(fieldDef) {
 		}
 	}
 
-    public class MethodInfo : MemberInfo {
+	public class MethodInfo : MemberInfo {
 		public MMethodDef MethodDef {
 			get { return (MMethodDef)memberRef; }
 		}
@@ -84,7 +84,7 @@ namespace de4dot.code.renamer {
 		}
 	}
 
-    public class ParamInfo {
+	public class ParamInfo {
 		MParamDef paramDef;
 		public string oldName;
 		public string newName;
@@ -100,7 +100,7 @@ namespace de4dot.code.renamer {
 		}
 	}
 
-    public class MemberInfos {
+	public class MemberInfos {
 		Dictionary<MTypeDef, TypeInfo> allTypeInfos = new Dictionary<MTypeDef, TypeInfo>();
 		Dictionary<MPropertyDef, PropertyInfo> allPropertyInfos = new Dictionary<MPropertyDef, PropertyInfo>();
 		Dictionary<MEventDef, EventInfo> allEventInfos = new Dictionary<MEventDef, EventInfo>();

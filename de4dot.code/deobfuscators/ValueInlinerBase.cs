@@ -91,7 +91,7 @@ namespace de4dot.code.deobfuscators {
 		}
 	}
 
-    public class BooleanValueInliner : ValueInlinerBase<bool> {
+	public class BooleanValueInliner : ValueInlinerBase<bool> {
 		protected override void InlineReturnValues(IList<CallResult> callResults) {
 			foreach (var callResult in callResults) {
 				var block = callResult.block;
@@ -104,7 +104,7 @@ namespace de4dot.code.deobfuscators {
 		}
 	}
 
-    public class Int32ValueInliner : ValueInlinerBase<int> {
+	public class Int32ValueInliner : ValueInlinerBase<int> {
 		protected override void InlineReturnValues(IList<CallResult> callResults) {
 			foreach (var callResult in callResults) {
 				var block = callResult.block;
@@ -117,7 +117,7 @@ namespace de4dot.code.deobfuscators {
 		}
 	}
 
-    public class Int64ValueInliner : ValueInlinerBase<long> {
+	public class Int64ValueInliner : ValueInlinerBase<long> {
 		protected override void InlineReturnValues(IList<CallResult> callResults) {
 			foreach (var callResult in callResults) {
 				var block = callResult.block;
@@ -130,7 +130,7 @@ namespace de4dot.code.deobfuscators {
 		}
 	}
 
-    public class SingleValueInliner : ValueInlinerBase<float> {
+	public class SingleValueInliner : ValueInlinerBase<float> {
 		protected override void InlineReturnValues(IList<CallResult> callResults) {
 			foreach (var callResult in callResults) {
 				var block = callResult.block;
@@ -143,7 +143,7 @@ namespace de4dot.code.deobfuscators {
 		}
 	}
 
-    public class DoubleValueInliner : ValueInlinerBase<double> {
+	public class DoubleValueInliner : ValueInlinerBase<double> {
 		protected override void InlineReturnValues(IList<CallResult> callResults) {
 			foreach (var callResult in callResults) {
 				var block = callResult.block;

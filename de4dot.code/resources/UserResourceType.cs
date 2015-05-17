@@ -18,7 +18,7 @@
 */
 
 namespace de4dot.code.resources {
-    public class UserResourceType {
+	public class UserResourceType {
 		readonly string name;
 		readonly ResourceTypeCode code;
 

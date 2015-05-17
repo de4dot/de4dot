@@ -22,7 +22,7 @@ using System.IO;
 using System.Runtime.Serialization;
 
 namespace de4dot.code.resources {
-    public class BuiltInResourceData : IResourceData {
+	public class BuiltInResourceData : IResourceData {
 		readonly ResourceTypeCode code;
 		readonly object data;
 
