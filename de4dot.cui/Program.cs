@@ -51,7 +51,7 @@ namespace de4dot.cui {
 			return plugins;
 		}
 
-		public static IList<IDeobfuscatorInfo> GetPlugins(string directory, IList<IDeobfuscatorInfo> local) {
+		public static void GetPlugins(string directory, ref Dictionary<string, IDeobfuscatorInfo> result) {
 			var plugins = new List<IDeobfuscatorInfo>();
 			try {
 				var files = Directory.GetFiles(directory, "deobfuscator.*.dll", SearchOption.TopDirectoryOnly);
@@ -60,8 +60,8 @@ namespace de4dot.cui {
 			}
 			catch {
 			}
-			plugins.AddRange(local);
-			return plugins;
+			foreach(var p in plugins)
+				result[p.Type] = p;
 		}
 
 		static IList<IDeobfuscatorInfo> CreateDeobfuscatorInfos() {
@@ -88,8 +88,12 @@ namespace de4dot.cui {
 				new de4dot.code.deobfuscators.Spices_Net.DeobfuscatorInfo(),
 				new de4dot.code.deobfuscators.Xenocode.DeobfuscatorInfo(),
 			};
+			var dict = new Dictionary<string, IDeobfuscatorInfo>();
+			foreach (var d in local)
+				dict[d.Type] = d;
 			string pluginDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "bin");
-			return GetPlugins(pluginDir, local);
+			GetPlugins(pluginDir, ref dict);
+			return new List<IDeobfuscatorInfo>(dict.Values);
 		}
 
 		public static int Main(string[] args) {
