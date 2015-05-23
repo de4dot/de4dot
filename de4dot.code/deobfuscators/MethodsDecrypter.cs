@@ -26,7 +26,7 @@ using de4dot.blocks;
 using de4dot.mdecrypt;
 
 namespace de4dot.code.deobfuscators {
-	static class MethodsDecrypter {
+	public static class MethodsDecrypter {
 		public static DumpedMethods Decrypt(ModuleDef module, byte[] moduleCctorBytes) {
 			return Decrypt(NewProcessAssemblyClientFactory.GetServerClrVersion(module), module.Location, moduleCctorBytes);
 		}

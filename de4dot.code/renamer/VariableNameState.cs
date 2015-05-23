@@ -20,7 +20,7 @@
 using dnlib.DotNet;
 
 namespace de4dot.code.renamer {
-	class VariableNameState {
+	public class VariableNameState {
 		ExistingNames existingVariableNames;
 		ExistingNames existingMethodNames;
 		ExistingNames existingPropertyNames;

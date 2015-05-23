@@ -44,7 +44,7 @@ namespace de4dot.code.AssemblyClient {
 			this.serverVersion = ServerClrVersion.CLR_ANY_ANYCPU;
 		}
 
-		internal NewProcessAssemblyClientFactory(ServerClrVersion serverVersion) {
+		public NewProcessAssemblyClientFactory(ServerClrVersion serverVersion) {
 			this.serverVersion = serverVersion;
 		}
 
@@ -56,7 +56,7 @@ namespace de4dot.code.AssemblyClient {
 			return new AssemblyClient(new NewProcessAssemblyServerLoader(serviceType, serverVersion));
 		}
 
-		internal static ServerClrVersion GetServerClrVersion(ModuleDef module) {
+		public static ServerClrVersion GetServerClrVersion(ModuleDef module) {
 			switch (module.GetPointerSize()) {
 			default:
 			case 4:

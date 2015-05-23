@@ -27,7 +27,7 @@ using de4dot.blocks;
 using de4dot.blocks.cflow;
 
 namespace de4dot.code.deobfuscators {
-	abstract class DeobfuscatorBase : IDeobfuscator, IModuleWriterListener {
+	public abstract class DeobfuscatorBase : IDeobfuscator, IModuleWriterListener {
 		public const string DEFAULT_VALID_NAME_REGEX = @"^[a-zA-Z_<{$][a-zA-Z_0-9<>{}$.`-]*$";
 		public const string DEFAULT_ASIAN_VALID_NAME_REGEX = @"^[\u2E80-\u9FFFa-zA-Z_<{$][\u2E80-\u9FFFa-zA-Z_0-9<>{}$.`-]*$";
 
@@ -61,7 +61,7 @@ namespace de4dot.code.deobfuscators {
 			set { moduleBytes = value; }
 		}
 
-		internal class OptionsBase : IDeobfuscatorOptions {
+		public class OptionsBase : IDeobfuscatorOptions {
 			public bool RenameResourcesInCode { get; set; }
 			public NameRegexes ValidNameRegex { get; set; }
 			public bool DecryptStrings { get; set; }

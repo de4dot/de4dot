@@ -22,7 +22,7 @@ using System.Collections.Generic;
 using dnlib.DotNet;
 
 namespace de4dot.code.renamer {
-	class ExistingNames {
+	public class ExistingNames {
 		Dictionary<string, bool> allNames = new Dictionary<string, bool>(StringComparer.Ordinal);
 
 		public void Add(string name) {

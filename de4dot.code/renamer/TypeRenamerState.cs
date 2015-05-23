@@ -22,7 +22,7 @@ using System.Collections.Generic;
 using dnlib.DotNet;
 
 namespace de4dot.code.renamer {
-	class TypeRenamerState {
+	public class TypeRenamerState {
 		ExistingNames existingNames;
 		Dictionary<string, string> namespaceToNewName;
 		NameCreator createNamespaceName;

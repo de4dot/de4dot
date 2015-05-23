@@ -1,4 +1,4 @@
-﻿/*
+/*
     Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
@@ -17,22 +17,17 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using dnlib.DotNet;
+using System.Reflection;
+using System.Runtime.InteropServices;
 
-namespace de4dot.code.renamer.asmmodules {
-	public class MParamDef {
-		public Parameter ParameterDef { get; set; }
-		public int Index { get; private set; }
-		public bool IsReturnParameter {
-			get { return ParameterDef.IsReturnTypeParameter; }
-		}
-		public bool IsHiddenThisParameter {
-			get { return ParameterDef.IsHiddenThisParameter; }
-		}
-
-		public MParamDef(Parameter parameterDef, int index) {
-			this.ParameterDef = parameterDef;
-			Index = index;
-		}
-	}
-}
+[assembly: AssemblyTitle("deobfuscator.Template")]
+[assembly: AssemblyDescription("de4dot Deobfuscator Template Module")]
+[assembly: AssemblyConfiguration("")]
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyProduct("deobfuscator.Template")]
+[assembly: AssemblyCopyright("Copyright (C) 2011-2014 de4dot@gmail.com")]
+[assembly: AssemblyTrademark("")]
+[assembly: AssemblyCulture("")]
+[assembly: ComVisible(false)]
+[assembly: AssemblyVersion("1.0.0.0")]
+[assembly: AssemblyFileVersion("1.0.0.0")]

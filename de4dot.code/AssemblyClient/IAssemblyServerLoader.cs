@@ -21,7 +21,7 @@ using System;
 using AssemblyData;
 
 namespace de4dot.code.AssemblyClient {
-	interface IAssemblyServerLoader : IDisposable {
+	public interface IAssemblyServerLoader : IDisposable {
 		void LoadServer();
 		IAssemblyService CreateService();
 	}

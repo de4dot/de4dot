@@ -23,7 +23,7 @@ using AssemblyData;
 
 namespace de4dot.code.AssemblyClient {
 	// Starts the server in a new app domain.
-	sealed class NewAppDomainAssemblyServerLoader : IpcAssemblyServerLoader {
+	public sealed class NewAppDomainAssemblyServerLoader : IpcAssemblyServerLoader {
 		AppDomain appDomain;
 		Thread thread;
 
