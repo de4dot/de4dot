@@ -23,7 +23,7 @@ using System.Text.RegularExpressions;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using de4dot.code.renamer.asmmodules;
-using de4dot.code.resources;
+using dnlib.DotNet.Resources;
 using de4dot.blocks;
 
 namespace de4dot.code.renamer {

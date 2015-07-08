@@ -25,7 +25,7 @@ using System.Text;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using de4dot.blocks;
-using de4dot.code.resources;
+using dnlib.DotNet.Resources;
 
 namespace de4dot.code.deobfuscators.CodeWall {
 	class AssemblyDecrypter {

@@ -26,7 +26,7 @@ using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using dnlib.IO;
 using de4dot.blocks;
-using de4dot.code.resources;
+using dnlib.DotNet.Resources;
 
 namespace de4dot.code.renamer {
 	public class ResourceKeysRenamer {
