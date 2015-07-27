@@ -1228,28 +1228,20 @@ namespace de4dot.blocks.cflow {
                             InstructionEmulator instrEmulator = new InstructionEmulator();
                             instrEmulator.Initialize(destMethod, true);
 
-                            bool validParameters = true;
+                            foreach (Parameter p in destMethod.Parameters)
+                                instrEmulator.SetArg(p, valueStack.Pop());
 
-                            foreach (Parameter p in destMethod.Parameters) {
-                                Value pVal = valueStack.Pop();
-                                if(pVal.IsUnknown())
-                                    validParameters = false;
-                                instrEmulator.SetArg(p, pVal);
-                            }
-
-                            if(validParameters) {
-                                try {
-                                    foreach (Instruction i in destMethod.Body.Instructions) {
-                                        if (i.OpCode == OpCodes.Ret) {
-                                            retValue = instrEmulator.Peek();
-                                            break;
-                                        }
-                                        instrEmulator.Emulate(i);
+                            try {
+                                foreach (Instruction i in destMethod.Body.Instructions) {
+                                    if (i.OpCode == OpCodes.Ret) {
+                                        retValue = instrEmulator.Peek();
+                                        break;
                                     }
-                                } catch {
-                                    retValue = GetUnknownValue(destMethod.MethodSig.GetRetType());
+                                    instrEmulator.Emulate(i);
                                 }
-                            } 
+                            } catch {
+                                retValue = GetUnknownValue(destMethod.MethodSig.GetRetType());
+                            }
                         }
                     }
 
