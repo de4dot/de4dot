@@ -1211,7 +1211,9 @@ namespace de4dot.blocks.cflow {
                         return false;
 
                     foreach (Instruction i in m.Body.Instructions) {
-                        if (i.OpCode.FlowControl == FlowControl.Throw || i.OpCode.FlowControl == FlowControl.Call)
+                        if (i.OpCode.FlowControl == FlowControl.Throw
+                        || i.OpCode.FlowControl == FlowControl.Call
+                        || i.OpCode.FlowControl == FlowControl.Cond_Branch)
                             return false;
                     }
 
