@@ -777,7 +777,48 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					decryptStringMethod.Body.ExceptionHandlers.Count >= 2 &&
 					new LocalTypes(decryptStringMethod).All(locals43) &&
 					CheckTypeFields2(fields43)) {
-					return "4.3";
+					return "4.3 - 4.9";
+				}
+
+				/////////////////////////////////////////////////////////////////
+				/////////////////////////////////////////////////////////////////
+				/////////////////////////////////////////////////////////////////
+
+				var fields50 = new string[] {
+					GetNestedTypeName(0),
+					GetNestedTypeName(1),
+					"System.Byte[]",
+					"System.Int16",
+					"System.Int32",
+					"System.Byte[]",
+					"System.Int32",
+					"System.Int32",
+					GetNestedTypeName(2),
+				};
+				var locals50 = CreateLocalsArray(
+					// GetNestedTypeName(2) // One of the nested types is the first local (non-enum type)
+					"System.String",
+					"System.String"
+				);
+				var otherMethod50 = otherMethods.Find((m) => {
+					return DotNetUtils.IsMethod(m, "System.Void", "(System.Byte[],System.Int32,System.Byte[])");
+				});
+				decryptStringMethod = stringDecrypter.RealMethod;
+				if (stringDecrypter.HasRealMethod &&
+					otherMethods.Count == 2 &&
+					otherMethod50 != null &&
+					decryptStringType.NestedTypes.Count == 3 &&
+					otherMethod50.IsPrivate &&
+					otherMethod50.IsStatic &&
+					decryptStringMethod.IsNoInlining &&
+					decryptStringMethod.IsAssembly &&
+					!decryptStringMethod.IsSynchronized &&
+					decryptStringMethod.Body.MaxStack >= 1 &&
+					decryptStringMethod.Body.MaxStack <= 8 &&
+					decryptStringMethod.Body.ExceptionHandlers.Count == 1 &&
+					new LocalTypes(decryptStringMethod).All(locals50) &&
+					CheckTypeFields2(fields50)) {
+					return "5.0";
 				}
 			}
 

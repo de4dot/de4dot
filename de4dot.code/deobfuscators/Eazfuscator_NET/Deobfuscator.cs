@@ -118,7 +118,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			base.DeobfuscateBegin();
 
 			stringDecrypter.Initialize(DeobfuscatedFile);
-			staticStringInliner.Add(stringDecrypter.Method, (method2, gim, args) => {
+			staticStringInliner.Add(stringDecrypter.RealMethod, (method2, gim, args) => {
 				return stringDecrypter.Decrypt((int)args[0]);
 			});
 			DeobfuscatedFile.StringDecryptersAdded();

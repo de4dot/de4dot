@@ -46,8 +46,10 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		StreamHelperType streamHelperType;
 		EfConstantsReader stringMethodConsts;
 		bool isV32OrLater;
+		bool isV50OrLater;
 		int? validStringDecrypterValue;
 		DynamicDynocodeIterator dynocode;
+		MethodDef realMethod;
 
 		class StreamHelperType {
 			public TypeDef type;
@@ -112,6 +114,18 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			get { return stringType != null; }
 		}
 
+		/// <summary>
+		/// In 5.0, the actual string decrypter method doesn't do much, calls a helper method which
+		/// does most of the work (and is mostly the same as the stringMethod from 4.9 and below).
+		/// </summary>
+		public bool HasRealMethod {
+			get { return realMethod != null; }
+		}
+
+		public MethodDef RealMethod {
+			get { return (realMethod != null ? realMethod : stringMethod); }
+		}
+
 		public StringDecrypter(ModuleDefMD module, DecrypterType decrypterType) {
 			this.module = module;
 			this.decrypterType = decrypterType;
@@ -135,8 +149,15 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					if (!CheckDecrypterMethod(method))
 						continue;
 
+					// 5.0
+					if (CheckIfHelperMethod(method)) {
+						stringMethod = method;
+						realMethod = GetRealDecrypterMethod(method);
+						isV50OrLater = true;
+					}
+					else stringMethod = method;
+
 					stringType = type;
-					stringMethod = method;
 					isV32OrLater = CheckIfV32OrLater(stringType);
 					return;
 				}
@@ -211,7 +232,31 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				if (calledMethod != null && calledMethod.FullName == "System.IO.Stream System.Reflection.Assembly::GetManifestResourceStream(System.String)")
 					return true;
 			}
+
 			return false;
+		}
+
+		/// <remarks>5.0</remarks>
+		static bool CheckIfHelperMethod(MethodDef method) {
+			// Helper method will be `private static`, instead of `internal static`
+			return method.DeclaringType.Methods.Count == 4 && !method.IsAssembly;
+		}
+
+		/// <summary>
+		/// Get the real decrypter method from a found helper method.
+		/// </summary>
+		/// <remarks>5.0</remarks>
+		static MethodDef GetRealDecrypterMethod(MethodDef helper) {
+			var methods = helper.DeclaringType.Methods;
+			var sigComparer = new SigComparer();
+			foreach (var method in methods) {
+				if (method.MDToken != helper.MDToken &&
+					method.IsAssembly &&
+					sigComparer.Equals(method.MethodSig, helper.MethodSig))
+					return method;
+			}
+
+			return null;
 		}
 
 		public void Initialize(ISimpleDeobfuscator simpleDeobfuscator) {
@@ -250,9 +295,14 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				return false;
 			if (checkMinus2 && !FindInt5())
 				return false;
-			dataDecrypterType = FindDataDecrypterType(stringMethod);
-			if (dataDecrypterType == null)
-				return false;
+
+			// The method body of the data decrypter method has been moved into
+			// the string decrypter helper method in 5.0
+			if (!isV50OrLater) {
+				dataDecrypterType = FindDataDecrypterType(stringMethod);
+				if (dataDecrypterType == null)
+					return false;
+			}
 
 			if (isV32OrLater) {
 				bool initializedAll;
