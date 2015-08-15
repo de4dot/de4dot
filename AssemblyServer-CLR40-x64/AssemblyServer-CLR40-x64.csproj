@@ -24,7 +24,6 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <NoStdLib>true</NoStdLib>
     <NoWarn>1685</NoWarn>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
@@ -36,16 +35,11 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <NoStdLib>true</NoStdLib>
     <NoWarn>1685</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <!-- Fix a warning that the referenced mscorlib is not 64-bit... -->
-    <Reference Include="$(Windir)\Microsoft.NET\Framework64\v4.0.30319\mscorlib.dll" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
