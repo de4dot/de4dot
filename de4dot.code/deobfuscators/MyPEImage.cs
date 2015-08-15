@@ -6,7 +6,7 @@ using dnlib.DotNet.MD;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators {
-	sealed class MyPEImage : IDisposable {
+	public sealed class MyPEImage : IDisposable {
 		IPEImage peImage;
 		byte[] peImageData;
 		IImageStream peStream;

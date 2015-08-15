@@ -34,7 +34,7 @@ namespace de4dot.code.deobfuscators {
 		OpDecryptString DecryptStrings { get; }
 	}
 
-	class Operations : IOperations {
+	public class Operations : IOperations {
 		public bool KeepObfuscatorTypes { get; set; }
 		public MetaDataFlags MetaDataFlags { get; set; }
 		public RenamerFlags RenamerFlags { get; set; }

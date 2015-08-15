@@ -5,6 +5,18 @@ de4dot is an open source (GPLv3) .NET deobfuscator and unpacker written in C#. I
 
 It uses [dnlib](https://github.com/0xd4d/dnlib/) to read and write assemblies so make sure you get it or it won't compile.
 
+Binaries
+========
+
+Get binaries from the [build server](https://ci.appveyor.com/project/0xd4d/de4dot/build/artifacts).
+
+It's FREE but there's NO SUPPORT
+================================
+
+There's no support. Don't email me if you can't use it or if it fails to deobfuscate a file obfuscated with an updated obfuscator.
+
+Instead, try to update de4dot yourself. It's a lot easier than you think. If you can't, search the Internet and you should find a couple of forums where you can ask your question.
+
 Features
 ========
 

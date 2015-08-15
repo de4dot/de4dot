@@ -151,17 +151,8 @@ namespace de4dot.code {
 		}
 
 		string GetDefaultNewFilename() {
-			int dotIndex = options.Filename.LastIndexOf('.');
-			string noExt, ext;
-			if (dotIndex != -1) {
-				noExt = options.Filename.Substring(0, dotIndex);
-				ext = options.Filename.Substring(dotIndex);
-			}
-			else {
-				noExt = options.Filename;
-				ext = "";
-			}
-			return noExt + "-cleaned" + ext;
+			string newFilename = Path.GetFileNameWithoutExtension(options.Filename) + "-cleaned" + Path.GetExtension(options.Filename);
+			return Path.Combine(Path.GetDirectoryName(options.Filename), newFilename);
 		}
 
 		public void Load(IList<IDeobfuscator> deobfuscators) {

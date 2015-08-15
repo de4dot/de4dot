@@ -23,7 +23,7 @@ using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators {
-	class UnusedMethodsFinder {
+	public class UnusedMethodsFinder {
 		ModuleDef module;
 		MethodCollection removedMethods;
 		Dictionary<MethodDef, bool> possiblyUnusedMethods = new Dictionary<MethodDef, bool>();

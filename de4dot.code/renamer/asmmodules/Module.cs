@@ -23,7 +23,7 @@ using dnlib.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.renamer.asmmodules {
-	class Module : IResolver {
+	public class Module : IResolver {
 		IObfuscatedFile obfuscatedFile;
 		TypeDefDict types = new TypeDefDict();
 		MemberRefFinder memberRefFinder;
@@ -101,10 +101,10 @@ namespace de4dot.code.renamer.asmmodules {
 		public void FindAllMemberRefs(ref int typeIndex) {
 			memberRefFinder = new MemberRefFinder();
 			memberRefFinder.FindAll(ModuleDefMD);
-			allMethods = new List<MethodDef>(memberRefFinder.methodDefs.Keys);
+			allMethods = new List<MethodDef>(memberRefFinder.MethodDefs.Keys);
 
 			var allTypesList = new List<MTypeDef>();
-			foreach (var type in memberRefFinder.typeDefs.Keys) {
+			foreach (var type in memberRefFinder.TypeDefs.Keys) {
 				var typeDef = new MTypeDef(type, this, typeIndex++);
 				types.Add(typeDef);
 				allTypesList.Add(typeDef);
@@ -131,13 +131,13 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 
 		public void ResolveAllRefs(IResolver resolver) {
-			foreach (var typeRef in memberRefFinder.typeRefs.Keys) {
+			foreach (var typeRef in memberRefFinder.TypeRefs.Keys) {
 				var typeDef = resolver.ResolveType(typeRef);
 				if (typeDef != null)
 					typeRefsToRename.Add(new RefToDef<TypeRef, TypeDef>(typeRef, typeDef.TypeDef));
 			}
 
-			foreach (var memberRef in memberRefFinder.memberRefs.Keys) {
+			foreach (var memberRef in memberRefFinder.MemberRefs.Keys) {
 				if (memberRef.IsMethodRef) {
 					var methodDef = resolver.ResolveMethod(memberRef);
 					if (methodDef != null)
@@ -150,7 +150,7 @@ namespace de4dot.code.renamer.asmmodules {
 				}
 			}
 
-			foreach (var cattr in memberRefFinder.customAttributes.Keys) {
+			foreach (var cattr in memberRefFinder.CustomAttributes.Keys) {
 				var typeDef = resolver.ResolveType(cattr.AttributeType);
 				if (typeDef == null)
 					continue;

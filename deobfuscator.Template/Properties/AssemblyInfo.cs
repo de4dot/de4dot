@@ -1,4 +1,4 @@
-﻿/*
+/*
     Copyright (C) 2011-2014 de4dot@gmail.com
 
     This file is part of de4dot.
@@ -17,23 +17,17 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using System;
-using System.Collections.Generic;
+using System.Reflection;
+using System.Runtime.InteropServices;
 
-namespace de4dot.code.resources {
-	class ResourceElementSet {
-		Dictionary<string, ResourceElement> dict = new Dictionary<string, ResourceElement>(StringComparer.Ordinal);
-
-		public int Count {
-			get { return dict.Count; }
-		}
-
-		public IEnumerable<ResourceElement> ResourceElements {
-			get { return dict.Values; }
-		}
-
-		public void Add(ResourceElement elem) {
-			dict[elem.Name] = elem;
-		}
-	}
-}
+[assembly: AssemblyTitle("deobfuscator.Template")]
+[assembly: AssemblyDescription("de4dot Deobfuscator Template Module")]
+[assembly: AssemblyConfiguration("")]
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyProduct("deobfuscator.Template")]
+[assembly: AssemblyCopyright("Copyright (C) 2011-2014 de4dot@gmail.com")]
+[assembly: AssemblyTrademark("")]
+[assembly: AssemblyCulture("")]
+[assembly: ComVisible(false)]
+[assembly: AssemblyVersion("1.0.0.0")]
+[assembly: AssemblyFileVersion("1.0.0.0")]
