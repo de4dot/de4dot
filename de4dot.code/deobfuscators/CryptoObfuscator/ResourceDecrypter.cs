@@ -38,6 +38,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		byte bitwiseNotEncryptedFlag;
 		FrameworkType frameworkType;
 		bool flipFlagsBits;
+		bool skipBeforeFlag;
 		int skipBytes;
 
 		public ResourceDecrypter(ModuleDefMD module, ISimpleDeobfuscator simpleDeobfuscator) {
@@ -179,10 +180,10 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			bitwiseNotEncryptedFlag = 4;
 		}
 
-		static bool CheckFlipBits(MethodDef method) {
-			int nots = 0;
+		static bool CheckFlipBits(MethodDef method, out int index) {
+			int nots = 0, i;
 			var instrs = method.Body.Instructions;
-			for (int i = 0; i < instrs.Count - 1; i++) {
+			for (i = 0; i < instrs.Count - 1; i++) {
 				var ldloc = instrs[i];
 				if (!ldloc.IsLdloc())
 					continue;
@@ -193,7 +194,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				if (instrs[i + 1].OpCode.Code == Code.Not)
 					nots++;
 			}
-
+			index = i;
 			return (nots & 1) == 1;
 		}
 
@@ -223,8 +224,10 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				constants.Add(flagValue);
 			}
 
-			flipFlagsBits = CheckFlipBits(method);
-			skipBytes = GetHeaderSkipBytes(method);
+			int notIndex, skipIndex;
+			flipFlagsBits = CheckFlipBits(method, out notIndex);
+			skipBytes = GetHeaderSkipBytes(method, out skipIndex);
+			skipBeforeFlag = skipIndex < notIndex;
 
 			switch (frameworkType) {
 			case FrameworkType.Desktop:
@@ -259,7 +262,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return false;
 		}
 
-		static int GetHeaderSkipBytes(MethodDef method) {
+		static int GetHeaderSkipBytes(MethodDef method, out int index) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 1; i++) {
 				var ldci4 = instrs[i];
@@ -271,8 +274,10 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				var blt = instrs[i + 1];
 				if (blt.OpCode.Code != Code.Blt && blt.OpCode.Code != Code.Blt_S && blt.OpCode.Code != Code.Clt)
 					continue;
+				index = i;
 				return loopCount - 1;
 			}
+			index = 0;
 			return 0;
 		}
 
@@ -312,15 +317,22 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		}
 
 		public byte[] Decrypt(Stream resourceStream) {
-			byte flags = (byte)resourceStream.ReadByte();
-			if (flipFlagsBits)
-				flags = (byte)~flags;
 			Stream sourceStream = resourceStream;
 			int sourceStreamOffset = 1;
 			bool didSomething = false;
 
-			sourceStream.Position += skipBytes;
-			sourceStreamOffset += skipBytes;
+			if (skipBeforeFlag)
+			{
+				sourceStream.Position += skipBytes;
+				sourceStreamOffset += skipBytes;
+			}
+			byte flags = (byte)sourceStream.ReadByte();
+			if (flipFlagsBits)
+				flags = (byte)~flags;
+			if (!skipBeforeFlag) {
+				sourceStream.Position += skipBytes;
+				sourceStreamOffset += skipBytes;
+			}
 
 			byte allFlags = (byte)(desEncryptedFlag | deflatedFlag | bitwiseNotEncryptedFlag);
 			if ((flags & ~allFlags) != 0)
