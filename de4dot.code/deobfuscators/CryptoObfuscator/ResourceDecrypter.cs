@@ -183,6 +183,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		static bool CheckFlipBits(MethodDef method, out int index) {
 			int nots = 0, i;
 			var instrs = method.Body.Instructions;
+			index = -1;
 			for (i = 0; i < instrs.Count - 1; i++) {
 				var ldloc = instrs[i];
 				if (!ldloc.IsLdloc())
@@ -190,11 +191,11 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				var local = ldloc.GetLocal(method.Body.Variables);
 				if (local == null || local.Type.GetElementType().GetPrimitiveSize() < 0)
 					continue;
-
-				if (instrs[i + 1].OpCode.Code == Code.Not)
+				if (instrs[i + 1].OpCode.Code == Code.Not) {
 					nots++;
+					index = i + 1;
+				}
 			}
-			index = i;
 			return (nots & 1) == 1;
 		}
 
