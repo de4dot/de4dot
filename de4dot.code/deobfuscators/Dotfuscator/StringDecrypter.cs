@@ -90,16 +90,12 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 					var ldci4 = instrs[i + 3];
 					if (!ldci4.IsLdcI4())
 						continue;
-						
-			                int temp_magic = ldci4.GetLdcI4Value();
-			
-			                var ldci4_2 = instrs[i + 6];
-			                if (ldci4_2.IsLdcI4())
-			                {
-			                        temp_magic += ldci4_2.GetLdcI4Value();
-			                }
-                   
-                    			var info = new StringDecrypterInfo(method, temp_magic); //ldci4.GetLdcI4Value() replaced with temp_magic (patched by bsvo2786)
+					int temp_magic = ldci4.GetLdcI4Value();
+					var ldci4_2 = instrs[i + 6];
+					if (ldci4_2.IsLdcI4())
+						temp_magic += ldci4_2.GetLdcI4Value();
+					
+					var info = new StringDecrypterInfo(method, temp_magic);
 					stringDecrypterMethods.Add(info.method, info);
 					Logger.v("Found string decrypter method: {0}, magic: 0x{1:X8}", Utils.RemoveNewlines(info.method), info.magic);
 					break;
