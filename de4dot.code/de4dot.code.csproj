@@ -47,6 +47,13 @@
     <Reference Include="System.XML" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="7zip\Compress\LZ\LzOutWindow.cs" />
+    <Compile Include="7zip\Compress\LZMA\LzmaBase.cs" />
+    <Compile Include="7zip\Compress\LZMA\LzmaDecoder.cs" />
+    <Compile Include="7zip\Compress\RangeCoder\RangeCoder.cs" />
+    <Compile Include="7zip\Compress\RangeCoder\RangeCoderBit.cs" />
+    <Compile Include="7zip\Compress\RangeCoder\RangeCoderBitTree.cs" />
+    <Compile Include="7zip\ICoder.cs" />
     <Compile Include="AssemblyClient\AssemblyClient.cs" />
     <Compile Include="AssemblyClient\AssemblyClientFactory.cs" />
     <Compile Include="AssemblyClient\IAssemblyClient.cs" />
@@ -143,6 +150,28 @@
     <Compile Include="deobfuscators\CodeWall\randomc\CRandomMersenne.cs" />
     <Compile Include="deobfuscators\CodeWall\randomc\CRandomMother.cs" />
     <Compile Include="deobfuscators\CodeWall\StringDecrypter.cs" />
+    <Compile Include="deobfuscators\Confuser\AntiDebugger.cs" />
+    <Compile Include="deobfuscators\Confuser\AntiDumping.cs" />
+    <Compile Include="deobfuscators\Confuser\Arg64ConstantsReader.cs" />
+    <Compile Include="deobfuscators\Confuser\ConfuserUtils.cs" />
+    <Compile Include="deobfuscators\Confuser\ConstantsDecrypterBase.cs" />
+    <Compile Include="deobfuscators\Confuser\ConstantsDecrypterUtils.cs" />
+    <Compile Include="deobfuscators\Confuser\ConstantsDecrypterV15.cs" />
+    <Compile Include="deobfuscators\Confuser\ConstantsDecrypterV17.cs" />
+    <Compile Include="deobfuscators\Confuser\ConstantsDecrypterV18.cs" />
+    <Compile Include="deobfuscators\Confuser\ConstantsFolder.cs" />
+    <Compile Include="deobfuscators\Confuser\ConstantsInliner.cs" />
+    <Compile Include="deobfuscators\Confuser\Deobfuscator.cs" />
+    <Compile Include="deobfuscators\Confuser\IVersionProvider.cs" />
+    <Compile Include="deobfuscators\Confuser\JitMethodsDecrypter.cs" />
+    <Compile Include="deobfuscators\Confuser\MemoryMethodsDecrypter.cs" />
+    <Compile Include="deobfuscators\Confuser\MethodsDecrypterBase.cs" />
+    <Compile Include="deobfuscators\Confuser\ProxyCallFixer.cs" />
+    <Compile Include="deobfuscators\Confuser\ResourceDecrypter.cs" />
+    <Compile Include="deobfuscators\Confuser\StringDecrypter.cs" />
+    <Compile Include="deobfuscators\Confuser\Unpacker.cs" />
+    <Compile Include="deobfuscators\Confuser\VersionDetector.cs" />
+    <Compile Include="deobfuscators\Confuser\x86Emulator.cs" />
     <Compile Include="deobfuscators\ConstantsReader.cs" />
     <Compile Include="deobfuscators\CRC32.cs" />
     <Compile Include="deobfuscators\CryptoObfuscator\AntiDebugger.cs" />
