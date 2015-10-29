@@ -492,7 +492,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				if (proxyType == ProxyCreatorType.Newobj)
 					foundNewobjProxy = true;
 
-				simpleDeobfuscator.Deobfuscate(method);
+				simpleDeobfuscator.Deobfuscate(method, SimpleDeobfuscatorFlags.DisableConstantsFolderExtraInstrs);
 				MethodDef nativeMethod = null;
 				uint magic;
 				if (FindMagic_v14_r58564(method, out magic)) {

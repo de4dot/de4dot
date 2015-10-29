@@ -202,7 +202,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			var cctor = DotNetUtils.GetModuleTypeCctor(module);
 			if (cctor == null)
 				return;
-			simpleDeobfuscator.Deobfuscate(cctor, true);
+			simpleDeobfuscator.Deobfuscate(cctor, SimpleDeobfuscatorFlags.Force | SimpleDeobfuscatorFlags.DisableConstantsFolderExtraInstrs);
 
 			if ((dictField = ConstantsDecrypterUtils.FindDictField(cctor, cctor.DeclaringType)) == null)
 				return;
@@ -216,7 +216,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			var method = GetDecryptMethod();
 			if (method == null)
 				return;
-			simpleDeobfuscator.Deobfuscate(method);
+			simpleDeobfuscator.Deobfuscate(method, SimpleDeobfuscatorFlags.DisableConstantsFolderExtraInstrs);
 			var info = new DecrypterInfo(this, method, ConfuserVersion.Unknown);
 			if (FindKeys_v18_r75367(info))
 				InitVersion(cctor, ConfuserVersion.v18_r75367_normal, ConfuserVersion.v18_r75367_dynamic, ConfuserVersion.v18_r75367_native);
@@ -425,7 +425,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			if (!IsDecryptMethodSignature(method))
 				return null;
 
-			simpleDeobfuscator.Deobfuscate(method);
+			simpleDeobfuscator.Deobfuscate(method, SimpleDeobfuscatorFlags.DisableConstantsFolderExtraInstrs);
 			var info = new DecrypterInfo(this, method, version);
 			if (!FindKeys(info))
 				return null;

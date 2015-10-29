@@ -78,7 +78,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				if (type.NestedTypes.Count > 0)
 					continue;
 
-				simpleDeobfuscator.Deobfuscate(calledMethod, true);
+				simpleDeobfuscator.Deobfuscate(calledMethod, SimpleDeobfuscatorFlags.Force | SimpleDeobfuscatorFlags.DisableConstantsFolderExtraInstrs);
 				if (CheckType(type, calledMethod)) {
 					initMethod = calledMethod;
 					return true;

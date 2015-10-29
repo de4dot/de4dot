@@ -29,6 +29,8 @@ namespace de4dot.blocks.cflow {
 		InstructionEmulator instructionEmulator = new InstructionEmulator();
 		IList<Parameter> args;
 
+		public bool DisableNewCode { get; set; }
+
 		protected override void Initialize(List<Block> allBlocks) {
 			base.Initialize(allBlocks);
 			args = blocks.Method.Parameters;
@@ -131,6 +133,8 @@ namespace de4dot.blocks.cflow {
 				case Code.Sub_Ovf:
 				case Code.Sub_Ovf_Un:
 				case Code.Xor:
+					if (DisableNewCode)
+						break;
 					if (i + 1 < instrs.Count && instrs[i + 1].OpCode.Code == Code.Pop)
 						break;
 					if (!VerifyValidArgs(instr.Instruction))

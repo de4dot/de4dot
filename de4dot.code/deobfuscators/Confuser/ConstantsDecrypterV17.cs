@@ -232,7 +232,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			if (!new LocalTypes(cctor).All(requiredLocalsCctor))
 				return;
 
-			simpleDeobfuscator.Deobfuscate(cctor, true);
+			simpleDeobfuscator.Deobfuscate(cctor, SimpleDeobfuscatorFlags.Force | SimpleDeobfuscatorFlags.DisableConstantsFolderExtraInstrs);
 			if (!Add(ConstantsDecrypterUtils.FindDictField(cctor, cctor.DeclaringType)))
 				return;
 			if (!Add(ConstantsDecrypterUtils.FindStreamField(cctor, cctor.DeclaringType)))

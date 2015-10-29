@@ -77,7 +77,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				return false;
 			if (!DotNetUtils.CallsMethod(method, "System.Void System.AppDomain::add_ResourceResolve(System.ResolveEventHandler)"))
 				return false;
-			simpleDeobfuscator.Deobfuscate(method, true);
+			simpleDeobfuscator.Deobfuscate(method, SimpleDeobfuscatorFlags.Force | SimpleDeobfuscatorFlags.DisableConstantsFolderExtraInstrs);
 			fields.Clear();
 
 			var tmpHandler = GetHandler(method);
@@ -88,7 +88,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			if (tmpResource == null)
 				return false;
 
-			simpleDeobfuscator.Deobfuscate(tmpHandler, true);
+			simpleDeobfuscator.Deobfuscate(tmpHandler, SimpleDeobfuscatorFlags.Force | SimpleDeobfuscatorFlags.DisableConstantsFolderExtraInstrs);
 			ConfuserVersion tmpVersion = ConfuserVersion.Unknown;
 			if (DotNetUtils.CallsMethod(tmpHandler, "System.Object System.AppDomain::GetData(System.String)")) {
 				if (!DotNetUtils.CallsMethod(tmpHandler, "System.Void System.Buffer::BlockCopy(System.Array,System.Int32,System.Array,System.Int32,System.Int32)")) {
