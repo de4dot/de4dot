@@ -476,7 +476,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		DumpedMethods Decrypt_v17_r73404(MyPEImage peImage, byte[] fileData) {
 			var dumpedMethods = new DumpedMethods();
 
-			var methodDef = peImage.DotNetFile.MetaData.TablesStream.MethodTable;
+			var methodDef = peImage.MetaData.TablesStream.MethodTable;
 			for (uint rid = 1; rid <= methodDef.Rows; rid++) {
 				var dm = new DumpedMethod();
 				peImage.ReadMethodTableRowTo(dm, rid);
@@ -604,7 +604,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		DumpedMethods Decrypt(MyPEImage peImage, byte[] fileData, DecryptMethodData decrypter) {
 			var dumpedMethods = new DumpedMethods();
 
-			var methodDef = peImage.DotNetFile.MetaData.TablesStream.MethodTable;
+			var methodDef = peImage.MetaData.TablesStream.MethodTable;
 			for (uint rid = 1; rid <= methodDef.Rows; rid++) {
 				var dm = new DumpedMethod();
 				peImage.ReadMethodTableRowTo(dm, rid);

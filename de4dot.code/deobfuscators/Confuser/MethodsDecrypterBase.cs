@@ -364,7 +364,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			var memStream = new MemoryStream();
 			var writer = new BinaryWriter(memStream);
 			var reader = peImage.Reader;
-			foreach (var mdStream in peImage.DotNetFile.MetaData.AllStreams) {
+			foreach (var mdStream in peImage.MetaData.AllStreams) {
 				reader.Position = (long)mdStream.StartOffset;
 				writer.Write(reader.ReadBytes((int)(mdStream.EndOffset - mdStream.StartOffset)));
 			}
