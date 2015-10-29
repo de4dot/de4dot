@@ -322,8 +322,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			int sourceStreamOffset = 1;
 			bool didSomething = false;
 
-			if (skipBeforeFlag)
-			{
+			if (skipBeforeFlag) {
 				sourceStream.Position += skipBytes;
 				sourceStreamOffset += skipBytes;
 			}
