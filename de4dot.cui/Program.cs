@@ -178,6 +178,8 @@ namespace de4dot.cui {
 		static bool IsN00bUser() {
 			if (HasEnv("VisualStudioDir"))
 				return false;
+			if (HasEnv("SHELL"))
+				return false;
 			return HasEnv("windir") && !HasEnv("PROMPT");
 		}
 
