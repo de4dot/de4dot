@@ -91,9 +91,11 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 					if (!ldci4.IsLdcI4())
 						continue;
 					int temp_magic = ldci4.GetLdcI4Value();
+					if (i + 6 < instrs.Count) {
 					var ldci4_2 = instrs[i + 6];
 					if (ldci4_2.IsLdcI4())
 						temp_magic += ldci4_2.GetLdcI4Value();
+					}
 					
 					var info = new StringDecrypterInfo(method, temp_magic);
 					stringDecrypterMethods.Add(info.method, info);
