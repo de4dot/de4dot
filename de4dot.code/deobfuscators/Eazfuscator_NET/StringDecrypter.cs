@@ -47,6 +47,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		EfConstantsReader stringMethodConsts;
 		bool isV32OrLater;
 		bool isV50OrLater;
+		bool isV51OrLater;
 		int? validStringDecrypterValue;
 		DynamicDynocodeIterator dynocode;
 		MethodDef realMethod;
@@ -429,11 +430,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				return null;
 			if (instrs[index++].OpCode.Code != Code.Ldc_I4_0)
 				return null;
-			if (instrs[index++].OpCode.Code != Code.Ceq)
-				return null;
-			if (instrs[index++].OpCode.Code != Code.Ldc_I4_0)
-				return null;
-			if (instrs[index++].OpCode.Code != Code.Ceq)
+			if (instrs[index++].OpCode.Code != Code.Cgt_Un)
 				return null;
 			var stloc = instrs[index++];
 			if (!stloc.IsStloc())
@@ -720,8 +717,8 @@ done: ;
 
 			if (index + 4 >= instrs.Count)
 				return false;
-			var ldloc = instrs[index + 3];
-			var stfld = instrs[index + 4];
+			var ldloc = instrs[index + 2];
+			var stfld = instrs[index + 3];
 			if (!ldloc.IsLdloc() || stfld.OpCode.Code != Code.Stfld)
 				return false;
 			var enumerableField = stfld.Operand as FieldDef;
