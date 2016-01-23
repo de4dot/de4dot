@@ -19,6 +19,7 @@
 
 using System;
 using System.Collections.Generic;
+using dnlib.DotNet.Emit;
 using dnlib.DotNet;
 using de4dot.blocks;
 
@@ -818,7 +819,11 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					decryptStringMethod.Body.ExceptionHandlers.Count == 1 &&
 					new LocalTypes(decryptStringMethod).All(locals50) &&
 					CheckTypeFields2(fields50)) {
-					return "5.0";
+                    foreach (var inst in stringDecrypter.Method.Body.Instructions) {
+                        if (inst.OpCode.Code == Code.Cgt_Un)
+                            return "5.1";
+                    }
+                    return "5.0";
 				}
 			}
 
