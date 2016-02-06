@@ -113,7 +113,15 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			if (decrypterType == null)
 				return;
 
-			encryptedResource = CoUtils.GetResource(module, DotNetUtils.GetCodeStrings(decrypterType.FindStaticConstructor()));
+			MethodDef cctor = decrypterType.FindStaticConstructor();
+			encryptedResource = CoUtils.GetResource(module, DotNetUtils.GetCodeStrings(cctor));
+
+			//if the return value is null, it is possible that resource name is encrypted
+			if (encryptedResource == null) {
+					var Resources = new string[] { CoUtils.DecryptResourceName(module,cctor) };
+					encryptedResource = CoUtils.GetResource(module, Resources);
+			}
+
 			encryptedResource.Data.Position = 0;
 			constantsData = resourceDecrypter.Decrypt(encryptedResource.Data.CreateStream());
 		}
