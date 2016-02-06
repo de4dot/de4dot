@@ -35,6 +35,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		int i1, i2, i3;
 		int m1_i1, m2_i1, m2_i2, m3_i1;
 		MethodDef[] efConstMethods;
+		List<int> shiftConsts;
 
 		public MethodDef Int64Method {
 			get { return int64Method; }
@@ -52,6 +53,16 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 
 		public bool Detected {
 			get { return type != null; }
+		}
+
+		public List<int> ShiftConsts {
+			get { return shiftConsts; }
+			set {
+				if (shiftConsts == null)
+					shiftConsts = value;
+				else if (shiftConsts != value)
+					throw new ApplicationException("Found another one");
+			}
 		}
 
 		public DecrypterType(ModuleDefMD module, ISimpleDeobfuscator simpleDeobfuscator) {
@@ -337,51 +348,6 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return BinOp1(efConstMethods[5].DeclaringType.MDToken.ToInt32(), BinOp3(BinOp2(efConstMethods[4].DeclaringType.MDToken.ToInt32(), efConstMethods[0].DeclaringType.MDToken.ToInt32()), BinOp3(efConstMethods[2].DeclaringType.MDToken.ToInt32() ^ i3, ConstMethod5())));
 		}
 
-		bool FindShiftInts(MethodDef method, out List<int> bytes) {
-			var instrs = method.Body.Instructions;
-			var constantsReader = new EfConstantsReader(method);
-			bytes = new List<int>(8);
-
-			for (int i = 0; i < instrs.Count - 4; i++) {
-				if (bytes.Count >= 8)
-					return true;
-
-				var ldloc1 = instrs[i];
-				if (ldloc1.OpCode.Code != Code.Ldloc_1)
-					continue;
-
-				var ldlocs = instrs[i + 1];
-				if (ldlocs.OpCode.Code != Code.Ldloc_S)
-					continue;
-
-				var maybe = instrs[i + 2];
-				if (maybe.OpCode.Code == Code.Conv_U1) {
-					var callvirt = instrs[i + 3];
-					if (callvirt.OpCode.Code != Code.Callvirt)
-						return false;
-
-					bytes.Add(0);
-					continue;
-				}
-				var shr = instrs[i + 3];
-				if (shr.OpCode.Code != Code.Shr)
-					return false;
-
-				var convu1 = instrs[i + 4];
-				if (convu1.OpCode.Code != Code.Conv_U1)
-					return false;
-
-				int constant;
-				int index = i + 2;
-				if (!constantsReader.GetInt32(ref index, out constant))
-					return false;
-
-				bytes.Add(constant);
-			}
-
-			return false;
-		}
-
 		public ulong GetMagic() {
 			if (type == null)
 				throw new ApplicationException("Can't calculate magic since type isn't initialized");
@@ -392,10 +358,6 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					bytes.AddRange(module.Assembly.PublicKeyToken.Data);
 				bytes.AddRange(Encoding.Unicode.GetBytes(module.Assembly.Name.String));
 			}
-
-			List<int> shiftConsts;
-			if (!FindShiftInts(int64Method, out shiftConsts))
-				throw new ApplicationException("Could not extract magic constants");
 
 			int num3 = ConstMethod1();
 			int num2 = type.MDToken.ToInt32();

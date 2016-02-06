@@ -325,9 +325,21 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				if (decrypterType.Detected && !decrypterType.Initialize())
 					return false;
 
+				if (!isV50OrLater) {
+					decrypterType.ShiftConsts = new List<int> { 24, 16, 8, 0, 16, 8, 0, 24 };
+				}
+				else {
+					List<int> shiftConsts;
+					if (!FindShiftInts(decrypterType.Int64Method, out shiftConsts))
+						return false;
+
+					decrypterType.ShiftConsts = shiftConsts;
+				}
+
 				if (!FindInts(index))
 					return false;
 			}
+
 
 			InitializeFlags();
 			Initialize();
@@ -622,6 +634,51 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			}
 
 			return DotNetUtils.GetResource(module, sb.ToString()) as EmbeddedResource;
+		}
+
+		bool FindShiftInts(MethodDef method, out List<int> bytes) {
+			var instrs = method.Body.Instructions;
+			var constantsReader = new EfConstantsReader(method);
+			bytes = new List<int>(8);
+
+			for (int i = 0; i < instrs.Count - 4; i++) {
+				if (bytes.Count >= 8)
+					return true;
+
+				var ldloc1 = instrs[i];
+				if (ldloc1.OpCode.Code != Code.Ldloc_1)
+					continue;
+
+				var ldlocs = instrs[i + 1];
+				if (ldlocs.OpCode.Code != Code.Ldloc_S)
+					continue;
+
+				var maybe = instrs[i + 2];
+				if (maybe.OpCode.Code == Code.Conv_U1) {
+					var callvirt = instrs[i + 3];
+					if (callvirt.OpCode.Code != Code.Callvirt)
+						return false;
+
+					bytes.Add(0);
+					continue;
+				}
+				var shr = instrs[i + 3];
+				if (shr.OpCode.Code != Code.Shr)
+					return false;
+
+				var convu1 = instrs[i + 4];
+				if (convu1.OpCode.Code != Code.Conv_U1)
+					return false;
+
+				int constant;
+				int index = i + 2;
+				if (!constantsReader.GetInt32(ref index, out constant))
+					return false;
+
+				bytes.Add(constant);
+			}
+
+			return false;
 		}
 
 		static MethodDef FindInt64Method(MethodDef method) {
