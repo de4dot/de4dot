@@ -35,6 +35,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		int i1, i2, i3;
 		int m1_i1, m2_i1, m2_i2, m3_i1;
 		MethodDef[] efConstMethods;
+		List<int> shiftConsts;
 
 		public MethodDef Int64Method {
 			get { return int64Method; }
@@ -52,6 +53,16 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 
 		public bool Detected {
 			get { return type != null; }
+		}
+
+		public List<int> ShiftConsts {
+			get { return shiftConsts; }
+			set {
+				if (shiftConsts == null)
+					shiftConsts = value;
+				else if (shiftConsts != value)
+					throw new ApplicationException("Found another one");
+			}
 		}
 
 		public DecrypterType(ModuleDefMD module, ISimpleDeobfuscator simpleDeobfuscator) {
@@ -216,6 +227,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return false;
 		}
 
+		
 		static List<MethodDef> GetBinaryIntMethods(TypeDef type) {
 			var list = new List<MethodDef>();
 			foreach (var method in type.Methods) {
@@ -346,15 +358,18 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					bytes.AddRange(module.Assembly.PublicKeyToken.Data);
 				bytes.AddRange(Encoding.Unicode.GetBytes(module.Assembly.Name.String));
 			}
-			int cm1 = ConstMethod1();
-			bytes.Add((byte)(type.MDToken.ToInt32() >> 24));
-			bytes.Add((byte)(cm1 >> 16));
-			bytes.Add((byte)(type.MDToken.ToInt32() >> 8));
-			bytes.Add((byte)cm1);
-			bytes.Add((byte)(type.MDToken.ToInt32() >> 16));
-			bytes.Add((byte)(cm1 >> 8));
-			bytes.Add((byte)type.MDToken.ToInt32());
-			bytes.Add((byte)(cm1 >> 24));
+
+			int num3 = ConstMethod1();
+			int num2 = type.MDToken.ToInt32();
+
+			bytes.Add((byte)(num2 >> shiftConsts[0]));
+			bytes.Add((byte)(num3 >> shiftConsts[1]));
+			bytes.Add((byte)(num2 >> shiftConsts[2]));
+			bytes.Add((byte)(num3 >> shiftConsts[3]));
+			bytes.Add((byte)(num2 >> shiftConsts[4]));
+			bytes.Add((byte)(num3 >> shiftConsts[5]));
+			bytes.Add((byte)(num2 >> shiftConsts[6]));
+			bytes.Add((byte)(num3 >> shiftConsts[7]));
 
 			ulong magic = 0;
 			foreach (var b in bytes) {

@@ -19,6 +19,7 @@
 
 using System;
 using System.Collections.Generic;
+using dnlib.DotNet.Emit;
 using dnlib.DotNet;
 using de4dot.blocks;
 
@@ -667,7 +668,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					(decryptStringMethod.Body.ExceptionHandlers.Count == 1 || decryptStringMethod.Body.ExceptionHandlers.Count == 2) &&
 					new LocalTypes(decryptStringMethod).Exactly(locals33_149) &&
 					CheckTypeFields2(fields33_149)) {
-					return "3.3.149 - 3.4";	// 3.3.149+ (but not SL or CF)
+					return "3.3.149 - 3.4"; // 3.3.149+ (but not SL or CF)
 				}
 
 				/////////////////////////////////////////////////////////////////
@@ -818,6 +819,10 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					decryptStringMethod.Body.ExceptionHandlers.Count == 1 &&
 					new LocalTypes(decryptStringMethod).All(locals50) &&
 					CheckTypeFields2(fields50)) {
+					foreach (var inst in stringDecrypter.Method.Body.Instructions) {
+						if (inst.OpCode.Code == Code.Cgt_Un)
+							return "5.1";
+					}
 					return "5.0";
 				}
 			}
