@@ -49,66 +49,64 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		}
 
 		public static string XorCipher(string text, int key) {
-			char[] array = text.ToCharArray();
-			int num = array.Length;
+			var array = text.ToCharArray();
+			int len = array.Length;
 			char cKey = Convert.ToChar(key);
-			while (--num >= 0) {
-				array[num] ^= cKey;
-			}
+			while (--len >= 0)
+				array[len] ^= cKey;
 			return new string(array);
 		}
 
 		public static string DecryptResourceName(string resourceName, int key, byte[] coddedBytes) {
-			int num = resourceName.Length;
-			char[] array = resourceName.ToCharArray();
-			while (--num >= 0) {
-				array[num] = (char)((int)array[num] ^ ((int)coddedBytes[key & 15] | key));
-			}
+			int len = resourceName.Length;
+			var array = resourceName.ToCharArray();
+			while (--len >= 0)
+				array[len] = (char)((int)array[len] ^ ((int)coddedBytes[key & 15] | key));
 			return new string(array);
 		}
 
-		public static string DecryptResourceName(ModuleDefMD module ,MethodDef method) {
+		public static string DecryptResourceName(ModuleDefMD module, MethodDef method) {
 			string resourceName = "";
 			MethodDef cctor = method, orginalResMethod = null;
-			//retrive key and encrypted resource name 
+			// retrive key and encrypted resource name 
 			int key = 0;
-			var ils = cctor.Body.Instructions;
-			for (int i = 0; i < ils.Count - 2; i++) {
-				if (ils[i].OpCode != OpCodes.Ldstr)
+			var instrs = cctor.Body.Instructions;
+			for (int i = 0; i < instrs.Count - 2; i++) {
+				if (instrs[i].OpCode != OpCodes.Ldstr)
 					continue;
-				if (!ils[i + 1].IsLdcI4())
+				if (!instrs[i + 1].IsLdcI4())
 					break;
-				key = ils[i + 1].GetLdcI4Value();
-				resourceName = ils[i].Operand as String;
-				cctor = ils[i + 2].Operand as MethodDef;
+				key = instrs[i + 1].GetLdcI4Value();
+				resourceName = instrs[i].Operand as String;
+				cctor = instrs[i + 2].Operand as MethodDef;
 				break;
 			}
 
-			//Find the method that contains resource name
+			// Find the method that contains resource name
 			while (orginalResMethod == null) {
-				foreach (var IL in cctor.Body.Instructions) {
-					if (IL.OpCode == OpCodes.Ldftn) {
-						MethodDef tempMethod = IL.Operand as MethodDef;
+				foreach (var instr in cctor.Body.Instructions) {
+					if (instr.OpCode == OpCodes.Ldftn) {
+						MethodDef tempMethod = instr.Operand as MethodDef;
 						if (tempMethod.ReturnType.FullName != "System.String")
 							continue;
 						orginalResMethod = tempMethod;
 						break;
-					} else if (IL.OpCode == OpCodes.Callvirt) {
-						cctor = IL.Operand as MethodDef;
+					}
+					else if (instr.OpCode == OpCodes.Callvirt) {
+						cctor = instr.Operand as MethodDef;
 						cctor = cctor.DeclaringType.FindStaticConstructor();
 						break;
 					}
 				}
 			}
 
-			//Get encrypted Resource name
+			// Get encrypted Resource name
 			string encResourcename = DotNetUtils.GetCodeStrings(orginalResMethod)[0];
-			//get Decryption key
+			// get Decryption key
 			int xorKey = 0;
 			for (int i = 0; i < orginalResMethod.Body.Instructions.Count; i++) {
-				if (orginalResMethod.Body.Instructions[i].OpCode == OpCodes.Xor) {
+				if (orginalResMethod.Body.Instructions[i].OpCode == OpCodes.Xor)
 					xorKey = orginalResMethod.Body.Instructions[i - 1].GetLdcI4Value();
-				}
 			}
 
 			encResourcename = XorCipher(encResourcename, xorKey);

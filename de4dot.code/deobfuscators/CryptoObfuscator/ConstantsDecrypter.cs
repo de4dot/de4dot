@@ -19,7 +19,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 using dnlib.IO;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
@@ -118,8 +117,8 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 
 			//if the return value is null, it is possible that resource name is encrypted
 			if (encryptedResource == null) {
-					var Resources = new string[] { CoUtils.DecryptResourceName(module,cctor) };
-					encryptedResource = CoUtils.GetResource(module, Resources);
+				var Resources = new string[] { CoUtils.DecryptResourceName(module, cctor) };
+				encryptedResource = CoUtils.GetResource(module, Resources);
 			}
 
 			encryptedResource.Data.Position = 0;

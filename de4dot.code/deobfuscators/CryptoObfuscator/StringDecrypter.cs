@@ -21,7 +21,6 @@ using System;
 using System.Text;
 using dnlib.DotNet;
 using de4dot.blocks;
-using dnlib.DotNet.Emit;
 
 namespace de4dot.code.deobfuscators.CryptoObfuscator {
 	class StringDecrypter {
@@ -90,8 +89,8 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				catch {
 					string s2 = CoUtils.DecryptResourceName(module, cctor);
 					try {
-						 return Encoding.UTF8.GetString(Convert.FromBase64String(s2));
-					} 
+						return Encoding.UTF8.GetString(Convert.FromBase64String(s2));
+					}
 					catch {
 					}
 				}
