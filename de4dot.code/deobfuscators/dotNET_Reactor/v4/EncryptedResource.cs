@@ -202,6 +202,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 					"System.Byte[]",
 					"System.IO.BinaryReader",
 					"System.IO.MemoryStream",
+					"System.Reflection.Assembly",
 					"System.Security.Cryptography.CryptoStream",
 					"System.Security.Cryptography.ICryptoTransform",
 				};
