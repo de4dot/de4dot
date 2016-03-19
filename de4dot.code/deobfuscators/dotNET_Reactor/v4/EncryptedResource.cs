@@ -271,13 +271,13 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 					key[i] ^= iv[i];
 
 				var origInstrs = method.Body.Instructions;
-
-				int emuStartIndex;
-				if (!FindStart(origInstrs, out emuStartIndex, out emuLocal))
-					return false;
 				int emuEndIndex;
-				if (!FindEnd(origInstrs, emuStartIndex, out emuEndIndex))
-					return false;
+				int emuStartIndex;
+
+				if (!Find(origInstrs, out emuStartIndex, out emuEndIndex, out emuLocal)) {
+					if (!FindStartEnd(origInstrs, out emuStartIndex, out emuEndIndex, out emuLocal))
+						return false;
+				}
 
 				int count = emuEndIndex - emuStartIndex + 1;
 				instructions = new List<Instruction>(count);
@@ -285,6 +285,54 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 					instructions.Add(origInstrs[emuStartIndex + i].Clone());
 
 				return true;
+			}
+
+			bool Find(IList<Instruction> instrs, out int startIndex, out int endIndex, out Local tmpLocal) {
+				int emuStartIndex;
+				startIndex = 0;
+				endIndex = 0;
+				tmpLocal = null;
+
+				if (!FindStart(instrs, out emuStartIndex, out emuLocal))
+					return false;
+				int emuEndIndex;
+				if (!FindEnd(instrs, emuStartIndex, out emuEndIndex))
+					return false;
+				startIndex = emuStartIndex;
+				endIndex = emuEndIndex;
+				tmpLocal = emuLocal;
+				return true;
+			}
+
+			bool FindStartEnd(IList<Instruction> instrs, out int startIndex, out int endIndex, out Local tmpLocal) {
+				for (int i = 0; i + 8 < instrs.Count; i++) {
+					if (instrs[i].OpCode.Code != Code.Conv_R_Un)
+						continue;
+					if (instrs[i + 1].OpCode.Code != Code.Conv_R8)
+						continue;
+					if (instrs[i + 2].OpCode.Code != Code.Conv_U4)
+						continue;
+					if (instrs[i + 3].OpCode.Code != Code.Add)
+						continue;
+					int newEndIndex = i + 3;
+					int newStartIndex = 0;
+					for (int x = newEndIndex; x > 0; x--)
+						if (instrs[x].OpCode.FlowControl != FlowControl.Next) {
+							newStartIndex = x + 1;
+							break;
+						}
+					if (newStartIndex < 0)
+						continue;
+
+					endIndex = newEndIndex;
+					startIndex = newStartIndex;
+					tmpLocal = CheckLocal(instrs[startIndex], true);
+					return true;
+				}
+				endIndex = 0;
+				startIndex = 0;
+				tmpLocal = null;
+				return false;
 			}
 
 			bool FindStart(IList<Instruction> instrs, out int startIndex, out Local tmpLocal) {
