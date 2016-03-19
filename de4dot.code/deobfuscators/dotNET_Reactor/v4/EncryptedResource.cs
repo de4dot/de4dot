@@ -315,7 +315,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 					if (instrs[i + 3].OpCode.Code != Code.Add)
 						continue;
 					int newEndIndex = i + 3;
-					int newStartIndex = 0;
+					int newStartIndex = -1;
 					for (int x = newEndIndex; x > 0; x--)
 						if (instrs[x].OpCode.FlowControl != FlowControl.Next) {
 							newStartIndex = x + 1;
