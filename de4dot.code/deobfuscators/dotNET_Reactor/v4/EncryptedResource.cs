@@ -202,13 +202,16 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 					"System.Byte[]",
 					"System.IO.BinaryReader",
 					"System.IO.MemoryStream",
-					"System.Reflection.Assembly",
 					"System.Security.Cryptography.CryptoStream",
 					"System.Security.Cryptography.ICryptoTransform",
 				};
 				requiredTypes.AddRange(additionalTypes);
 				if (!localTypes.All(requiredTypes))
 					return false;
+
+				if (DotNetUtils.GetMethod(method.DeclaringType, "System.Security.Cryptography.SymmetricAlgorithm", "()") != null)
+					return false;
+
 				if (!localTypes.Exists("System.Security.Cryptography.RijndaelManaged") &&
 					!localTypes.Exists("System.Security.Cryptography.AesManaged") &&
 					!localTypes.Exists("System.Security.Cryptography.SymmetricAlgorithm"))
