@@ -38,6 +38,7 @@
     <Compile Include="Block.cs" />
     <Compile Include="Blocks.cs" />
     <Compile Include="BlocksSorter.cs" />
+    <Compile Include="cflow\AccessChecker.cs" />
     <Compile Include="cflow\BlockCflowDeobfuscator.cs" />
     <Compile Include="cflow\BlockDeobfuscator.cs" />
     <Compile Include="cflow\BlocksCflowDeobfuscator.cs" />
