@@ -210,7 +210,8 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 					return false;
 
 				if (DotNetUtils.GetMethod(method.DeclaringType, "System.Security.Cryptography.SymmetricAlgorithm", "()") != null)
-					return false;
+					if (localTypes.Exists("System.UInt64"))
+						return false;
 
 				if (!localTypes.Exists("System.Security.Cryptography.RijndaelManaged") &&
 					!localTypes.Exists("System.Security.Cryptography.AesManaged") &&
