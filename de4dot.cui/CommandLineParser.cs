@@ -257,7 +257,6 @@ namespace de4dot.cui {
 				if (defaultStringDecrypterType != null)
 					newFileOptions.StringDecrypterType = defaultStringDecrypterType.Value;
 				newFileOptions.StringDecrypterMethods.AddRange(defaultStringDecrypterMethods);
-                //Addition - rolandh
                 newFileOptions.AutoDetectStringObfusicators = false;
 			});
 			fileOptions.Add(defaultOption);

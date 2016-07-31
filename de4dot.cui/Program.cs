@@ -152,7 +152,6 @@ namespace de4dot.cui {
 				catch (InvalidOperationException) {
 				}
 			}
-            Console.ReadKey();
 			return exitCode;
 		}
 
