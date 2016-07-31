@@ -92,6 +92,8 @@ namespace de4dot.code {
 			public bool PreserveTokens { get; set; }
 			public MetaDataFlags MetaDataFlags { get; set; }
 			public RenamerFlags RenamerFlags { get; set; }
+            //Addition - Roland.H
+            public bool AutoDetectStringObfusicators { get; set; }
 
 			public Options() {
 				StringDecrypterType = DecrypterType.Default;
@@ -139,7 +141,7 @@ namespace de4dot.code {
 		public ObfuscatedFile(Options options, ModuleContext moduleContext, IAssemblyClientFactory assemblyClientFactory) {
 			this.assemblyClientFactory = assemblyClientFactory;
 			this.options = options;
-			userStringDecrypterMethods = options.StringDecrypterMethods.Count > 0;
+			userStringDecrypterMethods = (options.StringDecrypterMethods.Count > 0) || options.AutoDetectStringObfusicators;
 			options.Filename = Utils.GetFullPath(options.Filename);
 			assemblyModule = new AssemblyModule(options.Filename, moduleContext);
 
@@ -459,8 +461,36 @@ namespace de4dot.code {
 					tokens.AddRange(FindMethodTokens(val));
 			}
 
+            //Auto detect static string obfusicators that can be deobfusicated by a delegate
+            if (options.AutoDetectStringObfusicators)
+            {
+                Logger.Log(LoggerEvent.Info, "Scanning for static string obfusicator methods...");
+                foreach (TypeDef classDef in module.GetTypes())
+                {
+                    foreach (MethodDef method in classDef.Methods)
+                    {
+                        if (IsStringObfusciator(method)) tokens.Add(method.MDToken.ToInt32());
+                    }
+                }
+            }
+
 			return tokens;
 		}
+
+        bool IsStringObfusciator(MethodDef method)
+        {
+            if (method == null) return false;
+            if (method.Body == null) return false;
+            if (method.Body.Instructions == null) return false;
+            if (!method.IsStatic) return false;
+            if (!DotNetUtils.IsMethod(method, "System.String", "(System.Int32)")) return false;
+            if (method.Name == ".ctor" || method.Name == ".cctor") return false;
+
+            Logger.Log(LoggerEvent.Info, "Found: " + method.FullName.Replace(" System.String","") + " Token: 0x" + method.MDToken.ToInt32().ToString("X"));
+
+            return true;
+
+        }
 
 		IEnumerable<int> FindMethodTokens(string methodDesc) {
 			var tokens = new List<int>();
