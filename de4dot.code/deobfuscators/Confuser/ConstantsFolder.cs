@@ -67,10 +67,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 				// Convert ldc.r4/r8 followed by conv to the appropriate ldc.i4/i8 instr
 				if (i + 1 < instrs.Count && (instr.OpCode.Code == Code.Ldc_R4 || instr.OpCode.Code == Code.Ldc_R8)) {
 					var conv = instrs[i + 1];
-					int vali32 = instr.OpCode.Code == Code.Ldc_R4 ? (int)(float)instr.Operand : (int)(double)instr.Operand;
+					/*int vali32 = instr.OpCode.Code == Code.Ldc_R4 ? (int)(float)instr.Operand : (int)(double)instr.Operand;
 					long vali64 = instr.OpCode.Code == Code.Ldc_R4 ? (long)(float)instr.Operand : (long)(double)instr.Operand;
 					uint valu32 = instr.OpCode.Code == Code.Ldc_R4 ? (uint)(float)instr.Operand : (uint)(double)instr.Operand;
-					ulong valu64 = instr.OpCode.Code == Code.Ldc_R4 ? (ulong)(float)instr.Operand : (ulong)(double)instr.Operand;
+					ulong valu64 = instr.OpCode.Code == Code.Ldc_R4 ? (ulong)(float)instr.Operand : (ulong)(double)instr.Operand;*/
 					switch (conv.OpCode.Code) {
 					case Code.Conv_I1:
 						newInstr = Instruction.CreateLdcI4(instr.OpCode.Code == Code.Ldc_R4 ? (sbyte)(float)instr.Operand : (sbyte)(double)instr.Operand);

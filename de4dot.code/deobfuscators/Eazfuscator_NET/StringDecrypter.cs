@@ -33,7 +33,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		MethodDef stringMethod;
 		TypeDef dataDecrypterType;
 		short s1, s2, s3;
-		int i1, i2, i3, i4, i5, i6;
+		int i1, /*i2,*/ i3, i4, i5, i6;
 		bool checkMinus2;
 		bool usePublicKeyToken;
 		int keyLen;
@@ -734,7 +734,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			if (index < 0)
 				return false;
 
-			i2 = 0;
+			//i2 = 0;
 			var instrs = stringMethod.Body.Instructions;
 
 			var emu = new InstructionEmulator(stringMethod);
@@ -792,7 +792,7 @@ done:
 			foreach (var val in fields.Values) {
 				if (val == null)
 					continue;
-				magic1 = i2 = val.Value;
+				magic1 = /*i2 =*/ val.Value;
 				return true;
 			}
 

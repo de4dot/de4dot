@@ -86,7 +86,7 @@ namespace de4dot.mdecrypt {
 		FuncPtrInfo<ReturnNameOfMethod> returnNameOfMethodInfo = new FuncPtrInfo<ReturnNameOfMethod>();
 
 		IntPtr origCompileMethod;
-		IntPtr jitterTextFreeMem;
+		//IntPtr jitterTextFreeMem;
 
 		IntPtr callMethod;
 		CallMethod callMethodDelegate;
@@ -203,7 +203,7 @@ namespace de4dot.mdecrypt {
 
 		public unsafe void InstallCompileMethod() {
 			var hJitterDll = GetJitterDllHandle();
-			jitterTextFreeMem = GetEndOfText(hJitterDll);
+			/*jitterTextFreeMem =*/ GetEndOfText(hJitterDll);
 
 			var getJitPtr = GetProcAddress(hJitterDll, "getJit");
 			var getJit = (GetJit)Marshal.GetDelegateForFunctionPointer(getJitPtr, typeof(GetJit));
@@ -249,7 +249,7 @@ namespace de4dot.mdecrypt {
 			int numSections = *(ushort*)(p + 2);
 			int sizeOptionalHeader = *(ushort*)(p + 0x10);
 			p += 0x14;
-			uint sectionAlignment = *(uint*)(p + 0x20);
+			//uint sectionAlignment = *(uint*)(p + 0x20);
 			p += sizeOptionalHeader;
 
 			var textName = new byte[8] { (byte)'.', (byte)'t', (byte)'e', (byte)'x', (byte)'t', 0, 0, 0 };

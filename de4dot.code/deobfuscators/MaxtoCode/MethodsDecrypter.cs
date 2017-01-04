@@ -304,7 +304,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				for (int i = 0; i < numMethods; i++, offset += structSize) {
 					uint methodBodyRva = ReadEncryptedUInt32(offset);
 					uint totalSize = ReadEncryptedUInt32(offset + 4);
-					uint methodInstructionRva = ReadEncryptedUInt32(offset + 8);
+					/*uint methodInstructionRva =*/ ReadEncryptedUInt32(offset + 8);
 
 					// Read the method body header and method body (instrs + exception handlers).
 					// The method body header is always in the first one. The instrs + ex handlers

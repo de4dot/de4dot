@@ -127,7 +127,7 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		public static byte[] Decompress(byte[] inData, int sig) {
-			int mode = BitConverter.ToInt32(inData, 4);
+			/*int mode =*/ BitConverter.ToInt32(inData, 4);
 			int compressedLength = BitConverter.ToInt32(inData, 8);
 			int decompressedLength = BitConverter.ToInt32(inData, 12);
 			bool isDataCompressed = BitConverter.ToInt32(inData, 16) == 1;

@@ -145,7 +145,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		DumpedMethods CreateDumpedMethods(MyPEImage peImage, byte[] fileData, byte[] methodsData) {
 			var dumpedMethods = new DumpedMethods();
 
-			var methodsDataReader = MemoryImageStream.Create(methodsData);
+			/*var methodsDataReader =*/ MemoryImageStream.Create(methodsData);
 			var fileDataReader = MemoryImageStream.Create(fileData);
 
 			var methodDef = peImage.MetaData.TablesStream.MethodTable;

@@ -228,7 +228,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 
 			var inflated = DeobUtils.Inflate(decryptedData, 0, decryptedData.Length, true);
 			var reader = MemoryImageStream.Create(inflated);
-			int deflatedLength = (int)reader.ReadCompressedUInt32();
+			/*int deflatedLength = (int)*/reader.ReadCompressedUInt32();
 			int numStrings = (int)reader.ReadCompressedUInt32();
 			decryptedStrings = new string[numStrings];
 			var offsets = new int[numStrings];

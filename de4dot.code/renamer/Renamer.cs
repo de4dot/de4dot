@@ -1647,7 +1647,7 @@ namespace de4dot.code.renamer {
 
 			string newMethodName;
 			if (overridePrefix != "") {
-				var overrideInfo = memberInfos.Method(overrideMethod);
+				/*var overrideInfo =*/ memberInfos.Method(overrideMethod);
 				var overriddenMethod = GetOverriddenMethod(overrideMethod);
 				if (overriddenMethod == null)
 					newMethodName = GetRealName(overrideMethod.MethodDef.Overrides[0].MethodDeclaration.Name.String);

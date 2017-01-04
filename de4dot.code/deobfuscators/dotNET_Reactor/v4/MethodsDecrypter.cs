@@ -155,7 +155,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 
 				PatchDwords(peImage, methodsDataReader, patchCount);
 				while (methodsDataReader.Position < methodsData.Length - 1) {
-					uint token = methodsDataReader.ReadUInt32();
+					/*uint token =*/ methodsDataReader.ReadUInt32();
 					int numDwords = methodsDataReader.ReadInt32();
 					PatchDwords(peImage, methodsDataReader, numDwords / 2);
 				}
@@ -202,7 +202,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				}
 
 				PatchDwords(peImage, methodsDataReader, patchCount);
-				int count = methodsDataReader.ReadInt32();
+				/*int count =*/ methodsDataReader.ReadInt32();
 				dumpedMethods = new DumpedMethods();
 				while (methodsDataReader.Position < methodsData.Length - 1) {
 					uint rva = methodsDataReader.ReadUInt32();

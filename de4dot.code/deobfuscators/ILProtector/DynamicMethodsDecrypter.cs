@@ -34,7 +34,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 		Module reflectionModule;
 		Module reflectionProtectModule;
 		TypeDef protectMainType;
-		Type reflectionProtectMainType;
+		//Type reflectionProtectMainType;
 		FieldInfo invokerFieldInfo;
 		ModuleDefMD moduleProtect;
 		IDecrypter decrypter;
@@ -630,7 +630,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 				throw new ApplicationException("Could not find Protect.MainType");
 			var invokerField = FindInvokerField(module);
 
-			reflectionProtectMainType = reflectionProtectModule.ResolveType(0x02000000 + (int)protectMainType.Rid);
+			/*reflectionProtectMainType =*/ reflectionProtectModule.ResolveType(0x02000000 + (int)protectMainType.Rid);
 			invokerFieldInfo = reflectionModule.ResolveField(0x04000000 + (int)invokerField.Rid);
 
 			decrypter = CreateDecrypter();

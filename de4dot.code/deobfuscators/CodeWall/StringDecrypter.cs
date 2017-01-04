@@ -177,10 +177,10 @@ namespace de4dot.code.deobfuscators.CodeWall {
 				return null;
 
 			MethodDef decrypterMethod = null;
-			MethodDef cctor = null;
+			//MethodDef cctor = null;
 			foreach (var method in type.Methods) {
 				if (method.Name == ".cctor") {
-					cctor = method;
+					//cctor = method;
 					continue;
 				}
 				if (decrypterMethod != null)

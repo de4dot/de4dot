@@ -22,7 +22,7 @@ using System.IO;
 
 namespace de4dot.code.deobfuscators.MaxtoCode {
 	class McKey {
-		PeHeader peHeader;
+		//PeHeader peHeader;
 		byte[] data;
 
 		public byte this[int index] {
@@ -30,7 +30,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		}
 
 		public McKey(MyPEImage peImage, PeHeader peHeader) {
-			this.peHeader = peHeader;
+			//this.peHeader = peHeader;
 			try {
 				this.data = peImage.ReadBytes(peHeader.GetMcKeyRva(), 0x2000);
 			}

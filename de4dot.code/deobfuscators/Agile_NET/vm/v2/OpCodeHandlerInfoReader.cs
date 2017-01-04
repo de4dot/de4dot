@@ -451,7 +451,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 		}
 
 		Instruction Handler_Ret(BinaryReader reader) {
-			var method = resolver.ResolveToken(reader.ReadUInt32(), gpContext) as IMethod;
+			/*var method =*/ resolver.ResolveToken(reader.ReadUInt32(), gpContext) /*as IMethod*/;
 			return OpCodes.Ret.ToInstruction();
 		}
 
@@ -486,7 +486,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 
 		Instruction Handler_Stloc(BinaryReader reader) {
 			ushort loc = reader.ReadUInt16();
-			var etype = (ElementType)reader.ReadInt32();
+			/*var etype = (ElementType)*/reader.ReadInt32();
 			return new Instruction(OpCodes.Stloc, new LocalOperand(loc));
 		}
 
