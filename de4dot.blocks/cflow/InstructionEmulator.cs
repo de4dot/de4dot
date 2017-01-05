@@ -36,6 +36,8 @@ namespace de4dot.blocks.cflow {
 		List<Value> cached_locals = new List<Value>();
 		List<Value> cached_zeroed_locals = new List<Value>();
 
+		public bool AllowDepthCall = false;
+
 		public InstructionEmulator() {
 		}
 
@@ -1204,15 +1206,69 @@ namespace de4dot.blocks.cflow {
 			Emulate_Call(instr, (IMethod)instr.Operand);
 		}
 
-		void Emulate_Call(Instruction instr, IMethod method) {
-			int pushes, pops;
-			instr.CalculateStackUsage(out pushes, out pops);
-			valueStack.Pop(pops);
-			if (pushes == 1)
-				valueStack.Push(GetUnknownValue(method.MethodSig.GetRetType()));
-			else
-				valueStack.Push(pushes);
-		}
+                bool IsEmulateable(MethodDef m) {
+                    if (!m.HasBody && !m.Body.HasInstructions)
+                        return false;
+
+                    foreach (Instruction i in m.Body.Instructions) {
+                        if (i.OpCode.FlowControl == FlowControl.Throw
+                        || i.OpCode.FlowControl == FlowControl.Call
+                        || i.OpCode.FlowControl == FlowControl.Cond_Branch)
+                            return false;
+                    }
+
+                    return true;
+                }
+
+                bool Emulate_DepthCall(MethodDef destMethod, int pushes, ref Value retValue) {
+                    bool retSuccess = false;
+
+                    if (pushes == 1 && destMethod != null && destMethod.HasBody) {
+                        if (IsEmulateable(destMethod)) {
+                            retSuccess = true;
+
+                            InstructionEmulator instrEmulator = new InstructionEmulator();
+                            instrEmulator.Initialize(destMethod, true);
+
+                            foreach (Parameter p in destMethod.Parameters)
+                                instrEmulator.SetArg(p, valueStack.Pop());
+
+                            try {
+                                foreach (Instruction i in destMethod.Body.Instructions) {
+                                    if (i.OpCode == OpCodes.Ret) {
+                                        retValue = instrEmulator.Peek();
+                                        break;
+                                    }
+                                    instrEmulator.Emulate(i);
+                                }
+                            } catch {
+                                retValue = GetUnknownValue(destMethod.MethodSig.GetRetType());
+                            }
+                        }
+                    }
+
+                    if (!retSuccess)
+                        retValue = null;
+
+                    return retSuccess;
+                }
+
+                void Emulate_Call(Instruction instr, IMethod method) {
+                    int pushes, pops;
+                    instr.CalculateStackUsage(out pushes, out pops);
+
+                    Value evaluatedVal = null;
+                    if (!AllowDepthCall || !Emulate_DepthCall(method as MethodDef, pushes, ref evaluatedVal)) {
+                        valueStack.Pop(pops);
+                    }
+
+                    if (pushes == 1) {
+                        if(evaluatedVal == null || evaluatedVal.IsUnknown())
+                            evaluatedVal = GetUnknownValue(method.MethodSig.GetRetType());
+                        valueStack.Push(evaluatedVal);
+                    } else
+                        valueStack.Push(pushes);
+                }
 
 		void Emulate_Castclass(Instruction instr) {
 			var val1 = valueStack.Pop();
