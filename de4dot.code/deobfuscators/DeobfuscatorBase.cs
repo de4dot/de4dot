@@ -193,6 +193,7 @@ namespace de4dot.code.deobfuscators {
 				RemoveTypesWithInvalidBaseTypes();
 
 				DeleteEmptyCctors();
+				DeleteProperties();
 				DeleteMethods();
 				DeleteFields();
 				DeleteCustomAttributes();
@@ -383,6 +384,16 @@ namespace de4dot.code.deobfuscators {
 		void RemoveMethodCalls(Blocks blocks) {
 			methodCallRemover.RemoveAll(blocks);
 		}
+		
+		protected void AddPropertiesToBeRemoved(IEnumerable<PropertyDef> properties, string reason) {
+			foreach (var property in properties)
+				AddPropertyToBeRemoved(property, reason);
+		}
+
+		protected void AddPropertyToBeRemoved(PropertyDef property, string reason) {
+			if (property != null)
+				propertiesToRemove.Add(new RemoveInfo<PropertyDef>(property, reason));
+		}
 
 		protected void AddMethodsToBeRemoved(IEnumerable<MethodDef> methods, string reason) {
 			foreach (var method in methods)
@@ -431,6 +442,11 @@ namespace de4dot.code.deobfuscators {
 				resourcesToRemove.Add(new RemoveInfo<Resource>(resource, reason));
 		}
 
+		protected void AddResourcesToBeRemoved(IEnumerable<Resource> resources, string reason) {
+			foreach (var resource in resources)
+				AddResourceToBeRemoved(resource, reason);
+		}
+
 		void DeleteEmptyCctors() {
 			var emptyCctorsToRemove = new List<MethodDef>();
 			foreach (var type in module.GetTypes()) {
@@ -453,6 +469,30 @@ namespace de4dot.code.deobfuscators {
 								cctor.MDToken.ToUInt32(),
 								Utils.RemoveNewlines(type),
 								type.MDToken.ToUInt32());
+			}
+			Logger.Instance.DeIndent();
+		}
+		
+		void DeleteProperties() {
+			if (propertiesToRemove.Count == 0)
+				return;
+
+			Logger.v("Removing properties");
+			Logger.Instance.Indent();
+			foreach (var info in propertiesToRemove)
+			{
+				var property = info.obj;
+				if (property == null || MustKeepObject(property))
+					continue;
+				var type = property.DeclaringType;
+				if (type == null)
+					continue;
+				if (type.Properties.Remove(property))
+					Logger.v("Removed property {0} ({1:X8}) (Type: {2}) (reason: {3})",
+								Utils.RemoveNewlines(property),
+								property.MDToken.ToUInt32(),
+								Utils.RemoveNewlines(type),
+								info.reason);
 			}
 			Logger.Instance.DeIndent();
 		}
