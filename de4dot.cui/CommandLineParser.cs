@@ -257,6 +257,7 @@ namespace de4dot.cui {
 				if (defaultStringDecrypterType != null)
 					newFileOptions.StringDecrypterType = defaultStringDecrypterType.Value;
 				newFileOptions.StringDecrypterMethods.AddRange(defaultStringDecrypterMethods);
+                newFileOptions.AutoDetectStringObfusicators = false;
 			});
 			fileOptions.Add(defaultOption);
 			fileOptions.Add(new OneArgOption("o", null, "Name of output file", "file", (val) => {
@@ -282,13 +283,19 @@ namespace de4dot.cui {
 					ExitError(string.Format("Invalid string decrypter type '{0}'", val));
 				newFileOptions.StringDecrypterType = (DecrypterType)decrypterType;
 			}));
-			fileOptions.Add(new OneArgOption(null, "strtok", "String decrypter method token or [type::][name][(args,...)]", "method", (val) => {
-				if (newFileOptions == null)
-					ExitError("Missing input file");
-				newFileOptions.StringDecrypterMethods.Add(val);
+            fileOptions.Add(new OneArgOption(null, "strtok", "String decrypter method token or [type::][name][(args,...)]", "method", (val) => {
+                if (newFileOptions == null)
+                    ExitError("Missing input file");
+                newFileOptions.StringDecrypterMethods.Add(val);
 			}));
+        
+            fileOptions.Add(new NoArgOption(null, "strtok-auto", "Auto detect static string obfusicator tokens with sig {static string methodName(int magicNumber)}", () => {
+                if (newFileOptions == null)
+                    ExitError("Missing input file");
+                newFileOptions.AutoDetectStringObfusicators = true;
+            }));
 
-			AddOptions(miscOptions);
+            AddOptions(miscOptions);
 			AddOptions(fileOptions);
 			foreach (var info in deobfuscatorInfos)
 				AddOptions(info.GetOptions());
