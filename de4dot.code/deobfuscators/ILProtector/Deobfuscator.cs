@@ -53,7 +53,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 	}
 
 	class Deobfuscator : DeobfuscatorBase {
-		Options options;
+		//Options options;
 		string obfuscatorName = DeobfuscatorInfo.THE_NAME;
 
 		MainType mainType;
@@ -77,7 +77,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 
 		public Deobfuscator(Options options)
 			: base(options) {
-			this.options = options;
+			//this.options = options;
 		}
 
 		protected override int DetectInternal() {

@@ -1233,7 +1233,7 @@ namespace de4dot.blocks.cflow {
 		}
 
 		void Emulate_Ldfld(Instruction instr) {
-			var val1 = valueStack.Pop();
+			/*var val1 =*/ valueStack.Pop();
 			EmulateLoadField(instr.Operand as IField);
 		}
 

@@ -66,7 +66,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 	class Unpacker : IVersionProvider {
 		ModuleDefMD module;
 		EmbeddedResource mainAsmResource;
-		uint key0, key1;
+		uint key0/*, key1*/;
 		uint entryPointToken;
 		ConfuserVersion version = ConfuserVersion.Unknown;
 		MethodDef asmResolverMethod;
@@ -146,6 +146,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			if ((asmResolverMethod = FindAssemblyResolverMethod(entryPoint.DeclaringType)) != null) {
 				theVersion = ConfuserVersion.v14_r58802;
 				simpleDeobfuscator.Deobfuscate(asmResolverMethod);
+				uint key1;
 				if (!FindKey1(asmResolverMethod, out key1))
 					return;
 			}

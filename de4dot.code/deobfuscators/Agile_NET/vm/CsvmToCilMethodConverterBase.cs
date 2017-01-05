@@ -50,7 +50,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 			vmIndexToCil.Clear();
 
 			var newInstructions = ReadInstructions(cilMethod, csvmMethod);
-			var newLocals = ReadLocals(cilMethod, csvmMethod);
+			/*var newLocals =*/ ReadLocals(cilMethod, csvmMethod);
 			var newExceptions = ReadExceptions(cilMethod, csvmMethod);
 
 			FixInstructionOperands(newInstructions);

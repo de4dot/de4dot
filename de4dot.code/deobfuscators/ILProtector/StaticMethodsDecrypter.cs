@@ -281,7 +281,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			var toOffset = new Dictionary<DecryptedMethodInfo, int>();
 			var reader = MemoryImageStream.Create(data);
 			int numMethods = (int)reader.Read7BitEncodedUInt32();
-			int totalCodeSize = (int)reader.Read7BitEncodedUInt32();
+			/*int totalCodeSize = (int)*/reader.Read7BitEncodedUInt32();
 			var methodInfos = new DecryptedMethodInfo[numMethods];
 			int offset = 0;
 			for (int i = 0; i < numMethods; i++) {

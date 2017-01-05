@@ -133,11 +133,11 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			resourceFlagsType = type;
 		}
 
-		static string[] resType_fields = new string[] {
+		/*static string[] resType_fields = new string[] {
 			"System.Int32",
 			"System.Object",
 			"System.String",
-		};
+		};*/
 		void FindResType() {
 			if (encryptedResourceReaderTypeDict == null)
 				return;

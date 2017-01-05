@@ -24,7 +24,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 	class StringDecrypter {
 		int stringOffset;
 		byte[] decryptedData;
-		StringDecrypterVersion stringDecrypterVersion;
+		//StringDecrypterVersion stringDecrypterVersion;
 
 		public bool CanDecrypt {
 			get { return decryptedData != null; }
@@ -45,7 +45,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 					decryptedData = stringDecrypterInfo.Decrypt();
 				}
 
-				stringDecrypterVersion = StringDecrypterInfo.DecrypterVersion;
+				//stringDecrypterVersion = StringDecrypterInfo.DecrypterVersion;
 			}
 		}
 

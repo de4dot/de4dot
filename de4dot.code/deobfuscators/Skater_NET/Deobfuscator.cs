@@ -47,7 +47,7 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 	}
 
 	class Deobfuscator : DeobfuscatorBase {
-		Options options;
+		//Options options;
 
 		StringDecrypter stringDecrypter;
 		EnumClassFinder enumClassFinder;
@@ -69,7 +69,7 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 
 		public Deobfuscator(Options options)
 			: base(options) {
-			this.options = options;
+			//this.options = options;
 			StringFeatures = StringFeatures.AllowNoDecryption | StringFeatures.AllowStaticDecryption;
 		}
 

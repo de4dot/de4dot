@@ -36,10 +36,10 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			: base(module) {
 		}
 
-		static string[] requiredFields = new string[] {
+		/*static string[] requiredFields = new string[] {
 				"System.Byte[]",
 				"System.Collections.Generic.Dictionary`2<System.Int32,System.String>",
-		};
+		};*/
 		protected override bool CheckDecrypterType(TypeDef type) {
 			var fields = type.Fields;
 			if (fields.Count != 2)

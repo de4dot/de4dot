@@ -375,7 +375,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			string DecryptTrial(int magic2, int magic3) {
 				int offset = magic ^ magic2 ^ magic3;
 				var keyChar = encryptedData[offset + 1];
-				int cachedIndex = encryptedData[offset] ^ keyChar;
+				//int cachedIndex = encryptedData[offset] ^ keyChar;
 				int numChars = ((keyChar ^ encryptedData[offset + 2]) << 16) + (keyChar ^ encryptedData[offset + 3]);
 				offset += 4;
 				var sb = new StringBuilder(numChars);
@@ -395,7 +395,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			string DecryptRetail(int magic2, int magic3, int keyCharOffs, int cachedIndexOffs, int flagsOffset, int flag, int keyDispl) {
 				int offset = magic ^ magic2 ^ magic3;
 				var keyChar = encryptedData[offset + keyCharOffs];
-				int cachedIndex = encryptedData[offset + cachedIndexOffs] ^ keyChar;
+				//int cachedIndex = encryptedData[offset + cachedIndexOffs] ^ keyChar;
 				int flags = encryptedData[offset + flagsOffset] ^ keyChar;
 				int numChars = ((flags >> 1) & ~(flag - 1)) | (flags & (flag - 1));
 				if ((flags & flag) != 0) {

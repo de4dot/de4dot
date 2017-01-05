@@ -239,7 +239,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		void FixFieldCtorCalls(Blocks blocks) {
 			if (blocks.Method.Name != ".ctor")
 				return;
-			var instrsToRemove = new List<int>();
+			//var instrsToRemove = new List<int>();
 			foreach (var block in blocks.MethodBlocks.GetAllBlocks()) {
 				var instrs = block.Instructions;
 				for (int i = 0; i < instrs.Count; i++) {

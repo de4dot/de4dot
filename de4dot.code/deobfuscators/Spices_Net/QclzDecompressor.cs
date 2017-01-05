@@ -25,15 +25,15 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			if (Read32(data, 0) == SPICES_QCLZ_SIG)
 				return QuickLZ.Decompress(data, SPICES_QCLZ_SIG);
 
-			int headerLength, decompressedLength, compressedLength;
+			int headerLength, decompressedLength/*, compressedLength*/;
 			if ((data[0] & 2) != 0) {
 				headerLength = 9;
-				compressedLength = (int)Read32(data, 1);
+				/*compressedLength = (int)*/Read32(data, 1);
 				decompressedLength = (int)Read32(data, 5);
 			}
 			else {
 				headerLength = 3;
-				compressedLength = data[1];
+				//compressedLength = data[1];
 				decompressedLength = data[2];
 			}
 

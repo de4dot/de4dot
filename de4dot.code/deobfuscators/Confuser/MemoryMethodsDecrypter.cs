@@ -308,7 +308,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			int csOffs = (int)peImage.OptionalHeader.StartOffset + 0x40;
 			Array.Clear(md5SumData, csOffs, 4);
-			var md5Sum = DeobUtils.Md5Sum(md5SumData);
+			/*var md5Sum =*/ DeobUtils.Md5Sum(md5SumData);
 			ulong checkSum = reader.ReadUInt64() ^ lkey0;
 			if (hasStrongNameInfo) {
 				int sn = reader.ReadInt32();

@@ -407,9 +407,14 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>mkdir "..\$(OutDir)..\LICENSES"
+    <PostBuildEvent Condition="'$(OS)' != 'Unix'">mkdir "..\$(OutDir)..\LICENSES"
 copy "$(SolutionDir)LICENSE*.txt" "..\$(OutDir)..\LICENSES"
 copy "$(SolutionDir)COPYING" "..\$(OutDir)..\LICENSES"</PostBuildEvent>
+    <PostBuildEvent Condition="'$(OS)' == 'Unix'">
+      mkdir -p "../$(OutDir)../LICENSES/"
+      cp "$(SolutionDir)LICENSE"*.txt "../$(OutDir)../LICENSES/"
+      cp "$(SolutionDir)COPYING" "../$(OutDir)../LICENSES/"
+    </PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

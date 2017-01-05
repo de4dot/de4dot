@@ -85,12 +85,12 @@ namespace de4dot.code.renamer {
 	}
 
 	public class ParamInfo {
-		MParamDef paramDef;
+		//MParamDef paramDef;
 		public string oldName;
 		public string newName;
 
 		public ParamInfo(MParamDef paramDef) {
-			this.paramDef = paramDef;
+			//this.paramDef = paramDef;
 			this.oldName = paramDef.ParameterDef.Name;
 			this.newName = paramDef.ParameterDef.Name;
 		}

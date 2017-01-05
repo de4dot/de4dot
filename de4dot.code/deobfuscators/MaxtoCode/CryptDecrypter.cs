@@ -351,7 +351,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			Bits key1, key2;
 			CreateKeys(data, index, out key1, out key2);
 			byte[] newKey = new byte[16 * 6];
-			byte[] tmpData = new byte[28 * 2];
+			//byte[] tmpData = new byte[28 * 2];
 			for (int i = 0; i < 16; i++) {
 				int rolCount = rots[i];
 				key1.Rol(rolCount);
