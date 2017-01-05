@@ -104,10 +104,10 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			if (additionalTypes == null)
 				additionalTypes = new string[0];
 			var localTypes = new LocalTypes(method);
-			if (DecrypterV1.CouldBeResourceDecrypter(method, localTypes, additionalTypes))
-				return DnrDecrypterType.V1;
-			else if (DecrypterV2.CouldBeResourceDecrypter(method, localTypes, additionalTypes))
+			if (DecrypterV2.CouldBeResourceDecrypter(method, localTypes, additionalTypes))
 				return DnrDecrypterType.V2;
+			else if (DecrypterV1.CouldBeResourceDecrypter(method, localTypes, additionalTypes))
+				return DnrDecrypterType.V1;
 			return DnrDecrypterType.Unknown;
 		}
 
