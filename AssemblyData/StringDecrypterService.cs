@@ -56,7 +56,7 @@ namespace AssemblyData {
 			var methodInfo = FindMethod(methodToken);
 			if (methodInfo == null)
 				throw new ApplicationException(string.Format("Could not find method {0:X8}", methodToken));
-			if (methodInfo.ReturnType != typeof(string) && methodInfo.ReturnType != typeof(object))
+			if (methodInfo.ReturnType != typeof(string) && methodInfo.ReturnType != typeof(object) && !(methodInfo.IsGenericMethodDefinition))
 				throw new ApplicationException(string.Format("Method return type must be string or object: {0}", methodInfo));
 			return stringDecrypter.DefineStringDecrypter(methodInfo);
 		}
