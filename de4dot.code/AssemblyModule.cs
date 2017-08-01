@@ -56,6 +56,11 @@ namespace de4dot.code {
 				var writerOptions = new ModuleWriterOptions(module, writerListener);
 				writerOptions.MetaDataOptions.Flags |= mdFlags;
 				writerOptions.Logger = Logger.Instance;
+                if(Logger.Instance.ForcePDBGeneration)
+                {
+                    writerOptions.WritePdb = true;
+                    module.CreatePdbState();
+                }
 				module.Write(newFilename, writerOptions);
 			}
 			else {
@@ -64,7 +69,12 @@ namespace de4dot.code {
 				writerOptions.Logger = Logger.Instance;
 				writerOptions.KeepExtraPEData = true;
 				writerOptions.KeepWin32Resources = true;
-				module.NativeWrite(newFilename, writerOptions);
+                if (Logger.Instance.ForcePDBGeneration)
+                {
+                    writerOptions.WritePdb = true;
+                    module.CreatePdbState();
+                }
+                module.NativeWrite(newFilename, writerOptions);
 			}
 		}
 
