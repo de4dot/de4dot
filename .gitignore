@@ -6,3 +6,5 @@
 *.suo
 /Debug/
 /Release/
+.vs/
+*.tmp_proj
