@@ -32,6 +32,7 @@ namespace de4dot.code {
 		Dictionary<string, bool> ignoredMessages = new Dictionary<string, bool>(StringComparer.Ordinal);
 		int numIgnoredMessages;
 		bool canIgnoreMessages;
+        bool forcePDBGeneration = false;
 
 		public int IndentLevel {
 			get { return indentLevel; }
@@ -56,6 +57,12 @@ namespace de4dot.code {
 		public int NumIgnoredMessages {
 			get { return numIgnoredMessages; }
 		}
+
+        public bool ForcePDBGeneration
+        {
+            get { return forcePDBGeneration; }
+            set { forcePDBGeneration = value; }
+        }
 
 		public Logger()
 			: this(2, true) {
