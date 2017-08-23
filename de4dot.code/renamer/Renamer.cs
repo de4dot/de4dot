@@ -43,6 +43,7 @@ namespace de4dot.code.renamer {
 		RestoreEventsFromNames = 0x800,
 		DontCreateNewParamDefs = 0x1000,
 		DontRenameDelegateFields = 0x2000,
+        DontRenamePublic = 0x4000,
 	}
 
 	public class Renamer {
@@ -173,6 +174,17 @@ namespace de4dot.code.renamer {
 					RenamerFlags &= ~RenamerFlags.DontRenameDelegateFields;
 			}
 		}
+	    public bool DontRenamePublic
+	    {
+	        get { return (RenamerFlags & RenamerFlags.DontRenamePublic) != 0; }
+	        set
+	        {
+	            if (value)
+	                RenamerFlags |= RenamerFlags.DontRenamePublic;
+	            else
+	                RenamerFlags &= ~RenamerFlags.DontRenamePublic;
+	        }
+	    }
 
 		Modules modules;
 		MemberInfos memberInfos = new MemberInfos();
@@ -351,7 +363,7 @@ namespace de4dot.code.renamer {
 
 			renameGenericParams2(type.GenericParams);
 
-			if (RenameTypes && info.GotNewName()) {
+			if (RenameTypes && info.GotNewName() && !(DontRenamePublic && type.IsGlobalType())) {
 				var old = typeDef.Name;
 				typeDef.Name = info.newName;
 				if (isVerbose)
@@ -419,6 +431,8 @@ namespace de4dot.code.renamer {
 					continue;
 				if (isDelegateType && DontRenameDelegateFields)
 					continue;
+			    if (DontRenamePublic && fieldDef.FieldDef.IsPublic)
+			        continue;
 				fieldDef.FieldDef.Name = fieldInfo.newName;
 				if (isVerbose)
 					Logger.v("Field: {0} ({1:X8}) => {2}",
@@ -435,6 +449,8 @@ namespace de4dot.code.renamer {
 				var propInfo = memberInfos.Property(propDef);
 				if (!propInfo.GotNewName())
 					continue;
+                if (DontRenamePublic && ContainsPublicMethod(propDef.MethodDefs()))
+			        continue;
 				propDef.PropertyDef.Name = propInfo.newName;
 				if (isVerbose)
 					Logger.v("Property: {0} ({1:X8}) => {2}",
@@ -451,6 +467,8 @@ namespace de4dot.code.renamer {
 				var eventInfo = memberInfos.Event(eventDef);
 				if (!eventInfo.GotNewName())
 					continue;
+			    if (DontRenamePublic && ContainsPublicMethod(eventDef.MethodDefs()))
+			        continue;
 				eventDef.EventDef.Name = eventInfo.newName;
 				if (isVerbose)
 					Logger.v("Event: {0} ({1:X8}) => {2}",
@@ -471,7 +489,7 @@ namespace de4dot.code.renamer {
 
 				renameGenericParams2(methodDef.GenericParams);
 
-				if (RenameMethods && methodInfo.GotNewName()) {
+				if (RenameMethods && methodInfo.GotNewName() && !(DontRenamePublic && methodDef.MethodDef.IsPublic)) {
 					methodDef.MethodDef.Name = methodInfo.newName;
 					if (isVerbose)
 						Logger.v("Name: {0} => {1}", Utils.RemoveNewlines(methodInfo.oldFullName), Utils.RemoveNewlines(methodDef.MethodDef.FullName));
@@ -609,7 +627,7 @@ namespace de4dot.code.renamer {
 					prop = method.Property;
 					break;
 				}
-				if (prop == null)
+				if (prop == null || (DontRenamePublic && ContainsPublicMethod(prop.MethodDefs())))
 					continue;
 				foreach (var method in group.Methods) {
 					if (!method.Owner.HasModule)
@@ -636,6 +654,8 @@ namespace de4dot.code.renamer {
 				}
 				if (evt == null)
 					continue;
+			    if (DontRenamePublic && ContainsPublicMethod(evt.MethodDefs()))
+			        continue;
 				foreach (var method in group.Methods) {
 					if (!method.Owner.HasModule)
 						continue;
@@ -1788,7 +1808,17 @@ namespace de4dot.code.renamer {
 			return false;
 		}
 
-		void PrepareRenameEntryPoints() {
+	    bool ContainsPublicMethod(IEnumerable<MethodDef> methods)
+	    {
+	        foreach (var methodDef in methods)
+	        {
+	            if (methodDef.IsPublic)
+	                return true;
+	        }
+	        return false;
+	    }
+
+        void PrepareRenameEntryPoints() {
 			foreach (var module in modules.TheModules) {
 				var entryPoint = module.ModuleDefMD.EntryPoint;
 				if (entryPoint == null)

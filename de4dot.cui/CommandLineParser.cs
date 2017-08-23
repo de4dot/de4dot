@@ -123,6 +123,10 @@ namespace de4dot.cui {
 				filesOptions.RenameSymbols = false;
 				filesOptions.RenamerFlags = 0;
 			}));
+            miscOptions.Add(new NoArgOption(null, "dont-rename-public", "Don't rename public classes, methods, etc.", () =>
+            {
+                filesOptions.RenamerFlags |= RenamerFlags.DontRenamePublic;
+            }));
 			miscOptions.Add(new OneArgOption(null, "keep-names", "Don't rename n(amespaces), t(ypes), p(rops), e(vents), f(ields), m(ethods), a(rgs), g(enericparams), d(elegate fields). Can be combined, eg. efm", "flags", (val) => {
 				foreach (var c in val) {
 					switch (c) {
