@@ -227,7 +227,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		static bool CheckDecrypterMethod(MethodDef method) {
 			if (method == null || !method.IsStatic || method.Body == null)
 				return false;
-			if (!DotNetUtils.IsMethod(method, "System.String", "(System.Int32)"))
+			if (!(DotNetUtils.IsMethod(method, "System.String", "(System.Int32)") || DotNetUtils.IsMethod(method, "System.String", "(System.Int32,System.Boolean)")))
 				return false;
 			if (!new LocalTypes(method).All(requiredLocalTypes))
 				return false;
