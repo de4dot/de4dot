@@ -50,6 +50,7 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 		//Options options;
 		string obfuscatorName = "Dotfuscator";
 
+		CflowDecrypter cflowDescrypter;
 		StringDecrypter stringDecrypter;
 		bool foundDotfuscatorAttribute = false;
 
@@ -114,6 +115,7 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 
 		public override void DeobfuscateBegin() {
 			base.DeobfuscateBegin();
+			DoCflowClean();
 			foreach (var info in stringDecrypter.StringDecrypterInfos)
 				staticStringInliner.Add(info.method, (method, gim, args) => stringDecrypter.Decrypt(method, (string)args[0], (int)args[1]));
 			DeobfuscatedFile.StringDecryptersAdded();
@@ -131,6 +133,11 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 			foreach (var method in stringDecrypter.StringDecrypters)
 				list.Add(method.MDToken.ToInt32());
 			return list;
+		}
+
+		void DoCflowClean() {
+			cflowDescrypter = new CflowDecrypter(module);
+			cflowDescrypter.CflowClean();
 		}
 	}
 }

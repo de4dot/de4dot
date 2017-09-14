@@ -30,9 +30,11 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 		public class StringDecrypterInfo {
 			public MethodDef method;
 			public int magic;
-			public StringDecrypterInfo(MethodDef method, int magic) {
+			public bool proVersion;
+			public StringDecrypterInfo(MethodDef method, int magic,bool proVersion) {
 				this.method = method;
 				this.magic = magic;
+				this.proVersion = proVersion;
 			}
 		}
 
@@ -74,7 +76,7 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 
 				simpleDeobfuscator.Deobfuscate(method);
 				var instrs = method.Body.Instructions;
-				for (int i = 0; i < instrs.Count - 3; i++) {
+				for (int i = 0; i < instrs.Count - 6; i++) {
 					var ldarg = instrs[i];
 					if (!ldarg.IsLdarg() || ldarg.GetParameterIndex() != 0)
 						continue;
@@ -90,8 +92,21 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 					var ldci4 = instrs[i + 3];
 					if (!ldci4.IsLdcI4())
 						continue;
+					bool isPro = false;
+					int magicAdd = 0;
+					var ldarg1 = instrs[i + 4];
+					if (!ldarg1.IsLdarg() || ldarg1.GetParameterIndex() != 1)
+						continue;
+					var opAdd1 = instrs[i + 5];
+					if (opAdd1.OpCode != OpCodes.Add)
+						continue;
+					var ldci4_2 = instrs[i + 6];
+					if (!ldci4_2.IsLdcI4())
+						continue;
+					magicAdd = ldci4_2.GetLdcI4Value();
+					isPro = true;
 
-					var info = new StringDecrypterInfo(method, ldci4.GetLdcI4Value());
+					var info = new StringDecrypterInfo(method, ldci4.GetLdcI4Value() + magicAdd ,isPro);
 					stringDecrypterMethods.Add(info.method, info);
 					Logger.v("Found string decrypter method: {0}, magic: 0x{1:X8}", Utils.RemoveNewlines(info.method), info.magic);
 					break;
@@ -105,7 +120,13 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 			byte key = (byte)(info.magic + value);
 			for (int i = 0; i < chars.Length; i++) {
 				char c = chars[i];
-				byte b1 = (byte)((byte)c ^ key++);
+				byte b1;
+				if (info.proVersion) {
+					b1 = (byte)((byte)(c & 0xFF) ^ key++);
+				}
+				else {
+					b1 = (byte)((byte)c ^ key++);
+				}
 				byte b2 = (byte)((byte)(c >> 8) ^ key++);
 				chars[i] = (char)((b1 << 8) | b2);
 			}
