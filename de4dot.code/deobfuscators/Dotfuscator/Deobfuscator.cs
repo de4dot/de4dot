@@ -50,7 +50,6 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 		//Options options;
 		string obfuscatorName = "Dotfuscator";
 
-		CflowDecrypter cflowDescrypter;
 		StringDecrypter stringDecrypter;
 		bool foundDotfuscatorAttribute = false;
 
@@ -136,7 +135,7 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 		}
 
 		void DoCflowClean() {
-			cflowDescrypter = new CflowDecrypter(module);
+			CflowDecrypter cflowDescrypter = new CflowDecrypter(module);
 			cflowDescrypter.CflowClean();
 		}
 	}

@@ -92,19 +92,22 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 					var ldci4 = instrs[i + 3];
 					if (!ldci4.IsLdcI4())
 						continue;
+
 					bool isPro = false;
 					int magicAdd = 0;
-					var ldarg1 = instrs[i + 4];
-					if (!ldarg1.IsLdarg() || ldarg1.GetParameterIndex() != 1)
-						continue;
-					var opAdd1 = instrs[i + 5];
-					if (opAdd1.OpCode != OpCodes.Add)
-						continue;
-					var ldci4_2 = instrs[i + 6];
-					if (!ldci4_2.IsLdcI4())
-						continue;
-					magicAdd = ldci4_2.GetLdcI4Value();
-					isPro = true;
+					if (i + 6 < instrs.Count - 1) {
+						var ldarg1 = instrs[i + 4];
+						if (ldarg1.IsLdarg() && ldarg1.GetParameterIndex() == 1) {
+							var opAdd1 = instrs[i + 5];
+							if (opAdd1.OpCode == OpCodes.Add) {
+								var ldci4_2 = instrs[i + 6];
+								if (ldci4_2.IsLdcI4()) {
+									magicAdd = ldci4_2.GetLdcI4Value();
+									isPro = true;
+								}
+							}
+						}
+					}
 
 					var info = new StringDecrypterInfo(method, ldci4.GetLdcI4Value() + magicAdd ,isPro);
 					stringDecrypterMethods.Add(info.method, info);
@@ -120,13 +123,7 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 			byte key = (byte)(info.magic + value);
 			for (int i = 0; i < chars.Length; i++) {
 				char c = chars[i];
-				byte b1;
-				if (info.proVersion) {
-					b1 = (byte)((byte)(c & 0xFF) ^ key++);
-				}
-				else {
-					b1 = (byte)((byte)c ^ key++);
-				}
+				byte b1 = (byte)((byte)c ^ key++);
 				byte b2 = (byte)((byte)(c >> 8) ^ key++);
 				chars[i] = (char)((b1 << 8) | b2);
 			}
