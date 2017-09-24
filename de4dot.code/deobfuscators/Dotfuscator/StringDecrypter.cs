@@ -30,11 +30,9 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 		public class StringDecrypterInfo {
 			public MethodDef method;
 			public int magic;
-			public bool proVersion;
-			public StringDecrypterInfo(MethodDef method, int magic,bool proVersion) {
+			public StringDecrypterInfo(MethodDef method, int magic) {
 				this.method = method;
 				this.magic = magic;
-				this.proVersion = proVersion;
 			}
 		}
 
@@ -76,7 +74,7 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 
 				simpleDeobfuscator.Deobfuscate(method);
 				var instrs = method.Body.Instructions;
-				for (int i = 0; i < instrs.Count - 6; i++) {
+				for (int i = 0; i < instrs.Count - 3; i++) {
 					var ldarg = instrs[i];
 					if (!ldarg.IsLdarg() || ldarg.GetParameterIndex() != 0)
 						continue;
@@ -93,9 +91,8 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 					if (!ldci4.IsLdcI4())
 						continue;
 
-					bool isPro = false;
 					int magicAdd = 0;
-					if (i + 6 < instrs.Count - 1) {
+					if (i < instrs.Count - 6) {
 						var ldarg1 = instrs[i + 4];
 						if (ldarg1.IsLdarg() && ldarg1.GetParameterIndex() == 1) {
 							var opAdd1 = instrs[i + 5];
@@ -103,13 +100,12 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 								var ldci4_2 = instrs[i + 6];
 								if (ldci4_2.IsLdcI4()) {
 									magicAdd = ldci4_2.GetLdcI4Value();
-									isPro = true;
 								}
 							}
 						}
 					}
 
-					var info = new StringDecrypterInfo(method, ldci4.GetLdcI4Value() + magicAdd ,isPro);
+					var info = new StringDecrypterInfo(method, ldci4.GetLdcI4Value() + magicAdd);
 					stringDecrypterMethods.Add(info.method, info);
 					Logger.v("Found string decrypter method: {0}, magic: 0x{1:X8}", Utils.RemoveNewlines(info.method), info.magic);
 					break;
