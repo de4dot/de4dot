@@ -260,7 +260,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 
 				cflowDeobfuscator.Deobfuscate(cctor);
 				var handlers = FindVmHandlerTypes(cctor);
-				
+
 				return handlers;
 			}
 
