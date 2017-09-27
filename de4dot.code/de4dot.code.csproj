@@ -406,6 +406,9 @@
       <LastGenOutput>CsvmResources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\CSVM6.bin" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent Condition="'$(OS)' != 'Unix'">mkdir "..\$(OutDir)..\LICENSES"
