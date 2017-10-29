@@ -838,7 +838,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				    decryptStringMethod.Body.MaxStack >= 1 &&
 				    decryptStringMethod.Body.MaxStack <= 8 &&
 				    decryptStringMethod.Body.ExceptionHandlers.Count == 1) {
-					return "5.2-5.7";
+					return "5.2-5.8";
 				}
 			}
 
