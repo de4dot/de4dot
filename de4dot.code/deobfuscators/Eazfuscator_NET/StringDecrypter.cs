@@ -255,11 +255,11 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		/// <remarks>5.0</remarks>
 		static MethodDef GetRealDecrypterMethod(MethodDef helper) {
 			var methods = helper.DeclaringType.Methods;
-			var sigComparer = new SigComparer();
 			foreach (var method in methods) {
 				if (method.MDToken != helper.MDToken &&
 					method.IsAssembly &&
-					sigComparer.Equals(method.MethodSig, helper.MethodSig))
+					method.Parameters.Count >= 1 &&
+					method.Parameters[0].Type == helper.Parameters[0].Type)	//checking first type, which should be string
 					return method;
 			}
 
@@ -775,8 +775,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				case Code.Call:
 					var method = instr.Operand as MethodDef;
 					if (!decrypterType.Detected || method != decrypterType.Int64Method)
-						//goto done;
-						break;
+						goto done;
 					emu.Push(new Int64Value((long)decrypterType.GetMagic()));
 					break;
 
@@ -1000,7 +999,7 @@ done:
 				else
 					continue;
 
-				return i;
+				return i + 2;	//+2 or else we would land on the call method
 			}
 
 			return -1;
@@ -1008,7 +1007,9 @@ done:
 
 		bool FindIntsCctor(MethodDef cctor) {
 			int index = 0;
-			if (!FindCallGetFrame(cctor, ref index))
+
+			//since somewhere after eaz 5.2, there are 2 calls to GetFrame, we need the last one
+			if (!FindLastCallGetFrame(cctor, ref index))
 				return FindIntsCctor2(cctor);
 
 			int tmp1, tmp2, tmp3 = 0;
@@ -1193,8 +1194,29 @@ done:
 			return FindCall(stringMethod, ref index, streamHelperType == null ? "System.Byte[] System.IO.BinaryReader::ReadBytes(System.Int32)" : streamHelperType.readBytesMethod.FullName);
 		}
 
-		static bool FindCallGetFrame(MethodDef method, ref int index) {
-			return FindCall(method, ref index, "System.Diagnostics.StackFrame System.Diagnostics.StackTrace::GetFrame(System.Int32)");
+		static bool FindLastCallGetFrame(MethodDef method, ref int index) {
+			return FindLastCall(method, ref index, "System.Diagnostics.StackFrame System.Diagnostics.StackTrace::GetFrame(System.Int32)");
+		}
+
+		static bool FindLastCall(MethodDef method, ref int index, string methodFullName) {
+			bool found;
+			bool foundOnce = false;
+			int tempIndex = index;
+
+			//keep doing until findcall returns false (we reached the end of the method)
+			do {
+				found = FindCall(method, ref tempIndex, methodFullName);
+
+				//indicate we did find one
+				if (found) {
+					foundOnce = true;
+					index = tempIndex;
+
+					//to not get stuck on the same instruction
+					tempIndex++;
+				}
+			} while (found);
+			return foundOnce;
 		}
 
 		static bool FindCall(MethodDef method, ref int index, string methodFullName) {
