@@ -246,7 +246,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		/// <remarks>5.0</remarks>
 		static bool CheckIfHelperMethod(MethodDef method) {
 			// Helper method will be `private static`, instead of `internal static`
-			return method.DeclaringType.Methods.Count == 4 && !method.IsAssembly;
+			return method.IsPrivate;
 		}
 
 		/// <summary>
@@ -314,6 +314,10 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			if (isV32OrLater) {
 				bool initializedAll;
 				int index = FindInitIntsIndex(stringMethod, out initializedAll);
+
+				//better return early than late on error
+				if (index == -1)
+					return false;
 
 				var cctor = stringType.FindStaticConstructor();
 				if (!initializedAll && cctor != null) {
@@ -771,7 +775,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				case Code.Call:
 					var method = instr.Operand as MethodDef;
 					if (!decrypterType.Detected || method != decrypterType.Int64Method)
-						goto done;
+						//goto done;
+						break;
 					emu.Push(new Int64Value((long)decrypterType.GetMagic()));
 					break;
 
@@ -971,7 +976,8 @@ done:
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count; i++) {
 				var ldnull = instrs[i];
-				if (ldnull.OpCode.Code != Code.Ldnull)
+				if (ldnull.OpCode.Code != Code.Ldnull
+					&& ldnull.OpCode.Code != Code.Call)
 					continue;
 
 				var stsfld = instrs[i + 1];
