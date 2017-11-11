@@ -36,11 +36,13 @@ namespace de4dot.code {
 		}
 
 		public ModuleDefMD Load() {
-			return SetModule(ModuleDefMD.Load(filename, moduleContext));
+			var options = new ModuleCreationOptions(moduleContext) { TryToLoadPdbFromDisk = false };
+			return SetModule(ModuleDefMD.Load(filename, options));
 		}
 
 		public ModuleDefMD Load(byte[] fileData) {
-			return SetModule(ModuleDefMD.Load(fileData, moduleContext));
+			var options = new ModuleCreationOptions(moduleContext) { TryToLoadPdbFromDisk = false };
+			return SetModule(ModuleDefMD.Load(fileData, options));
 		}
 
 		ModuleDefMD SetModule(ModuleDefMD newModule) {
@@ -70,7 +72,8 @@ namespace de4dot.code {
 
 		public ModuleDefMD Reload(byte[] newModuleData, DumpedMethodsRestorer dumpedMethodsRestorer, IStringDecrypter stringDecrypter) {
 			TheAssemblyResolver.Instance.Remove(module);
-			var mod = ModuleDefMD.Load(newModuleData, moduleContext);
+			var options = new ModuleCreationOptions(moduleContext) { TryToLoadPdbFromDisk = false };
+			var mod = ModuleDefMD.Load(newModuleData, options);
 			if (dumpedMethodsRestorer != null)
 				dumpedMethodsRestorer.Module = mod;
 			mod.StringDecrypter = stringDecrypter;
