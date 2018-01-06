@@ -91,7 +91,8 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				var call = instrs[i + 1];
 				if (call.OpCode.Code != Code.Call)
 					continue;
-				if (!(call.Operand is MethodDef calledMethod) || !IsDelegateCreatorMethod(calledMethod))
+				var calledMethod = call.Operand as MethodDef;
+				if (calledMethod == null || !IsDelegateCreatorMethod(calledMethod))
 					continue;
 
 				return module.ResolveToken(0x02000000 + ldci4.GetLdcI4Value()) as TypeDef;
