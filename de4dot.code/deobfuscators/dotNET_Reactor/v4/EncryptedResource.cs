@@ -208,10 +208,8 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				requiredTypes.AddRange(additionalTypes);
 				if (!localTypes.All(requiredTypes))
 					return false;
-				if (localTypes.Exists("System.UInt32")) // DNR >=4.8
-					return false;
 				if (DotNetUtils.GetMethod(method.DeclaringType, "System.Security.Cryptography.SymmetricAlgorithm", "()") != null)
-					if (localTypes.Exists("System.UInt64"))
+					if (localTypes.Exists("System.UInt64") || localTypes.Exists("System.UInt32"))
 						return false;
 
 				if (!localTypes.Exists("System.Security.Cryptography.RijndaelManaged") &&
