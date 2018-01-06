@@ -189,7 +189,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			readonly byte[] key, iv;
 
 			public DnrDecrypterType DecrypterType {
-				get { return DnrDecrypterType.V1; } 
+				get { return DnrDecrypterType.V1; }
 			}
 
 			public DecrypterV1(byte[] iv, byte[] key) {
