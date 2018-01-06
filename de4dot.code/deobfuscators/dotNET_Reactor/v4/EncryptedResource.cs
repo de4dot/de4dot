@@ -188,9 +188,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		class DecrypterV1 : IDecrypter {
 			readonly byte[] key, iv;
 
-			public DnrDecrypterType DecrypterType {
-				get { return DnrDecrypterType.V1; }
-			}
+			public DnrDecrypterType DecrypterType => DnrDecrypterType.V1;
 
 			public DecrypterV1(byte[] iv, byte[] key) {
 				this.iv = iv;
@@ -208,7 +206,8 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				requiredTypes.AddRange(additionalTypes);
 				if (!localTypes.All(requiredTypes))
 					return false;
-
+				if (localTypes.Exists("System.UInt32")) // DNR >=4.8
+					return false;
 				if (DotNetUtils.GetMethod(method.DeclaringType, "System.Security.Cryptography.SymmetricAlgorithm", "()") != null)
 					if (localTypes.Exists("System.UInt64"))
 						return false;
