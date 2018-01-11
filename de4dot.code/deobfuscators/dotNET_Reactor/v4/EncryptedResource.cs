@@ -136,7 +136,6 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 						iv[i * 2 + 1] = publicKeyToken.Data[i];
 				}
 			}
-
 			var decrypterType = GetDecrypterType(resourceDecrypterMethod, new string[0]);
 			switch (decrypterType) {
 			case DnrDecrypterType.V1: decrypter = new DecrypterV1(iv, key); break;
@@ -208,9 +207,8 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				requiredTypes.AddRange(additionalTypes);
 				if (!localTypes.All(requiredTypes))
 					return false;
-
 				if (DotNetUtils.GetMethod(method.DeclaringType, "System.Security.Cryptography.SymmetricAlgorithm", "()") != null)
-					if (localTypes.Exists("System.UInt64"))
+					if (localTypes.Exists("System.UInt64") || localTypes.Exists("System.UInt32") && !localTypes.Exists("System.Reflection.Assembly"))
 						return false;
 
 				if (!localTypes.Exists("System.Security.Cryptography.RijndaelManaged") &&
