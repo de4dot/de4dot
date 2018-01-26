@@ -104,8 +104,9 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				return false;
 			if (fieldTypes.Count("System.Object") == 2)
 				return true;
-			return fieldTypes.Count("System.Reflection.Assembly") == 1 &&
-				fieldTypes.Count("System.String[]") == 1;
+			if (fieldTypes.Count("System.String[]") != 1)
+				return false;
+			return fieldTypes.Count("System.Reflection.Assembly") == 1 || fieldTypes.Count("System.Object") == 1;
 		}
 
 		public void Initialize(ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
