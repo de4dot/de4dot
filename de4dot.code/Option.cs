@@ -18,7 +18,6 @@
 */
 
 using System;
-using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 namespace de4dot.code {

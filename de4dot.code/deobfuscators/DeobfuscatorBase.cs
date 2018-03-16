@@ -53,7 +53,7 @@ namespace de4dot.code.deobfuscators {
 		byte[] moduleBytes;
 		protected InitializedDataCreator initializedDataCreator;
 		bool keepTypes;
-		MetaDataFlags? mdFlags;
+		MetadataFlags? mdFlags;
 		Dictionary<object, bool> objectsThatMustBeKept = new Dictionary<object, bool>();
 
 		protected byte[] ModuleBytes {
@@ -81,8 +81,8 @@ namespace de4dot.code.deobfuscators {
 		public virtual RenamingOptions RenamingOptions { get; set; }
 		public DecrypterType DefaultDecrypterType { get; set; }
 
-		public virtual MetaDataFlags MetaDataFlags {
-			get { return mdFlags ?? Operations.MetaDataFlags; }
+		public virtual MetadataFlags MetadataFlags {
+			get { return mdFlags ?? Operations.MetadataFlags; }
 		}
 
 		public abstract string Type { get; }
@@ -136,11 +136,11 @@ namespace de4dot.code.deobfuscators {
 
 		protected void PreserveTokensAndTypes() {
 			keepTypes = true;
-			mdFlags = Operations.MetaDataFlags;
-			mdFlags |= MetaDataFlags.PreserveRids |
-						MetaDataFlags.PreserveUSOffsets |
-						MetaDataFlags.PreserveBlobOffsets |
-						MetaDataFlags.PreserveExtraSignatureData;
+			mdFlags = Operations.MetadataFlags;
+			mdFlags |= MetadataFlags.PreserveRids |
+						MetadataFlags.PreserveUSOffsets |
+						MetadataFlags.PreserveBlobOffsets |
+						MetadataFlags.PreserveExtraSignatureData;
 		}
 
 		protected virtual bool CheckValidName(string name) {
@@ -692,7 +692,7 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		protected bool HasMetadataStream(string name) {
-			foreach (var stream in module.MetaData.AllStreams) {
+			foreach (var stream in module.Metadata.AllStreams) {
 				if (stream.Name == name)
 					return true;
 			}

@@ -19,7 +19,6 @@
 
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Unknown {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {

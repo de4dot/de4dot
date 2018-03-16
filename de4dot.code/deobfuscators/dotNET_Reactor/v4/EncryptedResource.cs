@@ -18,13 +18,13 @@
 */
 
 using System;
-using System.IO;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
+using dnlib.IO;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 	enum DnrDecrypterType {
@@ -73,6 +73,14 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 
 			if (encryptedDataResource == null && oldOne.encryptedDataResource != null)
 				throw new ApplicationException("Could not initialize EncryptedResource");
+		}
+
+		public void SetNewResource(byte[] data) {
+			var dataReaderFactory = ByteArrayDataReaderFactory.Create(data, filename: null);
+			var newResource = new EmbeddedResource(encryptedDataResource.Name, dataReaderFactory, 0, (uint)data.Length, encryptedDataResource.Attributes);
+			int index = module.Resources.IndexOf(encryptedDataResource);
+			encryptedDataResource = newResource;
+			module.Resources[index] = encryptedDataResource;
 		}
 
 		T Lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
@@ -223,7 +231,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			}
 
 			public byte[] Decrypt(EmbeddedResource resource) {
-				return DeobUtils.AesDecrypt(resource.GetResourceData(), key, iv);
+				return DeobUtils.AesDecrypt(resource.GetReader().ToArray(), key, iv);
 			}
 
 			public byte[] Encrypt(byte[] data) {
@@ -405,7 +413,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			}
 
 			public byte[] Decrypt(EmbeddedResource resource) {
-				var encrypted = resource.GetResourceData();
+				var encrypted = resource.GetReader().ToArray();
 				var decrypted = new byte[encrypted.Length];
 
 				uint sum = 0;

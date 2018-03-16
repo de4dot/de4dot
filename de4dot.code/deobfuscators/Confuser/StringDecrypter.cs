@@ -31,7 +31,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		MethodDef decryptMethod;
 		EmbeddedResource resource;
 		uint magic1, magic2, key1;
-		IBinaryReader reader;
+		DataReader reader;
 		ConfuserVersion version = ConfuserVersion.Unknown;
 		Decrypter decrypter;
 
@@ -71,7 +71,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			public override string Decrypt(MethodDef caller, int magic) {
 				var reader = stringDecrypter.reader;
-				reader.Position = (caller.MDToken.ToInt32() ^ magic) - stringDecrypter.magic1;
+				reader.Position = (uint)((caller.MDToken.ToInt32() ^ magic) - stringDecrypter.magic1);
 				int len = reader.ReadInt32() ^ (int)~stringDecrypter.magic2;
 				var bytes = reader.ReadBytes(len);
 				var rand = new Random(key == null ? caller.MDToken.ToInt32() : key.Value);
@@ -95,7 +95,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			public override string Decrypt(MethodDef caller, int magic) {
 				var reader = stringDecrypter.reader;
-				reader.Position = (caller.MDToken.ToInt32() ^ magic) - stringDecrypter.magic1;
+				reader.Position = (uint)((caller.MDToken.ToInt32() ^ magic) - stringDecrypter.magic1);
 				int len = reader.ReadInt32() ^ (int)~stringDecrypter.magic2;
 				var rand = new Random(caller.MDToken.ToInt32());
 
@@ -126,7 +126,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			public override string Decrypt(MethodDef caller, int magic) {
 				var reader = stringDecrypter.reader;
-				reader.Position = (caller.MDToken.ToInt32() ^ magic) - stringDecrypter.magic1;
+				reader.Position = (uint)((caller.MDToken.ToInt32() ^ magic) - stringDecrypter.magic1);
 				int len = reader.ReadInt32() ^ (int)~stringDecrypter.magic2;
 				var decrypted = new byte[len];
 
@@ -135,7 +135,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 					throw new ApplicationException("Could not get start/end indexes");
 
 				var constReader = new Arg64ConstantsReader(stringDecrypter.decryptMethod.Body.Instructions, false);
-				ConfuserUtils.DecryptCompressedInt32Data(constReader, startIndex, endIndex, reader, decrypted);
+				ConfuserUtils.DecryptCompressedInt32Data(constReader, startIndex, endIndex, ref reader, decrypted);
 				return Encoding.Unicode.GetString(decrypted);
 			}
 
@@ -420,7 +420,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			resource = FindResource(decryptMethod);
 			if (resource == null)
 				throw new ApplicationException("Could not find encrypted strings resource");
-			reader = MemoryImageStream.Create(DeobUtils.Inflate(resource.GetResourceData(), true));
+			reader = ByteArrayDataReaderFactory.CreateReader(DeobUtils.Inflate(resource.GetReader().ToArray(), true));
 
 			switch (version) {
 			case ConfuserVersion.v10_r42915:

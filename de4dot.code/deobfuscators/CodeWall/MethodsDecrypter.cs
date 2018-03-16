@@ -71,7 +71,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 
 			bool decrypted = false;
 
-			var methodDef = peImage.MetaData.TablesStream.MethodTable;
+			var methodDef = peImage.Metadata.TablesStream.MethodTable;
 			for (uint rid = 1; rid <= methodDef.Rows; rid++) {
 				var dm = new DumpedMethod();
 				peImage.ReadMethodTableRowTo(dm, rid);
@@ -81,7 +81,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 				uint bodyOffset = peImage.RvaToOffset(dm.mdRVA);
 
 				peImage.Reader.Position = bodyOffset;
-				var mbHeader = MethodBodyParser.ParseMethodBody(peImage.Reader, out dm.code, out dm.extraSections);
+				var mbHeader = MethodBodyParser.ParseMethodBody(ref peImage.Reader, out dm.code, out dm.extraSections);
 				peImage.UpdateMethodHeaderInfo(dm, mbHeader);
 
 				if (dm.code.Length < 6 || dm.code[0] != 0x2A || dm.code[1] != 0x2A)

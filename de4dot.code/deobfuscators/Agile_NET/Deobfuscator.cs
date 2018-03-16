@@ -19,7 +19,6 @@
 
 using System;
 using System.Collections.Generic;
-using dnlib.IO;
 using dnlib.PE;
 using dnlib.DotNet;
 using de4dot.blocks;
@@ -132,7 +131,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			if (optHeader.DataDirectories[dataDirNum].Size != 0x48)
 				return null;
 
-			var fileData = peImage.GetImageAsByteArray();
+			var fileData = peImage.CreateReader().ToArray();
 			long dataDirBaseOffset = (long)optHeader.DataDirectories[0].StartOffset;
 			int dataDir = (int)dataDirBaseOffset + dataDirNum * 8;
 			int dotNetDir = (int)dataDirBaseOffset + dotNetDirNum * 8;
@@ -150,7 +149,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			if (data == null)
 				return null;
 
-			return ModuleBytes = data.Data.ReadAllBytes();
+			return ModuleBytes = data.GetReader().ToArray();
 		}
 
 		static void WriteUInt32(byte[] data, int offset, uint value) {

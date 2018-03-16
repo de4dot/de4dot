@@ -70,7 +70,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				return;
 			Logger.v("Adding string decrypter. Resource: {0}", Utils.ToCsharpString(stringResource.Name));
 
-			decryptedData = resourceDecrypter.Decrypt(stringResource.GetResourceStream());
+			decryptedData = resourceDecrypter.Decrypt(stringResource.GetReader().AsStream());
 		}
 
 		string GetResourceName() {

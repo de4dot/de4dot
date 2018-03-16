@@ -18,7 +18,6 @@
 */
 
 using System.Collections.Generic;
-using dnlib.DotNet;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
 

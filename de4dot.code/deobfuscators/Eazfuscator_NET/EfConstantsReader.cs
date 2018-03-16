@@ -18,7 +18,6 @@
 */
 
 using dnlib.DotNet;
-using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 	class EfConstantsReader : ConstantsReader {

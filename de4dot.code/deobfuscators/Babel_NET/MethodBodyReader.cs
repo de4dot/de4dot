@@ -19,8 +19,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
-using dnlib.IO;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
@@ -30,47 +28,70 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		public int Flags2 { get; set; }
 		public ushort MaxStack { get; set; }
 
-		public MethodBodyReader(ImageReader imageReader, IBinaryReader reader)
-			: base(reader) {
+		public MethodBodyReader(ImageReader imageReader)
+			: base(imageReader.reader) {
 			this.imageReader = imageReader;
 		}
 
 		public void Read(IList<Parameter> parameters) {
 			this.parameters = parameters;
-			Flags2 = reader.ReadInt16();
-			MaxStack = reader.ReadUInt16();
+			Flags2 = imageReader.reader.ReadInt16();
+			MaxStack = imageReader.reader.ReadUInt16();
 			SetLocals(imageReader.ReadTypeSigs());
-			ReadInstructions(imageReader.ReadVariableLengthInt32());
+			int len = imageReader.ReadVariableLengthInt32();
+			reader.Position = imageReader.reader.Position;
+			ReadInstructions(len);
+			imageReader.reader.Position = reader.Position;
 			ReadExceptionHandlers(imageReader.ReadVariableLengthInt32());
+			reader.Position = imageReader.reader.Position;
 		}
 
 		protected override IField ReadInlineField(Instruction instr) {
-			return imageReader.ReadFieldRef();
+			imageReader.reader.Position = reader.Position;
+			var res = imageReader.ReadFieldRef();
+			reader.Position = imageReader.reader.Position;
+			return res;
 		}
 
 		protected override IMethod ReadInlineMethod(Instruction instr) {
-			return imageReader.ReadMethodRef();
+			imageReader.reader.Position = reader.Position;
+			var res = imageReader.ReadMethodRef();
+			reader.Position = imageReader.reader.Position;
+			return res;
 		}
 
 		protected override MethodSig ReadInlineSig(Instruction instr) {
-			return imageReader.ReadCallSite();
+			imageReader.reader.Position = reader.Position;
+			var res = imageReader.ReadCallSite();
+			reader.Position = imageReader.reader.Position;
+			return res;
 		}
 
 		protected override string ReadInlineString(Instruction instr) {
-			return imageReader.ReadString();
+			imageReader.reader.Position = reader.Position;
+			var res = imageReader.ReadString();
+			reader.Position = imageReader.reader.Position;
+			return res;
 		}
 
 		protected override ITokenOperand ReadInlineTok(Instruction instr) {
-			switch (reader.ReadByte()) {
-			case 0: return imageReader.ReadTypeSig().ToTypeDefOrRef();
-			case 1: return imageReader.ReadFieldRef();
-			case 2: return imageReader.ReadMethodRef();
+			imageReader.reader.Position = reader.Position;
+			ITokenOperand res;
+			switch (imageReader.reader.ReadByte()) {
+			case 0: res = imageReader.ReadTypeSig().ToTypeDefOrRef(); break;
+			case 1: res = imageReader.ReadFieldRef(); break;
+			case 2: res = imageReader.ReadMethodRef(); break;
 			default: throw new ApplicationException("Unknown token type");
 			}
+			reader.Position = imageReader.reader.Position;
+			return res;
 		}
 
 		protected override ITypeDefOrRef ReadInlineType(Instruction instr) {
-			return imageReader.ReadTypeSig().ToTypeDefOrRef();
+			imageReader.reader.Position = reader.Position;
+			var res = imageReader.ReadTypeSig().ToTypeDefOrRef();
+			reader.Position = imageReader.reader.Position;
+			return res;
 		}
 
 		void ReadExceptionHandlers(int numExceptionHandlers) {
@@ -80,7 +101,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		}
 
 		ExceptionHandler ReadExceptionHandler() {
-			var ehType = (ExceptionHandlerType)reader.ReadByte();
+			var ehType = (ExceptionHandlerType)imageReader.reader.ReadByte();
 			uint tryOffset = imageReader.ReadVariableLengthUInt32();
 			uint tryLength = imageReader.ReadVariableLengthUInt32();
 			uint handlerOffset = imageReader.ReadVariableLengthUInt32();

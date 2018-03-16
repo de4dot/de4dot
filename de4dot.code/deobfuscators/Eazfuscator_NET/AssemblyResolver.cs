@@ -19,7 +19,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 using dnlib.DotNet;
@@ -347,7 +346,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				if (info.Resource == null)
 					throw new ApplicationException(string.Format("Could not find resource {0}", Utils.ToCsharpString(info.ResourceName)));
 
-				info.Data = info.Resource.GetResourceData();
+				info.Data = info.Resource.GetReader().ToArray();
 				if (info.IsEncrypted)
 					Decrypt(info.Data);
 				if (info.IsCompressed)

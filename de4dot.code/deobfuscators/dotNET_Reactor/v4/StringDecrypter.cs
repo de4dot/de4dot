@@ -20,7 +20,6 @@
 using System;
 using System.Text;
 using System.Collections.Generic;
-using dnlib.PE;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using de4dot.blocks;

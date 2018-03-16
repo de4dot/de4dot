@@ -42,7 +42,7 @@ namespace de4dot.code {
 			if (Logger.Instance.IgnoresEvent(LoggerEvent.Verbose))
 				return;
 
-			var md = writer.MetaData;
+			var md = writer.Metadata;
 
 			Logger.v("Old -> new tokens: Assembly: {0} (module: {1})", module.Assembly, module.Location);
 			Logger.Instance.Indent();

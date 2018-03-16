@@ -20,7 +20,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using dnlib.IO;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using de4dot.blocks;
@@ -107,7 +106,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 			encryptedResource = BabelUtils.FindEmbeddedResource(module, methodsDecrypter, simpleDeobfuscator, deob);
 			if (encryptedResource != null)
-				AddImageReader("", resourceDecrypter.Decrypt(encryptedResource.Data.ReadAllBytes()));
+				AddImageReader("", resourceDecrypter.Decrypt(encryptedResource.GetReader().ToArray()));
 		}
 
 		ImageReader AddImageReader(string name, byte[] data) {

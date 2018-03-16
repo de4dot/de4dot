@@ -23,10 +23,10 @@ using dnlib.IO;
 
 namespace de4dot.code.deobfuscators.CodeVeil {
 	class ErexResourceReader {
-		IBinaryReader reader;
+		DataReader reader;
 		uint[] key;
 
-		public ErexResourceReader(IBinaryReader reader) {
+		public ErexResourceReader(ref DataReader reader) {
 			this.reader = reader;
 		}
 
@@ -62,12 +62,12 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				key[i] = reader.ReadUInt32();
 		}
 
-		IBinaryReader Inflate(int length) {
+		DataReader Inflate(int length) {
 			var data = reader.ReadRemainingBytes();
-			return MemoryImageStream.Create(DeobUtils.Inflate(data, true));
+			return ByteArrayDataReaderFactory.CreateReader(DeobUtils.Inflate(data, true));
 		}
 
-		IBinaryReader Decrypt(int length) {
+		DataReader Decrypt(int length) {
 			var block = new uint[4];
 			var decrypted = new byte[16];
 
@@ -82,7 +82,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				outStream.Write(decrypted, 0, decrypted.Length);
 			}
 
-			return MemoryImageStream.Create(outStream.ToArray());
+			return ByteArrayDataReaderFactory.CreateReader(outStream.ToArray());
 		}
 	}
 }

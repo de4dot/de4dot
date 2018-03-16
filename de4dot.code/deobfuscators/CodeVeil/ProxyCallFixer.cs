@@ -19,7 +19,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using dnlib.IO;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
@@ -29,7 +28,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 	class ProxyCallFixer : ProxyCallFixer1 {
 		MainType mainType;
 		Info info = new Info();
-		IBinaryReader reader;
+		DataReader reader;
 
 		class Info {
 			public TypeDef proxyType;
@@ -103,7 +102,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 					continue;
 
 				int offset = ldci4.GetLdcI4Value();
-				reader.Position = offset;
+				reader.Position = (uint)offset;
 				uint rid = reader.ReadCompressedUInt32();
 				if (rid != type.Rid)
 					throw new ApplicationException("Invalid RID");
@@ -218,7 +217,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			FindOtherTypes();
 
 			var decompressed = DeobUtils.Inflate(info.dataField.InitialValue, true);
-			reader = MemoryImageStream.Create(decompressed);
+			reader = ByteArrayDataReaderFactory.CreateReader(decompressed);
 			info.dataField.FieldSig.Type = module.CorLibTypes.Byte;
 			info.dataField.InitialValue = new byte[1];
 			info.dataField.RVA = 0;

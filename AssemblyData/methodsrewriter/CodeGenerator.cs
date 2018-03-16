@@ -19,12 +19,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Reflection;
 using System.Reflection.Emit;
 using dnlib.DotNet.Emit;
 using dnlib.DotNet;
-using de4dot.blocks;
 
 using OpCode = dnlib.DotNet.Emit.OpCode;
 using OpCodes = dnlib.DotNet.Emit.OpCodes;

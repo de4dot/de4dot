@@ -21,7 +21,6 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using dnlib.DotNet;
-using dnlib.DotNet.Emit;
 using de4dot.code.renamer.asmmodules;
 using dnlib.DotNet.Resources;
 using de4dot.blocks;
@@ -219,8 +218,7 @@ namespace de4dot.code.renamer {
 
 		static bool HasXamlFiles(ModuleDef module, EmbeddedResource rsrc) {
 			try {
-				rsrc.Data.Position = 0;
-				var rsrcSet = ResourceReader.Read(module, rsrc.Data);
+				var rsrcSet = ResourceReader.Read(module, rsrc.GetReader());
 				foreach (var elem in rsrcSet.ResourceElements) {
 					if (elem.Name.EndsWith(".baml") || elem.Name.EndsWith(".xaml"))
 						return true;

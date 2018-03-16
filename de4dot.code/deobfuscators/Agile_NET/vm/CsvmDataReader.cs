@@ -19,16 +19,13 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using dnlib.IO;
-using dnlib.DotNet;
-using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Agile_NET.vm {
 	class CsvmDataReader {
-		IBinaryReader reader;
+		DataReader reader;
 
-		public CsvmDataReader(IBinaryReader reader) {
+		public CsvmDataReader(DataReader reader) {
 			reader.Position = 0;
 			this.reader = reader;
 		}

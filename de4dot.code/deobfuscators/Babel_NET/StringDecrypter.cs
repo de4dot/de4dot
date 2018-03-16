@@ -21,7 +21,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using dnlib.IO;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using de4dot.blocks;
@@ -74,7 +73,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			}
 
 			public void Initialize(ModuleDefMD module, EmbeddedResource resource) {
-				key = resource.Data.ReadAllBytes();
+				key = resource.GetReader().ToArray();
 				if (key.Length != 0x100)
 					throw new ApplicationException(string.Format("Unknown key length: {0}", key.Length));
 			}
@@ -108,7 +107,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			}
 
 			public void Initialize(ModuleDefMD module, EmbeddedResource resource) {
-				var decrypted = resourceDecrypter.Decrypt(resource.Data.ReadAllBytes());
+				var decrypted = resourceDecrypter.Decrypt(resource.GetReader().ToArray());
 				var reader = new BinaryReader(new MemoryStream(decrypted));
 				while (reader.BaseStream.Position < reader.BaseStream.Length)
 					offsetToString[GetOffset((int)reader.BaseStream.Position)] = reader.ReadString();

@@ -23,7 +23,6 @@ using System.IO;
 using System.Text;
 using dnlib.IO;
 using dnlib.DotNet;
-using dnlib.DotNet.MD;
 using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
@@ -263,7 +262,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			if ((resource = FindResource(key0)) == null)
 				throw new ApplicationException("Could not find resource");
-			constants = DecryptResource(resource.GetResourceData());
+			constants = DecryptResource(resource.GetReader().ToArray());
 
 			FindDecrypters();
 		}
@@ -738,7 +737,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			var key = GetSigKey();
 
 			byte[] decrypted = DecryptAndDecompress(encrypted, key);
-			var reader = MemoryImageStream.Create(decrypted);
+			var reader = ByteArrayDataReaderFactory.CreateReader(decrypted);
 			var result = new MemoryStream();
 			var writer = new BinaryWriter(result);
 			while (reader.Position < reader.Length) {

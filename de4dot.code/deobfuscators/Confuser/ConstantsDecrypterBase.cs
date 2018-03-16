@@ -34,7 +34,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		MethodDefAndDeclaringTypeDict<DecrypterInfo> methodToDecrypterInfo = new MethodDefAndDeclaringTypeDict<DecrypterInfo>();
 		FieldDefAndDeclaringTypeDict<bool> fields = new FieldDefAndDeclaringTypeDict<bool>();
 		protected EmbeddedResource resource;
-		protected IBinaryReader reader;
+		protected DataReader reader;
 
 		public class DecrypterInfo {
 			public MethodDef decryptMethod;
@@ -279,7 +279,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		protected void SetConstantsData(byte[] constants) {
-			reader = MemoryImageStream.Create(constants);
+			reader = ByteArrayDataReaderFactory.CreateReader(constants);
 		}
 
 		protected EmbeddedResource FindResource(MethodDef method) {
@@ -445,7 +445,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		static byte[] Decrypt(byte[] encrypted, uint key, Func<uint, int, byte> decryptFunc) {
-			var reader = MemoryImageStream.Create(encrypted);
+			var reader = ByteArrayDataReaderFactory.CreateReader(encrypted);
 			var decrypted = new byte[reader.ReadInt32() ^ key];
 			for (int i = 0; i < decrypted.Length; i++) {
 				uint magic = reader.Read7BitEncodedUInt32();

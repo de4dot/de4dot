@@ -17,7 +17,6 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using System;
 using dnlib.IO;
 
 namespace de4dot.code.deobfuscators.CodeVeil {
@@ -26,7 +25,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		public byte flags;
 		public int offset;
 		public int length;
-		public IBinaryReader dataReader;
+		public DataReader dataReader;
 		public ResourceInfo(string name, byte flags, int offset, int length) {
 			this.name = name;
 			this.flags = flags;

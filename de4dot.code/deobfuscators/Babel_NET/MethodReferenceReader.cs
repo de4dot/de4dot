@@ -19,8 +19,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
-using dnlib.IO;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
@@ -97,16 +95,14 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 	class MethodRefReader {
 		ImageReader imageReader;
-		IBinaryReader reader;
 		BabelMethodreference bmr;
 
-		public MethodRefReader(ImageReader imageReader, IBinaryReader reader)
-			: this(imageReader, reader, new BabelMethodreference()) {
+		public MethodRefReader(ImageReader imageReader)
+			: this(imageReader, new BabelMethodreference()) {
 		}
 
-		public MethodRefReader(ImageReader imageReader, IBinaryReader reader, BabelMethodreference bmr) {
+		public MethodRefReader(ImageReader imageReader, BabelMethodreference bmr) {
 			this.imageReader = imageReader;
-			this.reader = reader;
 			this.bmr = bmr;
 		}
 
@@ -115,7 +111,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			bmr.DeclaringType = imageReader.ReadTypeSig();
 			bmr.ReturnType = imageReader.ReadTypeSig();
 			var argTypes = imageReader.ReadTypeSigs();
-			bmr.Flags = reader.ReadByte();
+			bmr.Flags = imageReader.reader.ReadByte();
 			if (bmr.IsGenericMethod)
 				bmr.GenericArguments = imageReader.ReadTypeSigs();
 			else
@@ -138,10 +134,10 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		MethodBodyReader methodBodyReader;
 		BabelMethodDef bmd;
 
-		public MethodDefReader(ImageReader imageReader, IBinaryReader reader) {
+		public MethodDefReader(ImageReader imageReader) {
 			this.bmd = new BabelMethodDef();
-			this.methodRefReader = new MethodRefReader(imageReader, reader, bmd);
-			this.methodBodyReader = new MethodBodyReader(imageReader, reader);
+			this.methodRefReader = new MethodRefReader(imageReader, bmd);
+			this.methodBodyReader = new MethodBodyReader(imageReader);
 		}
 
 		public BabelMethodDef Read() {

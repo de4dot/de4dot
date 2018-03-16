@@ -18,19 +18,29 @@
 */
 
 using System.Collections.Generic;
+using dnlib.DotNet;
 
-namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
-	class CompositeOpCodeHandler {
-		public List<BlockSigInfo> BlockSigInfos { get; private set; }
-		public List<HandlerTypeCode> TypeCodes { get; private set; }
-
-		public CompositeOpCodeHandler(List<BlockSigInfo> blockSigInfos) {
-			this.BlockSigInfos = blockSigInfos;
-			this.TypeCodes = new List<HandlerTypeCode>();
-		}
-
-		public override string ToString() {
-			return OpCodeHandlerInfo.GetCompositeName(TypeCodes);
+namespace de4dot.code.deobfuscators {
+	static class AllTypesHelper {
+		public static IEnumerable<TypeDef> Types(IEnumerable<TypeDef> types) {
+			var visited = new Dictionary<TypeDef, bool>();
+			var stack = new Stack<IEnumerator<TypeDef>>();
+			if (types != null)
+				stack.Push(types.GetEnumerator());
+			while (stack.Count > 0) {
+				var enumerator = stack.Pop();
+				while (enumerator.MoveNext()) {
+					var type = enumerator.Current;
+					if (visited.ContainsKey(type))
+						continue;
+					visited[type] = true;
+					yield return type;
+					if (type.NestedTypes.Count > 0) {
+						stack.Push(enumerator);
+						enumerator = type.NestedTypes.GetEnumerator();
+					}
+				}
+			}
 		}
 	}
 }

@@ -28,7 +28,6 @@ using de4dot.blocks;
 
 using OpCode = dnlib.DotNet.Emit.OpCode;
 using OpCodes = dnlib.DotNet.Emit.OpCodes;
-using ROpCode = System.Reflection.Emit.OpCode;
 using ROpCodes = System.Reflection.Emit.OpCodes;
 
 namespace AssemblyData.methodsrewriter {

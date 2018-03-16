@@ -136,7 +136,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 
 		// 3.0.3.41 - 3.0.4.44
 		protected static byte[] DecryptResourceV3Old(EmbeddedResource resource) {
-			return DecryptResourceV3Old(resource.GetResourceData());
+			return DecryptResourceV3Old(resource.GetReader().ToArray());
 		}
 
 		// 3.0.3.41 - 3.0.4.44
@@ -145,7 +145,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		}
 
 		protected static byte[] DecryptResourceV41SL(EmbeddedResource resource) {
-			var data = resource.GetResourceData();
+			var data = resource.GetReader().ToArray();
 			byte k = data[0];
 			for (int i = 0; i < data.Length - 1; i++)
 				data[i + 1] ^= (byte)((k << (i & 5)) + i);
@@ -153,7 +153,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		}
 
 		protected static byte[] DecryptResourceV3(EmbeddedResource resource) {
-			return DecryptResourceV3(resource.GetResourceData());
+			return DecryptResourceV3(resource.GetReader().ToArray());
 		}
 
 		protected static byte[] DecryptResourceV3(byte[] data) {

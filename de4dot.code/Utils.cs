@@ -22,7 +22,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using dnlib.DotNet;
-using dnlib.IO;
 
 namespace de4dot.code {
 	// These are in .NET 3.5 and later...

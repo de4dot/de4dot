@@ -20,7 +20,6 @@
 using System.Collections.Generic;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
-using de4dot.blocks;
 using de4dot.blocks.cflow;
 
 namespace de4dot.code.deobfuscators {

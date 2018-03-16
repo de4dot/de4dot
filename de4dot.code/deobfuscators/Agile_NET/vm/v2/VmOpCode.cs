@@ -18,7 +18,6 @@
 */
 
 using System.Collections.Generic;
-using System.Text;
 
 namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 	class VmOpCode {

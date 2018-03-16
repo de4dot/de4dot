@@ -20,7 +20,6 @@
 using System;
 using System.Collections.Generic;
 using dnlib.DotNet;
-using de4dot.blocks;
 
 namespace de4dot.code {
 	// "global" data and methods that is shared between all deobfuscators that deobfuscate

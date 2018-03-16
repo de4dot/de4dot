@@ -19,7 +19,6 @@
 
 using System.Collections.Generic;
 using dnlib.DotNet;
-using de4dot.blocks;
 
 namespace de4dot.code.renamer {
 	public interface INameCreator {

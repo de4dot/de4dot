@@ -18,9 +18,7 @@
 */
 
 using System.Collections.Generic;
-using System.IO;
 using System.Xml;
-using dnlib.IO;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using de4dot.blocks;
@@ -125,11 +123,10 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		}
 
 		void FindEmbeddedAssemblies() {
-			var data = bundleData.Data.ReadAllBytes();
+			var data = bundleData.GetReader().ToArray();
 
 			var doc = new XmlDocument();
-			bundleXmlFile.Data.Position = 0;
-			doc.Load(XmlReader.Create(bundleXmlFile.Data.CreateStream()));
+			doc.Load(XmlReader.Create(bundleXmlFile.GetReader().AsStream()));
 			var manifest = doc.DocumentElement;
 			if (manifest.Name.ToLowerInvariant() != "manifest") {
 				Logger.w("Could not find Manifest element");

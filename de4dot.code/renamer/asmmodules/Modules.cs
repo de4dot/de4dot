@@ -20,7 +20,6 @@
 using System;
 using System.Collections.Generic;
 using dnlib.DotNet;
-using de4dot.blocks;
 
 namespace de4dot.code.renamer.asmmodules {
 	public class Modules : IResolver {

@@ -38,7 +38,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			if (stringDecrypterInfo != null) {
 				if (!stringDecrypterInfo.StringsEncrypted) {
 					stringOffset = stringDecrypterInfo.StringOffset;
-					decryptedData = stringDecrypterInfo.StringsResource.GetResourceData();
+					decryptedData = stringDecrypterInfo.StringsResource.GetReader().ToArray();
 				}
 				else if (stringDecrypterInfo.CanDecrypt) {
 					stringOffset = stringDecrypterInfo.StringOffset;

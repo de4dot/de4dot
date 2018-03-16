@@ -19,12 +19,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
-using System.IO;
 using System.Text;
 using dnlib.IO;
 using dnlib.DotNet;
-using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 using CR = System.Runtime.InteropServices;
@@ -48,7 +45,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		}
 
 		ModuleDefMD module;
-		IBinaryReader reader;
+		internal DataReader reader;
 		string[] strings;
 		AssemblyRef[] assemblyNames;
 		Dictionary<string, int> methodOffsets;
@@ -59,7 +56,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		public ImageReader(IDeobfuscatorContext deobfuscatorContext, ModuleDefMD module, byte[] data) {
 			//this.deobfuscatorContext = deobfuscatorContext;
 			this.module = module;
-			this.reader = MemoryImageStream.Create(data);
+			this.reader = ByteArrayDataReaderFactory.CreateReader(data);
 			this.memberRefConverter = new MemberRefConverter(module);
 		}
 
@@ -70,7 +67,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			int metadataOffset = GetMetadataOffset();
 			if (metadataOffset < 0)
 				return false;
-			long pos = metadataOffset + 4;
+			uint pos = (uint)metadataOffset + 4;
 			reader.Position = pos;
 			int version = reader.ReadInt16();	// major, minor
 			if (version == 0x0001) {
@@ -141,8 +138,8 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		BabelMethodDef GetMethod(string name) {
 			int offset = methodOffsets[name];
 			methodOffsets.Remove(name);
-			reader.Position = offset;
-			return new MethodDefReader(this, reader).Read();
+			reader.Position = (uint)offset;
+			return new MethodDefReader(this).Read();
 		}
 
 		public string ReadString() {
@@ -181,7 +178,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		}
 
 		public IMethod ReadMethodRef() {
-			var babelMethodRef = new MethodRefReader(this, reader).Read();
+			var babelMethodRef = new MethodRefReader(this).Read();
 
 			var method = GetMethodRef(babelMethodRef);
 			if (method == null) {
@@ -297,17 +294,17 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		}
 
 		void InitializeStrings(int headerOffset) {
-			reader.Position = headerOffset;
+			reader.Position = (uint)headerOffset;
 			if (reader.ReadInt32() != STRINGS_SIG)
 				throw new ApplicationException("Invalid strings sig");
 
 			strings = new string[ReadVariableLengthInt32()];
 			for (int i = 0; i < strings.Length; i++)
-				strings[i] = reader.ReadString();
+				strings[i] = reader.ReadSerializedString();
 		}
 
 		void InitializeAssemblyNames(int headerOffset) {
-			reader.Position = headerOffset;
+			reader.Position = (uint)headerOffset;
 			if (reader.ReadInt32() != ASSEMBLY_NAMES_SIG)
 				throw new ApplicationException("Invalid assembly names sig");
 
@@ -317,7 +314,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		}
 
 		void InitializeMethodNames(int headerOffset) {
-			reader.Position = headerOffset;
+			reader.Position = (uint)headerOffset;
 			if (reader.ReadInt32() != METHOD_NAMES_SIG)
 				throw new ApplicationException("Invalid methods sig");
 
@@ -330,7 +327,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		}
 
 		void InitializeTypeRefs(int headerOffset) {
-			reader.Position = headerOffset;
+			reader.Position = (uint)headerOffset;
 			if (reader.ReadInt32() != TYPEREFS_SIG)
 				throw new ApplicationException("Invalid typerefs sig");
 

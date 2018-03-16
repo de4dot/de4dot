@@ -324,7 +324,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		protected byte[] DecryptMethodsData_v16_r71742(MyPEImage peImage, uint encryptedHeaderOffset) {
 			uint mdRva = peImage.OptionalHeader.CheckSum ^ (uint)key0;
-			if ((RVA)mdRva != peImage.Cor20Header.MetaData.VirtualAddress)
+			if ((RVA)mdRva != peImage.Cor20Header.Metadata.VirtualAddress)
 				throw new ApplicationException("Invalid metadata rva");
 			var reader = peImage.Reader;
 			reader.Position = encryptedHeaderOffset;
@@ -364,8 +364,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 			var memStream = new MemoryStream();
 			var writer = new BinaryWriter(memStream);
 			var reader = peImage.Reader;
-			foreach (var mdStream in peImage.MetaData.AllStreams) {
-				reader.Position = (long)mdStream.StartOffset;
+			foreach (var mdStream in peImage.Metadata.AllStreams) {
+				reader.Position = (uint)mdStream.StartOffset;
 				writer.Write(reader.ReadBytes((int)(mdStream.EndOffset - mdStream.StartOffset)));
 			}
 			return memStream.ToArray();

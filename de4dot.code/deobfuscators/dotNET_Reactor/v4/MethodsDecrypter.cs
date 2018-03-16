@@ -141,7 +141,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			xorKey = GetXorKey();
 			XorEncrypt(methodsData);
 
-			var methodsDataReader = MemoryImageStream.Create(methodsData);
+			var methodsDataReader = ByteArrayDataReaderFactory.CreateReader(methodsData);
 			int patchCount = methodsDataReader.ReadInt32();
 			int mode = methodsDataReader.ReadInt32();
 
@@ -149,21 +149,21 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			methodsDataReader.Position -= 4;
 			if ((tmp & 0xFF000000) == 0x06000000) {
 				// It's method token + rva. DNR 3.7.0.3 (and earlier?) - 3.9.0.1
-				methodsDataReader.Position += 8L * patchCount;
+				methodsDataReader.Position += 8 * (uint)patchCount;
 				patchCount = methodsDataReader.ReadInt32();
 				mode = methodsDataReader.ReadInt32();
 
-				PatchDwords(peImage, methodsDataReader, patchCount);
+				PatchDwords(peImage, ref methodsDataReader, patchCount);
 				while (methodsDataReader.Position < methodsData.Length - 1) {
 					/*uint token =*/ methodsDataReader.ReadUInt32();
 					int numDwords = methodsDataReader.ReadInt32();
-					PatchDwords(peImage, methodsDataReader, numDwords / 2);
+					PatchDwords(peImage, ref methodsDataReader, numDwords / 2);
 				}
 			}
 			else if (!hooksJitter || mode == 1) {
 				// DNR 3.9.8.0, 4.0+
 
-				PatchDwords(peImage, methodsDataReader, patchCount);
+				PatchDwords(peImage, ref methodsDataReader, patchCount);
 				bool oldCode = !IsNewer45Decryption(encryptedResource.Method);
 				while (methodsDataReader.Position < methodsData.Length - 1) {
 					uint rva = methodsDataReader.ReadUInt32();
@@ -185,7 +185,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			else {
 				// DNR 4.0+ (jitter is hooked)
 
-				var methodDef = peImage.MetaData.TablesStream.MethodTable;
+				var methodDef = peImage.Metadata.TablesStream.MethodTable;
 				var rvaToIndex = new Dictionary<uint, int>((int)methodDef.Rows);
 				uint offset = (uint)methodDef.StartOffset;
 				for (int i = 0; i < methodDef.Rows; i++) {
@@ -201,7 +201,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 					rvaToIndex[rva] = i;
 				}
 
-				PatchDwords(peImage, methodsDataReader, patchCount);
+				PatchDwords(peImage, ref methodsDataReader, patchCount);
 				/*int count =*/ methodsDataReader.ReadInt32();
 				dumpedMethods = new DumpedMethods();
 				while (methodsDataReader.Position < methodsData.Length - 1) {
@@ -254,7 +254,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 					var codeReader = peImage.Reader;
 					codeReader.Position = peImage.RvaToOffset(dm.mdRVA);
 					byte[] code;
-					var mbHeader = MethodBodyParser.ParseMethodBody(codeReader, out code, out dm.extraSections);
+					var mbHeader = MethodBodyParser.ParseMethodBody(ref codeReader, out code, out dm.extraSections);
 					peImage.UpdateMethodHeaderInfo(dm, mbHeader);
 
 					dumpedMethods.Add(dm);
@@ -291,7 +291,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			return false;
 		}
 
-		static void PatchDwords(MyPEImage peImage, IBinaryReader reader, int count) {
+		static void PatchDwords(MyPEImage peImage, ref DataReader reader, int count) {
 			for (int i = 0; i < count; i++) {
 				uint rva = reader.ReadUInt32();
 				uint data = reader.ReadUInt32();
@@ -342,7 +342,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				return;
 
 			len = (len & ~15) + 16;
-			encryptedResource.Resource.Data = MemoryImageStream.Create(new byte[len]);
+			encryptedResource.SetNewResource(new byte[len]);
 		}
 
 		public void EncryptNativeMethods(ModuleWriterBase moduleWriter) {
@@ -361,7 +361,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			foreach (var method in validNativeMethods) {
 				var code = methodToNativeMethod[method];
 
-				var mb = moduleWriter.MetaData.GetMethodBody(method);
+				var mb = moduleWriter.Metadata.GetMethodBody(method);
 				if (mb == null) {
 					Logger.e("Could not find method body for method {0} ({1:X8})", method, method.MDToken.Raw);
 					continue;
@@ -373,7 +373,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				else
 					codeRva += (uint)(4 * (mb.Code[1] >> 4));
 
-				Logger.v("Native method {0:X8}, code RVA {1:X8}", new MDToken(Table.Method, moduleWriter.MetaData.GetRid(method)).Raw, codeRva);
+				Logger.v("Native method {0:X8}, code RVA {1:X8}", new MDToken(Table.Method, moduleWriter.Metadata.GetRid(method)).Raw, codeRva);
 
 				writer.Write(codeRva);
 				writer.Write(0x70000000 + index++);
@@ -384,8 +384,8 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			if (index != 0)
 				Logger.n("Re-encrypted {0}/{1} native methods", index, totalEncryptedNativeMethods);
 
-			var resourceChunk = moduleWriter.MetaData.GetChunk(encryptedResource.Resource);
-			var resourceData = resourceChunk.Data;
+			var resourceChunk = moduleWriter.Metadata.GetChunk(encryptedResource.Resource);
+			var resourceData = resourceChunk.GetReader();
 
 			var encrypted = stream.ToArray();
 			XorEncrypt(encrypted);
@@ -393,7 +393,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			encrypted = encryptedResource.Encrypt(encrypted);
 			if (encrypted.Length != resourceData.Length)
 				Logger.e("Encrypted native methods array is not same size as original array");
-			Array.Copy(encrypted, resourceData, resourceData.Length);
+			resourceChunk.SetData(ByteArrayDataReaderFactory.CreateReader(encrypted));
 		}
 
 		enum CompileMethodType {

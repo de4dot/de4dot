@@ -19,7 +19,6 @@
 
 using System;
 using System.Collections.Generic;
-using dnlib.IO;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using de4dot.blocks;
@@ -75,8 +74,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			if (resource == null)
 				return null;
 
-			resource.Data.Position = 0;
-			DeobUtils.DecryptAndAddResources(module, resource.Name.String, () => resourceDecrypter.Decrypt(resource.Data.CreateStream()));
+			DeobUtils.DecryptAndAddResources(module, resource.Name.String, () => resourceDecrypter.Decrypt(resource.GetReader().AsStream()));
 			mergedIt = true;
 			return resource;
 		}

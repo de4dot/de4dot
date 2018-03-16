@@ -23,7 +23,6 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
-using dnlib.IO;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using de4dot.blocks;
@@ -193,8 +192,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			if (assemblyEncryptedResource == null)
 				return null;
 
-			assemblyEncryptedResource.Data.Position = 0;
-			var reader = new BinaryReader(assemblyEncryptedResource.Data.CreateStream());
+			var reader = new BinaryReader(assemblyEncryptedResource.GetReader().AsStream());
 			var encryptedData = DeobUtils.Gunzip(reader.BaseStream, reader.ReadInt32());
 			reader = new BinaryReader(new MemoryStream(encryptedData));
 			var serializedData = reader.ReadBytes(reader.ReadInt32());
@@ -240,7 +238,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 				if (!Regex.IsMatch(resource.Name.String, "^cfd_([0-9a-f]{2})+_$"))
 					continue;
 
-				var asmData = Decrypt(embedPassword, Gunzip(resource.Data.ReadAllBytes()));
+				var asmData = Decrypt(embedPassword, Gunzip(resource.GetReader().ToArray()));
 				var mod = ModuleDefMD.Load(asmData);
 				infos.Add(new AssemblyInfo(asmData, resource, mod.Assembly.FullName, mod.Assembly.Name.String, DeobUtils.GetExtension(mod.Kind)));
 			}

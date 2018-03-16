@@ -21,7 +21,6 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using dnlib.DotNet;
-using de4dot.blocks;
 
 namespace AssemblyData.methodsrewriter {
 	static class Resolver {

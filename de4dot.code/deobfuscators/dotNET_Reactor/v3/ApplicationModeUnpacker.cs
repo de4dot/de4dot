@@ -22,10 +22,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
-using dnlib.IO;
 using dnlib.PE;
 using dnlib.DotNet;
-using dnlib.DotNet.MD;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 	class IniFile {
@@ -110,7 +108,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 				return data;
 
 			if (shouldUnpack)
-				Logger.w("Could not unpack file: {0}", peImage.FileName ?? "(unknown filename)");
+				Logger.w("Could not unpack file: {0}", peImage.Filename ?? "(unknown filename)");
 			return null;
 		}
 

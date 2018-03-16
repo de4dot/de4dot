@@ -17,7 +17,6 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using System;
 using System.Collections.Generic;
 using System.Text;
 using dnlib.DotNet;
@@ -178,8 +177,8 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				int hash = 0;
 				if (resource.Offset != null)
 					hash ^= resource.Offset.GetHashCode();
-				hash ^= (int)resource.Data.Position;
-				hash ^= (int)resource.Data.Length;
+				hash ^= (int)resource.GetReader().Position;
+				hash ^= (int)resource.GetReader().Length;
 				return hash;
 			}
 
@@ -187,8 +186,8 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				var other = obj as ResourceKey;
 				if (other == null)
 					return false;
-				return resource.Data.FileOffset == other.resource.Data.FileOffset &&
-					resource.Data.Length == other.resource.Data.Length;
+				return resource.GetReader().StartOffset == other.resource.GetReader().StartOffset &&
+					resource.GetReader().Length == other.resource.GetReader().Length;
 			}
 
 			public override string ToString() {
@@ -239,7 +238,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				var resource = tmp as EmbeddedResource;
 				if (resource == null)
 					continue;
-				if (resource.Offset == null || (resource.Data.FileOffset == 0 && resource.Data.Length == 0))
+				if (resource.Offset == null || (resource.GetReader().StartOffset == 0 && resource.GetReader().Length == 0))
 					AddResourceToBeRemoved(resource, "Invalid resource");
 			}
 		}

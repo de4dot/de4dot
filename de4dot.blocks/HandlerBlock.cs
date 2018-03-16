@@ -17,8 +17,6 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using System.Collections.Generic;
-
 namespace de4dot.blocks {
 	// This is the block inside catch(xxx) { }.
 	public class HandlerBlock : ScopeBlock {

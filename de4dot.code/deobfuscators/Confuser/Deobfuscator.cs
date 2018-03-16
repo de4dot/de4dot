@@ -20,7 +20,6 @@
 using System;
 using System.Collections.Generic;
 using dnlib.DotNet;
-using dnlib.IO;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
 

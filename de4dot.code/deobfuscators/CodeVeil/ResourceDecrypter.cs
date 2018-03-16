@@ -18,7 +18,6 @@
 */
 
 using System;
-using System.IO;
 using dnlib.IO;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
@@ -319,7 +318,8 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				if (resource == null)
 					continue;
 
-				var decrypted = Decrypt(resource.Data);
+				var rsrcReader = resource.GetReader();
+				var decrypted = Decrypt(ref rsrcReader);
 				if (decrypted == null)
 					continue;
 
@@ -328,15 +328,15 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			}
 		}
 
-		byte[] Decrypt(IBinaryReader reader) {
+		byte[] Decrypt(ref DataReader reader) {
 			try {
 				reader.Position = 0;
 				uint sig = reader.ReadUInt32();
 				reader.Position = 0;
 				if (sig == 0xBEEFCACE)
-					return DecryptBeefcace(reader);
+					return DecryptBeefcace(ref reader);
 				if (sig == 0x58455245)
-					return DecryptErex(reader);
+					return DecryptErex(ref reader);
 				return null;
 			}
 			catch (InvalidDataException) {
@@ -348,13 +348,13 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			}
 		}
 
-		byte[] DecryptBeefcace(IBinaryReader reader) {
-			var resourceReader = new ResourceReader(reader);
+		byte[] DecryptBeefcace(ref DataReader reader) {
+			var resourceReader = new ResourceReader(ref reader);
 			return new ResourceConverter(module, resourceReader.Read()).Convert();
 		}
 
-		byte[] DecryptErex(IBinaryReader reader) {
-			return new ErexResourceReader(reader).Decrypt();
+		byte[] DecryptErex(ref DataReader reader) {
+			return new ErexResourceReader(ref reader).Decrypt();
 		}
 
 		public void Deobfuscate(Blocks blocks) {

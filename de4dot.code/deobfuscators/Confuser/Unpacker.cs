@@ -472,7 +472,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		byte[] Decrypt(EmbeddedResource resource) {
-			var data = resource.GetResourceData();
+			var data = resource.GetReader().ToArray();
 			switch (version) {
 			case ConfuserVersion.v10_r42915: return Decrypt_v10_r42915(data);
 			case ConfuserVersion.v10_r48717: return Decrypt_v10_r42915(data);

@@ -10,10 +10,13 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>de4dot.code</RootNamespace>
     <AssemblyName>de4dot.code</AssemblyName>
-    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
     <FileAlignment>512</FileAlignment>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\de4dot.snk</AssemblyOriginatorKeyFile>
+    <Features>strict</Features>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -103,6 +106,7 @@
     <Compile Include="deobfuscators\Agile_NET\vm\v2\VmOpCode.cs" />
     <Compile Include="deobfuscators\Agile_NET\vm\v2\VmOpCodeHandlerDetector.cs" />
     <Compile Include="deobfuscators\Agile_NET\vm\VmOperand.cs" />
+    <Compile Include="deobfuscators\AllTypesHelper.cs" />
     <Compile Include="deobfuscators\ArrayFinder.cs" />
     <Compile Include="deobfuscators\Babel_NET\AssemblyResolver.cs" />
     <Compile Include="deobfuscators\Babel_NET\BabelInflater.cs" />
@@ -129,6 +133,7 @@
     <Compile Include="deobfuscators\CodeFort\ProxyCallFixer.cs" />
     <Compile Include="deobfuscators\CodeFort\StringDecrypter.cs" />
     <Compile Include="deobfuscators\CodeVeil\AssemblyResolver.cs" />
+    <Compile Include="deobfuscators\CodeVeil\DataReaderUtils.cs" />
     <Compile Include="deobfuscators\CodeVeil\Deobfuscator.cs" />
     <Compile Include="deobfuscators\CodeVeil\ErexResourceReader.cs" />
     <Compile Include="deobfuscators\CodeVeil\InvalidDataException.cs" />

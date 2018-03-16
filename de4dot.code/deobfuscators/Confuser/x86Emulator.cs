@@ -19,7 +19,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using dnlib.IO;
 
 namespace de4dot.code.deobfuscators.Confuser {
@@ -43,7 +42,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		};
 
 		MyPEImage peImage;
-		IBinaryReader reader;
+		DataReader reader;
 		uint[] args;
 		int nextArgIndex;
 		uint[] regs = new uint[8];
@@ -145,7 +144,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			}
 			else
 				throw new ApplicationException(string.Format("Missing prolog @ RVA {0:X8}", rva));
-			reader.Position += prolog.Length;
+			reader.Position += (uint)prolog.Length;
 
 			while (!IsBytes(epilog))
 				Emulate();
@@ -161,7 +160,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		bool IsBytes(IList<byte> bytes) {
-			long oldPos = reader.Position;
+			uint oldPos = reader.Position;
 			bool result = true;
 			for (int i = 0; i < bytes.Count; i++) {
 				if (bytes[i] != reader.ReadByte()) {
@@ -308,7 +307,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			if (peImage != null)
 				peImage.Dispose();
 			peImage = null;
-			reader = null;
+			reader = default(DataReader);
 		}
 	}
 }

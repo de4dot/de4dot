@@ -34,7 +34,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			try {
 				this.data = peImage.ReadBytes(peHeader.GetMcKeyRva(), 0x2000);
 			}
-			catch (IOException) {
+			catch (Exception ex) when (ex is IOException || ex is ArgumentException) {
 				this.data = peImage.ReadBytes(peHeader.GetMcKeyRva(), 0x1000);
 			}
 		}

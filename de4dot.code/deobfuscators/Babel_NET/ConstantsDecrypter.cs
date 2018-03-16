@@ -21,7 +21,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
-using dnlib.IO;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using de4dot.blocks;
@@ -152,7 +151,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				return;
 			}
 
-			var decrypted = resourceDecrypter.Decrypt(encryptedResource.Data.ReadAllBytes());
+			var decrypted = resourceDecrypter.Decrypt(encryptedResource.GetReader().ToArray());
 			var reader = new BinaryReader(new MemoryStream(decrypted));
 			int count;
 

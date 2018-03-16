@@ -19,7 +19,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Text;
 using dnlib.IO;
 using dnlib.DotNet;
@@ -53,7 +52,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			public int Magic1 { get; set; }
 			public int Magic2 { get; set; }
 			public int Magic3 { get; set; }
-			public IBinaryReader Reader { get; set; }
+			public DataReader Reader;
 
 			public StringEncrypterInfo(MethodDef method) {
 				this.method = method;
@@ -62,7 +61,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			public string Decrypt(int magic1, int magic2, int magic3) {
 				int dataLen = magic3 ^ Magic3;
 				var key = GetKey(magic1 ^ Magic1, dataLen);
-				Reader.Position = GetDataOffset(magic2);
+				Reader.Position = (uint)GetDataOffset(magic2);
 				var data = Reader.ReadBytes(dataLen);
 				for (int i = 0; i < dataLen; i++)
 					data[i] ^= key[i];
@@ -254,7 +253,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 				info.Magic1 = FindMagic1(info.Method);
 				info.Magic2 = FindMagic2(info.Method);
 				info.Magic3 = FindMagic3(info.Method);
-				info.Reader = info.Resource.Data;
+				info.Reader = info.Resource.GetReader();
 				info.Reader.Position = 0;
 			}
 		}

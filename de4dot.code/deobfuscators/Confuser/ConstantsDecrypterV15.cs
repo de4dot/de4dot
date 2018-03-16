@@ -141,7 +141,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			if (!InitializeFields(theDecrypterInfo))
 				throw new ApplicationException("Could not find all fields");
 
-			SetConstantsData(DeobUtils.Inflate(resource.GetResourceData(), true));
+			SetConstantsData(DeobUtils.Inflate(resource.GetReader().ToArray(), true));
 		}
 
 		bool InitializeFields(DecrypterInfo info) {
@@ -211,10 +211,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 			if (endIndex < 0)
 				throw new ApplicationException("Could not find start/endIndex");
 
-			var dataReader = MemoryImageStream.Create(encrypted);
+			var dataReader = ByteArrayDataReaderFactory.CreateReader(encrypted);
 			var decrypted = new byte[dataReader.ReadInt32()];
 			var constReader = new Arg64ConstantsReader(instrs, false);
-			ConfuserUtils.DecryptCompressedInt32Data(constReader, startIndex, endIndex, dataReader, decrypted);
+			ConfuserUtils.DecryptCompressedInt32Data(constReader, startIndex, endIndex, ref dataReader, decrypted);
 			return decrypted;
 		}
 

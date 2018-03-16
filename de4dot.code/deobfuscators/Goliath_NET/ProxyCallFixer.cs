@@ -17,11 +17,9 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using System;
 using System.Collections.Generic;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
-using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Goliath_NET {
 	class ProxyCallFixer : ProxyCallFixer2 {

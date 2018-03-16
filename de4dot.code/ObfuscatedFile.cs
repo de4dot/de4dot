@@ -21,7 +21,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Text;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using dnlib.DotNet.Writer;
@@ -90,7 +89,7 @@ namespace de4dot.code {
 			public bool ControlFlowDeobfuscation { get; set; }
 			public bool KeepObfuscatorTypes { get; set; }
 			public bool PreserveTokens { get; set; }
-			public MetaDataFlags MetaDataFlags { get; set; }
+			public MetadataFlags MetadataFlags { get; set; }
 			public RenamerFlags RenamerFlags { get; set; }
 
 			public Options() {
@@ -206,7 +205,7 @@ namespace de4dot.code {
 						module = assemblyModule.Load(unpackedData);
 					}
 					catch {
-						Logger.w("Could not load unpacked data. File: {0}, deobfuscator: {0}", peImage.FileName ?? "(unknown filename)", deob.TypeLong);
+						Logger.w("Could not load unpacked data. File: {0}, deobfuscator: {0}", peImage.Filename ?? "(unknown filename)", deob.TypeLong);
 						continue;
 					}
 					finally {
@@ -246,7 +245,7 @@ namespace de4dot.code {
 			}
 
 			op.KeepObfuscatorTypes = options.KeepObfuscatorTypes;
-			op.MetaDataFlags = options.MetaDataFlags;
+			op.MetadataFlags = options.MetadataFlags;
 			op.RenamerFlags = options.RenamerFlags;
 
 			return op;
@@ -319,15 +318,15 @@ namespace de4dot.code {
 			return detected;
 		}
 
-		MetaDataFlags GetMetaDataFlags() {
-			var mdFlags = options.MetaDataFlags | deob.MetaDataFlags;
+		MetadataFlags GetMetadataFlags() {
+			var mdFlags = options.MetadataFlags | deob.MetadataFlags;
 
 			// Always preserve tokens if it's an unknown obfuscator
 			if (deob.Type == "un") {
-				mdFlags |= MetaDataFlags.PreserveRids |
-						MetaDataFlags.PreserveUSOffsets |
-						MetaDataFlags.PreserveBlobOffsets |
-						MetaDataFlags.PreserveExtraSignatureData;
+				mdFlags |= MetadataFlags.PreserveRids |
+						MetadataFlags.PreserveUSOffsets |
+						MetadataFlags.PreserveBlobOffsets |
+						MetadataFlags.PreserveExtraSignatureData;
 			}
 
 			return mdFlags;
@@ -335,9 +334,9 @@ namespace de4dot.code {
 
 		public void Save() {
 			Logger.n("Saving {0}", options.NewFilename);
-			var mdFlags = GetMetaDataFlags();
+			var mdFlags = GetMetadataFlags();
 			if (!options.ControlFlowDeobfuscation)
-				mdFlags |= MetaDataFlags.KeepOldMaxStack;
+				mdFlags |= MetadataFlags.KeepOldMaxStack;
 			assemblyModule.Save(options.NewFilename, mdFlags, new PrintNewTokens(module, deob as IModuleWriterListener));
 		}
 
@@ -620,7 +619,7 @@ namespace de4dot.code {
 
 		bool CanOptimizeLocals() {
 			// Don't remove any locals if we must preserve StandAloneSig table
-			return (GetMetaDataFlags() & MetaDataFlags.PreserveStandAloneSigRids) == 0;
+			return (GetMetadataFlags() & MetadataFlags.PreserveStandAloneSigRids) == 0;
 		}
 
 		void Deobfuscate(MethodDef method, BlocksCflowDeobfuscator cflowDeobfuscator, MethodPrinter methodPrinter, bool isVerbose, bool isVV) {

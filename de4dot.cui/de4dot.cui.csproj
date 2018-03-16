@@ -10,11 +10,14 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>de4dot.cui</RootNamespace>
     <AssemblyName>de4dot.cui</AssemblyName>
-    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\de4dot.snk</AssemblyOriginatorKeyFile>
+    <Features>strict</Features>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>

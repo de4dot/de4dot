@@ -1,5 +1,3 @@
-using System;
-
 namespace SevenZip.Compression.RangeCoder
 {
 	class Decoder

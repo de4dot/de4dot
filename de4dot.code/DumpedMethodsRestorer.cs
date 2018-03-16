@@ -41,18 +41,23 @@ namespace de4dot.code {
 			return dumpedMethods.Get(0x06000000 | rid);
 		}
 
-		public RawMethodRow ReadRow(uint rid) {
+		public bool TryReadRow(uint rid, out RawMethodRow row) {
 			var dm = GetDumpedMethod(rid);
-			if (dm == null)
-				return null;
-			return new RawMethodRow(dm.mdRVA, dm.mdImplFlags, dm.mdFlags, dm.mdName, dm.mdSignature, dm.mdParamList);
+			if (dm == null) {
+				row = default(RawMethodRow);
+				return false;
+			}
+			else {
+				row = new RawMethodRow(dm.mdRVA, dm.mdImplFlags, dm.mdFlags, dm.mdName, dm.mdSignature, dm.mdParamList);
+				return true;
+			}
 		}
 
 		public bool ReadColumn(MDTable table, uint rid, ColumnInfo column, out uint value) {
 			if (table.Table == Table.Method) {
-				var row = ReadRow(rid);
-				if (row != null) {
-					value = row.Read(column.Index);
+				RawMethodRow row;
+				if (TryReadRow(rid, out row)) {
+					value = row[column.Index];
 					return true;
 				}
 			}

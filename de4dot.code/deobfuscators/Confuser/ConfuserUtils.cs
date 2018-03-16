@@ -105,7 +105,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return modified;
 		}
 
-		public static byte[] DecryptCompressedInt32Data(Arg64ConstantsReader constReader, int exprStart, int exprEnd, IBinaryReader reader, byte[] decrypted) {
+		public static byte[] DecryptCompressedInt32Data(Arg64ConstantsReader constReader, int exprStart, int exprEnd, ref DataReader reader, byte[] decrypted) {
 			for (int i = 0; i < decrypted.Length; i++) {
 				constReader.Arg = reader.Read7BitEncodedInt32();
 				int index = exprStart;

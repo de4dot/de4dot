@@ -20,7 +20,6 @@
 using System;
 using System.Collections.Generic;
 using dnlib.DotNet;
-using dnlib.IO;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
@@ -200,7 +199,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		static int unknownNameCounter = 0;
 		static string GetAssemblyName(EmbeddedResource resource) {
 			try {
-				var resourceModule = ModuleDefMD.Load(resource.Data.ReadAllBytes());
+				var resourceModule = ModuleDefMD.Load(resource.GetReader().ToArray());
 				return resourceModule.Assembly.FullName;
 			}
 			catch {

@@ -22,7 +22,6 @@ using System.IO;
 using System.Collections.Generic;
 using dnlib.DotNet;
 using dnlib.DotNet.Writer;
-using de4dot.blocks;
 using de4dot.code;
 using de4dot.code.renamer;
 using de4dot.code.deobfuscators;
@@ -38,7 +37,7 @@ namespace de4dot.cui {
 			public IList<IDeobfuscatorInfo> DeobfuscatorInfos { get; set; }
 			public IList<IObfuscatedFile> Files { get; set; }
 			public IList<SearchDir> SearchDirs { get; set; }
-			public MetaDataFlags MetaDataFlags { get; set; }
+			public MetadataFlags MetadataFlags { get; set; }
 			public bool DetectObfuscators { get; set; }
 			public RenamerFlags RenamerFlags { get; set; }
 			public bool RenameSymbols { get; set; }
@@ -159,7 +158,7 @@ namespace de4dot.cui {
 				DeobfuscatorContext = deobfuscatorContext,
 				ControlFlowDeobfuscation = options.ControlFlowDeobfuscation,
 				KeepObfuscatorTypes = options.KeepObfuscatorTypes,
-				MetaDataFlags = options.MetaDataFlags,
+				MetadataFlags = options.MetadataFlags,
 				RenamerFlags = options.RenamerFlags,
 				CreateDestinationDir = !onlyScan,
 			});
@@ -184,7 +183,7 @@ namespace de4dot.cui {
 				public IDeobfuscatorContext DeobfuscatorContext { get; set; }
 				public bool ControlFlowDeobfuscation { get; set; }
 				public bool KeepObfuscatorTypes { get; set; }
-				public MetaDataFlags MetaDataFlags { get; set; }
+				public MetadataFlags MetadataFlags { get; set; }
 				public RenamerFlags RenamerFlags { get; set; }
 				public bool CreateDestinationDir { get; set; }
 			}
@@ -320,7 +319,7 @@ namespace de4dot.cui {
 					Filename = Utils.GetFullPath(filename),
 					ControlFlowDeobfuscation = options.ControlFlowDeobfuscation,
 					KeepObfuscatorTypes = options.KeepObfuscatorTypes,
-					MetaDataFlags = options.MetaDataFlags,
+					MetadataFlags = options.MetadataFlags,
 					RenamerFlags = options.RenamerFlags,
 				};
 				if (options.DefaultStringDecrypterType != null)

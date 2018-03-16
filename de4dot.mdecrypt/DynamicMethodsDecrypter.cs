@@ -18,7 +18,6 @@
 */
 
 using System;
-using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
@@ -165,7 +164,7 @@ namespace de4dot.mdecrypt {
 
 				dnlibModule = ModuleDefMD.Load(hInstModule);
 				methodDefTable = dnlibModule.TablesStream.MethodTable;
-				methodDefTablePtr = new IntPtr((byte*)hInstModule + (uint)dnlibModule.MetaData.PEImage.ToRVA(methodDefTable.StartOffset));
+				methodDefTablePtr = new IntPtr((byte*)hInstModule + (uint)dnlibModule.Metadata.PEImage.ToRVA(methodDefTable.StartOffset));
 
 				InitializeDNLibMethods();
 			}

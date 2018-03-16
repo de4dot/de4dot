@@ -20,7 +20,6 @@
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
-using dnlib.IO;
 using dnlib.DotNet;
 using de4dot.blocks;
 
@@ -112,9 +111,9 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 		}
 
 		byte[] DecryptResource(EmbeddedResource resource) {
-			var reader = resource.Data;
+			var reader = resource.GetReader();
 			reader.Position = 0;
-			var key = reader.ReadString();
+			var key = reader.ReadSerializedString();
 			var data = reader.ReadRemainingBytes();
 			var cryptoTransform = new DESCryptoServiceProvider {
 				Key = Encoding.ASCII.GetBytes(key),

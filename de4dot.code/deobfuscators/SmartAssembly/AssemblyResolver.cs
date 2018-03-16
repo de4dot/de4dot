@@ -73,7 +73,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			if (info.isCompressed)
 				return resourceDecrypter.Decrypt(info.resource);
 			else
-				return info.resource.GetResourceData();
+				return info.resource.GetReader().ToArray();
 		}
 	}
 }

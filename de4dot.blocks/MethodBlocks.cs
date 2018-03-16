@@ -17,8 +17,6 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using System.Collections.Generic;
-
 namespace de4dot.blocks {
 	// Start of a method
 	public class MethodBlocks : ScopeBlock {

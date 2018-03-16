@@ -18,10 +18,8 @@
 */
 
 using System;
-using System.IO;
 using ICSharpCode.SharpZipLib.Zip.Compression;
 using dnlib.PE;
-using dnlib.IO;
 using dnlib.DotNet;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
@@ -41,7 +39,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			if (dataEntry == null)
 				return null;
 
-			var encryptedData = dataEntry.Data.ReadAllBytes();
+			var encryptedData = dataEntry.GetReader().ToArray();
 
 			var keyData = GetKeyData();
 			if (keyData == null)
@@ -85,7 +83,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 					if (resource == null)
 						return null;
 
-					return resource.Data.ReadAllBytes();
+					return resource.GetReader().ToArray();
 				}
 			}
 			catch {

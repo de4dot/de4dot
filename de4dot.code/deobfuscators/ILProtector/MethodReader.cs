@@ -19,7 +19,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using dnlib.IO;
 using dnlib.DotNet;
 using dnlib.DotNet.MD;
@@ -73,7 +72,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 		}
 
 		public MethodReader(ModuleDefMD module, byte[] data, IList<Parameter> parameters)
-			: base(MemoryImageStream.Create(data), parameters) {
+			: base(ByteArrayDataReaderFactory.CreateReader(data), parameters) {
 			this.module = module;
 		}
 

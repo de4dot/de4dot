@@ -18,7 +18,6 @@
 */
 
 using System;
-using System.IO;
 using System.Collections.Generic;
 using dnlib.DotNet;
 using dnlib.DotNet.Writer;
@@ -164,10 +163,10 @@ namespace de4dot.cui {
 				// --keep-types
 				filesOptions.KeepObfuscatorTypes = true;
 				// --preserve-tokens
-				filesOptions.MetaDataFlags |= MetaDataFlags.PreserveRids |
-						MetaDataFlags.PreserveUSOffsets |
-						MetaDataFlags.PreserveBlobOffsets |
-						MetaDataFlags.PreserveExtraSignatureData;
+				filesOptions.MetadataFlags |= MetadataFlags.PreserveRids |
+						MetadataFlags.PreserveUSOffsets |
+						MetadataFlags.PreserveBlobOffsets |
+						MetadataFlags.PreserveExtraSignatureData;
 				// --dont-rename
 				filesOptions.RenameSymbols = false;
 				filesOptions.RenamerFlags = 0;
@@ -179,10 +178,10 @@ namespace de4dot.cui {
 				filesOptions.KeepObfuscatorTypes = true;
 			}));
 			miscOptions.Add(new NoArgOption(null, "preserve-tokens", "Preserve important tokens, #US, #Blob, extra sig data", () => {
-				filesOptions.MetaDataFlags |= MetaDataFlags.PreserveRids |
-						MetaDataFlags.PreserveUSOffsets |
-						MetaDataFlags.PreserveBlobOffsets |
-						MetaDataFlags.PreserveExtraSignatureData;
+				filesOptions.MetadataFlags |= MetadataFlags.PreserveRids |
+						MetadataFlags.PreserveUSOffsets |
+						MetadataFlags.PreserveBlobOffsets |
+						MetadataFlags.PreserveExtraSignatureData;
 			}));
 			miscOptions.Add(new OneArgOption(null, "preserve-table", "Preserve rids in table: tr (TypeRef), td (TypeDef), fd (Field), md (Method), pd (Param), mr (MemberRef), s (StandAloneSig), ed (Event), pr (Property), ts (TypeSpec), ms (MethodSpec), all (all previous tables). Use - to disable (eg. all,-pd). Can be combined: ed,fd,md", "flags", (val) => {
 				foreach (var t in val.Split(',')) {
@@ -192,40 +191,40 @@ namespace de4dot.cui {
 					bool clear = s[0] == '-';
 					if (clear)
 						s = s.Substring(1);
-					MetaDataFlags flag;
+					MetadataFlags flag;
 					switch (s.Trim()) {
 					case "": flag = 0; break;
-					case "all": flag = MetaDataFlags.PreserveRids; break;
-					case "tr": flag = MetaDataFlags.PreserveTypeRefRids; break;
-					case "td": flag = MetaDataFlags.PreserveTypeDefRids; break;
-					case "fd": flag = MetaDataFlags.PreserveFieldRids; break;
-					case "md": flag = MetaDataFlags.PreserveMethodRids; break;
-					case "pd": flag = MetaDataFlags.PreserveParamRids; break;
-					case "mr": flag = MetaDataFlags.PreserveMemberRefRids; break;
-					case "s": flag = MetaDataFlags.PreserveStandAloneSigRids; break;
-					case "ed": flag = MetaDataFlags.PreserveEventRids; break;
-					case "pr": flag = MetaDataFlags.PreservePropertyRids; break;
-					case "ts": flag = MetaDataFlags.PreserveTypeSpecRids; break;
-					case "ms": flag = MetaDataFlags.PreserveMethodSpecRids; break;
+					case "all": flag = MetadataFlags.PreserveRids; break;
+					case "tr": flag = MetadataFlags.PreserveTypeRefRids; break;
+					case "td": flag = MetadataFlags.PreserveTypeDefRids; break;
+					case "fd": flag = MetadataFlags.PreserveFieldRids; break;
+					case "md": flag = MetadataFlags.PreserveMethodRids; break;
+					case "pd": flag = MetadataFlags.PreserveParamRids; break;
+					case "mr": flag = MetadataFlags.PreserveMemberRefRids; break;
+					case "s": flag = MetadataFlags.PreserveStandAloneSigRids; break;
+					case "ed": flag = MetadataFlags.PreserveEventRids; break;
+					case "pr": flag = MetadataFlags.PreservePropertyRids; break;
+					case "ts": flag = MetadataFlags.PreserveTypeSpecRids; break;
+					case "ms": flag = MetadataFlags.PreserveMethodSpecRids; break;
 					default: throw new UserException(string.Format("Invalid --preserve-table option: {0}", s));
 					}
 					if (clear)
-						filesOptions.MetaDataFlags &= ~flag;
+						filesOptions.MetadataFlags &= ~flag;
 					else
-						filesOptions.MetaDataFlags |= flag;
+						filesOptions.MetadataFlags |= flag;
 				}
 			}));
 			miscOptions.Add(new NoArgOption(null, "preserve-strings", "Preserve #Strings heap offsets", () => {
-				filesOptions.MetaDataFlags |= MetaDataFlags.PreserveStringsOffsets;
+				filesOptions.MetadataFlags |= MetadataFlags.PreserveStringsOffsets;
 			}));
 			miscOptions.Add(new NoArgOption(null, "preserve-us", "Preserve #US heap offsets", () => {
-				filesOptions.MetaDataFlags |= MetaDataFlags.PreserveUSOffsets;
+				filesOptions.MetadataFlags |= MetadataFlags.PreserveUSOffsets;
 			}));
 			miscOptions.Add(new NoArgOption(null, "preserve-blob", "Preserve #Blob heap offsets", () => {
-				filesOptions.MetaDataFlags |= MetaDataFlags.PreserveBlobOffsets;
+				filesOptions.MetadataFlags |= MetadataFlags.PreserveBlobOffsets;
 			}));
 			miscOptions.Add(new NoArgOption(null, "preserve-sig-data", "Preserve extra data at the end of signatures", () => {
-				filesOptions.MetaDataFlags |= MetaDataFlags.PreserveExtraSignatureData;
+				filesOptions.MetadataFlags |= MetadataFlags.PreserveExtraSignatureData;
 			}));
 			miscOptions.Add(new NoArgOption(null, "one-file", "Deobfuscate one file at a time", () => {
 				filesOptions.OneFileAtATime = true;
@@ -251,7 +250,7 @@ namespace de4dot.cui {
 					Filename = val,
 					ControlFlowDeobfuscation = filesOptions.ControlFlowDeobfuscation,
 					KeepObfuscatorTypes = filesOptions.KeepObfuscatorTypes,
-					MetaDataFlags = filesOptions.MetaDataFlags,
+					MetadataFlags = filesOptions.MetadataFlags,
 					RenamerFlags = filesOptions.RenamerFlags,
 				};
 				if (defaultStringDecrypterType != null)

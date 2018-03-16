@@ -217,8 +217,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 		void DecryptAllAssemblies() {
 			if (assemblyResource == null)
 				return;
-			assemblyResource.Data.Position = 0;
-			var resourceSet = ResourceReader.Read(resourceModule, assemblyResource.Data);
+			var resourceSet = ResourceReader.Read(resourceModule, assemblyResource.GetReader());
 			foreach (var resourceElement in resourceSet.ResourceElements) {
 				if (resourceElement.ResourceData.Code != ResourceTypeCode.ByteArray)
 					throw new ApplicationException("Invalid resource");

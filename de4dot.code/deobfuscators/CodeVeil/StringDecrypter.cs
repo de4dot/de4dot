@@ -18,7 +18,6 @@
 */
 
 using System;
-using System.IO;
 using dnlib.IO;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
@@ -227,7 +226,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			Buffer.BlockCopy(encryptedData, 0, decryptedData, 0, data.Length);
 
 			var inflated = DeobUtils.Inflate(decryptedData, 0, decryptedData.Length, true);
-			var reader = MemoryImageStream.Create(inflated);
+			var reader = ByteArrayDataReaderFactory.CreateReader(inflated);
 			/*int deflatedLength = (int)*/reader.ReadCompressedUInt32();
 			int numStrings = (int)reader.ReadCompressedUInt32();
 			decryptedStrings = new string[numStrings];
@@ -236,8 +235,8 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				offsets[i] = (int)reader.ReadCompressedUInt32();
 			int startOffset = (int)reader.Position;
 			for (int i = 0; i < numStrings; i++) {
-				reader.Position = startOffset + offsets[i];
-				decryptedStrings[i] = reader.ReadString();
+				reader.Position = (uint)(startOffset + offsets[i]);
+				decryptedStrings[i] = reader.ReadSerializedString();
 			}
 		}
 

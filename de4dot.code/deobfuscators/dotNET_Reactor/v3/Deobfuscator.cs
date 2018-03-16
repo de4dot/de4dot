@@ -17,14 +17,10 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Text.RegularExpressions;
-using dnlib.IO;
 using dnlib.PE;
 using dnlib.DotNet;
-using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
@@ -297,9 +293,9 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 
 		void DumpResourceFiles() {
 			foreach (var resource in libAssemblyResolver.Resources) {
-				var mod = ModuleDefMD.Load(resource.Data.ReadAllBytes());
+				var mod = ModuleDefMD.Load(resource.GetReader().ToArray());
 				AddResourceToBeRemoved(resource, string.Format("Embedded assembly: {0}", mod.Assembly.FullName));
-				DeobfuscatedFile.CreateAssemblyFile(resource.GetResourceData(),
+				DeobfuscatedFile.CreateAssemblyFile(resource.GetReader().ToArray(),
 							Utils.GetAssemblySimpleName(mod.Assembly.FullName),
 							DeobUtils.GetExtension(mod.Kind));
 			}

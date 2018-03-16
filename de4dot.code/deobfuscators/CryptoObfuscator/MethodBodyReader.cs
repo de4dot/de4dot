@@ -17,12 +17,10 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using System;
 using System.Collections.Generic;
 using dnlib.IO;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
-using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CryptoObfuscator {
 	class MethodBodyReader : MethodBodyReaderBase {
@@ -30,7 +28,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		ushort maxStackSize;
 		GenericParamContext gpContext;
 
-		public MethodBodyReader(ModuleDefMD module, IBinaryReader reader)
+		public MethodBodyReader(ModuleDefMD module, ref DataReader reader)
 			: base(reader) {
 			this.module = module;
 		}

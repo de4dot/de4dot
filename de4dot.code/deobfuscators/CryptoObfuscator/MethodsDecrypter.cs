@@ -119,8 +119,8 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			resource = CoUtils.GetResource(module, decrypterCctor);
 			if (resource == null)
 				return;
-			var decrypted = resourceDecrypter.Decrypt(resource.GetResourceStream());
-			var reader = MemoryImageStream.Create(decrypted);
+			var decrypted = resourceDecrypter.Decrypt(resource.GetReader().AsStream());
+			var reader = ByteArrayDataReaderFactory.CreateReader(decrypted);
 			int numEncrypted = reader.ReadInt32();
 			Logger.v("Restoring {0} encrypted methods", numEncrypted);
 			Logger.Instance.Indent();
@@ -129,13 +129,13 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				uint codeOffset = reader.ReadUInt32();
 				var origOffset = reader.Position;
 				reader.Position = codeOffset;
-				Decrypt(reader, delegateTypeToken, simpleDeobfuscator);
+				Decrypt(ref reader, delegateTypeToken, simpleDeobfuscator);
 				reader.Position = origOffset;
 			}
 			Logger.Instance.DeIndent();
 		}
 
-		void Decrypt(IBinaryReader reader, int delegateTypeToken, ISimpleDeobfuscator simpleDeobfuscator) {
+		void Decrypt(ref DataReader reader, int delegateTypeToken, ISimpleDeobfuscator simpleDeobfuscator) {
 			var delegateType = module.ResolveToken(delegateTypeToken) as TypeDef;
 			if (delegateType == null)
 				throw new ApplicationException("Couldn't find delegate type");
@@ -152,7 +152,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			if (encMethod == null)
 				throw new ApplicationException("Invalid encrypted method token");
 
-			var bodyReader = new MethodBodyReader(module, reader);
+			var bodyReader = new MethodBodyReader(module, ref reader);
 			bodyReader.Read(encMethod);
 			bodyReader.RestoreMethod(encMethod);
 			Logger.v("Restored method {0} ({1:X8}). Instrs:{2}, Locals:{3}, Exceptions:{4}",

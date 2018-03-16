@@ -20,7 +20,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using dnlib.IO;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using de4dot.blocks;
@@ -138,7 +137,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		}
 
 		byte[] DecryptResourceAssembly() {
-			var decrypted = resourceDecrypter.Decrypt(encryptedResource.Data.ReadAllBytes());
+			var decrypted = resourceDecrypter.Decrypt(encryptedResource.GetReader().ToArray());
 			var reader = new BinaryReader(new MemoryStream(decrypted));
 
 			int numResources = reader.ReadInt32() ^ xorKey1;

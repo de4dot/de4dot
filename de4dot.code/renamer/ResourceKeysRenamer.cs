@@ -24,7 +24,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
-using dnlib.IO;
 using de4dot.blocks;
 using dnlib.DotNet.Resources;
 
@@ -124,8 +123,7 @@ namespace de4dot.code.renamer {
 
 		void Rename(TypeDef type, EmbeddedResource resource) {
 			newNames.Clear();
-			resource.Data.Position = 0;
-			var resourceSet = ResourceReader.Read(module, resource.Data);
+			var resourceSet = ResourceReader.Read(module, resource.GetReader());
 			var renamed = new List<RenameInfo>();
 			foreach (var elem in resourceSet.ResourceElements) {
 				if (nameChecker.IsValidResourceKeyName(elem.Name)) {

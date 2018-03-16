@@ -21,7 +21,6 @@ using System;
 using System.Drawing;
 using System.IO;
 using System.Runtime.Serialization;
-using dnlib.IO;
 using dnlib.DotNet;
 using dnlib.DotNet.Resources;
 
@@ -60,7 +59,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 
 		ResourceElement Convert(ResourceInfo info) {
 			var reader = info.dataReader;
-			reader.Position = info.offset;
+			reader.Position = (uint)info.offset;
 
 			IResourceData resourceData;
 			int type = (info.flags & 0x7F);
@@ -77,8 +76,8 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				resourceData = dataCreator.Create(reader.ReadBytes(info.length));
 				break;
 
-			case 4:		// char[]
-				resourceData = new CharArrayResourceData(dataCreator.CreateUserResourceType(CharArrayResourceData.ReflectionTypeName), reader.ReadChars(info.length));
+			case 4:     // char[]
+				resourceData = new CharArrayResourceData(dataCreator.CreateUserResourceType(CharArrayResourceData.ReflectionTypeName), DataReaderUtils.ReadChars(ref reader, info.length));
 				break;
 
 			case 5:		// sbyte
@@ -86,7 +85,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				break;
 
 			case 6:		// char
-				resourceData = dataCreator.Create(reader.ReadChar());
+				resourceData = dataCreator.Create(DataReaderUtils.ReadChar(ref reader));
 				break;
 
 			case 7:		// decimal
@@ -114,7 +113,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				break;
 
 			case 13:	// string
-				resourceData = dataCreator.Create(reader.ReadString());
+				resourceData = dataCreator.Create(reader.ReadSerializedString());
 				break;
 
 			case 14:	// ushort

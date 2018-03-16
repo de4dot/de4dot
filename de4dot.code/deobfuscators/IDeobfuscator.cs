@@ -59,7 +59,7 @@ namespace de4dot.code.deobfuscators {
 		string Name { get; }
 		IDeobfuscatorOptions TheOptions { get; }
 		IOperations Operations { get; set; }
-		MetaDataFlags MetaDataFlags { get; }
+		MetadataFlags MetadataFlags { get; }
 		StringFeatures StringFeatures { get; }
 		RenamingOptions RenamingOptions { get; }
 		DecrypterType DefaultDecrypterType { get; }

@@ -857,7 +857,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			var methodInfos = new MethodInfos(module, decrypterInfo.mainType, peImage, decrypterInfo.peHeader, decrypterInfo.mcKey);
 			methodInfos.InitializeInfos();
 
-			var methodDef = peImage.MetaData.TablesStream.MethodTable;
+			var methodDef = peImage.Metadata.TablesStream.MethodTable;
 			for (uint rid = 1; rid <= methodDef.Rows; rid++) {
 				var dm = new DumpedMethod();
 				peImage.ReadMethodTableRowTo(dm, rid);
@@ -870,7 +870,8 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				if (magic != 0xFFF3)
 					continue;
 
-				var mbHeader = MethodBodyParser.ParseMethodBody(MemoryImageStream.Create(info.body), out dm.code, out dm.extraSections);
+				var bodyReader = ByteArrayDataReaderFactory.CreateReader(info.body);
+				var mbHeader = MethodBodyParser.ParseMethodBody(ref bodyReader, out dm.code, out dm.extraSections);
 				peImage.UpdateMethodHeaderInfo(dm, mbHeader);
 
 				dumpedMethods.Add(dm);
@@ -916,7 +917,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			uint usHeapSize = peHeader.ReadUInt32(0x0E04) ^ mcKey.ReadUInt32(0x0082);
 			if (usHeapRva == 0 || usHeapSize == 0)
 				return;
-			var usHeap = peImage.MetaData.USStream;
+			var usHeap = peImage.Metadata.USStream;
 			if (usHeap.StartOffset == 0 ||	// Start offset is 0 if it's not present in the file
 				peImage.RvaToOffset(usHeapRva) != (uint)usHeap.StartOffset ||
 				usHeapSize != (uint)(usHeap.EndOffset - usHeap.StartOffset)) {

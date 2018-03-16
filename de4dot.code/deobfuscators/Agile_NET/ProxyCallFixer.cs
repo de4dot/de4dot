@@ -18,10 +18,8 @@
 */
 
 using System;
-using System.Collections.Generic;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
-using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Agile_NET {
 	class ProxyCallFixer : ProxyCallFixer1 {
