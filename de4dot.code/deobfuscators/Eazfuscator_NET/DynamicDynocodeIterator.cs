@@ -28,37 +28,16 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		IAssemblyClient assemblyClient;
 		List<TypeDef> dynocodeTypes = new List<TypeDef>();
 
-		public List<TypeDef> Types {
-			get { return dynocodeTypes; }
-		}
+		public List<TypeDef> Types => dynocodeTypes;
 
 		class MyEnumerator : IEnumerator<int> {
 			DynamicDynocodeIterator ddi;
-
-			public MyEnumerator(DynamicDynocodeIterator ddi) {
-				this.ddi = ddi;
-			}
-
-			public int Current {
-				get {
-					return (int)ddi.assemblyClient.GenericService.SendMessage(DynocodeService.MSG_CALL_GET_CURRENT, null);
-				}
-			}
-
-			public void Dispose() {
-			}
-
-			object System.Collections.IEnumerator.Current {
-				get { return Current; }
-			}
-
-			public bool MoveNext() {
-				return (bool)ddi.assemblyClient.GenericService.SendMessage(DynocodeService.MSG_CALL_MOVE_NEXT, null);
-			}
-
-			public void Reset() {
-				throw new NotImplementedException();
-			}
+			public MyEnumerator(DynamicDynocodeIterator ddi) => this.ddi = ddi;
+			public int Current => (int)ddi.assemblyClient.GenericService.SendMessage(DynocodeService.MSG_CALL_GET_CURRENT, null);
+			public void Dispose() { }
+			object System.Collections.IEnumerator.Current => Current;
+			public bool MoveNext() => (bool)ddi.assemblyClient.GenericService.SendMessage(DynocodeService.MSG_CALL_MOVE_NEXT, null);
+			public void Reset() => throw new NotImplementedException();
 		}
 
 		public void Dispose() {
@@ -89,21 +68,13 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 					new object[] { ctor.MDToken.ToUInt32(), args });
 		}
 
-		public void WriteEnumerableField(uint fieldToken, object value) {
-			assemblyClient.GenericService.SendMessage(DynocodeService.MSG_WRITE_ENUMERABLE_FIELD,
-					new object[] { fieldToken, value });
-		}
+		public void WriteEnumerableField(uint fieldToken, object value) =>
+			assemblyClient.GenericService.SendMessage(DynocodeService.MSG_WRITE_ENUMERABLE_FIELD, new object[] { fieldToken, value });
 
-		public void CreateEnumerator() {
+		public void CreateEnumerator() =>
 			assemblyClient.GenericService.SendMessage(DynocodeService.MSG_CREATE_ENUMERATOR, null);
-		}
 
-		public IEnumerator<int> GetEnumerator() {
-			return new MyEnumerator(this);
-		}
-
-		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() {
-			return new MyEnumerator(this);
-		}
+		public IEnumerator<int> GetEnumerator() => new MyEnumerator(this);
+		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => new MyEnumerator(this);
 	}
 }

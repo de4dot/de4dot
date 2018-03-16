@@ -225,9 +225,8 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				constants.Add(flagValue);
 			}
 
-			int notIndex, skipIndex;
-			flipFlagsBits = CheckFlipBits(method, out notIndex);
-			skipBytes = GetHeaderSkipBytes(method, out skipIndex);
+			flipFlagsBits = CheckFlipBits(method, out int notIndex);
+			skipBytes = GetHeaderSkipBytes(method, out int skipIndex);
 			skipBeforeFlag = skipIndex < notIndex;
 
 			switch (frameworkType) {
@@ -318,7 +317,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		}
 
 		public byte[] Decrypt(Stream resourceStream) {
-			Stream sourceStream = resourceStream;
+			var sourceStream = resourceStream;
 			int sourceStreamOffset = 1;
 			bool didSomething = false;
 

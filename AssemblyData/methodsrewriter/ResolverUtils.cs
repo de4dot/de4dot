@@ -24,36 +24,20 @@ using dnlib.DotNet;
 
 namespace AssemblyData.methodsrewriter {
 	static class ResolverUtils {
-		public static bool CompareTypes(Type a, IType b) {
-			return new SigComparer().Equals(a, b);
-		}
-
-		public static bool CompareFields(FieldInfo a, IField b) {
-			return new SigComparer().Equals(a, b);
-		}
-
-		public static bool HasThis(MethodBase method) {
-			return (method.CallingConvention & CallingConventions.HasThis) != 0;
-		}
-
-		public static bool ExplicitThis(MethodBase method) {
-			return (method.CallingConvention & CallingConventions.ExplicitThis) != 0;
-		}
-
-		public static bool CompareMethods(MethodBase a, IMethod b) {
-			return new SigComparer().Equals(a, b);
-		}
+		public static bool CompareTypes(Type a, IType b) => new SigComparer().Equals(a, b);
+		public static bool CompareFields(FieldInfo a, IField b) => new SigComparer().Equals(a, b);
+		public static bool HasThis(MethodBase method) => (method.CallingConvention & CallingConventions.HasThis) != 0;
+		public static bool ExplicitThis(MethodBase method) => (method.CallingConvention & CallingConventions.ExplicitThis) != 0;
+		public static bool CompareMethods(MethodBase a, IMethod b) => new SigComparer().Equals(a, b);
 
 		public static Type GetReturnType(MethodBase methodBase) {
-			var methodInfo = methodBase as MethodInfo;
-			if (methodInfo != null)
+			if (methodBase is MethodInfo methodInfo)
 				return methodInfo.ReturnType;
 
-			var ctorInfo = methodBase as ConstructorInfo;
-			if (ctorInfo != null)
+			if (methodBase is ConstructorInfo ctorInfo)
 				return typeof(void);
 
-			throw new ApplicationException(string.Format("Could not figure out return type: {0} ({1:X8})", methodBase, methodBase.MetadataToken));
+			throw new ApplicationException($"Could not figure out return type: {methodBase} ({methodBase.MetadataToken:X8})");
 		}
 
 		public static Type[] GetGenericArguments(MethodBase methodBase) {
@@ -82,9 +66,7 @@ namespace AssemblyData.methodsrewriter {
 				this.memberType = memberType;
 			}
 
-			public override int GetHashCode() {
-				return type.GetHashCode() ^ memberType.GetHashCode();
-			}
+			public override int GetHashCode() => type.GetHashCode() ^ memberType.GetHashCode();
 
 			public override bool Equals(object obj) {
 				var other = obj as CachedMemberInfo;
@@ -97,8 +79,7 @@ namespace AssemblyData.methodsrewriter {
 		static Dictionary<CachedMemberInfo, FieldInfo> cachedFieldInfos = new Dictionary<CachedMemberInfo, FieldInfo>();
 		public static FieldInfo GetField(Type type, Type fieldType, BindingFlags flags) {
 			var key = new CachedMemberInfo(type, fieldType);
-			FieldInfo fieldInfo;
-			if (cachedFieldInfos.TryGetValue(key, out fieldInfo))
+			if (cachedFieldInfos.TryGetValue(key, out var fieldInfo))
 				return fieldInfo;
 
 			foreach (var field in type.GetFields(flags)) {

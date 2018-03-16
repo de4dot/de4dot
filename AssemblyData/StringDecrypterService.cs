@@ -29,9 +29,7 @@ namespace AssemblyData {
 				throw new ApplicationException("SetStringDecrypterType() hasn't been called yet.");
 		}
 
-		public void LoadAssembly(string filename) {
-			LoadAssemblyInternal(filename);
-		}
+		public void LoadAssembly(string filename) => LoadAssemblyInternal(filename);
 
 		public void SetStringDecrypterType(StringDecrypterType type) {
 			if (stringDecrypter != null)
@@ -47,7 +45,7 @@ namespace AssemblyData {
 				break;
 
 			default:
-				throw new ApplicationException(string.Format("Unknown StringDecrypterType {0}", type));
+				throw new ApplicationException($"Unknown StringDecrypterType {type}");
 			}
 		}
 
@@ -55,9 +53,9 @@ namespace AssemblyData {
 			CheckStringDecrypter();
 			var methodInfo = FindMethod(methodToken);
 			if (methodInfo == null)
-				throw new ApplicationException(string.Format("Could not find method {0:X8}", methodToken));
+				throw new ApplicationException($"Could not find method {methodToken:X8}");
 			if (methodInfo.ReturnType != typeof(string) && methodInfo.ReturnType != typeof(object))
-				throw new ApplicationException(string.Format("Method return type must be string or object: {0}", methodInfo));
+				throw new ApplicationException($"Method return type must be string or object: {methodInfo}");
 			return stringDecrypter.DefineStringDecrypter(methodInfo);
 		}
 
@@ -82,8 +80,7 @@ namespace AssemblyData {
 			CheckAssembly();
 
 			foreach (var module in assembly.GetModules()) {
-				var method = module.ResolveMethod(methodToken) as MethodInfo;
-				if (method != null)
+				if (module.ResolveMethod(methodToken) is MethodInfo method)
 					return method;
 			}
 

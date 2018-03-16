@@ -34,9 +34,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			this.iv = iv;
 		}
 
-		public override string ToString() {
-			return string.Format("P:{0}, S:{1}, I:{2}", passphrase, salt, iv);
-		}
+		public override string ToString() => $"P:{passphrase}, S:{salt}, I:{iv}";
 	}
 
 	class PasswordFinder {
@@ -46,37 +44,14 @@ namespace de4dot.code.deobfuscators.CodeFort {
 		class Obj {
 			object obj;
 
-			public Obj(object obj) {
-				this.obj = obj;
-			}
-
-			public string Name {
-				get { return (string)ReadField("Name"); }
-			}
-
-			public List<Obj> Members {
-				get { return GetList("Members"); }
-			}
-
-			public List<Obj> Instructions {
-				get { return GetList("Instructions"); }
-			}
-
-			public object Operand {
-				get { return ReadField("Operand"); }
-			}
-
-			public string OpCode {
-				get { return (string)ReadField("OpCode"); }
-			}
-
-			public Obj MemberDef {
-				get { return new Obj(ReadField("MemberDef")); }
-			}
-
-			protected object ReadField(string name) {
-				return PasswordFinder.ReadField(obj, name);
-			}
+			public Obj(object obj) => this.obj = obj;
+			public string Name => (string)ReadField("Name");
+			public List<Obj> Members => GetList("Members");
+			public List<Obj> Instructions => GetList("Instructions");
+			public object Operand => ReadField("Operand");
+			public string OpCode => (string)ReadField("OpCode");
+			public Obj MemberDef => new Obj(ReadField("MemberDef"));
+			protected object ReadField(string name) => PasswordFinder.ReadField(obj, name);
 
 			public Obj FindMethod(string name) {
 				foreach (var member in Members) {
@@ -88,12 +63,10 @@ namespace de4dot.code.deobfuscators.CodeFort {
 					return member;
 				}
 
-				throw new ApplicationException(string.Format("Could not find method {0}", name));
+				throw new ApplicationException($"Could not find method {name}");
 			}
 
-			List<Obj> GetList(string name) {
-				return ConvertList((System.Collections.IList)ReadField(name));
-			}
+			List<Obj> GetList(string name) => ConvertList((System.Collections.IList)ReadField(name));
 
 			static List<Obj> ConvertList(System.Collections.IList inList) {
 				var outList = new List<Obj>(inList.Count);
@@ -102,22 +75,12 @@ namespace de4dot.code.deobfuscators.CodeFort {
 				return outList;
 			}
 
-			public override string ToString() {
-				return Name;
-			}
+			public override string ToString() => Name;
 		}
 
-		public PasswordFinder(byte[] serializedData) {
-			this.serializedData = serializedData;
-		}
-
-		static object ReadField(object instance, string name) {
-			return instance.GetType().GetField(name).GetValue(instance);
-		}
-
-		static System.Collections.IList ToList(object obj) {
-			return (System.Collections.IList)obj;
-		}
+		public PasswordFinder(byte[] serializedData) => this.serializedData = serializedData;
+		static object ReadField(object instance, string name) => instance.GetType().GetField(name).GetValue(instance);
+		static System.Collections.IList ToList(object obj) => (System.Collections.IList)obj;
 
 		public void Find(out PasswordInfo mainAsmPassword, out PasswordInfo embedPassword) {
 			var asmBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(new AssemblyName("asm"), AssemblyBuilderAccess.Run);
@@ -216,7 +179,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 				return s.ToUpper();
 			if (op.Name == "ToLower")
 				return s.ToLower();
-			throw new ApplicationException(string.Format("Unknown method {0}", op.Name));
+			throw new ApplicationException($"Unknown method {op.Name}");
 		}
 	}
 }

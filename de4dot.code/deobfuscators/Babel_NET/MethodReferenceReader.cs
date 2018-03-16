@@ -30,14 +30,8 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		public Parameter[] Parameters { get; set; }
 		public TypeSig[] GenericArguments { get; set; }
 		public int Flags { get; set; }
-
-		public bool HasThis {
-			get { return (Flags & 1) != 0; }
-		}
-
-		public bool IsGenericMethod {
-			get { return (Flags & 2) != 0; }
-		}
+		public bool HasThis => (Flags & 1) != 0;
+		public bool IsGenericMethod => (Flags & 2) != 0;
 	}
 
 	class BabelMethodDef : BabelMethodreference {
@@ -48,22 +42,10 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		public IList<Local> Locals { get; set; }
 		public IList<Instruction> Instructions { get; set; }
 		public IList<ExceptionHandler> ExceptionHandlers { get; set; }
-
-		public bool IsStatic {
-			get { return (Flags2 & 0x10) != 0; }
-		}
-
-		public bool RequiresFatExceptionHandler {
-			get { return (Flags2 & 0x20) != 0; }
-		}
-
-		public bool InitLocals {
-			get { return (Flags2 & 0x40) != 0; }
-		}
-
-		public bool CacheMethod {
-			get { return (Flags2 & 0x80) != 0; }
-		}
+		public bool IsStatic => (Flags2 & 0x10) != 0;
+		public bool RequiresFatExceptionHandler => (Flags2 & 0x20) != 0;
+		public bool InitLocals => (Flags2 & 0x40) != 0;
+		public bool CacheMethod => (Flags2 & 0x80) != 0;
 
 		public Parameter ThisParameter {
 			get {
@@ -135,9 +117,9 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		BabelMethodDef bmd;
 
 		public MethodDefReader(ImageReader imageReader) {
-			this.bmd = new BabelMethodDef();
-			this.methodRefReader = new MethodRefReader(imageReader, bmd);
-			this.methodBodyReader = new MethodBodyReader(imageReader);
+			bmd = new BabelMethodDef();
+			methodRefReader = new MethodRefReader(imageReader, bmd);
+			methodBodyReader = new MethodBodyReader(imageReader);
 		}
 
 		public BabelMethodDef Read() {

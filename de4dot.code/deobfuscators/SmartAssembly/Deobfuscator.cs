@@ -38,30 +38,23 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			removeMemoryManager = new BoolOption(null, MakeArgName("memory"), "Remove memory manager code", true);
 		}
 
-		public override string Name {
-			get { return THE_NAME; }
-		}
+		public override string Name => THE_NAME;
+		public override string Type => THE_TYPE;
 
-		public override string Type {
-			get { return THE_TYPE; }
-		}
-
-		public override IDeobfuscator CreateDeobfuscator() {
-			return new Deobfuscator(new Deobfuscator.Options {
+		public override IDeobfuscator CreateDeobfuscator() =>
+			new Deobfuscator(new Deobfuscator.Options {
 				ValidNameRegex = validNameRegex.Get(),
 				RemoveAutomatedErrorReporting = removeAutomatedErrorReporting.Get(),
 				RemoveTamperProtection = removeTamperProtection.Get(),
 				RemoveMemoryManager = removeMemoryManager.Get(),
 			});
-		}
 
-		protected override IEnumerable<Option> GetOptionsInternal() {
-			return new List<Option>() {
+		protected override IEnumerable<Option> GetOptionsInternal() =>
+			new List<Option>() {
 				removeAutomatedErrorReporting,
 				removeTamperProtection,
 				removeMemoryManager,
 			};
-		}
 	}
 
 	class Deobfuscator : DeobfuscatorBase {
@@ -93,17 +86,9 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			public bool RemoveMemoryManager { get; set; }
 		}
 
-		public override string Type {
-			get { return DeobfuscatorInfo.THE_TYPE; }
-		}
-
-		public override string TypeLong {
-			get { return DeobfuscatorInfo.THE_NAME; }
-		}
-
-		public override string Name {
-			get { return obfuscatorName; }
-		}
+		public override string Type => DeobfuscatorInfo.THE_TYPE;
+		public override string TypeLong => DeobfuscatorInfo.THE_NAME;
+		public override string Name => obfuscatorName;
 
 		string ObfuscatorName {
 			set {
@@ -118,9 +103,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			StringFeatures = StringFeatures.AllowStaticDecryption;
 		}
 
-		public override void Initialize(ModuleDefMD module) {
-			base.Initialize(module);
-		}
+		public override void Initialize(ModuleDefMD module) => base.Initialize(module);
 
 		protected override int DetectInternal() {
 			int val = 0;
@@ -260,9 +243,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return null;
 		}
 
-		bool HasModuleCctor() {
-			return DotNetUtils.GetModuleTypeCctor(module) != null;
-		}
+		bool HasModuleCctor() => DotNetUtils.GetModuleTypeCctor(module) != null;
 
 		bool HasEmptyClassesInEveryNamespace() {
 			var namespaces = new Dictionary<string, int>(StringComparer.Ordinal);
@@ -290,7 +271,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 
 			tamperProtectionRemover = new TamperProtectionRemover(module);
 			automatedErrorReportingFinder = new AutomatedErrorReportingFinder(module);
-			automatedErrorReportingFinder.find();
+			automatedErrorReportingFinder.Find();
 
 			if (options.RemoveMemoryManager) {
 				AddModuleCctorInitCallToBeRemoved(memoryManagerInfo.CctorInitMethod);
@@ -332,7 +313,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			assemblyResolver.ResolveResources();
 			foreach (var tuple in assemblyResolver.GetDecryptedResources()) {
 				DeobfuscatedFile.CreateAssemblyFile(tuple.Item2, tuple.Item1.simpleName, null);
-				AddResourceToBeRemoved(tuple.Item1.resource, string.Format("Embedded assembly: {0}", tuple.Item1.assemblyName));
+				AddResourceToBeRemoved(tuple.Item1.resource, $"Embedded assembly: {tuple.Item1.assemblyName}");
 			}
 		}
 
@@ -412,7 +393,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			Logger.v("Adding string decrypter. Resource: {0}", Utils.ToCsharpString(info.StringsResource.Name));
 			var decrypter = new StringDecrypter(info);
 			if (decrypter.CanDecrypt) {
-				var invokeMethod = info.GetStringDelegate == null ? null : info.GetStringDelegate.FindMethod("Invoke");
+				var invokeMethod = info.GetStringDelegate?.FindMethod("Invoke");
 				staticStringInliner.Add(invokeMethod, (method, gim, args) => {
 					var fieldDef = DotNetUtils.GetField(module, (IField)args[0]);
 					return decrypter.Decrypt(fieldDef.MDToken.ToInt32(), (int)args[1]);
@@ -477,8 +458,8 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				return;
 			if (info.CallResolverType == null || info.Type == null)
 				return;
-			AddTypeToBeRemoved(info.CallResolverType, string.Format("{0} resolver type #1", typeName));
-			AddTypeToBeRemoved(info.Type, string.Format("{0} resolver type #2", typeName));
+			AddTypeToBeRemoved(info.CallResolverType, $"{typeName} resolver type #1");
+			AddTypeToBeRemoved(info.Type, $"{typeName} resolver type #2");
 		}
 
 		void RemoveAutomatedErrorReportingCode(Blocks blocks) {

@@ -101,38 +101,17 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			}
 
 			public DecryptedMethodInfo Lookup(uint bodyRva) {
-				DecryptedMethodInfo info;
-				infos.TryGetValue(bodyRva, out info);
+				infos.TryGetValue(bodyRva, out var info);
 				return info;
 			}
 
-			byte ReadByte(uint offset) {
-				return peImage.OffsetReadByte(methodInfosOffset + offset);
-			}
-
-			short ReadInt16(uint offset) {
-				return (short)peImage.OffsetReadUInt16(methodInfosOffset + offset);
-			}
-
-			uint ReadUInt32(uint offset) {
-				return peImage.OffsetReadUInt32(methodInfosOffset + offset);
-			}
-
-			int ReadInt32(uint offset) {
-				return (int)ReadUInt32(offset);
-			}
-
-			short ReadEncryptedInt16(uint offset) {
-				return (short)(ReadInt16(offset) ^ xorKey);
-			}
-
-			int ReadEncryptedInt32(uint offset) {
-				return (int)ReadEncryptedUInt32(offset);
-			}
-
-			uint ReadEncryptedUInt32(uint offset) {
-				return ReadUInt32(offset) ^ xorKey;
-			}
+			byte ReadByte(uint offset) => peImage.OffsetReadByte(methodInfosOffset + offset);
+			short ReadInt16(uint offset) => (short)peImage.OffsetReadUInt16(methodInfosOffset + offset);
+			uint ReadUInt32(uint offset) => peImage.OffsetReadUInt32(methodInfosOffset + offset);
+			int ReadInt32(uint offset) => (int)ReadUInt32(offset);
+			short ReadEncryptedInt16(uint offset) => (short)(ReadInt16(offset) ^ xorKey);
+			int ReadEncryptedInt32(uint offset) => (int)ReadEncryptedUInt32(offset);
+			uint ReadEncryptedUInt32(uint offset) => ReadUInt32(offset) ^ xorKey;
 
 			interface IDecrypter {
 				byte[] Decrypt(int type, byte[] encrypted);
@@ -155,7 +134,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				public byte[] Decrypt(int type, byte[] encrypted) {
 					if (1 <= type && type <= decrypterHandlers.Length)
 						return decrypterHandlers[type - 1](encrypted);
-					throw new ApplicationException(string.Format("Invalid encryption type: {0:X2}", type));
+					throw new ApplicationException($"Invalid encryption type: {type:X2}");
 				}
 
 				public bool HasTimeStamp(uint timeStamp) {
@@ -354,9 +333,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				return offset + source.Length;
 			}
 
-			byte[] ReadData(uint offset, int size) {
-				return peImage.OffsetReadBytes(encryptedDataOffset + offset, size);
-			}
+			byte[] ReadData(uint offset, int size) => peImage.OffsetReadBytes(encryptedDataOffset + offset, size);
 
 			byte[] Decrypt(IDecrypter decrypter, int type, uint dataOffset, uint encryptedSize, uint realSize) {
 				if (realSize == 0)
@@ -372,53 +349,18 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				return decrypted;
 			}
 
-			byte[] Decrypt1_v1(byte[] encrypted) {
-				return Decrypt1(encrypted, 0, 0, 0x2000);
-			}
-
-			byte[] Decrypt1_v2(byte[] encrypted) {
-				return Decrypt1(encrypted, 6, 6, 0x500);
-			}
-
-			byte[] Decrypt1_v3(byte[] encrypted) {
-				return Decrypt1(encrypted, 6, 0, 0x1000);
-			}
-
-			byte[] Decrypt1_v4(byte[] encrypted) {
-				return Decrypt1(encrypted, 5, 5, 0x500);
-			}
-
-			byte[] Decrypt1_v5(byte[] encrypted) {
-				return Decrypt1(encrypted, 9, 9, 0x500);
-			}
-
-			byte[] Decrypt1_v6(byte[] encrypted) {
-				return Decrypt1(encrypted, 0x27, 0x27, 0x100);
-			}
-
-			byte[] Decrypt1_v7(byte[] encrypted) {
-				return Decrypt1(encrypted, 0x1D, 0x1D, 0x400);
-			}
-
-			byte[] Decrypt1_v9(byte[] encrypted) {
-				return Decrypt1(encrypted, 9, 0x13, 0x400);
-			}
-
-			byte[] Decrypt1_v10(byte[] encrypted) {
-				return Decrypt1(encrypted, 0x11, 0x11, 0x400);
-			}
-
-			byte[] Decrypt1_v11(byte[] encrypted) {
-				return Decrypt1(encrypted, 0x13, 0x13, 0x400);
-			}
-
-			byte[] Decrypt1_v12(byte[] encrypted) {
-				return Decrypt1(encrypted, 0x12, 0x12, 0x200);
-			}
-
-			byte[] Decrypt1_v13(byte[] encrypted) {
-				return Decrypt1(encrypted, 0x11, 0x11, 0x200);
-			}
+			byte[] Decrypt1_v1(byte[] encrypted) => Decrypt1(encrypted, 0, 0, 0x2000);
+			byte[] Decrypt1_v2(byte[] encrypted) => Decrypt1(encrypted, 6, 6, 0x500);
+			byte[] Decrypt1_v3(byte[] encrypted) => Decrypt1(encrypted, 6, 0, 0x1000);
+			byte[] Decrypt1_v4(byte[] encrypted) => Decrypt1(encrypted, 5, 5, 0x500);
+			byte[] Decrypt1_v5(byte[] encrypted) => Decrypt1(encrypted, 9, 9, 0x500);
+			byte[] Decrypt1_v6(byte[] encrypted) => Decrypt1(encrypted, 0x27, 0x27, 0x100);
+			byte[] Decrypt1_v7(byte[] encrypted) => Decrypt1(encrypted, 0x1D, 0x1D, 0x400);
+			byte[] Decrypt1_v9(byte[] encrypted) => Decrypt1(encrypted, 9, 0x13, 0x400);
+			byte[] Decrypt1_v10(byte[] encrypted) => Decrypt1(encrypted, 0x11, 0x11, 0x400);
+			byte[] Decrypt1_v11(byte[] encrypted) => Decrypt1(encrypted, 0x13, 0x13, 0x400);
+			byte[] Decrypt1_v12(byte[] encrypted) => Decrypt1(encrypted, 0x12, 0x12, 0x200);
+			byte[] Decrypt1_v13(byte[] encrypted) => Decrypt1(encrypted, 0x11, 0x11, 0x200);
 
 			byte[] Decrypt1(byte[] encrypted, int keyStart, int keyReset, int keyEnd) {
 				var decrypted = new byte[encrypted.Length];
@@ -430,41 +372,15 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				return decrypted;
 			}
 
-			byte[] Decrypt2_v1(byte[] encrypted) {
-				return Decrypt2(encrypted, 0x00FA);
-			}
-
-			byte[] Decrypt2_v2(byte[] encrypted) {
-				return Decrypt2(encrypted, 0x00FA + 9);
-			}
-
-			byte[] Decrypt2_v3(byte[] encrypted) {
-				return Decrypt2(encrypted, 0x00FA + 0x24);
-			}
-
-			byte[] Decrypt2_v4(byte[] encrypted) {
-				return Decrypt2(encrypted, 0x00FA + 7);
-			}
-
-			byte[] Decrypt2_v5(byte[] encrypted) {
-				return Decrypt2(encrypted, 0x00FA + 0x63);
-			}
-
-			byte[] Decrypt2_v6(byte[] encrypted) {
-				return Decrypt2(encrypted, 0x00FA + 0x0B);
-			}
-
-			byte[] Decrypt2_v7(byte[] encrypted) {
-				return Decrypt2(encrypted, 0x00FA + 0x0E);
-			}
-
-			byte[] Decrypt2_v8(byte[] encrypted) {
-				return Decrypt2(encrypted, 0x00FA + 0x0D);
-			}
-
-			byte[] Decrypt2_v9(byte[] encrypted) {
-				return Decrypt2(encrypted, 0x00FA + 0x0C);
-			}
+			byte[] Decrypt2_v1(byte[] encrypted) => Decrypt2(encrypted, 0x00FA);
+			byte[] Decrypt2_v2(byte[] encrypted) => Decrypt2(encrypted, 0x00FA + 9);
+			byte[] Decrypt2_v3(byte[] encrypted) => Decrypt2(encrypted, 0x00FA + 0x24);
+			byte[] Decrypt2_v4(byte[] encrypted) => Decrypt2(encrypted, 0x00FA + 7);
+			byte[] Decrypt2_v5(byte[] encrypted) => Decrypt2(encrypted, 0x00FA + 0x63);
+			byte[] Decrypt2_v6(byte[] encrypted) => Decrypt2(encrypted, 0x00FA + 0x0B);
+			byte[] Decrypt2_v7(byte[] encrypted) => Decrypt2(encrypted, 0x00FA + 0x0E);
+			byte[] Decrypt2_v8(byte[] encrypted) => Decrypt2(encrypted, 0x00FA + 0x0D);
+			byte[] Decrypt2_v9(byte[] encrypted) => Decrypt2(encrypted, 0x00FA + 0x0C);
 
 			byte[] Decrypt2(byte[] encrypted, int offset) {
 				if ((encrypted.Length & 7) != 0)
@@ -489,45 +405,16 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				return decrypted;
 			}
 
-			byte[] Decrypt3_v1(byte[] encrypted) {
-				return Decrypt3(encrypted, 0x015E);
-			}
-
-			byte[] Decrypt3_v2(byte[] encrypted) {
-				return Decrypt3(encrypted, 0x015E + 0xE5);
-			}
-
-			byte[] Decrypt3_v3(byte[] encrypted) {
-				return Decrypt3(encrypted, 0x015E + 0x28);
-			}
-
-			byte[] Decrypt3_v4(byte[] encrypted) {
-				return Decrypt3(encrypted, 0x015E + 8);
-			}
-
-			byte[] Decrypt3_v5(byte[] encrypted) {
-				return Decrypt3(encrypted, 0x015E + 7);
-			}
-
-			byte[] Decrypt3_v6(byte[] encrypted) {
-				return Decrypt3(encrypted, 0x015E + 0x7F);
-			}
-
-			byte[] Decrypt3_v7(byte[] encrypted) {
-				return Decrypt3(encrypted, 0x015E + 0x0D);
-			}
-
-			byte[] Decrypt3_v8(byte[] encrypted) {
-				return Decrypt3(encrypted, 0x015E + 0x0F);
-			}
-
-			byte[] Decrypt3_v9(byte[] encrypted) {
-				return Decrypt3(encrypted, 0x015E + 0x12);
-			}
-
-			byte[] Decrypt3_v10(byte[] encrypted) {
-				return Decrypt3(encrypted, 0x015E + 0x0E);
-			}
+			byte[] Decrypt3_v1(byte[] encrypted) => Decrypt3(encrypted, 0x015E);
+			byte[] Decrypt3_v2(byte[] encrypted) => Decrypt3(encrypted, 0x015E + 0xE5);
+			byte[] Decrypt3_v3(byte[] encrypted) => Decrypt3(encrypted, 0x015E + 0x28);
+			byte[] Decrypt3_v4(byte[] encrypted) => Decrypt3(encrypted, 0x015E + 8);
+			byte[] Decrypt3_v5(byte[] encrypted) => Decrypt3(encrypted, 0x015E + 7);
+			byte[] Decrypt3_v6(byte[] encrypted) => Decrypt3(encrypted, 0x015E + 0x7F);
+			byte[] Decrypt3_v7(byte[] encrypted) => Decrypt3(encrypted, 0x015E + 0x0D);
+			byte[] Decrypt3_v8(byte[] encrypted) => Decrypt3(encrypted, 0x015E + 0x0F);
+			byte[] Decrypt3_v9(byte[] encrypted) => Decrypt3(encrypted, 0x015E + 0x12);
+			byte[] Decrypt3_v10(byte[] encrypted) => Decrypt3(encrypted, 0x015E + 0x0E);
 
 			static readonly byte[] decrypt3Shifts = new byte[16] { 5, 11, 14, 21, 6, 20, 17, 29, 4, 10, 3, 2, 7, 1, 26, 18 };
 			byte[] Decrypt3(byte[] encrypted, int offset) {
@@ -558,53 +445,18 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				return decrypted;
 			}
 
-			byte[] Decrypt4_v1(byte[] encrypted) {
-				return Decrypt4(encrypted, 0, 0, 0x2000);
-			}
-
-			byte[] Decrypt4_v2(byte[] encrypted) {
-				return Decrypt4(encrypted, 0x14, 0x14, 0x1000);
-			}
-
-			byte[] Decrypt4_v3(byte[] encrypted) {
-				return Decrypt4(encrypted, 5, 0, 0x2000);
-			}
-
-			byte[] Decrypt4_v4(byte[] encrypted) {
-				return Decrypt4(encrypted, 0x0B, 0x0B, 0x1000);
-			}
-
-			byte[] Decrypt4_v5(byte[] encrypted) {
-				return Decrypt4(encrypted, 0x15, 0x15, 0x100);
-			}
-
-			byte[] Decrypt4_v6(byte[] encrypted) {
-				return Decrypt4(encrypted, 0x63, 0x63, 0x150);
-			}
-
-			byte[] Decrypt4_v7(byte[] encrypted) {
-				return Decrypt4(encrypted, 0x0B, 0x0B, 0x100);
-			}
-
-			byte[] Decrypt4_v8(byte[] encrypted) {
-				return Decrypt4(encrypted, 9, 9, 0x100);
-			}
-
-			byte[] Decrypt4_v9(byte[] encrypted) {
-				return Decrypt4(encrypted, 0x0B, 0x0B, 0x150);
-			}
-
-			byte[] Decrypt4_v10(byte[] encrypted) {
-				return Decrypt4(encrypted, 0x10, 0x10, 0x120);
-			}
-
-			byte[] Decrypt4_v11(byte[] encrypted) {
-				return Decrypt4(encrypted, 0x0F, 0x0E, 0x120);
-			}
-
-			byte[] Decrypt4_v12(byte[] encrypted) {
-				return Decrypt4(encrypted, 0x0C, 0x0C, 0x150);
-			}
+			byte[] Decrypt4_v1(byte[] encrypted) => Decrypt4(encrypted, 0, 0, 0x2000);
+			byte[] Decrypt4_v2(byte[] encrypted) => Decrypt4(encrypted, 0x14, 0x14, 0x1000);
+			byte[] Decrypt4_v3(byte[] encrypted) => Decrypt4(encrypted, 5, 0, 0x2000);
+			byte[] Decrypt4_v4(byte[] encrypted) => Decrypt4(encrypted, 0x0B, 0x0B, 0x1000);
+			byte[] Decrypt4_v5(byte[] encrypted) => Decrypt4(encrypted, 0x15, 0x15, 0x100);
+			byte[] Decrypt4_v6(byte[] encrypted) => Decrypt4(encrypted, 0x63, 0x63, 0x150);
+			byte[] Decrypt4_v7(byte[] encrypted) => Decrypt4(encrypted, 0x0B, 0x0B, 0x100);
+			byte[] Decrypt4_v8(byte[] encrypted) => Decrypt4(encrypted, 9, 9, 0x100);
+			byte[] Decrypt4_v9(byte[] encrypted) => Decrypt4(encrypted, 0x0B, 0x0B, 0x150);
+			byte[] Decrypt4_v10(byte[] encrypted) => Decrypt4(encrypted, 0x10, 0x10, 0x120);
+			byte[] Decrypt4_v11(byte[] encrypted) => Decrypt4(encrypted, 0x0F, 0x0E, 0x120);
+			byte[] Decrypt4_v12(byte[] encrypted) => Decrypt4(encrypted, 0x0C, 0x0C, 0x150);
 
 			byte[] Decrypt4(byte[] encrypted, int keyStart, int keyReset, int keyEnd) {
 				var decrypted = new byte[encrypted.Length / 3 * 2 + 1];
@@ -629,13 +481,8 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				return decrypted;
 			}
 
-			byte[] Decrypt5(byte[] encrypted) {
-				return CryptDecrypter.Decrypt(mcKey.ReadBytes(0x0032, 15), encrypted);
-			}
-
-			byte[] Decrypt6(byte[] encrypted) {
-				return Decrypter6.Decrypt(mcKey.ReadBytes(0x0096, 32), encrypted);
-			}
+			byte[] Decrypt5(byte[] encrypted) => CryptDecrypter.Decrypt(mcKey.ReadBytes(0x0032, 15), encrypted);
+			byte[] Decrypt6(byte[] encrypted) => Decrypter6.Decrypt(mcKey.ReadBytes(0x0096, 32), encrypted);
 
 			byte[] Decrypt7(byte[] encrypted) {
 				var decrypted = (byte[])encrypted.Clone();
@@ -643,37 +490,14 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				return decrypted;
 			}
 
-			byte[] Decrypt8_v5(byte[] encrypted) {
-				return Decrypt8(encrypted, 7, 7, 0x600);
-			}
-
-			byte[] Decrypt8_v6(byte[] encrypted) {
-				return Decrypt8(encrypted, 0x1B, 0x1B, 0x100);
-			}
-
-			byte[] Decrypt8_v7(byte[] encrypted) {
-				return Decrypt8(encrypted, 0x0D, 0x0D, 0x600);
-			}
-
-			byte[] Decrypt8_v8(byte[] encrypted) {
-				return Decrypt8(encrypted, 0x11, 0x11, 0x600);
-			}
-
-			byte[] Decrypt8_v9(byte[] encrypted) {
-				return Decrypt8(encrypted, 0xA, 0xA, 0x600);
-			}
-
-			byte[] Decrypt8_v10(byte[] encrypted) {
-				return Decrypt8(encrypted, 0x14, 0x14, 0x600);
-			}
-
-			byte[] Decrypt8_v11(byte[] encrypted) {
-				return Decrypt8(encrypted, 0x19, 0x19, 0x500);
-			}
-
-			byte[] Decrypt8_v12(byte[] encrypted) {
-				return Decrypt8(encrypted, 0x14, 0x14, 0x600);
-			}
+			byte[] Decrypt8_v5(byte[] encrypted) => Decrypt8(encrypted, 7, 7, 0x600);
+			byte[] Decrypt8_v6(byte[] encrypted) => Decrypt8(encrypted, 0x1B, 0x1B, 0x100);
+			byte[] Decrypt8_v7(byte[] encrypted) => Decrypt8(encrypted, 0x0D, 0x0D, 0x600);
+			byte[] Decrypt8_v8(byte[] encrypted) => Decrypt8(encrypted, 0x11, 0x11, 0x600);
+			byte[] Decrypt8_v9(byte[] encrypted) => Decrypt8(encrypted, 0xA, 0xA, 0x600);
+			byte[] Decrypt8_v10(byte[] encrypted) => Decrypt8(encrypted, 0x14, 0x14, 0x600);
+			byte[] Decrypt8_v11(byte[] encrypted) => Decrypt8(encrypted, 0x19, 0x19, 0x500);
+			byte[] Decrypt8_v12(byte[] encrypted) => Decrypt8(encrypted, 0x14, 0x14, 0x600);
 
 			byte[] Decrypt8(byte[] encrypted, int keyStart, int keyReset, int keyEnd) {
 				var decrypted = new byte[encrypted.Length];
@@ -688,41 +512,15 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				return decrypted;
 			}
 
-			byte[] Decrypt9_v5(byte[] encrypted) {
-				return Decrypt9(encrypted, 0x11, 0x11, 0x610);
-			}
-
-			byte[] Decrypt9_v6(byte[] encrypted) {
-				return Decrypt9(encrypted, 0x2E, 0x2E, 0x310);
-			}
-
-			byte[] Decrypt9_v7(byte[] encrypted) {
-				return Decrypt9(encrypted, 0x28, 0x28, 0x510);
-			}
-
-			byte[] Decrypt9_v8(byte[] encrypted) {
-				return Decrypt9(encrypted, 0x2C, 0x2C, 0x510);
-			}
-
-			byte[] Decrypt9_v9(byte[] encrypted) {
-				return Decrypt9(encrypted, 0x10, 0x10, 0x510);
-			}
-
-			byte[] Decrypt9_v10(byte[] encrypted) {
-				return Decrypt9(encrypted, 5, 5, 0x510);
-			}
-
-			byte[] Decrypt9_v11(byte[] encrypted) {
-				return Decrypt9(encrypted, 0x19, 0x19, 0x500);
-			}
-
-			byte[] Decrypt9_v12(byte[] encrypted) {
-				return Decrypt9(encrypted, 0x19, 0x19, 0x500);
-			}
-
-			byte[] Decrypt9_v13(byte[] encrypted) {
-				return Decrypt9(encrypted, 5, 5, 0x510);
-			}
+			byte[] Decrypt9_v5(byte[] encrypted) => Decrypt9(encrypted, 0x11, 0x11, 0x610);
+			byte[] Decrypt9_v6(byte[] encrypted) => Decrypt9(encrypted, 0x2E, 0x2E, 0x310);
+			byte[] Decrypt9_v7(byte[] encrypted) => Decrypt9(encrypted, 0x28, 0x28, 0x510);
+			byte[] Decrypt9_v8(byte[] encrypted) => Decrypt9(encrypted, 0x2C, 0x2C, 0x510);
+			byte[] Decrypt9_v9(byte[] encrypted) => Decrypt9(encrypted, 0x10, 0x10, 0x510);
+			byte[] Decrypt9_v10(byte[] encrypted) => Decrypt9(encrypted, 5, 5, 0x510);
+			byte[] Decrypt9_v11(byte[] encrypted) => Decrypt9(encrypted, 0x19, 0x19, 0x500);
+			byte[] Decrypt9_v12(byte[] encrypted) => Decrypt9(encrypted, 0x19, 0x19, 0x500);
+			byte[] Decrypt9_v13(byte[] encrypted) => Decrypt9(encrypted, 5, 5, 0x510);
 
 			byte[] Decrypt9(byte[] encrypted, int keyStart, int keyReset, int keyEnd) {
 				var decrypted = new byte[encrypted.Length];
@@ -783,9 +581,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				return dest;
 			}
 
-			byte[] Decrypt11_v1(byte[] encrypted) {
-				return Decrypt11(encrypted, 5, 5, 0x510);
-			}
+			byte[] Decrypt11_v1(byte[] encrypted) => Decrypt11(encrypted, 5, 5, 0x510);
 
 			byte[] Decrypt11(byte[] encrypted, int keyStart, int keyReset, int keyEnd) {
 				byte[] dest = new byte[encrypted.Length];
@@ -960,8 +756,6 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			Logger.Instance.DeIndent();
 		}
 
-		byte Rolb(byte b, int n) {
-			return (byte)((b << n) | (b >> (8 - n)));
-		}
+		byte Rolb(byte b, int n) => (byte)((b << n) | (b >> (8 - n)));
 	}
 }

@@ -49,8 +49,7 @@ namespace de4dot.code {
 				if (ldstrIndex + 1 < block.Instructions.Count) {
 					var instr = block.Instructions[ldstrIndex + 1];
 					if (instr.OpCode.Code == Code.Call) {
-						var calledMethod = instr.Operand as IMethod;
-						if (calledMethod != null &&
+						if (instr.Operand is IMethod calledMethod &&
 							calledMethod.FullName == "System.String System.String::Intern(System.String)") {
 							block.Remove(ldstrIndex + 1, 1);
 						}
@@ -76,13 +75,9 @@ namespace de4dot.code {
 			}
 		}
 
-		public override bool HasHandlers {
-			get { return methodTokenToId.Count != 0; }
-		}
+		public override bool HasHandlers => methodTokenToId.Count != 0;
 
-		public DynamicStringInliner(IAssemblyClient assemblyClient) {
-			this.assemblyClient = assemblyClient;
-		}
+		public DynamicStringInliner(IAssemblyClient assemblyClient) => this.assemblyClient = assemblyClient;
 
 		public void Initialize(IEnumerable<int> methodTokens) {
 			methodTokenToId.Clear();
@@ -94,8 +89,7 @@ namespace de4dot.code {
 		}
 
 		protected override CallResult CreateCallResult(IMethod method, MethodSpec gim, Block block, int callInstrIndex) {
-			int methodId;
-			if (!methodTokenToId.TryGetValue(method.MDToken.ToInt32(), out methodId))
+			if (!methodTokenToId.TryGetValue(method.MDToken.ToInt32(), out int methodId))
 				return null;
 			return new MyCallResult(block, callInstrIndex, methodId, gim);
 		}
@@ -104,8 +98,7 @@ namespace de4dot.code {
 			var sortedCalls = new Dictionary<int, List<MyCallResult>>();
 			foreach (var tmp in callResults) {
 				var callResult = (MyCallResult)tmp;
-				List<MyCallResult> list;
-				if (!sortedCalls.TryGetValue(callResult.methodId, out list))
+				if (!sortedCalls.TryGetValue(callResult.methodId, out var list))
 					sortedCalls[callResult.methodId] = list = new List<MyCallResult>(callResults.Count);
 				list.Add(callResult);
 			}
@@ -130,20 +123,15 @@ namespace de4dot.code {
 	public class StaticStringInliner : StringInlinerBase {
 		MethodDefAndDeclaringTypeDict<Func<MethodDef, MethodSpec, object[], string>> stringDecrypters = new MethodDefAndDeclaringTypeDict<Func<MethodDef, MethodSpec, object[], string>>();
 
-		public override bool HasHandlers {
-			get { return stringDecrypters.Count != 0; }
-		}
-
-		public IEnumerable<MethodDef> Methods {
-			get { return stringDecrypters.GetKeys(); }
-		}
+		public override bool HasHandlers => stringDecrypters.Count != 0;
+		public IEnumerable<MethodDef> Methods => stringDecrypters.GetKeys();
 
 		class MyCallResult : CallResult {
 			public IMethod IMethod;
 			public MethodSpec gim;
 			public MyCallResult(Block block, int callEndIndex, IMethod method, MethodSpec gim)
 				: base(block, callEndIndex) {
-				this.IMethod = method;
+				IMethod = method;
 				this.gim = gim;
 			}
 		}

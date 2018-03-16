@@ -37,41 +37,24 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		int totalEncryptedNativeMethods = 0;
 		long xorKey;
 
-		public bool Detected {
-			get { return encryptedResource.Method != null; }
-		}
-
-		public bool HasNativeMethods {
-			get { return methodToNativeMethod.Count > 0; }
-		}
-
-		public TypeDef DecrypterType {
-			get { return encryptedResource.Type; }
-		}
-
-		public MethodDef Method {
-			get { return encryptedResource.Method; }
-		}
-
-		public EmbeddedResource Resource {
-			get { return encryptedResource.Resource; }
-		}
-
-		public DnrDecrypterType DecrypterTypeVersion {
-			get { return encryptedResource.GuessDecrypterType(); }
-		}
+		public bool Detected => encryptedResource.Method != null;
+		public bool HasNativeMethods => methodToNativeMethod.Count > 0;
+		public TypeDef DecrypterType => encryptedResource.Type;
+		public MethodDef Method => encryptedResource.Method;
+		public EmbeddedResource Resource => encryptedResource.Resource;
+		public DnrDecrypterType DecrypterTypeVersion => encryptedResource.GuessDecrypterType();
 
 		public MethodsDecrypter(ModuleDefMD module) {
 			this.module = module;
-			this.encryptedResource = new EncryptedResource(module);
+			encryptedResource = new EncryptedResource(module);
 		}
 
 		public MethodsDecrypter(ModuleDefMD module, MethodsDecrypter oldOne) {
 			this.module = module;
-			this.encryptedResource = new EncryptedResource(module, oldOne.encryptedResource);
-			this.tokenToNativeMethod = oldOne.tokenToNativeMethod;
-			this.totalEncryptedNativeMethods = oldOne.totalEncryptedNativeMethods;
-			this.xorKey = oldOne.xorKey;
+			encryptedResource = new EncryptedResource(module, oldOne.encryptedResource);
+			tokenToNativeMethod = oldOne.tokenToNativeMethod;
+			totalEncryptedNativeMethods = oldOne.totalEncryptedNativeMethods;
+			xorKey = oldOne.xorKey;
 		}
 
 		public void Find() {
@@ -211,8 +194,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 					int size = methodsDataReader.ReadInt32();
 					var methodData = methodsDataReader.ReadBytes(size);
 
-					int methodIndex;
-					if (!rvaToIndex.TryGetValue(rva, out methodIndex)) {
+					if (!rvaToIndex.TryGetValue(rva, out int methodIndex)) {
 						Logger.w("Could not find method having code RVA {0:X8}", rva);
 						continue;
 					}
@@ -253,8 +235,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 
 					var codeReader = peImage.Reader;
 					codeReader.Position = peImage.RvaToOffset(dm.mdRVA);
-					byte[] code;
-					var mbHeader = MethodBodyParser.ParseMethodBody(ref codeReader, out code, out dm.extraSections);
+					var mbHeader = MethodBodyParser.ParseMethodBody(ref codeReader, out var code, out dm.extraSections);
 					peImage.UpdateMethodHeaderInfo(dm, mbHeader);
 
 					dumpedMethods.Add(dm);
@@ -318,7 +299,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				int token = (int)pair.Key;
 				var method = module.ResolveToken(token) as MethodDef;
 				if (method == null)
-					throw new ApplicationException(string.Format("Could not find method {0:X8}", token));
+					throw new ApplicationException($"Could not find method {token:X8}");
 				methodToNativeMethod[method] = pair.Value;
 			}
 			tokenToNativeMethod = null;

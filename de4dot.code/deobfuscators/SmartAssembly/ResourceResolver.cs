@@ -32,9 +32,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			this.resourceResolverInfo = resourceResolverInfo;
 		}
 
-		public bool CanDecryptResource() {
-			return assemblyResolver.CanDecryptResource(resourceResolverInfo.ResourceInfo);
-		}
+		public bool CanDecryptResource() => assemblyResolver.CanDecryptResource(resourceResolverInfo.ResourceInfo);
 
 		public EmbeddedAssemblyInfo MergeResources() {
 			if (mergedIt)

@@ -178,8 +178,7 @@ namespace de4dot.blocks.cflow {
 		}
 
 		bool VerifyValidArgs(Instruction instr) {
-			int pushes, pops;
-			instr.CalculateStackUsage(out pushes, out pops);
+			instr.CalculateStackUsage(out int pushes, out int pops);
 			if (pops < 0)
 				return false;
 

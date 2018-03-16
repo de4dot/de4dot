@@ -26,35 +26,24 @@ namespace de4dot.code.AssemblyClient {
 	}
 
 	public class SameAppDomainAssemblyClientFactory : IAssemblyClientFactory {
-		public IAssemblyClient Create(AssemblyServiceType serviceType) {
-			return new AssemblyClient(new SameAppDomainAssemblyServerLoader(serviceType));
-		}
+		public IAssemblyClient Create(AssemblyServiceType serviceType) => new AssemblyClient(new SameAppDomainAssemblyServerLoader(serviceType));
 	}
 
 	public class NewAppDomainAssemblyClientFactory : IAssemblyClientFactory {
-		public IAssemblyClient Create(AssemblyServiceType serviceType) {
-			return new AssemblyClient(new NewAppDomainAssemblyServerLoader(serviceType));
-		}
+		public IAssemblyClient Create(AssemblyServiceType serviceType) => new AssemblyClient(new NewAppDomainAssemblyServerLoader(serviceType));
 	}
 
 	public class NewProcessAssemblyClientFactory : IAssemblyClientFactory {
 		ServerClrVersion serverVersion;
 
-		public NewProcessAssemblyClientFactory() {
-			this.serverVersion = ServerClrVersion.CLR_ANY_ANYCPU;
-		}
+		public NewProcessAssemblyClientFactory() => serverVersion = ServerClrVersion.CLR_ANY_ANYCPU;
+		public NewProcessAssemblyClientFactory(ServerClrVersion serverVersion) => this.serverVersion = serverVersion;
 
-		public NewProcessAssemblyClientFactory(ServerClrVersion serverVersion) {
-			this.serverVersion = serverVersion;
-		}
+		public IAssemblyClient Create(AssemblyServiceType serviceType, ModuleDef module) =>
+			new AssemblyClient(new NewProcessAssemblyServerLoader(serviceType, GetServerClrVersion(module)));
 
-		public IAssemblyClient Create(AssemblyServiceType serviceType, ModuleDef module) {
-			return new AssemblyClient(new NewProcessAssemblyServerLoader(serviceType, GetServerClrVersion(module)));
-		}
-
-		public IAssemblyClient Create(AssemblyServiceType serviceType) {
-			return new AssemblyClient(new NewProcessAssemblyServerLoader(serviceType, serverVersion));
-		}
+		public IAssemblyClient Create(AssemblyServiceType serviceType) =>
+			new AssemblyClient(new NewProcessAssemblyServerLoader(serviceType, serverVersion));
 
 		public static ServerClrVersion GetServerClrVersion(ModuleDef module) {
 			switch (module.GetPointerSize()) {

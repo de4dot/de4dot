@@ -18,6 +18,7 @@
 */
 
 namespace de4dot.code {
+	// Needed when executing on non-Windows platforms
 	public static class Win32Path {
 		public static string GetFileName(string path) {
 			if (path == null)

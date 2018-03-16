@@ -29,15 +29,12 @@ namespace AssemblyData.methodsrewriter {
 		Dictionary<string, List<MethodBase>> methods;
 		Dictionary<string, List<FieldInfo>> fields;
 
-		public TypeInstanceResolver(Type type, ITypeDefOrRef typeRef) {
-			this.type = ResolverUtils.MakeInstanceType(type, typeRef);
-		}
+		public TypeInstanceResolver(Type type, ITypeDefOrRef typeRef) => this.type = ResolverUtils.MakeInstanceType(type, typeRef);
 
 		public FieldInfo Resolve(IField fieldRef) {
 			InitFields();
 
-			List<FieldInfo> list;
-			if (!fields.TryGetValue(fieldRef.Name.String, out list))
+			if (!fields.TryGetValue(fieldRef.Name.String, out var list))
 				return null;
 
 			fieldRef = GenericArgsSubstitutor.Create(fieldRef, fieldRef.DeclaringType.TryGetGenericInstSig());
@@ -57,8 +54,7 @@ namespace AssemblyData.methodsrewriter {
 
 			var flags = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
 			foreach (var field in type.GetFields(flags)) {
-				List<FieldInfo> list;
-				if (!fields.TryGetValue(field.Name, out list))
+				if (!fields.TryGetValue(field.Name, out var list))
 					fields[field.Name] = list = new List<FieldInfo>();
 				list.Add(field);
 			}
@@ -67,8 +63,7 @@ namespace AssemblyData.methodsrewriter {
 		public MethodBase Resolve(IMethod methodRef) {
 			InitMethods();
 
-			List<MethodBase> list;
-			if (!methods.TryGetValue(methodRef.Name.String, out list))
+			if (!methods.TryGetValue(methodRef.Name.String, out var list))
 				return null;
 
 			methodRef = GenericArgsSubstitutor.Create(methodRef, methodRef.DeclaringType.TryGetGenericInstSig());
@@ -88,8 +83,7 @@ namespace AssemblyData.methodsrewriter {
 
 			var flags = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
 			foreach (var method in ResolverUtils.GetMethodBases(type, flags)) {
-				List<MethodBase> list;
-				if (!methods.TryGetValue(method.Name, out list))
+				if (!methods.TryGetValue(method.Name, out var list))
 					methods[method.Name] = list = new List<MethodBase>();
 				list.Add(method);
 			}

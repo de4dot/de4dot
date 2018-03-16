@@ -28,21 +28,10 @@ namespace de4dot.code.deobfuscators.Xenocode {
 		TypeDef stringDecrypterType;
 		MethodDef stringDecrypterMethod;
 
-		public bool Detected {
-			get { return stringDecrypterMethod != null; }
-		}
-
-		public TypeDef Type {
-			get { return stringDecrypterType; }
-		}
-
-		public MethodDef Method {
-			get { return stringDecrypterMethod; }
-		}
-
-		public StringDecrypter(ModuleDefMD module) {
-			this.module = module;
-		}
+		public bool Detected => stringDecrypterMethod != null;
+		public TypeDef Type => stringDecrypterType;
+		public MethodDef Method => stringDecrypterMethod;
+		public StringDecrypter(ModuleDefMD module) => this.module = module;
 
 		public void Find() {
 			foreach (var type in module.Types) {

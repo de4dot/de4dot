@@ -85,8 +85,6 @@ namespace de4dot.code {
 			return SetModule(mod);
 		}
 
-		public override string ToString() {
-			return filename;
-		}
+		public override string ToString() => filename;
 	}
 }

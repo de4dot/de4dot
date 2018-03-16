@@ -34,9 +34,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			this.simpleDeobfuscator = simpleDeobfuscator;
 		}
 
-		public ResourceDecrypter Create() {
-			return new ResourceDecrypter(module, simpleDeobfuscator);
-		}
+		public ResourceDecrypter Create() => new ResourceDecrypter(module, simpleDeobfuscator);
 	}
 
 	class ResourceDecrypter {
@@ -58,14 +56,11 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		class Decrypter1 : IDecrypter {
 			ModuleDefMD module;
 
-			public Decrypter1(ModuleDefMD module) {
-				this.module = module;
-			}
+			public Decrypter1(ModuleDefMD module) => this.module = module;
 
 			public byte[] Decrypt(byte[] encryptedData) {
-				byte[] key, iv;
 				var reader = new BinaryReader(new MemoryStream(encryptedData));
-				bool isCompressed = GetHeaderData(reader, out key, out iv);
+				bool isCompressed = GetHeaderData(reader, out var key, out var iv);
 				var data = DeobUtils.DesDecrypt(encryptedData,
 										(int)reader.BaseStream.Position,
 										(int)(reader.BaseStream.Length - reader.BaseStream.Position),
@@ -94,14 +89,11 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		class Decrypter2 : IDecrypter {
 			ModuleDefMD module;
 
-			public Decrypter2(ModuleDefMD module) {
-				this.module = module;
-			}
+			public Decrypter2(ModuleDefMD module) => this.module = module;
 
 			public byte[] Decrypt(byte[] encryptedData) {
 				int index = 0;
-				byte[] key, iv;
-				bool isCompressed = GetKeyIv(GetHeaderData(encryptedData, ref index), out key, out iv);
+				bool isCompressed = GetKeyIv(GetHeaderData(encryptedData, ref index), out var key, out var iv);
 				var data = DeobUtils.DesDecrypt(encryptedData, index, encryptedData.Length - index, key, iv);
 				if (isCompressed)
 					data = DeobUtils.Inflate(data, true);
@@ -157,13 +149,12 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 			public Decrypter3(ModuleDefMD module, MethodDef decryptMethod) {
 				this.module = module;
-				this.inflater = InflaterCreator.Create(decryptMethod, true);
+				inflater = InflaterCreator.Create(decryptMethod, true);
 			}
 
 			public byte[] Decrypt(byte[] encryptedData) {
 				int index = 0;
-				byte[] key, iv;
-				bool isCompressed = GetKeyIv(GetHeaderData(encryptedData, ref index), out key, out iv);
+				bool isCompressed = GetKeyIv(GetHeaderData(encryptedData, ref index), out var key, out var iv);
 				var data = DeobUtils.DesDecrypt(encryptedData, index, encryptedData.Length - index, key, iv);
 				if (isCompressed)
 					data = DeobUtils.Inflate(data, inflater);
@@ -254,8 +245,6 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return new Decrypter2(module);
 		}
 
-		static bool IsV30(byte[] data) {
-			return data.Length > 10 && data[0] == 8 && data[9] <= 1 && data[10] == 8;
-		}
+		static bool IsV30(byte[] data) => data.Length > 10 && data[0] == 8 && data[9] <= 1 && data[10] == 8;
 	}
 }

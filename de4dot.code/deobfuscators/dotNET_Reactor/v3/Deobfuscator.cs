@@ -43,16 +43,11 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			removeAntiStrongName = new BoolOption(null, MakeArgName("sn"), "Remove anti strong name code", true);
 		}
 
-		public override string Name {
-			get { return THE_NAME; }
-		}
+		public override string Name => THE_NAME;
+		public override string Type => THE_TYPE;
 
-		public override string Type {
-			get { return THE_TYPE; }
-		}
-
-		public override IDeobfuscator CreateDeobfuscator() {
-			return new Deobfuscator(new Deobfuscator.Options {
+		public override IDeobfuscator CreateDeobfuscator() =>
+			new Deobfuscator(new Deobfuscator.Options {
 				ValidNameRegex = validNameRegex.Get(),
 				RestoreTypes = restoreTypes.Get(),
 				InlineMethods = inlineMethods.Get(),
@@ -60,17 +55,15 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 				RemoveNamespaces = removeNamespaces.Get(),
 				RemoveAntiStrongName = removeAntiStrongName.Get(),
 			});
-		}
 
-		protected override IEnumerable<Option> GetOptionsInternal() {
-			return new List<Option>() {
+		protected override IEnumerable<Option> GetOptionsInternal() =>
+			new List<Option>() {
 				restoreTypes,
 				inlineMethods,
 				removeInlinedMethods,
 				removeNamespaces,
 				removeAntiStrongName,
 			};
-		}
 	}
 
 	class Deobfuscator : DeobfuscatorBase {
@@ -95,30 +88,19 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			public bool RemoveAntiStrongName { get; set; }
 		}
 
-		public override string Type {
-			get { return DeobfuscatorInfo.THE_TYPE; }
-		}
-
-		public override string TypeLong {
-			get { return DeobfuscatorInfo.THE_NAME + " 3.x"; }
-		}
-
-		public override string Name {
-			get { return obfuscatorName; }
-		}
-
-		protected override bool CanInlineMethods {
-			get { return startedDeobfuscating ? options.InlineMethods : true; }
-		}
+		public override string Type => DeobfuscatorInfo.THE_TYPE;
+		public override string TypeLong => DeobfuscatorInfo.THE_NAME + " 3.x";
+		public override string Name => obfuscatorName;
+		protected override bool CanInlineMethods => startedDeobfuscating ? options.InlineMethods : true;
 
 		public Deobfuscator(Options options)
 			: base(options) {
 			this.options = options;
 
 			if (options.RemoveNamespaces)
-				this.RenamingOptions |= RenamingOptions.RemoveNamespaceIfOneType;
+				RenamingOptions |= RenamingOptions.RemoveNamespaceIfOneType;
 			else
-				this.RenamingOptions &= ~RenamingOptions.RemoveNamespaceIfOneType;
+				RenamingOptions &= ~RenamingOptions.RemoveNamespaceIfOneType;
 		}
 
 		public override byte[] UnpackNativeFile(IPEImage peImage) {
@@ -133,9 +115,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			return data;
 		}
 
-		bool NeedsPatching() {
-			return decrypterType.LinkedResource != null || nativeLibSaver.Resource != null;
-		}
+		bool NeedsPatching() => decrypterType.LinkedResource != null || nativeLibSaver.Resource != null;
 
 		public override bool GetDecryptedModule(int count, ref byte[] newFileData, ref DumpedMethods dumpedMethods) {
 			if (count != 0 || !NeedsPatching())
@@ -155,10 +135,6 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			newOne.decrypterType = new DecrypterType(module, decrypterType);
 			newOne.nativeLibSaver = new NativeLibSaver(module, nativeLibSaver);
 			return newOne;
-		}
-
-		public override void Initialize(ModuleDefMD module) {
-			base.Initialize(module);
 		}
 
 		static Regex isRandomName = new Regex(@"^[A-Z]{30,40}$");
@@ -185,41 +161,15 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			return CheckValidName(ns, isRandomNameTypes);
 		}
 
-		public override bool IsValidTypeName(string name) {
-			return name != null && CheckValidName(name, isRandomNameTypes);
-		}
-
-		public override bool IsValidMethodName(string name) {
-			return name != null && CheckValidName(name, isRandomNameMembers);
-		}
-
-		public override bool IsValidPropertyName(string name) {
-			return name != null && CheckValidName(name, isRandomNameMembers);
-		}
-
-		public override bool IsValidEventName(string name) {
-			return name != null && CheckValidName(name, isRandomNameMembers);
-		}
-
-		public override bool IsValidFieldName(string name) {
-			return name != null && CheckValidName(name, isRandomNameMembers);
-		}
-
-		public override bool IsValidGenericParamName(string name) {
-			return name != null && CheckValidName(name, isRandomNameMembers);
-		}
-
-		public override bool IsValidMethodArgName(string name) {
-			return name != null && CheckValidName(name, isRandomNameMembers);
-		}
-
-		public override bool IsValidMethodReturnArgName(string name) {
-			return string.IsNullOrEmpty(name) || CheckValidName(name, isRandomNameMembers);
-		}
-
-		public override bool IsValidResourceKeyName(string name) {
-			return name != null && CheckValidName(name, isRandomNameMembers);
-		}
+		public override bool IsValidTypeName(string name) => name != null && CheckValidName(name, isRandomNameTypes);
+		public override bool IsValidMethodName(string name) => name != null && CheckValidName(name, isRandomNameMembers);
+		public override bool IsValidPropertyName(string name) => name != null && CheckValidName(name, isRandomNameMembers);
+		public override bool IsValidEventName(string name) => name != null && CheckValidName(name, isRandomNameMembers);
+		public override bool IsValidFieldName(string name) => name != null && CheckValidName(name, isRandomNameMembers);
+		public override bool IsValidGenericParamName(string name) => name != null && CheckValidName(name, isRandomNameMembers);
+		public override bool IsValidMethodArgName(string name) => name != null && CheckValidName(name, isRandomNameMembers);
+		public override bool IsValidMethodReturnArgName(string name) => string.IsNullOrEmpty(name) || CheckValidName(name, isRandomNameMembers);
+		public override bool IsValidResourceKeyName(string name) => name != null && CheckValidName(name, isRandomNameMembers);
 
 		protected override int DetectInternal() {
 			int val = 0;
@@ -243,9 +193,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 				obfuscatorName += " (native)";
 		}
 
-		string DetectVersion() {
-			return DeobfuscatorInfo.THE_NAME + " 3.x";
-		}
+		string DetectVersion() => DeobfuscatorInfo.THE_NAME + " 3.x";
 
 		public override void DeobfuscateBegin() {
 			base.DeobfuscateBegin();
@@ -294,7 +242,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 		void DumpResourceFiles() {
 			foreach (var resource in libAssemblyResolver.Resources) {
 				var mod = ModuleDefMD.Load(resource.GetReader().ToArray());
-				AddResourceToBeRemoved(resource, string.Format("Embedded assembly: {0}", mod.Assembly.FullName));
+				AddResourceToBeRemoved(resource, $"Embedded assembly: {mod.Assembly.FullName}");
 				DeobfuscatedFile.CreateAssemblyFile(resource.GetReader().ToArray(),
 							Utils.GetAssemblySimpleName(mod.Assembly.FullName),
 							DeobUtils.GetExtension(mod.Kind));

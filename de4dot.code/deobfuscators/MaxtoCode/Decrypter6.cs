@@ -35,9 +35,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		static readonly byte[] d4h = new byte[16] { 4, 11, 12, 14, 15, 0, 8, 13, 3, 12, 9, 7, 5, 10, 6, 1 };
 		static readonly byte[] d4l = new byte[16] { 13, 2, 8, 14, 6, 7, 11, 1, 10, 9, 3, 14, 5, 0, 12, 7 };
 
-		public static byte[] Decrypt(byte[] key, byte[] encrypted) {
-			return new Decrypter6(key).Decrypt(encrypted);
-		}
+		public static byte[] Decrypt(byte[] key, byte[] encrypted) => new Decrypter6(key).Decrypt(encrypted);
 
 		Decrypter6(byte[] key) {
 			if (key.Length != 32)
@@ -54,8 +52,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 
 			int count = decrypted.Length / 8;
 			for (int i = 0; i < count; i++) {
-				uint x, y;
-				Decrypt(BitConverter.ToUInt32(encrypted, i * 8), BitConverter.ToUInt32(encrypted, i * 8 + 4), out x, out y);
+				Decrypt(BitConverter.ToUInt32(encrypted, i * 8), BitConverter.ToUInt32(encrypted, i * 8 + 4), out uint x, out uint y);
 				for (int j = 1; j < 100; j++)
 					Decrypt(x, y, out x, out y);
 				WriteUInt32(decrypted, i * 8, x);
@@ -116,8 +113,6 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			return Ror(x, 21);
 		}
 
-		static uint Ror(uint val, int n) {
-			return (val << (32 - n)) + (val >> n);
-		}
+		static uint Ror(uint val, int n) => (val << (32 - n)) + (val >> n);
 	}
 }

@@ -28,37 +28,31 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 		public HandlerTypeCode TypeCode { get; set; }
 		public List<BlockSigInfo> BlockSigInfos { get; private set; }
 
-		public MethodSigInfo(List<BlockSigInfo> blockSigInfos) {
-			this.BlockSigInfos = blockSigInfos;
-		}
+		public MethodSigInfo(List<BlockSigInfo> blockSigInfos) => BlockSigInfos = blockSigInfos;
 
 		public MethodSigInfo(List<BlockSigInfo> blockSigInfos, HandlerTypeCode typeCode) {
-			this.BlockSigInfos = blockSigInfos;
-			this.TypeCode = typeCode;
+			BlockSigInfos = blockSigInfos;
+			TypeCode = typeCode;
 		}
 
-		public override string ToString() {
-			return OpCodeHandlerInfo.GetHandlerName(TypeCode);
-		}
+		public override string ToString() => OpCodeHandlerInfo.GetHandlerName(TypeCode);
 	}
 
 	class BlockSigInfo {
 		readonly List<int> targets;
 
 		public List<BlockElementHash> Hashes { get; private set; }
-		public List<int> Targets {
-			get { return targets; }
-		}
+		public List<int> Targets => targets;
 		public bool HasFallThrough { get; set; }
 		public bool EndsInRet { get; set; }
 
 		public BlockSigInfo() {
-			this.targets = new List<int>();
-			this.Hashes = new List<BlockElementHash>();
+			targets = new List<int>();
+			Hashes = new List<BlockElementHash>();
 		}
 
 		public BlockSigInfo(List<BlockElementHash> hashes, List<int> targets) {
-			this.Hashes = hashes;
+			Hashes = hashes;
 			this.targets = targets;
 		}
 	}
@@ -84,8 +78,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 			if (key == null)
 				return null;
 
-			int id;
-			if (objToId.TryGetValue(key, out id))
+			if (objToId.TryGetValue(key, out int id))
 				return id;
 			return null;
 		}
@@ -96,9 +89,10 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 
 			var blockInfos = new List<BlockSigInfo>(allBlocks.Count);
 			foreach (var block in allBlocks) {
-				var blockInfo = new BlockSigInfo();
-				blockInfo.HasFallThrough = block.FallThrough != null;
-				blockInfo.EndsInRet = block.LastInstr.OpCode.Code == Code.Ret;
+				var blockInfo = new BlockSigInfo {
+					HasFallThrough = block.FallThrough != null,
+					EndsInRet = block.LastInstr.OpCode.Code == Code.Ret,
+				};
 				blockInfos.Add(blockInfo);
 				var instrs = block.Instructions;
 				for (int i = 0; i < instrs.Count; i++) {
@@ -236,9 +230,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 			return null;
 		}
 
-		bool IsTypeField(FieldDef fd) {
-			return fd != null && fd.DeclaringType == blocks.Method.DeclaringType;
-		}
+		bool IsTypeField(FieldDef fd) => fd != null && fd.DeclaringType == blocks.Method.DeclaringType;
 
 		static int GetFieldId(FieldDef fd) {
 			if (fd == null)
@@ -263,62 +255,52 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 		}
 
 		void Hash(object op) {
-			var md = op as MethodDef;
-			if (md != null) {
+			if (op is MethodDef md) {
 				Hash(md);
 				return;
 			}
 
-			var mr = op as MemberRef;
-			if (mr != null) {
+			if (op is MemberRef mr) {
 				Hash(mr);
 				return;
 			}
 
-			var td = op as TypeDef;
-			if (td != null) {
+			if (op is TypeDef td) {
 				Hash(td);
 				return;
 			}
 
-			var tr = op as TypeRef;
-			if (tr != null) {
+			if (op is TypeRef tr) {
 				Hash(tr);
 				return;
 			}
 
-			var ts = op as TypeSpec;
-			if (ts != null) {
+			if (op is TypeSpec ts) {
 				Hash(ts);
 				return;
 			}
 
-			var fsig = op as FieldSig;
-			if (fsig != null) {
+			if (op is FieldSig fsig) {
 				Hash(fsig);
 				return;
 			}
 
-			var msig = op as MethodSig;
-			if (msig != null) {
+			if (op is MethodSig msig) {
 				Hash(msig);
 				return;
 			}
 
-			var gsig = op as GenericInstMethodSig;
-			if (gsig != null) {
+			if (op is GenericInstMethodSig gsig) {
 				Hash(gsig);
 				return;
 			}
 
-			var asmRef = op as AssemblyRef;
-			if (asmRef != null) {
+			if (op is AssemblyRef asmRef) {
 				Hash(asmRef);
 				return;
 			}
 
-			var tsig = op as TypeSig;
-			if (tsig != null) {
+			if (op is TypeSig tsig) {
 				Hash(tsig);
 				return;
 			}
@@ -326,9 +308,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 			return;
 		}
 
-		void Hash(TypeSig sig) {
-			Hash(sig, 0);
-		}
+		void Hash(TypeSig sig) => Hash(sig, 0);
 
 		void Hash(TypeSig sig, int level) {
 			if (sig == null)
@@ -553,21 +533,17 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 			return (BlockElementHash)hasher.GetHash();
 		}
 
-		static bool IsFromNonObfuscatedAssembly(IMemberRefParent mrp) {
-			return IsFromNonObfuscatedAssembly(mrp as TypeRef);
-		}
+		static bool IsFromNonObfuscatedAssembly(IMemberRefParent mrp) => IsFromNonObfuscatedAssembly(mrp as TypeRef);
 
 		static bool IsFromNonObfuscatedAssembly(TypeRef tr) {
 			if (tr == null)
 				return false;
 
 			for (int i = 0; i < 100; i++) {
-				var asmRef = tr.ResolutionScope as AssemblyRef;
-				if (asmRef != null)
+				if (tr.ResolutionScope is AssemblyRef asmRef)
 					return IsNonObfuscatedAssembly(asmRef);
 
-				var tr2 = tr.ResolutionScope as TypeRef;
-				if (tr2 != null) {
+				if (tr.ResolutionScope is TypeRef tr2) {
 					tr = tr2;
 					continue;
 				}

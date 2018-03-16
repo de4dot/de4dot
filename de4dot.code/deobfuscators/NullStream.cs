@@ -25,33 +25,18 @@ namespace de4dot.code.deobfuscators {
 		long offset = 0;
 		long length = 0;
 
-		public override bool CanRead {
-			get { return false; }
-		}
-
-		public override bool CanSeek {
-			get { return true; }
-		}
-
-		public override bool CanWrite {
-			get { return true; }
-		}
-
-		public override void Flush() {
-		}
-
-		public override long Length {
-			get { return length; }
-		}
+		public override bool CanRead => false;
+		public override bool CanSeek => true;
+		public override bool CanWrite => true;
+		public override void Flush() { }
+		public override long Length => length;
 
 		public override long Position {
-			get { return offset; }
-			set { offset = value; }
+			get => offset;
+			set => offset = value;
 		}
 
-		public override int Read(byte[] buffer, int offset, int count) {
-			throw new NotImplementedException();
-		}
+		public override int Read(byte[] buffer, int offset, int count) => throw new NotImplementedException();
 
 		public override long Seek(long offset, SeekOrigin origin) {
 			switch (origin) {
@@ -74,14 +59,12 @@ namespace de4dot.code.deobfuscators {
 			return this.offset;
 		}
 
-		public override void SetLength(long value) {
-			this.length = value;
-		}
+		public override void SetLength(long value) => length = value;
 
 		public override void Write(byte[] buffer, int offset, int count) {
 			this.offset += count;
-			if (this.offset > this.length)
-				this.length = this.offset;
+			if (this.offset > length)
+				length = this.offset;
 		}
 	}
 }

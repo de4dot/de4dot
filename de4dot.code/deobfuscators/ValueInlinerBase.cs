@@ -33,29 +33,24 @@ namespace de4dot.code.deobfuscators {
 			public MethodSpec gim;
 			public MyCallResult(Block block, int callEndIndex, IMethod method, MethodSpec gim)
 				: base(block, callEndIndex) {
-				this.methodRef = method;
+				methodRef = method;
 				this.gim = gim;
 			}
 		}
 
 		public bool RemoveUnbox {
-			get { return removeUnbox; }
-			set { removeUnbox = value; }
+			get => removeUnbox;
+			set => removeUnbox = value;
 		}
 
-		public override bool HasHandlers {
-			get { return decrypterMethods.Count != 0; }
-		}
-
-		public IEnumerable<MethodDef> Methods {
-			get { return decrypterMethods.GetKeys(); }
-		}
+		public override bool HasHandlers => decrypterMethods.Count != 0;
+		public IEnumerable<MethodDef> Methods => decrypterMethods.GetKeys();
 
 		public void Add(MethodDef method, Func<MethodDef, MethodSpec, object[], object> handler) {
 			if (method == null)
 				return;
 			if (decrypterMethods.Find(method) != null)
-				throw new ApplicationException(string.Format("Handler for method {0:X8} has already been added", method.MDToken.ToInt32()));
+				throw new ApplicationException($"Handler for method {method.MDToken.ToInt32():X8} has already been added");
 			if (method != null)
 				decrypterMethods.Add(method, handler);
 		}

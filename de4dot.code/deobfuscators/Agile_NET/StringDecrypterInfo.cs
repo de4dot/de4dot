@@ -29,8 +29,8 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 		}
 
 		public StringDecrypterInfo(MethodDef method, FieldDef field) {
-			this.Method = method;
-			this.Field = field;
+			Method = method;
+			Field = field;
 		}
 
 		public override int GetHashCode() {

@@ -42,39 +42,20 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			HasDelegateType = 0x10,
 		}
 
-		public TypeDef DelegateType {
-			get { return delegateType; }
-		}
-
-		public bool InitLocals {
-			get { return (flags & MethodFlags.InitLocals) != 0; }
-		}
-
-		bool HasLocals {
-			get { return (flags & MethodFlags.HasLocals) != 0; }
-		}
-
-		bool HasInstructions {
-			get { return (flags & MethodFlags.HasInstructions) != 0; }
-		}
-
-		bool HasExceptionHandlers {
-			get { return (flags & MethodFlags.HasExceptionHandlers) != 0; }
-		}
-
-		bool HasDelegateType {
-			get { return !hasDelegateTypeFlag || (flags & MethodFlags.HasDelegateType) != 0; }
-		}
+		public TypeDef DelegateType => delegateType;
+		public bool InitLocals => (flags & MethodFlags.InitLocals) != 0;
+		bool HasLocals => (flags & MethodFlags.HasLocals) != 0;
+		bool HasInstructions => (flags & MethodFlags.HasInstructions) != 0;
+		bool HasExceptionHandlers => (flags & MethodFlags.HasExceptionHandlers) != 0;
+		bool HasDelegateType => !hasDelegateTypeFlag || (flags & MethodFlags.HasDelegateType) != 0;
 
 		public bool HasDelegateTypeFlag {
-			get { return hasDelegateTypeFlag; }
-			set { hasDelegateTypeFlag = value; }
+			get => hasDelegateTypeFlag;
+			set => hasDelegateTypeFlag = value;
 		}
 
 		public MethodReader(ModuleDefMD module, byte[] data, IList<Parameter> parameters)
-			: base(ByteArrayDataReaderFactory.CreateReader(data), parameters) {
-			this.module = module;
-		}
+			: base(ByteArrayDataReaderFactory.CreateReader(data), parameters) => this.module = module;
 
 		public void Read(MethodDef method) {
 			gpContext = GenericParamContext.Create(method);
@@ -108,13 +89,8 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			SetLocals(localsTypes);
 		}
 
-		T Resolve<T>(int token) {
-			return (T)module.ResolveToken(token, gpContext);
-		}
-
-		int ReadTypeToken() {
-			return GetTypeDefOrRefToken(reader.Read7BitEncodedUInt32());
-		}
+		T Resolve<T>(int token) => (T)module.ResolveToken(token, gpContext);
+		int ReadTypeToken() => GetTypeDefOrRefToken(reader.Read7BitEncodedUInt32());
 
 		TypeSig ReadType() {
 			switch ((ElementType)reader.ReadByte()) {
@@ -171,33 +147,20 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			}
 		}
 
-		protected override IField ReadInlineField(Instruction instr) {
-			return Resolve<IField>(reader.ReadInt32());
-		}
-
-		protected override IMethod ReadInlineMethod(Instruction instr) {
-			return Resolve<IMethod>(reader.ReadInt32());
-		}
+		protected override IField ReadInlineField(Instruction instr) => Resolve<IField>(reader.ReadInt32());
+		protected override IMethod ReadInlineMethod(Instruction instr) => Resolve<IMethod>(reader.ReadInt32());
 
 		protected override MethodSig ReadInlineSig(Instruction instr) {
 			var token = reader.ReadUInt32();
 			if (MDToken.ToTable(token) != Table.StandAloneSig)
 				return null;
 			var sas = module.ResolveStandAloneSig(MDToken.ToRID(token), gpContext);
-			return sas == null ? null : sas.MethodSig;
+			return sas?.MethodSig;
 		}
 
-		protected override string ReadInlineString(Instruction instr) {
-			return module.ReadUserString(reader.ReadUInt32());
-		}
-
-		protected override ITokenOperand ReadInlineTok(Instruction instr) {
-			return Resolve<ITokenOperand>(reader.ReadInt32());
-		}
-
-		protected override ITypeDefOrRef ReadInlineType(Instruction instr) {
-			return Resolve<ITypeDefOrRef>(reader.ReadInt32());
-		}
+		protected override string ReadInlineString(Instruction instr) => module.ReadUserString(reader.ReadUInt32());
+		protected override ITokenOperand ReadInlineTok(Instruction instr) => Resolve<ITokenOperand>(reader.ReadInt32());
+		protected override ITypeDefOrRef ReadInlineType(Instruction instr) => Resolve<ITypeDefOrRef>(reader.ReadInt32());
 
 		void ReadExceptionHandlers(int numExceptionHandlers) {
 			exceptionHandlers = new List<ExceptionHandler>(numExceptionHandlers);

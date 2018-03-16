@@ -36,9 +36,7 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 			}
 		}
 
-		public bool Detected {
-			get { return stringDecrypterMethods.Count > 0; }
-		}
+		public bool Detected => stringDecrypterMethods.Count > 0;
 
 		public IEnumerable<MethodDef> StringDecrypters {
 			get {
@@ -49,13 +47,8 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 			}
 		}
 
-		public IEnumerable<StringDecrypterInfo> StringDecrypterInfos {
-			get { return stringDecrypterMethods.GetValues(); }
-		}
-
-		public StringDecrypter(ModuleDefMD module) {
-			this.module = module;
-		}
+		public IEnumerable<StringDecrypterInfo> StringDecrypterInfos => stringDecrypterMethods.GetValues();
+		public StringDecrypter(ModuleDefMD module) => this.module = module;
 
 		public void Find(ISimpleDeobfuscator simpleDeobfuscator) {
 			foreach (var type in module.GetTypes())

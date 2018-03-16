@@ -30,8 +30,6 @@ namespace AssemblyData.methodsrewriter {
 			this.fieldDef = fieldDef;
 		}
 
-		public override string ToString() {
-			return fieldDef.ToString();
-		}
+		public override string ToString() => fieldDef.ToString();
 	}
 }

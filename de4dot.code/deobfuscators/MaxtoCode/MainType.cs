@@ -29,13 +29,8 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		bool isOld;
 		ModuleRef runtimeModule1, runtimeModule2;
 
-		public bool IsOld {
-			get { return isOld; }
-		}
-
-		public TypeDef Type {
-			get { return mcType; }
-		}
+		public bool IsOld => isOld;
+		public TypeDef Type => mcType;
 
 		public IEnumerable<MethodDef> InitMethods {
 			get {
@@ -59,22 +54,16 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			}
 		}
 
-		public bool Detected {
-			get { return mcType != null; }
-		}
-
-		public MainType(ModuleDefMD module) {
-			this.module = module;
-		}
+		public bool Detected => mcType != null;
+		public MainType(ModuleDefMD module) => this.module = module;
 
 		public MainType(ModuleDefMD module, MainType oldOne) {
 			this.module = module;
-			this.mcType = Lookup(oldOne.mcType, "Could not find main type");
+			mcType = Lookup(oldOne.mcType, "Could not find main type");
 		}
 
-		T Lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
-			return DeobUtils.Lookup(module, def, errorMessage);
-		}
+		T Lookup<T>(T def, string errorMessage) where T : class, ICodedToken =>
+			DeobUtils.Lookup(module, def, errorMessage);
 
 		public void Find() {
 			foreach (var cctor in DeobUtils.GetInitCctors(module, 3)) {
@@ -90,8 +79,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				if (!DotNetUtils.IsMethod(method, "System.Void", "()"))
 					continue;
 
-				bool isOldTmp;
-				if (!CheckType(method.DeclaringType, out runtimeModule1, out runtimeModule2, out isOldTmp))
+				if (!CheckType(method.DeclaringType, out runtimeModule1, out runtimeModule2, out bool isOldTmp))
 					continue;
 
 				mcType = method.DeclaringType;
@@ -130,8 +118,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				var info = method.ImplMap;
 				if (info == null || UTF8String.IsNullOrEmpty(info.Name))
 					continue;
-				List<MethodDef> list;
-				if (!pinvokes.TryGetValue(info.Name.String, out list))
+				if (!pinvokes.TryGetValue(info.Name.String, out var list))
 					pinvokes[info.Name.String] = list = new List<MethodDef>();
 				list.Add(method);
 			}
@@ -139,8 +126,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		}
 
 		static List<MethodDef> GetPinvokeList(Dictionary<string, List<MethodDef>> pinvokes, string methodName) {
-			List<MethodDef> list;
-			if (!pinvokes.TryGetValue(methodName, out list))
+			if (!pinvokes.TryGetValue(methodName, out var list))
 				return null;
 			if (list.Count != 2)
 				return null;

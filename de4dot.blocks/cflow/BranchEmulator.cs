@@ -83,9 +83,7 @@ namespace de4dot.blocks.cflow {
 			return true;
 		}
 
-		bool Emulate_Br() {
-			return EmulateBranch(0, true);
-		}
+		bool Emulate_Br() => EmulateBranch(0, true);
 
 		bool Emulate_Beq() {
 			var val2 = instructionEmulator.Pop();

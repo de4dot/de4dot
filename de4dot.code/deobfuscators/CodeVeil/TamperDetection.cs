@@ -29,13 +29,8 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		TypeDef tamperDetectionType;
 		List<MethodDef> tamperDetectionMethods = new List<MethodDef>();
 
-		public TypeDef Type {
-			get { return tamperDetectionType; }
-		}
-
-		public List<MethodDef> Methods {
-			get { return tamperDetectionMethods; }
-		}
+		public TypeDef Type => tamperDetectionType;
+		public List<MethodDef> Methods => tamperDetectionMethods;
 
 		public TamperDetection(ModuleDefMD module, MainType mainType) {
 			this.module = module;

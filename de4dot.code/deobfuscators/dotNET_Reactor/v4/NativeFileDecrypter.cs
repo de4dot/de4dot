@@ -70,7 +70,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				int i1;
 				do {
 					counter++;
-					i1 = 1 + (this.key[(i + 37 + counter) % key.Length] + counter + kb) % 255;
+					i1 = 1 + (key[(i + 37 + counter) % key.Length] + counter + kb) % 255;
 				} while (transformTemp[0, i1] != 0x400);
 				for (int i0 = 0; i0 < 256; i0++)
 					transformTemp[i0, i1] = transformTemp[(i0 + ki) % 256, 0];

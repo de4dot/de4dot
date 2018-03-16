@@ -42,7 +42,7 @@ namespace de4dot.blocks {
 			}
 
 			public void CalculateStackUsage() {
-				Block block = baseBlock as Block;
+				var block = baseBlock as Block;
 				if (block == null) {
 					stackEnd = stackStart;
 					return;
@@ -76,7 +76,7 @@ namespace de4dot.blocks {
 			// One reason for this to fail is if there are still dead blocks left. Could also
 			// be a bug in the code.
 			if (blockInfos.Count != sorted.Count)
-				throw new ApplicationException(string.Format("Didn't add all blocks: {0} vs {1}", blockInfos.Count, sorted.Count));
+				throw new ApplicationException($"Didn't add all blocks: {blockInfos.Count} vs {sorted.Count}");
 		}
 
 		IEnumerable<BaseBlock> GetStartBlocks() {
@@ -139,7 +139,7 @@ namespace de4dot.blocks {
 			foreach (var bb in sorted)
 				AddToNewList(bb);
 			if (newList.Count != sorted.Count)
-				throw new ApplicationException(string.Format("Too many/few blocks after sorting: {0} vs {1}", newList.Count, sorted.Count));
+				throw new ApplicationException($"Too many/few blocks after sorting: {newList.Count} vs {sorted.Count}");
 			if (newList.Count > 0 && !ReferenceEquals(newList[0], sorted[0]))
 				throw new ApplicationException("Start block is not first block after sorting");
 		}

@@ -231,25 +231,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		public abstract bool Detected { get; }
 
-		public MethodDef NativeMethod {
-			get { return nativeMethod; }
-		}
-
-		public EmbeddedResource Resource {
-			get { return resource; }
-		}
-
-		public IEnumerable<FieldDef> Fields {
-			get { return fields.GetKeys(); }
-		}
-
-		protected bool HasDecrypterInfos {
-			get { return methodToDecrypterInfo.Count > 0; }
-		}
-
-		public IEnumerable<DecrypterInfo> DecrypterInfos {
-			get { return methodToDecrypterInfo.GetValues(); }
-		}
+		public MethodDef NativeMethod => nativeMethod;
+		public EmbeddedResource Resource => resource;
+		public IEnumerable<FieldDef> Fields => fields.GetKeys();
+		protected bool HasDecrypterInfos => methodToDecrypterInfo.Count > 0;
+		public IEnumerable<DecrypterInfo> DecrypterInfos => methodToDecrypterInfo.GetValues();
 
 		public ConstantsDecrypterBase(ModuleDefMD module, byte[] fileData, ISimpleDeobfuscator simpleDeobfuscator) {
 			this.module = module;
@@ -260,9 +246,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		public abstract bool GetRevisionRange(out int minRev, out int maxRev);
 		public abstract void Initialize();
 
-		protected void Add(DecrypterInfo info) {
-			methodToDecrypterInfo.Add(info.decryptMethod, info);
-		}
+		protected void Add(DecrypterInfo info) => methodToDecrypterInfo.Add(info.decryptMethod, info);
 
 		protected bool Add(FieldDef field) {
 			if (field == null)
@@ -278,13 +262,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 			}
 		}
 
-		protected void SetConstantsData(byte[] constants) {
-			reader = ByteArrayDataReaderFactory.CreateReader(constants);
-		}
-
-		protected EmbeddedResource FindResource(MethodDef method) {
-			return DotNetUtils.GetResource(module, DotNetUtils.GetCodeStrings(method)) as EmbeddedResource;
-		}
+		protected void SetConstantsData(byte[] constants) => reader = ByteArrayDataReaderFactory.CreateReader(constants);
+		protected EmbeddedResource FindResource(MethodDef method) => DotNetUtils.GetResource(module, DotNetUtils.GetCodeStrings(method)) as EmbeddedResource;
 
 		protected static MethodDef FindNativeMethod(MethodDef method) {
 			var instrs = method.Body.Instructions;
@@ -409,9 +388,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		static readonly byte[] defaultDecryptKey_v17 = new byte[1];
-		protected byte[] DecryptConstant_v17_r73740_dynamic(DecrypterInfo info, byte[] encrypted, uint offs, uint key) {
-			return DecryptConstant_v17_r73740_dynamic(info, encrypted, offs, key, defaultDecryptKey_v17);
-		}
+		protected byte[] DecryptConstant_v17_r73740_dynamic(DecrypterInfo info, byte[] encrypted, uint offs, uint key) =>
+			DecryptConstant_v17_r73740_dynamic(info, encrypted, offs, key, defaultDecryptKey_v17);
 
 		protected byte[] DecryptConstant_v17_r73740_dynamic(DecrypterInfo info, byte[] encrypted, uint offs, uint key1, byte[] key2) {
 			var local = GetDynamicLocal_v17_r73740(info.decryptMethod);
@@ -428,19 +406,18 @@ namespace de4dot.code.deobfuscators.Confuser {
 			var constReader = new ConstantsReader(info.decryptMethod);
 			return Decrypt(encrypted, key1, (magic, i) => {
 				constReader.SetConstantInt32(local, magic);
-				int index = startIndex, result;
-				if (!constReader.GetNextInt32(ref index, out result) || index != endIndex)
+				int index = startIndex;
+				if (!constReader.GetNextInt32(ref index, out int result) || index != endIndex)
 					throw new ApplicationException("Could not decrypt integer");
 				return (byte)(result ^ key2[i % key2.Length]);
 			});
 		}
 
-		protected byte[] DecryptConstant_v17_r73764_native(DecrypterInfo info, byte[] encrypted, uint offs, uint key) {
-			return DecryptConstant_v17_r73764_native(info, encrypted, offs, key, defaultDecryptKey_v17);
-		}
+		protected byte[] DecryptConstant_v17_r73764_native(DecrypterInfo info, byte[] encrypted, uint offs, uint key) =>
+			DecryptConstant_v17_r73764_native(info, encrypted, offs, key, defaultDecryptKey_v17);
 
 		protected byte[] DecryptConstant_v17_r73764_native(DecrypterInfo info, byte[] encrypted, uint offs, uint key1, byte[] key2) {
-			using (var x86Emu = new x86Emulator(fileData))
+			using (var x86Emu = new X86Emulator(fileData))
 				return Decrypt(encrypted, key1, (magic, i) => (byte)(x86Emu.Emulate((uint)nativeMethod.RVA, magic) ^ key2[i % key2.Length]));
 		}
 
@@ -457,8 +434,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		public object DecryptInt32(MethodDef caller, MethodDef decryptMethod, object[] args) {
 			var info = methodToDecrypterInfo.Find(decryptMethod);
-			byte typeCode;
-			var data = DecryptData(info, caller, args, out typeCode);
+			var data = DecryptData(info, caller, args, out byte typeCode);
 			if (typeCode != info.int32Type)
 				return null;
 			if (data.Length != 4)
@@ -468,8 +444,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		public object DecryptInt64(MethodDef caller, MethodDef decryptMethod, object[] args) {
 			var info = methodToDecrypterInfo.Find(decryptMethod);
-			byte typeCode;
-			var data = DecryptData(info, caller, args, out typeCode);
+			var data = DecryptData(info, caller, args, out byte typeCode);
 			if (typeCode != info.int64Type)
 				return null;
 			if (data.Length != 8)
@@ -479,8 +454,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		public object DecryptSingle(MethodDef caller, MethodDef decryptMethod, object[] args) {
 			var info = methodToDecrypterInfo.Find(decryptMethod);
-			byte typeCode;
-			var data = DecryptData(info, caller, args, out typeCode);
+			var data = DecryptData(info, caller, args, out byte typeCode);
 			if (typeCode != info.singleType)
 				return null;
 			if (data.Length != 4)
@@ -490,8 +464,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		public object DecryptDouble(MethodDef caller, MethodDef decryptMethod, object[] args) {
 			var info = methodToDecrypterInfo.Find(decryptMethod);
-			byte typeCode;
-			var data = DecryptData(info, caller, args, out typeCode);
+			var data = DecryptData(info, caller, args, out byte typeCode);
 			if (typeCode != info.doubleType)
 				return null;
 			if (data.Length != 8)
@@ -501,8 +474,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		public string DecryptString(MethodDef caller, MethodDef decryptMethod, object[] args) {
 			var info = methodToDecrypterInfo.Find(decryptMethod);
-			byte typeCode;
-			var data = DecryptData(info, caller, args, out typeCode);
+			var data = DecryptData(info, caller, args, out byte typeCode);
 			if (typeCode != info.stringType)
 				return null;
 			return Encoding.UTF8.GetString(data);

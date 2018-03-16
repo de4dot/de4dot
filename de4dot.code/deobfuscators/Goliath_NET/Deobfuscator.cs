@@ -43,16 +43,11 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			removeAntiStrongName = new BoolOption(null, MakeArgName("sn"), "Remove anti strong name code", true);
 		}
 
-		public override string Name {
-			get { return THE_NAME; }
-		}
+		public override string Name => THE_NAME;
+		public override string Type => THE_TYPE;
 
-		public override string Type {
-			get { return THE_TYPE; }
-		}
-
-		public override IDeobfuscator CreateDeobfuscator() {
-			return new Deobfuscator(new Deobfuscator.Options {
+		public override IDeobfuscator CreateDeobfuscator() =>
+			new Deobfuscator(new Deobfuscator.Options {
 				RenameResourcesInCode = false,
 				ValidNameRegex = validNameRegex.Get(),
 				InlineMethods = inlineMethods.Get(),
@@ -62,10 +57,9 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 				DecryptArrays = decryptArrays.Get(),
 				RemoveAntiStrongName = removeAntiStrongName.Get(),
 			});
-		}
 
-		protected override IEnumerable<Option> GetOptionsInternal() {
-			return new List<Option>() {
+		protected override IEnumerable<Option> GetOptionsInternal() =>
+			new List<Option>() {
 				inlineMethods,
 				removeInlinedMethods,
 				restoreLocals,
@@ -73,7 +67,6 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 				decryptArrays,
 				removeAntiStrongName,
 			};
-		}
 	}
 
 	class Deobfuscator : DeobfuscatorBase {
@@ -102,26 +95,11 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			public bool RemoveAntiStrongName { get; set; }
 		}
 
-		public override string Type {
-			get { return DeobfuscatorInfo.THE_TYPE; }
-		}
-
-		public override string TypeLong {
-			get { return DeobfuscatorInfo.THE_NAME; }
-		}
-
-		public override string Name {
-			get { return obfuscatorName; }
-		}
-
-		protected override bool CanInlineMethods {
-			get { return startedDeobfuscating ? options.InlineMethods : true; }
-		}
-
-		internal Deobfuscator(Options options)
-			: base(options) {
-			this.options = options;
-		}
+		public override string Type => DeobfuscatorInfo.THE_TYPE;
+		public override string TypeLong => DeobfuscatorInfo.THE_NAME;
+		public override string Name => obfuscatorName;
+		protected override bool CanInlineMethods => startedDeobfuscating ? options.InlineMethods : true;
+		internal Deobfuscator(Options options) : base(options) => this.options = options;
 
 		protected override int DetectInternal() {
 			int val = 0;

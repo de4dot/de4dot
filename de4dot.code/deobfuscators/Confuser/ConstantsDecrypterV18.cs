@@ -77,25 +77,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 				this.version = version;
 			}
 
-			public string DecryptString(uint magic1, ulong magic2) {
-				return Encoding.UTF8.GetString(Decrypt(magic1, magic2));
-			}
-
-			public int DecryptInt32(uint magic1, ulong magic2) {
-				return BitConverter.ToInt32(Decrypt(magic1, magic2), 0);
-			}
-
-			public long DecryptInt64(uint magic1, ulong magic2) {
-				return BitConverter.ToInt64(Decrypt(magic1, magic2), 0);
-			}
-
-			public float DecryptSingle(uint magic1, ulong magic2) {
-				return BitConverter.ToSingle(Decrypt(magic1, magic2), 0);
-			}
-
-			public double DecryptDouble(uint magic1, ulong magic2) {
-				return BitConverter.ToDouble(Decrypt(magic1, magic2), 0);
-			}
+			public string DecryptString(uint magic1, ulong magic2) => Encoding.UTF8.GetString(Decrypt(magic1, magic2));
+			public int DecryptInt32(uint magic1, ulong magic2) => BitConverter.ToInt32(Decrypt(magic1, magic2), 0);
+			public long DecryptInt64(uint magic1, ulong magic2) => BitConverter.ToInt64(Decrypt(magic1, magic2), 0);
+			public float DecryptSingle(uint magic1, ulong magic2) => BitConverter.ToSingle(Decrypt(magic1, magic2), 0);
+			public double DecryptDouble(uint magic1, ulong magic2) => BitConverter.ToDouble(Decrypt(magic1, magic2), 0);
 
 			byte[] Decrypt(uint magic1, ulong magic2) {
 				ulong info = Hash(method.DeclaringType.MDToken.ToUInt32() * magic1) ^ magic2;
@@ -162,34 +148,12 @@ namespace de4dot.code.deobfuscators.Confuser {
 			}
 		}
 
-		public IEnumerable<FieldDef> Fields {
-			get {
-				return new List<FieldDef> {
-					dataField,
-					dictField,
-				};
-			}
-		}
-
-		public MethodDef NativeMethod {
-			get { return nativeMethod; }
-		}
-
-		public TypeDef LzmaType {
-			get { return lzmaType; }
-		}
-
-		public EmbeddedResource Resource {
-			get { return resource; }
-		}
-
-		public IEnumerable<DecrypterInfo> Decrypters {
-			get { return decrypters.GetValues(); }
-		}
-
-		public bool Detected {
-			get { return installMethod != null; }
-		}
+		public IEnumerable<FieldDef> Fields => new List<FieldDef> { dataField, dictField };
+		public MethodDef NativeMethod => nativeMethod;
+		public TypeDef LzmaType => lzmaType;
+		public EmbeddedResource Resource => resource;
+		public IEnumerable<DecrypterInfo> Decrypters => decrypters.GetValues();
+		public bool Detected => installMethod != null;
 
 		public ConstantsDecrypterV18(ModuleDefMD module, byte[] fileData, ISimpleDeobfuscator simpleDeobfuscator) {
 			this.module = module;
@@ -651,9 +615,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			}
 		}
 
-		byte[] GetSigKey() {
-			return module.ReadBlob(key0d ^ installMethod.MDToken.ToUInt32());
-		}
+		byte[] GetSigKey() => module.ReadBlob(key0d ^ installMethod.MDToken.ToUInt32());
 
 		byte[] DecryptResource_v18_r75367_normal(byte[] encrypted) {
 			var key = GetSigKey();
@@ -704,8 +666,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		byte[] DecryptResource_v18_r75367_dynamic(byte[] encrypted) {
-			int ldlocIndex;
-			var local = GetDynamicLocal(out ldlocIndex);
+			var local = GetDynamicLocal(out int ldlocIndex);
 			if (local == null)
 				throw new ApplicationException("Could not find local");
 
@@ -719,8 +680,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			return DecryptResource(encrypted, magic => {
 				constReader.SetConstantInt32(local, magic);
-				int index = startIndex, result;
-				if (!constReader.GetNextInt32(ref index, out result))
+				int index = startIndex;
+				if (!constReader.GetNextInt32(ref index, out int result))
 					throw new ApplicationException("Could not get constant");
 				if (index != endIndex)
 					throw new ApplicationException("Wrong constant");
@@ -729,7 +690,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		byte[] DecryptResource_v18_r75367_native(byte[] encrypted) {
-			using (var x86Emu = new x86Emulator(fileData))
+			using (var x86Emu = new X86Emulator(fileData))
 				return DecryptResource(encrypted, magic => (byte)x86Emu.Emulate((uint)nativeMethod.RVA, magic));
 		}
 

@@ -63,8 +63,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				uint declaringTypeToken = (uint)(int)instrs[2].Operand;
 				var createMethod = instrs[3].Operand as MethodDef;
 
-				ProxyCreatorType proxyCreatorType;
-				if (!methodToType.TryGetValue(createMethod, out proxyCreatorType))
+				if (!methodToType.TryGetValue(createMethod, out var proxyCreatorType))
 					continue;
 
 				return new Context(typeToken, methodToken, declaringTypeToken, proxyCreatorType);
@@ -87,7 +86,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				callOpcode = OpCodes.Newobj;
 				break;
 			default:
-				throw new ApplicationException(string.Format("Invalid proxy creator type: {0}", ctx.proxyCreatorType));
+				throw new ApplicationException($"Invalid proxy creator type: {ctx.proxyCreatorType}");
 			}
 
 			calledMethod = module.ResolveToken(ctx.methodToken) as IMethod;

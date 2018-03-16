@@ -24,10 +24,6 @@ using System.Reflection.Emit;
 using System.Text;
 
 namespace AssemblyData {
-	internal delegate void Action();
-	internal delegate void Action<T1>(T1 arg1);
-	internal delegate void Action<T1, T2>(T1 arg1, T2 arg2);
-	internal delegate void Action<T1, T2, T3>(T1 arg1, T2 arg2, T3 arg3);
 	internal delegate void Action<T1, T2, T3, T4>(T1 arg1, T2 arg2, T3 arg3, T4 arg4);
 	internal delegate void Action<T1, T2, T3, T4, T5>(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5);
 	internal delegate void Action<T1, T2, T3, T4, T5, T6>(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6);
@@ -44,11 +40,6 @@ namespace AssemblyData {
 	internal delegate void Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17>(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15, T16 arg16, T17 arg17);
 	internal delegate void Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18>(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15, T16 arg16, T17 arg17, T18 arg18);
 	internal delegate void Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19>(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15, T16 arg16, T17 arg17, T18 arg18, T19 arg19);
-	internal delegate TResult Func<TResult>();
-	internal delegate TResult Func<T1, TResult>(T1 arg1);
-	internal delegate TResult Func<T1, T2, TResult>(T1 arg1, T2 arg2);
-	internal delegate TResult Func<T1, T2, T3, TResult>(T1 arg1, T2 arg2, T3 arg3);
-	internal delegate TResult Func<T1, T2, T3, T4, TResult>(T1 arg1, T2 arg2, T3 arg3, T4 arg4);
 	internal delegate TResult Func<T1, T2, T3, T4, T5, TResult>(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5);
 	internal delegate TResult Func<T1, T2, T3, T4, T5, T6, TResult>(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6);
 	internal delegate TResult Func<T1, T2, T3, T4, T5, T6, T7, TResult>(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7);
@@ -68,9 +59,7 @@ namespace AssemblyData {
 	static class Utils {
 		static Random random = new Random();
 
-		public static uint GetRandomUint() {
-			return (uint)(random.NextDouble() * uint.MaxValue);
-		}
+		public static uint GetRandomUint() => (uint)(random.NextDouble() * uint.MaxValue);
 
 		public static Type GetDelegateType(Type returnType, Type[] args) {
 			Type[] types;
@@ -98,7 +87,7 @@ namespace AssemblyData {
 				case 18: return typeof(Action<,,,,,,,,,,,,,,,,,>).MakeGenericType(types);
 				case 19: return typeof(Action<,,,,,,,,,,,,,,,,,,>).MakeGenericType(types);
 				default:
-					throw new ApplicationException(string.Format("Too many delegate type arguments: {0}", types.Length));
+					throw new ApplicationException($"Too many delegate type arguments: {types.Length}");
 				}
 			}
 			else {
@@ -128,7 +117,7 @@ namespace AssemblyData {
 				case 19: return typeof(Func<,,,,,,,,,,,,,,,,,,>).MakeGenericType(types);
 				case 20: return typeof(Func<,,,,,,,,,,,,,,,,,,,>).MakeGenericType(types);
 				default:
-					throw new ApplicationException(string.Format("Too many delegate type arguments: {0}", types.Length));
+					throw new ApplicationException($"Too many delegate type arguments: {types.Length}");
 				}
 			}
 		}
@@ -180,8 +169,6 @@ namespace AssemblyData {
 			}
 		}
 
-		public static string GetDirName(string name) {
-			return Path.GetDirectoryName(name);
-		}
+		public static string GetDirName(string name) => Path.GetDirectoryName(name);
 	}
 }

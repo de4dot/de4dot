@@ -93,8 +93,6 @@ namespace AssemblyData.methodsrewriter {
 			}
 		}
 
-		public override string ToString() {
-			return string.Format("{0:X8} - {1}", typeDef.MDToken.Raw, typeDef.FullName);
-		}
+		public override string ToString() => $"{typeDef.MDToken.Raw:X8} - {typeDef.FullName}";
 	}
 }

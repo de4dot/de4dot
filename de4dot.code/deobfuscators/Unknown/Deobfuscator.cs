@@ -30,20 +30,14 @@ namespace de4dot.code.deobfuscators.Unknown {
 			: base(DEFAULT_REGEX) {
 		}
 
-		public override string Name {
-			get { return THE_NAME; }
-		}
+		public override string Name => THE_NAME;
+		public override string Type => THE_TYPE;
 
-		public override string Type {
-			get { return THE_TYPE; }
-		}
-
-		public override IDeobfuscator CreateDeobfuscator() {
-			return new Deobfuscator(new Deobfuscator.Options {
+		public override IDeobfuscator CreateDeobfuscator() =>
+			new Deobfuscator(new Deobfuscator.Options {
 				RenameResourcesInCode = false,
 				ValidNameRegex = validNameRegex.Get(),
 			});
-		}
 	}
 
 	class Deobfuscator : DeobfuscatorBase {
@@ -52,26 +46,16 @@ namespace de4dot.code.deobfuscators.Unknown {
 		internal class Options : OptionsBase {
 		}
 
-		public override string Type {
-			get { return DeobfuscatorInfo.THE_TYPE; }
-		}
-
-		public override string TypeLong {
-			get { return DeobfuscatorInfo.THE_NAME; }
-		}
-
-		public override string Name {
-			get { return obfuscatorName ?? "Unknown Obfuscator"; }
-		}
+		public override string Type => DeobfuscatorInfo.THE_TYPE;
+		public override string TypeLong => DeobfuscatorInfo.THE_NAME;
+		public override string Name => obfuscatorName ?? "Unknown Obfuscator";
 
 		internal Deobfuscator(Options options)
-			: base(options) {
-			KeepTypes = true;
-		}
+			: base(options) => KeepTypes = true;
 
 		void SetName(string name) {
 			if (obfuscatorName == null && name != null)
-				obfuscatorName = string.Format("{0} (not supported)", name);
+				obfuscatorName = $"{name} (not supported)";
 		}
 
 		protected override int DetectInternal() {
@@ -97,8 +81,6 @@ namespace de4dot.code.deobfuscators.Unknown {
 			return null;
 		}
 
-		public override IEnumerable<int> GetStringDecrypterMethods() {
-			return new List<int>();
-		}
+		public override IEnumerable<int> GetStringDecrypterMethods() => new List<int>();
 	}
 }

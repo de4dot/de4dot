@@ -33,21 +33,10 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		MethodDef decrypterMethod;
 		string[] decryptedStrings;
 
-		public bool Detected {
-			get { return decrypterType != null; }
-		}
-
-		public TypeDef Type {
-			get { return decrypterType; }
-		}
-
-		public MethodDef InitMethod {
-			get { return initMethod; }
-		}
-
-		public MethodDef DecryptMethod {
-			get { return decrypterMethod; }
-		}
+		public bool Detected => decrypterType != null;
+		public TypeDef Type => decrypterType;
+		public MethodDef InitMethod => initMethod;
+		public MethodDef DecryptMethod => decrypterMethod;
 
 		public StringDecrypter(ModuleDefMD module, MainType mainType) {
 			this.module = module;
@@ -57,15 +46,14 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		public StringDecrypter(ModuleDefMD module, MainType mainType, StringDecrypter oldOne) {
 			this.module = module;
 			this.mainType = mainType;
-			this.decrypterType = Lookup(oldOne.decrypterType, "Could not find string decrypter type");
-			this.stringDataField = Lookup(oldOne.stringDataField, "Could not find string data field");
-			this.initMethod = Lookup(oldOne.initMethod, "Could not find string decrypter init method");
-			this.decrypterMethod = Lookup(oldOne.decrypterMethod, "Could not find string decrypter method");
+			decrypterType = Lookup(oldOne.decrypterType, "Could not find string decrypter type");
+			stringDataField = Lookup(oldOne.stringDataField, "Could not find string data field");
+			initMethod = Lookup(oldOne.initMethod, "Could not find string decrypter init method");
+			decrypterMethod = Lookup(oldOne.decrypterMethod, "Could not find string decrypter method");
 		}
 
-		T Lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
-			return DeobUtils.Lookup(module, def, errorMessage);
-		}
+		T Lookup<T>(T def, string errorMessage) where T : class, ICodedToken =>
+			DeobUtils.Lookup(module, def, errorMessage);
 
 		public void Find() {
 			var cctor = DotNetUtils.GetModuleTypeCctor(module);
@@ -240,8 +228,6 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			}
 		}
 
-		public string Decrypt(int index) {
-			return decryptedStrings[index];
-		}
+		public string Decrypt(int index) => decryptedStrings[index];
 	}
 }

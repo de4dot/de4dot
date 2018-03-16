@@ -24,12 +24,10 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 	class CflowDecrypter {
 		ModuleDefMD module;
 
-		public CflowDecrypter(ModuleDefMD module) {
-			this.module = module;
-		}
-		
+		public CflowDecrypter(ModuleDefMD module) => this.module = module;
+
 		public void CflowClean() {
-			foreach (TypeDef type in this.module.GetTypes()) {
+			foreach (var type in module.GetTypes()) {
 				if (!type.HasMethods)
 					continue;
 				foreach(var method in type.Methods ) {

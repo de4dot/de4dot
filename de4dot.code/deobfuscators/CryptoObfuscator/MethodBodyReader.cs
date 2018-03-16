@@ -28,14 +28,11 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		ushort maxStackSize;
 		GenericParamContext gpContext;
 
-		public MethodBodyReader(ModuleDefMD module, ref DataReader reader)
-			: base(reader) {
-			this.module = module;
-		}
+		public MethodBodyReader(ModuleDefMD module, ref DataReader reader) : base(reader) => this.module = module;
 
 		public void Read(MethodDef method) {
-			this.gpContext = GenericParamContext.Create(method);
-			this.parameters = method.Parameters;
+			gpContext = GenericParamContext.Create(method);
+			parameters = method.Parameters;
 			SetLocals(GetLocals(method));
 
 			maxStackSize = (ushort)reader.ReadInt32();
@@ -57,30 +54,17 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return method.Body.Variables;
 		}
 
-		protected override IField ReadInlineField(Instruction instr) {
-			return module.ResolveToken(reader.ReadUInt32(), gpContext) as IField;
-		}
-
-		protected override IMethod ReadInlineMethod(Instruction instr) {
-			return module.ResolveToken(reader.ReadUInt32(), gpContext) as IMethod;
-		}
+		protected override IField ReadInlineField(Instruction instr) => module.ResolveToken(reader.ReadUInt32(), gpContext) as IField;
+		protected override IMethod ReadInlineMethod(Instruction instr) => module.ResolveToken(reader.ReadUInt32(), gpContext) as IMethod;
 
 		protected override MethodSig ReadInlineSig(Instruction instr) {
 			var sas = module.ResolveStandAloneSig(MDToken.ToRID(reader.ReadUInt32()), gpContext);
-			return sas == null ? null : sas.MethodSig;
+			return sas?.MethodSig;
 		}
 
-		protected override string ReadInlineString(Instruction instr) {
-			return module.ReadUserString(reader.ReadUInt32());
-		}
-
-		protected override ITokenOperand ReadInlineTok(Instruction instr) {
-			return module.ResolveToken(reader.ReadUInt32(), gpContext) as ITokenOperand;
-		}
-
-		protected override ITypeDefOrRef ReadInlineType(Instruction instr) {
-			return module.ResolveToken(reader.ReadUInt32(), gpContext) as ITypeDefOrRef;
-		}
+		protected override string ReadInlineString(Instruction instr) => module.ReadUserString(reader.ReadUInt32());
+		protected override ITokenOperand ReadInlineTok(Instruction instr) => module.ResolveToken(reader.ReadUInt32(), gpContext) as ITokenOperand;
+		protected override ITypeDefOrRef ReadInlineType(Instruction instr) => module.ResolveToken(reader.ReadUInt32(), gpContext) as ITypeDefOrRef;
 
 		void ReadExceptionHandlers(int numExceptionHandlers) {
 			exceptionHandlers = new ExceptionHandler[numExceptionHandlers];

@@ -43,9 +43,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 		}
 
 		void RestoreMethod(Blocks blocks) {
-			IList<Instruction> allInstructions;
-			IList<ExceptionHandler> allExceptionHandlers;
-			blocks.GetCode(out allInstructions, out allExceptionHandlers);
+			blocks.GetCode(out var allInstructions, out var allExceptionHandlers);
 			DotNetUtils.RestoreBody(blocks.Method, allInstructions, allExceptionHandlers);
 		}
 
@@ -55,13 +53,8 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 			RestoreMethod(blocks);
 		}
 
-		public void DecryptStrings(Blocks blocks) {
-			staticStringInliner.Decrypt(blocks);
-		}
-
-		public void Deobfuscate(MethodDef method) {
-			DecryptStrings(method);
-		}
+		public void DecryptStrings(Blocks blocks) => staticStringInliner.Decrypt(blocks);
+		public void Deobfuscate(MethodDef method) => DecryptStrings(method);
 	}
 
 	class VmOpCodeHandlerDetector {
@@ -70,13 +63,8 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 		List<VmOpCode> vmOpCodes;
 		MyDeobfuscator deobfuscator;
 
-		public IList<VmOpCode> Handlers {
-			get { return vmOpCodes; }
-		}
-
-		public VmOpCodeHandlerDetector(ModuleDefMD module) {
-			this.module = module;
-		}
+		public IList<VmOpCode> Handlers => vmOpCodes;
+		public VmOpCodeHandlerDetector(ModuleDefMD module) => this.module = module;
 
 		public void FindHandlers() {
 			if (vmOpCodes != null)
@@ -134,13 +122,10 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 			return list;
 		}
 
-		MethodDef GetExecMethod(TypeDef type) {
-			return GetExecMethod(deobfuscator, type);
-		}
+		MethodDef GetExecMethod(TypeDef type) => GetExecMethod(deobfuscator, type);
 
 		static MethodDef GetExecMethod(MyDeobfuscator deobfuscator, TypeDef type) {
-			MethodDef readMethod, execMethod;
-			GetReadAndExecMethods(type, out readMethod, out execMethod);
+			GetReadAndExecMethods(type, out var readMethod, out var execMethod);
 			deobfuscator.Deobfuscate(execMethod);
 			SimplifyInstructions(execMethod);
 			return execMethod;

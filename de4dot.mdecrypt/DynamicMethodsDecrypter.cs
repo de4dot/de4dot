@@ -150,7 +150,7 @@ namespace de4dot.mdecrypt {
 		delegate int CallMethod(IntPtr compileMethod, IntPtr jitter, IntPtr comp, IntPtr info, uint flags, IntPtr nativeEntry, IntPtr nativeSizeOfCode);
 
 		public DecryptMethodsInfo DecryptMethodsInfo {
-			set { decryptMethodsInfo = value; }
+			set => decryptMethodsInfo = value;
 		}
 
 		public unsafe Module Module {
@@ -177,13 +177,13 @@ namespace de4dot.mdecrypt {
 			if (obj.GetType().ToString() == "System.Reflection.RuntimeModule")
 				return (IntPtr)GetFieldValue(obj, "m_pData");
 
-			throw new ApplicationException(string.Format("m_ptr is an invalid type: {0}", obj.GetType()));
+			throw new ApplicationException($"m_ptr is an invalid type: {obj.GetType()}");
 		}
 
 		static object GetFieldValue(object obj, string fieldName) {
 			var field = obj.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
 			if (field == null)
-				throw new ApplicationException(string.Format("Could not get field {0}::{1}", obj.GetType(), fieldName));
+				throw new ApplicationException($"Could not get field {obj.GetType()}::{fieldName}");
 			return field.GetValue(obj);
 		}
 
@@ -219,8 +219,7 @@ namespace de4dot.mdecrypt {
 		}
 
 		unsafe void WriteCompileMethod(IntPtr newCompileMethod) {
-			uint oldProtect;
-			if (!VirtualProtect(jitterVtbl, IntPtr.Size, PAGE_EXECUTE_READWRITE, out oldProtect))
+			if (!VirtualProtect(jitterVtbl, IntPtr.Size, PAGE_EXECUTE_READWRITE, out uint oldProtect))
 				throw new ApplicationException("Could not enable write access to jitter vtbl");
 			*(IntPtr*)jitterVtbl = newCompileMethod;
 			VirtualProtect(jitterVtbl, IntPtr.Size, oldProtect, out oldProtect);
@@ -232,14 +231,11 @@ namespace de4dot.mdecrypt {
 			returnNameOfMethodInfo.Prepare(returnNameOfMethodInfo.del = ReturnNameOfMethod2);
 		}
 
-		public void LoadObfuscator() {
-			RuntimeHelpers.RunModuleConstructor(moduleToDecrypt.ModuleHandle);
-		}
+		public void LoadObfuscator() => RuntimeHelpers.RunModuleConstructor(moduleToDecrypt.ModuleHandle);
 
-		public unsafe bool CanDecryptMethods() {
-			return *(IntPtr*)jitterVtbl != ourCompileMethodInfo.ptrInDll &&
-					*(IntPtr*)jitterVtbl != origCompileMethod;
-		}
+		public unsafe bool CanDecryptMethods() =>
+			*(IntPtr*)jitterVtbl != ourCompileMethodInfo.ptrInDll &&
+			*(IntPtr*)jitterVtbl != origCompileMethod;
 
 		unsafe static IntPtr GetEndOfText(IntPtr hDll) {
 			byte* p = (byte*)hDll;
@@ -330,7 +326,7 @@ namespace de4dot.mdecrypt {
 			code.WriteBytes(0xC2, (ushort)(IntPtr.Size * 3));
 
 			ourCodeAddr = VirtualAlloc(IntPtr.Zero, new UIntPtr((ulong)code.Size), 0x00001000, PAGE_EXECUTE_READWRITE);
-			IntPtr baseAddr = ourCodeAddr;
+			var baseAddr = ourCodeAddr;
 			ourCompileMethodInfo.ptrInDll = new IntPtr((byte*)baseAddr + compileMethodOffset);
 			callMethod = new IntPtr((byte*)baseAddr + callMethodOffset);
 			returnMethodTokenInfo.ptrInDll = new IntPtr((byte*)baseAddr + getMethodTokenOffset);
@@ -398,9 +394,8 @@ namespace de4dot.mdecrypt {
 			return 0;
 		}
 
-		unsafe static byte* Align(byte* p, int alignment) {
-			return (byte*)new IntPtr((long)((ulong)(p + alignment - 1) & ~(ulong)(alignment - 1)));
-		}
+		unsafe static byte* Align(byte* p, int alignment) =>
+			(byte*)new IntPtr((long)((ulong)(p + alignment - 1) & ~(ulong)(alignment - 1)));
 
 		unsafe static byte[] ReadExtraSections(byte* p) {
 			p = Align(p, 4);
@@ -452,17 +447,12 @@ namespace de4dot.mdecrypt {
 			case 1: return *(row + colInfo.Offset);
 			case 2: return *(ushort*)(row + colInfo.Offset);
 			case 4: return *(uint*)(row + colInfo.Offset);
-			default: throw new ApplicationException(string.Format("Unknown size: {0}", colInfo.Size));
+			default: throw new ApplicationException($"Unknown size: {colInfo.Size}");
 			}
 		}
 
-		string ReturnNameOfMethod2() {
-			return ctx.method.Name.String;
-		}
-
-		int ReturnMethodToken2() {
-			return ctx.method.MDToken.ToInt32();
-		}
+		string ReturnNameOfMethod2() => ctx.method.Name.String;
+		int ReturnMethodToken2() => ctx.method.MDToken.ToInt32();
 
 		public DumpedMethods DecryptMethods() {
 			if (!CanDecryptMethods())
@@ -493,7 +483,7 @@ namespace de4dot.mdecrypt {
 
 			ctx.method = dnlibModule.ResolveMethod(MDToken.ToRID(token));
 			if (ctx.method == null)
-				throw new ApplicationException(string.Format("Could not find method {0:X8}", token));
+				throw new ApplicationException($"Could not find method {token:X8}");
 
 			byte* mh = (byte*)hInstModule + (uint)ctx.method.RVA;
 			byte* code;
@@ -521,7 +511,7 @@ namespace de4dot.mdecrypt {
 				code = mh + headerSize;
 			}
 
-			CORINFO_METHOD_INFO info = default(CORINFO_METHOD_INFO);
+			CORINFO_METHOD_INFO info = default;
 			info.ILCode = new IntPtr(code);
 			info.ILCodeSize = ctx.dm.mhCodeSize;
 			info.maxStack = ctx.dm.mhMaxStack;
@@ -547,7 +537,7 @@ namespace de4dot.mdecrypt {
 			if (ourCompMem == IntPtr.Zero)
 				throw new ApplicationException("Could not allocate memory");
 
-			IntPtr* mem = (IntPtr*)ourCompMem;
+			var mem = (IntPtr*)ourCompMem;
 			for (int i = 0; i < numIndexes; i++)
 				mem[i] = IntPtr.Zero;
 
@@ -574,8 +564,7 @@ namespace de4dot.mdecrypt {
 		}
 
 		static IntPtr GetModuleHandle(IntPtr addr) {
-			IntPtr hModule;
-			if (!GetModuleHandleEx(4, addr, out hModule))
+			if (!GetModuleHandleEx(4, addr, out var hModule))
 				throw new ApplicationException("GetModuleHandleEx() failed");
 			return hModule;
 		}
@@ -586,9 +575,9 @@ namespace de4dot.mdecrypt {
 			public byte[] Orig;
 
 			public PatchInfo(int rva, byte[] data, byte[] orig) {
-				this.RVA = rva;
-				this.Data = data;
-				this.Orig = orig;
+				RVA = rva;
+				Data = data;
+				Orig = orig;
 			}
 		}
 		static readonly PatchInfo[] patches = new PatchInfo[] {
@@ -624,8 +613,7 @@ namespace de4dot.mdecrypt {
 					if (!Equals(data, info.Orig))
 						continue;
 
-					uint oldProtect;
-					if (!VirtualProtect(addr, info.Data.Length, PAGE_EXECUTE_READWRITE, out oldProtect))
+					if (!VirtualProtect(addr, info.Data.Length, PAGE_EXECUTE_READWRITE, out uint oldProtect))
 						throw new ApplicationException("Could not enable write access");
 					Marshal.Copy(info.Data, 0, addr, info.Data.Length);
 					VirtualProtect(addr, info.Data.Length, oldProtect, out oldProtect);

@@ -26,9 +26,6 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 		public byte[] Locals { get; set; }
 		public byte[] Instructions { get; set; }
 		public byte[] Exceptions { get; set; }
-
-		public override string ToString() {
-			return string.Format("{0:X8} - {1}", Token, Guid);
-		}
+		public override string ToString() => $"{Token:X8} - {Guid}";
 	}
 }

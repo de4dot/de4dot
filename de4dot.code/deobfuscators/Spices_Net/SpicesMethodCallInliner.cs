@@ -30,9 +30,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 		MethodDefAndDeclaringTypeDict<MethodDef> classMethods = new MethodDefAndDeclaringTypeDict<MethodDef>();
 
 		public SpicesMethodCallInliner(ModuleDefMD module)
-			: base(false) {
-			this.module = module;
-		}
+			: base(false) => this.module = module;
 
 		protected override bool IsCompatibleType(int paramIndex, IType origType, IType newType) {
 			if (new SigComparer(SigComparerOptions.IgnoreModifiers).Equals(origType, newType))
@@ -44,13 +42,8 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			return newType.FullName == "System.Object";
 		}
 
-		public bool CheckCanInline(MethodDef method) {
-			return methodsTypes.Find(method.DeclaringType);
-		}
-
-		protected override bool CanInline(MethodDef method) {
-			return CheckCanInline(method);
-		}
+		public bool CheckCanInline(MethodDef method) => methodsTypes.Find(method.DeclaringType);
+		protected override bool CanInline(MethodDef method) => CheckCanInline(method);
 
 		public void Initialize(ISimpleDeobfuscator simpleDeobfuscator) {
 			InitializeMethodsTypes();
@@ -68,8 +61,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 						if (method.Name == ".ctor" || method.Name == ".cctor")
 							continue;
 
-						MethodDef calledMethod;
-						if (!CheckRestoreBody(method, out calledMethod))
+						if (!CheckRestoreBody(method, out var calledMethod))
 							continue;
 						if (!CheckSameMethods(method, calledMethod))
 							continue;

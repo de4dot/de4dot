@@ -41,63 +41,41 @@ namespace de4dot.code.renamer {
 			newName = newTypeName;
 		}
 
-		public bool GotNewName() {
-			return oldName != newName;
-		}
-
-		public override string ToString() {
-			return string.Format("O:{0} -- N:{1}", oldFullName, newName);
-		}
+		public bool GotNewName() => oldName != newName;
+		public override string ToString() => $"O:{oldFullName} -- N:{newName}";
 	}
 
 	public class GenericParamInfo : MemberInfo {
-		public GenericParamInfo(MGenericParamDef genericParamDef)
-			: base(genericParamDef) {
-		}
+		public GenericParamInfo(MGenericParamDef genericParamDef) : base(genericParamDef) { }
 	}
 
 	public class PropertyInfo : MemberInfo {
-		public PropertyInfo(MPropertyDef propertyDef)
-			: base(propertyDef) {
-		}
+		public PropertyInfo(MPropertyDef propertyDef) : base(propertyDef) { }
 	}
 
 	public class EventInfo : MemberInfo {
-		public EventInfo(MEventDef eventDef)
-			: base(eventDef) {
-		}
+		public EventInfo(MEventDef eventDef) : base(eventDef) { }
 	}
 
 	public class FieldInfo : MemberInfo {
-		public FieldInfo(MFieldDef fieldDef)
-			: base(fieldDef) {
-		}
+		public FieldInfo(MFieldDef fieldDef) : base(fieldDef) { }
 	}
 
 	public class MethodInfo : MemberInfo {
-		public MMethodDef MethodDef {
-			get { return (MMethodDef)memberRef; }
-		}
-
-		public MethodInfo(MMethodDef methodDef)
-			: base(methodDef) {
-		}
+		public MMethodDef MethodDef => (MMethodDef)memberRef;
+		public MethodInfo(MMethodDef methodDef) : base(methodDef) { }
 	}
 
 	public class ParamInfo {
-		//MParamDef paramDef;
 		public string oldName;
 		public string newName;
 
 		public ParamInfo(MParamDef paramDef) {
-			//this.paramDef = paramDef;
-			this.oldName = paramDef.ParameterDef.Name;
-			this.newName = paramDef.ParameterDef.Name;
+			oldName = paramDef.ParameterDef.Name;
+			newName = paramDef.ParameterDef.Name;
 		}
 
-		public bool GotNewName() {
-			return oldName != newName;
-		}
+		public bool GotNewName() => oldName != newName;
 	}
 
 	public class MemberInfos {
@@ -206,61 +184,20 @@ namespace de4dot.code.renamer {
 #endregion
 		};
 
-		public MemberInfos() {
-			checkWinFormsClass = new DerivedFrom(WINFORMS_CLASSES);
-		}
-
-		public bool IsWinFormsClass(MTypeDef type) {
-			return checkWinFormsClass.Check(type);
-		}
-
-		public TypeInfo Type(MTypeDef t) {
-			return allTypeInfos[t];
-		}
-
-		public bool TryGetType(MTypeDef t, out TypeInfo info) {
-			return allTypeInfos.TryGetValue(t, out info);
-		}
-
-		public bool TryGetEvent(MEventDef e, out EventInfo info) {
-			return allEventInfos.TryGetValue(e, out info);
-		}
-
-		public bool TryGetProperty(MPropertyDef p, out PropertyInfo info) {
-			return allPropertyInfos.TryGetValue(p, out info);
-		}
-
-		public PropertyInfo Property(MPropertyDef prop) {
-			return allPropertyInfos[prop];
-		}
-
-		public EventInfo Event(MEventDef evt) {
-			return allEventInfos[evt];
-		}
-
-		public FieldInfo Field(MFieldDef field) {
-			return allFieldInfos[field];
-		}
-
-		public MethodInfo Method(MMethodDef method) {
-			return allMethodInfos[method];
-		}
-
-		public GenericParamInfo GenericParam(MGenericParamDef gparam) {
-			return allGenericParamInfos[gparam];
-		}
-
-		public ParamInfo Param(MParamDef param) {
-			return allParamInfos[param];
-		}
-
-		public void Add(MPropertyDef prop) {
-			allPropertyInfos[prop] = new PropertyInfo(prop);
-		}
-
-		public void Add(MEventDef evt) {
-			allEventInfos[evt] = new EventInfo(evt);
-		}
+		public MemberInfos() => checkWinFormsClass = new DerivedFrom(WINFORMS_CLASSES);
+		public bool IsWinFormsClass(MTypeDef type) => checkWinFormsClass.Check(type);
+		public TypeInfo Type(MTypeDef t) => allTypeInfos[t];
+		public bool TryGetType(MTypeDef t, out TypeInfo info) => allTypeInfos.TryGetValue(t, out info);
+		public bool TryGetEvent(MEventDef e, out EventInfo info) => allEventInfos.TryGetValue(e, out info);
+		public bool TryGetProperty(MPropertyDef p, out PropertyInfo info) => allPropertyInfos.TryGetValue(p, out info);
+		public PropertyInfo Property(MPropertyDef prop) => allPropertyInfos[prop];
+		public EventInfo Event(MEventDef evt) => allEventInfos[evt];
+		public FieldInfo Field(MFieldDef field) => allFieldInfos[field];
+		public MethodInfo Method(MMethodDef method) => allMethodInfos[method];
+		public GenericParamInfo GenericParam(MGenericParamDef gparam) => allGenericParamInfos[gparam];
+		public ParamInfo Param(MParamDef param) => allParamInfos[param];
+		public void Add(MPropertyDef prop) => allPropertyInfos[prop] = new PropertyInfo(prop);
+		public void Add(MEventDef evt) => allEventInfos[evt] = new EventInfo(evt);
 
 		public void Initialize(Modules modules) {
 			foreach (var type in modules.AllTypes) {

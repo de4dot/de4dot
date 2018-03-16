@@ -49,7 +49,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		public MemoryMethodsDecrypter(ModuleDefMD module, ISimpleDeobfuscator simpleDeobfuscator, MemoryMethodsDecrypter other)
 			: base(module, simpleDeobfuscator, other) {
 			if (other != null)
-				this.version = other.version;
+				version = other.version;
 		}
 
 		protected override bool CheckType(TypeDef type, MethodDef initMethod) {

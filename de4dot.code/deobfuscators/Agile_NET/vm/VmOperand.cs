@@ -25,31 +25,23 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 	}
 
 	class TargetDisplOperand : IVmOperand {
-		public readonly int Displacement;	// number of VM instructions from current VM instr
-		public TargetDisplOperand(int displacement) {
-			this.Displacement = displacement;
-		}
+		public readonly int Displacement;   // number of VM instructions from current VM instr
+		public TargetDisplOperand(int displacement) => Displacement = displacement;
 	}
 
 	class SwitchTargetDisplOperand : IVmOperand {
-		public readonly int[] TargetDisplacements;	// number of VM instructions from current VM instr
-		public SwitchTargetDisplOperand(int[] targetDisplacements) {
-			this.TargetDisplacements = targetDisplacements;
-		}
+		public readonly int[] TargetDisplacements;  // number of VM instructions from current VM instr
+		public SwitchTargetDisplOperand(int[] targetDisplacements) => TargetDisplacements = targetDisplacements;
 	}
 
 	class ArgOperand : IVmOperand {
 		public readonly ushort Arg;
-		public ArgOperand(ushort arg) {
-			this.Arg = arg;
-		}
+		public ArgOperand(ushort arg) => Arg = arg;
 	}
 
 	class LocalOperand : IVmOperand {
 		public readonly ushort Local;
-		public LocalOperand(ushort local) {
-			this.Local = local;
-		}
+		public LocalOperand(ushort local) => Local = local;
 	}
 
 	class FieldInstructionOperand : IVmOperand {
@@ -58,9 +50,9 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 		public readonly IField Field;
 
 		public FieldInstructionOperand(OpCode staticOpCode, OpCode instanceOpCode, IField field) {
-			this.StaticOpCode = staticOpCode;
-			this.InstanceOpCode = instanceOpCode;
-			this.Field = field;
+			StaticOpCode = staticOpCode;
+			InstanceOpCode = instanceOpCode;
+			Field = field;
 		}
 	}
 }

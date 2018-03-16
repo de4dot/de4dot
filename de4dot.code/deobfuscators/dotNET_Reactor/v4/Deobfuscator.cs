@@ -57,16 +57,11 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			renameShort = new BoolOption(null, MakeArgName("sname"), "Rename short names", false);
 		}
 
-		public override string Name {
-			get { return THE_NAME; }
-		}
+		public override string Name => THE_NAME;
+		public override string Type => THE_TYPE;
 
-		public override string Type {
-			get { return THE_TYPE; }
-		}
-
-		public override IDeobfuscator CreateDeobfuscator() {
-			return new Deobfuscator(new Deobfuscator.Options {
+		public override IDeobfuscator CreateDeobfuscator() =>
+			new Deobfuscator(new Deobfuscator.Options {
 				ValidNameRegex = validNameRegex.Get(),
 				DecryptMethods = decryptMethods.Get(),
 				DecryptBools = decryptBools.Get(),
@@ -79,10 +74,9 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				RemoveAntiStrongName = removeAntiStrongName.Get(),
 				RenameShort = renameShort.Get(),
 			});
-		}
 
-		protected override IEnumerable<Option> GetOptionsInternal() {
-			return new List<Option>() {
+		protected override IEnumerable<Option> GetOptionsInternal() =>
+			new List<Option>() {
 				decryptMethods,
 				decryptBools,
 				restoreTypes,
@@ -94,7 +88,6 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				removeAntiStrongName,
 				renameShort,
 			};
-		}
 	}
 
 	class Deobfuscator : DeobfuscatorBase {
@@ -131,21 +124,10 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			public bool RenameShort { get; set; }
 		}
 
-		public override string Type {
-			get { return DeobfuscatorInfo.THE_TYPE; }
-		}
-
-		public override string TypeLong {
-			get { return DeobfuscatorInfo.THE_NAME + " 4.x"; }
-		}
-
-		public override string Name {
-			get { return obfuscatorName; }
-		}
-
-		protected override bool CanInlineMethods {
-			get { return startedDeobfuscating ? options.InlineMethods : true; }
-		}
+		public override string Type => DeobfuscatorInfo.THE_TYPE;
+		public override string TypeLong => DeobfuscatorInfo.THE_NAME + " 4.x";
+		public override string Name => obfuscatorName;
+		protected override bool CanInlineMethods => startedDeobfuscating ? options.InlineMethods : true;
 
 		public override IEnumerable<IBlocksDeobfuscator> BlocksDeobfuscators {
 			get {
@@ -161,9 +143,9 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			this.options = options;
 
 			if (options.RemoveNamespaces)
-				this.RenamingOptions |= RenamingOptions.RemoveNamespaceIfOneType;
+				RenamingOptions |= RenamingOptions.RemoveNamespaceIfOneType;
 			else
-				this.RenamingOptions &= ~RenamingOptions.RemoveNamespaceIfOneType;
+				RenamingOptions &= ~RenamingOptions.RemoveNamespaceIfOneType;
 			if (options.RenameShort)
 				options.ValidNameRegex.Regexes.Insert(0, new NameRegex(DeobfuscatorInfo.SHORT_NAME_REGEX));
 		}
@@ -178,9 +160,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			return data;
 		}
 
-		public override void Initialize(ModuleDefMD module) {
-			base.Initialize(module);
-		}
+		public override void Initialize(ModuleDefMD module) => base.Initialize(module);
 
 		static Regex isRandomName = new Regex(@"^[A-Z]{30,40}$");
 		static Regex isRandomNameMembers = new Regex(@"^[a-zA-Z0-9]{9,11}$");	// methods, fields, props, events
@@ -206,41 +186,15 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			return CheckValidName(ns, isRandomNameTypes);
 		}
 
-		public override bool IsValidTypeName(string name) {
-			return name != null && CheckValidName(name, isRandomNameTypes);
-		}
-
-		public override bool IsValidMethodName(string name) {
-			return name != null && CheckValidName(name, isRandomNameMembers);
-		}
-
-		public override bool IsValidPropertyName(string name) {
-			return name != null && CheckValidName(name, isRandomNameMembers);
-		}
-
-		public override bool IsValidEventName(string name) {
-			return name != null && CheckValidName(name, isRandomNameMembers);
-		}
-
-		public override bool IsValidFieldName(string name) {
-			return name != null && CheckValidName(name, isRandomNameMembers);
-		}
-
-		public override bool IsValidGenericParamName(string name) {
-			return name != null && CheckValidName(name, isRandomNameMembers);
-		}
-
-		public override bool IsValidMethodArgName(string name) {
-			return name != null && CheckValidName(name, isRandomNameMembers);
-		}
-
-		public override bool IsValidMethodReturnArgName(string name) {
-			return string.IsNullOrEmpty(name) || CheckValidName(name, isRandomNameMembers);
-		}
-
-		public override bool IsValidResourceKeyName(string name) {
-			return name != null && CheckValidName(name, isRandomNameMembers);
-		}
+		public override bool IsValidTypeName(string name) => name != null && CheckValidName(name, isRandomNameTypes);
+		public override bool IsValidMethodName(string name) => name != null && CheckValidName(name, isRandomNameMembers);
+		public override bool IsValidPropertyName(string name) => name != null && CheckValidName(name, isRandomNameMembers);
+		public override bool IsValidEventName(string name) => name != null && CheckValidName(name, isRandomNameMembers);
+		public override bool IsValidFieldName(string name) => name != null && CheckValidName(name, isRandomNameMembers);
+		public override bool IsValidGenericParamName(string name) => name != null && CheckValidName(name, isRandomNameMembers);
+		public override bool IsValidMethodArgName(string name) => name != null && CheckValidName(name, isRandomNameMembers);
+		public override bool IsValidMethodReturnArgName(string name) => string.IsNullOrEmpty(name) || CheckValidName(name, isRandomNameMembers);
+		public override bool IsValidResourceKeyName(string name) => name != null && CheckValidName(name, isRandomNameMembers);
 
 		protected override int DetectInternal() {
 			int val = 0;
@@ -598,13 +552,11 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			foreach (var info in assemblyResolver.GetEmbeddedAssemblies(DeobfuscatedFile, this)) {
 				var simpleName = Utils.GetAssemblySimpleName(info.name);
 				DeobfuscatedFile.CreateAssemblyFile(info.resource.GetReader().ToArray(), simpleName, null);
-				AddResourceToBeRemoved(info.resource, string.Format("Embedded assembly: {0}", info.name));
+				AddResourceToBeRemoved(info.resource, $"Embedded assembly: {info.name}");
 			}
 		}
 
-		public override bool DeobfuscateOther(Blocks blocks) {
-			return booleanValueInliner.Decrypt(blocks) > 0;
-		}
+		public override bool DeobfuscateOther(Blocks blocks) => booleanValueInliner.Decrypt(blocks) > 0;
 
 		public override void DeobfuscateMethodEnd(Blocks blocks) {
 			proxyCallFixer.Deobfuscate(blocks);
@@ -621,9 +573,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				Logger.v("Removed anti strong name code");
 		}
 
-		TypeDef GetDecrypterType() {
-			return methodsDecrypter.DecrypterType ?? stringDecrypter.DecrypterType ?? booleanDecrypter.DecrypterType;
-		}
+		TypeDef GetDecrypterType() => methodsDecrypter.DecrypterType ?? stringDecrypter.DecrypterType ?? booleanDecrypter.DecrypterType;
 
 		void FixTypeofDecrypterInstructions(Blocks blocks) {
 			var type = GetDecrypterType();

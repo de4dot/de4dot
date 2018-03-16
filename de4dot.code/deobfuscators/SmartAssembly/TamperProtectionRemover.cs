@@ -33,13 +33,8 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			V2,
 		}
 
-		public IList<MethodDef> PinvokeMethods {
-			get { return pinvokeMethods; }
-		}
-
-		public TamperProtectionRemover(ModuleDefMD module) {
-			this.module = module;
-		}
+		public IList<MethodDef> PinvokeMethods => pinvokeMethods;
+		public TamperProtectionRemover(ModuleDefMD module) => this.module = module;
 
 		public bool Remove(Blocks blocks) {
 			if (blocks.Method.Name != ".cctor")
@@ -110,8 +105,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				if (instr.OpCode.Code != Code.Call && instr.OpCode.Code != Code.Callvirt)
 					continue;
 
-				var calledMethod = instr.Operand as IMethod;
-				if (calledMethod != null && func(calledMethod))
+				if (instr.Operand is IMethod calledMethod && func(calledMethod))
 					return i;
 				if (!keepLooking)
 					return -1;

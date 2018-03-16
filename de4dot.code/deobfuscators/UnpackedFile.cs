@@ -27,8 +27,6 @@ namespace de4dot.code.deobfuscators {
 			this.data = data;
 		}
 
-		public override string ToString() {
-			return string.Format("{0:X8} - {1}", data.Length, filename);
-		}
+		public override string ToString() => $"{data.Length:X8} - {filename}";
 	}
 }

@@ -34,7 +34,7 @@ namespace de4dot.code {
 		bool canIgnoreMessages;
 
 		public int IndentLevel {
-			get { return indentLevel; }
+			get => indentLevel;
 			set {
 				if (indentLevel == value)
 					return;
@@ -44,22 +44,18 @@ namespace de4dot.code {
 		}
 
 		public LoggerEvent MaxLoggerEvent {
-			get { return maxLoggerEvent; }
-			set { maxLoggerEvent = value; }
+			get => maxLoggerEvent;
+			set => maxLoggerEvent = value;
 		}
 
 		public bool CanIgnoreMessages {
-			get { return canIgnoreMessages; }
-			set { canIgnoreMessages = value; }
+			get => canIgnoreMessages;
+			set => canIgnoreMessages = value;
 		}
 
-		public int NumIgnoredMessages {
-			get { return numIgnoredMessages; }
-		}
+		public int NumIgnoredMessages => numIgnoredMessages;
 
-		public Logger()
-			: this(2, true) {
-		}
+		public Logger() : this(2, true) { }
 
 		public Logger(int indentSize, bool canIgnoreMessages) {
 			this.indentSize = indentSize;
@@ -82,13 +78,8 @@ namespace de4dot.code {
 			InitIndentString();
 		}
 
-		public void Log(object sender, LoggerEvent loggerEvent, string format, params object[] args) {
-			Log(true, sender, loggerEvent, format, args);
-		}
-
-		public void LogErrorDontIgnore(string format, params object[] args) {
-			Log(false, null, LoggerEvent.Error, format, args);
-		}
+		public void Log(object sender, LoggerEvent loggerEvent, string format, params object[] args) => Log(true, sender, loggerEvent, format, args);
+		public void LogErrorDontIgnore(string format, params object[] args) => Log(false, null, LoggerEvent.Error, format, args);
 
 		public void Log(bool canIgnore, object sender, LoggerEvent loggerEvent, string format, params object[] args) {
 			if (IgnoresEvent(loggerEvent))
@@ -99,12 +90,12 @@ namespace de4dot.code {
 			switch (loggerEvent) {
 			case LoggerEvent.Error:
 				foreach (var l in string.Format(format, args).Split('\n'))
-					LogMessage(string.Empty, string.Format("ERROR: {0}", l));
+					LogMessage(string.Empty, $"ERROR: {l}");
 				break;
 
 			case LoggerEvent.Warning:
 				foreach (var l in string.Format(format, args).Split('\n'))
-					LogMessage(string.Empty, string.Format("WARNING: {0}", l));
+					LogMessage(string.Empty, $"WARNING: {l}");
 				break;
 
 			default:
@@ -134,32 +125,13 @@ namespace de4dot.code {
 				Console.WriteLine(indent + format, args);
 		}
 
-		public bool IgnoresEvent(LoggerEvent loggerEvent) {
-			return loggerEvent > maxLoggerEvent;
-		}
+		public bool IgnoresEvent(LoggerEvent loggerEvent) => loggerEvent > maxLoggerEvent;
 
-		public static void Log(LoggerEvent loggerEvent, string format, params object[] args) {
-			Instance.Log(null, loggerEvent, format, args);
-		}
-
-		public static void e(string format, params object[] args) {
-			Instance.Log(null, LoggerEvent.Error, format, args);
-		}
-
-		public static void w(string format, params object[] args) {
-			Instance.Log(null, LoggerEvent.Warning, format, args);
-		}
-
-		public static void n(string format, params object[] args) {
-			Instance.Log(null, LoggerEvent.Info, format, args);
-		}
-
-		public static void v(string format, params object[] args) {
-			Instance.Log(null, LoggerEvent.Verbose, format, args);
-		}
-
-		public static void vv(string format, params object[] args) {
-			Instance.Log(null, LoggerEvent.VeryVerbose, format, args);
-		}
+		public static void Log(LoggerEvent loggerEvent, string format, params object[] args) => Instance.Log(null, loggerEvent, format, args);
+		public static void e(string format, params object[] args) => Instance.Log(null, LoggerEvent.Error, format, args);
+		public static void w(string format, params object[] args) => Instance.Log(null, LoggerEvent.Warning, format, args);
+		public static void n(string format, params object[] args) => Instance.Log(null, LoggerEvent.Info, format, args);
+		public static void v(string format, params object[] args) => Instance.Log(null, LoggerEvent.Verbose, format, args);
+		public static void vv(string format, params object[] args) => Instance.Log(null, LoggerEvent.VeryVerbose, format, args);
 	}
 }

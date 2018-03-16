@@ -57,13 +57,8 @@ namespace de4dot.cui {
 		class Infos {
 			List<Info> infos = new List<Info>();
 
-			public void add(object value, string name, string desc) {
-				infos.Add(new Info(value, name, desc));
-			}
-
-			public IEnumerable<Info> GetInfos() {
-				return infos;
-			}
+			public void Add(object value, string name, string desc) => infos.Add(new Info(value, name, desc));
+			public IEnumerable<Info> GetInfos() => infos;
 
 			public bool GetValue(string name, out object value) {
 				foreach (var info in infos) {
@@ -78,11 +73,11 @@ namespace de4dot.cui {
 		}
 
 		static CommandLineParser() {
-			stringDecrypterTypes.add(DecrypterType.None, "none", "Don't decrypt strings");
-			stringDecrypterTypes.add(DecrypterType.Default, "default", "Use default string decrypter type (usually static)");
-			stringDecrypterTypes.add(DecrypterType.Static, "static", "Use static string decrypter if available");
-			stringDecrypterTypes.add(DecrypterType.Delegate, "delegate", "Use a delegate to call the real string decrypter");
-			stringDecrypterTypes.add(DecrypterType.Emulate, "emulate", "Call real string decrypter and emulate certain instructions");
+			stringDecrypterTypes.Add(DecrypterType.None, "none", "Don't decrypt strings");
+			stringDecrypterTypes.Add(DecrypterType.Default, "default", "Use default string decrypter type (usually static)");
+			stringDecrypterTypes.Add(DecrypterType.Static, "static", "Use static string decrypter if available");
+			stringDecrypterTypes.Add(DecrypterType.Delegate, "delegate", "Use a delegate to call the real string decrypter");
+			stringDecrypterTypes.Add(DecrypterType.Emulate, "emulate", "Call real string decrypter and emulate certain instructions");
 		}
 
 		public CommandLineParser(IList<IDeobfuscatorInfo> deobfuscatorInfos, FilesDeobfuscator.Options filesOptions) {
@@ -99,7 +94,7 @@ namespace de4dot.cui {
 				AddSearchDir();
 				searchDir = new FilesDeobfuscator.SearchDir();
 				if (!Utils.PathExists(val))
-					ExitError(string.Format("Directory {0} does not exist", val));
+					ExitError($"Directory {val} does not exist");
 				searchDir.InputDirectory = val;
 			}));
 			miscOptions.Add(new OneArgOption("ro", null, "Output base dir for recursively found files", "dir", (val) => {
@@ -134,7 +129,7 @@ namespace de4dot.cui {
 					case 'a': filesOptions.RenamerFlags &= ~RenamerFlags.RenameMethodArgs; break;
 					case 'g': filesOptions.RenamerFlags &= ~RenamerFlags.RenameGenericParams; break;
 					case 'd': filesOptions.RenamerFlags |= RenamerFlags.DontRenameDelegateFields; break;
-					default: throw new UserException(string.Format("Unrecognized --keep-names char: '{0}'", c));
+					default: throw new UserException($"Unrecognized --keep-names char: '{c}'");
 					}
 				}
 			}));
@@ -145,9 +140,8 @@ namespace de4dot.cui {
 				filesOptions.RenamerFlags &= ~(RenamerFlags.RestorePropertiesFromNames | RenamerFlags.RestoreEventsFromNames);
 			}));
 			miscOptions.Add(new OneArgOption(null, "default-strtyp", "Default string decrypter type", "type", (val) => {
-				object decrypterType;
-				if (!stringDecrypterTypes.GetValue(val, out decrypterType))
-					ExitError(string.Format("Invalid string decrypter type '{0}'", val));
+				if (!stringDecrypterTypes.GetValue(val, out object decrypterType))
+					ExitError($"Invalid string decrypter type '{val}'");
 				defaultStringDecrypterType = (DecrypterType)decrypterType;
 			}));
 			miscOptions.Add(new OneArgOption(null, "default-strtok", "Default string decrypter method token or [type::][name][(args,...)]", "method", (val) => {
@@ -206,7 +200,7 @@ namespace de4dot.cui {
 					case "pr": flag = MetadataFlags.PreservePropertyRids; break;
 					case "ts": flag = MetadataFlags.PreserveTypeSpecRids; break;
 					case "ms": flag = MetadataFlags.PreserveMethodSpecRids; break;
-					default: throw new UserException(string.Format("Invalid --preserve-table option: {0}", s));
+					default: throw new UserException($"Invalid --preserve-table option: {s}");
 					}
 					if (clear)
 						filesOptions.MetadataFlags &= ~flag;
@@ -245,7 +239,7 @@ namespace de4dot.cui {
 			defaultOption = new OneArgOption("f", null, "Name of .NET file", "file", (val) => {
 				AddFile();
 				if (!Utils.FileExists(val))
-					ExitError(string.Format("File \"{0}\" does not exist.", val));
+					ExitError($"File \"{val}\" does not exist.");
 				newFileOptions = new ObfuscatedFile.Options {
 					Filename = val,
 					ControlFlowDeobfuscation = filesOptions.ControlFlowDeobfuscation,
@@ -263,22 +257,21 @@ namespace de4dot.cui {
 					ExitError("Missing input file");
 				var newFilename = Utils.GetFullPath(val);
 				if (string.Equals(Utils.GetFullPath(newFileOptions.Filename), newFilename, StringComparison.OrdinalIgnoreCase))
-					ExitError(string.Format("Output file can't be same as input file ({0})", newFilename));
+					ExitError($"Output file can't be same as input file ({newFilename})");
 				newFileOptions.NewFilename = newFilename;
 			}));
 			fileOptions.Add(new OneArgOption("p", null, "Obfuscator type (see below)", "type", (val) => {
 				if (newFileOptions == null)
 					ExitError("Missing input file");
 				if (!IsValidObfuscatorType(val))
-					ExitError(string.Format("Invalid obfuscator type '{0}'", val));
+					ExitError($"Invalid obfuscator type '{val}'");
 				newFileOptions.ForcedObfuscatorType = val;
 			}));
 			fileOptions.Add(new OneArgOption(null, "strtyp", "String decrypter type", "type", (val) => {
 				if (newFileOptions == null)
 					ExitError("Missing input file");
-				object decrypterType;
-				if (!stringDecrypterTypes.GetValue(val, out decrypterType))
-					ExitError(string.Format("Invalid string decrypter type '{0}'", val));
+				if (!stringDecrypterTypes.GetValue(val, out object decrypterType))
+					ExitError($"Invalid string decrypter type '{val}'");
 				newFileOptions.StringDecrypterType = (DecrypterType)decrypterType;
 			}));
 			fileOptions.Add(new OneArgOption(null, "strtok", "String decrypter method token or [type::][name][(args,...)]", "method", (val) => {
@@ -304,7 +297,7 @@ namespace de4dot.cui {
 			if (name == null)
 				return;
 			if (optionsDict.ContainsKey(name))
-				throw new ApplicationException(string.Format("Option {0} is present twice!", name));
+				throw new ApplicationException($"Option {name} is present twice!");
 			optionsDict[name] = option;
 		}
 
@@ -318,8 +311,7 @@ namespace de4dot.cui {
 				var arg = args[i];
 
 				string val = null;
-				Option option;
-				if (optionsDict.TryGetValue(arg, out option)) {
+				if (optionsDict.TryGetValue(arg, out var option)) {
 					if (option.NeedArgument) {
 						if (++i >= args.Length)
 							ExitError("Missing options value");
@@ -331,8 +323,7 @@ namespace de4dot.cui {
 					val = arg;
 				}
 
-				string errorString;
-				if (!option.Set(val, out errorString))
+				if (!option.Set(val, out string errorString))
 					ExitError(errorString);
 			}
 			AddFile();
@@ -370,9 +361,7 @@ namespace de4dot.cui {
 			Exit(2);
 		}
 
-		void Exit(int exitCode) {
-			throw new ExitException(exitCode);
-		}
+		void Exit(int exitCode) => throw new ExitException(exitCode);
 
 		void Usage() {
 			string progName = GetProgramBaseName();
@@ -407,9 +396,7 @@ namespace de4dot.cui {
 			Logger.n("{0} file1 --strtyp delegate --strtok 06000123", progName);
 		}
 
-		string GetProgramBaseName() {
-			return Utils.GetBaseName(Environment.GetCommandLineArgs()[0]);
-		}
+		string GetProgramBaseName() => Utils.GetBaseName(Environment.GetCommandLineArgs()[0]);
 
 		void PrintInfos(string desc, Infos infos) {
 			Logger.n("{0}", desc);
@@ -420,18 +407,18 @@ namespace de4dot.cui {
 		void PrintOption(Option option) {
 			string defaultAndDesc;
 			if (option.NeedArgument && option.Default != null)
-				defaultAndDesc = string.Format("{0} ({1})", option.Description, option.Default);
+				defaultAndDesc = $"{option.Description} ({option.Default})";
 			else
 				defaultAndDesc = option.Description;
 			PrintOptionAndExplanation(GetOptionAndArgName(option, option.ShortName ?? option.LongName), defaultAndDesc);
 			if (option.ShortName != null && option.LongName != null)
-				PrintOptionAndExplanation(option.LongName, string.Format("Same as {0}", option.ShortName));
+				PrintOptionAndExplanation(option.LongName, $"Same as {option.ShortName}");
 		}
 
 		void PrintOptionAndExplanation(string option, string explanation) {
 			const int maxCols = 16;
 			const string prefix = "  ";
-			string left = string.Format(string.Format("{{0,-{0}}}", maxCols), option);
+			string left = string.Format($"{{0,-{maxCols}}}", option);
 			if (option.Length > maxCols) {
 				Logger.n("{0}{1}", prefix, left);
 				Logger.n("{0}{1} {2}", prefix, new string(' ', maxCols), explanation);

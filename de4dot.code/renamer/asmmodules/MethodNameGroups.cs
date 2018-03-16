@@ -24,17 +24,10 @@ namespace de4dot.code.renamer.asmmodules {
 	public class MethodNameGroup {
 		List<MMethodDef> methods = new List<MMethodDef>();
 
-		public List<MMethodDef> Methods {
-			get { return methods; }
-		}
+		public List<MMethodDef> Methods => methods;
+		public int Count => methods.Count;
 
-		public int Count {
-			get { return methods.Count; }
-		}
-
-		public void Add(MMethodDef method) {
-			methods.Add(method);
-		}
+		public void Add(MMethodDef method) => methods.Add(method);
 
 		public void Merge(MethodNameGroup other) {
 			if (this == other)
@@ -96,27 +89,19 @@ namespace de4dot.code.renamer.asmmodules {
 			return false;
 		}
 
-		public override string ToString() {
-			return string.Format("{0} -- {1}", methods.Count, methods.Count > 0 ? methods[0].ToString() : "");
-		}
+		public override string ToString() => $"{methods.Count} -- {(methods.Count > 0 ? methods[0].ToString() : "")}";
 	}
 
 	public class MethodNameGroups {
 		Dictionary<MMethodDef, MethodNameGroup> methodGroups = new Dictionary<MMethodDef, MethodNameGroup>();
 
-		public void Same(MMethodDef a, MMethodDef b) {
-			Merge(Get(a), Get(b));
-		}
-
-		public void Add(MMethodDef methodDef) {
-			Get(methodDef);
-		}
+		public void Same(MMethodDef a, MMethodDef b) => Merge(Get(a), Get(b));
+		public void Add(MMethodDef methodDef) => Get(methodDef);
 
 		public MethodNameGroup Get(MMethodDef method) {
 			if (!method.IsVirtual())
 				throw new ApplicationException("Not a virtual method");
-			MethodNameGroup group;
-			if (!methodGroups.TryGetValue(method, out group)) {
+			if (!methodGroups.TryGetValue(method, out var group)) {
 				methodGroups[method] = group = new MethodNameGroup();
 				group.Add(method);
 			}
@@ -128,7 +113,7 @@ namespace de4dot.code.renamer.asmmodules {
 				return;
 
 			if (a.Count < b.Count) {
-				MethodNameGroup tmp = a;
+				var tmp = a;
 				a = b;
 				b = tmp;
 			}
@@ -137,8 +122,6 @@ namespace de4dot.code.renamer.asmmodules {
 				methodGroups[methodDef] = a;
 		}
 
-		public IEnumerable<MethodNameGroup> GetAllGroups() {
-			return Utils.Unique(methodGroups.Values);
-		}
+		public IEnumerable<MethodNameGroup> GetAllGroups() => Utils.Unique(methodGroups.Values);
 	}
 }

@@ -30,24 +30,17 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 			: base(DEFAULT_REGEX) {
 		}
 
-		public override string Name {
-			get { return THE_NAME; }
-		}
+		public override string Name => THE_NAME;
+		public override string Type => THE_TYPE;
 
-		public override string Type {
-			get { return THE_TYPE; }
-		}
-
-		public override IDeobfuscator CreateDeobfuscator() {
-			return new Deobfuscator(new Deobfuscator.Options {
+		public override IDeobfuscator CreateDeobfuscator() =>
+			new Deobfuscator(new Deobfuscator.Options {
 				RenameResourcesInCode = false,
 				ValidNameRegex = validNameRegex.Get(),
 			});
-		}
 	}
 
 	class Deobfuscator : DeobfuscatorBase {
-		//Options options;
 		string obfuscatorName = "Dotfuscator";
 
 		StringDecrypter stringDecrypter;
@@ -56,22 +49,10 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 		internal class Options : OptionsBase {
 		}
 
-		public override string Type {
-			get { return DeobfuscatorInfo.THE_TYPE; }
-		}
-
-		public override string TypeLong {
-			get { return DeobfuscatorInfo.THE_NAME; }
-		}
-
-		public override string Name {
-			get { return obfuscatorName; }
-		}
-
-		public Deobfuscator(Options options)
-			: base(options) {
-			//this.options = options;
-		}
+		public override string Type => DeobfuscatorInfo.THE_TYPE;
+		public override string TypeLong => DeobfuscatorInfo.THE_NAME;
+		public override string Name => obfuscatorName;
+		public Deobfuscator(Options options) : base(options) { }
 
 		protected override int DetectInternal() {
 			int val = 0;
@@ -135,7 +116,7 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 		}
 
 		void DoCflowClean() {
-			CflowDecrypter cflowDescrypter = new CflowDecrypter(module);
+			var cflowDescrypter = new CflowDecrypter(module);
 			cflowDescrypter.CflowClean();
 		}
 	}

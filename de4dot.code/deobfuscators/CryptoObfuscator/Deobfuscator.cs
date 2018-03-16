@@ -42,32 +42,25 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			fixLdnull = new BoolOption(null, MakeArgName("ldnull"), "Restore ldnull instructions", true);
 		}
 
-		public override string Name {
-			get { return THE_NAME; }
-		}
+		public override string Name => THE_NAME;
+		public override string Type => THE_TYPE;
 
-		public override string Type {
-			get { return THE_TYPE; }
-		}
-
-		public override IDeobfuscator CreateDeobfuscator() {
-			return new Deobfuscator(new Deobfuscator.Options {
+		public override IDeobfuscator CreateDeobfuscator() =>
+			new Deobfuscator(new Deobfuscator.Options {
 				ValidNameRegex = validNameRegex.Get(),
 				RemoveTamperProtection = removeTamperProtection.Get(),
 				DecryptConstants = decryptConstants.Get(),
 				InlineMethods = inlineMethods.Get(),
 				FixLdnull = fixLdnull.Get(),
 			});
-		}
 
-		protected override IEnumerable<Option> GetOptionsInternal() {
-			return new List<Option>() {
+		protected override IEnumerable<Option> GetOptionsInternal() =>
+			new List<Option>() {
 				removeTamperProtection,
 				decryptConstants,
 				inlineMethods,
 				fixLdnull,
 			};
-		}
 	}
 
 	class Deobfuscator : DeobfuscatorBase {
@@ -100,21 +93,10 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			public bool FixLdnull { get; set; }
 		}
 
-		public override string Type {
-			get { return DeobfuscatorInfo.THE_TYPE; }
-		}
-
-		public override string TypeLong {
-			get { return DeobfuscatorInfo.THE_NAME; }
-		}
-
-		public override string Name {
-			get { return obfuscatorName; }
-		}
-
-		protected override bool CanInlineMethods {
-			get { return startedDeobfuscating ? options.InlineMethods : true; }
-		}
+		public override string Type => DeobfuscatorInfo.THE_TYPE;
+		public override string TypeLong => DeobfuscatorInfo.THE_NAME;
+		public override string Name => obfuscatorName;
+		protected override bool CanInlineMethods => startedDeobfuscating ? options.InlineMethods : true;
 
 		public override IEnumerable<IBlocksDeobfuscator> BlocksDeobfuscators {
 			get {
@@ -129,10 +111,6 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			: base(options) {
 			this.options = options;
 			StringFeatures = StringFeatures.AllowStaticDecryption | StringFeatures.AllowDynamicDecryption;
-		}
-
-		public override void Initialize(ModuleDefMD module) {
-			base.Initialize(module);
 		}
 
 		protected override int DetectInternal() {
@@ -300,10 +278,10 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 
 		void DumpEmbeddedAssemblies() {
 			foreach (var info in assemblyResolver.AssemblyInfos) {
-				DumpEmbeddedFile(info.resource, info.assemblyName, ".dll", string.Format("Embedded assembly: {0}", info.assemblyName));
+				DumpEmbeddedFile(info.resource, info.assemblyName, ".dll", $"Embedded assembly: {info.assemblyName}");
 
 				if (info.symbolsResource != null)
-					DumpEmbeddedFile(info.symbolsResource, info.assemblyName, ".pdb", string.Format("Embedded pdb: {0}", info.assemblyName));
+					DumpEmbeddedFile(info.symbolsResource, info.assemblyName, ".pdb", $"Embedded pdb: {info.assemblyName}");
 			}
 		}
 

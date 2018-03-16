@@ -27,9 +27,7 @@ namespace de4dot.code.deobfuscators {
 
 		public int NumRemovedExceptionLoggers { get; set; }
 
-		public void Add(MethodDef exceptionLogger) {
-			exceptionLoggerMethods.Add(exceptionLogger, true);
-		}
+		public void Add(MethodDef exceptionLogger) => exceptionLoggerMethods.Add(exceptionLogger, true);
 
 		bool Find(Blocks blocks, out TryBlock tryBlock) {
 			tryBlock = null;
@@ -85,20 +83,14 @@ namespace de4dot.code.deobfuscators {
 			return false;
 		}
 
-		protected virtual bool IsExceptionLogger(IMethod method) {
-			return exceptionLoggerMethods.Find(method);
-		}
-
-		protected virtual bool HasExceptionLoggers {
-			get { return exceptionLoggerMethods.Count != 0; }
-		}
+		protected virtual bool IsExceptionLogger(IMethod method) => exceptionLoggerMethods.Find(method);
+		protected virtual bool HasExceptionLoggers => exceptionLoggerMethods.Count != 0;
 
 		public bool Remove(Blocks blocks) {
 			if (!HasExceptionLoggers)
 				return false;
 
-			TryBlock tryBlock;
-			if (!Find(blocks, out tryBlock))
+			if (!Find(blocks, out var tryBlock))
 				return false;
 
 			blocks.MethodBlocks.RemoveTryBlock(tryBlock);

@@ -36,8 +36,8 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			public byte[] Hash { get; private set; }
 
 			public VersionInfo(Version version, byte[] hash) {
-				this.Version = version;
-				this.Hash = hash;
+				Version = version;
+				Hash = hash;
 			}
 		}
 
@@ -96,7 +96,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 		};
 
 		public RuntimeFileInfo(MethodDef protectMethod) {
-			this.ProtectMethod = protectMethod;
+			ProtectMethod = protectMethod;
 			Name = !protectMethod.HasImplMap ? "<<UNKNOWN_NAME>>" : protectMethod.ImplMap.Module.Name.String;
 			PathName = Path.Combine(Path.GetDirectoryName(Utils.GetFullPath(protectMethod.Module.Location)), Name);
 		}
@@ -161,8 +161,6 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			return true;
 		}
 
-		public override string ToString() {
-			return PathName;
-		}
+		public override string ToString() => PathName;
 	}
 }

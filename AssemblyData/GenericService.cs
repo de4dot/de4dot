@@ -40,12 +40,12 @@ namespace AssemblyData {
 
 		MethodInfo GetCreateUserServiceMethod(Type createServiceType) {
 			if (createServiceType == null)
-				throw new ApplicationException(string.Format("Create-service-type is null"));
+				throw new ApplicationException("Create-service-type is null");
 			foreach (var method in createServiceType.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)) {
 				if (method.GetCustomAttributes(typeof(CreateUserGenericServiceAttribute), false).Length > 0)
 					return method;
 			}
-			throw new ApplicationException(string.Format("Failed to find create-service-method. Type token: Type: {0}", createServiceType));
+			throw new ApplicationException($"Failed to find create-service-method. Type token: Type: {createServiceType}");
 		}
 
 		void CheckUserService() {

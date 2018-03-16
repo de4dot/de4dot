@@ -47,7 +47,7 @@ namespace de4dot.code.AssemblyClient {
 			assemblyServerFilename = GetServerName(serverVersion);
 			ipcName = Utils.RandomName(15, 20);
 			ipcUri = Utils.RandomName(15, 20);
-			url = string.Format("ipc://{0}/{1}", ipcName, ipcUri);
+			url = $"ipc://{ipcName}/{ipcUri}";
 		}
 
 		static string GetServerName(ServerClrVersion serverVersion) {
@@ -60,20 +60,13 @@ namespace de4dot.code.AssemblyClient {
 			case ServerClrVersion.CLR_v20_x64: return "AssemblyServer-CLR20-x64.exe";
 			case ServerClrVersion.CLR_v40_x86: return "AssemblyServer-CLR40.exe";
 			case ServerClrVersion.CLR_v40_x64: return "AssemblyServer-CLR40-x64.exe";
-			default: throw new ArgumentException(string.Format("Invalid server version: {0}", serverVersion));
+			default: throw new ArgumentException($"Invalid server version: {serverVersion}");
 			}
 		}
 
-		public void LoadServer() {
-			LoadServer(Utils.GetPathOfOurFile(assemblyServerFilename));
-		}
-
+		public void LoadServer() => LoadServer(Utils.GetPathOfOurFile(assemblyServerFilename));
 		public abstract void LoadServer(string filename);
-
-		public IAssemblyService CreateService() {
-			return (IAssemblyService)Activator.GetObject(AssemblyService.GetType(serviceType), url);
-		}
-
+		public IAssemblyService CreateService() => (IAssemblyService)Activator.GetObject(AssemblyService.GetType(serviceType), url);
 		public abstract void Dispose();
 	}
 }

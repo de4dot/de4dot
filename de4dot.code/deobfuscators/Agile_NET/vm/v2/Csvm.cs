@@ -30,13 +30,8 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 		EmbeddedResource resource;
 		AssemblyRef vmAssemblyRef;
 
-		public bool Detected {
-			get { return resource != null && vmAssemblyRef != null; }
-		}
-
-		public EmbeddedResource Resource {
-			get { return Detected ? resource : null; }
-		}
+		public bool Detected => resource != null && vmAssemblyRef != null;
+		public EmbeddedResource Resource => Detected ? resource : null;
 
 		public Csvm(IDeobfuscatorContext deobfuscatorContext, ModuleDefMD module) {
 			this.deobfuscatorContext = deobfuscatorContext;
@@ -47,9 +42,9 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 			this.deobfuscatorContext = deobfuscatorContext;
 			this.module = module;
 			if (oldOne.resource != null)
-				this.resource = (EmbeddedResource)module.Resources[oldOne.module.Resources.IndexOf(oldOne.resource)];
+				resource = (EmbeddedResource)module.Resources[oldOne.module.Resources.IndexOf(oldOne.resource)];
 			if (oldOne.vmAssemblyRef != null)
-				this.vmAssemblyRef = module.ResolveAssemblyRef(oldOne.vmAssemblyRef.Rid);
+				vmAssemblyRef = module.ResolveAssemblyRef(oldOne.vmAssemblyRef.Rid);
 		}
 
 		public void Find() {
@@ -74,9 +69,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 			return null;
 		}
 
-		EmbeddedResource FindCsvmResource() {
-			return DotNetUtils.GetResource(module, "_CSVM") as EmbeddedResource;
-		}
+		EmbeddedResource FindCsvmResource() => DotNetUtils.GetResource(module, "_CSVM") as EmbeddedResource;
 
 		public bool Restore() {
 			if (!Detected)
@@ -106,7 +99,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 			foreach (var csvmMethod in csvmMethods) {
 				var cilMethod = module.ResolveToken(csvmMethod.Token) as MethodDef;
 				if (cilMethod == null)
-					throw new ApplicationException(string.Format("Could not find method {0:X8}", csvmMethod.Token));
+					throw new ApplicationException($"Could not find method {csvmMethod.Token:X8}");
 				converter.Convert(cilMethod, csvmMethod);
 				Logger.v("Restored method {0:X8}", cilMethod.MDToken.ToInt32());
 				PrintMethod(methodPrinter, cilMethod);
@@ -145,8 +138,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 			var dict = (Dictionary<string, VmOpCodeHandlerDetector>)deobfuscatorContext.GetData(dataKey);
 			if (dict == null)
 				deobfuscatorContext.SetData(dataKey, dict = new Dictionary<string, VmOpCodeHandlerDetector>(StringComparer.OrdinalIgnoreCase));
-			VmOpCodeHandlerDetector detector;
-			if (dict.TryGetValue(vmModulePath, out detector))
+			if (dict.TryGetValue(vmModulePath, out var detector))
 				return detector;
 			dict[vmModulePath] = detector = new VmOpCodeHandlerDetector(ModuleDefMD.Load(vmModulePath));
 

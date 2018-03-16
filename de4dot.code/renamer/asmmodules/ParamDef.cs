@@ -23,15 +23,11 @@ namespace de4dot.code.renamer.asmmodules {
 	public class MParamDef {
 		public Parameter ParameterDef { get; set; }
 		public int Index { get; private set; }
-		public bool IsReturnParameter {
-			get { return ParameterDef.IsReturnTypeParameter; }
-		}
-		public bool IsHiddenThisParameter {
-			get { return ParameterDef.IsHiddenThisParameter; }
-		}
+		public bool IsReturnParameter => ParameterDef.IsReturnTypeParameter;
+		public bool IsHiddenThisParameter => ParameterDef.IsHiddenThisParameter;
 
 		public MParamDef(Parameter parameterDef, int index) {
-			this.ParameterDef = parameterDef;
+			ParameterDef = parameterDef;
 			Index = index;
 		}
 	}

@@ -44,26 +44,21 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 
 			public AssemblyInfo(string fullName, string extension, byte[] data) {
 				this.fullName = fullName;
-				this.simpleName = Utils.GetAssemblySimpleName(fullName);
+				simpleName = Utils.GetAssemblySimpleName(fullName);
 				this.extension = extension;
 				this.data = data;
 			}
 
-			public override string ToString() {
-				return fullName;
-			}
+			public override string ToString() => fullName;
 		}
 
-		public bool CanRemoveTypes {
-			get {
-				return bundleType != null &&
-					assemblyManagerType != null &&
-					bundleStreamProviderIFace != null &&
-					xmlParserType != null &&
-					bundledAssemblyType != null &&
-					streamProviderType != null;
-			}
-		}
+		public bool CanRemoveTypes =>
+			bundleType != null &&
+			assemblyManagerType != null &&
+			bundleStreamProviderIFace != null &&
+			xmlParserType != null &&
+			bundledAssemblyType != null &&
+			streamProviderType != null;
 
 		public IEnumerable<TypeDef> BundleTypes {
 			get {
@@ -82,21 +77,10 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			}
 		}
 
-		public IEnumerable<AssemblyInfo> AssemblyInfos {
-			get { return infos; }
-		}
-
-		public EmbeddedResource BundleDataResource {
-			get { return bundleData; }
-		}
-
-		public EmbeddedResource BundleXmlFileResource {
-			get { return bundleXmlFile; }
-		}
-
-		public AssemblyResolver(ModuleDefMD module) {
-			this.module = module;
-		}
+		public IEnumerable<AssemblyInfo> AssemblyInfos => infos;
+		public EmbeddedResource BundleDataResource => bundleData;
+		public EmbeddedResource BundleXmlFileResource => bundleXmlFile;
+		public AssemblyResolver(ModuleDefMD module) => this.module = module;
 
 		public void Initialize() {
 			if (!FindTypeAndResources())
@@ -159,8 +143,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			if (string.IsNullOrEmpty(str))
 				return -1;
 
-			int value;
-			if (!int.TryParse(str, out value))
+			if (!int.TryParse(str, out int value))
 				return -1;
 
 			return value;

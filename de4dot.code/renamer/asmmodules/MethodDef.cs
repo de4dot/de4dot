@@ -30,18 +30,9 @@ namespace de4dot.code.renamer.asmmodules {
 
 		public MPropertyDef Property { get; set; }
 		public MEventDef Event { get; set; }
-
-		public int VisibleParameterCount {
-			get { return visibleParamCount; }
-		}
-
-		public int VisibleParameterBaseIndex {
-			get { return visibleBaseIndex; }
-		}
-
-		public IList<MParamDef> ParamDefs {
-			get { return paramDefs; }
-		}
+		public int VisibleParameterCount => visibleParamCount;
+		public int VisibleParameterBaseIndex => visibleBaseIndex;
+		public IList<MParamDef> ParamDefs => paramDefs;
 
 		public IEnumerable<MParamDef> AllParamDefs {
 			get {
@@ -51,17 +42,9 @@ namespace de4dot.code.renamer.asmmodules {
 			}
 		}
 
-		public MParamDef ReturnParamDef {
-			get { return returnParamDef; }
-		}
-
-		public IList<MGenericParamDef> GenericParams {
-			get { return genericParams; }
-		}
-
-		public MethodDef MethodDef {
-			get { return (MethodDef)memberRef; }
-		}
+		public MParamDef ReturnParamDef => returnParamDef;
+		public IList<MGenericParamDef> GenericParams => genericParams;
+		public MethodDef MethodDef => (MethodDef)memberRef;
 
 		public MMethodDef(MethodDef methodDef, MTypeDef owner, int index)
 			: base(methodDef, owner, index) {
@@ -76,20 +59,9 @@ namespace de4dot.code.renamer.asmmodules {
 			returnParamDef = new MParamDef(methodDef.Parameters.ReturnParameter, -1);
 		}
 
-		public bool IsPublic() {
-			return MethodDef.IsPublic;
-		}
-
-		public bool IsVirtual() {
-			return MethodDef.IsVirtual;
-		}
-
-		public bool IsNewSlot() {
-			return MethodDef.IsNewSlot;
-		}
-
-		public bool IsStatic() {
-			return MethodDef.IsStatic;
-		}
+		public bool IsPublic() => MethodDef.IsPublic;
+		public bool IsVirtual() => MethodDef.IsVirtual;
+		public bool IsNewSlot() => MethodDef.IsNewSlot;
+		public bool IsStatic() => MethodDef.IsStatic;
 	}
 }

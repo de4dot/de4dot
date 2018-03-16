@@ -26,37 +26,15 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 	class MemberRefConverter {
 		ModuleDefMD module;
 
-		public ModuleDefMD Module {
-			get { return module; }
-		}
+		public ModuleDefMD Module => module;
+		public MemberRefConverter(ModuleDefMD module) => this.module = module;
 
-		public MemberRefConverter(ModuleDefMD module) {
-			this.module = module;
-		}
-
-		bool IsInOurModule(IMemberRef memberRef) {
-			return memberRef.Module == module;
-		}
-
-		Importer CreateImporter() {
-			return new Importer(module, ImporterOptions.TryToUseTypeDefs);
-		}
-
-		public TypeSig Convert(TypeRef typeRef) {
-			return CreateImporter().Import(typeRef).ToTypeSig();
-		}
-
-		ITypeDefOrRef Convert(ITypeDefOrRef tdr) {
-			return (ITypeDefOrRef)CreateImporter().Import(tdr);
-		}
-
-		TypeSig Convert2(TypeSig ts) {
-			return CreateImporter().Import(ts);
-		}
-
-		public TypeSig Convert(TypeSig ts) {
-			return CreateImporter().Import(ts);
-		}
+		bool IsInOurModule(IMemberRef memberRef) => memberRef.Module == module;
+		Importer CreateImporter() => new Importer(module, ImporterOptions.TryToUseTypeDefs);
+		public TypeSig Convert(TypeRef typeRef) => CreateImporter().Import(typeRef).ToTypeSig();
+		ITypeDefOrRef Convert(ITypeDefOrRef tdr) => (ITypeDefOrRef)CreateImporter().Import(tdr);
+		TypeSig Convert2(TypeSig ts) => CreateImporter().Import(ts);
+		public TypeSig Convert(TypeSig ts) => CreateImporter().Import(ts);
 
 		public IField Convert(IField fieldRef) {
 			if (IsInOurModule(fieldRef))
@@ -73,8 +51,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		}
 
 		public IField TryGetFieldDef(IField fieldRef) {
-			var fieldDef = fieldRef as FieldDef;
-			if (fieldDef != null)
+			if (fieldRef is FieldDef fieldDef)
 				return fieldDef;
 
 			var declaringType = DotNetUtils.GetType(module, fieldRef.DeclaringType);
@@ -84,8 +61,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		}
 
 		public IMethod TryGetMethodDef(IMethod methodRef) {
-			var methodDef = methodRef as MethodDef;
-			if (methodDef != null)
+			if (methodRef is MethodDef methodDef)
 				return methodDef;
 
 			var declaringType = DotNetUtils.GetType(module, methodRef.DeclaringType);

@@ -28,8 +28,8 @@ namespace de4dot.blocks {
 		protected List<BaseBlock> baseBlocks;
 
 		public List<BaseBlock> BaseBlocks {
-			get { return baseBlocks; }
-			set { baseBlocks = value; }
+			get => baseBlocks;
+			set => baseBlocks = value;
 		}
 
 		public IEnumerable<BaseBlock> GetBaseBlocks() {
@@ -39,22 +39,15 @@ namespace de4dot.blocks {
 			}
 		}
 
-		public List<BaseBlock> GetAllBaseBlocks() {
-			return GetTheBlocks(new List<BaseBlock>());
-		}
-
-		public List<Block> GetAllBlocks() {
-			return GetTheBlocks(new List<Block>());
-		}
+		public List<BaseBlock> GetAllBaseBlocks() => GetTheBlocks(new List<BaseBlock>());
+		public List<Block> GetAllBlocks() => GetTheBlocks(new List<Block>());
 
 		public List<Block> GetAllBlocks(List<Block> allBlocks) {
 			allBlocks.Clear();
 			return GetTheBlocks(allBlocks);
 		}
 
-		public List<ScopeBlock> GetAllScopeBlocks() {
-			return GetTheBlocks(new List<ScopeBlock>());
-		}
+		public List<ScopeBlock> GetAllScopeBlocks() => GetTheBlocks(new List<ScopeBlock>());
 
 		public List<T> GetTheBlocks<T>(List<T> list) where T : BaseBlock {
 			AddBlocks(list, this);
@@ -63,23 +56,19 @@ namespace de4dot.blocks {
 
 		void AddBlocks<T>(IList<T> list, ScopeBlock scopeBlock) where T : BaseBlock {
 			foreach (var bb in scopeBlock.GetBaseBlocks()) {
-				T t = bb as T;
-				if (t != null)
+				if (bb is T t)
 					list.Add(t);
 				if (bb is ScopeBlock)
 					AddBlocks(list, (ScopeBlock)bb);
 			}
 		}
 
-		List<Block> FindBlocks() {
-			return FindBlocks(null);
-		}
+		List<Block> FindBlocks() => FindBlocks(null);
 
 		List<Block> FindBlocks(Func<Block, bool> blockChecker) {
 			var blocks = new List<Block>();
 			foreach (var bb in GetBaseBlocks()) {
-				Block block = bb as Block;
-				if (block != null && (blockChecker == null || blockChecker(block)))
+				if (bb is Block block && (blockChecker == null || blockChecker(block)))
 					blocks.Add(block);
 			}
 			return blocks;
@@ -103,14 +92,10 @@ namespace de4dot.blocks {
 
 		// Remove the block if it's a dead block. If it has refs to other dead blocks, those
 		// are also removed.
-		public void RemoveDeadBlock(Block block) {
-			RemoveDeadBlocks(new List<Block> { block });
-		}
+		public void RemoveDeadBlock(Block block) => RemoveDeadBlocks(new List<Block> { block });
 
 		// Remove all dead blocks we can find
-		public void RemoveDeadBlocks() {
-			RemoveDeadBlocks(FindBlocks());
-		}
+		public void RemoveDeadBlocks() => RemoveDeadBlocks(FindBlocks());
 
 		// Remove the blocks if they're dead blocks. If they have refs to other dead blocks,
 		// those are also removed.
@@ -137,9 +122,7 @@ namespace de4dot.blocks {
 			}
 		}
 
-		public bool IsOurBaseBlock(BaseBlock bb) {
-			return bb != null && bb.Parent == this;
-		}
+		public bool IsOurBaseBlock(BaseBlock bb) => bb != null && bb.Parent == this;
 
 		// For each block, if it has only one target, and the target has only one source, then
 		// merge them into one block.
@@ -234,18 +217,15 @@ namespace de4dot.blocks {
 				removedDict[removedBlock] = true;
 			foreach (var removedBlock in removedBlocks) {
 				foreach (var source in removedBlock.Sources) {
-					bool val;
-					if (!removedDict.TryGetValue(source, out val))
-						return false;	// external code references a removed block
+					if (!removedDict.TryGetValue(source, out bool val))
+						return false;   // external code references a removed block
 				}
 			}
 			return true;
 		}
 
 		// Remove all blocks in deadBlocks. They're guaranteed to be dead.
-		void RemoveAllDeadBlocks(IEnumerable<BaseBlock> deadBlocks) {
-			RemoveAllDeadBlocks(deadBlocks, null);
-		}
+		void RemoveAllDeadBlocks(IEnumerable<BaseBlock> deadBlocks) => RemoveAllDeadBlocks(deadBlocks, null);
 
 		// Remove all blocks in deadBlocks. They're guaranteed to be dead. deadBlocksDict is
 		// a dictionary of all dead blocks (even those not in this ScopeBlock).
@@ -258,12 +238,10 @@ namespace de4dot.blocks {
 			foreach (var bb in deadBlocks) {
 				if (bb is Block)
 					allDeadBlocks.Add(bb as Block);
-				else if (bb is ScopeBlock) {
-					var sb = (ScopeBlock)bb;
+				else if (bb is ScopeBlock sb)
 					allDeadBlocks.AddRange(sb.GetAllBlocks());
-				}
 				else
-					throw new ApplicationException(string.Format("Unknown BaseBlock type {0}", bb.GetType()));
+					throw new ApplicationException($"Unknown BaseBlock type {bb.GetType()}");
 			}
 
 			if (deadBlocksDict != null) {

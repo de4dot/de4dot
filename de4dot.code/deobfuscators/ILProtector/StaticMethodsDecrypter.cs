@@ -40,13 +40,11 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			protected byte[] decryptionKey;
 			protected int decryptionKeyMod;
 
-			public string Version {
-				get { return ilpVersion; }
-			}
+			public string Version => ilpVersion;
 
 			protected void SetVersion(Version version) {
 				if (version.Revision == 0)
-					ilpVersion = string.Format("{0}.{1}.{2}", version.Major, version.Minor, version.Build);
+					ilpVersion = $"{version.Major}.{version.Minor}.{version.Build}";
 				else
 					ilpVersion = version.ToString();
 			}
@@ -60,18 +58,15 @@ namespace de4dot.code.deobfuscators.ILProtector {
 					return reader.ReadRemainingBytes();
 			}
 
-			byte[] Decompress(ref DataReader reader) {
-				return Decompress(ref reader, decryptionKey, decryptionKeyMod);
-			}
+			byte[] Decompress(ref DataReader reader) => Decompress(ref reader, decryptionKey, decryptionKeyMod);
 
 			static void Copy(byte[] src, int srcIndex, byte[] dst, int dstIndex, int size) {
 				for (int i = 0; i < size; i++)
 					dst[dstIndex++] = src[srcIndex++];
 			}
 
-			static byte[] Decompress(ref DataReader reader, byte[] key, int keyMod) {
-				return Decompress(new byte[reader.Read7BitEncodedUInt32()], ref reader, key, keyMod);
-			}
+			static byte[] Decompress(ref DataReader reader, byte[] key, int keyMod) =>
+				Decompress(new byte[reader.Read7BitEncodedUInt32()], ref reader, key, keyMod);
 
 			protected static byte[] Decompress(byte[] decrypted, ref DataReader reader, byte[] key, int keyMod) {
 				int destIndex = 0;
@@ -110,9 +105,9 @@ namespace de4dot.code.deobfuscators.ILProtector {
 
 			DecrypterV100(Version ilpVersion) {
 				SetVersion(ilpVersion);
-				this.startOffset = 8;
-				this.decryptionKey = ilpPublicKeyToken;
-				this.decryptionKeyMod = 8;
+				startOffset = 8;
+				decryptionKey = ilpPublicKeyToken;
+				decryptionKeyMod = 8;
 			}
 
 			public static DecrypterV100 Create(ref DataReader reader) {
@@ -130,9 +125,9 @@ namespace de4dot.code.deobfuscators.ILProtector {
 		class DecrypterV105 : DecrypterBase {
 			DecrypterV105(Version ilpVersion, byte[] key) {
 				SetVersion(ilpVersion);
-				this.startOffset = 0xA0;
-				this.decryptionKey = key;
-				this.decryptionKeyMod = key.Length - 1;
+				startOffset = 0xA0;
+				decryptionKey = key;
+				decryptionKeyMod = key.Length - 1;
 			}
 
 			public static DecrypterV105 Create(ref DataReader reader) {
@@ -152,12 +147,12 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			byte[] decryptionKey7;
 
 			DecrypterV106(byte[] key0, byte[] key6, byte[] key7, int startOffset) {
-				this.ilpVersion = "1.0.6.x";
+				ilpVersion = "1.0.6.x";
 				this.startOffset = startOffset;
-				this.decryptionKey = key0;
-				this.decryptionKey6 = key6;
-				this.decryptionKey7 = key7;
-				this.decryptionKeyMod = key0.Length - 1;
+				decryptionKey = key0;
+				decryptionKey6 = key6;
+				decryptionKey7 = key7;
+				decryptionKeyMod = key0.Length - 1;
 			}
 
 			public static DecrypterV106 Create(ref DataReader reader) {
@@ -225,17 +220,9 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			}
 		}
 
-		public string Version {
-			get { return decrypter == null ? null : decrypter.Version; }
-		}
-
-		public bool Detected {
-			get { return methodsResource != null; }
-		}
-
-		public StaticMethodsDecrypter(ModuleDefMD module, MainType mainType)
-			: base(module, mainType) {
-		}
+		public string Version => decrypter?.Version;
+		public bool Detected => methodsResource != null;
+		public StaticMethodsDecrypter(ModuleDefMD module, MainType mainType) : base(module, mainType) { }
 
 		public void Find() {
 			foreach (var tmp in module.Resources) {

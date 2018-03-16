@@ -50,38 +50,20 @@ namespace de4dot.code.deobfuscators.CodeFort {
 				this.extension = extension;
 			}
 
-			public override string ToString() {
-				return asmFullName;
-			}
+			public override string ToString() => asmFullName;
 		}
 
-		public bool EncryptedDetected {
-			get { return assemblyEncryptedResource != null; }
-		}
+		public bool EncryptedDetected => assemblyEncryptedResource != null;
+		public bool MainAssemblyHasAssemblyResolver => embedInitMethod != null;
+		public bool Detected => EncryptedDetected || MainAssemblyHasAssemblyResolver;
+		public TypeDef Type => embedInitMethod?.DeclaringType;
+		public MethodDef InitMethod => embedInitMethod;
 
-		public bool MainAssemblyHasAssemblyResolver {
-			get { return embedInitMethod != null; }
-		}
-
-		public bool Detected {
-			get { return EncryptedDetected || MainAssemblyHasAssemblyResolver; }
-		}
-
-		public TypeDef Type {
-			get { return embedInitMethod != null ? embedInitMethod.DeclaringType : null; }
-		}
-
-		public MethodDef InitMethod {
-			get { return embedInitMethod; }
-		}
-
-		public AssemblyDecrypter(ModuleDefMD module) {
-			this.module = module;
-		}
+		public AssemblyDecrypter(ModuleDefMD module) => this.module = module;
 
 		public AssemblyDecrypter(ModuleDefMD module, AssemblyDecrypter oldOne) {
 			this.module = module;
-			this.embedPassword = oldOne.embedPassword;
+			embedPassword = oldOne.embedPassword;
 		}
 
 		public void Find() {
@@ -135,14 +117,8 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			return initMethod;
 		}
 
-		EmbeddedResource GetResource() {
-			return DotNetUtils.GetResource(module, "_") as EmbeddedResource;
-		}
-
-		bool FindEmbedded() {
-			return FindEmbedded(DotNetUtils.GetModuleTypeCctor(module)) ||
-				FindEmbedded(module.EntryPoint);
-		}
+		EmbeddedResource GetResource() => DotNetUtils.GetResource(module, "_") as EmbeddedResource;
+		bool FindEmbedded() => FindEmbedded(DotNetUtils.GetModuleTypeCctor(module)) || FindEmbedded(module.EntryPoint);
 
 		bool FindEmbedded(MethodDef method) {
 			if (method == null || method.Body == null)
@@ -201,8 +177,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			var encryptedAssembly = reader.ReadBytes((int)(reader.BaseStream.Length - reader.BaseStream.Position));
 
 			var passwordFinder = new PasswordFinder(serializedData);
-			PasswordInfo mainAsmPassword;
-			passwordFinder.Find(out mainAsmPassword, out embedPassword);
+			passwordFinder.Find(out var mainAsmPassword, out embedPassword);
 
 			return Decrypt(mainAsmPassword, encryptedAssembly);
 		}
@@ -289,7 +264,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 				return s.ToUpper();
 			if (calledMethod.Name.String == "ToLower")
 				return s.ToLower();
-			throw new ApplicationException(string.Format("Unknown method {0}", calledMethod));
+			throw new ApplicationException($"Unknown method {calledMethod}");
 		}
 	}
 }

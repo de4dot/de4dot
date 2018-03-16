@@ -29,12 +29,9 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return chars;
 		}
 
-		public static char ReadChar(ref DataReader reader) {
-			return ReadChar(ref reader, Encoding.UTF8);
-		}
+		public static char ReadChar(ref DataReader reader) => ReadChar(ref reader, Encoding.UTF8);
 
 		static char ReadChar(ref DataReader reader, Encoding encoding) {
-			// This is slow but this method should rarely be called...
 			var decoder = encoding.GetDecoder();
 			bool twoBytes = encoding is UnicodeEncoding;
 			byte[] bytes = new byte[2];

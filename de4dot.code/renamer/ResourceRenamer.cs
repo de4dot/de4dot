@@ -29,9 +29,7 @@ namespace de4dot.code.renamer {
 		Module module;
 		Dictionary<string, Resource> nameToResource;
 
-		public ResourceRenamer(Module module) {
-			this.module = module;
-		}
+		public ResourceRenamer(Module module) => this.module = module;
 
 		public void Rename(List<TypeInfo> renamedTypes) {
 			// Rename the longest names first. Otherwise eg. b.g.resources could be renamed
@@ -74,12 +72,10 @@ namespace de4dot.code.renamer {
 					if (string.IsNullOrEmpty(codeString))
 						continue;
 
-					Resource resource;
-					if (!nameToResource.TryGetValue(codeString, out resource))
+					if (!nameToResource.TryGetValue(codeString, out var resource))
 						continue;
 
-					TypeInfo typeInfo;
-					if (!oldNameToTypeInfo.TryGetValue(codeString, out typeInfo))
+					if (!oldNameToTypeInfo.TryGetValue(codeString, out var typeInfo))
 						continue;
 					var newName = typeInfo.type.TypeDef.FullName;
 
@@ -141,17 +137,14 @@ namespace de4dot.code.renamer {
 				this.typeInfo = typeInfo;
 				this.newResourceName = newResourceName;
 			}
-			public override string ToString() {
-				return string.Format("{0} => {1}", resource.Name, newResourceName);
-			}
+			public override string ToString() => $"{resource.Name} => {newResourceName}";
 		}
 
 		void RenameResources(List<TypeInfo> renamedTypes) {
 			var newNames = new Dictionary<Resource, RenameInfo>();
 			foreach (var info in renamedTypes) {
 				var oldFullName = info.oldFullName;
-				Resource resource;
-				if (!nameToResource.TryGetValue(oldFullName, out resource))
+				if (!nameToResource.TryGetValue(oldFullName, out var resource))
 					continue;
 				if (newNames.ContainsKey(resource))
 					continue;

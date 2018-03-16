@@ -32,26 +32,15 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 		Dictionary<StringDecrypterInfo, bool> stringDecrypterInfos = new Dictionary<StringDecrypterInfo, bool>();
 		byte[] stringDecrypterKey;
 
-		public bool Detected {
-			get { return stringDecrypterInfos.Count != 0; }
-		}
-
-		public TypeDef Type {
-			get { return stringDecrypterType; }
-		}
-
-		public TypeDef KeyArrayFieldType {
-			get { return keyArrayField == null ? null : keyArrayField.DeclaringType; }
-		}
-
-		public IEnumerable<StringDecrypterInfo> StringDecrypterInfos {
-			get { return stringDecrypterInfos.Keys; }
-		}
+		public bool Detected => stringDecrypterInfos.Count != 0;
+		public TypeDef Type => stringDecrypterType;
+		public TypeDef KeyArrayFieldType => keyArrayField?.DeclaringType;
+		public IEnumerable<StringDecrypterInfo> StringDecrypterInfos => stringDecrypterInfos.Keys;
 
 		public StringDecrypter(ModuleDefMD module, IEnumerable<StringDecrypterInfo> stringDecrypterMethods) {
 			this.module = module;
 			foreach (var sdm in stringDecrypterMethods)
-				this.stringDecrypterInfos[sdm] = true;
+				stringDecrypterInfos[sdm] = true;
 		}
 
 		public StringDecrypter(ModuleDefMD module, StringDecrypter oldOne) {
@@ -67,9 +56,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			stringDecrypterKey = oldOne.stringDecrypterKey;
 		}
 
-		T Lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
-			return DeobUtils.Lookup(module, def, errorMessage);
-		}
+		T Lookup<T>(T def, string errorMessage) where T : class, ICodedToken => DeobUtils.Lookup(module, def, errorMessage);
 
 		public void AddDecrypterInfos(IEnumerable<StringDecrypterInfo> infos) {
 			foreach (var info in infos)
@@ -109,8 +96,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 				return;
 
 			foreach (var type in module.GetTypes()) {
-				FieldDef field;
-				var method = FindStringDecrypters(type, keyArrayField, out field);
+				var method = FindStringDecrypters(type, keyArrayField, out var field);
 				if (method == null)
 					continue;
 

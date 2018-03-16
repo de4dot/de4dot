@@ -22,7 +22,7 @@ using System.Collections.Generic;
 using dnlib.IO;
 
 namespace de4dot.code.deobfuscators.Confuser {
-	class x86Emulator : IDisposable {
+	class X86Emulator : IDisposable {
 		// Confuser 1.7 r73740 - r73822
 		static readonly byte[] prolog1 = new byte[] {
 			0x8B, 0x44, 0x24, 0x04, 0x53, 0x50,
@@ -70,26 +70,14 @@ namespace de4dot.code.deobfuscators.Confuser {
 				"eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi",
 			};
 			public readonly int reg;
-
-			public RegOperand(int reg) {
-				this.reg = reg;
-			}
-
-			public override string ToString() {
-				return names[reg];
-			}
+			public RegOperand(int reg) => this.reg = reg;
+			public override string ToString() => names[reg];
 		}
 
 		class ImmOperand : IOperand {
 			public readonly int imm;
-
-			public ImmOperand(int imm) {
-				this.imm = imm;
-			}
-
-			public override string ToString() {
-				return string.Format("{0:X2}h", imm);
-			}
+			public ImmOperand(int imm) => this.imm = imm;
+			public override string ToString() => $"{imm:X2}h";
 		}
 
 		class Instruction {
@@ -113,21 +101,19 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			public override string ToString() {
 				if (op1 != null && op2 != null)
-					return string.Format("{0} {1},{2}", opCode, op1, op2);
+					return $"{opCode} {op1},{op2}";
 				if (op1 != null)
-					return string.Format("{0} {1}", opCode, op1);
-				return string.Format("{0}", opCode);
+					return $"{opCode} {op1}";
+				return opCode.ToString();
 			}
 		}
 
-		public x86Emulator(byte[] fileData) {
-			this.peImage = new MyPEImage(fileData);
-			this.reader = peImage.Reader;
+		public X86Emulator(byte[] fileData) {
+			peImage = new MyPEImage(fileData);
+			reader = peImage.Reader;
 		}
 
-		public uint Emulate(uint rva, uint arg) {
-			return Emulate(rva, new uint[] { arg });
-		}
+		public uint Emulate(uint rva, uint arg) => Emulate(rva, new uint[] { arg });
 
 		public uint Emulate(uint rva, uint[] args) {
 			Initialize(args);
@@ -143,7 +129,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				epilog = epilog2;
 			}
 			else
-				throw new ApplicationException(string.Format("Missing prolog @ RVA {0:X8}", rva));
+				throw new ApplicationException($"Missing prolog @ RVA {rva:X8}");
 			reader.Position += (uint)prolog.Length;
 
 			while (!IsBytes(epilog))
@@ -223,12 +209,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		uint ReadOp(IOperand op) {
-			var regOp = op as RegOperand;
-			if (regOp != null)
+			if (op is RegOperand regOp)
 				return regs[regOp.reg];
 
-			var immOp = op as ImmOperand;
-			if (immOp != null)
+			if (op is ImmOperand immOp)
 				return (uint)immOp.imm;
 
 			throw new NotSupportedException();
@@ -290,7 +274,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				default: throw new NotSupportedException();
 				}
 
-			default: throw new NotSupportedException(string.Format("Invalid opcode: {0:X2}", opc));
+			default: throw new NotSupportedException($"Invalid opcode: {opc:X2}");
 			}
 		}
 
@@ -307,7 +291,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			if (peImage != null)
 				peImage.Dispose();
 			peImage = null;
-			reader = default(DataReader);
+			reader = default;
 		}
 	}
 }

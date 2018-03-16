@@ -30,21 +30,10 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 		MethodDef rsrcRrrMethod;
 		MethodDef rsrcResolveMethod;
 
-		public bool Detected {
-			get { return rsrcType != null; }
-		}
-
-		public TypeDef Type {
-			get { return rsrcType; }
-		}
-
-		public MethodDef RsrcRrrMethod {
-			get { return rsrcRrrMethod; }
-		}
-
-		public ResourceDecrypter(ModuleDefMD module) {
-			this.module = module;
-		}
+		public bool Detected => rsrcType != null;
+		public TypeDef Type => rsrcType;
+		public MethodDef RsrcRrrMethod => rsrcRrrMethod;
+		public ResourceDecrypter(ModuleDefMD module) => this.module = module;
 
 		public ResourceDecrypter(ModuleDefMD module, ResourceDecrypter oldOne) {
 			this.module = module;
@@ -53,13 +42,8 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			rsrcResolveMethod = Lookup(oldOne.rsrcResolveMethod, "Could not find rsrcResolveMethod");
 		}
 
-		T Lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
-			return DeobUtils.Lookup(module, def, errorMessage);
-		}
-
-		public void Find() {
-			FindResourceType();
-		}
+		T Lookup<T>(T def, string errorMessage) where T : class, ICodedToken => DeobUtils.Lookup(module, def, errorMessage);
+		public void Find() => FindResourceType();
 
 		static readonly string[] requiredFields1 = new string[] {
 			"System.Reflection.Assembly",

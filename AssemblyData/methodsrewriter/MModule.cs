@@ -58,9 +58,7 @@ namespace AssemblyData.methodsrewriter {
 			}
 		}
 
-		public MType GetType(IType typeRef) {
-			return typeRefToType.Find(typeRef);
-		}
+		public MType GetType(IType typeRef) => typeRefToType.Find(typeRef);
 
 		public MMethod GetMethod(IMethod methodRef) {
 			var type = GetType(methodRef.DeclaringType);
@@ -140,8 +138,6 @@ namespace AssemblyData.methodsrewriter {
 			}
 		}
 
-		public override string ToString() {
-			return moduleDef.Location;
-		}
+		public override string ToString() => moduleDef.Location;
 	}
 }

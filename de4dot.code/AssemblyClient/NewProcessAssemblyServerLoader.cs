@@ -39,8 +39,7 @@ namespace de4dot.code.AssemblyClient {
 				throw new ApplicationException("Server is already loaded");
 
 			var psi = new ProcessStartInfo {
-				Arguments = string.Format("{0} {1} {2}", (int)serviceType,
-							Utils.ShellEscape(ipcName), Utils.ShellEscape(ipcUri)),
+				Arguments = $"{(int)serviceType} {Utils.ShellEscape(ipcName)} {Utils.ShellEscape(ipcUri)}",
 				CreateNoWindow = true,
 				ErrorDialog = false,
 				FileName = filename,

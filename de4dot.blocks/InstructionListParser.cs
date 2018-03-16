@@ -31,7 +31,7 @@ namespace de4dot.blocks {
 		public InstructionListParser(IList<Instruction> instructions, IList<ExceptionHandler> exceptionHandlers) {
 			this.instructions = instructions;
 			this.exceptionHandlers = exceptionHandlers;
-			this.branches = new Dictionary<int, List<int>>();
+			branches = new Dictionary<int, List<int>>();
 
 			CreateInstrToIndex();
 			CreateBranches();
@@ -46,8 +46,7 @@ namespace de4dot.blocks {
 		}
 
 		List<int> GetBranchTargetList(int index) {
-			List<int> targetsList;
-			if (!branches.TryGetValue(index, out targetsList))
+			if (!branches.TryGetValue(index, out var targetsList))
 				branches[index] = targetsList = new List<int>();
 			return targetsList;
 		}
@@ -122,13 +121,12 @@ namespace de4dot.blocks {
 		void FindBlocks(List<Block> instrToBlock, List<Block> allBlocks) {
 			Block block = null;
 			for (var i = 0; i < instructions.Count; i++) {
-				List<int> branchSources;
-				if (branches.TryGetValue(i, out branchSources) || block == null) {
+				if (branches.TryGetValue(i, out var branchSources) || block == null) {
 					block = new Block();
 					allBlocks.Add(block);
 				}
 
-				block.Add(new Instr(this.instructions[i]));
+				block.Add(new Instr(instructions[i]));
 				instrToBlock.Add(block);
 			}
 		}
@@ -175,9 +173,7 @@ namespace de4dot.blocks {
 		class EHInfo {
 			public ExceptionHandler eh;
 
-			public EHInfo(ExceptionHandler eh) {
-				this.eh = eh;
-			}
+			public EHInfo(ExceptionHandler eh) => this.eh = eh;
 
 			public override int GetHashCode() {
 				int res = eh.TryStart.GetHashCode();
@@ -198,8 +194,7 @@ namespace de4dot.blocks {
 		List<List<ExceptionHandler>> GetSortedExceptionInfos() {
 			var exInfos = new Dictionary<EHInfo, List<ExceptionHandler>>();
 			foreach (var eh in exceptionHandlers) {
-				List<ExceptionHandler> handlers;
-				if (!exInfos.TryGetValue(new EHInfo(eh), out handlers))
+				if (!exInfos.TryGetValue(new EHInfo(eh), out var handlers))
 					exInfos[new EHInfo(eh)] = handlers = new List<ExceptionHandler>();
 
 				handlers.Add(eh);
@@ -292,8 +287,7 @@ namespace de4dot.blocks {
 				if (endInstr < startInstr)
 					return new List<BaseBlock>();
 
-				int startIndex, endIndex;
-				var rv = GetBlocks(startInstr, endInstr, out startIndex, out endIndex);
+				var rv = GetBlocks(startInstr, endInstr, out int startIndex, out int endIndex);
 				UpdateParent(rv, bb);
 
 				var bbi = new BaseBlockInfo(blocksLeft[startIndex].startInstr, blocksLeft[endIndex].endInstr, bb);
@@ -306,8 +300,7 @@ namespace de4dot.blocks {
 			public List<BaseBlock> GetBlocks(ScopeBlock parent) {
 				if (blocksLeft.Count == 0)
 					return new List<BaseBlock>();
-				int startIndex, endIndex;
-				var lb = GetBlocks(0, blocksLeft[blocksLeft.Count - 1].endInstr, out startIndex, out endIndex);
+				var lb = GetBlocks(0, blocksLeft[blocksLeft.Count - 1].endInstr, out int startIndex, out int endIndex);
 				return UpdateParent(lb, parent);
 			}
 

@@ -44,9 +44,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 		}
 
 		public ProxyCallFixer(ModuleDefMD module, ISimpleDeobfuscator simpleDeobfuscator)
-			: base(module) {
-			this.simpleDeobfuscator = simpleDeobfuscator;
-		}
+			: base(module) => this.simpleDeobfuscator = simpleDeobfuscator;
 
 		protected override object CheckCctor(ref TypeDef type, MethodDef cctor) {
 			var instrs = cctor.Body.Instructions;
@@ -84,8 +82,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 					break;
 				}
 
-				int val;
-				if (specialCharsDict.TryGetValue(c, out val))
+				if (specialCharsDict.TryGetValue(c, out int val))
 					memberRefRid = memberRefRid * (uint)specialChars.Length + (uint)val;
 			}
 			memberRefRid++;

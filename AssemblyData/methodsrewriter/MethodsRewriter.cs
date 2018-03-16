@@ -61,14 +61,11 @@ namespace AssemblyData.methodsrewriter {
 				}
 			}
 
-			public MethodBase GetNext() {
-				return methods[next++ % methods.Count];
-			}
+			public MethodBase GetNext() => methods[next++ % methods.Count];
 		}
 
 		public MethodBase GetMethod(Module module) {
-			MethodsModule methodsModule;
-			if (!moduleToMethods.TryGetValue(module, out methodsModule))
+			if (!moduleToMethods.TryGetValue(module, out var methodsModule))
 				moduleToMethods[module] = methodsModule = new MethodsModule(module);
 			return methodsModule.GetNext();
 		}
@@ -111,18 +108,11 @@ namespace AssemblyData.methodsrewriter {
 				this.rewrittenMethodName = rewrittenMethodName;
 			}
 
-			public bool IsRewrittenMethod(string name) {
-				return name == rewrittenMethodName;
-			}
-
-			public bool IsDelegateMethod(string name) {
-				return name == delegateMethodName;
-			}
+			public bool IsRewrittenMethod(string name) => name == rewrittenMethodName;
+			public bool IsDelegateMethod(string name) => name == delegateMethodName;
 		}
 
-		public Type GetDelegateType(MethodBase methodBase) {
-			return realMethodToNewMethod[methodBase].delegateType;
-		}
+		public Type GetDelegateType(MethodBase methodBase) => realMethodToNewMethod[methodBase].delegateType;
 
 		public RewrittenMethod CreateDelegate(MethodBase realMethod) {
 			var newMethodInfo = realMethodToNewMethod[realMethod];
@@ -173,7 +163,7 @@ namespace AssemblyData.methodsrewriter {
 		string GetDelegateMethodName(MethodBase method) {
 			string name = null;
 			do {
-				name = string.Format(" {0} {1:X8} DMN {2:X8} ", method.Name, method.MetadataToken, Utils.GetRandomUint());
+				name = $" {method.Name} {method.MetadataToken:X8} DMN {Utils.GetRandomUint():X8} ";
 			} while (delegateNameToNewMethodInfo.ContainsKey(name));
 			return name;
 		}
@@ -190,7 +180,7 @@ namespace AssemblyData.methodsrewriter {
 			var moduleInfo = Resolver.LoadAssembly(realMethod.Module);
 			var methodInfo = moduleInfo.GetMethod(realMethod);
 			if (!methodInfo.HasInstructions())
-				throw new ApplicationException(string.Format("Method {0} ({1:X8}) has no body", methodInfo.methodDef, methodInfo.methodDef.MDToken.Raw));
+				throw new ApplicationException($"Method {methodInfo.methodDef} ({methodInfo.methodDef.MDToken.Raw:X8}) has no body");
 
 			var codeGenerator = new CodeGenerator(this, newMethodInfo.delegateMethodName);
 			codeGenerator.SetMethodInfo(methodInfo);
@@ -200,18 +190,15 @@ namespace AssemblyData.methodsrewriter {
 			foreach (var block in blocks.MethodBlocks.GetAllBlocks())
 				Update(block, newMethodInfo);
 
-			IList<Instruction> allInstructions;
-			IList<ExceptionHandler> allExceptionHandlers;
-			blocks.GetCode(out allInstructions, out allExceptionHandlers);
+			blocks.GetCode(out var allInstructions, out var allExceptionHandlers);
 			newMethodInfo.delegateInstance = codeGenerator.Generate(allInstructions, allExceptionHandlers);
 		}
 
-		static Instruction Create(OpCode opcode, object operand) {
-			return new Instruction {
+		static Instruction Create(OpCode opcode, object operand) =>
+			new Instruction {
 				OpCode = opcode,
 				Operand = operand,
 			};
-		}
 
 		// Inserts ldarg THIS, and returns number of instructions inserted at 'i'
 		int InsertLoadThis(Block block, int i) {
@@ -351,19 +338,16 @@ namespace AssemblyData.methodsrewriter {
 			var methodField = GetStackFrameMethodField();
 			methodField.SetValue(frame, method);
 			if (frame.GetMethod() != method)
-				throw new ApplicationException(string.Format("Could not set new method: {0}", method));
+				throw new ApplicationException($"Could not set new method: {method}");
 		}
 
 		NewMethodInfo GetNewMethodInfo(string name) {
-			NewMethodInfo info;
-			delegateNameToNewMethodInfo.TryGetValue(name, out info);
+			delegateNameToNewMethodInfo.TryGetValue(name, out var info);
 			return info;
 		}
 
 		// Called after the StackTrace ctor has been called.
-		static StackTrace static_RtFixStackTrace(StackTrace stackTrace, MethodsRewriter self) {
-			return self.RtFixStackTrace(stackTrace);
-		}
+		static StackTrace static_RtFixStackTrace(StackTrace stackTrace, MethodsRewriter self) => self.RtFixStackTrace(stackTrace);
 
 		StackTrace RtFixStackTrace(StackTrace stackTrace) {
 			var framesField = GetStackTraceStackFramesField();
@@ -379,9 +363,7 @@ namespace AssemblyData.methodsrewriter {
 			return stackTrace;
 		}
 
-		static StackFrame static_RtFixStackFrame(StackFrame stackFrame, MethodsRewriter self) {
-			return self.RtFixStackFrame(stackFrame);
-		}
+		static StackFrame static_RtFixStackFrame(StackFrame stackFrame, MethodsRewriter self) => self.RtFixStackFrame(stackFrame);
 
 		StackFrame RtFixStackFrame(StackFrame frame) {
 			FixStackFrame(frame);
@@ -394,8 +376,7 @@ namespace AssemblyData.methodsrewriter {
 			if (info == null)
 				return;
 
-			MethodBase stackMethod;
-			if (newStackMethodDict.TryGetValue(info, out stackMethod)) {
+			if (newStackMethodDict.TryGetValue(info, out var stackMethod)) {
 				WriteMethodBase(frame, stackMethod);
 			}
 			else if (info.IsRewrittenMethod(method.Name)) {
@@ -411,21 +392,11 @@ namespace AssemblyData.methodsrewriter {
 		}
 
 		// Called when the code calls GetCallingAssembly(), GetEntryAssembly(), or GetExecutingAssembly()
-		Assembly RtGetAssembly(int delegateIndex) {
-			return newMethodInfos[delegateIndex].oldMethod.Module.Assembly;
-		}
+		Assembly RtGetAssembly(int delegateIndex) => newMethodInfos[delegateIndex].oldMethod.Module.Assembly;
 
 		// Called when the code calls GetAssembly(Type)
-		static Assembly static_RtGetAssembly_TypeArg(Type type, MethodsRewriter self) {
-			return self.RtGetAssembly_TypeArg(type);
-		}
-
-		Assembly RtGetAssembly_TypeArg(Type type) {
-			return Assembly.GetAssembly(type);
-		}
-
-		Delegate RtGetDelegateInstance(int delegateIndex) {
-			return newMethodInfos[delegateIndex].delegateInstance;
-		}
+		static Assembly static_RtGetAssembly_TypeArg(Type type, MethodsRewriter self) => self.RtGetAssembly_TypeArg(type);
+		Assembly RtGetAssembly_TypeArg(Type type) => Assembly.GetAssembly(type);
+		Delegate RtGetDelegateInstance(int delegateIndex) => newMethodInfos[delegateIndex].delegateInstance;
 	}
 }

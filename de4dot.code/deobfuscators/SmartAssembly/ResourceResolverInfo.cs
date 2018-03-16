@@ -26,18 +26,13 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 		EmbeddedAssemblyInfo resourceInfo;
 		AssemblyResolverInfo assemblyResolverInfo;
 
-		public EmbeddedAssemblyInfo ResourceInfo {
-			get { return resourceInfo; }
-		}
+		public EmbeddedAssemblyInfo ResourceInfo => resourceInfo;
 
 		public ResourceResolverInfo(ModuleDefMD module, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob, AssemblyResolverInfo assemblyResolverInfo)
-			: base(module, simpleDeobfuscator, deob) {
-			this.assemblyResolverInfo = assemblyResolverInfo;
-		}
+			: base(module, simpleDeobfuscator, deob) => this.assemblyResolverInfo = assemblyResolverInfo;
 
-		protected override bool CheckResolverType(TypeDef type) {
-			return DotNetUtils.FindFieldType(type, "System.Reflection.Assembly", true) != null;
-		}
+		protected override bool CheckResolverType(TypeDef type) =>
+			DotNetUtils.FindFieldType(type, "System.Reflection.Assembly", true) != null;
 
 		protected override bool CheckHandlerMethod(MethodDef method) {
 			if (!method.IsStatic || !method.HasBody)

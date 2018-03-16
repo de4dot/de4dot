@@ -27,17 +27,9 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		string resourceReader;
 		string resourceSet;
 
-		public string ResourceReaderName {
-			get { return resourceReader; }
-		}
-
-		public string ResourceSetName {
-			get { return resourceSet; }
-		}
-
-		public ResourceReader(ref DataReader reader) {
-			this.reader = reader;
-		}
+		public string ResourceReaderName => resourceReader;
+		public string ResourceSetName => resourceSet;
+		public ResourceReader(ref DataReader reader) => this.reader = reader;
 
 		public ResourceInfo[] Read() {
 			if (reader.ReadUInt32() != 0xBEEFCACE)

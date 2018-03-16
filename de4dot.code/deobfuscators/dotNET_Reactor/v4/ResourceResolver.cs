@@ -29,30 +29,19 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		EncryptedResource encryptedResource;
 		MethodDef initMethod;
 
-		public bool Detected {
-			get { return encryptedResource.Method != null; }
-		}
-
-		public TypeDef Type {
-			get { return encryptedResource.Type; }
-		}
-
-		public MethodDef InitMethod {
-			get { return initMethod; }
-		}
-
-		public bool FoundResource {
-			get { return encryptedResource.FoundResource; }
-		}
+		public bool Detected => encryptedResource.Method != null;
+		public TypeDef Type => encryptedResource.Type;
+		public MethodDef InitMethod => initMethod;
+		public bool FoundResource => encryptedResource.FoundResource;
 
 		public ResourceResolver(ModuleDefMD module) {
 			this.module = module;
-			this.encryptedResource = new EncryptedResource(module);
+			encryptedResource = new EncryptedResource(module);
 		}
 
 		public ResourceResolver(ModuleDefMD module, ResourceResolver oldOne) {
 			this.module = module;
-			this.encryptedResource = new EncryptedResource(module, oldOne.encryptedResource);
+			encryptedResource = new EncryptedResource(module, oldOne.encryptedResource);
 		}
 
 		public void Find(ISimpleDeobfuscator simpleDeobfuscator) {

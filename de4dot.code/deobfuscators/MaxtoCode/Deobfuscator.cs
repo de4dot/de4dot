@@ -29,32 +29,19 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		const string DEFAULT_REGEX = @"!^[oO01l]+$&!^[A-F0-9]{20,}$&" + DeobfuscatorBase.DEFAULT_ASIAN_VALID_NAME_REGEX;
 		IntOption stringCodePage;
 
-		public DeobfuscatorInfo()
-			: base(DEFAULT_REGEX) {
-			stringCodePage = new IntOption(null, MakeArgName("cp"), "String code page", 936);
-		}
+		public DeobfuscatorInfo() : base(DEFAULT_REGEX) => stringCodePage = new IntOption(null, MakeArgName("cp"), "String code page", 936);
 
-		public override string Name {
-			get { return THE_NAME; }
-		}
+		public override string Name => THE_NAME;
+		public override string Type => THE_TYPE;
 
-		public override string Type {
-			get { return THE_TYPE; }
-		}
-
-		public override IDeobfuscator CreateDeobfuscator() {
-			return new Deobfuscator(new Deobfuscator.Options {
+		public override IDeobfuscator CreateDeobfuscator() =>
+			new Deobfuscator(new Deobfuscator.Options {
 				RenameResourcesInCode = false,
 				ValidNameRegex = validNameRegex.Get(),
 				StringCodePage = stringCodePage.Get(),
 			});
-		}
 
-		protected override IEnumerable<Option> GetOptionsInternal() {
-			return new List<Option>() {
-				stringCodePage,
-			};
-		}
+		protected override IEnumerable<Option> GetOptionsInternal() => new List<Option>() { stringCodePage };
 	}
 
 	class Deobfuscator : DeobfuscatorBase {
@@ -67,17 +54,9 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			public int StringCodePage { get; set; }
 		}
 
-		public override string Type {
-			get { return DeobfuscatorInfo.THE_TYPE; }
-		}
-
-		public override string TypeLong {
-			get { return DeobfuscatorInfo.THE_NAME; }
-		}
-
-		public override string Name {
-			get { return DeobfuscatorInfo.THE_NAME; }
-		}
+		public override string Type => DeobfuscatorInfo.THE_TYPE;
+		public override string TypeLong => DeobfuscatorInfo.THE_NAME;
+		public override string Name => DeobfuscatorInfo.THE_NAME;
 
 		internal Deobfuscator(Options options)
 			: base(options) {
@@ -169,9 +148,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		class ResourceKey {
 			readonly EmbeddedResource resource;
 
-			public ResourceKey(EmbeddedResource resource) {
-				this.resource = resource;
-			}
+			public ResourceKey(EmbeddedResource resource) => this.resource = resource;
 
 			public override int GetHashCode() {
 				int hash = 0;
@@ -190,9 +167,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 					resource.GetReader().Length == other.resource.GetReader().Length;
 			}
 
-			public override string ToString() {
-				return resource.Name.String;
-			}
+			public override string ToString() => resource.Name.String;
 		}
 
 		void RemoveDuplicateEmbeddedResources() {
@@ -203,9 +178,8 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 					continue;
 				if (rsrc.Offset == null)
 					continue;
-				List<EmbeddedResource> list;
 				var key = new ResourceKey(rsrc);
-				if (!resources.TryGetValue(key, out list))
+				if (!resources.TryGetValue(key, out var list))
 					resources[key] = list = new List<EmbeddedResource>();
 				list.Add(rsrc);
 			}
@@ -228,7 +202,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				foreach (var rsrc in list) {
 					if (rsrc == resourceToKeep)
 						continue;
-					AddResourceToBeRemoved(rsrc, string.Format("Duplicate of resource {0}", Utils.ToCsharpString(resourceToKeep.Name)));
+					AddResourceToBeRemoved(rsrc, $"Duplicate of resource {Utils.ToCsharpString(resourceToKeep.Name)}");
 				}
 			}
 		}

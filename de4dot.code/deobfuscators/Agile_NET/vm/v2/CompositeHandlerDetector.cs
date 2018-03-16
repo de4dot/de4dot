@@ -51,14 +51,12 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 			public int HashIndex;
 
 			public HandlerState(List<BlockSigInfo> blockSigInfos, int blockIndex, int hashIndex) {
-				this.BlockSigInfos = blockSigInfos;
-				this.BlockIndex = blockIndex;
-				this.HashIndex = hashIndex;
+				BlockSigInfos = blockSigInfos;
+				BlockIndex = blockIndex;
+				HashIndex = hashIndex;
 			}
 
-			public HandlerState Clone() {
-				return new HandlerState(BlockSigInfos, BlockIndex, HashIndex);
-			}
+			public HandlerState Clone() => new HandlerState(BlockSigInfos, BlockIndex, HashIndex);
 		}
 
 		struct FindHandlerState {
@@ -67,20 +65,18 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 			public bool Done;
 
 			public FindHandlerState(HandlerState compositeState) {
-				this.CompositeState = compositeState;
-				this.VisitedCompositeBlocks = new Dictionary<int, bool>();
-				this.Done = false;
+				CompositeState = compositeState;
+				VisitedCompositeBlocks = new Dictionary<int, bool>();
+				Done = false;
 			}
 
 			public FindHandlerState(HandlerState compositeState, Dictionary<int, bool> visitedCompositeBlocks, bool done) {
-				this.CompositeState = compositeState;
-				this.VisitedCompositeBlocks = new Dictionary<int, bool>(visitedCompositeBlocks);
-				this.Done = done;
+				CompositeState = compositeState;
+				VisitedCompositeBlocks = new Dictionary<int, bool>(visitedCompositeBlocks);
+				Done = done;
 			}
 
-			public FindHandlerState Clone() {
-				return new FindHandlerState(CompositeState.Clone(), VisitedCompositeBlocks, Done);
-			}
+			public FindHandlerState Clone() => new FindHandlerState(CompositeState.Clone(), VisitedCompositeBlocks, Done);
 		}
 
 		public bool FindHandlers(CompositeOpCodeHandler composite) {
@@ -98,7 +94,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 
 		MethodSigInfo FindHandlerMethod(ref FindHandlerState findExecState) {
 			foreach (var handler in handlers) {
-				FindHandlerState findExecStateNew = findExecState.Clone();
+				var findExecStateNew = findExecState.Clone();
 				if (!Matches(handler.BlockSigInfos, ref findExecStateNew))
 					continue;
 

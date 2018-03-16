@@ -32,17 +32,9 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		MethodDef handlerMethod;
 		List<string> resourceInfos = new List<string>();
 
-		public TypeDef Type {
-			get { return resolverType; }
-		}
-
-		public MethodDef InitMethod {
-			get { return initMethod; }
-		}
-
-		public bool Detected {
-			get { return resolverType != null; }
-		}
+		public TypeDef Type => resolverType;
+		public MethodDef InitMethod => initMethod;
+		public bool Detected => resolverType != null;
 
 		public ResourceResolver(ModuleDefMD module, AssemblyResolver assemblyResolver) {
 			this.module = module;
@@ -140,7 +132,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			foreach (var asmName in resourceInfos) {
 				var asmInfo = assemblyResolver.Get(asmName);
 				if (asmInfo == null)
-					throw new ApplicationException(string.Format("Could not find resource assembly {0}", Utils.ToCsharpString(asmName)));
+					throw new ApplicationException($"Could not find resource assembly {Utils.ToCsharpString(asmName)}");
 
 				DeobUtils.DecryptAndAddResources(module, asmInfo.ResourceName, () => asmInfo.Data);
 				list.Add(asmInfo);

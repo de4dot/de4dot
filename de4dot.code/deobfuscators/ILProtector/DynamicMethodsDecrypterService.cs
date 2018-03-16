@@ -33,9 +33,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 		bool hasDelegateTypeFlag;
 
 		[CreateUserGenericService]
-		public static IUserGenericService Create() {
-			return new DynamicMethodsDecrypterService();
-		}
+		public static IUserGenericService Create() => new DynamicMethodsDecrypterService();
 
 		public void Dispose() {
 			if (obfModule != null)
@@ -44,8 +42,8 @@ namespace de4dot.code.deobfuscators.ILProtector {
 		}
 
 		public void AssemblyLoaded(Assembly assembly) {
-			this.reflObfModule = assembly.ManifestModule;
-			this.obfModule = ModuleDefMD.Load(reflObfModule);
+			reflObfModule = assembly.ManifestModule;
+			obfModule = ModuleDefMD.Load(reflObfModule);
 		}
 
 		public object HandleMessage(int msg, object[] args) {
@@ -57,7 +55,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 				return hasDelegateTypeFlag;
 
 			default:
-				throw new ApplicationException(string.Format("Invalid msg: {0:X8}", msg));
+				throw new ApplicationException($"Invalid msg: {msg:X8}");
 			}
 		}
 

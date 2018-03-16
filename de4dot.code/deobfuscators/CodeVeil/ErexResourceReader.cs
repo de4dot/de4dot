@@ -26,9 +26,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		DataReader reader;
 		uint[] key;
 
-		public ErexResourceReader(ref DataReader reader) {
-			this.reader = reader;
-		}
+		public ErexResourceReader(ref DataReader reader) => this.reader = reader;
 
 		public byte[] Decrypt() {
 			if (reader.ReadUInt32() != 0x58455245)

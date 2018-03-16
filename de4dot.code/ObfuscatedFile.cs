@@ -58,9 +58,7 @@ namespace de4dot.code {
 					DotNetUtils.CopyBody(method, out instructions, out exceptionHandlers);
 				}
 
-				public void Restore() {
-					DotNetUtils.RestoreBody(method, instructions, exceptionHandlers);
-				}
+				public void Restore() => DotNetUtils.RestoreBody(method, instructions, exceptionHandlers);
 			}
 
 			public void Save(MethodDef method) {
@@ -75,9 +73,7 @@ namespace de4dot.code {
 				savedMethodBodies.Clear();
 			}
 
-			public bool IsSaved(MethodDef method) {
-				return savedMethodBodies.ContainsKey(method);
-			}
+			public bool IsSaved(MethodDef method) => savedMethodBodies.ContainsKey(method);
 		}
 
 		public class Options {
@@ -98,41 +94,17 @@ namespace de4dot.code {
 			}
 		}
 
-		public string Filename {
-			get { return options.Filename; }
-		}
-
-		public string NewFilename {
-			get { return options.NewFilename; }
-		}
-
-		public ModuleDefMD ModuleDefMD {
-			get { return module; }
-		}
-
-		public INameChecker NameChecker {
-			get { return deob; }
-		}
-
-		public bool RenameResourcesInCode {
-			get { return deob.TheOptions.RenameResourcesInCode; }
-		}
-
-		public bool RemoveNamespaceWithOneType {
-			get { return (deob.RenamingOptions & RenamingOptions.RemoveNamespaceIfOneType) != 0; }
-		}
-
-		public bool RenameResourceKeys {
-			get { return (deob.RenamingOptions & RenamingOptions.RenameResourceKeys) != 0; }
-		}
-
-		public IDeobfuscator Deobfuscator {
-			get { return deob; }
-		}
-
+		public string Filename => options.Filename;
+		public string NewFilename => options.NewFilename;
+		public ModuleDefMD ModuleDefMD => module;
+		public INameChecker NameChecker => deob;
+		public bool RenameResourcesInCode => deob.TheOptions.RenameResourcesInCode;
+		public bool RemoveNamespaceWithOneType => (deob.RenamingOptions & RenamingOptions.RemoveNamespaceIfOneType) != 0;
+		public bool RenameResourceKeys => (deob.RenamingOptions & RenamingOptions.RenameResourceKeys) != 0;
+		public IDeobfuscator Deobfuscator => deob;
 		public IDeobfuscatorContext DeobfuscatorContext {
-			get { return deobfuscatorContext; }
-			set { deobfuscatorContext = value; }
+			get => deobfuscatorContext;
+			set => deobfuscatorContext = value;
 		}
 
 		public ObfuscatedFile(Options options, ModuleContext moduleContext, IAssemblyClientFactory assemblyClientFactory) {
@@ -146,7 +118,7 @@ namespace de4dot.code {
 				options.NewFilename = GetDefaultNewFilename();
 
 			if (string.Equals(options.Filename, options.NewFilename, StringComparison.OrdinalIgnoreCase))
-				throw new UserException(string.Format("filename is same as new filename! ({0})", options.Filename));
+				throw new UserException($"filename is same as new filename! ({options.Filename})");
 		}
 
 		string GetDefaultNewFilename() {
@@ -173,7 +145,7 @@ namespace de4dot.code {
 		}
 
 		void LoadModule(IEnumerable<IDeobfuscator> deobfuscators) {
-			ModuleDefMD oldModule = module;
+			var oldModule = module;
 			try {
 				module = assemblyModule.Load();
 			}
@@ -259,7 +231,7 @@ namespace de4dot.code {
 				savedMethodBodies = new SavedMethodBodies();
 
 			// It's not null if it unpacked a native file
-			if (this.deob != null) {
+			if (deob != null) {
 				deob.Initialize(module);
 				deob.DeobfuscatedFile = this;
 				deob.Detect();
@@ -281,7 +253,7 @@ namespace de4dot.code {
 				}
 			}
 			else
-				this.deob = DetectObfuscator2(deobfuscators);
+				deob = DetectObfuscator2(deobfuscators);
 		}
 
 		IDeobfuscator DetectObfuscator2(IEnumerable<IDeobfuscator> deobfuscators) {
@@ -305,7 +277,7 @@ namespace de4dot.code {
 					detected = deob;
 				}
 			}
-			this.deob = null;
+			deob = null;
 
 			if (allDetected.Count > 1) {
 				Logger.n("More than one obfuscator detected:");
@@ -373,14 +345,14 @@ namespace de4dot.code {
 				break;
 
 			default:
-				throw new ApplicationException(string.Format("Invalid string decrypter type '{0}'", options.StringDecrypterType));
+				throw new ApplicationException($"Invalid string decrypter type '{options.StringDecrypterType}'");
 			}
 		}
 
 		public void CheckSupportedStringDecrypter(StringFeatures feature) {
 			if ((deob.StringFeatures & feature) == feature)
 				return;
-			throw new UserException(string.Format("Deobfuscator {0} does not support this string decryption type", deob.TypeLong));
+			throw new UserException($"Deobfuscator {deob.TypeLong} does not support this string decryption type");
 		}
 
 		public void Deobfuscate() {
@@ -430,7 +402,7 @@ namespace de4dot.code {
 			else if (options.StringDecrypterType == DecrypterType.Emulate)
 				assemblyClient.StringDecrypterService.SetStringDecrypterType(AssemblyData.StringDecrypterType.Emulate);
 			else
-				throw new ApplicationException(string.Format("Invalid string decrypter type '{0}'", options.StringDecrypterType));
+				throw new ApplicationException($"Invalid string decrypter type '{options.StringDecrypterType}'");
 
 			dynamicStringInliner = new DynamicStringInliner(assemblyClient);
 			UpdateDynamicStringInliner();
@@ -451,8 +423,7 @@ namespace de4dot.code {
 				var tokenStr = val.Trim();
 				if (Utils.StartsWith(tokenStr, "0x", StringComparison.OrdinalIgnoreCase))
 					tokenStr = tokenStr.Substring(2);
-				int methodToken;
-				if (int.TryParse(tokenStr, NumberStyles.HexNumber, null, out methodToken))
+				if (int.TryParse(tokenStr, NumberStyles.HexNumber, null, out int methodToken))
 					tokens.Add(methodToken);
 				else
 					tokens.AddRange(FindMethodTokens(val));
@@ -464,9 +435,7 @@ namespace de4dot.code {
 		IEnumerable<int> FindMethodTokens(string methodDesc) {
 			var tokens = new List<int>();
 
-			string typeString, methodName;
-			string[] argsStrings;
-			SplitMethodDesc(methodDesc, out typeString, out methodName, out argsStrings);
+			SplitMethodDesc(methodDesc, out string typeString, out string methodName, out var argsStrings);
 
 			foreach (var type in module.GetTypes()) {
 				if (typeString != null && typeString != type.FullName)
@@ -528,7 +497,7 @@ namespace de4dot.code {
 				stringArgs = remaining;
 			}
 			else if (remaining.Length > 0)
-				throw new UserException(string.Format("Invalid method desc: '{0}'", methodDesc));
+				throw new UserException($"Invalid method desc: '{methodDesc}'");
 
 			if (stringArgs != null) {
 				if (Utils.StartsWith(stringArgs, "(", StringComparison.Ordinal))
@@ -546,9 +515,7 @@ namespace de4dot.code {
 				name = null;
 		}
 
-		public void DeobfuscateEnd() {
-			DeobfuscateCleanUp();
-		}
+		public void DeobfuscateEnd() => DeobfuscateCleanUp();
 
 		public void DeobfuscateCleanUp() {
 			if (assemblyClient != null) {
@@ -648,9 +615,7 @@ namespace de4dot.code {
 			DeobfuscateStrings(blocks);
 			deob.DeobfuscateMethodEnd(blocks);
 
-			IList<Instruction> allInstructions;
-			IList<ExceptionHandler> allExceptionHandlers;
-			blocks.GetCode(out allInstructions, out allExceptionHandlers);
+			blocks.GetCode(out var allInstructions, out var allExceptionHandlers);
 			DotNetUtils.RestoreBody(method, allInstructions, allExceptionHandlers);
 
 			if (isVerbose && numRemovedLocals > 0)
@@ -667,9 +632,7 @@ namespace de4dot.code {
 			}
 		}
 
-		bool HasNonEmptyBody(MethodDef method) {
-			return method.HasBody && method.Body.Instructions.Count > 0;
-		}
+		bool HasNonEmptyBody(MethodDef method) => method.HasBody && method.Body.Instructions.Count > 0;
 
 		void DeobfuscateStrings(Blocks blocks) {
 			switch (options.StringDecrypterType) {
@@ -686,7 +649,7 @@ namespace de4dot.code {
 				break;
 
 			default:
-				throw new ApplicationException(string.Format("Invalid string decrypter type '{0}'", options.StringDecrypterType));
+				throw new ApplicationException($"Invalid string decrypter type '{options.StringDecrypterType}'");
 			}
 		}
 
@@ -742,16 +705,14 @@ namespace de4dot.code {
 		bool Check(MethodDef method, SimpleDeobFlags flag) {
 			if (method == null)
 				return false;
-			SimpleDeobFlags oldFlags;
-			simpleDeobfuscatorFlags.TryGetValue(method, out oldFlags);
+			simpleDeobfuscatorFlags.TryGetValue(method, out var oldFlags);
 			simpleDeobfuscatorFlags[method] = oldFlags | flag;
 			return (oldFlags & flag) == flag;
 		}
 		bool Clear(MethodDef method, SimpleDeobFlags flag) {
 			if (method == null)
 				return false;
-			SimpleDeobFlags oldFlags;
-			if (!simpleDeobfuscatorFlags.TryGetValue(method, out oldFlags))
+			if (!simpleDeobfuscatorFlags.TryGetValue(method, out var oldFlags))
 				return false;
 			simpleDeobfuscatorFlags[method] = oldFlags & ~flag;
 			return true;
@@ -770,9 +731,7 @@ namespace de4dot.code {
 
 					handler(blocks);
 
-					IList<Instruction> allInstructions;
-					IList<ExceptionHandler> allExceptionHandlers;
-					blocks.GetCode(out allInstructions, out allExceptionHandlers);
+					blocks.GetCode(out var allInstructions, out var allExceptionHandlers);
 					DotNetUtils.RestoreBody(method, allInstructions, allExceptionHandlers);
 				}
 				catch {
@@ -783,13 +742,8 @@ namespace de4dot.code {
 			Logger.Instance.DeIndent();
 		}
 
-		void ISimpleDeobfuscator.MethodModified(MethodDef method) {
-			Clear(method, SimpleDeobFlags.HasDeobfuscated);
-		}
-
-		void ISimpleDeobfuscator.Deobfuscate(MethodDef method) {
-			((ISimpleDeobfuscator)this).Deobfuscate(method, 0);
-		}
+		void ISimpleDeobfuscator.MethodModified(MethodDef method) => Clear(method, SimpleDeobFlags.HasDeobfuscated);
+		void ISimpleDeobfuscator.Deobfuscate(MethodDef method) => ((ISimpleDeobfuscator)this).Deobfuscate(method, 0);
 
 		void ISimpleDeobfuscator.Deobfuscate(MethodDef method, SimpleDeobfuscatorFlags flags) {
 			bool force = (flags & SimpleDeobfuscatorFlags.Force) != 0;
@@ -804,9 +758,8 @@ namespace de4dot.code {
 			});
 		}
 
-		void ISimpleDeobfuscator.DecryptStrings(MethodDef method, IDeobfuscator theDeob) {
+		void ISimpleDeobfuscator.DecryptStrings(MethodDef method, IDeobfuscator theDeob) =>
 			Deobfuscate(method, "Static string decryption", (blocks) => theDeob.DeobfuscateStrings(blocks));
-		}
 
 		void IDeobfuscatedFile.CreateAssemblyFile(byte[] data, string assemblyName, string extension) {
 			if (extension == null)
@@ -817,13 +770,9 @@ namespace de4dot.code {
 			File.WriteAllBytes(newName, data);
 		}
 
-		void IDeobfuscatedFile.StringDecryptersAdded() {
-			UpdateDynamicStringInliner();
-		}
+		void IDeobfuscatedFile.StringDecryptersAdded() => UpdateDynamicStringInliner();
 
-		void IDeobfuscatedFile.SetDeobfuscator(IDeobfuscator deob) {
-			this.deob = deob;
-		}
+		void IDeobfuscatedFile.SetDeobfuscator(IDeobfuscator deob) => this.deob = deob;
 
 		public void Dispose() {
 			DeobfuscateCleanUp();

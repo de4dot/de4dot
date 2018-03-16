@@ -35,24 +35,15 @@ namespace de4dot.code.deobfuscators.MPRESS {
 			: base(DEFAULT_REGEX) {
 		}
 
-		public override string Name {
-			get { return THE_NAME; }
-		}
+		public override string Name => THE_NAME;
+		public override string Type => THE_TYPE;
 
-		public override string Type {
-			get { return THE_TYPE; }
-		}
-
-		public override IDeobfuscator CreateDeobfuscator() {
-			return new Deobfuscator(new Deobfuscator.Options {
+		public override IDeobfuscator CreateDeobfuscator() =>
+			new Deobfuscator(new Deobfuscator.Options {
 				ValidNameRegex = validNameRegex.Get(),
 			});
-		}
 
-		protected override IEnumerable<Option> GetOptionsInternal() {
-			return new List<Option>() {
-			};
-		}
+		protected override IEnumerable<Option> GetOptionsInternal() => new List<Option>() { };
 	}
 
 	class Deobfuscator : DeobfuscatorBase {
@@ -70,22 +61,10 @@ namespace de4dot.code.deobfuscators.MPRESS {
 		internal class Options : OptionsBase {
 		}
 
-		public override string Type {
-			get { return DeobfuscatorInfo.THE_TYPE; }
-		}
-
-		public override string TypeLong {
-			get { return DeobfuscatorInfo.THE_NAME; }
-		}
-
-		public override string Name {
-			get { return obfuscatorName; }
-		}
-
-		public Deobfuscator(Options options)
-			: base(options) {
-			this.options = options;
-		}
+		public override string Type => DeobfuscatorInfo.THE_TYPE;
+		public override string TypeLong => DeobfuscatorInfo.THE_NAME;
+		public override string Name => obfuscatorName;
+		public Deobfuscator(Options options) : base(options) => this.options = options;
 
 		protected override int DetectInternal() {
 			int val = 0;
@@ -260,8 +239,6 @@ namespace de4dot.code.deobfuscators.MPRESS {
 			}
 		}
 
-		public override IEnumerable<int> GetStringDecrypterMethods() {
-			return new List<int>();
-		}
+		public override IEnumerable<int> GetStringDecrypterMethods() => new List<int>();
 	}
 }

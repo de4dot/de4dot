@@ -41,41 +41,21 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 
 		class Context {
 			public int offset;
-
-			public Context(int offset) {
-				this.offset = offset;
-			}
+			public Context(int offset) => this.offset = offset;
 		}
 
-		public bool FoundProxyType {
-			get { return info.proxyType != null; }
-		}
+		public bool FoundProxyType => info.proxyType != null;
 
-		public bool CanRemoveTypes {
-			get {
-				return info.proxyType != null &&
-					info.ilgeneratorType != null &&
-					info.fieldInfoType != null &&
-					info.methodInfoType != null;
-			}
-		}
+		public bool CanRemoveTypes =>
+			info.proxyType != null &&
+			info.ilgeneratorType != null &&
+			info.fieldInfoType != null &&
+			info.methodInfoType != null;
 
-		public TypeDef IlGeneratorType {
-			get { return info.ilgeneratorType; }
-		}
-
-		public TypeDef FieldInfoType {
-			get { return info.fieldInfoType; }
-		}
-
-		public TypeDef MethodInfoType {
-			get { return info.methodInfoType; }
-		}
-
-		public ProxyCallFixer(ModuleDefMD module, MainType mainType)
-			: base(module) {
-			this.mainType = mainType;
-		}
+		public TypeDef IlGeneratorType => info.ilgeneratorType;
+		public TypeDef FieldInfoType => info.fieldInfoType;
+		public TypeDef MethodInfoType => info.methodInfoType;
+		public ProxyCallFixer(ModuleDefMD module, MainType mainType) : base(module) => this.mainType = mainType;
 
 		public ProxyCallFixer(ModuleDefMD module, MainType mainType, ProxyCallFixer oldOne)
 			: base(module, oldOne) {

@@ -30,67 +30,29 @@ namespace de4dot.blocks.cflow {
 
 		public Int32Value(int value)
 			: base(ValueType.Int32) {
-			this.Value = value;
-			this.ValidMask = NO_UNKNOWN_BITS;
+			Value = value;
+			ValidMask = NO_UNKNOWN_BITS;
 		}
 
 		public Int32Value(int value, uint validMask)
 			: base(ValueType.Int32) {
-			this.Value = value;
-			this.ValidMask = validMask;
+			Value = value;
+			ValidMask = validMask;
 		}
 
-		public bool HasUnknownBits() {
-			return ValidMask != NO_UNKNOWN_BITS;
-		}
-
-		public bool AllBitsValid() {
-			return !HasUnknownBits();
-		}
-
-		bool IsBitValid(int n) {
-			return IsBitValid(ValidMask, n);
-		}
-
-		static bool IsBitValid(uint validMask, int n) {
-			return (validMask & (1U << n)) != 0;
-		}
-
-		bool AreBitsValid(uint bitsToTest) {
-			return (ValidMask & bitsToTest) == bitsToTest;
-		}
-
-		public static Int32Value CreateUnknownBool() {
-			return new Int32Value(0, NO_UNKNOWN_BITS << 1);
-		}
-
-		public static Int32Value CreateUnknownUInt8() {
-			return new Int32Value(0, NO_UNKNOWN_BITS << 8);
-		}
-
-		public static Int32Value CreateUnknownUInt16() {
-			return new Int32Value(0, NO_UNKNOWN_BITS << 16);
-		}
-
-		public static Int32Value CreateUnknown() {
-			return new Int32Value(0, 0U);
-		}
-
-		public bool IsZero() {
-			return HasValue(0);
-		}
-
-		public bool IsNonZero() {
-			return ((uint)Value & ValidMask) != 0;
-		}
-
-		public bool HasValue(int value) {
-			return AllBitsValid() && this.Value == value;
-		}
-
-		public bool HasValue(uint value) {
-			return HasValue((int)value);
-		}
+		public bool HasUnknownBits() => ValidMask != NO_UNKNOWN_BITS;
+		public bool AllBitsValid() => !HasUnknownBits();
+		bool IsBitValid(int n) => IsBitValid(ValidMask, n);
+		static bool IsBitValid(uint validMask, int n) => (validMask & (1U << n)) != 0;
+		bool AreBitsValid(uint bitsToTest) => (ValidMask & bitsToTest) == bitsToTest;
+		public static Int32Value CreateUnknownBool() => new Int32Value(0, NO_UNKNOWN_BITS << 1);
+		public static Int32Value CreateUnknownUInt8() => new Int32Value(0, NO_UNKNOWN_BITS << 8);
+		public static Int32Value CreateUnknownUInt16() => new Int32Value(0, NO_UNKNOWN_BITS << 16);
+		public static Int32Value CreateUnknown() => new Int32Value(0, 0U);
+		public bool IsZero() => HasValue(0);
+		public bool IsNonZero() => ((uint)Value & ValidMask) != 0;
+		public bool HasValue(int value) => AllBitsValid() && Value == value;
+		public bool HasValue(uint value) => HasValue((int)value);
 
 		public Int32Value ToBoolean() {
 			if (IsNonZero())
@@ -100,29 +62,12 @@ namespace de4dot.blocks.cflow {
 			return CreateUnknownBool();
 		}
 
-		public Int32Value ToInt8() {
-			return Conv_I1(this);
-		}
-
-		public Int32Value ToUInt8() {
-			return Conv_U1(this);
-		}
-
-		public Int32Value ToInt16() {
-			return Conv_I2(this);
-		}
-
-		public Int32Value ToUInt16() {
-			return Conv_U2(this);
-		}
-
-		public static Int32Value Conv_U1(Int32Value a) {
-			return Conv_U1(a.Value, a.ValidMask);
-		}
-
-		public static Int32Value Conv_U1(Int64Value a) {
-			return Conv_U1((int)a.Value, (uint)a.ValidMask);
-		}
+		public Int32Value ToInt8() => Conv_I1(this);
+		public Int32Value ToUInt8() => Conv_U1(this);
+		public Int32Value ToInt16() => Conv_I2(this);
+		public Int32Value ToUInt16() => Conv_U2(this);
+		public static Int32Value Conv_U1(Int32Value a) => Conv_U1(a.Value, a.ValidMask);
+		public static Int32Value Conv_U1(Int64Value a) => Conv_U1((int)a.Value, (uint)a.ValidMask);
 
 		public static Int32Value Conv_U1(int value, uint validMask) {
 			value = (int)(byte)value;
@@ -136,13 +81,8 @@ namespace de4dot.blocks.cflow {
 			return new Int32Value((int)(byte)a.Value);
 		}
 
-		public static Int32Value Conv_I1(Int32Value a) {
-			return Conv_I1(a.Value, a.ValidMask);
-		}
-
-		public static Int32Value Conv_I1(Int64Value a) {
-			return Conv_I1((int)a.Value, (uint)a.ValidMask);
-		}
+		public static Int32Value Conv_I1(Int32Value a) => Conv_I1(a.Value, a.ValidMask);
+		public static Int32Value Conv_I1(Int64Value a) => Conv_I1((int)a.Value, (uint)a.ValidMask);
 
 		public static Int32Value Conv_I1(int value, uint validMask) {
 			value = (int)(sbyte)value;
@@ -159,13 +99,8 @@ namespace de4dot.blocks.cflow {
 			return new Int32Value((int)(sbyte)a.Value);
 		}
 
-		public static Int32Value Conv_U2(Int32Value a) {
-			return Conv_U2(a.Value, a.ValidMask);
-		}
-
-		public static Int32Value Conv_U2(Int64Value a) {
-			return Conv_U2((int)a.Value, (uint)a.ValidMask);
-		}
+		public static Int32Value Conv_U2(Int32Value a) => Conv_U2(a.Value, a.ValidMask);
+		public static Int32Value Conv_U2(Int64Value a) => Conv_U2((int)a.Value, (uint)a.ValidMask);
 
 		public static Int32Value Conv_U2(int value, uint validMask) {
 			value = (int)(ushort)value;
@@ -179,13 +114,8 @@ namespace de4dot.blocks.cflow {
 			return new Int32Value((int)(ushort)a.Value);
 		}
 
-		public static Int32Value Conv_I2(Int32Value a) {
-			return Conv_I2(a.Value, a.ValidMask);
-		}
-
-		public static Int32Value Conv_I2(Int64Value a) {
-			return Conv_I2((int)a.Value, (uint)a.ValidMask);
-		}
+		public static Int32Value Conv_I2(Int32Value a) => Conv_I2(a.Value, a.ValidMask);
+		public static Int32Value Conv_I2(Int64Value a) => Conv_I2((int)a.Value, (uint)a.ValidMask);
 
 		public static Int32Value Conv_I2(int value, uint validMask) {
 			value = (int)(short)value;
@@ -202,27 +132,16 @@ namespace de4dot.blocks.cflow {
 			return new Int32Value((int)(short)a.Value);
 		}
 
-		public static Int32Value Conv_U4(Int32Value a) {
-			return a;
-		}
-
-		public static Int32Value Conv_U4(Int64Value a) {
-			return new Int32Value((int)(uint)a.Value, (uint)a.ValidMask);
-		}
-
+		public static Int32Value Conv_U4(Int32Value a) => a;
+		public static Int32Value Conv_U4(Int64Value a) => new Int32Value((int)(uint)a.Value, (uint)a.ValidMask);
 		public static Int32Value Conv_U4(Real8Value a) {
 			if (!a.IsValid)
 				return CreateUnknown();
 			return new Int32Value((int)(uint)a.Value);
 		}
 
-		public static Int32Value Conv_I4(Int32Value a) {
-			return a;
-		}
-
-		public static Int32Value Conv_I4(Int64Value a) {
-			return new Int32Value((int)a.Value, (uint)a.ValidMask);
-		}
+		public static Int32Value Conv_I4(Int32Value a) => a;
+		public static Int32Value Conv_I4(Int64Value a) => new Int32Value((int)a.Value, (uint)a.ValidMask);
 
 		public static Int32Value Conv_I4(Real8Value a) {
 			if (!a.IsValid)
@@ -230,9 +149,7 @@ namespace de4dot.blocks.cflow {
 			return new Int32Value((int)a.Value);
 		}
 
-		bool CheckSign(uint mask) {
-			return ((uint)Value & mask) == 0 || ((uint)Value & mask) == mask;
-		}
+		bool CheckSign(uint mask) => ((uint)Value & mask) == 0 || ((uint)Value & mask) == mask;
 
 		public static Int32Value Conv_Ovf_I1(Int32Value a) {
 			if (!a.AreBitsValid(NO_UNKNOWN_BITS << 7) ||
@@ -262,9 +179,7 @@ namespace de4dot.blocks.cflow {
 			return Conv_I2(a);
 		}
 
-		public static Int32Value Conv_Ovf_I4(Int32Value a) {
-			return a;
-		}
+		public static Int32Value Conv_Ovf_I4(Int32Value a) => a;
 
 		public static Int32Value Conv_Ovf_I4_Un(Int32Value a) {
 			if (!IsBitValid(a.ValidMask, 31) || a.Value < 0)
@@ -279,9 +194,8 @@ namespace de4dot.blocks.cflow {
 			return new Int64Value(a.Value, validMask);
 		}
 
-		public static Int64Value Conv_Ovf_I8_Un(Int32Value a) {
-			return new Int64Value((long)(uint)a.Value, a.ValidMask | (Int64Value.NO_UNKNOWN_BITS << 32));
-		}
+		public static Int64Value Conv_Ovf_I8_Un(Int32Value a) =>
+			new Int64Value((long)(uint)a.Value, a.ValidMask | (Int64Value.NO_UNKNOWN_BITS << 32));
 
 		public static Int32Value Conv_Ovf_U1(Int32Value a) {
 			if (!a.AreBitsValid(NO_UNKNOWN_BITS << 7) ||
@@ -317,9 +231,7 @@ namespace de4dot.blocks.cflow {
 			return a;
 		}
 
-		public static Int32Value Conv_Ovf_U4_Un(Int32Value a) {
-			return a;
-		}
+		public static Int32Value Conv_Ovf_U4_Un(Int32Value a) => a;
 
 		public static Int64Value Conv_Ovf_U8(Int32Value a) {
 			if (!IsBitValid(a.ValidMask, 31) || a.Value < 0)
@@ -327,9 +239,8 @@ namespace de4dot.blocks.cflow {
 			return new Int64Value(a.Value, (ulong)a.ValidMask | (Int64Value.NO_UNKNOWN_BITS << 32));
 		}
 
-		public static Int64Value Conv_Ovf_U8_Un(Int32Value a) {
-			return new Int64Value((long)(uint)a.Value, a.ValidMask | (Int64Value.NO_UNKNOWN_BITS << 32));
-		}
+		public static Int64Value Conv_Ovf_U8_Un(Int32Value a) =>
+			new Int64Value((long)(uint)a.Value, a.ValidMask | (Int64Value.NO_UNKNOWN_BITS << 32));
 
 		public static Real8Value Conv_R_Un(Int32Value a) {
 			if (a.AllBitsValid())
@@ -532,9 +443,7 @@ namespace de4dot.blocks.cflow {
 			return new Int32Value(av ^ bv, am & bm);
 		}
 
-		public static Int32Value Not(Int32Value a) {
-			return new Int32Value(~a.Value, a.ValidMask);
-		}
+		public static Int32Value Not(Int32Value a) => new Int32Value(~a.Value, a.ValidMask);
 
 		public static Int32Value Shl(Int32Value a, Int32Value b) {
 			if (b.HasUnknownBits())
@@ -582,25 +491,11 @@ namespace de4dot.blocks.cflow {
 			}
 		}
 
-		public static Int32Value Ceq(Int32Value a, Int32Value b) {
-			return Create(CompareEq(a, b));
-		}
-
-		public static Int32Value Cgt(Int32Value a, Int32Value b) {
-			return Create(CompareGt(a, b));
-		}
-
-		public static Int32Value Cgt_Un(Int32Value a, Int32Value b) {
-			return Create(CompareGt_Un(a, b));
-		}
-
-		public static Int32Value Clt(Int32Value a, Int32Value b) {
-			return Create(CompareLt(a, b));
-		}
-
-		public static Int32Value Clt_Un(Int32Value a, Int32Value b) {
-			return Create(CompareLt_Un(a, b));
-		}
+		public static Int32Value Ceq(Int32Value a, Int32Value b) => Create(CompareEq(a, b));
+		public static Int32Value Cgt(Int32Value a, Int32Value b) => Create(CompareGt(a, b));
+		public static Int32Value Cgt_Un(Int32Value a, Int32Value b) => Create(CompareGt_Un(a, b));
+		public static Int32Value Clt(Int32Value a, Int32Value b) => Create(CompareLt(a, b));
+		public static Int32Value Clt_Un(Int32Value a, Int32Value b) => Create(CompareLt_Un(a, b));
 
 		public static Bool3 CompareEq(Int32Value a, Int32Value b) {
 			if (a.AllBitsValid() && b.AllBitsValid())
@@ -721,7 +616,7 @@ namespace de4dot.blocks.cflow {
 		public override string ToString() {
 			if (AllBitsValid())
 				return Value.ToString();
-			return string.Format("0x{0:X8}({1:X8})", Value, ValidMask);
+			return $"0x{Value:X8}({ValidMask:X8})";
 		}
 	}
 }

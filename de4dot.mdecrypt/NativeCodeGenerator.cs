@@ -27,18 +27,14 @@ namespace de4dot.mdecrypt {
 		BinaryWriter writer;
 		Dictionary<int, IntPtr> offsetToBranchAddr = new Dictionary<int, IntPtr>();
 
-		public int Size {
-			get { return (int)memStream.Length; }
-		}
+		public int Size => (int)memStream.Length;
 
 		public NativeCodeGenerator() {
 			memStream = new MemoryStream(0x200);
 			writer = new BinaryWriter(memStream);
 		}
 
-		public void WriteByte(byte b) {
-			writer.Write(b);
-		}
+		public void WriteByte(byte b) => writer.Write(b);
 
 		public void WriteBytes(byte b1, byte b2) {
 			WriteByte(b1);
@@ -50,17 +46,9 @@ namespace de4dot.mdecrypt {
 			WriteWord(us);
 		}
 
-		public void WriteWord(ushort w) {
-			writer.Write(w);
-		}
-
-		public void WriteDword(uint d) {
-			writer.Write(d);
-		}
-
-		public void WriteBytes(byte[] bytes) {
-			writer.Write(bytes);
-		}
+		public void WriteWord(ushort w) => writer.Write(w);
+		public void WriteDword(uint d) => writer.Write(d);
+		public void WriteBytes(byte[] bytes) => writer.Write(bytes);
 
 		public void WriteCall(IntPtr addr) {
 			WriteByte(0xE8);

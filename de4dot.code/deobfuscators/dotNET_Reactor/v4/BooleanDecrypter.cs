@@ -28,30 +28,19 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		byte[] fileData;
 		byte[] decryptedData;
 
-		public bool Detected {
-			get { return encryptedResource.Method != null; }
-		}
-
-		public TypeDef DecrypterType {
-			get { return encryptedResource.Type; }
-		}
-
-		public MethodDef Method {
-			get { return encryptedResource.Method; }
-		}
-
-		public EmbeddedResource Resource {
-			get { return encryptedResource.Resource; }
-		}
+		public bool Detected => encryptedResource.Method != null;
+		public TypeDef DecrypterType => encryptedResource.Type;
+		public MethodDef Method => encryptedResource.Method;
+		public EmbeddedResource Resource => encryptedResource.Resource;
 
 		public BooleanDecrypter(ModuleDefMD module) {
 			this.module = module;
-			this.encryptedResource = new EncryptedResource(module);
+			encryptedResource = new EncryptedResource(module);
 		}
 
 		public BooleanDecrypter(ModuleDefMD module, BooleanDecrypter oldOne) {
 			this.module = module;
-			this.encryptedResource = new EncryptedResource(module, oldOne.encryptedResource);
+			encryptedResource = new EncryptedResource(module, oldOne.encryptedResource);
 		}
 
 		public void Find() {

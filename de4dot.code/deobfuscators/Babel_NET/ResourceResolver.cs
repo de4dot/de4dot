@@ -35,17 +35,9 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		bool hasXorKeys;
 		int xorKey1, xorKey2;
 
-		public bool Detected {
-			get { return resolverType != null; }
-		}
-
-		public TypeDef Type {
-			get { return resolverType; }
-		}
-
-		public MethodDef InitMethod {
-			get { return registerMethod; }
-		}
+		public bool Detected => resolverType != null;
+		public TypeDef Type => resolverType;
+		public MethodDef InitMethod => registerMethod;
 
 		public ResourceResolver(ModuleDefMD module, ResourceDecrypter resourceDecrypter, ISimpleDeobfuscator simpleDeobfuscator) {
 			this.module = module;
@@ -66,8 +58,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				if (!new FieldTypes(type).All(requiredTypes))
 					continue;
 
-				MethodDef regMethod, handler;
-				if (!BabelUtils.FindRegisterMethod(type, out regMethod, out handler))
+				if (!BabelUtils.FindRegisterMethod(type, out var regMethod, out var handler))
 					continue;
 
 				var resource = BabelUtils.FindEmbeddedResource(module, type);

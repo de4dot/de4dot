@@ -23,21 +23,15 @@ namespace de4dot.code.deobfuscators {
 	public abstract class DeobfuscatorInfoBase : IDeobfuscatorInfo {
 		protected NameRegexOption validNameRegex;
 
-		public DeobfuscatorInfoBase(string nameRegex) {
+		public DeobfuscatorInfoBase(string nameRegex) =>
 			validNameRegex = new NameRegexOption(null, MakeArgName("name"), "Valid name regex pattern", nameRegex ?? DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX);
-		}
 
-		protected string MakeArgName(string name) {
-			return string.Format("{0}-{1}", Type, name);
-		}
+		protected string MakeArgName(string name) => $"{Type}-{name}";
 
 		public abstract string Type { get; }
 		public abstract string Name { get; }
 		public abstract IDeobfuscator CreateDeobfuscator();
-
-		protected virtual IEnumerable<Option> GetOptionsInternal() {
-			return new List<Option>();
-		}
+		protected virtual IEnumerable<Option> GetOptionsInternal() => new List<Option>();
 
 		public IEnumerable<Option> GetOptions() {
 			var options = new List<Option>();

@@ -28,31 +28,22 @@ namespace de4dot.code.deobfuscators.CodeFort {
 		const string DEFAULT_REGEX = @"!^[a-zA-Z]{1,3}$&!^[_<>{}$.`-]$&" + DeobfuscatorBase.DEFAULT_ASIAN_VALID_NAME_REGEX;
 		BoolOption dumpEmbeddedAssemblies;
 
-		public DeobfuscatorInfo()
-			: base(DEFAULT_REGEX) {
+		public DeobfuscatorInfo() : base(DEFAULT_REGEX) =>
 			dumpEmbeddedAssemblies = new BoolOption(null, MakeArgName("embedded"), "Dump embedded assemblies", true);
-		}
 
-		public override string Name {
-			get { return THE_NAME; }
-		}
+		public override string Name => THE_NAME;
+		public override string Type => THE_TYPE;
 
-		public override string Type {
-			get { return THE_TYPE; }
-		}
-
-		public override IDeobfuscator CreateDeobfuscator() {
-			return new Deobfuscator(new Deobfuscator.Options {
+		public override IDeobfuscator CreateDeobfuscator() =>
+			new Deobfuscator(new Deobfuscator.Options {
 				ValidNameRegex = validNameRegex.Get(),
 				DumpEmbeddedAssemblies = dumpEmbeddedAssemblies.Get(),
 			});
-		}
 
-		protected override IEnumerable<Option> GetOptionsInternal() {
-			return new List<Option>() {
+		protected override IEnumerable<Option> GetOptionsInternal() =>
+			new List<Option>() {
 				dumpEmbeddedAssemblies,
 			};
-		}
 	}
 
 	class Deobfuscator : DeobfuscatorBase {
@@ -66,22 +57,11 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			public bool DumpEmbeddedAssemblies { get; set; }
 		}
 
-		public override string Type {
-			get { return DeobfuscatorInfo.THE_TYPE; }
-		}
+		public override string Type => DeobfuscatorInfo.THE_TYPE;
+		public override string TypeLong => DeobfuscatorInfo.THE_NAME;
+		public override string Name => DeobfuscatorInfo.THE_NAME;
 
-		public override string TypeLong {
-			get { return DeobfuscatorInfo.THE_NAME; }
-		}
-
-		public override string Name {
-			get { return DeobfuscatorInfo.THE_NAME; }
-		}
-
-		public Deobfuscator(Options options)
-			: base(options) {
-			this.options = options;
-		}
+		public Deobfuscator(Options options) : base(options) => this.options = options;
 
 		protected override int DetectInternal() {
 			int val = 0;
@@ -141,7 +121,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 				return;
 			foreach (var info in assemblyDecrypter.GetAssemblyInfos(DeobfuscatedFile, this)) {
 				DeobfuscatedFile.CreateAssemblyFile(info.data, info.asmSimpleName, info.extension);
-				AddResourceToBeRemoved(info.resource, string.Format("Embedded assembly: {0}", info.asmFullName));
+				AddResourceToBeRemoved(info.resource, $"Embedded assembly: {info.asmFullName}");
 			}
 			AddCctorInitCallToBeRemoved(assemblyDecrypter.InitMethod);
 			AddCallToBeRemoved(module.EntryPoint, assemblyDecrypter.InitMethod);

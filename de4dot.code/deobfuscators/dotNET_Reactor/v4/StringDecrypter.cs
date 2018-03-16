@@ -53,35 +53,21 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			}
 		}
 
-		public bool Detected {
-			get { return encryptedResource.Method != null; }
-		}
-
-		public TypeDef DecrypterType {
-			get { return encryptedResource.Type; }
-		}
-
-		public EmbeddedResource Resource {
-			get { return encryptedResource.Resource; }
-		}
-
-		public IEnumerable<DecrypterInfo> DecrypterInfos {
-			get { return decrypterInfos; }
-		}
-
-		public MethodDef OtherStringDecrypter {
-			get { return otherStringDecrypter; }
-		}
+		public bool Detected => encryptedResource.Method != null;
+		public TypeDef DecrypterType => encryptedResource.Type;
+		public EmbeddedResource Resource => encryptedResource.Resource;
+		public IEnumerable<DecrypterInfo> DecrypterInfos => decrypterInfos;
+		public MethodDef OtherStringDecrypter => otherStringDecrypter;
 
 		public StringDecrypter(ModuleDefMD module) {
 			this.module = module;
-			this.encryptedResource = new EncryptedResource(module);
+			encryptedResource = new EncryptedResource(module);
 		}
 
 		public StringDecrypter(ModuleDefMD module, StringDecrypter oldOne) {
 			this.module = module;
-			this.stringDecrypterVersion = oldOne.stringDecrypterVersion;
-			this.encryptedResource = new EncryptedResource(module, oldOne.encryptedResource);
+			stringDecrypterVersion = oldOne.stringDecrypterVersion;
+			encryptedResource = new EncryptedResource(module, oldOne.encryptedResource);
 			foreach (var oldInfo in oldOne.decrypterInfos) {
 				var method = Lookup(oldInfo.method, "Could not find string decrypter method");
 				decrypterInfos.Add(new DecrypterInfo(method, oldInfo.key, oldInfo.iv));
@@ -89,9 +75,8 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			otherStringDecrypter = Lookup(oldOne.otherStringDecrypter, "Could not find string decrypter method");
 		}
 
-		T Lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
-			return DeobUtils.Lookup(module, def, errorMessage);
-		}
+		T Lookup<T>(T def, string errorMessage) where T : class, ICodedToken =>
+			DeobUtils.Lookup(module, def, errorMessage);
 
 		public void Find(ISimpleDeobfuscator simpleDeobfuscator) {
 			var additionalTypes = new string[] {
@@ -253,8 +238,6 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			}
 		}
 
-		public string Decrypt(string s) {
-			return Encoding.Unicode.GetString(Convert.FromBase64String(s));
-		}
+		public string Decrypt(string s) => Encoding.Unicode.GetString(Convert.FromBase64String(s));
 	}
 }

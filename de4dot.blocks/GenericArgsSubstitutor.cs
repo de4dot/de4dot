@@ -67,7 +67,7 @@ namespace de4dot.blocks {
 			var newSig = Create(field.FieldSig, genericArgs);
 			if (newSig == field.FieldSig)
 				return field;
-			var module = field.DeclaringType != null ? field.DeclaringType.Module : null;
+			var module = field.DeclaringType?.Module;
 			return new MemberRefUser(module, field.Name, newSig, field.DeclaringType);
 		}
 
@@ -87,12 +87,10 @@ namespace de4dot.blocks {
 			if (git == null)
 				return method;
 
-			var mdr = method as IMethodDefOrRef;
-			if (mdr != null)
+			if (method is IMethodDefOrRef mdr)
 				return Create(mdr, git);
 
-			var ms = method as MethodSpec;
-			if (ms != null)
+			if (method is MethodSpec ms)
 				return Create(ms, git);
 
 			return method;
@@ -125,13 +123,11 @@ namespace de4dot.blocks {
 			return Create(method, git.GenericArguments);
 		}
 
-		public static IMethodDefOrRef Create(IMethodDefOrRef method, IList<TypeSig> genericArgs) {
-			return Create(method, genericArgs, null);
-		}
+		public static IMethodDefOrRef Create(IMethodDefOrRef method, IList<TypeSig> genericArgs) =>
+			Create(method, genericArgs, null);
 
-		public static IMethodDefOrRef Create(IMethodDefOrRef method, GenericInstSig git, IList<TypeSig> genericMethodArgs) {
-			return Create(method, git == null ? null : git.GenericArguments, genericMethodArgs);
-		}
+		public static IMethodDefOrRef Create(IMethodDefOrRef method, GenericInstSig git, IList<TypeSig> genericMethodArgs) =>
+			Create(method, git?.GenericArguments, genericMethodArgs);
 
 		// Creates a new method but keeps declaring type as is
 		public static IMethodDefOrRef Create(IMethodDefOrRef method, IList<TypeSig> genericArgs, IList<TypeSig> genericMethodArgs) {
@@ -153,14 +149,14 @@ namespace de4dot.blocks {
 
 		GenericArgsSubstitutor(IList<TypeSig> genericArgs) {
 			this.genericArgs = genericArgs;
-			this.genericMethodArgs = null;
-			this.updated = false;
+			genericMethodArgs = null;
+			updated = false;
 		}
 
 		GenericArgsSubstitutor(IList<TypeSig> genericArgs, IList<TypeSig> genericMethodArgs) {
 			this.genericArgs = genericArgs;
 			this.genericMethodArgs = genericMethodArgs;
-			this.updated = false;
+			updated = false;
 		}
 
 		TypeSig Create(TypeSig type) {

@@ -26,9 +26,7 @@ namespace de4dot.code.AssemblyClient {
 		IAssemblyService service;
 		AssemblyServiceType serviceType;
 
-		public SameAppDomainAssemblyServerLoader(AssemblyServiceType serviceType) {
-			this.serviceType = serviceType;
-		}
+		public SameAppDomainAssemblyServerLoader(AssemblyServiceType serviceType) => this.serviceType = serviceType;
 
 		public void LoadServer() {
 			if (service != null)
@@ -36,11 +34,7 @@ namespace de4dot.code.AssemblyClient {
 			service = AssemblyService.Create(serviceType);
 		}
 
-		public IAssemblyService CreateService() {
-			return service;
-		}
-
-		public void Dispose() {
-		}
+		public IAssemblyService CreateService() => service;
+		public void Dispose() { }
 	}
 }

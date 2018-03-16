@@ -36,17 +36,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 		protected uint key0, key1, key2, key3, key4, key5, key6;
 		protected byte[] methodsData;
 
-		public MethodDef InitMethod {
-			get { return initMethod; }
-		}
-
-		public TypeDef Type {
-			get { return initMethod != null ? initMethod.DeclaringType : null; }
-		}
-
-		public bool Detected {
-			get { return initMethod != null; }
-		}
+		public MethodDef InitMethod => initMethod;
+		public TypeDef Type => initMethod?.DeclaringType;
+		public bool Detected => initMethod != null;
 
 		protected MethodsDecrypterBase(ModuleDefMD module, ISimpleDeobfuscator simpleDeobfuscator) {
 			this.module = module;
@@ -57,18 +49,12 @@ namespace de4dot.code.deobfuscators.Confuser {
 			this.module = module;
 			this.simpleDeobfuscator = simpleDeobfuscator;
 			if (other != null)
-				this.initMethod = Lookup(other.initMethod, "Could not find initMethod");
+				initMethod = Lookup(other.initMethod, "Could not find initMethod");
 		}
 
-		T Lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
-			return DeobUtils.Lookup(module, def, errorMessage);
-		}
-
+		T Lookup<T>(T def, string errorMessage) where T : class, ICodedToken => DeobUtils.Lookup(module, def, errorMessage);
 		public abstract bool GetRevisionRange(out int minRev, out int maxRev);
-
-		public void Find() {
-			Find(DotNetUtils.GetModuleTypeCctor(module));
-		}
+		public void Find() => Find(DotNetUtils.GetModuleTypeCctor(module));
 
 		bool Find(MethodDef method) {
 			if (method == null || method.Body == null)
@@ -310,17 +296,14 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		protected static int FindCallvirtReadUInt32(IList<Instruction> instrs, int index) {
-			return ConfuserUtils.FindCallMethod(instrs, index, Code.Callvirt, "System.UInt32 System.IO.BinaryReader::ReadUInt32()");
-		}
+		protected static int FindCallvirtReadUInt32(IList<Instruction> instrs, int index) =>
+			ConfuserUtils.FindCallMethod(instrs, index, Code.Callvirt, "System.UInt32 System.IO.BinaryReader::ReadUInt32()");
 
-		static int FindCallvirtReadUInt64(IList<Instruction> instrs, int index) {
-			return ConfuserUtils.FindCallMethod(instrs, index, Code.Callvirt, "System.UInt64 System.IO.BinaryReader::ReadUInt64()");
-		}
+		static int FindCallvirtReadUInt64(IList<Instruction> instrs, int index) =>
+			ConfuserUtils.FindCallMethod(instrs, index, Code.Callvirt, "System.UInt64 System.IO.BinaryReader::ReadUInt64()");
 
-		protected byte[] DecryptMethodsData_v17_r73404(MyPEImage peImage) {
-			return DecryptMethodsData_v16_r71742(peImage, GetEncryptedHeaderOffset_vXX(peImage.Sections));
-		}
+		protected byte[] DecryptMethodsData_v17_r73404(MyPEImage peImage) =>
+			DecryptMethodsData_v16_r71742(peImage, GetEncryptedHeaderOffset_vXX(peImage.Sections));
 
 		protected byte[] DecryptMethodsData_v16_r71742(MyPEImage peImage, uint encryptedHeaderOffset) {
 			uint mdRva = peImage.OptionalHeader.CheckSum ^ (uint)key0;

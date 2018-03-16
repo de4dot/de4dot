@@ -38,9 +38,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			this.doubleValueInliner = doubleValueInliner;
 		}
 
-		public void DeobfuscateBegin(Blocks blocks) {
-			this.blocks = blocks;
-		}
+		public void DeobfuscateBegin(Blocks blocks) => this.blocks = blocks;
 
 		public bool Deobfuscate(List<Block> allBlocks) {
 			bool modified = false;

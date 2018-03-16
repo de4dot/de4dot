@@ -35,22 +35,19 @@ namespace de4dot.code.deobfuscators.Confuser {
 				var instr = instrs[i];
 				if (constantsReader.IsLoadConstantInt32(instr.Instruction)) {
 					index = i;
-					int val;
-					if (!constantsReader.GetInt32(ref index, out val))
+					if (!constantsReader.GetInt32(ref index, out int val))
 						continue;
 					newInstr = Instruction.CreateLdcI4(val);
 				}
 				else if (constantsReader.IsLoadConstantInt64(instr.Instruction)) {
 					index = i;
-					long val;
-					if (!constantsReader.GetInt64(ref index, out val))
+					if (!constantsReader.GetInt64(ref index, out long val))
 						continue;
 					newInstr = Instruction.Create(OpCodes.Ldc_I8, val);
 				}
 				else if (constantsReader.IsLoadConstantDouble(instr.Instruction)) {
 					index = i;
-					double val;
-					if (!constantsReader.GetDouble(ref index, out val))
+					if (!constantsReader.GetDouble(ref index, out double val))
 						continue;
 					newInstr = Instruction.Create(OpCodes.Ldc_R8, val);
 				}
@@ -112,8 +109,6 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return modified;
 		}
 
-		static ConstantsReader CreateConstantsReader(IList<Instr> instrs) {
-			return new ConstantsReader(instrs, false);
-		}
+		static ConstantsReader CreateConstantsReader(IList<Instr> instrs) => new ConstantsReader(instrs, false);
 	}
 }

@@ -39,9 +39,7 @@ namespace de4dot.code {
 		}
 
 		// Returns true if the regex matches. Use MatchValue to get result.
-		public bool IsMatch(string s) {
-			return regex.IsMatch(s);
-		}
+		public bool IsMatch(string s) => regex.IsMatch(s);
 
 		public override string ToString() {
 			if (!MatchValue)
@@ -54,18 +52,10 @@ namespace de4dot.code {
 		IList<NameRegex> regexes;
 		public bool DefaultValue { get; set; }
 		public const char regexSeparatorChar = '&';
+		public IList<NameRegex> Regexes => regexes;
 
-		public IList<NameRegex> Regexes {
-			get { return regexes; }
-		}
-
-		public NameRegexes()
-			: this("") {
-		}
-
-		public NameRegexes(string regex) {
-			Set(regex);
-		}
+		public NameRegexes() : this("") { }
+		public NameRegexes(string regex) => Set(regex);
 
 		public void Set(string regexesString) {
 			regexes = new List<NameRegex>();

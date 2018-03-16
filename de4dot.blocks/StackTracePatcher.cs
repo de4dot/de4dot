@@ -88,7 +88,7 @@ namespace de4dot.blocks {
 		static void WriteMethodBase(StackFrame frame, MethodBase method) {
 			methodField.SetValue(frame, method);
 			if (frame.GetMethod() != method)
-				throw new ApplicationException(string.Format("Could not set new method: {0}", method));
+				throw new ApplicationException($"Could not set new method: {method}");
 		}
 	}
 }

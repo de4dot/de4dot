@@ -25,21 +25,10 @@ namespace de4dot.blocks.cflow {
 	class ValueStack {
 		List<Value> stack = new List<Value>();
 
-		public int Size {
-			get { return stack.Count; }
-		}
-
-		public void Initialize() {
-			stack.Clear();
-		}
-
-		public void Clear() {
-			stack.Clear();
-		}
-
-		public void Push(Value value) {
-			stack.Add(value);
-		}
+		public int Size => stack.Count;
+		public void Initialize() => stack.Clear();
+		public void Clear() => stack.Clear();
+		public void Push(Value value) => stack.Add(value);
 
 		public Value Peek() {
 			if (stack.Count == 0)
@@ -48,7 +37,7 @@ namespace de4dot.blocks.cflow {
 		}
 
 		public Value Pop() {
-			Value value = Peek();
+			var value = Peek();
 			if (stack.Count != 0)
 				stack.RemoveAt(stack.Count - 1);
 			return value;
@@ -61,9 +50,7 @@ namespace de4dot.blocks.cflow {
 				PushUnknown();
 		}
 
-		public void PushUnknown() {
-			Push(new UnknownValue());
-		}
+		public void PushUnknown() => Push(new UnknownValue());
 
 		public void Pop(int count) {
 			if (count < 0)
@@ -74,9 +61,7 @@ namespace de4dot.blocks.cflow {
 				stack.RemoveRange(stack.Count - count, count);
 		}
 
-		public void CopyTop() {
-			Push(Peek());
-		}
+		public void CopyTop() => Push(Peek());
 
 		public override string ToString() {
 			if (stack.Count == 0)

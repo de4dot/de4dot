@@ -29,12 +29,7 @@ namespace AssemblyData.methodsrewriter {
 			this.methodDef = methodDef;
 		}
 
-		public bool HasInstructions() {
-			return methodDef.Body != null && methodDef.Body.Instructions.Count != 0;
-		}
-
-		public override string ToString() {
-			return methodDef.ToString();
-		}
+		public bool HasInstructions() => methodDef.Body != null && methodDef.Body.Instructions.Count != 0;
+		public override string ToString() => methodDef.ToString();
 	}
 }

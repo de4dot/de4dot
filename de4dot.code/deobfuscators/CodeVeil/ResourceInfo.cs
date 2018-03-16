@@ -32,9 +32,6 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			this.offset = offset;
 			this.length = length;
 		}
-
-		public override string ToString() {
-			return string.Format("{0:X2} {1:X8} {2} {3}", flags, offset, length, name);
-		}
+		public override string ToString() => $"{flags:X2} {offset:X8} {length} {name}";
 	}
 }

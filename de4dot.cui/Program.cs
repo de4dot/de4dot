@@ -29,9 +29,7 @@ using System.Reflection;
 namespace de4dot.cui {
 	class ExitException : Exception {
 		public readonly int code;
-		public ExitException(int code) {
-			this.code = code;
-		}
+		public ExitException(int code) => this.code = code;
 	}
 
 	class Program {
@@ -40,7 +38,7 @@ namespace de4dot.cui {
 		static IList<IDeobfuscatorInfo> LoadPlugin(string assembly) {
 			var plugins = new List<IDeobfuscatorInfo>();
 			try {
-				foreach (Type item in Assembly.LoadFile(assembly).GetTypes()) {
+				foreach (var item in Assembly.LoadFile(assembly).GetTypes()) {
 					var interfaces = new List<Type>(item.GetInterfaces());
 					if (item.IsClass && interfaces.Contains(typeof(IDeobfuscatorInfo)))
 						plugins.Add((IDeobfuscatorInfo)Activator.CreateInstance(item));
@@ -183,9 +181,7 @@ namespace de4dot.cui {
 			return HasEnv("windir") && !HasEnv("PROMPT");
 		}
 
-		public static void PrintStackTrace(Exception ex) {
-			PrintStackTrace(ex, LoggerEvent.Error);
-		}
+		public static void PrintStackTrace(Exception ex) => PrintStackTrace(ex, LoggerEvent.Error);
 
 		public static void PrintStackTrace(Exception ex, LoggerEvent loggerEvent) {
 			var line = new string('-', 78);

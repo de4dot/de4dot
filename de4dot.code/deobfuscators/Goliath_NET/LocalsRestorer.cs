@@ -48,9 +48,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			}
 		}
 
-		public LocalsRestorer(ModuleDefMD module) {
-			this.module = module;
-		}
+		public LocalsRestorer(ModuleDefMD module) => this.module = module;
 
 		public void Find() {
 			foreach (var type in module.GetTypes())

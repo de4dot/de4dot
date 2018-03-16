@@ -34,9 +34,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		class Decrypter : IDecrypter {
 			DataReader methodsDataReader;
 
-			public virtual void Initialize(byte[] methodsData) {
-				methodsDataReader = ByteArrayDataReaderFactory.CreateReader(methodsData);
-			}
+			public virtual void Initialize(byte[] methodsData) => methodsDataReader = ByteArrayDataReaderFactory.CreateReader(methodsData);
 
 			public virtual bool Decrypt(ref DataReader fileDataReader, DumpedMethod dm) {
 				if (fileDataReader.ReadByte() != 0x2A)
@@ -54,9 +52,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				return true;
 			}
 
-			protected virtual bool DecryptCode(DumpedMethod dm) {
-				return true;
-			}
+			protected virtual bool DecryptCode(DumpedMethod dm) => true;
 		}
 
 		class DecrypterV5 : Decrypter {
@@ -82,17 +78,9 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			}
 		}
 
-		public bool Detected {
-			get { return decrypter != null; }
-		}
-
-		public MethodsDecrypter(MainType mainType) {
-			this.mainType = mainType;
-		}
-
-		public MethodsDecrypter(MainType mainType, MethodsDecrypter oldOne) {
-			this.mainType = mainType;
-		}
+		public bool Detected => decrypter != null;
+		public MethodsDecrypter(MainType mainType) => this.mainType = mainType;
+		public MethodsDecrypter(MainType mainType, MethodsDecrypter oldOne) => this.mainType = mainType;
 
 		public void Find() {
 			if (!mainType.Detected)

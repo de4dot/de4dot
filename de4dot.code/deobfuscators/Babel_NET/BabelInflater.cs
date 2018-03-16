@@ -24,10 +24,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 	class BabelInflater : Inflater {
 		int magic;
 
-		public BabelInflater(bool noHeader, int magic)
-			: base(noHeader) {
-			this.magic = magic;
-		}
+		public BabelInflater(bool noHeader, int magic) : base(noHeader) => this.magic = magic;
 
 		protected override bool ReadHeader(ref bool isLastBlock, out int blockType) {
 			const int numBits = 4;

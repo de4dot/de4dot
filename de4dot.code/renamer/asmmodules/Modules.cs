@@ -33,29 +33,17 @@ namespace de4dot.code.renamer.asmmodules {
 		List<MTypeDef> baseTypes = new List<MTypeDef>();
 		List<MTypeDef> nonNestedTypes;
 
-		public IList<Module> TheModules {
-			get { return modules; }
-		}
-
-		public IEnumerable<MTypeDef> AllTypes {
-			get { return allTypes; }
-		}
-
-		public IEnumerable<MTypeDef> BaseTypes {
-			get { return baseTypes; }
-		}
-
-		public List<MTypeDef> NonNestedTypes {
-			get { return nonNestedTypes; }
-		}
+		public IList<Module> TheModules => modules;
+		public IEnumerable<MTypeDef> AllTypes => allTypes;
+		public IEnumerable<MTypeDef> BaseTypes => baseTypes;
+		public List<MTypeDef> NonNestedTypes => nonNestedTypes;
 
 		class AssemblyHash {
 			IDictionary<string, ModuleHash> assemblyHash = new Dictionary<string, ModuleHash>(StringComparer.Ordinal);
 
 			public void Add(Module module) {
-				ModuleHash moduleHash;
 				var key = GetModuleKey(module);
-				if (!assemblyHash.TryGetValue(key, out moduleHash))
+				if (!assemblyHash.TryGetValue(key, out var moduleHash))
 					assemblyHash[key] = moduleHash = new ModuleHash();
 				moduleHash.Add(module);
 			}
@@ -67,8 +55,7 @@ namespace de4dot.code.renamer.asmmodules {
 			}
 
 			public ModuleHash Lookup(IAssembly asm) {
-				ModuleHash moduleHash;
-				if (assemblyHash.TryGetValue(GetAssemblyName(asm), out moduleHash))
+				if (assemblyHash.TryGetValue(GetAssemblyName(asm), out var moduleHash))
 					return moduleHash;
 				return null;
 			}
@@ -90,13 +77,11 @@ namespace de4dot.code.renamer.asmmodules {
 				var asm = module.ModuleDefMD.Assembly;
 				if (asm != null && ReferenceEquals(asm.ManifestModule, module.ModuleDefMD)) {
 					if (mainModule != null) {
-						throw new UserException(string.Format(
+						throw new UserException(
 							"Two modules in the same assembly are main modules.\n" +
 							"Is one 32-bit and the other 64-bit?\n" +
-							"  Module1: \"{0}\"" +
-							"  Module2: \"{1}\"",
-							module.ModuleDefMD.Location,
-							mainModule.ModuleDefMD.Location));
+							$"  Module1: \"{module.ModuleDefMD.Location}\"" +
+							$"  Module2: \"{mainModule.ModuleDefMD.Location}\"");
 					}
 					mainModule = module;
 				}
@@ -104,13 +89,8 @@ namespace de4dot.code.renamer.asmmodules {
 				modulesDict.Add(module);
 			}
 
-			public Module Lookup(string moduleName) {
-				return modulesDict.Lookup(moduleName);
-			}
-
-			public IEnumerable<Module> Modules {
-				get { return modulesDict.Modules; }
-			}
+			public Module Lookup(string moduleName) => modulesDict.Lookup(moduleName);
+			public IEnumerable<Module> Modules => modulesDict.Modules;
 		}
 
 		class ModulesDict {
@@ -119,35 +99,26 @@ namespace de4dot.code.renamer.asmmodules {
 			public void Add(Module module) {
 				var moduleName = module.ModuleDefMD.Name.String;
 				if (Lookup(moduleName) != null)
-					throw new ApplicationException(string.Format("Module \"{0}\" was found twice", moduleName));
+					throw new ApplicationException($"Module \"{moduleName}\" was found twice");
 				modulesDict[moduleName] = module;
 			}
 
 			public Module Lookup(string moduleName) {
-				Module module;
-				if (modulesDict.TryGetValue(moduleName, out module))
+				if (modulesDict.TryGetValue(moduleName, out var module))
 					return module;
 				return null;
 			}
 
-			public IEnumerable<Module> Modules {
-				get { return modulesDict.Values; }
-			}
+			public IEnumerable<Module> Modules => modulesDict.Values;
 		}
 
-		public bool Empty {
-			get { return modules.Count == 0; }
-		}
-
-		public Modules(IDeobfuscatorContext deobfuscatorContext) {
-			this.deobfuscatorContext = deobfuscatorContext;
-		}
+		public bool Empty => modules.Count == 0;
+		public Modules(IDeobfuscatorContext deobfuscatorContext) => this.deobfuscatorContext = deobfuscatorContext;
 
 		public void Add(Module module) {
 			if (initializeCalled)
 				throw new ApplicationException("initialize() has been called");
-			Module otherModule;
-			if (modulesDict.TryGetValue(module.ModuleDefMD, out otherModule))
+			if (modulesDict.TryGetValue(module.ModuleDefMD, out var otherModule))
 				return;
 			modulesDict[module.ModuleDefMD] = module;
 			modules.Add(module);
@@ -241,8 +212,7 @@ namespace de4dot.code.renamer.asmmodules {
 
 			public T this[ITypeDefOrRef type] {
 				get {
-					T value;
-					if (TryGetValue(type, out value))
+					if (TryGetValue(type, out var value))
 						return value;
 					throw new KeyNotFoundException();
 				}
@@ -250,22 +220,18 @@ namespace de4dot.code.renamer.asmmodules {
 					dict[type] = value;
 
 					if (value != null) {
-						List<ITypeDefOrRef> list;
-						if (!refs.TryGetValue(type, out list))
+						if (!refs.TryGetValue(type, out var list))
 							refs[type] = list = new List<ITypeDefOrRef>();
 						list.Add(type);
 					}
 				}
 			}
 
-			public bool TryGetValue(ITypeDefOrRef type, out T value) {
-				return dict.TryGetValue(type, out value);
-			}
+			public bool TryGetValue(ITypeDefOrRef type, out T value) => dict.TryGetValue(type, out value);
 
 			public bool TryGetSimilarValue(ITypeDefOrRef type, out T value) {
-				List<ITypeDefOrRef> list;
-				if (!refs.TryGetValue(type, out list)) {
-					value = default(T);
+				if (!refs.TryGetValue(type, out var list)) {
+					value = default;
 					return false;
 				}
 
@@ -309,7 +275,7 @@ namespace de4dot.code.renamer.asmmodules {
 					return true;
 				}
 
-				value = default(T);
+				value = default;
 				return false;
 			}
 		}
@@ -322,8 +288,7 @@ namespace de4dot.code.renamer.asmmodules {
 			if (type == null)
 				return null;
 
-			MTypeDef typeDef;
-			if (typeToTypeDefDict.TryGetValue(type, out typeDef))
+			if (typeToTypeDefDict.TryGetValue(type, out var typeDef))
 				return typeDef;
 
 			var typeDef2 = deobfuscatorContext.ResolveType(type);
@@ -418,7 +383,7 @@ namespace de4dot.code.renamer.asmmodules {
 				return new List<Module> { module };
 			}
 
-			throw new ApplicationException(string.Format("scope is an unsupported type: {0}", scope.GetType()));
+			throw new ApplicationException($"scope is an unsupported type: {scope.GetType()}");
 		}
 
 		IEnumerable<Module> FindModules(AssemblyRef assemblyRef) {
@@ -429,8 +394,7 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 
 		IEnumerable<Module> FindModules(ModuleDef moduleDef) {
-			Module module;
-			if (modulesDict.TryGetValue(moduleDef, out module))
+			if (modulesDict.TryGetValue(moduleDef, out var module))
 				return new List<Module> { module };
 			return null;
 		}

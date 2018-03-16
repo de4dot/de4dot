@@ -26,7 +26,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		bool firstTime;
 
 		public long Arg {
-			get { return arg; }
+			get => arg;
 			set {
 				arg = value;
 				firstTime = true;

@@ -54,14 +54,10 @@ namespace de4dot.code.deobfuscators.CodeWall {
 				this.isEntryPointAssembly = isEntryPointAssembly;
 			}
 
-			public override string ToString() {
-				return assemblyFullName;
-			}
+			public override string ToString() => assemblyFullName;
 		}
 
-		public IEnumerable<AssemblyInfo> AssemblyInfos {
-			get { return assemblyInfos; }
-		}
+		public IEnumerable<AssemblyInfo> AssemblyInfos => assemblyInfos;
 
 		public AssemblyDecrypter(ModuleDefMD module, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
 			this.module = module;
@@ -74,18 +70,15 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			if (!CheckEntryPoint(method))
 				return;
 
-			MethodDef decryptAssemblyMethod;
-			var mainKey = GetMainResourceKey(method, out decryptAssemblyMethod);
+			var mainKey = GetMainResourceKey(method, out var decryptAssemblyMethod);
 			if (mainKey == null)
 				return;
 
 			DeobfuscateAll(decryptAssemblyMethod);
-			ModuleDefMD theResourceModule;
-			var resource = GetResource(decryptAssemblyMethod, out theResourceModule);
+			var resource = GetResource(decryptAssemblyMethod, out var theResourceModule);
 			if (resource == null)
 				return;
-			string password, salt;
-			if (!GetPassword(decryptAssemblyMethod, out password, out salt))
+			if (!GetPassword(decryptAssemblyMethod, out string password, out string salt))
 				return;
 
 			entryPointAssemblyKey = mainKey;
@@ -161,8 +154,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			foreach (var s in DotNetUtils.GetCodeStrings(method)) {
 				if (s.Length > 0 && s[0] == '\\')
 					resourceDllFileName = s;
-				var resource = DotNetUtils.GetResource(theResourceModule, s + ".resources") as EmbeddedResource;
-				if (resource != null)
+				if (DotNetUtils.GetResource(theResourceModule, s + ".resources") is EmbeddedResource resource)
 					return resource;
 			}
 
@@ -173,8 +165,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			if (theResourceModule == null)
 				return null;
 			foreach (var s in DotNetUtils.GetCodeStrings(method)) {
-				var resource = DotNetUtils.GetResource(theResourceModule, s + ".resources") as EmbeddedResource;
-				if (resource != null)
+				if (DotNetUtils.GetResource(theResourceModule, s + ".resources") is EmbeddedResource resource)
 					return resource;
 			}
 
@@ -250,8 +241,6 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			return null;
 		}
 
-		public void Remove(AssemblyInfo asmInfo) {
-			assemblyInfos.Remove(asmInfo);
-		}
+		public void Remove(AssemblyInfo asmInfo) => assemblyInfos.Remove(asmInfo);
 	}
 }

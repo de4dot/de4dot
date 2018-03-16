@@ -30,13 +30,8 @@ namespace de4dot.code.deobfuscators.CodeWall {
 		ModuleDefMD module;
 		IMethod initMethod;
 
-		public bool Detected {
-			get { return initMethod != null; }
-		}
-
-		public MethodsDecrypter(ModuleDefMD module) {
-			this.module = module;
-		}
+		public bool Detected => initMethod != null;
+		public MethodsDecrypter(ModuleDefMD module) => this.module = module;
 
 		public void Find() {
 			foreach (var cctor in DeobUtils.GetInitCctors(module, 3)) {

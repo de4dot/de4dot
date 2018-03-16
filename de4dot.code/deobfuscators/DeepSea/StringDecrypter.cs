@@ -101,10 +101,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return null;
 		}
 
-		static bool FindMagic(MethodDef method, out int magic) {
-			int arg1, arg2;
-			return FindMagic(method, out arg1, out arg2, out magic);
-		}
+		static bool FindMagic(MethodDef method, out int magic) => FindMagic(method, out int arg1, out int arg2, out magic);
 
 		static bool FindMagic(MethodDef method, out int arg1, out int arg2, out int magic) {
 			var instrs = method.Body.Instructions;
@@ -181,10 +178,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				}
 			}
 
-			public DecrypterVersion Version {
-				get { return DecrypterVersion.V4_1; }
-			}
-
+			public DecrypterVersion Version => DecrypterVersion.V4_1;
 			public MethodDef Method { get; private set; }
 
 			public DecrypterInfo41(MethodDef cctor, MethodDef method) {
@@ -341,9 +335,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				return FindKey(cctor);
 			}
 
-			short[] FindKey(MethodDef initMethod) {
-				return StringDecrypter.FindKey(initMethod, fields);
-			}
+			short[] FindKey(MethodDef initMethod) => StringDecrypter.FindKey(initMethod, fields);
 
 			short[] GetPublicKeyTokenKey(byte[] publicKeyToken) {
 				if (keyShift < 0)
@@ -384,13 +376,8 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				return sb.ToString();
 			}
 
-			string DecryptRetail2(int magic2, int magic3) {
-				return DecryptRetail(magic2, magic3, 2, 1, 0, 8, 0);
-			}
-
-			string DecryptRetail3(int magic2, int magic3) {
-				return DecryptRetail(magic2, magic3, 0, 2, 1, 0x20, 17);
-			}
+			string DecryptRetail2(int magic2, int magic3) => DecryptRetail(magic2, magic3, 2, 1, 0, 8, 0);
+			string DecryptRetail3(int magic2, int magic3) => DecryptRetail(magic2, magic3, 0, 2, 1, 0x20, 17);
 
 			string DecryptRetail(int magic2, int magic3, int keyCharOffs, int cachedIndexOffs, int flagsOffset, int flag, int keyDispl) {
 				int offset = magic ^ magic2 ^ magic3;
@@ -429,14 +416,11 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			ushort[] encryptedData;
 
 			public MethodDef Method { get; private set; }
-
-			public DecrypterVersion Version {
-				get { return DecrypterVersion.V4_0; }
-			}
+			public DecrypterVersion Version => DecrypterVersion.V4_0;
 
 			public DecrypterInfo40(MethodDef cctor, MethodDef method) {
 				this.cctor = cctor;
-				this.Method = method;
+				Method = method;
 			}
 
 			public static bool IsPossibleDecrypterMethod(MethodDef method, ref bool? state) {
@@ -545,9 +529,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				return FindKey(cctor);
 			}
 
-			short[] FindKey(MethodDef initMethod) {
-				return StringDecrypter.FindKey(initMethod, keyField);
-			}
+			short[] FindKey(MethodDef initMethod) => StringDecrypter.FindKey(initMethod, keyField);
 
 			static short[] GetPublicKeyTokenKey(byte[] publicKeyToken) {
 				var key = new short[publicKeyToken.Length];
@@ -558,9 +540,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				return key;
 			}
 
-			public string Decrypt(object[] args) {
-				return Decrypt((int)args[0], (int)args[1]);
-			}
+			public string Decrypt(object[] args) => Decrypt((int)args[0], (int)args[1]);
 
 			string Decrypt(int magic2, int magic3) {
 				int index = magic ^ magic2 ^ magic3;
@@ -589,10 +569,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			short[] key;
 
 			public MethodDef Method { get; private set; }
-
-			public DecrypterVersion Version {
-				get { return DecrypterVersion.V1_3; }
-			}
+			public DecrypterVersion Version => DecrypterVersion.V1_3;
 
 			public static bool IsPossibleDecrypterMethod(MethodDef method, ref bool? state) {
 				if (state == null)
@@ -604,12 +581,10 @@ namespace de4dot.code.deobfuscators.DeepSea {
 
 			public DecrypterInfo13(MethodDef cctor, MethodDef method) {
 				this.cctor = cctor;
-				this.Method = method;
+				Method = method;
 			}
 
-			public string Decrypt(object[] args) {
-				return Decrypt((int)args[0]);
-			}
+			public string Decrypt(object[] args) => Decrypt((int)args[0]);
 
 			string Decrypt(int magic2) {
 				var es = encryptedStrings[magic ^ magic2];
@@ -675,9 +650,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				return FindKey(cctor);
 			}
 
-			short[] FindKey(MethodDef initMethod) {
-				return StringDecrypter.FindKey(initMethod, keyField);
-			}
+			short[] FindKey(MethodDef initMethod) => StringDecrypter.FindKey(initMethod, keyField);
 
 			static short[] GetPublicKeyTokenKey(byte[] publicKeyToken) {
 				var key = new short[publicKeyToken.Length];
@@ -733,21 +706,12 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				return switchInstr;
 			}
 
-			public void CleanUp() {
-			}
-
-			public override string ToString() {
-				return string.Format("M:{0:X8} N:{1}", magic, encryptedStrings.Length);
-			}
+			public void CleanUp() { }
+			public override string ToString() => $"M:{magic:X8} N:{encryptedStrings.Length}";
 		}
 
-		public bool Detected {
-			get { return methodToInfo.Count != 0; }
-		}
-
-		public DecrypterVersion Version {
-			get { return version; }
-		}
+		public bool Detected => methodToInfo.Count != 0;
+		public DecrypterVersion Version => version;
 
 		public List<MethodDef> DecrypterMethods {
 			get {
@@ -758,9 +722,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			}
 		}
 
-		public StringDecrypter(ModuleDefMD module) {
-			this.module = module;
-		}
+		public StringDecrypter(ModuleDefMD module) => this.module = module;
 
 		public void Find(ISimpleDeobfuscator simpleDeobfuscator) {
 			if (module.Assembly == null)

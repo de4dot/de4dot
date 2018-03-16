@@ -29,14 +29,8 @@ namespace de4dot.code.deobfuscators.ILProtector {
 		protected Dictionary<int, DecryptedMethodInfo> methodInfos = new Dictionary<int, DecryptedMethodInfo>();
 		List<TypeDef> delegateTypes = new List<TypeDef>();
 
-		public EmbeddedResource Resource {
-			get { return methodsResource; }
-		}
-
-		public IEnumerable<TypeDef> DelegateTypes {
-			get { return delegateTypes; }
-		}
-
+		public EmbeddedResource Resource => methodsResource;
+		public IEnumerable<TypeDef> DelegateTypes => delegateTypes;
 		public bool MethodReaderHasDelegateTypeFlag { get; set; }
 
 		public MethodsDecrypterBase(ModuleDefMD module, MainType mainType) {

@@ -27,9 +27,8 @@ using de4dot.mdecrypt;
 
 namespace de4dot.code.deobfuscators {
 	public static class MethodsDecrypter {
-		public static DumpedMethods Decrypt(ModuleDef module, byte[] moduleCctorBytes) {
-			return Decrypt(NewProcessAssemblyClientFactory.GetServerClrVersion(module), module.Location, moduleCctorBytes);
-		}
+		public static DumpedMethods Decrypt(ModuleDef module, byte[] moduleCctorBytes) =>
+			Decrypt(NewProcessAssemblyClientFactory.GetServerClrVersion(module), module.Location, moduleCctorBytes);
 
 		public static DumpedMethods Decrypt(ServerClrVersion serverVersion, string filename, byte[] moduleCctorBytes) {
 			Exception lastEx = null;

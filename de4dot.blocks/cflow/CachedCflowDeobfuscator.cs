@@ -30,22 +30,17 @@ namespace de4dot.blocks.cflow {
 		public CachedCflowDeobfuscator() {
 		}
 
-		public CachedCflowDeobfuscator(IEnumerable<IBlocksDeobfuscator> blocksDeobfuscators) {
-			Add(blocksDeobfuscators);
-		}
+		public CachedCflowDeobfuscator(IEnumerable<IBlocksDeobfuscator> blocksDeobfuscators) => Add(blocksDeobfuscators);
 
 		public void Add(IEnumerable<IBlocksDeobfuscator> blocksDeobfuscators) {
 			foreach (var bd in blocksDeobfuscators)
 				cflowDeobfuscator.Add(bd);
 		}
 
-		public void Add(IBlocksDeobfuscator blocksDeobfuscator) {
-			cflowDeobfuscator.Add(blocksDeobfuscator);
-		}
+		public void Add(IBlocksDeobfuscator blocksDeobfuscator) => cflowDeobfuscator.Add(blocksDeobfuscator);
 
 		public MethodDef Deobfuscate(MethodDef method) {
-			MethodDef deobfuscatedMethod;
-			if (deobfuscated.TryGetValue(method, out deobfuscatedMethod))
+			if (deobfuscated.TryGetValue(method, out var deobfuscatedMethod))
 				return deobfuscatedMethod;
 
 			if (method.Body == null || method.Body.Instructions.Count == 0) {
@@ -58,9 +53,7 @@ namespace de4dot.blocks.cflow {
 
 			var blocks = new Blocks(deobfuscatedMethod);
 			Deobfuscate(blocks);
-			IList<Instruction> allInstructions;
-			IList<ExceptionHandler> allExceptionHandlers;
-			blocks.GetCode(out allInstructions, out allExceptionHandlers);
+			blocks.GetCode(out var allInstructions, out var allExceptionHandlers);
 			DotNetUtils.RestoreBody(deobfuscatedMethod, allInstructions, allExceptionHandlers);
 
 			return deobfuscatedMethod;

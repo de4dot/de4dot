@@ -27,7 +27,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 
 		public DecryptedMethodInfo(int id, int size) {
 			this.id = id;
-			this.data = new byte[size];
+			data = new byte[size];
 		}
 
 		public DecryptedMethodInfo(int id, byte[] data) {
@@ -35,8 +35,6 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			this.data = data;
 		}
 
-		public override string ToString() {
-			return string.Format("ID: {0}, Size: 0x{1:X}", id, data.Length);
-		}
+		public override string ToString() => $"ID: {id}, Size: 0x{data.Length:X}";
 	}
 }

@@ -39,30 +39,23 @@ namespace de4dot.code.deobfuscators.Confuser {
 			decryptMainAsm = new BoolOption(null, MakeArgName("decrypt-main"), "Decrypt main embedded assembly", true);
 		}
 
-		public override string Name {
-			get { return THE_NAME; }
-		}
+		public override string Name => THE_NAME;
+		public override string Type => THE_TYPE;
 
-		public override string Type {
-			get { return THE_TYPE; }
-		}
-
-		public override IDeobfuscator CreateDeobfuscator() {
-			return new Deobfuscator(new Deobfuscator.Options {
+		public override IDeobfuscator CreateDeobfuscator() =>
+			new Deobfuscator(new Deobfuscator.Options {
 				ValidNameRegex = validNameRegex.Get(),
 				RemoveAntiDebug = removeAntiDebug.Get(),
 				RemoveAntiDump = removeAntiDump.Get(),
 				DecryptMainAsm = decryptMainAsm.Get(),
 			});
-		}
 
-		protected override IEnumerable<Option> GetOptionsInternal() {
-			return new List<Option>() {
+		protected override IEnumerable<Option> GetOptionsInternal() =>
+			new List<Option>() {
 				removeAntiDebug,
 				removeAntiDump,
 				decryptMainAsm,
 			};
-		}
 	}
 
 	class Deobfuscator : DeobfuscatorBase, IStringDecrypter {
@@ -97,17 +90,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 			public bool DecryptMainAsm { get; set; }
 		}
 
-		public override string Type {
-			get { return DeobfuscatorInfo.THE_TYPE; }
-		}
-
-		public override string TypeLong {
-			get { return DeobfuscatorInfo.THE_NAME; }
-		}
-
-		public override string Name {
-			get { return obfuscatorName; }
-		}
+		public override string Type => DeobfuscatorInfo.THE_TYPE;
+		public override string TypeLong => DeobfuscatorInfo.THE_NAME;
+		public override string Name => obfuscatorName;
 
 		public override IEnumerable<IBlocksDeobfuscator> BlocksDeobfuscators {
 			get {
@@ -203,7 +188,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			stringDecrypter = new StringDecrypter(module);
 			stringDecrypter.Find(DeobfuscatedFile);
 			InitializeStringDecrypter();
-			unpacker = new Unpacker(module, oldOne == null ? null : oldOne.unpacker);
+			unpacker = new Unpacker(module, oldOne?.unpacker);
 			unpacker.Find(DeobfuscatedFile, this);
 			InitializeObfuscatorName();
 		}
@@ -213,7 +198,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			if (string.IsNullOrEmpty(versionString))
 				obfuscatorName = DeobfuscatorInfo.THE_NAME;
 			else
-				obfuscatorName = string.Format("{0} {1}", DeobfuscatorInfo.THE_NAME, versionString);
+				obfuscatorName = $"{DeobfuscatorInfo.THE_NAME} {versionString}";
 		}
 
 		const bool useAttributeVersion = true;
@@ -236,8 +221,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			foreach (var versionProvider in versionProviders) {
 				if (versionProvider == null)
 					continue;
-				int minRev, maxRev;
-				if (versionProvider.GetRevisionRange(out minRev, out maxRev)) {
+				if (versionProvider.GetRevisionRange(out int minRev, out int maxRev)) {
 					if (maxRev == int.MaxValue)
 						Logger.v("r{0}-latest : {1}", minRev, versionProvider.GetType().Name);
 					else
@@ -405,12 +389,12 @@ namespace de4dot.code.deobfuscators.Confuser {
 				var asm = module.Assembly;
 				var name = (asm == null ? module.Name : asm.Name).String;
 				DeobfuscatedFile.CreateAssemblyFile(mainAsmInfo.data, name + "_real", mainAsmInfo.extension);
-				AddResourceToBeRemoved(mainAsmInfo.resource, string.Format("Embedded assembly: {0}", mainAsmInfo.asmFullName));
+				AddResourceToBeRemoved(mainAsmInfo.resource, $"Embedded assembly: {mainAsmInfo.asmFullName}");
 			}
 			foreach (var info in embeddedAssemblyInfos) {
 				if (module.Assembly == null || info.asmFullName != module.Assembly.FullName)
 					DeobfuscatedFile.CreateAssemblyFile(info.data, info.asmSimpleName, info.extension);
-				AddResourceToBeRemoved(info.resource, string.Format("Embedded assembly: {0}", info.asmFullName));
+				AddResourceToBeRemoved(info.resource, $"Embedded assembly: {info.asmFullName}");
 			}
 			embeddedAssemblyInfos.Clear();
 		}
@@ -466,14 +450,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		bool hasInitializedConstantsDecrypter15 = false;
-		void InitializeConstantsDecrypterV15() {
-			Initialize(constantsDecrypterV15, ref hasInitializedConstantsDecrypter15);
-		}
+		void InitializeConstantsDecrypterV15() => Initialize(constantsDecrypterV15, ref hasInitializedConstantsDecrypter15);
 
 		bool hasInitializedConstantsDecrypter17 = false;
-		void InitializeConstantsDecrypterV17() {
-			Initialize(constantsDecrypterV17, ref hasInitializedConstantsDecrypter17);
-		}
+		void InitializeConstantsDecrypterV17() => Initialize(constantsDecrypterV17, ref hasInitializedConstantsDecrypter17);
 
 		void Initialize(ConstantsDecrypterBase constDecrypter, ref bool hasInitialized) {
 			if (hasInitialized || (constDecrypter == null || !constDecrypter.Detected))

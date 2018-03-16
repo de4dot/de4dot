@@ -28,9 +28,7 @@ namespace de4dot.blocks {
 		Stack<BaseBlock> baseBlocksToCheck = new Stack<BaseBlock>();
 		Stack<ScopeBlock> scopeBlocksToCheck = new Stack<ScopeBlock>();
 
-		public DeadBlocksRemover(MethodBlocks methodBlocks) {
-			this.methodBlocks = methodBlocks;
-		}
+		public DeadBlocksRemover(MethodBlocks methodBlocks) => this.methodBlocks = methodBlocks;
 
 		public int Remove() {
 			AddScopeBlock(methodBlocks);
@@ -41,9 +39,7 @@ namespace de4dot.blocks {
 		class ScopeBlockInfo {
 			public ScopeBlock scopeBlock;
 			public IList<BaseBlock> deadBlocks = new List<BaseBlock>();
-			public ScopeBlockInfo(ScopeBlock scopeBlock) {
-				this.scopeBlock = scopeBlock;
-			}
+			public ScopeBlockInfo(ScopeBlock scopeBlock) => this.scopeBlock = scopeBlock;
 		}
 
 		int RemoveDeadBlocks() {
@@ -53,9 +49,8 @@ namespace de4dot.blocks {
 			var deadBlocksDict = new Dictionary<BaseBlock, bool>();
 			foreach (var baseBlock in FindDeadBlocks()) {
 				deadBlocksDict[baseBlock] = true;
-				ScopeBlock parent = baseBlock.Parent;
-				ScopeBlockInfo info;
-				if (!infos.TryGetValue(parent, out info))
+				var parent = baseBlock.Parent;
+				if (!infos.TryGetValue(parent, out var info))
 					infos[parent] = info = new ScopeBlockInfo(parent);
 				info.deadBlocks.Add(baseBlock);
 				numDeadBlocks++;
@@ -78,9 +73,7 @@ namespace de4dot.blocks {
 			return deadBlocks;
 		}
 
-		void AddScopeBlock(ScopeBlock scopeBlock) {
-			scopeBlocksToCheck.Push(scopeBlock);
-		}
+		void AddScopeBlock(ScopeBlock scopeBlock) => scopeBlocksToCheck.Push(scopeBlock);
 
 		void ProcessAll() {
 			bool didSomething;
@@ -102,24 +95,22 @@ namespace de4dot.blocks {
 				return;
 			checkedBaseBlocks[baseBlock] = true;
 
-			if (baseBlock is Block) {
-				var block = (Block)baseBlock;
+			if (baseBlock is Block block) {
 				foreach (var block2 in block.GetTargets())
 					AddBaseBlock(block2);
 			}
-			else if (baseBlock is ScopeBlock) {
-				var scopeBlock = (ScopeBlock)baseBlock;
+			else if (baseBlock is ScopeBlock scopeBlock) {
 				AddScopeBlock(scopeBlock);
 				if (scopeBlock.BaseBlocks != null && scopeBlock.BaseBlocks.Count > 0)
 					AddBaseBlock(scopeBlock.BaseBlocks[0]);
 			}
 			else
-				throw new ApplicationException(string.Format("Unknown BaseBlock type {0}", baseBlock.GetType()));
+				throw new ApplicationException($"Unknown BaseBlock type {baseBlock.GetType()}");
 		}
 
 		// Add a block to be processed later, including all its enclosing ScopeBlocks.
 		void AddBaseBlock(BaseBlock baseBlock) {
-			for (BaseBlock bb = baseBlock; bb != null; bb = bb.Parent)
+			for (var bb = baseBlock; bb != null; bb = bb.Parent)
 				baseBlocksToCheck.Push(bb);
 		}
 
@@ -129,13 +120,11 @@ namespace de4dot.blocks {
 			checkedScopeBlocks[scopeBlock] = true;
 			AddBaseBlock(scopeBlock);
 
-			if (scopeBlock is TryBlock) {
-				var tryBlock = (TryBlock)scopeBlock;
+			if (scopeBlock is TryBlock tryBlock) {
 				foreach (var handler in tryBlock.TryHandlerBlocks)
 					AddScopeBlock(handler);
 			}
-			else if (scopeBlock is TryHandlerBlock) {
-				var tryHandlerBlock = (TryHandlerBlock)scopeBlock;
+			else if (scopeBlock is TryHandlerBlock tryHandlerBlock) {
 				AddScopeBlock(tryHandlerBlock.FilterHandlerBlock);
 				AddScopeBlock(tryHandlerBlock.HandlerBlock);
 			}

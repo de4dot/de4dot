@@ -54,21 +54,10 @@ namespace de4dot.code.deobfuscators.MPRESS {
 		const int LZMAT_DIST_MSK0 = 0x3F;
 		const int LZMAT_DIST_MSK1 = 0x3FF;
 
-		static uint LZMAT_GET_U4(byte[] _p_, ref uint _i_, ref byte _n_) {
-			return (_n_^=1)!=0?(uint)(_p_[_i_]&0xF):(uint)(_p_[_i_++]>>4);
-		}
-
-		static byte LZMAT_GET_U8(byte[] _p_, uint _i_, byte _n_) {
-			return (byte)(((_n_)!=0?((_p_[_i_]>>4)|(_p_[_i_+1]<<4)):_p_[_i_]));
-		}
-
-		static ushort LZMAT_GET_LE16(byte[] _p_, uint _i_, byte _n_) {
-			return (ushort)((_n_)!=0?((_p_[_i_]>>4)|((ushort)(GET_LE16(_p_,_i_+1))<<4)):GET_LE16(_p_,_i_));
-		}
-
-		static ushort GET_LE16(byte[] _p_, uint _i_) {
-			return BitConverter.ToUInt16(_p_, (int)_i_);
-		}
+		static uint LZMAT_GET_U4(byte[] _p_, ref uint _i_, ref byte _n_) => (_n_ ^= 1) != 0 ? (uint)(_p_[_i_] & 0xF) : (uint)(_p_[_i_++] >> 4);
+		static byte LZMAT_GET_U8(byte[] _p_, uint _i_, byte _n_) => (byte)(((_n_) != 0 ? ((_p_[_i_] >> 4) | (_p_[_i_ + 1] << 4)) : _p_[_i_]));
+		static ushort LZMAT_GET_LE16(byte[] _p_, uint _i_, byte _n_) => (ushort)((_n_) != 0 ? ((_p_[_i_] >> 4) | ((ushort)(GET_LE16(_p_, _i_ + 1)) << 4)) : GET_LE16(_p_, _i_));
+		static ushort GET_LE16(byte[] _p_, uint _i_) => BitConverter.ToUInt16(_p_, (int)_i_);
 
 		public static LzmatStatus Decompress(byte[] pbOut, out uint pcbOut, byte[] pbIn) {
 			pcbOut = 0;
@@ -216,7 +205,7 @@ namespace de4dot.code.deobfuscators.MPRESS {
 				}
 				else {
 					partLen &= 0x7FFFFF;
-					int decompressedLen2 = lzmat_old(decompressed, dstIndex, decompressedLen - dstIndex, compressed, srcIndex, partLen);
+					int decompressedLen2 = Lzmat_old(decompressed, dstIndex, decompressedLen - dstIndex, compressed, srcIndex, partLen);
 					if (decompressedLen2 == 0)
 						return null;
 					dstIndex += decompressedLen2;
@@ -226,7 +215,7 @@ namespace de4dot.code.deobfuscators.MPRESS {
 			return decompressed;
 		}
 
-		static int lzmat_old(byte[] outBuf, int outIndex, int outLen, byte[] inBuf, int inIndex, int inLen) {
+		static int Lzmat_old(byte[] outBuf, int outIndex, int outLen, byte[] inBuf, int inIndex, int inLen) {
 			int inPos = 0;
 			int outPos = 0;
 			while (inPos < inLen) {

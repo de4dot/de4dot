@@ -38,13 +38,10 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		byte[] headerData;
 		uint xorKey;
 
-		public EncryptionVersion EncryptionVersion {
-			get { return version; }
-		}
+		public EncryptionVersion EncryptionVersion => version;
 
 		public PeHeader(MainType mainType, MyPEImage peImage) {
-			uint headerOffset;
-			version = GetHeaderOffsetAndVersion(peImage, out headerOffset);
+			version = GetHeaderOffsetAndVersion(peImage, out uint headerOffset);
 			headerData = peImage.OffsetReadBytes(headerOffset, 0x1000);
 
 			switch (version) {
@@ -82,17 +79,9 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			return (rva & 0xFFF) == 0 && peImage.FindSection((RVA)rva) != null;
 		}
 
-		public uint GetMcKeyRva() {
-			return GetRva(0x0FFC, xorKey);
-		}
-
-		public uint GetRva(int offset, uint xorKey) {
-			return ReadUInt32(offset) ^ xorKey;
-		}
-
-		public uint ReadUInt32(int offset) {
-			return BitConverter.ToUInt32(headerData, offset);
-		}
+		public uint GetMcKeyRva() => GetRva(0x0FFC, xorKey);
+		public uint GetRva(int offset, uint xorKey) => ReadUInt32(offset) ^ xorKey;
+		public uint ReadUInt32(int offset) => BitConverter.ToUInt32(headerData, offset);
 
 		static EncryptionVersion GetHeaderOffsetAndVersion(MyPEImage peImage, out uint headerOffset) {
 			headerOffset = 0;

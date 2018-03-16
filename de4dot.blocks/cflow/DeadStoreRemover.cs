@@ -41,9 +41,7 @@ namespace de4dot.blocks.cflow {
 
 		public bool ExecuteIfNotModified { get; set; }
 
-		public void DeobfuscateBegin(Blocks blocks) {
-			this.blocks = blocks;
-		}
+		public void DeobfuscateBegin(Blocks blocks) => this.blocks = blocks;
 
 		public bool Deobfuscate(List<Block> allBlocks) {
 			this.allBlocks = allBlocks;

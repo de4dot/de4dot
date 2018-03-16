@@ -45,13 +45,8 @@ namespace de4dot.code.deobfuscators.Rummage {
 			protected BinaryReader reader;
 			protected uint[] key;
 
-			public RummageVersion Version {
-				get { return version; }
-			}
-
-			public MethodDef Method {
-				get { return decrypterMethod; }
-			}
+			public RummageVersion Version => version;
+			public MethodDef Method => decrypterMethod;
 
 			protected DecrypterBaseV11(RummageVersion version, MethodDef decrypterMethod, int fileDispl) {
 				this.version = version;
@@ -116,8 +111,7 @@ namespace de4dot.code.deobfuscators.Rummage {
 				var method = CheckType(cctor);
 				if (method == null)
 					return null;
-				int fileDispl;
-				if (!GetDispl(method, out fileDispl))
+				if (!GetDispl(method, out int fileDispl))
 					return null;
 
 				return new DecrypterV11(method, fileDispl);
@@ -164,9 +158,7 @@ namespace de4dot.code.deobfuscators.Rummage {
 				return false;
 			}
 
-			protected override void InitializeImpl() {
-				InitKey();
-			}
+			protected override void InitializeImpl() => InitKey();
 
 			void InitKey() {
 				reader.BaseStream.Position = reader.BaseStream.Length - 48;
@@ -192,8 +184,7 @@ namespace de4dot.code.deobfuscators.Rummage {
 				var method = CheckType(cctor);
 				if (method == null)
 					return null;
-				int fileDispl;
-				if (!GetDispl(method, out fileDispl))
+				if (!GetDispl(method, out int fileDispl))
 					return null;
 
 				return new DecrypterV21(method, fileDispl);
@@ -309,18 +300,13 @@ namespace de4dot.code.deobfuscators.Rummage {
 
 			public override string ToString() {
 				if (decrypted != null)
-					return string.Format("{0:X8} - {1}", stringId, Utils.ToCsharpString(decrypted));
-				return string.Format("{0:X8}", stringId);
+					return $"{stringId:X8} - {Utils.ToCsharpString(decrypted)}";
+				return $"{stringId:X8}";
 			}
 		}
 
-		public RummageVersion Version {
-			get { return decrypter == null ? RummageVersion.Unknown : decrypter.Version; }
-		}
-
-		public TypeDef Type {
-			get { return decrypter != null ? decrypter.Method.DeclaringType : null; }
-		}
+		public RummageVersion Version => decrypter == null ? RummageVersion.Unknown : decrypter.Version;
+		public TypeDef Type => decrypter?.Method.DeclaringType;
 
 		public IEnumerable<TypeDef> OtherTypes {
 			get {
@@ -331,13 +317,8 @@ namespace de4dot.code.deobfuscators.Rummage {
 			}
 		}
 
-		public bool Detected {
-			get { return decrypter != null; }
-		}
-
-		public StringDecrypter(ModuleDefMD module) {
-			this.module = module;
-		}
+		public bool Detected => decrypter != null;
+		public StringDecrypter(ModuleDefMD module) => this.module = module;
 
 		public void Find() {
 			foreach (var type in module.GetTypes()) {

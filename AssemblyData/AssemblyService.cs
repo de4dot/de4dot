@@ -59,20 +59,10 @@ namespace AssemblyData {
 			}
 		}
 
-		public void DoNothing() {
-		}
-
-		public virtual void Exit() {
-			exitEvent.Set();
-		}
-
-		public void WaitExit() {
-			exitEvent.WaitOne();
-		}
-
-		public override object InitializeLifetimeService() {
-			return null;
-		}
+		public void DoNothing() { }
+		public virtual void Exit() => exitEvent.Set();
+		public void WaitExit() => exitEvent.WaitOne();
+		public override object InitializeLifetimeService() => null;
 
 		protected void CheckAssembly() {
 			if (assembly == null)
@@ -86,7 +76,7 @@ namespace AssemblyData {
 				assembly = assemblyResolver.Load(filename);
 			}
 			catch (BadImageFormatException ex) {
-				throw new ApplicationException(string.Format("Could not load assembly {0}. Maybe it's 32-bit or 64-bit only?", filename), ex);
+				throw new ApplicationException($"Could not load assembly {filename}. Maybe it's 32-bit or 64-bit only?", ex);
 			}
 		}
 	}

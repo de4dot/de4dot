@@ -62,8 +62,7 @@ namespace de4dot.code.renamer {
 		}
 
 		EmbeddedResource GetResource(string resourceName) {
-			var resource = DotNetUtils.GetResource(module, resourceName + ".resources") as EmbeddedResource;
-			if (resource != null)
+			if (DotNetUtils.GetResource(module, resourceName + ".resources") is EmbeddedResource resource)
 				return resource;
 
 			string name = "";
@@ -114,11 +113,9 @@ namespace de4dot.code.renamer {
 			public RenameInfo(ResourceElement element, string newName) {
 				this.element = element;
 				this.newName = newName;
-				this.foundInCode = false;
+				foundInCode = false;
 			}
-			public override string ToString() {
-				return string.Format("{0} => {1}", element, newName);
-			}
+			public override string ToString() => $"{element} => {newName}";
 		}
 
 		void Rename(TypeDef type, EmbeddedResource resource) {
@@ -193,9 +190,8 @@ namespace de4dot.code.renamer {
 						continue;
 					}
 
-					RenameInfo info;
-					if (!nameToInfo.TryGetValue(name, out info))
-						continue;	// should not be renamed
+					if (!nameToInfo.TryGetValue(name, out var info))
+						continue;   // should not be renamed
 
 					ldstr.Operand = info.newName;
 					Logger.v("Renamed resource key {0} => {1}", Utils.ToCsharpString(info.element.Name), Utils.ToCsharpString(info.newName));
@@ -215,7 +211,7 @@ namespace de4dot.code.renamer {
 				return CreateDefaultName();
 			var stringData = (BuiltInResourceData)elem.ResourceData;
 			var name = CreatePrefixFromStringData((string)stringData.Data);
-			return CreateName(counter => counter == 0 ? name : string.Format("{0}_{1}", name, counter));
+			return CreateName(counter => counter == 0 ? name : $"{name}_{counter}");
 		}
 
 		string CreatePrefixFromStringData(string data) {
@@ -239,9 +235,7 @@ namespace de4dot.code.renamer {
 			return sb.ToString();
 		}
 
-		string CreateDefaultName() {
-			return CreateName(counter => string.Format("{0}{1}", DEFAULT_KEY_NAME, counter));
-		}
+		string CreateDefaultName() => CreateName(counter => $"{DEFAULT_KEY_NAME}{counter}");
 
 		string CreateName(Func<int, string> create) {
 			for (int counter = 0; ; counter++) {

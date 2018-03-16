@@ -31,13 +31,11 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			"System.Byte[]",
 			"System.Collections.Generic.Dictionary`2<System.Int32,System.Object>",
 		};
-		protected override bool CheckDecrypterType(TypeDef type) {
-			return new FieldTypes(type).Exactly(requiredFields);
-		}
+		protected override bool CheckDecrypterType(TypeDef type) =>
+			new FieldTypes(type).Exactly(requiredFields);
 
-		protected override bool CheckDelegateInvokeMethod(MethodDef invokeMethod) {
-			return DotNetUtils.IsMethod(invokeMethod, "System.Object", "(System.Int32)");
-		}
+		protected override bool CheckDelegateInvokeMethod(MethodDef invokeMethod) =>
+			DotNetUtils.IsMethod(invokeMethod, "System.Object", "(System.Int32)");
 
 		public int Decrypt(MethodDef method) {
 			var info = GetInfo(method);

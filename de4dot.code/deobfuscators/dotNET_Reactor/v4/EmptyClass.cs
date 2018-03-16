@@ -26,13 +26,8 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		ModuleDefMD module;
 		MethodDef emptyMethod;
 
-		public MethodDef Method {
-			get { return emptyMethod; }
-		}
-
-		public TypeDef Type {
-			get { return emptyMethod != null ? emptyMethod.DeclaringType : null; }
-		}
+		public MethodDef Method => emptyMethod;
+		public TypeDef Type => emptyMethod?.DeclaringType;
 
 		public EmptyClass(ModuleDefMD module) {
 			this.module = module;
@@ -61,8 +56,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				}
 			}
 
-			int numCalls;
-			var theMethod = (MethodDef)callCounter.Most(out numCalls);
+			var theMethod = (MethodDef)callCounter.Most(out int numCalls);
 			if (numCalls >= 10)
 				emptyMethod = theMethod;
 		}

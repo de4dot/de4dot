@@ -43,9 +43,7 @@ namespace de4dot.code.deobfuscators.CodeWall.randomc {
 		public CRandomMersenne() {
 		}
 
-		public CRandomMersenne(int seed) {
-			RandomInit(seed);
-		}
+		public CRandomMersenne(int seed) => RandomInit(seed);
 
 		void Init0(int seed) {
 			// Seed generator

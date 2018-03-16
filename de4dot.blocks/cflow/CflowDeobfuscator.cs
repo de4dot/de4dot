@@ -17,6 +17,7 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Collections.Generic;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
@@ -28,20 +29,15 @@ namespace de4dot.blocks.cflow {
 		public CflowDeobfuscator() {
 		}
 
-		public CflowDeobfuscator(IBlocksDeobfuscator blocksDeobfuscator) {
-			cflowDeobfuscator.Add(blocksDeobfuscator);
-		}
+		public CflowDeobfuscator(IBlocksDeobfuscator blocksDeobfuscator) => cflowDeobfuscator.Add(blocksDeobfuscator);
 
-		public void Deobfuscate(MethodDef method) {
+		public void Deobfuscate(MethodDef method) =>
 			Deobfuscate(method, (blocks) => {
 				cflowDeobfuscator.Initialize(blocks);
 				cflowDeobfuscator.Deobfuscate();
 			});
-		}
 
-		static bool HasNonEmptyBody(MethodDef method) {
-			return method.Body != null && method.Body.Instructions.Count > 0;
-		}
+		static bool HasNonEmptyBody(MethodDef method) => method.Body != null && method.Body.Instructions.Count > 0;
 
 		void Deobfuscate(MethodDef method, Action<Blocks> handler) {
 			if (HasNonEmptyBody(method)) {
@@ -49,9 +45,7 @@ namespace de4dot.blocks.cflow {
 
 				handler(blocks);
 
-				IList<Instruction> allInstructions;
-				IList<ExceptionHandler> allExceptionHandlers;
-				blocks.GetCode(out allInstructions, out allExceptionHandlers);
+				blocks.GetCode(out var allInstructions, out var allExceptionHandlers);
 				DotNetUtils.RestoreBody(method, allInstructions, allExceptionHandlers);
 			}
 		}

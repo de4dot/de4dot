@@ -32,9 +32,8 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		MethodDef methodToInline;
 		CachedCflowDeobfuscator cflowDeobfuscator;
 
-		public DsMethodCallInliner(CachedCflowDeobfuscator cflowDeobfuscator) {
+		public DsMethodCallInliner(CachedCflowDeobfuscator cflowDeobfuscator) =>
 			this.cflowDeobfuscator = cflowDeobfuscator;
-		}
 
 		protected override bool DeobfuscateInternal() {
 			bool modified = false;
@@ -52,8 +51,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		bool InlineMethod(Instruction callInstr, int instrIndex) {
 			var method = callInstr.Operand as MethodDef;
 			if (method == null) {
-				var ms = callInstr.Operand as MethodSpec;
-				if (ms != null)
+				if (callInstr.Operand is MethodSpec ms)
 					method = ms.Method as MethodDef;
 				if (method == null)
 					return false;
@@ -253,7 +251,7 @@ done:
 		int EmulateBranch(int stackArgs, Bool3 cond, Instruction instrTrue, Instruction instrFalse) {
 			if (cond == Bool3.Unknown)
 				return -1;
-			Instruction instr = cond == Bool3.True ? instrTrue : instrFalse;
+			var instr = cond == Bool3.True ? instrTrue : instrFalse;
 			return methodToInline.Body.Instructions.IndexOf(instr);
 		}
 
@@ -282,8 +280,7 @@ done:
 		}
 
 		bool EmulateToReturn(int index, Instruction lastInstr) {
-			int pushes, pops;
-			lastInstr.CalculateStackUsage(false, out pushes, out pops);
+			lastInstr.CalculateStackUsage(false, out int pushes, out int pops);
 			instructionEmulator.Pop(pops);
 
 			returnValue = null;
@@ -337,9 +334,8 @@ done:
 			return true;
 		}
 
-		static bool IsIntType(ElementType etype) {
-			return etype == ElementType.Char || etype == ElementType.I2 || etype == ElementType.I4;
-		}
+		static bool IsIntType(ElementType etype) =>
+			etype == ElementType.Char || etype == ElementType.I2 || etype == ElementType.I4;
 
 		protected override bool IsReturn(MethodDef methodToInline, int instrIndex) {
 			int oldIndex = instrIndex;

@@ -25,9 +25,7 @@ namespace de4dot.blocks.cflow {
 	public class MethodCallInliner : MethodCallInlinerBase {
 		protected readonly bool inlineInstanceMethods;
 
-		public MethodCallInliner(bool inlineInstanceMethods) {
-			this.inlineInstanceMethods = inlineInstanceMethods;
-		}
+		public MethodCallInliner(bool inlineInstanceMethods) => this.inlineInstanceMethods = inlineInstanceMethods;
 
 		protected override bool DeobfuscateInternal() {
 			bool modified = false;
@@ -55,9 +53,8 @@ namespace de4dot.blocks.cflow {
 			return inlineInstanceMethods;
 		}
 
-		protected virtual Instruction GetFirstInstruction(IList<Instruction> instrs, ref int index) {
-			return DotNetUtils.GetInstruction(instrs, ref index);
-		}
+		protected virtual Instruction GetFirstInstruction(IList<Instruction> instrs, ref int index) =>
+			DotNetUtils.GetInstruction(instrs, ref index);
 
 		bool InlineMethod(Instruction callInstr, int instrIndex) {
 			var methodToInline = callInstr.Operand as MethodDef;

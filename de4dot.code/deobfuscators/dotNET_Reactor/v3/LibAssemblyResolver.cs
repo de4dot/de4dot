@@ -28,21 +28,10 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 		MethodDef initMethod;
 		List<EmbeddedResource> resources = new List<EmbeddedResource>();
 
-		public TypeDef Type {
-			get { return initMethod == null ? null : initMethod.DeclaringType; }
-		}
-
-		public MethodDef InitMethod {
-			get { return initMethod; }
-		}
-
-		public IEnumerable<EmbeddedResource> Resources {
-			get { return resources; }
-		}
-
-		public LibAssemblyResolver(ModuleDefMD module) {
-			this.module = module;
-		}
+		public TypeDef Type => initMethod?.DeclaringType;
+		public MethodDef InitMethod => initMethod;
+		public IEnumerable<EmbeddedResource> Resources => resources;
+		public LibAssemblyResolver(ModuleDefMD module) => this.module = module;
 
 		public void Find(ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
 			if (CheckInitMethod(DotNetUtils.GetModuleTypeCctor(module), simpleDeobfuscator, deob))
@@ -95,8 +84,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 
 		string GetResourcePrefix(MethodDef handler) {
 			foreach (var s in DotNetUtils.GetCodeStrings(handler)) {
-				var resource = DotNetUtils.GetResource(module, s + "00000") as EmbeddedResource;
-				if (resource != null)
+				if (DotNetUtils.GetResource(module, s + "00000") is EmbeddedResource resource)
 					return s;
 			}
 			return null;

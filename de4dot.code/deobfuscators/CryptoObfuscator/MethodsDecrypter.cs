@@ -33,25 +33,11 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		EmbeddedResource resource;
 		List<TypeDef> delegateTypes = new List<TypeDef>();
 
-		public TypeDef Type {
-			get { return decrypterType; }
-		}
-
-		public IEnumerable<TypeDef> DelegateTypes {
-			get { return delegateTypes; }
-		}
-
-		public EmbeddedResource Resource {
-			get { return resource; }
-		}
-
-		public bool Detected {
-			get { return decrypterType != null; }
-		}
-
-		public MethodsDecrypter(ModuleDefMD module) {
-			this.module = module;
-		}
+		public TypeDef Type => decrypterType;
+		public IEnumerable<TypeDef> DelegateTypes => delegateTypes;
+		public EmbeddedResource Resource => resource;
+		public bool Detected => decrypterType != null;
+		public MethodsDecrypter(ModuleDefMD module) => this.module = module;
 
 		public void Find() {
 			foreach (var type in module.Types) {
@@ -140,8 +126,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			if (delegateType == null)
 				throw new ApplicationException("Couldn't find delegate type");
 
-			int delToken, encMethToken, encDeclToken;
-			if (!GetTokens(delegateType, out delToken, out encMethToken, out encDeclToken))
+			if (!GetTokens(delegateType, out int delToken, out int encMethToken, out int encDeclToken))
 				throw new ApplicationException("Could not find encrypted method tokens");
 			if (delToken != delegateTypeToken)
 				throw new ApplicationException("Invalid delegate type token");

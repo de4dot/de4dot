@@ -25,9 +25,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		readonly InlinedMethodTypes inlinedMethodTypes;
 
 		public CoMethodCallInliner(InlinedMethodTypes inlinedMethodTypes)
-			: base(false) {
-			this.inlinedMethodTypes = inlinedMethodTypes;
-		}
+			: base(false) => this.inlinedMethodTypes = inlinedMethodTypes;
 
 		protected override bool CanInline(MethodDef method) {
 			if (method == null)

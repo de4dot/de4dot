@@ -26,13 +26,8 @@ namespace de4dot.code.deobfuscators {
 		List<Instruction> args;
 		int nextIndex;
 
-		public bool CanAddMore {
-			get { return nextIndex >= 0; }
-		}
-
-		public int NumValidArgs {
-			get { return args.Count - (nextIndex + 1); }
-		}
+		public bool CanAddMore => nextIndex >= 0;
+		public int NumValidArgs => args.Count - (nextIndex + 1);
 
 		public PushedArgs(int numArgs) {
 			nextIndex = numArgs - 1;
@@ -41,13 +36,8 @@ namespace de4dot.code.deobfuscators {
 				args.Add(null);
 		}
 
-		public void Add(Instruction instr) {
-			args[nextIndex--] = instr;
-		}
-
-		public void Set(int i, Instruction instr) {
-			args[i] = instr;
-		}
+		public void Add(Instruction instr) => args[nextIndex--] = instr;
+		public void Set(int i, Instruction instr) => args[i] = instr;
 
 		public Instruction Get(int i) {
 			if (0 <= i && i < args.Count)
@@ -55,9 +45,7 @@ namespace de4dot.code.deobfuscators {
 			return null;
 		}
 
-		public Instruction GetEnd(int i) {
-			return Get(args.Count - 1 - i);
-		}
+		public Instruction GetEnd(int i) => Get(args.Count - 1 - i);
 
 		public void FixDups() {
 			Instruction prev = null, instr;
@@ -77,8 +65,7 @@ namespace de4dot.code.deobfuscators {
 		// May not return all args. The args are returned in reverse order.
 		public static PushedArgs GetPushedArgInstructions(IList<Instruction> instructions, int index) {
 			try {
-				int pushes, pops;
-				instructions[index].CalculateStackUsage(false, out pushes, out pops);
+				instructions[index].CalculateStackUsage(false, out int pushes, out int pops);
 				if (pops != -1)
 					return GetPushedArgInstructions(instructions, index, pops);
 			}
@@ -99,8 +86,7 @@ namespace de4dot.code.deobfuscators {
 				if (instr == null)
 					break;
 
-				int pushes, pops;
-				instr.CalculateStackUsage(false, out pushes, out pops);
+				instr.CalculateStackUsage(false, out int pushes, out int pops);
 				if (pops == -1)
 					break;
 				if (instr.OpCode.Code == Code.Dup) {
@@ -126,8 +112,7 @@ namespace de4dot.code.deobfuscators {
 			if (instr != null && instr.OpCode.Code == Code.Dup) {
 				instr = GetPreviousInstruction(instructions, ref index);
 				if (instr != null) {
-					int pushes, pops;
-					instr.CalculateStackUsage(false, out pushes, out pops);
+					instr.CalculateStackUsage(false, out int pushes, out int pops);
 					if (pushes == 1 && pops == 0)
 						pushedArgs.Set(0, instr);
 				}
@@ -137,19 +122,12 @@ namespace de4dot.code.deobfuscators {
 			return pushedArgs;
 		}
 
-		public static TypeSig GetLoadedType(MethodDef method, IList<Instruction> instructions, int instrIndex) {
-			bool wasNewobj;
-			return GetLoadedType(method, instructions, instrIndex, 0, out wasNewobj);
-		}
-
-		public static TypeSig GetLoadedType(MethodDef method, IList<Instruction> instructions, int instrIndex, int argIndexFromEnd) {
-			bool wasNewobj;
-			return GetLoadedType(method, instructions, instrIndex, argIndexFromEnd, out wasNewobj);
-		}
-
-		public static TypeSig GetLoadedType(MethodDef method, IList<Instruction> instructions, int instrIndex, out bool wasNewobj) {
-			return GetLoadedType(method, instructions, instrIndex, 0, out wasNewobj);
-		}
+		public static TypeSig GetLoadedType(MethodDef method, IList<Instruction> instructions, int instrIndex) =>
+			GetLoadedType(method, instructions, instrIndex, 0, out bool wasNewobj);
+		public static TypeSig GetLoadedType(MethodDef method, IList<Instruction> instructions, int instrIndex, int argIndexFromEnd) =>
+			GetLoadedType(method, instructions, instrIndex, argIndexFromEnd, out bool wasNewobj);
+		public static TypeSig GetLoadedType(MethodDef method, IList<Instruction> instructions, int instrIndex, out bool wasNewobj) =>
+			GetLoadedType(method, instructions, instrIndex, 0, out wasNewobj);
 
 		public static TypeSig GetLoadedType(MethodDef method, IList<Instruction> instructions, int instrIndex, int argIndexFromEnd, out bool wasNewobj) {
 			wasNewobj = false;

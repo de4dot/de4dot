@@ -34,7 +34,6 @@ namespace de4dot.code.deobfuscators.ILProtector {
 		Module reflectionModule;
 		Module reflectionProtectModule;
 		TypeDef protectMainType;
-		//Type reflectionProtectMainType;
 		FieldInfo invokerFieldInfo;
 		ModuleDefMD moduleProtect;
 		IDecrypter decrypter;
@@ -101,8 +100,8 @@ namespace de4dot.code.deobfuscators.ILProtector {
 				}
 
 				public PatchData(int rva, byte[] data) {
-					this.RVA = rva;
-					this.Data = data;
+					RVA = rva;
+					Data = data;
 				}
 			}
 
@@ -114,8 +113,8 @@ namespace de4dot.code.deobfuscators.ILProtector {
 				}
 
 				public PatchInfo(int rvaDecryptMethod, PatchData patchData) {
-					this.RvaDecryptMethod = rvaDecryptMethod;
-					this.PatchData = new List<PatchData> { patchData };
+					RvaDecryptMethod = rvaDecryptMethod;
+					PatchData = new List<PatchData> { patchData };
 				}
 			}
 
@@ -144,12 +143,12 @@ namespace de4dot.code.deobfuscators.ILProtector {
 
 			public DecrypterBase(DynamicMethodsDecrypter dmd) {
 				this.dmd = dmd;
-				this.appDomainId = AppDomain.CurrentDomain.Id;
-				this.asmHashCode = dmd.reflectionModule.Assembly.GetHashCode();
+				appDomainId = AppDomain.CurrentDomain.Id;
+				asmHashCode = dmd.reflectionModule.Assembly.GetHashCode();
 			}
 
 			protected IntPtr GetDelegateAddress(FieldDef delegateField) {
-				FieldInfo delegateFieldInfo = dmd.reflectionProtectModule.ResolveField(0x04000000 + (int)delegateField.Rid);
+				var delegateFieldInfo = dmd.reflectionProtectModule.ResolveField(0x04000000 + (int)delegateField.Rid);
 				object mainTypeInst = ((Delegate)dmd.invokerFieldInfo.GetValue(null)).Target;
 				return GetNativeAddressOfDelegate((Delegate)delegateFieldInfo.GetValue(mainTypeInst));
 			}
@@ -170,8 +169,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			bool PatchRuntimeInternal(IntPtr decryptAddr) {
 				var patchInfos = IntPtr.Size == 4 ? patchInfos32 : patchInfos64;
 				var protectVersion = dmd.reflectionProtectModule.Assembly.GetName().Version;
-				PatchInfo info;
-				if (!patchInfos.TryGetValue(protectVersion, out info))
+				if (!patchInfos.TryGetValue(protectVersion, out var info))
 					return false;
 				return PatchRuntime(decryptAddr, info);
 			}
@@ -179,7 +177,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			[HandleProcessCorruptedStateExceptions, SecurityCritical]	// Req'd on .NET 4.0
 			static bool PatchRuntime(IntPtr decryptAddr, PatchInfo info) {
 				try {
-					IntPtr baseAddr = new IntPtr(decryptAddr.ToInt64() - info.RvaDecryptMethod);
+					var baseAddr = new IntPtr(decryptAddr.ToInt64() - info.RvaDecryptMethod);
 					if ((baseAddr.ToInt64() & 0xFFFF) != 0)
 						return false;
 
@@ -188,8 +186,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 
 					foreach (var patchData in info.PatchData) {
 						var patchAddr = new IntPtr(baseAddr.ToInt64() + patchData.RVA);
-						uint oldProtect;
-						if (!VirtualProtect(patchAddr, patchData.Data.Length, PAGE_EXECUTE_READWRITE, out oldProtect))
+						if (!VirtualProtect(patchAddr, patchData.Data.Length, PAGE_EXECUTE_READWRITE, out uint oldProtect))
 							return false;
 						Marshal.Copy(patchData.Data, 0, patchAddr, patchData.Data.Length);
 						VirtualProtect(patchAddr, patchData.Data.Length, oldProtect, out oldProtect);
@@ -214,14 +211,12 @@ namespace de4dot.code.deobfuscators.ILProtector {
 
 			public DecrypterV1_0_7_0(DynamicMethodsDecrypter dmd, FieldDef delegateField)
 				: base(dmd) {
-				IntPtr addr = GetDelegateAddress(delegateField);
+				var addr = GetDelegateAddress(delegateField);
 				decryptMethod = (DecryptMethod)Marshal.GetDelegateForFunctionPointer(addr, typeof(DecryptMethod));
 			}
 
 			public unsafe override byte[] Decrypt(int methodId, uint rid) {
-				byte* pMethodCode;
-				int methodSize;
-				if (!decryptMethod(appDomainId, asmHashCode, methodId, out pMethodCode, out methodSize))
+				if (!decryptMethod(appDomainId, asmHashCode, methodId, out var pMethodCode, out int methodSize))
 					return null;
 				byte[] methodData = new byte[methodSize];
 				Marshal.Copy(new IntPtr(pMethodCode), methodData, 0, methodData.Length);
@@ -237,14 +232,12 @@ namespace de4dot.code.deobfuscators.ILProtector {
 
 			public DecrypterV2_0_0_0(DynamicMethodsDecrypter dmd, FieldDef delegateField)
 				: base(dmd) {
-				IntPtr addr = GetDelegateAddress(delegateField);
+				var addr = GetDelegateAddress(delegateField);
 				decryptMethod = (DecryptMethod)Marshal.GetDelegateForFunctionPointer(addr, typeof(DecryptMethod));
 			}
 
 			public unsafe override byte[] Decrypt(int methodId, uint rid) {
-				byte* pMethodCode;
-				int methodSize;
-				if (!decryptMethod(Environment.Version.Major, appDomainId, asmHashCode, methodId, out pMethodCode, out methodSize))
+				if (!decryptMethod(Environment.Version.Major, appDomainId, asmHashCode, methodId, out var pMethodCode, out int methodSize))
 					return null;
 				byte[] methodData = new byte[methodSize];
 				Marshal.Copy(new IntPtr(pMethodCode), methodData, 0, methodData.Length);
@@ -262,14 +255,13 @@ namespace de4dot.code.deobfuscators.ILProtector {
 
 			public DecrypterV2_0_8_0(DynamicMethodsDecrypter dmd, FieldDef delegateField)
 				: base(dmd) {
-				IntPtr addr = GetDelegateAddress(delegateField);
+				var addr = GetDelegateAddress(delegateField);
 				decryptMethod = (DecryptMethod)Marshal.GetDelegateForFunctionPointer(addr, typeof(DecryptMethod));
 				PatchRuntime(addr);
 			}
 
 			public unsafe override byte[] Decrypt(int methodId, uint rid) {
-				Delegate createdDelegate;
-				if (!decryptMethod(Environment.Version.Major, appDomainId, asmHashCode, methodId, MyDecryptCallback, out createdDelegate))
+				if (!decryptMethod(Environment.Version.Major, appDomainId, asmHashCode, methodId, MyDecryptCallback, out var createdDelegate))
 					return null;
 				return decryptedData;
 			}
@@ -292,15 +284,14 @@ namespace de4dot.code.deobfuscators.ILProtector {
 
 			public DecrypterV2_0_8_5(DynamicMethodsDecrypter dmd, FieldDef delegateField)
 				: base(dmd) {
-				IntPtr addr = GetDelegateAddress(delegateField);
+				var addr = GetDelegateAddress(delegateField);
 				decryptMethod = (DecryptMethod)Marshal.GetDelegateForFunctionPointer(addr, typeof(DecryptMethod));
 				PatchRuntime(addr);
 			}
 
 			public unsafe override byte[] Decrypt(int methodId, uint rid) {
-				Delegate createdDelegate;
 				decryptReturnValue = false;
-				if (!decryptMethod(Environment.Version.Major, appDomainId, asmHashCode, methodId, new StackTrace(), MyDecryptCallback, out createdDelegate) &&
+				if (!decryptMethod(Environment.Version.Major, appDomainId, asmHashCode, methodId, new StackTrace(), MyDecryptCallback, out var createdDelegate) &&
 					!decryptReturnValue)
 					return null;
 				return decryptedData;
@@ -324,13 +315,13 @@ namespace de4dot.code.deobfuscators.ILProtector {
 
 			public DecrypterV2_0_9_0(DynamicMethodsDecrypter dmd, FieldDef delegateField)
 				: base(dmd) {
-				IntPtr addr = GetDelegateAddress(delegateField);
+				var addr = GetDelegateAddress(delegateField);
 				decryptMethod = (DecryptMethod)Marshal.GetDelegateForFunctionPointer(addr, typeof(DecryptMethod));
 				PatchRuntime(addr);
 			}
 
 			public unsafe override byte[] Decrypt(int methodId, uint rid) {
-				var encMethod = this.dmd.reflectionModule.ResolveMethod(0x06000000 + (int)rid);
+				var encMethod = dmd.reflectionModule.ResolveMethod(0x06000000 + (int)rid);
 				var stackTrace = StackTracePatcher.WriteStackFrame(new StackTrace(), 1, encMethod);
 				if (!decryptMethod(Environment.Version.Major, appDomainId, asmHashCode, methodId, stackTrace, MyDecryptCallback))
 					return null;
@@ -354,7 +345,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 
 			protected unsafe DecrypterBaseV2_0_12_x(DynamicMethodsDecrypter dmd) {
 				this.dmd = dmd;
-				this.invoker = (Delegate)dmd.invokerFieldInfo.GetValue(null);
+				invoker = (Delegate)dmd.invokerFieldInfo.GetValue(null);
 
 				byte* p = (byte*)GetStateAddr(invoker.Target);
 				p += IntPtr.Size * 3;
@@ -407,9 +398,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 				*(IntPtr*)pDecryptCallback = Marshal.GetFunctionPointerForDelegate(decryptCallbackDelegate);
 			}
 
-			byte[] GetCallerMethodAsILByteArray(IntPtr a, int skipFrames) {
-				return currentILBytes;
-			}
+			byte[] GetCallerMethodAsILByteArray(IntPtr a, int skipFrames) => currentILBytes;
 
 			unsafe bool DecryptCallback(IntPtr a, byte* pMethodCode, int methodSize, int methodId) {
 				SaveDecryptedData(pMethodCode, methodSize);
@@ -435,9 +424,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 				*(IntPtr*)pDecryptCallback = Marshal.GetFunctionPointerForDelegate(decryptCallbackDelegate);
 			}
 
-			byte[] GetCallerMethodAsILByteArray(IntPtr a, int skipFrames, IntPtr c, IntPtr d) {
-				return currentILBytes;
-			}
+			byte[] GetCallerMethodAsILByteArray(IntPtr a, int skipFrames, IntPtr c, IntPtr d) => currentILBytes;
 
 			unsafe bool DecryptCallback(IntPtr a, byte* pMethodCode, int methodSize, int methodId, IntPtr e) {
 				SaveDecryptedData(pMethodCode, methodSize);
@@ -465,7 +452,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 
 			public unsafe DecrypterV2_0_13_0_Base(DynamicMethodsDecrypter dmd) {
 				this.dmd = dmd;
-				this.invoker = (Delegate)dmd.invokerFieldInfo.GetValue(null);
+				invoker = (Delegate)dmd.invokerFieldInfo.GetValue(null);
 
 				byte* p = (byte*)DecrypterBaseV2_0_12_x.GetStateAddr(invoker.Target);
 				byte* pis = GetAddr(*(byte**)p);
@@ -491,8 +478,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			}
 
 			static unsafe byte* GetModuleHandle(byte* addr) {
-				IntPtr hModule;
-				if (!GetModuleHandleEx(4, new IntPtr(addr), out hModule))
+				if (!GetModuleHandleEx(4, new IntPtr(addr), out var hModule))
 					throw new ApplicationException("GetModuleHandleEx() failed");
 				return (byte*)hModule;
 			}
@@ -563,9 +549,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 				return true;
 			}
 
-			IntPtr IgnoreMethod(IntPtr a, IntPtr b) {
-				return dummy;
-			}
+			IntPtr IgnoreMethod(IntPtr a, IntPtr b) => dummy;
 		}
 
 		class DecrypterV2_0_13_0 : DecrypterV2_0_13_0_Base {
@@ -609,9 +593,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			}
 		}
 
-		public bool MethodReaderHasDelegateTypeFlag {
-			get { return methodReaderHasDelegateTypeFlag; }
-		}
+		public bool MethodReaderHasDelegateTypeFlag => methodReaderHasDelegateTypeFlag;
 
 		public DynamicMethodsDecrypter(ModuleDefMD module, Module reflectionModule) {
 			this.module = module;
@@ -641,7 +623,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 		public DecryptedMethodInfo Decrypt(int methodId, uint rid) {
 			byte[] methodData = decrypter.Decrypt(methodId, rid);
 			if (methodData == null)
-				throw new ApplicationException(string.Format("Probably a new version. Could not decrypt method. ID:{0}, RID:{1:X4}", methodId, rid));
+				throw new ApplicationException($"Probably a new version. Could not decrypt method. ID:{methodId}, RID:{rid:X4}");
 			return new DecryptedMethodInfo(methodId, methodData);
 		}
 
@@ -752,25 +734,20 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			return null;
 		}
 
-		static FieldDef FindInvokerField(ModuleDef module) {
-			return FindDelegateField(module.GlobalType, "System.Delegate", "(System.Int32)");
-		}
+		static FieldDef FindInvokerField(ModuleDef module) =>
+			FindDelegateField(module.GlobalType, "System.Delegate", "(System.Int32)");
 
-		static FieldDef FindDelegateFieldV1_0_7_0(TypeDef mainType) {
-			return FindDelegateField(mainType, "System.Boolean", "(System.Int32,System.Int32,System.Int32,System.Byte*&,System.Int32&)");
-		}
+		static FieldDef FindDelegateFieldV1_0_7_0(TypeDef mainType) =>
+			FindDelegateField(mainType, "System.Boolean", "(System.Int32,System.Int32,System.Int32,System.Byte*&,System.Int32&)");
 
-		static FieldDef FindDelegateFieldV2_0_0_0(TypeDef mainType) {
-			return FindDelegateField(mainType, "System.Boolean", "(System.Int32,System.Int32,System.Int32,System.Int32,System.Byte*&,System.Int32&)");
-		}
+		static FieldDef FindDelegateFieldV2_0_0_0(TypeDef mainType) =>
+			FindDelegateField(mainType, "System.Boolean", "(System.Int32,System.Int32,System.Int32,System.Int32,System.Byte*&,System.Int32&)");
 
-		static FieldDef FindDecryptCallbackV2_0_8_0(TypeDef mainType) {
-			return FindDelegateField(mainType, "System.Boolean", "(System.Byte*,System.Int32,System.Delegate&)");
-		}
+		static FieldDef FindDecryptCallbackV2_0_8_0(TypeDef mainType) =>
+			FindDelegateField(mainType, "System.Boolean", "(System.Byte*,System.Int32,System.Delegate&)");
 
-		static FieldDef FindDecryptCallbackV2_0_9_0(TypeDef mainType) {
-			return FindDelegateField(mainType, "System.Boolean", "(System.Byte*,System.Int32,System.Int32)");
-		}
+		static FieldDef FindDecryptCallbackV2_0_9_0(TypeDef mainType) =>
+			FindDelegateField(mainType, "System.Boolean", "(System.Byte*,System.Int32,System.Int32)");
 
 		static FieldDef FindDelegateFieldV2_0_8_0(TypeDef mainType, FieldDef decryptCallbackField) {
 			if (decryptCallbackField == null)
@@ -778,7 +755,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			var type = decryptCallbackField.FieldSig.GetFieldType().ToTypeDefOrRef() as TypeDef;
 			if (type == null)
 				return null;
-			return FindDelegateField(mainType, "System.Boolean", string.Format("(System.Int32,System.Int32,System.Int32,System.Int32,{0},System.Delegate&)", type.FullName));
+			return FindDelegateField(mainType, "System.Boolean", $"(System.Int32,System.Int32,System.Int32,System.Int32,{type.FullName},System.Delegate&)");
 		}
 
 		static FieldDef FindDelegateFieldV2_0_8_5(TypeDef mainType, FieldDef decryptCallbackField) {
@@ -787,7 +764,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			var type = decryptCallbackField.FieldSig.GetFieldType().ToTypeDefOrRef() as TypeDef;
 			if (type == null)
 				return null;
-			return FindDelegateField(mainType, "System.Boolean", string.Format("(System.Int32,System.Int32,System.Int32,System.Int32,System.Diagnostics.StackTrace,{0},System.Delegate&)", type.FullName));
+			return FindDelegateField(mainType, "System.Boolean", $"(System.Int32,System.Int32,System.Int32,System.Int32,System.Diagnostics.StackTrace,{type.FullName},System.Delegate&)");
 		}
 
 		static FieldDef FindDelegateFieldV2_0_9_0(TypeDef mainType, FieldDef decryptCallbackField) {
@@ -796,7 +773,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			var type = decryptCallbackField.FieldSig.GetFieldType().ToTypeDefOrRef() as TypeDef;
 			if (type == null)
 				return null;
-			return FindDelegateField(mainType, "System.Boolean", string.Format("(System.Int32,System.Int32,System.Int32,System.Int32,System.Diagnostics.StackTrace,{0})", type.FullName));
+			return FindDelegateField(mainType, "System.Boolean", $"(System.Int32,System.Int32,System.Int32,System.Int32,System.Diagnostics.StackTrace,{type.FullName})");
 		}
 
 		static FieldDef FindDelegateField(TypeDef mainType, string returnType, string parameters) {

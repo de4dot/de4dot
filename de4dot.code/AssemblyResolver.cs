@@ -23,18 +23,14 @@ namespace de4dot.code {
 	public class TheAssemblyResolver : AssemblyResolver {
 		public static readonly TheAssemblyResolver Instance = new TheAssemblyResolver();
 
-		public TheAssemblyResolver() {
-			EnableTypeDefCache = true;
-		}
+		public TheAssemblyResolver() => EnableTypeDefCache = true;
 
 		public void AddSearchDirectory(string dir) {
 			if (!PostSearchPaths.Contains(dir))
 				PostSearchPaths.Add(dir);
 		}
 
-		public void AddModule(ModuleDef module) {
-			AddToCache(module.Assembly);
-		}
+		public void AddModule(ModuleDef module) => AddToCache(module.Assembly);
 
 		public void RemoveModule(ModuleDef module) {
 			var assembly = module.Assembly;

@@ -27,14 +27,8 @@ namespace de4dot.code.renamer {
 
 	public class OneNameCreator : INameCreator {
 		string name;
-
-		public OneNameCreator(string name) {
-			this.name = name;
-		}
-
-		public string Create() {
-			return name;
-		}
+		public OneNameCreator(string name) => this.name = name;
+		public string Create() => name;
 	}
 
 	public abstract class NameCreatorCounter : INameCreator {
@@ -55,29 +49,22 @@ namespace de4dot.code.renamer {
 		public override string Create() {
 			if (num < names.Length)
 				return names[num++];
-			return string.Format("T{0}", num++);
+			return $"T{num++}";
 		}
 	}
 
 	public class NameCreator : NameCreatorCounter {
 		string prefix;
 
-		public NameCreator(string prefix)
-			: this(prefix, 0) {
-		}
+		public NameCreator(string prefix) : this(prefix, 0) { }
 
 		public NameCreator(string prefix, int num) {
 			this.prefix = prefix;
 			this.num = num;
 		}
 
-		public NameCreator Clone() {
-			return new NameCreator(prefix, num);
-		}
-
-		public override string Create() {
-			return prefix + num++;
-		}
+		public NameCreator Clone() => new NameCreator(prefix, num);
+		public override string Create() => prefix + num++;
 	}
 
 	// Like NameCreator but don't add the counter the first time
@@ -121,9 +108,7 @@ namespace de4dot.code.renamer {
 			}
 		}
 
-		public void Add(string name, NameCreator nameCreator) {
-			nameInfos.Add(new NameInfo(name, nameCreator));
-		}
+		public void Add(string name, NameCreator nameCreator) => nameInfos.Add(new NameInfo(name, nameCreator));
 
 		public NameCreator Find(string typeName) {
 			foreach (var nameInfo in nameInfos) {
@@ -167,9 +152,7 @@ namespace de4dot.code.renamer {
 				nameInfos.Add(name, CreateNameCreator(name));
 		}
 
-		protected virtual NameCreator CreateNameCreator(string prefix) {
-			return new NameCreator(prefix);
-		}
+		protected virtual NameCreator CreateNameCreator(string prefix) => new NameCreator(prefix);
 
 		public string Create(TypeDef typeDef, string newBaseTypeName) {
 			var nameCreator = GetNameCreator(typeDef, newBaseTypeName);
@@ -205,12 +188,7 @@ namespace de4dot.code.renamer {
 	}
 
 	public class GlobalTypeNameCreator : TypeNameCreator {
-		public GlobalTypeNameCreator(ExistingNames existingNames)
-			: base(existingNames) {
-		}
-
-		protected override NameCreator CreateNameCreator(string prefix) {
-			return base.CreateNameCreator("G" + prefix);
-		}
+		public GlobalTypeNameCreator(ExistingNames existingNames) : base(existingNames) { }
+		protected override NameCreator CreateNameCreator(string prefix) => base.CreateNameCreator("G" + prefix);
 	}
 }

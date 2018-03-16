@@ -27,26 +27,16 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 		ModuleDefMD module;
 		bool enabled;
 
-		protected override bool HasExceptionLoggers {
-			get { return enabled; }
-		}
+		protected override bool HasExceptionLoggers => enabled;
+		public AutomatedErrorReportingFinder(ModuleDefMD module) => this.module = module;
+		protected override bool IsExceptionLogger(IMethod method) => IsExceptionLoggerMethod(method);
 
-		public AutomatedErrorReportingFinder(ModuleDefMD module) {
-			this.module = module;
-		}
-
-		protected override bool IsExceptionLogger(IMethod method) {
-			return IsExceptionLoggerMethod(method);
-		}
-
-		public void find() {
+		public void Find() {
 			var entryPoint = module.EntryPoint;
 			if (entryPoint == null)
 				enabled = true;
-			else {
-				MethodDef exceptionMethod;
-				enabled = CheckMethod(entryPoint, out exceptionMethod);
-			}
+			else
+				enabled = CheckMethod(entryPoint, out var exceptionMethod);
 		}
 
 		bool CheckMethod(MethodDef method, out MethodDef exceptionMethod) {

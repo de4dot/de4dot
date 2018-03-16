@@ -36,13 +36,9 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		MethodInfo mi_MoveNext;
 
 		[CreateUserGenericService]
-		public static IUserGenericService Create() {
-			return new DynocodeService();
-		}
+		public static IUserGenericService Create() => new DynocodeService();
 
-		public void AssemblyLoaded(Assembly assembly) {
-			this.reflObfModule = assembly.ManifestModule;
-		}
+		public void AssemblyLoaded(Assembly assembly) => reflObfModule = assembly.ManifestModule;
 
 		public object HandleMessage(int msg, object[] args) {
 			switch (msg) {
@@ -65,21 +61,21 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 				return CallMoveNext();
 
 			default:
-				throw new ApplicationException(string.Format("Invalid msg: {0:X8}", msg));
+				throw new ApplicationException($"Invalid msg: {msg:X8}");
 			}
 		}
 
 		void CreateEnumerable(uint ctorToken, object[] args) {
 			var ctor = reflObfModule.ResolveMethod((int)ctorToken) as ConstructorInfo;
 			if (ctor == null)
-				throw new ApplicationException(string.Format("Invalid ctor with token: {0:X8}", ctorToken));
+				throw new ApplicationException($"Invalid ctor with token: {ctorToken:X8}");
 			ienumerable = ctor.Invoke(args);
 		}
 
 		void WriteEnumerableField(uint fieldToken, object value) {
 			var field = reflObfModule.ResolveField((int)fieldToken);
 			if (field == null)
-				throw new ApplicationException(string.Format("Invalid field: {0:X8}", fieldToken));
+				throw new ApplicationException($"Invalid field: {fieldToken:X8}");
 			field.SetValue(ienumerable, value);
 		}
 
@@ -146,15 +142,8 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return true;
 		}
 
-		int CallGetCurrent() {
-			return (int)mi_get_Current.Invoke(ienumerator, null);
-		}
-
-		bool CallMoveNext() {
-			return (bool)mi_MoveNext.Invoke(ienumerator, null);
-		}
-
-		public void Dispose() {
-		}
+		int CallGetCurrent() => (int)mi_get_Current.Invoke(ienumerator, null);
+		bool CallMoveNext() => (bool)mi_MoveNext.Invoke(ienumerator, null);
+		public void Dispose() { }
 	}
 }

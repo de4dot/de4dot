@@ -35,9 +35,7 @@ namespace de4dot.code {
 			object value;
 			bool unknownValue = false;
 
-			public bool IsValid() {
-				return !unknownValue && writes == 1;
-			}
+			public bool IsValid() => !unknownValue && writes == 1;
 
 			public object Value {
 				get {
@@ -45,16 +43,11 @@ namespace de4dot.code {
 						throw new ApplicationException("Unknown variable value");
 					return value;
 				}
-				set { this.value = value; }
+				set => this.value = value;
 			}
 
-			public void AddWrite() {
-				writes++;
-			}
-
-			public void SetUnknown() {
-				unknownValue = true;
-			}
+			public void AddWrite() => writes++;
+			public void SetUnknown() => unknownValue = true;
 		}
 
 		public VariableValues(IList<Local> locals, IList<Block> allBlocks) {
@@ -135,9 +128,7 @@ namespace de4dot.code {
 			}
 		}
 
-		public Variable GetValue(Local variable) {
-			return variableToValue[variable];
-		}
+		public Variable GetValue(Local variable) => variableToValue[variable];
 	}
 
 	public abstract class MethodReturnValueInliner {
@@ -149,8 +140,8 @@ namespace de4dot.code {
 		bool useUnknownArgs = false;
 
 		public bool UseUnknownArgs {
-			get { return useUnknownArgs; }
-			set { useUnknownArgs = value; }
+			get => useUnknownArgs;
+			set => useUnknownArgs = value;
 		}
 
 		protected class CallResult {
@@ -165,20 +156,12 @@ namespace de4dot.code {
 				this.callEndIndex = callEndIndex;
 			}
 
-			public IMethod GetMethodRef() {
-				return (IMethod)block.Instructions[callEndIndex].Operand;
-			}
+			public IMethod GetMethodRef() => (IMethod)block.Instructions[callEndIndex].Operand;
 		}
 
-		public bool InlinedAllCalls {
-			get { return errors == 0; }
-		}
-
+		public bool InlinedAllCalls => errors == 0;
 		public abstract bool HasHandlers { get; }
-
-		public MethodDef Method {
-			get { return theMethod; }
-		}
+		public MethodDef Method => theMethod;
 
 		protected abstract void InlineAllCalls();
 
@@ -242,7 +225,7 @@ namespace de4dot.code {
 				if (method == null)
 					continue;
 
-				IMethod elementMethod = method;
+				var elementMethod = method;
 				var gim = method as MethodSpec;
 				if (gim != null)
 					elementMethod = gim.Method;
@@ -292,7 +275,7 @@ namespace de4dot.code {
 			case ElementType.I8: return (long)value;
 			case ElementType.U8: return (ulong)value;
 			}
-			throw new ApplicationException(string.Format("Wrong type {0}", type));
+			throw new ApplicationException($"Wrong type {type}");
 		}
 
 		bool GetArg(IMethod method, Block block, ref object arg, ref int instrIndex) {

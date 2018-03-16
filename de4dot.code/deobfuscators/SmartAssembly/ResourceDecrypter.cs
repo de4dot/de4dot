@@ -27,13 +27,10 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 	class ResourceDecrypter {
 		ResourceDecrypterInfo resourceDecrypterInfo;
 
-		public ResourceDecrypter(ResourceDecrypterInfo resourceDecrypterInfo) {
+		public ResourceDecrypter(ResourceDecrypterInfo resourceDecrypterInfo) =>
 			this.resourceDecrypterInfo = resourceDecrypterInfo;
-		}
 
-		public bool CanDecrypt {
-			get { return resourceDecrypterInfo != null && resourceDecrypterInfo.CanDecrypt; }
-		}
+		public bool CanDecrypt => resourceDecrypterInfo != null && resourceDecrypterInfo.CanDecrypt;
 
 		public byte[] Decrypt(EmbeddedResource resource) {
 			if (!CanDecrypt)
@@ -50,7 +47,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 
 			byte encryption = (byte)(headerMagic >> 24);
 			if ((headerMagic & 0x00FFFFFF) != 0x007D7A7B)	// Check if "{z}"
-				throw new ApplicationException(string.Format("Invalid SA header magic 0x{0:X8}", headerMagic));
+				throw new ApplicationException($"Invalid SA header magic 0x{headerMagic:X8}");
 
 			switch (encryption) {
 			case 1:
@@ -96,7 +93,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				}
 
 			default:
-				throw new ApplicationException(string.Format("Unknown encryption type 0x{0:X2}", encryption));
+				throw new ApplicationException($"Unknown encryption type 0x{encryption:X2}");
 			}
 		}
 	}

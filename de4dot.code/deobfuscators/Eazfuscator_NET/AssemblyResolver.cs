@@ -49,42 +49,23 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			public string Extension { get; set; }
 			public EmbeddedResource Resource { get; set; }
 			public byte[] Data { get; set; }
-
-			public override string ToString() {
-				return AssemblyFullName ?? Filename;
-			}
+			public override string ToString() => AssemblyFullName ?? Filename;
 		}
 
-		public TypeDef Type {
-			get { return resolverType; }
-		}
-
-		public TypeDef OtherType {
-			get { return otherType; }
-		}
-
-		public MethodDef InitMethod {
-			get { return initMethod; }
-		}
-
-		public IEnumerable<AssemblyInfo> AssemblyInfos {
-			get { return assemblyInfos; }
-		}
-
-		public bool Detected {
-			get { return resolverType != null; }
-		}
+		public TypeDef Type => resolverType;
+		public TypeDef OtherType => otherType;
+		public MethodDef InitMethod => initMethod;
+		public IEnumerable<AssemblyInfo> AssemblyInfos => assemblyInfos;
+		public bool Detected => resolverType != null;
 
 		public AssemblyResolver(ModuleDefMD module, DecrypterType decrypterType) {
 			this.module = module;
-			this.frameworkType = DotNetUtils.GetFrameworkType(module);
+			frameworkType = DotNetUtils.GetFrameworkType(module);
 			this.decrypterType = decrypterType;
-			this.codeCompilerMethodCallRestorer = new CodeCompilerMethodCallRestorer(module);
+			codeCompilerMethodCallRestorer = new CodeCompilerMethodCallRestorer(module);
 		}
 
-		public void Find() {
-			CheckCalledMethods(DotNetUtils.GetModuleTypeCctor(module));
-		}
+		public void Find() => CheckCalledMethods(DotNetUtils.GetModuleTypeCctor(module));
 
 		bool CheckCalledMethods(MethodDef method) {
 			if (method == null || method.Body == null)
@@ -344,7 +325,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			foreach (var info in assemblyInfos) {
 				info.Resource = DotNetUtils.GetResource(module, info.ResourceName) as EmbeddedResource;
 				if (info.Resource == null)
-					throw new ApplicationException(string.Format("Could not find resource {0}", Utils.ToCsharpString(info.ResourceName)));
+					throw new ApplicationException($"Could not find resource {Utils.ToCsharpString(info.ResourceName)}");
 
 				info.Data = info.Resource.GetReader().ToArray();
 				if (info.IsEncrypted)
@@ -426,9 +407,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return null;
 		}
 
-		public void Deobfuscate(Blocks blocks) {
-			codeCompilerMethodCallRestorer.Deobfuscate(blocks);
-		}
+		public void Deobfuscate(Blocks blocks) => codeCompilerMethodCallRestorer.Deobfuscate(blocks);
 
 		void FindCodeDomMethods() {
 			if (resolverType == null)

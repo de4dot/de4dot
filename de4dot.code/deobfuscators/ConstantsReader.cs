@@ -31,17 +31,9 @@ namespace de4dot.code.deobfuscators {
 		protected Dictionary<Local, double> localsValuesDouble = new Dictionary<Local, double>();
 		bool emulateConvInstrs;
 
-		public IEnumerable<KeyValuePair<Local, int>> Locals32 {
-			get { return localsValuesInt32; }
-		}
-
-		public IEnumerable<KeyValuePair<Local, long>> Locals64 {
-			get { return localsValuesInt64; }
-		}
-
-		public IEnumerable<KeyValuePair<Local, double>> LocalsDouble {
-			get { return localsValuesDouble; }
-		}
+		public IEnumerable<KeyValuePair<Local, int>> Locals32 => localsValuesInt32;
+		public IEnumerable<KeyValuePair<Local, long>> Locals64 => localsValuesInt64;
+		public IEnumerable<KeyValuePair<Local, double>> LocalsDouble => localsValuesDouble;
 
 		public interface IInstructions {
 			int Count { get; }
@@ -50,39 +42,21 @@ namespace de4dot.code.deobfuscators {
 
 		class ListInstructions : IInstructions {
 			IList<Instruction> instrs;
-
-			public int Count {
-				get { return instrs.Count; }
-			}
-
-			public Instruction this[int index] {
-				get { return instrs[index]; }
-			}
-
-			public ListInstructions(IList<Instruction> instrs) {
-				this.instrs = instrs;
-			}
+			public int Count => instrs.Count;
+			public Instruction this[int index] => instrs[index];
+			public ListInstructions(IList<Instruction> instrs) => this.instrs = instrs;
 		}
 
 		class ListInstrs : IInstructions {
 			IList<Instr> instrs;
-
-			public int Count {
-				get { return instrs.Count; }
-			}
-
-			public Instruction this[int index] {
-				get { return instrs[index].Instruction; }
-			}
-
-			public ListInstrs(IList<Instr> instrs) {
-				this.instrs = instrs;
-			}
+			public int Count => instrs.Count;
+			public Instruction this[int index] => instrs[index].Instruction;
+			public ListInstrs(IList<Instr> instrs) => this.instrs = instrs;
 		}
 
 		public bool EmulateConvInstructions {
-			get { return emulateConvInstrs; }
-			set { emulateConvInstrs = value; }
+			get => emulateConvInstrs;
+			set => emulateConvInstrs = value;
 		}
 
 		ConstantsReader(IInstructions instructions)
@@ -111,34 +85,16 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		public ConstantsReader(MethodDef method)
-			: this(method.Body.Instructions) {
-			this.locals = method.Body.Variables;
-		}
+			: this(method.Body.Instructions) => locals = method.Body.Variables;
 
 		public ConstantsReader(IList<Instr> instrs, IList<Local> locals)
-			: this(instrs) {
-			this.locals = locals;
-		}
+			: this(instrs) => this.locals = locals;
 
-		public void SetConstantInt32(Local local, int value) {
-			localsValuesInt32[local] = value;
-		}
-
-		public void SetConstantInt32(Local local, uint value) {
-			SetConstantInt32(local, (int)value);
-		}
-
-		public void SetConstantInt64(Local local, long value) {
-			localsValuesInt64[local] = value;
-		}
-
-		public void SetConstantInt64(Local local, ulong value) {
-			SetConstantInt64(local, (long)value);
-		}
-
-		public void SetConstantDouble(Local local, double value) {
-			localsValuesDouble[local] = value;
-		}
+		public void SetConstantInt32(Local local, int value) => localsValuesInt32[local] = value;
+		public void SetConstantInt32(Local local, uint value) => SetConstantInt32(local, (int)value);
+		public void SetConstantInt64(Local local, long value) => localsValuesInt64[local] = value;
+		public void SetConstantInt64(Local local, ulong value) => SetConstantInt64(local, (long)value);
+		public void SetConstantDouble(Local local, double value) => localsValuesDouble[local] = value;
 
 		public bool GetNextInt32(ref int index, out int val) {
 			for (; index < instructions.Count; index++) {
@@ -156,48 +112,35 @@ namespace de4dot.code.deobfuscators {
 		public bool IsLoadConstantInt32(Instruction instr) {
 			if (instr.IsLdcI4())
 				return true;
-			if (instr.IsLdloc()) {
-				int tmp;
-				return GetLocalConstantInt32(instr, out tmp);
-			}
-			if (instr.IsLdarg()) {
-				int tmp;
-				return GetArgConstantInt32(instr, out tmp);
-			}
+			if (instr.IsLdloc())
+				return GetLocalConstantInt32(instr, out int tmp);
+			if (instr.IsLdarg())
+				return GetArgConstantInt32(instr, out int tmp);
 			return false;
 		}
 
 		public bool IsLoadConstantInt64(Instruction instr) {
 			if (instr.OpCode.Code == Code.Ldc_I8)
 				return true;
-			if (instr.IsLdloc()) {
-				long tmp;
-				return GetLocalConstantInt64(instr, out tmp);
-			}
-			if (instr.IsLdarg()) {
-				long tmp;
-				return GetArgConstantInt64(instr, out tmp);
-			}
+			if (instr.IsLdloc())
+				return GetLocalConstantInt64(instr, out long tmp);
+			if (instr.IsLdarg())
+				return GetArgConstantInt64(instr, out long tmp);
 			return false;
 		}
 
 		public bool IsLoadConstantDouble(Instruction instr) {
 			if (instr.OpCode.Code == Code.Ldc_R8)
 				return true;
-			if (instr.IsLdloc()) {
-				double tmp;
-				return GetLocalConstantDouble(instr, out tmp);
-			}
-			if (instr.IsLdarg()) {
-				double tmp;
-				return GetArgConstantDouble(instr, out tmp);
-			}
+			if (instr.IsLdloc())
+				return GetLocalConstantDouble(instr, out double tmp);
+			if (instr.IsLdarg())
+				return GetArgConstantDouble(instr, out double tmp);
 			return false;
 		}
 
 		public bool GetInt16(ref int index, out short val) {
-			int tmp;
-			if (!GetInt32(ref index, out tmp)) {
+			if (!GetInt32(ref index, out int tmp)) {
 				val = 0;
 				return false;
 			}
@@ -215,17 +158,9 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
-		protected virtual bool ProcessInstructionInt32(ref int index, Stack<ConstantInfo<int>> stack) {
-			return false;
-		}
-
-		protected virtual bool ProcessInstructionInt64(ref int index, Stack<ConstantInfo<long>> stack) {
-			return false;
-		}
-
-		protected virtual bool ProcessInstructionDouble(ref int index, Stack<ConstantInfo<double>> stack) {
-			return false;
-		}
+		protected virtual bool ProcessInstructionInt32(ref int index, Stack<ConstantInfo<int>> stack) => false;
+		protected virtual bool ProcessInstructionInt64(ref int index, Stack<ConstantInfo<long>> stack) => false;
+		protected virtual bool ProcessInstructionDouble(ref int index, Stack<ConstantInfo<double>> stack) => false;
 
 		public bool GetInt32(ref int index, out int val) {
 			val = 0;

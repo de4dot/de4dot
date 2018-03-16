@@ -76,21 +76,10 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 			}
 		}
 
-		public bool Detected {
-			get { return decrypterType != null; }
-		}
-
-		public bool CanRemoveType {
-			get { return canRemoveType; }
-		}
-
-		public TypeDef Type {
-			get { return decrypterType; }
-		}
-
-		public StringDecrypter(ModuleDefMD module) {
-			this.module = module;
-		}
+		public bool Detected => decrypterType != null;
+		public bool CanRemoveType => canRemoveType;
+		public TypeDef Type => decrypterType;
+		public StringDecrypter(ModuleDefMD module) => this.module = module;
 
 		public void Find() {
 			foreach (var type in module.Types) {
@@ -215,8 +204,7 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 
 			var saltAry = new byte[(int)Math.Round((double)s2.Length / 2 - 1) + 1];
 			for (int i = 0; i < saltAry.Length; i++) {
-				int result;
-				if (!int.TryParse(s2.Substring(i * 2, 2), NumberStyles.AllowHexSpecifier, null, out result))
+				if (!int.TryParse(s2.Substring(i * 2, 2), NumberStyles.AllowHexSpecifier, null, out int result))
 					return null;
 				saltAry[i] = (byte)result;
 			}
@@ -250,8 +238,7 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 			var ary = hexChars.Trim().Split(' ');
 			string password = "";
 			for (int i = 0; i < ary.Length; i++) {
-				int result;
-				if (!int.TryParse(ary[i], NumberStyles.AllowHexSpecifier, null, out result))
+				if (!int.TryParse(ary[i], NumberStyles.AllowHexSpecifier, null, out int result))
 					return null;
 				password += (char)result;
 			}
@@ -291,8 +278,7 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 					if (instr.OpCode.Code == Code.Call || instr.OpCode.Code == Code.Callvirt) {
 						if (blocks.Method.DeclaringType == decrypterType)
 							continue;
-						var calledMethod = instr.Operand as IMethod;
-						if (calledMethod != null && calledMethod.DeclaringType == decrypterType)
+						if (instr.Operand is IMethod calledMethod && calledMethod.DeclaringType == decrypterType)
 							canRemoveType = false;
 					}
 					else if (instr.OpCode.Code == Code.Ldsfld) {

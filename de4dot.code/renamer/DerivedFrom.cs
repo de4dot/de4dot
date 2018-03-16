@@ -26,22 +26,15 @@ namespace de4dot.code.renamer {
 		Dictionary<string, bool> classNames = new Dictionary<string, bool>(StringComparer.Ordinal);
 		Dictionary<MTypeDef, bool> results = new Dictionary<MTypeDef, bool>();
 
-		public DerivedFrom(string className) {
-			AddName(className);
-		}
+		public DerivedFrom(string className) => AddName(className);
 
 		public DerivedFrom(string[] classNames) {
 			foreach (var className in classNames)
 				AddName(className);
 		}
 
-		void AddName(string className) {
-			classNames[className] = true;
-		}
-
-		public bool Check(MTypeDef type) {
-			return Check(type, 0);
-		}
+		void AddName(string className) => classNames[className] = true;
+		public bool Check(MTypeDef type) => Check(type, 0);
 
 		public bool Check(MTypeDef type, int recurseCount) {
 			if (recurseCount >= 100)

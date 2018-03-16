@@ -25,32 +25,18 @@ namespace de4dot.code.renamer {
 	public class ExistingNames {
 		Dictionary<string, bool> allNames = new Dictionary<string, bool>(StringComparer.Ordinal);
 
-		public void Add(string name) {
-			allNames[name] = true;
-		}
-
-		public bool Exists(string name) {
-			return allNames.ContainsKey(name);
-		}
-
-		public string GetName(UTF8String oldName, INameCreator nameCreator) {
-			return GetName(UTF8String.ToSystemStringOrEmpty(oldName), nameCreator);
-		}
-
-		public string GetName(string oldName, INameCreator nameCreator) {
-			return GetName(oldName, () => nameCreator.Create());
-		}
-
-		public string GetName(UTF8String oldName, Func<string> createNewName) {
-			return GetName(UTF8String.ToSystemStringOrEmpty(oldName), createNewName);
-		}
+		public void Add(string name) => allNames[name] = true;
+		public bool Exists(string name) => allNames.ContainsKey(name);
+		public string GetName(UTF8String oldName, INameCreator nameCreator) => GetName(UTF8String.ToSystemStringOrEmpty(oldName), nameCreator);
+		public string GetName(string oldName, INameCreator nameCreator) => GetName(oldName, () => nameCreator.Create());
+		public string GetName(UTF8String oldName, Func<string> createNewName) => GetName(UTF8String.ToSystemStringOrEmpty(oldName), createNewName);
 
 		public string GetName(string oldName, Func<string> createNewName) {
 			string prevName = null;
 			while (true) {
 				var name = createNewName();
 				if (name == prevName)
-					throw new ApplicationException(string.Format("Could not rename symbol to {0}", Utils.ToCsharpString(name)));
+					throw new ApplicationException($"Could not rename symbol to {Utils.ToCsharpString(name)}");
 
 				if (!Exists(name) || name == oldName) {
 					allNames[name] = true;

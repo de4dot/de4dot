@@ -39,21 +39,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v19_r76186,
 		}
 
-		public MethodDef InitMethod {
-			get { return initMethod; }
-		}
-
-		public TypeDef Type {
-			get { return initMethod != null ? initMethod.DeclaringType : null; }
-		}
-
-		public bool Detected {
-			get { return initMethod != null; }
-		}
-
-		public AntiDumping(ModuleDefMD module) {
-			this.module = module;
-		}
+		public MethodDef InitMethod => initMethod;
+		public TypeDef Type => initMethod?.DeclaringType;
+		public bool Detected => initMethod != null;
+		public AntiDumping(ModuleDefMD module) => this.module = module;
 
 		public void Find(ISimpleDeobfuscator simpleDeobfuscator) {
 			if (CheckMethod(simpleDeobfuscator, DotNetUtils.GetModuleTypeCctor(module)))
@@ -87,10 +76,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		bool CheckType(TypeDef type, MethodDef initMethod) {
-			return CheckType_v14_r58564(type, initMethod) ||
-				CheckType_v14_r58852(type, initMethod);
-		}
+		bool CheckType(TypeDef type, MethodDef initMethod) =>
+			CheckType_v14_r58564(type, initMethod) ||
+			CheckType_v14_r58852(type, initMethod);
 
 		bool CheckType_v14_r58564(TypeDef type, MethodDef initMethod) {
 			var virtualProtect = DotNetUtils.GetPInvokeMethod(type, "VirtualProtect");

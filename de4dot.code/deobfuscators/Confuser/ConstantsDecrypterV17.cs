@@ -211,9 +211,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			}
 		}
 
-		public override bool Detected {
-			get { return initMethod != null; }
-		}
+		public override bool Detected => initMethod != null;
 
 		public ConstantsDecrypterV17(ModuleDefMD module, byte[] fileData, ISimpleDeobfuscator simpleDeobfuscator)
 			: base(module, fileData, simpleDeobfuscator) {
@@ -327,29 +325,23 @@ namespace de4dot.code.deobfuscators.Confuser {
 			}
 		}
 
-		byte[] DecryptConstant_v17_r74708_normal(DecrypterInfoV17 info, byte[] encrypted, uint offs, byte typeCode) {
-			return ConfuserUtils.Decrypt(info.key4 * (offs + typeCode), encrypted);
-		}
+		byte[] DecryptConstant_v17_r74708_normal(DecrypterInfoV17 info, byte[] encrypted, uint offs, byte typeCode) =>
+			ConfuserUtils.Decrypt(info.key4 * (offs + typeCode), encrypted);
 
-		byte[] DecryptConstant_v17_r74708_dynamic(DecrypterInfoV17 info, byte[] encrypted, uint offs, byte typeCode) {
-			return DecryptConstant_v17_r73740_dynamic(info, encrypted, offs, info.key4);
-		}
+		byte[] DecryptConstant_v17_r74708_dynamic(DecrypterInfoV17 info, byte[] encrypted, uint offs, byte typeCode) =>
+			DecryptConstant_v17_r73740_dynamic(info, encrypted, offs, info.key4);
 
-		byte[] DecryptConstant_v17_r74708_native(DecrypterInfoV17 info, byte[] encrypted, uint offs, byte typeCode) {
-			return DecryptConstant_v17_r73764_native(info, encrypted, offs, info.key4);
-		}
+		byte[] DecryptConstant_v17_r74708_native(DecrypterInfoV17 info, byte[] encrypted, uint offs, byte typeCode) =>
+			DecryptConstant_v17_r73764_native(info, encrypted, offs, info.key4);
 
-		byte[] DecryptConstant_v17_r74788_normal(DecrypterInfoV17 info, byte[] encrypted, uint offs, byte typeCode) {
-			return ConfuserUtils.Decrypt(info.key4 * (offs + typeCode), encrypted, GetKey_v17_r74788(info));
-		}
+		byte[] DecryptConstant_v17_r74788_normal(DecrypterInfoV17 info, byte[] encrypted, uint offs, byte typeCode) =>
+			ConfuserUtils.Decrypt(info.key4 * (offs + typeCode), encrypted, GetKey_v17_r74788(info));
 
-		byte[] DecryptConstant_v17_r74788_dynamic(DecrypterInfoV17 info, byte[] encrypted, uint offs, byte typeCode) {
-			return DecryptConstant_v17_r73740_dynamic(info, encrypted, offs, info.key4, GetKey_v17_r74788(info));
-		}
+		byte[] DecryptConstant_v17_r74788_dynamic(DecrypterInfoV17 info, byte[] encrypted, uint offs, byte typeCode) =>
+			DecryptConstant_v17_r73740_dynamic(info, encrypted, offs, info.key4, GetKey_v17_r74788(info));
 
-		byte[] DecryptConstant_v17_r74788_native(DecrypterInfoV17 info, byte[] encrypted, uint offs, byte typeCode) {
-			return DecryptConstant_v17_r73764_native(info, encrypted, offs, info.key4, GetKey_v17_r74788(info));
-		}
+		byte[] DecryptConstant_v17_r74788_native(DecrypterInfoV17 info, byte[] encrypted, uint offs, byte typeCode) =>
+			DecryptConstant_v17_r73764_native(info, encrypted, offs, info.key4, GetKey_v17_r74788(info));
 
 		byte[] GetKey_v17_r74788(DecrypterInfoV17 info) {
 			var key = module.ReadBlob(info.decryptMethod.MDToken.ToUInt32() ^ info.key5);

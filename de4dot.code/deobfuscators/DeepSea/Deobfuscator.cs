@@ -46,16 +46,11 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			castDeobfuscation = new BoolOption(null, MakeArgName("casts"), "Deobfuscate casts", true);
 		}
 
-		public override string Name {
-			get { return THE_NAME; }
-		}
+		public override string Name => THE_NAME;
+		public override string Type => THE_TYPE;
 
-		public override string Type {
-			get { return THE_TYPE; }
-		}
-
-		public override IDeobfuscator CreateDeobfuscator() {
-			return new Deobfuscator(new Deobfuscator.Options {
+		public override IDeobfuscator CreateDeobfuscator() =>
+			new Deobfuscator(new Deobfuscator.Options {
 				ValidNameRegex = validNameRegex.Get(),
 				InlineMethods = inlineMethods.Get(),
 				RemoveInlinedMethods = removeInlinedMethods.Get(),
@@ -65,10 +60,9 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				RenameResourceKeys = renameResourceKeys.Get(),
 				CastDeobfuscation = castDeobfuscation.Get(),
 			});
-		}
 
-		protected override IEnumerable<Option> GetOptionsInternal() {
-			return new List<Option>() {
+		protected override IEnumerable<Option> GetOptionsInternal() =>
+			new List<Option>() {
 				inlineMethods,
 				removeInlinedMethods,
 				decryptResources,
@@ -77,7 +71,6 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				renameResourceKeys,
 				castDeobfuscation,
 			};
-		}
 	}
 
 	class Deobfuscator : DeobfuscatorBase {
@@ -101,21 +94,10 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			public bool CastDeobfuscation { get; set; }
 		}
 
-		public override string Type {
-			get { return DeobfuscatorInfo.THE_TYPE; }
-		}
-
-		public override string TypeLong {
-			get { return DeobfuscatorInfo.THE_NAME; }
-		}
-
-		public override string Name {
-			get { return obfuscatorName; }
-		}
-
-		protected override bool CanInlineMethods {
-			get { return startedDeobfuscating ? options.InlineMethods : true; }
-		}
+		public override string Type => DeobfuscatorInfo.THE_TYPE;
+		public override string TypeLong => DeobfuscatorInfo.THE_NAME;
+		public override string Name => obfuscatorName;
+		protected override bool CanInlineMethods => startedDeobfuscating ? options.InlineMethods : true;
 
 		public override IEnumerable<IBlocksDeobfuscator> BlocksDeobfuscators {
 			get {
@@ -140,9 +122,9 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			this.options = options;
 
 			if (options.RenameResourceKeys)
-				this.RenamingOptions |= RenamingOptions.RenameResourceKeys;
+				RenamingOptions |= RenamingOptions.RenameResourceKeys;
 			else
-				this.RenamingOptions &= ~RenamingOptions.RenameResourceKeys;
+				RenamingOptions &= ~RenamingOptions.RenameResourceKeys;
 		}
 
 		protected override int DetectInternal() {
@@ -232,8 +214,7 @@ done:
 		void DecryptResources() {
 			if (!options.DecryptResources)
 				return;
-			EmbeddedResource rsrc;
-			if (!resourceResolver.MergeResources(out rsrc))
+			if (!resourceResolver.MergeResources(out var rsrc))
 				return;
 			AddResourceToBeRemoved(rsrc, "Encrypted resources");
 			AddCctorInitCallToBeRemoved(resourceResolver.InitMethod);
@@ -251,7 +232,7 @@ done:
 				if (info.resource != null && info.resource == resourceResolver.Resource)
 					continue;
 				DeobfuscatedFile.CreateAssemblyFile(info.data, info.simpleName, info.extension);
-				AddResourceToBeRemoved(info.resource, string.Format("Embedded assembly: {0}", info.fullName));
+				AddResourceToBeRemoved(info.resource, $"Embedded assembly: {info.fullName}");
 			}
 			AddCctorInitCallToBeRemoved(assemblyResolver.InitMethod);
 			AddCallToBeRemoved(module.EntryPoint, assemblyResolver.InitMethod);

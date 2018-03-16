@@ -37,107 +37,45 @@ namespace de4dot.blocks.cflow {
 
 	public abstract class Value {
 		public readonly ValueType valueType;
-
-		public bool IsUnknown() {
-			return valueType == ValueType.Unknown;
-		}
-
-		public bool IsNull() {
-			return valueType == ValueType.Null;
-		}
-
-		public bool IsObject() {
-			return valueType == ValueType.Object;
-		}
-
-		public bool IsBoxed() {
-			return valueType == ValueType.Boxed;
-		}
-
-		public bool IsInt32() {
-			return valueType == ValueType.Int32;
-		}
-
-		public bool IsInt64() {
-			return valueType == ValueType.Int64;
-		}
-
-		public bool IsReal8() {
-			return valueType == ValueType.Real8;
-		}
-
-		public bool IsString() {
-			return valueType == ValueType.String;
-		}
-
-		protected Value(ValueType valueType) {
-			this.valueType = valueType;
-		}
+		public bool IsUnknown() => valueType == ValueType.Unknown;
+		public bool IsNull() => valueType == ValueType.Null;
+		public bool IsObject() => valueType == ValueType.Object;
+		public bool IsBoxed() => valueType == ValueType.Boxed;
+		public bool IsInt32() => valueType == ValueType.Int32;
+		public bool IsInt64() => valueType == ValueType.Int64;
+		public bool IsReal8() => valueType == ValueType.Real8;
+		public bool IsString() => valueType == ValueType.String;
+		protected Value(ValueType valueType) => this.valueType = valueType;
 	}
 
 	public class UnknownValue : Value {
-		public UnknownValue()
-			: base(ValueType.Unknown) {
-		}
-
-		public override string ToString() {
-			return "<unknown>";
-		}
+		public UnknownValue() : base(ValueType.Unknown) { }
+		public override string ToString() => "<unknown>";
 	}
 
 	public class ObjectValue : Value {
 		public readonly object obj;	// can be null but that doesn't mean that this ObjectValue instance is null
-
-		public ObjectValue()
-			: this(null) {
-		}
-
-		public ObjectValue(object obj)
-			: base(ValueType.Object) {
-			this.obj = obj;
-		}
-
-		public override string ToString() {
-			return "<non-null object>";
-		}
+		public ObjectValue() : this(null) { }
+		public ObjectValue(object obj) : base(ValueType.Object) => this.obj = obj;
+		public override string ToString() => "<non-null object>";
 	}
 
 	public class NullValue : Value {
 		// There's only one type of null
 		public static readonly NullValue Instance = new NullValue();
-
-		NullValue()
-			: base(ValueType.Null) {
-		}
-
-		public override string ToString() {
-			return "null";
-		}
+		NullValue() : base(ValueType.Null) { }
+		public override string ToString() => "null";
 	}
 
 	public class BoxedValue : Value {
 		public readonly Value value;
-
-		public BoxedValue(Value value)
-			: base(ValueType.Boxed) {
-			this.value = value;
-		}
-
-		public override string ToString() {
-			return string.Format("box({0})", value.ToString());
-		}
+		public BoxedValue(Value value) : base(ValueType.Boxed) => this.value = value;
+		public override string ToString() => $"box({value.ToString()})";
 	}
 
 	public class StringValue : Value {
 		public readonly string value;
-
-		public StringValue(string value)
-			: base(ValueType.String) {
-			this.value = value;
-		}
-
-		public override string ToString() {
-			return string.Format("\"{0}\"", value);
-		}
+		public StringValue(string value) : base(ValueType.String) => this.value = value;
+		public override string ToString() => $"\"{value}\"";
 	}
 }

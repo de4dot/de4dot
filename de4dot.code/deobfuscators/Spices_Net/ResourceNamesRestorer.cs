@@ -32,17 +32,9 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 		MethodDefAndDeclaringTypeDict<IMethod> componentManagerCtors = new MethodDefAndDeclaringTypeDict<IMethod>();
 		Dictionary<TypeDef, bool> callsResourceManager = new Dictionary<TypeDef, bool>();
 
-		public TypeDef ResourceManagerType {
-			get { return resourceManagerType; }
-		}
-
-		public TypeDef ComponentResourceManagerType {
-			get { return componentResourceManagerType; }
-		}
-
-		public ResourceNamesRestorer(ModuleDefMD module) {
-			this.module = module;
-		}
+		public TypeDef ResourceManagerType => resourceManagerType;
+		public TypeDef ComponentResourceManagerType => componentResourceManagerType;
+		public ResourceNamesRestorer(ModuleDefMD module) => this.module = module;
 
 		public void Find() {
 			foreach (var type in module.Types) {
@@ -93,9 +85,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 					this.ns = ns;
 				}
 
-				public override int GetHashCode() {
-					return (int)(hash ^ ns.GetHashCode());
-				}
+				public override int GetHashCode() => (int)(hash ^ ns.GetHashCode());
 
 				public override bool Equals(object obj) {
 					if (!(obj is Key))
@@ -107,15 +97,13 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 
 				public override string ToString() {
 					if (ns == string.Empty)
-						return string.Format("{0}", hash);
-					return string.Format("{0}.{1}", ns, hash);
+						return $"{hash}";
+					return $"{ns}.{hash}";
 				}
 			}
 			Dictionary<Key, Resource> resources = new Dictionary<Key, Resource>();
 
-			public int Count {
-				get { return resources.Count; }
-			}
+			public int Count => resources.Count;
 
 			public bool Add(Resource resource) {
 				var name = resource.Name.String;
@@ -125,8 +113,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 					ext = name;
 				else
 					ext = name.Substring(index + 1);
-				uint extNum;
-				if (!uint.TryParse(ext, out extNum))
+				if (!uint.TryParse(ext, out uint extNum))
 					return false;
 				var ns = index < 0 ? string.Empty : name.Substring(0, index);
 
@@ -136,8 +123,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 
 			public Resource GetAndRemove(uint hash, string ns) {
 				var key = new Key(hash, ns);
-				Resource resource;
-				if (resources.TryGetValue(key, out resource))
+				if (resources.TryGetValue(key, out var resource))
 					resources.Remove(key);
 				return resource;
 			}
@@ -240,9 +226,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			return hash;
 		}
 
-		static uint Ror(uint val, int n) {
-			return (val << (32 - n)) + (val >> n);
-		}
+		static uint Ror(uint val, int n) => (val << (32 - n)) + (val >> n);
 
 		public void Deobfuscate(Blocks blocks) {
 			if (resourceManagerType == null && componentResourceManagerType == null)

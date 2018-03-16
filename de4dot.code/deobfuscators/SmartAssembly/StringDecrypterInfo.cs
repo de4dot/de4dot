@@ -42,41 +42,17 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 		MethodDef stringDecrypterMethod;
 		StringDecrypterVersion decrypterVersion;
 
-		public StringDecrypterVersion DecrypterVersion {
-			get { return decrypterVersion; }
-		}
-
+		public StringDecrypterVersion DecrypterVersion => decrypterVersion;
 		public TypeDef GetStringDelegate { get; set; }
 		public TypeDef StringsType { get; set; }
 		public MethodDef CreateStringDelegateMethod { get; set; }
-
-		public TypeDef StringsEncodingClass {
-			get { return stringsEncodingClass; }
-		}
-
-		public bool CanDecrypt {
-			get { return resourceDecrypter == null || resourceDecrypter.CanDecrypt; }
-		}
-
-		public MethodDef SimpleZipTypeMethod {
-			get { return simpleZipTypeMethod; }
-		}
-
-		public EmbeddedResource StringsResource {
-			get { return stringsResource; }
-		}
-
-		public int StringOffset {
-			get { return stringOffset; }
-		}
-
-		public bool StringsEncrypted {
-			get { return simpleZipTypeMethod != null; }
-		}
-
-		public MethodDef StringDecrypterMethod {
-			get { return stringDecrypterMethod; }
-		}
+		public TypeDef StringsEncodingClass => stringsEncodingClass;
+		public bool CanDecrypt => resourceDecrypter == null || resourceDecrypter.CanDecrypt;
+		public MethodDef SimpleZipTypeMethod => simpleZipTypeMethod;
+		public EmbeddedResource StringsResource => stringsResource;
+		public int StringOffset => stringOffset;
+		public bool StringsEncrypted => simpleZipTypeMethod != null;
+		public MethodDef StringDecrypterMethod => stringDecrypterMethod;
 
 		public StringDecrypterInfo(ModuleDefMD module, TypeDef stringsEncodingClass) {
 			this.module = module;
@@ -208,8 +184,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			foreach (var s in DotNetUtils.GetCodeStrings(method)) {
 				if (s == null)
 					continue;
-				var resource = DotNetUtils.GetResource(module, s) as EmbeddedResource;
-				if (resource != null)
+				if (DotNetUtils.GetResource(module, s) is EmbeddedResource resource)
 					return resource;
 			}
 			return null;
@@ -270,8 +245,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				if (field == null || fields.Find(field) != offsetField)
 					continue;
 
-				int value;
-				if (!int.TryParse(stringVal, System.Globalization.NumberStyles.Integer, null, out value))
+				if (!int.TryParse(stringVal, System.Globalization.NumberStyles.Integer, null, out int value))
 					continue;
 
 				return value;

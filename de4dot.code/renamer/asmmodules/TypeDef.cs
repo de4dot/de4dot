@@ -32,14 +32,11 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 
 		public TypeInfo(TypeInfo other, GenericInstSig git) {
-			this.typeRef = GenericArgsSubstitutor.Create(other.typeRef, git);
-			this.typeDef = other.typeDef;
+			typeRef = GenericArgsSubstitutor.Create(other.typeRef, git);
+			typeDef = other.typeDef;
 		}
 
-		public override int GetHashCode() {
-			return typeDef.GetHashCode() +
-					new SigComparer().GetHashCode(typeRef);
-		}
+		public override int GetHashCode() => typeDef.GetHashCode() + new SigComparer().GetHashCode(typeRef);
 
 		public override bool Equals(object obj) {
 			var other = obj as TypeInfo;
@@ -49,21 +46,14 @@ namespace de4dot.code.renamer.asmmodules {
 				new SigComparer().Equals(typeRef, other.typeRef);
 		}
 
-		public override string ToString() {
-			return typeRef.ToString();
-		}
+		public override string ToString() => typeRef.ToString();
 	}
 
 	public class MethodDefKey {
 		public readonly MMethodDef methodDef;
 
-		public MethodDefKey(MMethodDef methodDef) {
-			this.methodDef = methodDef;
-		}
-
-		public override int GetHashCode() {
-			return MethodEqualityComparer.CompareDeclaringTypes.GetHashCode(methodDef.MethodDef);
-		}
+		public MethodDefKey(MMethodDef methodDef) => this.methodDef = methodDef;
+		public override int GetHashCode() => MethodEqualityComparer.CompareDeclaringTypes.GetHashCode(methodDef.MethodDef);
 
 		public override bool Equals(object obj) {
 			var other = obj as MethodDefKey;
@@ -82,9 +72,7 @@ namespace de4dot.code.renamer.asmmodules {
 			this.methodRef = methodRef;
 		}
 
-		public override string ToString() {
-			return methodRef.ToString();
-		}
+		public override string ToString() => methodRef.ToString();
 	}
 
 	public class MethodInstances {
@@ -100,22 +88,18 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 
 		public void Add(MethodInst methodInst) {
-			List<MethodInst> list;
 			var key = methodInst.methodRef;
-			if (methodInst.origMethodDef.IsNewSlot() || !methodInstances.TryGetValue(key, out list))
+			if (methodInst.origMethodDef.IsNewSlot() || !methodInstances.TryGetValue(key, out var list))
 				methodInstances[key] = list = new List<MethodInst>();
 			list.Add(methodInst);
 		}
 
 		public List<MethodInst> Lookup(IMethodDefOrRef methodRef) {
-			List<MethodInst> list;
-			methodInstances.TryGetValue(methodRef, out list);
+			methodInstances.TryGetValue(methodRef, out var list);
 			return list;
 		}
 
-		public IEnumerable<List<MethodInst>> GetMethods() {
-			return methodInstances.Values;
-		}
+		public IEnumerable<List<MethodInst>> GetMethods() => methodInstances.Values;
 	}
 
 	// Keeps track of which methods of an interface that have been implemented
@@ -123,13 +107,8 @@ namespace de4dot.code.renamer.asmmodules {
 		TypeInfo iface;
 		Dictionary<MethodDefKey, MMethodDef> ifaceMethodToClassMethod = new Dictionary<MethodDefKey, MMethodDef>();
 
-		public TypeInfo IFace {
-			get { return iface; }
-		}
-
-		public Dictionary<MethodDefKey, MMethodDef> IfaceMethodToClassMethod {
-			get { return ifaceMethodToClassMethod; }
-		}
+		public TypeInfo IFace => iface;
+		public Dictionary<MethodDefKey, MMethodDef> IfaceMethodToClassMethod => ifaceMethodToClassMethod;
 
 		public InterfaceMethodInfo(TypeInfo iface) {
 			this.iface = iface;
@@ -159,8 +138,7 @@ namespace de4dot.code.renamer.asmmodules {
 			if (!ifaceMethodToClassMethod.ContainsKey(ifaceKey))
 				throw new ApplicationException("Could not find interface method");
 
-			MMethodDef oldMethod;
-			ifaceMethodToClassMethod.TryGetValue(ifaceKey, out oldMethod);
+			ifaceMethodToClassMethod.TryGetValue(ifaceKey, out var oldMethod);
 			ifaceMethodToClassMethod[ifaceKey] = classMethod;
 			return oldMethod;
 		}
@@ -170,17 +148,13 @@ namespace de4dot.code.renamer.asmmodules {
 				AddMethod(ifaceMethod, classMethod);
 		}
 
-		public override string ToString() {
-			return iface.ToString();
-		}
+		public override string ToString() => iface.ToString();
 	}
 
 	public class InterfaceMethodInfos {
 		Dictionary<ITypeDefOrRef, InterfaceMethodInfo> interfaceMethods = new Dictionary<ITypeDefOrRef, InterfaceMethodInfo>(TypeEqualityComparer.Instance);
 
-		public IEnumerable<InterfaceMethodInfo> AllInfos {
-			get { return interfaceMethods.Values; }
-		}
+		public IEnumerable<InterfaceMethodInfo> AllInfos => interfaceMethods.Values;
 
 		public void InitializeFrom(InterfaceMethodInfos other, GenericInstSig git) {
 			foreach (var pair in other.interfaceMethods) {
@@ -189,7 +163,7 @@ namespace de4dot.code.renamer.asmmodules {
 				var oldKey = oldTypeInfo.typeRef;
 				var newKey = newTypeInfo.typeRef;
 
-				InterfaceMethodInfo newMethodsInfo = new InterfaceMethodInfo(newTypeInfo, other.interfaceMethods[oldKey]);
+				var newMethodsInfo = new InterfaceMethodInfo(newTypeInfo, other.interfaceMethods[oldKey]);
 				if (interfaceMethods.ContainsKey(newKey))
 					newMethodsInfo.Merge(interfaceMethods[newKey]);
 				interfaceMethods[newKey] = newMethodsInfo;
@@ -203,21 +177,18 @@ namespace de4dot.code.renamer.asmmodules {
 		}
 
 		// Returns the previous classMethod, or null if none
-		public MMethodDef AddMethod(TypeInfo iface, MMethodDef ifaceMethod, MMethodDef classMethod) {
-			return AddMethod(iface.typeRef, ifaceMethod, classMethod);
-		}
+		public MMethodDef AddMethod(TypeInfo iface, MMethodDef ifaceMethod, MMethodDef classMethod) =>
+			AddMethod(iface.typeRef, ifaceMethod, classMethod);
 
 		// Returns the previous classMethod, or null if none
 		public MMethodDef AddMethod(ITypeDefOrRef iface, MMethodDef ifaceMethod, MMethodDef classMethod) {
-			InterfaceMethodInfo info;
-			if (!interfaceMethods.TryGetValue(iface, out info))
+			if (!interfaceMethods.TryGetValue(iface, out var info))
 				throw new ApplicationException("Could not find interface");
 			return info.AddMethod(ifaceMethod, classMethod);
 		}
 
 		public void AddMethodIfEmpty(TypeInfo iface, MMethodDef ifaceMethod, MMethodDef classMethod) {
-			InterfaceMethodInfo info;
-			if (!interfaceMethods.TryGetValue(iface.typeRef, out info))
+			if (!interfaceMethods.TryGetValue(iface.typeRef, out var info))
 				throw new ApplicationException("Could not find interface");
 			info.AddMethodIfEmpty(ifaceMethod, classMethod);
 		}
@@ -240,60 +211,22 @@ namespace de4dot.code.renamer.asmmodules {
 		Dictionary<TypeInfo, bool> allImplementedInterfaces = new Dictionary<TypeInfo, bool>();
 		InterfaceMethodInfos interfaceMethodInfos = new InterfaceMethodInfos();
 
-		public Module Module {
-			get { return module; }
-		}
+		public Module Module => module;
 
 		// Returns false if this is a type from a dependency (non-renamble) assembly (eg. mscorlib)
-		public bool HasModule {
-			get { return module != null; }
-		}
-
-		public IList<MGenericParamDef> GenericParams {
-			get { return genericParams; }
-		}
-
-		public IEnumerable<MTypeDef> NestedTypes {
-			get { return types.GetSorted(); }
-		}
-
+		public bool HasModule => module != null;
+		public IList<MGenericParamDef> GenericParams => genericParams;
+		public IEnumerable<MTypeDef> NestedTypes => types.GetSorted();
 		public MTypeDef NestingType { get; set; }
-
-		public TypeDef TypeDef {
-			get { return (TypeDef)memberRef; }
-		}
-
-		public IEnumerable<MEventDef> AllEvents {
-			get { return events.GetValues(); }
-		}
-
-		public IEnumerable<MFieldDef> AllFields {
-			get { return fields.GetValues(); }
-		}
-
-		public IEnumerable<MMethodDef> AllMethods {
-			get { return methods.GetValues(); }
-		}
-
-		public IEnumerable<MPropertyDef> AllProperties {
-			get { return properties.GetValues(); }
-		}
-
-		public IEnumerable<MEventDef> AllEventsSorted {
-			get { return events.GetSorted(); }
-		}
-
-		public IEnumerable<MFieldDef> AllFieldsSorted {
-			get { return fields.GetSorted(); }
-		}
-
-		public IEnumerable<MMethodDef> AllMethodsSorted {
-			get { return methods.GetSorted(); }
-		}
-
-		public IEnumerable<MPropertyDef> AllPropertiesSorted {
-			get { return properties.GetSorted(); }
-		}
+		public TypeDef TypeDef => (TypeDef)memberRef;
+		public IEnumerable<MEventDef> AllEvents => events.GetValues();
+		public IEnumerable<MFieldDef> AllFields => fields.GetValues();
+		public IEnumerable<MMethodDef> AllMethods => methods.GetValues();
+		public IEnumerable<MPropertyDef> AllProperties => properties.GetValues();
+		public IEnumerable<MEventDef> AllEventsSorted => events.GetSorted();
+		public IEnumerable<MFieldDef> AllFieldsSorted => fields.GetSorted();
+		public IEnumerable<MMethodDef> AllMethodsSorted => methods.GetSorted();
+		public IEnumerable<MPropertyDef> AllPropertiesSorted => properties.GetSorted();
 
 		public MTypeDef(TypeDef typeDef, Module module, int index)
 			: base(typeDef, null, index) {
@@ -313,65 +246,21 @@ namespace de4dot.code.renamer.asmmodules {
 			baseType = new TypeInfo(baseRef, baseDef);
 		}
 
-		public void Add(MEventDef e) {
-			events.Add(e);
-		}
-
-		public void Add(MFieldDef f) {
-			fields.Add(f);
-		}
-
-		public void Add(MMethodDef m) {
-			methods.Add(m);
-		}
-
-		public void Add(MPropertyDef p) {
-			properties.Add(p);
-		}
-
-		public void Add(MTypeDef t) {
-			types.Add(t);
-		}
-
-		public MMethodDef FindMethod(MemberRef mr) {
-			return methods.Find(mr);
-		}
-
-		public MMethodDef FindMethod(IMethodDefOrRef md) {
-			return methods.Find(md);
-		}
-
-		public MMethodDef FindMethod(MethodDef md) {
-			return methods.Find(md);
-		}
-
-		public MMethodDef FindAnyMethod(MemberRef mr) {
-			return methods.FindAny(mr);
-		}
-
-		public MFieldDef FindField(MemberRef fr) {
-			return fields.Find(fr);
-		}
-
-		public MFieldDef FindAnyField(MemberRef fr) {
-			return fields.FindAny(fr);
-		}
-
-		public MPropertyDef Find(PropertyDef pr) {
-			return properties.Find(pr);
-		}
-
-		public MPropertyDef FindAny(PropertyDef pr) {
-			return properties.FindAny(pr);
-		}
-
-		public MEventDef Find(EventDef er) {
-			return events.Find(er);
-		}
-
-		public MEventDef FindAny(EventDef er) {
-			return events.FindAny(er);
-		}
+		public void Add(MEventDef e) => events.Add(e);
+		public void Add(MFieldDef f) => fields.Add(f);
+		public void Add(MMethodDef m) => methods.Add(m);
+		public void Add(MPropertyDef p) => properties.Add(p);
+		public void Add(MTypeDef t) => types.Add(t);
+		public MMethodDef FindMethod(MemberRef mr) => methods.Find(mr);
+		public MMethodDef FindMethod(IMethodDefOrRef md) => methods.Find(md);
+		public MMethodDef FindMethod(MethodDef md) => methods.Find(md);
+		public MMethodDef FindAnyMethod(MemberRef mr) => methods.FindAny(mr);
+		public MFieldDef FindField(MemberRef fr) => fields.Find(fr);
+		public MFieldDef FindAnyField(MemberRef fr) => fields.FindAny(fr);
+		public MPropertyDef Find(PropertyDef pr) => properties.Find(pr);
+		public MPropertyDef FindAny(PropertyDef pr) => properties.FindAny(pr);
+		public MEventDef Find(EventDef er) => events.Find(er);
+		public MEventDef FindAny(EventDef er) => events.FindAny(er);
 
 		public MPropertyDef Create(PropertyDef newProp) {
 			if (FindAny(newProp) != null)
@@ -442,9 +331,7 @@ namespace de4dot.code.renamer.asmmodules {
 			types.OnTypesRenamed();
 		}
 
-		public bool IsNested() {
-			return NestingType != null;
-		}
+		public bool IsNested() => NestingType != null;
 
 		public bool IsGlobalType() {
 			if (!IsNested())
@@ -541,8 +428,7 @@ namespace de4dot.code.renamer.asmmodules {
 						if (!ifaceMethod.IsVirtual())
 							continue;
 						var ifaceMethodRef = GenericArgsSubstitutor.Create(methodInst.methodRef, ifaceInfo.typeRef.TryGetGenericInstSig());
-						MMethodDef classMethod;
-						if (!methodsDict.TryGetValue(ifaceMethodRef, out classMethod))
+						if (!methodsDict.TryGetValue(ifaceMethodRef, out var classMethod))
 							continue;
 						interfaceMethodInfos.AddMethod(ifaceInfo, ifaceMethod, classMethod);
 					}
@@ -575,8 +461,7 @@ namespace de4dot.code.renamer.asmmodules {
 					if (!ifaceMethod.IsVirtual())
 						continue;
 					var ifaceMethodRef = GenericArgsSubstitutor.Create(ifaceMethod.MethodDef, ifaceInfo.typeRef.TryGetGenericInstSig());
-					MMethodDef classMethod;
-					if (!methodsDict.TryGetValue(ifaceMethodRef, out classMethod))
+					if (!methodsDict.TryGetValue(ifaceMethodRef, out var classMethod))
 						continue;
 					interfaceMethodInfos.AddMethodIfEmpty(ifaceInfo, ifaceMethod, classMethod);
 				}
@@ -600,8 +485,7 @@ namespace de4dot.code.renamer.asmmodules {
 				if (!classMethod.IsVirtual())
 					continue;
 				foreach (var overrideMethod in classMethod.MethodDef.Overrides) {
-					MMethodDef ifaceMethod;
-					if (!ifaceMethodsDict.TryGetValue(overrideMethod.MethodDeclaration, out ifaceMethod)) {
+					if (!ifaceMethodsDict.TryGetValue(overrideMethod.MethodDeclaration, out var ifaceMethod)) {
 						// We couldn't find the interface method (eg. interface not resolved) or
 						// it overrides a base class method, and not an interface method.
 						continue;

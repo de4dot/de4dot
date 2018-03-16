@@ -32,21 +32,13 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		protected MethodDef resolveHandler;
 		protected FrameworkType frameworkType;
 
-		public MethodDef InitMethod {
-			get { return initMethod; }
-		}
-
-		public MethodDef HandlerMethod {
-			get { return resolveHandler; }
-		}
-
-		public bool Detected {
-			get { return initMethod != null; }
-		}
+		public MethodDef InitMethod => initMethod;
+		public MethodDef HandlerMethod => resolveHandler;
+		public bool Detected => initMethod != null;
 
 		public ResolverBase(ModuleDefMD module, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
 			this.module = module;
-			this.frameworkType = DotNetUtils.GetFrameworkType(module);
+			frameworkType = DotNetUtils.GetFrameworkType(module);
 			this.simpleDeobfuscator = simpleDeobfuscator;
 			this.deob = deob;
 		}
@@ -106,10 +98,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return false;
 		}
 
-		protected virtual bool CheckResolverInitMethodSilverlight(MethodDef resolverInitMethod) {
-			return false;
-		}
-
+		protected virtual bool CheckResolverInitMethodSilverlight(MethodDef resolverInitMethod) => false;
 		protected abstract bool CheckResolverInitMethodInternal(MethodDef resolverInitMethod);
 
 		IEnumerable<MethodDef> GetLdftnMethods(MethodDef method) {
@@ -117,8 +106,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Ldftn)
 					continue;
-				var loadedMethod = instr.Operand as MethodDef;
-				if (loadedMethod != null)
+				if (instr.Operand is MethodDef loadedMethod)
 					list.Add(loadedMethod);
 			}
 			return list;
@@ -135,14 +123,12 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		protected abstract bool CheckHandlerMethodDesktopInternal(MethodDef handler);
 
 		// 3.0.3.41 - 3.0.4.44
-		protected static byte[] DecryptResourceV3Old(EmbeddedResource resource) {
-			return DecryptResourceV3Old(resource.GetReader().ToArray());
-		}
+		protected static byte[] DecryptResourceV3Old(EmbeddedResource resource) =>
+			DecryptResourceV3Old(resource.GetReader().ToArray());
 
 		// 3.0.3.41 - 3.0.4.44
-		protected static byte[] DecryptResourceV3Old(byte[] data) {
-			return DecryptResource(data, 0, data.Length, 0);
-		}
+		protected static byte[] DecryptResourceV3Old(byte[] data) =>
+			DecryptResource(data, 0, data.Length, 0);
 
 		protected static byte[] DecryptResourceV41SL(EmbeddedResource resource) {
 			var data = resource.GetReader().ToArray();
@@ -152,17 +138,9 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return InflateIfNeeded(data, 1, data.Length - 1);
 		}
 
-		protected static byte[] DecryptResourceV3(EmbeddedResource resource) {
-			return DecryptResourceV3(resource.GetReader().ToArray());
-		}
-
-		protected static byte[] DecryptResourceV3(byte[] data) {
-			return DecryptResource(data, 1, data.Length - 1, data[0]);
-		}
-
-		protected static byte[] DecryptResourceV4(byte[] data, int magic) {
-			return DecryptResource(data, 0, data.Length, magic);
-		}
+		protected static byte[] DecryptResourceV3(EmbeddedResource resource) => DecryptResourceV3(resource.GetReader().ToArray());
+		protected static byte[] DecryptResourceV3(byte[] data) => DecryptResource(data, 1, data.Length - 1, data[0]);
+		protected static byte[] DecryptResourceV4(byte[] data, int magic) => DecryptResource(data, 0, data.Length, magic);
 
 		protected static byte[] DecryptResource(byte[] data, int start, int len, int magic) {
 			for (int i = start; i < start + len; i++)
@@ -170,9 +148,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return InflateIfNeeded(data, start, len);
 		}
 
-		protected static byte[] InflateIfNeeded(byte[] data) {
-			return InflateIfNeeded(data, 0, data.Length);
-		}
+		protected static byte[] InflateIfNeeded(byte[] data) => InflateIfNeeded(data, 0, data.Length);
 
 		protected static byte[] InflateIfNeeded(byte[] data, int start, int len) {
 			if (BitConverter.ToInt16(data, start) != 0x5A4D)

@@ -33,10 +33,7 @@ namespace de4dot.blocks {
 
 		class BlockState {
 			public ScopeBlock scopeBlock;
-
-			public BlockState(ScopeBlock scopeBlock) {
-				this.scopeBlock = scopeBlock;
-			}
+			public BlockState(ScopeBlock scopeBlock) => this.scopeBlock = scopeBlock;
 		}
 
 		class ExceptionInfo {
@@ -63,9 +60,7 @@ namespace de4dot.blocks {
 			}
 		}
 
-		public CodeGenerator(MethodBlocks methodBlocks) {
-			this.methodBlocks = methodBlocks;
-		}
+		public CodeGenerator(MethodBlocks methodBlocks) => this.methodBlocks = methodBlocks;
 
 		public void GetCode(out IList<Instruction> allInstructions, out IList<ExceptionHandler> allExceptionHandlers) {
 			FixEmptyBlocks();
@@ -158,7 +153,7 @@ namespace de4dot.blocks {
 			return null;
 		}
 
-		void SortExceptions() {
+		void SortExceptions() =>
 			exceptions.Sort((a, b) => {
 				// Make sure nested try blocks are sorted before the outer try block.
 				if (a.tryStart > b.tryStart) return -1;	// a could be nested, but b is not
@@ -182,7 +177,6 @@ namespace de4dot.blocks {
 
 				return 0;
 			});
-		}
 
 		void FixEmptyBlocks() {
 			foreach (var block in methodBlocks.GetAllBlocks()) {
@@ -205,8 +199,7 @@ namespace de4dot.blocks {
 			stateStack.Pop();
 
 			foreach (var bb in notProcessedYet) {
-				bool wasVisited;
-				visited.TryGetValue(bb, out wasVisited);
+				visited.TryGetValue(bb, out bool wasVisited);
 				if (!wasVisited)
 					throw new ApplicationException("A block wasn't processed");
 			}
@@ -217,8 +210,7 @@ namespace de4dot.blocks {
 			int lastIndex = -1;
 			for (int i = 0; i < lb.Count; i++) {
 				var bb = lb[i];
-				var block = bb as Block;
-				if (block != null && placeLast(block))
+				if (bb is Block block && placeLast(block))
 					lastIndex = i;
 				bbs.Add(bb);
 			}
@@ -234,7 +226,7 @@ namespace de4dot.blocks {
 		// Returns the BaseBlock's ScopeBlock. The return value is either current ScopeBlock,
 		// the ScopeBlock one step below current (current one's child), or null.
 		ScopeBlock GetScopeBlock(BaseBlock bb) {
-			BlockState current = stateStack.Peek();
+			var current = stateStack.Peek();
 
 			if (current.scopeBlock.IsOurBaseBlock(bb))
 				return current.scopeBlock;
@@ -242,15 +234,14 @@ namespace de4dot.blocks {
 		}
 
 		void DoBaseBlock(BaseBlock bb) {
-			BlockState current = stateStack.Peek();
-			ScopeBlock newOne = GetScopeBlock(bb);
+			var current = stateStack.Peek();
+			var newOne = GetScopeBlock(bb);
 			if (newOne == null)
 				return;		// Not a BaseBlock somewhere inside this ScopeBlock
 			if (newOne != current.scopeBlock)
 				bb = newOne;
 
-			bool hasVisited;
-			if (!visited.TryGetValue(bb, out hasVisited))
+			if (!visited.TryGetValue(bb, out bool hasVisited))
 				visited[bb] = hasVisited = false;
 			if (hasVisited)
 				return;
@@ -274,9 +265,7 @@ namespace de4dot.blocks {
 				throw new ApplicationException("Invalid block found");
 		}
 
-		void DoBlock(Block block) {
-			blocks.Add(block);
-		}
+		void DoBlock(Block block) => blocks.Add(block);
 
 		void DoTryBlock(TryBlock tryBlock) {
 			var tryStart = blocks.Count;

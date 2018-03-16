@@ -30,17 +30,9 @@ namespace de4dot.blocks {
 			public BaseBlock baseBlock;
 			public bool onStack;
 
-			public BlockInfo(BaseBlock baseBlock) {
-				this.baseBlock = baseBlock;
-			}
-
-			public bool Visited() {
-				return dfsNumber >= 0;
-			}
-
-			public override string ToString() {
-				return string.Format("L:{0}, D:{1}, S:{2}", low, dfsNumber, onStack);
-			}
+			public BlockInfo(BaseBlock baseBlock) => this.baseBlock = baseBlock;
+			public bool Visited() => dfsNumber >= 0;
+			public override string ToString() => $"L:{low}, D:{dfsNumber}, S:{onStack}";
 		}
 
 		// It uses Tarjan's strongly connected components algorithm to find all SCCs.
@@ -118,18 +110,15 @@ namespace de4dot.blocks {
 				baseBlock = scopeBlock.ToChild(baseBlock);
 				if (baseBlock == null)
 					return null;
-				BlockInfo info;
-				blockToInfo.TryGetValue(baseBlock, out info);
+				blockToInfo.TryGetValue(baseBlock, out var info);
 				return info;
 			}
 
 			List<BaseBlock> GetTargets(BaseBlock baseBlock) {
 				var list = new List<BaseBlock>();
 
-				if (baseBlock is Block) {
-					var block = (Block)baseBlock;
+				if (baseBlock is Block block)
 					AddTargets(list, block.GetTargets());
-				}
 				else if (baseBlock is TryBlock)
 					AddTargets(list, (TryBlock)baseBlock);
 				else if (baseBlock is TryHandlerBlock)
@@ -176,10 +165,10 @@ namespace de4dot.blocks {
 				public int TargetIndex;
 				public BlockInfo TargetInfo;
 				public VisitState(BlockInfo info) {
-					this.Info = info;
-					this.Targets = null;
-					this.TargetIndex = 0;
-					this.TargetInfo = null;
+					Info = info;
+					Targets = null;
+					TargetIndex = 0;
+					TargetInfo = null;
 				}
 			}
 			Stack<VisitState> visitStateStack = new Stack<VisitState>();
@@ -187,7 +176,7 @@ namespace de4dot.blocks {
 				// This method used to be recursive but to prevent stack overflows,
 				// it's not recursive anymore.
 
-				VisitState state = new VisitState(info);
+				var state = new VisitState(info);
 recursive_call:
 				if (state.Info.baseBlock == firstBlock)
 					throw new ApplicationException("Can't visit firstBlock");
@@ -262,8 +251,7 @@ return_from_method:
 			Block GetLoopStartBlock(List<BaseBlock> list) {
 				var loopBlocks = new Dictionary<Block, bool>(list.Count);
 				foreach (var bb in list) {
-					var block = bb as Block;
-					if (block != null)
+					if (bb is Block block)
 						loopBlocks[block] = true;
 				}
 
@@ -275,8 +263,7 @@ return_from_method:
 					foreach (var source in block.Sources) {
 						if (loopBlocks.ContainsKey(source))
 							continue;
-						int count;
-						targetBlocks.TryGetValue(block, out count);
+						targetBlocks.TryGetValue(block, out int count);
 						targetBlocks[block] = count + 1;
 					}
 				}
@@ -294,9 +281,7 @@ return_from_method:
 			}
 		}
 
-		public BlocksSorter(ScopeBlock scopeBlock) {
-			this.scopeBlock = scopeBlock;
-		}
+		public BlocksSorter(ScopeBlock scopeBlock) => this.scopeBlock = scopeBlock;
 
 		public List<BaseBlock> Sort() {
 			var sorted = new Sorter(scopeBlock, scopeBlock.BaseBlocks, false).Sort();

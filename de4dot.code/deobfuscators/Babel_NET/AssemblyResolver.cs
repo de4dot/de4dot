@@ -37,31 +37,17 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			public byte[] data;
 
 			public EmbeddedAssemblyInfo(string fullName, string extension, byte[] data) {
-				this.fullname = fullName;
+				fullname = fullName;
 				this.extension = extension;
 				this.data = data;
 			}
 		}
 
-		public bool Detected {
-			get { return resolverType != null; }
-		}
-
-		public TypeDef Type {
-			get { return resolverType; }
-		}
-
-		public MethodDef InitMethod {
-			get { return registerMethod; }
-		}
-
-		public EmbeddedResource EncryptedResource {
-			get { return encryptedResource; }
-		}
-
-		public EmbeddedAssemblyInfo[] EmbeddedAssemblyInfos {
-			get { return embeddedAssemblyInfos; }
-		}
+		public bool Detected => resolverType != null;
+		public TypeDef Type => resolverType;
+		public MethodDef InitMethod => registerMethod;
+		public EmbeddedResource EncryptedResource => encryptedResource;
+		public EmbeddedAssemblyInfo[] EmbeddedAssemblyInfos => embeddedAssemblyInfos;
 
 		public AssemblyResolver(ModuleDefMD module, ResourceDecrypter resourceDecrypter) {
 			this.module = module;
@@ -80,8 +66,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				if (!new FieldTypes(type).Exactly(requiredTypes))
 					continue;
 
-				MethodDef regMethod, handler;
-				if (!BabelUtils.FindRegisterMethod(type, out regMethod, out handler))
+				if (!BabelUtils.FindRegisterMethod(type, out var regMethod, out var handler))
 					continue;
 
 				var decryptMethod = FindDecryptMethod(type);

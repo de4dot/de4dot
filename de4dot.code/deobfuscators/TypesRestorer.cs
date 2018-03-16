@@ -50,10 +50,7 @@ namespace de4dot.code.deobfuscators {
 		class UpdatedField {
 			public int token;
 			public TypeSig newFieldType;
-
-			public UpdatedField(FieldDef field) {
-				token = field.MDToken.ToInt32();
-			}
+			public UpdatedField(FieldDef field) => token = field.MDToken.ToInt32();
 		}
 
 		class TypeInfo<T> {
@@ -62,17 +59,9 @@ namespace de4dot.code.deobfuscators {
 			public T arg;
 			bool newobjTypes;
 
-			public Dictionary<TypeSig, bool> Types {
-				get { return types; }
-			}
-
-			public TypeInfo(T arg) {
-				this.arg = arg;
-			}
-
-			public void Add(TypeSig type) {
-				Add(type, false);
-			}
+			public Dictionary<TypeSig, bool> Types => types;
+			public TypeInfo(T arg) => this.arg = arg;
+			public void Add(TypeSig type) => Add(type, false);
 
 			public void Add(TypeSig type, bool wasNewobj) {
 				if (wasNewobj) {
@@ -85,9 +74,7 @@ namespace de4dot.code.deobfuscators {
 				types[type] = true;
 			}
 
-			public void Clear() {
-				types.Clear();
-			}
+			public void Clear() => types.Clear();
 
 			public bool UpdateNewType(ModuleDef module) {
 				if (types.Count == 0)
@@ -113,22 +100,18 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
-		public TypesRestorerBase(ModuleDef module) {
-			this.module = module;
-		}
+		public TypesRestorerBase(ModuleDef module) => this.module = module;
 
 		UpdatedMethod GetUpdatedMethod(MethodDef method) {
 			int token = method.MDToken.ToInt32();
-			UpdatedMethod updatedMethod;
-			if (updatedMethods.TryGetValue(token, out updatedMethod))
+			if (updatedMethods.TryGetValue(token, out var updatedMethod))
 				return updatedMethod;
 			return updatedMethods[token] = new UpdatedMethod(method);
 		}
 
 		UpdatedField GetUpdatedField(FieldDef field) {
 			int token = field.MDToken.ToInt32();
-			UpdatedField updatedField;
-			if (updatedFields.TryGetValue(token, out updatedField))
+			if (updatedFields.TryGetValue(token, out var updatedField))
 				return updatedField;
 			return updatedFields[token] = new UpdatedField(field);
 		}
@@ -150,13 +133,8 @@ namespace de4dot.code.deobfuscators {
 				AddMethods(type.Methods);
 		}
 
-		void AddMethods(IEnumerable<MethodDef> methods) {
-			allMethods.AddRange(methods);
-		}
-
-		void AddMethod(MethodDef method) {
-			allMethods.Add(method);
-		}
+		void AddMethods(IEnumerable<MethodDef> methods) => allMethods.AddRange(methods);
+		void AddMethod(MethodDef method) => allMethods.Add(method);
 
 		void AddAllFields() {
 			foreach (var type in module.GetTypes()) {
@@ -448,9 +426,8 @@ namespace de4dot.code.deobfuscators {
 			return AddMethodArgType(gpp, methodParam, otherParam.Type);
 		}
 
-		bool AddMethodArgType(IGenericParameterProvider gpp, Parameter methodParam, ITypeDefOrRef type) {
-			return AddMethodArgType(gpp, methodParam, type.ToTypeSig());
-		}
+		bool AddMethodArgType(IGenericParameterProvider gpp, Parameter methodParam, ITypeDefOrRef type) =>
+			AddMethodArgType(gpp, methodParam, type.ToTypeSig());
 
 		bool AddMethodArgType(IGenericParameterProvider gpp, Parameter methodParam, TypeSig type) {
 			if (methodParam == null || type == null)
@@ -459,8 +436,7 @@ namespace de4dot.code.deobfuscators {
 			if (!IsValidType(gpp, type))
 				return false;
 
-			TypeInfo<Parameter> info;
-			if (!argInfos.TryGetValue(methodParam, out info))
+			if (!argInfos.TryGetValue(methodParam, out var info))
 				return false;
 			if (info.Types.ContainsKey(type))
 				return false;
@@ -655,19 +631,16 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		protected override bool IsUnknownType(object o) {
-			var arg = o as Parameter;
-			if (arg != null)
+			if (o is Parameter arg)
 				return arg.Type.GetElementType() == ElementType.Object;
 
-			var field = o as FieldDef;
-			if (field != null)
+			if (o is FieldDef field)
 				return field.FieldSig.GetFieldType().GetElementType() == ElementType.Object;
 
-			var sig = o as TypeSig;
-			if (sig != null)
+			if (o is TypeSig sig)
 				return sig.ElementType == ElementType.Object;
 
-			throw new ApplicationException(string.Format("Unknown type: {0}", o.GetType()));
+			throw new ApplicationException($"Unknown type: {o.GetType()}");
 		}
 	}
 }

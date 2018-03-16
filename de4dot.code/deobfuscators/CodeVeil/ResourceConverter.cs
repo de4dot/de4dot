@@ -37,13 +37,13 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 
 			protected override string GetAssemblyFullName(string simpleName) {
 				var asm = TheAssemblyResolver.Instance.Resolve(new AssemblyNameInfo(simpleName), Module);
-				return asm == null ? null : asm.FullName;
+				return asm?.FullName;
 			}
 		}
 
 		public ResourceConverter(ModuleDefMD module, ResourceInfo[] infos) {
 			this.module = module;
-			this.dataCreator = new MyResourceDataCreator(module);
+			dataCreator = new MyResourceDataCreator(module);
 			this.infos = infos;
 		}
 
@@ -76,7 +76,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				resourceData = dataCreator.Create(reader.ReadBytes(info.length));
 				break;
 
-			case 4:     // char[]
+			case 4:		// char[]
 				resourceData = new CharArrayResourceData(dataCreator.CreateUserResourceType(CharArrayResourceData.ReflectionTypeName), DataReaderUtils.ReadChars(ref reader, info.length));
 				break;
 
@@ -163,54 +163,24 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 	class CharArrayResourceData : UserResourceData {
 		public static readonly string ReflectionTypeName = "System.Char[],mscorlib";
 		char[] data;
-
-		public CharArrayResourceData(UserResourceType type, char[] data)
-			: base(type) {
-			this.data = data;
-		}
-
-		public override void WriteData(BinaryWriter writer, IFormatter formatter) {
-			formatter.Serialize(writer.BaseStream, data);
-		}
-
-		public override string ToString() {
-			return string.Format("char[]: Length: {0}", data.Length);
-		}
+		public CharArrayResourceData(UserResourceType type, char[] data) : base(type) => this.data = data;
+		public override void WriteData(BinaryWriter writer, IFormatter formatter) => formatter.Serialize(writer.BaseStream, data);
+		public override string ToString() => $"char[]: Length: {data.Length}";
 	}
 
 	class IconResourceData : UserResourceData {
 		public static readonly string ReflectionTypeName = "System.Drawing.Icon,System.Drawing";
 		Icon icon;
-
-		public IconResourceData(UserResourceType type, byte[] data)
-			: base(type) {
-			icon = new Icon(new MemoryStream(data));
-		}
-
-		public override void WriteData(BinaryWriter writer, IFormatter formatter) {
-			formatter.Serialize(writer.BaseStream, icon);
-		}
-
-		public override string ToString() {
-			return string.Format("Icon: {0}", icon);
-		}
+		public IconResourceData(UserResourceType type, byte[] data) : base(type) => icon = new Icon(new MemoryStream(data));
+		public override void WriteData(BinaryWriter writer, IFormatter formatter) => formatter.Serialize(writer.BaseStream, icon);
+		public override string ToString() => $"Icon: {icon}";
 	}
 
 	class ImageResourceData : UserResourceData {
 		public static readonly string ReflectionTypeName = "System.Drawing.Bitmap,System.Drawing";
 		Bitmap bitmap;
-
-		public ImageResourceData(UserResourceType type, byte[] data)
-			: base(type) {
-			bitmap = new Bitmap(Image.FromStream(new MemoryStream(data)));
-		}
-
-		public override void WriteData(BinaryWriter writer, IFormatter formatter) {
-			formatter.Serialize(writer.BaseStream, bitmap);
-		}
-
-		public override string ToString() {
-			return "Bitmap";
-		}
+		public ImageResourceData(UserResourceType type, byte[] data) : base(type) => bitmap = new Bitmap(Image.FromStream(new MemoryStream(data)));
+		public override void WriteData(BinaryWriter writer, IFormatter formatter) => formatter.Serialize(writer.BaseStream, bitmap);
+		public override string ToString() => "Bitmap";
 	}
 }

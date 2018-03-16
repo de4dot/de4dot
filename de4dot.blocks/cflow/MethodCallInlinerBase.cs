@@ -61,12 +61,10 @@ namespace de4dot.blocks.cflow {
 				this.patchIndex = patchIndex;
 				this.afterIndex = afterIndex;
 				this.lastInstr = lastInstr;
-				this.clonedInstr = new Instr(lastInstr.Clone());
+				clonedInstr = new Instr(lastInstr.Clone());
 			}
 
-			public void Patch(Block block) {
-				block.Instructions[patchIndex] = clonedInstr;
-			}
+			public void Patch(Block block) => block.Instructions[patchIndex] = clonedInstr;
 		}
 
 		protected bool InlineLoadMethod(int patchIndex, MethodDef methodToInline, Instruction loadInstr, int instrIndex) {
@@ -81,13 +79,11 @@ namespace de4dot.blocks.cflow {
 			return true;
 		}
 
-		protected bool InlineOtherMethod(int patchIndex, MethodDef methodToInline, Instruction instr, int instrIndex) {
-			return InlineOtherMethod(patchIndex, methodToInline, instr, instrIndex, 0);
-		}
+		protected bool InlineOtherMethod(int patchIndex, MethodDef methodToInline, Instruction instr, int instrIndex) =>
+			InlineOtherMethod(patchIndex, methodToInline, instr, instrIndex, 0);
 
-		protected bool InlineOtherMethod(int patchIndex, MethodDef methodToInline, Instruction instr, int instrIndex, int popLastArgs) {
-			return PatchMethod(methodToInline, TryInlineOtherMethod(patchIndex, methodToInline, instr, instrIndex, popLastArgs));
-		}
+		protected bool InlineOtherMethod(int patchIndex, MethodDef methodToInline, Instruction instr, int instrIndex, int popLastArgs) =>
+			PatchMethod(methodToInline, TryInlineOtherMethod(patchIndex, methodToInline, instr, instrIndex, popLastArgs));
 
 		protected bool PatchMethod(MethodDef methodToInline, InstructionPatcher patcher) {
 			if (patcher == null)
@@ -100,13 +96,10 @@ namespace de4dot.blocks.cflow {
 			return true;
 		}
 
-		protected InstructionPatcher TryInlineOtherMethod(int patchIndex, MethodDef methodToInline, Instruction instr, int instrIndex) {
-			return TryInlineOtherMethod(patchIndex, methodToInline, instr, instrIndex, 0);
-		}
+		protected InstructionPatcher TryInlineOtherMethod(int patchIndex, MethodDef methodToInline, Instruction instr, int instrIndex) =>
+			TryInlineOtherMethod(patchIndex, methodToInline, instr, instrIndex, 0);
 
-		protected virtual Instruction OnAfterLoadArg(MethodDef methodToInline, Instruction instr, ref int instrIndex) {
-			return instr;
-		}
+		protected virtual Instruction OnAfterLoadArg(MethodDef methodToInline, Instruction instr, ref int instrIndex) => instr;
 
 		protected InstructionPatcher TryInlineOtherMethod(int patchIndex, MethodDef methodToInline, Instruction instr, int instrIndex, int popLastArgs) {
 			int loadIndex = 0;
@@ -220,18 +213,15 @@ namespace de4dot.blocks.cflow {
 			return accessChecker.CanAccess(operand) ?? GetDefaultAccessResult();
 		}
 
-		protected virtual bool GetDefaultAccessResult() {
-			return true;
-		}
+		protected virtual bool GetDefaultAccessResult() => true;
 
 		protected virtual bool IsReturn(MethodDef methodToInline, int instrIndex) {
 			var instr = DotNetUtils.GetInstruction(methodToInline.Body.Instructions, ref instrIndex);
 			return instr != null && instr.OpCode.Code == Code.Ret;
 		}
 
-		protected bool CheckSameMethods(IMethod method, MethodDef methodToInline) {
-			return CheckSameMethods(method, methodToInline, 0);
-		}
+		protected bool CheckSameMethods(IMethod method, MethodDef methodToInline) =>
+			CheckSameMethods(method, methodToInline, 0);
 
 		protected bool CheckSameMethods(IMethod method, MethodDef methodToInline, int ignoreLastMethodToInlineArgs) {
 			var methodToInlineArgs = methodToInline.Parameters;
@@ -245,7 +235,7 @@ namespace de4dot.blocks.cflow {
 				if (!IsCompatibleType(i, methodArg, methodToInlineArg)) {
 					if (i != 0 || !hasImplicitThis)
 						return false;
-					if (!isCompatibleValueThisPtr(methodArg, methodToInlineArg))
+					if (!IsCompatibleValueThisPtr(methodArg, methodToInlineArg))
 						return false;
 				}
 			}
@@ -266,11 +256,10 @@ namespace de4dot.blocks.cflow {
 			return arg;
 		}
 
-		protected virtual bool IsCompatibleType(int paramIndex, IType origType, IType newType) {
-			return new SigComparer().Equals(origType, newType);
-		}
+		protected virtual bool IsCompatibleType(int paramIndex, IType origType, IType newType) =>
+			new SigComparer().Equals(origType, newType);
 
-		static bool isCompatibleValueThisPtr(IType origType, IType newType) {
+		static bool IsCompatibleValueThisPtr(IType origType, IType newType) {
 			var newByRef = newType as ByRefSig;
 			if (newByRef == null)
 				return false;

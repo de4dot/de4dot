@@ -62,7 +62,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		public JitMethodsDecrypter(ModuleDefMD module, ISimpleDeobfuscator simpleDeobfuscator, JitMethodsDecrypter other)
 			: base(module, simpleDeobfuscator, other) {
 			if (other != null)
-				this.version = other.version;
+				version = other.version;
 		}
 
 		protected override bool CheckType(TypeDef type, MethodDef initMethod) {
@@ -512,9 +512,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return dumpedMethods != null;
 		}
 
-		DumpedMethods Decrypt_v17_r73477(MyPEImage peImage, byte[] fileData) {
-			return Decrypt(peImage, fileData, new DecryptMethodData_v17_r73477());
-		}
+		DumpedMethods Decrypt_v17_r73477(MyPEImage peImage, byte[] fileData) =>
+			Decrypt(peImage, fileData, new DecryptMethodData_v17_r73477());
 
 		bool Decrypt_v17_r73479(MyPEImage peImage, byte[] fileData, ref DumpedMethods dumpedMethods) {
 			methodsData = DecryptMethodsData_v17_r73404(peImage);
@@ -522,9 +521,8 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return dumpedMethods != null;
 		}
 
-		DumpedMethods Decrypt_v17_r73479(MyPEImage peImage, byte[] fileData) {
-			return Decrypt(peImage, fileData, new DecryptMethodData_v17_r73479());
-		}
+		DumpedMethods Decrypt_v17_r73479(MyPEImage peImage, byte[] fileData) =>
+			Decrypt(peImage, fileData, new DecryptMethodData_v17_r73479());
 
 		bool Decrypt_v18_r75402(MyPEImage peImage, byte[] fileData, ref DumpedMethods dumpedMethods) {
 			if (peImage.OptionalHeader.CheckSum == 0)
@@ -534,16 +532,12 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return dumpedMethods != null;
 		}
 
-		DumpedMethods Decrypt_v18_r75402(MyPEImage peImage, byte[] fileData) {
-			return Decrypt(peImage, fileData, new DecryptMethodData_v18_r75402(this));
-		}
+		DumpedMethods Decrypt_v18_r75402(MyPEImage peImage, byte[] fileData) =>
+			Decrypt(peImage, fileData, new DecryptMethodData_v18_r75402(this));
 
 		abstract class DecryptMethodData {
 			public abstract void Decrypt(byte[] fileData, int offset, uint k1, int size, out uint[] methodData, out byte[] codeData);
-
-			public bool IsCodeFollowedByExtraSections(uint options) {
-				return (options >> 8) == 0;
-			}
+			public bool IsCodeFollowedByExtraSections(uint options) => (options >> 8) == 0;
 		}
 
 		class DecryptMethodData_v17_r73477 : DecryptMethodData {
@@ -581,9 +575,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		class DecryptMethodData_v18_r75402 : DecryptMethodData {
 			JitMethodsDecrypter jitDecrypter;
 
-			public DecryptMethodData_v18_r75402(JitMethodsDecrypter jitDecrypter) {
-				this.jitDecrypter = jitDecrypter;
-			}
+			public DecryptMethodData_v18_r75402(JitMethodsDecrypter jitDecrypter) => this.jitDecrypter = jitDecrypter;
 
 			public override void Decrypt(byte[] fileData, int offset, uint k1, int size, out uint[] methodData, out byte[] codeData) {
 				var data = new byte[size];
@@ -620,9 +612,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				int mdOffs = BitConverter.ToInt32(fileData, (int)bodyOffset + 2) ^ key;
 				int len = BitConverter.ToInt32(fileData, (int)bodyOffset + 11) ^ ~key;
 				int methodDataOffset = mdOffs + 2;
-				uint[] methodData;
-				byte[] codeData;
-				decrypter.Decrypt(methodsData, methodDataOffset, (uint)key, len, out methodData, out codeData);
+				decrypter.Decrypt(methodsData, methodDataOffset, (uint)key, len, out var methodData, out var codeData);
 
 				dm.mhFlags = 0x03;
 				int maxStack = (int)methodData[methodDataIndexes.maxStack];
@@ -664,12 +654,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return dumpedMethods;
 		}
 
-		static bool IsEncryptedMethod(byte[] fileData, int offset) {
-			return fileData[offset] == 0x46 &&
-				fileData[offset + 1] == 0x21 &&
-				fileData[offset + 10] == 0x20 &&
-				fileData[offset + 15] == 0x26;
-		}
+		static bool IsEncryptedMethod(byte[] fileData, int offset) =>
+			fileData[offset] == 0x46 &&
+			fileData[offset + 1] == 0x21 &&
+			fileData[offset + 10] == 0x20 &&
+			fileData[offset + 15] == 0x26;
 
 		static byte[] ReadExceptionHandlers(ref DataReader reader, int numExceptions) {
 			if (numExceptions == 0)

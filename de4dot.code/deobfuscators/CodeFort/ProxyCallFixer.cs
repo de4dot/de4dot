@@ -27,17 +27,9 @@ namespace de4dot.code.deobfuscators.CodeFort {
 		MethodDefAndDeclaringTypeDict<bool> proxyTargetMethods = new MethodDefAndDeclaringTypeDict<bool>();
 		TypeDef proxyMethodsType;
 
-		public TypeDef ProxyMethodsType {
-			get { return proxyMethodsType; }
-		}
-
-		public ProxyCallFixer(ModuleDefMD module)
-			: base(module) {
-		}
-
-		public bool IsProxyTargetMethod(IMethod method) {
-			return proxyTargetMethods.Find(method);
-		}
+		public TypeDef ProxyMethodsType => proxyMethodsType;
+		public ProxyCallFixer(ModuleDefMD module) : base(module) { }
+		public bool IsProxyTargetMethod(IMethod method) => proxyTargetMethods.Find(method);
 
 		public void FindDelegateCreator() {
 			foreach (var type in module.Types) {

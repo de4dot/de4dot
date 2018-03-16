@@ -32,7 +32,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		string ourAsm;
 		ConfuserVersion version = ConfuserVersion.Unknown;
 		byte[] fileData;
-		x86Emulator x86emu;
+		X86Emulator x86emu;
 		ushort callvirtChar;
 		bool foundNewobjProxy;
 
@@ -108,9 +108,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			}
 		}
 
-		protected override bool ProxyCallIsObfuscated {
-			get { return true; }
-		}
+		protected override bool ProxyCallIsObfuscated => true;
 
 		public IEnumerable<FieldDef> Fields {
 			get {
@@ -196,8 +194,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		protected override void GetCallInfo(object context, FieldDef field, out IMethod calledMethod, out OpCode callOpcode) {
 			var info = context as DelegateInitInfo;
 			if (info == null) {
-				var fieldToInfo = context as FieldDefAndDeclaringTypeDict<DelegateInitInfo>;
-				if (fieldToInfo != null)
+				if (context is FieldDefAndDeclaringTypeDict<DelegateInitInfo> fieldToInfo)
 					info = fieldToInfo.Find(field);
 			}
 			if (info == null)
@@ -366,9 +363,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		void GetCallInfo_v17_r73740_normal(DelegateInitInfo info, ProxyCreatorInfo creatorInfo, out IMethod calledMethod, out OpCode callOpcode) {
 			var nameInfo = DecryptFieldName(info.field.Name.String);
-			uint arg, table;
-			bool isCallvirt;
-			Extract_v17_r73740(creatorInfo, nameInfo, out arg, out table, out isCallvirt);
+			Extract_v17_r73740(creatorInfo, nameInfo, out uint arg, out uint table, out bool isCallvirt);
 			uint token = (arg ^ creatorInfo.magic) | table;
 
 			calledMethod = module.ResolveToken((int)token) as IMethod;
@@ -377,28 +372,24 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 		void GetCallInfo_v17_r73740_native(DelegateInitInfo info, ProxyCreatorInfo creatorInfo, out IMethod calledMethod, out OpCode callOpcode) {
 			var nameInfo = DecryptFieldName(info.field.Name.String);
-			uint arg, table;
-			bool isCallvirt;
-			Extract_v17_r73740(creatorInfo, nameInfo, out arg, out table, out isCallvirt);
+			Extract_v17_r73740(creatorInfo, nameInfo, out uint arg, out uint table, out bool isCallvirt);
 			if (x86emu == null)
-				x86emu = new x86Emulator(fileData);
+				x86emu = new X86Emulator(fileData);
 			uint token = x86emu.Emulate((uint)creatorInfo.nativeMethod.RVA, arg) | table;
 
 			calledMethod = module.ResolveToken((int)token) as IMethod;
 			callOpcode = GetCallOpCode(creatorInfo, isCallvirt);
 		}
 
-		void GetCallInfo_v18_r75367_normal(DelegateInitInfo info, ProxyCreatorInfo creatorInfo, out IMethod calledMethod, out OpCode callOpcode) {
+		void GetCallInfo_v18_r75367_normal(DelegateInitInfo info, ProxyCreatorInfo creatorInfo, out IMethod calledMethod, out OpCode callOpcode) =>
 			GetCallInfo_v18_r75367(info, creatorInfo, out calledMethod, out callOpcode, (creatorInfo2, magic) => creatorInfo2.magic ^ magic);
-		}
 
-		void GetCallInfo_v18_r75367_native(DelegateInitInfo info, ProxyCreatorInfo creatorInfo, out IMethod calledMethod, out OpCode callOpcode) {
+		void GetCallInfo_v18_r75367_native(DelegateInitInfo info, ProxyCreatorInfo creatorInfo, out IMethod calledMethod, out OpCode callOpcode) =>
 			GetCallInfo_v18_r75367(info, creatorInfo, out calledMethod, out callOpcode, (creatorInfo2, magic) => {
 				if (x86emu == null)
-					x86emu = new x86Emulator(fileData);
+					x86emu = new X86Emulator(fileData);
 				return x86emu.Emulate((uint)creatorInfo2.nativeMethod.RVA, magic);
 			});
-		}
 
 		void GetCallInfo_v18_r75367(DelegateInitInfo info, ProxyCreatorInfo creatorInfo, out IMethod calledMethod, out OpCode callOpcode, Func<ProxyCreatorInfo, uint, uint> getRid) {
 			var sig = module.ReadBlob(info.field.MDToken.Raw);
@@ -476,7 +467,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			foreach (var method in type.Methods) {
 				if (method.Body == null || !method.IsStatic || !method.IsAssembly)
 					continue;
-				ConfuserVersion theVersion = ConfuserVersion.Unknown;
+				var theVersion = ConfuserVersion.Unknown;
 
 				if (DotNetUtils.IsMethod(method, "System.Void", "(System.String,System.RuntimeFieldHandle)"))
 					theVersion = ConfuserVersion.v10_r42915;
@@ -485,8 +476,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				else
 					continue;
 
-				int tmpVer;
-				var proxyType = GetProxyCreatorType(method, simpleDeobfuscator, out tmpVer);
+				var proxyType = GetProxyCreatorType(method, simpleDeobfuscator, out int tmpVer);
 				if (proxyType == ProxyCreatorType.None)
 					continue;
 				if (proxyType == ProxyCreatorType.Newobj)
@@ -494,8 +484,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 				simpleDeobfuscator.Deobfuscate(method, SimpleDeobfuscatorFlags.DisableConstantsFolderExtraInstrs);
 				MethodDef nativeMethod = null;
-				uint magic;
-				if (FindMagic_v14_r58564(method, out magic)) {
+				if (FindMagic_v14_r58564(method, out uint magic)) {
 					if (!DotNetUtils.CallsMethod(method, "System.Byte[] System.Convert::FromBase64String(System.String)")) {
 						if (!IsMethodCreator_v14_r58802(method, proxyType))
 							theVersion = ConfuserVersion.v14_r58564;
@@ -893,10 +882,9 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return false;
 		}
 
-		static bool CheckCallProxyTypeV2(MethodDef method) {
-			return DeobUtils.HasInteger(method, 0x28) &&
-				DeobUtils.HasInteger(method, 0x6F);
-		}
+		static bool CheckCallProxyTypeV2(MethodDef method) =>
+			DeobUtils.HasInteger(method, 0x28) &&
+			DeobUtils.HasInteger(method, 0x6F);
 
 		// r78963 adds a 'castclass' opcode to the generated code. This code assumes
 		// CheckCtorProxyTypeV2() has returned true.
@@ -931,8 +919,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				throw new ApplicationException("Missing proxy delegates");
 			var delegateToFields = new Dictionary<TypeDef, List<FieldDef>>();
 			foreach (var field in fieldToMethods.GetKeys()) {
-				List<FieldDef> list;
-				if (!delegateToFields.TryGetValue(field.FieldType.TryGetTypeDef(), out list))
+				if (!delegateToFields.TryGetValue(field.FieldType.TryGetTypeDef(), out var list))
 					delegateToFields[field.FieldType.TryGetTypeDef()] = list = new List<FieldDef>();
 				list.Add(field);
 			}
@@ -953,9 +940,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 					if (info == null)
 						throw new ApplicationException("Missing proxy info");
 
-					IMethod calledMethod;
-					OpCode callOpcode;
-					GetCallInfo(info, field, out calledMethod, out callOpcode);
+					GetCallInfo(info, field, out var calledMethod, out var callOpcode);
 
 					if (calledMethod == null)
 						continue;

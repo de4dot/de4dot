@@ -53,9 +53,7 @@ namespace de4dot.code.deobfuscators {
 			return newDef;
 		}
 
-		public static byte[] ReadModule(ModuleDef module) {
-			return Utils.ReadFile(module.Location);
-		}
+		public static byte[] ReadModule(ModuleDef module) => Utils.ReadFile(module.Location);
 
 		public static bool IsCode(short[] nativeCode, byte[] code) {
 			if (nativeCode.Length != code.Length)
@@ -69,17 +67,9 @@ namespace de4dot.code.deobfuscators {
 			return true;
 		}
 
-		public static byte[] Md5Sum(byte[] data) {
-			return MD5.Create().ComputeHash(data);
-		}
-
-		public static byte[] Sha1Sum(byte[] data) {
-			return SHA1.Create().ComputeHash(data);
-		}
-
-		public static byte[] Sha256Sum(byte[] data) {
-			return SHA256.Create().ComputeHash(data);
-		}
+		public static byte[] Md5Sum(byte[] data) => MD5.Create().ComputeHash(data);
+		public static byte[] Sha1Sum(byte[] data) => SHA1.Create().ComputeHash(data);
+		public static byte[] Sha256Sum(byte[] data) => SHA256.Create().ComputeHash(data);
 
 		public static byte[] AesDecrypt(byte[] data, byte[] key, byte[] iv) {
 			using (var aes = new RijndaelManaged { Mode = CipherMode.CBC }) {
@@ -150,17 +140,14 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
-		public static byte[] Inflate(byte[] data, bool noHeader) {
-			return Inflate(data, 0, data.Length, noHeader);
-		}
+		public static byte[] Inflate(byte[] data, bool noHeader) =>
+			Inflate(data, 0, data.Length, noHeader);
 
-		public static byte[] Inflate(byte[] data, int start, int len, bool noHeader) {
-			return Inflate(data, start, len, new Inflater(noHeader));
-		}
+		public static byte[] Inflate(byte[] data, int start, int len, bool noHeader) =>
+			Inflate(data, start, len, new Inflater(noHeader));
 
-		public static byte[] Inflate(byte[] data, Inflater inflater) {
-			return Inflate(data, 0, data.Length, inflater);
-		}
+		public static byte[] Inflate(byte[] data, Inflater inflater) =>
+			Inflate(data, 0, data.Length, inflater);
 
 		public static byte[] Inflate(byte[] data, int start, int len, Inflater inflater) {
 			var buffer = new byte[0x1000];
@@ -186,8 +173,7 @@ namespace de4dot.code.deobfuscators {
 
 		public static EmbeddedResource GetEmbeddedResourceFromCodeStrings(ModuleDef module, MethodDef method) {
 			foreach (var s in DotNetUtils.GetCodeStrings(method)) {
-				var resource = DotNetUtils.GetResource(module, s) as EmbeddedResource;
-				if (resource != null)
+				if (DotNetUtils.GetResource(module, s) is EmbeddedResource resource)
 					return resource;
 			}
 			return null;
@@ -205,13 +191,8 @@ namespace de4dot.code.deobfuscators {
 					data[index++];
 		}
 
-		public static bool HasInteger(MethodDef method, uint value) {
-			return HasInteger(method, (int)value);
-		}
-
-		public static bool HasInteger(MethodDef method, int value) {
-			return IndexOfLdci4Instruction(method, value) >= 0;
-		}
+		public static bool HasInteger(MethodDef method, uint value) => HasInteger(method, (int)value);
+		public static bool HasInteger(MethodDef method, int value) => IndexOfLdci4Instruction(method, value) >= 0;
 
 		public static int IndexOfLdci4Instruction(MethodDef method, int value) {
 			if (method == null || method.Body == null)

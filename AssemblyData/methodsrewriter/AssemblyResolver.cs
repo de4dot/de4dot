@@ -40,8 +40,7 @@ namespace AssemblyData.methodsrewriter {
 		void InitTypes() {
 			foreach (var type in assembly.GetTypes()) {
 				string key = (type.Namespace ?? "") + "." + type.Name;
-				List<TypeResolver> list;
-				if (!types.TryGetValue(key, out list))
+				if (!types.TryGetValue(key, out var list))
 					types[key] = list = new List<TypeResolver>();
 				list.Add(new TypeResolver(type));
 			}
@@ -52,8 +51,7 @@ namespace AssemblyData.methodsrewriter {
 				return null;
 			var scopeType = typeRef.ScopeType;
 			var key = scopeType.Namespace + "." + scopeType.TypeName;
-			List<TypeResolver> list;
-			if (!types.TryGetValue(key, out list))
+			if (!types.TryGetValue(key, out var list))
 				return null;
 
 			if (scopeType is TypeDef) {
@@ -132,15 +130,12 @@ namespace AssemblyData.methodsrewriter {
 			if (resolver != null)
 				return resolver.type;
 
-			var ts = typeRef as TypeSpec;
-			if (ts != null && ts.TypeSig is GenericSig)
+			if (typeRef is TypeSpec ts && ts.TypeSig is GenericSig)
 				return typeof(MGenericParameter);
 
 			return null;
 		}
 
-		public override string ToString() {
-			return assembly.ToString();
-		}
+		public override string ToString() => assembly.ToString();
 	}
 }

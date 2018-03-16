@@ -32,37 +32,14 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v1 {
 		int numStaticMethods, numInstanceMethods, numVirtualMethods, numCtors;
 		int executeMethodThrows, executeMethodPops;
 
-		public MethodDef ReadMethod {
-			get { return readMethod; }
-		}
-
-		public MethodDef ExecuteMethod {
-			get { return executeMethod; }
-		}
-
-		public int NumStaticMethods {
-			get { return numStaticMethods; }
-		}
-
-		public int NumInstanceMethods {
-			get { return numInstanceMethods; }
-		}
-
-		public int NumVirtualMethods {
-			get { return numVirtualMethods; }
-		}
-
-		public int ExecuteMethodThrows {
-			get { return executeMethodThrows; }
-		}
-
-		public int ExecuteMethodPops {
-			get { return executeMethodPops; }
-		}
-
-		public int NumCtors {
-			get { return numCtors; }
-		}
+		public MethodDef ReadMethod => readMethod;
+		public MethodDef ExecuteMethod => executeMethod;
+		public int NumStaticMethods => numStaticMethods;
+		public int NumInstanceMethods => numInstanceMethods;
+		public int NumVirtualMethods => numVirtualMethods;
+		public int ExecuteMethodThrows => executeMethodThrows;
+		public int ExecuteMethodPops => executeMethodPops;
+		public int NumCtors => numCtors;
 
 		public UnknownHandlerInfo(TypeDef type, CsvmInfo csvmInfo) {
 			this.type = type;
@@ -155,8 +132,6 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v1 {
 			return count;
 		}
 
-		public bool HasSameFieldTypes(object[] fieldTypes) {
-			return new FieldsInfo(fieldTypes).IsSame(fieldsInfo);
-		}
+		public bool HasSameFieldTypes(object[] fieldTypes) => new FieldsInfo(fieldTypes).IsSame(fieldsInfo);
 	}
 }

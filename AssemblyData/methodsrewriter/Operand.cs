@@ -33,7 +33,7 @@ namespace AssemblyData.methodsrewriter {
 
 		public Operand(Type type) {
 			this.type = type;
-			this.data = null;
+			data = null;
 		}
 
 		public Operand(Type type, object data) {
@@ -41,8 +41,6 @@ namespace AssemblyData.methodsrewriter {
 			this.data = data;
 		}
 
-		public override string ToString() {
-			return "{" + type + " => " + data + "}";
-		}
+		public override string ToString() => "{" + type + " => " + data + "}";
 	}
 }

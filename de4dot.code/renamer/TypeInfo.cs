@@ -33,57 +33,32 @@ namespace de4dot.code.renamer {
 		public MTypeDef type;
 		MemberInfos memberInfos;
 
-		public INameChecker NameChecker {
-			get { return type.Module.ObfuscatedFile.NameChecker; }
-		}
+		public INameChecker NameChecker => type.Module.ObfuscatedFile.NameChecker;
 
 		public TypeInfo(MTypeDef typeDef, MemberInfos memberInfos)
 			: base(typeDef) {
-			this.type = typeDef;
+			type = typeDef;
 			this.memberInfos = memberInfos;
 			oldNamespace = typeDef.TypeDef.Namespace.String;
 		}
 
-		bool IsWinFormsClass() {
-			return memberInfos.IsWinFormsClass(type);
-		}
-
-		public PropertyInfo Property(MPropertyDef prop) {
-			return memberInfos.Property(prop);
-		}
-
-		public EventInfo Event(MEventDef evt) {
-			return memberInfos.Event(evt);
-		}
-
-		public FieldInfo Field(MFieldDef field) {
-			return memberInfos.Field(field);
-		}
-
-		public MethodInfo Method(MMethodDef method) {
-			return memberInfos.Method(method);
-		}
-
-		public GenericParamInfo GenericParam(MGenericParamDef gparam) {
-			return memberInfos.GenericParam(gparam);
-		}
-
-		public ParamInfo Param(MParamDef param) {
-			return memberInfos.Param(param);
-		}
+		bool IsWinFormsClass() => memberInfos.IsWinFormsClass(type);
+		public PropertyInfo Property(MPropertyDef prop) => memberInfos.Property(prop);
+		public EventInfo Event(MEventDef evt) => memberInfos.Event(evt);
+		public FieldInfo Field(MFieldDef field) => memberInfos.Field(field);
+		public MethodInfo Method(MMethodDef method) => memberInfos.Method(method);
+		public GenericParamInfo GenericParam(MGenericParamDef gparam) => memberInfos.GenericParam(gparam);
+		public ParamInfo Param(MParamDef param) => memberInfos.Param(param);
 
 		TypeInfo GetBase() {
 			if (type.baseType == null)
 				return null;
 
-			TypeInfo baseInfo;
-			memberInfos.TryGetType(type.baseType.typeDef, out baseInfo);
+			memberInfos.TryGetType(type.baseType.typeDef, out var baseInfo);
 			return baseInfo;
 		}
 
-		bool IsModuleType() {
-			return type.TypeDef.IsGlobalModuleType;
-		}
+		bool IsModuleType() => type.TypeDef.IsGlobalModuleType;
 
 		public void PrepareRenameTypes(TypeRenamerState state) {
 			var checker = NameChecker;
@@ -92,7 +67,7 @@ namespace de4dot.code.renamer {
 				if (type.TypeDef.IsNested)
 					newNamespace = "";
 				else if (!checker.IsValidNamespaceName(oldNamespace))
-					newNamespace = state.CreateNamespace(this.type.TypeDef, oldNamespace);
+					newNamespace = state.CreateNamespace(type.TypeDef, oldNamespace);
 			}
 
 			string origClassName = null;
@@ -107,11 +82,11 @@ namespace de4dot.code.renamer {
 				if (origClassName != null && checker.IsValidTypeName(origClassName))
 					Rename(state.GetTypeName(oldName, origClassName));
 				else {
-					ITypeNameCreator nameCreator = type.IsGlobalType() ?
+					var nameCreator = type.IsGlobalType() ?
 											state.globalTypeNameCreator :
 											state.internalTypeNameCreator;
 					string newBaseType = null;
-					TypeInfo baseInfo = GetBase();
+					var baseInfo = GetBase();
 					if (baseInfo != null && baseInfo.renamed)
 						newBaseType = baseInfo.newName;
 					Rename(nameCreator.Create(type.TypeDef, newBaseType));
@@ -131,8 +106,7 @@ namespace de4dot.code.renamer {
 		void MergeState(MTypeDef other) {
 			if (other == null)
 				return;
-			TypeInfo otherInfo;
-			if (!memberInfos.TryGetType(other, out otherInfo))
+			if (!memberInfos.TryGetType(other, out var otherInfo))
 				return;
 			variableNameState.Merge(otherInfo.variableNameState);
 		}
@@ -288,7 +262,7 @@ namespace de4dot.code.renamer {
 			var checker = NameChecker;
 			foreach (var methodDef in type.AllMethodsSorted) {
 				PrepareRenameMethodArgs(methodDef);
-				PrepareRenameGenericParams(methodDef.GenericParams, checker, methodDef.Owner == null ? null : methodDef.Owner.GenericParams);
+				PrepareRenameGenericParams(methodDef.GenericParams, checker, methodDef.Owner?.GenericParams);
 			}
 		}
 
@@ -420,9 +394,8 @@ namespace de4dot.code.renamer {
 			return true;
 		}
 
-		void PrepareRenameGenericParams(IEnumerable<MGenericParamDef> genericParams, INameChecker checker) {
+		void PrepareRenameGenericParams(IEnumerable<MGenericParamDef> genericParams, INameChecker checker) =>
 			PrepareRenameGenericParams(genericParams, checker, null);
-		}
 
 		void PrepareRenameGenericParams(IEnumerable<MGenericParamDef> genericParams, INameChecker checker, IEnumerable<MGenericParamDef> otherGenericParams) {
 			var usedNames = new Dictionary<string, bool>(StringComparer.Ordinal);
@@ -566,8 +539,7 @@ namespace de4dot.code.renamer {
 				if (setterDef == null)
 					continue;
 
-				string eventName;
-				var handler = GetVbHandler(setterDef.MethodDef, out eventName);
+				var handler = GetVbHandler(setterDef.MethodDef, out string eventName);
 				if (handler == null)
 					continue;
 				var handlerDef = ourMethods.Find(handler);
@@ -577,7 +549,7 @@ namespace de4dot.code.renamer {
 				if (!checker.IsValidEventName(eventName))
 					continue;
 
-				memberInfos.Method(handlerDef).suggestedName = string.Format("{0}_{1}", memberInfos.Property(propDef).newName, eventName);
+				memberInfos.Method(handlerDef).suggestedName = $"{memberInfos.Property(propDef).newName}_{eventName}";
 			}
 		}
 
@@ -617,11 +589,9 @@ namespace de4dot.code.renamer {
 				return null;
 			index = newobjIndex;
 
-			IField addField, removeField;
-			IMethod addMethod, removeMethod;
-			if (!FindEventCall(instructions, ref index, out removeField, out removeMethod))
+			if (!FindEventCall(instructions, ref index, out var removeField, out var removeMethod))
 				return null;
-			if (!FindEventCall(instructions, ref index, out addField, out addMethod))
+			if (!FindEventCall(instructions, ref index, out var addField, out var addMethod))
 				return null;
 
 			if (FindInstruction(instructions, index, Code.Callvirt) != -1)
@@ -749,7 +719,7 @@ namespace de4dot.code.renamer {
 					if (!checker.IsValidEventName(eventName))
 						continue;
 
-					memberInfos.Method(handlerMethod).suggestedName = string.Format("{0}_{1}", memberInfos.Field(fieldDef).newName, eventName);
+					memberInfos.Method(handlerMethod).suggestedName = $"{memberInfos.Field(fieldDef).newName}_{eventName}";
 				}
 			}
 		}
@@ -815,14 +785,12 @@ namespace de4dot.code.renamer {
 					if (!checker.IsValidEventName(eventName))
 						continue;
 
-					memberInfos.Method(handlerDef).suggestedName = string.Format("{0}_{1}", newName, eventName);
+					memberInfos.Method(handlerDef).suggestedName = $"{newName}_{eventName}";
 				}
 			}
 		}
 
-		static bool IsThisOrDup(Instruction instr) {
-			return instr.GetParameterIndex() == 0 || instr.OpCode.Code == Code.Dup;
-		}
+		static bool IsThisOrDup(Instruction instr) => instr.GetParameterIndex() == 0 || instr.OpCode.Code == Code.Dup;
 
 		static bool IsEventHandlerCtor(IMethod method) {
 			if (method == null)
@@ -836,9 +804,7 @@ namespace de4dot.code.renamer {
 			return true;
 		}
 
-		static bool IsEventHandlerType(IType type) {
-			return type.FullName.EndsWith("EventHandler", StringComparison.Ordinal);
-		}
+		static bool IsEventHandlerType(IType type) => type.FullName.EndsWith("EventHandler", StringComparison.Ordinal);
 
 		string FindWindowsFormsClassName(MTypeDef type) {
 			foreach (var methodDef in type.AllMethods) {

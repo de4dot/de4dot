@@ -53,49 +53,18 @@ namespace de4dot.code.renamer.asmmodules {
 			}
 		}
 
-		public IEnumerable<RefToDef<TypeRef, TypeDef>> TypeRefsToRename {
-			get { return typeRefsToRename; }
-		}
+		public IEnumerable<RefToDef<TypeRef, TypeDef>> TypeRefsToRename => typeRefsToRename;
+		public IEnumerable<RefToDef<MemberRef, MethodDef>> MethodRefsToRename => methodRefsToRename;
+		public IEnumerable<RefToDef<MemberRef, FieldDef>> FieldRefsToRename => fieldRefsToRename;
+		public IEnumerable<CustomAttributeRef> CustomAttributeFieldRefs => customAttributeFieldRefs;
+		public IEnumerable<CustomAttributeRef> CustomAttributePropertyRefs => customAttributePropertyRefs;
+		public IObfuscatedFile ObfuscatedFile => obfuscatedFile;
+		public string Filename => obfuscatedFile.Filename;
+		public ModuleDefMD ModuleDefMD => obfuscatedFile.ModuleDefMD;
+		public Module(IObfuscatedFile obfuscatedFile) => this.obfuscatedFile = obfuscatedFile;
 
-		public IEnumerable<RefToDef<MemberRef, MethodDef>> MethodRefsToRename {
-			get { return methodRefsToRename; }
-		}
-
-		public IEnumerable<RefToDef<MemberRef, FieldDef>> FieldRefsToRename {
-			get { return fieldRefsToRename; }
-		}
-
-		public IEnumerable<CustomAttributeRef> CustomAttributeFieldRefs {
-			get { return customAttributeFieldRefs; }
-		}
-
-		public IEnumerable<CustomAttributeRef> CustomAttributePropertyRefs {
-			get { return customAttributePropertyRefs; }
-		}
-
-		public IObfuscatedFile ObfuscatedFile {
-			get { return obfuscatedFile; }
-		}
-
-		public string Filename {
-			get { return obfuscatedFile.Filename; }
-		}
-
-		public ModuleDefMD ModuleDefMD {
-			get { return obfuscatedFile.ModuleDefMD; }
-		}
-
-		public Module(IObfuscatedFile obfuscatedFile) {
-			this.obfuscatedFile = obfuscatedFile;
-		}
-
-		public IEnumerable<MTypeDef> GetAllTypes() {
-			return types.GetValues();
-		}
-
-		public IEnumerable<MethodDef> GetAllMethods() {
-			return allMethods;
-		}
+		public IEnumerable<MTypeDef> GetAllTypes() => types.GetValues();
+		public IEnumerable<MethodDef> GetAllMethods() => allMethods;
 
 		public void FindAllMemberRefs(ref int typeIndex) {
 			memberRefFinder = new MemberRefFinder();
@@ -239,19 +208,17 @@ namespace de4dot.code.renamer.asmmodules {
 			return gis.GenericType.TypeDefOrRef;
 		}
 
-		public MTypeDef ResolveType(ITypeDefOrRef typeRef) {
-			return this.types.Find(GetNonGenericTypeRef(typeRef));
-		}
+		public MTypeDef ResolveType(ITypeDefOrRef typeRef) => types.Find(GetNonGenericTypeRef(typeRef));
 
 		public MMethodDef ResolveMethod(IMethodDefOrRef methodRef) {
-			var typeDef = this.types.Find(GetNonGenericTypeRef(methodRef.DeclaringType));
+			var typeDef = types.Find(GetNonGenericTypeRef(methodRef.DeclaringType));
 			if (typeDef == null)
 				return null;
 			return typeDef.FindMethod(methodRef);
 		}
 
 		public MFieldDef ResolveField(MemberRef fieldRef) {
-			var typeDef = this.types.Find(GetNonGenericTypeRef(fieldRef.DeclaringType));
+			var typeDef = types.Find(GetNonGenericTypeRef(fieldRef.DeclaringType));
 			if (typeDef == null)
 				return null;
 			return typeDef.FindField(fieldRef);

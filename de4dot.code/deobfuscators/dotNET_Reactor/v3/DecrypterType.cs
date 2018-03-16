@@ -34,56 +34,33 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 		List<ModuleRef> moduleRefs = new List<ModuleRef>();
 		Resource linkedResource;
 
-		public bool Detected {
-			get { return decrypterType != null; }
-		}
+		public bool Detected => decrypterType != null;
+		public TypeDef Type => decrypterType;
+		public Resource LinkedResource => linkedResource;
+		public MethodDef StringDecrypter1 => stringDecrypter1;
+		public MethodDef StringDecrypter2 => stringDecrypter2;
+		public IEnumerable<MethodDef> InitMethods => initMethods;
 
-		public TypeDef Type {
-			get { return decrypterType; }
-		}
+		public IEnumerable<MethodDef> StringDecrypters =>
+			new List<MethodDef> {
+				stringDecrypter1,
+				stringDecrypter2,
+			};
 
-		public Resource LinkedResource {
-			get { return linkedResource; }
-		}
-
-		public MethodDef StringDecrypter1 {
-			get { return stringDecrypter1; }
-		}
-
-		public MethodDef StringDecrypter2 {
-			get { return stringDecrypter2; }
-		}
-
-		public IEnumerable<MethodDef> InitMethods {
-			get { return initMethods; }
-		}
-
-		public IEnumerable<MethodDef> StringDecrypters {
-			get {
-				return new List<MethodDef> {
-					stringDecrypter1,
-					stringDecrypter2,
-				};
-			}
-		}
-
-		public DecrypterType(ModuleDefMD module) {
-			this.module = module;
-		}
+		public DecrypterType(ModuleDefMD module) => this.module = module;
 
 		public DecrypterType(ModuleDefMD module, DecrypterType oldOne) {
 			this.module = module;
-			this.decrypterType = Lookup(oldOne.decrypterType, "Could not find decrypterType");
-			this.stringDecrypter1 = Lookup(oldOne.stringDecrypter1, "Could not find stringDecrypter1");
-			this.stringDecrypter2 = Lookup(oldOne.stringDecrypter2, "Could not find stringDecrypter2");
+			decrypterType = Lookup(oldOne.decrypterType, "Could not find decrypterType");
+			stringDecrypter1 = Lookup(oldOne.stringDecrypter1, "Could not find stringDecrypter1");
+			stringDecrypter2 = Lookup(oldOne.stringDecrypter2, "Could not find stringDecrypter2");
 			foreach (var method in oldOne.initMethods)
 				initMethods.Add(Lookup(method, "Could not find initMethod"));
 			UpdateModuleRefs();
 		}
 
-		T Lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
-			return DeobUtils.Lookup(module, def, errorMessage);
-		}
+		T Lookup<T>(T def, string errorMessage) where T : class, ICodedToken =>
+			DeobUtils.Lookup(module, def, errorMessage);
 
 		public void Find() {
 			foreach (var type in module.Types) {
@@ -143,9 +120,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			return sb.ToString();
 		}
 
-		public string Decrypt2(string s) {
-			return Encoding.Unicode.GetString(Convert.FromBase64String(s));
-		}
+		public string Decrypt2(string s) => Encoding.Unicode.GetString(Convert.FromBase64String(s));
 
 		public bool Patch(byte[] peData) {
 			try {

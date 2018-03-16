@@ -69,7 +69,7 @@ namespace de4dot.blocks.cflow {
 		/// Gets/sets the user type which is accessing the target type, field or method
 		/// </summary>
 		public TypeDef UserType {
-			get { return userType; }
+			get => userType;
 			set {
 				if (userType == value)
 					return;
@@ -89,10 +89,10 @@ namespace de4dot.blocks.cflow {
 		/// <param name="userType">The type accessing the target type, field or method</param>
 		public AccessChecker(TypeDef userType) {
 			this.userType = userType;
-			this.userTypeEnclosingTypes = null;
-			this.baseTypes = null;
-			this.enclosingTypesInitialized = false;
-			this.baseTypesInitialized = false;
+			userTypeEnclosingTypes = null;
+			baseTypes = null;
+			enclosingTypesInitialized = false;
+			baseTypesInitialized = false;
 		}
 
 		/// <summary>
@@ -102,32 +102,25 @@ namespace de4dot.blocks.cflow {
 		/// <returns><c>true</c> if it has access to it, <c>false</c> if not, and <c>null</c>
 		/// if we can't determine it (eg. we couldn't resolve a type or input was <c>null</c>)</returns>
 		public bool? CanAccess(object op) {
-			var md = op as MethodDef;
-			if (md != null)
+			if (op is MethodDef md)
 				return CanAccess(md);
 
-			var mr = op as MemberRef;
-			if (mr != null)
+			if (op is MemberRef mr)
 				return CanAccess(mr);
 
-			var fd = op as FieldDef;
-			if (fd != null)
+			if (op is FieldDef fd)
 				return CanAccess(fd);
 
-			var ms = op as MethodSpec;
-			if (ms != null)
+			if (op is MethodSpec ms)
 				return CanAccess(ms);
 
-			var tr = op as TypeRef;
-			if (tr != null)
+			if (op is TypeRef tr)
 				return CanAccess(tr.Resolve());
 
-			var td = op as TypeDef;
-			if (td != null)
+			if (op is TypeDef td)
 				return CanAccess(td);
 
-			var ts = op as TypeSpec;
-			if (ts != null)
+			if (op is TypeSpec ts)
 				return CanAccess(ts);
 
 			return null;
@@ -311,7 +304,7 @@ namespace de4dot.blocks.cflow {
 				return false;
 			InitializeBaseTypes();
 
-			if (baseTypes.ContainsKey(git == null ? (IType)td : git))
+			if (baseTypes.ContainsKey(git ?? (IType)td))
 				return true;
 
 			// td is Family, FamANDAssem, or FamORAssem. If we derive from its enclosing type,
@@ -379,9 +372,7 @@ namespace de4dot.blocks.cflow {
 		/// <param name="fd">The field</param>
 		/// <returns><c>true</c> if it has access to it, <c>false</c> if not, and <c>null</c>
 		/// if we can't determine it (eg. we couldn't resolve a type or input was <c>null</c>)</returns>
-		public bool? CanAccess(FieldDef fd) {
-			return CanAccess(fd, null);
-		}
+		public bool? CanAccess(FieldDef fd) => CanAccess(fd, null);
 
 		bool? CanAccess(FieldDef fd, GenericInstSig git) {
 			if (fd == null)
@@ -444,9 +435,7 @@ namespace de4dot.blocks.cflow {
 		/// <param name="md">The method</param>
 		/// <returns><c>true</c> if it has access to it, <c>false</c> if not, and <c>null</c>
 		/// if we can't determine it (eg. we couldn't resolve a type or input was <c>null</c>)</returns>
-		public bool? CanAccess(MethodDef md) {
-			return CanAccess(md, (GenericInstSig)null);
-		}
+		public bool? CanAccess(MethodDef md) => CanAccess(md, (GenericInstSig)null);
 
 		bool? CanAccess(MethodDef md, GenericInstSig git) {
 			if (md == null)
@@ -515,32 +504,25 @@ namespace de4dot.blocks.cflow {
 
 			var parent = mr.Class;
 
-			var td = parent as TypeDef;
-			if (td != null)
+			if (parent is TypeDef td)
 				return CanAccess(td, mr);
 
-			var tr = parent as TypeRef;
-			if (tr != null)
+			if (parent is TypeRef tr)
 				return CanAccess(tr.Resolve(), mr);
 
-			var ts = parent as TypeSpec;
-			if (ts != null)
+			if (parent is TypeSpec ts)
 				return CanAccess(ts.ResolveTypeDef(), ts.TryGetGenericInstSig(), mr);
 
-			var md = parent as MethodDef;
-			if (md != null)
+			if (parent is MethodDef md)
 				return CanAccess(md, mr);
 
-			var mod = parent as ModuleRef;
-			if (mod != null)
+			if (parent is ModuleRef mod)
 				return CanAccess(mod, mr);
 
 			return null;
 		}
 
-		bool? CanAccess(TypeDef td, MemberRef mr) {
-			return CanAccess(td, null, mr);
-		}
+		bool? CanAccess(TypeDef td, MemberRef mr) => CanAccess(td, null, mr);
 
 		bool? CanAccess(TypeDef td, GenericInstSig git, MemberRef mr) {
 			if (mr == null || td == null)
@@ -593,9 +575,7 @@ namespace de4dot.blocks.cflow {
 		/// <param name="ts">The type spec</param>
 		/// <returns><c>true</c> if it has access to it, <c>false</c> if not, and <c>null</c>
 		/// if we can't determine it (eg. we couldn't resolve a type or input was <c>null</c>)</returns>
-		public bool? CanAccess(TypeSpec ts) {
-			return CanAccess(ts.ResolveTypeDef());
-		}
+		public bool? CanAccess(TypeSpec ts) => CanAccess(ts.ResolveTypeDef());
 
 		/// <summary>
 		/// Checks whether it can access a <see cref="MethodSpec"/>
@@ -609,20 +589,16 @@ namespace de4dot.blocks.cflow {
 
 			var mdr = ms.Method;
 
-			var md = mdr as MethodDef;
-			if (md != null)
+			if (mdr is MethodDef md)
 				return CanAccess(md);
 
-			var mr = mdr as MemberRef;
-			if (mr != null)
+			if (mdr is MemberRef mr)
 				return CanAccess(mr);
 
 			return null;
 		}
 
 		/// <inheritdoc/>
-		public override string ToString() {
-			return string.Format("{0}", userType);
-		}
+		public override string ToString() => userType.ToString();
 	}
 }

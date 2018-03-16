@@ -24,27 +24,27 @@ namespace de4dot.code.renamer.asmmodules {
 	public class MemberRefFinder : MemberFinder {
 		public void RemoveTypeDef(TypeDef td) {
 			if (!TypeDefs.Remove(td))
-				throw new ApplicationException(string.Format("Could not remove TypeDef: {0}", td));
+				throw new ApplicationException($"Could not remove TypeDef: {td}");
 		}
 
 		public void RemoveEventDef(EventDef ed) {
 			if (!EventDefs.Remove(ed))
-				throw new ApplicationException(string.Format("Could not remove EventDef: {0}", ed));
+				throw new ApplicationException($"Could not remove EventDef: {ed}");
 		}
 
 		public void RemoveFieldDef(FieldDef fd) {
 			if (!FieldDefs.Remove(fd))
-				throw new ApplicationException(string.Format("Could not remove FieldDef: {0}", fd));
+				throw new ApplicationException($"Could not remove FieldDef: {fd}");
 		}
 
 		public void RemoveMethodDef(MethodDef md) {
 			if (!MethodDefs.Remove(md))
-				throw new ApplicationException(string.Format("Could not remove MethodDef: {0}", md));
+				throw new ApplicationException($"Could not remove MethodDef: {md}");
 		}
 
 		public void RemovePropertyDef(PropertyDef pd) {
 			if (!PropertyDefs.Remove(pd))
-				throw new ApplicationException(string.Format("Could not remove PropertyDef: {0}", pd));
+				throw new ApplicationException($"Could not remove PropertyDef: {pd}");
 		}
 	}
 }

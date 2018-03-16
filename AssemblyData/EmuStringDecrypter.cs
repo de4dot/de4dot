@@ -30,9 +30,7 @@ namespace AssemblyData {
 			public MethodInfo method;
 			public RewrittenMethod decryptString;
 
-			public DecryptInfo(MethodInfo method) {
-				this.method = method;
-			}
+			public DecryptInfo(MethodInfo method) => this.method = method;
 		}
 
 		public int DefineStringDecrypter(MethodInfo method) {

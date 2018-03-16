@@ -74,21 +74,15 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			}
 		}
 
-		public MethodDef GetDataMethod {
-			get { return data40 != null ? data40.getDataMethod : null; }
-		}
-
-		public EmbeddedResource Resource {
-			get { return data30 != null ? data30.resource : null; }
-		}
+		public MethodDef GetDataMethod => data40?.getDataMethod;
+		public EmbeddedResource Resource => data30?.resource;
 
 		public ResourceResolver(ModuleDefMD module, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob)
 			: base(module, simpleDeobfuscator, deob) {
 		}
 
-		protected override bool CheckResolverInitMethodInternal(MethodDef resolverInitMethod) {
-			return DotNetUtils.CallsMethod(resolverInitMethod, "System.Void System.AppDomain::add_ResourceResolve(System.ResolveEventHandler)");
-		}
+		protected override bool CheckResolverInitMethodInternal(MethodDef resolverInitMethod) =>
+			DotNetUtils.CallsMethod(resolverInitMethod, "System.Void System.AppDomain::add_ResourceResolve(System.ResolveEventHandler)");
 
 		protected override bool CheckHandlerMethodDesktopInternal(MethodDef handler) {
 			if (CheckHandlerV3(handler)) {
@@ -103,8 +97,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			}
 
 			var info = GetHandlerArgs41(handler);
-			Data41 data41Tmp;
-			if (info != null && CheckHandlerV41(info, out data41Tmp)) {
+			if (info != null && CheckHandlerV41(info, out var data41Tmp)) {
 				version = ResourceVersion.V41;
 				data41 = data41Tmp;
 				return true;
@@ -139,8 +132,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			data41.resourceField = GetLdtokenField(info.handler);
 			if (data41.resourceField == null)
 				return false;
-			bool isOtherRetail;
-			int magicArgIndex = GetMagicArgIndex41Retail(info.handler, out isOtherRetail);
+			int magicArgIndex = GetMagicArgIndex41Retail(info.handler, out bool isOtherRetail);
 			if (magicArgIndex < 0) {
 				magicArgIndex = GetMagicArgIndex41Trial(info.handler);
 				data41.isTrial = true;
@@ -230,9 +222,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			"System.String",
 			"System.String[]",
 		};
-		static bool CheckHandlerV3(MethodDef handler) {
-			return new LocalTypes(handler).All(handlerLocalTypes_V3);
-		}
+		static bool CheckHandlerV3(MethodDef handler) => new LocalTypes(handler).All(handlerLocalTypes_V3);
 
 		static Data40 CheckHandlerV40(MethodDef handler) {
 			var data40 = new Data40();
@@ -352,7 +342,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			if (resourceField == null)
 				return false;
 
-			string name = string.Format("Embedded data field {0:X8} RVA {1:X8}", resourceField.MDToken.ToInt32(), (uint)resourceField.RVA);
+			string name = $"Embedded data field {resourceField.MDToken.ToInt32():X8} RVA {(uint)resourceField.RVA:X8}";
 			DeobUtils.DecryptAndAddResources(module, name, () => DecryptResourceV4(resourceField.InitialValue, magic));
 			resourceField.InitialValue = new byte[1];
 			resourceField.FieldSig.Type = module.CorLibTypes.Byte;

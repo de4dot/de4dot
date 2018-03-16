@@ -25,28 +25,20 @@ namespace de4dot.blocks {
 	public class Instr {
 		Instruction instruction;
 
-		public OpCode OpCode {
-			get { return instruction.OpCode; }
-		}
+		public OpCode OpCode => instruction.OpCode;
 
 		public object Operand {
-			get { return instruction.Operand; }
-			set { instruction.Operand = value; }
+			get => instruction.Operand;
+			set => instruction.Operand = value;
 		}
 
-		public Instr(Instruction instruction) {
-			this.instruction = instruction;
-		}
+		public Instr(Instruction instruction) => this.instruction = instruction;
 
-		public Instruction Instruction {
-			get { return instruction; }
-		}
+		public Instruction Instruction => instruction;
 
 		// Returns the variable or null if it's not a ldloc/stloc instruction. It does not return
 		// a local variable if it's a ldloca/ldloca.s instruction.
-		public static Local GetLocalVar(IList<Local> locals, Instr instr) {
-			return instr.Instruction.GetLocal(locals);
-		}
+		public static Local GetLocalVar(IList<Local> locals, Instr instr) => instr.Instruction.GetLocal(locals);
 
 		static public bool IsFallThrough(OpCode opCode) {
 			switch (opCode.FlowControl) {
@@ -103,53 +95,18 @@ namespace de4dot.blocks {
 			}
 		}
 
-		public bool IsLdcI4() {
-			return instruction.IsLdcI4();
-		}
-
-		public int GetLdcI4Value() {
-			return instruction.GetLdcI4Value();
-		}
-
-		public bool IsLdarg() {
-			return instruction.IsLdarg();
-		}
-
-		public bool IsStloc() {
-			return instruction.IsStloc();
-		}
-
-		public bool IsLdloc() {
-			return instruction.IsLdloc();
-		}
-
-		public bool IsNop() {
-			return OpCode == OpCodes.Nop;
-		}
-
-		public bool IsPop() {
-			return OpCode == OpCodes.Pop;
-		}
-
-		public bool IsLeave() {
-			return instruction.IsLeave();
-		}
-
-		public bool IsBr() {
-			return instruction.IsBr();
-		}
-
-		public bool IsBrfalse() {
-			return instruction.IsBrfalse();
-		}
-
-		public bool IsBrtrue() {
-			return instruction.IsBrtrue();
-		}
-
-		public bool IsConditionalBranch() {
-			return instruction.IsConditionalBranch();
-		}
+		public bool IsLdcI4() => instruction.IsLdcI4();
+		public int GetLdcI4Value() => instruction.GetLdcI4Value();
+		public bool IsLdarg() => instruction.IsLdarg();
+		public bool IsStloc() => instruction.IsStloc();
+		public bool IsLdloc() => instruction.IsLdloc();
+		public bool IsNop() => OpCode == OpCodes.Nop;
+		public bool IsPop() => OpCode == OpCodes.Pop;
+		public bool IsLeave() => instruction.IsLeave();
+		public bool IsBr() => instruction.IsBr();
+		public bool IsBrfalse() => instruction.IsBrfalse();
+		public bool IsBrtrue() => instruction.IsBrtrue();
+		public bool IsConditionalBranch() => instruction.IsConditionalBranch();
 
 		public bool GetFlippedBranchOpCode(out OpCode opcode) {
 			switch (OpCode.Code) {
@@ -191,17 +148,13 @@ namespace de4dot.blocks {
 		}
 
 		public void FlipConditonalBranch() {
-			OpCode opcode;
-			if (!GetFlippedBranchOpCode(out opcode))
+			if (!GetFlippedBranchOpCode(out var opcode))
 				throw new ApplicationException("Can't flip conditional since it's not a supported conditional instruction");
 			instruction.OpCode = opcode;
 		}
 
 		// Returns true if we can flip a conditional branch
-		public bool CanFlipConditionalBranch() {
-			OpCode opcode;
-			return GetFlippedBranchOpCode(out opcode);
-		}
+		public bool CanFlipConditionalBranch() => GetFlippedBranchOpCode(out var opcode);
 
 		public void UpdateTargets(List<Instr> targets) {
 			switch (OpCode.OperandType) {
@@ -226,8 +179,6 @@ namespace de4dot.blocks {
 			}
 		}
 
-		public override string ToString() {
-			return instruction.ToString();
-		}
+		public override string ToString() => instruction.ToString();
 	}
 }

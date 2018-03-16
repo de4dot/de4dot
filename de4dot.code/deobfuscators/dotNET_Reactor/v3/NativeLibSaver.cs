@@ -29,40 +29,25 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 		MethodDef initMethod;
 		Resource nativeFileResource;
 
-		public TypeDef Type {
-			get { return nativeLibCallerType; }
-		}
-
-		public MethodDef InitMethod {
-			get { return initMethod; }
-		}
-
-		public Resource Resource {
-			get { return nativeFileResource; }
-		}
-
-		public bool Detected {
-			get { return nativeLibCallerType != null; }
-		}
-
-		public NativeLibSaver(ModuleDefMD module) {
-			this.module = module;
-		}
+		public TypeDef Type => nativeLibCallerType;
+		public MethodDef InitMethod => initMethod;
+		public Resource Resource => nativeFileResource;
+		public bool Detected => nativeLibCallerType != null;
+		public NativeLibSaver(ModuleDefMD module) => this.module = module;
 
 		public NativeLibSaver(ModuleDefMD module, NativeLibSaver oldOne) {
 			this.module = module;
-			this.nativeLibCallerType = Lookup(oldOne.nativeLibCallerType, "Could not find nativeLibCallerType");
-			this.initMethod = Lookup(oldOne.initMethod, "Could not find initMethod");
+			nativeLibCallerType = Lookup(oldOne.nativeLibCallerType, "Could not find nativeLibCallerType");
+			initMethod = Lookup(oldOne.initMethod, "Could not find initMethod");
 			if (oldOne.nativeFileResource != null) {
-				this.nativeFileResource = DotNetUtils.GetResource(module, oldOne.nativeFileResource.Name.String);
-				if (this.nativeFileResource == null)
+				nativeFileResource = DotNetUtils.GetResource(module, oldOne.nativeFileResource.Name.String);
+				if (nativeFileResource == null)
 					throw new ApplicationException("Could not find nativeFileResource");
 			}
 		}
 
-		T Lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
-			return DeobUtils.Lookup(module, def, errorMessage);
-		}
+		T Lookup<T>(T def, string errorMessage) where T : class, ICodedToken =>
+			DeobUtils.Lookup(module, def, errorMessage);
 
 		public void Find() {
 			foreach (var calledMethod in DotNetUtils.GetCalledMethods(module, DotNetUtils.GetModuleTypeCctor(module))) {

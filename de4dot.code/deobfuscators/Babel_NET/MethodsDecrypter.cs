@@ -35,9 +35,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		MethodDef decryptExecuteMethod;
 		EmbeddedResource encryptedResource;
 
-		public bool Detected {
-			get { return methodsDecrypterCreator != null; }
-		}
+		public bool Detected => methodsDecrypterCreator != null;
 
 		public MethodsDecrypter(ModuleDefMD module, ResourceDecrypter resourceDecrypter, IDeobfuscatorContext deobfuscatorContext) {
 			this.module = module;
@@ -116,7 +114,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				return null;
 			}
 			if (imageReaders.ContainsKey(name))
-				throw new ApplicationException(string.Format("ImageReader for name '{0}' already exists", name));
+				throw new ApplicationException($"ImageReader for name '{name}' already exists");
 			imageReaders[name] = imageReader;
 			return imageReader;
 		}
@@ -130,7 +128,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				get {
 					if (string.IsNullOrEmpty(feature))
 						return encryptedMethodName;
-					return string.Format("{0}:{1}", feature, encryptedMethodName);
+					return $"{feature}:{encryptedMethodName}";
 				}
 			}
 
@@ -142,13 +140,13 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 			public override string ToString() {
 				if (feature != "")
-					return string.Format("{0}:{1} {2:X8}", feature, encryptedMethodName, method.MDToken.ToInt32());
+					return $"{feature}:{encryptedMethodName} {method.MDToken.ToInt32():X8}";
 				else
-					return string.Format("{0} {1:X8}", encryptedMethodName, method.MDToken.ToInt32());
+					return $"{encryptedMethodName} {method.MDToken.ToInt32():X8}";
 			}
 		}
 
-		public void decrypt() {
+		public void Decrypt() {
 			int numNonDecryptedMethods = 0;
 			int totalEncryptedMethods = 0;
 			foreach (var info in GetEncryptedMethods()) {
@@ -166,8 +164,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		}
 
 		ImageReader GetImageReader(string feature) {
-			ImageReader imageReader;
-			if (imageReaders.TryGetValue(feature, out imageReader))
+			if (imageReaders.TryGetValue(feature, out var imageReader))
 				return imageReader;
 
 			return CreateImageReader(feature);
@@ -205,8 +202,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 			foreach (var type in module.GetTypes()) {
 				foreach (var method in type.Methods) {
-					EncryptInfo info;
-					if (CheckEncryptedMethod(method, out info))
+					if (CheckEncryptedMethod(method, out var info))
 						infos.Add(info);
 				}
 			}
@@ -223,7 +219,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 			var strings = DotNetUtils.GetCodeStrings(method);
 			if (strings.Count != 1)
-				throw new ApplicationException(string.Format("Could not find name of encrypted method"));
+				throw new ApplicationException("Could not find name of encrypted method");
 
 			string feature = "";
 			string name = strings[0];

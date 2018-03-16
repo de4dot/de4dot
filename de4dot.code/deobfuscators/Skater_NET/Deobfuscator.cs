@@ -30,47 +30,26 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 			: base(DEFAULT_REGEX) {
 		}
 
-		public override string Name {
-			get { return THE_NAME; }
-		}
+		public override string Name => THE_NAME;
+		public override string Type => THE_TYPE;
 
-		public override string Type {
-			get { return THE_TYPE; }
-		}
-
-		public override IDeobfuscator CreateDeobfuscator() {
-			return new Deobfuscator(new Deobfuscator.Options {
+		public override IDeobfuscator CreateDeobfuscator() =>
+			new Deobfuscator(new Deobfuscator.Options {
 				ValidNameRegex = validNameRegex.Get(),
 			});
-		}
 	}
 
 	class Deobfuscator : DeobfuscatorBase {
-		//Options options;
-
 		StringDecrypter stringDecrypter;
 		EnumClassFinder enumClassFinder;
 
 		internal class Options : OptionsBase {
 		}
 
-		public override string Type {
-			get { return DeobfuscatorInfo.THE_TYPE; }
-		}
-
-		public override string TypeLong {
-			get { return DeobfuscatorInfo.THE_NAME; }
-		}
-
-		public override string Name {
-			get { return DeobfuscatorInfo.THE_NAME; }
-		}
-
-		public Deobfuscator(Options options)
-			: base(options) {
-			//this.options = options;
-			StringFeatures = StringFeatures.AllowNoDecryption | StringFeatures.AllowStaticDecryption;
-		}
+		public override string Type => DeobfuscatorInfo.THE_TYPE;
+		public override string TypeLong => DeobfuscatorInfo.THE_NAME;
+		public override string Name => DeobfuscatorInfo.THE_NAME;
+		public Deobfuscator(Options options) : base(options) => StringFeatures = StringFeatures.AllowNoDecryption | StringFeatures.AllowStaticDecryption;
 
 		protected override int DetectInternal() {
 			int val = 0;

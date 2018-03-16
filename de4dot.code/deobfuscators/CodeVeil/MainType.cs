@@ -33,52 +33,29 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		List<uint> rvas = new List<uint>();	// _stub and _executive
 		List<MethodDef> otherInitMethods = new List<MethodDef>();
 
-		public bool Detected {
-			get { return theType != null; }
-		}
+		public bool Detected => theType != null;
+		public ObfuscatorVersion Version => obfuscatorVersion;
+		public TypeDef Type => theType;
+		public MethodDef InitMethod => initMethod;
+		public List<MethodDef> OtherInitMethods => otherInitMethods;
+		public MethodDef TamperCheckMethod => tamperCheckMethod;
+		public List<uint> Rvas => rvas;
 
-		public ObfuscatorVersion Version {
-			get { return obfuscatorVersion; }
-		}
-
-		public TypeDef Type {
-			get { return theType; }
-		}
-
-		public MethodDef InitMethod {
-			get { return initMethod; }
-		}
-
-		public List<MethodDef> OtherInitMethods {
-			get { return otherInitMethods; }
-		}
-
-		public MethodDef TamperCheckMethod {
-			get { return tamperCheckMethod; }
-		}
-
-		public List<uint> Rvas {
-			get { return rvas; }
-		}
-
-		public MainType(ModuleDefMD module) {
-			this.module = module;
-		}
+		public MainType(ModuleDefMD module) => this.module = module;
 
 		public MainType(ModuleDefMD module, MainType oldOne) {
 			this.module = module;
-			this.theType = Lookup(oldOne.theType, "Could not find main type");
-			this.initMethod = Lookup(oldOne.initMethod, "Could not find main type init method");
-			this.tamperCheckMethod = Lookup(oldOne.tamperCheckMethod, "Could not find tamper detection method");
-			this.obfuscatorVersion = oldOne.obfuscatorVersion;
-			this.rvas = oldOne.rvas;
+			theType = Lookup(oldOne.theType, "Could not find main type");
+			initMethod = Lookup(oldOne.initMethod, "Could not find main type init method");
+			tamperCheckMethod = Lookup(oldOne.tamperCheckMethod, "Could not find tamper detection method");
+			obfuscatorVersion = oldOne.obfuscatorVersion;
+			rvas = oldOne.rvas;
 			foreach (var otherInitMethod in otherInitMethods)
 				otherInitMethods.Add(Lookup(otherInitMethod, "Could not find otherInitMethod"));
 		}
 
-		T Lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
-			return DeobUtils.Lookup(module, def, errorMessage);
-		}
+		T Lookup<T>(T def, string errorMessage) where T : class, ICodedToken =>
+			DeobUtils.Lookup(module, def, errorMessage);
 
 		public void Find() {
 			var cctor = DotNetUtils.GetModuleTypeCctor(module);
@@ -99,8 +76,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				if (call.OpCode.Code != Code.Call)
 					continue;
 				var initMethodTmp = call.Operand as MethodDef;
-				ObfuscatorVersion obfuscatorVersionTmp;
-				if (!CheckInitMethod(initMethodTmp, out obfuscatorVersionTmp))
+				if (!CheckInitMethod(initMethodTmp, out var obfuscatorVersionTmp))
 					continue;
 				if (!CheckMethodsType(initMethodTmp.DeclaringType))
 					continue;

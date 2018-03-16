@@ -56,8 +56,7 @@ namespace de4dot.code.deobfuscators {
 
 		public static bool Verify(ref DataReader reader) {
 			try {
-				byte[] code, extraSections;
-				ParseMethodBody(ref reader, out code, out extraSections);
+				ParseMethodBody(ref reader, out var code, out var extraSections);
 				return true;
 			}
 			catch (InvalidMethodBody) {
@@ -105,9 +104,8 @@ namespace de4dot.code.deobfuscators {
 			return mbHeader;
 		}
 
-		static void Align(ref DataReader reader, int alignment) {
+		static void Align(ref DataReader reader, int alignment) =>
 			reader.Position = (reader.Position + (uint)alignment - 1) & ~((uint)alignment - 1);
-		}
 
 		public static byte[] ReadExtraSections(ref DataReader reader) {
 			try {

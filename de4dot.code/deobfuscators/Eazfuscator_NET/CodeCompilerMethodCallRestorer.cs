@@ -21,47 +21,15 @@ using dnlib.DotNet;
 
 namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 	class CodeCompilerMethodCallRestorer : MethodCallRestorerBase {
-		ITypeDefOrRef CodeDomProvider {
-			get {
-				return builder.Type("System.CodeDom.Compiler", "CodeDomProvider", "System").ToTypeDefOrRef();
-			}
-		}
+		ITypeDefOrRef CodeDomProvider => builder.Type("System.CodeDom.Compiler", "CodeDomProvider", "System").ToTypeDefOrRef();
+		ITypeDefOrRef ICodeCompiler => builder.Type("System.CodeDom.Compiler", "ICodeCompiler", "System").ToTypeDefOrRef();
+		TypeSig CompilerResults => builder.Type("System.CodeDom.Compiler", "CompilerResults", "System");
+		TypeSig CompilerParameters => builder.Type("System.CodeDom.Compiler", "CompilerParameters", "System");
+		TypeSig CodeCompileUnit => builder.Type("System.CodeDom", "CodeCompileUnit", "System");
+		TypeSig CodeCompileUnitArray => builder.Array(CodeCompileUnit);
+		TypeSig StringArray => builder.Array(builder.String);
 
-		ITypeDefOrRef ICodeCompiler {
-			get {
-				return builder.Type("System.CodeDom.Compiler", "ICodeCompiler", "System").ToTypeDefOrRef();
-			}
-		}
-
-		TypeSig CompilerResults {
-			get {
-				return builder.Type("System.CodeDom.Compiler", "CompilerResults", "System");
-			}
-		}
-
-		TypeSig CompilerParameters {
-			get {
-				return builder.Type("System.CodeDom.Compiler", "CompilerParameters", "System");
-			}
-		}
-
-		TypeSig CodeCompileUnit {
-			get {
-				return builder.Type("System.CodeDom", "CodeCompileUnit", "System");
-			}
-		}
-
-		TypeSig CodeCompileUnitArray {
-			get { return builder.Array(CodeCompileUnit); }
-		}
-
-		TypeSig StringArray {
-			get { return builder.Array(builder.String); }
-		}
-
-		public CodeCompilerMethodCallRestorer(ModuleDefMD module)
-			: base(module) {
-		}
+		public CodeCompilerMethodCallRestorer(ModuleDefMD module) : base(module) { }
 
 		public void Add_CodeDomProvider_CompileAssemblyFromDom(MethodDef oldMethod) {
 			if (oldMethod == null)

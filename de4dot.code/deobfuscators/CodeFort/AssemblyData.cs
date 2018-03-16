@@ -30,45 +30,22 @@ namespace de4dot.code.deobfuscators.CodeFort {
 	}
 
 	static class ITypeCreator {
-		public static ICFType Create(string name) {
-			return new StringType(name);
-		}
-
-		public static ICFType Create(Type type) {
-			return new ExistingType(type);
-		}
+		public static ICFType Create(string name) => new StringType(name);
+		public static ICFType Create(Type type) => new ExistingType(type);
 	}
 
 	class StringType : ICFType {
 		readonly string name;
-
-		public StringType(string name) {
-			this.name = name;
-		}
-
-		public Type Get(SerializedTypes serializedTypes) {
-			return serializedTypes.GetBuilderType(name);
-		}
-
-		public override string ToString() {
-			return name;
-		}
+		public StringType(string name) => this.name = name;
+		public Type Get(SerializedTypes serializedTypes) => serializedTypes.GetBuilderType(name);
+		public override string ToString() => name;
 	}
 
 	class ExistingType : ICFType {
 		readonly Type type;
-
-		public ExistingType(Type type) {
-			this.type = type;
-		}
-
-		public Type Get(SerializedTypes serializedTypes) {
-			return type;
-		}
-
-		public override string ToString() {
-			return type.ToString();
-		}
+		public ExistingType(Type type) => this.type = type;
+		public Type Get(SerializedTypes serializedTypes) => type;
+		public override string ToString() => type.ToString();
 	}
 
 	class GenericType : ICFType {
@@ -147,8 +124,8 @@ namespace de4dot.code.deobfuscators.CodeFort {
 
 		public override string ToString() {
 			if (!string.IsNullOrEmpty(dcNamespace))
-				return string.Format("{0} - {1}.{2}", name, dcNamespace, dcName);
-			return string.Format("{0} - {1}", name, dcName);
+				return $"{name} - {dcNamespace}.{dcName}";
+			return $"{name} - {dcName}";
 		}
 	}
 
@@ -194,9 +171,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			this.dmName = dmName;
 		}
 
-		public override string ToString() {
-			return string.Format("{0} {1} - {2}", type, name, dmName);
-		}
+		public override string ToString() => $"{type} {name} - {dmName}";
 	}
 
 	class EnumInfo : TypeInfoBase {
@@ -208,9 +183,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 		}
 
 		public EnumInfo(string name, string dcNamespace, string dcName, EnumFieldInfo[] fieldInfos)
-			: base(name, dcNamespace, dcName) {
-			this.fieldInfos = fieldInfos;
-		}
+			: base(name, dcNamespace, dcName) => this.fieldInfos = fieldInfos;
 	}
 
 	class EnumFieldInfo {
@@ -224,9 +197,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			this.emValue = emValue;
 		}
 
-		public override string ToString() {
-			return string.Format("({0}) {1} - {2}", value, name, emValue);
-		}
+		public override string ToString() => $"({value}) {name} - {emValue}";
 	}
 
 	class SerializedTypes {
@@ -370,22 +341,14 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			List<PropertyInfo> properties = new List<PropertyInfo>();
 			List<object> values = new List<object>();
 
-			public PropertyInfo[] Properties {
-				get { return properties.ToArray(); }
-			}
-
-			public object[] Values {
-				get { return values.ToArray(); }
-			}
-
-			public PropertyInfoCreator(Type type) {
-				this.type = type;
-			}
+			public PropertyInfo[] Properties => properties.ToArray();
+			public object[] Values => values.ToArray();
+			public PropertyInfoCreator(Type type) => this.type = type;
 
 			public void Add(string propertyName, object value) {
 				var prop = type.GetProperty(propertyName);
 				if (prop == null)
-					throw new ApplicationException(string.Format("Could not find property {0} (type {1})", propertyName, type));
+					throw new ApplicationException($"Could not find property {propertyName} (type {type})");
 				properties.Add(prop);
 				values.Add(value);
 			}
@@ -440,13 +403,13 @@ namespace de4dot.code.deobfuscators.CodeFort {
 
 		void Add(string name, EnumBuilder builder) {
 			if (enumBuilders.ContainsKey(name))
-				throw new ApplicationException(string.Format("Enum {0} already exists", name));
+				throw new ApplicationException($"Enum {name} already exists");
 			enumBuilders[name] = builder;
 		}
 
 		void Add(string name, TypeBuilder builder) {
 			if (typeBuilders.ContainsKey(name))
-				throw new ApplicationException(string.Format("Type {0} already exists", name));
+				throw new ApplicationException($"Type {name} already exists");
 			typeBuilders[name] = builder;
 		}
 
@@ -483,20 +446,16 @@ namespace de4dot.code.deobfuscators.CodeFort {
 		}
 
 		public Type GetBuilderType(string name) {
-			EnumBuilder enumBuilder;
-			if (enumBuilders.TryGetValue(name, out enumBuilder))
+			if (enumBuilders.TryGetValue(name, out var enumBuilder))
 				return enumBuilder;
 
-			TypeBuilder typeBuilder;
-			if (typeBuilders.TryGetValue(name, out typeBuilder))
+			if (typeBuilders.TryGetValue(name, out var typeBuilder))
 				return typeBuilder;
 
-			throw new ApplicationException(string.Format("Could not find type {0}", name));
+			throw new ApplicationException($"Could not find type {name}");
 		}
 
-		Type GetType(string name) {
-			return createdTypes[name];
-		}
+		Type GetType(string name) => createdTypes[name];
 
 		public object Deserialize(byte[] data) {
 			var serializerType = Type.GetType("System.Runtime.Serialization.DataContractSerializer," + serializationAssemblyname);

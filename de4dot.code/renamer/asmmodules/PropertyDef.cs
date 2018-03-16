@@ -24,10 +24,7 @@ namespace de4dot.code.renamer.asmmodules {
 	public class MPropertyDef : Ref {
 		public MMethodDef GetMethod { get; set; }
 		public MMethodDef SetMethod { get; set; }
-
-		public PropertyDef PropertyDef {
-			get { return (PropertyDef)memberRef; }
-		}
+		public PropertyDef PropertyDef => (PropertyDef)memberRef;
 
 		public MPropertyDef(PropertyDef propertyDef, MTypeDef owner, int index)
 			: base(propertyDef, owner, index) {

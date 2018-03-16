@@ -63,18 +63,15 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 		public MethodDef LocalsGet;
 		public MethodDef LocalsSet;
 
-		public CsvmInfo(ModuleDef module) {
-			this.module = module;
-		}
+		public CsvmInfo(ModuleDef module) => this.module = module;
 
-		public bool Initialize() {
-			return FindVmHandlerBase() &&
-					FindLocalOpsMethods() &&
-					FindComparerMethods() &&
-					FindArithmeticMethods() &&
-					FindUnaryOpsMethods() &&
-					FindArgsLocals();
-		}
+		public bool Initialize() =>
+			FindVmHandlerBase() &&
+			FindLocalOpsMethods() &&
+			FindComparerMethods() &&
+			FindArithmeticMethods() &&
+			FindUnaryOpsMethods() &&
+			FindArgsLocals();
 
 		public bool FindVmHandlerBase() {
 			foreach (var type in module.Types) {
@@ -117,17 +114,9 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 			return false;
 		}
 
-		MethodDef FindLogicalOpMethodShrUn(TypeDef type) {
-			return FindLogicalOpMethod(type, ElementType.U4, ElementType.I4, ElementType.U4, Code.Shr_Un);
-		}
-
-		MethodDef FindLogicalOpMethodShl(TypeDef type) {
-			return FindLogicalOpMethod(type, ElementType.I4, ElementType.I4, ElementType.I4, Code.Shl);
-		}
-
-		MethodDef FindLogicalOpMethodShr(TypeDef type) {
-			return FindLogicalOpMethod(type, ElementType.I4, ElementType.I4, ElementType.I4, Code.Shr);
-		}
+		MethodDef FindLogicalOpMethodShrUn(TypeDef type) => FindLogicalOpMethod(type, ElementType.U4, ElementType.I4, ElementType.U4, Code.Shr_Un);
+		MethodDef FindLogicalOpMethodShl(TypeDef type) => FindLogicalOpMethod(type, ElementType.I4, ElementType.I4, ElementType.I4, Code.Shl);
+		MethodDef FindLogicalOpMethodShr(TypeDef type) => FindLogicalOpMethod(type, ElementType.I4, ElementType.I4, ElementType.I4, Code.Shr);
 
 		MethodDef FindLogicalOpMethod(TypeDef type, ElementType e1, ElementType e2, ElementType e3, Code code) {
 			foreach (var method in type.Methods) {
@@ -164,17 +153,9 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 			return null;
 		}
 
-		MethodDef FindLogicalOpMethodAnd(TypeDef type) {
-			return FindLogicalOpMethod(type, Code.And);
-		}
-
-		MethodDef FindLogicalOpMethodXor(TypeDef type) {
-			return FindLogicalOpMethod(type, Code.Xor);
-		}
-
-		MethodDef FindLogicalOpMethodOr(TypeDef type) {
-			return FindLogicalOpMethod(type, Code.Or);
-		}
+		MethodDef FindLogicalOpMethodAnd(TypeDef type) => FindLogicalOpMethod(type, Code.And);
+		MethodDef FindLogicalOpMethodXor(TypeDef type) => FindLogicalOpMethod(type, Code.Xor);
+		MethodDef FindLogicalOpMethodOr(TypeDef type) => FindLogicalOpMethod(type, Code.Or);
 
 		MethodDef FindLogicalOpMethod(TypeDef type, Code code) {
 			foreach (var method in type.Methods) {
@@ -206,14 +187,13 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 			return null;
 		}
 
-		static bool CheckLogicalMethodSig(MethodDef method) {
-			return method != null &&
-				method.IsStatic &&
-				method.MethodSig.GetParamCount() == 2 &&
-				method.MethodSig.RetType.GetElementType() == ElementType.Object &&
-				method.MethodSig.Params[0].GetElementType() == ElementType.Object &&
-				method.MethodSig.Params[1].GetElementType() == ElementType.Object;
-		}
+		static bool CheckLogicalMethodSig(MethodDef method) =>
+			method != null &&
+			method.IsStatic &&
+			method.MethodSig.GetParamCount() == 2 &&
+			method.MethodSig.RetType.GetElementType() == ElementType.Object &&
+			method.MethodSig.Params[0].GetElementType() == ElementType.Object &&
+			method.MethodSig.Params[1].GetElementType() == ElementType.Object;
 
 		public bool FindComparerMethods() {
 			foreach (var type in module.Types) {
@@ -238,21 +218,10 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 			return false;
 		}
 
-		MethodDef FindCompareLt(TypeDef type) {
-			return FindCompareMethod(type, Code.Clt, false);
-		}
-
-		MethodDef FindCompareLte(TypeDef type) {
-			return FindCompareMethod(type, Code.Cgt, true);
-		}
-
-		MethodDef FindCompareGt(TypeDef type) {
-			return FindCompareMethod(type, Code.Cgt, false);
-		}
-
-		MethodDef FindCompareGte(TypeDef type) {
-			return FindCompareMethod(type, Code.Clt, true);
-		}
+		MethodDef FindCompareLt(TypeDef type) => FindCompareMethod(type, Code.Clt, false);
+		MethodDef FindCompareLte(TypeDef type) => FindCompareMethod(type, Code.Cgt, true);
+		MethodDef FindCompareGt(TypeDef type) => FindCompareMethod(type, Code.Cgt, false);
+		MethodDef FindCompareGte(TypeDef type) => FindCompareMethod(type, Code.Clt, true);
 
 		MethodDef FindCompareMethod(TypeDef type, Code code, bool invert) {
 			foreach (var method in type.Methods) {
@@ -344,14 +313,13 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 			return null;
 		}
 
-		static bool CheckCompareEqMethodSig(MethodDef method) {
-			return method != null &&
-				method.IsStatic &&
-				method.MethodSig.GetParamCount() == 2 &&
-				method.MethodSig.RetType.GetElementType() == ElementType.Boolean &&
-				method.MethodSig.Params[0].GetElementType() == ElementType.Object &&
-				method.MethodSig.Params[1].GetElementType() == ElementType.Object;
-		}
+		static bool CheckCompareEqMethodSig(MethodDef method) =>
+			method != null &&
+			method.IsStatic &&
+			method.MethodSig.GetParamCount() == 2 &&
+			method.MethodSig.RetType.GetElementType() == ElementType.Boolean &&
+			method.MethodSig.Params[0].GetElementType() == ElementType.Object &&
+			method.MethodSig.Params[1].GetElementType() == ElementType.Object;
 
 		MethodDef FindCompareEqz(TypeDef type) {
 			foreach (var method in type.Methods) {
@@ -381,13 +349,12 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 			return null;
 		}
 
-		static bool CheckCompareEqzMethodSig(MethodDef method) {
-			return method != null &&
-				method.IsStatic &&
-				method.MethodSig.GetParamCount() == 1 &&
-				method.MethodSig.RetType.GetElementType() == ElementType.Boolean &&
-				method.MethodSig.Params[0].GetElementType() == ElementType.Object;
-		}
+		static bool CheckCompareEqzMethodSig(MethodDef method) =>
+			method != null &&
+			method.IsStatic &&
+			method.MethodSig.GetParamCount() == 1 &&
+			method.MethodSig.RetType.GetElementType() == ElementType.Boolean &&
+			method.MethodSig.Params[0].GetElementType() == ElementType.Object;
 
 		public bool FindArithmeticMethods() {
 			foreach (var type in module.Types) {
@@ -424,17 +391,9 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 			return false;
 		}
 
-		MethodDef FindArithmeticSubOvfUn(TypeDef type) {
-			return FindArithmeticOpUn(type, Code.Sub_Ovf_Un);
-		}
-
-		MethodDef FindArithmeticMulOvfUn(TypeDef type) {
-			return FindArithmeticOpUn(type, Code.Mul_Ovf_Un);
-		}
-
-		MethodDef FindArithmeticAddOvfUn(TypeDef type) {
-			return FindArithmeticOpUn(type, Code.Add_Ovf_Un);
-		}
+		MethodDef FindArithmeticSubOvfUn(TypeDef type) => FindArithmeticOpUn(type, Code.Sub_Ovf_Un);
+		MethodDef FindArithmeticMulOvfUn(TypeDef type) => FindArithmeticOpUn(type, Code.Mul_Ovf_Un);
+		MethodDef FindArithmeticAddOvfUn(TypeDef type) => FindArithmeticOpUn(type, Code.Add_Ovf_Un);
 
 		MethodDef FindArithmeticOpUn(TypeDef type, Code code) {
 			foreach (var method in type.Methods) {
@@ -472,22 +431,16 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 			return null;
 		}
 
-		static bool CheckArithmeticUnMethodSig(MethodDef method) {
-			return method != null &&
-				method.IsStatic &&
-				method.MethodSig.GetParamCount() == 2 &&
-				method.MethodSig.RetType.GetElementType() == ElementType.Object &&
-				method.MethodSig.Params[0].GetElementType() == ElementType.Class &&
-				method.MethodSig.Params[1].GetElementType() == ElementType.Class;
-		}
+		static bool CheckArithmeticUnMethodSig(MethodDef method) =>
+			method != null &&
+			method.IsStatic &&
+			method.MethodSig.GetParamCount() == 2 &&
+			method.MethodSig.RetType.GetElementType() == ElementType.Object &&
+			method.MethodSig.Params[0].GetElementType() == ElementType.Class &&
+			method.MethodSig.Params[1].GetElementType() == ElementType.Class;
 
-		MethodDef FindArithmeticRemUn(TypeDef type) {
-			return FindArithmeticDivOrRemUn(type, Code.Rem_Un);
-		}
-
-		MethodDef FindArithmeticDivUn(TypeDef type) {
-			return FindArithmeticDivOrRemUn(type, Code.Div_Un);
-		}
+		MethodDef FindArithmeticRemUn(TypeDef type) => FindArithmeticDivOrRemUn(type, Code.Rem_Un);
+		MethodDef FindArithmeticDivUn(TypeDef type) => FindArithmeticDivOrRemUn(type, Code.Div_Un);
 
 		MethodDef FindArithmeticDivOrRemUn(TypeDef type, Code code) {
 			foreach (var method in type.Methods) {
@@ -521,37 +474,14 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 			return null;
 		}
 
-		MethodDef FindArithmeticRem(TypeDef type) {
-			return FindArithmeticOther(type, Code.Rem);
-		}
-
-		MethodDef FindArithmeticDiv(TypeDef type) {
-			return FindArithmeticOther(type, Code.Div);
-		}
-
-		MethodDef FindArithmeticMul(TypeDef type) {
-			return FindArithmeticOther(type, Code.Mul);
-		}
-
-		MethodDef FindArithmeticMulOvf(TypeDef type) {
-			return FindArithmeticOther(type, Code.Mul_Ovf);
-		}
-
-		MethodDef FindArithmeticSub(TypeDef type) {
-			return FindArithmeticOther(type, Code.Sub);
-		}
-
-		MethodDef FindArithmeticSubOvf(TypeDef type) {
-			return FindArithmeticOther(type, Code.Sub_Ovf);
-		}
-
-		MethodDef FindArithmeticAdd(TypeDef type) {
-			return FindArithmeticOther(type, Code.Add);
-		}
-
-		MethodDef FindArithmeticAddOvf(TypeDef type) {
-			return FindArithmeticOther(type, Code.Add_Ovf);
-		}
+		MethodDef FindArithmeticRem(TypeDef type) => FindArithmeticOther(type, Code.Rem);
+		MethodDef FindArithmeticDiv(TypeDef type) => FindArithmeticOther(type, Code.Div);
+		MethodDef FindArithmeticMul(TypeDef type) => FindArithmeticOther(type, Code.Mul);
+		MethodDef FindArithmeticMulOvf(TypeDef type) => FindArithmeticOther(type, Code.Mul_Ovf);
+		MethodDef FindArithmeticSub(TypeDef type) => FindArithmeticOther(type, Code.Sub);
+		MethodDef FindArithmeticSubOvf(TypeDef type) => FindArithmeticOther(type, Code.Sub_Ovf);
+		MethodDef FindArithmeticAdd(TypeDef type) => FindArithmeticOther(type, Code.Add);
+		MethodDef FindArithmeticAddOvf(TypeDef type) => FindArithmeticOther(type, Code.Add_Ovf);
 
 		MethodDef FindArithmeticOther(TypeDef type, Code code) {
 			foreach (var method in type.Methods) {
@@ -583,14 +513,13 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 			return null;
 		}
 
-		static bool CheckArithmeticOtherMethodSig(MethodDef method) {
-			return method != null &&
-				method.IsStatic &&
-				method.MethodSig.GetParamCount() == 2 &&
-				method.MethodSig.RetType.GetElementType() == ElementType.Object &&
-				method.MethodSig.Params[0].GetElementType() == ElementType.Object &&
-				method.MethodSig.Params[1].GetElementType() == ElementType.Object;
-		}
+		static bool CheckArithmeticOtherMethodSig(MethodDef method) =>
+			method != null &&
+			method.IsStatic &&
+			method.MethodSig.GetParamCount() == 2 &&
+			method.MethodSig.RetType.GetElementType() == ElementType.Object &&
+			method.MethodSig.Params[0].GetElementType() == ElementType.Object &&
+			method.MethodSig.Params[1].GetElementType() == ElementType.Object;
 
 		public bool FindUnaryOpsMethods() {
 			UnaryNot = FindUnaryOpMethod1(Code.Not);

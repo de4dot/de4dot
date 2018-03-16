@@ -36,28 +36,21 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			decryptMainAsm = new BoolOption(null, MakeArgName("decrypt-main"), "Decrypt main embedded assembly", true);
 		}
 
-		public override string Name {
-			get { return THE_NAME; }
-		}
+		public override string Name => THE_NAME;
+		public override string Type => THE_TYPE;
 
-		public override string Type {
-			get { return THE_TYPE; }
-		}
-
-		public override IDeobfuscator CreateDeobfuscator() {
-			return new Deobfuscator(new Deobfuscator.Options {
+		public override IDeobfuscator CreateDeobfuscator() =>
+			new Deobfuscator(new Deobfuscator.Options {
 				ValidNameRegex = validNameRegex.Get(),
 				DumpEmbeddedAssemblies = dumpEmbeddedAssemblies.Get(),
 				DecryptMainAsm = decryptMainAsm.Get(),
 			});
-		}
 
-		protected override IEnumerable<Option> GetOptionsInternal() {
-			return new List<Option>() {
+		protected override IEnumerable<Option> GetOptionsInternal() =>
+			new List<Option>() {
 				dumpEmbeddedAssemblies,
 				decryptMainAsm,
 			};
-		}
 	}
 
 	class Deobfuscator : DeobfuscatorBase {
@@ -72,22 +65,10 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			public bool DecryptMainAsm { get; set; }
 		}
 
-		public override string Type {
-			get { return DeobfuscatorInfo.THE_TYPE; }
-		}
-
-		public override string TypeLong {
-			get { return DeobfuscatorInfo.THE_NAME; }
-		}
-
-		public override string Name {
-			get { return obfuscatorName; }
-		}
-
-		public Deobfuscator(Options options)
-			: base(options) {
-			this.options = options;
-		}
+		public override string Type => DeobfuscatorInfo.THE_TYPE;
+		public override string TypeLong => DeobfuscatorInfo.THE_NAME;
+		public override string Name => obfuscatorName;
+		public Deobfuscator(Options options) : base(options) => this.options = options;
 
 		protected override int DetectInternal() {
 			int val = 0;

@@ -37,17 +37,10 @@ namespace de4dot.code.renamer {
 			internalTypeNameCreator = new TypeNameCreator(existingNames);
 		}
 
-		public void AddTypeName(string name) {
-			existingNames.Add(name);
-		}
-
-		public string GetTypeName(string oldName, string newName) {
-			return existingNames.GetName(oldName, new NameCreator2(newName));
-		}
+		public void AddTypeName(string name) => existingNames.Add(name);
+		public string GetTypeName(string oldName, string newName) => existingNames.GetName(oldName, new NameCreator2(newName));
 
 		public string CreateNamespace(TypeDef type, string ns) {
-			string newName;
-
 			string asmFullName;
 			if (type.Module.Assembly != null)
 				asmFullName = type.Module.Assembly.FullName;
@@ -56,12 +49,8 @@ namespace de4dot.code.renamer {
 
 			// Make sure that two namespaces with the same names in different modules aren't renamed
 			// to the same name.
-			var key = string.Format(" [{0}] [{1}] [{2}] [{3}] ",
-						type.Module.Location,
-						asmFullName,
-						type.Module.Name,
-						ns);
-			if (namespaceToNewName.TryGetValue(key, out newName))
+			var key = $" [{type.Module.Location}] [{asmFullName}] [{type.Module.Name}] [{ns}] ";
+			if (namespaceToNewName.TryGetValue(key, out string newName))
 				return newName;
 			return namespaceToNewName[key] = createNamespaceName.Create();
 		}

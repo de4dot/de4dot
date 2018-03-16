@@ -69,8 +69,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			foreach (var rev in revs) {
 				if (rev <= prevRev)
 					throw new ApplicationException();
-				Version version;
-				if (revToVersion.TryGetValue(rev, out version))
+				if (revToVersion.TryGetValue(rev, out var version))
 					currentVersion = version;
 				else if (currentVersion == null)
 					throw new ApplicationException();
@@ -118,23 +117,21 @@ namespace de4dot.code.deobfuscators.Confuser {
 			if (maxRev == int.MaxValue) {
 				var latestRev = revs[revs.Length - 1];
 				if (minRev == latestRev)
-					return string.Format("v{0}.{1} (r{2})", minVersion.Major, minVersion.Minor, minRev);
+					return $"v{minVersion.Major}.{minVersion.Minor} (r{minRev})";
 				var latestVersion = revToVersion[latestRev];
 				if (minVersion == latestVersion)
-					return string.Format("v{0}.{1} (r{2}+)", minVersion.Major, minVersion.Minor, minRev);
-				return string.Format("v{0}.{1}+ (r{2}+)", minVersion.Major, minVersion.Minor, minRev);
+					return $"v{minVersion.Major}.{minVersion.Minor} (r{minRev}+)";
+				return $"v{minVersion.Major}.{minVersion.Minor}+ (r{minRev}+)";
 			}
 			var maxVersion = revToVersion[maxRev];
 			if (minVersion == maxVersion) {
 				if (minRev == maxRev)
-					return string.Format("v{0}.{1} (r{2})", minVersion.Major, minVersion.Minor, minRev);
-				return string.Format("v{0}.{1} (r{2}-r{3})", minVersion.Major, minVersion.Minor, minRev, maxRev);
+					return $"v{minVersion.Major}.{minVersion.Minor} (r{minRev})";
+				return $"v{minVersion.Major}.{minVersion.Minor} (r{minRev}-r{maxRev})";
 			}
-			return string.Format("v{0}.{1} - v{2}.{3} (r{4}-r{5})", minVersion.Major, minVersion.Minor, maxVersion.Major, maxVersion.Minor, minRev, maxRev);
+			return $"v{minVersion.Major}.{minVersion.Minor} - v{maxVersion.Major}.{maxVersion.Minor} (r{minRev}-r{maxRev})";
 		}
 
-		public override string ToString() {
-			return GetVersionString() ?? "<no version>";
-		}
+		public override string ToString() => GetVersionString() ?? "<no version>";
 	}
 }

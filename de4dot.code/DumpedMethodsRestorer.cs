@@ -30,21 +30,17 @@ namespace de4dot.code {
 		DumpedMethods dumpedMethods;
 
 		public ModuleDefMD Module {
-			set { module = value; }
+			set => module = value;
 		}
 
-		public DumpedMethodsRestorer(DumpedMethods dumpedMethods) {
-			this.dumpedMethods = dumpedMethods;
-		}
+		public DumpedMethodsRestorer(DumpedMethods dumpedMethods) => this.dumpedMethods = dumpedMethods;
 
-		DumpedMethod GetDumpedMethod(uint rid) {
-			return dumpedMethods.Get(0x06000000 | rid);
-		}
+		DumpedMethod GetDumpedMethod(uint rid) => dumpedMethods.Get(0x06000000 | rid);
 
 		public bool TryReadRow(uint rid, out RawMethodRow row) {
 			var dm = GetDumpedMethod(rid);
 			if (dm == null) {
-				row = default(RawMethodRow);
+				row = default;
 				return false;
 			}
 			else {
@@ -55,8 +51,7 @@ namespace de4dot.code {
 
 		public bool ReadColumn(MDTable table, uint rid, ColumnInfo column, out uint value) {
 			if (table.Table == Table.Method) {
-				RawMethodRow row;
-				if (TryReadRow(rid, out row)) {
+				if (TryReadRow(rid, out var row)) {
 					value = row[column.Index];
 					return true;
 				}

@@ -22,8 +22,8 @@ namespace de4dot.blocks {
 		ScopeBlock parent = null;
 
 		public ScopeBlock Parent {
-			get { return parent; }
-			set { parent = value; }
+			get => parent;
+			set => parent = value;
 		}
 	}
 }

@@ -44,25 +44,11 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			}
 		}
 
-		public bool Detected {
-			get { return encryptedResource != null; }
-		}
-
-		public Resource EncryptedResource {
-			get { return encryptedResource; }
-		}
-
-		public TypeDef Type {
-			get { return decrypterType; }
-		}
-
-		public TypeDef DelegateInitType {
-			get { return delegateInitType ?? FindDelegateInitType(); }
-		}
-
-		public TypeDef DelegateType {
-			get { return delegateType; }
-		}
+		public bool Detected => encryptedResource != null;
+		public Resource EncryptedResource => encryptedResource;
+		public TypeDef Type => decrypterType;
+		public TypeDef DelegateInitType => delegateInitType ?? FindDelegateInitType();
+		public TypeDef DelegateType => delegateType;
 
 		public IEnumerable<TypeDef> DecrypterTypes {
 			get {
@@ -75,9 +61,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 			}
 		}
 
-		public DecrypterBase(ModuleDefMD module) {
-			this.module = module;
-		}
+		public DecrypterBase(ModuleDefMD module) => this.module = module;
 
 		protected Info GetInfo(MethodDef method) {
 			var info = decrypterMethods.Find(method);
@@ -95,8 +79,7 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 					continue;
 				if (!resource.Name.String.EndsWith(".resources", StringComparison.Ordinal))
 					continue;
-				string ns, name;
-				SplitTypeName(resource.Name.String.Substring(0, resource.Name.String.Length - 10), out ns, out name);
+				SplitTypeName(resource.Name.String.Substring(0, resource.Name.String.Length - 10), out string ns, out string name);
 				var type = new TypeRefUser(module, ns, name, module).Resolve();
 				if (type == null)
 					continue;

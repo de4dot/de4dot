@@ -22,19 +22,18 @@ using System.Text;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using de4dot.blocks;
+using System;
 
 namespace de4dot.code.deobfuscators.Babel_NET {
 	static class BabelUtils {
-		public static EmbeddedResource FindEmbeddedResource(ModuleDefMD module, TypeDef decrypterType) {
-			return FindEmbeddedResource(module, decrypterType, (method) => { });
-		}
+		public static EmbeddedResource FindEmbeddedResource(ModuleDefMD module, TypeDef decrypterType) =>
+			FindEmbeddedResource(module, decrypterType, (method) => { });
 
-		public static EmbeddedResource FindEmbeddedResource(ModuleDefMD module, TypeDef decrypterType, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
-			return FindEmbeddedResource(module, decrypterType, (method) => {
+		public static EmbeddedResource FindEmbeddedResource(ModuleDefMD module, TypeDef decrypterType, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) =>
+			FindEmbeddedResource(module, decrypterType, (method) => {
 				simpleDeobfuscator.Deobfuscate(method);
 				simpleDeobfuscator.DecryptStrings(method, deob);
 			});
-		}
 
 		public static EmbeddedResource FindEmbeddedResource(ModuleDefMD module, TypeDef decrypterType, Action<MethodDef> fixMethod) {
 			foreach (var method in decrypterType.Methods) {
@@ -52,8 +51,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 		static EmbeddedResource FindEmbeddedResource1(ModuleDefMD module, MethodDef method) {
 			foreach (var s in DotNetUtils.GetCodeStrings(method)) {
-				var resource = DotNetUtils.GetResource(module, s) as EmbeddedResource;
-				if (resource != null)
+				if (DotNetUtils.GetResource(module, s) is EmbeddedResource resource)
 					return resource;
 			}
 			return null;
@@ -65,8 +63,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				return null;
 			var encryptedString = strings[0];
 
-			int xorKey;
-			if (!GetXorKey2(method, out xorKey))
+			if (!GetXorKey2(method, out int xorKey))
 				return null;
 
 			var sb = new StringBuilder(encryptedString.Length);

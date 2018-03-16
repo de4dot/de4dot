@@ -30,28 +30,18 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			: base(DEFAULT_REGEX) {
 		}
 
-		public override string Name {
-			get { return THE_NAME; }
-		}
+		public override string Name => THE_NAME;
+		public override string Type => THE_TYPE;
 
-		public override string Type {
-			get { return THE_TYPE; }
-		}
-
-		public override IDeobfuscator CreateDeobfuscator() {
-			return new Deobfuscator(new Deobfuscator.Options {
+		public override IDeobfuscator CreateDeobfuscator() =>
+			new Deobfuscator(new Deobfuscator.Options {
 				ValidNameRegex = validNameRegex.Get(),
 			});
-		}
 
-		protected override IEnumerable<Option> GetOptionsInternal() {
-			return new List<Option>() {
-			};
-		}
+		protected override IEnumerable<Option> GetOptionsInternal() => new Option[0];
 	}
 
 	class Deobfuscator : DeobfuscatorBase {
-		//Options options;
 		string obfuscatorName = DeobfuscatorInfo.THE_NAME;
 
 		MainType mainType;
@@ -61,26 +51,11 @@ namespace de4dot.code.deobfuscators.ILProtector {
 		internal class Options : OptionsBase {
 		}
 
-		public override string Type {
-			get { return DeobfuscatorInfo.THE_TYPE; }
-		}
-
-		public override string TypeLong {
-			get { return DeobfuscatorInfo.THE_NAME; }
-		}
-
-		public override string Name {
-			get { return obfuscatorName; }
-		}
-
-		public Deobfuscator(Options options)
-			: base(options) {
-			//this.options = options;
-		}
-
-		protected override int DetectInternal() {
-			return mainType.Detected ? 150 : 0;
-		}
+		public override string Type => DeobfuscatorInfo.THE_TYPE;
+		public override string TypeLong => DeobfuscatorInfo.THE_NAME;
+		public override string Name => obfuscatorName;
+		public Deobfuscator(Options options) : base(options) { }
+		protected override int DetectInternal() => mainType.Detected ? 150 : 0;
 
 		protected override void ScanForObfuscator() {
 			mainType = new MainType(module);
@@ -145,8 +120,6 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			mainType.CleanUp();
 		}
 
-		public override IEnumerable<int> GetStringDecrypterMethods() {
-			return new List<int>();
-		}
+		public override IEnumerable<int> GetStringDecrypterMethods() => new int[0];
 	}
 }

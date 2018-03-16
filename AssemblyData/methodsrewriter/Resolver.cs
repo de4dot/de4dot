@@ -28,8 +28,7 @@ namespace AssemblyData.methodsrewriter {
 		static Dictionary<Module, MModule> modules = new Dictionary<Module, MModule>();
 
 		public static MModule LoadAssembly(Module module) {
-			MModule info;
-			if (modules.TryGetValue(module, out info))
+			if (modules.TryGetValue(module, out var info))
 				return info;
 
 			info = new MModule(module, ModuleDefMD.Load(module.FullyQualifiedName));
@@ -93,17 +92,14 @@ namespace AssemblyData.methodsrewriter {
 		public static object GetRtObject(ITokenOperand memberRef) {
 			if (memberRef == null)
 				return null;
-			var tdr = memberRef as ITypeDefOrRef;
-			if (tdr != null)
+			if (memberRef is ITypeDefOrRef tdr)
 				return GetRtType(tdr);
-			var field = memberRef as IField;
-			if (field != null && field.FieldSig != null)
+			if (memberRef is IField field && field.FieldSig != null)
 				return GetRtField(field);
-			var method = memberRef as IMethod;
-			if (method != null && method.MethodSig != null)
+			if (memberRef is IMethod method && method.MethodSig != null)
 				return GetRtMethod(method);
 
-			throw new ApplicationException(string.Format("Unknown MemberRef: {0}", memberRef));
+			throw new ApplicationException($"Unknown MemberRef: {memberRef}");
 		}
 
 		public static Type GetRtType(IType typeRef) {
@@ -132,8 +128,7 @@ namespace AssemblyData.methodsrewriter {
 
 		static AssemblyResolver GetAssemblyResolver(ITypeDefOrRef type) {
 			var asmName = type.DefinitionAssembly.FullName;
-			AssemblyResolver resolver;
-			if (!assemblyResolvers.TryGetValue(asmName, out resolver))
+			if (!assemblyResolvers.TryGetValue(asmName, out var resolver))
 				assemblyResolvers[asmName] = resolver = new AssemblyResolver(asmName);
 			return resolver;
 		}
@@ -146,7 +141,7 @@ namespace AssemblyData.methodsrewriter {
 			var resolvedType = resolver.Resolve(scopeType);
 			if (resolvedType != null)
 				return FixType(typeRef, resolvedType);
-			throw new ApplicationException(string.Format("Could not resolve type {0} ({1:X8}) in assembly {2}", typeRef, typeRef.MDToken.Raw, resolver));
+			throw new ApplicationException($"Could not resolve type {typeRef} ({typeRef.MDToken.Raw:X8}) in assembly {resolver}");
 		}
 
 		static FieldInfo Resolve(IField fieldRef) {
@@ -156,7 +151,7 @@ namespace AssemblyData.methodsrewriter {
 			var fieldInfo = resolver.Resolve(fieldRef);
 			if (fieldInfo != null)
 				return fieldInfo;
-			throw new ApplicationException(string.Format("Could not resolve field {0} ({1:X8}) in assembly {2}", fieldRef, fieldRef.MDToken.Raw, resolver));
+			throw new ApplicationException($"Could not resolve field {fieldRef} ({fieldRef.MDToken.Raw:X8}) in assembly {resolver}");
 		}
 
 		static MethodBase Resolve(IMethod methodRef) {
@@ -166,14 +161,13 @@ namespace AssemblyData.methodsrewriter {
 			var methodBase = resolver.Resolve(methodRef);
 			if (methodBase != null)
 				return methodBase;
-			throw new ApplicationException(string.Format("Could not resolve method {0} ({1:X8}) in assembly {2}", methodRef, methodRef.MDToken.Raw, resolver));
+			throw new ApplicationException($"Could not resolve method {methodRef} ({methodRef.MDToken.Raw:X8}) in assembly {resolver}");
 		}
 
 		static Type FixType(IType typeRef, Type type) {
 			var sig = typeRef as TypeSig;
 			if (sig == null) {
-				var ts = typeRef as TypeSpec;
-				if (ts != null)
+				if (typeRef is TypeSpec ts)
 					sig = ts.TypeSig;
 			}
 			while (sig != null) {

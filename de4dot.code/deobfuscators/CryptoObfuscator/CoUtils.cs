@@ -34,8 +34,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 
 		public static EmbeddedResource GetResource(ModuleDefMD module, IEnumerable<string> names) {
 			foreach (var name in names) {
-				var resource = DotNetUtils.GetResource(module, name) as EmbeddedResource;
-				if (resource != null)
+				if (DotNetUtils.GetResource(module, name) is EmbeddedResource resource)
 					return resource;
 				try {
 					resource = DotNetUtils.GetResource(module, Encoding.UTF8.GetString(Convert.FromBase64String(name))) as EmbeddedResource;
@@ -86,7 +85,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			while (orginalResMethod == null) {
 				foreach (var instr in cctor.Body.Instructions) {
 					if (instr.OpCode == OpCodes.Ldftn) {
-						MethodDef tempMethod = instr.Operand as MethodDef;
+						var tempMethod = instr.Operand as MethodDef;
 						if (tempMethod.ReturnType.FullName != "System.String")
 							continue;
 						orginalResMethod = tempMethod;

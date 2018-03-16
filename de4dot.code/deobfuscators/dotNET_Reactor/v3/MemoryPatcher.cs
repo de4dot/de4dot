@@ -38,13 +38,10 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			}
 		}
 
-		public bool Detected {
-			get { return decryptMethod.Detected; }
-		}
+		public bool Detected => decryptMethod.Detected;
 
-		public MemoryPatcher(TypeDef type, ICflowDeobfuscator cflowDeobfuscator) {
+		public MemoryPatcher(TypeDef type, ICflowDeobfuscator cflowDeobfuscator) =>
 			Find(type, cflowDeobfuscator);
-		}
 
 		void Find(TypeDef type, ICflowDeobfuscator cflowDeobfuscator) {
 			var additionalTypes = new List<string> {
@@ -86,14 +83,14 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 		}
 
 		PatchInfo GetPatchInfo(MethodDef method) {
-			int index1 = 0, index2, index3, size1, size2, size3;
-			if (!ArrayFinder.FindNewarr(method, ref index1, out size1))
+			int index1 = 0, index2, index3;
+			if (!ArrayFinder.FindNewarr(method, ref index1, out int size1))
 				return null;
 			index2 = index1 + 1;
-			if (!ArrayFinder.FindNewarr(method, ref index2, out size2))
+			if (!ArrayFinder.FindNewarr(method, ref index2, out int size2))
 				return null;
 			index3 = index2 + 1;
-			if (ArrayFinder.FindNewarr(method, ref index3, out size3))
+			if (ArrayFinder.FindNewarr(method, ref index3, out int size3))
 				return null;
 
 			if (size1 <= 0 || size1 > 35)

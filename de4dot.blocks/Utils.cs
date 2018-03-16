@@ -20,15 +20,6 @@
 using System.Collections.Generic;
 
 namespace de4dot.blocks {
-	internal delegate TResult Func<TResult>();
-	internal delegate TResult Func<T, TResult>(T arg);
-	internal delegate TResult Func<T1, T2, TResult>(T1 arg1, T2 arg2);
-	internal delegate TResult Func<T1, T2, T3, TResult>(T1 arg1, T2 arg2, T3 arg3);
-	internal delegate void Action();
-	internal delegate void Action<T>(T arg);
-	internal delegate void Action<T1, T2>(T1 arg1, T2 arg2);
-	internal delegate void Action<T1, T2, T3>(T1 arg1, T2 arg2, T3 arg3);
-
 	public class Tuple<T1, T2> {
 		public T1 Item1 { get; set; }
 		public T2 Item2 { get; set; }
@@ -38,12 +29,8 @@ namespace de4dot.blocks {
 				return false;
 			return Item1.Equals(other.Item1) && Item2.Equals(other.Item2);
 		}
-		public override int GetHashCode() {
-			return Item1.GetHashCode() + Item2.GetHashCode();
-		}
-		public override string ToString() {
-			return "<" + Item1.ToString() + "," + Item2.ToString() + ">";
-		}
+		public override int GetHashCode() => Item1.GetHashCode() + Item2.GetHashCode();
+		public override string ToString() => "<" + Item1.ToString() + "," + Item2.ToString() + ">";
 	}
 
 	static class Utils {

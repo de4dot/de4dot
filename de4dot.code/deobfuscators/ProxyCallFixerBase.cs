@@ -29,9 +29,7 @@ namespace de4dot.code.deobfuscators {
 		protected Dictionary<TypeDef, bool> delegateTypesDict = new Dictionary<TypeDef, bool>();
 		protected int errors = 0;
 
-		public int Errors {
-			get { return errors; }
-		}
+		public int Errors => errors;
 
 		protected class DelegateInfo {
 			public IMethod methodRef;	// Method we should call
@@ -45,10 +43,7 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		public int RemovedDelegateCreatorCalls { get; set; }
-
-		public IEnumerable<TypeDef> DelegateTypes {
-			get { return delegateTypesDict.Keys; }
-		}
+		public IEnumerable<TypeDef> DelegateTypes => delegateTypesDict.Keys;
 
 		public IEnumerable<TypeDef> DelegateCreatorTypes {
 			get {
@@ -57,17 +52,9 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
-		public virtual IEnumerable<Tuple<MethodDef, string>> OtherMethods {
-			get { return new List<Tuple<MethodDef, string>>(); }
-		}
-
-		public bool Detected {
-			get { return delegateCreatorMethods.Count != 0; }
-		}
-
-		protected ProxyCallFixerBase(ModuleDefMD module) {
-			this.module = module;
-		}
+		public virtual IEnumerable<Tuple<MethodDef, string>> OtherMethods => new List<Tuple<MethodDef, string>>();
+		public bool Detected => delegateCreatorMethods.Count != 0;
+		protected ProxyCallFixerBase(ModuleDefMD module) => this.module = module;
 
 		protected ProxyCallFixerBase(ModuleDefMD module, ProxyCallFixerBase oldOne) {
 			this.module = module;
@@ -83,9 +70,8 @@ namespace de4dot.code.deobfuscators {
 			return new DelegateInfo(field, method, di.callOpcode);
 		}
 
-		protected T Lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
-			return DeobUtils.Lookup(module, def, errorMessage);
-		}
+		protected T Lookup<T>(T def, string errorMessage) where T : class, ICodedToken =>
+			DeobUtils.Lookup(module, def, errorMessage);
 
 		protected void SetDelegateCreatorMethod(MethodDef delegateCreatorMethod) {
 			if (delegateCreatorMethod == null)
@@ -118,14 +104,10 @@ namespace de4dot.code.deobfuscators {
 		protected class RemoveInfo {
 			public int Index { get; set; }
 			public DelegateInfo DelegateInfo { get; set; }
-			public bool IsCall {
-				get { return DelegateInfo != null; }
-			}
+			public bool IsCall => DelegateInfo != null;
 		}
 
-		protected virtual bool ProxyCallIsObfuscated {
-			get { return false; }
-		}
+		protected virtual bool ProxyCallIsObfuscated => false;
 
 		public void Deobfuscate(Blocks blocks) {
 			if (blocks.Method.DeclaringType != null && delegateTypesDict.ContainsKey(blocks.Method.DeclaringType))
@@ -145,8 +127,7 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		protected static void Add(Dictionary<Block, List<RemoveInfo>> removeInfos, Block block, int index, DelegateInfo di) {
-			List<RemoveInfo> list;
-			if (!removeInfos.TryGetValue(block, out list))
+			if (!removeInfos.TryGetValue(block, out var list))
 				removeInfos[block] = list = new List<RemoveInfo>();
 			list.Add(new RemoveInfo {
 				Index = index,
@@ -199,9 +180,7 @@ namespace de4dot.code.deobfuscators {
 				fieldToDelegateInfo.Add(Lookup(key, "Could not find field"), Copy(oldOne.fieldToDelegateInfo.Find(key)));
 		}
 
-		protected void AddDelegateInfo(DelegateInfo di) {
-			fieldToDelegateInfo.Add(di.field, di);
-		}
+		protected void AddDelegateInfo(DelegateInfo di) => fieldToDelegateInfo.Add(di.field, di);
 
 		protected DelegateInfo GetDelegateInfo(IField field) {
 			if (field == null)
@@ -234,9 +213,7 @@ namespace de4dot.code.deobfuscators {
 					if (!field.IsStatic)
 						continue;
 
-					IMethod calledMethod;
-					OpCode callOpcode;
-					GetCallInfo(context, field, out calledMethod, out callOpcode);
+					GetCallInfo(context, field, out var calledMethod, out var callOpcode);
 
 					if (calledMethod == null)
 						continue;
@@ -288,9 +265,8 @@ namespace de4dot.code.deobfuscators {
 			return FixProxyCalls(blocks.Method, removeInfos);
 		}
 
-		protected virtual BlockInstr FindProxyCall(DelegateInfo di, Block block, int index) {
-			return FindProxyCall(di, block, index, new Dictionary<Block, bool>(), 1);
-		}
+		protected virtual BlockInstr FindProxyCall(DelegateInfo di, Block block, int index) =>
+			FindProxyCall(di, block, index, new Dictionary<Block, bool>(), 1);
 
 		BlockInstr FindProxyCall(DelegateInfo di, Block block, int index, Dictionary<Block, bool> visited, int stack) {
 			if (visited.ContainsKey(block))
@@ -337,9 +313,8 @@ namespace de4dot.code.deobfuscators {
 			return null;
 		}
 
-		protected override void DeobfuscateEnd(Blocks blocks, IList<Block> allBlocks) {
+		protected override void DeobfuscateEnd(Blocks blocks, IList<Block> allBlocks) =>
 			FixBrokenCalls(blocks.Method, allBlocks);
-		}
 
 		// The obfuscator could be buggy and call a proxy delegate without pushing the
 		// instance field. SA has done it, so let's fix it.
@@ -353,7 +328,7 @@ namespace de4dot.code.deobfuscators {
 					var methodRef = call.Operand as IMethod;
 					if (methodRef == null || methodRef.Name != "Invoke")
 						continue;
-					MethodDef method = DotNetUtils.GetMethod2(module, methodRef);
+					var method = DotNetUtils.GetMethod2(module, methodRef);
 					if (method == null || method.DeclaringType == null)
 						continue;
 					if (!delegateTypesDict.ContainsKey(method.DeclaringType))
@@ -416,13 +391,10 @@ namespace de4dot.code.deobfuscators {
 
 				Logger.Instance.Indent();
 				foreach (var field in type.Fields) {
-					MethodDef proxyMethod;
-					if (!fieldToMethod.TryGetValue(field, out proxyMethod))
+					if (!fieldToMethod.TryGetValue(field, out var proxyMethod))
 						continue;
 
-					IMethod calledMethod;
-					OpCode callOpcode;
-					GetCallInfo(context, field, out calledMethod, out callOpcode);
+					GetCallInfo(context, field, out var calledMethod, out var callOpcode);
 
 					if (calledMethod == null)
 						continue;
@@ -438,10 +410,7 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
-		protected void Add(MethodDef method, DelegateInfo di) {
-			proxyMethodToDelegateInfo.Add(method, di);
-		}
-
+		protected void Add(MethodDef method, DelegateInfo di) => proxyMethodToDelegateInfo.Add(method, di);
 		protected abstract object CheckCctor(TypeDef type, MethodDef cctor);
 		protected abstract void GetCallInfo(object context, FieldDef field, out IMethod calledMethod, out OpCode callOpcode);
 

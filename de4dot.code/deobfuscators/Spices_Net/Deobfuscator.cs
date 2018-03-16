@@ -39,32 +39,25 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			restoreResourceNames = new BoolOption(null, MakeArgName("rsrc"), "Restore resource names", true);
 		}
 
-		public override string Name {
-			get { return THE_NAME; }
-		}
+		public override string Name => THE_NAME;
+		public override string Type => THE_TYPE;
 
-		public override string Type {
-			get { return THE_TYPE; }
-		}
-
-		public override IDeobfuscator CreateDeobfuscator() {
-			return new Deobfuscator(new Deobfuscator.Options {
+		public override IDeobfuscator CreateDeobfuscator() =>
+			new Deobfuscator(new Deobfuscator.Options {
 				ValidNameRegex = validNameRegex.Get(),
 				InlineMethods = inlineMethods.Get(),
 				RemoveInlinedMethods = removeInlinedMethods.Get(),
 				RemoveNamespaces = removeNamespaces.Get(),
 				RestoreResourceNames = restoreResourceNames.Get(),
 			});
-		}
 
-		protected override IEnumerable<Option> GetOptionsInternal() {
-			return new List<Option>() {
+		protected override IEnumerable<Option> GetOptionsInternal() =>
+			new List<Option>() {
 				inlineMethods,
 				removeInlinedMethods,
 				removeNamespaces,
 				restoreResourceNames,
 			};
-		}
 	}
 
 	class Deobfuscator : DeobfuscatorBase {
@@ -83,21 +76,10 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			public bool RestoreResourceNames { get; set; }
 		}
 
-		public override string Type {
-			get { return DeobfuscatorInfo.THE_TYPE; }
-		}
-
-		public override string TypeLong {
-			get { return DeobfuscatorInfo.THE_NAME; }
-		}
-
-		public override string Name {
-			get { return DeobfuscatorInfo.THE_NAME; }
-		}
-
-		protected override bool CanInlineMethods {
-			get { return startedDeobfuscating ? options.InlineMethods : true; }
-		}
+		public override string Type => DeobfuscatorInfo.THE_TYPE;
+		public override string TypeLong => DeobfuscatorInfo.THE_NAME;
+		public override string Name => DeobfuscatorInfo.THE_NAME;
+		protected override bool CanInlineMethods => startedDeobfuscating ? options.InlineMethods : true;
 
 		public override IEnumerable<IBlocksDeobfuscator> BlocksDeobfuscators {
 			get {
@@ -113,9 +95,9 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			this.options = options;
 
 			if (options.RemoveNamespaces)
-				this.RenamingOptions |= RenamingOptions.RemoveNamespaceIfOneType;
+				RenamingOptions |= RenamingOptions.RemoveNamespaceIfOneType;
 			else
-				this.RenamingOptions &= ~RenamingOptions.RemoveNamespaceIfOneType;
+				RenamingOptions &= ~RenamingOptions.RemoveNamespaceIfOneType;
 		}
 
 		protected override int DetectInternal() {

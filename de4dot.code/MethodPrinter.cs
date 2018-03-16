@@ -84,7 +84,7 @@ namespace de4dot.code {
 			var sortedTargets = new List<Instruction>(targets.Keys);
 			sortedTargets.Sort((a, b) => a.Offset.CompareTo(b.Offset));
 			for (int i = 0; i < sortedTargets.Count; i++)
-				labels[sortedTargets[i]] = string.Format("label_{0}", i);
+				labels[sortedTargets[i]] = $"label_{i}";
 		}
 
 		void SetTarget(Instruction instr) {
@@ -110,8 +110,7 @@ namespace de4dot.code {
 		ExInfo GetExInfo(Instruction instruction) {
 			if (instruction == null)
 				return lastExInfo;
-			ExInfo exInfo;
-			if (!exInfos.TryGetValue(instruction, out exInfo))
+			if (!exInfos.TryGetValue(instruction, out var exInfo))
 				exInfos[instruction] = exInfo = new ExInfo();
 			return exInfo;
 		}
@@ -127,8 +126,7 @@ namespace de4dot.code {
 					Logger.Log(loggerEvent, "{0}:", GetLabel(instr));
 					Logger.Instance.Indent();
 				}
-				ExInfo exInfo;
-				if (exInfos.TryGetValue(instr, out exInfo))
+				if (exInfos.TryGetValue(instr, out var exInfo))
 					PrintExInfo(exInfo);
 				var instrString = instr.OpCode.Name;
 				var operandString = GetOperandString(instr);
@@ -159,12 +157,11 @@ namespace de4dot.code {
 			}
 			else if (instr.Operand is string)
 				return Utils.ToCsharpString((string)instr.Operand);
-			else if (instr.Operand is Parameter) {
-				var arg = (Parameter)instr.Operand;
+			else if (instr.Operand is Parameter arg) {
 				var s = InstructionPrinter.GetOperandString(instr);
 				if (s != "")
 					return s;
-				return string.Format("<arg_{0}>", arg.Index);
+				return $"<arg_{arg.Index}>";
 			}
 			else
 				return InstructionPrinter.GetOperandString(instr);
@@ -188,14 +185,14 @@ namespace de4dot.code {
 		string GetExceptionString(ExceptionHandler ex) {
 			var sb = new StringBuilder();
 			if (ex.TryStart != null)
-				sb.Append(string.Format("TRY: {0}-{1}", GetLabel(ex.TryStart), GetLabel(ex.TryEnd)));
+				sb.Append($"TRY: {GetLabel(ex.TryStart)}-{GetLabel(ex.TryEnd)}");
 			if (ex.FilterStart != null)
-				sb.Append(string.Format(", FILTER: {0}", GetLabel(ex.FilterStart)));
+				sb.Append($", FILTER: {GetLabel(ex.FilterStart)}");
 			if (ex.HandlerStart != null)
-				sb.Append(string.Format(", HANDLER: {0}-{1}", GetLabel(ex.HandlerStart), GetLabel(ex.HandlerEnd)));
-			sb.Append(string.Format(", TYPE: {0}", ex.HandlerType));
+				sb.Append($", HANDLER: {GetLabel(ex.HandlerStart)}-{GetLabel(ex.HandlerEnd)}");
+			sb.Append($", TYPE: {ex.HandlerType}");
 			if (ex.CatchType != null)
-				sb.Append(string.Format(", CATCH: {0}", ex.CatchType));
+				sb.Append($", CATCH: {ex.CatchType}");
 			return sb.ToString();
 		}
 

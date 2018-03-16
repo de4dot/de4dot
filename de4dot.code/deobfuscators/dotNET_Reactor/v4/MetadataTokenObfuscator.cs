@@ -30,9 +30,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		MethodDef typeMethod;
 		MethodDef fieldMethod;
 
-		public TypeDef Type {
-			get { return type; }
-		}
+		public TypeDef Type => type;
 
 		public MetadataTokenObfuscator(ModuleDefMD module) {
 			this.module = module;

@@ -36,15 +36,11 @@ namespace de4dot.blocks {
 		Dictionary<IMethod, int> calls = new Dictionary<IMethod, int>(MethodEqualityComparer.CompareDeclaringTypes);
 
 		public void Add(IMethod calledMethod) {
-			int count;
-			calls.TryGetValue(calledMethod, out count);
+			calls.TryGetValue(calledMethod, out int count);
 			calls[calledMethod] = count + 1;
 		}
 
-		public IMethod Most() {
-			int numCalls;
-			return Most(out numCalls);
-		}
+		public IMethod Most() => Most(out int numCalls);
 
 		public IMethod Most(out int numCalls) {
 			IMethod method = null;
@@ -61,13 +57,8 @@ namespace de4dot.blocks {
 	}
 
 	public static class DotNetUtils {
-		public static TypeDef GetModuleType(ModuleDef module) {
-			return module.GlobalType;
-		}
-
-		public static MethodDef GetModuleTypeCctor(ModuleDef module) {
-			return module.GlobalType.FindStaticConstructor();
-		}
+		public static TypeDef GetModuleType(ModuleDef module) => module.GlobalType;
+		public static MethodDef GetModuleTypeCctor(ModuleDef module) => module.GlobalType.FindStaticConstructor();
 
 		public static bool IsEmpty(MethodDef method) {
 			if (method.Body == null)
@@ -101,9 +92,8 @@ namespace de4dot.blocks {
 			return null;
 		}
 
-		public static IEnumerable<MethodDef> FindMethods(IEnumerable<MethodDef> methods, string returnType, string[] argsTypes) {
-			return FindMethods(methods, returnType, argsTypes, true);
-		}
+		public static IEnumerable<MethodDef> FindMethods(IEnumerable<MethodDef> methods, string returnType, string[] argsTypes) =>
+			FindMethods(methods, returnType, argsTypes, true);
 
 		public static IEnumerable<MethodDef> FindMethods(IEnumerable<MethodDef> methods, string returnType, string[] argsTypes, bool isStatic) {
 			foreach (var method in methods) {
@@ -132,13 +122,10 @@ namespace de4dot.blocks {
 			return fn == "System.Delegate" || fn == "System.MulticastDelegate";
 		}
 
-		public static bool DerivesFromDelegate(TypeDef type) {
-			return type != null && IsDelegate(type.BaseType);
-		}
+		public static bool DerivesFromDelegate(TypeDef type) => type != null && IsDelegate(type.BaseType);
 
-		public static bool IsMethod(IMethod method, string returnType, string parameters) {
-			return method != null && method.FullName == returnType + " " + method.DeclaringType.FullName + "::" + method.Name + parameters;
-		}
+		public static bool IsMethod(IMethod method, string returnType, string parameters) =>
+			method != null && method.FullName == returnType + " " + method.DeclaringType.FullName + "::" + method.Name + parameters;
 
 		public static string GetDllName(string dll) {
 			if (dll.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
@@ -146,9 +133,8 @@ namespace de4dot.blocks {
 			return dll;
 		}
 
-		public static bool HasPinvokeMethod(TypeDef type, string methodName) {
-			return GetPInvokeMethod(type, methodName) != null;
-		}
+		public static bool HasPinvokeMethod(TypeDef type, string methodName) =>
+			GetPInvokeMethod(type, methodName) != null;
 
 		public static MethodDef GetPInvokeMethod(TypeDef type, string methodName) {
 			if (type == null)
@@ -228,8 +214,7 @@ namespace de4dot.blocks {
 		public static TypeDef GetType(ModuleDef module, ITypeDefOrRef type) {
 			var td = type as TypeDef;
 			if (td == null) {
-				var tr = type as TypeRef;
-				if (tr != null) {
+				if (type is TypeRef tr) {
 					var trAsm = tr.DefinitionAssembly;
 					var modAsm = module.Assembly;
 					if (trAsm != null && modAsm != null && trAsm.Name == modAsm.Name)
@@ -296,8 +281,7 @@ namespace de4dot.blocks {
 			var list = new List<IMethod>();
 			if (method.HasBody) {
 				foreach (var instr in method.Body.Instructions) {
-					var calledMethod = instr.Operand as IMethod;
-					if (calledMethod != null)
+					if (instr.Operand is IMethod calledMethod)
 						list.Add(calledMethod);
 				}
 			}
@@ -325,9 +309,8 @@ namespace de4dot.blocks {
 			return strings;
 		}
 
-		public static Resource GetResource(ModuleDef module, string name) {
-			return GetResource(module, new List<string> { name });
-		}
+		public static Resource GetResource(ModuleDef module, string name) =>
+			GetResource(module, new List<string> { name });
 
 		public static Resource GetResource(ModuleDef module, IEnumerable<string> strings) {
 			if (!module.HasResources)
@@ -393,8 +376,7 @@ namespace de4dot.blocks {
 				var operand = newInstr.Operand;
 				if (operand is Instruction)
 					newInstr.Operand = instructions[oldToIndex[(Instruction)operand]];
-				else if (operand is IList<Instruction>) {
-					var oldArray = (IList<Instruction>)operand;
+				else if (operand is IList<Instruction> oldArray) {
 					var newArray = new Instruction[oldArray.Count];
 					for (int i = 0; i < oldArray.Count; i++)
 						newArray[i] = instructions[oldToIndex[oldArray[i]]];
@@ -440,9 +422,7 @@ namespace de4dot.blocks {
 			if (fromMethod == toMethod)
 				return;
 
-			IList<Instruction> instructions;
-			IList<ExceptionHandler> exceptionHandlers;
-			CopyBody(fromMethod, out instructions, out exceptionHandlers);
+			CopyBody(fromMethod, out var instructions, out var exceptionHandlers);
 			RestoreBody(toMethod, instructions, exceptionHandlers);
 			CopyLocalsFromTo(fromMethod, toMethod);
 			UpdateInstructionOperands(fromMethod, toMethod);
@@ -475,8 +455,7 @@ namespace de4dot.blocks {
 			foreach (var instr in toBody.Instructions) {
 				if (instr.Operand == null)
 					continue;
-				object newOperand;
-				if (newOperands.TryGetValue(instr.Operand, out newOperand))
+				if (newOperands.TryGetValue(instr.Operand, out object newOperand))
 					instr.Operand = newOperand;
 			}
 		}
@@ -571,7 +550,7 @@ namespace de4dot.blocks {
 		}
 
 		public static TypeSig GetGenericArgument(GenericInstSig typeOwner, MethodSpec methodOwner, TypeSig type) {
-			var typeArgs = typeOwner == null ? null : typeOwner.GenericArguments;
+			var typeArgs = typeOwner?.GenericArguments;
 			var genMethodArgs = methodOwner == null || methodOwner.GenericInstMethodSig == null ?
 						null : methodOwner.GenericInstMethodSig.GenericArguments;
 			return GenericArgsSubstitutor.Create(type, typeArgs, genMethodArgs);
@@ -676,16 +655,14 @@ namespace de4dot.blocks {
 			return false;
 		}
 
-		public static IList<Instruction> GetArgPushes(IList<Instruction> instrs, int index) {
-			return GetArgPushes(instrs, ref index);
-		}
+		public static IList<Instruction> GetArgPushes(IList<Instruction> instrs, int index) =>
+			GetArgPushes(instrs, ref index);
 
 		public static IList<Instruction> GetArgPushes(IList<Instruction> instrs, ref int index) {
 			if (index < 0 || index >= instrs.Count)
 				return null;
 			var startInstr = instrs[index];
-			int pushes, pops;
-			startInstr.CalculateStackUsage(false, out pushes, out pops);
+			startInstr.CalculateStackUsage(false, out int pushes, out int pops);
 
 			index--;
 			int numArgs = pops;

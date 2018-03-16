@@ -93,8 +93,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		}
 
 		public void DontRemoveType(TypeDef type) {
-			TypeFlags flags;
-			types.TryGetValue(type, out flags);
+			types.TryGetValue(type, out var flags);
 			flags |= TypeFlags.DontRemoveType;
 			types[type] = flags;
 		}

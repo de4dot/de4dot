@@ -24,16 +24,6 @@ using System.Text;
 using dnlib.DotNet;
 
 namespace de4dot.code {
-	// These are in .NET 3.5 and later...
-	public delegate TResult Func<TResult>();
-	public delegate TResult Func<T, TResult>(T arg);
-	public delegate TResult Func<T1, T2, TResult>(T1 arg1, T2 arg2);
-	public delegate TResult Func<T1, T2, T3, TResult>(T1 arg1, T2 arg2, T3 arg3);
-	public delegate void Action();
-	public delegate void Action<T>(T arg);
-	public delegate void Action<T1, T2>(T1 arg1, T2 arg2);
-	public delegate void Action<T1, T2, T3>(T1 arg1, T2 arg2, T3 arg3);
-
 	public class Tuple<T1, T2> {
 		public T1 Item1 { get; set; }
 		public T2 Item2 { get; set; }
@@ -43,12 +33,8 @@ namespace de4dot.code {
 				return false;
 			return Item1.Equals(other.Item1) && Item2.Equals(other.Item2);
 		}
-		public override int GetHashCode() {
-			return Item1.GetHashCode() + Item2.GetHashCode();
-		}
-		public override string ToString() {
-			return "<" + Item1.ToString() + "," + Item2.ToString() + ">";
-		}
+		public override int GetHashCode() => Item1.GetHashCode() + Item2.GetHashCode();
+		public override string ToString() => "<" + Item1.ToString() + "," + Item2.ToString() + ">";
 	}
 
 	public static class Utils {
@@ -62,9 +48,7 @@ namespace de4dot.code {
 			return dict.Keys;
 		}
 
-		public static string ToCsharpString(UTF8String s) {
-			return ToCsharpString(UTF8String.ToSystemStringOrEmpty(s));
-		}
+		public static string ToCsharpString(UTF8String s) => ToCsharpString(UTF8String.ToSystemStringOrEmpty(s));
 
 		public static string ToCsharpString(string s) {
 			var sb = new StringBuilder(s.Length + 2);
@@ -80,7 +64,7 @@ namespace de4dot.code {
 					case '\t': AppendEscape(sb, 't'); break;
 					case '\v': AppendEscape(sb, 'v'); break;
 					default:
-						sb.Append(string.Format(@"\u{0:X4}", (int)c));
+						sb.Append($@"\u{(int)c:X4}");
 						break;
 					}
 				}
@@ -112,13 +96,8 @@ namespace de4dot.code {
 			sb.Append(c);
 		}
 
-		public static string RemoveNewlines(object o) {
-			return RemoveNewlines(o.ToString());
-		}
-
-		public static string RemoveNewlines(string s) {
-			return s.Replace('\n', ' ').Replace('\r', ' ');
-		}
+		public static string RemoveNewlines(object o) => RemoveNewlines(o.ToString());
+		public static string RemoveNewlines(string s) => s.Replace('\n', ' ').Replace('\r', ' ');
 
 		public static string GetFullPath(string path) {
 			try {
@@ -156,9 +135,7 @@ namespace de4dot.code {
 			return name.Substring(index + 1);
 		}
 
-		public static string GetDirName(string name) {
-			return Path.GetDirectoryName(name);
-		}
+		public static string GetDirName(string name) => Path.GetDirectoryName(name);
 
 		static string ourBaseDir = null;
 		public static string GetOurBaseDir() {
@@ -167,9 +144,7 @@ namespace de4dot.code {
 			return ourBaseDir = GetDirName(typeof(Utils).Assembly.Location);
 		}
 
-		public static string GetPathOfOurFile(string filename) {
-			return Path.Combine(GetOurBaseDir(), filename);
-		}
+		public static string GetPathOfOurFile(string filename) => Path.Combine(GetOurBaseDir(), filename);
 
 		// This fixes a mono (tested 2.10.5) String.StartsWith() bug. NB: stringComparison must be
 		// Ordinal or OrdinalIgnoreCase!

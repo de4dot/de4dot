@@ -35,18 +35,18 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			bool isValid;
 
 			public ITypeDefOrRef CastType {
-				get { return type; }
+				get => type;
 				set {
 					if (!isValid)
 						return;
 
 					if (value == null) {
-						invalid();
+						Invalid();
 						return;
 					}
 
 					if (type != null && !new SigComparer().Equals(type, value)) {
-						invalid();
+						Invalid();
 						return;
 					}
 
@@ -56,28 +56,23 @@ namespace de4dot.code.deobfuscators.DeepSea {
 
 			public LocalInfo(Local local) {
 				this.local = local;
-				this.isValid = true;
+				isValid = true;
 			}
 
-			public void invalid() {
+			public void Invalid() {
 				isValid = false;
 				type = null;
 			}
 
 			public override string ToString() {
 				if (type == null)
-					return string.Format("{0} - INVALID", local);
-				return string.Format("{0} - {1:X8} {2}", local, type.MDToken.ToInt32(), type.FullName);
+					return $"{local} - INVALID";
+				return $"{local} - {type.MDToken.ToInt32():X8} {type.FullName}";
 			}
 		}
 
-		public bool ExecuteIfNotModified {
-			get { return true; }
-		}
-
-		public void DeobfuscateBegin(Blocks blocks) {
-			this.blocks = blocks;
-		}
+		public bool ExecuteIfNotModified => true;
+		public void DeobfuscateBegin(Blocks blocks) => this.blocks = blocks;
 
 		public bool Deobfuscate(List<Block> allBlocks) {
 			if (!Initialize(allBlocks))
@@ -95,7 +90,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 						var local = instr.Operand as Local;
 						if (local == null)
 							continue;
-						localInfos[local].invalid();
+						localInfos[local].Invalid();
 					}
 					else if (instr.IsLdloc()) {
 						var local = instr.Instruction.GetLocal(blocks.Locals);
@@ -200,9 +195,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return true;
 		}
 
-		static bool IsCast(Instr instr) {
-			return instr.OpCode.Code == Code.Castclass || instr.OpCode.Code == Code.Isinst;
-		}
+		static bool IsCast(Instr instr) => instr.OpCode.Code == Code.Castclass || instr.OpCode.Code == Code.Isinst;
 
 		static ITypeDefOrRef GetCastType(Instr instr) {
 			if (!IsCast(instr))

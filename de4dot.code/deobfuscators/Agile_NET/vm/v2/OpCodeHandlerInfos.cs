@@ -59,9 +59,10 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 					var hashes = new List<BlockElementHash>(numHashes);
 					for (int k = 0; k < numHashes; k++)
 						hashes.Add((BlockElementHash)reader.ReadInt32());
-					var block = new BlockSigInfo(hashes, targets);
-					block.HasFallThrough = reader.ReadBoolean();
-					block.EndsInRet = reader.ReadBoolean();
+					var block = new BlockSigInfo(hashes, targets) {
+						HasFallThrough = reader.ReadBoolean(),
+						EndsInRet = reader.ReadBoolean(),
+					};
 					blocks.Add(block);
 				}
 				list.Add(new MethodSigInfo(blocks, typeCode));
@@ -79,8 +80,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
 
 		};
 
-		static IList<MethodSigInfo> ReadOpCodeHandlerInfos(byte[] data) {
-			return OpCodeHandlerInfos.Read(new BinaryReader(new MemoryStream(data)));
-		}
+		static IList<MethodSigInfo> ReadOpCodeHandlerInfos(byte[] data) =>
+			OpCodeHandlerInfos.Read(new BinaryReader(new MemoryStream(data)));
 	}
 }

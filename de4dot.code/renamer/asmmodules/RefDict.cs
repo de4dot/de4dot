@@ -30,52 +30,27 @@ namespace de4dot.code.renamer.asmmodules {
 	}
 
 	public class TypeDefDict : TypeDefDict<MTypeDef> {
-		public IEnumerable<MTypeDef> GetSorted() {
-			return DictHelper.GetSorted(GetValues());
-		}
-
-		public void Add(MTypeDef typeDef) {
-			Add(typeDef.TypeDef, typeDef);
-		}
+		public IEnumerable<MTypeDef> GetSorted() => DictHelper.GetSorted(GetValues());
+		public void Add(MTypeDef typeDef) => Add(typeDef.TypeDef, typeDef);
 	}
 
 	public class FieldDefDict : FieldDefDict<MFieldDef> {
-		public IEnumerable<MFieldDef> GetSorted() {
-			return DictHelper.GetSorted(GetValues());
-		}
-
-		public void Add(MFieldDef fieldDef) {
-			Add(fieldDef.FieldDef, fieldDef);
-		}
+		public IEnumerable<MFieldDef> GetSorted() => DictHelper.GetSorted(GetValues());
+		public void Add(MFieldDef fieldDef) => Add(fieldDef.FieldDef, fieldDef);
 	}
 
 	public class MethodDefDict : MethodDefDict<MMethodDef> {
-		public IEnumerable<MMethodDef> GetSorted() {
-			return DictHelper.GetSorted(GetValues());
-		}
-
-		public void Add(MMethodDef methodDef) {
-			Add(methodDef.MethodDef, methodDef);
-		}
+		public IEnumerable<MMethodDef> GetSorted() => DictHelper.GetSorted(GetValues());
+		public void Add(MMethodDef methodDef) => Add(methodDef.MethodDef, methodDef);
 	}
 
 	public class PropertyDefDict : PropertyDefDict<MPropertyDef> {
-		public IEnumerable<MPropertyDef> GetSorted() {
-			return DictHelper.GetSorted(GetValues());
-		}
-
-		public void Add(MPropertyDef propDef) {
-			Add(propDef.PropertyDef, propDef);
-		}
+		public IEnumerable<MPropertyDef> GetSorted() => DictHelper.GetSorted(GetValues());
+		public void Add(MPropertyDef propDef) => Add(propDef.PropertyDef, propDef);
 	}
 
 	public class EventDefDict : EventDefDict<MEventDef> {
-		public IEnumerable<MEventDef> GetSorted() {
-			return DictHelper.GetSorted(GetValues());
-		}
-
-		public void Add(MEventDef eventDef) {
-			Add(eventDef.EventDef, eventDef);
-		}
+		public IEnumerable<MEventDef> GetSorted() => DictHelper.GetSorted(GetValues());
+		public void Add(MEventDef eventDef) => Add(eventDef.EventDef, eventDef);
 	}
 }

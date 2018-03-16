@@ -28,17 +28,9 @@ namespace de4dot.blocks {
 		IList<Local> locals;
 		MethodBlocks methodBlocks;
 
-		public MethodBlocks MethodBlocks {
-			get { return methodBlocks; }
-		}
-
-		public IList<Local> Locals {
-			get { return locals; }
-		}
-
-		public MethodDef Method {
-			get { return method; }
-		}
+		public MethodBlocks MethodBlocks => methodBlocks;
+		public IList<Local> Locals => locals;
+		public MethodDef Method => method;
 
 		public Blocks(MethodDef method) {
 			this.method = method;
@@ -58,13 +50,10 @@ namespace de4dot.blocks {
 			return list;
 		}
 
-		public int RemoveDeadBlocks() {
-			return new DeadBlocksRemover(methodBlocks).Remove();
-		}
+		public int RemoveDeadBlocks() => new DeadBlocksRemover(methodBlocks).Remove();
 
-		public void GetCode(out IList<Instruction> allInstructions, out IList<ExceptionHandler> allExceptionHandlers) {
+		public void GetCode(out IList<Instruction> allInstructions, out IList<ExceptionHandler> allExceptionHandlers) =>
 			new CodeGenerator(methodBlocks).GetCode(out allInstructions, out allExceptionHandlers);
-		}
 
 		struct LocalVariableInfo {
 			public Block block;
@@ -112,8 +101,7 @@ namespace de4dot.blocks {
 					if (local == null)
 						continue;
 
-					List<LocalVariableInfo> list;
-					if (!usedLocals.TryGetValue(local, out list))
+					if (!usedLocals.TryGetValue(local, out var list))
 						usedLocals[local] = list = new List<LocalVariableInfo>();
 					list.Add(new LocalVariableInfo(block, i));
 					if (usedLocals.Count == locals.Count)

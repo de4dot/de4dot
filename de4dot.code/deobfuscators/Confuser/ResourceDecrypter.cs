@@ -46,21 +46,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v19_r77172,
 		}
 
-		public IEnumerable<FieldDef> Fields {
-			get { return fields.Keys; }
-		}
-
-		public MethodDef Handler {
-			get { return handler; }
-		}
-
-		public TypeDef LzmaType {
-			get { return lzmaType; }
-		}
-
-		public bool Detected {
-			get { return handler != null; }
-		}
+		public IEnumerable<FieldDef> Fields => fields.Keys;
+		public MethodDef Handler => handler;
+		public TypeDef LzmaType => lzmaType;
+		public bool Detected => handler != null;
 
 		public ResourceDecrypter(ModuleDefMD module, ISimpleDeobfuscator simpleDeobfuscator) {
 			this.module = module;
@@ -89,7 +78,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 				return false;
 
 			simpleDeobfuscator.Deobfuscate(tmpHandler, SimpleDeobfuscatorFlags.Force | SimpleDeobfuscatorFlags.DisableConstantsFolderExtraInstrs);
-			ConfuserVersion tmpVersion = ConfuserVersion.Unknown;
+			var tmpVersion = ConfuserVersion.Unknown;
 			if (DotNetUtils.CallsMethod(tmpHandler, "System.Object System.AppDomain::GetData(System.String)")) {
 				if (!DotNetUtils.CallsMethod(tmpHandler, "System.Void System.Buffer::BlockCopy(System.Array,System.Int32,System.Array,System.Int32,System.Int32)")) {
 					if (!FindKey0Key1_v14_r55802(tmpHandler, out key0, out key1))
@@ -176,16 +165,13 @@ namespace de4dot.code.deobfuscators.Confuser {
 		static IEnumerable<FieldDef> FindFields(MethodDef method, TypeDef declaringType) {
 			var fields = new List<FieldDef>();
 			foreach (var instr in method.Body.Instructions) {
-				var field = instr.Operand as FieldDef;
-				if (field != null && field.DeclaringType == declaringType)
+				if (instr.Operand is FieldDef field && field.DeclaringType == declaringType)
 					fields.Add(field);
 			}
 			return fields;
 		}
 
-		EmbeddedResource FindResource(MethodDef method) {
-			return DotNetUtils.GetResource(module, DotNetUtils.GetCodeStrings(method)) as EmbeddedResource;
-		}
+		EmbeddedResource FindResource(MethodDef method) => DotNetUtils.GetResource(module, DotNetUtils.GetCodeStrings(method)) as EmbeddedResource;
 
 		static bool FindKey0_v18_r75367(MethodDef method, out byte key0) {
 			var instrs = method.Body.Instructions;

@@ -42,41 +42,15 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		float[] decryptedFloats;
 		double[] decryptedDoubles;
 
-		public bool Detected {
-			get { return decrypterType != null; }
-		}
-
-		public bool CanDecrypt {
-			get { return encryptedResource != null; }
-		}
-
-		public Resource Resource {
-			get { return encryptedResource; }
-		}
-
-		public TypeDef Type {
-			get { return decrypterType; }
-		}
-
-		public MethodDef Int32Decrypter {
-			get { return int32Decrypter; }
-		}
-
-		public MethodDef Int64Decrypter {
-			get { return int64Decrypter; }
-		}
-
-		public MethodDef SingleDecrypter {
-			get { return singleDecrypter; }
-		}
-
-		public MethodDef DoubleDecrypter {
-			get { return doubleDecrypter; }
-		}
-
-		public MethodDef ArrayDecrypter {
-			get { return arrayDecrypter; }
-		}
+		public bool Detected => decrypterType != null;
+		public bool CanDecrypt => encryptedResource != null;
+		public Resource Resource => encryptedResource;
+		public TypeDef Type => decrypterType;
+		public MethodDef Int32Decrypter => int32Decrypter;
+		public MethodDef Int64Decrypter => int64Decrypter;
+		public MethodDef SingleDecrypter => singleDecrypter;
+		public MethodDef DoubleDecrypter => doubleDecrypter;
+		public MethodDef ArrayDecrypter => arrayDecrypter;
 
 		public ConstantsDecrypter(ModuleDefMD module, ResourceDecrypter resourceDecrypter, InitializedDataCreator initializedDataCreator) {
 			this.module = module;
@@ -176,21 +150,10 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				decryptedDoubles[count] = reader.ReadDouble();
 		}
 
-		public int DecryptInt32(int index) {
-			return decryptedInts[index];
-		}
-
-		public long DecryptInt64(int index) {
-			return decryptedLongs[index];
-		}
-
-		public float DecryptSingle(int index) {
-			return decryptedFloats[index];
-		}
-
-		public double DecryptDouble(int index) {
-			return decryptedDoubles[index];
-		}
+		public int DecryptInt32(int index) => decryptedInts[index];
+		public long DecryptInt64(int index) => decryptedLongs[index];
+		public float DecryptSingle(int index) => decryptedFloats[index];
+		public double DecryptDouble(int index) => decryptedDoubles[index];
 
 		struct ArrayInfo {
 			public FieldDef encryptedField;

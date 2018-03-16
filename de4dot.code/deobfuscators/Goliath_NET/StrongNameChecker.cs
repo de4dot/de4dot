@@ -27,21 +27,10 @@ namespace de4dot.code.deobfuscators.Goliath_NET {
 		TypeDef strongNameType;
 		MethodDef strongNameCheckMethod;
 
-		public bool Detected {
-			get { return strongNameType != null; }
-		}
-
-		public TypeDef Type {
-			get { return strongNameType; }
-		}
-
-		public MethodDef CheckerMethod {
-			get { return strongNameCheckMethod; }
-		}
-
-		public StrongNameChecker(ModuleDefMD module) {
-			this.module = module;
-		}
+		public bool Detected => strongNameType != null;
+		public TypeDef Type => strongNameType;
+		public MethodDef CheckerMethod => strongNameCheckMethod;
+		public StrongNameChecker(ModuleDefMD module) => this.module = module;
 
 		public void Find() {
 			foreach (var type in module.Types) {

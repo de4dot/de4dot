@@ -31,33 +31,13 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 		MethodDef loadMethod;
 		bool foundSig;
 
-		public bool Detected {
-			get { return foundSig || cliSecureRtType != null; }
-		}
-
-		public TypeDef Type {
-			get { return cliSecureRtType; }
-		}
-
-		public IEnumerable<StringDecrypterInfo> StringDecrypterInfos {
-			get { return stringDecrypterInfos.Keys; }
-		}
-
-		public MethodDef PostInitializeMethod {
-			get { return postInitializeMethod; }
-		}
-
-		public MethodDef InitializeMethod {
-			get { return initializeMethod; }
-		}
-
-		public MethodDef LoadMethod {
-			get { return loadMethod; }
-		}
-
-		public CliSecureRtType(ModuleDefMD module) {
-			this.module = module;
-		}
+		public bool Detected => foundSig || cliSecureRtType != null;
+		public TypeDef Type => cliSecureRtType;
+		public IEnumerable<StringDecrypterInfo> StringDecrypterInfos => stringDecrypterInfos.Keys;
+		public MethodDef PostInitializeMethod => postInitializeMethod;
+		public MethodDef InitializeMethod => initializeMethod;
+		public MethodDef LoadMethod => loadMethod;
+		public CliSecureRtType(ModuleDefMD module) => this.module = module;
 
 		public CliSecureRtType(ModuleDefMD module, CliSecureRtType oldOne) {
 			this.module = module;
@@ -73,9 +53,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			foundSig = oldOne.foundSig;
 		}
 
-		T Lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
-			return DeobUtils.Lookup(module, def, errorMessage);
-		}
+		T Lookup<T>(T def, string errorMessage) where T : class, ICodedToken => DeobUtils.Lookup(module, def, errorMessage);
 
 		public void Find(byte[] moduleBytes) {
 			if (cliSecureRtType != null)
@@ -114,9 +92,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			return false;
 		}
 
-		void FindStringDecrypters() {
-			AddStringDecrypterMethod(FindStringDecrypterMethod(cliSecureRtType));
-		}
+		void FindStringDecrypters() => AddStringDecrypterMethod(FindStringDecrypterMethod(cliSecureRtType));
 
 		void AddStringDecrypterMethod(MethodDef method) {
 			if (method != null)
@@ -196,14 +172,12 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 		}
 
 		bool FindNativeCode(byte[] moduleBytes) {
-			var bytes = moduleBytes != null ? moduleBytes : DeobUtils.ReadModule(module);
+			var bytes = moduleBytes ?? DeobUtils.ReadModule(module);
 			using (var peImage = new MyPEImage(bytes))
 				return foundSig = MethodsDecrypter.Detect(peImage);
 		}
 
-		public bool IsAtLeastVersion50() {
-			return DotNetUtils.HasPinvokeMethod(cliSecureRtType, "LoadLibraryA");
-		}
+		public bool IsAtLeastVersion50() => DotNetUtils.HasPinvokeMethod(cliSecureRtType, "LoadLibraryA");
 
 		public void FindStringDecrypterMethod() {
 			if (cliSecureRtType != null)

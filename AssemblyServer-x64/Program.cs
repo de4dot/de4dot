@@ -19,8 +19,6 @@
 
 namespace AssemblyServer_x64 {
 	class Program {
-		static int Main(string[] args) {
-			return AssemblyServer.Start.Main(args);
-		}
+		static int Main(string[] args) => AssemblyServer.Start.Main(args);
 	}
 }

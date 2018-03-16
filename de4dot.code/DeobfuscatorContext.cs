@@ -27,23 +27,15 @@ namespace de4dot.code {
 	public class DeobfuscatorContext : IDeobfuscatorContext {
 		Dictionary<string, object> dataDict = new Dictionary<string, object>(StringComparer.Ordinal);
 
-		public void Clear() {
-			dataDict.Clear();
-		}
-
-		public void SetData(string name, object data) {
-			dataDict[name] = data;
-		}
+		public void Clear() => dataDict.Clear();
+		public void SetData(string name, object data) => dataDict[name] = data;
 
 		public object GetData(string name) {
-			object value;
-			dataDict.TryGetValue(name, out value);
+			dataDict.TryGetValue(name, out object value);
 			return value;
 		}
 
-		public void ClearData(string name) {
-			dataDict.Remove(name);
-		}
+		public void ClearData(string name) => dataDict.Remove(name);
 
 		static ITypeDefOrRef GetNonGenericTypeRef(ITypeDefOrRef typeRef) {
 			var ts = typeRef as TypeSpec;
@@ -60,12 +52,10 @@ namespace de4dot.code {
 				return null;
 			type = GetNonGenericTypeRef(type);
 
-			var typeDef = type as TypeDef;
-			if (typeDef != null)
+			if (type is TypeDef typeDef)
 				return typeDef;
 
-			var tr = type as TypeRef;
-			if (tr != null)
+			if (type is TypeRef tr)
 				return tr.Resolve();
 
 			return null;
@@ -75,8 +65,7 @@ namespace de4dot.code {
 			if (method == null)
 				return null;
 
-			var md = method as MethodDef;
-			if (md != null)
+			if (method is MethodDef md)
 				return md;
 
 			var mr = method as MemberRef;
@@ -94,8 +83,7 @@ namespace de4dot.code {
 			if (field == null)
 				return null;
 
-			var fd = field as FieldDef;
-			if (fd != null)
+			if (field is FieldDef fd)
 				return fd;
 
 			var mr = field as MemberRef;

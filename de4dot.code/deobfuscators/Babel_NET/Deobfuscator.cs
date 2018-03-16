@@ -45,16 +45,11 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			dumpEmbeddedAssemblies = new BoolOption(null, MakeArgName("embedded"), "Dump embedded assemblies", true);
 		}
 
-		public override string Name {
-			get { return THE_NAME; }
-		}
+		public override string Name => THE_NAME;
+		public override string Type => THE_TYPE;
 
-		public override string Type {
-			get { return THE_TYPE; }
-		}
-
-		public override IDeobfuscator CreateDeobfuscator() {
-			return new Deobfuscator(new Deobfuscator.Options {
+		public override IDeobfuscator CreateDeobfuscator() =>
+			new Deobfuscator(new Deobfuscator.Options {
 				ValidNameRegex = validNameRegex.Get(),
 				InlineMethods = inlineMethods.Get(),
 				RemoveInlinedMethods = removeInlinedMethods.Get(),
@@ -63,10 +58,9 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				DecryptConstants = decryptConstants.Get(),
 				DumpEmbeddedAssemblies = dumpEmbeddedAssemblies.Get(),
 			});
-		}
 
-		protected override IEnumerable<Option> GetOptionsInternal() {
-			return new List<Option>() {
+		protected override IEnumerable<Option> GetOptionsInternal() =>
+			new List<Option>() {
 				inlineMethods,
 				removeInlinedMethods,
 				decryptMethods,
@@ -74,7 +68,6 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				decryptConstants,
 				dumpEmbeddedAssemblies,
 			};
-		}
 	}
 
 	class Deobfuscator : DeobfuscatorBase {
@@ -103,21 +96,10 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			public bool DumpEmbeddedAssemblies { get; set; }
 		}
 
-		public override string Type {
-			get { return DeobfuscatorInfo.THE_TYPE; }
-		}
-
-		public override string TypeLong {
-			get { return DeobfuscatorInfo.THE_NAME; }
-		}
-
-		public override string Name {
-			get { return obfuscatorName; }
-		}
-
-		protected override bool CanInlineMethods {
-			get { return startedDeobfuscating ? options.InlineMethods : true; }
-		}
+		public override string Type => DeobfuscatorInfo.THE_TYPE;
+		public override string TypeLong => DeobfuscatorInfo.THE_NAME;
+		public override string Name => obfuscatorName;
+		protected override bool CanInlineMethods => startedDeobfuscating ? options.InlineMethods : true;
 
 		public override IEnumerable<IBlocksDeobfuscator> BlocksDeobfuscators {
 			get {
@@ -128,14 +110,8 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			}
 		}
 
-		public Deobfuscator(Options options)
-			: base(options) {
-			this.options = options;
-		}
-
-		public override void Initialize(ModuleDefMD module) {
-			base.Initialize(module);
-		}
+		public Deobfuscator(Options options) : base(options) => this.options = options;
+		public override void Initialize(ModuleDefMD module) => base.Initialize(module);
 
 		protected override int DetectInternal() {
 			int val = 0;
@@ -189,7 +165,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				var val = Regex.Match((string)versionField.Constant.Value, @"^(\d+\.\d+\.\d+\.\d+)$");
 				if (val.Groups.Count < 2)
 					return;
-				obfuscatorName = string.Format("{0} {1}", DeobfuscatorInfo.THE_NAME, val.Groups[1].ToString());
+				obfuscatorName = $"{DeobfuscatorInfo.THE_NAME} {val.Groups[1].ToString()}";
 				return;
 			}
 		}
@@ -224,7 +200,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 			if (options.DecryptMethods) {
 				methodsDecrypter.Initialize(DeobfuscatedFile, this);
-				methodsDecrypter.decrypt();
+				methodsDecrypter.Decrypt();
 			}
 
 			if (options.DecryptConstants) {

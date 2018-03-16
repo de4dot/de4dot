@@ -38,25 +38,16 @@ namespace de4dot.blocks.cflow {
 		public InstructionEmulator() {
 		}
 
-		public InstructionEmulator(MethodDef method) {
-			Initialize(method, false);
-		}
-
-		public void Initialize(Blocks blocks, bool emulateFromFirstInstruction) {
+		public InstructionEmulator(MethodDef method) => Initialize(method, false);
+		public void Initialize(Blocks blocks, bool emulateFromFirstInstruction) =>
 			Initialize(blocks.Method, emulateFromFirstInstruction);
-		}
-
-		public void Initialize(MethodDef method) {
-			Initialize(method, false);
-		}
-
-		public void Initialize(MethodDef method, bool emulateFromFirstInstruction) {
+		public void Initialize(MethodDef method) => Initialize(method, false);
+		public void Initialize(MethodDef method, bool emulateFromFirstInstruction) =>
 			Initialize(method, method.Parameters, method.Body.Variables, method.Body.InitLocals, emulateFromFirstInstruction);
-		}
 
 		public void Initialize(MethodDef method, IList<Parameter> methodParameters, IList<Local> methodLocals, bool initLocals, bool emulateFromFirstInstruction) {
-			this.parameterDefs = methodParameters;
-			this.localDefs = methodLocals;
+			parameterDefs = methodParameters;
+			localDefs = methodLocals;
 			valueStack.Initialize();
 			protectedStackValues.Clear();
 
@@ -81,13 +72,8 @@ namespace de4dot.blocks.cflow {
 			locals.AddRange(initLocals && emulateFromFirstInstruction ? cached_zeroed_locals : cached_locals);
 		}
 
-		public void SetProtected(Value value) {
-			protectedStackValues[value] = true;
-		}
-
-		static Value GetUnknownValue(ITypeDefOrRef type) {
-			return GetUnknownValue(type.ToTypeSig(false));
-		}
+		public void SetProtected(Value value) => protectedStackValues[value] = true;
+		static Value GetUnknownValue(ITypeDefOrRef type) => GetUnknownValue(type.ToTypeSig(false));
 
 		static Value GetUnknownValue(TypeSig type) {
 			if (type == null)
@@ -188,9 +174,7 @@ namespace de4dot.blocks.cflow {
 			return new UnknownValue();
 		}
 
-		public Value GetArg(int i) {
-			return GetValue(args, i);
-		}
+		public Value GetArg(int i) => GetValue(args, i);
 
 		public Value GetArg(Parameter arg) {
 			if (arg == null)
@@ -219,13 +203,8 @@ namespace de4dot.blocks.cflow {
 				args[index] = TruncateValue(value, GetArgType(index));
 		}
 
-		Value GetUnknownArg(int index) {
-			return GetUnknownValue(GetArgType(index));
-		}
-
-		public Value GetLocal(int i) {
-			return GetValue(locals, i);
-		}
+		Value GetUnknownArg(int index) => GetUnknownValue(GetArgType(index));
+		public Value GetLocal(int i) => GetValue(locals, i);
 
 		public Value GetLocal(Local local) {
 			if (local == null)
@@ -254,17 +233,9 @@ namespace de4dot.blocks.cflow {
 			return new UnknownValue();
 		}
 
-		public int StackSize() {
-			return valueStack.Size;
-		}
-
-		public void Push(Value value) {
-			valueStack.Push(value);
-		}
-
-		public void ClearStack() {
-			valueStack.Clear();
-		}
+		public int StackSize() => valueStack.Size;
+		public void Push(Value value) => valueStack.Push(value);
+		public void ClearStack() => valueStack.Clear();
 
 		public void Pop(int num) {
 			if (num < 0)
@@ -273,13 +244,8 @@ namespace de4dot.blocks.cflow {
 				valueStack.Pop(num);
 		}
 
-		public Value Pop() {
-			return valueStack.Pop();
-		}
-
-		public Value Peek() {
-			return valueStack.Peek();
-		}
+		public Value Pop() => valueStack.Pop();
+		public Value Peek() => valueStack.Peek();
 
 		public void Emulate(IEnumerable<Instr> instructions) {
 			foreach (var instr in instructions)
@@ -535,8 +501,7 @@ namespace de4dot.blocks.cflow {
 		}
 
 		void UpdateStack(Instruction instr) {
-			int pushes, pops;
-			instr.CalculateStackUsage(out pushes, out pops);
+			instr.CalculateStackUsage(out int pushes, out int pops);
 			if (pops == -1)
 				valueStack.Clear();
 			else {
@@ -1169,43 +1134,27 @@ namespace de4dot.blocks.cflow {
 				valueStack.PushUnknown();
 		}
 
-		void Emulate_Starg(Parameter arg) {
-			SetArg(arg == null ? -1 : arg.Index, valueStack.Pop());
-		}
-
-		void Emulate_Stloc(Local local) {
-			Emulate_Stloc(local == null ? -1 : local.Index);
-		}
-
-		void Emulate_Stloc(int index) {
-			SetLocal(index, valueStack.Pop());
-		}
+		void Emulate_Starg(Parameter arg) => SetArg(arg == null ? -1 : arg.Index, valueStack.Pop());
+		void Emulate_Stloc(Local local) => Emulate_Stloc(local == null ? -1 : local.Index);
+		void Emulate_Stloc(int index) => SetLocal(index, valueStack.Pop());
 
 		void Emulate_Ldarga(Parameter arg) {
 			valueStack.PushUnknown();
 			MakeArgUnknown(arg);
 		}
 
-		void Emulate_Ldloca(Local local) {
-			Emulate_Ldloca(local == null ? -1 : local.Index);
-		}
+		void Emulate_Ldloca(Local local) => Emulate_Ldloca(local == null ? -1 : local.Index);
 
 		void Emulate_Ldloca(int index) {
 			valueStack.PushUnknown();
 			SetLocal(index, GetUnknownLocal(index));
 		}
 
-		void Emulate_Call(Instruction instr) {
-			Emulate_Call(instr, (IMethod)instr.Operand);
-		}
-
-		void Emulate_Callvirt(Instruction instr) {
-			Emulate_Call(instr, (IMethod)instr.Operand);
-		}
+		void Emulate_Call(Instruction instr) => Emulate_Call(instr, (IMethod)instr.Operand);
+		void Emulate_Callvirt(Instruction instr) => Emulate_Call(instr, (IMethod)instr.Operand);
 
 		void Emulate_Call(Instruction instr, IMethod method) {
-			int pushes, pops;
-			instr.CalculateStackUsage(out pushes, out pops);
+			instr.CalculateStackUsage(out int pushes, out int pops);
 			valueStack.Pop(pops);
 			if (pushes == 1)
 				valueStack.Push(GetUnknownValue(method.MethodSig.GetRetType()));
@@ -1236,9 +1185,7 @@ namespace de4dot.blocks.cflow {
 			EmulateLoadField(instr.Operand as IField);
 		}
 
-		void Emulate_Ldsfld(Instruction instr) {
-			EmulateLoadField(instr.Operand as IField);
-		}
+		void Emulate_Ldsfld(Instruction instr) => EmulateLoadField(instr.Operand as IField);
 
 		void EmulateLoadField(IField field) {
 			if (field != null)

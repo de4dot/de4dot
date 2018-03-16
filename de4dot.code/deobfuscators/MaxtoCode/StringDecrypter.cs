@@ -29,17 +29,9 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		string[] decryptedStrings;
 		Encoding encoding;
 
-		public MethodDef Method {
-			get { return decryptMethod; }
-		}
-
-		public bool Detected {
-			get { return decryptMethod != null; }
-		}
-
-		public StringDecrypter(DecrypterInfo decrypterInfo) {
-			this.decrypterInfo = decrypterInfo;
-		}
+		public MethodDef Method => decryptMethod;
+		public bool Detected => decryptMethod != null;
+		public StringDecrypter(DecrypterInfo decrypterInfo) => this.decrypterInfo = decrypterInfo;
 
 		public void Find() {
 			if (decrypterInfo == null)
@@ -65,9 +57,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			return null;
 		}
 
-		public void Initialize(Encoding encoding) {
-			this.encoding = encoding;
-		}
+		public void Initialize(Encoding encoding) => this.encoding = encoding;
 
 		void InitializeStrings() {
 			if (decryptedStrings != null)
@@ -115,9 +105,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			return s.Substring(0, len);
 		}
 
-		static int Add(int ki, int size) {
-			return (ki + size) % 0x1FF0;
-		}
+		static int Add(int ki, int size) => (ki + size) % 0x1FF0;
 
 		public string Decrypt(uint id) {
 			InitializeStrings();

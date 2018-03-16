@@ -27,11 +27,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 		ImageReader imageReader;
 		public int Flags2 { get; set; }
 		public ushort MaxStack { get; set; }
-
-		public MethodBodyReader(ImageReader imageReader)
-			: base(imageReader.reader) {
-			this.imageReader = imageReader;
-		}
+		public MethodBodyReader(ImageReader imageReader) : base(imageReader.reader) => this.imageReader = imageReader;
 
 		public void Read(IList<Parameter> parameters) {
 			this.parameters = parameters;

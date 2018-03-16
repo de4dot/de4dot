@@ -71,21 +71,10 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			}
 		}
 
-		public TypeDef Type {
-			get { return decrypterType; }
-		}
-
-		public bool Detected {
-			get { return decrypterType != null; }
-		}
-
-		public IEnumerable<DecrypterInfo> DecrypterInfos {
-			get { return methodToInfo.GetValues(); }
-		}
-
-		public StringDecrypter(ModuleDefMD module) {
-			this.module = module;
-		}
+		public TypeDef Type => decrypterType;
+		public bool Detected => decrypterType != null;
+		public IEnumerable<DecrypterInfo> DecrypterInfos => methodToInfo.GetValues();
+		public StringDecrypter(ModuleDefMD module) => this.module = module;
 
 		public void Find() {
 			foreach (var type in module.Types) {
@@ -105,9 +94,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 				if (cctor == null)
 					continue;
 
-				FieldDef encryptedDataFieldTmp;
-				StringDataFlags stringDataFlagsTmp;
-				if (!CheckCctor(cctor, out encryptedDataFieldTmp, out stringDataFlagsTmp))
+				if (!CheckCctor(cctor, out var encryptedDataFieldTmp, out var stringDataFlagsTmp))
 					continue;
 
 				if (!InitializeDecrypterInfos(type))
@@ -219,7 +206,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			key = arrays[0];
 			if (arrays.Count == 1) {
 				var pkt = PublicKeyBase.ToPublicKeyToken(module.Assembly.PublicKey);
-				iv = pkt == null ? null : pkt.Data;
+				iv = pkt?.Data;
 			}
 			else
 				iv = arrays[1];
@@ -263,13 +250,11 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			return false;
 		}
 
-		static bool CheckClass(TypeSig type, string fullName) {
-			return type != null && (type.ElementType == ElementType.Object || type.FullName == fullName);
-		}
+		static bool CheckClass(TypeSig type, string fullName) =>
+			type != null && (type.ElementType == ElementType.Object || type.FullName == fullName);
 
-		static bool IsStringType(TypeSig type) {
-			return type != null && (type.ElementType == ElementType.Object || type.ElementType == ElementType.String);
-		}
+		static bool IsStringType(TypeSig type) =>
+			type != null && (type.ElementType == ElementType.Object || type.ElementType == ElementType.String);
 
 		bool InitializeDecrypterInfos(TypeDef type) {
 			foreach (var method in type.Methods) {

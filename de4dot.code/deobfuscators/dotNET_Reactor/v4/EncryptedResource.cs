@@ -39,37 +39,24 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		EmbeddedResource encryptedDataResource;
 		IDecrypter decrypter;
 
-		public DnrDecrypterType DecrypterTypeVersion {
-			get { return decrypter == null ? DnrDecrypterType.Unknown : decrypter.DecrypterType; }
-		}
-
-		public TypeDef Type {
-			get { return resourceDecrypterMethod == null ? null : resourceDecrypterMethod.DeclaringType; }
-		}
+		public DnrDecrypterType DecrypterTypeVersion => decrypter == null ? DnrDecrypterType.Unknown : decrypter.DecrypterType;
+		public TypeDef Type => resourceDecrypterMethod?.DeclaringType;
 
 		public MethodDef Method {
-			get { return resourceDecrypterMethod; }
-			set { resourceDecrypterMethod = value; }
+			get => resourceDecrypterMethod;
+			set => resourceDecrypterMethod = value;
 		}
 
-		public EmbeddedResource Resource {
-			get { return encryptedDataResource; }
-		}
-
-		public bool FoundResource {
-			get { return encryptedDataResource != null; }
-		}
-
-		public EncryptedResource(ModuleDefMD module) {
-			this.module = module;
-		}
+		public EmbeddedResource Resource => encryptedDataResource;
+		public bool FoundResource => encryptedDataResource != null;
+		public EncryptedResource(ModuleDefMD module) => this.module = module;
 
 		public EncryptedResource(ModuleDefMD module, EncryptedResource oldOne) {
 			this.module = module;
 			resourceDecrypterMethod = Lookup(oldOne.resourceDecrypterMethod, "Could not find resource decrypter method");
 			if (oldOne.encryptedDataResource != null)
 				encryptedDataResource = DotNetUtils.GetResource(module, oldOne.encryptedDataResource.Name.String) as EmbeddedResource;
-			this.decrypter = oldOne.decrypter;
+			decrypter = oldOne.decrypter;
 
 			if (encryptedDataResource == null && oldOne.encryptedDataResource != null)
 				throw new ApplicationException("Could not initialize EncryptedResource");
@@ -83,13 +70,11 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			module.Resources[index] = encryptedDataResource;
 		}
 
-		T Lookup<T>(T def, string errorMessage) where T : class, ICodedToken {
-			return DeobUtils.Lookup(module, def, errorMessage);
-		}
+		T Lookup<T>(T def, string errorMessage) where T : class, ICodedToken =>
+			DeobUtils.Lookup(module, def, errorMessage);
 
-		public bool CouldBeResourceDecrypter(MethodDef method, IList<string> additionalTypes) {
-			return CouldBeResourceDecrypter(method, additionalTypes, true);
-		}
+		public bool CouldBeResourceDecrypter(MethodDef method, IList<string> additionalTypes) =>
+			CouldBeResourceDecrypter(method, additionalTypes, true);
 
 		public bool CouldBeResourceDecrypter(MethodDef method, IList<string> additionalTypes, bool checkResource) {
 			if (GetDecrypterType(method, additionalTypes) == DnrDecrypterType.Unknown)
@@ -101,9 +86,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			return true;
 		}
 
-		public DnrDecrypterType GuessDecrypterType() {
-			return GetDecrypterType(resourceDecrypterMethod, null);
-		}
+		public DnrDecrypterType GuessDecrypterType() => GetDecrypterType(resourceDecrypterMethod, null);
 
 		static DnrDecrypterType GetDecrypterType(MethodDef method, IList<string> additionalTypes) {
 			if (method == null || !method.IsStatic || method.Body == null)
@@ -174,14 +157,11 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			return false;
 		}
 
-		bool NeedReverse() {
-			return DotNetUtils.CallsMethod(resourceDecrypterMethod, "System.Void System.Array::Reverse(System.Array)");
-		}
+		bool NeedReverse() => DotNetUtils.CallsMethod(resourceDecrypterMethod, "System.Void System.Array::Reverse(System.Array)");
 
 		EmbeddedResource FindMethodsDecrypterResource(MethodDef method) {
 			foreach (var s in DotNetUtils.GetCodeStrings(method)) {
-				var resource = DotNetUtils.GetResource(module, s) as EmbeddedResource;
-				if (resource != null)
+				if (DotNetUtils.GetResource(module, s) is EmbeddedResource resource)
 					return resource;
 			}
 			return null;
@@ -196,9 +176,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 		class DecrypterV1 : IDecrypter {
 			readonly byte[] key, iv;
 
-			public DnrDecrypterType DecrypterType {
-				get { return DnrDecrypterType.V1; }
-			}
+			public DnrDecrypterType DecrypterType => DnrDecrypterType.V1;
 
 			public DecrypterV1(byte[] iv, byte[] key) {
 				this.iv = iv;
@@ -230,9 +208,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				return true;
 			}
 
-			public byte[] Decrypt(EmbeddedResource resource) {
-				return DeobUtils.AesDecrypt(resource.GetReader().ToArray(), key, iv);
-			}
+			public byte[] Decrypt(EmbeddedResource resource) => DeobUtils.AesDecrypt(resource.GetReader().ToArray(), key, iv);
 
 			public byte[] Encrypt(byte[] data) {
 				using (var aes = new RijndaelManaged { Mode = CipherMode.CBC }) {
@@ -251,15 +227,13 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			readonly InstructionEmulator instrEmulator = new InstructionEmulator();
 			Local emuLocal;
 
-			public DnrDecrypterType DecrypterType {
-				get { return DnrDecrypterType.V2; }
-			}
+			public DnrDecrypterType DecrypterType => DnrDecrypterType.V2;
 
 			public DecrypterV2(byte[] iv, byte[] key, MethodDef method) {
 				this.iv = iv;
 				this.key = key;
 				this.method = method;
-				this.locals = new List<Local>(method.Body.Variables);
+				locals = new List<Local>(method.Body.Variables);
 				if (!Initialize())
 					throw new ApplicationException("Could not initialize decrypter");
 			}
@@ -284,10 +258,8 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 					key[i] ^= iv[i];
 
 				var origInstrs = method.Body.Instructions;
-				int emuEndIndex;
-				int emuStartIndex;
 
-				if (!Find(origInstrs, out emuStartIndex, out emuEndIndex, out emuLocal)) {
+				if (!Find(origInstrs, out int emuStartIndex, out int emuEndIndex, out emuLocal)) {
 					if (!FindStartEnd(origInstrs, out emuStartIndex, out emuEndIndex, out emuLocal))
 						return false;
 				}
@@ -301,15 +273,13 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			}
 
 			bool Find(IList<Instruction> instrs, out int startIndex, out int endIndex, out Local tmpLocal) {
-				int emuStartIndex;
 				startIndex = 0;
 				endIndex = 0;
 				tmpLocal = null;
 
-				if (!FindStart(instrs, out emuStartIndex, out emuLocal))
+				if (!FindStart(instrs, out int emuStartIndex, out emuLocal))
 					return false;
-				int emuEndIndex;
-				if (!FindEnd(instrs, emuStartIndex, out emuEndIndex))
+				if (!FindEnd(instrs, emuStartIndex, out int emuEndIndex))
 					return false;
 				startIndex = emuStartIndex;
 				endIndex = emuEndIndex;
