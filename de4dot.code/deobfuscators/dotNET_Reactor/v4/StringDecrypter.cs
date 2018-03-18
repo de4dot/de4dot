@@ -147,7 +147,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			if (!encryptedResource.FoundResource)
 				return;
 			Logger.v("Adding string decrypter. Resource: {0}", Utils.ToCsharpString(encryptedResource.Resource.Name));
-			decryptedData = encryptedResource.Decrypt();
+			decryptedData = encryptedResource.Decrypt(); //BUG: throw Error even when using `--strtyp delegate`
 		}
 
 		void FindKeyIv(MethodDef method, out byte[] key, out byte[] iv) {
