@@ -307,8 +307,20 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 					if (newStartIndex < 0)
 						continue;
 
+					var checkLocs = new List<Local>();
+					int ckStartIndex = -1;
+					for (int y = newEndIndex; y >= newStartIndex; y--) {
+						var loc = CheckLocal(instrs[y], true);
+						if (loc == null)
+							continue;
+						if (!checkLocs.Contains(loc))
+							checkLocs.Add(loc);
+						if (checkLocs.Count == 3)
+							break;
+						ckStartIndex = y;
+					}
 					endIndex = newEndIndex;
-					startIndex = newStartIndex;
+					startIndex = Math.Max(ckStartIndex, newStartIndex);
 					tmpLocal = CheckLocal(instrs[startIndex], true);
 					return true;
 				}
