@@ -446,8 +446,10 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			proxyCallFixer.FindDelegateCreator();
 			proxyCallFixer.Find();
 
-			stringDecrypter.Initialize(peImage, fileData, DeobfuscatedFile);
-			if (!stringDecrypter.Detected)
+			bool decryptStrings = Operations.DecryptStrings == OpDecryptString.Static;
+			if (decryptStrings)
+				stringDecrypter.Initialize(peImage, fileData, DeobfuscatedFile);
+			if (!stringDecrypter.Detected || !decryptStrings)
 				FreePEImage();
 			booleanDecrypter.Initialize(fileData, DeobfuscatedFile);
 			booleanValueInliner = new BooleanValueInliner();
@@ -459,15 +461,17 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				});
 			}
 
-			foreach (var info in stringDecrypter.DecrypterInfos) {
-				staticStringInliner.Add(info.method, (method2, gim, args) => {
-					return stringDecrypter.Decrypt(method2, (int)args[0]);
-				});
-			}
-			if (stringDecrypter.OtherStringDecrypter != null) {
-				staticStringInliner.Add(stringDecrypter.OtherStringDecrypter, (method2, gim, args) => {
-					return stringDecrypter.Decrypt((string)args[0]);
-				});
+			if (decryptStrings) {
+				foreach (var info in stringDecrypter.DecrypterInfos) {
+					staticStringInliner.Add(info.method, (method2, gim, args) => {
+						return stringDecrypter.Decrypt(method2, (int)args[0]);
+					});
+				}
+				if (stringDecrypter.OtherStringDecrypter != null) {
+					staticStringInliner.Add(stringDecrypter.OtherStringDecrypter, (method2, gim, args) => {
+						return stringDecrypter.Decrypt((string)args[0]);
+					});
+				}
 			}
 			DeobfuscatedFile.StringDecryptersAdded();
 
