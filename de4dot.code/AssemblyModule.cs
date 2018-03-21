@@ -62,7 +62,7 @@ namespace de4dot.code {
 				module.Write(newFilename, writerOptions);
 			}
 			else {
-				var writerOptions = new NativeModuleWriterOptions(module);
+				var writerOptions = new NativeModuleWriterOptions(module, optimizeImageSize: true);
 				writerOptions.WriterEvent += (s, e) => writerListener?.OnWriterEvent(e.Writer, e.Event);
 				writerOptions.MetadataOptions.Flags |= mdFlags;
 				writerOptions.Logger = Logger.Instance;
