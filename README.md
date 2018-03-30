@@ -8,7 +8,7 @@ It uses [dnlib](https://github.com/0xd4d/dnlib/) to read and write assemblies so
 Binaries
 ========
 
-Get binaries from the [build server](https://ci.appveyor.com/project/0xd4d/de4dot/build/artifacts).
+Get binaries from the [build server](https://ci.appveyor.com/project/0xd4d/de4dot/branch/master/artifacts).
 
 It's FREE but there's NO SUPPORT
 ================================
