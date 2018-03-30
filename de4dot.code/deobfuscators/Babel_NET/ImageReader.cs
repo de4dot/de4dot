@@ -447,15 +447,8 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 		ByRefSig ReadByRefType() => new ByRefSig(ReadTypeSig());
 
-		public uint ReadVariableLengthUInt32() {
-			reader.ReadCompressedUInt32(out uint val);
-			return val;
-		}
-
-		public int ReadVariableLengthInt32() {
-			reader.ReadCompressedUInt32(out uint val);
-			return (int)val;
-		}
+		public uint ReadVariableLengthUInt32() => reader.ReadCompressedUInt32();
+		public int ReadVariableLengthInt32() => (int)reader.ReadCompressedUInt32();
 
 		int GetMetadataOffset() {
 			reader.Position = reader.Length - 4;

@@ -38,7 +38,11 @@ namespace de4dot.blocks {
 
 		// Returns the variable or null if it's not a ldloc/stloc instruction. It does not return
 		// a local variable if it's a ldloca/ldloca.s instruction.
-		public static Local GetLocalVar(IList<Local> locals, Instr instr) => instr.Instruction.GetLocal(locals);
+		public static Local GetLocalVar(IList<Local> locals, Instr instr) {
+			if (instr.Instruction.IsLdloc() || instr.Instruction.IsStloc())
+				return instr.Instruction.GetLocal(locals);
+			return null;
+		}
 
 		static public bool IsFallThrough(OpCode opCode) {
 			switch (opCode.FlowControl) {

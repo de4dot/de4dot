@@ -644,6 +644,8 @@ done:
 			value = 0;
 			if (locals == null)
 				return false;
+			if (!instr.IsLdloc() && !instr.IsStloc())
+				return false;
 			var local = instr.GetLocal(locals);
 			if (local == null)
 				return false;
@@ -661,6 +663,8 @@ done:
 			value = 0;
 			if (locals == null)
 				return false;
+			if (!instr.IsLdloc() && !instr.IsStloc())
+				return false;
 			var local = instr.GetLocal(locals);
 			if (local == null)
 				return false;
@@ -677,6 +681,8 @@ done:
 		protected virtual bool GetLocalConstantDouble(Instruction instr, out double value) {
 			value = 0;
 			if (locals == null)
+				return false;
+			if (!instr.IsLdloc() && !instr.IsStloc())
 				return false;
 			var local = instr.GetLocal(locals);
 			if (local == null)
