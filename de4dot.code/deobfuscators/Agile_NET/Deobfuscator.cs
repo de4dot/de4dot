@@ -124,7 +124,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 			if (data == null)
 				return null;
 
-			return ModuleBytes = data.GetReader().ToArray();
+			return ModuleBytes = data.CreateReader().ToArray();
 		}
 
 		static void WriteUInt32(byte[] data, int offset, uint value) {

@@ -100,7 +100,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				encryptedResource = CoUtils.GetResource(module, Resources);
 			}
 
-			constantsData = resourceDecrypter.Decrypt(encryptedResource.GetReader().AsStream());
+			constantsData = resourceDecrypter.Decrypt(encryptedResource.CreateReader().AsStream());
 		}
 
 		public int DecryptInt32(int index) => BitConverter.ToInt32(constantsData, index);

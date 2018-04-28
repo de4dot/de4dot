@@ -50,7 +50,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			}
 
 			public virtual byte[] GetMethodsData(EmbeddedResource resource) {
-				var reader = resource.GetReader();
+				var reader = resource.CreateReader();
 				reader.Position = (uint)startOffset;
 				if ((reader.ReadInt32() & 1) != 0)
 					return Decompress(ref reader);
@@ -195,7 +195,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			}
 
 			public override byte[] GetMethodsData(EmbeddedResource resource) {
-				var reader = resource.GetReader();
+				var reader = resource.CreateReader();
 				reader.Position = (uint)startOffset;
 				var decrypted = new byte[reader.Read7BitEncodedUInt32()];
 				uint origCrc32 = reader.ReadUInt32();
@@ -229,7 +229,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 				var resource = tmp as EmbeddedResource;
 				if (resource == null)
 					continue;
-				var reader = resource.GetReader();
+				var reader = resource.CreateReader();
 				reader.Position = 0;
 				if (!CheckResourceV100(ref reader) &&
 					!CheckResourceV105(ref reader) &&

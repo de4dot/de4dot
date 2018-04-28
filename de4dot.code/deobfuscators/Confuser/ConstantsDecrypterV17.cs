@@ -361,7 +361,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			FindDecrypterInfos();
 			InitializeDecrypterInfos();
 
-			SetConstantsData(DeobUtils.Inflate(resource.GetReader().ToArray(), true));
+			SetConstantsData(DeobUtils.Inflate(resource.CreateReader().ToArray(), true));
 		}
 
 		void FindDecrypterInfos() {

@@ -451,7 +451,7 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 		}
 
 		void Initialize() {
-			reader = new BinaryReader(encryptedResource.GetReader().AsStream());
+			reader = new BinaryReader(encryptedResource.CreateReader().AsStream());
 			short len = (short)(reader.ReadInt16() ^ s1);
 			if (len != 0)
 				theKey = reader.ReadBytes(len);

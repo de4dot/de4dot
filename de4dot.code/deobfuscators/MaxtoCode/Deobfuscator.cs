@@ -154,8 +154,8 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				int hash = 0;
 				if (resource.Offset != null)
 					hash ^= resource.Offset.GetHashCode();
-				hash ^= (int)resource.GetReader().Position;
-				hash ^= (int)resource.GetReader().Length;
+				hash ^= (int)resource.CreateReader().Position;
+				hash ^= (int)resource.CreateReader().Length;
 				return hash;
 			}
 
@@ -163,8 +163,8 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				var other = obj as ResourceKey;
 				if (other == null)
 					return false;
-				return resource.GetReader().StartOffset == other.resource.GetReader().StartOffset &&
-					resource.GetReader().Length == other.resource.GetReader().Length;
+				return resource.CreateReader().StartOffset == other.resource.CreateReader().StartOffset &&
+					resource.CreateReader().Length == other.resource.CreateReader().Length;
 			}
 
 			public override string ToString() => resource.Name.String;
@@ -212,7 +212,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				var resource = tmp as EmbeddedResource;
 				if (resource == null)
 					continue;
-				if (resource.Offset == null || (resource.GetReader().StartOffset == 0 && resource.GetReader().Length == 0))
+				if (resource.Offset == null || (resource.CreateReader().StartOffset == 0 && resource.CreateReader().Length == 0))
 					AddResourceToBeRemoved(resource, "Invalid resource");
 			}
 		}

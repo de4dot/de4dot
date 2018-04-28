@@ -226,7 +226,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 
 			if ((resource = FindResource(key0)) == null)
 				throw new ApplicationException("Could not find resource");
-			constants = DecryptResource(resource.GetReader().ToArray());
+			constants = DecryptResource(resource.CreateReader().ToArray());
 
 			FindDecrypters();
 		}

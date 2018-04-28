@@ -22,7 +22,7 @@ namespace de4dot.code.deobfuscators {
 
 				var dotNetDir = peImage.ImageNTHeaders.OptionalHeader.DataDirectories[14];
 				if (dotNetDir.VirtualAddress != 0 && dotNetDir.Size >= 0x48) {
-					metadata = MetadataCreator.CreateMetadata(peImage, false);
+					metadata = MetadataFactory.CreateMetadata(peImage, false);
 					dotNetSection = FindSection(dotNetDir.VirtualAddress);
 				}
 				return metadata;

@@ -110,7 +110,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 
 			encResourcename = XorCipher(encResourcename, xorKey);
 			var firstResource = GetResource(module, new string[] { encResourcename });
-			resourceName = DecryptResourceName(resourceName, key, firstResource.GetReader().ToArray());
+			resourceName = DecryptResourceName(resourceName, key, firstResource.CreateReader().ToArray());
 			return resourceName;
 		}
 	}

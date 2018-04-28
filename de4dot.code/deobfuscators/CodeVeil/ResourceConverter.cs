@@ -28,10 +28,10 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 	class ResourceConverter {
 		ModuleDefMD module;
 		ResourceInfo[] infos;
-		MyResourceDataCreator dataCreator;
+		MyResourceDataFactory dataCreator;
 
-		sealed class MyResourceDataCreator : ResourceDataCreator {
-			public MyResourceDataCreator(ModuleDef module)
+		sealed class MyResourceDataFactory : ResourceDataFactory {
+			public MyResourceDataFactory(ModuleDef module)
 				: base(module) {
 			}
 
@@ -43,7 +43,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 
 		public ResourceConverter(ModuleDefMD module, ResourceInfo[] infos) {
 			this.module = module;
-			dataCreator = new MyResourceDataCreator(module);
+			dataCreator = new MyResourceDataFactory(module);
 			this.infos = infos;
 		}
 

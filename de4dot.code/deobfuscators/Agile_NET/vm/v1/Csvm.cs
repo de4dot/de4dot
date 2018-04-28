@@ -93,7 +93,7 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v1 {
 			Logger.Instance.Indent();
 
 			var opcodeDetector = GetVmOpCodeHandlerDetector();
-			var csvmMethods = new CsvmDataReader(resource.GetReader()).Read();
+			var csvmMethods = new CsvmDataReader(resource.CreateReader()).Read();
 			var converter = new CsvmToCilMethodConverter(deobfuscatorContext, module, opcodeDetector);
 			var methodPrinter = new MethodPrinter();
 			foreach (var csvmMethod in csvmMethods) {

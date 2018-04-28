@@ -366,7 +366,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				Logger.n("Re-encrypted {0}/{1} native methods", index, totalEncryptedNativeMethods);
 
 			var resourceChunk = moduleWriter.Metadata.GetChunk(encryptedResource.Resource);
-			var resourceData = resourceChunk.GetReader();
+			var resourceData = resourceChunk.CreateReader();
 
 			var encrypted = stream.ToArray();
 			XorEncrypt(encrypted);

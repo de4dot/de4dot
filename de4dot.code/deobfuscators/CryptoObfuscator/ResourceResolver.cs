@@ -69,7 +69,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			if (resource == null)
 				return null;
 
-			DeobUtils.DecryptAndAddResources(module, resource.Name.String, () => resourceDecrypter.Decrypt(resource.GetReader().AsStream()));
+			DeobUtils.DecryptAndAddResources(module, resource.Name.String, () => resourceDecrypter.Decrypt(resource.CreateReader().AsStream()));
 			mergedIt = true;
 			return resource;
 		}

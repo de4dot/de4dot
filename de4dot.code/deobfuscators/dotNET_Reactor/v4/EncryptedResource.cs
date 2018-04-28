@@ -208,7 +208,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 				return true;
 			}
 
-			public byte[] Decrypt(EmbeddedResource resource) => DeobUtils.AesDecrypt(resource.GetReader().ToArray(), key, iv);
+			public byte[] Decrypt(EmbeddedResource resource) => DeobUtils.AesDecrypt(resource.CreateReader().ToArray(), key, iv);
 
 			public byte[] Encrypt(byte[] data) {
 				using (var aes = new RijndaelManaged { Mode = CipherMode.CBC }) {
@@ -395,7 +395,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			}
 
 			public byte[] Decrypt(EmbeddedResource resource) {
-				var encrypted = resource.GetReader().ToArray();
+				var encrypted = resource.CreateReader().ToArray();
 				var decrypted = new byte[encrypted.Length];
 
 				uint sum = 0;

@@ -105,7 +105,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			resource = CoUtils.GetResource(module, decrypterCctor);
 			if (resource == null)
 				return;
-			var decrypted = resourceDecrypter.Decrypt(resource.GetReader().AsStream());
+			var decrypted = resourceDecrypter.Decrypt(resource.CreateReader().AsStream());
 			var reader = ByteArrayDataReaderFactory.CreateReader(decrypted);
 			int numEncrypted = reader.ReadInt32();
 			Logger.v("Restoring {0} encrypted methods", numEncrypted);

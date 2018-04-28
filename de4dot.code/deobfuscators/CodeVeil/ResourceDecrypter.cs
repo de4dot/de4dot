@@ -293,7 +293,7 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				if (resource == null)
 					continue;
 
-				var rsrcReader = resource.GetReader();
+				var rsrcReader = resource.CreateReader();
 				var decrypted = Decrypt(ref rsrcReader);
 				if (decrypted == null)
 					continue;

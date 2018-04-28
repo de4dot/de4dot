@@ -104,7 +104,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 
 			encryptedResource = BabelUtils.FindEmbeddedResource(module, methodsDecrypter, simpleDeobfuscator, deob);
 			if (encryptedResource != null)
-				AddImageReader("", resourceDecrypter.Decrypt(encryptedResource.GetReader().ToArray()));
+				AddImageReader("", resourceDecrypter.Decrypt(encryptedResource.CreateReader().ToArray()));
 		}
 
 		ImageReader AddImageReader(string name, byte[] data) {

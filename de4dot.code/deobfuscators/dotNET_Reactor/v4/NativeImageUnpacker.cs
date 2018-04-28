@@ -37,7 +37,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			if (dataEntry == null)
 				return null;
 
-			var encryptedData = dataEntry.GetReader().ToArray();
+			var encryptedData = dataEntry.CreateReader().ToArray();
 
 			var keyData = GetKeyData();
 			if (keyData == null)
@@ -81,7 +81,7 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 					if (resource == null)
 						return null;
 
-					return resource.GetReader().ToArray();
+					return resource.CreateReader().ToArray();
 				}
 			}
 			catch {

@@ -35,7 +35,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 		public byte[] Decrypt(EmbeddedResource resource) {
 			if (!CanDecrypt)
 				throw new ApplicationException("Can't decrypt resources");
-			var encryptedData = resource.GetReader().ToArray();
+			var encryptedData = resource.CreateReader().ToArray();
 			return Decrypt(encryptedData);
 		}
 

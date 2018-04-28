@@ -124,21 +124,21 @@ namespace de4dot.code.deobfuscators.DeepSea {
 
 		// 3.0.3.41 - 3.0.4.44
 		protected static byte[] DecryptResourceV3Old(EmbeddedResource resource) =>
-			DecryptResourceV3Old(resource.GetReader().ToArray());
+			DecryptResourceV3Old(resource.CreateReader().ToArray());
 
 		// 3.0.3.41 - 3.0.4.44
 		protected static byte[] DecryptResourceV3Old(byte[] data) =>
 			DecryptResource(data, 0, data.Length, 0);
 
 		protected static byte[] DecryptResourceV41SL(EmbeddedResource resource) {
-			var data = resource.GetReader().ToArray();
+			var data = resource.CreateReader().ToArray();
 			byte k = data[0];
 			for (int i = 0; i < data.Length - 1; i++)
 				data[i + 1] ^= (byte)((k << (i & 5)) + i);
 			return InflateIfNeeded(data, 1, data.Length - 1);
 		}
 
-		protected static byte[] DecryptResourceV3(EmbeddedResource resource) => DecryptResourceV3(resource.GetReader().ToArray());
+		protected static byte[] DecryptResourceV3(EmbeddedResource resource) => DecryptResourceV3(resource.CreateReader().ToArray());
 		protected static byte[] DecryptResourceV3(byte[] data) => DecryptResource(data, 1, data.Length - 1, data[0]);
 		protected static byte[] DecryptResourceV4(byte[] data, int magic) => DecryptResource(data, 0, data.Length, magic);
 

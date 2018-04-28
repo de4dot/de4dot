@@ -95,7 +95,7 @@ namespace de4dot.code.deobfuscators.Agile_NET {
 		}
 
 		byte[] DecryptResource(EmbeddedResource resource) {
-			var reader = resource.GetReader();
+			var reader = resource.CreateReader();
 			reader.Position = 0;
 			var key = reader.ReadSerializedString();
 			var data = reader.ReadRemainingBytes();

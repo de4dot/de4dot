@@ -397,7 +397,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			resource = FindResource(decryptMethod);
 			if (resource == null)
 				throw new ApplicationException("Could not find encrypted strings resource");
-			reader = ByteArrayDataReaderFactory.CreateReader(DeobUtils.Inflate(resource.GetReader().ToArray(), true));
+			reader = ByteArrayDataReaderFactory.CreateReader(DeobUtils.Inflate(resource.CreateReader().ToArray(), true));
 
 			switch (version) {
 			case ConfuserVersion.v10_r42915:

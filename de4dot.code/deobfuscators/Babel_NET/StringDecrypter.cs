@@ -64,7 +64,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			public bool NeedsResource => true;
 
 			public void Initialize(ModuleDefMD module, EmbeddedResource resource) {
-				key = resource.GetReader().ToArray();
+				key = resource.CreateReader().ToArray();
 				if (key.Length != 0x100)
 					throw new ApplicationException($"Unknown key length: {key.Length}");
 			}
@@ -92,7 +92,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			public DecrypterInfoV3(ResourceDecrypter resourceDecrypter) => this.resourceDecrypter = resourceDecrypter;
 
 			public void Initialize(ModuleDefMD module, EmbeddedResource resource) {
-				var decrypted = resourceDecrypter.Decrypt(resource.GetReader().ToArray());
+				var decrypted = resourceDecrypter.Decrypt(resource.CreateReader().ToArray());
 				var reader = new BinaryReader(new MemoryStream(decrypted));
 				while (reader.BaseStream.Position < reader.BaseStream.Length)
 					offsetToString[GetOffset((int)reader.BaseStream.Position)] = reader.ReadString();

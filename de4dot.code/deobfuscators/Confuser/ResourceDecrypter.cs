@@ -361,7 +361,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		byte[] Decrypt_v14_r55802() {
-			var reader = new BinaryReader(new MemoryStream(Decompress(resource.GetReader().ToArray())));
+			var reader = new BinaryReader(new MemoryStream(Decompress(resource.CreateReader().ToArray())));
 			var encypted = reader.ReadBytes(reader.ReadInt32());
 			if ((encypted.Length & 1) != 0)
 				throw new ApplicationException("Invalid resource data length");
@@ -373,12 +373,12 @@ namespace de4dot.code.deobfuscators.Confuser {
 		}
 
 		byte[] Decrypt_v17_r73404() {
-			var reader = new BinaryReader(new MemoryStream(Decompress(resource.GetReader().ToArray())));
+			var reader = new BinaryReader(new MemoryStream(Decompress(resource.CreateReader().ToArray())));
 			return DecryptXor(reader.ReadBytes(reader.ReadInt32()));
 		}
 
 		byte[] Decrypt_v18_r75367() {
-			var encrypted = DecryptXor(resource.GetReader().ToArray());
+			var encrypted = DecryptXor(resource.CreateReader().ToArray());
 			var reader = new BinaryReader(new MemoryStream(Decompress(encrypted)));
 			return reader.ReadBytes(reader.ReadInt32());
 		}
