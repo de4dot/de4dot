@@ -67,7 +67,7 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 
 				simpleDeobfuscator.Deobfuscate(method);
 				var instrs = method.Body.Instructions;
-				for (int i = 0; i < instrs.Count - 3; i++) {
+				for (int i = 0; i < instrs.Count - 6; i++) {
 					var ldarg = instrs[i];
 					if (!ldarg.IsLdarg() || ldarg.GetParameterIndex() != 0)
 						continue;
@@ -83,18 +83,24 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 					var ldci4 = instrs[i + 3];
 					if (!ldci4.IsLdcI4())
 						continue;
+					var ldarg2 = instrs[i + 4];
+					if (!ldarg2.IsLdarg() || ldarg2.GetParameterIndex() != 1)
+						continue;
+					var opAdd1 = instrs[i + 5];
+					if (opAdd1.OpCode != OpCodes.Add)
+						continue;
 
 					int magicAdd = 0;
-					if (i < instrs.Count - 6) {
-						var ldarg1 = instrs[i + 4];
-						if (ldarg1.IsLdarg() && ldarg1.GetParameterIndex() == 1) {
-							var opAdd1 = instrs[i + 5];
-							if (opAdd1.OpCode == OpCodes.Add) {
-								var ldci4_2 = instrs[i + 6];
-								if (ldci4_2.IsLdcI4()) {
-									magicAdd = ldci4_2.GetLdcI4Value();
-								}
-							}
+					int j = i + 6;
+					while (j < instrs.Count - 1 && !instrs[j].IsStloc()) {
+						var ldcOp = instrs[j];
+						var addOp = instrs[j + 1];
+						if(ldcOp.IsLdcI4() && addOp.OpCode == OpCodes.Add) {
+							magicAdd = magicAdd + ldcOp.GetLdcI4Value();
+							j = j + 2;
+						}
+						else {
+							j++;
 						}
 					}
 
