@@ -95,13 +95,12 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 					while (j < instrs.Count - 1 && !instrs[j].IsStloc()) {
 						var ldcOp = instrs[j];
 						var addOp = instrs[j + 1];
-						if(ldcOp.IsLdcI4() && addOp.OpCode == OpCodes.Add) {
+						if (ldcOp.IsLdcI4() && addOp.OpCode == OpCodes.Add) {
 							magicAdd = magicAdd + ldcOp.GetLdcI4Value();
 							j = j + 2;
 						}
-						else {
+						else
 							j++;
-						}
 					}
 
 					var info = new StringDecrypterInfo(method, ldci4.GetLdcI4Value() + magicAdd);
