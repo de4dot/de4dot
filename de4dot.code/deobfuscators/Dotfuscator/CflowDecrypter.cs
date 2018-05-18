@@ -19,6 +19,7 @@
 
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
+using System.Collections.Generic;
 
 namespace de4dot.code.deobfuscators.Dotfuscator {
 	class CflowDecrypter {
@@ -30,12 +31,11 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 			foreach (var type in module.GetTypes()) {
 				if (!type.HasMethods)
 					continue;
-				foreach(var method in type.Methods ) {
+				foreach (var method in type.Methods) {
 					CleanMethod(method);
 				}
 			}
 		}
-
 		public void CleanMethod(MethodDef method) {
 			if (!method.HasBody)
 				return;
@@ -46,24 +46,47 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 			if (method.Body.Variables.Count == 0)
 				return;
 			var ins = method.Body.Instructions;
-			for (int i = 3; i < ins.Count; i++) {
-				if (ins[i].OpCode.Code != Code.Ldind_I4)
-					continue;
-				if (!ins[i - 1].IsLdloc() && ins[i - 1].OpCode.Code != Code.Ldloca && ins[i - 1].OpCode.Code != Code.Ldloca_S)
-					continue;
-				if (!ins[i - 2].IsStloc())
-					continue;
-				if (!ins[i - 3].IsLdcI4())
-					continue;
-				if (ins[i - 1].Operand != ins[i - 2].Operand)
-					continue;
-				method.Body.Instructions[i].OpCode = OpCodes.Nop;
-				method.Body.Instructions[i].Operand = null;
-				method.Body.Instructions[i - 1].OpCode = OpCodes.Nop;
-				method.Body.Instructions[i - 1].Operand = null;
-				method.Body.Instructions[i - 2].OpCode = OpCodes.Nop;
-				method.Body.Instructions[i - 2].Operand = null;
+			var Idxs = GetFixIndexs(ins);
+			if (Idxs[0].Count > 0) {
+				foreach (var idx in Idxs[0]) {
+					method.Body.Instructions[idx].OpCode = OpCodes.Nop;
+					method.Body.Instructions[idx].Operand = null;
+				}
 			}
+			if (Idxs[1].Count > 0) {
+				foreach (var idx in Idxs[1]) {
+					method.Body.Instructions[idx].OpCode = OpCodes.Ldloc;
+				}
+			}
+		}
+		public List<int>[] GetFixIndexs(IList<Instruction> instructions) {
+			var insNoNops = new List<Instruction>();
+			foreach (var ins in instructions) {
+				if (ins.OpCode != OpCodes.Nop)
+					insNoNops.Add(ins);
+			}
+			var nopIdxs = new List<int>();
+			var ldlocIdxs = new List<int>();
+			for (int i = 3; i < insNoNops.Count - 1; i++) {
+				var ldind = insNoNops[i];
+				if (ldind.OpCode != OpCodes.Ldind_I4 && ldind.OpCode != OpCodes.Ldind_I2)
+					continue;
+				var ldlocX = insNoNops[i - 1];
+				if (!ldlocX.IsLdloc() && ldlocX.OpCode.Code != Code.Ldloca && ldlocX.OpCode.Code != Code.Ldloca_S)
+					continue;
+				var stloc = insNoNops[i - 2];
+				if (!stloc.IsStloc())
+					continue;
+				var ldci4 = insNoNops[i - 3];
+				if (!ldci4.IsLdcI4())
+					continue;
+				ldlocIdxs.Add(instructions.IndexOf(ldlocX));
+				nopIdxs.Add(instructions.IndexOf(ldind));
+				var convi2 = insNoNops[i + 1];
+				if (ldind.OpCode == OpCodes.Ldind_I2 && convi2.OpCode == OpCodes.Conv_I2)
+					nopIdxs.Add(instructions.IndexOf(convi2));
+			}
+			return new List<int>[] { nopIdxs, ldlocIdxs };
 		}
 	}
 }
