@@ -61,7 +61,7 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 			}
 		}
 
-		public void GetFixIndexs(IList<Instruction> instructions, out List<int> nopIdxs, out List<int> ldlocIdxs) {
+		static void GetFixIndexs(IList<Instruction> instructions, out List<int> nopIdxs, out List<int> ldlocIdxs) {
 			var insNoNops = new List<Instruction>();
 			foreach (var ins in instructions) {
 				if (ins.OpCode != OpCodes.Nop)
