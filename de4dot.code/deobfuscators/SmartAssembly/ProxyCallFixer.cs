@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -17,10 +17,9 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.SmartAssembly {
@@ -37,7 +36,6 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			'\x9E', '\x9F',
 		};
 
-		IList<MemberReference> memberReferences;
 		ISimpleDeobfuscator simpleDeobfuscator;
 
 		static ProxyCallFixer() {
@@ -45,41 +43,38 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				specialCharsDict[specialChars[i]] = i;
 		}
 
-		public ProxyCallFixer(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator)
-			: base(module) {
-			this.memberReferences = new List<MemberReference>(module.GetMemberReferences());
-			this.simpleDeobfuscator = simpleDeobfuscator;
-		}
+		public ProxyCallFixer(ModuleDefMD module, ISimpleDeobfuscator simpleDeobfuscator)
+			: base(module) => this.simpleDeobfuscator = simpleDeobfuscator;
 
-		protected override object checkCctor(ref TypeDefinition type, MethodDefinition cctor) {
+		protected override object CheckCctor(ref TypeDef type, MethodDef cctor) {
 			var instrs = cctor.Body.Instructions;
 			if (instrs.Count > 10)
 				return null;
 			if (instrs.Count != 3)
-				simpleDeobfuscator.deobfuscate(cctor);
+				simpleDeobfuscator.Deobfuscate(cctor);
 			if (instrs.Count != 3)
 				return null;
-			if (!DotNetUtils.isLdcI4(instrs[0].OpCode.Code))
+			if (!instrs[0].IsLdcI4())
 				return null;
-			if (instrs[1].OpCode != OpCodes.Call || !isDelegateCreatorMethod(instrs[1].Operand as MethodDefinition))
+			if (instrs[1].OpCode != OpCodes.Call || !IsDelegateCreatorMethod(instrs[1].Operand as MethodDef))
 				return null;
 			if (instrs[2].OpCode != OpCodes.Ret)
 				return null;
 
-			int delegateToken = 0x02000001 + DotNetUtils.getLdcI4Value(instrs[0]);
-			if (type.MetadataToken.ToInt32() != delegateToken) {
-				Log.w("Delegate token is not current type");
+			int delegateToken = 0x02000001 + instrs[0].GetLdcI4Value();
+			if (type.MDToken.ToInt32() != delegateToken) {
+				Logger.w("Delegate token is not current type");
 				return null;
 			}
 
 			return new object();
 		}
 
-		protected override void getCallInfo(object context, FieldDefinition field, out MethodReference calledMethod, out OpCode callOpcode) {
+		protected override void GetCallInfo(object context, FieldDef field, out IMethod calledMethod, out OpCode callOpcode) {
 			callOpcode = OpCodes.Call;
-			string name = field.Name;
+			string name = field.Name.String;
 
-			int methodIndex = 0;
+			uint memberRefRid = 0;
 			for (int i = name.Length - 1; i >= 0; i--) {
 				char c = name[i];
 				if (c == '~') {
@@ -87,37 +82,33 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 					break;
 				}
 
-				int val;
-				if (specialCharsDict.TryGetValue(c, out val))
-					methodIndex = methodIndex * specialChars.Length + val;
+				if (specialCharsDict.TryGetValue(c, out int val))
+					memberRefRid = memberRefRid * (uint)specialChars.Length + (uint)val;
 			}
+			memberRefRid++;
 
-			if (methodIndex >= memberReferences.Count) {
-				Log.w("Ignoring invalid methodIndex: {0:X8}, field: {1:X8}", methodIndex, field.MetadataToken.ToInt32());
-				calledMethod = null;
-				return;
-			}
-
-			calledMethod = memberReferences[methodIndex] as MethodReference;
+			calledMethod = module.ResolveMemberRef(memberRefRid);
+			if (calledMethod == null)
+				Logger.w("Ignoring invalid method RID: {0:X8}, field: {1:X8}", memberRefRid, field.MDToken.ToInt32());
 		}
 
-		public void findDelegateCreator(ModuleDefinition module) {
+		public void FindDelegateCreator(ModuleDefMD module) {
 			var callCounter = new CallCounter();
 			foreach (var type in module.Types) {
-				if (type.Namespace != "" || !DotNetUtils.derivesFromDelegate(type))
+				if (type.Namespace != "" || !DotNetUtils.DerivesFromDelegate(type))
 					continue;
-				var cctor = DotNetUtils.getMethod(type, ".cctor");
+				var cctor = type.FindStaticConstructor();
 				if (cctor == null)
 					continue;
-				foreach (var method in DotNetUtils.getMethodCalls(cctor))
-					callCounter.add(method);
+				foreach (var method in DotNetUtils.GetMethodCalls(cctor))
+					callCounter.Add(method);
 			}
 
-			var mostCalls = callCounter.most();
+			var mostCalls = callCounter.Most();
 			if (mostCalls == null)
 				return;
 
-			setDelegateCreatorMethod(DotNetUtils.getMethod(module, mostCalls));
+			SetDelegateCreatorMethod(DotNetUtils.GetMethod(module, mostCalls));
 		}
 	}
 }

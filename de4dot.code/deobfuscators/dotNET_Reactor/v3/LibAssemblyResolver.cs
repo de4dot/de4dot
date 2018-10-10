@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -18,70 +18,58 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dnlib.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 	// Find the assembly resolver that's used in lib mode (3.8+)
 	class LibAssemblyResolver {
-		ModuleDefinition module;
-		MethodDefinition initMethod;
+		ModuleDefMD module;
+		MethodDef initMethod;
 		List<EmbeddedResource> resources = new List<EmbeddedResource>();
 
-		public TypeDefinition Type {
-			get { return initMethod == null ? null : initMethod.DeclaringType; }
-		}
+		public TypeDef Type => initMethod?.DeclaringType;
+		public MethodDef InitMethod => initMethod;
+		public IEnumerable<EmbeddedResource> Resources => resources;
+		public LibAssemblyResolver(ModuleDefMD module) => this.module = module;
 
-		public MethodDefinition InitMethod {
-			get { return initMethod; }
-		}
-
-		public IEnumerable<EmbeddedResource> Resources {
-			get { return resources; }
-		}
-
-		public LibAssemblyResolver(ModuleDefinition module) {
-			this.module = module;
-		}
-
-		public void find(ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
-			if (checkInitMethod(DotNetUtils.getModuleTypeCctor(module), simpleDeobfuscator, deob))
+		public void Find(ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
+			if (CheckInitMethod(DotNetUtils.GetModuleTypeCctor(module), simpleDeobfuscator, deob))
 				return;
-			if (checkInitMethod(module.EntryPoint, simpleDeobfuscator, deob))
+			if (CheckInitMethod(module.EntryPoint, simpleDeobfuscator, deob))
 				return;
 		}
 
-		bool checkInitMethod(MethodDefinition checkMethod, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
+		bool CheckInitMethod(MethodDef checkMethod, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
 			var requiredFields = new string[] {
 				"System.Collections.Hashtable",
 				"System.Boolean",
 			};
 
-			foreach (var method in DotNetUtils.getCalledMethods(module, checkMethod)) {
+			foreach (var method in DotNetUtils.GetCalledMethods(module, checkMethod)) {
 				if (method.Body == null)
 					continue;
 				if (!method.IsStatic)
 					continue;
-				if (!DotNetUtils.isMethod(method, "System.Void", "()"))
+				if (!DotNetUtils.IsMethod(method, "System.Void", "()"))
 					continue;
 
 				var type = method.DeclaringType;
-				if (!new FieldTypes(type).exactly(requiredFields))
+				if (!new FieldTypes(type).Exactly(requiredFields))
 					continue;
-				var ctor = DotNetUtils.getMethod(type, ".ctor");
+				var ctor = type.FindMethod(".ctor");
 				if (ctor == null)
 					continue;
-				var handler = DeobUtils.getResolveMethod(ctor);
+				var handler = DeobUtils.GetResolveMethod(ctor);
 				if (handler == null)
 					continue;
-				simpleDeobfuscator.decryptStrings(handler, deob);
-				var resourcePrefix = getResourcePrefix(handler);
+				simpleDeobfuscator.DecryptStrings(handler, deob);
+				var resourcePrefix = GetResourcePrefix(handler);
 				if (resourcePrefix == null)
 					continue;
 
 				for (int i = 0; ; i++) {
-					var resource = DotNetUtils.getResource(module, resourcePrefix + i.ToString("D5")) as EmbeddedResource;
+					var resource = DotNetUtils.GetResource(module, resourcePrefix + i.ToString("D5")) as EmbeddedResource;
 					if (resource == null)
 						break;
 					resources.Add(resource);
@@ -94,10 +82,9 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 			return false;
 		}
 
-		string getResourcePrefix(MethodDefinition handler) {
-			foreach (var s in DotNetUtils.getCodeStrings(handler)) {
-				var resource = DotNetUtils.getResource(module, s + "00000") as EmbeddedResource;
-				if (resource != null)
+		string GetResourcePrefix(MethodDef handler) {
+			foreach (var s in DotNetUtils.GetCodeStrings(handler)) {
+				if (DotNetUtils.GetResource(module, s + "00000") is EmbeddedResource resource)
 					return s;
 			}
 			return null;

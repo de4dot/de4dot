@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -20,7 +20,8 @@
 namespace de4dot.code.deobfuscators {
 	public interface IDeobfuscatedFile : ISimpleDeobfuscator {
 		IDeobfuscatorContext DeobfuscatorContext { get; }
-		void createAssemblyFile(byte[] data, string assemblyName, string extension);
-		void stringDecryptersAdded();
+		void CreateAssemblyFile(byte[] data, string assemblyName, string extension);
+		void StringDecryptersAdded();
+		void SetDeobfuscator(IDeobfuscator deob);
 	}
 }

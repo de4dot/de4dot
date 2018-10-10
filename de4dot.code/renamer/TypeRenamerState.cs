@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -19,10 +19,10 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
+using dnlib.DotNet;
 
 namespace de4dot.code.renamer {
-	class TypeRenamerState {
+	public class TypeRenamerState {
 		ExistingNames existingNames;
 		Dictionary<string, string> namespaceToNewName;
 		NameCreator createNamespaceName;
@@ -37,17 +37,10 @@ namespace de4dot.code.renamer {
 			internalTypeNameCreator = new TypeNameCreator(existingNames);
 		}
 
-		public void addTypeName(string name) {
-			existingNames.add(name);
-		}
+		public void AddTypeName(string name) => existingNames.Add(name);
+		public string GetTypeName(string oldName, string newName) => existingNames.GetName(oldName, new NameCreator2(newName));
 
-		public string getTypeName(string oldName, string newName) {
-			return existingNames.getName(oldName, new NameCreator2(newName));
-		}
-
-		public string createNamespace(TypeDefinition type, string ns) {
-			string newName;
-
+		public string CreateNamespace(TypeDef type, string ns) {
 			string asmFullName;
 			if (type.Module.Assembly != null)
 				asmFullName = type.Module.Assembly.FullName;
@@ -56,14 +49,10 @@ namespace de4dot.code.renamer {
 
 			// Make sure that two namespaces with the same names in different modules aren't renamed
 			// to the same name.
-			var key = string.Format(" [{0}] [{1}] [{2}] [{3}] ",
-						type.Module.FullyQualifiedName,
-						asmFullName,
-						type.Module.Name,
-						ns);
-			if (namespaceToNewName.TryGetValue(key, out newName))
+			var key = $" [{type.Module.Location}] [{asmFullName}] [{type.Module.Name}] [{ns}] ";
+			if (namespaceToNewName.TryGetValue(key, out string newName))
 				return newName;
-			return namespaceToNewName[key] = createNamespaceName.create();
+			return namespaceToNewName[key] = createNamespaceName.Create();
 		}
 	}
 }

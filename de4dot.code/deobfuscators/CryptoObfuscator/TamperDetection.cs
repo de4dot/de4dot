@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -17,55 +17,47 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.Cecil;
+using dnlib.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CryptoObfuscator {
 	class TamperDetection {
-		ModuleDefinition module;
-		TypeDefinition tamperType;
-		MethodDefinition tamperMethod;
+		ModuleDefMD module;
+		TypeDef tamperType;
+		MethodDef tamperMethod;
 		FrameworkType frameworkType;
 
-		public bool Detected {
-			get { return tamperMethod != null; }
-		}
+		public bool Detected => tamperMethod != null;
+		public TypeDef Type => tamperType;
+		public MethodDef Method => tamperMethod;
 
-		public TypeDefinition Type {
-			get { return tamperType; }
-		}
-
-		public MethodDefinition Method {
-			get { return tamperMethod; }
-		}
-
-		public TamperDetection(ModuleDefinition module) {
+		public TamperDetection(ModuleDefMD module) {
 			this.module = module;
-			frameworkType = DotNetUtils.getFrameworkType(module);
+			frameworkType = DotNetUtils.GetFrameworkType(module);
 		}
 
-		public void find() {
-			if (find(module.EntryPoint))
+		public void Find() {
+			if (Find(module.EntryPoint))
 				return;
-			if (find(DotNetUtils.getModuleTypeCctor(module)))
+			if (Find(DotNetUtils.GetModuleTypeCctor(module)))
 				return;
 		}
 
-		bool find(MethodDefinition methodToCheck) {
+		bool Find(MethodDef methodToCheck) {
 			if (methodToCheck == null)
 				return false;
 
-			foreach (var method in DotNetUtils.getCalledMethods(module, methodToCheck)) {
+			foreach (var method in DotNetUtils.GetCalledMethods(module, methodToCheck)) {
 				bool result = false;
 				switch (frameworkType) {
 				case FrameworkType.Desktop:
-					result = findDesktop(method);
+					result = FindDesktop(method);
 					break;
 				case FrameworkType.Silverlight:
-					result = findSilverlight(method);
+					result = FindSilverlight(method);
 					break;
 				case FrameworkType.CompactFramework:
-					result = findCompactFramework(method);
+					result = FindCompactFramework(method);
 					break;
 				}
 				if (!result)
@@ -79,16 +71,16 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return false;
 		}
 
-		bool findDesktop(MethodDefinition method) {
+		bool FindDesktop(MethodDef method) {
 			var type = method.DeclaringType;
 
-			if (!method.IsStatic || !DotNetUtils.isMethod(method, "System.Void", "()"))
+			if (!method.IsStatic || !DotNetUtils.IsMethod(method, "System.Void", "()"))
 				return false;
-			if (type.Methods.Count < 3 || type.Methods.Count > 10)
+			if (type.Methods.Count < 3 || type.Methods.Count > 31)
 				return false;
-			if (DotNetUtils.getPInvokeMethod(type, "mscoree", "StrongNameSignatureVerificationEx") != null) {
+			if (DotNetUtils.GetPInvokeMethod(type, "mscoree", "StrongNameSignatureVerificationEx") != null) {
 			}
-			else if (DotNetUtils.getPInvokeMethod(type, "mscoree", "CLRCreateInstance") != null) {
+			else if (DotNetUtils.GetPInvokeMethod(type, "mscoree", "CLRCreateInstance") != null) {
 				if (type.NestedTypes.Count != 3)
 					return false;
 				if (!type.NestedTypes[0].IsInterface || !type.NestedTypes[1].IsInterface || !type.NestedTypes[2].IsInterface)
@@ -107,22 +99,22 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			"System.Reflection.AssemblyName",
 			"System.String",
 		};
-		bool findSilverlight(MethodDefinition method) {
-			if (!new LocalTypes(method).exactly(requiredLocals_sl))
+		bool FindSilverlight(MethodDef method) {
+			if (!new LocalTypes(method).Exactly(requiredLocals_sl))
 				return false;
-			if (!DotNetUtils.callsMethod(method, "System.Int32 System.String::get_Length()"))
+			if (!DotNetUtils.CallsMethod(method, "System.Int32 System.String::get_Length()"))
 				return false;
-			if (!DotNetUtils.callsMethod(method, "System.Byte[] System.Convert::FromBase64String(System.String)"))
+			if (!DotNetUtils.CallsMethod(method, "System.Byte[] System.Convert::FromBase64String(System.String)"))
 				return false;
-			if (!DotNetUtils.callsMethod(method, "System.Reflection.Assembly System.Reflection.Assembly::GetExecutingAssembly()"))
+			if (!DotNetUtils.CallsMethod(method, "System.Reflection.Assembly System.Reflection.Assembly::GetExecutingAssembly()"))
 				return false;
-			if (!DotNetUtils.callsMethod(method, "System.String System.Reflection.Assembly::get_FullName()"))
+			if (!DotNetUtils.CallsMethod(method, "System.String System.Reflection.Assembly::get_FullName()"))
 				return false;
-			if (!DotNetUtils.callsMethod(method, "System.Byte[] System.Reflection.AssemblyName::GetPublicKeyToken()"))
+			if (!DotNetUtils.CallsMethod(method, "System.Byte[] System.Reflection.AssemblyName::GetPublicKeyToken()"))
 				return false;
-			if (DotNetUtils.callsMethod(method, "System.String", "(System.Reflection.Assembly)")) {
+			if (DotNetUtils.CallsMethod(method, "System.String", "(System.Reflection.Assembly)")) {
 			}
-			else if (DotNetUtils.callsMethod(method, "System.String System.Reflection.AssemblyName::get_Name()")) {
+			else if (DotNetUtils.CallsMethod(method, "System.String System.Reflection.AssemblyName::get_Name()")) {
 			}
 			else
 				return false;
@@ -136,21 +128,21 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			"System.Int32",
 			"System.String",
 		};
-		bool findCompactFramework(MethodDefinition method) {
-			if (!new LocalTypes(method).exactly(requiredLocals_cf))
+		bool FindCompactFramework(MethodDef method) {
+			if (!new LocalTypes(method).Exactly(requiredLocals_cf))
 				return false;
-			if (!DotNetUtils.callsMethod(method, "System.Int32 System.String::get_Length()"))
+			if (!DotNetUtils.CallsMethod(method, "System.Int32 System.String::get_Length()"))
 				return false;
-			if (!DotNetUtils.callsMethod(method, "System.Byte[] System.Convert::FromBase64String(System.String)"))
+			if (!DotNetUtils.CallsMethod(method, "System.Byte[] System.Convert::FromBase64String(System.String)"))
 				return false;
-			if (!DotNetUtils.callsMethod(method, "System.Reflection.Assembly System.Reflection.Assembly::GetExecutingAssembly()"))
+			if (!DotNetUtils.CallsMethod(method, "System.Reflection.Assembly System.Reflection.Assembly::GetExecutingAssembly()"))
 				return false;
 
-			if (DotNetUtils.callsMethod(method, "System.Byte[]", "(System.Reflection.Assembly)") &&
-				DotNetUtils.callsMethod(method, "System.String", "(System.Reflection.Assembly)")) {
+			if (DotNetUtils.CallsMethod(method, "System.Byte[]", "(System.Reflection.Assembly)") &&
+				DotNetUtils.CallsMethod(method, "System.String", "(System.Reflection.Assembly)")) {
 			}
-			else if (DotNetUtils.callsMethod(method, "System.Reflection.AssemblyName System.Reflection.Assembly::GetName()") &&
-					DotNetUtils.callsMethod(method, "System.Byte[] System.Reflection.AssemblyName::GetPublicKeyToken()")) {
+			else if (DotNetUtils.CallsMethod(method, "System.Reflection.AssemblyName System.Reflection.Assembly::GetName()") &&
+					DotNetUtils.CallsMethod(method, "System.Byte[] System.Reflection.AssemblyName::GetPublicKeyToken()")) {
 			}
 			else
 				return false;

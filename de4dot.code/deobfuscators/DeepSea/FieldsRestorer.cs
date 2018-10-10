@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -19,24 +19,23 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using Mono.Cecil.Metadata;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.DeepSea {
 	// DS 4.x can move fields from a class to a struct. This class restores the fields.
 	class FieldsRestorer {
-		ModuleDefinition module;
-		TypeDefinitionDict<List<TypeDefinition>> structToOwners = new TypeDefinitionDict<List<TypeDefinition>>();
-		FieldDefinitionAndDeclaringTypeDict<bool> structFieldsToFix = new FieldDefinitionAndDeclaringTypeDict<bool>();
-		TypeDefinitionDict<FieldDefinitionAndDeclaringTypeDict<FieldDefinition>> typeToFieldsDict = new TypeDefinitionDict<FieldDefinitionAndDeclaringTypeDict<FieldDefinition>>();
+		ModuleDefMD module;
+		TypeDefDict<List<TypeDef>> structToOwners = new TypeDefDict<List<TypeDef>>();
+		FieldDefAndDeclaringTypeDict<bool> structFieldsToFix = new FieldDefAndDeclaringTypeDict<bool>();
+		TypeDefDict<FieldDefAndDeclaringTypeDict<FieldDef>> typeToFieldsDict = new TypeDefDict<FieldDefAndDeclaringTypeDict<FieldDef>>();
 
-		public List<TypeDefinition> FieldStructs {
+		public List<TypeDef> FieldStructs {
 			get {
-				var list = new List<TypeDefinition>(structToOwners.Count);
-				foreach (var structType in structToOwners.getKeys()) {
-					if (!hasNoMethods(structType))
+				var list = new List<TypeDef>(structToOwners.Count);
+				foreach (var structType in structToOwners.GetKeys()) {
+					if (!HasNoMethods(structType))
 						continue;
 
 					list.Add(structType);
@@ -45,58 +44,56 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			}
 		}
 
-		static bool hasNoMethods(TypeDefinition type) {
+		static bool HasNoMethods(TypeDef type) {
 			if (type.Methods.Count == 0)
 				return true;
 			if (type.BaseType == null)
 				return false;
-			if (type.BaseType.EType != ElementType.Object)
+			if (type.BaseType.FullName != "System.Object")
 				return false;
 			if (type.Methods.Count != 1)
 				return false;
 			var ctor = type.Methods[0];
-			if (ctor.Name != ".ctor" || ctor.Parameters.Count != 0)
+			if (ctor.Name != ".ctor" || ctor.MethodSig.GetParamCount() != 0)
 				return false;
 			return true;
 		}
 
-		public FieldsRestorer(ModuleDefinition module) {
-			this.module = module;
-		}
+		public FieldsRestorer(ModuleDefMD module) => this.module = module;
 
-		public void initialize() {
-			foreach (var kv in getMovedTypes()) {
+		public void Initialize() {
+			foreach (var kv in GetMovedTypes()) {
 				var structType = kv.Key;
-				structToOwners.add(structType, kv.Value);
+				structToOwners.Add(structType, kv.Value);
 
 				foreach (var ownerType in kv.Value) {
 					foreach (var ownerField in ownerType.Fields) {
-						if (DotNetUtils.getType(module, ownerField.FieldType) != structType)
+						if (DotNetUtils.GetType(module, ownerField.FieldSig.GetFieldType()) != structType)
 							continue;
-						structFieldsToFix.add(ownerField, true);
+						structFieldsToFix.Add(ownerField, true);
 						break;
 					}
 
-					var fieldsDict = new FieldDefinitionAndDeclaringTypeDict<FieldDefinition>();
-					typeToFieldsDict.add(ownerType, fieldsDict);
+					var fieldsDict = new FieldDefAndDeclaringTypeDict<FieldDef>();
+					typeToFieldsDict.Add(ownerType, fieldsDict);
 					foreach (var structField in structType.Fields) {
-						var newField = DotNetUtils.createFieldDefinition(structField.Name, structField.Attributes, structField.FieldType);
+						var newField = module.UpdateRowId(new FieldDefUser(structField.Name, structField.FieldSig.Clone(), structField.Attributes));
 						ownerType.Fields.Add(newField);
-						fieldsDict.add(structField, newField);
+						fieldsDict.Add(structField, newField);
 					}
 				}
 			}
 		}
 
-		Dictionary<TypeDefinition, List<TypeDefinition>> getMovedTypes() {
-			var candidates = new Dictionary<TypeDefinition, List<TypeDefinition>>();
-			var typeToStruct = new Dictionary<TypeDefinition, TypeDefinition>();
+		Dictionary<TypeDef, List<TypeDef>> GetMovedTypes() {
+			var candidates = new Dictionary<TypeDef, List<TypeDef>>();
+			var typeToStruct = new Dictionary<TypeDef, TypeDef>();
 			foreach (var type in module.GetTypes()) {
-				foreach (var field in getPossibleFields(type)) {
-					var fieldType = DotNetUtils.getType(module, field.FieldType);
+				foreach (var field in GetPossibleFields(type)) {
+					var fieldType = DotNetUtils.GetType(module, field.FieldSig.GetFieldType());
 					if (fieldType == null)
 						continue;
-					if (!checkBaseType(fieldType))
+					if (!CheckBaseType(fieldType))
 						continue;
 					if ((fieldType.Attributes & ~TypeAttributes.Sealed) != TypeAttributes.NestedAssembly)
 						continue;
@@ -108,14 +105,13 @@ namespace de4dot.code.deobfuscators.DeepSea {
 						continue;
 					if (fieldType.HasEvents || fieldType.HasProperties || fieldType.HasInterfaces)
 						continue;
-					if (checkMethods(fieldType))
+					if (CheckMethods(fieldType))
 						continue;
-					if (!checkFields(fieldType))
+					if (!CheckFields(fieldType))
 						continue;
 
-					List<TypeDefinition> list;
-					if (!candidates.TryGetValue(fieldType, out list))
-						candidates[fieldType] = list = new List<TypeDefinition>();
+					if (!candidates.TryGetValue(fieldType, out var list))
+						candidates[fieldType] = list = new List<TypeDef>();
 					list.Add(type);
 					typeToStruct[type] = fieldType;
 					break;
@@ -123,20 +119,19 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			}
 
 			foreach (var type in module.GetTypes()) {
-				TypeDefinition structType;
-				typeToStruct.TryGetValue(type, out structType);
+				typeToStruct.TryGetValue(type, out var structType);
 
 				foreach (var field in type.Fields) {
-					if (field.IsStatic || field.FieldType != structType)
-						removeType(candidates, field.FieldType);
+					if (field.IsStatic || field.FieldSig.GetFieldType().TryGetTypeDef() != structType)
+						RemoveType(candidates, field.FieldSig.GetFieldType());
 				}
 				foreach (var method in type.Methods) {
-					removeType(candidates, method.MethodReturnType.ReturnType);
-					foreach (var parameter in method.Parameters)
-						removeType(candidates, parameter.ParameterType);
+					RemoveType(candidates, method.MethodSig.GetRetType());
+					foreach (var parameter in method.MethodSig.GetParams())
+						RemoveType(candidates, parameter);
 					if (method.Body != null) {
 						foreach (var local in method.Body.Variables)
-							removeType(candidates, local.VariableType);
+							RemoveType(candidates, local.Type);
 					}
 				}
 			}
@@ -144,46 +139,47 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return candidates;
 		}
 
-		IEnumerable<FieldDefinition> getPossibleFields(TypeDefinition type) {
-			var typeToFields = new TypeDefinitionDict<List<FieldDefinition>>();
+		IEnumerable<FieldDef> GetPossibleFields(TypeDef type) {
+			var typeToFields = new TypeDefDict<List<FieldDef>>();
 			foreach (var field in type.Fields) {
 				if (field.Attributes != FieldAttributes.Private)
 					continue;
-				var fieldType = DotNetUtils.getType(module, field.FieldType);
+				var fieldType = DotNetUtils.GetType(module, field.FieldSig.GetFieldType());
 				if (fieldType == null)
 					continue;
-				if (!checkBaseType(fieldType))
+				if (!CheckBaseType(fieldType))
 					continue;
-				var list = typeToFields.find(fieldType);
+				var list = typeToFields.Find(fieldType);
 				if (list == null)
-					typeToFields.add(fieldType, list = new List<FieldDefinition>());
+					typeToFields.Add(fieldType, list = new List<FieldDef>());
 				list.Add(field);
 			}
 
-			foreach (var list in typeToFields.getValues()) {
+			foreach (var list in typeToFields.GetValues()) {
 				if (list.Count == 1)
 					yield return list[0];
 			}
 		}
 
-		static bool checkBaseType(TypeDefinition type) {
+		static bool CheckBaseType(TypeDef type) {
 			if (type == null || type.BaseType == null)
 				return false;
-			return type.BaseType.FullName == "System.ValueType" || type.BaseType.EType == ElementType.Object;
+			var fn = type.BaseType.FullName;
+			return fn == "System.ValueType" || fn == "System.Object";
 		}
 
-		void removeType(Dictionary<TypeDefinition, List<TypeDefinition>> candidates, TypeReference type) {
-			var typeDef = DotNetUtils.getType(module, type);
+		void RemoveType(Dictionary<TypeDef, List<TypeDef>> candidates, TypeSig type) {
+			var typeDef = DotNetUtils.GetType(module, type);
 			if (typeDef == null)
 				return;
 			candidates.Remove(typeDef);
 		}
 
-		static bool checkMethods(TypeDefinition type) {
+		static bool CheckMethods(TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (method.Name == ".cctor")
 					continue;
-				if (type.BaseType != null && type.BaseType.EType == ElementType.Object && method.Name == ".ctor" && method.Parameters.Count == 0)
+				if (type.BaseType != null && type.BaseType.FullName == "System.Object" && method.Name == ".ctor" && method.MethodSig.GetParamCount() == 0)
 					continue;
 				if (!method.IsStatic)
 					return true;
@@ -191,13 +187,13 @@ namespace de4dot.code.deobfuscators.DeepSea {
 					return true;
 				if (method.Body == null)
 					return true;
-				if (method.HasPInvokeInfo || method.PInvokeInfo != null)
+				if (method.ImplMap != null)
 					return true;
 			}
 			return false;
 		}
 
-		static bool checkFields(TypeDefinition type) {
+		static bool CheckFields(TypeDef type) {
 			if (type.Fields.Count == 0)
 				return false;
 			foreach (var field in type.Fields) {
@@ -209,78 +205,78 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return true;
 		}
 
-		public void deobfuscate(Blocks blocks) {
-			deobfuscateNormal(blocks);
-			fixFieldCtorCalls(blocks);
+		public void Deobfuscate(Blocks blocks) {
+			DeobfuscateNormal(blocks);
+			FixFieldCtorCalls(blocks);
 		}
 
-		void deobfuscateNormal(Blocks blocks) {
+		void DeobfuscateNormal(Blocks blocks) {
 			var instrsToRemove = new List<int>();
-			foreach (var block in blocks.MethodBlocks.getAllBlocks()) {
+			foreach (var block in blocks.MethodBlocks.GetAllBlocks()) {
 				instrsToRemove.Clear();
 				var instrs = block.Instructions;
 				for (int i = instrs.Count - 1; i >= 0; i--) {
 					var instr = instrs[i];
 					if (instr.OpCode.Code != Code.Ldflda && instr.OpCode.Code != Code.Ldfld)
 						continue;
-					var structField = instr.Operand as FieldReference;
-					if (structField == null || !structFieldsToFix.find(structField))
+					var structField = instr.Operand as IField;
+					if (structField == null || !structFieldsToFix.Find(structField))
 						continue;
 
-					var ldStFld = instrs[findLdStFieldIndex(instrs, i + 1)];
-					ldStFld.Operand = getNewField(structField, ldStFld.Operand as FieldReference);
+					var ldStFld = instrs[FindLdStFieldIndex(instrs, i + 1)];
+					ldStFld.Operand = GetNewField(structField, ldStFld.Operand as IField);
 					instrsToRemove.Add(i);
 				}
 				if (instrsToRemove.Count > 0)
-					block.remove(instrsToRemove);
+					block.Remove(instrsToRemove);
 			}
 		}
 
-		void fixFieldCtorCalls(Blocks blocks) {
+		void FixFieldCtorCalls(Blocks blocks) {
 			if (blocks.Method.Name != ".ctor")
 				return;
-			var instrsToRemove = new List<int>();
-			foreach (var block in blocks.MethodBlocks.getAllBlocks()) {
+			//var instrsToRemove = new List<int>();
+			foreach (var block in blocks.MethodBlocks.GetAllBlocks()) {
 				var instrs = block.Instructions;
 				for (int i = 0; i < instrs.Count; i++) {
 					var stfld = instrs[i];
 					if (stfld.OpCode.Code != Code.Stfld)
 						continue;
-					var field = stfld.Operand as FieldReference;
+					var field = stfld.Operand as IField;
 					if (field == null)
 						continue;
-					if (!structFieldsToFix.find(field))
+					if (!structFieldsToFix.Find(field))
 						continue;
-					var instrs2 = toInstructionList(instrs);
-					var instrPushes = DotNetUtils.getArgPushes(instrs2, i);
+					var instrs2 = ToInstructionList(instrs);
+					var instrPushes = DotNetUtils.GetArgPushes(instrs2, i);
 					if (instrPushes == null || instrPushes.Count != 2)
 						continue;
-					block.remove(i, 1);
-					block.remove(instrs2.IndexOf(instrPushes[1]), 1);
-					block.remove(instrs2.IndexOf(instrPushes[0]), 1);
+					block.Remove(i, 1);
+					block.Remove(instrs2.IndexOf(instrPushes[1]), 1);
+					block.Remove(instrs2.IndexOf(instrPushes[0]), 1);
 					i -= 3;
 				}
 			}
 		}
 
-		static IList<Instruction> toInstructionList(IEnumerable<Instr> instrs) {
+		static IList<Instruction> ToInstructionList(IEnumerable<Instr> instrs) {
 			var newInstrs = new List<Instruction>();
 			foreach (var instr in instrs)
 				newInstrs.Add(instr.Instruction);
 			return newInstrs;
 		}
 
-		FieldDefinition getNewField(FieldReference structField, FieldReference oldFieldRef) {
-			var fieldsDict = typeToFieldsDict.find(structField.DeclaringType);
+		FieldDef GetNewField(IField structField, IField oldFieldRef) {
+			var fieldsDict = typeToFieldsDict.Find(structField.DeclaringType);
 			if (fieldsDict == null)
 				throw new ApplicationException("Could not find structField declaringType");
-			var newField = fieldsDict.find(oldFieldRef);
+			var newField = fieldsDict.Find(oldFieldRef);
 			if (newField == null)
 				throw new ApplicationException("Could not find new field");
 			return newField;
 		}
 
-		static int findLdStFieldIndex(IList<Instr> instrs, int index) {
+		static int FindLdStFieldIndex(IList<Instr> instrs, int index) {
 			int stack = 0;
 			for (int i = index; i < instrs.Count; i++) {
 				var instr = instrs[i];
@@ -290,8 +286,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				if (stack == 1 && instr.OpCode.Code == Code.Stfld)
 					return i;
 
-				int pushes, pops;
-				DotNetUtils.calculateStackUsage(instr.Instruction, false, out pushes, out pops);
+				instr.Instruction.CalculateStackUsage(false, out int pushes, out int pops);
 				stack -= pops;
 				if (stack < 0)
 					break;
@@ -300,8 +295,8 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			throw new ApplicationException("Could not find ldfld/stfld");
 		}
 
-		public void cleanUp() {
-			foreach (var field in structFieldsToFix.getKeys())
+		public void CleanUp() {
+			foreach (var field in structFieldsToFix.GetKeys())
 				field.DeclaringType.Fields.Remove(field);
 		}
 	}

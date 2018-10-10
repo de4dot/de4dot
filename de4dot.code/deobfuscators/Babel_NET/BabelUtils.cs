@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -19,63 +19,60 @@
 
 using System.Collections.Generic;
 using System.Text;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
+using System;
 
 namespace de4dot.code.deobfuscators.Babel_NET {
 	static class BabelUtils {
-		public static EmbeddedResource findEmbeddedResource(ModuleDefinition module, TypeDefinition decrypterType) {
-			return findEmbeddedResource(module, decrypterType, (method) => { });
-		}
+		public static EmbeddedResource FindEmbeddedResource(ModuleDefMD module, TypeDef decrypterType) =>
+			FindEmbeddedResource(module, decrypterType, (method) => { });
 
-		public static EmbeddedResource findEmbeddedResource(ModuleDefinition module, TypeDefinition decrypterType, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
-			return findEmbeddedResource(module, decrypterType, (method) => {
-				simpleDeobfuscator.deobfuscate(method);
-				simpleDeobfuscator.decryptStrings(method, deob);
+		public static EmbeddedResource FindEmbeddedResource(ModuleDefMD module, TypeDef decrypterType, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) =>
+			FindEmbeddedResource(module, decrypterType, (method) => {
+				simpleDeobfuscator.Deobfuscate(method);
+				simpleDeobfuscator.DecryptStrings(method, deob);
 			});
-		}
 
-		public static EmbeddedResource findEmbeddedResource(ModuleDefinition module, TypeDefinition decrypterType, Action<MethodDefinition> fixMethod) {
+		public static EmbeddedResource FindEmbeddedResource(ModuleDefMD module, TypeDef decrypterType, Action<MethodDef> fixMethod) {
 			foreach (var method in decrypterType.Methods) {
-				if (!DotNetUtils.isMethod(method, "System.String", "()"))
+				if (!DotNetUtils.IsMethod(method, "System.String", "()"))
 					continue;
 				if (!method.IsStatic)
 					continue;
 				fixMethod(method);
-				var resource = findEmbeddedResource1(module, method) ?? findEmbeddedResource2(module, method);
+				var resource = FindEmbeddedResource1(module, method) ?? FindEmbeddedResource2(module, method);
 				if (resource != null)
 					return resource;
 			}
 			return null;
 		}
 
-		static EmbeddedResource findEmbeddedResource1(ModuleDefinition module, MethodDefinition method) {
-			foreach (var s in DotNetUtils.getCodeStrings(method)) {
-				var resource = DotNetUtils.getResource(module, s) as EmbeddedResource;
-				if (resource != null)
+		static EmbeddedResource FindEmbeddedResource1(ModuleDefMD module, MethodDef method) {
+			foreach (var s in DotNetUtils.GetCodeStrings(method)) {
+				if (DotNetUtils.GetResource(module, s) is EmbeddedResource resource)
 					return resource;
 			}
 			return null;
 		}
 
-		static EmbeddedResource findEmbeddedResource2(ModuleDefinition module, MethodDefinition method) {
-			var strings = new List<string>(DotNetUtils.getCodeStrings(method));
+		static EmbeddedResource FindEmbeddedResource2(ModuleDefMD module, MethodDef method) {
+			var strings = new List<string>(DotNetUtils.GetCodeStrings(method));
 			if (strings.Count != 1)
 				return null;
 			var encryptedString = strings[0];
 
-			int xorKey;
-			if (!getXorKey2(method, out xorKey))
+			if (!GetXorKey2(method, out int xorKey))
 				return null;
 
 			var sb = new StringBuilder(encryptedString.Length);
 			foreach (var c in encryptedString)
 				sb.Append((char)(c ^ xorKey));
-			return DotNetUtils.getResource(module, sb.ToString()) as EmbeddedResource;
+			return DotNetUtils.GetResource(module, sb.ToString()) as EmbeddedResource;
 		}
 
-		static bool getXorKey2(MethodDefinition method, out int xorKey) {
+		static bool GetXorKey2(MethodDef method, out int xorKey) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 2; i++) {
 				var ldelem = instrs[i];
@@ -83,13 +80,13 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 					continue;
 
 				var ldci4 = instrs[i + 1];
-				if (!DotNetUtils.isLdcI4(ldci4))
+				if (!ldci4.IsLdcI4())
 					continue;
 
 				if (instrs[i + 2].OpCode.Code != Code.Xor)
 					continue;
 
-				xorKey = DotNetUtils.getLdcI4Value(ldci4);
+				xorKey = ldci4.GetLdcI4Value();
 				return true;
 			}
 
@@ -97,7 +94,7 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			return false;
 		}
 
-		public static bool findRegisterMethod(TypeDefinition type, out MethodDefinition regMethod, out MethodDefinition handler) {
+		public static bool FindRegisterMethod(TypeDef type, out MethodDef regMethod, out MethodDef handler) {
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
@@ -107,14 +104,14 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 				foreach (var instr in method.Body.Instructions) {
 					if (instr.OpCode.Code != Code.Ldftn)
 						continue;
-					var handlerRef = instr.Operand as MethodReference;
+					var handlerRef = instr.Operand as IMethod;
 					if (handlerRef == null)
 						continue;
-					if (!DotNetUtils.isMethod(handlerRef, "System.Reflection.Assembly", "(System.Object,System.ResolveEventArgs)"))
+					if (!DotNetUtils.IsMethod(handlerRef, "System.Reflection.Assembly", "(System.Object,System.ResolveEventArgs)"))
 						continue;
-					if (!MemberReferenceHelper.compareTypes(type, handlerRef.DeclaringType))
+					if (!new SigComparer().Equals(type, handlerRef.DeclaringType))
 						continue;
-					handler = DotNetUtils.getMethod(type, handlerRef);
+					handler = DotNetUtils.GetMethod(type, handlerRef);
 					if (handler == null)
 						continue;
 					if (handler.Body == null || handler.Body.ExceptionHandlers.Count != 1)

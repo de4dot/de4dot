@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -19,12 +19,12 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.MyStuff;
+using dnlib.PE;
+using dnlib.DotNet;
+using dnlib.DotNet.Writer;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
 using de4dot.code.renamer;
-using de4dot.PE;
 
 namespace de4dot.code.deobfuscators {
 	public interface IDeobfuscatorOptions {
@@ -53,12 +53,13 @@ namespace de4dot.code.deobfuscators {
 		RenameResourceKeys = 2,
 	}
 
-	public interface IDeobfuscator : INameChecker {
+	public interface IDeobfuscator : INameChecker, IDisposable {
 		string Type { get; }
 		string TypeLong { get; }
 		string Name { get; }
 		IDeobfuscatorOptions TheOptions { get; }
 		IOperations Operations { get; set; }
+		MetadataFlags MetadataFlags { get; }
 		StringFeatures StringFeatures { get; }
 		RenamingOptions RenamingOptions { get; }
 		DecrypterType DefaultDecrypterType { get; }
@@ -68,46 +69,41 @@ namespace de4dot.code.deobfuscators {
 		IDeobfuscatedFile DeobfuscatedFile { get; set; }
 
 		// Returns null or the unpacked .NET PE file
-		byte[] unpackNativeFile(PeImage peImage);
+		byte[] UnpackNativeFile(IPEImage peImage);
 
-		void init(ModuleDefinition module);
-
-		// Same as detect() but may be used by deobfuscators to detect obfuscator that decrypt
-		// metadata at runtime. Code in detect() assume they can access everything. 0 should be
-		// returned if not detected.
-		int earlyDetect();
+		void Initialize(ModuleDefMD module);
 
 		// Returns 0 if it's not detected, or > 0 if detected (higher value => more likely true).
 		// This method is always called.
-		int detect();
+		int Detect();
 
 		// If the obfuscator has encrypted parts of the file, then this method should return the
 		// decrypted file. true is returned if args have been initialized, false otherwise.
-		bool getDecryptedModule(int count, ref byte[] newFileData, ref DumpedMethods dumpedMethods);
+		bool GetDecryptedModule(int count, ref byte[] newFileData, ref DumpedMethods dumpedMethods);
 
 		// This is only called if getDecryptedModule() != null, and after the module has been
 		// reloaded. Should return a new IDeobfuscator with the same options and the new module.
-		IDeobfuscator moduleReloaded(ModuleDefinition module);
+		IDeobfuscator ModuleReloaded(ModuleDefMD module);
 
 		// Called before all other deobfuscation methods
-		void deobfuscateBegin();
+		void DeobfuscateBegin();
 
 		// Called before the code is deobfuscated
-		void deobfuscateMethodBegin(Blocks blocks);
+		void DeobfuscateMethodBegin(Blocks blocks);
 
 		// Return true if we should deobfuscate control flow again
-		bool deobfuscateOther(Blocks blocks);
+		bool DeobfuscateOther(Blocks blocks);
 
 		// Called after deobfuscateMethodBegin() but before deobfuscateMethodEnd()
-		void deobfuscateStrings(Blocks blocks);
+		void DeobfuscateStrings(Blocks blocks);
 
 		// Called after the code has been deobfuscated
-		void deobfuscateMethodEnd(Blocks blocks);
+		void DeobfuscateMethodEnd(Blocks blocks);
 
 		// Called after all deobfuscation methods
-		void deobfuscateEnd();
+		void DeobfuscateEnd();
 
 		// Returns all string decrypter method tokens
-		IEnumerable<int> getStringDecrypterMethods();
+		IEnumerable<int> GetStringDecrypterMethods();
 	}
 }

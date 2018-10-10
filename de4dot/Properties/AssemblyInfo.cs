@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -21,13 +21,13 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 
 [assembly: AssemblyTitle("de4dot")]
-[assembly: AssemblyDescription("Deobfuscates obfuscated .NET applications - AnyCpu")]
+[assembly: AssemblyDescription("Deobfuscates obfuscated .NET applications - x86")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("de4dot")]
-[assembly: AssemblyCopyright("Copyright (C) 2011-2012 de4dot@gmail.com")]
+[assembly: AssemblyCopyright("Copyright (C) 2011-2015 de4dot@gmail.com")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 [assembly: ComVisible(false)]
-[assembly: AssemblyVersion("1.9.0.3405")]
-[assembly: AssemblyFileVersion("1.9.0.3405")]
+[assembly: AssemblyVersion("3.1.41592.3405")]
+[assembly: AssemblyFileVersion("3.1.41592.3405")]

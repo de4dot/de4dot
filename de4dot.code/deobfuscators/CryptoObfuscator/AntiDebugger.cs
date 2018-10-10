@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -17,55 +17,56 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.Cecil;
+using dnlib.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CryptoObfuscator {
 	class AntiDebugger {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		ISimpleDeobfuscator simpleDeobfuscator;
 		IDeobfuscator deob;
-		TypeDefinition antiDebuggerType;
-		MethodDefinition antiDebuggerMethod;
+		TypeDef antiDebuggerType;
+		MethodDef antiDebuggerMethod;
 
-		public TypeDefinition Type {
-			get { return antiDebuggerType; }
-		}
+		public TypeDef Type => antiDebuggerType;
+		public MethodDef Method => antiDebuggerMethod;
 
-		public MethodDefinition Method {
-			get { return antiDebuggerMethod; }
-		}
-
-		public AntiDebugger(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
+		public AntiDebugger(ModuleDefMD module, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
 			this.module = module;
 			this.simpleDeobfuscator = simpleDeobfuscator;
 			this.deob = deob;
 		}
 
-		public void find() {
-			if (find(module.EntryPoint))
+		public void Find() {
+			if (Find(module.EntryPoint))
 				return;
-			if (find(DotNetUtils.getModuleTypeCctor(module)))
+			if (Find(DotNetUtils.GetModuleTypeCctor(module)))
 				return;
 		}
 
-		bool find(MethodDefinition methodToCheck) {
+		bool Find(MethodDef methodToCheck) {
 			if (methodToCheck == null)
 				return false;
-			foreach (var method in DotNetUtils.getCalledMethods(module, methodToCheck)) {
+			foreach (var method in DotNetUtils.GetCalledMethods(module, methodToCheck)) {
 				var type = method.DeclaringType;
 
-				if (!method.IsStatic || !DotNetUtils.isMethod(method, "System.Void", "()"))
+				if (!method.IsStatic || !DotNetUtils.IsMethod(method, "System.Void", "()"))
 					continue;
-				if (DotNetUtils.getPInvokeMethod(type, "kernel32", "LoadLibrary") == null)
+				if (DotNetUtils.GetPInvokeMethod(type, "kernel32", "LoadLibrary") == null)
 					continue;
-				if (DotNetUtils.getPInvokeMethod(type, "kernel32", "GetProcAddress") == null)
+				if (DotNetUtils.GetPInvokeMethod(type, "kernel32", "GetProcAddress") == null)
 					continue;
-				deobfuscate(method);
-				if (!containsString(method, "debugger is activ") &&
-					!containsString(method, "debugger is running") &&
-					!containsString(method, "run under a debugger") &&
-					!containsString(method, "Debugger detected"))
+				Deobfuscate(method);
+				if (!ContainsString(method, "debugger is activ") &&
+					!ContainsString(method, "debugger is running") &&
+					!ContainsString(method, "Debugger detected") &&
+					!ContainsString(method, "Debugger was detected") &&
+					!ContainsString(method, "{0} was detected") &&
+					!ContainsString(method, "run under") &&
+					!ContainsString(method, "run with") &&
+					!ContainsString(method, "started under") &&
+					!ContainsString(method, "{0} detected") &&
+					!ContainsString(method, "{0} found"))
 					continue;
 
 				antiDebuggerType = type;
@@ -76,13 +77,13 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return false;
 		}
 
-		void deobfuscate(MethodDefinition method) {
-			simpleDeobfuscator.deobfuscate(method);
-			simpleDeobfuscator.decryptStrings(method, deob);
+		void Deobfuscate(MethodDef method) {
+			simpleDeobfuscator.Deobfuscate(method);
+			simpleDeobfuscator.DecryptStrings(method, deob);
 		}
 
-		bool containsString(MethodDefinition method, string part) {
-			foreach (var s in DotNetUtils.getCodeStrings(method)) {
+		bool ContainsString(MethodDef method, string part) {
+			foreach (var s in DotNetUtils.GetCodeStrings(method)) {
 				if (s.Contains(part))
 					return true;
 			}

@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -18,11 +18,13 @@
 */
 
 using System;
-using System.IO;
 using System.Collections.Generic;
+using dnlib.DotNet;
+using dnlib.DotNet.Writer;
 using de4dot.code;
 using de4dot.code.deobfuscators;
 using de4dot.code.AssemblyClient;
+using de4dot.code.renamer;
 
 namespace de4dot.cui {
 	class CommandLineParser {
@@ -55,15 +57,10 @@ namespace de4dot.cui {
 		class Infos {
 			List<Info> infos = new List<Info>();
 
-			public void add(object value, string name, string desc) {
-				infos.Add(new Info(value, name, desc));
-			}
+			public void Add(object value, string name, string desc) => infos.Add(new Info(value, name, desc));
+			public IEnumerable<Info> GetInfos() => infos;
 
-			public IEnumerable<Info> getInfos() {
-				return infos;
-			}
-
-			public bool getValue(string name, out object value) {
+			public bool GetValue(string name, out object value) {
 				foreach (var info in infos) {
 					if (name.Equals(info.name, StringComparison.OrdinalIgnoreCase)) {
 						value = info.value;
@@ -76,11 +73,11 @@ namespace de4dot.cui {
 		}
 
 		static CommandLineParser() {
-			stringDecrypterTypes.add(DecrypterType.None, "none", "Don't decrypt strings");
-			stringDecrypterTypes.add(DecrypterType.Default, "default", "Use default string decrypter type (usually static)");
-			stringDecrypterTypes.add(DecrypterType.Static, "static", "Use static string decrypter if available");
-			stringDecrypterTypes.add(DecrypterType.Delegate, "delegate", "Use a delegate to call the real string decrypter");
-			stringDecrypterTypes.add(DecrypterType.Emulate, "emulate", "Call real string decrypter and emulate certain instructions");
+			stringDecrypterTypes.Add(DecrypterType.None, "none", "Don't decrypt strings");
+			stringDecrypterTypes.Add(DecrypterType.Default, "default", "Use default string decrypter type (usually static)");
+			stringDecrypterTypes.Add(DecrypterType.Static, "static", "Use static string decrypter if available");
+			stringDecrypterTypes.Add(DecrypterType.Delegate, "delegate", "Use a delegate to call the real string decrypter");
+			stringDecrypterTypes.Add(DecrypterType.Emulate, "emulate", "Call real string decrypter and emulate certain instructions");
 		}
 
 		public CommandLineParser(IList<IDeobfuscatorInfo> deobfuscatorInfos, FilesDeobfuscator.Options filesOptions) {
@@ -89,43 +86,62 @@ namespace de4dot.cui {
 			this.filesOptions.DeobfuscatorInfos = deobfuscatorInfos;
 			this.filesOptions.AssemblyClientFactory = new NewAppDomainAssemblyClientFactory();
 
-			addAllOptions();
+			AddAllOptions();
 		}
 
-		void addAllOptions() {
+		void AddAllOptions() {
 			miscOptions.Add(new OneArgOption("r", null, "Scan for .NET files in all subdirs", "dir", (val) => {
-				addSearchDir();
+				AddSearchDir();
 				searchDir = new FilesDeobfuscator.SearchDir();
-				if (!Utils.pathExists(val))
-					exitError(string.Format("Directory {0} does not exist", val));
+				if (!Utils.PathExists(val))
+					ExitError($"Directory {val} does not exist");
 				searchDir.InputDirectory = val;
 			}));
 			miscOptions.Add(new OneArgOption("ro", null, "Output base dir for recursively found files", "dir", (val) => {
 				if (searchDir == null)
-					exitError("Missing -r option");
+					ExitError("Missing -r option");
 				searchDir.OutputDirectory = val;
 			}));
 			miscOptions.Add(new NoArgOption("ru", null, "Skip recursively found files with unsupported obfuscator", () => {
 				if (searchDir == null)
-					exitError("Missing -r option");
+					ExitError("Missing -r option");
 				searchDir.SkipUnknownObfuscators = true;
 			}));
 			miscOptions.Add(new NoArgOption("d", null, "Detect obfuscators and exit", () => {
 				filesOptions.DetectObfuscators = true;
 			}));
 			miscOptions.Add(new OneArgOption(null, "asm-path", "Add an assembly search path", "path", (val) => {
-				AssemblyResolver.Instance.addSearchDirectory(val);
+				TheAssemblyResolver.Instance.AddSearchDirectory(val);
 			}));
 			miscOptions.Add(new NoArgOption(null, "dont-rename", "Don't rename classes, methods, etc.", () => {
 				filesOptions.RenameSymbols = false;
+				filesOptions.RenamerFlags = 0;
+			}));
+			miscOptions.Add(new OneArgOption(null, "keep-names", "Don't rename n(amespaces), t(ypes), p(rops), e(vents), f(ields), m(ethods), a(rgs), g(enericparams), d(elegate fields). Can be combined, eg. efm", "flags", (val) => {
+				foreach (var c in val) {
+					switch (c) {
+					case 'n': filesOptions.RenamerFlags &= ~RenamerFlags.RenameNamespaces; break;
+					case 't': filesOptions.RenamerFlags &= ~RenamerFlags.RenameTypes; break;
+					case 'p': filesOptions.RenamerFlags &= ~RenamerFlags.RenameProperties; break;
+					case 'e': filesOptions.RenamerFlags &= ~RenamerFlags.RenameEvents; break;
+					case 'f': filesOptions.RenamerFlags &= ~RenamerFlags.RenameFields; break;
+					case 'm': filesOptions.RenamerFlags &= ~RenamerFlags.RenameMethods; break;
+					case 'a': filesOptions.RenamerFlags &= ~RenamerFlags.RenameMethodArgs; break;
+					case 'g': filesOptions.RenamerFlags &= ~RenamerFlags.RenameGenericParams; break;
+					case 'd': filesOptions.RenamerFlags |= RenamerFlags.DontRenameDelegateFields; break;
+					default: throw new UserException($"Unrecognized --keep-names char: '{c}'");
+					}
+				}
+			}));
+			miscOptions.Add(new NoArgOption(null, "dont-create-params", "Don't create method params when renaming", () => {
+				filesOptions.RenamerFlags |= RenamerFlags.DontCreateNewParamDefs;
 			}));
 			miscOptions.Add(new NoArgOption(null, "dont-restore-props", "Don't restore properties/events", () => {
-				filesOptions.RestorePropsEvents = false;
+				filesOptions.RenamerFlags &= ~(RenamerFlags.RestorePropertiesFromNames | RenamerFlags.RestoreEventsFromNames);
 			}));
 			miscOptions.Add(new OneArgOption(null, "default-strtyp", "Default string decrypter type", "type", (val) => {
-				object decrypterType;
-				if (!stringDecrypterTypes.getValue(val, out decrypterType))
-					exitError(string.Format("Invalid string decrypter type '{0}'", val));
+				if (!stringDecrypterTypes.GetValue(val, out object decrypterType))
+					ExitError($"Invalid string decrypter type '{val}'");
 				defaultStringDecrypterType = (DecrypterType)decrypterType;
 			}));
 			miscOptions.Add(new OneArgOption(null, "default-strtok", "Default string decrypter method token or [type::][name][(args,...)]", "method", (val) => {
@@ -134,34 +150,102 @@ namespace de4dot.cui {
 			miscOptions.Add(new NoArgOption(null, "no-cflow-deob", "No control flow deobfuscation (NOT recommended)", () => {
 				filesOptions.ControlFlowDeobfuscation = false;
 			}));
+			miscOptions.Add(new NoArgOption(null, "only-cflow-deob", "Only control flow deobfuscation", () => {
+				filesOptions.ControlFlowDeobfuscation = true;
+				// --strtyp none
+				defaultStringDecrypterType = DecrypterType.None;
+				// --keep-types
+				filesOptions.KeepObfuscatorTypes = true;
+				// --preserve-tokens
+				filesOptions.MetadataFlags |= MetadataFlags.PreserveRids |
+						MetadataFlags.PreserveUSOffsets |
+						MetadataFlags.PreserveBlobOffsets |
+						MetadataFlags.PreserveExtraSignatureData;
+				// --dont-rename
+				filesOptions.RenameSymbols = false;
+				filesOptions.RenamerFlags = 0;
+			}));
 			miscOptions.Add(new NoArgOption(null, "load-new-process", "Load executed assemblies into a new process", () => {
 				filesOptions.AssemblyClientFactory = new NewProcessAssemblyClientFactory();
 			}));
 			miscOptions.Add(new NoArgOption(null, "keep-types", "Keep obfuscator types, fields, methods", () => {
 				filesOptions.KeepObfuscatorTypes = true;
 			}));
+			miscOptions.Add(new NoArgOption(null, "preserve-tokens", "Preserve important tokens, #US, #Blob, extra sig data", () => {
+				filesOptions.MetadataFlags |= MetadataFlags.PreserveRids |
+						MetadataFlags.PreserveUSOffsets |
+						MetadataFlags.PreserveBlobOffsets |
+						MetadataFlags.PreserveExtraSignatureData;
+			}));
+			miscOptions.Add(new OneArgOption(null, "preserve-table", "Preserve rids in table: tr (TypeRef), td (TypeDef), fd (Field), md (Method), pd (Param), mr (MemberRef), s (StandAloneSig), ed (Event), pr (Property), ts (TypeSpec), ms (MethodSpec), all (all previous tables). Use - to disable (eg. all,-pd). Can be combined: ed,fd,md", "flags", (val) => {
+				foreach (var t in val.Split(',')) {
+					var s = t.Trim();
+					if (s.Length == 0)
+						continue;
+					bool clear = s[0] == '-';
+					if (clear)
+						s = s.Substring(1);
+					MetadataFlags flag;
+					switch (s.Trim()) {
+					case "": flag = 0; break;
+					case "all": flag = MetadataFlags.PreserveRids; break;
+					case "tr": flag = MetadataFlags.PreserveTypeRefRids; break;
+					case "td": flag = MetadataFlags.PreserveTypeDefRids; break;
+					case "fd": flag = MetadataFlags.PreserveFieldRids; break;
+					case "md": flag = MetadataFlags.PreserveMethodRids; break;
+					case "pd": flag = MetadataFlags.PreserveParamRids; break;
+					case "mr": flag = MetadataFlags.PreserveMemberRefRids; break;
+					case "s": flag = MetadataFlags.PreserveStandAloneSigRids; break;
+					case "ed": flag = MetadataFlags.PreserveEventRids; break;
+					case "pr": flag = MetadataFlags.PreservePropertyRids; break;
+					case "ts": flag = MetadataFlags.PreserveTypeSpecRids; break;
+					case "ms": flag = MetadataFlags.PreserveMethodSpecRids; break;
+					default: throw new UserException($"Invalid --preserve-table option: {s}");
+					}
+					if (clear)
+						filesOptions.MetadataFlags &= ~flag;
+					else
+						filesOptions.MetadataFlags |= flag;
+				}
+			}));
+			miscOptions.Add(new NoArgOption(null, "preserve-strings", "Preserve #Strings heap offsets", () => {
+				filesOptions.MetadataFlags |= MetadataFlags.PreserveStringsOffsets;
+			}));
+			miscOptions.Add(new NoArgOption(null, "preserve-us", "Preserve #US heap offsets", () => {
+				filesOptions.MetadataFlags |= MetadataFlags.PreserveUSOffsets;
+			}));
+			miscOptions.Add(new NoArgOption(null, "preserve-blob", "Preserve #Blob heap offsets", () => {
+				filesOptions.MetadataFlags |= MetadataFlags.PreserveBlobOffsets;
+			}));
+			miscOptions.Add(new NoArgOption(null, "preserve-sig-data", "Preserve extra data at the end of signatures", () => {
+				filesOptions.MetadataFlags |= MetadataFlags.PreserveExtraSignatureData;
+			}));
 			miscOptions.Add(new NoArgOption(null, "one-file", "Deobfuscate one file at a time", () => {
 				filesOptions.OneFileAtATime = true;
 			}));
 			miscOptions.Add(new NoArgOption("v", null, "Verbose", () => {
-				Log.logLevel = Log.LogLevel.verbose;
+				Logger.Instance.MaxLoggerEvent = LoggerEvent.Verbose;
+				Logger.Instance.CanIgnoreMessages = false;
 			}));
 			miscOptions.Add(new NoArgOption("vv", null, "Very verbose", () => {
-				Log.logLevel = Log.LogLevel.veryverbose;
+				Logger.Instance.MaxLoggerEvent = LoggerEvent.VeryVerbose;
+				Logger.Instance.CanIgnoreMessages = false;
 			}));
 			miscOptions.Add(new NoArgOption("h", "help", "Show this help message", () => {
-				usage();
-				exit(0);
+				Usage();
+				Exit(0);
 			}));
 
 			defaultOption = new OneArgOption("f", null, "Name of .NET file", "file", (val) => {
-				addFile();
-				if (!Utils.fileExists(val))
-					exitError(string.Format("File \"{0}\" does not exist.", val));
+				AddFile();
+				if (!Utils.FileExists(val))
+					ExitError($"File \"{val}\" does not exist.");
 				newFileOptions = new ObfuscatedFile.Options {
 					Filename = val,
 					ControlFlowDeobfuscation = filesOptions.ControlFlowDeobfuscation,
 					KeepObfuscatorTypes = filesOptions.KeepObfuscatorTypes,
+					MetadataFlags = filesOptions.MetadataFlags,
+					RenamerFlags = filesOptions.RenamerFlags,
 				};
 				if (defaultStringDecrypterType != null)
 					newFileOptions.StringDecrypterType = defaultStringDecrypterType.Value;
@@ -170,68 +254,67 @@ namespace de4dot.cui {
 			fileOptions.Add(defaultOption);
 			fileOptions.Add(new OneArgOption("o", null, "Name of output file", "file", (val) => {
 				if (newFileOptions == null)
-					exitError("Missing input file");
-				if (string.Equals(Utils.getFullPath(newFileOptions.Filename), Utils.getFullPath(val), StringComparison.OrdinalIgnoreCase))
-					exitError(string.Format("Output file can't be same as input file ({0})", val));
-				newFileOptions.NewFilename = val;
+					ExitError("Missing input file");
+				var newFilename = Utils.GetFullPath(val);
+				if (string.Equals(Utils.GetFullPath(newFileOptions.Filename), newFilename, StringComparison.OrdinalIgnoreCase))
+					ExitError($"Output file can't be same as input file ({newFilename})");
+				newFileOptions.NewFilename = newFilename;
 			}));
 			fileOptions.Add(new OneArgOption("p", null, "Obfuscator type (see below)", "type", (val) => {
 				if (newFileOptions == null)
-					exitError("Missing input file");
-				if (!isValidObfuscatorType(val))
-					exitError(string.Format("Invalid obfuscator type '{0}'", val));
+					ExitError("Missing input file");
+				if (!IsValidObfuscatorType(val))
+					ExitError($"Invalid obfuscator type '{val}'");
 				newFileOptions.ForcedObfuscatorType = val;
 			}));
 			fileOptions.Add(new OneArgOption(null, "strtyp", "String decrypter type", "type", (val) => {
 				if (newFileOptions == null)
-					exitError("Missing input file");
-				object decrypterType;
-				if (!stringDecrypterTypes.getValue(val, out decrypterType))
-					exitError(string.Format("Invalid string decrypter type '{0}'", val));
+					ExitError("Missing input file");
+				if (!stringDecrypterTypes.GetValue(val, out object decrypterType))
+					ExitError($"Invalid string decrypter type '{val}'");
 				newFileOptions.StringDecrypterType = (DecrypterType)decrypterType;
 			}));
 			fileOptions.Add(new OneArgOption(null, "strtok", "String decrypter method token or [type::][name][(args,...)]", "method", (val) => {
 				if (newFileOptions == null)
-					exitError("Missing input file");
+					ExitError("Missing input file");
 				newFileOptions.StringDecrypterMethods.Add(val);
 			}));
 
-			addOptions(miscOptions);
-			addOptions(fileOptions);
+			AddOptions(miscOptions);
+			AddOptions(fileOptions);
 			foreach (var info in deobfuscatorInfos)
-				addOptions(info.getOptions());
+				AddOptions(info.GetOptions());
 		}
 
-		void addOptions(IEnumerable<Option> options) {
+		void AddOptions(IEnumerable<Option> options) {
 			foreach (var option in options) {
-				addOption(option, option.ShortName);
-				addOption(option, option.LongName);
+				AddOption(option, option.ShortName);
+				AddOption(option, option.LongName);
 			}
 		}
 
-		void addOption(Option option, string name) {
+		void AddOption(Option option, string name) {
 			if (name == null)
 				return;
 			if (optionsDict.ContainsKey(name))
-				throw new ApplicationException(string.Format("Option {0} is present twice!", name));
+				throw new ApplicationException($"Option {name} is present twice!");
 			optionsDict[name] = option;
 		}
 
-		public void parse(string[] args) {
+		public void Parse(string[] args) {
 			if (args.Length == 0) {
-				usage();
-				exit(1);
+				Usage();
+				Exit(1);
 			}
 
 			for (int i = 0; i < args.Length; i++) {
 				var arg = args[i];
 
 				string val = null;
-				Option option;
-				if (optionsDict.TryGetValue(arg, out option)) {
+				if (optionsDict.TryGetValue(arg, out var option)) {
 					if (option.NeedArgument) {
 						if (++i >= args.Length)
-							exitError("Missing options value");
+							ExitError("Missing options value");
 						val = args[i];
 					}
 				}
@@ -240,32 +323,31 @@ namespace de4dot.cui {
 					val = arg;
 				}
 
-				string errorString;
-				if (!option.set(val, out errorString))
-					exitError(errorString);
+				if (!option.Set(val, out string errorString))
+					ExitError(errorString);
 			}
-			addFile();
-			addSearchDir();
+			AddFile();
+			AddSearchDir();
 			filesOptions.Files = files;
 			filesOptions.DefaultStringDecrypterMethods.AddRange(defaultStringDecrypterMethods);
 			filesOptions.DefaultStringDecrypterType = defaultStringDecrypterType;
 		}
 
-		void addFile() {
+		void AddFile() {
 			if (newFileOptions == null)
 				return;
-			files.Add(new ObfuscatedFile(newFileOptions, filesOptions.AssemblyClientFactory));
+			files.Add(new ObfuscatedFile(newFileOptions, filesOptions.ModuleContext, filesOptions.AssemblyClientFactory));
 			newFileOptions = null;
 		}
 
-		void addSearchDir() {
+		void AddSearchDir() {
 			if (searchDir == null)
 				return;
 			filesOptions.SearchDirs.Add(searchDir);
 			searchDir = null;
 		}
 
-		bool isValidObfuscatorType(string type) {
+		bool IsValidObfuscatorType(string type) {
 			foreach (var info in deobfuscatorInfos) {
 				if (string.Equals(info.Type, type, StringComparison.OrdinalIgnoreCase))
 					return true;
@@ -273,83 +355,79 @@ namespace de4dot.cui {
 			return false;
 		}
 
-		void exitError(string msg) {
-			usage();
-			Log.e("\n\nERROR: {0}\n", msg);
-			exit(2);
+		void ExitError(string msg) {
+			Usage();
+			Logger.Instance.LogErrorDontIgnore("\n\nERROR: {0}\n", msg);
+			Exit(2);
 		}
 
-		void exit(int exitCode) {
-			throw new ExitException(exitCode);
-		}
+		void Exit(int exitCode) => throw new ExitException(exitCode);
 
-		void usage() {
-			string progName = getProgramBaseName();
-			Log.n("Some of the advanced options may be incompatible, causing a nice exception.");
-			Log.n("With great power comes great responsibility.");
-			Log.n("");
-			Log.n("{0} <options> <file options>", progName);
-			Log.n("Options:");
+		void Usage() {
+			string progName = GetProgramBaseName();
+			Logger.n("Some of the advanced options may be incompatible, causing a nice exception.");
+			Logger.n("With great power comes great responsibility.");
+			Logger.n("");
+			Logger.n("{0} <options> <file options>", progName);
+			Logger.n("Options:");
 			foreach (var option in miscOptions)
-				printOption(option);
-			Log.n("");
-			Log.n("File options:");
+				PrintOption(option);
+			Logger.n("");
+			Logger.n("File options:");
 			foreach (var option in fileOptions)
-				printOption(option);
-			Log.n("");
-			Log.n("Deobfuscator options:");
+				PrintOption(option);
+			Logger.n("");
+			Logger.n("Deobfuscator options:");
 			foreach (var info in deobfuscatorInfos) {
-				Log.n("Type {0} ({1})", info.Type, info.Name);
-				foreach (var option in info.getOptions())
-					printOption(option);
-				Log.n("");
+				Logger.n("Type {0} ({1})", info.Type, info.Name);
+				foreach (var option in info.GetOptions())
+					PrintOption(option);
+				Logger.n("");
 			}
-			printInfos("String decrypter types", stringDecrypterTypes);
-			Log.n("");
-			Log.n("Multiple regexes can be used if separated by '{0}'.", NameRegexes.regexSeparatorChar);
-			Log.n("Use '{0}' if you want to invert the regex. Example: {0}^[a-z\\d]{{1,2}}${1}{0}^[A-Z]_\\d+${1}^[\\w.]+$", NameRegex.invertChar, NameRegexes.regexSeparatorChar);
-			Log.n("");
-			Log.n("Examples:");
-			Log.n("{0} -r c:\\my\\files -ro c:\\my\\output", progName);
-			Log.n("{0} file1 file2 file3", progName);
-			Log.n("{0} file1 -f file2 -o file2.out -f file3 -o file3.out", progName);
-			Log.n("{0} file1 --strtyp delegate --strtok 06000123", progName);
+			PrintInfos("String decrypter types", stringDecrypterTypes);
+			Logger.n("");
+			Logger.n("Multiple regexes can be used if separated by '{0}'.", NameRegexes.regexSeparatorChar);
+			Logger.n("Use '{0}' if you want to invert the regex. Example: {0}^[a-z\\d]{{1,2}}${1}{0}^[A-Z]_\\d+${1}^[\\w.]+$", NameRegex.invertChar, NameRegexes.regexSeparatorChar);
+			Logger.n("");
+			Logger.n("Examples:");
+			Logger.n("{0} -r c:\\my\\files -ro c:\\my\\output", progName);
+			Logger.n("{0} file1 file2 file3", progName);
+			Logger.n("{0} file1 -f file2 -o file2.out -f file3 -o file3.out", progName);
+			Logger.n("{0} file1 --strtyp delegate --strtok 06000123", progName);
 		}
 
-		string getProgramBaseName() {
-			return Utils.getBaseName(Environment.GetCommandLineArgs()[0]);
+		string GetProgramBaseName() => Utils.GetBaseName(Environment.GetCommandLineArgs()[0]);
+
+		void PrintInfos(string desc, Infos infos) {
+			Logger.n("{0}", desc);
+			foreach (var info in infos.GetInfos())
+				PrintOptionAndExplanation(info.name, info.desc);
 		}
 
-		void printInfos(string desc, Infos infos) {
-			Log.n("{0}", desc);
-			foreach (var info in infos.getInfos())
-				printOptionAndExplanation(info.name, info.desc);
-		}
-
-		void printOption(Option option) {
+		void PrintOption(Option option) {
 			string defaultAndDesc;
 			if (option.NeedArgument && option.Default != null)
-				defaultAndDesc = string.Format("{0} ({1})", option.Description, option.Default);
+				defaultAndDesc = $"{option.Description} ({option.Default})";
 			else
 				defaultAndDesc = option.Description;
-			printOptionAndExplanation(getOptionAndArgName(option, option.ShortName ?? option.LongName), defaultAndDesc);
+			PrintOptionAndExplanation(GetOptionAndArgName(option, option.ShortName ?? option.LongName), defaultAndDesc);
 			if (option.ShortName != null && option.LongName != null)
-				printOptionAndExplanation(option.LongName, string.Format("Same as {0}", option.ShortName));
+				PrintOptionAndExplanation(option.LongName, $"Same as {option.ShortName}");
 		}
 
-		void printOptionAndExplanation(string option, string explanation) {
+		void PrintOptionAndExplanation(string option, string explanation) {
 			const int maxCols = 16;
 			const string prefix = "  ";
-			string left = string.Format(string.Format("{{0,-{0}}}", maxCols), option);
+			string left = string.Format($"{{0,-{maxCols}}}", option);
 			if (option.Length > maxCols) {
-				Log.n("{0}{1}", prefix, left);
-				Log.n("{0}{1} {2}", prefix, new string(' ', maxCols), explanation);
+				Logger.n("{0}{1}", prefix, left);
+				Logger.n("{0}{1} {2}", prefix, new string(' ', maxCols), explanation);
 			}
 			else
-				Log.n("{0}{1} {2}", prefix, left, explanation);
+				Logger.n("{0}{1} {2}", prefix, left, explanation);
 		}
 
-		string getOptionAndArgName(Option option, string optionName) {
+		string GetOptionAndArgName(Option option, string optionName) {
 			if (option.NeedArgument)
 				return optionName + " " + option.ArgumentValueName.ToUpperInvariant();
 			else

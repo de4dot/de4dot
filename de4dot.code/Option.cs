@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -18,7 +18,6 @@
 */
 
 using System;
-using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 namespace de4dot.code {
@@ -31,33 +30,20 @@ namespace de4dot.code {
 		string description;
 		object defaultVal;
 
-		public string ShortName {
-			get { return shortName; }
-		}
-
-		public string LongName {
-			get { return longName; }
-		}
-
-		public string Description {
-			get { return description; }
-		}
+		public string ShortName => shortName;
+		public string LongName => longName;
+		public string Description => description;
 
 		public object Default {
-			get { return defaultVal; }
-			protected set { defaultVal = value; }
+			get => defaultVal;
+			protected set => defaultVal = value;
 		}
 
-		public virtual bool NeedArgument {
-			get { return true; }
-		}
-
-		public virtual string ArgumentValueName {
-			get { return "value"; }
-		}
+		public virtual bool NeedArgument => true;
+		public virtual string ArgumentValueName => "value";
 
 		// Returns true if the new value is set, or false on error. error string is also updated.
-		public abstract bool set(string val, out string error);
+		public abstract bool Set(string val, out string error);
 
 		public Option(string shortName, string longName, string description) {
 			if (shortName != null)
@@ -71,15 +57,11 @@ namespace de4dot.code {
 	public class BoolOption : Option {
 		bool val;
 		public BoolOption(string shortName, string longName, string description, bool val)
-			: base(shortName, longName, description) {
-			Default = this.val = val;
-		}
+			: base(shortName, longName, description) => Default = this.val = val;
 
-		public override string ArgumentValueName {
-			get { return "bool"; }
-		}
+		public override string ArgumentValueName => "bool";
 
-		public override bool set(string newVal, out string error) {
+		public override bool Set(string newVal, out string error) {
 			if (string.Equals(newVal, "false", StringComparison.OrdinalIgnoreCase) ||
 				string.Equals(newVal, "off", StringComparison.OrdinalIgnoreCase) ||
 				string.Equals(newVal, "0", StringComparison.OrdinalIgnoreCase)) {
@@ -91,26 +73,20 @@ namespace de4dot.code {
 			return true;
 		}
 
-		public bool get() {
-			return val;
-		}
+		public bool Get() => val;
 	}
 
 	public class IntOption : Option {
 		int val;
+
 		public IntOption(string shortName, string longName, string description, int val)
-			: base(shortName, longName, description) {
-			Default = this.val = val;
-		}
+			: base(shortName, longName, description) => Default = this.val = val;
 
-		public override string ArgumentValueName {
-			get { return "int"; }
-		}
+		public override string ArgumentValueName => "int";
 
-		public override bool set(string newVal, out string error) {
-			int newInt;
-			if (!int.TryParse(newVal, out newInt)) {
-				error = string.Format("Not an integer: '{0}'", newVal);
+		public override bool Set(string newVal, out string error) {
+			if (!int.TryParse(newVal, out int newInt)) {
+				error = $"Not an integer: '{newVal}'";
 				return false;
 			}
 			val = newInt;
@@ -118,131 +94,102 @@ namespace de4dot.code {
 			return true;
 		}
 
-		public int get() {
-			return val;
-		}
+		public int Get() => val;
 	}
 
 	public class StringOption : Option {
 		string val;
 
-		public override string ArgumentValueName {
-			get { return "string"; }
-		}
+		public override string ArgumentValueName => "string";
 
 		public StringOption(string shortName, string longName, string description, string val)
-			: base(shortName, longName, description) {
-			Default = this.val = val;
-		}
+			: base(shortName, longName, description) => Default = this.val = val;
 
-		public override bool set(string newVal, out string error) {
+		public override bool Set(string newVal, out string error) {
 			val = newVal;
 			error = "";
 			return true;
 		}
 
-		public string get() {
-			return val;
-		}
+		public string Get() => val;
 	}
 
 	public class NameRegexOption : Option {
 		NameRegexes val;
 
-		public override string ArgumentValueName {
-			get { return "regex"; }
-		}
+		public override string ArgumentValueName => "regex";
 
 		public NameRegexOption(string shortName, string longName, string description, string val)
-			: base(shortName, longName, description) {
-			Default = this.val = new NameRegexes(val);
-		}
+			: base(shortName, longName, description) => Default = this.val = new NameRegexes(val);
 
-		public override bool set(string newVal, out string error) {
+		public override bool Set(string newVal, out string error) {
 			try {
 				var regexes = new NameRegexes();
-				regexes.set(newVal);
+				regexes.Set(newVal);
 				val = regexes;
 			}
 			catch (ArgumentException) {
-				error = string.Format("Could not parse regex '{0}'", newVal);
+				error = $"Could not parse regex '{newVal}'";
 				return false;
 			}
 			error = "";
 			return true;
 		}
 
-		public NameRegexes get() {
-			return val;
-		}
+		public NameRegexes Get() => val;
 	}
 
 	public class RegexOption : Option {
 		Regex val;
 
-		public override string ArgumentValueName {
-			get { return "regex"; }
-		}
+		public override string ArgumentValueName => "regex";
 
 		public RegexOption(string shortName, string longName, string description, string val)
-			: base(shortName, longName, description) {
-			Default = this.val = new Regex(val);
-		}
+			: base(shortName, longName, description) => Default = this.val = new Regex(val);
 
-		public override bool set(string newVal, out string error) {
+		public override bool Set(string newVal, out string error) {
 			try {
 				val = new Regex(newVal);
 			}
 			catch (ArgumentException) {
-				error = string.Format("Could not parse regex '{0}'", newVal);
+				error = $"Could not parse regex '{newVal}'";
 				return false;
 			}
 			error = "";
 			return true;
 		}
 
-		public Regex get() {
-			return val;
-		}
+		public Regex Get() => val;
 	}
 
 	public class NoArgOption : Option {
 		Action action;
 		bool triggered;
 
-		public override bool NeedArgument {
-			get { return false; }
-		}
+		public override bool NeedArgument => false;
 
 		public NoArgOption(string shortName, string longName, string description)
 			: this(shortName, longName, description, null) {
 		}
 
 		public NoArgOption(string shortName, string longName, string description, Action action)
-			: base(shortName, longName, description) {
-			this.action = action;
-		}
+			: base(shortName, longName, description) => this.action = action;
 
-		public override bool set(string val, out string error) {
+		public override bool Set(string val, out string error) {
 			triggered = true;
-			if (action != null)
-				action();
+			action?.Invoke();
 			error = "";
 			return true;
 		}
 
-		public bool get() {
-			return triggered;
-		}
+		public bool Get() => triggered;
 	}
 
 	public class OneArgOption : Option {
 		Action<string> action;
 		string typeName;
 
-		public override string ArgumentValueName {
-			get { return typeName; }
-		}
+		public override string ArgumentValueName => typeName;
 
 		public OneArgOption(string shortName, string longName, string description, string typeName, Action<string> action)
 			: base(shortName, longName, description) {
@@ -251,7 +198,7 @@ namespace de4dot.code {
 			Default = null;
 		}
 
-		public override bool set(string val, out string error) {
+		public override bool Set(string val, out string error) {
 			action(val);
 			error = "";
 			return true;

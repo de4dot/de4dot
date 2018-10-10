@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -19,15 +19,15 @@
 
 using System;
 using System.IO;
-using Mono.Cecil;
+using dnlib.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Babel_NET {
 	class AssemblyResolver {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		ResourceDecrypter resourceDecrypter;
-		TypeDefinition resolverType;
-		MethodDefinition registerMethod;
+		TypeDef resolverType;
+		MethodDef registerMethod;
 		EmbeddedResource encryptedResource;
 		EmbeddedAssemblyInfo[] embeddedAssemblyInfos = new EmbeddedAssemblyInfo[0];
 
@@ -37,38 +37,24 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			public byte[] data;
 
 			public EmbeddedAssemblyInfo(string fullName, string extension, byte[] data) {
-				this.fullname = fullName;
+				fullname = fullName;
 				this.extension = extension;
 				this.data = data;
 			}
 		}
 
-		public bool Detected {
-			get { return resolverType != null; }
-		}
+		public bool Detected => resolverType != null;
+		public TypeDef Type => resolverType;
+		public MethodDef InitMethod => registerMethod;
+		public EmbeddedResource EncryptedResource => encryptedResource;
+		public EmbeddedAssemblyInfo[] EmbeddedAssemblyInfos => embeddedAssemblyInfos;
 
-		public TypeDefinition Type {
-			get { return resolverType; }
-		}
-
-		public MethodDefinition InitMethod {
-			get { return registerMethod; }
-		}
-
-		public EmbeddedResource EncryptedResource {
-			get { return encryptedResource; }
-		}
-
-		public EmbeddedAssemblyInfo[] EmbeddedAssemblyInfos {
-			get { return embeddedAssemblyInfos; }
-		}
-
-		public AssemblyResolver(ModuleDefinition module, ResourceDecrypter resourceDecrypter) {
+		public AssemblyResolver(ModuleDefMD module, ResourceDecrypter resourceDecrypter) {
 			this.module = module;
 			this.resourceDecrypter = resourceDecrypter;
 		}
 
-		public void find() {
+		public void Find() {
 			var requiredTypes = new string[] {
 				"System.Object",
 				"System.Int32",
@@ -77,17 +63,16 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			foreach (var type in module.Types) {
 				if (type.HasEvents)
 					continue;
-				if (!new FieldTypes(type).exactly(requiredTypes))
+				if (!new FieldTypes(type).Exactly(requiredTypes))
 					continue;
 
-				MethodDefinition regMethod, handler;
-				if (!BabelUtils.findRegisterMethod(type, out regMethod, out handler))
+				if (!BabelUtils.FindRegisterMethod(type, out var regMethod, out var handler))
 					continue;
 
-				var decryptMethod = findDecryptMethod(type);
+				var decryptMethod = FindDecryptMethod(type);
 				if (decryptMethod == null)
 					throw new ApplicationException("Couldn't find resource type decrypt method");
-				resourceDecrypter.DecryptMethod = ResourceDecrypter.findDecrypterMethod(decryptMethod);
+				resourceDecrypter.DecryptMethod = ResourceDecrypter.FindDecrypterMethod(decryptMethod);
 
 				resolverType = type;
 				registerMethod = regMethod;
@@ -95,34 +80,34 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			}
 		}
 
-		static MethodDefinition findDecryptMethod(TypeDefinition type) {
+		static MethodDef FindDecryptMethod(TypeDef type) {
 			foreach (var method in type.Methods) {
-				if (!DotNetUtils.isMethod(method, "System.Void", "(System.IO.Stream)"))
+				if (!DotNetUtils.IsMethod(method, "System.Void", "(System.IO.Stream)"))
 					continue;
 				return method;
 			}
 			return null;
 		}
 
-		public void initialize(ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
+		public void Initialize(ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
 			if (resolverType == null)
 				return;
 
-			encryptedResource = BabelUtils.findEmbeddedResource(module, resolverType, simpleDeobfuscator, deob);
+			encryptedResource = BabelUtils.FindEmbeddedResource(module, resolverType, simpleDeobfuscator, deob);
 			if (encryptedResource == null) {
-				Log.w("Could not find embedded assemblies resource");
+				Logger.w("Could not find embedded assemblies resource");
 				return;
 			}
 
-			var decrypted = resourceDecrypter.decrypt(encryptedResource.GetResourceData());
+			var decrypted = resourceDecrypter.Decrypt(encryptedResource.CreateReader().ToArray());
 			var reader = new BinaryReader(new MemoryStream(decrypted));
 			int numAssemblies = reader.ReadInt32();
 			embeddedAssemblyInfos = new EmbeddedAssemblyInfo[numAssemblies];
 			for (int i = 0; i < numAssemblies; i++) {
 				string name = reader.ReadString();
 				var data = reader.ReadBytes(reader.ReadInt32());
-				var mod = ModuleDefinition.ReadModule(new MemoryStream(data));
-				embeddedAssemblyInfos[i] = new EmbeddedAssemblyInfo(name, DeobUtils.getExtension(mod.Kind), data);
+				var mod = ModuleDefMD.Load(data);
+				embeddedAssemblyInfos[i] = new EmbeddedAssemblyInfo(name, DeobUtils.GetExtension(mod.Kind), data);
 			}
 		}
 	}

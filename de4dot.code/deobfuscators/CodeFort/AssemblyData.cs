@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -25,80 +25,57 @@ using System.Reflection.Emit;
 using System.Text;
 
 namespace de4dot.code.deobfuscators.CodeFort {
-	interface IType {
-		Type get(SerializedTypes serializedTypes);
+	interface ICFType {
+		Type Get(SerializedTypes serializedTypes);
 	}
 
 	static class ITypeCreator {
-		public static IType create(string name) {
-			return new StringType(name);
-		}
-
-		public static IType create(Type type) {
-			return new ExistingType(type);
-		}
+		public static ICFType Create(string name) => new StringType(name);
+		public static ICFType Create(Type type) => new ExistingType(type);
 	}
 
-	class StringType : IType {
+	class StringType : ICFType {
 		readonly string name;
-
-		public StringType(string name) {
-			this.name = name;
-		}
-
-		public Type get(SerializedTypes serializedTypes) {
-			return serializedTypes.getBuilderType(name);
-		}
-
-		public override string ToString() {
-			return name;
-		}
+		public StringType(string name) => this.name = name;
+		public Type Get(SerializedTypes serializedTypes) => serializedTypes.GetBuilderType(name);
+		public override string ToString() => name;
 	}
 
-	class ExistingType : IType {
+	class ExistingType : ICFType {
 		readonly Type type;
-
-		public ExistingType(Type type) {
-			this.type = type;
-		}
-
-		public Type get(SerializedTypes serializedTypes) {
-			return type;
-		}
-
-		public override string ToString() {
-			return type.ToString();
-		}
+		public ExistingType(Type type) => this.type = type;
+		public Type Get(SerializedTypes serializedTypes) => type;
+		public override string ToString() => type.ToString();
 	}
 
-	class GenericType : IType {
-		IType type;
-		IType[] genericArgs;
+	class GenericType : ICFType {
+		ICFType type;
+		ICFType[] genericArgs;
 
-		public GenericType(string type, IType[] genericArgs)
-			: this(ITypeCreator.create(type), genericArgs) {
+		public GenericType(string type, ICFType[] genericArgs)
+			: this(ITypeCreator.Create(type), genericArgs) {
 		}
 
-		public GenericType(Type type, IType[] genericArgs)
-			: this(ITypeCreator.create(type), genericArgs) {
+		public GenericType(Type type, ICFType[] genericArgs)
+			: this(ITypeCreator.Create(type), genericArgs) {
 		}
 
-		public GenericType(IType type, IType[] genericArgs) {
+		public GenericType(ICFType type, ICFType[] genericArgs) {
 			this.type = type;
 			this.genericArgs = genericArgs;
 		}
 
-		public Type get(SerializedTypes serializedTypes) {
-			var genericType = type.get(serializedTypes);
+		public Type Get(SerializedTypes serializedTypes) {
+			var genericType = type.Get(serializedTypes);
 			var types = new List<Type>(genericArgs.Length);
 			foreach (var ga in genericArgs)
-				types.Add(ga.get(serializedTypes));
+				types.Add(ga.Get(serializedTypes));
 			return genericType.MakeGenericType(types.ToArray());
 		}
 
 		public override string ToString() {
 			var sb = new StringBuilder();
-			sb.Append(getTypeName());
+			sb.Append(GetTypeName());
 			if (genericArgs != null && genericArgs.Length > 0) {
 				sb.Append('<');
 				for (int i = 0; i < genericArgs.Length; i++) {
@@ -111,7 +88,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			return sb.ToString();
 		}
 
-		string getTypeName() {
+		string GetTypeName() {
 			var typeName = type.ToString();
 			int index = typeName.LastIndexOf('`');
 			if (index < 0)
@@ -122,15 +99,15 @@ namespace de4dot.code.deobfuscators.CodeFort {
 
 	class ListType : GenericType {
 		public ListType(string type)
-			: this(ITypeCreator.create(type)) {
+			: this(ITypeCreator.Create(type)) {
 		}
 
 		public ListType(Type type)
-			: this(ITypeCreator.create(type)) {
+			: this(ITypeCreator.Create(type)) {
 		}
 
-		public ListType(IType type)
-			: base(typeof(List<>), new IType[] { type }) {
+		public ListType(ICFType type)
+			: base(typeof(List<>), new ICFType[] { type }) {
 		}
 	}
 
@@ -147,13 +124,13 @@ namespace de4dot.code.deobfuscators.CodeFort {
 
 		public override string ToString() {
 			if (!string.IsNullOrEmpty(dcNamespace))
-				return string.Format("{0} - {1}.{2}", name, dcNamespace, dcName);
-			return string.Format("{0} - {1}", name, dcName);
+				return $"{name} - {dcNamespace}.{dcName}";
+			return $"{name} - {dcName}";
 		}
 	}
 
 	class TypeInfo : TypeInfoBase {
-		public readonly IType baseType;
+		public readonly ICFType baseType;
 		public readonly TypeFieldInfo[] fieldInfos;
 
 		public TypeInfo(string name, string dcName, TypeFieldInfo[] fieldInfos)
@@ -161,14 +138,14 @@ namespace de4dot.code.deobfuscators.CodeFort {
 		}
 
 		public TypeInfo(string name, string dcNamespace, string dcName, TypeFieldInfo[] fieldInfos)
-			: this(ITypeCreator.create(typeof(object)), name, dcNamespace, dcName, fieldInfos) {
+			: this(ITypeCreator.Create(typeof(object)), name, dcNamespace, dcName, fieldInfos) {
 		}
 
-		public TypeInfo(IType baseType, string name, string dcName, TypeFieldInfo[] fieldInfos)
+		public TypeInfo(ICFType baseType, string name, string dcName, TypeFieldInfo[] fieldInfos)
 			: this(baseType, name, "", dcName, fieldInfos) {
 		}
 
-		public TypeInfo(IType baseType, string name, string dcNamespace, string dcName, TypeFieldInfo[] fieldInfos)
+		public TypeInfo(ICFType baseType, string name, string dcNamespace, string dcName, TypeFieldInfo[] fieldInfos)
 			: base(name, dcNamespace, dcName) {
 			this.baseType = baseType;
 			this.fieldInfos = fieldInfos;
@@ -176,27 +153,25 @@ namespace de4dot.code.deobfuscators.CodeFort {
 	}
 
 	class TypeFieldInfo {
-		public readonly IType type;
+		public readonly ICFType type;
 		public readonly string name;
 		public readonly string dmName;
 
 		public TypeFieldInfo(string type, string name, string dmName)
-			: this(ITypeCreator.create(type), name, dmName) {
+			: this(ITypeCreator.Create(type), name, dmName) {
 		}
 
 		public TypeFieldInfo(Type type, string name, string dmName)
-			: this(ITypeCreator.create(type), name, dmName) {
+			: this(ITypeCreator.Create(type), name, dmName) {
 		}
 
-		public TypeFieldInfo(IType type, string name, string dmName) {
+		public TypeFieldInfo(ICFType type, string name, string dmName) {
 			this.type = type;
 			this.name = name;
 			this.dmName = dmName;
 		}
 
-		public override string ToString() {
-			return string.Format("{0} {1} - {2}", type, name, dmName);
-		}
+		public override string ToString() => $"{type} {name} - {dmName}";
 	}
 
 	class EnumInfo : TypeInfoBase {
@@ -208,9 +183,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 		}
 
 		public EnumInfo(string name, string dcNamespace, string dcName, EnumFieldInfo[] fieldInfos)
-			: base(name, dcNamespace, dcName) {
-			this.fieldInfos = fieldInfos;
-		}
+			: base(name, dcNamespace, dcName) => this.fieldInfos = fieldInfos;
 	}
 
 	class EnumFieldInfo {
@@ -224,9 +197,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			this.emValue = emValue;
 		}
 
-		public override string ToString() {
-			return string.Format("({0}) {1} - {2}", value, name, emValue);
-		}
+		public override string ToString() => $"({value}) {name} - {emValue}";
 	}
 
 	class SerializedTypes {
@@ -317,7 +288,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 				new TypeFieldInfo("TypeRef", "ReturnType", "T"),
 			}),
 
-			new TypeInfo(ITypeCreator.create("MemberRef"), "MethodRef", "i", new TypeFieldInfo[] {
+			new TypeInfo(ITypeCreator.Create("MemberRef"), "MethodRef", "i", new TypeFieldInfo[] {
 				new TypeFieldInfo(new ListType("ParameterRef"), "Parameters", "P"),
 				new TypeFieldInfo(typeof(int), "CallingConventions", "V"),
 			}),
@@ -341,18 +312,18 @@ namespace de4dot.code.deobfuscators.CodeFort {
 				new TypeFieldInfo("TypeRef", "Type", "T"),
 			}),
 
-			new TypeInfo(ITypeCreator.create("MemberDef"), "PropertyDef", "n", new TypeFieldInfo[] {
+			new TypeInfo(ITypeCreator.Create("MemberDef"), "PropertyDef", "n", new TypeFieldInfo[] {
 				new TypeFieldInfo("MethodDef", "GetMethod", "G"),
 				new TypeFieldInfo(new ListType("ParameterDef"), "ParameterTypes", "P"),
 				new TypeFieldInfo("MethodDef", "SetMethod", "S"),
 			}),
 
-			new TypeInfo(ITypeCreator.create("MemberDef"), "EventDef", "o", new TypeFieldInfo[] {
+			new TypeInfo(ITypeCreator.Create("MemberDef"), "EventDef", "o", new TypeFieldInfo[] {
 				new TypeFieldInfo("MethodDef", "AddOnMethod", "A"),
 				new TypeFieldInfo("MethodDef", "RemoveOnMethod", "R"),
 			}),
 
-			new TypeInfo(ITypeCreator.create("MemberDef"), "MethodDef", "p", new TypeFieldInfo[] {
+			new TypeInfo(ITypeCreator.Create("MemberDef"), "MethodDef", "p", new TypeFieldInfo[] {
 				new TypeFieldInfo(new ListType("Instruction"), "Instructions", "A"),
 				new TypeFieldInfo(typeof(CallingConventions), "CallingConventions", "C"),
 				new TypeFieldInfo(typeof(MethodImplAttributes), "MethodImplAttributes", "I"),
@@ -370,22 +341,14 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			List<PropertyInfo> properties = new List<PropertyInfo>();
 			List<object> values = new List<object>();
 
-			public PropertyInfo[] Properties {
-				get { return properties.ToArray(); }
-			}
+			public PropertyInfo[] Properties => properties.ToArray();
+			public object[] Values => values.ToArray();
+			public PropertyInfoCreator(Type type) => this.type = type;
 
-			public object[] Values {
-				get { return values.ToArray(); }
-			}
-
-			public PropertyInfoCreator(Type type) {
-				this.type = type;
-			}
-
-			public void add(string propertyName, object value) {
+			public void Add(string propertyName, object value) {
 				var prop = type.GetProperty(propertyName);
 				if (prop == null)
-					throw new ApplicationException(string.Format("Could not find property {0} (type {1})", propertyName, type));
+					throw new ApplicationException($"Could not find property {propertyName} (type {type})");
 				properties.Add(prop);
 				values.Add(value);
 			}
@@ -398,81 +361,81 @@ namespace de4dot.code.deobfuscators.CodeFort {
 
 		public SerializedTypes(ModuleBuilder moduleBuilder) {
 			this.moduleBuilder = moduleBuilder;
-			createTypeBuilders();
-			initializeEnums();
-			initializeTypes();
-			createTypes();
+			CreateTypeBuilders();
+			InitializeEnums();
+			InitializeTypes();
+			CreateTypes();
 		}
 
-		void createTypeBuilders() {
+		void CreateTypeBuilders() {
 			foreach (var info in enumInfos)
-				add(info.name, moduleBuilder.DefineEnum(info.name, TypeAttributes.Public, info.underlyingType));
+				Add(info.name, moduleBuilder.DefineEnum(info.name, TypeAttributes.Public, info.underlyingType));
 			foreach (var info in typeInfos)
-				add(info.name, moduleBuilder.DefineType(info.name, TypeAttributes.Public, info.baseType.get(this)));
+				Add(info.name, moduleBuilder.DefineType(info.name, TypeAttributes.Public, info.baseType.Get(this)));
 		}
 
-		CustomAttributeBuilder createDataContractAttribute(string ns, string name, bool isReference) {
+		CustomAttributeBuilder CreateDataContractAttribute(string ns, string name, bool isReference) {
 			var dcAttr = Type.GetType("System.Runtime.Serialization.DataContractAttribute," + serializationAssemblyname);
 			var ctor = dcAttr.GetConstructor(Type.EmptyTypes);
 			var propCreator = new PropertyInfoCreator(dcAttr);
-			propCreator.add("Namespace", ns);
-			propCreator.add("Name", name);
-			propCreator.add("IsReference", isReference);
+			propCreator.Add("Namespace", ns);
+			propCreator.Add("Name", name);
+			propCreator.Add("IsReference", isReference);
 			return new CustomAttributeBuilder(ctor, new object[0], propCreator.Properties, propCreator.Values);
 		}
 
-		CustomAttributeBuilder createEnumMemberAttribute(string value) {
+		CustomAttributeBuilder CreateEnumMemberAttribute(string value) {
 			var emAttr = Type.GetType("System.Runtime.Serialization.EnumMemberAttribute," + serializationAssemblyname);
 			var ctor = emAttr.GetConstructor(Type.EmptyTypes);
 			var propCreator = new PropertyInfoCreator(emAttr);
-			propCreator.add("Value", value);
+			propCreator.Add("Value", value);
 			return new CustomAttributeBuilder(ctor, new object[0], propCreator.Properties, propCreator.Values);
 		}
 
-		CustomAttributeBuilder createDataMemberAttribute(string name, bool emitDefaultValue) {
+		CustomAttributeBuilder CreateDataMemberAttribute(string name, bool emitDefaultValue) {
 			var dmAttr = Type.GetType("System.Runtime.Serialization.DataMemberAttribute," + serializationAssemblyname);
 			var ctor = dmAttr.GetConstructor(Type.EmptyTypes);
 			var propCreator = new PropertyInfoCreator(dmAttr);
-			propCreator.add("Name", name);
-			propCreator.add("EmitDefaultValue", emitDefaultValue);
+			propCreator.Add("Name", name);
+			propCreator.Add("EmitDefaultValue", emitDefaultValue);
 			return new CustomAttributeBuilder(ctor, new object[0], propCreator.Properties, propCreator.Values);
 		}
 
-		void add(string name, EnumBuilder builder) {
+		void Add(string name, EnumBuilder builder) {
 			if (enumBuilders.ContainsKey(name))
-				throw new ApplicationException(string.Format("Enum {0} already exists", name));
+				throw new ApplicationException($"Enum {name} already exists");
 			enumBuilders[name] = builder;
 		}
 
-		void add(string name, TypeBuilder builder) {
+		void Add(string name, TypeBuilder builder) {
 			if (typeBuilders.ContainsKey(name))
-				throw new ApplicationException(string.Format("Type {0} already exists", name));
+				throw new ApplicationException($"Type {name} already exists");
 			typeBuilders[name] = builder;
 		}
 
-		void initializeEnums() {
+		void InitializeEnums() {
 			foreach (var info in enumInfos) {
 				var builder = enumBuilders[info.name];
-				builder.SetCustomAttribute(createDataContractAttribute(info.dcNamespace, info.dcName, false));
+				builder.SetCustomAttribute(CreateDataContractAttribute(info.dcNamespace, info.dcName, false));
 				foreach (var fieldInfo in info.fieldInfos) {
 					var fieldBuilder = builder.DefineLiteral(fieldInfo.name, fieldInfo.value);
-					fieldBuilder.SetCustomAttribute(createEnumMemberAttribute(fieldInfo.emValue));
+					fieldBuilder.SetCustomAttribute(CreateEnumMemberAttribute(fieldInfo.emValue));
 				}
 			}
 		}
 
-		void initializeTypes() {
+		void InitializeTypes() {
 			foreach (var info in typeInfos) {
 				var builder = typeBuilders[info.name];
-				builder.SetCustomAttribute(createDataContractAttribute(info.dcNamespace, info.dcName, true));
+				builder.SetCustomAttribute(CreateDataContractAttribute(info.dcNamespace, info.dcName, true));
 				foreach (var fieldInfo in info.fieldInfos) {
-					var fieldBuilder = builder.DefineField(fieldInfo.name, fieldInfo.type.get(this), FieldAttributes.Public);
-					fieldBuilder.SetCustomAttribute(createDataMemberAttribute(fieldInfo.dmName, false));
+					var fieldBuilder = builder.DefineField(fieldInfo.name, fieldInfo.type.Get(this), FieldAttributes.Public);
+					fieldBuilder.SetCustomAttribute(CreateDataMemberAttribute(fieldInfo.dmName, false));
 				}
 			}
 		}
 
-		void createTypes() {
+		void CreateTypes() {
 			foreach (var info in enumInfos)
 				createdTypes[info.name] = enumBuilders[info.name].CreateType();
 			foreach (var info in typeInfos)
@@ -482,44 +445,40 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			typeBuilders = null;
 		}
 
-		public Type getBuilderType(string name) {
-			EnumBuilder enumBuilder;
-			if (enumBuilders.TryGetValue(name, out enumBuilder))
+		public Type GetBuilderType(string name) {
+			if (enumBuilders.TryGetValue(name, out var enumBuilder))
 				return enumBuilder;
 
-			TypeBuilder typeBuilder;
-			if (typeBuilders.TryGetValue(name, out typeBuilder))
+			if (typeBuilders.TryGetValue(name, out var typeBuilder))
 				return typeBuilder;
 
-			throw new ApplicationException(string.Format("Could not find type {0}", name));
+			throw new ApplicationException($"Could not find type {name}");
 		}
 
-		Type getType(string name) {
-			return createdTypes[name];
-		}
+		Type GetType(string name) => createdTypes[name];
 
-		public object deserialize(byte[] data) {
+		public object Deserialize(byte[] data) {
 			var serializerType = Type.GetType("System.Runtime.Serialization.DataContractSerializer," + serializationAssemblyname);
 			if (serializerType == null)
 				throw new ApplicationException("You need .NET 3.0 or later to decrypt the assembly");
 			var quotasType = Type.GetType("System.Xml.XmlDictionaryReaderQuotas," + serializationAssemblyname);
 			var serializerCtor = serializerType.GetConstructor(new Type[] { typeof(Type), typeof(IEnumerable<Type>) });
-			var serializer = serializerCtor.Invoke(new object[] { getType("AllTypes"), new Type[] {
-				getType("MemberTypes1"),
-				getType("Instruction"),
-				getType("InstructionType"),
-				getType("InstructionLabel"),
-				getType("LocalVariable"),
-				getType("ParameterDef"),
-				getType("TypeDef"),
-				getType("MemberDef"),
-				getType("MethodDef"),
-				getType("EventDef"),
-				getType("PropertyDef"),
-				getType("ParameterRef"),
-				getType("TypeRef"),
-				getType("MemberRef"),
-				getType("MethodRef"),
+			var serializer = serializerCtor.Invoke(new object[] { GetType("AllTypes"), new Type[] {
+				GetType("MemberTypes1"),
+				GetType("Instruction"),
+				GetType("InstructionType"),
+				GetType("InstructionLabel"),
+				GetType("LocalVariable"),
+				GetType("ParameterDef"),
+				GetType("TypeDef"),
+				GetType("MemberDef"),
+				GetType("MethodDef"),
+				GetType("EventDef"),
+				GetType("PropertyDef"),
+				GetType("ParameterRef"),
+				GetType("TypeRef"),
+				GetType("MemberRef"),
+				GetType("MethodRef"),
 			}});
 
 			var xmlReaderType = Type.GetType("System.Xml.XmlDictionaryReader," + serializationAssemblyname);

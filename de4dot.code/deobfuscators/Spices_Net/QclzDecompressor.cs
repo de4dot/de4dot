@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -21,28 +21,28 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 	class QclzDecompressor : QuickLZBase {
 		static int SPICES_QCLZ_SIG = 0x3952534E;	// "9RSN"
 
-		public static byte[] decompress(byte[] data) {
-			if (read32(data, 0) == SPICES_QCLZ_SIG)
-				return QuickLZ.decompress(data, SPICES_QCLZ_SIG);
+		public static byte[] Decompress(byte[] data) {
+			if (Read32(data, 0) == SPICES_QCLZ_SIG)
+				return QuickLZ.Decompress(data, SPICES_QCLZ_SIG);
 
-			int headerLength, decompressedLength, compressedLength;
+			int headerLength, decompressedLength/*, compressedLength*/;
 			if ((data[0] & 2) != 0) {
 				headerLength = 9;
-				compressedLength = (int)read32(data, 1);
-				decompressedLength = (int)read32(data, 5);
+				/*compressedLength = (int)*/Read32(data, 1);
+				decompressedLength = (int)Read32(data, 5);
 			}
 			else {
 				headerLength = 3;
-				compressedLength = data[1];
+				//compressedLength = data[1];
 				decompressedLength = data[2];
 			}
 
 			bool isCompressed = (data[0] & 1) != 0;
 			byte[] decompressed = new byte[decompressedLength];
 			if (isCompressed)
-				decompress(data, headerLength, decompressed);
+				Decompress(data, headerLength, decompressed);
 			else
-				copy(data, headerLength, decompressed, 0, decompressed.Length);
+				Copy(data, headerLength, decompressed, 0, decompressed.Length);
 
 			return decompressed;
 		}

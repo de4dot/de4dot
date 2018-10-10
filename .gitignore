@@ -6,4 +6,5 @@
 *.suo
 /Debug/
 /Release/
-/de4dot.snk
+.vs/
+*.tmp_proj

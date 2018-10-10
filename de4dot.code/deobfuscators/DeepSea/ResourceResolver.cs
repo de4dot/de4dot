@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -17,10 +17,9 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.DeepSea {
@@ -42,30 +41,30 @@ namespace de4dot.code.deobfuscators.DeepSea {
 		}
 
 		class Data40 {
-			public FieldDefinition resourceField;
-			public MethodDefinition resolveHandler2;
-			public MethodDefinition getDataMethod;
+			public FieldDef resourceField;
+			public MethodDef resolveHandler2;
+			public MethodDef getDataMethod;
 			public int magic;
 		}
 
 		class Data41 {
-			public FieldDefinition resourceField;
-			public MethodDefinition resolveHandler2;
+			public FieldDef resourceField;
+			public MethodDef resolveHandler2;
 			public int magic;
 			public bool isTrial;
 		}
 
 		class HandlerInfo {
-			public MethodDefinition handler;
+			public MethodDef handler;
 			public IList<object> args;
 
-			public HandlerInfo(MethodDefinition handler, IList<object> args) {
+			public HandlerInfo(MethodDef handler, IList<object> args) {
 				this.handler = handler;
 				this.args = args;
 			}
 		}
 
-		public MethodDefinition InitMethod2 {
+		public MethodDef InitMethod2 {
 			get {
 				if (data40 != null)
 					return data40.resolveHandler2;
@@ -75,37 +74,30 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			}
 		}
 
-		public MethodDefinition GetDataMethod {
-			get { return data40 != null ? data40.getDataMethod : null; }
-		}
+		public MethodDef GetDataMethod => data40?.getDataMethod;
+		public EmbeddedResource Resource => data30?.resource;
 
-		public EmbeddedResource Resource {
-			get { return data30 != null ? data30.resource : null; }
-		}
-
-		public ResourceResolver(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob)
+		public ResourceResolver(ModuleDefMD module, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob)
 			: base(module, simpleDeobfuscator, deob) {
 		}
 
-		protected override bool checkResolverInitMethodInternal(MethodDefinition resolverInitMethod) {
-			return DotNetUtils.callsMethod(resolverInitMethod, "System.Void System.AppDomain::add_ResourceResolve(System.ResolveEventHandler)");
-		}
+		protected override bool CheckResolverInitMethodInternal(MethodDef resolverInitMethod) =>
+			DotNetUtils.CallsMethod(resolverInitMethod, "System.Void System.AppDomain::add_ResourceResolve(System.ResolveEventHandler)");
 
-		protected override bool checkHandlerMethodDesktopInternal(MethodDefinition handler) {
-			if (checkHandlerV3(handler)) {
+		protected override bool CheckHandlerMethodDesktopInternal(MethodDef handler) {
+			if (CheckHandlerV3(handler)) {
 				version = ResourceVersion.V3;
 				return true;
 			}
 
-			simpleDeobfuscator.deobfuscate(handler);
-			if ((data40 = checkHandlerV40(handler)) != null) {
+			simpleDeobfuscator.Deobfuscate(handler);
+			if ((data40 = CheckHandlerV40(handler)) != null) {
 				version = ResourceVersion.V40;
 				return true;
 			}
 
-			var info = getHandlerArgs41(handler);
-			Data41 data41Tmp;
-			if (info != null && checkHandlerV41(info, out data41Tmp)) {
+			var info = GetHandlerArgs41(handler);
+			if (info != null && CheckHandlerV41(info, out var data41Tmp)) {
 				version = ResourceVersion.V41;
 				data41 = data41Tmp;
 				return true;
@@ -114,18 +106,18 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return false;
 		}
 
-		HandlerInfo getHandlerArgs41(MethodDefinition handler) {
+		HandlerInfo GetHandlerArgs41(MethodDef handler) {
 			var instrs = handler.Body.Instructions;
 			for (int i = 0; i < instrs.Count; i++) {
 				var instr = instrs[i];
 				if (instr.OpCode.Code != Code.Call)
 					continue;
-				var calledMethod = instr.Operand as MethodDefinition;
+				var calledMethod = instr.Operand as MethodDef;
 				if (calledMethod == null)
 					continue;
-				if (getLdtokenField(calledMethod) == null)
+				if (GetLdtokenField(calledMethod) == null)
 					continue;
-				var args = DsUtils.getArgValues(instrs, i);
+				var args = DsUtils.GetArgValues(instrs, i);
 				if (args == null)
 					continue;
 
@@ -134,18 +126,18 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return null;
 		}
 
-		bool checkHandlerV41(HandlerInfo info, out Data41 data41) {
+		bool CheckHandlerV41(HandlerInfo info, out Data41 data41) {
 			data41 = new Data41();
 			data41.resolveHandler2 = info.handler;
-			data41.resourceField = getLdtokenField(info.handler);
+			data41.resourceField = GetLdtokenField(info.handler);
 			if (data41.resourceField == null)
 				return false;
-			int magicArgIndex = getMagicArgIndex41Retail(info.handler);
+			int magicArgIndex = GetMagicArgIndex41Retail(info.handler, out bool isOtherRetail);
 			if (magicArgIndex < 0) {
-				magicArgIndex = getMagicArgIndex41Trial(info.handler);
+				magicArgIndex = GetMagicArgIndex41Trial(info.handler);
 				data41.isTrial = true;
 			}
-			var asmVer = module.Assembly.Name.Version;
+			var asmVer = module.Assembly.Version;
 			if (magicArgIndex < 0 || magicArgIndex >= info.args.Count)
 				return false;
 			var val = info.args[magicArgIndex];
@@ -153,53 +145,64 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				return false;
 			if (data41.isTrial)
 				data41.magic = (int)val >> 3;
+			else if (isOtherRetail)
+				data41.magic = data41.resourceField.InitialValue.Length - (int)val;
 			else
 				data41.magic = ((asmVer.Major << 3) | (asmVer.Minor << 2) | asmVer.Revision) - (int)val;
 			return true;
 		}
 
-		static int getMagicArgIndex41Retail(MethodDefinition method) {
+		static int GetMagicArgIndex41Retail(MethodDef method, out bool isOtherRetail) {
+			isOtherRetail = false;
 			var instrs = method.Body.Instructions;
-			for (int i = 0; i < instrs.Count - 3; i++) {
-				var add = instrs[i];
-				if (add.OpCode.Code != Code.Add)
-					continue;
-				var ldarg = instrs[i + 1];
-				if (!DotNetUtils.isLdarg(ldarg))
-					continue;
-				var sub = instrs[i + 2];
-				if (sub.OpCode.Code != Code.Sub)
-					continue;
-				var ldci4 = instrs[i + 3];
-				if (!DotNetUtils.isLdcI4(ldci4) || DotNetUtils.getLdcI4Value(ldci4) != 0xFF)
+			for (int i = 0; i < instrs.Count - 4; i++) {
+				isOtherRetail = false;
+				var ld = instrs[i];
+				if (ld.IsLdarg())
+					isOtherRetail = true;
+				else if (!ld.IsLdloc())
 					continue;
 
-				return DotNetUtils.getArgIndex(ldarg);
+				var add = instrs[i + 1];
+				if (add.OpCode.Code != Code.Add)
+					continue;
+				var ldarg = instrs[i + 2];
+				if (!ldarg.IsLdarg())
+					continue;
+				var sub = instrs[i + 3];
+				if (sub.OpCode.Code != Code.Sub)
+					continue;
+				var ldci4 = instrs[i + 4];
+				if (!ldci4.IsLdcI4() || ldci4.GetLdcI4Value() != 0xFF)
+					continue;
+
+				return ldarg.GetParameterIndex();
 			}
+
 			return -1;
 		}
 
-		static int getMagicArgIndex41Trial(MethodDefinition method) {
+		static int GetMagicArgIndex41Trial(MethodDef method) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 2; i++) {
 				var ldarg = instrs[i];
-				if (!DotNetUtils.isLdarg(ldarg))
+				if (!ldarg.IsLdarg())
 					continue;
-				if (!DotNetUtils.isLdcI4(instrs[i + 1]))
+				if (!instrs[i + 1].IsLdcI4())
 					continue;
 				if (instrs[i + 2].OpCode.Code != Code.Shr)
 					continue;
 
-				return DotNetUtils.getArgIndex(ldarg);
+				return ldarg.GetParameterIndex();
 			}
 			return -1;
 		}
 
-		static FieldDefinition getLdtokenField(MethodDefinition method) {
+		static FieldDef GetLdtokenField(MethodDef method) {
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Ldtoken)
 					continue;
-				var field = instr.Operand as FieldDefinition;
+				var field = instr.Operand as FieldDef;
 				if (field == null || field.InitialValue == null || field.InitialValue.Length == 0)
 					continue;
 
@@ -219,11 +222,9 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			"System.String",
 			"System.String[]",
 		};
-		static bool checkHandlerV3(MethodDefinition handler) {
-			return new LocalTypes(handler).all(handlerLocalTypes_V3);
-		}
+		static bool CheckHandlerV3(MethodDef handler) => new LocalTypes(handler).All(handlerLocalTypes_V3);
 
-		static Data40 checkHandlerV40(MethodDefinition handler) {
+		static Data40 CheckHandlerV40(MethodDef handler) {
 			var data40 = new Data40();
 
 			var instrs = handler.Body.Instructions;
@@ -236,15 +237,15 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				var ldtoken = instrs[index++];
 				if (ldtoken.OpCode.Code != Code.Ldtoken)
 					continue;
-				var field = ldtoken.Operand as FieldDefinition;
+				var field = ldtoken.Operand as FieldDef;
 
 				string methodSig = "(System.ResolveEventArgs,System.RuntimeFieldHandle,System.Int32,System.String,System.Int32)";
-				var method = ldtoken.Operand as MethodDefinition;
+				var method = ldtoken.Operand as MethodDef;
 				if (method != null) {
 					// >= 4.0.4
-					if (!DotNetUtils.isMethod(method, "System.Byte[]", "()"))
+					if (!DotNetUtils.IsMethod(method, "System.Byte[]", "()"))
 						continue;
-					field = getResourceField(method);
+					field = GetResourceField(method);
 					methodSig = "(System.ResolveEventArgs,System.RuntimeMethodHandle,System.Int32,System.String,System.Int32)";
 				}
 				else {
@@ -255,26 +256,26 @@ namespace de4dot.code.deobfuscators.DeepSea {
 					continue;
 
 				var ldci4_len = instrs[index++];
-				if (!DotNetUtils.isLdcI4(ldci4_len))
+				if (!ldci4_len.IsLdcI4())
 					continue;
-				if (DotNetUtils.getLdcI4Value(ldci4_len) != field.InitialValue.Length)
+				if (ldci4_len.GetLdcI4Value() != field.InitialValue.Length)
 					continue;
 
 				if (instrs[index++].OpCode.Code != Code.Ldstr)
 					continue;
 
 				var ldci4_magic = instrs[index++];
-				if (!DotNetUtils.isLdcI4(ldci4_magic))
+				if (!ldci4_magic.IsLdcI4())
 					continue;
-				data40.magic = DotNetUtils.getLdcI4Value(ldci4_magic);
+				data40.magic = ldci4_magic.GetLdcI4Value();
 
 				var call = instrs[index++];
-				if (call.OpCode.Code == Code.Tail)
+				if (call.OpCode.Code == Code.Tailcall)
 					call = instrs[index++];
 				if (call.OpCode.Code != Code.Call)
 					continue;
-				var resolveHandler2 = call.Operand as MethodDefinition;
-				if (!DotNetUtils.isMethod(resolveHandler2, "System.Reflection.Assembly", methodSig))
+				var resolveHandler2 = call.Operand as MethodDef;
+				if (!DotNetUtils.IsMethod(resolveHandler2, "System.Reflection.Assembly", methodSig))
 					continue;
 
 				data40.resourceField = field;
@@ -286,11 +287,11 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return null;
 		}
 
-		static FieldDefinition getResourceField(MethodDefinition method) {
+		static FieldDef GetResourceField(MethodDef method) {
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Ldtoken)
 					continue;
-				var field = instr.Operand as FieldDefinition;
+				var field = instr.Operand as FieldDef;
 				if (field == null || field.InitialValue == null || field.InitialValue.Length == 0)
 					continue;
 				return field;
@@ -298,23 +299,23 @@ namespace de4dot.code.deobfuscators.DeepSea {
 			return null;
 		}
 
-		public void initialize() {
+		public void Initialize() {
 			if (resolveHandler == null)
 				return;
 
 			if (version == ResourceVersion.V3) {
-				simpleDeobfuscator.deobfuscate(resolveHandler);
-				simpleDeobfuscator.decryptStrings(resolveHandler, deob);
+				simpleDeobfuscator.Deobfuscate(resolveHandler);
+				simpleDeobfuscator.DecryptStrings(resolveHandler, deob);
 				data30 = new Data30();
-				data30.resource = DeobUtils.getEmbeddedResourceFromCodeStrings(module, resolveHandler);
+				data30.resource = DeobUtils.GetEmbeddedResourceFromCodeStrings(module, resolveHandler);
 				if (data30.resource == null) {
-					Log.w("Could not find resource of encrypted resources");
+					Logger.w("Could not find resource of encrypted resources");
 					return;
 				}
 			}
 		}
 
-		public bool mergeResources(out EmbeddedResource rsrc) {
+		public bool MergeResources(out EmbeddedResource rsrc) {
 			rsrc = null;
 
 			switch (version) {
@@ -322,29 +323,30 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				if (data30.resource == null)
 					return false;
 
-				DeobUtils.decryptAndAddResources(module, data30.resource.Name, () => decryptResourceV3(data30.resource));
+				DeobUtils.DecryptAndAddResources(module, data30.resource.Name.String, () => DecryptResourceV3(data30.resource));
 				rsrc = data30.resource;
 				return true;
 
 			case ResourceVersion.V40:
-				return decryptResource(data40.resourceField, data40.magic);
+				return DecryptResource(data40.resourceField, data40.magic);
 
 			case ResourceVersion.V41:
-				return decryptResource(data41.resourceField, data41.magic);
+				return DecryptResource(data41.resourceField, data41.magic);
 
 			default:
 				return true;
 			}
 		}
 
-		bool decryptResource(FieldDefinition resourceField, int magic) {
+		bool DecryptResource(FieldDef resourceField, int magic) {
 			if (resourceField == null)
 				return false;
 
-			string name = string.Format("Embedded data field {0:X8} RVA {1:X8}", resourceField.MetadataToken.ToInt32(), resourceField.RVA);
-			DeobUtils.decryptAndAddResources(module, name, () => decryptResourceV4(resourceField.InitialValue, magic));
+			string name = $"Embedded data field {resourceField.MDToken.ToInt32():X8} RVA {(uint)resourceField.RVA:X8}";
+			DeobUtils.DecryptAndAddResources(module, name, () => DecryptResourceV4(resourceField.InitialValue, magic));
 			resourceField.InitialValue = new byte[1];
-			resourceField.FieldType = module.TypeSystem.Byte;
+			resourceField.FieldSig.Type = module.CorLibTypes.Byte;
+			resourceField.RVA = 0;
 			return true;
 		}
 	}

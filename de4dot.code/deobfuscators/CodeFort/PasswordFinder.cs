@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -19,10 +19,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
-using Mono.Cecil;
 
 namespace de4dot.code.deobfuscators.CodeFort {
 	class PasswordInfo {
@@ -36,9 +34,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			this.iv = iv;
 		}
 
-		public override string ToString() {
-			return string.Format("P:{0}, S:{1}, I:{2}", passphrase, salt, iv);
-		}
+		public override string ToString() => $"P:{passphrase}, S:{salt}, I:{iv}";
 	}
 
 	class PasswordFinder {
@@ -48,39 +44,16 @@ namespace de4dot.code.deobfuscators.CodeFort {
 		class Obj {
 			object obj;
 
-			public Obj(object obj) {
-				this.obj = obj;
-			}
+			public Obj(object obj) => this.obj = obj;
+			public string Name => (string)ReadField("Name");
+			public List<Obj> Members => GetList("Members");
+			public List<Obj> Instructions => GetList("Instructions");
+			public object Operand => ReadField("Operand");
+			public string OpCode => (string)ReadField("OpCode");
+			public Obj MemberDef => new Obj(ReadField("MemberDef"));
+			protected object ReadField(string name) => PasswordFinder.ReadField(obj, name);
 
-			public string Name {
-				get { return (string)readField("Name"); }
-			}
-
-			public List<Obj> Members {
-				get { return getList("Members"); }
-			}
-
-			public List<Obj> Instructions {
-				get { return getList("Instructions"); }
-			}
-
-			public object Operand {
-				get { return readField("Operand"); }
-			}
-
-			public string OpCode {
-				get { return (string)readField("OpCode"); }
-			}
-
-			public Obj MemberDef {
-				get { return new Obj(readField("MemberDef")); }
-			}
-
-			protected object readField(string name) {
-				return PasswordFinder.readField(obj, name);
-			}
-
-			public Obj findMethod(string name) {
+			public Obj FindMethod(string name) {
 				foreach (var member in Members) {
 					if (member.obj.GetType().ToString() != "MethodDef")
 						continue;
@@ -90,49 +63,37 @@ namespace de4dot.code.deobfuscators.CodeFort {
 					return member;
 				}
 
-				throw new ApplicationException(string.Format("Could not find method {0}", name));
+				throw new ApplicationException($"Could not find method {name}");
 			}
 
-			List<Obj> getList(string name) {
-				return convertList((System.Collections.IList)readField(name));
-			}
+			List<Obj> GetList(string name) => ConvertList((System.Collections.IList)ReadField(name));
 
-			static List<Obj> convertList(System.Collections.IList inList) {
+			static List<Obj> ConvertList(System.Collections.IList inList) {
 				var outList = new List<Obj>(inList.Count);
 				foreach (var e in inList)
 					outList.Add(new Obj(e));
 				return outList;
 			}
 
-			public override string ToString() {
-				return Name;
-			}
+			public override string ToString() => Name;
 		}
 
-		public PasswordFinder(byte[] serializedData) {
-			this.serializedData = serializedData;
-		}
+		public PasswordFinder(byte[] serializedData) => this.serializedData = serializedData;
+		static object ReadField(object instance, string name) => instance.GetType().GetField(name).GetValue(instance);
+		static System.Collections.IList ToList(object obj) => (System.Collections.IList)obj;
 
-		static object readField(object instance, string name) {
-			return instance.GetType().GetField(name).GetValue(instance);
-		}
-
-		static System.Collections.IList toList(object obj) {
-			return (System.Collections.IList)obj;
-		}
-
-		public void find(out PasswordInfo mainAsmPassword, out PasswordInfo embedPassword) {
+		public void Find(out PasswordInfo mainAsmPassword, out PasswordInfo embedPassword) {
 			var asmBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(new AssemblyName("asm"), AssemblyBuilderAccess.Run);
 			var moduleBuilder = asmBuilder.DefineDynamicModule("mod");
 			var serializedTypes = new SerializedTypes(moduleBuilder);
-			var allTypes = serializedTypes.deserialize(serializedData);
-			asmTypes = toList(readField(allTypes, "Types"));
+			var allTypes = serializedTypes.Deserialize(serializedData);
+			asmTypes = ToList(ReadField(allTypes, "Types"));
 
-			mainAsmPassword = findMainAssemblyPassword();
-			embedPassword = findEmbedPassword();
+			mainAsmPassword = FindMainAssemblyPassword();
+			embedPassword = FindEmbedPassword();
 		}
 
-		Obj findType(string name) {
+		Obj FindType(string name) {
 			foreach (var tmp in asmTypes) {
 				var type = new Obj(tmp);
 				if (type.Name == name)
@@ -141,17 +102,17 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			return null;
 		}
 
-		PasswordInfo findMainAssemblyPassword() {
-			var type = findType("BootstrapDynArguments");
-			var cctor = type.findMethod(".cctor");
+		PasswordInfo FindMainAssemblyPassword() {
+			var type = FindType("BootstrapDynArguments");
+			var cctor = type.FindMethod(".cctor");
 			var instrs = cctor.Instructions;
-			var passphrase = findStringStoreValue(instrs, "KeyPassphrase");
-			var salt = findStringStoreValue(instrs, "KeySaltValue");
-			var iv = findStringStoreValue(instrs, "KeyIV");
+			var passphrase = FindStringStoreValue(instrs, "KeyPassphrase");
+			var salt = FindStringStoreValue(instrs, "KeySaltValue");
+			var iv = FindStringStoreValue(instrs, "KeyIV");
 			return new PasswordInfo(passphrase, salt, iv);
 		}
 
-		static string findStringStoreValue(List<Obj> instrs, string fieldName) {
+		static string FindStringStoreValue(List<Obj> instrs, string fieldName) {
 			for (int i = 0; i < instrs.Count - 1; i++) {
 				var ldstr = instrs[i];
 				if (ldstr.OpCode != "ldstr")
@@ -171,11 +132,11 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			return null;
 		}
 
-		PasswordInfo findEmbedPassword() {
-			var type = findType("CilEmbeddingHelper");
+		PasswordInfo FindEmbedPassword() {
+			var type = FindType("CilEmbeddingHelper");
 			if (type == null)
 				return null;
-			var method = type.findMethod("CurrentDomain_AssemblyResolve");
+			var method = type.FindMethod("CurrentDomain_AssemblyResolve");
 			var instrs = method.Instructions;
 			for (int i = 0; i < instrs.Count - 3; i++) {
 				int index = i;
@@ -183,12 +144,12 @@ namespace de4dot.code.deobfuscators.CodeFort {
 				var ldstr1 = instrs[index++];
 				if (ldstr1.OpCode != "ldstr")
 					continue;
-				var passphrase = getString(ldstr1, instrs, ref index);
+				var passphrase = GetString(ldstr1, instrs, ref index);
 
 				var ldstr2 = instrs[index++];
 				if (ldstr2.OpCode != "ldstr")
 					continue;
-				var salt = getString(ldstr2, instrs, ref index);
+				var salt = GetString(ldstr2, instrs, ref index);
 
 				var ldc = instrs[index++];
 				if (!ldc.OpCode.StartsWith("ldc.i4"))
@@ -197,7 +158,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 				var ldstr3 = instrs[index++];
 				if (ldstr3.OpCode != "ldstr")
 					continue;
-				var iv = getString(ldstr3, instrs, ref index);
+				var iv = GetString(ldstr3, instrs, ref index);
 
 				return new PasswordInfo(passphrase, salt, iv);
 			}
@@ -205,7 +166,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 			return null;
 		}
 
-		static string getString(Obj ldstr, List<Obj> instrs, ref int index) {
+		static string GetString(Obj ldstr, List<Obj> instrs, ref int index) {
 			var s = (string)ldstr.Operand;
 			if (index >= instrs.Count)
 				return s;
@@ -218,7 +179,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 				return s.ToUpper();
 			if (op.Name == "ToLower")
 				return s.ToLower();
-			throw new ApplicationException(string.Format("Unknown method {0}", op.Name));
+			throw new ApplicationException($"Unknown method {op.Name}");
 		}
 	}
 }

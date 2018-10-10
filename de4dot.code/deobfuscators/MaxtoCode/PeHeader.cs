@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -18,7 +18,7 @@
 */
 
 using System;
-using de4dot.PE;
+using dnlib.PE;
 
 namespace de4dot.code.deobfuscators.MaxtoCode {
 	enum EncryptionVersion {
@@ -28,51 +28,89 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 		V3,
 		V4,
 		V5,
+		V6,
+		V7,
+		V8,
 	}
 
 	class PeHeader {
-		const int XOR_KEY = 0x7ABF931;
-
 		EncryptionVersion version;
 		byte[] headerData;
+		uint xorKey;
 
-		public EncryptionVersion EncryptionVersion {
-			get { return version; }
+		public EncryptionVersion EncryptionVersion => version;
+
+		public PeHeader(MainType mainType, MyPEImage peImage) {
+			version = GetHeaderOffsetAndVersion(peImage, out uint headerOffset);
+			headerData = peImage.OffsetReadBytes(headerOffset, 0x1000);
+
+			switch (version) {
+			case EncryptionVersion.V1:
+			case EncryptionVersion.V2:
+			case EncryptionVersion.V3:
+			case EncryptionVersion.V4:
+			case EncryptionVersion.V5:
+			default:
+				xorKey = 0x7ABF931;
+				break;
+
+			case EncryptionVersion.V6:
+				xorKey = 0x7ABA931;
+				break;
+
+			case EncryptionVersion.V7:
+				xorKey = 0x8ABA931;
+				break;
+
+			case EncryptionVersion.V8:
+				if (CheckMcKeyRva(peImage, 0x99BA9A13))
+					break;
+				if (CheckMcKeyRva(peImage, 0x18ABA931))
+					break;
+				if (CheckMcKeyRva(peImage, 0x18ABA933))
+					break;
+				break;
+			}
 		}
 
-		public PeHeader(MainType mainType, PeImage peImage) {
-			uint headerOffset;
-			version = getHeaderOffsetAndVersion(peImage, out headerOffset);
-			headerData = peImage.offsetReadBytes(headerOffset, 0x1000);
+		bool CheckMcKeyRva(MyPEImage peImage, uint newXorKey) {
+			xorKey = newXorKey;
+			uint rva = GetMcKeyRva();
+			return (rva & 0xFFF) == 0 && peImage.FindSection((RVA)rva) != null;
 		}
 
-		public uint getMcKeyRva() {
-			return getRva(0x0FFC, XOR_KEY);
-		}
+		public uint GetMcKeyRva() => GetRva(0x0FFC, xorKey);
+		public uint GetRva(int offset, uint xorKey) => ReadUInt32(offset) ^ xorKey;
+		public uint ReadUInt32(int offset) => BitConverter.ToUInt32(headerData, offset);
 
-		public uint getRva(int offset, uint xorKey) {
-			return (readUInt32(offset) ^ xorKey);
-		}
-
-		public uint readUInt32(int offset) {
-			return BitConverter.ToUInt32(headerData, offset);
-		}
-
-		static EncryptionVersion getHeaderOffsetAndVersion(PeImage peImage, out uint headerOffset) {
+		static EncryptionVersion GetHeaderOffsetAndVersion(MyPEImage peImage, out uint headerOffset) {
 			headerOffset = 0;
 
-			var version = getVersion(peImage, headerOffset);
+			var version = GetVersion(peImage, headerOffset);
 			if (version != EncryptionVersion.Unknown)
 				return version;
 
-			var section = peImage.findSection(".rsrc");
-			if (section == null)
-				return EncryptionVersion.Unknown;
+			var section = peImage.FindSection(".rsrc");
+			if (section != null) {
+				version = GetHeaderOffsetAndVersion(section, peImage, out headerOffset);
+				if (version != EncryptionVersion.Unknown)
+					return version;
+			}
 
-			headerOffset = section.pointerToRawData;
-			uint end = section.pointerToRawData + section.sizeOfRawData - 0x1000 + 1;
+			foreach (var section2 in peImage.Sections) {
+				version = GetHeaderOffsetAndVersion(section2, peImage, out headerOffset);
+				if (version != EncryptionVersion.Unknown)
+					return version;
+			}
+
+			return EncryptionVersion.Unknown;
+		}
+
+		static EncryptionVersion GetHeaderOffsetAndVersion(ImageSectionHeader section, MyPEImage peImage, out uint headerOffset) {
+			headerOffset = section.PointerToRawData;
+			uint end = section.PointerToRawData + section.SizeOfRawData - 0x1000 + 1;
 			while (headerOffset < end) {
-				version = getVersion(peImage, headerOffset);
+				var version = GetVersion(peImage, headerOffset);
 				if (version != EncryptionVersion.Unknown)
 					return version;
 				headerOffset++;
@@ -81,9 +119,9 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			return EncryptionVersion.Unknown;
 		}
 
-		static EncryptionVersion getVersion(PeImage peImage, uint headerOffset) {
-			uint m1lo = peImage.offsetReadUInt32(headerOffset + 0x900);
-			uint m1hi = peImage.offsetReadUInt32(headerOffset + 0x904);
+		static EncryptionVersion GetVersion(MyPEImage peImage, uint headerOffset) {
+			uint m1lo = peImage.OffsetReadUInt32(headerOffset + 0x900);
+			uint m1hi = peImage.OffsetReadUInt32(headerOffset + 0x904);
 
 			foreach (var info in EncryptionInfos.Rva900h) {
 				if (info.MagicLo == m1lo && info.MagicHi == m1hi)

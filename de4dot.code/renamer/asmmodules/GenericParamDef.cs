@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -18,25 +18,23 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
+using dnlib.DotNet;
 
 namespace de4dot.code.renamer.asmmodules {
-	class GenericParamDef : Ref {
-		public GenericParameter GenericParameter {
-			get { return (GenericParameter)memberReference; }
-		}
+	public class MGenericParamDef : Ref {
+		public GenericParam GenericParam => (GenericParam)memberRef;
 
-		public GenericParamDef(GenericParameter genericParameter, int index)
+		public MGenericParamDef(GenericParam genericParameter, int index)
 			: base(genericParameter, null, index) {
 		}
 
-		public static List<GenericParamDef> createGenericParamDefList(IEnumerable<GenericParameter> parameters) {
-			var list = new List<GenericParamDef>();
+		public static List<MGenericParamDef> CreateGenericParamDefList(IEnumerable<GenericParam> parameters) {
+			var list = new List<MGenericParamDef>();
 			if (parameters == null)
 				return list;
 			int i = 0;
 			foreach (var param in parameters)
-				list.Add(new GenericParamDef(param, i++));
+				list.Add(new MGenericParamDef(param, i++));
 			return list;
 		}
 	}

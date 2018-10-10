@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -17,28 +17,15 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.MyStuff;
-using de4dot.mdecrypt;
-
 namespace AssemblyData {
-	public enum StringDecrypterType {
-		Delegate,
-		Emulate,
+	public enum AssemblyServiceType {
+		StringDecrypter,
+		MethodDecrypter,
+		Generic,
 	}
 
 	public interface IAssemblyService {
-		void doNothing();
-		void exit();
-
-		void loadAssembly(string filename);
-
-		void setStringDecrypterType(StringDecrypterType type);
-		int defineStringDecrypter(int methodToken);
-		object[] decryptStrings(int stringDecrypterMethod, object[] args, int callerToken);
-
-		void installCompileMethod(DecryptMethodsInfo decryptMethodsInfo);
-		void loadObfuscator(string filename);
-		bool canDecryptMethods();
-		DumpedMethods decryptMethods();
+		void DoNothing();
+		void Exit();
 	}
 }

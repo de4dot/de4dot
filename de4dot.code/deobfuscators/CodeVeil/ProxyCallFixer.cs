@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -19,81 +19,60 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using Mono.Cecil.Metadata;
+using dnlib.IO;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CodeVeil {
 	class ProxyCallFixer : ProxyCallFixer1 {
 		MainType mainType;
 		Info info = new Info();
-		BinaryReader reader;
+		DataReader reader;
 
 		class Info {
-			public TypeDefinition proxyType;
-			public MethodDefinition initMethod;
-			public FieldDefinition dataField;
-			public TypeDefinition ilgeneratorType;
-			public TypeDefinition fieldInfoType;
-			public TypeDefinition methodInfoType;
+			public TypeDef proxyType;
+			public MethodDef initMethod;
+			public FieldDef dataField;
+			public TypeDef ilgeneratorType;
+			public TypeDef fieldInfoType;
+			public TypeDef methodInfoType;
 		}
 
 		class Context {
 			public int offset;
-
-			public Context(int offset) {
-				this.offset = offset;
-			}
+			public Context(int offset) => this.offset = offset;
 		}
 
-		public bool FoundProxyType {
-			get { return info.proxyType != null; }
-		}
+		public bool FoundProxyType => info.proxyType != null;
 
-		public bool CanRemoveTypes {
-			get {
-				return info.proxyType != null &&
-					info.ilgeneratorType != null &&
-					info.fieldInfoType != null &&
-					info.methodInfoType != null;
-			}
-		}
+		public bool CanRemoveTypes =>
+			info.proxyType != null &&
+			info.ilgeneratorType != null &&
+			info.fieldInfoType != null &&
+			info.methodInfoType != null;
 
-		public TypeDefinition IlGeneratorType {
-			get { return info.ilgeneratorType; }
-		}
+		public TypeDef IlGeneratorType => info.ilgeneratorType;
+		public TypeDef FieldInfoType => info.fieldInfoType;
+		public TypeDef MethodInfoType => info.methodInfoType;
+		public ProxyCallFixer(ModuleDefMD module, MainType mainType) : base(module) => this.mainType = mainType;
 
-		public TypeDefinition FieldInfoType {
-			get { return info.fieldInfoType; }
-		}
-
-		public TypeDefinition MethodInfoType {
-			get { return info.methodInfoType; }
-		}
-
-		public ProxyCallFixer(ModuleDefinition module, MainType mainType)
-			: base(module) {
-			this.mainType = mainType;
-		}
-
-		public ProxyCallFixer(ModuleDefinition module, MainType mainType, ProxyCallFixer oldOne)
+		public ProxyCallFixer(ModuleDefMD module, MainType mainType, ProxyCallFixer oldOne)
 			: base(module, oldOne) {
 			this.mainType = mainType;
-			info.proxyType = lookup(oldOne.info.proxyType, "Could not find proxyType");
-			info.initMethod = lookup(oldOne.info.initMethod, "Could not find initMethod");
-			info.dataField = lookup(oldOne.info.dataField, "Could not find dataField");
-			info.ilgeneratorType = lookup(oldOne.info.ilgeneratorType, "Could not find ilgeneratorType");
-			info.fieldInfoType = lookup(oldOne.info.fieldInfoType, "Could not find fieldInfoType");
-			info.methodInfoType = lookup(oldOne.info.methodInfoType, "Could not find methodInfoType");
+			info.proxyType = Lookup(oldOne.info.proxyType, "Could not find proxyType");
+			info.initMethod = Lookup(oldOne.info.initMethod, "Could not find initMethod");
+			info.dataField = Lookup(oldOne.info.dataField, "Could not find dataField");
+			info.ilgeneratorType = Lookup(oldOne.info.ilgeneratorType, "Could not find ilgeneratorType");
+			info.fieldInfoType = Lookup(oldOne.info.fieldInfoType, "Could not find fieldInfoType");
+			info.methodInfoType = Lookup(oldOne.info.methodInfoType, "Could not find methodInfoType");
 		}
 
-		protected override object checkCctor(ref TypeDefinition type, MethodDefinition cctor) {
+		protected override object CheckCctor(ref TypeDef type, MethodDef cctor) {
 			var instrs = cctor.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 1; i++) {
 				var ldci4 = instrs[i];
-				if (!DotNetUtils.isLdcI4(ldci4))
+				if (!ldci4.IsLdcI4())
 					continue;
 
 				var call = instrs[i + 1];
@@ -102,48 +81,48 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				if (call.Operand != info.initMethod)
 					continue;
 
-				int offset = DotNetUtils.getLdcI4Value(ldci4);
-				reader.BaseStream.Position = offset;
-				int rid = DeobUtils.readVariableLengthInt32(reader);
-				if (rid != type.MetadataToken.RID)
+				int offset = ldci4.GetLdcI4Value();
+				reader.Position = (uint)offset;
+				uint rid = reader.ReadCompressedUInt32();
+				if (rid != type.Rid)
 					throw new ApplicationException("Invalid RID");
 				return string.Empty;	// It's non-null
 			}
 			return null;
 		}
 
-		protected override void getCallInfo(object context, FieldDefinition field, out MethodReference calledMethod, out OpCode callOpcode) {
+		protected override void GetCallInfo(object context, FieldDef field, out IMethod calledMethod, out OpCode callOpcode) {
 			byte flags = reader.ReadByte();
 
-			int methodToken = 0x06000000 + ((flags & 0x3F) << 24) + DeobUtils.readVariableLengthInt32(reader);
-			int genericTypeToken = (flags & 0x40) == 0 ? -1 : 0x1B000000 + DeobUtils.readVariableLengthInt32(reader);
+			int methodToken = 0x06000000 + ((flags & 0x3F) << 24) + (int)reader.ReadCompressedUInt32();
+			int genericTypeToken = (flags & 0x40) == 0 ? -1 : 0x1B000000 + (int)reader.ReadCompressedUInt32();
 			callOpcode = (flags & 0x80) != 0 ? OpCodes.Callvirt : OpCodes.Call;
 
-			calledMethod = module.LookupToken(methodToken) as MethodReference;
+			calledMethod = module.ResolveToken(methodToken) as IMethod;
 			if (calledMethod == null)
 				throw new ApplicationException("Could not find method");
-			if (genericTypeToken != -1 && calledMethod.DeclaringType.MetadataToken.ToInt32() != genericTypeToken)
+			if (genericTypeToken != -1 && calledMethod.DeclaringType.MDToken.ToInt32() != genericTypeToken)
 				throw new ApplicationException("Invalid declaring type token");
 		}
 
-		public void findDelegateCreator() {
+		public void FindDelegateCreator() {
 			if (!mainType.Detected)
 				return;
 
 			var infoTmp = new Info();
-			if (!initializeInfo(infoTmp, mainType.Type))
+			if (!InitializeInfo(infoTmp, mainType.Type))
 				return;
 
 			info = infoTmp;
-			setDelegateCreatorMethod(info.initMethod);
+			SetDelegateCreatorMethod(info.initMethod);
 		}
 
-		bool initializeInfo(Info infoTmp, TypeDefinition type) {
+		bool InitializeInfo(Info infoTmp, TypeDef type) {
 			foreach (var dtype in type.NestedTypes) {
-				var cctor = DotNetUtils.getMethod(dtype, ".cctor");
+				var cctor = dtype.FindMethod(".cctor");
 				if (cctor == null)
 					continue;
-				if (!initProxyType(infoTmp, cctor))
+				if (!InitProxyType(infoTmp, cctor))
 					continue;
 
 				return true;
@@ -152,13 +131,13 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return false;
 		}
 
-		bool initProxyType(Info infoTmp, MethodDefinition method) {
-			foreach (var calledMethod in DotNetUtils.getCalledMethods(module, method)) {
+		bool InitProxyType(Info infoTmp, MethodDef method) {
+			foreach (var calledMethod in DotNetUtils.GetCalledMethods(module, method)) {
 				if (!calledMethod.IsStatic)
 					continue;
-				if (!DotNetUtils.isMethod(calledMethod, "System.Void", "(System.Int32)"))
+				if (!DotNetUtils.IsMethod(calledMethod, "System.Void", "(System.Int32)"))
 					continue;
-				if (!checkProxyType(infoTmp, calledMethod.DeclaringType))
+				if (!CheckProxyType(infoTmp, calledMethod.DeclaringType))
 					continue;
 
 				infoTmp.proxyType = calledMethod.DeclaringType;
@@ -175,18 +154,18 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			"System.Reflection.Emit.OpCode",
 			"System.Reflection.Emit.OpCode[]",
 		};
-		bool checkProxyType(Info infoTmp, TypeDefinition type) {
+		bool CheckProxyType(Info infoTmp, TypeDef type) {
 			if (type.NestedTypes.Count != 1)
 				return false;
 
-			if (!new FieldTypes(type).all(requiredFields))
+			if (!new FieldTypes(type).All(requiredFields))
 				return false;
 
-			var fields = getRvaFields(type);
+			var fields = GetRvaFields(type);
 			if (fields.Count != 1)
 				return false;
 			var field = fields[0];
-			var fieldType = DotNetUtils.getType(module, field.FieldType);
+			var fieldType = DotNetUtils.GetType(module, field.FieldSig.GetFieldType());
 			if (type.NestedTypes.IndexOf(fieldType) < 0)
 				return false;
 			if (field.InitialValue == null || field.InitialValue.Length == 0)
@@ -196,8 +175,8 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return true;
 		}
 
-		static List<FieldDefinition> getRvaFields(TypeDefinition type) {
-			var fields = new List<FieldDefinition>();
+		static List<FieldDef> GetRvaFields(TypeDef type) {
+			var fields = new List<FieldDef>();
 			foreach (var field in type.Fields) {
 				if (field.RVA != 0)
 					fields.Add(field);
@@ -205,42 +184,44 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return fields;
 		}
 
-		protected override IEnumerable<TypeDefinition> getDelegateTypes() {
+		protected override IEnumerable<TypeDef> GetDelegateTypes() {
 			if (!mainType.Detected)
-				return new List<TypeDefinition>();
+				return new List<TypeDef>();
 			return mainType.Type.NestedTypes;
 		}
 
-		public void initialize() {
+		public void Initialize() {
 			if (info.dataField == null)
 				return;
 
-			findOtherTypes();
+			FindOtherTypes();
 
-			var decompressed = DeobUtils.inflate(info.dataField.InitialValue, true);
-			reader = new BinaryReader(new MemoryStream(decompressed));
-			info.dataField.FieldType = module.TypeSystem.Byte;
+			var decompressed = DeobUtils.Inflate(info.dataField.InitialValue, true);
+			reader = ByteArrayDataReaderFactory.CreateReader(decompressed);
+			info.dataField.FieldSig.Type = module.CorLibTypes.Byte;
 			info.dataField.InitialValue = new byte[1];
+			info.dataField.RVA = 0;
 		}
 
-		void findOtherTypes() {
+		void FindOtherTypes() {
 			if (info.proxyType == null)
 				return;
 
 			foreach (var method in info.proxyType.Methods) {
-				if (method.Parameters.Count != 4)
+				var sig = method.MethodSig;
+				if (sig == null || sig.Params.Count != 4)
 					continue;
 
-				if (method.Parameters[2].ParameterType.FullName != "System.Type[]")
+				if (sig.Params[2].GetFullName() != "System.Type[]")
 					continue;
-				var methodType = method.Parameters[0].ParameterType as TypeDefinition;
-				var fieldType = method.Parameters[1].ParameterType as TypeDefinition;
-				var ilgType = method.Parameters[3].ParameterType as TypeDefinition;
-				if (!checkMethodType(methodType))
+				var methodType = sig.Params[0].TryGetTypeDef();
+				var fieldType = sig.Params[1].TryGetTypeDef();
+				var ilgType = sig.Params[3].TryGetTypeDef();
+				if (!CheckMethodType(methodType))
 					continue;
-				if (!checkFieldType(fieldType))
+				if (!CheckFieldType(fieldType))
 					continue;
-				if (!checkIlGeneratorType(ilgType))
+				if (!CheckIlGeneratorType(ilgType))
 					continue;
 
 				info.ilgeneratorType = ilgType;
@@ -249,32 +230,32 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			}
 		}
 
-		bool checkMethodType(TypeDefinition type) {
-			if (type == null || type.BaseType == null || type.BaseType.EType != ElementType.Object)
+		bool CheckMethodType(TypeDef type) {
+			if (type == null || type.BaseType == null || type.BaseType.FullName != "System.Object")
 				return false;
 			if (type.Fields.Count != 1)
 				return false;
-			if (DotNetUtils.getField(type, "System.Reflection.MethodInfo") == null)
+			if (DotNetUtils.GetField(type, "System.Reflection.MethodInfo") == null)
 				return false;
 
 			return true;
 		}
 
-		bool checkFieldType(TypeDefinition type) {
-			if (type == null || type.BaseType == null || type.BaseType.EType != ElementType.Object)
+		bool CheckFieldType(TypeDef type) {
+			if (type == null || type.BaseType == null || type.BaseType.FullName != "System.Object")
 				return false;
-			if (DotNetUtils.getField(type, "System.Reflection.FieldInfo") == null)
+			if (DotNetUtils.GetField(type, "System.Reflection.FieldInfo") == null)
 				return false;
 
 			return true;
 		}
 
-		bool checkIlGeneratorType(TypeDefinition type) {
-			if (type == null || type.BaseType == null || type.BaseType.EType != ElementType.Object)
+		bool CheckIlGeneratorType(TypeDef type) {
+			if (type == null || type.BaseType == null || type.BaseType.FullName != "System.Object")
 				return false;
 			if (type.Fields.Count != 1)
 				return false;
-			if (DotNetUtils.getField(type, "System.Reflection.Emit.ILGenerator") == null)
+			if (DotNetUtils.GetField(type, "System.Reflection.Emit.ILGenerator") == null)
 				return false;
 
 			return true;

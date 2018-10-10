@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -19,16 +19,16 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Text;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dnlib.IO;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CodeWall {
 	class StringDecrypter {
-		ModuleDefinition module;
-		MethodDefinitionAndDeclaringTypeDict<StringEncrypterInfo> stringEncrypterInfos = new MethodDefinitionAndDeclaringTypeDict<StringEncrypterInfo>();
+		ModuleDefMD module;
+		MethodDefAndDeclaringTypeDict<StringEncrypterInfo> stringEncrypterInfos = new MethodDefAndDeclaringTypeDict<StringEncrypterInfo>();
 		Version version;
 
 		public enum Version {
@@ -38,79 +38,60 @@ namespace de4dot.code.deobfuscators.CodeWall {
 		}
 
 		public class StringEncrypterInfo {
-			MethodDefinition method;
+			MethodDef method;
 
-			public TypeDefinition Type {
-				get { return method.DeclaringType; }
-			}
-
-			public MethodDefinition Method {
-				get { return method; }
-			}
-
+			public TypeDef Type => method.DeclaringType;
+			public MethodDef Method => method;
 			public EmbeddedResource Resource { get; set; }
 			public int Magic1 { get; set; }
 			public int Magic2 { get; set; }
 			public int Magic3 { get; set; }
-			public BinaryReader Reader { get; set; }
+			public DataReader Reader;
 
-			public StringEncrypterInfo(MethodDefinition method) {
-				this.method = method;
-			}
+			public StringEncrypterInfo(MethodDef method) => this.method = method;
 
-			public string decrypt(int magic1, int magic2, int magic3) {
+			public string Decrypt(int magic1, int magic2, int magic3) {
 				int dataLen = magic3 ^ Magic3;
-				var key = getKey(magic1 ^ Magic1, dataLen);
-				Reader.BaseStream.Position = getDataOffset(magic2);
+				var key = GetKey(magic1 ^ Magic1, dataLen);
+				Reader.Position = (uint)GetDataOffset(magic2);
 				var data = Reader.ReadBytes(dataLen);
 				for (int i = 0; i < dataLen; i++)
 					data[i] ^= key[i];
 				return Encoding.Unicode.GetString(data);
 			}
 
-			byte[] getKey(int seed, int keyLen) {
+			byte[] GetKey(int seed, int keyLen) {
 				var random = new Random(seed);
 				var key = new byte[keyLen];
 				random.NextBytes(key);
 				return key;
 			}
 
-			int getDataOffset(int magic2) {
-				var pkt = getPublicKeyToken();
+			int GetDataOffset(int magic2) {
+				var pkt = GetPublicKeyToken();
 				if (pkt == null)
 					return magic2 ^ Magic2;
 				else
 					return magic2 ^ BitConverter.ToInt32(pkt, 0) ^ BitConverter.ToInt32(pkt, 4);
 			}
 
-			byte[] getPublicKeyToken() {
+			byte[] GetPublicKeyToken() {
 				var module = method.Module;
-				if (module.Assembly == null || module.Assembly.Name.PublicKeyToken == null)
+				if (module.Assembly == null || PublicKeyBase.IsNullOrEmpty2(module.Assembly.PublicKey))
 					return null;
-				if (module.Assembly.Name.PublicKeyToken.Length != 8)
-					return null;
-				return module.Assembly.Name.PublicKeyToken;
+				return module.Assembly.PublicKeyToken.Data;
 			}
 
-			public override string ToString() {
-				return string.Format("{0:X8} M1:{1:X8} M2:{2:X8} M3:{3:X8}",
-						Method.MetadataToken.ToInt32(),
-						Magic1, Magic2, Magic3);
-			}
+			public override string ToString() => $"{Method.MDToken.ToInt32():X8} M1:{Magic1:X8} M2:{Magic2:X8} M3:{Magic3:X8}";
 		}
 
-		public bool Detected {
-			get { return stringEncrypterInfos.Count != 0; }
-		}
-
-		public Version TheVersion {
-			get { return version; }
-		}
+		public bool Detected => stringEncrypterInfos.Count != 0;
+		public Version TheVersion => version;
 
 		public IEnumerable<StringEncrypterInfo> Infos {
 			get {
 				var list = new List<StringEncrypterInfo>();
-				foreach (var info in stringEncrypterInfos.getValues()) {
+				foreach (var info in stringEncrypterInfos.GetValues()) {
 					if (info.Resource != null)
 						list.Add(info);
 				}
@@ -118,30 +99,27 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			}
 		}
 
-		public StringDecrypter(ModuleDefinition module) {
-			this.module = module;
-		}
+		public StringDecrypter(ModuleDefMD module) => this.module = module;
 
-		public void find() {
+		public void Find() {
 			foreach (var type in module.Types) {
-				MethodDefinition decrypterMethod;
-				var decrypterVersion = checkType(type, out decrypterMethod);
+				var decrypterVersion = CheckType(type, out var decrypterMethod);
 				if (decrypterVersion == Version.Unknown)
 					continue;
 				version = decrypterVersion;
-				stringEncrypterInfos.add(decrypterMethod, new StringEncrypterInfo(decrypterMethod));
+				stringEncrypterInfos.Add(decrypterMethod, new StringEncrypterInfo(decrypterMethod));
 			}
 		}
 
-		Version checkType(TypeDefinition type, out MethodDefinition decrypterMethod) {
-			MethodDefinition method;
+		Version CheckType(TypeDef type, out MethodDef decrypterMethod) {
+			MethodDef method;
 
-			if ((method = checkType_v30(type)) != null) {
+			if ((method = CheckTypeV30(type)) != null) {
 				decrypterMethod = method;
 				return Version.V30;
 			}
 
-			if ((method = checkType_v36(type)) != null) {
+			if ((method = CheckTypeV36(type)) != null) {
 				decrypterMethod = method;
 				return Version.V36;
 			}
@@ -161,32 +139,32 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			"System.Random",
 			"System.String",
 		};
-		MethodDefinition checkType_v30(TypeDefinition type) {
-			MethodDefinition decrypterMethod = checkMethods_v30(type);
+		MethodDef CheckTypeV30(TypeDef type) {
+			var decrypterMethod = CheckMethodsV30(type);
 			if (decrypterMethod == null)
 				return null;
-			if (!new FieldTypes(type).exactly(requiredTypes_v30))
+			if (!new FieldTypes(type).Exactly(requiredTypes_v30))
 				return null;
-			if (!new LocalTypes(decrypterMethod).exactly(requiredLocals_v30))
+			if (!new LocalTypes(decrypterMethod).Exactly(requiredLocals_v30))
 				return null;
 
 			return decrypterMethod;
 		}
 
-		static MethodDefinition checkMethods_v30(TypeDefinition type) {
+		static MethodDef CheckMethodsV30(TypeDef type) {
 			if (type.Methods.Count < 1 || type.Methods.Count > 2)
 				return null;
 
-			MethodDefinition decrypterMethod = null;
-			MethodDefinition cctor = null;
+			MethodDef decrypterMethod = null;
+			//MethodDef cctor = null;
 			foreach (var method in type.Methods) {
 				if (method.Name == ".cctor") {
-					cctor = method;
+					//cctor = method;
 					continue;
 				}
 				if (decrypterMethod != null)
 					return null;
-				if (!DotNetUtils.isMethod(method, "System.String", "(System.Int32,System.Int32,System.Int32)"))
+				if (!DotNetUtils.IsMethod(method, "System.String", "(System.Int32,System.Int32,System.Int32)"))
 					return null;
 				decrypterMethod = method;
 			}
@@ -208,24 +186,24 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			"System.String",
 			"System.Object",
 		};
-		MethodDefinition checkType_v36(TypeDefinition type) {
-			MethodDefinition decrypterMethod = checkMethods_v36(type);
+		MethodDef CheckTypeV36(TypeDef type) {
+			var decrypterMethod = CheckMethodsV36(type);
 			if (decrypterMethod == null)
 				return null;
-			if (!new FieldTypes(type).exactly(requiredTypes_v36))
+			if (!new FieldTypes(type).Exactly(requiredTypes_v36))
 				return null;
-			if (!new LocalTypes(decrypterMethod).exactly(requiredLocals_v36))
+			if (!new LocalTypes(decrypterMethod).Exactly(requiredLocals_v36))
 				return null;
 
 			return decrypterMethod;
 		}
 
-		static MethodDefinition checkMethods_v36(TypeDefinition type) {
+		static MethodDef CheckMethodsV36(TypeDef type) {
 			if (type.Methods.Count != 2)
 				return null;
 
-			MethodDefinition decrypterMethod = null;
-			MethodDefinition cctor = null;
+			MethodDef decrypterMethod = null;
+			MethodDef cctor = null;
 			foreach (var method in type.Methods) {
 				if (method.Name == ".cctor") {
 					cctor = method;
@@ -233,7 +211,7 @@ namespace de4dot.code.deobfuscators.CodeWall {
 				}
 				if (decrypterMethod != null)
 					return null;
-				if (!DotNetUtils.isMethod(method, "System.String", "(System.Int32,System.Int32,System.Int32)"))
+				if (!DotNetUtils.IsMethod(method, "System.String", "(System.Int32,System.Int32,System.Int32)"))
 					return null;
 				decrypterMethod = method;
 			}
@@ -244,76 +222,76 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			return decrypterMethod;
 		}
 
-		public void initialize(ISimpleDeobfuscator simpleDeobfuscator) {
-			foreach (var info in stringEncrypterInfos.getValues()) {
-				simpleDeobfuscator.deobfuscate(info.Method);
-				info.Resource = findResource(info.Method);
+		public void Initialize(ISimpleDeobfuscator simpleDeobfuscator) {
+			foreach (var info in stringEncrypterInfos.GetValues()) {
+				simpleDeobfuscator.Deobfuscate(info.Method);
+				info.Resource = FindResource(info.Method);
 				if (info.Resource == null) {
-					Log.w("Could not find encrypted strings resource (Method {0:X8})", info.Method.MetadataToken.ToInt32());
+					Logger.w("Could not find encrypted strings resource (Method {0:X8})", info.Method.MDToken.ToInt32());
 					continue;
 				}
-				info.Magic1 = findMagic1(info.Method);
-				info.Magic2 = findMagic2(info.Method);
-				info.Magic3 = findMagic3(info.Method);
-				info.Reader = new BinaryReader(info.Resource.GetResourceStream());
+				info.Magic1 = FindMagic1(info.Method);
+				info.Magic2 = FindMagic2(info.Method);
+				info.Magic3 = FindMagic3(info.Method);
+				info.Reader = info.Resource.CreateReader();
+				info.Reader.Position = 0;
 			}
 		}
 
-		EmbeddedResource findResource(MethodDefinition method) {
-			return DotNetUtils.getResource(module, DotNetUtils.getCodeStrings(method)) as EmbeddedResource;
-		}
+		EmbeddedResource FindResource(MethodDef method) =>
+			DotNetUtils.GetResource(module, DotNetUtils.GetCodeStrings(method)) as EmbeddedResource;
 
-		static int findMagic1(MethodDefinition method) {
+		static int FindMagic1(MethodDef method) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 2; i++) {
 				var ldarg = instrs[i];
-				if (!DotNetUtils.isLdarg(ldarg) || DotNetUtils.getArgIndex(ldarg) != 0)
+				if (!ldarg.IsLdarg() || ldarg.GetParameterIndex() != 0)
 					continue;
 				var ldci4 = instrs[i + 1];
-				if (!DotNetUtils.isLdcI4(ldci4))
+				if (!ldci4.IsLdcI4())
 					continue;
 				if (instrs[i + 2].OpCode.Code != Code.Xor)
 					continue;
-				return DotNetUtils.getLdcI4Value(ldci4);
+				return ldci4.GetLdcI4Value();
 			}
 			throw new ApplicationException("Could not find magic1");
 		}
 
-		static int findMagic2(MethodDefinition method) {
+		static int FindMagic2(MethodDef method) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 2; i++) {
 				var ldloc = instrs[i];
-				if (!DotNetUtils.isLdloc(ldloc))
+				if (!ldloc.IsLdloc())
 					continue;
 				var ldci4 = instrs[i + 1];
-				if (!DotNetUtils.isLdcI4(ldci4))
+				if (!ldci4.IsLdcI4())
 					continue;
 				if (instrs[i + 2].OpCode.Code != Code.Xor)
 					continue;
-				return DotNetUtils.getLdcI4Value(ldci4);
+				return ldci4.GetLdcI4Value();
 			}
 			throw new ApplicationException("Could not find magic2");
 		}
 
-		static int findMagic3(MethodDefinition method) {
+		static int FindMagic3(MethodDef method) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 2; i++) {
 				var ldarg = instrs[i];
-				if (!DotNetUtils.isLdarg(ldarg) || DotNetUtils.getArgIndex(ldarg) != 2)
+				if (!ldarg.IsLdarg() || ldarg.GetParameterIndex() != 2)
 					continue;
 				var ldci4 = instrs[i + 1];
-				if (!DotNetUtils.isLdcI4(ldci4))
+				if (!ldci4.IsLdcI4())
 					continue;
 				if (instrs[i + 2].OpCode.Code != Code.Xor)
 					continue;
-				return DotNetUtils.getLdcI4Value(ldci4);
+				return ldci4.GetLdcI4Value();
 			}
 			throw new ApplicationException("Could not find magic3");
 		}
 
-		public string decrypt(MethodDefinition method, int magic1, int magic2, int magic3) {
-			var info = stringEncrypterInfos.find(method);
-			return info.decrypt(magic1, magic2, magic3);
+		public string Decrypt(MethodDef method, int magic1, int magic2, int magic3) {
+			var info = stringEncrypterInfos.Find(method);
+			return info.Decrypt(magic1, magic2, magic3);
 		}
 	}
 }

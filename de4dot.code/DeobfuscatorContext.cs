@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -19,90 +19,82 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using de4dot.blocks;
+using dnlib.DotNet;
 
 namespace de4dot.code {
 	// "global" data and methods that is shared between all deobfuscators that deobfuscate
 	// assemblies at the same time.
 	public class DeobfuscatorContext : IDeobfuscatorContext {
-		ExternalAssemblies externalAssemblies = new ExternalAssemblies();
 		Dictionary<string, object> dataDict = new Dictionary<string, object>(StringComparer.Ordinal);
 
-		public void clear() {
-			dataDict.Clear();
-			externalAssemblies.unloadAll();
-		}
+		public void Clear() => dataDict.Clear();
+		public void SetData(string name, object data) => dataDict[name] = data;
 
-		public void setData(string name, object data) {
-			dataDict[name] = data;
-		}
-
-		public object getData(string name) {
-			object value;
-			dataDict.TryGetValue(name, out value);
+		public object GetData(string name) {
+			dataDict.TryGetValue(name, out object value);
 			return value;
 		}
 
-		public void clearData(string name) {
-			dataDict.Remove(name);
+		public void ClearData(string name) => dataDict.Remove(name);
+
+		static ITypeDefOrRef GetNonGenericTypeRef(ITypeDefOrRef typeRef) {
+			var ts = typeRef as TypeSpec;
+			if (ts == null)
+				return typeRef;
+			var gis = ts.TryGetGenericInstSig();
+			if (gis == null || gis.GenericType == null)
+				return typeRef;
+			return gis.GenericType.TypeDefOrRef;
 		}
 
-		static TypeReference getNonGenericTypeReference(TypeReference typeReference) {
-			if (typeReference == null)
-				return null;
-			if (!typeReference.IsGenericInstance)
-				return typeReference;
-			var type = (GenericInstanceType)typeReference;
-			return type.ElementType;
-		}
-
-		public TypeDefinition resolve(TypeReference type) {
+		public TypeDef ResolveType(ITypeDefOrRef type) {
 			if (type == null)
 				return null;
-			var typeDef = getNonGenericTypeReference(type) as TypeDefinition;
-			if (typeDef != null)
+			type = GetNonGenericTypeRef(type);
+
+			if (type is TypeDef typeDef)
 				return typeDef;
 
-			return externalAssemblies.resolve(type);
+			if (type is TypeRef tr)
+				return tr.Resolve();
+
+			return null;
 		}
 
-		public MethodDefinition resolve(MethodReference method) {
+		public MethodDef ResolveMethod(IMethod method) {
 			if (method == null)
 				return null;
-			var methodDef = method as MethodDefinition;
-			if (methodDef != null)
-				return methodDef;
 
-			var type = resolve(method.DeclaringType);
+			if (method is MethodDef md)
+				return md;
+
+			var mr = method as MemberRef;
+			if (mr == null || !mr.IsMethodRef)
+				return null;
+
+			var type = ResolveType(mr.DeclaringType);
 			if (type == null)
 				return null;
 
-			foreach (var m in type.Methods) {
-				if (MemberReferenceHelper.compareMethodReference(method, m))
-					return m;
-			}
-
-			return null;
+			return type.Resolve(mr) as MethodDef;
 		}
 
-		public FieldDefinition resolve(FieldReference field) {
+		public FieldDef ResolveField(IField field) {
 			if (field == null)
 				return null;
-			var fieldDef = field as FieldDefinition;
-			if (fieldDef != null)
-				return fieldDef;
 
-			var type = resolve(field.DeclaringType);
+			if (field is FieldDef fd)
+				return fd;
+
+			var mr = field as MemberRef;
+			if (mr == null || !mr.IsFieldRef)
+				return null;
+
+			var type = ResolveType(mr.DeclaringType);
 			if (type == null)
 				return null;
 
-			foreach (var f in type.Fields) {
-				if (MemberReferenceHelper.compareFieldReference(field, f))
-					return f;
-			}
-
-			return null;
+			return type.Resolve(mr) as FieldDef;
 		}
 	}
 }

@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -22,38 +22,37 @@ using System.Collections.Generic;
 using de4dot.code.renamer.asmmodules;
 
 namespace de4dot.code.renamer {
-	class DerivedFrom {
+	public class DerivedFrom {
 		Dictionary<string, bool> classNames = new Dictionary<string, bool>(StringComparer.Ordinal);
-		Dictionary<TypeDef, bool> results = new Dictionary<TypeDef, bool>();
+		Dictionary<MTypeDef, bool> results = new Dictionary<MTypeDef, bool>();
 
-		public DerivedFrom(string className) {
-			addName(className);
-		}
+		public DerivedFrom(string className) => AddName(className);
 
 		public DerivedFrom(string[] classNames) {
 			foreach (var className in classNames)
-				addName(className);
+				AddName(className);
 		}
 
-		void addName(string className) {
-			classNames[className] = true;
-		}
+		void AddName(string className) => classNames[className] = true;
+		public bool Check(MTypeDef type) => Check(type, 0);
 
-		public bool check(TypeDef type) {
+		public bool Check(MTypeDef type, int recurseCount) {
+			if (recurseCount >= 100)
+				return false;
 			if (results.ContainsKey(type))
 				return results[type];
 
 			bool val;
-			if (classNames.ContainsKey(type.TypeDefinition.FullName))
+			if (classNames.ContainsKey(type.TypeDef.FullName))
 				val = true;
 			else if (type.baseType == null) {
-				if (type.TypeDefinition.BaseType != null)
-					val = classNames.ContainsKey(type.TypeDefinition.BaseType.FullName);
+				if (type.TypeDef.BaseType != null)
+					val = classNames.ContainsKey(type.TypeDef.BaseType.FullName);
 				else
 					val = false;
 			}
 			else
-				val = check(type.baseType.typeDef);
+				val = Check(type.baseType.typeDef, recurseCount + 1);
 
 			results[type] = val;
 			return val;

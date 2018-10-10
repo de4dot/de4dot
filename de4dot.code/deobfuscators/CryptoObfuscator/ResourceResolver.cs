@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -19,16 +19,16 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CryptoObfuscator {
 	class ResourceResolver {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		ResourceDecrypter resourceDecrypter;
-		TypeDefinition resolverType;
-		MethodDefinition resolverMethod;
+		TypeDef resolverType;
+		MethodDef resolverMethod;
 		ResolverVersion resolverVersion = ResolverVersion.V1;
 		bool mergedIt = false;
 
@@ -38,58 +38,53 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			V2,
 		}
 
-		public TypeDefinition Type {
-			get { return resolverType; }
-		}
+		public TypeDef Type => resolverType;
+		public MethodDef Method => resolverMethod;
 
-		public MethodDefinition Method {
-			get { return resolverMethod; }
-		}
-
-		public ResourceResolver(ModuleDefinition module, ResourceDecrypter resourceDecrypter) {
+		public ResourceResolver(ModuleDefMD module, ResourceDecrypter resourceDecrypter) {
 			this.module = module;
 			this.resourceDecrypter = resourceDecrypter;
 		}
 
-		public void find() {
-			var cctor = DotNetUtils.getModuleTypeCctor(module);
+		public void Find() {
+			var cctor = DotNetUtils.GetModuleTypeCctor(module);
 			if (cctor == null)
 				return;
 
-			foreach (var method in DotNetUtils.getCalledMethods(module, cctor)) {
+			foreach (var method in DotNetUtils.GetCalledMethods(module, cctor)) {
 				if (method.Name == ".cctor" || method.Name == ".ctor")
 					continue;
-				if (!method.IsStatic || !DotNetUtils.isMethod(method, "System.Void", "()"))
+				if (!method.IsStatic || !DotNetUtils.IsMethod(method, "System.Void", "()"))
 					continue;
-				if (checkType(method))
+				if (CheckType(method))
 					break;
 			}
 		}
 
-		public EmbeddedResource mergeResources() {
+		public EmbeddedResource MergeResources() {
 			if (mergedIt)
 				return null;
 
-			var resource = DotNetUtils.getResource(module, getResourceNames()) as EmbeddedResource;
+			var resource = DotNetUtils.GetResource(module, GetResourceNames()) as EmbeddedResource;
 			if (resource == null)
 				return null;
 
-			DeobUtils.decryptAndAddResources(module, resource.Name, () => resourceDecrypter.decrypt(resource.GetResourceStream()));
+			DeobUtils.DecryptAndAddResources(module, resource.Name.String, () => resourceDecrypter.Decrypt(resource.CreateReader().AsStream()));
 			mergedIt = true;
 			return resource;
 		}
 
-		IEnumerable<string> getResourceNames() {
+		IEnumerable<string> GetResourceNames() {
 			var names = new List<string>();
 
 			switch (resolverVersion) {
 			case ResolverVersion.V1:
-				names.Add(module.Assembly.Name.Name);
+				names.Add(module.Assembly.Name.String);
 				break;
 
 			case ResolverVersion.V2:
-				names.Add(string.Format("{0}{0}{0}", module.Assembly.Name.Name));
-				names.Add(string.Format("{0}&", module.Assembly.Name.Name));
+				names.Add($"{module.Assembly.Name.String}{module.Assembly.Name.String}{module.Assembly.Name.String}");
+				names.Add($"{module.Assembly.Name.String}&");
 				break;
 
 			default:
@@ -99,15 +94,15 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return names;
 		}
 
-		bool checkType(MethodDefinition initMethod) {
+		bool CheckType(MethodDef initMethod) {
 			if (!initMethod.HasBody)
 				return false;
-			if (DotNetUtils.findFieldType(initMethod.DeclaringType, "System.Reflection.Assembly", true) == null)
+			if (DotNetUtils.FindFieldType(initMethod.DeclaringType, "System.Reflection.Assembly", true) == null)
 				return false;
 
-			resolverVersion = checkSetupMethod(initMethod);
+			resolverVersion = CheckSetupMethod(initMethod);
 			if (resolverVersion == ResolverVersion.None)
-				resolverVersion = checkSetupMethod(DotNetUtils.getMethod(initMethod.DeclaringType, ".cctor"));
+				resolverVersion = CheckSetupMethod(initMethod.DeclaringType.FindStaticConstructor());
 			if (resolverVersion == ResolverVersion.None)
 				return false;
 
@@ -116,23 +111,23 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return true;
 		}
 
-		ResolverVersion checkSetupMethod(MethodDefinition setupMethod) {
+		ResolverVersion CheckSetupMethod(MethodDef setupMethod) {
 			var instructions = setupMethod.Body.Instructions;
 			int foundCount = 0;
 			for (int i = 0; i < instructions.Count; i++) {
-				var instrs = DotNetUtils.getInstructions(instructions, i, OpCodes.Ldnull, OpCodes.Ldftn, OpCodes.Newobj);
+				var instrs = DotNetUtils.GetInstructions(instructions, i, OpCodes.Ldnull, OpCodes.Ldftn, OpCodes.Newobj);
 				if (instrs == null)
 					continue;
 
-				MethodReference methodRef;
+				IMethod methodRef;
 				var ldftn = instrs[1];
 				var newobj = instrs[2];
 
-				methodRef = ldftn.Operand as MethodReference;
-				if (methodRef == null || !MemberReferenceHelper.compareTypes(setupMethod.DeclaringType, methodRef.DeclaringType))
+				methodRef = ldftn.Operand as IMethod;
+				if (methodRef == null || !new SigComparer().Equals(setupMethod.DeclaringType, methodRef.DeclaringType))
 					continue;
 
-				methodRef = newobj.Operand as MethodReference;
+				methodRef = newobj.Operand as IMethod;
 				if (methodRef == null || methodRef.FullName != "System.Void System.ResolveEventHandler::.ctor(System.Object,System.IntPtr)")
 					continue;
 

@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -27,12 +27,12 @@ namespace AssemblyData {
 		delegate string DecryptString(object[] args);
 		List<DecryptString> stringDecryptMethods = new List<DecryptString>();
 
-		public int defineStringDecrypter(MethodInfo method) {
-			stringDecryptMethods.Add(buildDynamicMethod(method));
+		public int DefineStringDecrypter(MethodInfo method) {
+			stringDecryptMethods.Add(BuildDynamicMethod(method));
 			return stringDecryptMethods.Count - 1;
 		}
 
-		public object[] decryptStrings(int stringDecrypterMethod, object[] args, MethodBase caller) {
+		public object[] DecryptStrings(int stringDecrypterMethod, object[] args, MethodBase caller) {
 			if (stringDecrypterMethod > stringDecryptMethods.Count)
 				throw new ApplicationException("Invalid string decrypter method");
 
@@ -43,9 +43,9 @@ namespace AssemblyData {
 			return rv;
 		}
 
-		DecryptString buildDynamicMethod(MethodInfo method) {
+		DecryptString BuildDynamicMethod(MethodInfo method) {
 			var dm = new DynamicMethod("", typeof(string), new Type[] { typeof(object[]) }, typeof(DelegateStringDecrypter), true);
-			Utils.addCallStringDecrypterMethodInstructions(method, dm.GetILGenerator());
+			Utils.AddCallStringDecrypterMethodInstructions(method, dm.GetILGenerator());
 			return (DecryptString)dm.CreateDelegate(typeof(DecryptString));
 		}
 	}

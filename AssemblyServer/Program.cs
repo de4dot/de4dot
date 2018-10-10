@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -19,8 +19,6 @@
 
 namespace AssemblyServer_x86 {
 	class Program {
-		static int Main(string[] args) {
-			return AssemblyServer.Start.main(args);
-		}
+		static int Main(string[] args) => AssemblyServer.Start.Main(args);
 	}
 }

@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -18,71 +18,57 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
-using de4dot.blocks;
+using dnlib.DotNet;
 
 namespace de4dot.code.renamer {
-	interface INameCreator {
-		string create();
+	public interface INameCreator {
+		string Create();
 	}
 
-	class OneNameCreator : INameCreator {
+	public class OneNameCreator : INameCreator {
 		string name;
-
-		public OneNameCreator(string name) {
-			this.name = name;
-		}
-
-		public string create() {
-			return name;
-		}
+		public OneNameCreator(string name) => this.name = name;
+		public string Create() => name;
 	}
 
-	abstract class NameCreatorCounter : INameCreator {
+	public abstract class NameCreatorCounter : INameCreator {
 		protected int num;
 
-		public abstract string create();
+		public abstract string Create();
 
-		public NameCreatorCounter merge(NameCreatorCounter other) {
+		public NameCreatorCounter Merge(NameCreatorCounter other) {
 			if (num < other.num)
 				num = other.num;
 			return this;
 		}
 	}
 
-	class GenericParamNameCreator : NameCreatorCounter {
+	public class GenericParamNameCreator : NameCreatorCounter {
 		static string[] names = new string[] { "T", "U", "V", "W", "X", "Y", "Z" };
 
-		public override string create() {
+		public override string Create() {
 			if (num < names.Length)
 				return names[num++];
-			return string.Format("T{0}", num++);
+			return $"T{num++}";
 		}
 	}
 
-	class NameCreator : NameCreatorCounter {
+	public class NameCreator : NameCreatorCounter {
 		string prefix;
 
-		public NameCreator(string prefix)
-			: this(prefix, 0) {
-		}
+		public NameCreator(string prefix) : this(prefix, 0) { }
 
 		public NameCreator(string prefix, int num) {
 			this.prefix = prefix;
 			this.num = num;
 		}
 
-		public NameCreator clone() {
-			return new NameCreator(prefix, num);
-		}
-
-		public override string create() {
-			return prefix + num++;
-		}
+		public NameCreator Clone() => new NameCreator(prefix, num);
+		public override string Create() => prefix + num++;
 	}
 
 	// Like NameCreator but don't add the counter the first time
-	class NameCreator2 : NameCreatorCounter {
+	public class NameCreator2 : NameCreatorCounter {
 		string prefix;
 		const string separator = "_";
 
@@ -95,7 +81,7 @@ namespace de4dot.code.renamer {
 			this.num = num;
 		}
 
-		public override string create() {
+		public override string Create() {
 			string rv;
 			if (num == 0)
 				rv = prefix;
@@ -106,11 +92,11 @@ namespace de4dot.code.renamer {
 		}
 	}
 
-	interface ITypeNameCreator {
-		string create(TypeDefinition typeDefinition, string newBaseTypeName);
+	public interface ITypeNameCreator {
+		string Create(TypeDef typeDef, string newBaseTypeName);
 	}
 
-	class NameInfos {
+	public class NameInfos {
 		IList<NameInfo> nameInfos = new List<NameInfo>();
 
 		class NameInfo {
@@ -122,11 +108,9 @@ namespace de4dot.code.renamer {
 			}
 		}
 
-		public void add(string name, NameCreator nameCreator) {
-			nameInfos.Add(new NameInfo(name, nameCreator));
-		}
+		public void Add(string name, NameCreator nameCreator) => nameInfos.Add(new NameInfo(name, nameCreator));
 
-		public NameCreator find(string typeName) {
+		public NameCreator Find(string typeName) {
 			foreach (var nameInfo in nameInfos) {
 				if (typeName.Contains(nameInfo.name))
 					return nameInfo.nameCreator;
@@ -136,7 +120,7 @@ namespace de4dot.code.renamer {
 		}
 	}
 
-	class TypeNameCreator : ITypeNameCreator {
+	public class TypeNameCreator : ITypeNameCreator {
 		ExistingNames existingNames;
 		NameCreator createUnknownTypeName;
 		NameCreator createEnumName;
@@ -148,12 +132,12 @@ namespace de4dot.code.renamer {
 
 		public TypeNameCreator(ExistingNames existingNames) {
 			this.existingNames = existingNames;
-			createUnknownTypeName = createNameCreator("Type");
-			createEnumName = createNameCreator("Enum");
-			createStructName = createNameCreator("Struct");
-			createDelegateName = createNameCreator("Delegate");
-			createClassName = createNameCreator("Class");
-			createInterfaceName = createNameCreator("Interface");
+			createUnknownTypeName = CreateNameCreator("Type");
+			createEnumName = CreateNameCreator("Enum");
+			createStructName = CreateNameCreator("Struct");
+			createDelegateName = CreateNameCreator("Delegate");
+			createClassName = CreateNameCreator("Class");
+			createInterfaceName = CreateNameCreator("Interface");
 
 			var names = new string[] {
 				"Exception",
@@ -165,32 +149,31 @@ namespace de4dot.code.renamer {
 				"Stream",
 			};
 			foreach (var name in names)
-				nameInfos.add(name, createNameCreator(name));
+				nameInfos.Add(name, CreateNameCreator(name));
 		}
 
-		protected virtual NameCreator createNameCreator(string prefix) {
-			return new NameCreator(prefix);
+		protected virtual NameCreator CreateNameCreator(string prefix) => new NameCreator(prefix);
+
+		public string Create(TypeDef typeDef, string newBaseTypeName) {
+			var nameCreator = GetNameCreator(typeDef, newBaseTypeName);
+			return existingNames.GetName(typeDef.Name.String, nameCreator);
 		}
 
-		public string create(TypeDefinition typeDefinition, string newBaseTypeName) {
-			var nameCreator = getNameCreator(typeDefinition, newBaseTypeName);
-			return existingNames.getName(typeDefinition.Name, nameCreator);
-		}
-
-		NameCreator getNameCreator(TypeDefinition typeDefinition, string newBaseTypeName) {
+		NameCreator GetNameCreator(TypeDef typeDef, string newBaseTypeName) {
 			var nameCreator = createUnknownTypeName;
-			if (typeDefinition.IsEnum)
+			if (typeDef.IsEnum)
 				nameCreator = createEnumName;
-			else if (typeDefinition.IsValueType)
+			else if (typeDef.IsValueType)
 				nameCreator = createStructName;
-			else if (typeDefinition.IsClass) {
-				if (typeDefinition.BaseType != null) {
-					if (MemberReferenceHelper.verifyType(typeDefinition.BaseType, "mscorlib", "System.Delegate"))
+			else if (typeDef.IsClass) {
+				if (typeDef.BaseType != null) {
+					var fn = typeDef.BaseType.FullName;
+					if (fn == "System.Delegate")
 						nameCreator = createDelegateName;
-					else if (MemberReferenceHelper.verifyType(typeDefinition.BaseType, "mscorlib", "System.MulticastDelegate"))
+					else if (fn == "System.MulticastDelegate")
 						nameCreator = createDelegateName;
 					else {
-						nameCreator = nameInfos.find(newBaseTypeName ?? typeDefinition.BaseType.Name);
+						nameCreator = nameInfos.Find(newBaseTypeName ?? typeDef.BaseType.Name.String);
 						if (nameCreator == null)
 							nameCreator = createClassName;
 					}
@@ -198,19 +181,14 @@ namespace de4dot.code.renamer {
 				else
 					nameCreator = createClassName;
 			}
-			else if (typeDefinition.IsInterface)
+			else if (typeDef.IsInterface)
 				nameCreator = createInterfaceName;
 			return nameCreator;
 		}
 	}
 
-	class GlobalTypeNameCreator : TypeNameCreator {
-		public GlobalTypeNameCreator(ExistingNames existingNames)
-			: base(existingNames) {
-		}
-
-		protected override NameCreator createNameCreator(string prefix) {
-			return base.createNameCreator("G" + prefix);
-		}
+	public class GlobalTypeNameCreator : TypeNameCreator {
+		public GlobalTypeNameCreator(ExistingNames existingNames) : base(existingNames) { }
+		protected override NameCreator CreateNameCreator(string prefix) => base.CreateNameCreator("G" + prefix);
 	}
 }

@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -18,121 +18,134 @@
 */
 
 using System;
+using System.Drawing;
 using System.IO;
-using Mono.Cecil;
-using de4dot.code.resources;
+using System.Runtime.Serialization;
+using dnlib.DotNet;
+using dnlib.DotNet.Resources;
 
 namespace de4dot.code.deobfuscators.CodeVeil {
 	class ResourceConverter {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		ResourceInfo[] infos;
-		ResourceDataCreator dataCreator;
+		MyResourceDataFactory dataCreator;
 
-		public ResourceConverter(ModuleDefinition module, ResourceInfo[] infos) {
+		sealed class MyResourceDataFactory : ResourceDataFactory {
+			public MyResourceDataFactory(ModuleDef module)
+				: base(module) {
+			}
+
+			protected override string GetAssemblyFullName(string simpleName) {
+				var asm = TheAssemblyResolver.Instance.Resolve(new AssemblyNameInfo(simpleName), Module);
+				return asm?.FullName;
+			}
+		}
+
+		public ResourceConverter(ModuleDefMD module, ResourceInfo[] infos) {
 			this.module = module;
-			this.dataCreator = new ResourceDataCreator(module);
+			dataCreator = new MyResourceDataFactory(module);
 			this.infos = infos;
 		}
 
-		public byte[] convert() {
+		public byte[] Convert() {
 			var resources = new ResourceElementSet();
 			foreach (var info in infos)
-				resources.add(convert(info));
+				resources.Add(Convert(info));
 
 			var memStream = new MemoryStream();
-			ResourceWriter.write(module, memStream, resources);
+			ResourceWriter.Write(module, memStream, resources);
 			return memStream.ToArray();
 		}
 
-		ResourceElement convert(ResourceInfo info) {
+		ResourceElement Convert(ResourceInfo info) {
 			var reader = info.dataReader;
-			reader.BaseStream.Position = info.offset;
+			reader.Position = (uint)info.offset;
 
 			IResourceData resourceData;
 			int type = (info.flags & 0x7F);
 			switch (type) {
 			case 1:		// bool
-				resourceData = dataCreator.create(reader.ReadBoolean());
+				resourceData = dataCreator.Create(reader.ReadBoolean());
 				break;
 
 			case 2:		// byte
-				resourceData = dataCreator.create(reader.ReadByte());
+				resourceData = dataCreator.Create(reader.ReadByte());
 				break;
 
 			case 3:		// byte[]
-				resourceData = dataCreator.create(reader.ReadBytes(info.length));
+				resourceData = dataCreator.Create(reader.ReadBytes(info.length));
 				break;
 
 			case 4:		// char[]
-				resourceData = dataCreator.create(reader.ReadChars(info.length));
+				resourceData = new CharArrayResourceData(dataCreator.CreateUserResourceType(CharArrayResourceData.ReflectionTypeName), DataReaderUtils.ReadChars(ref reader, info.length));
 				break;
 
 			case 5:		// sbyte
-				resourceData = dataCreator.create(reader.ReadSByte());
+				resourceData = dataCreator.Create(reader.ReadSByte());
 				break;
 
 			case 6:		// char
-				resourceData = dataCreator.create(reader.ReadChar());
+				resourceData = dataCreator.Create(DataReaderUtils.ReadChar(ref reader));
 				break;
 
 			case 7:		// decimal
-				resourceData = dataCreator.create(reader.ReadDecimal());
+				resourceData = dataCreator.Create(reader.ReadDecimal());
 				break;
 
 			case 8:		// double
-				resourceData = dataCreator.create(reader.ReadDouble());
+				resourceData = dataCreator.Create(reader.ReadDouble());
 				break;
 
 			case 9:		// short
-				resourceData = dataCreator.create(reader.ReadInt16());
+				resourceData = dataCreator.Create(reader.ReadInt16());
 				break;
 
 			case 10:	// int
-				resourceData = dataCreator.create(reader.ReadInt32());
+				resourceData = dataCreator.Create(reader.ReadInt32());
 				break;
 
 			case 11:	// long
-				resourceData = dataCreator.create(reader.ReadInt64());
+				resourceData = dataCreator.Create(reader.ReadInt64());
 				break;
 
 			case 12:	// float
-				resourceData = dataCreator.create(reader.ReadSingle());
+				resourceData = dataCreator.Create(reader.ReadSingle());
 				break;
 
 			case 13:	// string
-				resourceData = dataCreator.create(reader.ReadString());
+				resourceData = dataCreator.Create(reader.ReadSerializedString());
 				break;
 
 			case 14:	// ushort
-				resourceData = dataCreator.create(reader.ReadUInt16());
+				resourceData = dataCreator.Create(reader.ReadUInt16());
 				break;
 
 			case 15:	// uint
-				resourceData = dataCreator.create(reader.ReadUInt32());
+				resourceData = dataCreator.Create(reader.ReadUInt32());
 				break;
 
 			case 16:	// ulong
-				resourceData = dataCreator.create(reader.ReadUInt64());
+				resourceData = dataCreator.Create(reader.ReadUInt64());
 				break;
 
 			case 17:	// DateTime
-				resourceData = dataCreator.create(DateTime.FromBinary(reader.ReadInt64()));
+				resourceData = dataCreator.Create(DateTime.FromBinary(reader.ReadInt64()));
 				break;
 
 			case 18:	// TimeSpan
-				resourceData = dataCreator.create(TimeSpan.FromTicks(reader.ReadInt64()));
+				resourceData = dataCreator.Create(TimeSpan.FromTicks(reader.ReadInt64()));
 				break;
 
 			case 19:	// Icon
-				resourceData = dataCreator.createIcon(reader.ReadBytes(info.length));
+				resourceData = new IconResourceData(dataCreator.CreateUserResourceType(IconResourceData.ReflectionTypeName), reader.ReadBytes(info.length));
 				break;
 
 			case 20:	// Image
-				resourceData = dataCreator.createImage(reader.ReadBytes(info.length));
+				resourceData = new ImageResourceData(dataCreator.CreateUserResourceType(ImageResourceData.ReflectionTypeName), reader.ReadBytes(info.length));
 				break;
 
 			case 31:	// binary
-				resourceData = dataCreator.createSerialized(reader.ReadBytes(info.length));
+				resourceData = dataCreator.CreateSerialized(reader.ReadBytes(info.length));
 				break;
 
 			case 21:	// Point (CV doesn't restore this type)
@@ -145,5 +158,29 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				ResourceData = resourceData,
 			};
 		}
+	}
+
+	class CharArrayResourceData : UserResourceData {
+		public static readonly string ReflectionTypeName = "System.Char[],mscorlib";
+		char[] data;
+		public CharArrayResourceData(UserResourceType type, char[] data) : base(type) => this.data = data;
+		public override void WriteData(BinaryWriter writer, IFormatter formatter) => formatter.Serialize(writer.BaseStream, data);
+		public override string ToString() => $"char[]: Length: {data.Length}";
+	}
+
+	class IconResourceData : UserResourceData {
+		public static readonly string ReflectionTypeName = "System.Drawing.Icon,System.Drawing";
+		Icon icon;
+		public IconResourceData(UserResourceType type, byte[] data) : base(type) => icon = new Icon(new MemoryStream(data));
+		public override void WriteData(BinaryWriter writer, IFormatter formatter) => formatter.Serialize(writer.BaseStream, icon);
+		public override string ToString() => $"Icon: {icon}";
+	}
+
+	class ImageResourceData : UserResourceData {
+		public static readonly string ReflectionTypeName = "System.Drawing.Bitmap,System.Drawing";
+		Bitmap bitmap;
+		public ImageResourceData(UserResourceType type, byte[] data) : base(type) => bitmap = new Bitmap(Image.FromStream(new MemoryStream(data)));
+		public override void WriteData(BinaryWriter writer, IFormatter formatter) => formatter.Serialize(writer.BaseStream, bitmap);
+		public override string ToString() => "Bitmap";
 	}
 }

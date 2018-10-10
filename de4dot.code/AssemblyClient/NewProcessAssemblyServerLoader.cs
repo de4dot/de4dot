@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -19,24 +19,33 @@
 
 using System;
 using System.Diagnostics;
+using AssemblyData;
 
 namespace de4dot.code.AssemblyClient {
 	// Starts the server in a new process
-	class NewProcessAssemblyServerLoader : IpcAssemblyServerLoader {
+	public class NewProcessAssemblyServerLoader : IpcAssemblyServerLoader {
 		Process process;
 
-		public override void loadServer(string filename) {
+		public NewProcessAssemblyServerLoader(AssemblyServiceType serviceType)
+			: base(serviceType) {
+		}
+
+		public NewProcessAssemblyServerLoader(AssemblyServiceType serviceType, ServerClrVersion version)
+			: base(serviceType, version) {
+		}
+
+		public override void LoadServer(string filename) {
 			if (process != null)
 				throw new ApplicationException("Server is already loaded");
 
 			var psi = new ProcessStartInfo {
-				Arguments = string.Format("{0} {1}", Utils.shellEscape(ipcName), Utils.shellEscape(ipcUri)),
+				Arguments = $"{(int)serviceType} {Utils.ShellEscape(ipcName)} {Utils.ShellEscape(ipcUri)}",
 				CreateNoWindow = true,
 				ErrorDialog = false,
 				FileName = filename,
 				LoadUserProfile = false,
 				UseShellExecute = false,
-				WorkingDirectory = Utils.getOurBaseDir(),
+				WorkingDirectory = Utils.GetOurBaseDir(),
 			};
 			process = Process.Start(psi);
 			if (process == null)

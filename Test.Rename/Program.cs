@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -15,20 +15,6 @@
 
     You should have received a copy of the GNU General Public License
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
-
-/*
-How to test it:
-- Compile this assembly and the other test assembly
-- Force rename of everything (set name regex to eg. .*)
-- Run peverify /IL /MD on both files
-- Decompile them and create a solution for both projects. I recommend using ILSpy.
-- Compile with VS. If it fails to build, make sure the decompiler isn't buggy.
-- Some manual inspection may be required as well even if it builds 100%.
-
-Yes, it's not 100% automated. You get what you pay for! Buy something
-nice with the money you saved.
 */
 
 namespace Test.Rename {

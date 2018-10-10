@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -18,7 +18,7 @@
 */
 
 namespace de4dot.code.deobfuscators {
-	class UnpackedFile {
+	public class UnpackedFile {
 		public string filename;
 		public byte[] data;
 
@@ -27,8 +27,6 @@ namespace de4dot.code.deobfuscators {
 			this.data = data;
 		}
 
-		public override string ToString() {
-			return string.Format("{0:X8} - {1}", data.Length, filename);
-		}
+		public override string ToString() => $"{data.Length:X8} - {filename}";
 	}
 }

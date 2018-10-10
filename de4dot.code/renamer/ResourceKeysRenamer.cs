@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -22,48 +22,47 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
-using de4dot.code.resources;
+using dnlib.DotNet.Resources;
 
 namespace de4dot.code.renamer {
-	class ResourceKeysRenamer {
+	public class ResourceKeysRenamer {
 		const int RESOURCE_KEY_MAX_LEN = 50;
 		const string DEFAULT_KEY_NAME = "Key";
 
-		ModuleDefinition module;
+		ModuleDefMD module;
 		INameChecker nameChecker;
 		Dictionary<string, bool> newNames = new Dictionary<string, bool>();
 
-		public ResourceKeysRenamer(ModuleDefinition module, INameChecker nameChecker) {
+		public ResourceKeysRenamer(ModuleDefMD module, INameChecker nameChecker) {
 			this.module = module;
 			this.nameChecker = nameChecker;
 		}
 
-		public void rename() {
-			Log.v("Renaming resource keys ({0})", module);
-			Log.indent();
+		public void Rename() {
+			Logger.v("Renaming resource keys ({0})", module);
+			Logger.Instance.Indent();
 			foreach (var type in module.GetTypes()) {
-				string resourceName = getResourceName(type);
+				string resourceName = GetResourceName(type);
 				if (resourceName == null)
 					continue;
-				var resource = getResource(resourceName);
+				var resource = GetResource(resourceName);
 				if (resource == null) {
-					Log.w("Could not find resource {0}", Utils.removeNewlines(resourceName));
+					Logger.w("Could not find resource {0}", Utils.RemoveNewlines(resourceName));
 					continue;
 				}
-				Log.v("Resource: {0}", Utils.toCsharpString(resource.Name));
-				Log.indent();
-				rename(type, resource);
-				Log.deIndent();
+				Logger.v("Resource: {0}", Utils.ToCsharpString(resource.Name));
+				Logger.Instance.Indent();
+				Rename(type, resource);
+				Logger.Instance.DeIndent();
 			}
-			Log.deIndent();
+			Logger.Instance.DeIndent();
 		}
 
-		EmbeddedResource getResource(string resourceName) {
-			var resource = DotNetUtils.getResource(module, resourceName + ".resources") as EmbeddedResource;
-			if (resource != null)
+		EmbeddedResource GetResource(string resourceName) {
+			if (DotNetUtils.GetResource(module, resourceName + ".resources") is EmbeddedResource resource)
 				return resource;
 
 			string name = "";
@@ -71,14 +70,14 @@ namespace de4dot.code.renamer {
 			Array.Reverse(pieces);
 			foreach (var piece in pieces) {
 				name = piece + name;
-				resource = DotNetUtils.getResource(module, name + ".resources") as EmbeddedResource;
+				resource = DotNetUtils.GetResource(module, name + ".resources") as EmbeddedResource;
 				if (resource != null)
 					return resource;
 			}
 			return null;
 		}
 
-		static string getResourceName(TypeDefinition type) {
+		static string GetResourceName(TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (method.Body == null)
 					continue;
@@ -92,11 +91,11 @@ namespace de4dot.code.renamer {
 					}
 
 					if (instr.OpCode.Code == Code.Newobj) {
-						var ctor = instr.Operand as MethodReference;
+						var ctor = instr.Operand as IMethod;
 						if (ctor.FullName != "System.Void System.Resources.ResourceManager::.ctor(System.String,System.Reflection.Assembly)")
 							continue;
 						if (resourceName == null) {
-							Log.w("Could not find resource name");
+							Logger.w("Could not find resource name");
 							continue;
 						}
 
@@ -114,42 +113,39 @@ namespace de4dot.code.renamer {
 			public RenameInfo(ResourceElement element, string newName) {
 				this.element = element;
 				this.newName = newName;
-				this.foundInCode = false;
+				foundInCode = false;
 			}
-			public override string ToString() {
-				return string.Format("{0} => {1}", element, newName);
-			}
+			public override string ToString() => $"{element} => {newName}";
 		}
 
-		void rename(TypeDefinition type, EmbeddedResource resource) {
+		void Rename(TypeDef type, EmbeddedResource resource) {
 			newNames.Clear();
-			var resourceSet = ResourceReader.read(module, resource.GetResourceStream());
+			var resourceSet = ResourceReader.Read(module, resource.CreateReader());
 			var renamed = new List<RenameInfo>();
 			foreach (var elem in resourceSet.ResourceElements) {
-				if (nameChecker.isValidResourceKeyName(elem.Name)) {
+				if (nameChecker.IsValidResourceKeyName(elem.Name)) {
 					newNames.Add(elem.Name, true);
 					continue;
 				}
 
-				renamed.Add(new RenameInfo(elem, getNewName(elem)));
+				renamed.Add(new RenameInfo(elem, GetNewName(elem)));
 			}
 
 			if (renamed.Count == 0)
 				return;
 
-			rename(type, renamed);
+			Rename(type, renamed);
 
 			var outStream = new MemoryStream();
-			ResourceWriter.write(module, outStream, resourceSet);
-			outStream.Position = 0;
-			var newResource = new EmbeddedResource(resource.Name, resource.Attributes, outStream);
+			ResourceWriter.Write(module, outStream, resourceSet);
+			var newResource = new EmbeddedResource(resource.Name, outStream.ToArray(), resource.Attributes);
 			int resourceIndex = module.Resources.IndexOf(resource);
 			if (resourceIndex < 0)
 				throw new ApplicationException("Could not find index of resource");
 			module.Resources[resourceIndex] = newResource;
 		}
 
-		void rename(TypeDefinition type, List<RenameInfo> renamed) {
+		void Rename(TypeDef type, List<RenameInfo> renamed) {
 			var nameToInfo = new Dictionary<string, RenameInfo>(StringComparer.Ordinal);
 			foreach (var info in renamed)
 				nameToInfo[info.element.Name] = info;
@@ -163,7 +159,7 @@ namespace de4dot.code.renamer {
 					var call = instrs[i];
 					if (call.OpCode.Code != Code.Call && call.OpCode.Code != Code.Callvirt)
 						continue;
-					var calledMethod = call.Operand as MethodReference;
+					var calledMethod = call.Operand as IMethod;
 					if (calledMethod == null)
 						continue;
 
@@ -190,16 +186,15 @@ namespace de4dot.code.renamer {
 					if (ldstrIndex >= 0)
 						ldstr = instrs[ldstrIndex];
 					if (ldstr == null || (name = ldstr.Operand as string) == null) {
-						Log.w("Could not find string argument to method {0}", calledMethod);
+						Logger.w("Could not find string argument to method {0}", calledMethod);
 						continue;
 					}
 
-					RenameInfo info;
-					if (!nameToInfo.TryGetValue(name, out info))
-						continue;	// should not be renamed
+					if (!nameToInfo.TryGetValue(name, out var info))
+						continue;   // should not be renamed
 
 					ldstr.Operand = info.newName;
-					Log.v("Renamed resource key {0} => {1}", Utils.toCsharpString(info.element.Name), Utils.toCsharpString(info.newName));
+					Logger.v("Renamed resource key {0} => {1}", Utils.ToCsharpString(info.element.Name), Utils.ToCsharpString(info.newName));
 					info.element.Name = info.newName;
 					info.foundInCode = true;
 				}
@@ -207,19 +202,19 @@ namespace de4dot.code.renamer {
 
 			foreach (var info in renamed) {
 				if (!info.foundInCode)
-					Log.w("Could not find resource key {0} in code", Utils.removeNewlines(info.element.Name));
+					Logger.w("Could not find resource key {0} in code", Utils.RemoveNewlines(info.element.Name));
 			}
 		}
 
-		string getNewName(ResourceElement elem) {
+		string GetNewName(ResourceElement elem) {
 			if (elem.ResourceData.Code != ResourceTypeCode.String)
-				return createDefaultName();
+				return CreateDefaultName();
 			var stringData = (BuiltInResourceData)elem.ResourceData;
-			var name = createPrefixFromStringData((string)stringData.Data);
-			return createName(counter => counter == 0 ? name : string.Format("{0}_{1}", name, counter));
+			var name = CreatePrefixFromStringData((string)stringData.Data);
+			return CreateName(counter => counter == 0 ? name : $"{name}_{counter}");
 		}
 
-		string createPrefixFromStringData(string data) {
+		string CreatePrefixFromStringData(string data) {
 			var sb = new StringBuilder();
 			data = data.Substring(0, Math.Min(data.Length, 100));
 			data = Regex.Replace(data, "[`'\"]", "");
@@ -236,15 +231,13 @@ namespace de4dot.code.renamer {
 				sb.Append(piece2);
 			}
 			if (sb.Length <= 3)
-				return createDefaultName();
+				return CreateDefaultName();
 			return sb.ToString();
 		}
 
-		string createDefaultName() {
-			return createName(counter => string.Format("{0}{1}", DEFAULT_KEY_NAME, counter));
-		}
+		string CreateDefaultName() => CreateName(counter => $"{DEFAULT_KEY_NAME}{counter}");
 
-		string createName(Func<int, string> create) {
+		string CreateName(Func<int, string> create) {
 			for (int counter = 0; ; counter++) {
 				string newName = create(counter);
 				if (!newNames.ContainsKey(newName)) {

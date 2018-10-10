@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -20,8 +20,8 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
-using Mono.Cecil;
-using de4dot.blocks;
+using dnlib.DotNet;
+using dnlib.DotNet.Writer;
 using de4dot.code;
 using de4dot.code.renamer;
 using de4dot.code.deobfuscators;
@@ -33,12 +33,14 @@ namespace de4dot.cui {
 		IDeobfuscatorContext deobfuscatorContext = new DeobfuscatorContext();
 
 		public class Options {
+			public ModuleContext ModuleContext { get; set; }
 			public IList<IDeobfuscatorInfo> DeobfuscatorInfos { get; set; }
 			public IList<IObfuscatedFile> Files { get; set; }
 			public IList<SearchDir> SearchDirs { get; set; }
+			public MetadataFlags MetadataFlags { get; set; }
 			public bool DetectObfuscators { get; set; }
+			public RenamerFlags RenamerFlags { get; set; }
 			public bool RenameSymbols { get; set; }
-			public bool RestorePropsEvents { get; set; }
 			public bool ControlFlowDeobfuscation { get; set; }
 			public bool KeepObfuscatorTypes { get; set; }
 			public bool OneFileAtATime { get; set; }
@@ -47,12 +49,24 @@ namespace de4dot.cui {
 			public IAssemblyClientFactory AssemblyClientFactory { get; set; }
 
 			public Options() {
+				ModuleContext = new ModuleContext(TheAssemblyResolver.Instance);
 				DeobfuscatorInfos = new List<IDeobfuscatorInfo>();
 				Files = new List<IObfuscatedFile>();
 				SearchDirs = new List<SearchDir>();
 				DefaultStringDecrypterMethods = new List<string>();
+				RenamerFlags = RenamerFlags.RenameNamespaces |
+						RenamerFlags.RenameTypes |
+						RenamerFlags.RenameProperties |
+						RenamerFlags.RenameEvents |
+						RenamerFlags.RenameFields |
+						RenamerFlags.RenameMethods |
+						RenamerFlags.RenameMethodArgs |
+						RenamerFlags.RenameGenericParams |
+						RenamerFlags.RestorePropertiesFromNames |
+						RenamerFlags.RestoreEventsFromNames |
+						RenamerFlags.RestoreProperties |
+						RenamerFlags.RestoreEvents;
 				RenameSymbols = true;
-				RestorePropsEvents = true;
 				ControlFlowDeobfuscation = true;
 			}
 		}
@@ -63,82 +77,87 @@ namespace de4dot.cui {
 			public bool SkipUnknownObfuscators { get; set; }
 		}
 
-		public FilesDeobfuscator(Options options) {
-			this.options = options;
-		}
+		public FilesDeobfuscator(Options options) => this.options = options;
 
-		public void doIt() {
+		public void DoIt() {
 			if (options.DetectObfuscators)
-				detectObfuscators();
+				DetectObfuscators();
 			else if (options.OneFileAtATime)
-				deobfuscateOneAtATime();
+				DeobfuscateOneAtATime();
 			else
-				deobfuscateAll();
+				DeobfuscateAll();
 		}
 
-		static void removeModule(ModuleDefinition module) {
-			AssemblyResolver.Instance.removeModule(module);
-			DotNetUtils.typeCaches.invalidate(module);
-		}
+		static void RemoveModule(ModuleDef module) => TheAssemblyResolver.Instance.Remove(module);
 
-		void detectObfuscators() {
-			foreach (var file in loadAllFiles(true)) {
-				removeModule(file.ModuleDefinition);
-				deobfuscatorContext.clear();
+		void DetectObfuscators() {
+			foreach (var file in LoadAllFiles(true)) {
+				RemoveModule(file.ModuleDefMD);
+				file.Dispose();
+				deobfuscatorContext.Clear();
 			}
 		}
 
-		void deobfuscateOneAtATime() {
-			foreach (var file in loadAllFiles()) {
-				int oldIndentLevel = Log.indentLevel;
+		void DeobfuscateOneAtATime() {
+			foreach (var file in LoadAllFiles()) {
+				int oldIndentLevel = Logger.Instance.IndentLevel;
 				try {
-					file.deobfuscateBegin();
-					file.deobfuscate();
-					file.deobfuscateEnd();
-					rename(new List<IObfuscatedFile> { file });
-					file.save();
+					file.DeobfuscateBegin();
+					file.Deobfuscate();
+					file.DeobfuscateEnd();
+					Rename(new List<IObfuscatedFile> { file });
+					file.Save();
 
-					removeModule(file.ModuleDefinition);
-					AssemblyResolver.Instance.clearAll();
-					deobfuscatorContext.clear();
+					RemoveModule(file.ModuleDefMD);
+					TheAssemblyResolver.Instance.ClearAll();
+					deobfuscatorContext.Clear();
 				}
 				catch (Exception ex) {
-					Log.w("Could not deobfuscate {0}. Use -v to see stack trace", file.Filename);
-					Program.printStackTrace(ex, Log.LogLevel.verbose);
+					Logger.Instance.Log(false, null, LoggerEvent.Warning, "Could not deobfuscate {0}. Use -v to see stack trace", file.Filename);
+					Program.PrintStackTrace(ex, LoggerEvent.Verbose);
 				}
 				finally {
-					file.deobfuscateCleanUp();
-					Log.indentLevel = oldIndentLevel;
+					file.Dispose();
+					Logger.Instance.IndentLevel = oldIndentLevel;
 				}
 			}
 		}
 
-		void deobfuscateAll() {
-			var allFiles = new List<IObfuscatedFile>(loadAllFiles());
-			deobfuscateAllFiles(allFiles);
-			rename(allFiles);
-			saveAllFiles(allFiles);
+		void DeobfuscateAll() {
+			var allFiles = new List<IObfuscatedFile>(LoadAllFiles());
+			try {
+				DeobfuscateAllFiles(allFiles);
+				Rename(allFiles);
+				SaveAllFiles(allFiles);
+			}
+			finally {
+				foreach (var file in allFiles) {
+					if (file != null)
+						file.Dispose();
+				}
+			}
 		}
 
-		IEnumerable<IObfuscatedFile> loadAllFiles() {
-			return loadAllFiles(false);
-		}
+		IEnumerable<IObfuscatedFile> LoadAllFiles() => LoadAllFiles(false);
 
-		IEnumerable<IObfuscatedFile> loadAllFiles(bool onlyScan) {
+		IEnumerable<IObfuscatedFile> LoadAllFiles(bool onlyScan) {
 			var loader = new DotNetFileLoader(new DotNetFileLoader.Options {
+				ModuleContext = options.ModuleContext,
 				PossibleFiles  = options.Files,
 				SearchDirs = options.SearchDirs,
-				CreateDeobfuscators = () => createDeobfuscators(),
+				CreateDeobfuscators = () => CreateDeobfuscators(),
 				DefaultStringDecrypterType = options.DefaultStringDecrypterType,
 				DefaultStringDecrypterMethods = options.DefaultStringDecrypterMethods,
 				AssemblyClientFactory = options.AssemblyClientFactory,
 				DeobfuscatorContext = deobfuscatorContext,
 				ControlFlowDeobfuscation = options.ControlFlowDeobfuscation,
 				KeepObfuscatorTypes = options.KeepObfuscatorTypes,
+				MetadataFlags = options.MetadataFlags,
+				RenamerFlags = options.RenamerFlags,
 				CreateDestinationDir = !onlyScan,
 			});
 
-			foreach (var file in loader.load())
+			foreach (var file in loader.Load())
 				yield return file;
 		}
 
@@ -148,81 +167,87 @@ namespace de4dot.cui {
 			Dictionary<string, bool> visitedDirectory = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
 
 			public class Options {
+				public ModuleContext ModuleContext { get; set; }
 				public IEnumerable<IObfuscatedFile> PossibleFiles { get; set; }
 				public IEnumerable<SearchDir> SearchDirs { get; set; }
-				public Func<IEnumerable<IDeobfuscator>> CreateDeobfuscators { get; set; }
+				public Func<IList<IDeobfuscator>> CreateDeobfuscators { get; set; }
 				public DecrypterType? DefaultStringDecrypterType { get; set; }
 				public List<string> DefaultStringDecrypterMethods { get; set; }
 				public IAssemblyClientFactory AssemblyClientFactory { get; set; }
 				public IDeobfuscatorContext DeobfuscatorContext { get; set; }
 				public bool ControlFlowDeobfuscation { get; set; }
 				public bool KeepObfuscatorTypes { get; set; }
+				public MetadataFlags MetadataFlags { get; set; }
+				public RenamerFlags RenamerFlags { get; set; }
 				public bool CreateDestinationDir { get; set; }
 			}
 
-			public DotNetFileLoader(Options options) {
-				this.options = options;
-			}
+			public DotNetFileLoader(Options options) => this.options = options;
 
-			public IEnumerable<IObfuscatedFile> load() {
+			public IEnumerable<IObfuscatedFile> Load() {
 				foreach (var file in options.PossibleFiles) {
-					if (add(file, false, true))
+					if (Add(file, false, true))
 						yield return file;
 				}
 
 				foreach (var searchDir in options.SearchDirs) {
-					foreach (var file in loadFiles(searchDir))
+					foreach (var file in LoadFiles(searchDir))
 						yield return file;
 				}
 			}
 
-			bool add(IObfuscatedFile file, bool skipUnknownObfuscator, bool isFromPossibleFiles) {
-				var key = Utils.getFullPath(file.Filename);
+			bool Add(IObfuscatedFile file, bool skipUnknownObfuscator, bool isFromPossibleFiles) {
+				var key = Utils.GetFullPath(file.Filename);
 				if (allFiles.ContainsKey(key)) {
-					Log.w("Ingoring duplicate file: {0}", file.Filename);
+					Logger.Instance.Log(false, null, LoggerEvent.Warning, "Ingoring duplicate file: {0}", file.Filename);
 					return false;
 				}
 				allFiles[key] = true;
 
-				int oldIndentLevel = Log.indentLevel;
+				int oldIndentLevel = Logger.Instance.IndentLevel;
 				try {
 					file.DeobfuscatorContext = options.DeobfuscatorContext;
-					file.load(options.CreateDeobfuscators());
+					file.Load(options.CreateDeobfuscators());
 				}
 				catch (NotSupportedException) {
 					return false;	// Eg. unsupported architecture
 				}
 				catch (BadImageFormatException) {
 					if (isFromPossibleFiles)
-						Log.w("The file isn't a .NET PE file: {0}", file.Filename);
+						Logger.Instance.Log(false, null, LoggerEvent.Warning, "The file isn't a .NET PE file: {0}", file.Filename);
 					return false;	// Not a .NET file
 				}
 				catch (EndOfStreamException) {
 					return false;
 				}
+				catch (IOException) {
+					if (isFromPossibleFiles)
+						Logger.Instance.Log(false, null, LoggerEvent.Warning, "The file isn't a .NET PE file: {0}", file.Filename);
+					return false;	// Not a .NET file
+				}
 				catch (Exception ex) {
-					Log.w("Could not load file ({0}): {1}", ex.GetType(), file.Filename);
+					Logger.Instance.Log(false, null, LoggerEvent.Warning, "Could not load file ({0}): {1}", ex.GetType(), file.Filename);
 					return false;
 				}
 				finally {
-					Log.indentLevel = oldIndentLevel;
+					Logger.Instance.IndentLevel = oldIndentLevel;
 				}
 
 				var deob = file.Deobfuscator;
 				if (skipUnknownObfuscator && deob.Type == "un") {
-					Log.v("Skipping unknown obfuscator: {0}", file.Filename);
-					removeModule(file.ModuleDefinition);
+					Logger.v("Skipping unknown obfuscator: {0}", file.Filename);
+					RemoveModule(file.ModuleDefMD);
 					return false;
 				}
 				else {
-					Log.n("Detected {0} ({1})", deob.Name, file.Filename);
+					Logger.n("Detected {0} ({1})", deob.Name, file.Filename);
 					if (options.CreateDestinationDir)
-						createDirectories(Path.GetDirectoryName(file.NewFilename));
+						CreateDirectories(Path.GetDirectoryName(file.NewFilename));
 					return true;
 				}
 			}
 
-			IEnumerable<IObfuscatedFile> loadFiles(SearchDir searchDir) {
+			IEnumerable<IObfuscatedFile> LoadFiles(SearchDir searchDir) {
 				DirectoryInfo di = null;
 				bool ok = false;
 				try {
@@ -235,18 +260,18 @@ namespace de4dot.cui {
 				catch (ArgumentException) {
 				}
 				if (ok) {
-					foreach (var filename in doDirectoryInfo(searchDir, di)) {
-						var obfuscatedFile = createObfuscatedFile(searchDir, filename);
+					foreach (var filename in DoDirectoryInfo(searchDir, di)) {
+						var obfuscatedFile = CreateObfuscatedFile(searchDir, filename);
 						if (obfuscatedFile != null)
 							yield return obfuscatedFile;
 					}					
 				}
 			}
 
-			IEnumerable<string> recursiveAdd(SearchDir searchDir, IEnumerable<FileSystemInfo> fileSystemInfos) {
+			IEnumerable<string> RecursiveAdd(SearchDir searchDir, IEnumerable<FileSystemInfo> fileSystemInfos) {
 				foreach (var fsi in fileSystemInfos) {
-					if ((int)(fsi.Attributes & FileAttributes.Directory) != 0) {
-						foreach (var filename in doDirectoryInfo(searchDir, (DirectoryInfo)fsi))
+					if ((int)(fsi.Attributes & System.IO.FileAttributes.Directory) != 0) {
+						foreach (var filename in DoDirectoryInfo(searchDir, (DirectoryInfo)fsi))
 							yield return filename;
 					}
 					else {
@@ -257,7 +282,7 @@ namespace de4dot.cui {
 				}
 			}
 
-			IEnumerable<string> doDirectoryInfo(SearchDir searchDir, DirectoryInfo di) {
+			IEnumerable<string> DoDirectoryInfo(SearchDir searchDir, DirectoryInfo di) {
 				if (!di.Exists)
 					return new List<string>();
 
@@ -275,42 +300,48 @@ namespace de4dot.cui {
 				catch (IOException) {
 					return new List<string>();
 				}
-				return recursiveAdd(searchDir, fsinfos);
+				catch (System.Security.SecurityException) {
+					return new List<string>();
+				}
+				return RecursiveAdd(searchDir, fsinfos);
 			}
 
-			IObfuscatedFile createObfuscatedFile(SearchDir searchDir, string filename) {
+			IObfuscatedFile CreateObfuscatedFile(SearchDir searchDir, string filename) {
 				var fileOptions = new ObfuscatedFile.Options {
-					Filename = Utils.getFullPath(filename),
+					Filename = Utils.GetFullPath(filename),
 					ControlFlowDeobfuscation = options.ControlFlowDeobfuscation,
 					KeepObfuscatorTypes = options.KeepObfuscatorTypes,
+					MetadataFlags = options.MetadataFlags,
+					RenamerFlags = options.RenamerFlags,
 				};
 				if (options.DefaultStringDecrypterType != null)
 					fileOptions.StringDecrypterType = options.DefaultStringDecrypterType.Value;
 				fileOptions.StringDecrypterMethods.AddRange(options.DefaultStringDecrypterMethods);
 
 				if (!string.IsNullOrEmpty(searchDir.OutputDirectory)) {
-					var inDir = Utils.getFullPath(searchDir.InputDirectory);
-					var outDir = Utils.getFullPath(searchDir.OutputDirectory);
+					var inDir = Utils.GetFullPath(searchDir.InputDirectory);
+					var outDir = Utils.GetFullPath(searchDir.OutputDirectory);
 
 					if (!Utils.StartsWith(fileOptions.Filename, inDir, StringComparison.OrdinalIgnoreCase))
-						throw new UserException(string.Format("Filename {0} does not start with inDir {1}", fileOptions.Filename, inDir));
+						throw new UserException($"Filename {fileOptions.Filename} does not start with inDir {inDir}");
 
 					var subDirs = fileOptions.Filename.Substring(inDir.Length);
 					if (subDirs.Length > 0 && subDirs[0] == Path.DirectorySeparatorChar)
 						subDirs = subDirs.Substring(1);
-					fileOptions.NewFilename = Utils.getFullPath(Path.Combine(outDir, subDirs));
+					fileOptions.NewFilename = Utils.GetFullPath(Path.Combine(outDir, subDirs));
 
 					if (fileOptions.Filename.Equals(fileOptions.NewFilename, StringComparison.OrdinalIgnoreCase))
-						throw new UserException(string.Format("Input and output filename is the same: {0}", fileOptions.Filename));
+						throw new UserException($"Input and output filename is the same: {fileOptions.Filename}");
 				}
 
-				var obfuscatedFile = new ObfuscatedFile(fileOptions, options.AssemblyClientFactory);
-				if (add(obfuscatedFile, searchDir.SkipUnknownObfuscators, false))
+				var obfuscatedFile = new ObfuscatedFile(fileOptions, options.ModuleContext, options.AssemblyClientFactory);
+				if (Add(obfuscatedFile, searchDir.SkipUnknownObfuscators, false))
 					return obfuscatedFile;
+				obfuscatedFile.Dispose();
 				return null;
 			}
 
-			void createDirectories(string path) {
+			void CreateDirectories(string path) {
 				if (string.IsNullOrEmpty(path))
 					return;
 				try {
@@ -325,41 +356,38 @@ namespace de4dot.cui {
 			}
 		}
 
-		void deobfuscateAllFiles(IEnumerable<IObfuscatedFile> allFiles) {
+		void DeobfuscateAllFiles(IEnumerable<IObfuscatedFile> allFiles) {
 			try {
 				foreach (var file in allFiles)
-					file.deobfuscateBegin();
+					file.DeobfuscateBegin();
 				foreach (var file in allFiles) {
-					file.deobfuscate();
-					file.deobfuscateEnd();
+					file.Deobfuscate();
+					file.DeobfuscateEnd();
 				}
 			}
 			finally {
 				foreach (var file in allFiles)
-					file.deobfuscateCleanUp();
+					file.DeobfuscateCleanUp();
 			}
 		}
 
-		void saveAllFiles(IEnumerable<IObfuscatedFile> allFiles) {
+		void SaveAllFiles(IEnumerable<IObfuscatedFile> allFiles) {
 			foreach (var file in allFiles)
-				file.save();
+				file.Save();
 		}
 
-		IEnumerable<IDeobfuscator> createDeobfuscators() {
+		IList<IDeobfuscator> CreateDeobfuscators() {
 			var list = new List<IDeobfuscator>(options.DeobfuscatorInfos.Count);
 			foreach (var info in options.DeobfuscatorInfos)
-				list.Add(info.createDeobfuscator());
+				list.Add(info.CreateDeobfuscator());
 			return list;
 		}
 
-		void rename(IEnumerable<IObfuscatedFile> theFiles) {
+		void Rename(IEnumerable<IObfuscatedFile> theFiles) {
 			if (!options.RenameSymbols)
 				return;
-			var renamer = new Renamer(deobfuscatorContext, theFiles) {
-				RestorePropertiesFromNames = options.RestorePropsEvents,
-				RestoreEventsFromNames = options.RestorePropsEvents,
-			};
-			renamer.rename();
+			var renamer = new Renamer(deobfuscatorContext, theFiles, options.RenamerFlags);
+			renamer.Rename();
 		}
 	}
 }

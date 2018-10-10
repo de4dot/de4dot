@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -51,19 +51,17 @@ namespace AssemblyData {
 	}
 
 	public static class SimpleData {
-		public static object[] pack(object[] args) {
+		public static object[] Pack(object[] args) {
 			for (int i = 0; i < args.Length; i++) {
-				var s = args[i] as string;
-				if (s != null)
+				if (args[i] is string s)
 					args[i] = new MyString(s);
 			}
 			return args;
 		}
 
-		public static object[] unpack(object[] args) {
+		public static object[] Unpack(object[] args) {
 			for (int i = 0; i < args.Length; i++) {
-				var s = args[i] as MyString;
-				if (s != null)
+				if (args[i] is MyString s)
 					args[i] = s.ToString();
 			}
 			return args;

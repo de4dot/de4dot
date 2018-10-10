@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -21,19 +21,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using dnlib.DotNet;
 
 namespace de4dot.code {
-	// These are in .NET 3.5 and later...
-	public delegate TResult Func<TResult>();
-	public delegate TResult Func<T, TResult>(T arg);
-	public delegate TResult Func<T1, T2, TResult>(T1 arg1, T2 arg2);
-	public delegate TResult Func<T1, T2, T3, TResult>(T1 arg1, T2 arg2, T3 arg3);
-	public delegate void Action();
-	public delegate void Action<T>(T arg);
-	public delegate void Action<T1, T2>(T1 arg1, T2 arg2);
-	public delegate void Action<T1, T2, T3>(T1 arg1, T2 arg2, T3 arg3);
-
-	class Tuple<T1, T2> {
+	public class Tuple<T1, T2> {
 		public T1 Item1 { get; set; }
 		public T2 Item2 { get; set; }
 		public override bool Equals(object obj) {
@@ -42,18 +33,14 @@ namespace de4dot.code {
 				return false;
 			return Item1.Equals(other.Item1) && Item2.Equals(other.Item2);
 		}
-		public override int GetHashCode() {
-			return Item1.GetHashCode() + Item2.GetHashCode();
-		}
-		public override string ToString() {
-			return "<" + Item1.ToString() + "," + Item2.ToString() + ">";
-		}
+		public override int GetHashCode() => Item1.GetHashCode() + Item2.GetHashCode();
+		public override string ToString() => "<" + Item1.ToString() + "," + Item2.ToString() + ">";
 	}
 
 	public static class Utils {
 		static Random random = new Random();
 
-		public static IEnumerable<T> unique<T>(IEnumerable<T> values) {
+		public static IEnumerable<T> Unique<T>(IEnumerable<T> values) {
 			// HashSet is only available in .NET 3.5 and later.
 			var dict = new Dictionary<T, bool>();
 			foreach (var val in values)
@@ -61,26 +48,28 @@ namespace de4dot.code {
 			return dict.Keys;
 		}
 
-		public static string toCsharpString(string s) {
+		public static string ToCsharpString(UTF8String s) => ToCsharpString(UTF8String.ToSystemStringOrEmpty(s));
+
+		public static string ToCsharpString(string s) {
 			var sb = new StringBuilder(s.Length + 2);
 			sb.Append('"');
 			foreach (var c in s) {
 				if ((int)c < 0x20) {
 					switch (c) {
-					case '\a': appendEscape(sb, 'a'); break;
-					case '\b': appendEscape(sb, 'b'); break;
-					case '\f': appendEscape(sb, 'f'); break;
-					case '\n': appendEscape(sb, 'n'); break;
-					case '\r': appendEscape(sb, 'r'); break;
-					case '\t': appendEscape(sb, 't'); break;
-					case '\v': appendEscape(sb, 'v'); break;
+					case '\a': AppendEscape(sb, 'a'); break;
+					case '\b': AppendEscape(sb, 'b'); break;
+					case '\f': AppendEscape(sb, 'f'); break;
+					case '\n': AppendEscape(sb, 'n'); break;
+					case '\r': AppendEscape(sb, 'r'); break;
+					case '\t': AppendEscape(sb, 't'); break;
+					case '\v': AppendEscape(sb, 'v'); break;
 					default:
-						sb.Append(string.Format(@"\u{0:X4}", (int)c));
+						sb.Append($@"\u{(int)c:X4}");
 						break;
 					}
 				}
 				else if (c == '\\' || c == '"') {
-					appendEscape(sb, c);
+					AppendEscape(sb, c);
 				}
 				else
 					sb.Append(c);
@@ -89,12 +78,12 @@ namespace de4dot.code {
 			return sb.ToString();
 		}
 
-		public static string shellEscape(string s) {
+		public static string ShellEscape(string s) {
 			var sb = new StringBuilder(s.Length + 2);
 			sb.Append('"');
 			foreach (var c in s) {
 				if (c == '"')
-					appendEscape(sb, c);
+					AppendEscape(sb, c);
 				else
 					sb.Append(c);
 			}
@@ -102,20 +91,15 @@ namespace de4dot.code {
 			return sb.ToString();
 		}
 
-		static void appendEscape(StringBuilder sb, char c) {
+		static void AppendEscape(StringBuilder sb, char c) {
 			sb.Append('\\');
 			sb.Append(c);
 		}
 
-		public static string removeNewlines(object o) {
-			return removeNewlines(o.ToString());
-		}
+		public static string RemoveNewlines(object o) => RemoveNewlines(o.ToString());
+		public static string RemoveNewlines(string s) => s.Replace('\n', ' ').Replace('\r', ' ');
 
-		public static string removeNewlines(string s) {
-			return s.Replace('\n', ' ').Replace('\r', ' ');
-		}
-
-		public static string getFullPath(string path) {
+		public static string GetFullPath(string path) {
 			try {
 				return Path.GetFullPath(path);
 			}
@@ -124,7 +108,7 @@ namespace de4dot.code {
 			}
 		}
 
-		public static string randomName(int min, int max) {
+		public static string RandomName(int min, int max) {
 			int numChars = random.Next(min, max + 1);
 			var sb = new StringBuilder(numChars);
 			int numLower = 0;
@@ -144,27 +128,23 @@ namespace de4dot.code {
 			return sb.ToString();
 		}
 
-		public static string getBaseName(string name) {
+		public static string GetBaseName(string name) {
 			int index = name.LastIndexOf(Path.DirectorySeparatorChar);
 			if (index < 0)
 				return name;
 			return name.Substring(index + 1);
 		}
 
-		public static string getDirName(string name) {
-			return Path.GetDirectoryName(name);
-		}
+		public static string GetDirName(string name) => Path.GetDirectoryName(name);
 
 		static string ourBaseDir = null;
-		public static string getOurBaseDir() {
+		public static string GetOurBaseDir() {
 			if (ourBaseDir != null)
 				return ourBaseDir;
-			return ourBaseDir = getDirName(typeof(Utils).Assembly.Location);
+			return ourBaseDir = GetDirName(typeof(Utils).Assembly.Location);
 		}
 
-		public static string getPathOfOurFile(string filename) {
-			return Path.Combine(getOurBaseDir(), filename);
-		}
+		public static string GetPathOfOurFile(string filename) => Path.Combine(GetOurBaseDir(), filename);
 
 		// This fixes a mono (tested 2.10.5) String.StartsWith() bug. NB: stringComparison must be
 		// Ordinal or OrdinalIgnoreCase!
@@ -174,14 +154,14 @@ namespace de4dot.code {
 			return left.Substring(0, right.Length).Equals(right, stringComparison);
 		}
 
-		public static string getAssemblySimpleName(string name) {
+		public static string GetAssemblySimpleName(string name) {
 			int i = name.IndexOf(',');
 			if (i < 0)
 				return name;
 			return name.Substring(0, i);
 		}
 
-		public static bool pathExists(string path) {
+		public static bool PathExists(string path) {
 			try {
 				return new DirectoryInfo(path).Exists;
 			}
@@ -190,7 +170,7 @@ namespace de4dot.code {
 			}
 		}
 
-		public static bool fileExists(string path) {
+		public static bool FileExists(string path) {
 			try {
 				return new FileInfo(path).Exists;
 			}
@@ -199,7 +179,7 @@ namespace de4dot.code {
 			}
 		}
 
-		public static bool compare(byte[] a, byte[] b) {
+		public static bool Compare(byte[] a, byte[] b) {
 			if (a.Length != b.Length)
 				return false;
 			for (int i = 0; i < a.Length; i++) {
@@ -209,13 +189,7 @@ namespace de4dot.code {
 			return true;
 		}
 
-		public static int compareInt32(int a, int b) {
-			if (a < b) return -1;
-			if (a > b) return 1;
-			return 0;
-		}
-
-		public static byte[] readFile(string filename) {
+		public static byte[] ReadFile(string filename) {
 			// If the file is on the network, and we read more than 2MB, we'll read from the wrong
 			// offset in the file! Tested: VMware 8, Win7 x64.
 			const int MAX_BYTES_READ = 0x200000;
@@ -231,23 +205,6 @@ namespace de4dot.code {
 
 				return fileData;
 			}
-		}
-
-		public static uint readEncodedUInt32(BinaryReader reader) {
-			uint val = 0;
-			int bits = 0;
-			for (int i = 0; i < 5; i++) {
-				byte b = reader.ReadByte();
-				val |= (uint)(b & 0x7F) << bits;
-				if ((b & 0x80) == 0)
-					return val;
-				bits += 7;
-			}
-			throw new ApplicationException("Invalid encoded int32");
-		}
-
-		public static int readEncodedInt32(BinaryReader reader) {
-			return (int)readEncodedUInt32(reader);
 		}
 	}
 }

@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -21,28 +21,21 @@ using System;
 using System.Collections.Generic;
 
 namespace de4dot.code.renamer.asmmodules {
-	class MethodNameGroup {
-		List<MethodDef> methods = new List<MethodDef>();
+	public class MethodNameGroup {
+		List<MMethodDef> methods = new List<MMethodDef>();
 
-		public List<MethodDef> Methods {
-			get { return methods; }
-		}
+		public List<MMethodDef> Methods => methods;
+		public int Count => methods.Count;
 
-		public int Count {
-			get { return methods.Count; }
-		}
+		public void Add(MMethodDef method) => methods.Add(method);
 
-		public void add(MethodDef method) {
-			methods.Add(method);
-		}
-
-		public void merge(MethodNameGroup other) {
+		public void Merge(MethodNameGroup other) {
 			if (this == other)
 				return;
 			methods.AddRange(other.methods);
 		}
 
-		public bool hasNonRenamableMethod() {
+		public bool HasNonRenamableMethod() {
 			foreach (var method in methods) {
 				if (!method.Owner.HasModule)
 					return true;
@@ -50,15 +43,15 @@ namespace de4dot.code.renamer.asmmodules {
 			return false;
 		}
 
-		public bool hasInterfaceMethod() {
+		public bool HasInterfaceMethod() {
 			foreach (var method in methods) {
-				if (method.Owner.TypeDefinition.IsInterface)
+				if (method.Owner.TypeDef.IsInterface)
 					return true;
 			}
 			return false;
 		}
 
-		public bool hasGetterOrSetterPropertyMethod() {
+		public bool HasGetterOrSetterPropertyMethod() {
 			foreach (var method in methods) {
 				if (method.Property == null)
 					continue;
@@ -69,7 +62,7 @@ namespace de4dot.code.renamer.asmmodules {
 			return false;
 		}
 
-		public bool hasAddRemoveOrRaiseEventMethod() {
+		public bool HasAddRemoveOrRaiseEventMethod() {
 			foreach (var method in methods) {
 				if (method.Event == null)
 					continue;
@@ -80,7 +73,7 @@ namespace de4dot.code.renamer.asmmodules {
 			return false;
 		}
 
-		public bool hasProperty() {
+		public bool HasProperty() {
 			foreach (var method in methods) {
 				if (method.Property != null)
 					return true;
@@ -88,7 +81,7 @@ namespace de4dot.code.renamer.asmmodules {
 			return false;
 		}
 
-		public bool hasEvent() {
+		public bool HasEvent() {
 			foreach (var method in methods) {
 				if (method.Event != null)
 					return true;
@@ -96,49 +89,39 @@ namespace de4dot.code.renamer.asmmodules {
 			return false;
 		}
 
-		public override string ToString() {
-			return string.Format("{0} -- {1}", methods.Count, methods.Count > 0 ? methods[0].ToString() : "");
-		}
+		public override string ToString() => $"{methods.Count} -- {(methods.Count > 0 ? methods[0].ToString() : "")}";
 	}
 
-	class MethodNameGroups {
-		Dictionary<MethodDef, MethodNameGroup> methodGroups = new Dictionary<MethodDef, MethodNameGroup>();
+	public class MethodNameGroups {
+		Dictionary<MMethodDef, MethodNameGroup> methodGroups = new Dictionary<MMethodDef, MethodNameGroup>();
 
-		public void same(MethodDef a, MethodDef b) {
-			merge(get(a), get(b));
-		}
+		public void Same(MMethodDef a, MMethodDef b) => Merge(Get(a), Get(b));
+		public void Add(MMethodDef methodDef) => Get(methodDef);
 
-		public void add(MethodDef methodDef) {
-			get(methodDef);
-		}
-
-		public MethodNameGroup get(MethodDef method) {
-			if (!method.isVirtual())
+		public MethodNameGroup Get(MMethodDef method) {
+			if (!method.IsVirtual())
 				throw new ApplicationException("Not a virtual method");
-			MethodNameGroup group;
-			if (!methodGroups.TryGetValue(method, out group)) {
+			if (!methodGroups.TryGetValue(method, out var group)) {
 				methodGroups[method] = group = new MethodNameGroup();
-				group.add(method);
+				group.Add(method);
 			}
 			return group;
 		}
 
-		void merge(MethodNameGroup a, MethodNameGroup b) {
+		void Merge(MethodNameGroup a, MethodNameGroup b) {
 			if (a == b)
 				return;
 
 			if (a.Count < b.Count) {
-				MethodNameGroup tmp = a;
+				var tmp = a;
 				a = b;
 				b = tmp;
 			}
-			a.merge(b);
+			a.Merge(b);
 			foreach (var methodDef in b.Methods)
 				methodGroups[methodDef] = a;
 		}
 
-		public IEnumerable<MethodNameGroup> getAllGroups() {
-			return Utils.unique(methodGroups.Values);
-		}
+		public IEnumerable<MethodNameGroup> GetAllGroups() => Utils.Unique(methodGroups.Values);
 	}
 }

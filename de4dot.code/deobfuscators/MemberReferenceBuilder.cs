@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -19,174 +19,84 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using de4dot.blocks;
+using dnlib.DotNet;
 
 namespace de4dot.code.deobfuscators {
-	class MemberReferenceBuilder {
-		ModuleDefinition module;
-		Dictionary<TypeReferenceKey, TypeReference> createdTypes = new Dictionary<TypeReferenceKey, TypeReference>();
+	public class MemberRefBuilder {
+		ModuleDefMD module;
+		Dictionary<TypeSig, TypeSig> createdTypes = new Dictionary<TypeSig, TypeSig>(TypeEqualityComparer.Instance);
 
-		public MemberReferenceBuilder(ModuleDefinition module) {
-			this.module = module;
+		public MemberRefBuilder(ModuleDefMD module) => this.module = module;
+
+		public AssemblyRef CorLib => module.CorLibTypes.AssemblyRef;
+		public CorLibTypeSig Object => module.CorLibTypes.Object;
+		public CorLibTypeSig Void => module.CorLibTypes.Void;
+		public CorLibTypeSig Boolean => module.CorLibTypes.Boolean;
+		public CorLibTypeSig Char => module.CorLibTypes.Char;
+		public CorLibTypeSig SByte => module.CorLibTypes.SByte;
+		public CorLibTypeSig Byte => module.CorLibTypes.Byte;
+		public CorLibTypeSig Int16 => module.CorLibTypes.Int16;
+		public CorLibTypeSig UInt16 => module.CorLibTypes.UInt16;
+		public CorLibTypeSig Int32 => module.CorLibTypes.Int32;
+		public CorLibTypeSig UInt32 => module.CorLibTypes.UInt32;
+		public CorLibTypeSig Int64 => module.CorLibTypes.Int64;
+		public CorLibTypeSig UInt64 => module.CorLibTypes.UInt64;
+		public CorLibTypeSig Single => module.CorLibTypes.Single;
+		public CorLibTypeSig Double => module.CorLibTypes.Double;
+		public CorLibTypeSig IntPtr => module.CorLibTypes.IntPtr;
+		public CorLibTypeSig UIntPtr => module.CorLibTypes.UIntPtr;
+		public CorLibTypeSig String => module.CorLibTypes.String;
+		public CorLibTypeSig TypedReference => module.CorLibTypes.TypedReference;
+
+		public ClassSig Type(string ns, string name, string asmSimpleName) => Type(ns, name, FindAssemblyRef(asmSimpleName));
+		public ClassSig Type(string ns, string name) => Type(ns, name, CorLib);
+		public ClassSig Type(string ns, string name, AssemblyRef asmRef) => (ClassSig)Type(false, ns, name, asmRef);
+		public ValueTypeSig ValueType(string ns, string name, string asmSimpleName) => ValueType(ns, name, FindAssemblyRef(asmSimpleName));
+		public ValueTypeSig ValueType(string ns, string name) => ValueType(ns, name, CorLib);
+		public ValueTypeSig ValueType(string ns, string name, AssemblyRef asmRef) => (ValueTypeSig)Type(true, ns, name, asmRef);
+
+		public ClassOrValueTypeSig Type(bool isValueType, string ns, string name, IResolutionScope resolutionScope) {
+			var typeRef = module.UpdateRowId(new TypeRefUser(module, ns, name, resolutionScope));
+			ClassOrValueTypeSig type;
+			if (isValueType)
+				type = new ValueTypeSig(typeRef);
+			else
+				type = new ClassSig(typeRef);
+			return (ClassOrValueTypeSig)Add(type);
 		}
 
-		public IMetadataScope CorLib {
-			get { return module.TypeSystem.Corlib; }
-		}
+		public SZArraySig Array(TypeSig typeRef) => (SZArraySig)Add(new SZArraySig(typeRef));
 
-		public TypeReference Object {
-			get { return module.TypeSystem.Object; }
-		}
-
-		public TypeReference Void {
-			get { return module.TypeSystem.Void; }
-		}
-
-		public TypeReference Boolean {
-			get { return module.TypeSystem.Boolean; }
-		}
-
-		public TypeReference Char {
-			get { return module.TypeSystem.Char; }
-		}
-
-		public TypeReference SByte {
-			get { return module.TypeSystem.SByte; }
-		}
-
-		public TypeReference Byte {
-			get { return module.TypeSystem.Byte; }
-		}
-
-		public TypeReference Int16 {
-			get { return module.TypeSystem.Int16; }
-		}
-
-		public TypeReference UInt16 {
-			get { return module.TypeSystem.UInt16; }
-		}
-
-		public TypeReference Int32 {
-			get { return module.TypeSystem.Int32; }
-		}
-
-		public TypeReference UInt32 {
-			get { return module.TypeSystem.UInt32; }
-		}
-
-		public TypeReference Int64 {
-			get { return module.TypeSystem.Int64; }
-		}
-
-		public TypeReference UInt64 {
-			get { return module.TypeSystem.UInt64; }
-		}
-
-		public TypeReference Single {
-			get { return module.TypeSystem.Single; }
-		}
-
-		public TypeReference Double {
-			get { return module.TypeSystem.Double; }
-		}
-
-		public TypeReference IntPtr {
-			get { return module.TypeSystem.IntPtr; }
-		}
-
-		public TypeReference UIntPtr {
-			get { return module.TypeSystem.UIntPtr; }
-		}
-
-		public TypeReference String {
-			get { return module.TypeSystem.String; }
-		}
-
-		public TypeReference TypedReference {
-			get { return module.TypeSystem.TypedReference; }
-		}
-
-		public TypeReference type(string ns, string name, string asmSimpleName) {
-			return type(ns, name, findAssemblyReference(asmSimpleName));
-		}
-
-		public TypeReference type(string ns, string name) {
-			return type(ns, name, CorLib);
-		}
-
-		public TypeReference type(string ns, string name, IMetadataScope asmRef) {
-			return type(false, ns, name, asmRef);
-		}
-
-		public TypeReference valueType(string ns, string name, string asmSimpleName) {
-			return valueType(ns, name, findAssemblyReference(asmSimpleName));
-		}
-
-		public TypeReference valueType(string ns, string name) {
-			return valueType(ns, name, CorLib);
-		}
-
-		public TypeReference valueType(string ns, string name, IMetadataScope asmRef) {
-			return type(true, ns, name, asmRef);
-		}
-
-		public TypeReference type(bool isValueType, string ns, string name, IMetadataScope asmRef) {
-			var typeRef = new TypeReference(ns, name, module, asmRef);
-			typeRef.IsValueType = isValueType;
-			return add(isValueType, typeRef);
-		}
-
-		public TypeReference array(TypeReference typeRef) {
-			return add(false, new ArrayType(typeRef));
-		}
-
-		TypeReference add(bool isValueType, TypeReference typeRef) {
-			var key = new TypeReferenceKey(typeRef);
-			TypeReference createdTypeRef;
-			if (createdTypes.TryGetValue(key, out createdTypeRef)) {
-				if (createdTypeRef.IsValueType != isValueType)
-					throw new ApplicationException(string.Format("Type {0}'s IsValueType is not correct", createdTypeRef));
+		TypeSig Add(TypeSig typeRef) {
+			if (createdTypes.TryGetValue(typeRef, out var createdTypeRef)) {
+				if (createdTypeRef.ElementType != typeRef.ElementType)
+					throw new ApplicationException($"Type {createdTypeRef}'s IsValueType is not correct");
 				return createdTypeRef;
 			}
-			createdTypes[key] = typeRef;
+			createdTypes[typeRef] = typeRef;
 			return typeRef;
 		}
 
-		public MethodReference instanceMethod(string name, TypeReference declaringType, TypeReference returnType, params TypeReference[] args) {
-			return method(true, name, declaringType, returnType, args);
+		public MemberRef InstanceMethod(string name, IMemberRefParent declaringType, TypeSig returnType, params TypeSig[] args) =>
+			Method(true, name, declaringType, returnType, args);
+
+		public MemberRef StaticMethod(string name, IMemberRefParent declaringType, TypeSig returnType, params TypeSig[] args) =>
+			Method(false, name, declaringType, returnType, args);
+
+		public MemberRef Method(bool isInstance, string name, IMemberRefParent declaringType, TypeSig returnType, params TypeSig[] args) {
+			MethodSig sig;
+			if (isInstance)
+				sig = MethodSig.CreateInstance(returnType, args);
+			else
+				sig = MethodSig.CreateStatic(returnType, args);
+			return module.UpdateRowId(new MemberRefUser(module, name, sig, declaringType));
 		}
 
-		public MethodReference staticMethod(string name, TypeReference declaringType, TypeReference returnType, params TypeReference[] args) {
-			return method(false, name, declaringType, returnType, args);
-		}
-
-		public MethodReference method(bool isInstance, string name, TypeReference declaringType, TypeReference returnType, params TypeReference[] args) {
-			var method = new MethodReference(name, returnType, declaringType);
-			method.HasThis = isInstance;
-			foreach (var arg in args)
-				method.Parameters.Add(new ParameterDefinition(arg));
-			return method;
-		}
-
-		AssemblyNameReference findAssemblyReference(string asmSimpleName) {
-			AssemblyNameReference asmRef = null;
-			foreach (var asmRef2 in findAssemblyReferences(asmSimpleName)) {
-				if (asmRef == null || asmRef.Version == null || (asmRef2.Version != null && asmRef2.Version > asmRef.Version))
-					asmRef = asmRef2;
-			}
+		AssemblyRef FindAssemblyRef(string asmSimpleName) {
+			var asmRef = module.GetAssemblyRef(asmSimpleName);
 			if (asmRef == null)
-				throw new ApplicationException(string.Format("Could not find assembly {0} in assembly references", asmSimpleName));
+				throw new ApplicationException($"Could not find assembly {asmSimpleName} in assembly references");
 			return asmRef;
-		}
-
-		List<AssemblyNameReference> findAssemblyReferences(string asmSimpleName) {
-			var asmRefs = new List<AssemblyNameReference>();
-			foreach (var asmRef in module.AssemblyReferences) {
-				if (asmRef.Name == asmSimpleName)
-					asmRefs.Add(asmRef);
-			}
-			return asmRefs;
 		}
 	}
 }

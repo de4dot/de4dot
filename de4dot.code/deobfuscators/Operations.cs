@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -17,6 +17,9 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using dnlib.DotNet.Writer;
+using de4dot.code.renamer;
+
 namespace de4dot.code.deobfuscators {
 	public enum OpDecryptString {
 		None,
@@ -26,11 +29,15 @@ namespace de4dot.code.deobfuscators {
 
 	public interface IOperations {
 		bool KeepObfuscatorTypes { get; }
+		MetadataFlags MetadataFlags { get; }
+		RenamerFlags RenamerFlags { get; }
 		OpDecryptString DecryptStrings { get; }
 	}
 
-	class Operations : IOperations {
+	public class Operations : IOperations {
 		public bool KeepObfuscatorTypes { get; set; }
+		public MetadataFlags MetadataFlags { get; set; }
+		public RenamerFlags RenamerFlags { get; set; }
 		public OpDecryptString DecryptStrings { get; set; }
 	}
 }

@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -30,14 +30,12 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			mother = new CRandomMother(seed);
 		}
 
-		uint random() {
-			return (mersenne.BRandom() >> 1) ^ (uint)Math.Abs((int)(mother.Random() * int.MinValue));
-		}
+		uint Random() => (mersenne.BRandom() >> 1) ^ (uint)Math.Abs((int)(mother.Random() * int.MinValue));
 
-		public byte[] generate(int size) {
+		public byte[] Generate(int size) {
 			var key = new byte[size];
 			for (int i = 0; i < size; i++)
-				key[i] = (byte)random();
+				key[i] = (byte)Random();
 			return key;
 		}
 	}

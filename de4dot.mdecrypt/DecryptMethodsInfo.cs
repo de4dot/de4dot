@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -19,7 +19,6 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.MyStuff;
 
 namespace de4dot.mdecrypt {
 	[Serializable]

@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -21,65 +21,59 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators {
-	class InitializedDataCreator {
-		ModuleDefinition module;
-		Dictionary<long, TypeDefinition> sizeToArrayType = new Dictionary<long, TypeDefinition>();
-		TypeDefinition ourType;
-		TypeReference valueType;
+	public class InitializedDataCreator {
+		ModuleDef module;
+		Dictionary<long, TypeDef> sizeToArrayType = new Dictionary<long, TypeDef>();
+		TypeDef ourType;
+		TypeDefOrRefSig valueType;
 		int unique = 0;
-		MethodReference initializeArrayMethod;
+		MemberRef initializeArrayMethod;
 
-		public MethodReference InitializeArrayMethod {
-			get { return createInitializeArrayMethod(); }
-		}
+		public MemberRef InitializeArrayMethod => CreateInitializeArrayMethod();
+		public InitializedDataCreator(ModuleDef module) => this.module = module;
 
-		public InitializedDataCreator(ModuleDefinition module) {
-			this.module = module;
-		}
-
-		MethodReference createInitializeArrayMethod() {
+		MemberRef CreateInitializeArrayMethod() {
 			if (initializeArrayMethod == null) {
-				var runtimeHelpersType = DotNetUtils.findOrCreateTypeReference(module, module.TypeSystem.Corlib as AssemblyNameReference, "System.Runtime.CompilerServices", "RuntimeHelpers", false);
-				initializeArrayMethod = new MethodReference("InitializeArray", module.TypeSystem.Void, runtimeHelpersType);
-				var systemArrayType = DotNetUtils.findOrCreateTypeReference(module, module.TypeSystem.Corlib as AssemblyNameReference, "System", "Array", false);
-				var runtimeFieldHandleType = DotNetUtils.findOrCreateTypeReference(module, module.TypeSystem.Corlib as AssemblyNameReference, "System", "RuntimeFieldHandle", true);
-				initializeArrayMethod.Parameters.Add(new ParameterDefinition(systemArrayType));
-				initializeArrayMethod.Parameters.Add(new ParameterDefinition(runtimeFieldHandleType));
+				var runtimeHelpersType = DotNetUtils.FindOrCreateTypeRef(module, module.CorLibTypes.AssemblyRef, "System.Runtime.CompilerServices", "RuntimeHelpers", false);
+				var systemArrayType = DotNetUtils.FindOrCreateTypeRef(module, module.CorLibTypes.AssemblyRef, "System", "Array", false);
+				var runtimeFieldHandleType = DotNetUtils.FindOrCreateTypeRef(module, module.CorLibTypes.AssemblyRef, "System", "RuntimeFieldHandle", true);
+				var methodSig = MethodSig.CreateStatic(module.CorLibTypes.Void, systemArrayType, runtimeFieldHandleType);
+				initializeArrayMethod = module.UpdateRowId(new MemberRefUser(module, "InitializeArray", methodSig, runtimeHelpersType.TypeDefOrRef));
 			}
 			return initializeArrayMethod;
 		}
 
-		public void addInitializeArrayCode(Block block, int start, int numToRemove, TypeReference elementType, byte[] data) {
+		public void AddInitializeArrayCode(Block block, int start, int numToRemove, ITypeDefOrRef elementType, byte[] data) {
 			int index = start;
-			block.replace(index++, numToRemove, DotNetUtils.createLdci4(data.Length / elementType.PrimitiveSize));
-			block.insert(index++, Instruction.Create(OpCodes.Newarr, elementType));
-			block.insert(index++, Instruction.Create(OpCodes.Dup));
-			block.insert(index++, Instruction.Create(OpCodes.Ldtoken, create(data)));
-			block.insert(index++, Instruction.Create(OpCodes.Call, InitializeArrayMethod));
+			block.Replace(index++, numToRemove, Instruction.CreateLdcI4(data.Length / elementType.ToTypeSig().ElementType.GetPrimitiveSize()));
+			block.Insert(index++, OpCodes.Newarr.ToInstruction(elementType));
+			block.Insert(index++, OpCodes.Dup.ToInstruction());
+			block.Insert(index++, OpCodes.Ldtoken.ToInstruction((IField)Create(data)));
+			block.Insert(index++, OpCodes.Call.ToInstruction((IMethod)InitializeArrayMethod));
 		}
 
-		void createOurType() {
+		void CreateOurType() {
 			if (ourType != null)
 				return;
 
-			var attrs = TypeAttributes.NotPublic | TypeAttributes.AutoLayout |
-						TypeAttributes.Class | TypeAttributes.AnsiClass;
-			ourType = new TypeDefinition("", string.Format("<PrivateImplementationDetails>{0}", getModuleId()), attrs, module.TypeSystem.Object);
-			ourType.MetadataToken = DotNetUtils.nextTypeDefToken();
+			ourType = new TypeDefUser("", $"<PrivateImplementationDetails>{GetModuleId()}", module.CorLibTypes.Object.TypeDefOrRef);
+			ourType.Attributes = TypeAttributes.NotPublic | TypeAttributes.AutoLayout |
+							TypeAttributes.Class | TypeAttributes.AnsiClass;
+			module.UpdateRowId(ourType);
 			module.Types.Add(ourType);
 		}
 
-		object getModuleId() {
+		object GetModuleId() {
 			var memoryStream = new MemoryStream();
 			var writer = new BinaryWriter(memoryStream);
 			if (module.Assembly != null)
-				writer.Write(module.Assembly.Name.FullName);
-			writer.Write(module.Mvid.ToByteArray());
+				writer.Write(module.Assembly.FullName);
+			writer.Write((module.Mvid ?? Guid.Empty).ToByteArray());
 			var hash = new SHA1Managed().ComputeHash(memoryStream.GetBuffer());
 			var guid = new Guid(BitConverter.ToInt32(hash, 0),
 								BitConverter.ToInt16(hash, 4),
@@ -89,33 +83,31 @@ namespace de4dot.code.deobfuscators {
 			return guid.ToString("B");
 		}
 
-		TypeDefinition getArrayType(long size) {
-			createOurType();
+		TypeDef GetArrayType(long size) {
+			CreateOurType();
 
-			TypeDefinition arrayType;
-			if (sizeToArrayType.TryGetValue(size, out arrayType))
+			if (sizeToArrayType.TryGetValue(size, out var arrayType))
 				return arrayType;
 
 			if (valueType == null)
-				valueType = DotNetUtils.findOrCreateTypeReference(module, module.TypeSystem.Corlib as AssemblyNameReference, "System", "ValueType", false);
-			var attrs = TypeAttributes.NestedPrivate | TypeAttributes.ExplicitLayout |
-						TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.AnsiClass;
-			arrayType = new TypeDefinition("", string.Format("__StaticArrayInitTypeSize={0}", size), attrs, valueType);
-			arrayType.MetadataToken = DotNetUtils.nextTypeDefToken();
+				valueType = DotNetUtils.FindOrCreateTypeRef(module, module.CorLibTypes.AssemblyRef, "System", "ValueType", false);
+			arrayType = new TypeDefUser("", $"__StaticArrayInitTypeSize={size}", valueType.TypeDefOrRef);
+			module.UpdateRowId(arrayType);
+			arrayType.Attributes = TypeAttributes.NestedPrivate | TypeAttributes.ExplicitLayout |
+							TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.AnsiClass;
 			ourType.NestedTypes.Add(arrayType);
 			sizeToArrayType[size] = arrayType;
-			arrayType.ClassSize = (int)size;
-			arrayType.PackingSize = 1;
-			arrayType.IsValueType = true;
+			arrayType.ClassLayout = new ClassLayoutUser(1, (uint)size);
 			return arrayType;
 		}
 
-		public FieldDefinition create(byte[] data) {
-			var arrayType = getArrayType(data.LongLength);
+		public FieldDef Create(byte[] data) {
+			var arrayType = GetArrayType(data.LongLength);
+			var fieldSig = new FieldSig(new ValueTypeSig(arrayType));
 			var attrs = FieldAttributes.Assembly | FieldAttributes.Static;
-			var field = new FieldDefinition(string.Format("field_{0}", unique++), attrs, arrayType);
-			field.Attributes |= FieldAttributes.HasFieldRVA;
-			field.MetadataToken = DotNetUtils.nextFieldToken();
+			var field = new FieldDefUser($"field_{unique++}", fieldSig, attrs);
+			module.UpdateRowId(field);
+			field.HasFieldRVA = true;
 			ourType.Fields.Add(field);
 			var iv = new byte[data.Length];
 			Array.Copy(data, iv, data.Length);

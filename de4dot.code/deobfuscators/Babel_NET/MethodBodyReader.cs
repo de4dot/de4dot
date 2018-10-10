@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -18,75 +18,100 @@
 */
 
 using System;
-using System.IO;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using System.Collections.Generic;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 
 namespace de4dot.code.deobfuscators.Babel_NET {
 	class MethodBodyReader : MethodBodyReaderBase {
 		ImageReader imageReader;
 		public int Flags2 { get; set; }
-		public short MaxStack { get; set; }
+		public ushort MaxStack { get; set; }
+		public MethodBodyReader(ImageReader imageReader) : base(imageReader.reader) => this.imageReader = imageReader;
 
-		public MethodBodyReader(ImageReader imageReader, BinaryReader reader)
-			: base(reader) {
-			this.imageReader = imageReader;
-		}
-
-		public void read(ParameterDefinition[] parameters) {
+		public void Read(IList<Parameter> parameters) {
 			this.parameters = parameters;
-			Flags2 = reader.ReadInt16();
-			MaxStack = reader.ReadInt16();
-			setLocals(imageReader.readTypeReferences());
-			readInstructions(imageReader.readVariableLengthInt32());
-			readExceptionHandlers(imageReader.readVariableLengthInt32());
+			Flags2 = imageReader.reader.ReadInt16();
+			MaxStack = imageReader.reader.ReadUInt16();
+			SetLocals(imageReader.ReadTypeSigs());
+			int len = imageReader.ReadVariableLengthInt32();
+			reader.Position = imageReader.reader.Position;
+			ReadInstructions(len);
+			imageReader.reader.Position = reader.Position;
+			ReadExceptionHandlers(imageReader.ReadVariableLengthInt32());
+			reader.Position = imageReader.reader.Position;
 		}
 
-		protected override FieldReference readInlineField(Instruction instr) {
-			return imageReader.readFieldReference();
+		protected override IField ReadInlineField(Instruction instr) {
+			imageReader.reader.Position = reader.Position;
+			var res = imageReader.ReadFieldRef();
+			reader.Position = imageReader.reader.Position;
+			return res;
 		}
 
-		protected override MethodReference readInlineMethod(Instruction instr) {
-			return imageReader.readMethodReference();
+		protected override IMethod ReadInlineMethod(Instruction instr) {
+			imageReader.reader.Position = reader.Position;
+			var res = imageReader.ReadMethodRef();
+			reader.Position = imageReader.reader.Position;
+			return res;
 		}
 
-		protected override CallSite readInlineSig(Instruction instr) {
-			return imageReader.readCallSite();
+		protected override MethodSig ReadInlineSig(Instruction instr) {
+			imageReader.reader.Position = reader.Position;
+			var res = imageReader.ReadCallSite();
+			reader.Position = imageReader.reader.Position;
+			return res;
 		}
 
-		protected override string readInlineString(Instruction instr) {
-			return imageReader.readString();
+		protected override string ReadInlineString(Instruction instr) {
+			imageReader.reader.Position = reader.Position;
+			var res = imageReader.ReadString();
+			reader.Position = imageReader.reader.Position;
+			return res;
 		}
 
-		protected override MemberReference readInlineTok(Instruction instr) {
-			switch (reader.ReadByte()) {
-			case 0: return imageReader.readTypeReference();
-			case 1: return imageReader.readFieldReference();
-			case 2: return imageReader.readMethodReference();
+		protected override ITokenOperand ReadInlineTok(Instruction instr) {
+			imageReader.reader.Position = reader.Position;
+			ITokenOperand res;
+			switch (imageReader.reader.ReadByte()) {
+			case 0: res = imageReader.ReadTypeSig().ToTypeDefOrRef(); break;
+			case 1: res = imageReader.ReadFieldRef(); break;
+			case 2: res = imageReader.ReadMethodRef(); break;
 			default: throw new ApplicationException("Unknown token type");
 			}
+			reader.Position = imageReader.reader.Position;
+			return res;
 		}
 
-		protected override TypeReference readInlineType(Instruction instr) {
-			return imageReader.readTypeReference();
+		protected override ITypeDefOrRef ReadInlineType(Instruction instr) {
+			imageReader.reader.Position = reader.Position;
+			var res = imageReader.ReadTypeSig().ToTypeDefOrRef();
+			reader.Position = imageReader.reader.Position;
+			return res;
 		}
 
-		protected override ExceptionHandler readExceptionHandler() {
-			var ehType = (ExceptionHandlerType)reader.ReadByte();
-			int tryOffset = imageReader.readVariableLengthInt32();
-			int tryLength = imageReader.readVariableLengthInt32();
-			int handlerOffset = imageReader.readVariableLengthInt32();
-			int handlerLength = imageReader.readVariableLengthInt32();
-			var catchType = imageReader.readTypeReference();
-			int filterOffset = imageReader.readVariableLengthInt32();
+		void ReadExceptionHandlers(int numExceptionHandlers) {
+			exceptionHandlers = new List<ExceptionHandler>(numExceptionHandlers);
+			for (int i = 0; i < numExceptionHandlers; i++)
+				Add(ReadExceptionHandler());
+		}
+
+		ExceptionHandler ReadExceptionHandler() {
+			var ehType = (ExceptionHandlerType)imageReader.reader.ReadByte();
+			uint tryOffset = imageReader.ReadVariableLengthUInt32();
+			uint tryLength = imageReader.ReadVariableLengthUInt32();
+			uint handlerOffset = imageReader.ReadVariableLengthUInt32();
+			uint handlerLength = imageReader.ReadVariableLengthUInt32();
+			var catchType = imageReader.ReadTypeSig().ToTypeDefOrRef();
+			uint filterOffset = imageReader.ReadVariableLengthUInt32();
 
 			var eh = new ExceptionHandler(ehType);
-			eh.TryStart = getInstruction(tryOffset);
-			eh.TryEnd = getInstructionOrNull(tryOffset + tryLength);
+			eh.TryStart = GetInstructionThrow(tryOffset);
+			eh.TryEnd = GetInstruction(tryOffset + tryLength);
 			if (ehType == ExceptionHandlerType.Filter)
-				eh.FilterStart = getInstruction(filterOffset);
-			eh.HandlerStart = getInstruction(handlerOffset);
-			eh.HandlerEnd = getInstructionOrNull(handlerOffset + handlerLength);
+				eh.FilterStart = GetInstructionThrow(filterOffset);
+			eh.HandlerStart = GetInstructionThrow(handlerOffset);
+			eh.HandlerEnd = GetInstruction(handlerOffset + handlerLength);
 			eh.CatchType = catchType;
 			return eh;
 		}

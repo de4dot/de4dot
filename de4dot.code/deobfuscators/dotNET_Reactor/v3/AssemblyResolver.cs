@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -18,7 +18,7 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
+using dnlib.DotNet;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
 
@@ -26,23 +26,14 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 	class AssemblyResolver {
 		DecryptMethod decryptMethod = new DecryptMethod();
 
-		public byte[] Key {
-			get { return decryptMethod.Key; }
-		}
+		public byte[] Key => decryptMethod.Key;
+		public byte[] Iv => decryptMethod.Iv;
+		public bool Detected => decryptMethod.Detected;
 
-		public byte[] Iv {
-			get { return decryptMethod.Iv; }
-		}
+		public AssemblyResolver(TypeDef type, ICflowDeobfuscator cflowDeobfuscator) =>
+			Find(type, cflowDeobfuscator);
 
-		public bool Detected {
-			get { return decryptMethod.Detected; }
-		}
-
-		public AssemblyResolver(TypeDefinition type, ICflowDeobfuscator cflowDeobfuscator) {
-			find(type, cflowDeobfuscator);
-		}
-
-		void find(TypeDefinition type, ICflowDeobfuscator cflowDeobfuscator) {
+		void Find(TypeDef type, ICflowDeobfuscator cflowDeobfuscator) {
 			var additionalTypes = new List<string> {
 				"System.IO.BinaryReader",
 				"System.IO.FileStream",
@@ -51,12 +42,12 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v3 {
 				"System.String",
 			};
 			foreach (var method in type.Methods) {
-				if (!DotNetUtils.isMethod(method, "System.Reflection.Assembly", "(System.Object,System.ResolveEventArgs)"))
+				if (!DotNetUtils.IsMethod(method, "System.Reflection.Assembly", "(System.Object,System.ResolveEventArgs)"))
 					continue;
-				if (!DecryptMethod.couldBeDecryptMethod(method, additionalTypes))
+				if (!DecryptMethod.CouldBeDecryptMethod(method, additionalTypes))
 					continue;
-				cflowDeobfuscator.deobfuscate(method);
-				if (!decryptMethod.getKey(method))
+				cflowDeobfuscator.Deobfuscate(method);
+				if (!decryptMethod.GetKey(method))
 					continue;
 
 				return;

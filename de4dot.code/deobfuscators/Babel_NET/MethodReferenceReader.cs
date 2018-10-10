@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -19,78 +19,45 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using Mono.Collections.Generic;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 
 namespace de4dot.code.deobfuscators.Babel_NET {
-	class BabelMethodreference : IGenericInstance {
+	class BabelMethodreference {
 		public string Name { get; set; }
-		public TypeReference DeclaringType { get; set; }
-		public TypeReference ReturnType { get; set; }
-		public ParameterDefinition[] Parameters { get; set; }
-		public TypeReference[] GenericArguments { get; set; }
+		public TypeSig DeclaringType { get; set; }
+		public TypeSig ReturnType { get; set; }
+		public Parameter[] Parameters { get; set; }
+		public TypeSig[] GenericArguments { get; set; }
 		public int Flags { get; set; }
-
-		public bool HasThis {
-			get { return (Flags & 1) != 0; }
-		}
-
-		public bool IsGenericMethod {
-			get { return (Flags & 2) != 0; }
-		}
-
-		bool IGenericInstance.HasGenericArguments {
-			get { return IsGenericMethod; }
-		}
-
-		Collection<TypeReference> IGenericInstance.GenericArguments {
-			get { return new Collection<TypeReference>(GenericArguments); }
-		}
-
-		MetadataToken IMetadataTokenProvider.MetadataToken {
-			get { throw new NotImplementedException(); }
-			set { throw new NotImplementedException(); }
-		}
+		public bool HasThis => (Flags & 1) != 0;
+		public bool IsGenericMethod => (Flags & 2) != 0;
 	}
 
-	class BabelMethodDefinition : BabelMethodreference {
-		ParameterDefinition thisParameter;
+	class BabelMethodDef : BabelMethodreference {
+		Parameter thisParameter;
 
 		public int Flags2 { get; set; }
-		public short MaxStack { get; set; }
-		public List<VariableDefinition> Locals { get; set; }
-		public Instruction[] Instructions { get; set; }
-		public ExceptionHandler[] ExceptionHandlers { get; set; }
+		public ushort MaxStack { get; set; }
+		public IList<Local> Locals { get; set; }
+		public IList<Instruction> Instructions { get; set; }
+		public IList<ExceptionHandler> ExceptionHandlers { get; set; }
+		public bool IsStatic => (Flags2 & 0x10) != 0;
+		public bool RequiresFatExceptionHandler => (Flags2 & 0x20) != 0;
+		public bool InitLocals => (Flags2 & 0x40) != 0;
+		public bool CacheMethod => (Flags2 & 0x80) != 0;
 
-		public bool IsStatic {
-			get { return (Flags2 & 0x10) != 0; }
-		}
-
-		public bool RequiresFatExceptionHandler {
-			get { return (Flags2 & 0x20) != 0; }
-		}
-
-		public bool InitLocals {
-			get { return (Flags2 & 0x40) != 0; }
-		}
-
-		public bool CacheMethod {
-			get { return (Flags2 & 0x80) != 0; }
-		}
-
-		public ParameterDefinition ThisParameter {
+		public Parameter ThisParameter {
 			get {
 				if (!HasThis)
 					return null;
 				if (thisParameter != null)
 					return thisParameter;
-				return thisParameter = new ParameterDefinition(DeclaringType);
+				return thisParameter = new Parameter(0, Parameter.HIDDEN_THIS_METHOD_SIG_INDEX, DeclaringType);
 			}
 		}
 
-		public void setBody(MethodBodyReader mbr) {
+		public void SetBody(MethodBodyReader mbr) {
 			Flags2 = mbr.Flags2;
 			MaxStack = mbr.MaxStack;
 			Locals = mbr.Locals;
@@ -98,68 +65,67 @@ namespace de4dot.code.deobfuscators.Babel_NET {
 			ExceptionHandlers = mbr.ExceptionHandlers;
 		}
 
-		public ParameterDefinition[] getRealParameters() {
+		public IList<Parameter> GetRealParameters() {
 			if (ThisParameter == null)
 				return Parameters;
-			var parameters = new ParameterDefinition[Parameters.Length + 1];
+			var parameters = new Parameter[Parameters.Length + 1];
 			parameters[0] = ThisParameter;
 			Array.Copy(Parameters, 0, parameters, 1, Parameters.Length);
 			return parameters;
 		}
 	}
 
-	class MethodReferenceReader {
+	class MethodRefReader {
 		ImageReader imageReader;
-		BinaryReader reader;
 		BabelMethodreference bmr;
 
-		public MethodReferenceReader(ImageReader imageReader, BinaryReader reader)
-			: this(imageReader, reader, new BabelMethodreference()) {
+		public MethodRefReader(ImageReader imageReader)
+			: this(imageReader, new BabelMethodreference()) {
 		}
 
-		public MethodReferenceReader(ImageReader imageReader, BinaryReader reader, BabelMethodreference bmr) {
+		public MethodRefReader(ImageReader imageReader, BabelMethodreference bmr) {
 			this.imageReader = imageReader;
-			this.reader = reader;
 			this.bmr = bmr;
 		}
 
-		public BabelMethodreference read() {
-			bmr.Name = imageReader.readString();
-			bmr.DeclaringType = imageReader.readTypeReference();
-			bmr.ReturnType = imageReader.readTypeReference();
-			bmr.Parameters = readParameters();
-			bmr.Flags = reader.ReadByte();
+		public BabelMethodreference Read() {
+			bmr.Name = imageReader.ReadString();
+			bmr.DeclaringType = imageReader.ReadTypeSig();
+			bmr.ReturnType = imageReader.ReadTypeSig();
+			var argTypes = imageReader.ReadTypeSigs();
+			bmr.Flags = imageReader.reader.ReadByte();
 			if (bmr.IsGenericMethod)
-				bmr.GenericArguments = imageReader.readTypeReferences();
+				bmr.GenericArguments = imageReader.ReadTypeSigs();
 			else
-				bmr.GenericArguments = new TypeReference[0];
+				bmr.GenericArguments = new TypeSig[0];
+			bmr.Parameters = ReadParameters(argTypes, bmr.HasThis);
 			return bmr;
 		}
 
-		ParameterDefinition[] readParameters() {
-			var typeReferences = imageReader.readTypeReferences();
-			var parameters = new ParameterDefinition[typeReferences.Length];
-			for (int i = 0; i < parameters.Length; i++)
-				parameters[i] = new ParameterDefinition(typeReferences[i]);
-			return parameters;
+		Parameter[] ReadParameters(IList<TypeSig> argTypes, bool hasThis) {
+			var ps = new Parameter[argTypes.Count];
+			int bi = hasThis ? 1 : 0;
+			for (int i = 0; i < ps.Length; i++)
+				ps[i] = new Parameter(bi + i, i, argTypes[i]);
+			return ps;
 		}
 	}
 
-	class MethodDefinitionReader {
-		MethodReferenceReader methodReferenceReader;
+	class MethodDefReader {
+		MethodRefReader methodRefReader;
 		MethodBodyReader methodBodyReader;
-		BabelMethodDefinition bmd;
+		BabelMethodDef bmd;
 
-		public MethodDefinitionReader(ImageReader imageReader, BinaryReader reader) {
-			this.bmd = new BabelMethodDefinition();
-			this.methodReferenceReader = new MethodReferenceReader(imageReader, reader, bmd);
-			this.methodBodyReader = new MethodBodyReader(imageReader, reader);
+		public MethodDefReader(ImageReader imageReader) {
+			bmd = new BabelMethodDef();
+			methodRefReader = new MethodRefReader(imageReader, bmd);
+			methodBodyReader = new MethodBodyReader(imageReader);
 		}
 
-		public BabelMethodDefinition read() {
-			methodReferenceReader.read();
-			methodBodyReader.read(bmd.getRealParameters());
-			bmd.setBody(methodBodyReader);
+		public BabelMethodDef Read() {
+			methodRefReader.Read();
+			methodBodyReader.Read(bmd.GetRealParameters());
+			bmd.SetBody(methodBodyReader);
 			return bmd;
 		}
 	}

@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -17,29 +17,24 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using System;
-using System.IO;
-using Mono.Cecil;
-using de4dot.blocks;
+using dnlib.DotNet;
 
 namespace de4dot.code.deobfuscators.SmartAssembly {
 	class ResourceResolver {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		AssemblyResolver assemblyResolver;
 		ResourceResolverInfo resourceResolverInfo;
 		bool mergedIt = false;
 
-		public ResourceResolver(ModuleDefinition module, AssemblyResolver assemblyResolver, ResourceResolverInfo resourceResolverInfo) {
+		public ResourceResolver(ModuleDefMD module, AssemblyResolver assemblyResolver, ResourceResolverInfo resourceResolverInfo) {
 			this.module = module;
 			this.assemblyResolver = assemblyResolver;
 			this.resourceResolverInfo = resourceResolverInfo;
 		}
 
-		public bool canDecryptResource() {
-			return assemblyResolver.canDecryptResource(resourceResolverInfo.ResourceInfo);
-		}
+		public bool CanDecryptResource() => assemblyResolver.CanDecryptResource(resourceResolverInfo.ResourceInfo);
 
-		public EmbeddedAssemblyInfo mergeResources() {
+		public EmbeddedAssemblyInfo MergeResources() {
 			if (mergedIt)
 				return null;
 
@@ -47,7 +42,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			if (info == null)
 				return null;
 
-			DeobUtils.decryptAndAddResources(module, info.resourceName, () => assemblyResolver.removeDecryptedResource(info));
+			DeobUtils.DecryptAndAddResources(module, info.resourceName, () => assemblyResolver.RemoveDecryptedResource(info));
 			mergedIt = true;
 			return info;
 		}

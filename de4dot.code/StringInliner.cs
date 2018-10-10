@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -19,14 +19,14 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.code.AssemblyClient;
 using de4dot.blocks;
 
 namespace de4dot.code {
-	abstract class StringInlinerBase : MethodReturnValueInliner {
-		protected override void inlineReturnValues(IList<CallResult> callResults) {
+	public abstract class StringInlinerBase : MethodReturnValueInliner {
+		protected override void InlineReturnValues(IList<CallResult> callResults) {
 			foreach (var callResult in callResults) {
 				var block = callResult.block;
 				int num = callResult.callEndIndex - callResult.callStartIndex + 1;
@@ -36,74 +36,69 @@ namespace de4dot.code {
 					continue;
 
 				int ldstrIndex = callResult.callStartIndex;
-				block.replace(ldstrIndex, num, Instruction.Create(OpCodes.Ldstr, decryptedString));
+				block.Replace(ldstrIndex, num, OpCodes.Ldstr.ToInstruction(decryptedString));
 
 				// If it's followed by castclass string, remove it
 				if (ldstrIndex + 1 < block.Instructions.Count) {
 					var instr = block.Instructions[ldstrIndex + 1];
 					if (instr.OpCode.Code == Code.Castclass && instr.Operand.ToString() == "System.String")
-						block.remove(ldstrIndex + 1, 1);
+						block.Remove(ldstrIndex + 1, 1);
 				}
 
 				// If it's followed by String.Intern(), then nop out that call
 				if (ldstrIndex + 1 < block.Instructions.Count) {
 					var instr = block.Instructions[ldstrIndex + 1];
 					if (instr.OpCode.Code == Code.Call) {
-						var calledMethod = instr.Operand as MethodReference;
-						if (calledMethod != null &&
+						if (instr.Operand is IMethod calledMethod &&
 							calledMethod.FullName == "System.String System.String::Intern(System.String)") {
-							block.remove(ldstrIndex + 1, 1);
+							block.Remove(ldstrIndex + 1, 1);
 						}
 					}
 				}
 
-				Log.v("Decrypted string: {0}", Utils.toCsharpString(decryptedString));
+				Logger.v("Decrypted string: {0}", Utils.ToCsharpString(decryptedString));
 			}
 		}
 	}
 
-	class DynamicStringInliner : StringInlinerBase {
+	public class DynamicStringInliner : StringInlinerBase {
 		IAssemblyClient assemblyClient;
 		Dictionary<int, int> methodTokenToId = new Dictionary<int, int>();
 
 		class MyCallResult : CallResult {
 			public int methodId;
-			public MyCallResult(Block block, int callEndIndex, int methodId)
+			public MethodSpec gim;
+			public MyCallResult(Block block, int callEndIndex, int methodId, MethodSpec gim)
 				: base(block, callEndIndex) {
 				this.methodId = methodId;
+				this.gim = gim;
 			}
 		}
 
-		public override bool HasHandlers {
-			get { return methodTokenToId.Count != 0; }
-		}
+		public override bool HasHandlers => methodTokenToId.Count != 0;
 
-		public DynamicStringInliner(IAssemblyClient assemblyClient) {
-			this.assemblyClient = assemblyClient;
-		}
+		public DynamicStringInliner(IAssemblyClient assemblyClient) => this.assemblyClient = assemblyClient;
 
-		public void init(IEnumerable<int> methodTokens) {
+		public void Initialize(IEnumerable<int> methodTokens) {
 			methodTokenToId.Clear();
 			foreach (var methodToken in methodTokens) {
 				if (methodTokenToId.ContainsKey(methodToken))
 					continue;
-				methodTokenToId[methodToken] = assemblyClient.Service.defineStringDecrypter(methodToken);
+				methodTokenToId[methodToken] = assemblyClient.StringDecrypterService.DefineStringDecrypter(methodToken);
 			}
 		}
 
-		protected override CallResult createCallResult(MethodReference method, Block block, int callInstrIndex) {
-			int methodId;
-			if (!methodTokenToId.TryGetValue(method.MetadataToken.ToInt32(), out methodId))
+		protected override CallResult CreateCallResult(IMethod method, MethodSpec gim, Block block, int callInstrIndex) {
+			if (!methodTokenToId.TryGetValue(method.MDToken.ToInt32(), out int methodId))
 				return null;
-			return new MyCallResult(block, callInstrIndex, methodId);
+			return new MyCallResult(block, callInstrIndex, methodId, gim);
 		}
 
-		protected override void inlineAllCalls() {
+		protected override void InlineAllCalls() {
 			var sortedCalls = new Dictionary<int, List<MyCallResult>>();
 			foreach (var tmp in callResults) {
 				var callResult = (MyCallResult)tmp;
-				List<MyCallResult> list;
-				if (!sortedCalls.TryGetValue(callResult.methodId, out list))
+				if (!sortedCalls.TryGetValue(callResult.methodId, out var list))
 					sortedCalls[callResult.methodId] = list = new List<MyCallResult>(callResults.Count);
 				list.Add(callResult);
 			}
@@ -112,59 +107,52 @@ namespace de4dot.code {
 				var list = sortedCalls[methodId];
 				var args = new object[list.Count];
 				for (int i = 0; i < list.Count; i++) {
-					AssemblyData.SimpleData.pack(list[i].args);
+					AssemblyData.SimpleData.Pack(list[i].args);
 					args[i] = list[i].args;
 				}
-				var decryptedStrings = assemblyClient.Service.decryptStrings(methodId, args, Method.MetadataToken.ToInt32());
+				var decryptedStrings = assemblyClient.StringDecrypterService.DecryptStrings(methodId, args, Method.MDToken.ToInt32());
 				if (decryptedStrings.Length != args.Length)
 					throw new ApplicationException("Invalid decrypted strings array length");
-				AssemblyData.SimpleData.unpack(decryptedStrings);
-				for (int i = 0; i < list.Count; i++) {
-					var s = decryptedStrings[i];
-					if (s == null)
-						throw new ApplicationException(string.Format("Decrypted string is null. Method: {0}", list[i].getMethodReference()));
-					list[i].returnValue = (string)s;
-				}
+				AssemblyData.SimpleData.Unpack(decryptedStrings);
+				for (int i = 0; i < list.Count; i++)
+					list[i].returnValue = (string)decryptedStrings[i];
 			}
 		}
 	}
 
-	class StaticStringInliner : StringInlinerBase {
-		MethodDefinitionAndDeclaringTypeDict<Func<MethodDefinition, object[], string>> stringDecrypters = new MethodDefinitionAndDeclaringTypeDict<Func<MethodDefinition, object[], string>>();
+	public class StaticStringInliner : StringInlinerBase {
+		MethodDefAndDeclaringTypeDict<Func<MethodDef, MethodSpec, object[], string>> stringDecrypters = new MethodDefAndDeclaringTypeDict<Func<MethodDef, MethodSpec, object[], string>>();
 
-		public override bool HasHandlers {
-			get { return stringDecrypters.Count != 0; }
-		}
-
-		public IEnumerable<MethodDefinition> Methods {
-			get { return stringDecrypters.getKeys(); }
-		}
+		public override bool HasHandlers => stringDecrypters.Count != 0;
+		public IEnumerable<MethodDef> Methods => stringDecrypters.GetKeys();
 
 		class MyCallResult : CallResult {
-			public MethodReference methodReference;
-			public MyCallResult(Block block, int callEndIndex, MethodReference method)
+			public IMethod IMethod;
+			public MethodSpec gim;
+			public MyCallResult(Block block, int callEndIndex, IMethod method, MethodSpec gim)
 				: base(block, callEndIndex) {
-				this.methodReference = method;
+				IMethod = method;
+				this.gim = gim;
 			}
 		}
 
-		public void add(MethodDefinition method, Func<MethodDefinition, object[], string> handler) {
+		public void Add(MethodDef method, Func<MethodDef, MethodSpec, object[], string> handler) {
 			if (method != null)
-				stringDecrypters.add(method, handler);
+				stringDecrypters.Add(method, handler);
 		}
 
-		protected override void inlineAllCalls() {
+		protected override void InlineAllCalls() {
 			foreach (var tmp in callResults) {
 				var callResult = (MyCallResult)tmp;
-				var handler = stringDecrypters.find(callResult.methodReference);
-				callResult.returnValue = handler((MethodDefinition)callResult.methodReference, callResult.args);
+				var handler = stringDecrypters.Find(callResult.IMethod);
+				callResult.returnValue = handler((MethodDef)callResult.IMethod, callResult.gim, callResult.args);
 			}
 		}
 
-		protected override CallResult createCallResult(MethodReference method, Block block, int callInstrIndex) {
-			if (stringDecrypters.find(method) == null)
+		protected override CallResult CreateCallResult(IMethod method, MethodSpec gim, Block block, int callInstrIndex) {
+			if (stringDecrypters.Find(method) == null)
 				return null;
-			return new MyCallResult(block, callInstrIndex, method);
+			return new MyCallResult(block, callInstrIndex, method, gim);
 		}
 	}
 }

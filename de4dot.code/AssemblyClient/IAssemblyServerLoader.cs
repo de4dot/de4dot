@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -21,8 +21,8 @@ using System;
 using AssemblyData;
 
 namespace de4dot.code.AssemblyClient {
-	interface IAssemblyServerLoader : IDisposable {
-		void loadServer();
-		IAssemblyService createService();
+	public interface IAssemblyServerLoader : IDisposable {
+		void LoadServer();
+		IAssemblyService CreateService();
 	}
 }

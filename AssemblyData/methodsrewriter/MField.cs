@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -18,20 +18,18 @@
 */
 
 using System.Reflection;
-using Mono.Cecil;
+using dnlib.DotNet;
 
 namespace AssemblyData.methodsrewriter {
 	class MField {
 		public FieldInfo fieldInfo;
-		public FieldDefinition fieldDefinition;
+		public FieldDef fieldDef;
 
-		public MField(FieldInfo fieldInfo, FieldDefinition fieldDefinition) {
+		public MField(FieldInfo fieldInfo, FieldDef fieldDef) {
 			this.fieldInfo = fieldInfo;
-			this.fieldDefinition = fieldDefinition;
+			this.fieldDef = fieldDef;
 		}
 
-		public override string ToString() {
-			return fieldDefinition.ToString();
-		}
+		public override string ToString() => fieldDef.ToString();
 	}
 }

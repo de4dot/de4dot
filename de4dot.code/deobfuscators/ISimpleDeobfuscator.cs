@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -17,12 +17,23 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.Cecil;
+using System;
+using dnlib.DotNet;
 
 namespace de4dot.code.deobfuscators {
+	[Flags]
+	public enum SimpleDeobfuscatorFlags : uint {
+		Force											= 0x00000001,
+
+		// Hack for Confuser deobfuscator code. That code was written before the
+		// constants folder was updated and it now breaks the old Confuser code.
+		DisableConstantsFolderExtraInstrs				= 0x00000002,
+	}
+
 	public interface ISimpleDeobfuscator {
-		void deobfuscate(MethodDefinition method);
-		void deobfuscate(MethodDefinition method, bool force);
-		void decryptStrings(MethodDefinition method, IDeobfuscator deob);
+		void MethodModified(MethodDef method);
+		void Deobfuscate(MethodDef method);
+		void Deobfuscate(MethodDef method, SimpleDeobfuscatorFlags flags);
+		void DecryptStrings(MethodDef method, IDeobfuscator deob);
 	}
 }

@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -18,20 +18,20 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
+using dnlib.DotNet;
 
 namespace de4dot.code.deobfuscators.DeepSea {
 	static class DsInlinedMethodsFinder {
-		public static List<MethodDefinition> find(ModuleDefinition module, IEnumerable<MethodDefinition> notInlinedMethods) {
-			var notInlinedMethodsDict = new Dictionary<MethodDefinition, bool>();
+		public static List<MethodDef> Find(ModuleDefMD module, IEnumerable<MethodDef> notInlinedMethods) {
+			var notInlinedMethodsDict = new Dictionary<MethodDef, bool>();
 			foreach (var method in notInlinedMethods)
 				notInlinedMethodsDict[method] = true;
 
-			var inlinedMethods = new List<MethodDefinition>();
+			var inlinedMethods = new List<MethodDef>();
 
 			foreach (var type in module.GetTypes()) {
 				foreach (var method in type.Methods) {
-					if (!notInlinedMethodsDict.ContainsKey(method) && DsMethodCallInliner.canInline(method))
+					if (!notInlinedMethodsDict.ContainsKey(method) && DsMethodCallInliner.CanInline(method))
 						inlinedMethods.Add(method);
 				}
 			}

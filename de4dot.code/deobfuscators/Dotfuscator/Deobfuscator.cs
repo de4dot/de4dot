@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -18,36 +18,29 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
+using dnlib.DotNet;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Dotfuscator {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "Dotfuscator";
 		public const string THE_TYPE = "df";
-		const string DEFAULT_REGEX = @"!^[a-z][a-z0-9]{0,2}$&!^A_[0-9]+$&" + DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
+		const string DEFAULT_REGEX = @"!^(?:eval_)?[a-z][a-z0-9]{0,2}$&!^A_[0-9]+$&" + DeobfuscatorBase.DEFAULT_ASIAN_VALID_NAME_REGEX;
 		public DeobfuscatorInfo()
 			: base(DEFAULT_REGEX) {
 		}
 
-		public override string Name {
-			get { return THE_NAME; }
-		}
+		public override string Name => THE_NAME;
+		public override string Type => THE_TYPE;
 
-		public override string Type {
-			get { return THE_TYPE; }
-		}
-
-		public override IDeobfuscator createDeobfuscator() {
-			return new Deobfuscator(new Deobfuscator.Options {
+		public override IDeobfuscator CreateDeobfuscator() =>
+			new Deobfuscator(new Deobfuscator.Options {
 				RenameResourcesInCode = false,
-				ValidNameRegex = validNameRegex.get(),
+				ValidNameRegex = validNameRegex.Get(),
 			});
-		}
 	}
 
 	class Deobfuscator : DeobfuscatorBase {
-		Options options;
 		string obfuscatorName = "Dotfuscator";
 
 		StringDecrypter stringDecrypter;
@@ -56,24 +49,12 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 		internal class Options : OptionsBase {
 		}
 
-		public override string Type {
-			get { return DeobfuscatorInfo.THE_TYPE; }
-		}
+		public override string Type => DeobfuscatorInfo.THE_TYPE;
+		public override string TypeLong => DeobfuscatorInfo.THE_NAME;
+		public override string Name => obfuscatorName;
+		public Deobfuscator(Options options) : base(options) { }
 
-		public override string TypeLong {
-			get { return DeobfuscatorInfo.THE_NAME; }
-		}
-
-		public override string Name {
-			get { return obfuscatorName; }
-		}
-
-		public Deobfuscator(Options options)
-			: base(options) {
-			this.options = options;
-		}
-
-		protected override int detectInternal() {
+		protected override int DetectInternal() {
 			int val = 0;
 
 			if (stringDecrypter.Detected)
@@ -84,25 +65,25 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 			return val;
 		}
 
-		protected override void scanForObfuscator() {
+		protected override void ScanForObfuscator() {
 			stringDecrypter = new StringDecrypter(module);
-			stringDecrypter.find(DeobfuscatedFile);
-			findDotfuscatorAttribute();
+			stringDecrypter.Find(DeobfuscatedFile);
+			FindDotfuscatorAttribute();
 		}
 
-		void findDotfuscatorAttribute() {
+		void FindDotfuscatorAttribute() {
 			foreach (var type in module.Types) {
 				if (type.FullName == "DotfuscatorAttribute") {
 					foundDotfuscatorAttribute = true;
-					addAttributeToBeRemoved(type, "Obfuscator attribute");
-					initializeVersion(type);
+					AddAttributeToBeRemoved(type, "Obfuscator attribute");
+					InitializeVersion(type);
 					return;
 				}
 			}
 		}
 
-		void initializeVersion(TypeDefinition attr) {
-			var s = DotNetUtils.getCustomArgAsString(getAssemblyAttribute(attr), 0);
+		void InitializeVersion(TypeDef attr) {
+			var s = DotNetUtils.GetCustomArgAsString(GetAssemblyAttribute(attr), 0);
 			if (s == null)
 				return;
 
@@ -112,25 +93,31 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 			obfuscatorName = "Dotfuscator " + val.Groups[1].ToString();
 		}
 
-		public override void deobfuscateBegin() {
-			base.deobfuscateBegin();
+		public override void DeobfuscateBegin() {
+			base.DeobfuscateBegin();
+			DoCflowClean();
 			foreach (var info in stringDecrypter.StringDecrypterInfos)
-				staticStringInliner.add(info.method, (method, args) => stringDecrypter.decrypt(method, (string)args[0], (int)args[1]));
-			DeobfuscatedFile.stringDecryptersAdded();
+				staticStringInliner.Add(info.method, (method, gim, args) => stringDecrypter.Decrypt(method, (string)args[0], (int)args[1]));
+			DeobfuscatedFile.StringDecryptersAdded();
 		}
 
-		public override void deobfuscateEnd() {
+		public override void DeobfuscateEnd() {
 			if (CanRemoveStringDecrypterType)
-				addMethodsToBeRemoved(stringDecrypter.StringDecrypters, "String decrypter method");
+				AddMethodsToBeRemoved(stringDecrypter.StringDecrypters, "String decrypter method");
 
-			base.deobfuscateEnd();
+			base.DeobfuscateEnd();
 		}
 
-		public override IEnumerable<int> getStringDecrypterMethods() {
+		public override IEnumerable<int> GetStringDecrypterMethods() {
 			var list = new List<int>();
 			foreach (var method in stringDecrypter.StringDecrypters)
-				list.Add(method.MetadataToken.ToInt32());
+				list.Add(method.MDToken.ToInt32());
 			return list;
+		}
+
+		void DoCflowClean() {
+			var cflowDescrypter = new CflowDecrypter(module);
+			cflowDescrypter.CflowClean();
 		}
 	}
 }

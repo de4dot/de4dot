@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -19,56 +19,39 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
-using Mono.Cecil;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CryptoObfuscator {
 	class ConstantsDecrypter {
-		ModuleDefinition module;
-		TypeDefinition decrypterType;
-		MethodDefinition methodI4;
-		MethodDefinition methodI8;
-		MethodDefinition methodR4;
-		MethodDefinition methodR8;
+		ModuleDefMD module;
+		TypeDef decrypterType;
+		MethodDef methodI4;
+		MethodDef methodI8;
+		MethodDef methodR4;
+		MethodDef methodR8;
+		MethodDef methodArray;
+		InitializedDataCreator initializedDataCreator;
 		EmbeddedResource encryptedResource;
 		byte[] constantsData;
 
-		public TypeDefinition Type {
-			get { return decrypterType; }
-		}
+		public TypeDef Type => decrypterType;
+		public EmbeddedResource Resource => encryptedResource;
+		public MethodDef Int32Decrypter => methodI4;
+		public MethodDef Int64Decrypter => methodI8;
+		public MethodDef SingleDecrypter => methodR4;
+		public MethodDef DoubleDecrypter => methodR8;
+		public bool Detected => decrypterType != null;
 
-		public EmbeddedResource Resource {
-			get { return encryptedResource; }
-		}
-
-		public MethodDefinition Int32Decrypter {
-			get { return methodI4; }
-		}
-
-		public MethodDefinition Int64Decrypter {
-			get { return methodI8; }
-		}
-
-		public MethodDefinition SingleDecrypter {
-			get { return methodR4; }
-		}
-
-		public MethodDefinition DoubleDecrypter {
-			get { return methodR8; }
-		}
-
-		public bool Detected {
-			get { return decrypterType != null; }
-		}
-
-		public ConstantsDecrypter(ModuleDefinition module) {
+		public ConstantsDecrypter(ModuleDefMD module, InitializedDataCreator initializedDataCreator) {
 			this.module = module;
+			this.initializedDataCreator = initializedDataCreator;
 		}
 
-		public void find() {
+		public void Find() {
 			foreach (var type in module.Types) {
-				if (!checkType(type))
+				if (!CheckType(type))
 					continue;
 
 				decrypterType = type;
@@ -79,67 +62,124 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		static readonly string[] requiredTypes = new string[] {
 			"System.Byte[]",
 		};
-		bool checkType(TypeDefinition type) {
+		bool CheckType(TypeDef type) {
 			if (type.Methods.Count != 7)
 				return false;
-			if (type.Fields.Count != 1)
+			if (type.Fields.Count < 1 || type.Fields.Count > 2)
 				return false;
-			if (!new FieldTypes(type).all(requiredTypes))
+			if (!new FieldTypes(type).All(requiredTypes))
 				return false;
-			if (!checkMethods(type))
+			if (!CheckMethods(type))
 				return false;
 
 			return true;
 		}
 
-		bool checkMethods(TypeDefinition type) {
-			methodI4 = DotNetUtils.getMethod(type, "System.Int32", "(System.Int32)");
-			methodI8 = DotNetUtils.getMethod(type, "System.Int64", "(System.Int32)");
-			methodR4 = DotNetUtils.getMethod(type, "System.Single", "(System.Int32)");
-			methodR8 = DotNetUtils.getMethod(type, "System.Double", "(System.Int32)");
+		bool CheckMethods(TypeDef type) {
+			methodI4 = DotNetUtils.GetMethod(type, "System.Int32", "(System.Int32)");
+			methodI8 = DotNetUtils.GetMethod(type, "System.Int64", "(System.Int32)");
+			methodR4 = DotNetUtils.GetMethod(type, "System.Single", "(System.Int32)");
+			methodR8 = DotNetUtils.GetMethod(type, "System.Double", "(System.Int32)");
+			methodArray = DotNetUtils.GetMethod(type, "System.Void", "(System.Array,System.Int32)");
 
 			return methodI4 != null && methodI8 != null &&
-				methodR4 != null && methodR8 != null;
+				methodR4 != null && methodR8 != null &&
+				methodArray != null;
 		}
 
-		public void init(ResourceDecrypter resourceDecrypter) {
+		public void Initialize(ResourceDecrypter resourceDecrypter) {
 			if (decrypterType == null)
 				return;
 
-			encryptedResource = getResource(module, DotNetUtils.getCodeStrings(DotNetUtils.getMethod(decrypterType, ".cctor")));
-			constantsData = resourceDecrypter.decrypt(encryptedResource.GetResourceStream());
+			var cctor = decrypterType.FindStaticConstructor();
+			encryptedResource = CoUtils.GetResource(module, DotNetUtils.GetCodeStrings(cctor));
+
+			//if the return value is null, it is possible that resource name is encrypted
+			if (encryptedResource == null) {
+				var Resources = new string[] { CoUtils.DecryptResourceName(module, cctor) };
+				encryptedResource = CoUtils.GetResource(module, Resources);
+			}
+
+			constantsData = resourceDecrypter.Decrypt(encryptedResource.CreateReader().AsStream());
 		}
 
-		static EmbeddedResource getResource(ModuleDefinition module, IEnumerable<string> names) {
-			foreach (var name in names) {
-				var resource = DotNetUtils.getResource(module, name) as EmbeddedResource;
-				if (resource != null)
-					return resource;
-				try {
-					resource = DotNetUtils.getResource(module, Encoding.UTF8.GetString(Convert.FromBase64String(name))) as EmbeddedResource;
-					if (resource != null)
-						return resource;
+		public int DecryptInt32(int index) => BitConverter.ToInt32(constantsData, index);
+		public long DecryptInt64(int index) => BitConverter.ToInt64(constantsData, index);
+		public float DecryptSingle(int index) => BitConverter.ToSingle(constantsData, index);
+		public double DecryptDouble(int index) => BitConverter.ToDouble(constantsData, index);
+
+		struct ArrayInfo {
+			public CorLibTypeSig arrayType;
+			public int start, len;
+			public int arySize, index;
+
+			public ArrayInfo(int start, int len, CorLibTypeSig arrayType, int arySize, int index) {
+				this.start = start;
+				this.len = len;
+				this.arrayType = arrayType;
+				this.arySize = arySize;
+				this.index = index;
+			}
+		}
+
+		public void Deobfuscate(Blocks blocks) {
+			var infos = new List<ArrayInfo>();
+			foreach (var block in blocks.MethodBlocks.GetAllBlocks()) {
+				var instrs = block.Instructions;
+				infos.Clear();
+
+				for (int i = 0; i < instrs.Count - 5; i++) {
+					int index = i;
+
+					var ldci4_arySize = instrs[index++];
+					if (!ldci4_arySize.IsLdcI4())
+						continue;
+
+					var newarr = instrs[index++];
+					if (newarr.OpCode.Code != Code.Newarr)
+						continue;
+					var arrayType = module.CorLibTypes.GetCorLibTypeSig(newarr.Operand as ITypeDefOrRef);
+					if (arrayType == null)
+						continue;
+
+					if (instrs[index++].OpCode.Code != Code.Dup)
+						continue;
+
+					var ldci4_index = instrs[index++];
+					if (!ldci4_index.IsLdcI4())
+						continue;
+
+					var call = instrs[index++];
+					if (call.OpCode.Code != Code.Call && call.OpCode.Code != Code.Callvirt)
+						continue;
+					if (!MethodEqualityComparer.CompareDeclaringTypes.Equals(call.Operand as IMethod, methodArray))
+						continue;
+
+					if (arrayType.ElementType.GetPrimitiveSize() == -1) {
+						Logger.w("Can't decrypt non-primitive type array in method {0:X8}", blocks.Method.MDToken.ToInt32());
+						continue;
+					}
+
+					infos.Add(new ArrayInfo(i, index - i, arrayType, ldci4_arySize.GetLdcI4Value(),
+								ldci4_index.GetLdcI4Value()));
 				}
-				catch {
+
+				infos.Reverse();
+				foreach (var info in infos) {
+					var elemSize = info.arrayType.ElementType.GetPrimitiveSize();
+					var decrypted = DecryptArray(info);
+					initializedDataCreator.AddInitializeArrayCode(block, info.start, info.len, info.arrayType.ToTypeDefOrRef(), decrypted);
+					Logger.v("Decrypted {0} array: {1} elements", info.arrayType.ToString(), decrypted.Length / elemSize);
 				}
 			}
-			return null;
 		}
 
-		public int decryptInt32(int index) {
-			return BitConverter.ToInt32(constantsData, index);
-		}
-
-		public long decryptInt64(int index) {
-			return BitConverter.ToInt64(constantsData, index);
-		}
-
-		public float decryptSingle(int index) {
-			return BitConverter.ToSingle(constantsData, index);
-		}
-
-		public double decryptDouble(int index) {
-			return BitConverter.ToDouble(constantsData, index);
+		byte[] DecryptArray(ArrayInfo aryInfo) {
+			var ary = new byte[aryInfo.arySize * aryInfo.arrayType.ElementType.GetPrimitiveSize()];
+			int dataIndex = aryInfo.index;
+			int len = DeobUtils.ReadVariableLengthInt32(constantsData, ref dataIndex);
+			Buffer.BlockCopy(constantsData, dataIndex, ary, 0, len);
+			return ary;
 		}
 	}
 }

@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -18,7 +18,6 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
 
@@ -26,7 +25,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 	public class DeobfuscatorInfo : DeobfuscatorInfoBase {
 		public const string THE_NAME = "Spices.Net";
 		public const string THE_TYPE = "sn";
-		const string DEFAULT_REGEX = @"!^[a-zA-Z0-9]{1,2}$&" + DeobfuscatorBase.DEFAULT_VALID_NAME_REGEX;
+		const string DEFAULT_REGEX = @"!^[a-zA-Z0-9]{1,2}$&" + DeobfuscatorBase.DEFAULT_ASIAN_VALID_NAME_REGEX;
 		BoolOption inlineMethods;
 		BoolOption removeInlinedMethods;
 		BoolOption removeNamespaces;
@@ -34,38 +33,31 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 
 		public DeobfuscatorInfo()
 			: base(DEFAULT_REGEX) {
-			inlineMethods = new BoolOption(null, makeArgName("inline"), "Inline short methods", true);
-			removeInlinedMethods = new BoolOption(null, makeArgName("remove-inlined"), "Remove inlined methods", true);
-			removeNamespaces = new BoolOption(null, makeArgName("ns1"), "Clear namespace if there's only one class in it", true);
-			restoreResourceNames = new BoolOption(null, makeArgName("rsrc"), "Restore resource names", true);
+			inlineMethods = new BoolOption(null, MakeArgName("inline"), "Inline short methods", true);
+			removeInlinedMethods = new BoolOption(null, MakeArgName("remove-inlined"), "Remove inlined methods", true);
+			removeNamespaces = new BoolOption(null, MakeArgName("ns1"), "Clear namespace if there's only one class in it", true);
+			restoreResourceNames = new BoolOption(null, MakeArgName("rsrc"), "Restore resource names", true);
 		}
 
-		public override string Name {
-			get { return THE_NAME; }
-		}
+		public override string Name => THE_NAME;
+		public override string Type => THE_TYPE;
 
-		public override string Type {
-			get { return THE_TYPE; }
-		}
-
-		public override IDeobfuscator createDeobfuscator() {
-			return new Deobfuscator(new Deobfuscator.Options {
-				ValidNameRegex = validNameRegex.get(),
-				InlineMethods = inlineMethods.get(),
-				RemoveInlinedMethods = removeInlinedMethods.get(),
-				RemoveNamespaces = removeNamespaces.get(),
-				RestoreResourceNames = restoreResourceNames.get(),
+		public override IDeobfuscator CreateDeobfuscator() =>
+			new Deobfuscator(new Deobfuscator.Options {
+				ValidNameRegex = validNameRegex.Get(),
+				InlineMethods = inlineMethods.Get(),
+				RemoveInlinedMethods = removeInlinedMethods.Get(),
+				RemoveNamespaces = removeNamespaces.Get(),
+				RestoreResourceNames = restoreResourceNames.Get(),
 			});
-		}
 
-		protected override IEnumerable<Option> getOptionsInternal() {
-			return new List<Option>() {
+		protected override IEnumerable<Option> GetOptionsInternal() =>
+			new List<Option>() {
 				inlineMethods,
 				removeInlinedMethods,
 				removeNamespaces,
 				restoreResourceNames,
 			};
-		}
 	}
 
 	class Deobfuscator : DeobfuscatorBase {
@@ -84,21 +76,10 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			public bool RestoreResourceNames { get; set; }
 		}
 
-		public override string Type {
-			get { return DeobfuscatorInfo.THE_TYPE; }
-		}
-
-		public override string TypeLong {
-			get { return DeobfuscatorInfo.THE_NAME; }
-		}
-
-		public override string Name {
-			get { return DeobfuscatorInfo.THE_NAME; }
-		}
-
-		protected override bool CanInlineMethods {
-			get { return startedDeobfuscating ? options.InlineMethods : true; }
-		}
+		public override string Type => DeobfuscatorInfo.THE_TYPE;
+		public override string TypeLong => DeobfuscatorInfo.THE_NAME;
+		public override string Name => DeobfuscatorInfo.THE_NAME;
+		protected override bool CanInlineMethods => startedDeobfuscating ? options.InlineMethods : true;
 
 		public override IEnumerable<IBlocksDeobfuscator> BlocksDeobfuscators {
 			get {
@@ -114,15 +95,15 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			this.options = options;
 
 			if (options.RemoveNamespaces)
-				this.RenamingOptions |= RenamingOptions.RemoveNamespaceIfOneType;
+				RenamingOptions |= RenamingOptions.RemoveNamespaceIfOneType;
 			else
-				this.RenamingOptions &= ~RenamingOptions.RemoveNamespaceIfOneType;
+				RenamingOptions &= ~RenamingOptions.RemoveNamespaceIfOneType;
 		}
 
-		protected override int detectInternal() {
+		protected override int DetectInternal() {
 			int val = 0;
 
-			int sum = toInt32(stringDecrypter.Detected);
+			int sum = ToInt32(stringDecrypter.Detected);
 			if (sum > 0)
 				val += 100 + 10 * (sum - 1);
 			if (foundSpicesAttribute)
@@ -131,89 +112,90 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			return val;
 		}
 
-		protected override void scanForObfuscator() {
+		protected override void ScanForObfuscator() {
 			methodCallInliner = new SpicesMethodCallInliner(module);
 			stringDecrypter = new StringDecrypter(module);
-			stringDecrypter.find();
-			findSpicesAttributes();
+			stringDecrypter.Find();
+			FindSpicesAttributes();
 		}
 
-		void findSpicesAttributes() {
+		void FindSpicesAttributes() {
 			foreach (var type in module.Types) {
 				switch (type.FullName) {
 				case "NineRays.Decompiler.NotDecompile":
 				case "NineRays.Obfuscator.Evaluation":
-					addAttributeToBeRemoved(type, "Obfuscator attribute");
+				case "NineRays.Obfuscator.SoftwareWatermarkAttribute":
+					AddAttributeToBeRemoved(type, "Obfuscator attribute");
 					foundSpicesAttribute = true;
 					break;
 				}
 			}
 		}
 
-		public override void deobfuscateBegin() {
-			base.deobfuscateBegin();
+		public override void DeobfuscateBegin() {
+			base.DeobfuscateBegin();
 
-			methodCallInliner.initialize();
+			methodCallInliner.Initialize(DeobfuscatedFile);
 
 			if (options.RestoreResourceNames) {
 				resourceNamesRestorer = new ResourceNamesRestorer(module);
-				resourceNamesRestorer.find();
-				resourceNamesRestorer.renameResources();
+				resourceNamesRestorer.Find();
 			}
 
-			stringDecrypter.initialize();
+			stringDecrypter.Initialize();
 			foreach (var info in stringDecrypter.DecrypterInfos) {
-				staticStringInliner.add(info.method, (method2, args) => {
-					return stringDecrypter.decrypt(method2);
+				staticStringInliner.Add(info.method, (method2, gim, args) => {
+					return stringDecrypter.Decrypt(method2);
 				});
 			}
-			DeobfuscatedFile.stringDecryptersAdded();
+			DeobfuscatedFile.StringDecryptersAdded();
 
 			startedDeobfuscating = true;
 		}
 
-		public override void deobfuscateMethodEnd(Blocks blocks) {
-			methodCallInliner.deobfuscate(blocks);
+		public override void DeobfuscateMethodEnd(Blocks blocks) {
+			methodCallInliner.Deobfuscate(blocks);
 			if (options.RestoreResourceNames)
-				resourceNamesRestorer.deobfuscate(blocks);
-			base.deobfuscateMethodEnd(blocks);
+				resourceNamesRestorer.Deobfuscate(blocks);
+			base.DeobfuscateMethodEnd(blocks);
 		}
 
-		public override void deobfuscateEnd() {
-			removeInlinedMethods();
+		public override void DeobfuscateEnd() {
+			RemoveInlinedMethods();
 
 			if (options.RestoreResourceNames) {
-				addTypeToBeRemoved(resourceNamesRestorer.ResourceManagerType, "Obfuscator ResourceManager type");
-				addTypeToBeRemoved(resourceNamesRestorer.ComponentResourceManagerType, "Obfuscator ComponentResourceManager type");
+				resourceNamesRestorer.RenameResources();
+				AddTypeToBeRemoved(resourceNamesRestorer.ResourceManagerType, "Obfuscator ResourceManager type");
+				AddTypeToBeRemoved(resourceNamesRestorer.ComponentResourceManagerType, "Obfuscator ComponentResourceManager type");
 			}
 
 			if (Operations.DecryptStrings != OpDecryptString.None) {
-				addTypeToBeRemoved(stringDecrypter.Type, "String decrypter type");
-				addTypeToBeRemoved(stringDecrypter.EncryptedStringsType, "Encrypted strings field type");
-				stringDecrypter.cleanUp();
+				AddTypeToBeRemoved(stringDecrypter.Type, "String decrypter type");
+				AddTypeToBeRemoved(stringDecrypter.EncryptedStringsType, "Encrypted strings field type");
+				stringDecrypter.CleanUp();
 			}
 
-			base.deobfuscateEnd();
+			base.DeobfuscateEnd();
 		}
 
-		void removeInlinedMethods() {
+		void RemoveInlinedMethods() {
 			if (!options.InlineMethods || !options.RemoveInlinedMethods)
 				return;
 
-			var unusedMethods = new UnusedMethodsFinder(module, methodCallInliner.getInlinedMethods(), getRemovedMethods()).find();
-			var removedTypes = methodCallInliner.getInlinedTypes(unusedMethods);
+			var unusedMethods = new UnusedMethodsFinder(module, methodCallInliner.GetInlinedMethods(), GetRemovedMethods()).Find();
+			var removedTypes = methodCallInliner.GetInlinedTypes(unusedMethods);
 
-			addTypesToBeRemoved(removedTypes.getKeys(), "Obfuscator methods type");
+			AddTypesToBeRemoved(removedTypes.GetKeys(), "Obfuscator methods type");
 			foreach (var method in unusedMethods) {
-				if (!removedTypes.find(method.DeclaringType))
-					addMethodToBeRemoved(method, "Inlined method");
+				if (!removedTypes.Find(method.DeclaringType))
+					AddMethodToBeRemoved(method, "Inlined method");
 			}
 		}
 
-		public override IEnumerable<int> getStringDecrypterMethods() {
+		public override IEnumerable<int> GetStringDecrypterMethods() {
 			var list = new List<int>();
 			foreach (var info in stringDecrypter.DecrypterInfos)
-				list.Add(info.method.MetadataToken.ToInt32());
+				list.Add(info.method.MDToken.ToInt32());
 			return list;
 		}
 	}

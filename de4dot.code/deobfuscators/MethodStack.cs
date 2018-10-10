@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -18,22 +18,16 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using de4dot.blocks;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 
 namespace de4dot.code.deobfuscators {
-	class PushedArgs {
+	public class PushedArgs {
 		List<Instruction> args;
 		int nextIndex;
 
-		public bool CanAddMore {
-			get { return nextIndex >= 0; }
-		}
-
-		public int NumValidArgs {
-			get { return args.Count - (nextIndex + 1); }
-		}
+		public bool CanAddMore => nextIndex >= 0;
+		public int NumValidArgs => args.Count - (nextIndex + 1);
 
 		public PushedArgs(int numArgs) {
 			nextIndex = numArgs - 1;
@@ -42,25 +36,18 @@ namespace de4dot.code.deobfuscators {
 				args.Add(null);
 		}
 
-		public void add(Instruction instr) {
-			args[nextIndex--] = instr;
-		}
+		public void Add(Instruction instr) => args[nextIndex--] = instr;
+		public void Set(int i, Instruction instr) => args[i] = instr;
 
-		public void set(int i, Instruction instr) {
-			args[i] = instr;
-		}
-
-		public Instruction get(int i) {
+		public Instruction Get(int i) {
 			if (0 <= i && i < args.Count)
 				return args[i];
 			return null;
 		}
 
-		public Instruction getEnd(int i) {
-			return get(args.Count - 1 - i);
-		}
+		public Instruction GetEnd(int i) => Get(args.Count - 1 - i);
 
-		public void fixDups() {
+		public void FixDups() {
 			Instruction prev = null, instr;
 			for (int i = 0; i < NumValidArgs; i++, prev = instr) {
 				instr = args[i];
@@ -74,14 +61,13 @@ namespace de4dot.code.deobfuscators {
 		}
 	}
 
-	static class MethodStack {
+	public static class MethodStack {
 		// May not return all args. The args are returned in reverse order.
-		public static PushedArgs getPushedArgInstructions(IList<Instruction> instructions, int index) {
+		public static PushedArgs GetPushedArgInstructions(IList<Instruction> instructions, int index) {
 			try {
-				int pushes, pops;
-				DotNetUtils.calculateStackUsage(instructions[index], false, out pushes, out pops);
+				instructions[index].CalculateStackUsage(false, out int pushes, out int pops);
 				if (pops != -1)
-					return getPushedArgInstructions(instructions, index, pops);
+					return GetPushedArgInstructions(instructions, index, pops);
 			}
 			catch (System.NullReferenceException) {
 				// Here if eg. invalid metadata token in a call instruction (operand is null)
@@ -90,18 +76,17 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		// May not return all args. The args are returned in reverse order.
-		static PushedArgs getPushedArgInstructions(IList<Instruction> instructions, int index, int numArgs) {
+		static PushedArgs GetPushedArgInstructions(IList<Instruction> instructions, int index, int numArgs) {
 			var pushedArgs = new PushedArgs(numArgs);
 
 			Instruction instr;
 			int skipPushes = 0;
 			while (index >= 0 && pushedArgs.CanAddMore) {
-				instr = getPreviousInstruction(instructions, ref index);
+				instr = GetPreviousInstruction(instructions, ref index);
 				if (instr == null)
 					break;
 
-				int pushes, pops;
-				DotNetUtils.calculateStackUsage(instr, false, out pushes, out pops);
+				instr.CalculateStackUsage(false, out int pushes, out int pops);
 				if (pops == -1)
 					break;
 				if (instr.OpCode.Code == Code.Dup) {
@@ -119,115 +104,108 @@ namespace de4dot.code.deobfuscators {
 				}
 				else {
 					if (pushes == 1)
-						pushedArgs.add(instr);
+						pushedArgs.Add(instr);
 					skipPushes += pops;
 				}
 			}
-			instr = pushedArgs.get(0);
+			instr = pushedArgs.Get(0);
 			if (instr != null && instr.OpCode.Code == Code.Dup) {
-				instr = getPreviousInstruction(instructions, ref index);
+				instr = GetPreviousInstruction(instructions, ref index);
 				if (instr != null) {
-					int pushes, pops;
-					DotNetUtils.calculateStackUsage(instr, false, out pushes, out pops);
+					instr.CalculateStackUsage(false, out int pushes, out int pops);
 					if (pushes == 1 && pops == 0)
-						pushedArgs.set(0, instr);
+						pushedArgs.Set(0, instr);
 				}
 			}
-			pushedArgs.fixDups();
+			pushedArgs.FixDups();
 
 			return pushedArgs;
 		}
 
-		public static TypeReference getLoadedType(MethodDefinition method, IList<Instruction> instructions, int instrIndex) {
-			bool wasNewobj;
-			return getLoadedType(method, instructions, instrIndex, 0, out wasNewobj);
-		}
+		public static TypeSig GetLoadedType(MethodDef method, IList<Instruction> instructions, int instrIndex) =>
+			GetLoadedType(method, instructions, instrIndex, 0, out bool wasNewobj);
+		public static TypeSig GetLoadedType(MethodDef method, IList<Instruction> instructions, int instrIndex, int argIndexFromEnd) =>
+			GetLoadedType(method, instructions, instrIndex, argIndexFromEnd, out bool wasNewobj);
+		public static TypeSig GetLoadedType(MethodDef method, IList<Instruction> instructions, int instrIndex, out bool wasNewobj) =>
+			GetLoadedType(method, instructions, instrIndex, 0, out wasNewobj);
 
-		public static TypeReference getLoadedType(MethodDefinition method, IList<Instruction> instructions, int instrIndex, int argIndexFromEnd) {
-			bool wasNewobj;
-			return getLoadedType(method, instructions, instrIndex, argIndexFromEnd, out wasNewobj);
-		}
-
-		public static TypeReference getLoadedType(MethodDefinition method, IList<Instruction> instructions, int instrIndex, out bool wasNewobj) {
-			return getLoadedType(method, instructions, instrIndex, 0, out wasNewobj);
-		}
-
-		public static TypeReference getLoadedType(MethodDefinition method, IList<Instruction> instructions, int instrIndex, int argIndexFromEnd, out bool wasNewobj) {
+		public static TypeSig GetLoadedType(MethodDef method, IList<Instruction> instructions, int instrIndex, int argIndexFromEnd, out bool wasNewobj) {
 			wasNewobj = false;
-			var pushedArgs = MethodStack.getPushedArgInstructions(instructions, instrIndex);
-			var pushInstr = pushedArgs.getEnd(argIndexFromEnd);
+			var pushedArgs = MethodStack.GetPushedArgInstructions(instructions, instrIndex);
+			var pushInstr = pushedArgs.GetEnd(argIndexFromEnd);
 			if (pushInstr == null)
 				return null;
 
-			TypeReference type;
-			VariableDefinition local;
+			TypeSig type;
+			Local local;
+			var corLibTypes = method.DeclaringType.Module.CorLibTypes;
 			switch (pushInstr.OpCode.Code) {
 			case Code.Ldstr:
-				type = method.Module.TypeSystem.String;
+				type = corLibTypes.String;
 				break;
 
 			case Code.Conv_I:
 			case Code.Conv_Ovf_I:
 			case Code.Conv_Ovf_I_Un:
-				type = method.Module.TypeSystem.IntPtr;
+				type = corLibTypes.IntPtr;
 				break;
 
 			case Code.Conv_U:
 			case Code.Conv_Ovf_U:
 			case Code.Conv_Ovf_U_Un:
-				type = method.Module.TypeSystem.UIntPtr;
+				type = corLibTypes.UIntPtr;
 				break;
 
 			case Code.Conv_I8:
 			case Code.Conv_Ovf_I8:
 			case Code.Conv_Ovf_I8_Un:
-				type = method.Module.TypeSystem.Int64;
+				type = corLibTypes.Int64;
 				break;
 
 			case Code.Conv_U8:
 			case Code.Conv_Ovf_U8:
 			case Code.Conv_Ovf_U8_Un:
-				type = method.Module.TypeSystem.UInt64;
+				type = corLibTypes.UInt64;
 				break;
 
 			case Code.Conv_R8:
 			case Code.Ldc_R8:
 			case Code.Ldelem_R8:
 			case Code.Ldind_R8:
-				type = method.Module.TypeSystem.Double;
+				type = corLibTypes.Double;
 				break;
 
 			case Code.Call:
 			case Code.Calli:
 			case Code.Callvirt:
-				var calledMethod = pushInstr.Operand as MethodReference;
+				var calledMethod = pushInstr.Operand as IMethod;
 				if (calledMethod == null)
 					return null;
-				type = calledMethod.MethodReturnType.ReturnType;
+				type = calledMethod.MethodSig.GetRetType();
 				break;
 
 			case Code.Newarr:
-				type = pushInstr.Operand as TypeReference;
-				if (type == null)
+				var type2 = pushInstr.Operand as ITypeDefOrRef;
+				if (type2 == null)
 					return null;
-				type = new ArrayType(type);
+				type = new SZArraySig(type2.ToTypeSig());
 				wasNewobj = true;
 				break;
 
 			case Code.Newobj:
-				var ctor = pushInstr.Operand as MethodReference;
+				var ctor = pushInstr.Operand as IMethod;
 				if (ctor == null)
 					return null;
-				type = ctor.DeclaringType;
+				type = ctor.DeclaringType.ToTypeSig();
 				wasNewobj = true;
 				break;
 
 			case Code.Castclass:
 			case Code.Isinst:
 			case Code.Unbox_Any:
-			case Code.Ldelem_Any:
+			case Code.Ldelem:
 			case Code.Ldobj:
-				type = pushInstr.Operand as TypeReference;
+				type = (pushInstr.Operand as ITypeDefOrRef).ToTypeSig();
 				break;
 
 			case Code.Ldarg:
@@ -236,7 +214,7 @@ namespace de4dot.code.deobfuscators {
 			case Code.Ldarg_1:
 			case Code.Ldarg_2:
 			case Code.Ldarg_3:
-				type = DotNetUtils.getArgType(method, pushInstr);
+				type = pushInstr.GetArgumentType(method.MethodSig, method.DeclaringType);
 				break;
 
 			case Code.Ldloc:
@@ -245,44 +223,44 @@ namespace de4dot.code.deobfuscators {
 			case Code.Ldloc_1:
 			case Code.Ldloc_2:
 			case Code.Ldloc_3:
-				local = DotNetUtils.getLocalVar(method.Body.Variables, pushInstr);
+				local = pushInstr.GetLocal(method.Body.Variables);
 				if (local == null)
 					return null;
-				type = local.VariableType;
+				type = local.Type.RemovePinned();
 				break;
 
 			case Code.Ldloca:
 			case Code.Ldloca_S:
-				local = pushInstr.Operand as VariableDefinition;
+				local = pushInstr.Operand as Local;
 				if (local == null)
 					return null;
-				type = createByReferenceType(local.VariableType);
+				type = CreateByRefType(local.Type.RemovePinned());
 				break;
 
 			case Code.Ldarga:
 			case Code.Ldarga_S:
-				type = createByReferenceType(DotNetUtils.getArgType(method, pushInstr));
+				type = CreateByRefType(pushInstr.GetArgumentType(method.MethodSig, method.DeclaringType));
 				break;
 
 			case Code.Ldfld:
 			case Code.Ldsfld:
-				var field = pushInstr.Operand as FieldReference;
-				if (field == null)
+				var field = pushInstr.Operand as IField;
+				if (field == null || field.FieldSig == null)
 					return null;
-				type = field.FieldType;
+				type = field.FieldSig.GetFieldType();
 				break;
 
 			case Code.Ldflda:
 			case Code.Ldsflda:
-				var field2 = pushInstr.Operand as FieldReference;
-				if (field2 == null)
+				var field2 = pushInstr.Operand as IField;
+				if (field2 == null || field2.FieldSig == null)
 					return null;
-				type = createByReferenceType(field2.FieldType);
+				type = CreateByRefType(field2.FieldSig.GetFieldType());
 				break;
 
 			case Code.Ldelema:
 			case Code.Unbox:
-				type = createByReferenceType(pushInstr.Operand as TypeReference);
+				type = CreateByRefType(pushInstr.Operand as ITypeDefOrRef);
 				break;
 
 			default:
@@ -292,13 +270,19 @@ namespace de4dot.code.deobfuscators {
 			return type;
 		}
 
-		static ByReferenceType createByReferenceType(TypeReference elementType) {
+		static ByRefSig CreateByRefType(ITypeDefOrRef elementType) {
 			if (elementType == null)
 				return null;
-			return new ByReferenceType(elementType);
+			return new ByRefSig(elementType.ToTypeSig());
 		}
 
-		static Instruction getPreviousInstruction(IList<Instruction> instructions, ref int instrIndex) {
+		static ByRefSig CreateByRefType(TypeSig elementType) {
+			if (elementType == null)
+				return null;
+			return new ByRefSig(elementType);
+		}
+
+		static Instruction GetPreviousInstruction(IList<Instruction> instructions, ref int instrIndex) {
 			while (true) {
 				instrIndex--;
 				if (instrIndex < 0)

@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -19,118 +19,124 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 	class ResourceResolver {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		EncryptedResource encryptedResource;
-		MethodDefinition initMethod;
+		MethodDef initMethod;
 
-		public bool Detected {
-			get { return encryptedResource.Method != null; }
-		}
+		public bool Detected => encryptedResource.Method != null;
+		public TypeDef Type => encryptedResource.Type;
+		public MethodDef InitMethod => initMethod;
+		public bool FoundResource => encryptedResource.FoundResource;
 
-		public TypeDefinition Type {
-			get { return encryptedResource.Type; }
-		}
-
-		public MethodDefinition InitMethod {
-			get { return initMethod; }
-		}
-
-		public bool FoundResource {
-			get { return encryptedResource.FoundResource; }
-		}
-
-		public ResourceResolver(ModuleDefinition module) {
+		public ResourceResolver(ModuleDefMD module) {
 			this.module = module;
-			this.encryptedResource = new EncryptedResource(module);
+			encryptedResource = new EncryptedResource(module);
 		}
 
-		public ResourceResolver(ModuleDefinition module, ResourceResolver oldOne) {
+		public ResourceResolver(ModuleDefMD module, ResourceResolver oldOne) {
 			this.module = module;
-			this.encryptedResource = new EncryptedResource(module, oldOne.encryptedResource);
+			encryptedResource = new EncryptedResource(module, oldOne.encryptedResource);
 		}
 
-		public void find(ISimpleDeobfuscator simpleDeobfuscator) {
+		public void Find(ISimpleDeobfuscator simpleDeobfuscator) {
 			var additionalTypes = new string[] {
 				"System.String",
 			};
 			foreach (var type in module.Types) {
 				if (type.BaseType == null || type.BaseType.FullName != "System.Object")
 					continue;
-				if (!checkFields(type.Fields))
+				if (!CheckFields(type.Fields))
 					continue;
 				foreach (var method in type.Methods) {
 					if (!method.IsStatic || !method.HasBody)
 						continue;
-					if (!DotNetUtils.isMethod(method, "System.Reflection.Assembly", "(System.Object,System.ResolveEventArgs)") &&
-						!DotNetUtils.isMethod(method, "System.Reflection.Assembly", "(System.Object,System.Object)"))
+					if (!DotNetUtils.IsMethod(method, "System.Reflection.Assembly", "(System.Object,System.ResolveEventArgs)") &&
+						!DotNetUtils.IsMethod(method, "System.Reflection.Assembly", "(System.Object,System.Object)"))
 						continue;
-					if (!encryptedResource.couldBeResourceDecrypter(method, additionalTypes, false))
+					var initMethod = GetResourceDecrypterInitMethod(method, additionalTypes, false);
+					if (initMethod == null)
 						continue;
 
-					encryptedResource.Method = method;
+					encryptedResource.Method = initMethod;
 					return;
 				}
 			}
 		}
 
-		bool checkFields(IList<FieldDefinition> fields) {
-			if (fields.Count != 3)
-				return false;
+		MethodDef GetResourceDecrypterInitMethod(MethodDef method, string[] additionalTypes, bool checkResource) {
+			if (encryptedResource.CouldBeResourceDecrypter(method, additionalTypes, checkResource))
+				return method;
 
-			var fieldTypes = new FieldTypes(fields);
-			if (fieldTypes.count("System.Boolean") != 1)
-				return false;
-			if (fieldTypes.count("System.Object") == 2)
-				return true;
-			return fieldTypes.count("System.Reflection.Assembly") == 1 &&
-				fieldTypes.count("System.String[]") == 1;
+			foreach (var calledMethod in DotNetUtils.GetCalledMethods(module, method)) {
+				if (!DotNetUtils.IsMethod(calledMethod, "System.Void", "()"))
+					continue;
+				if (encryptedResource.CouldBeResourceDecrypter(calledMethod, additionalTypes, checkResource))
+					return calledMethod;
+			}
+
+			return null;
 		}
 
-		public void init(ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
+		bool CheckFields(IList<FieldDef> fields) {
+			if (fields.Count != 3 && fields.Count != 4)
+				return false;
+
+			int numBools = fields.Count == 3 ? 1 : 2;
+			var fieldTypes = new FieldTypes(fields);
+			if (fieldTypes.Count("System.Boolean") != numBools)
+				return false;
+			if (fieldTypes.Count("System.Object") == 2)
+				return true;
+			if (fieldTypes.Count("System.String[]") != 1)
+				return false;
+			return fieldTypes.Count("System.Reflection.Assembly") == 1 || fieldTypes.Count("System.Object") == 1;
+		}
+
+		public void Initialize(ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob) {
 			if (encryptedResource.Method == null)
 				return;
 
-			initMethod = findInitMethod(simpleDeobfuscator);
+			initMethod = FindInitMethod(simpleDeobfuscator);
 			if (initMethod == null)
 				throw new ApplicationException("Could not find resource resolver init method");
 
-			simpleDeobfuscator.deobfuscate(encryptedResource.Method);
-			simpleDeobfuscator.decryptStrings(encryptedResource.Method, deob);
-			encryptedResource.init(simpleDeobfuscator);
+			simpleDeobfuscator.Deobfuscate(encryptedResource.Method);
+			simpleDeobfuscator.DecryptStrings(encryptedResource.Method, deob);
+			encryptedResource.Initialize(simpleDeobfuscator);
 		}
 
-		MethodDefinition findInitMethod(ISimpleDeobfuscator simpleDeobfuscator) {
-			var ctor = DotNetUtils.getMethod(Type, ".ctor");
+		MethodDef FindInitMethod(ISimpleDeobfuscator simpleDeobfuscator) {
+			var ctor = Type.FindMethod(".ctor");
 			foreach (var method in Type.Methods) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
-				if (!DotNetUtils.isMethod(method, "System.Void", "()"))
+				if (!DotNetUtils.IsMethod(method, "System.Void", "()"))
 					continue;
 				if (method.Body.Variables.Count > 1)
 					continue;
 
-				simpleDeobfuscator.deobfuscate(method);
+				simpleDeobfuscator.Deobfuscate(method);
 				bool stsfldUsed = false, newobjUsed = false;
 				foreach (var instr in method.Body.Instructions) {
 					if (instr.OpCode.Code == Code.Stsfld) {
-						var field = instr.Operand as FieldReference;
-						if (field == null || field.FieldType.FullName != "System.Boolean")
+						var field = instr.Operand as IField;
+						if (field == null || field.FieldSig.GetFieldType().GetElementType() != ElementType.Boolean)
 							continue;
-						if (!MemberReferenceHelper.compareTypes(Type, field.DeclaringType))
+						if (!new SigComparer().Equals(Type, field.DeclaringType))
 							continue;
 						stsfldUsed = true;
 					}
 					else if (instr.OpCode.Code == Code.Newobj) {
-						var calledCtor = instr.Operand as MethodReference;
+						var calledCtor = instr.Operand as IMethod;
 						if (calledCtor == null)
 							continue;
-						if (!MemberReferenceHelper.compareMethodReferenceAndDeclaringType(calledCtor, ctor))
+						if (!MethodEqualityComparer.CompareDeclaringTypes.Equals(calledCtor, ctor))
 							continue;
 						newobjUsed = true;
 					}
@@ -143,11 +149,11 @@ namespace de4dot.code.deobfuscators.dotNET_Reactor.v4 {
 			return null;
 		}
 
-		public EmbeddedResource mergeResources() {
+		public EmbeddedResource MergeResources() {
 			if (encryptedResource.Resource == null)
 				return null;
-			DeobUtils.decryptAndAddResources(module, encryptedResource.Resource.Name, () => {
-				return QuickLZ.decompress(encryptedResource.decrypt());
+			DeobUtils.DecryptAndAddResources(module, encryptedResource.Resource.Name.String, () => {
+				return QuickLZ.Decompress(encryptedResource.Decrypt());
 			});
 			return encryptedResource.Resource;
 		}

@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -21,13 +21,13 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 
 [assembly: AssemblyTitle("AssemblyServer-x64")]
-[assembly: AssemblyDescription("Assembly Server - x64")]
+[assembly: AssemblyDescription("Assembly Server - CLR any version - x64")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("AssemblyServer-x64")]
-[assembly: AssemblyCopyright("Copyright (C) 2011-2012 de4dot@gmail.com")]
+[assembly: AssemblyCopyright("Copyright (C) 2011-2015 de4dot@gmail.com")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 [assembly: ComVisible(false)]
-[assembly: AssemblyVersion("1.9.0.3405")]
-[assembly: AssemblyFileVersion("1.9.0.3405")]
+[assembly: AssemblyVersion("3.1.41592.3405")]
+[assembly: AssemblyFileVersion("3.1.41592.3405")]

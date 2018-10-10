@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -20,7 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using Mono.Cecil;
+using dnlib.DotNet;
 using de4dot.blocks;
 
 namespace AssemblyData.methodsrewriter {
@@ -29,71 +29,61 @@ namespace AssemblyData.methodsrewriter {
 		Dictionary<string, List<MethodBase>> methods;
 		Dictionary<string, List<FieldInfo>> fields;
 
-		public TypeInstanceResolver(Type type, TypeReference typeReference) {
-			this.type = ResolverUtils.makeInstanceType(type, typeReference);
-		}
+		public TypeInstanceResolver(Type type, ITypeDefOrRef typeRef) => this.type = ResolverUtils.MakeInstanceType(type, typeRef);
 
-		public FieldInfo resolve(FieldReference fieldReference) {
-			initFields();
+		public FieldInfo Resolve(IField fieldRef) {
+			InitFields();
 
-			List<FieldInfo> list;
-			if (!fields.TryGetValue(fieldReference.Name, out list))
+			if (!fields.TryGetValue(fieldRef.Name.String, out var list))
 				return null;
 
-			var git = fieldReference.DeclaringType as GenericInstanceType;
-			if (git != null)
-				fieldReference = FieldReferenceInstance.make(fieldReference, git);
+			fieldRef = GenericArgsSubstitutor.Create(fieldRef, fieldRef.DeclaringType.TryGetGenericInstSig());
 
 			foreach (var field in list) {
-				if (ResolverUtils.compareFields(field, fieldReference))
+				if (ResolverUtils.CompareFields(field, fieldRef))
 					return field;
 			}
 
 			return null;
 		}
 
-		void initFields() {
+		void InitFields() {
 			if (fields != null)
 				return;
 			fields = new Dictionary<string, List<FieldInfo>>(StringComparer.Ordinal);
 
 			var flags = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
 			foreach (var field in type.GetFields(flags)) {
-				List<FieldInfo> list;
-				if (!fields.TryGetValue(field.Name, out list))
+				if (!fields.TryGetValue(field.Name, out var list))
 					fields[field.Name] = list = new List<FieldInfo>();
 				list.Add(field);
 			}
 		}
 
-		public MethodBase resolve(MethodReference methodReference) {
-			initMethods();
+		public MethodBase Resolve(IMethod methodRef) {
+			InitMethods();
 
-			List<MethodBase> list;
-			if (!methods.TryGetValue(methodReference.Name, out list))
+			if (!methods.TryGetValue(methodRef.Name.String, out var list))
 				return null;
 
-			var git = methodReference.DeclaringType as GenericInstanceType;
-			var gim = methodReference as GenericInstanceMethod;
-			methodReference = MethodReferenceInstance.make(methodReference, git, gim);
+			methodRef = GenericArgsSubstitutor.Create(methodRef, methodRef.DeclaringType.TryGetGenericInstSig());
 
 			foreach (var method in list) {
-				if (ResolverUtils.compareMethods(method, methodReference))
+				if (ResolverUtils.CompareMethods(method, methodRef))
 					return method;
 			}
 
 			return null;
 		}
 
-		void initMethods() {
+		void InitMethods() {
 			if (methods != null)
 				return;
 			methods = new Dictionary<string, List<MethodBase>>(StringComparer.Ordinal);
 
 			var flags = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
-			foreach (var method in ResolverUtils.getMethodBases(type, flags)) {
-				List<MethodBase> list;
-				if (!methods.TryGetValue(method.Name, out list))
+			foreach (var method in ResolverUtils.GetMethodBases(type, flags)) {
+				if (!methods.TryGetValue(method.Name, out var list))
 					methods[method.Name] = list = new List<MethodBase>();
 				list.Add(method);
 			}

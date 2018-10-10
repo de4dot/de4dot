@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -18,89 +18,101 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using Mono.Cecil.Metadata;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
 
 namespace de4dot.code.deobfuscators.DeepSea {
 	class DsMethodCallInliner : MethodCallInlinerBase {
 		InstructionEmulator instructionEmulator = new InstructionEmulator();
-		List<ParameterDefinition> parameters;
-		ParameterDefinition arg1, arg2;
+		IList<Parameter> parameters;
+		Parameter arg1, arg2;
 		Value returnValue;
-		MethodDefinition methodToInline;
+		MethodDef methodToInline;
 		CachedCflowDeobfuscator cflowDeobfuscator;
 
-		public DsMethodCallInliner(CachedCflowDeobfuscator cflowDeobfuscator) {
+		public DsMethodCallInliner(CachedCflowDeobfuscator cflowDeobfuscator) =>
 			this.cflowDeobfuscator = cflowDeobfuscator;
-		}
 
-		protected override bool deobfuscateInternal() {
-			bool changed = false;
+		protected override bool DeobfuscateInternal() {
+			bool modified = false;
 
 			var instructions = block.Instructions;
 			for (int i = 0; i < instructions.Count; i++) {
 				var instr = instructions[i].Instruction;
 				if (instr.OpCode.Code == Code.Call)
-					changed |= inlineMethod(instr, i);
+					modified |= InlineMethod(instr, i);
 			}
 
-			return changed;
+			return modified;
 		}
 
-		bool inlineMethod(Instruction callInstr, int instrIndex) {
-			var method = callInstr.Operand as MethodDefinition;
-			if (method == null)
-				return false;
-			if (!canInline(method))
+		bool InlineMethod(Instruction callInstr, int instrIndex) {
+			var method = callInstr.Operand as MethodDef;
+			if (method == null) {
+				if (callInstr.Operand is MethodSpec ms)
+					method = ms.Method as MethodDef;
+				if (method == null)
+					return false;
+			}
+			if (!CanInline(method))
 				return false;
 
 			if (instrIndex < 2)
 				return false;
 			var ldci4_1st = block.Instructions[instrIndex - 2];
 			var ldci4_2nd = block.Instructions[instrIndex - 1];
-			if (!ldci4_1st.isLdcI4() || !ldci4_2nd.isLdcI4())
+			if (!ldci4_1st.IsLdcI4() || !ldci4_2nd.IsLdcI4())
 				return false;
 
-			if (!inlineMethod(method, instrIndex, ldci4_1st.getLdcI4Value(), ldci4_2nd.getLdcI4Value()))
+			if (!InlineMethod(method, instrIndex, ldci4_1st.GetLdcI4Value(), ldci4_2nd.GetLdcI4Value()))
 				return false;
 
 			return true;
 		}
 
-		bool inlineMethod(MethodDefinition methodToInline, int instrIndex, int const1, int const2) {
-			this.methodToInline = methodToInline = cflowDeobfuscator.deobfuscate(methodToInline);
+		protected override Instruction OnAfterLoadArg(MethodDef methodToInline, Instruction instr, ref int instrIndex) {
+			if (instr.OpCode.Code != Code.Box)
+				return instr;
+			if (methodToInline.MethodSig.GetGenParamCount() == 0)
+				return instr;
+			return DotNetUtils.GetInstruction(methodToInline.Body.Instructions, ref instrIndex);
+		}
 
-			parameters = DotNetUtils.getParameters(methodToInline);
+		bool InlineMethod(MethodDef methodToInline, int instrIndex, int const1, int const2) {
+			this.methodToInline = methodToInline = cflowDeobfuscator.Deobfuscate(methodToInline);
+
+			parameters = methodToInline.Parameters;
 			arg1 = parameters[parameters.Count - 2];
 			arg2 = parameters[parameters.Count - 1];
 			returnValue = null;
 
-			instructionEmulator.init(methodToInline);
+			instructionEmulator.Initialize(methodToInline);
 			foreach (var arg in parameters) {
-				if (arg.ParameterType.EType >= ElementType.Boolean && arg.ParameterType.EType <= ElementType.U4)
-					instructionEmulator.setArg(arg, new Int32Value(0));
+				if (!arg.IsNormalMethodParameter)
+					continue;
+				if (arg.Type.ElementType >= ElementType.Boolean && arg.Type.ElementType <= ElementType.U4)
+					instructionEmulator.SetArg(arg, new Int32Value(0));
 			}
-			instructionEmulator.setArg(arg1, new Int32Value(const1));
-			instructionEmulator.setArg(arg2, new Int32Value(const2));
+			instructionEmulator.SetArg(arg1, new Int32Value(const1));
+			instructionEmulator.SetArg(arg2, new Int32Value(const2));
 
 			int index = 0;
-			if (!emulateInstructions(ref index, false))
+			if (!EmulateInstructions(ref index, false))
 				return false;
-			var patcher = tryInlineOtherMethod(instrIndex, methodToInline, methodToInline.Body.Instructions[index], index + 1, 2);
+			var patcher = TryInlineOtherMethod(instrIndex, methodToInline, methodToInline.Body.Instructions[index], index + 1, 2);
 			if (patcher == null)
 				return false;
-			if (!emulateToReturn(patcher.afterIndex, patcher.lastInstr))
+			if (!EmulateToReturn(patcher.afterIndex, patcher.lastInstr))
 				return false;
-			patcher.patch(block);
-			block.insert(instrIndex, Instruction.Create(OpCodes.Pop));
-			block.insert(instrIndex, Instruction.Create(OpCodes.Pop));
+			patcher.Patch(block);
+			block.Insert(instrIndex, OpCodes.Pop.ToInstruction());
+			block.Insert(instrIndex, OpCodes.Pop.ToInstruction());
 			return true;
 		}
 
-		bool emulateInstructions(ref int index, bool allowUnknownArgs) {
+		bool EmulateInstructions(ref int index, bool allowUnknownArgs) {
 			Instruction instr;
 			var instrs = methodToInline.Body.Instructions;
 			int counter = 0;
@@ -147,7 +159,7 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				case Code.Mul:
 				case Code.Rem:
 				case Code.Div:
-					instructionEmulator.emulate(instr);
+					instructionEmulator.Emulate(instr);
 					index++;
 					break;
 
@@ -157,13 +169,13 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				case Code.Ldarg_1:
 				case Code.Ldarg_2:
 				case Code.Ldarg_3:
-					var arg = DotNetUtils.getParameter(parameters, instr);
+					var arg = instr.GetParameter(parameters);
 					if (arg != arg1 && arg != arg2) {
 						if (!allowUnknownArgs)
 							goto done;
 						checkInstrs = true;
 					}
-					instructionEmulator.emulate(instr);
+					instructionEmulator.Emulate(instr);
 					index++;
 					break;
 
@@ -173,12 +185,12 @@ namespace de4dot.code.deobfuscators.DeepSea {
 					goto done;
 
 				case Code.Switch:
-					var value = instructionEmulator.pop() as Int32Value;
-					if (value == null || !value.allBitsValid())
+					var value = instructionEmulator.Pop() as Int32Value;
+					if (value == null || !value.AllBitsValid())
 						return false;
 					var targets = (Instruction[])instr.Operand;
-					if (value.value >= 0 && value.value < targets.Length)
-						index = instrs.IndexOf(targets[value.value]);
+					if (value.Value >= 0 && value.Value < targets.Length)
+						index = instrs.IndexOf(targets[value.Value]);
 					else
 						index++;
 					break;
@@ -190,21 +202,21 @@ namespace de4dot.code.deobfuscators.DeepSea {
 
 				case Code.Brtrue:
 				case Code.Brtrue_S:
-					index = emulateBrtrue(index);
+					index = EmulateBrtrue(index);
 					break;
 
 				case Code.Brfalse:
 				case Code.Brfalse_S:
-					index = emulateBrfalse(index);
+					index = EmulateBrfalse(index);
 					break;
 
 				case Code.Isinst:
 				case Code.Castclass:
-					if (returnValue != null && instructionEmulator.peek() == returnValue) {
+					if (returnValue != null && instructionEmulator.Peek() == returnValue) {
 						// Do nothing
 					}
 					else
-						instructionEmulator.emulate(instr);
+						instructionEmulator.Emulate(instr);
 					index++;
 					break;
 
@@ -236,51 +248,49 @@ done:
 			return true;
 		}
 
-		int emulateBranch(int stackArgs, Bool3 cond, Instruction instrTrue, Instruction instrFalse) {
+		int EmulateBranch(int stackArgs, Bool3 cond, Instruction instrTrue, Instruction instrFalse) {
 			if (cond == Bool3.Unknown)
 				return -1;
-			Instruction instr = cond == Bool3.True ? instrTrue : instrFalse;
+			var instr = cond == Bool3.True ? instrTrue : instrFalse;
 			return methodToInline.Body.Instructions.IndexOf(instr);
 		}
 
-		int emulateBrtrue(int instrIndex) {
-			var val1 = instructionEmulator.pop();
+		int EmulateBrtrue(int instrIndex) {
+			var val1 = instructionEmulator.Pop();
 
 			var instr = methodToInline.Body.Instructions[instrIndex];
 			var instrTrue = (Instruction)instr.Operand;
 			var instrFalse = methodToInline.Body.Instructions[instrIndex + 1];
 
-			if (val1.isInt32())
-				return emulateBranch(1, Int32Value.compareTrue((Int32Value)val1), instrTrue, instrFalse);
+			if (val1.IsInt32())
+				return EmulateBranch(1, Int32Value.CompareTrue((Int32Value)val1), instrTrue, instrFalse);
 			return -1;
 		}
 
-		int emulateBrfalse(int instrIndex) {
-			var val1 = instructionEmulator.pop();
+		int EmulateBrfalse(int instrIndex) {
+			var val1 = instructionEmulator.Pop();
 
 			var instr = methodToInline.Body.Instructions[instrIndex];
 			var instrTrue = (Instruction)instr.Operand;
 			var instrFalse = methodToInline.Body.Instructions[instrIndex + 1];
 
-			if (val1.isInt32())
-				return emulateBranch(1, Int32Value.compareFalse((Int32Value)val1), instrTrue, instrFalse);
+			if (val1.IsInt32())
+				return EmulateBranch(1, Int32Value.CompareFalse((Int32Value)val1), instrTrue, instrFalse);
 			return -1;
 		}
 
-		bool emulateToReturn(int index, Instruction lastInstr) {
-			int pushes, pops;
-			DotNetUtils.calculateStackUsage(lastInstr, false, out pushes, out pops);
-			for (int i = 0; i < pops; i++)
-				instructionEmulator.pop();
+		bool EmulateToReturn(int index, Instruction lastInstr) {
+			lastInstr.CalculateStackUsage(false, out int pushes, out int pops);
+			instructionEmulator.Pop(pops);
 
 			returnValue = null;
 			if (pushes != 0) {
 				returnValue = new UnknownValue();
-				instructionEmulator.setProtected(returnValue);
-				instructionEmulator.push(returnValue);
+				instructionEmulator.SetProtected(returnValue);
+				instructionEmulator.Push(returnValue);
 			}
 
-			if (!emulateInstructions(ref index, true))
+			if (!EmulateInstructions(ref index, true))
 				return false;
 			if (index >= methodToInline.Body.Instructions.Count)
 				return false;
@@ -288,43 +298,48 @@ done:
 				return false;
 
 			if (returnValue != null) {
-				if (instructionEmulator.pop() != returnValue)
+				if (instructionEmulator.Pop() != returnValue)
 					return false;
 			}
-			return instructionEmulator.stackSize() == 0;
+			return instructionEmulator.StackSize() == 0;
 		}
 
-		public static bool canInline(MethodDefinition method) {
+		public static bool CanInline(MethodDef method) {
 			if (method == null || method.Body == null)
 				return false;
 			if (method.Attributes != (MethodAttributes.Assembly | MethodAttributes.Static))
 				return false;
-			if (method.GenericParameters.Count > 0)
-				return false;
 			if (method.Body.ExceptionHandlers.Count > 0)
 				return false;
 
-			var parameters = method.Parameters;
+			var parameters = method.MethodSig.GetParams();
 			int paramCount = parameters.Count;
 			if (paramCount < 2)
 				return false;
+
+			if (method.GenericParameters.Count > 0) {
+				foreach (var gp in method.GenericParameters) {
+					if (gp.GenericParamConstraints.Count == 0)
+						return false;
+				}
+			}
+
 			var param1 = parameters[paramCount - 1];
 			var param2 = parameters[paramCount - 2];
-			if (!isIntType(param1.ParameterType.EType))
+			if (!IsIntType(param1.ElementType))
 				return false;
-			if (!isIntType(param2.ParameterType.EType))
+			if (!IsIntType(param2.ElementType))
 				return false;
 
 			return true;
 		}
 
-		static bool isIntType(ElementType etype) {
-			return etype == ElementType.Char || etype == ElementType.I2 || etype == ElementType.I4;
-		}
+		static bool IsIntType(ElementType etype) =>
+			etype == ElementType.Char || etype == ElementType.I2 || etype == ElementType.I4;
 
-		protected override bool isReturn(MethodDefinition methodToInline, int instrIndex) {
+		protected override bool IsReturn(MethodDef methodToInline, int instrIndex) {
 			int oldIndex = instrIndex;
-			if (base.isReturn(methodToInline, oldIndex))
+			if (base.IsReturn(methodToInline, oldIndex))
 				return true;
 
 			return false;

@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -20,18 +20,17 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using Mono.Cecil.Metadata;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Spices_Net {
 	class StringDecrypter {
-		ModuleDefinition module;
-		TypeDefinition decrypterType;
-		FieldDefinition encryptedDataField;
+		ModuleDefMD module;
+		TypeDef decrypterType;
+		FieldDef encryptedDataField;
 		StringDataFlags stringDataFlags;
-		MethodDefinitionAndDeclaringTypeDict<DecrypterInfo> methodToInfo = new MethodDefinitionAndDeclaringTypeDict<DecrypterInfo>();
+		MethodDefAndDeclaringTypeDict<DecrypterInfo> methodToInfo = new MethodDefAndDeclaringTypeDict<DecrypterInfo>();
 		byte[] decryptedData;
 		byte[] key;
 		byte[] iv;
@@ -45,22 +44,22 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 		}
 
 		public class DecrypterInfo {
-			public MethodDefinition method;
+			public MethodDef method;
 			public int offset;
 			public int length;
 
-			public DecrypterInfo(MethodDefinition method, int offset, int length) {
+			public DecrypterInfo(MethodDef method, int offset, int length) {
 				this.method = method;
 				this.offset = offset;
 				this.length = length;
 			}
 		}
 
-		public TypeDefinition EncryptedStringsType {
+		public TypeDef EncryptedStringsType {
 			get {
 				if (encryptedDataField == null)
 					return null;
-				var type = encryptedDataField.FieldType as TypeDefinition;
+				var type = encryptedDataField.FieldSig.GetFieldType().TryGetTypeDef();
 				if (type == null || type.Fields.Count != 1 || type.Fields[0] != encryptedDataField)
 					return null;
 				if (type.HasMethods || type.HasEvents || type.HasProperties || type.HasNestedTypes)
@@ -72,46 +71,33 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			}
 		}
 
-		public TypeDefinition Type {
-			get { return decrypterType; }
-		}
+		public TypeDef Type => decrypterType;
+		public bool Detected => decrypterType != null;
+		public IEnumerable<DecrypterInfo> DecrypterInfos => methodToInfo.GetValues();
+		public StringDecrypter(ModuleDefMD module) => this.module = module;
 
-		public bool Detected {
-			get { return decrypterType != null; }
-		}
-
-		public IEnumerable<DecrypterInfo> DecrypterInfos {
-			get { return methodToInfo.getValues(); }
-		}
-
-		public StringDecrypter(ModuleDefinition module) {
-			this.module = module;
-		}
-
-		public void find() {
+		public void Find() {
 			foreach (var type in module.Types) {
 				if (type.HasNestedTypes || type.HasInterfaces)
 					continue;
 				if (type.HasEvents || type.HasProperties)
 					continue;
-				if (type.Fields.Count != 2)
+				if (type.Fields.Count < 2 || type.Fields.Count > 3)
 					continue;
 				if ((type.Attributes & ~TypeAttributes.Sealed) != 0)
 					continue;
 				if (type.BaseType == null || type.BaseType.FullName != "System.Object")
 					continue;
-				if (hasInstanceMethods(type))
+				if (HasInstanceMethods(type))
 					continue;
-				var cctor = DotNetUtils.getMethod(type, ".cctor");
+				var cctor = type.FindStaticConstructor();
 				if (cctor == null)
 					continue;
 
-				FieldDefinition encryptedDataFieldTmp;
-				StringDataFlags stringDataFlagsTmp;
-				if (!checkCctor(cctor, out encryptedDataFieldTmp, out stringDataFlagsTmp))
+				if (!CheckCctor(cctor, out var encryptedDataFieldTmp, out var stringDataFlagsTmp))
 					continue;
 
-				if (!initializeDecrypterInfos(type))
+				if (!InitializeDecrypterInfos(type))
 					continue;
 
 				encryptedDataField = encryptedDataFieldTmp;
@@ -121,25 +107,25 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			}
 		}
 
-		static bool hasInstanceMethods(TypeDefinition type) {
+		static bool HasInstanceMethods(TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic)
 					return true;
-				if (method.PInvokeInfo != null)
+				if (method.ImplMap != null)
 					return true;
 			}
 			return false;
 		}
 
-		bool checkCctor(MethodDefinition cctor, out FieldDefinition compressedDataField, out StringDataFlags flags) {
+		bool CheckCctor(MethodDef cctor, out FieldDef compressedDataField, out StringDataFlags flags) {
 			flags = 0;
 			var instructions = cctor.Body.Instructions;
 			for (int i = 0; i < instructions.Count; i++) {
 				var ldci4 = instructions[i];
-				if (!DotNetUtils.isLdcI4(ldci4))
+				if (!ldci4.IsLdcI4())
 					continue;
 
-				var instrs = DotNetUtils.getInstructions(instructions, i + 1, OpCodes.Newarr, OpCodes.Dup, OpCodes.Ldtoken, OpCodes.Call);
+				var instrs = DotNetUtils.GetInstructions(instructions, i + 1, OpCodes.Newarr, OpCodes.Dup, OpCodes.Ldtoken, OpCodes.Call);
 				if (instrs == null)
 					continue;
 
@@ -147,13 +133,13 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 				if (newarr.Operand.ToString() != "System.Byte")
 					continue;
 
-				var field = instrs[2].Operand as FieldDefinition;
+				var field = instrs[2].Operand as FieldDef;
 				if (field == null || field.InitialValue == null || field.InitialValue.Length == 0)
 					continue;
 
 				int index = i + 1 + instrs.Count;
 				if (index < instructions.Count && instructions[index].OpCode.Code == Code.Call)
-					flags = getStringDataFlags(instructions[index].Operand as MethodDefinition);
+					flags = GetStringDataFlags(instructions[index].Operand as MethodDef);
 
 				compressedDataField = field;
 				return true;
@@ -163,42 +149,44 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			return false;
 		}
 
-		StringDataFlags getStringDataFlags(MethodDefinition method) {
+		StringDataFlags GetStringDataFlags(MethodDef method) {
 			if (method == null || method.Body == null)
 				return 0;
-			if (method.Parameters.Count != 1)
+			var sig = method.MethodSig;
+			if (sig == null || sig.Params.Count != 1)
 				return 0;
-			if (!checkClass(method.Parameters[0].ParameterType, "System.Byte[]"))
+			if (!CheckClass(sig.Params[0], "System.Byte[]"))
 				return 0;
-			if (!checkClass(method.MethodReturnType.ReturnType, "System.Byte[]"))
+			if (!CheckClass(sig.RetType, "System.Byte[]"))
 				return 0;
 
 			StringDataFlags flags = 0;
 
-			if (hasInstruction(method, Code.Not))
+			if (HasInstruction(method, Code.Not))
 				flags |= StringDataFlags.Encrypted2;
-			else if (hasInstruction(method, Code.Xor))
+			else if (HasInstruction(method, Code.Xor))
 				flags |= StringDataFlags.Encrypted1;
-			else if (check3DesCreator(method))
+			else if (Check3DesCreator(method))
 				flags |= StringDataFlags.Encrypted3DES;
-			if (callsDecompressor(method))
+			if (CallsDecompressor(method))
 				flags |= StringDataFlags.Compressed;
 
 			return flags;
 		}
 
-		bool check3DesCreator(MethodDefinition method) {
+		bool Check3DesCreator(MethodDef method) {
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Call)
 					continue;
-				var calledMethod = instr.Operand as MethodDefinition;
+				var calledMethod = instr.Operand as MethodDef;
 				if (calledMethod == null)
 					continue;
-				if (calledMethod.MethodReturnType.ReturnType.EType == ElementType.Void)
+				var sig = calledMethod.MethodSig;
+				if (sig == null || sig.RetType.GetElementType() == ElementType.Void)
 					continue;
-				if (calledMethod.Parameters.Count != 0)
+				if (sig.Params.Count != 0)
 					continue;
-				if (!get3DesKeyIv(calledMethod, ref key, ref iv))
+				if (!Get3DesKeyIv(calledMethod, ref key, ref iv))
 					continue;
 
 				return true;
@@ -206,42 +194,47 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			return false;
 		}
 
-		bool get3DesKeyIv(MethodDefinition method, ref byte[] key, ref byte[] iv) {
-			if (!new LocalTypes(method).exists("System.Security.Cryptography.TripleDESCryptoServiceProvider"))
+		bool Get3DesKeyIv(MethodDef method, ref byte[] key, ref byte[] iv) {
+			if (!new LocalTypes(method).Exists("System.Security.Cryptography.TripleDESCryptoServiceProvider"))
 				return false;
 
 			var instrs = method.Body.Instructions;
-			var arrays = ArrayFinder.getArrays(method, module.TypeSystem.Byte);
+			var arrays = ArrayFinder.GetArrays(method, module.CorLibTypes.Byte);
 			if (arrays.Count != 1 && arrays.Count != 2)
 				return false;
 
 			key = arrays[0];
-			if (arrays.Count == 1)
-				iv = module.Assembly.Name.PublicKeyToken;
+			if (arrays.Count == 1) {
+				var pkt = PublicKeyBase.ToPublicKeyToken(module.Assembly.PublicKey);
+				iv = pkt?.Data;
+			}
 			else
 				iv = arrays[1];
 			return true;
 		}
 
-		static bool callsDecompressor(MethodDefinition method) {
+		static bool CallsDecompressor(MethodDef method) {
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Call)
 					continue;
-				var called = instr.Operand as MethodDefinition;
+				var called = instr.Operand as MethodDef;
 				if (called == null)
 					continue;
-				if (called.MethodReturnType.ReturnType.EType != ElementType.I4)
+				var sig = called.MethodSig;
+				if (sig == null)
 					continue;
-				var parameters = called.Parameters;
+				if (sig.RetType.GetElementType() != ElementType.I4)
+					continue;
+				var parameters = sig.Params;
 				if (parameters.Count != 4)
 					continue;
-				if (!checkClass(parameters[0].ParameterType, "System.Byte[]"))
+				if (!CheckClass(parameters[0], "System.Byte[]"))
 					continue;
-				if (parameters[1].ParameterType.EType != ElementType.I4)
+				if (parameters[1].GetElementType() != ElementType.I4)
 					continue;
-				if (!checkClass(parameters[2].ParameterType, "System.Byte[]"))
+				if (!CheckClass(parameters[2], "System.Byte[]"))
 					continue;
-				if (parameters[3].ParameterType.EType != ElementType.I4)
+				if (parameters[3].GetElementType() != ElementType.I4)
 					continue;
 
 				return true;
@@ -249,7 +242,7 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			return false;
 		}
 
-		static bool hasInstruction(MethodDefinition method, Code code) {
+		static bool HasInstruction(MethodDef method, Code code) {
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code == code)
 					return true;
@@ -257,50 +250,51 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			return false;
 		}
 
-		static bool checkClass(TypeReference type, string fullName) {
-			return type != null && (type.EType == ElementType.Object || type.FullName == fullName);
-		}
+		static bool CheckClass(TypeSig type, string fullName) =>
+			type != null && (type.ElementType == ElementType.Object || type.FullName == fullName);
 
-		static bool isStringType(TypeReference type) {
-			return type != null && (type.EType == ElementType.Object || type.EType == ElementType.String);
-		}
+		static bool IsStringType(TypeSig type) =>
+			type != null && (type.ElementType == ElementType.Object || type.ElementType == ElementType.String);
 
-		bool initializeDecrypterInfos(TypeDefinition type) {
+		bool InitializeDecrypterInfos(TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
-				if (method.Parameters.Count != 0)
+				var sig = method.MethodSig;
+				if (sig == null)
 					continue;
-				if (!isStringType(method.MethodReturnType.ReturnType))
+				if (sig.Params.Count != 0)
+					continue;
+				if (!IsStringType(sig.RetType))
 					continue;
 
-				var info = createInfo(method);
+				var info = CreateInfo(method);
 				if (info == null)
 					continue;
 
-				methodToInfo.add(method, info);
+				methodToInfo.Add(method, info);
 			}
 
 			return methodToInfo.Count != 0;
 		}
 
-		DecrypterInfo createInfo(MethodDefinition method) {
+		DecrypterInfo CreateInfo(MethodDef method) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 1; i++) {
 				var ldci4_1 = instrs[i];
 				var ldci4_2 = instrs[i + 1];
-				if (!DotNetUtils.isLdcI4(ldci4_1) || !DotNetUtils.isLdcI4(ldci4_2))
+				if (!ldci4_1.IsLdcI4() || !ldci4_2.IsLdcI4())
 					continue;
 
-				int offset = DotNetUtils.getLdcI4Value(ldci4_1);
-				int length = DotNetUtils.getLdcI4Value(ldci4_2);
+				int offset = ldci4_1.GetLdcI4Value();
+				int length = ldci4_2.GetLdcI4Value();
 				return new DecrypterInfo(method, offset, length);
 			}
 
 			return null;
 		}
 
-		public void initialize() {
+		public void Initialize() {
 			if (decrypterType == null)
 				return;
 
@@ -313,29 +307,30 @@ namespace de4dot.code.deobfuscators.Spices_Net {
 			}
 
 			if ((stringDataFlags & StringDataFlags.Encrypted2) != 0) {
-				var k = module.Assembly.Name.PublicKey;
+				var k = module.Assembly.PublicKey.Data;
 				int mask = (byte)(~k.Length);
 				for (int i = 0; i < decryptedData.Length; i++)
 					decryptedData[i] ^= k[i & mask];
 			}
 
 			if ((stringDataFlags & StringDataFlags.Encrypted3DES) != 0)
-				decryptedData = DeobUtils.des3Decrypt(decryptedData, key, iv);
+				decryptedData = DeobUtils.Des3Decrypt(decryptedData, key, iv);
 
 			if ((stringDataFlags & StringDataFlags.Compressed) != 0)
-				decryptedData = QclzDecompressor.decompress(decryptedData);
+				decryptedData = QclzDecompressor.Decompress(decryptedData);
 		}
 
-		public void cleanUp() {
+		public void CleanUp() {
 			if (decrypterType == null)
 				return;
 
 			encryptedDataField.InitialValue = new byte[1];
-			encryptedDataField.FieldType = module.TypeSystem.Byte;
+			encryptedDataField.FieldSig.Type = module.CorLibTypes.Byte;
+			encryptedDataField.RVA = 0;
 		}
 
-		public string decrypt(MethodDefinition method) {
-			var info = methodToInfo.find(method);
+		public string Decrypt(MethodDef method) {
+			var info = methodToInfo.Find(method);
 			return Encoding.Unicode.GetString(decryptedData, info.offset, info.length);
 		}
 	}

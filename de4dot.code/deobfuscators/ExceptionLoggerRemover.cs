@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -17,22 +17,19 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators {
-	class ExceptionLoggerRemover {
-		MethodDefinitionAndDeclaringTypeDict<bool> exceptionLoggerMethods = new MethodDefinitionAndDeclaringTypeDict<bool>();
+	public class ExceptionLoggerRemover {
+		MethodDefAndDeclaringTypeDict<bool> exceptionLoggerMethods = new MethodDefAndDeclaringTypeDict<bool>();
 
 		public int NumRemovedExceptionLoggers { get; set; }
 
-		public void add(MethodDefinition exceptionLogger) {
-			exceptionLoggerMethods.add(exceptionLogger, true);
-		}
+		public void Add(MethodDef exceptionLogger) => exceptionLoggerMethods.Add(exceptionLogger, true);
 
-		bool find(Blocks blocks, out TryBlock tryBlock) {
+		bool Find(Blocks blocks, out TryBlock tryBlock) {
 			tryBlock = null;
 
 			foreach (var bb in blocks.MethodBlocks.BaseBlocks) {
@@ -74,10 +71,10 @@ namespace de4dot.code.deobfuscators {
 				}
 				if (failed || calls != 1 || callInstr.OpCode.Code != Code.Call)
 					continue;
-				var calledMethod = callInstr.Operand as MethodReference;
+				var calledMethod = callInstr.Operand as IMethod;
 				if (calledMethod == null)
 					continue;
-				if (!isExceptionLogger(calledMethod))
+				if (!IsExceptionLogger(calledMethod))
 					continue;
 
 				return true;
@@ -86,23 +83,17 @@ namespace de4dot.code.deobfuscators {
 			return false;
 		}
 
-		protected virtual bool isExceptionLogger(MethodReference method) {
-			return exceptionLoggerMethods.find(method);
-		}
+		protected virtual bool IsExceptionLogger(IMethod method) => exceptionLoggerMethods.Find(method);
+		protected virtual bool HasExceptionLoggers => exceptionLoggerMethods.Count != 0;
 
-		protected virtual bool HasExceptionLoggers {
-			get { return exceptionLoggerMethods.Count != 0; }
-		}
-
-		public bool remove(Blocks blocks) {
+		public bool Remove(Blocks blocks) {
 			if (!HasExceptionLoggers)
 				return false;
 
-			TryBlock tryBlock;
-			if (!find(blocks, out tryBlock))
+			if (!Find(blocks, out var tryBlock))
 				return false;
 
-			blocks.MethodBlocks.removeTryBlock(tryBlock);
+			blocks.MethodBlocks.RemoveTryBlock(tryBlock);
 			NumRemovedExceptionLoggers++;
 			return true;
 		}

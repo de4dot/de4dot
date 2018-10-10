@@ -26,11 +26,9 @@
 
 namespace de4dot.code.deobfuscators.CodeWall.randomc {
 	class CRandomMother {
-		uint[] x = new uint[5];				// History buffer
+		uint[] x = new uint[5];             // History buffer
 
-		public CRandomMother(int seed) {
-			RandomInit(seed);
-		}
+		public CRandomMother(int seed) => RandomInit(seed);
 
 		// this function initializes the random number generator:
 		public void RandomInit(int seed) {
@@ -60,8 +58,6 @@ namespace de4dot.code.deobfuscators.CodeWall.randomc {
 		}
 
 		// returns a random number between 0 and 1:
-		public double Random() {
-			return (double)BRandom() * (1.0/(65536.0*65536.0));
-		}
+		public double Random() => (double)BRandom() * (1.0 / (65536.0 * 65536.0));
 	}
 }

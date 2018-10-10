@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -20,28 +20,57 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using dnlib.DotNet;
 using de4dot.code;
 using de4dot.code.deobfuscators;
+using System.IO;
+using System.Reflection;
 
 namespace de4dot.cui {
 	class ExitException : Exception {
 		public readonly int code;
-		public ExitException(int code) {
-			this.code = code;
-		}
+		public ExitException(int code) => this.code = code;
 	}
 
 	class Program {
-		static IList<IDeobfuscatorInfo> deobfuscatorInfos = createDeobfuscatorInfos();
+		static IList<IDeobfuscatorInfo> deobfuscatorInfos = CreateDeobfuscatorInfos();
 
-		static IList<IDeobfuscatorInfo> createDeobfuscatorInfos() {
-			return new List<IDeobfuscatorInfo> {
+		static IList<IDeobfuscatorInfo> LoadPlugin(string assembly) {
+			var plugins = new List<IDeobfuscatorInfo>();
+			try {
+				foreach (var item in Assembly.LoadFile(assembly).GetTypes()) {
+					var interfaces = new List<Type>(item.GetInterfaces());
+					if (item.IsClass && interfaces.Contains(typeof(IDeobfuscatorInfo)))
+						plugins.Add((IDeobfuscatorInfo)Activator.CreateInstance(item));
+				}
+			}
+			catch {
+			}
+			return plugins;
+		}
+
+		public static void GetPlugins(string directory, ref Dictionary<string, IDeobfuscatorInfo> result) {
+			var plugins = new List<IDeobfuscatorInfo>();
+			try {
+				var files = Directory.GetFiles(directory, "deobfuscator.*.dll", SearchOption.TopDirectoryOnly);
+				foreach (var file in files)
+					plugins.AddRange(LoadPlugin(Path.GetFullPath(file)));
+			}
+			catch {
+			}
+			foreach(var p in plugins)
+				result[p.Type] = p;
+		}
+
+		static IList<IDeobfuscatorInfo> CreateDeobfuscatorInfos() {
+			var local = new List<IDeobfuscatorInfo> {
 				new de4dot.code.deobfuscators.Unknown.DeobfuscatorInfo(),
+				new de4dot.code.deobfuscators.Agile_NET.DeobfuscatorInfo(),
 				new de4dot.code.deobfuscators.Babel_NET.DeobfuscatorInfo(),
-				new de4dot.code.deobfuscators.CliSecure.DeobfuscatorInfo(),
 				new de4dot.code.deobfuscators.CodeFort.DeobfuscatorInfo(),
 				new de4dot.code.deobfuscators.CodeVeil.DeobfuscatorInfo(),
 				new de4dot.code.deobfuscators.CodeWall.DeobfuscatorInfo(),
+				new de4dot.code.deobfuscators.Confuser.DeobfuscatorInfo(),
 				new de4dot.code.deobfuscators.CryptoObfuscator.DeobfuscatorInfo(),
 				new de4dot.code.deobfuscators.DeepSea.DeobfuscatorInfo(),
 				new de4dot.code.deobfuscators.Dotfuscator.DeobfuscatorInfo(),
@@ -58,49 +87,61 @@ namespace de4dot.cui {
 				new de4dot.code.deobfuscators.Spices_Net.DeobfuscatorInfo(),
 				new de4dot.code.deobfuscators.Xenocode.DeobfuscatorInfo(),
 			};
+			var dict = new Dictionary<string, IDeobfuscatorInfo>();
+			foreach (var d in local)
+				dict[d.Type] = d;
+			string pluginDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "bin");
+			GetPlugins(pluginDir, ref dict);
+			return new List<IDeobfuscatorInfo>(dict.Values);
 		}
 
-		public static int main(string[] args) {
+		public static int Main(string[] args) {
 			int exitCode = 0;
 
+			const string showAllMessagesEnvName = "SHOWALLMESSAGES";
 			try {
 				if (Console.OutputEncoding.IsSingleByte)
 					Console.OutputEncoding = new UTF8Encoding(false);
 
-				Log.n("");
-				Log.n("de4dot v{0} Copyright (C) 2011-2012 de4dot@gmail.com", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
-				Log.n("Latest version and source code: https://github.com/0xd4d/de4dot");
-				Log.n("");
+				Logger.Instance.CanIgnoreMessages = !HasEnv(showAllMessagesEnvName);
+
+				Logger.n("");
+				Logger.n("de4dot v{0} Copyright (C) 2011-2015 de4dot@gmail.com", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
+				Logger.n("Latest version and source code: https://github.com/0xd4d/de4dot");
+				Logger.n("");
 
 				var options = new FilesDeobfuscator.Options();
-				parseCommandLine(args, options);
-				new FilesDeobfuscator(options).doIt();
+				ParseCommandLine(args, options);
+				new FilesDeobfuscator(options).DoIt();
 			}
 			catch (ExitException ex) {
 				exitCode = ex.code;
 			}
 			catch (UserException ex) {
-				Log.e("ERROR: {0}", ex.Message);
+				Logger.Instance.LogErrorDontIgnore("{0}", ex.Message);
 				exitCode = 1;
 			}
 			catch (Exception ex) {
-				if (printFullStackTrace()) {
-					printStackTrace(ex);
-					Log.e("\nTry the latest version before reporting this problem!");
-					Log.e("Send bug reports to de4dot@gmail.com or go to https://github.com/0xd4d/de4dot/issues");
+				if (PrintFullStackTrace()) {
+					PrintStackTrace(ex);
+					Logger.Instance.LogErrorDontIgnore("\nTry the latest version!");
 				}
 				else {
-					Log.e("\n\n");
-					Log.e("Hmmmm... something didn't work. Try the latest version.");
-					Log.e("    EX: {0} : message: {1}", ex.GetType(), ex.Message);
-					Log.e("If it's a supported obfuscator, it could be a bug or a new obfuscator version.");
-					Log.e("If it's an unsupported obfuscator, make sure the methods are decrypted!");
-					Log.e("Send bug reports to de4dot@gmail.com or go to https://github.com/0xd4d/de4dot/issues");
+					Logger.Instance.LogErrorDontIgnore("\n\n");
+					Logger.Instance.LogErrorDontIgnore("Hmmmm... something didn't work. Try the latest version.");
 				}
 				exitCode = 1;
 			}
 
-			if (isN00bUser()) {
+			if (Logger.Instance.NumIgnoredMessages > 0) {
+				if (Logger.Instance.NumIgnoredMessages == 1)
+					Logger.n("Ignored {0} warning/error", Logger.Instance.NumIgnoredMessages);
+				else
+					Logger.n("Ignored {0} warnings/errors", Logger.Instance.NumIgnoredMessages);
+				Logger.n("Use -v/-vv option or set environment variable {0}=1 to see all messages", showAllMessagesEnvName);
+			}
+
+			if (IsN00bUser()) {
 				Console.Error.WriteLine("\n\nPress any key to exit...\n");
 				try {
 					Console.ReadKey(true);
@@ -112,16 +153,16 @@ namespace de4dot.cui {
 			return exitCode;
 		}
 
-		static bool printFullStackTrace() {
-			if (Log.isAtLeast(Log.LogLevel.verbose))
+		static bool PrintFullStackTrace() {
+			if (!Logger.Instance.IgnoresEvent(LoggerEvent.Verbose))
 				return true;
-			if (hasEnv("STACKTRACE"))
+			if (HasEnv("STACKTRACE"))
 				return true;
 
 			return false;
 		}
 
-		static bool hasEnv(string name) {
+		static bool HasEnv(string name) {
 			foreach (var tmp in Environment.GetEnvironmentVariables().Keys) {
 				var env = tmp as string;
 				if (env == null)
@@ -132,38 +173,38 @@ namespace de4dot.cui {
 			return false;
 		}
 
-		static bool isN00bUser() {
-			if (hasEnv("VisualStudioDir"))
+		static bool IsN00bUser() {
+			if (HasEnv("VisualStudioDir"))
 				return false;
-			return hasEnv("windir") && !hasEnv("PROMPT");
+			if (HasEnv("SHELL"))
+				return false;
+			return HasEnv("windir") && !HasEnv("PROMPT");
 		}
 
-		public static void printStackTrace(Exception ex) {
-			printStackTrace(ex, Log.LogLevel.error);
-		}
+		public static void PrintStackTrace(Exception ex) => PrintStackTrace(ex, LoggerEvent.Error);
 
-		public static void printStackTrace(Exception ex, Log.LogLevel logLevel) {
+		public static void PrintStackTrace(Exception ex, LoggerEvent loggerEvent) {
 			var line = new string('-', 78);
-			Log.log(logLevel, "\n\n");
-			Log.log(logLevel, line);
-			Log.log(logLevel, "Stack trace:\n{0}", ex.StackTrace);
-			Log.log(logLevel, "\n\nERROR: Caught an exception:\n");
-			Log.log(logLevel, line);
-			Log.log(logLevel, "Message:");
-			Log.log(logLevel, "  {0}", ex.Message);
-			Log.log(logLevel, "Type:");
-			Log.log(logLevel, "  {0}", ex.GetType());
-			Log.log(logLevel, line);
+			Logger.Instance.Log(false, null, loggerEvent, "\n\n");
+			Logger.Instance.Log(false, null, loggerEvent, line);
+			Logger.Instance.Log(false, null, loggerEvent, "Stack trace:\n{0}", ex.StackTrace);
+			Logger.Instance.Log(false, null, loggerEvent, "\n\nCaught an exception:\n");
+			Logger.Instance.Log(false, null, loggerEvent, line);
+			Logger.Instance.Log(false, null, loggerEvent, "Message:");
+			Logger.Instance.Log(false, null, loggerEvent, "  {0}", ex.Message);
+			Logger.Instance.Log(false, null, loggerEvent, "Type:");
+			Logger.Instance.Log(false, null, loggerEvent, "  {0}", ex.GetType());
+			Logger.Instance.Log(false, null, loggerEvent, line);
 		}
 
-		static void parseCommandLine(string[] args, FilesDeobfuscator.Options options) {
-			new CommandLineParser(deobfuscatorInfos, options).parse(args);
+		static void ParseCommandLine(string[] args, FilesDeobfuscator.Options options) {
+			new CommandLineParser(deobfuscatorInfos, options).Parse(args);
 
-			Log.vv("Args:");
-			Log.indent();
+			Logger.vv("Args:");
+			Logger.Instance.Indent();
 			foreach (var arg in args)
-				Log.vv("{0}", Utils.toCsharpString(arg));
-			Log.deIndent();
+				Logger.vv("{0}", Utils.ToCsharpString(arg));
+			Logger.Instance.DeIndent();
 		}
 	}
 }

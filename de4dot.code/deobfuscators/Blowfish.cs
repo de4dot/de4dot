@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -20,7 +20,7 @@
 using System;
 
 namespace de4dot.code.deobfuscators {
-	class Blowfish {
+	public class Blowfish {
 		static readonly uint[] Pboxes = new uint[18] {
 			0x243F6A88, 0x85A308D3, 0x13198A2E, 0x03707344,
 			0xA4093822, 0x299F31D0, 0x082EFA98, 0xEC4E6C89,
@@ -290,14 +290,10 @@ namespace de4dot.code.deobfuscators {
 		protected readonly uint[] P = new uint[18];
 		protected readonly uint[] S = new uint[1024];
 
-		public Blowfish() {
-		}
+		public Blowfish() { }
+		public Blowfish(byte[] key) => Initialize(key);
 
-		public Blowfish(byte[] key) {
-			init(key);
-		}
-
-		public void init(byte[] key) {
+		public void Initialize(byte[] key) {
 			Array.Copy(Sboxes, S, S.Length);
 			int kl = key.Length;
 			for (int i = 0, ki = 0; i < 18; i++) {
@@ -307,22 +303,22 @@ namespace de4dot.code.deobfuscators {
 
 			uint xl = 0, xr = 0;
 			for (int i = 0; i < 18; i += 2) {
-				encrypt(ref xl, ref xr);
+				Encrypt(ref xl, ref xr);
 				P[i] = xl;
 				P[i + 1] = xr;
 			}
 			for (int i = 0; i < 1024; i += 2) {
-				encrypt(ref xl, ref xr);
+				Encrypt(ref xl, ref xr);
 				S[i] = xl;
 				S[i + 1] = xr;
 			}
 		}
 
-		public void encrypt_LE(byte[] data) {
+		public void Encrypt_LE(byte[] data) {
 			for (int i = 0; i + 8 <= data.Length; i += 8) {
 				uint xl = BitConverter.ToUInt32(data, i);
 				uint xr = BitConverter.ToUInt32(data, i + 4);
-				encrypt(ref xl, ref xr);
+				Encrypt(ref xl, ref xr);
 				data[i] = (byte)xl;
 				data[i + 1] = (byte)(xl >> 8);
 				data[i + 2] = (byte)(xl >> 16);
@@ -334,11 +330,11 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
-		public void encrypt(byte[] data) {
+		public void Encrypt(byte[] data) {
 			for (int i = 0; i + 8 <= data.Length; i += 8) {
 				uint xl = (uint)((data[i] << 24) | (data[i + 1] << 16) | (data[i + 2] << 8) | data[i + 3]);
 				uint xr = (uint)((data[i + 4] << 24) | (data[i + 5] << 16) | (data[i + 6] << 8) | data[i + 7]);
-				encrypt(ref xl, ref xr);
+				Encrypt(ref xl, ref xr);
 				data[i] = (byte)(xl >> 24);
 				data[i + 1] = (byte)(xl >> 16);
 				data[i + 2] = (byte)(xl >> 8);
@@ -350,7 +346,7 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
-		protected virtual void encrypt(ref uint rxl, ref uint rxr) {
+		protected virtual void Encrypt(ref uint rxl, ref uint rxr) {
 			uint xl = rxl, xr = rxr;
 			for (int i = 0; i < 16; i++) {
 				xl ^= P[i];
@@ -363,11 +359,11 @@ namespace de4dot.code.deobfuscators {
 			rxl = xr ^ P[17];
 		}
 
-		public void decrypt_LE(byte[] data) {
+		public void Decrypt_LE(byte[] data) {
 			for (int i = 0; i + 8 <= data.Length; i += 8) {
 				uint xl = BitConverter.ToUInt32(data, i);
 				uint xr = BitConverter.ToUInt32(data, i + 4);
-				decrypt(ref xl, ref xr);
+				Decrypt(ref xl, ref xr);
 				data[i] = (byte)xl;
 				data[i + 1] = (byte)(xl >> 8);
 				data[i + 2] = (byte)(xl >> 16);
@@ -379,11 +375,11 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
-		public void decrypt(byte[] data) {
+		public void Decrypt(byte[] data) {
 			for (int i = 0; i + 8 <= data.Length; i += 8) {
 				uint xl = (uint)((data[i] << 24) | (data[i + 1] << 16) | (data[i + 2] << 8) | data[i + 3]);
 				uint xr = (uint)((data[i + 4] << 24) | (data[i + 5] << 16) | (data[i + 6] << 8) | data[i + 7]);
-				decrypt(ref xl, ref xr);
+				Decrypt(ref xl, ref xr);
 				data[i] = (byte)(xl >> 24);
 				data[i + 1] = (byte)(xl >> 16);
 				data[i + 2] = (byte)(xl >> 8);
@@ -395,7 +391,7 @@ namespace de4dot.code.deobfuscators {
 			}
 		}
 
-		protected virtual void decrypt(ref uint rxl, ref uint rxr) {
+		protected virtual void Decrypt(ref uint rxl, ref uint rxr) {
 			uint xl = rxl, xr = rxr;
 			for (int i = 17; i >= 2; i--) {
 				xl ^= P[i];

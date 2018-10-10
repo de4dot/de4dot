@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -18,23 +18,22 @@
 */
 
 using System.Collections.Generic;
-using System.IO;
 using System.Xml;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CodeVeil {
 	class AssemblyResolver {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		EmbeddedResource bundleData;
 		EmbeddedResource bundleXmlFile;
-		TypeDefinition bundleType;
-		TypeDefinition assemblyManagerType;
-		TypeDefinition bundleStreamProviderIFace;
-		TypeDefinition xmlParserType;
-		TypeDefinition bundledAssemblyType;
-		TypeDefinition streamProviderType;
+		TypeDef bundleType;
+		TypeDef assemblyManagerType;
+		TypeDef bundleStreamProviderIFace;
+		TypeDef xmlParserType;
+		TypeDef bundledAssemblyType;
+		TypeDef streamProviderType;
 		List<AssemblyInfo> infos = new List<AssemblyInfo>();
 
 		public class AssemblyInfo {
@@ -45,30 +44,25 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 
 			public AssemblyInfo(string fullName, string extension, byte[] data) {
 				this.fullName = fullName;
-				this.simpleName = Utils.getAssemblySimpleName(fullName);
+				simpleName = Utils.GetAssemblySimpleName(fullName);
 				this.extension = extension;
 				this.data = data;
 			}
 
-			public override string ToString() {
-				return fullName;
-			}
+			public override string ToString() => fullName;
 		}
 
-		public bool CanRemoveTypes {
-			get {
-				return bundleType != null &&
-					assemblyManagerType != null &&
-					bundleStreamProviderIFace != null &&
-					xmlParserType != null &&
-					bundledAssemblyType != null &&
-					streamProviderType != null;
-			}
-		}
+		public bool CanRemoveTypes =>
+			bundleType != null &&
+			assemblyManagerType != null &&
+			bundleStreamProviderIFace != null &&
+			xmlParserType != null &&
+			bundledAssemblyType != null &&
+			streamProviderType != null;
 
-		public IEnumerable<TypeDefinition> BundleTypes {
+		public IEnumerable<TypeDef> BundleTypes {
 			get {
-				var list = new List<TypeDefinition>();
+				var list = new List<TypeDef>();
 				if (!CanRemoveTypes)
 					return list;
 
@@ -83,54 +77,43 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			}
 		}
 
-		public IEnumerable<AssemblyInfo> AssemblyInfos {
-			get { return infos; }
-		}
+		public IEnumerable<AssemblyInfo> AssemblyInfos => infos;
+		public EmbeddedResource BundleDataResource => bundleData;
+		public EmbeddedResource BundleXmlFileResource => bundleXmlFile;
+		public AssemblyResolver(ModuleDefMD module) => this.module = module;
 
-		public EmbeddedResource BundleDataResource {
-			get { return bundleData; }
-		}
-
-		public EmbeddedResource BundleXmlFileResource {
-			get { return bundleXmlFile; }
-		}
-
-		public AssemblyResolver(ModuleDefinition module) {
-			this.module = module;
-		}
-
-		public void initialize() {
-			if (!findTypeAndResources())
+		public void Initialize() {
+			if (!FindTypeAndResources())
 				return;
 
-			findEmbeddedAssemblies();
+			FindEmbeddedAssemblies();
 		}
 
-		bool findTypeAndResources() {
-			var bundleDataTmp = DotNetUtils.getResource(module, ".bundle.dat") as EmbeddedResource;
-			var bundleXmlFileTmp = DotNetUtils.getResource(module, ".bundle.manifest") as EmbeddedResource;
+		bool FindTypeAndResources() {
+			var bundleDataTmp = DotNetUtils.GetResource(module, ".bundle.dat") as EmbeddedResource;
+			var bundleXmlFileTmp = DotNetUtils.GetResource(module, ".bundle.manifest") as EmbeddedResource;
 			if (bundleDataTmp == null || bundleXmlFileTmp == null)
 				return false;
 
-			var bundleTypeTmp = findBundleType();
+			var bundleTypeTmp = FindBundleType();
 			if (bundleTypeTmp == null)
 				return false;
 
 			bundleData = bundleDataTmp;
 			bundleXmlFile = bundleXmlFileTmp;
 			bundleType = bundleTypeTmp;
-			findOtherTypes();
+			FindOtherTypes();
 			return true;
 		}
 
-		void findEmbeddedAssemblies() {
-			var data = bundleData.GetResourceData();
+		void FindEmbeddedAssemblies() {
+			var data = bundleData.CreateReader().ToArray();
 
 			var doc = new XmlDocument();
-			doc.Load(XmlReader.Create(bundleXmlFile.GetResourceStream()));
+			doc.Load(XmlReader.Create(bundleXmlFile.CreateReader().AsStream()));
 			var manifest = doc.DocumentElement;
 			if (manifest.Name.ToLowerInvariant() != "manifest") {
-				Log.w("Could not find Manifest element");
+				Logger.w("Could not find Manifest element");
 				return;
 			}
 			foreach (var tmp in manifest.ChildNodes) {
@@ -139,51 +122,50 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 					continue;
 
 				if (assemblyElem.Name.ToLowerInvariant() != "assembly") {
-					Log.w("Unknown element: {0}", assemblyElem.Name);
+					Logger.w("Unknown element: {0}", assemblyElem.Name);
 					continue;
 				}
 
-				int offset = getAttributeValueInt32(assemblyElem, "offset");
+				int offset = GetAttributeValueInt32(assemblyElem, "offset");
 				if (offset < 0) {
-					Log.w("Could not find offset attribute");
+					Logger.w("Could not find offset attribute");
 					continue;
 				}
 
-				var assemblyData = DeobUtils.inflate(data, offset, data.Length - offset, true);
-				var mod = ModuleDefinition.ReadModule(new MemoryStream(assemblyData));
-				infos.Add(new AssemblyInfo(mod.Assembly.FullName, DeobUtils.getExtension(mod.Kind), assemblyData));
+				var assemblyData = DeobUtils.Inflate(data, offset, data.Length - offset, true);
+				var mod = ModuleDefMD.Load(assemblyData);
+				infos.Add(new AssemblyInfo(mod.Assembly.FullName, DeobUtils.GetExtension(mod.Kind), assemblyData));
 			}
 		}
 
-		static int getAttributeValueInt32(XmlElement elem, string attrName) {
+		static int GetAttributeValueInt32(XmlElement elem, string attrName) {
 			var str = elem.GetAttribute(attrName);
 			if (string.IsNullOrEmpty(str))
 				return -1;
 
-			int value;
-			if (!int.TryParse(str, out value))
+			if (!int.TryParse(str, out int value))
 				return -1;
 
 			return value;
 		}
 
-		TypeDefinition findBundleType() {
+		TypeDef FindBundleType() {
 			foreach (var type in module.Types) {
 				if (type.Namespace != "")
 					continue;
 				if (type.Fields.Count != 2)
 					continue;
 
-				var ctor = DotNetUtils.getMethod(type, ".ctor");
+				var ctor = type.FindMethod(".ctor");
 				if (ctor == null || !ctor.IsPrivate)
 					continue;
-				if (!DotNetUtils.isMethod(ctor, "System.Void", "(System.Reflection.Assembly)"))
+				if (!DotNetUtils.IsMethod(ctor, "System.Void", "(System.Reflection.Assembly)"))
 					continue;
 
-				var initMethodTmp = findInitMethod(type);
+				var initMethodTmp = FindInitMethod(type);
 				if (initMethodTmp == null)
 					continue;
-				var getTempFilenameMethod = findGetTempFilenameMethod(type);
+				var getTempFilenameMethod = FindGetTempFilenameMethod(type);
 				if (getTempFilenameMethod == null)
 					continue;
 
@@ -193,13 +175,13 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return null;
 		}
 
-		MethodDefinition findInitMethod(TypeDefinition type) {
+		MethodDef FindInitMethod(TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
 				if (!method.IsPublic && !method.IsAssembly)
 					continue;
-				if (!DotNetUtils.isMethod(method, "System.Void", "(System.Reflection.Assembly)"))
+				if (!DotNetUtils.IsMethod(method, "System.Void", "(System.Reflection.Assembly)"))
 					continue;
 
 				return method;
@@ -208,13 +190,13 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return null;
 		}
 
-		MethodDefinition findGetTempFilenameMethod(TypeDefinition type) {
+		MethodDef FindGetTempFilenameMethod(TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (method.IsStatic || method.Body == null)
 					continue;
 				if (!method.IsPublic && !method.IsAssembly)
 					continue;
-				if (!DotNetUtils.isMethod(method, "System.String", "(System.String)"))
+				if (!DotNetUtils.IsMethod(method, "System.String", "(System.String)"))
 					continue;
 
 				return method;
@@ -223,18 +205,18 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return null;
 		}
 
-		void findOtherTypes() {
-			findAssemblyManagerType();
-			findXmlParserType();
-			findStreamProviderType();
+		void FindOtherTypes() {
+			FindAssemblyManagerType();
+			FindXmlParserType();
+			FindStreamProviderType();
 		}
 
-		void findAssemblyManagerType() {
+		void FindAssemblyManagerType() {
 			if (bundleType == null)
 				return;
 
 			foreach (var field in bundleType.Fields) {
-				var type = field.FieldType as TypeDefinition;
+				var type = field.FieldSig.GetFieldType().TryGetTypeDef();
 				if (type == null)
 					continue;
 				if (type == bundleType)
@@ -242,10 +224,13 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				if (type.Fields.Count != 2)
 					continue;
 
-				var ctor = DotNetUtils.getMethod(type, ".ctor");
-				if (ctor == null || ctor.Parameters.Count != 2)
+				var ctor = type.FindMethod(".ctor");
+				if (ctor == null)
 					continue;
-				var iface = ctor.Parameters[1].ParameterType as TypeDefinition;
+				var sig = ctor.MethodSig;
+				if (sig == null || sig.Params.Count != 2)
+					continue;
+				var iface = sig.Params[1].TryGetTypeDef();
 				if (iface == null || !iface.IsInterface)
 					continue;
 
@@ -255,26 +240,26 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			}
 		}
 
-		void findXmlParserType() {
+		void FindXmlParserType() {
 			if (assemblyManagerType == null)
 				return;
 			foreach (var field in assemblyManagerType.Fields) {
-				var type = field.FieldType as TypeDefinition;
+				var type = field.FieldSig.GetFieldType().TryGetTypeDef();
 				if (type == null || type.IsInterface)
 					continue;
-				var ctor = DotNetUtils.getMethod(type, ".ctor");
-				if (!DotNetUtils.isMethod(ctor, "System.Void", "()"))
+				var ctor = type.FindMethod(".ctor");
+				if (!DotNetUtils.IsMethod(ctor, "System.Void", "()"))
 					continue;
 				if (type.Fields.Count != 1)
 					continue;
-				var git = type.Fields[0].FieldType as GenericInstanceType;
+				var git = type.Fields[0].FieldSig.GetFieldType().ToGenericInstSig();
 				if (git == null)
 					continue;
-				if (git.ElementType.FullName != "System.Collections.Generic.List`1")
+				if (git.GenericType.FullName != "System.Collections.Generic.List`1")
 					continue;
 				if (git.GenericArguments.Count != 1)
 					continue;
-				var type2 = git.GenericArguments[0] as TypeDefinition;
+				var type2 = git.GenericArguments[0].TryGetTypeDef();
 				if (type2 == null)
 					continue;
 
@@ -284,26 +269,26 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			}
 		}
 
-		void findStreamProviderType() {
+		void FindStreamProviderType() {
 			if (bundleType == null)
 				return;
-			var ctor = DotNetUtils.getMethod(bundleType, ".ctor");
-			if (!DotNetUtils.isMethod(ctor, "System.Void", "(System.Reflection.Assembly)"))
+			var ctor = bundleType.FindMethod(".ctor");
+			if (!DotNetUtils.IsMethod(ctor, "System.Void", "(System.Reflection.Assembly)"))
 				return;
 			foreach (var instr in ctor.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Newobj)
 					continue;
-				var newobjCtor = instr.Operand as MethodDefinition;
+				var newobjCtor = instr.Operand as MethodDef;
 				if (newobjCtor == null)
 					continue;
 				if (newobjCtor.DeclaringType == assemblyManagerType)
 					continue;
-				if (!DotNetUtils.isMethod(newobjCtor, "System.Void", "(System.Reflection.Assembly,System.String)"))
+				if (!DotNetUtils.IsMethod(newobjCtor, "System.Void", "(System.Reflection.Assembly,System.String)"))
 					continue;
 				var type = newobjCtor.DeclaringType;
 				if (type.Interfaces.Count != 1)
 					continue;
-				if (type.Interfaces[0] != bundleStreamProviderIFace)
+				if (type.Interfaces[0].Interface != bundleStreamProviderIFace)
 					continue;
 
 				streamProviderType = type;

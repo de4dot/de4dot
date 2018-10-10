@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -24,32 +24,26 @@ using System.Threading;
 using AssemblyData;
 
 namespace de4dot.code.AssemblyClient {
-	sealed class AssemblyClient : IAssemblyClient {
+	public sealed class AssemblyClient : IAssemblyClient {
 		const int WAIT_TIME_BEFORE_CONNECTING = 1000;
 		const int MAX_CONNECT_WAIT_TIME_MS = 2000;
 		IAssemblyServerLoader loader;
 		IAssemblyService service;
 		DateTime serverLoadedTime;
 
-		public IAssemblyService Service {
-			get { return service; }
-		}
+		public IAssemblyService Service => service;
+		public IStringDecrypterService StringDecrypterService => (IStringDecrypterService)service;
+		public IMethodDecrypterService MethodDecrypterService => (IMethodDecrypterService)service;
+		public IGenericService GenericService => (IGenericService)service;
+		public AssemblyClient(IAssemblyServerLoader loader) => this.loader = loader;
 
-		public AssemblyClient()
-			: this(new NewProcessAssemblyServerLoader()) {
-		}
-
-		public AssemblyClient(IAssemblyServerLoader loader) {
-			this.loader = loader;
-		}
-
-		public void connect() {
-			loader.loadServer();
-			service = loader.createService();
+		public void Connect() {
+			loader.LoadServer();
+			service = loader.CreateService();
 			serverLoadedTime = DateTime.UtcNow;
 		}
 
-		public void waitConnected() {
+		public void WaitConnected() {
 			// If we don't wait here, we'll sometimes get stuck in doNothing(). Make sure the
 			// server has had time to start... This only seems to be needed when starting a
 			// server in a different process, though.
@@ -61,7 +55,7 @@ namespace de4dot.code.AssemblyClient {
 			var startTime = DateTime.UtcNow;
 			while (true) {
 				try {
-					service.doNothing();
+					service.DoNothing();
 					break;
 				}
 				catch (RemotingException) {
@@ -77,7 +71,7 @@ namespace de4dot.code.AssemblyClient {
 		public void Dispose() {
 			if (service != null) {
 				try {
-					service.exit();
+					service.Exit();
 				}
 				catch (RemotingException) {
 					// Couldn't connect

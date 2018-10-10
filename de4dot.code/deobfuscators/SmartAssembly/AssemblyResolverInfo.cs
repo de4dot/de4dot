@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -20,8 +20,8 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.SmartAssembly {
@@ -34,11 +34,9 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 		public bool isTempFile = false;
 		public string flags = "";
 
-		public override string ToString() {
-			return assemblyName ?? base.ToString();
-		}
+		public override string ToString() => assemblyName ?? base.ToString();
 
-		public static EmbeddedAssemblyInfo create(ModuleDefinition module, string encName, string rsrcName) {
+		public static EmbeddedAssemblyInfo Create(ModuleDefMD module, string encName, string rsrcName) {
 			var info = new EmbeddedAssemblyInfo();
 
 			try {
@@ -63,36 +61,31 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 
 			info.assemblyName = Encoding.UTF8.GetString(Convert.FromBase64String(encName));
 			info.resourceName = rsrcName;
-			info.resource = DotNetUtils.getResource(module, rsrcName) as EmbeddedResource;
-			info.simpleName = Utils.getAssemblySimpleName(info.assemblyName);
+			info.resource = DotNetUtils.GetResource(module, rsrcName) as EmbeddedResource;
+			info.simpleName = Utils.GetAssemblySimpleName(info.assemblyName);
 
 			return info;
 		}
 	}
 
 	class AssemblyResolverInfo : ResolverInfoBase {
-		MethodDefinition simpleZipTypeMethod;
+		MethodDef simpleZipTypeMethod;
 		List<EmbeddedAssemblyInfo> embeddedAssemblyInfos = new List<EmbeddedAssemblyInfo>();
 
-		public MethodDefinition SimpleZipTypeMethod {
-			get { return simpleZipTypeMethod; }
-		}
+		public MethodDef SimpleZipTypeMethod => simpleZipTypeMethod;
+		public IList<EmbeddedAssemblyInfo> EmbeddedAssemblyInfos => embeddedAssemblyInfos;
 
-		public IList<EmbeddedAssemblyInfo> EmbeddedAssemblyInfos {
-			get { return embeddedAssemblyInfos; }
-		}
-
-		public AssemblyResolverInfo(ModuleDefinition module, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob)
+		public AssemblyResolverInfo(ModuleDefMD module, ISimpleDeobfuscator simpleDeobfuscator, IDeobfuscator deob)
 			: base(module, simpleDeobfuscator, deob) {
 		}
 
-		public bool resolveResources() {
+		public bool ResolveResources() {
 			bool ok = true;
 
 			foreach (var info in embeddedAssemblyInfos) {
 				if (info.resource != null)
 					continue;
-				info.resource = DotNetUtils.getResource(module, info.resourceName) as EmbeddedResource;
+				info.resource = DotNetUtils.GetResource(module, info.resourceName) as EmbeddedResource;
 				if (info.resource == null)
 					ok = false;
 			}
@@ -100,12 +93,13 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return ok;
 		}
 
-		protected override bool checkResolverType(TypeDefinition type) {
-			if (DotNetUtils.findFieldType(type, "System.Collections.Hashtable", true) != null)
+		protected override bool CheckResolverType(TypeDef type) {
+			if (DotNetUtils.FindFieldType(type, "System.Collections.Hashtable", true) != null ||
+				DotNetUtils.FindFieldType(type, "System.Collections.Generic.Dictionary`2<System.String,System.Reflection.Assembly>", true) != null)
 				return true;
 
 			foreach (var field in type.Fields) {
-				if (DotNetUtils.derivesFromDelegate(DotNetUtils.getType(module, field.FieldType)))
+				if (DotNetUtils.DerivesFromDelegate(DotNetUtils.GetType(module, field.FieldType)))
 					continue;
 				if (field.IsLiteral && field.FieldType.ToString() == "System.String")
 					continue;
@@ -114,63 +108,63 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return true;
 		}
 
-		protected override bool checkHandlerMethod(MethodDefinition method) {
+		protected override bool CheckHandlerMethod(MethodDef method) {
 			if (!method.IsStatic || !method.HasBody)
 				return false;
 
 			var infos = new List<EmbeddedAssemblyInfo>();
-			foreach (var s in DotNetUtils.getCodeStrings(method)) {
+			foreach (var s in DotNetUtils.GetCodeStrings(method)) {
 				if (string.IsNullOrEmpty(s))
 					continue;
-				if (!initInfos(infos, s.Split(',')))
+				if (!InitInfos(infos, s.Split(',')))
 					continue;
 
 				embeddedAssemblyInfos = infos;
-				findSimpleZipType(method);
+				FindSimpleZipType(method);
 				return true;
 			}
 
 			return false;
 		}
 
-		bool initInfos(IList<EmbeddedAssemblyInfo> list, string[] strings) {
+		bool InitInfos(IList<EmbeddedAssemblyInfo> list, string[] strings) {
 			list.Clear();
 			if (strings.Length % 2 == 1)
 				return false;
 
 			for (int i = 0; i < strings.Length; i += 2) {
-				var info = EmbeddedAssemblyInfo.create(module, strings[i], strings[i + 1]);
+				var info = EmbeddedAssemblyInfo.Create(module, strings[i], strings[i + 1]);
 				if (info == null)
 					return false;
 				list.Add(info);
 			}
 
-			Log.v("Found embedded assemblies:");
-			Log.indent();
+			Logger.v("Found embedded assemblies:");
+			Logger.Instance.Indent();
 			foreach (var info in list)
-				Log.v("{0}", info.assemblyName);
-			Log.deIndent();
+				Logger.v("{0}", info.assemblyName);
+			Logger.Instance.DeIndent();
 
 			return true;
 		}
 
-		void findSimpleZipType(MethodDefinition method) {
+		void FindSimpleZipType(MethodDef method) {
 			if (method == null || !method.HasBody)
 				return;
 			foreach (var call in method.Body.Instructions) {
 				if (call.OpCode.Code != Code.Call)
 					continue;
-				var calledMethod = call.Operand as MethodReference;
+				var calledMethod = call.Operand as IMethod;
 				if (calledMethod == null)
 					continue;
-				if (!SimpleZipInfo.isSimpleZipDecryptMethod_QuickCheck(module, calledMethod, out simpleZipTypeMethod))
+				if (!SimpleZipInfo.IsSimpleZipDecryptMethod_QuickCheck(module, calledMethod, out simpleZipTypeMethod))
 					continue;
 
 				return;
 			}
 		}
 
-		public EmbeddedAssemblyInfo find(string simpleName) {
+		public EmbeddedAssemblyInfo Find(string simpleName) {
 			foreach (var info in embeddedAssemblyInfos) {
 				if (info.simpleName == simpleName)
 					return info;
@@ -179,7 +173,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			return null;
 		}
 
-		public bool removeEmbeddedAssemblyInfo(EmbeddedAssemblyInfo info) {
+		public bool RemoveEmbeddedAssemblyInfo(EmbeddedAssemblyInfo info) {
 			bool removed = false;
 			for (int i = 0; i < EmbeddedAssemblyInfos.Count; i++) {
 				var other = EmbeddedAssemblyInfos[i];

@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -19,17 +19,16 @@
 
 using System;
 using System.IO;
+using dnlib.IO;
 
 namespace de4dot.code.deobfuscators.CodeVeil {
 	class ErexResourceReader {
-		BinaryReader reader;
+		DataReader reader;
 		uint[] key;
 
-		public ErexResourceReader(Stream stream) {
-			reader = new BinaryReader(stream);
-		}
+		public ErexResourceReader(ref DataReader reader) => this.reader = reader;
 
-		public byte[] decrypt() {
+		public byte[] Decrypt() {
 			if (reader.ReadUInt32() != 0x58455245)
 				throw new InvalidDataException("Invalid EREX sig");
 			if (reader.ReadInt32() > 1)
@@ -44,45 +43,44 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				throw new ApplicationException("Invalid length");
 
 			if (isEncrypted)
-				readKey();
+				ReadKey();
 
 			if (isDeflated)
-				reader = new BinaryReader(inflate(length));
+				reader = Inflate(length);
 
 			if (isEncrypted)
-				reader = new BinaryReader(decrypt(length));
+				reader = Decrypt(length);
 
 			return reader.ReadBytes(length);
 		}
 
-		void readKey() {
+		void ReadKey() {
 			key = new uint[reader.ReadByte()];
 			for (int i = 0; i < key.Length; i++)
 				key[i] = reader.ReadUInt32();
 		}
 
-		Stream inflate(int length) {
-			var data = reader.ReadBytes((int)(reader.BaseStream.Length - reader.BaseStream.Position));
-			return new MemoryStream(DeobUtils.inflate(data, true));
+		DataReader Inflate(int length) {
+			var data = reader.ReadRemainingBytes();
+			return ByteArrayDataReaderFactory.CreateReader(DeobUtils.Inflate(data, true));
 		}
 
-		Stream decrypt(int length) {
+		DataReader Decrypt(int length) {
 			var block = new uint[4];
 			var decrypted = new byte[16];
 
 			var outStream = new MemoryStream(length);
-			while (reader.BaseStream.Position < reader.BaseStream.Length) {
+			while (reader.Position < reader.Length) {
 				block[0] = reader.ReadUInt32();
 				block[1] = reader.ReadUInt32();
 				block[2] = reader.ReadUInt32();
 				block[3] = reader.ReadUInt32();
-				DeobUtils.xxteaDecrypt(block, key);
+				DeobUtils.XxteaDecrypt(block, key);
 				Buffer.BlockCopy(block, 0, decrypted, 0, decrypted.Length);
 				outStream.Write(decrypted, 0, decrypted.Length);
 			}
 
-			outStream.Position = 0;
-			return outStream;
+			return ByteArrayDataReaderFactory.CreateReader(outStream.ToArray());
 		}
 	}
 }

@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -20,29 +20,26 @@
 using System;
 using System.IO;
 using System.Security.Cryptography;
-using Mono.Cecil;
+using dnlib.DotNet;
 using ICSharpCode.SharpZipLib.Zip.Compression;
 
 namespace de4dot.code.deobfuscators.SmartAssembly {
 	class ResourceDecrypter {
 		ResourceDecrypterInfo resourceDecrypterInfo;
 
-		public ResourceDecrypter(ResourceDecrypterInfo resourceDecrypterInfo) {
+		public ResourceDecrypter(ResourceDecrypterInfo resourceDecrypterInfo) =>
 			this.resourceDecrypterInfo = resourceDecrypterInfo;
-		}
 
-		public bool CanDecrypt {
-			get { return resourceDecrypterInfo != null && resourceDecrypterInfo.CanDecrypt; }
-		}
+		public bool CanDecrypt => resourceDecrypterInfo != null && resourceDecrypterInfo.CanDecrypt;
 
-		public byte[] decrypt(EmbeddedResource resource) {
+		public byte[] Decrypt(EmbeddedResource resource) {
 			if (!CanDecrypt)
 				throw new ApplicationException("Can't decrypt resources");
-			var encryptedData = resource.GetResourceData();
-			return decrypt(encryptedData);
+			var encryptedData = resource.CreateReader().ToArray();
+			return Decrypt(encryptedData);
 		}
 
-		byte[] decrypt(byte[] encryptedData) {
+		byte[] Decrypt(byte[] encryptedData) {
 			var reader = new BinaryReader(new MemoryStream(encryptedData));
 			int headerMagic = reader.ReadInt32();
 			if (headerMagic == 0x04034B50)
@@ -50,7 +47,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 
 			byte encryption = (byte)(headerMagic >> 24);
 			if ((headerMagic & 0x00FFFFFF) != 0x007D7A7B)	// Check if "{z}"
-				throw new ApplicationException(string.Format("Invalid SA header magic 0x{0:X8}", headerMagic));
+				throw new ApplicationException($"Invalid SA header magic 0x{headerMagic:X8}");
 
 			switch (encryption) {
 			case 1:
@@ -80,7 +77,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 					provider.Key = resourceDecrypterInfo.DES_Key;
 					provider.IV  = resourceDecrypterInfo.DES_IV;
 					using (var transform = provider.CreateDecryptor()) {
-						return decrypt(transform.TransformFinalBlock(encryptedData, 4, encryptedData.Length - 4));
+						return Decrypt(transform.TransformFinalBlock(encryptedData, 4, encryptedData.Length - 4));
 					}
 				}
 
@@ -91,12 +88,12 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 					provider.Key = resourceDecrypterInfo.AES_Key;
 					provider.IV  = resourceDecrypterInfo.AES_IV;
 					using (var transform = provider.CreateDecryptor()) {
-						return decrypt(transform.TransformFinalBlock(encryptedData, 4, encryptedData.Length - 4));
+						return Decrypt(transform.TransformFinalBlock(encryptedData, 4, encryptedData.Length - 4));
 					}
 				}
 
 			default:
-				throw new ApplicationException(string.Format("Unknown encryption type 0x{0:X2}", encryption));
+				throw new ApplicationException($"Unknown encryption type 0x{encryption:X2}");
 			}
 		}
 	}

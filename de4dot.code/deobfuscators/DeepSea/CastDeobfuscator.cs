@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -21,32 +21,32 @@ using System;
 using System.Collections.Generic;
 using de4dot.blocks;
 using de4dot.blocks.cflow;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 
 namespace de4dot.code.deobfuscators.DeepSea {
 	class CastDeobfuscator : IBlocksDeobfuscator {
 		Blocks blocks;
-		Dictionary<VariableDefinition, LocalInfo> localInfos = new Dictionary<VariableDefinition, LocalInfo>();
+		Dictionary<Local, LocalInfo> localInfos = new Dictionary<Local, LocalInfo>();
 
 		class LocalInfo {
-			public readonly VariableDefinition local;
-			TypeReference type;
+			public readonly Local local;
+			ITypeDefOrRef type;
 			bool isValid;
 
-			public TypeReference CastType {
-				get { return type; }
+			public ITypeDefOrRef CastType {
+				get => type;
 				set {
 					if (!isValid)
 						return;
 
 					if (value == null) {
-						invalid();
+						Invalid();
 						return;
 					}
 
-					if (type != null && !MemberReferenceHelper.compareTypes(type, value)) {
-						invalid();
+					if (type != null && !new SigComparer().Equals(type, value)) {
+						Invalid();
 						return;
 					}
 
@@ -54,36 +54,31 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				}
 			}
 
-			public LocalInfo(VariableDefinition local) {
+			public LocalInfo(Local local) {
 				this.local = local;
-				this.isValid = true;
+				isValid = true;
 			}
 
-			public void invalid() {
+			public void Invalid() {
 				isValid = false;
 				type = null;
 			}
 
 			public override string ToString() {
 				if (type == null)
-					return string.Format("{0} - INVALID", local);
-				return string.Format("{0} - {1:X8} {2}", local, type.MetadataToken.ToInt32(), type.FullName);
+					return $"{local} - INVALID";
+				return $"{local} - {type.MDToken.ToInt32():X8} {type.FullName}";
 			}
 		}
 
-		public bool ExecuteOnNoChange {
-			get { return true; }
-		}
+		public bool ExecuteIfNotModified => true;
+		public void DeobfuscateBegin(Blocks blocks) => this.blocks = blocks;
 
-		public void deobfuscateBegin(Blocks blocks) {
-			this.blocks = blocks;
-		}
-
-		public bool deobfuscate(List<Block> allBlocks) {
-			if (!init(allBlocks))
+		public bool Deobfuscate(List<Block> allBlocks) {
+			if (!Initialize(allBlocks))
 				return false;
 
-			bool changed = false;
+			bool modified = false;
 
 			var indexesToRemove = new List<int>();
 			foreach (var block in allBlocks) {
@@ -92,38 +87,38 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				for (int i = 0; i < instrs.Count - 1; i++) {
 					var instr = instrs[i];
 					if (instr.OpCode.Code == Code.Ldloca || instr.OpCode.Code == Code.Ldloca_S) {
-						var local = instr.Operand as VariableDefinition;
+						var local = instr.Operand as Local;
 						if (local == null)
 							continue;
-						localInfos[local].invalid();
+						localInfos[local].Invalid();
 					}
-					else if (instr.isLdloc()) {
-						var local = DotNetUtils.getLocalVar(blocks.Locals, instr.Instruction);
+					else if (instr.IsLdloc()) {
+						var local = instr.Instruction.GetLocal(blocks.Locals);
 						if (local == null)
 							continue;
 						var localInfo = localInfos[local];
 						var cast = instrs[i + 1];
 						if (localInfo.CastType == null)
 							continue;
-						if (!isCast(cast))
+						if (!IsCast(cast))
 							throw new ApplicationException("Not a cast instr");
 
 						indexesToRemove.Add(i + 1);
 					}
 				}
 				if (indexesToRemove.Count > 0) {
-					block.remove(indexesToRemove);
-					changed = true;
+					block.Remove(indexesToRemove);
+					modified = true;
 				}
 			}
 
 			foreach (var info in localInfos.Values) {
 				if (info.CastType == null)
 					continue;
-				info.local.VariableType = info.CastType;
+				info.local.Type = info.CastType.ToTypeSig();
 			}
 
-			if (changed) {
+			if (modified) {
 				foreach (var block in allBlocks) {
 					var instrs = block.Instructions;
 					for (int i = 0; i < instrs.Count - 1; i++) {
@@ -136,48 +131,48 @@ namespace de4dot.code.deobfuscators.DeepSea {
 							instr = instrs[i - 1];
 						}
 
-						if (instr.isLdarg())
-							addCast(block, castIndex, i + 1, DotNetUtils.getArgType(blocks.Method, instr.Instruction));
+						if (instr.IsLdarg())
+							AddCast(block, castIndex, i + 1, instr.Instruction.GetArgumentType(blocks.Method.MethodSig, blocks.Method.DeclaringType));
 						else if (instr.OpCode.Code == Code.Ldfld || instr.OpCode.Code == Code.Ldsfld) {
-							var field = instr.Operand as FieldReference;
+							var field = instr.Operand as IField;
 							if (field == null)
 								continue;
-							addCast(block, castIndex, i + 1, field.FieldType);
+							AddCast(block, castIndex, i + 1, field.FieldSig.GetFieldType());
 						}
 						else if (instr.OpCode.Code == Code.Call || instr.OpCode.Code == Code.Callvirt) {
-							var calledMethod = instr.Operand as MethodReference;
-							if (calledMethod == null || !DotNetUtils.hasReturnValue(calledMethod))
+							var calledMethod = instr.Operand as IMethod;
+							if (calledMethod == null || !DotNetUtils.HasReturnValue(calledMethod))
 								continue;
-							addCast(block, castIndex, i + 1, calledMethod.MethodReturnType.ReturnType);
+							AddCast(block, castIndex, i + 1, calledMethod.MethodSig.GetRetType());
 						}
 					}
 				}
 			}
 
-			return changed;
+			return modified;
 		}
 
-		bool addCast(Block block, int castIndex, int index, TypeReference type) {
+		bool AddCast(Block block, int castIndex, int index, TypeSig type) {
 			if (type == null)
 				return false;
 			if (castIndex >= block.Instructions.Count || index >= block.Instructions.Count)
 				return false;
 			var stloc = block.Instructions[index];
-			if (!stloc.isStloc())
+			if (!stloc.IsStloc())
 				return false;
-			var local = DotNetUtils.getLocalVar(blocks.Locals, stloc.Instruction);
+			var local = stloc.Instruction.GetLocal(blocks.Locals);
 			if (local == null)
 				return false;
 			var localInfo = localInfos[local];
 			if (localInfo.CastType == null)
 				return false;
 
-			if (!MemberReferenceHelper.compareTypes(localInfo.CastType, type))
-				block.insert(castIndex, new Instruction(OpCodes.Castclass, localInfo.CastType));
+			if (!new SigComparer().Equals(localInfo.CastType, type))
+				block.Insert(castIndex, new Instruction(OpCodes.Castclass, localInfo.CastType));
 			return true;
 		}
 
-		bool init(List<Block> allBlocks) {
+		bool Initialize(List<Block> allBlocks) {
 			localInfos.Clear();
 			foreach (var local in blocks.Locals)
 				localInfos[local] = new LocalInfo(local);
@@ -188,26 +183,24 @@ namespace de4dot.code.deobfuscators.DeepSea {
 				var instrs = block.Instructions;
 				for (int i = 0; i < instrs.Count - 1; i++) {
 					var ldloc = instrs[i];
-					if (!ldloc.isLdloc())
+					if (!ldloc.IsLdloc())
 						continue;
-					var local = DotNetUtils.getLocalVar(blocks.Locals, ldloc.Instruction);
+					var local = ldloc.Instruction.GetLocal(blocks.Locals);
 					if (local == null)
 						continue;
 					var localInfo = localInfos[local];
-					localInfo.CastType = getCastType(instrs[i + 1]);
+					localInfo.CastType = GetCastType(instrs[i + 1]);
 				}
 			}
 			return true;
 		}
 
-		static bool isCast(Instr instr) {
-			return instr.OpCode.Code == Code.Castclass || instr.OpCode.Code == Code.Isinst;
-		}
+		static bool IsCast(Instr instr) => instr.OpCode.Code == Code.Castclass || instr.OpCode.Code == Code.Isinst;
 
-		static TypeReference getCastType(Instr instr) {
-			if (!isCast(instr))
+		static ITypeDefOrRef GetCastType(Instr instr) {
+			if (!IsCast(instr))
 				return null;
-			return instr.Operand as TypeReference;
+			return instr.Operand as ITypeDefOrRef;
 		}
 	}
 }

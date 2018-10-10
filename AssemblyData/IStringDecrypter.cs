@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -21,7 +21,7 @@ using System.Reflection;
 
 namespace AssemblyData {
 	interface IStringDecrypter {
-		int defineStringDecrypter(MethodInfo method);
-		object[] decryptStrings(int stringDecrypterMethod, object[] args, MethodBase caller);
+		int DefineStringDecrypter(MethodInfo method);
+		object[] DecryptStrings(int stringDecrypterMethod, object[] args, MethodBase caller);
 	}
 }

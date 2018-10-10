@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -19,15 +19,15 @@
 
 using System;
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CryptoObfuscator {
 	class ProxyCallFixer : ProxyCallFixer2 {
-		Dictionary<MethodDefinition, ProxyCreatorType> methodToType = new Dictionary<MethodDefinition, ProxyCreatorType>();
+		Dictionary<MethodDef, ProxyCreatorType> methodToType = new Dictionary<MethodDef, ProxyCreatorType>();
 
-		public ProxyCallFixer(ModuleDefinition module)
+		public ProxyCallFixer(ModuleDefMD module)
 			: base(module) {
 		}
 
@@ -39,11 +39,11 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 		}
 
 		class Context {
-			public int typeToken;
-			public int methodToken;
-			public int declaringTypeToken;
+			public uint typeToken;
+			public uint methodToken;
+			public uint declaringTypeToken;
 			public ProxyCreatorType proxyCreatorType;
-			public Context(int typeToken, int methodToken, int declaringTypeToken, ProxyCreatorType proxyCreatorType) {
+			public Context(uint typeToken, uint methodToken, uint declaringTypeToken, ProxyCreatorType proxyCreatorType) {
 				this.typeToken = typeToken;
 				this.methodToken = methodToken;
 				this.declaringTypeToken = declaringTypeToken;
@@ -51,20 +51,19 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			}
 		}
 
-		protected override object checkCctor(TypeDefinition type, MethodDefinition cctor) {
+		protected override object CheckCctor(TypeDef type, MethodDef cctor) {
 			var instructions = cctor.Body.Instructions;
 			for (int i = 0; i < instructions.Count; i++) {
-				var instrs = DotNetUtils.getInstructions(instructions, i, OpCodes.Ldc_I4, OpCodes.Ldc_I4, OpCodes.Ldc_I4, OpCodes.Call);
+				var instrs = DotNetUtils.GetInstructions(instructions, i, OpCodes.Ldc_I4, OpCodes.Ldc_I4, OpCodes.Ldc_I4, OpCodes.Call);
 				if (instrs == null)
 					continue;
 
-				int typeToken = (int)instrs[0].Operand;
-				int methodToken = (int)instrs[1].Operand;
-				int declaringTypeToken = (int)instrs[2].Operand;
-				var createMethod = instrs[3].Operand as MethodDefinition;
+				uint typeToken = (uint)(int)instrs[0].Operand;
+				uint methodToken = (uint)(int)instrs[1].Operand;
+				uint declaringTypeToken = (uint)(int)instrs[2].Operand;
+				var createMethod = instrs[3].Operand as MethodDef;
 
-				ProxyCreatorType proxyCreatorType;
-				if (!methodToType.TryGetValue(createMethod, out proxyCreatorType))
+				if (!methodToType.TryGetValue(createMethod, out var proxyCreatorType))
 					continue;
 
 				return new Context(typeToken, methodToken, declaringTypeToken, proxyCreatorType);
@@ -73,26 +72,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return null;
 		}
 
-		protected override Dictionary<FieldDefinition, MethodDefinition> getFieldToMethodDictionary(TypeDefinition type) {
-			var dict = new Dictionary<FieldDefinition, MethodDefinition>();
-			foreach (var method in type.Methods) {
-				if (!method.IsStatic || !method.HasBody || method.Name == ".cctor")
-					continue;
-
-				var instructions = method.Body.Instructions;
-				for (int i = 0; i < instructions.Count; i++) {
-					var instr = instructions[i];
-					if (instr.OpCode.Code != Code.Ldsfld)
-						continue;
-
-					dict[(FieldDefinition)instr.Operand] = method;
-					break;
-				}
-			}
-			return dict;
-		}
-
-		protected override void getCallInfo(object context, FieldDefinition field, out MethodReference calledMethod, out OpCode callOpcode) {
+		protected override void GetCallInfo(object context, FieldDef field, out IMethod calledMethod, out OpCode callOpcode) {
 			var ctx = (Context)context;
 
 			switch (ctx.proxyCreatorType) {
@@ -106,37 +86,37 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				callOpcode = OpCodes.Newobj;
 				break;
 			default:
-				throw new ApplicationException(string.Format("Invalid proxy creator type: {0}", ctx.proxyCreatorType));
+				throw new ApplicationException($"Invalid proxy creator type: {ctx.proxyCreatorType}");
 			}
 
-			calledMethod = module.LookupToken(ctx.methodToken) as MethodReference;
+			calledMethod = module.ResolveToken(ctx.methodToken) as IMethod;
 		}
 
-		public void findDelegateCreator() {
+		public void FindDelegateCreator() {
 			foreach (var type in module.Types) {
-				var createMethod = getProxyCreateMethod(type);
+				var createMethod = GetProxyCreateMethod(type);
 				if (createMethod == null)
 					continue;
 
-				var proxyCreatorType = getProxyCreatorType(type, createMethod);
+				var proxyCreatorType = GetProxyCreatorType(type, createMethod);
 				if (proxyCreatorType == ProxyCreatorType.None)
 					continue;
 				methodToType[createMethod] = proxyCreatorType;
-				setDelegateCreatorMethod(createMethod);
+				SetDelegateCreatorMethod(createMethod);
 			}
 		}
 
-		MethodDefinition getProxyCreateMethod(TypeDefinition type) {
-			if (DotNetUtils.findFieldType(type, "System.ModuleHandle", true) == null)
+		MethodDef GetProxyCreateMethod(TypeDef type) {
+			if (DotNetUtils.FindFieldType(type, "System.ModuleHandle", true) == null)
 				return null;
-			if (type.Fields.Count < 1 || type.Fields.Count > 8)
+			if (type.Fields.Count < 1 || type.Fields.Count > 20)
 				return null;
 
-			MethodDefinition createMethod = null;
+			MethodDef createMethod = null;
 			foreach (var m in type.Methods) {
 				if (m.Name == ".ctor" || m.Name == ".cctor")
 					continue;
-				if (createMethod == null && DotNetUtils.isMethod(m, "System.Void", "(System.Int32,System.Int32,System.Int32)")) {
+				if (createMethod == null && DotNetUtils.IsMethod(m, "System.Void", "(System.Int32,System.Int32,System.Int32)")) {
 					createMethod = m;
 					continue;
 				}
@@ -144,18 +124,18 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			}
 			if (createMethod == null || !createMethod.HasBody)
 				return null;
-			if (!DeobUtils.hasInteger(createMethod, 0xFFFFFF))
+			if (!DeobUtils.HasInteger(createMethod, 0xFFFFFF))
 				return null;
 
 			return createMethod;
 		}
 
-		ProxyCreatorType getProxyCreatorType(TypeDefinition type, MethodDefinition createMethod) {
+		ProxyCreatorType GetProxyCreatorType(TypeDef type, MethodDef createMethod) {
 			int numCalls = 0, numCallvirts = 0, numNewobjs = 0;
 			foreach (var instr in createMethod.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Ldsfld)
 					continue;
-				var field = instr.Operand as FieldReference;
+				var field = instr.Operand as IField;
 				if (field == null)
 					continue;
 				switch (field.FullName) {

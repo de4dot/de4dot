@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -20,16 +20,17 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CryptoObfuscator {
 	class AssemblyResolver {
-		ModuleDefinition module;
-		TypeDefinition resolverType;
-		MethodDefinition resolverMethod;
+		ModuleDefMD module;
+		TypeDef resolverType;
+		MethodDef resolverMethod;
 		List<AssemblyInfo> assemblyInfos = new List<AssemblyInfo>();
+		string asmSeparator;
 
 		public class AssemblyInfo {
 			public string assemblyName;
@@ -41,51 +42,42 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				this.symbolsResource = symbolsResource;
 			}
 
-			public override string ToString() {
-				return string.Format("{{{0} => {1}}}", assemblyName, resource.Name);
-			}
+			public override string ToString() => $"{{{assemblyName} => {resource.Name}}}";
 		}
 
-		public List<AssemblyInfo> AssemblyInfos {
-			get { return assemblyInfos; }
-		}
+		public bool Detected => resolverType != null;
+		public List<AssemblyInfo> AssemblyInfos => assemblyInfos;
+		public TypeDef Type => resolverType;
+		public MethodDef Method => resolverMethod;
+		public AssemblyResolver(ModuleDefMD module) => this.module = module;
 
-		public TypeDefinition Type {
-			get { return resolverType; }
-		}
-
-		public MethodDefinition Method {
-			get { return resolverMethod; }
-		}
-
-		public AssemblyResolver(ModuleDefinition module) {
-			this.module = module;
-		}
-
-		public void find() {
-			var cctor = DotNetUtils.getModuleTypeCctor(module);
+		public void Find(ISimpleDeobfuscator simpleDeobfuscator) {
+			var cctor = DotNetUtils.GetModuleTypeCctor(module);
 			if (cctor == null)
 				return;
 
-			foreach (var method in DotNetUtils.getCalledMethods(module, cctor)) {
+			foreach (var method in DotNetUtils.GetCalledMethods(module, cctor)) {
 				if (method.Name == ".cctor" || method.Name == ".ctor")
 					continue;
-				if (!method.IsStatic || !DotNetUtils.isMethod(method, "System.Void", "()"))
+				if (!method.IsStatic || !DotNetUtils.IsMethod(method, "System.Void", "()"))
 					continue;
-				if (checkType(method.DeclaringType, method))
+				if (CheckType(method.DeclaringType, method, simpleDeobfuscator))
 					break;
 			}
 		}
 
-		bool checkType(TypeDefinition type, MethodDefinition initMethod) {
-			if (DotNetUtils.findFieldType(type, "System.Collections.Hashtable", true) == null)
+		bool CheckType(TypeDef type, MethodDef initMethod, ISimpleDeobfuscator simpleDeobfuscator) {
+			if (DotNetUtils.FindFieldType(type, "System.Collections.Hashtable", true) == null)
 				return false;
-			if (!checkInitMethod(initMethod))
+			simpleDeobfuscator.Deobfuscate(initMethod);
+			if (!CheckInitMethod(initMethod))
+				return false;
+			if ((asmSeparator = FindAssemblySeparator(initMethod)) == null)
 				return false;
 
 			List<AssemblyInfo> newAssemblyInfos = null;
-			foreach (var s in DotNetUtils.getCodeStrings(initMethod)) {
-				newAssemblyInfos = initializeEmbeddedAssemblies(s);
+			foreach (var s in DotNetUtils.GetCodeStrings(initMethod)) {
+				newAssemblyInfos = InitializeEmbeddedAssemblies(s);
 				if (newAssemblyInfos != null)
 					break;
 			}
@@ -98,25 +90,25 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return true;
 		}
 
-		bool checkInitMethod(MethodDefinition initMethod) {
+		bool CheckInitMethod(MethodDef initMethod) {
 			if (!initMethod.HasBody)
 				return false;
 
 			var instructions = initMethod.Body.Instructions;
 			for (int i = 0; i < instructions.Count; i++) {
-				var instrs = DotNetUtils.getInstructions(instructions, i, OpCodes.Ldnull, OpCodes.Ldftn, OpCodes.Newobj);
+				var instrs = DotNetUtils.GetInstructions(instructions, i, OpCodes.Ldnull, OpCodes.Ldftn, OpCodes.Newobj);
 				if (instrs == null)
 					continue;
 
-				MethodReference methodRef;
+				IMethod methodRef;
 				var ldftn = instrs[1];
 				var newobj = instrs[2];
 
-				methodRef = ldftn.Operand as MethodReference;
-				if (methodRef == null || !MemberReferenceHelper.compareTypes(initMethod.DeclaringType, methodRef.DeclaringType))
+				methodRef = ldftn.Operand as IMethod;
+				if (methodRef == null || !new SigComparer().Equals(initMethod.DeclaringType, methodRef.DeclaringType))
 					continue;
 
-				methodRef = newobj.Operand as MethodReference;
+				methodRef = newobj.Operand as IMethod;
 				if (methodRef == null || methodRef.FullName != "System.Void System.ResolveEventHandler::.ctor(System.Object,System.IntPtr)")
 					continue;
 
@@ -126,11 +118,11 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			return false;
 		}
 
-		List<AssemblyInfo> initializeEmbeddedAssemblies(string s) {
+		List<AssemblyInfo> InitializeEmbeddedAssemblies(string s) {
 			var sb = new StringBuilder(s.Length);
 			foreach (var c in s)
 				sb.Append((char)~c);
-			var tmpAssemblyInfos = sb.ToString().Split(new string[] { "##" }, StringSplitOptions.RemoveEmptyEntries);
+			var tmpAssemblyInfos = sb.ToString().Split(new string[] { asmSeparator }, StringSplitOptions.RemoveEmptyEntries);
 			if (tmpAssemblyInfos.Length == 0 || (tmpAssemblyInfos.Length & 1) == 1)
 				return null;
 
@@ -138,14 +130,33 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 			for (int i = 0; i < tmpAssemblyInfos.Length; i += 2) {
 				var assemblyName = tmpAssemblyInfos[i];
 				var resourceName = tmpAssemblyInfos[i + 1];
-				var resource = DotNetUtils.getResource(module, resourceName) as EmbeddedResource;
-				var symbolsResource = DotNetUtils.getResource(module, resourceName + "#") as EmbeddedResource;
+				var resource = DotNetUtils.GetResource(module, resourceName) as EmbeddedResource;
+				var symbolsResource = DotNetUtils.GetResource(module, resourceName + "#") as EmbeddedResource;
 				if (resource == null)
 					return null;
 				newAssemblyInfos.Add(new AssemblyInfo(assemblyName, resource, symbolsResource));
 			}
 
 			return newAssemblyInfos;
+		}
+
+		string FindAssemblySeparator(MethodDef initMethod) {
+			if (!initMethod.HasBody)
+				return null;
+
+			foreach (var instr in initMethod.Body.Instructions) {
+				if (instr.OpCode.Code != Code.Newarr)
+					continue;
+				var op = module.CorLibTypes.GetCorLibTypeSig(instr.Operand as ITypeDefOrRef);
+				if (op == null)
+					continue;
+				if (op.ElementType == ElementType.String)
+					return "##";
+				if (op.ElementType == ElementType.Char)
+					return "`";
+			}
+
+			return null;
 		}
 	}
 }

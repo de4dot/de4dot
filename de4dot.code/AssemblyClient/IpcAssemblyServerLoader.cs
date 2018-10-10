@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -21,35 +21,52 @@ using System;
 using AssemblyData;
 
 namespace de4dot.code.AssemblyClient {
-	abstract class IpcAssemblyServerLoader : IAssemblyServerLoader {
-		const string ASSEMBLY_SERVER_FILENAME_X86 = "AssemblyServer.exe";
-		const string ASSEMBLY_SERVER_FILENAME_X64 = "AssemblyServer-x64.exe";
+	public enum ServerClrVersion {
+		CLR_ANY_ANYCPU,
+		CLR_ANY_x86,
+		CLR_ANY_x64,
+		CLR_v20_x86,
+		CLR_v20_x64,
+		CLR_v40_x86,
+		CLR_v40_x64,
+	}
+
+	public abstract class IpcAssemblyServerLoader : IAssemblyServerLoader {
 		readonly string assemblyServerFilename;
 		protected string ipcName;
 		protected string ipcUri;
+		protected AssemblyServiceType serviceType;
 		string url;
 
-		protected IpcAssemblyServerLoader() {
-			assemblyServerFilename = getServerName();
-			ipcName = Utils.randomName(15, 20);
-			ipcUri = Utils.randomName(15, 20);
-			url = string.Format("ipc://{0}/{1}", ipcName, ipcUri);
+		protected IpcAssemblyServerLoader(AssemblyServiceType serviceType)
+			: this(serviceType, ServerClrVersion.CLR_ANY_ANYCPU) {
 		}
 
-		static string getServerName() {
-			return IntPtr.Size == 4 ? ASSEMBLY_SERVER_FILENAME_X86 : ASSEMBLY_SERVER_FILENAME_X64;
+		protected IpcAssemblyServerLoader(AssemblyServiceType serviceType, ServerClrVersion serverVersion) {
+			this.serviceType = serviceType;
+			assemblyServerFilename = GetServerName(serverVersion);
+			ipcName = Utils.RandomName(15, 20);
+			ipcUri = Utils.RandomName(15, 20);
+			url = $"ipc://{ipcName}/{ipcUri}";
 		}
 
-		public void loadServer() {
-			loadServer(Utils.getPathOfOurFile(assemblyServerFilename));
+		static string GetServerName(ServerClrVersion serverVersion) {
+			if (serverVersion == ServerClrVersion.CLR_ANY_ANYCPU)
+				serverVersion = IntPtr.Size == 4 ? ServerClrVersion.CLR_ANY_x86 : ServerClrVersion.CLR_ANY_x64;
+			switch (serverVersion) {
+			case ServerClrVersion.CLR_ANY_x86: return "AssemblyServer.exe";
+			case ServerClrVersion.CLR_ANY_x64: return "AssemblyServer-x64.exe";
+			case ServerClrVersion.CLR_v20_x86: return "AssemblyServer-CLR20.exe";
+			case ServerClrVersion.CLR_v20_x64: return "AssemblyServer-CLR20-x64.exe";
+			case ServerClrVersion.CLR_v40_x86: return "AssemblyServer-CLR40.exe";
+			case ServerClrVersion.CLR_v40_x64: return "AssemblyServer-CLR40-x64.exe";
+			default: throw new ArgumentException($"Invalid server version: {serverVersion}");
+			}
 		}
 
-		public abstract void loadServer(string filename);
-
-		public IAssemblyService createService() {
-			return (IAssemblyService)Activator.GetObject(typeof(AssemblyService), url);
-		}
-
+		public void LoadServer() => LoadServer(Utils.GetPathOfOurFile(assemblyServerFilename));
+		public abstract void LoadServer(string filename);
+		public IAssemblyService CreateService() => (IAssemblyService)Activator.GetObject(AssemblyService.GetType(serviceType), url);
 		public abstract void Dispose();
 	}
 }

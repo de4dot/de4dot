@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -23,7 +23,7 @@ namespace de4dot.code.deobfuscators {
 	public interface IDeobfuscatorInfo {
 		string Type { get; }
 		string Name { get; }
-		IDeobfuscator createDeobfuscator();
-		IEnumerable<Option> getOptions();
+		IDeobfuscator CreateDeobfuscator();
+		IEnumerable<Option> GetOptions();
 	}
 }

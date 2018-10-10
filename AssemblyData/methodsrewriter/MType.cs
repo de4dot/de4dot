@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -20,81 +20,79 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using Mono.Cecil;
+using dnlib.DotNet;
 using de4dot.blocks;
 
 namespace AssemblyData.methodsrewriter {
 	class MType {
 		public Type type;
-		public TypeDefinition typeDefinition;
+		public TypeDef typeDef;
 		Dictionary<int, MMethod> tokenToMethod;
-		MethodDefinitionDict<MMethod> methodReferenceToMethod;
+		MethodDefDict<MMethod> methodRefToMethod;
 		Dictionary<int, MField> tokenToField;
-		FieldDefinitionDict<MField> fieldReferenceToField;
+		FieldDefDict<MField> fieldRefToField;
 
-		public MType(Type type, TypeDefinition typeDefinition) {
+		public MType(Type type, TypeDef typeDef) {
 			this.type = type;
-			this.typeDefinition = typeDefinition;
+			this.typeDef = typeDef;
 		}
 
-		public MMethod getMethod(MethodReference methodReference) {
-			initMethods();
-			return methodReferenceToMethod.find(methodReference);
+		public MMethod GetMethod(IMethod methodRef) {
+			InitMethods();
+			return methodRefToMethod.Find(methodRef);
 		}
 
-		public MField getField(FieldReference fieldReference) {
-			initFields();
-			return fieldReferenceToField.find(fieldReference);
+		public MField GetField(IField fieldRef) {
+			InitFields();
+			return fieldRefToField.Find(fieldRef);
 		}
 
-		public MMethod getMethod(int token) {
-			initMethods();
+		public MMethod GetMethod(int token) {
+			InitMethods();
 			return tokenToMethod[token];
 		}
 
-		public MField getField(int token) {
-			initFields();
+		public MField GetField(int token) {
+			InitFields();
 			return tokenToField[token];
 		}
 
-		void initMethods() {
+		void InitMethods() {
 			if (tokenToMethod != null)
 				return;
-			tokenToMethod = new Dictionary<int, MMethod>(typeDefinition.Methods.Count);
-			methodReferenceToMethod = new MethodDefinitionDict<MMethod>();
+			tokenToMethod = new Dictionary<int, MMethod>(typeDef.Methods.Count);
+			methodRefToMethod = new MethodDefDict<MMethod>();
 
 			var tmpTokenToMethod = new Dictionary<int, MethodBase>();
 			var flags = BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
-			foreach (var m in ResolverUtils.getMethodBases(type, flags))
+			foreach (var m in ResolverUtils.GetMethodBases(type, flags))
 				tmpTokenToMethod[m.MetadataToken] = m;
-			foreach (var m in typeDefinition.Methods) {
-				var token = m.MetadataToken.ToInt32();
+			foreach (var m in typeDef.Methods) {
+				var token = (int)m.MDToken.Raw;
 				var method = new MMethod(tmpTokenToMethod[token], m);
 				tokenToMethod[token] = method;
-				methodReferenceToMethod.add(method.methodDefinition, method);
+				methodRefToMethod.Add(method.methodDef, method);
 			}
 		}
 
-		void initFields() {
+		void InitFields() {
 			if (tokenToField != null)
 				return;
-			tokenToField = new Dictionary<int, MField>(typeDefinition.Fields.Count);
-			fieldReferenceToField = new FieldDefinitionDict<MField>();
+			tokenToField = new Dictionary<int, MField>(typeDef.Fields.Count);
+			fieldRefToField = new FieldDefDict<MField>();
 
 			var tmpTokenToField = new Dictionary<int, FieldInfo>();
 			var flags = BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
 			foreach (var f in type.GetFields(flags))
 				tmpTokenToField[f.MetadataToken] = f;
-			foreach (var f in typeDefinition.Fields) {
-				var token = f.MetadataToken.ToInt32();
+			foreach (var f in typeDef.Fields) {
+				var token = (int)f.MDToken.Raw;
 				var field = new MField(tmpTokenToField[token], f);
 				tokenToField[token] = field;
-				fieldReferenceToField.add(field.fieldDefinition, field);
+				fieldRefToField.Add(field.fieldDef, field);
 			}
 		}
 
-		public override string ToString() {
-			return string.Format("{0:X8} - {1}", typeDefinition.MetadataToken.ToUInt32(), typeDefinition.FullName);
-		}
+		public override string ToString() => $"{typeDef.MDToken.Raw:X8} - {typeDef.FullName}";
 	}
 }

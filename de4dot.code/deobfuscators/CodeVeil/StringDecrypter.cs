@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -18,68 +18,56 @@
 */
 
 using System;
-using System.IO;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dnlib.IO;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CodeVeil {
 	class StringDecrypter {
-		ModuleDefinition module;
+		ModuleDefMD module;
 		MainType mainType;
-		TypeDefinition decrypterType;
-		FieldDefinition stringDataField;
-		MethodDefinition initMethod;
-		MethodDefinition decrypterMethod;
+		TypeDef decrypterType;
+		FieldDef stringDataField;
+		MethodDef initMethod;
+		MethodDef decrypterMethod;
 		string[] decryptedStrings;
 
-		public bool Detected {
-			get { return decrypterType != null; }
-		}
+		public bool Detected => decrypterType != null;
+		public TypeDef Type => decrypterType;
+		public MethodDef InitMethod => initMethod;
+		public MethodDef DecryptMethod => decrypterMethod;
 
-		public TypeDefinition Type {
-			get { return decrypterType; }
-		}
-
-		public MethodDefinition InitMethod {
-			get { return initMethod; }
-		}
-
-		public MethodDefinition DecryptMethod {
-			get { return decrypterMethod; }
-		}
-
-		public StringDecrypter(ModuleDefinition module, MainType mainType) {
+		public StringDecrypter(ModuleDefMD module, MainType mainType) {
 			this.module = module;
 			this.mainType = mainType;
 		}
 
-		public StringDecrypter(ModuleDefinition module, MainType mainType, StringDecrypter oldOne) {
+		public StringDecrypter(ModuleDefMD module, MainType mainType, StringDecrypter oldOne) {
 			this.module = module;
 			this.mainType = mainType;
-			this.decrypterType = lookup(oldOne.decrypterType, "Could not find string decrypter type");
-			this.stringDataField = lookup(oldOne.stringDataField, "Could not find string data field");
-			this.initMethod = lookup(oldOne.initMethod, "Could not find string decrypter init method");
-			this.decrypterMethod = lookup(oldOne.decrypterMethod, "Could not find string decrypter method");
+			decrypterType = Lookup(oldOne.decrypterType, "Could not find string decrypter type");
+			stringDataField = Lookup(oldOne.stringDataField, "Could not find string data field");
+			initMethod = Lookup(oldOne.initMethod, "Could not find string decrypter init method");
+			decrypterMethod = Lookup(oldOne.decrypterMethod, "Could not find string decrypter method");
 		}
 
-		T lookup<T>(T def, string errorMessage) where T : MemberReference {
-			return DeobUtils.lookup(module, def, errorMessage);
-		}
+		T Lookup<T>(T def, string errorMessage) where T : class, ICodedToken =>
+			DeobUtils.Lookup(module, def, errorMessage);
 
-		public void find() {
-			var cctor = DotNetUtils.getModuleTypeCctor(module);
+		public void Find() {
+			var cctor = DotNetUtils.GetModuleTypeCctor(module);
 			if (cctor == null)
 				return;
 
 			// V3-V4 calls string decrypter init method in <Module>::.cctor().
-			if (find(cctor))
+			if (Find(cctor))
 				return;
 
-			findV5(cctor);
+			FindV5(cctor);
 		}
 
-		bool find(MethodDefinition method) {
+		bool Find(MethodDef method) {
 			if (method == null || method.Body == null || !method.IsStatic)
 				return false;
 
@@ -88,12 +76,12 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 				var call = instrs[i];
 				if (call.OpCode.Code != Code.Call)
 					continue;
-				var initMethodTmp = call.Operand as MethodDefinition;
+				var initMethodTmp = call.Operand as MethodDef;
 				if (initMethodTmp == null || initMethodTmp.Body == null || !initMethodTmp.IsStatic)
 					continue;
-				if (!DotNetUtils.isMethod(initMethodTmp, "System.Void", "()"))
+				if (!DotNetUtils.IsMethod(initMethodTmp, "System.Void", "()"))
 					continue;
-				if (!checkType(initMethodTmp.DeclaringType))
+				if (!CheckType(initMethodTmp.DeclaringType))
 					continue;
 
 				decrypterType = initMethodTmp.DeclaringType;
@@ -105,27 +93,27 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 		}
 
 		// The main decrypter type calls the string decrypter init method inside its init method
-		void findV5(MethodDefinition method) {
+		void FindV5(MethodDef method) {
 			if (!mainType.Detected)
 				return;
-			foreach (var calledMethod in DotNetUtils.getCalledMethods(module, mainType.InitMethod)) {
-				if (find(calledMethod))
+			foreach (var calledMethod in DotNetUtils.GetCalledMethods(module, mainType.InitMethod)) {
+				if (Find(calledMethod))
 					return;
 			}
 		}
 
-		bool checkType(TypeDefinition type) {
+		bool CheckType(TypeDef type) {
 			if (!type.HasNestedTypes)
 				return false;
 
-			var stringDataFieldTmp = checkFields(type);
+			var stringDataFieldTmp = CheckFields(type);
 			if (stringDataFieldTmp == null)
 				return false;
-			var fieldType = DotNetUtils.getType(module, stringDataFieldTmp.FieldType);
+			var fieldType = DotNetUtils.GetType(module, stringDataFieldTmp.FieldSig.GetFieldType());
 			if (fieldType == null || type.NestedTypes.IndexOf(fieldType) < 0)
 				return false;
 
-			var decrypterMethodTmp = getDecrypterMethod(type);
+			var decrypterMethodTmp = GetDecrypterMethod(type);
 			if (decrypterMethodTmp == null)
 				return false;
 
@@ -134,12 +122,12 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return true;
 		}
 
-		static MethodDefinition getDecrypterMethod(TypeDefinition type) {
-			MethodDefinition foundMethod = null;
+		static MethodDef GetDecrypterMethod(TypeDef type) {
+			MethodDef foundMethod = null;
 			foreach (var method in type.Methods) {
 				if (method.Body == null || !method.IsStatic)
 					continue;
-				if (!DotNetUtils.isMethod(method, "System.String", "(System.Int32)"))
+				if (!DotNetUtils.IsMethod(method, "System.String", "(System.Int32)"))
 					continue;
 				if (foundMethod != null)
 					return null;
@@ -155,11 +143,11 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			"System.String[]",
 			"System.UInt32[]",
 		};
-		FieldDefinition checkFields(TypeDefinition type) {
-			if (!new FieldTypes(type).all(requiredFields))
+		FieldDef CheckFields(TypeDef type) {
+			if (!new FieldTypes(type).All(requiredFields))
 				return null;
 
-			FieldDefinition stringData = null;
+			FieldDef stringData = null;
 			foreach (var field in type.Fields) {
 				if (field.RVA != 0) {
 					if (stringData != null)
@@ -179,34 +167,35 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return stringData;
 		}
 
-		public void initialize() {
+		public void Initialize() {
 			if (initMethod == null || stringDataField == null)
 				return;
 
-			var key = getKey(initMethod);
+			var key = GetKey(initMethod);
 			if (key == null)
 				throw new ApplicationException("Could not find string decrypter key");
 
-			decryptStrings(key);
+			DecryptStrings(key);
 
-			stringDataField.FieldType = module.TypeSystem.Byte;
+			stringDataField.FieldSig.Type = module.CorLibTypes.Byte;
 			stringDataField.InitialValue = new byte[1];
+			stringDataField.RVA = 0;
 		}
 
-		static uint[] getKey(MethodDefinition method) {
+		static uint[] GetKey(MethodDef method) {
 			var instrs = method.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 1; i++) {
 				var ldci4 = instrs[i];
-				if (!DotNetUtils.isLdcI4(ldci4))
+				if (!ldci4.IsLdcI4())
 					continue;
-				if (DotNetUtils.getLdcI4Value(ldci4) != 4)
+				if (ldci4.GetLdcI4Value() != 4)
 					continue;
 
 				if (instrs[i + 1].OpCode.Code != Code.Newarr)
 					continue;
 
 				i++;
-				var key = ArrayFinder.getInitializedUInt32Array(4, method, ref i);
+				var key = ArrayFinder.GetInitializedUInt32Array(4, method, ref i);
 				if (key == null)
 					continue;
 
@@ -215,32 +204,30 @@ namespace de4dot.code.deobfuscators.CodeVeil {
 			return null;
 		}
 
-		void decryptStrings(uint[] key) {
+		void DecryptStrings(uint[] key) {
 			var data = stringDataField.InitialValue;
 
 			var encryptedData = new uint[data.Length / 4];
 			Buffer.BlockCopy(data, 0, encryptedData, 0, data.Length);
-			DeobUtils.xxteaDecrypt(encryptedData, key);
+			DeobUtils.XxteaDecrypt(encryptedData, key);
 			var decryptedData = new byte[data.Length];
 			Buffer.BlockCopy(encryptedData, 0, decryptedData, 0, data.Length);
 
-			var inflated = DeobUtils.inflate(decryptedData, 0, decryptedData.Length, true);
-			var reader = new BinaryReader(new MemoryStream(inflated));
-			int deflatedLength = DeobUtils.readVariableLengthInt32(reader);
-			int numStrings = DeobUtils.readVariableLengthInt32(reader);
+			var inflated = DeobUtils.Inflate(decryptedData, 0, decryptedData.Length, true);
+			var reader = ByteArrayDataReaderFactory.CreateReader(inflated);
+			/*int deflatedLength = (int)*/reader.ReadCompressedUInt32();
+			int numStrings = (int)reader.ReadCompressedUInt32();
 			decryptedStrings = new string[numStrings];
 			var offsets = new int[numStrings];
 			for (int i = 0; i < numStrings; i++)
-				offsets[i] = DeobUtils.readVariableLengthInt32(reader);
-			int startOffset = (int)reader.BaseStream.Position;
+				offsets[i] = (int)reader.ReadCompressedUInt32();
+			int startOffset = (int)reader.Position;
 			for (int i = 0; i < numStrings; i++) {
-				reader.BaseStream.Position = startOffset + offsets[i];
-				decryptedStrings[i] = reader.ReadString();
+				reader.Position = (uint)(startOffset + offsets[i]);
+				decryptedStrings[i] = reader.ReadSerializedString();
 			}
 		}
 
-		public string decrypt(int index) {
-			return decryptedStrings[index];
-		}
+		public string Decrypt(int index) => decryptedStrings[index];
 	}
 }

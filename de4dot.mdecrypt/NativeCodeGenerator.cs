@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -27,58 +27,46 @@ namespace de4dot.mdecrypt {
 		BinaryWriter writer;
 		Dictionary<int, IntPtr> offsetToBranchAddr = new Dictionary<int, IntPtr>();
 
-		public int Size {
-			get { return (int)memStream.Length; }
-		}
+		public int Size => (int)memStream.Length;
 
 		public NativeCodeGenerator() {
 			memStream = new MemoryStream(0x200);
 			writer = new BinaryWriter(memStream);
 		}
 
-		public void writeByte(byte b) {
-			writer.Write(b);
+		public void WriteByte(byte b) => writer.Write(b);
+
+		public void WriteBytes(byte b1, byte b2) {
+			WriteByte(b1);
+			WriteByte(b2);
 		}
 
-		public void writeBytes(byte b1, byte b2) {
-			writeByte(b1);
-			writeByte(b2);
+		public void WriteBytes(byte b, ushort us) {
+			WriteByte(b);
+			WriteWord(us);
 		}
 
-		public void writeBytes(byte b, ushort us) {
-			writeByte(b);
-			writeWord(us);
+		public void WriteWord(ushort w) => writer.Write(w);
+		public void WriteDword(uint d) => writer.Write(d);
+		public void WriteBytes(byte[] bytes) => writer.Write(bytes);
+
+		public void WriteCall(IntPtr addr) {
+			WriteByte(0xE8);
+			WriteBranchAddr(addr);
 		}
 
-		public void writeWord(ushort w) {
-			writer.Write(w);
-		}
-
-		public void writeDword(uint d) {
-			writer.Write(d);
-		}
-
-		public void writeBytes(byte[] bytes) {
-			writer.Write(bytes);
-		}
-
-		public void writeCall(IntPtr addr) {
-			writeByte(0xE8);
-			writeBranchAddr(addr);
-		}
-
-		public void writeBranchAddr(IntPtr addr) {
+		public void WriteBranchAddr(IntPtr addr) {
 			offsetToBranchAddr.Add((int)memStream.Position, addr);
 			writer.Write(0);
 		}
 
-		public byte[] getCode(IntPtr addr) {
-			fixOffsets(addr);
+		public byte[] GetCode(IntPtr addr) {
+			FixOffsets(addr);
 			memStream.Position = memStream.Length;
 			return memStream.ToArray();
 		}
 
-		unsafe void fixOffsets(IntPtr destAddr) {
+		unsafe void FixOffsets(IntPtr destAddr) {
 			foreach (var kv in offsetToBranchAddr) {
 				memStream.Position = kv.Key;
 				// kv.Value (func/label) = destAddr + kv.Key + 4 + displ

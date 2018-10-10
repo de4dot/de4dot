@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -33,7 +33,7 @@ namespace AssemblyData.methodsrewriter {
 
 		public Operand(Type type) {
 			this.type = type;
-			this.data = null;
+			data = null;
 		}
 
 		public Operand(Type type, object data) {
@@ -41,8 +41,6 @@ namespace AssemblyData.methodsrewriter {
 			this.data = data;
 		}
 
-		public override string ToString() {
-			return "{" + type + " => " + data + "}";
-		}
+		public override string ToString() => "{" + type + " => " + data + "}";
 	}
 }

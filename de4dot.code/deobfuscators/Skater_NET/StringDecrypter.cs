@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -23,21 +23,21 @@ using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Skater_NET {
 	class StringDecrypter {
-		ModuleDefinition module;
-		TypeDefinition decrypterType;
-		MethodDefinition decrypterCctor;
-		FieldDefinitionAndDeclaringTypeDict<string> fieldToDecryptedString = new FieldDefinitionAndDeclaringTypeDict<string>();
+		ModuleDefMD module;
+		TypeDef decrypterType;
+		MethodDef decrypterCctor;
+		FieldDefAndDeclaringTypeDict<string> fieldToDecryptedString = new FieldDefAndDeclaringTypeDict<string>();
 		bool canRemoveType;
 		IDecrypter decrypter;
 
 		interface IDecrypter {
-			string decrypt(string encrypted);
+			string Decrypt(string encrypted);
 		}
 
 		class DecrypterV1 : IDecrypter {
@@ -49,9 +49,9 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 				this.iv = iv;
 			}
 
-			public string decrypt(string encrypted) {
+			public string Decrypt(string encrypted) {
 				try {
-					return Encoding.Unicode.GetString(DeobUtils.des3Decrypt(Convert.FromBase64String(encrypted), key, iv));
+					return Encoding.Unicode.GetString(DeobUtils.Des3Decrypt(Convert.FromBase64String(encrypted), key, iv));
 				}
 				catch (FormatException) {
 					return "";
@@ -60,7 +60,7 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 		}
 
 		class DecrypterV2 : IDecrypter {
-			public string decrypt(string encrypted) {
+			public string Decrypt(string encrypted) {
 				var ints = encrypted.Split(' ');
 				if (ints.Length % 3 != 0)
 					throw new ApplicationException("Invalid encrypted string");
@@ -76,32 +76,21 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 			}
 		}
 
-		public bool Detected {
-			get { return decrypterType != null; }
-		}
+		public bool Detected => decrypterType != null;
+		public bool CanRemoveType => canRemoveType;
+		public TypeDef Type => decrypterType;
+		public StringDecrypter(ModuleDefMD module) => this.module = module;
 
-		public bool CanRemoveType {
-			get { return canRemoveType; }
-		}
-
-		public TypeDefinition Type {
-			get { return decrypterType; }
-		}
-
-		public StringDecrypter(ModuleDefinition module) {
-			this.module = module;
-		}
-
-		public void find() {
+		public void Find() {
 			foreach (var type in module.Types) {
 				if (type.HasProperties || type.HasEvents)
 					continue;
 
-				var cctor = DotNetUtils.getMethod(type, ".cctor");
+				var cctor = type.FindStaticConstructor();
 				if (cctor == null)
 					continue;
 
-				if (checkType(type)) {
+				if (CheckType(type)) {
 					canRemoveType = true;
 					decrypterType = type;
 					decrypterCctor = cctor;
@@ -110,11 +99,11 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 			}
 		}
 
-		public void initialize(ISimpleDeobfuscator deobfuscator) {
+		public void Initialize(ISimpleDeobfuscator deobfuscator) {
 			if (decrypterCctor == null)
 				return;
 
-			deobfuscator.deobfuscate(decrypterCctor);
+			deobfuscator.Deobfuscate(decrypterCctor);
 			var instrs = decrypterCctor.Body.Instructions;
 			for (int i = 0; i < instrs.Count - 4; i++) {
 				var ldstr = instrs[i];
@@ -131,38 +120,38 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 					continue;
 				if (instrs[i + 4].OpCode.Code != Code.Stsfld)
 					continue;
-				var field = instrs[i + 4].Operand as FieldDefinition;
+				var field = instrs[i + 4].Operand as FieldDef;
 				if (field == null)
 					continue;
-				if (!MemberReferenceHelper.compareTypes(field.DeclaringType, decrypterType))
+				if (!new SigComparer().Equals(field.DeclaringType, decrypterType))
 					continue;
 
-				fieldToDecryptedString.add(field, decrypter.decrypt(encryptedString));
+				fieldToDecryptedString.Add(field, decrypter.Decrypt(encryptedString));
 			}
 		}
 
-		bool checkType(TypeDefinition type) {
+		bool CheckType(TypeDef type) {
 			foreach (var method in type.Methods) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
-				if (!DotNetUtils.isMethod(method, "System.String", "(System.String)"))
+				if (!DotNetUtils.IsMethod(method, "System.String", "(System.String)"))
 					continue;
 
-				if (checkMethodV1(method))
+				if (CheckMethodV1(method))
 					return true;
-				if (checkMethodV2(method))
+				if (CheckMethodV2(method))
 					return true;
 			}
 
 			return false;
 		}
 
-		bool checkMethodV1(MethodDefinition method) {
-			var salt = getSalt(method);
+		bool CheckMethodV1(MethodDef method) {
+			var salt = GetSalt(method);
 			if (salt == null)
 				return false;
 
-			var password = getPassword(method);
+			var password = GetPassword(method);
 			if (string.IsNullOrEmpty(password))
 				return false;
 
@@ -181,11 +170,11 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 			"System.String System.String::Concat(System.String,System.String)",
 			"System.Char Microsoft.VisualBasic.Strings::Chr(System.Int32)",
 		};
-		bool checkMethodV2(MethodDefinition method) {
-			if (!DeobUtils.hasInteger(method, ' '))
+		bool CheckMethodV2(MethodDef method) {
+			if (!DeobUtils.HasInteger(method, ' '))
 				return false;
 			foreach (var calledMethodName in callsMethodsV2) {
-				if (!DotNetUtils.callsMethod(method, calledMethodName))
+				if (!DotNetUtils.CallsMethod(method, calledMethodName))
 					return false;
 			}
 
@@ -193,9 +182,9 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 			return true;
 		}
 
-		static byte[] getSalt(MethodDefinition method) {
-			foreach (var s in DotNetUtils.getCodeStrings(method)) {
-				var saltAry = fixSalt(s);
+		static byte[] GetSalt(MethodDef method) {
+			foreach (var s in DotNetUtils.GetCodeStrings(method)) {
+				var saltAry = FixSalt(s);
 				if (saltAry != null)
 					return saltAry;
 			}
@@ -203,7 +192,7 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 			return null;
 		}
 
-		static byte[] fixSalt(string s) {
+		static byte[] FixSalt(string s) {
 			if (s.Length < 10 || s.Length > 30 || s.Length / 2 * 2 != s.Length)
 				return null;
 
@@ -215,8 +204,7 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 
 			var saltAry = new byte[(int)Math.Round((double)s2.Length / 2 - 1) + 1];
 			for (int i = 0; i < saltAry.Length; i++) {
-				int result;
-				if (!int.TryParse(s2.Substring(i * 2, 2), NumberStyles.AllowHexSpecifier, null, out result))
+				if (!int.TryParse(s2.Substring(i * 2, 2), NumberStyles.AllowHexSpecifier, null, out int result))
 					return null;
 				saltAry[i] = (byte)result;
 			}
@@ -224,20 +212,20 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 			return saltAry;
 		}
 
-		string getPassword(MethodDefinition decryptMethod) {
-			foreach (var method in DotNetUtils.getCalledMethods(module, decryptMethod)) {
+		string GetPassword(MethodDef decryptMethod) {
+			foreach (var method in DotNetUtils.GetCalledMethods(module, decryptMethod)) {
 				if (!method.IsStatic || method.Body == null)
 					continue;
-				if (!MemberReferenceHelper.compareTypes(method.DeclaringType, decryptMethod.DeclaringType))
+				if (!new SigComparer().Equals(method.DeclaringType, decryptMethod.DeclaringType))
 					continue;
-				if (!DotNetUtils.isMethod(method, "System.String", "()"))
+				if (!DotNetUtils.IsMethod(method, "System.String", "()"))
 					continue;
 
-				var hexChars = getPassword2(method);
+				var hexChars = GetPassword2(method);
 				if (string.IsNullOrEmpty(hexChars))
 					continue;
 
-				var password = fixPassword(hexChars);
+				var password = FixPassword(hexChars);
 				if (string.IsNullOrEmpty(password))
 					continue;
 
@@ -246,22 +234,21 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 			return null;
 		}
 
-		string fixPassword(string hexChars) {
+		string FixPassword(string hexChars) {
 			var ary = hexChars.Trim().Split(' ');
 			string password = "";
 			for (int i = 0; i < ary.Length; i++) {
-				int result;
-				if (!int.TryParse(ary[i], NumberStyles.AllowHexSpecifier, null, out result))
+				if (!int.TryParse(ary[i], NumberStyles.AllowHexSpecifier, null, out int result))
 					return null;
 				password += (char)result;
 			}
 			return password;
 		}
 
-		string getPassword2(MethodDefinition method) {
+		string GetPassword2(MethodDef method) {
 			string password = "";
-			foreach (var calledMethod in DotNetUtils.getCalledMethods(module, method)) {
-				var s = getPassword3(calledMethod);
+			foreach (var calledMethod in DotNetUtils.GetCalledMethods(module, method)) {
+				var s = GetPassword3(calledMethod);
 				if (string.IsNullOrEmpty(s))
 					return null;
 
@@ -270,8 +257,8 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 			return password;
 		}
 
-		string getPassword3(MethodDefinition method) {
-			var strings = new List<string>(DotNetUtils.getCodeStrings(method));
+		string GetPassword3(MethodDef method) {
+			var strings = new List<string>(DotNetUtils.GetCodeStrings(method));
 			if (strings.Count != 1)
 				return null;
 
@@ -282,8 +269,8 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 			return s;
 		}
 
-		public void deobfuscate(Blocks blocks) {
-			foreach (var block in blocks.MethodBlocks.getAllBlocks()) {
+		public void Deobfuscate(Blocks blocks) {
+			foreach (var block in blocks.MethodBlocks.GetAllBlocks()) {
 				var instrs = block.Instructions;
 				for (int i = 0; i < instrs.Count; i++) {
 					var instr = instrs[i];
@@ -291,22 +278,21 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 					if (instr.OpCode.Code == Code.Call || instr.OpCode.Code == Code.Callvirt) {
 						if (blocks.Method.DeclaringType == decrypterType)
 							continue;
-						var calledMethod = instr.Operand as MethodReference;
-						if (calledMethod != null && calledMethod.DeclaringType == decrypterType)
+						if (instr.Operand is IMethod calledMethod && calledMethod.DeclaringType == decrypterType)
 							canRemoveType = false;
 					}
 					else if (instr.OpCode.Code == Code.Ldsfld) {
 						if (instr.OpCode.Code != Code.Ldsfld)
 							continue;
-						var field = instr.Operand as FieldReference;
+						var field = instr.Operand as IField;
 						if (field == null)
 							continue;
-						var decrypted = fieldToDecryptedString.find(field);
+						var decrypted = fieldToDecryptedString.Find(field);
 						if (decrypted == null)
 							continue;
 
-						instrs[i] = new Instr(Instruction.Create(OpCodes.Ldstr, decrypted));
-						Log.v("Decrypted string: {0}", Utils.toCsharpString(decrypted));
+						instrs[i] = new Instr(OpCodes.Ldstr.ToInstruction(decrypted));
+						Logger.v("Decrypted string: {0}", Utils.ToCsharpString(decrypted));
 					}
 				}
 			}

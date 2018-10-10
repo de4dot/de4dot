@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -17,16 +17,11 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.Cecil;
+using dnlib.DotNet;
 
 namespace de4dot.code.renamer.asmmodules {
-	class FieldDef : Ref {
-		public FieldDefinition FieldDefinition {
-			get { return (FieldDefinition)memberReference; }
-		}
-
-		public FieldDef(FieldDefinition fieldDefinition, TypeDef owner, int index)
-			: base(fieldDefinition, owner, index) {
-		}
+	public class MFieldDef : Ref {
+		public FieldDef FieldDef => (FieldDef)memberRef;
+		public MFieldDef(FieldDef fieldDef, MTypeDef owner, int index) : base(fieldDef, owner, index) { }
 	}
 }

@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -18,88 +18,100 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.ILProtector {
 	class MainType {
-		ModuleDefinition module;
-		List<MethodDefinition> protectMethods;
-		TypeDefinition invokerDelegate;
-		FieldDefinition invokerInstanceField;
+		ModuleDefMD module;
+		List<RuntimeFileInfo> runtimeFileInfos;
+		TypeDef invokerDelegate;
+		FieldDef invokerInstanceField;
 
-		public IEnumerable<MethodDefinition> ProtectMethods {
-			get { return protectMethods; }
-		}
+		public List<RuntimeFileInfo> RuntimeFileInfos => runtimeFileInfos;
+		public TypeDef InvokerDelegate => invokerDelegate;
+		public FieldDef InvokerInstanceField => invokerInstanceField;
+		public bool Detected => runtimeFileInfos != null;
+		public MainType(ModuleDefMD module) => this.module = module;
+		public void Find() => CheckMethod(DotNetUtils.GetModuleTypeCctor(module));
 
-		public TypeDefinition InvokerDelegate {
-			get { return invokerDelegate; }
-		}
-
-		public FieldDefinition InvokerInstanceField {
-			get { return invokerInstanceField; }
-		}
-
-		public bool Detected {
-			get { return protectMethods != null; }
-		}
-
-		public MainType(ModuleDefinition module) {
-			this.module = module;
-		}
-
-		public void find() {
-			checkMethod(DotNetUtils.getModuleTypeCctor(module));
-		}
-
-		static string[] ilpLocals = new string[] {
+		static string[] ilpLocalsV1x = new string[] {
 			"System.Boolean",
 			"System.IntPtr",
 			"System.Object[]",
 		};
-		bool checkMethod(MethodDefinition cctor) {
+		static string[] ilpLocalsV2x = new string[] {
+			"System.IntPtr",
+		};
+		bool CheckMethod(MethodDef cctor) {
 			if (cctor == null || cctor.Body == null)
 				return false;
-			if (!new LocalTypes(cctor).exactly(ilpLocals))
+			var localTypes = new LocalTypes(cctor);
+			if (!localTypes.Exactly(ilpLocalsV1x) &&
+				!localTypes.Exactly(ilpLocalsV2x))
 				return false;
 
 			var type = cctor.DeclaringType;
-			var methods = getPinvokeMethods(type, "Protect");
+			var methods = GetPinvokeMethods(type, "Protect");
 			if (methods.Count == 0)
-				methods = getPinvokeMethods(type, "P0");
+				methods = GetPinvokeMethods(type, "P0");
 			if (methods.Count != 2)
 				return false;
-			if (type.Fields.Count != 1)
+			if (type.Fields.Count < 1 || type.Fields.Count > 2)
 				return false;
 
-			var theField = type.Fields[0];
-			var theDelegate = theField.FieldType as TypeDefinition;
-			if (theDelegate == null || !DotNetUtils.derivesFromDelegate(theDelegate))
+			if (!GetDelegate(type, out invokerInstanceField, out invokerDelegate))
 				return false;
 
-			protectMethods = methods;
-			invokerDelegate = theDelegate;
-			invokerInstanceField = theField;
+			runtimeFileInfos = new List<RuntimeFileInfo>(methods.Count);
+			foreach (var method in methods)
+				runtimeFileInfos.Add(new RuntimeFileInfo(method));
 			return true;
 		}
 
-		static List<MethodDefinition> getPinvokeMethods(TypeDefinition type, string name) {
-			var list = new List<MethodDefinition>();
+		bool GetDelegate(TypeDef type, out FieldDef field, out TypeDef del) {
+			foreach (var fld in type.Fields) {
+				var theDelegate = fld.FieldType.TryGetTypeDef();
+				if (theDelegate != null && DotNetUtils.DerivesFromDelegate(theDelegate)) {
+					field = fld;
+					del = theDelegate;
+					return true;
+				}
+			}
+
+			field = null;
+			del = null;
+			return false;
+		}
+
+		static List<MethodDef> GetPinvokeMethods(TypeDef type, string name) {
+			var list = new List<MethodDef>();
 			foreach (var method in type.Methods) {
-				if (method.PInvokeInfo != null && method.PInvokeInfo.EntryPoint == name)
+				if (method.ImplMap != null && method.ImplMap.Name == name)
 					list.Add(method);
 			}
 			return list;
 		}
 
-		public void cleanUp() {
-			var cctor = DotNetUtils.getModuleTypeCctor(module);
+		public string GetRuntimeVersionString() {
+			if (runtimeFileInfos == null)
+				return null;
+			foreach (var info in runtimeFileInfos) {
+				var version = info.GetVersion();
+				if (version != null)
+					return version.ToString();
+			}
+			return null;
+		}
+
+		public void CleanUp() {
+			var cctor = DotNetUtils.GetModuleTypeCctor(module);
 			if (cctor != null) {
 				cctor.Body.InitLocals = false;
 				cctor.Body.Variables.Clear();
 				cctor.Body.Instructions.Clear();
-				cctor.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
+				cctor.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
 				cctor.Body.ExceptionHandlers.Clear();
 			}
 		}

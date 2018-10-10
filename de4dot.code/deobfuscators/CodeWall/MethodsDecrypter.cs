@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -18,10 +18,8 @@
 */
 
 using System;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using Mono.MyStuff;
-using de4dot.PE;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.CodeWall {
@@ -29,36 +27,27 @@ namespace de4dot.code.deobfuscators.CodeWall {
 		static readonly byte[] newCodeHeader = new byte[6] { 0x2B, 4, 0, 0, 0, 0 };
 		static readonly byte[] decryptKey = new byte[10] { 0x8D, 0xB5, 0x2C, 0x3A, 0x1F, 0xC7, 0x31, 0xC3, 0xCD, 0x47 };
 
-		ModuleDefinition module;
-		MethodReference initMethod;
+		ModuleDefMD module;
+		IMethod initMethod;
 
-		public bool Detected {
-			get { return initMethod != null; }
-		}
+		public bool Detected => initMethod != null;
+		public MethodsDecrypter(ModuleDefMD module) => this.module = module;
 
-		public AssemblyNameReference AssemblyNameReference {
-			get { return initMethod == null ? null : (AssemblyNameReference)initMethod.DeclaringType.Scope; }
-		}
-
-		public MethodsDecrypter(ModuleDefinition module) {
-			this.module = module;
-		}
-
-		public void find() {
-			foreach (var cctor in DeobUtils.getInitCctors(module, 3)) {
-				if (checkCctor(cctor))
+		public void Find() {
+			foreach (var cctor in DeobUtils.GetInitCctors(module, 3)) {
+				if (CheckCctor(cctor))
 					return;
 			}
 		}
 
-		bool checkCctor(MethodDefinition method) {
+		bool CheckCctor(MethodDef method) {
 			if (method == null || method.Body == null)
 				return false;
 
 			foreach (var instr in method.Body.Instructions) {
 				if (instr.OpCode.Code != Code.Call)
 					continue;
-				var calledMethod = instr.Operand as MethodReference;
+				var calledMethod = instr.Operand as IMethod;
 				if (calledMethod == null)
 					continue;
 				if (calledMethod.DeclaringType.Scope == module)
@@ -72,84 +61,68 @@ namespace de4dot.code.deobfuscators.CodeWall {
 			return false;
 		}
 
-		public bool decrypt(PeImage peImage, ref DumpedMethods dumpedMethods) {
+		public bool Decrypt(MyPEImage peImage, ref DumpedMethods dumpedMethods) {
 			dumpedMethods = new DumpedMethods();
 
 			bool decrypted = false;
 
-			var metadataTables = peImage.Cor20Header.createMetadataTables();
-			var methodDef = metadataTables.getMetadataType(MetadataIndex.iMethodDef);
-			uint methodDefOffset = methodDef.fileOffset;
-			for (int i = 0; i < methodDef.rows; i++, methodDefOffset += methodDef.totalSize) {
-				uint bodyRva = peImage.offsetReadUInt32(methodDefOffset);
-				if (bodyRva == 0)
-					continue;
-				uint bodyOffset = peImage.rvaToOffset(bodyRva);
-
+			var methodDef = peImage.Metadata.TablesStream.MethodTable;
+			for (uint rid = 1; rid <= methodDef.Rows; rid++) {
 				var dm = new DumpedMethod();
-				dm.token = (uint)(0x06000001 + i);
+				peImage.ReadMethodTableRowTo(dm, rid);
 
-				byte[] code, extraSections;
-				peImage.Reader.BaseStream.Position = bodyOffset;
-				var mbHeader = MethodBodyParser.parseMethodBody(peImage.Reader, out code, out extraSections);
-
-				if (code.Length < 6 || code[0] != 0x2A || code[1] != 0x2A)
+				if (dm.mdRVA == 0)
 					continue;
-				dm.code = code;
-				dm.extraSections = extraSections;
+				uint bodyOffset = peImage.RvaToOffset(dm.mdRVA);
 
-				int seed = BitConverter.ToInt32(code, 2);
-				Array.Copy(newCodeHeader, code, newCodeHeader.Length);
+				peImage.Reader.Position = bodyOffset;
+				var mbHeader = MethodBodyParser.ParseMethodBody(ref peImage.Reader, out dm.code, out dm.extraSections);
+				peImage.UpdateMethodHeaderInfo(dm, mbHeader);
+
+				if (dm.code.Length < 6 || dm.code[0] != 0x2A || dm.code[1] != 0x2A)
+					continue;
+
+				int seed = BitConverter.ToInt32(dm.code, 2);
+				Array.Copy(newCodeHeader, dm.code, newCodeHeader.Length);
 				if (seed == 0)
-					decrypt(code);
+					Decrypt(dm.code);
 				else
-					decrypt(code, seed);
+					Decrypt(dm.code, seed);
 
-				dm.mdImplFlags = peImage.offsetReadUInt16(methodDefOffset + (uint)methodDef.fields[1].offset);
-				dm.mdFlags = peImage.offsetReadUInt16(methodDefOffset + (uint)methodDef.fields[2].offset);
-				dm.mdName = peImage.offsetRead(methodDefOffset + (uint)methodDef.fields[3].offset, methodDef.fields[3].size);
-				dm.mdSignature = peImage.offsetRead(methodDefOffset + (uint)methodDef.fields[4].offset, methodDef.fields[4].size);
-				dm.mdParamList = peImage.offsetRead(methodDefOffset + (uint)methodDef.fields[5].offset, methodDef.fields[5].size);
-
-				dm.mhFlags = mbHeader.flags;
-				dm.mhMaxStack = mbHeader.maxStack;
-				dm.mhCodeSize = (uint)dm.code.Length;
-				dm.mhLocalVarSigTok = mbHeader.localVarSigTok;
-
-				dumpedMethods.add(dm);
+				dumpedMethods.Add(dm);
 				decrypted = true;
 			}
 
 			return decrypted;
 		}
 
-		void decrypt(byte[] data) {
+		void Decrypt(byte[] data) {
 			for (int i = 6; i < data.Length; i++)
 				data[i] ^= decryptKey[i % decryptKey.Length];
 		}
 
-		void decrypt(byte[] data, int seed) {
-			var key = new KeyGenerator(seed).generate(data.Length);
+		void Decrypt(byte[] data, int seed) {
+			var key = new KeyGenerator(seed).Generate(data.Length);
 			for (int i = 6; i < data.Length; i++)
 				data[i] ^= key[i];
 		}
 
-		public void deobfuscate(Blocks blocks) {
+		public void Deobfuscate(Blocks blocks) {
 			if (initMethod == null)
 				return;
 			if (blocks.Method.Name != ".cctor")
 				return;
 
-			foreach (var block in blocks.MethodBlocks.getAllBlocks()) {
+			foreach (var block in blocks.MethodBlocks.GetAllBlocks()) {
 				var instrs = block.Instructions;
 				for (int i = 0; i < instrs.Count; i++) {
 					var instr = instrs[i];
 					if (instr.OpCode.Code != Code.Call)
 						continue;
-					var calledMethod = instr.Operand as MethodReference;
-					if (!MemberReferenceHelper.compareMethodReferenceAndDeclaringType(calledMethod, initMethod))
+					var calledMethod = instr.Operand as IMethod;
+					if (!MethodEqualityComparer.CompareDeclaringTypes.Equals(calledMethod, initMethod))
 						continue;
-					block.remove(i, 1);
+					block.Remove(i, 1);
 					i--;
 				}
 			}

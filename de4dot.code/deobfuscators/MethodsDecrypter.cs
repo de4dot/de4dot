@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -17,21 +17,42 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.MyStuff;
+using System;
+using System.Runtime.Remoting;
+using dnlib.DotNet;
+using AssemblyData;
 using de4dot.code.AssemblyClient;
+using de4dot.blocks;
 using de4dot.mdecrypt;
 
 namespace de4dot.code.deobfuscators {
-	static class MethodsDecrypter {
-		public static DumpedMethods decrypt(string filename, byte[] moduleCctorBytes) {
-			using (var client = new NewProcessAssemblyClientFactory().create()) {
-				client.connect();
-				client.waitConnected();
+	public static class MethodsDecrypter {
+		public static DumpedMethods Decrypt(ModuleDef module, byte[] moduleCctorBytes) =>
+			Decrypt(NewProcessAssemblyClientFactory.GetServerClrVersion(module), module.Location, moduleCctorBytes);
+
+		public static DumpedMethods Decrypt(ServerClrVersion serverVersion, string filename, byte[] moduleCctorBytes) {
+			Exception lastEx = null;
+			for (int i = 0; i < 5; i++) {
+				try {
+					return Decrypt2(serverVersion, filename, moduleCctorBytes);
+				}
+				catch (RemotingException ex) {
+					lastEx = ex;
+					continue;
+				}
+			}
+			throw lastEx;
+		}
+
+		static DumpedMethods Decrypt2(ServerClrVersion serverVersion, string filename, byte[] moduleCctorBytes) {
+			using (var client = new NewProcessAssemblyClientFactory(serverVersion).Create(AssemblyServiceType.MethodDecrypter)) {
+				client.Connect();
+				client.WaitConnected();
 				var info = new DecryptMethodsInfo();
 				info.moduleCctorBytes = moduleCctorBytes;
-				client.Service.installCompileMethod(info);
-				client.Service.loadObfuscator(filename);
-				return client.Service.decryptMethods();
+				client.MethodDecrypterService.InstallCompileMethod(info);
+				client.MethodDecrypterService.LoadObfuscator(filename);
+				return client.MethodDecrypterService.DecryptMethods();
 			}
 		}
 	}

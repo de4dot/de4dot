@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -17,15 +17,17 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.Cecil;
+using dnlib.DotNet;
 
 namespace de4dot.code.renamer.asmmodules {
-	class ParamDef {
-		public ParameterDefinition ParameterDefinition { get; set; }
+	public class MParamDef {
+		public Parameter ParameterDef { get; set; }
 		public int Index { get; private set; }
+		public bool IsReturnParameter => ParameterDef.IsReturnTypeParameter;
+		public bool IsHiddenThisParameter => ParameterDef.IsHiddenThisParameter;
 
-		public ParamDef(ParameterDefinition parameterDefinition, int index) {
-			this.ParameterDefinition = parameterDefinition;
+		public MParamDef(Parameter parameterDef, int index) {
+			ParameterDef = parameterDef;
 			Index = index;
 		}
 	}

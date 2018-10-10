@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -17,14 +17,15 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Collections.Generic;
 using de4dot.code.deobfuscators;
-using Mono.Cecil;
+using dnlib.DotNet;
 using de4dot.code.renamer;
 
 namespace de4dot.code {
-	public interface IObfuscatedFile {
-		ModuleDefinition ModuleDefinition { get; }
+	public interface IObfuscatedFile : IDisposable {
+		ModuleDefMD ModuleDefMD { get; }
 		IDeobfuscator Deobfuscator { get; }
 		IDeobfuscatorContext DeobfuscatorContext { get; set; }
 		string Filename { get; }
@@ -34,12 +35,12 @@ namespace de4dot.code {
 		bool RemoveNamespaceWithOneType { get; }
 		bool RenameResourceKeys { get; }
 
-		void deobfuscateBegin();
-		void deobfuscate();
-		void deobfuscateEnd();
-		void deobfuscateCleanUp();
+		void DeobfuscateBegin();
+		void Deobfuscate();
+		void DeobfuscateEnd();
+		void DeobfuscateCleanUp();
 
-		void load(IEnumerable<IDeobfuscator> deobfuscators);
-		void save();
+		void Load(IList<IDeobfuscator> deobfuscators);
+		void Save();
 	}
 }

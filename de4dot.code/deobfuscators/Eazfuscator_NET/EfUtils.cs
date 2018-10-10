@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -17,14 +17,12 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using System.Collections.Generic;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using de4dot.blocks;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 
 namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 	static class EfUtils {
-		public static int findOpCodeIndex(MethodDefinition method, int index, Code code) {
+		public static int FindOpCodeIndex(MethodDef method, int index, Code code) {
 			for (; index < method.Body.Instructions.Count; index++) {
 				var instr = method.Body.Instructions[index];
 				if (instr.OpCode.Code != code)
@@ -35,9 +33,9 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return -1;
 		}
 
-		public static int findOpCodeIndex(MethodDefinition method, int index, Code code, string operandString) {
+		public static int FindOpCodeIndex(MethodDef method, int index, Code code, string operandString) {
 			while (index < method.Body.Instructions.Count) {
-				index = findOpCodeIndex(method, index, code);
+				index = FindOpCodeIndex(method, index, code);
 				if (index < 0)
 					break;
 				var instr = method.Body.Instructions[index];
@@ -49,14 +47,14 @@ namespace de4dot.code.deobfuscators.Eazfuscator_NET {
 			return -1;
 		}
 
-		public static Instruction getNextStore(MethodDefinition method, ref int index) {
+		public static Instruction GetNextStore(MethodDef method, ref int index) {
 			for (; index < method.Body.Instructions.Count; index++) {
 				var instr = method.Body.Instructions[index];
 
 				switch (instr.OpCode.Code) {
 				case Code.Starg:
 				case Code.Starg_S:
-				case Code.Stelem_Any:
+				case Code.Stelem:
 				case Code.Stelem_I:
 				case Code.Stelem_I1:
 				case Code.Stelem_I2:

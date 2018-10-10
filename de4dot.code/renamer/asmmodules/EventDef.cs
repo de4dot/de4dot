@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -18,37 +18,34 @@
 */
 
 using System.Collections.Generic;
-using Mono.Cecil;
+using dnlib.DotNet;
 
 namespace de4dot.code.renamer.asmmodules {
-	class EventDef : Ref {
-		public MethodDef AddMethod { get; set; }
-		public MethodDef RemoveMethod { get; set; }
-		public MethodDef RaiseMethod { get; set; }
+	public class MEventDef : Ref {
+		public MMethodDef AddMethod { get; set; }
+		public MMethodDef RemoveMethod { get; set; }
+		public MMethodDef RaiseMethod { get; set; }
+		public EventDef EventDef => (EventDef)memberRef;
 
-		public EventDefinition EventDefinition {
-			get { return (EventDefinition)memberReference; }
+		public MEventDef(EventDef eventDef, MTypeDef owner, int index)
+			: base(eventDef, owner, index) {
 		}
 
-		public EventDef(EventDefinition eventDefinition, TypeDef owner, int index)
-			: base(eventDefinition, owner, index) {
-		}
-
-		public IEnumerable<MethodDefinition> methodDefinitions() {
-			if (EventDefinition.AddMethod != null)
-				yield return EventDefinition.AddMethod;
-			if (EventDefinition.RemoveMethod != null)
-				yield return EventDefinition.RemoveMethod;
-			if (EventDefinition.InvokeMethod != null)
-				yield return EventDefinition.InvokeMethod;
-			if (EventDefinition.OtherMethods != null) {
-				foreach (var m in EventDefinition.OtherMethods)
+		public IEnumerable<MethodDef> MethodDefs() {
+			if (EventDef.AddMethod != null)
+				yield return EventDef.AddMethod;
+			if (EventDef.RemoveMethod != null)
+				yield return EventDef.RemoveMethod;
+			if (EventDef.InvokeMethod != null)
+				yield return EventDef.InvokeMethod;
+			if (EventDef.OtherMethods != null) {
+				foreach (var m in EventDef.OtherMethods)
 					yield return m;
 			}
 		}
 
-		public bool isVirtual() {
-			foreach (var method in methodDefinitions()) {
+		public bool IsVirtual() {
+			foreach (var method in MethodDefs()) {
 				if (method.IsVirtual)
 					return true;
 			}

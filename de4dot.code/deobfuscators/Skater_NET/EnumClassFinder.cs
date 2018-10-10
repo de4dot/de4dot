@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -17,21 +17,21 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators.Skater_NET {
 	class EnumClassFinder {
-		ModuleDefinition module;
-		FieldDefinition enumField;
+		ModuleDefMD module;
+		FieldDef enumField;
 
-		public EnumClassFinder(ModuleDefinition module) {
+		public EnumClassFinder(ModuleDefMD module) {
 			this.module = module;
-			find();
+			Find();
 		}
 
-		void find() {
+		void Find() {
 			foreach (var type in module.Types) {
 				if (type.HasEvents || type.HasProperties)
 					continue;
@@ -43,7 +43,7 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 				if (method.Name != ".ctor")
 					continue;
 				var field = type.Fields[0];
-				var fieldType = DotNetUtils.getType(module, field.FieldType);
+				var fieldType = DotNetUtils.GetType(module, field.FieldSig.GetFieldType());
 				if (fieldType == null)
 					continue;
 				if (!fieldType.IsEnum)
@@ -53,8 +53,8 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 			}
 		}
 
-		public void deobfuscate(Blocks blocks) {
-			foreach (var block in blocks.MethodBlocks.getAllBlocks()) {
+		public void Deobfuscate(Blocks blocks) {
+			foreach (var block in blocks.MethodBlocks.GetAllBlocks()) {
 				var instrs = block.Instructions;
 				for (int i = 0; i < instrs.Count - 2; i++) {
 					var ldsfld = instrs[i];
@@ -62,17 +62,17 @@ namespace de4dot.code.deobfuscators.Skater_NET {
 						continue;
 
 					var ldci4 = instrs[i + 1];
-					if (!ldci4.isLdcI4())
+					if (!ldci4.IsLdcI4())
 						continue;
 
 					var stfld = instrs[i + 2];
 					if (stfld.OpCode.Code != Code.Stfld)
 						continue;
 
-					var field = stfld.Operand as FieldReference;
-					if (!MemberReferenceHelper.compareFieldReferenceAndDeclaringType(enumField, field))
+					var field = stfld.Operand as IField;
+					if (!FieldEqualityComparer.CompareDeclaringTypes.Equals(enumField, field))
 						continue;
-					block.remove(i, 3);
+					block.Remove(i, 3);
 					i--;
 				}
 			}

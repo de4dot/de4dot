@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -18,7 +18,8 @@
 */
 
 namespace de4dot.code {
-	static class Win32Path {
+	// Needed when executing on non-Windows platforms
+	public static class Win32Path {
 		public static string GetFileName(string path) {
 			if (path == null)
 				return null;

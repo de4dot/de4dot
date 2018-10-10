@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2012 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -19,10 +19,9 @@
 
 using System;
 using System.Reflection;
-using Mono.Cecil;
 
 namespace AssemblyData.methodsrewriter {
 	interface IMethodsRewriter {
-		Type getDelegateType(MethodBase methodBase);
+		Type GetDelegateType(MethodBase methodBase);
 	}
 }
