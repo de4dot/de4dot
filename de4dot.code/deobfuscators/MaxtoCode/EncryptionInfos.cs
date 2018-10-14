@@ -70,7 +70,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				MagicHi = 0xF28EECA3,
 				Version = EncryptionVersion.V3,
 			},
-			// 4F832868 = Mon, Apr 09 2012 20:20:24
+			// 4F832868 = Mon, 09 Apr 2012 18:20:24
 			new EncryptionInfo {
 				MagicLo = 0xAA913B87,
 				MagicHi = 0xF28EE0A3,
@@ -89,34 +89,34 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				MagicHi = 0xF28ECDA3,
 				Version = EncryptionVersion.V6,
 			},
-			// 50D367A5 = Mon, 12 Nov 2012 06:25:00
+			// 50D367A5 = Thu, 20 Dec 2012 19:31:49
 			new EncryptionInfo {
 				MagicLo = 0x8A683B87,
 				MagicHi = 0x828ECDA3,
 				Version = EncryptionVersion.V7,
 			},
-			// 513D4492
-			// 51413BD8
-			// 51413D68
-			// 5166DB4F
+			// 513D4492 = Mon, 11 Mar 2013 02:42:26
+			// 51413BD8 = Thu, 14 Mar 2013 02:54:16
+			// 51413D68 = Thu, 14 Mar 2013 03:00:56
+			// 5166DB4F = Thu, 11 Apr 2013 15:48:31
 			new EncryptionInfo {
 				MagicLo = 0x1A683B87,
 				MagicHi = 0x128ECDA3,
 				Version = EncryptionVersion.V8,
 			},
-			// 51927495
+			// 51927495 = Tue, 14 May 2013 17:29:57
 			new EncryptionInfo {
 				MagicLo = 0x7A643B87,
 				MagicHi = 0x624ECDA3,
 				Version = EncryptionVersion.V8,
 			},
-			// 526BC020
-			// 526BDD12
-			// 5296E242
-			// 52B2B2A3
-			// 52B3043C
-			// 53172907
-			// 531729C4
+			// 526BC020 = Sat, 26 Oct 2013 13:14:08
+			// 526BDD12 = Sat, 26 Oct 2013 15:17:38
+			// 5296E242 = Thu, 28 Nov 2013 06:27:14
+			// 52B2B2A3 = Thu, 19 Dec 2013 08:47:31
+			// 52B3043C = Thu, 19 Dec 2013 14:35:40
+			// 53172907 = Wed, 05 Mar 2014 13:39:19
+			// 531729C4 = Wed, 05 Mar 2014 13:42:28
 			new EncryptionInfo {
 				MagicLo = 0x9A683B87,
 				MagicHi = 0x928ECDA3,
@@ -158,7 +158,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				MagicHi = 0xD72B891F,
 				Version = EncryptionVersion.V3,
 			},
-			// 4F832868 = Mon, Apr 09 2012 20:20:24
+			// 4F832868 = Mon, 09 Apr 2012 18:20:24
 			new EncryptionInfo {
 				MagicLo = 0x6AD31B13,
 				MagicHi = 0xD72B8A1F,
@@ -170,29 +170,29 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				MagicHi = 0xD723891F,
 				Version = EncryptionVersion.V5,
 			},
-			// 50D367A5 = Mon, 12 Nov 2012 06:25:00
+			// 50D367A5 = Thu, 20 Dec 2012 19:31:49
 			new EncryptionInfo {
 				MagicLo = 0x8A731B13,
 				MagicHi = 0x8723891F,
 				Version = EncryptionVersion.V7,
 			},
-			// 513D4492
-			// 51413BD8
-			// 51413D68
-			// 5166DB4F
-			// 526BC020
-			// 526BDD12
-			// 5296E242
-			// 52B2B2A3
-			// 52B3043C
-			// 53172907
-			// 531729C4
+			// 513D4492 = Mon, 11 Mar 2013 02:42:26
+			// 51413BD8 = Thu, 14 Mar 2013 02:54:16
+			// 51413D68 = Thu, 14 Mar 2013 03:00:56
+			// 5166DB4F = Thu, 11 Apr 2013 15:48:31
+			// 526BC020 = Sat, 26 Oct 2013 13:14:08
+			// 526BDD12 = Sat, 26 Oct 2013 15:17:38
+			// 5296E242 = Thu, 28 Nov 2013 06:27:14
+			// 52B2B2A3 = Thu, 19 Dec 2013 08:47:31
+			// 52B3043C = Thu, 19 Dec 2013 14:35:40
+			// 53172907 = Wed, 05 Mar 2014 13:39:19
+			// 531729C4 = Wed, 05 Mar 2014 13:42:28
 			new EncryptionInfo {
 				MagicLo = 0x1A731B13,
 				MagicHi = 0x1723891F,
 				Version = EncryptionVersion.V8,
 			},
-			// 51927495
+			// 51927495 = Tue, 14 May 2013 17:29:57
 			new EncryptionInfo {
 				MagicLo = 0x7A731B13,
 				MagicHi = 0x1723891F,
