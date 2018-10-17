@@ -3,7 +3,7 @@
 
   <PropertyGroup>
     <De4DotNetFramework>false</De4DotNetFramework>
-    <De4DotNetFramework Condition=" '$(SolutionFileName)' == 'de4dot.netframework.sln' ">true</De4DotNetFramework>
+    <De4DotNetFramework Condition=" '$(SolutionName)' == 'de4dot.netframework' ">true</De4DotNetFramework>
     <!-- Two different sln files are used because some of the projects are only available when targetting .NET Framework -->
     <TargetFrameworks Condition=" '$(De4DotNetFramework)' == 'true' ">net35</TargetFrameworks>
     <TargetFrameworks Condition=" '$(De4DotNetFramework)' != 'true' ">netcoreapp2.1</TargetFrameworks>
