@@ -23,6 +23,13 @@ using System.Runtime.Serialization;
 using System.Threading;
 using AssemblyData;
 
+#if !NET35
+namespace System.Runtime.Remoting {
+	class RemotingException : SystemException {
+	}
+}
+#endif
+
 namespace de4dot.code.AssemblyClient {
 	public sealed class AssemblyClient : IAssemblyClient {
 		const int WAIT_TIME_BEFORE_CONNECTING = 1000;

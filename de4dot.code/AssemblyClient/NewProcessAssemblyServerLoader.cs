@@ -17,6 +17,7 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#if NET35
 using System;
 using System.Diagnostics;
 using AssemblyData;
@@ -67,3 +68,4 @@ namespace de4dot.code.AssemblyClient {
 		}
 	}
 }
+#endif

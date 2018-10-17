@@ -17,6 +17,7 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#if NET35
 using System;
 using System.Collections;
 using System.Runtime.Remoting;
@@ -50,3 +51,13 @@ namespace AssemblyServer {
 		}
 	}
 }
+#else
+namespace AssemblyServer {
+	public static class Start {
+		public static int Main(string[] args) {
+			System.Console.WriteLine("Not supported");
+			return -1;
+		}
+	}
+}
+#endif
