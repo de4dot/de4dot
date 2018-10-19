@@ -96,6 +96,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				Version = EncryptionVersion.V7,
 			},
 			// 513D4492 = Mon, 11 Mar 2013 02:42:26
+			// 513D7124 = Mon, 11 Mar 2013 05:52:36 (3.70)
 			// 51413BD8 = Thu, 14 Mar 2013 02:54:16
 			// 51413D68 = Thu, 14 Mar 2013 03:00:56
 			// 5166DB4F = Thu, 11 Apr 2013 15:48:31
@@ -117,6 +118,11 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			// 52B3043C = Thu, 19 Dec 2013 14:35:40
 			// 53172907 = Wed, 05 Mar 2014 13:39:19
 			// 531729C4 = Wed, 05 Mar 2014 13:42:28
+			// 55F5B112 = Sun, 13 Sep 2015 17:23:30 (3.80) (untested)
+			// 5892EF00 = Thu, 02 Feb 2017 08:34:08 (3.84) (untested)
+			// 59995527 = Sun, 20 Aug 2017 09:23:51 (3.86) (untested)
+			// 5AAF874A = Mon, 19 Mar 2018 09:47:54 (3.87) (untested)
+			// 5B37D998 = Sat, 30 Jun 2018 19:27:20 (Beta above 3.87) (untested)
 			new EncryptionInfo {
 				MagicLo = 0x9A683B87,
 				MagicHi = 0x928ECDA3,
@@ -177,6 +183,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				Version = EncryptionVersion.V7,
 			},
 			// 513D4492 = Mon, 11 Mar 2013 02:42:26
+			// 513D7124 = Mon, 11 Mar 2013 05:52:36 (3.70)
 			// 51413BD8 = Thu, 14 Mar 2013 02:54:16
 			// 51413D68 = Thu, 14 Mar 2013 03:00:56
 			// 5166DB4F = Thu, 11 Apr 2013 15:48:31
@@ -187,6 +194,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			// 52B3043C = Thu, 19 Dec 2013 14:35:40
 			// 53172907 = Wed, 05 Mar 2014 13:39:19
 			// 531729C4 = Wed, 05 Mar 2014 13:42:28
+			// 5892EF00 = Thu, 02 Feb 2017 08:34:08 (3.84) (untested)
 			new EncryptionInfo {
 				MagicLo = 0x1A731B13,
 				MagicHi = 0x1723891F,
@@ -196,6 +204,30 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			new EncryptionInfo {
 				MagicLo = 0x7A731B13,
 				MagicHi = 0x1723891F,
+				Version = EncryptionVersion.V8,
+			},
+			// 55F5B112 = Sun, 13 Sep 2015 17:23:30 (3.80) (untested)
+			new EncryptionInfo {
+				MagicLo = 0xDD980712,
+				MagicHi = 0xF36F3511,
+				Version = EncryptionVersion.V8,
+			},
+			// 59995527 = Sun, 20 Aug 2017 09:23:51 (3.86) (untested)
+			new EncryptionInfo {
+				MagicLo = 0x49DC30A2,
+				MagicHi = 0x3BE51694,
+				Version = EncryptionVersion.V8,
+			},
+			// 5AAF874A = Mon, 19 Mar 2018 09:47:54 (3.87) (untested)
+			new EncryptionInfo {
+				MagicLo = 0x58425DA8,
+				MagicHi = 0xDF80B317,
+				Version = EncryptionVersion.V8,
+			},
+			// 5B37D998 = Sat, 30 Jun 2018 19:27:20 (Beta above 3.87) (untested)
+			new EncryptionInfo {
+				MagicLo = 0xC00CA8DC,
+				MagicHi = 0xEFBCF433,
 				Version = EncryptionVersion.V8,
 			},
 		};
