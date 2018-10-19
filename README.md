@@ -1,9 +1,3 @@
-Read it before
-===========
-[Notice of Crypto Laws](Notice%20of%20Crypto%20Laws.md)
-
-[致中国区用户的一封信](致中国区用户的一封信.md)
-
 Description
 ===========
 
