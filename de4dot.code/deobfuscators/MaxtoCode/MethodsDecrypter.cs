@@ -77,16 +77,39 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			static uint GetStructSize(McKey mcKey) {
 				uint magicLo = mcKey.ReadUInt32(0x8C0);
 				uint magicHi = mcKey.ReadUInt32(0x8C4);
+
+				// Key reader of McKey8C0h keys(untested).
+				// Print MagicLo from McKey8C0h
+				Logger.vv("The MagicLo from McKey8C0h is");
+				Logger.Instance.Indent();
+				Logger.vv("MagicLo = 0x" + magicLo.ToString("X"));
+				Logger.Instance.DeIndent();
+
+				// Print MagicHi from McKey8C0h
+				Logger.vv("The MagicHi from McKey8C0h is");
+				Logger.Instance.Indent();
+				Logger.vv("MagicHi = 0x" + magicHi.ToString("X"));
+				Logger.Instance.DeIndent();
+
 				foreach (var info in EncryptionInfos.McKey8C0h) {
-					if (magicLo == info.MagicLo && magicHi == info.MagicHi)
+					if (magicLo == info.MagicLo && magicHi == info.MagicHi) {
+						Logger.vv("Keys in McKey8C0h infos is used.");
 						return 0xC + 6 * ENCRYPTED_DATA_INFO_SIZE;
+					}						
 				}
 				return 0xC + 3 * ENCRYPTED_DATA_INFO_SIZE;
 			}
 
 			EncryptionVersion GetVersion() {
-				if (peHeader.EncryptionVersion != EncryptionVersion.Unknown)
+				if (peHeader.EncryptionVersion != EncryptionVersion.Unknown) {
+					// Print EncryptionVersion
+					Logger.vv("The EncryptionVersion is");
+					Logger.Instance.Indent();
+					Logger.vv("Version = EncryptionVersion." + peHeader.EncryptionVersion.ToString());
+					Logger.Instance.DeIndent();
+
 					return peHeader.EncryptionVersion;
+				}
 
 				uint m2lo = mcKey.ReadUInt32(0x8C0);
 				uint m2hi = mcKey.ReadUInt32(0x8C4);
@@ -211,8 +234,23 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 						foreach (var dllName in rtNames) {
 							try {
 								using (var peImage = new PEImage(Path.Combine(di.FullName, dllName))) {
-									if (peImage.ImageNTHeaders.FileHeader.Machine == Machine.I386)
+									if (peImage.ImageNTHeaders.FileHeader.Machine == Machine.I386) {
+										// The Referenced DLL is no longer necessarily to be the Runtime DLL since the beta version above 3.87
+										// Print Referenced DLL Path
+										if (dllName != null) {
+											Logger.vv("Referenced DLL is " + dllName);
+											if (di != null)
+												Logger.vv("Full path of Referenced DLL is " + Path.Combine(di.FullName, dllName));
+										}
+										// Print Runtime TimeDateStamp
+										var dateTime = new DateTime(1970, 1, 1, 0, 0, 0);
+										Logger.vv("Referenced DLL TimeDateStamp is");
+										Logger.Instance.Indent();
+										Logger.vv("{0:X} = {1:r}", peImage.ImageNTHeaders.FileHeader.TimeDateStamp, dateTime.AddSeconds(peImage.ImageNTHeaders.FileHeader.TimeDateStamp));
+										Logger.Instance.DeIndent();
+
 										return peImage.ImageNTHeaders.FileHeader.TimeDateStamp;
+									}
 								}
 							}
 							catch {
@@ -363,6 +401,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			byte[] Decrypt1_v13(byte[] encrypted) => Decrypt1(encrypted, 0x11, 0x11, 0x200);
 
 			byte[] Decrypt1(byte[] encrypted, int keyStart, int keyReset, int keyEnd) {
+				Logger.vv("Decrypt1() called, keyStart 0x{0:X}, keyReset 0x{1:X}, keyEnd 0x{2:X}",  keyStart, keyReset, keyEnd);
 				var decrypted = new byte[encrypted.Length];
 				for (int i = 0, ki = keyStart; i < decrypted.Length; i++) {
 					decrypted[i] = (byte)(encrypted[i] ^ mcKey.ReadByte(ki));
@@ -383,6 +422,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			byte[] Decrypt2_v9(byte[] encrypted) => Decrypt2(encrypted, 0x00FA + 0x0C);
 
 			byte[] Decrypt2(byte[] encrypted, int offset) {
+				Logger.vv("Decrypt2() called, offset 0x{0:X}", offset);
 				if ((encrypted.Length & 7) != 0)
 					throw new ApplicationException("Invalid encryption #2 length");
 				uint key4 = mcKey.ReadUInt32(offset + 4 * 4);
@@ -418,6 +458,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 
 			static readonly byte[] decrypt3Shifts = new byte[16] { 5, 11, 14, 21, 6, 20, 17, 29, 4, 10, 3, 2, 7, 1, 26, 18 };
 			byte[] Decrypt3(byte[] encrypted, int offset) {
+				Logger.vv("Decrypt3() called, offset 0x{0:X}", offset);
 				if ((encrypted.Length & 7) != 0)
 					throw new ApplicationException("Invalid encryption #3 length");
 				uint key0 = mcKey.ReadUInt32(offset + 0 * 4);
@@ -459,6 +500,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			byte[] Decrypt4_v12(byte[] encrypted) => Decrypt4(encrypted, 0x0C, 0x0C, 0x150);
 
 			byte[] Decrypt4(byte[] encrypted, int keyStart, int keyReset, int keyEnd) {
+				Logger.vv("Decrypt4() called, keyStart 0x{0:X}, keyReset 0x{1:X}, keyEnd 0x{2:X}", keyStart, keyReset, keyEnd);
 				var decrypted = new byte[encrypted.Length / 3 * 2 + 1];
 
 				int count = encrypted.Length / 3;
@@ -481,10 +523,17 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				return decrypted;
 			}
 
-			byte[] Decrypt5(byte[] encrypted) => CryptDecrypter.Decrypt(mcKey.ReadBytes(0x0032, 15), encrypted);
-			byte[] Decrypt6(byte[] encrypted) => Decrypter6.Decrypt(mcKey.ReadBytes(0x0096, 32), encrypted);
+			byte[] Decrypt5(byte[] encrypted) {
+				Logger.vv("Decrypt5() called.");
+				return CryptDecrypter.Decrypt(mcKey.ReadBytes(0x0032, 15), encrypted);
+			}
+			byte[] Decrypt6(byte[] encrypted) {
+				Logger.vv("Decrypt6() called.");
+				return Decrypter6.Decrypt(mcKey.ReadBytes(0x0096, 32), encrypted);
+			}
 
 			byte[] Decrypt7(byte[] encrypted) {
+				Logger.vv("Decrypt7() called.");
 				var decrypted = (byte[])encrypted.Clone();
 				new Blowfish(GetBlowfishKey()).Decrypt_LE(decrypted);
 				return decrypted;
@@ -500,6 +549,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			byte[] Decrypt8_v12(byte[] encrypted) => Decrypt8(encrypted, 0x14, 0x14, 0x600);
 
 			byte[] Decrypt8(byte[] encrypted, int keyStart, int keyReset, int keyEnd) {
+				Logger.vv("Decrypt8() called, keyStart 0x{0:X}, keyReset 0x{1:X}, keyEnd 0x{2:X}", keyStart, keyReset, keyEnd);
 				var decrypted = new byte[encrypted.Length];
 				int ki = keyStart;
 				for (int i = 0; i < encrypted.Length; i++) {
@@ -523,6 +573,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			byte[] Decrypt9_v13(byte[] encrypted) => Decrypt9(encrypted, 5, 5, 0x510);
 
 			byte[] Decrypt9(byte[] encrypted, int keyStart, int keyReset, int keyEnd) {
+				Logger.vv("Decrypt9() called, keyStart 0x{0:X}, keyReset 0x{1:X}, keyEnd 0x{2:X}", keyStart, keyReset, keyEnd);
 				var decrypted = new byte[encrypted.Length];
 				int ki = keyStart;
 				for (int i = 0; ; ) {
@@ -557,6 +608,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			}
 
 			byte[] Decrypt10(byte[] encrypted) {
+				Logger.vv("Decrypt10() called");
 				byte[] enc = (byte[])encrypted.Clone();
 				byte[] dest = new byte[enc.Length];
 				int halfSize = enc.Length / 2;
@@ -584,6 +636,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			byte[] Decrypt11_v1(byte[] encrypted) => Decrypt11(encrypted, 5, 5, 0x510);
 
 			byte[] Decrypt11(byte[] encrypted, int keyStart, int keyReset, int keyEnd) {
+				Logger.vv("Decrypt11() called");
 				byte[] dest = new byte[encrypted.Length];
 
 				for (int i = 0, ki = keyStart; i < encrypted.Length; i++, ki++) {
@@ -613,6 +666,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 
 			byte[] blowfishKey;
 			byte[] GetBlowfishKey() {
+				Logger.vv("GetBlowfishKey() called.");
 				if (blowfishKey != null)
 					return blowfishKey;
 				var key = new byte[100];
