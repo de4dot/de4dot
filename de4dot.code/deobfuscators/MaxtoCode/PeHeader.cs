@@ -123,9 +123,44 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			uint m1lo = peImage.OffsetReadUInt32(headerOffset + 0x900);
 			uint m1hi = peImage.OffsetReadUInt32(headerOffset + 0x904);
 
+			// Key reader of Rva900h keys, just the possible combinations.
+			// Two methods: Call hundreds of staffs to build and run it respectively
+			// Or use Automated scripts to run msbuild then run all instances of de4dot
+
+			/*
+			if (m1lo > 0 && m1hi > 0) {
+			// Print Possible MagicLo from Rva900h
+				Logger.vv("The MagicLo from Rva900h could be");
+				Logger.Instance.Indent();
+				Logger.vv("MagicLo = 0x" + m1lo.ToString("X"));
+				Logger.Instance.DeIndent();
+
+			// Print Possible MagicHi from Rva900h			
+				Logger.vv("The MagicHi from Rva900h could be");
+				Logger.Instance.Indent();
+				Logger.vv("MagicHi = 0x" + m1hi.ToString("X"));
+				Logger.Instance.DeIndent();
+				Logger.vv("_________________________________");
+			}
+			*/
+
 			foreach (var info in EncryptionInfos.Rva900h) {
-				if (info.MagicLo == m1lo && info.MagicHi == m1hi)
+				if (info.MagicLo == m1lo && info.MagicHi == m1hi) {
+					// Print Successful MagicLo from Rva900h
+					Logger.vv("The used MagicLo from Rva900h is");
+					Logger.Instance.Indent();
+					Logger.vv("MagicLo = 0x" + m1lo.ToString("X"));
+					Logger.Instance.DeIndent();
+
+					// Print Successful MagicHi from Rva900h			
+					Logger.vv("The used MagicHi from Rva900h is");
+					Logger.Instance.Indent();
+					Logger.vv("MagicHi = 0x" + m1hi.ToString("X"));
+					Logger.Instance.DeIndent();
+					Logger.vv("_________________________________");
+
 					return info.Version;
+				}
 			}
 
 			return EncryptionVersion.Unknown;
