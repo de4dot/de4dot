@@ -242,7 +242,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 											if (di != null)
 												Logger.vv("Full path of Referenced DLL is " + Path.Combine(di.FullName, dllName));
 										}
-										// Print Runtime TimeDateStamp
+										// Print Referenced DLL TimeDateStamp
 										var dateTime = new DateTime(1970, 1, 1, 0, 0, 0);
 										Logger.vv("Referenced DLL TimeDateStamp is");
 										Logger.Instance.Indent();
@@ -401,6 +401,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			byte[] Decrypt1_v13(byte[] encrypted) => Decrypt1(encrypted, 0x11, 0x11, 0x200);
 
 			byte[] Decrypt1(byte[] encrypted, int keyStart, int keyReset, int keyEnd) {
+				// Print Decrypt params, same as below
 				Logger.vv("Decrypt1() called, keyStart 0x{0:X}, keyReset 0x{1:X}, keyEnd 0x{2:X}",  keyStart, keyReset, keyEnd);
 				var decrypted = new byte[encrypted.Length];
 				for (int i = 0, ki = keyStart; i < decrypted.Length; i++) {
@@ -422,7 +423,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			byte[] Decrypt2_v9(byte[] encrypted) => Decrypt2(encrypted, 0x00FA + 0x0C);
 
 			byte[] Decrypt2(byte[] encrypted, int offset) {
-				Logger.vv("Decrypt2() called, offset 0x{0:X}", offset);
+				Logger.vv("Decrypt2() called, offset 0x00FA + 0x{0:X}", (int)(offset - Convert.ToInt32("0x00FA", 16)));
 				if ((encrypted.Length & 7) != 0)
 					throw new ApplicationException("Invalid encryption #2 length");
 				uint key4 = mcKey.ReadUInt32(offset + 4 * 4);
@@ -458,7 +459,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 
 			static readonly byte[] decrypt3Shifts = new byte[16] { 5, 11, 14, 21, 6, 20, 17, 29, 4, 10, 3, 2, 7, 1, 26, 18 };
 			byte[] Decrypt3(byte[] encrypted, int offset) {
-				Logger.vv("Decrypt3() called, offset 0x{0:X}", offset);
+				Logger.vv("Decrypt3() called, offset 0x015E + 0x{0:X}", (int)(offset - Convert.ToInt32("0x015E", 16)));
 				if ((encrypted.Length & 7) != 0)
 					throw new ApplicationException("Invalid encryption #3 length");
 				uint key0 = mcKey.ReadUInt32(offset + 0 * 4);
