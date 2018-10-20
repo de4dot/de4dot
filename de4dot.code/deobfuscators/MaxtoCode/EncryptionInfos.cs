@@ -78,6 +78,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 			},
 			// 4F8E262C = Wed, 18 Apr 2012 02:25:48
 			// 4FBE81DE = Thu, 24 May 2012 18:45:50
+			// 4FCEBD7B = Wed, 06 Jun 2012 02:16:27 (untested)
 			new EncryptionInfo {
 				MagicLo = 0xBA983B87,
 				MagicHi = 0xF28EDDA3,
@@ -96,7 +97,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				Version = EncryptionVersion.V7,
 			},
 			// 513D4492 = Mon, 11 Mar 2013 02:42:26
-			// 513D7124 = Mon, 11 Mar 2013 05:52:36 (3.70)
+			// 513D7124 = Mon, 11 Mar 2013 05:52:36
 			// 51413BD8 = Thu, 14 Mar 2013 02:54:16
 			// 51413D68 = Thu, 14 Mar 2013 03:00:56
 			// 5166DB4F = Thu, 11 Apr 2013 15:48:31
@@ -176,6 +177,12 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				MagicHi = 0xD723891F,
 				Version = EncryptionVersion.V5,
 			},
+			// 4FCEBD7B = Wed, 06 Jun 2012 02:16:27 (untested)
+			new EncryptionInfo {
+				MagicLo = 0x64D6CE53,
+				MagicHi = 0xDEC2844E,
+				Version = EncryptionVersion.V5,
+			},
 			// 50D367A5 = Thu, 20 Dec 2012 19:31:49
 			new EncryptionInfo {
 				MagicLo = 0x8A731B13,
@@ -183,7 +190,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				Version = EncryptionVersion.V7,
 			},
 			// 513D4492 = Mon, 11 Mar 2013 02:42:26
-			// 513D7124 = Mon, 11 Mar 2013 05:52:36 (3.70)
+			// 513D7124 = Mon, 11 Mar 2013 05:52:36
 			// 51413BD8 = Thu, 14 Mar 2013 02:54:16
 			// 51413D68 = Thu, 14 Mar 2013 03:00:56
 			// 5166DB4F = Thu, 11 Apr 2013 15:48:31
