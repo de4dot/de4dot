@@ -159,6 +159,8 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 					Logger.Instance.DeIndent();
 					Logger.vv("_________________________________");
 
+					Logger.vv("Check these keys in EncryptionInfo[] Rva900h in de4dot.code\\deobfuscators\\MaxtoCode\\EncryptionInfos.cs");
+
 					return info.Version;
 				}
 			}

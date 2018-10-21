@@ -91,6 +91,8 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 				Logger.vv("MagicHi = 0x" + magicHi.ToString("X"));
 				Logger.Instance.DeIndent();
 
+				Logger.vv("If keys are new, add them with version info into EncryptionInfo[] McKey8C0h in de4dot.code\\deobfuscators\\MaxtoCode\\EncryptionInfos.cs, then publish your code.");
+
 				foreach (var info in EncryptionInfos.McKey8C0h) {
 					if (magicLo == info.MagicLo && magicHi == info.MagicHi) {
 						Logger.vv("Keys in McKey8C0h infos is used.");
@@ -106,6 +108,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 					Logger.vv("The EncryptionVersion is");
 					Logger.Instance.Indent();
 					Logger.vv("Version = EncryptionVersion." + peHeader.EncryptionVersion.ToString());
+					Logger.vv("Add this version info with new keys into EncryptionInfo[] Rva900h and EncryptionInfo[] McKey8C0h in de4dot.code\\deobfuscators\\MaxtoCode\\EncryptionInfos.cs, then publish your code.");
 					Logger.Instance.DeIndent();
 
 					return peHeader.EncryptionVersion;
@@ -248,6 +251,7 @@ namespace de4dot.code.deobfuscators.MaxtoCode {
 										Logger.Instance.Indent();
 										Logger.vv("{0:X} = {1:r}", peImage.ImageNTHeaders.FileHeader.TimeDateStamp, dateTime.AddSeconds(peImage.ImageNTHeaders.FileHeader.TimeDateStamp));
 										Logger.Instance.DeIndent();
+										Logger.vv("Add this TimeDateStamp into comments of EncryptionInfo[] Rva900h and EncryptionInfo[] McKey8C0h in de4dot.code\\deobfuscators\\MaxtoCode\\EncryptionInfos.cs, then publish your code.");
 
 										return peImage.ImageNTHeaders.FileHeader.TimeDateStamp;
 									}
