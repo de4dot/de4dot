@@ -9,3 +9,4 @@ bin/
 obj/
 Release/
 Debug/
+launchSettings.json
