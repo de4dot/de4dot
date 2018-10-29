@@ -436,8 +436,15 @@ namespace de4dot.code.deobfuscators.CodeFort {
 		}
 
 		void CreateTypes() {
-			foreach (var info in enumInfos)
-				createdTypes[info.name] = enumBuilders[info.name].CreateType();
+			foreach (var info in enumInfos) {
+				var builder = enumBuilders[info.name];
+#if NET35
+				var type = builder.CreateType();
+#else
+				var type = builder.CreateTypeInfo();
+#endif
+				createdTypes[info.name] = type;
+			}
 			foreach (var info in typeInfos)
 				createdTypes[info.name] = typeBuilders[info.name].CreateType();
 			moduleBuilder = null;

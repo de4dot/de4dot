@@ -17,8 +17,10 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#if NET35
 namespace System.Runtime.ExceptionServices {
 	[AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
 	public class HandleProcessCorruptedStateExceptionsAttribute : Attribute {
 	}
 }
+#endif

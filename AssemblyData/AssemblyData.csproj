@@ -1,90 +1,15 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
-  <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{FBD84077-9D35-41FE-89DF-8D79EFE0B595}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <RootNamespace>AssemblyData</RootNamespace>
-    <AssemblyName>AssemblyData</AssemblyName>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
-    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
-    <FileAlignment>512</FileAlignment>
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>..\de4dot.snk</AssemblyOriginatorKeyFile>
-    <Features>strict</Features>
-    <LangVersion>latest</LangVersion>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>portable</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>..\Debug\bin\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>portable</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>..\Release\bin\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-  </PropertyGroup>
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\De4DotCommon.props" />
+
   <ItemGroup>
-    <Compile Include="AssemblyResolver.cs" />
-    <Compile Include="AssemblyServer.cs" />
-    <Compile Include="AssemblyService.cs" />
-    <Compile Include="DelegateStringDecrypter.cs" />
-    <Compile Include="EmuStringDecrypter.cs" />
-    <Compile Include="GenericService.cs" />
-    <Compile Include="IAssemblyService.cs" />
-    <Compile Include="IGenericService.cs" />
-    <Compile Include="IMethodDecrypterService.cs" />
-    <Compile Include="IStringDecrypter.cs" />
-    <Compile Include="IStringDecrypterService.cs" />
-    <Compile Include="IUserGenericService.cs" />
-    <Compile Include="MethodDecrypterService.cs" />
-    <Compile Include="methodsrewriter\AssemblyResolver.cs" />
-    <Compile Include="methodsrewriter\CodeGenerator.cs" />
-    <Compile Include="methodsrewriter\IMethodsRewriter.cs" />
-    <Compile Include="methodsrewriter\MethodsRewriter.cs" />
-    <Compile Include="methodsrewriter\MField.cs" />
-    <Compile Include="methodsrewriter\MMethod.cs" />
-    <Compile Include="methodsrewriter\MModule.cs" />
-    <Compile Include="methodsrewriter\MType.cs" />
-    <Compile Include="methodsrewriter\Operand.cs" />
-    <Compile Include="methodsrewriter\Resolver.cs" />
-    <Compile Include="methodsrewriter\ResolverUtils.cs" />
-    <Compile Include="methodsrewriter\TypeInstanceResolver.cs" />
-    <Compile Include="methodsrewriter\TypeResolver.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SimpleData.cs" />
-    <Compile Include="StringDecrypterService.cs" />
-    <Compile Include="Utils.cs" />
+    <Reference Include="System.Runtime.Remoting" Condition=" '$(De4DotNetFramework)' == 'true' " />
   </ItemGroup>
+
   <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="System.Runtime.Remoting" />
-    <Reference Include="System.XML" />
+    <ProjectReference Include="..\de4dot.blocks\de4dot.blocks.csproj" />
+    <ProjectReference Include="..\de4dot.mdecrypt\de4dot.mdecrypt.csproj" />
+    <ProjectReference Include="..\dnlib\src\dnlib.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\de4dot.blocks\de4dot.blocks.csproj">
-      <Project>{045B96F2-AF80-4C4C-8D27-E38635AC705E}</Project>
-      <Name>de4dot.blocks</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\de4dot.mdecrypt\de4dot.mdecrypt.csproj">
-      <Project>{5C93C5E2-196F-4877-BF65-96FEBFCEFCA1}</Project>
-      <Name>de4dot.mdecrypt</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\dnlib\src\dnlib.csproj">
-      <Project>{FDFC1237-143F-4919-8318-4926901F4639}</Project>
-      <Name>dnlib</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+
 </Project>

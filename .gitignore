@@ -1,10 +1,12 @@
 *~
-*/obj/
 *.csproj.user
 *.sdf
 *.opensdf
 *.suo
-/Debug/
-/Release/
 .vs/
 *.tmp_proj
+bin/
+obj/
+Release/
+Debug/
+launchSettings.json
