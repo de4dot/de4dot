@@ -1,12 +1,8 @@
 *~
-*.csproj.user
-*.sdf
-*.opensdf
-*.suo
 .vs/
-*.tmp_proj
 bin/
 obj/
 Release/
 Debug/
 launchSettings.json
+*.user
