@@ -17,7 +17,7 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#if NET35
+#if NETFRAMEWORK
 using System;
 using System.Diagnostics;
 using AssemblyData;

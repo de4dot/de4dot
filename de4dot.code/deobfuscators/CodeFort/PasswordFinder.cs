@@ -85,7 +85,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 		public void Find(out PasswordInfo mainAsmPassword, out PasswordInfo embedPassword) {
 			var asmName = new AssemblyName("asm");
 			const AssemblyBuilderAccess BuilderAccess = AssemblyBuilderAccess.Run;
-#if NET35
+#if NETFRAMEWORK
 			var asmBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(asmName, BuilderAccess);
 #else
 			var asmBuilder = AssemblyBuilder.DefineDynamicAssembly(asmName, BuilderAccess);

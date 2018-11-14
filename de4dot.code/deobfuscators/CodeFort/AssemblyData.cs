@@ -438,7 +438,7 @@ namespace de4dot.code.deobfuscators.CodeFort {
 		void CreateTypes() {
 			foreach (var info in enumInfos) {
 				var builder = enumBuilders[info.name];
-#if NET35
+#if NETFRAMEWORK
 				var type = builder.CreateType();
 #else
 				var type = builder.CreateTypeInfo();

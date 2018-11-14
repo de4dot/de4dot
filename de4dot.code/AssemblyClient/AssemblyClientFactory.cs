@@ -31,7 +31,7 @@ namespace de4dot.code.AssemblyClient {
 
 	public class NewAppDomainAssemblyClientFactory : IAssemblyClientFactory {
 		public IAssemblyClient Create(AssemblyServiceType serviceType) =>
-#if NET35
+#if NETFRAMEWORK
 			new AssemblyClient(new NewAppDomainAssemblyServerLoader(serviceType));
 #else
 			new AssemblyClient(new SameAppDomainAssemblyServerLoader(serviceType));
@@ -45,14 +45,14 @@ namespace de4dot.code.AssemblyClient {
 		public NewProcessAssemblyClientFactory(ServerClrVersion serverVersion) => this.serverVersion = serverVersion;
 
 		public IAssemblyClient Create(AssemblyServiceType serviceType, ModuleDef module) =>
-#if NET35
+#if NETFRAMEWORK
 			new AssemblyClient(new NewProcessAssemblyServerLoader(serviceType, GetServerClrVersion(module)));
 #else
 			new AssemblyClient(new SameAppDomainAssemblyServerLoader(serviceType));
 #endif
 
 		public IAssemblyClient Create(AssemblyServiceType serviceType) =>
-#if NET35
+#if NETFRAMEWORK
 			new AssemblyClient(new NewProcessAssemblyServerLoader(serviceType, serverVersion));
 #else
 			new AssemblyClient(new SameAppDomainAssemblyServerLoader(serviceType));
