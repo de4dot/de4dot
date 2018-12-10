@@ -1,0 +1,37 @@
+version: x.x.{build}
+branches:
+  only:
+  - master
+skip_tags: true
+image: Visual Studio 2017
+configuration: Release
+install:
+- cmd: git submodule update --init --recursive
+build_script:
+- cmd: >-
+    appveyor-retry nuget restore de4dot.netframework.sln
+
+    msbuild de4dot.netframework.sln /p:Configuration=Release /m /verbosity:normal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+
+    del Release\net35\*.pdb Release\net35\*.xml Release\net35\Test.Rename.*
+
+
+    dotnet restore de4dot.netcore.sln
+
+    dotnet publish -c Release -f netcoreapp2.1 -o publish-netcoreapp2.1 de4dot
+
+    del de4dot\publish-netcoreapp2.1\*.pdb
+
+    del de4dot\publish-netcoreapp2.1\*.xml
+artifacts:
+- path: Release/net35
+  name: de4dot-net35
+- path: de4dot/publish-netcoreapp2.1
+  name: de4dot-netcoreapp2.1
+notifications:
+- provider: Email
+  to:
+  - de4dot@gmail.com
+  on_build_success: false
+  on_build_failure: true
+  on_build_status_changed: false
