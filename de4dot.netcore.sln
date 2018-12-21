@@ -19,8 +19,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "de4dot.cui", "de4dot.cui\de
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "de4dot.mdecrypt", "de4dot.mdecrypt\de4dot.mdecrypt.csproj", "{5C93C5E2-196F-4877-BF65-96FEBFCEFCA1}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "dnlib", "dnlib\src\dnlib.csproj", "{FDFC1237-143F-4919-8318-4926901F4639}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -137,18 +135,6 @@ Global
 		{5C93C5E2-196F-4877-BF65-96FEBFCEFCA1}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{5C93C5E2-196F-4877-BF65-96FEBFCEFCA1}.Release|Win32.ActiveCfg = Release|Any CPU
 		{5C93C5E2-196F-4877-BF65-96FEBFCEFCA1}.Release|x86.ActiveCfg = Release|Any CPU
-		{FDFC1237-143F-4919-8318-4926901F4639}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FDFC1237-143F-4919-8318-4926901F4639}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FDFC1237-143F-4919-8318-4926901F4639}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
-		{FDFC1237-143F-4919-8318-4926901F4639}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
-		{FDFC1237-143F-4919-8318-4926901F4639}.Debug|Win32.ActiveCfg = Debug|Any CPU
-		{FDFC1237-143F-4919-8318-4926901F4639}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{FDFC1237-143F-4919-8318-4926901F4639}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FDFC1237-143F-4919-8318-4926901F4639}.Release|Any CPU.Build.0 = Release|Any CPU
-		{FDFC1237-143F-4919-8318-4926901F4639}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{FDFC1237-143F-4919-8318-4926901F4639}.Release|Mixed Platforms.Build.0 = Release|Any CPU
-		{FDFC1237-143F-4919-8318-4926901F4639}.Release|Win32.ActiveCfg = Release|Any CPU
-		{FDFC1237-143F-4919-8318-4926901F4639}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -14,7 +14,6 @@
     <ProjectReference Include="..\de4dot.blocks\de4dot.blocks.csproj" />
     <ProjectReference Include="..\de4dot.code\de4dot.code.csproj" />
     <ProjectReference Include="..\de4dot.mdecrypt\de4dot.mdecrypt.csproj" />
-    <ProjectReference Include="..\dnlib\src\dnlib.csproj" />
   </ItemGroup>
 
 </Project>

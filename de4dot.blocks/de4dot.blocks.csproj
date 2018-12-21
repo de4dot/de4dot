@@ -3,7 +3,7 @@
   <Import Project="..\De4DotCommon.props" />
 
   <ItemGroup>
-    <ProjectReference Include="..\dnlib\src\dnlib.csproj" />
+    <PackageReference Include="dnlib" Version="$(DnlibVersion)" />
   </ItemGroup>
 
 </Project>
