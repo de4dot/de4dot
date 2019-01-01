@@ -1,4 +1,4 @@
-﻿/*
+/*
 ***************************************************************************
 ** LZMAT ANSI-C decoder 1.01
 ** Copyright (C) 2007,2008 Vitaly Evseenko. All Rights Reserved.

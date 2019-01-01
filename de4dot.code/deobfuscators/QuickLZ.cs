@@ -1,4 +1,4 @@
-﻿// QuickLZ data compression library
+// QuickLZ data compression library
 // Copyright (C) 2006-2011 Lasse Mikkel Reinhold
 // lar@quicklz.com
 //
