@@ -66,6 +66,7 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 					!ContainsString(method, "run with") &&
 					!ContainsString(method, "started under") &&
 					!ContainsString(method, "{0} detected") &&
+					!ContainsString(method, "{0} was found - this software cannot be executed") &&
 					!ContainsString(method, "{0} found"))
 					continue;
 

@@ -313,6 +313,8 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 					yield return method;
 				else if (DotNetUtils.IsMethod(method, "System.Byte[]", "(System.Char,System.IO.Stream)"))
 					yield return method;
+				else if (DotNetUtils.IsMethod(method, "System.Byte[]", "(System.Int64,System.Object)"))
+					yield return method;
 			}
 		}
 
