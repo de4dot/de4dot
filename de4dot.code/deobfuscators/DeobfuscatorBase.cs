@@ -162,8 +162,8 @@ namespace de4dot.code.deobfuscators {
 
 			RestoreBaseType();
 			FixMDHeaderVersion();
-			UpdateMVID();
 
+			module.Mvid = Guid.NewGuid();
 			module.EnableTypeDefFindCache = cacheState;
 		}
 
@@ -208,18 +208,6 @@ namespace de4dot.code.deobfuscators {
 			// will have a problem reading the MD tables, so switch to the standard v2.0.
 			if (module.TablesHeaderVersion == 0x0101)
 				module.TablesHeaderVersion = 0x0200;
-		}
-
-		void UpdateMVID() {
-			string newid = (module.Mvid.HasValue ? module.Mvid.Value.ToString() : module.ToString()) + "-deobfuscated by de4dot";
-			var hash = new System.Security.Cryptography.SHA1Managed().ComputeHash(System.Text.Encoding.UTF8.GetBytes(newid));
-			var guid = new Guid(BitConverter.ToInt32(hash, 0),
-								BitConverter.ToInt16(hash, 4),
-								BitConverter.ToInt16(hash, 6),
-								hash[8], hash[9], hash[10], hash[11],
-								hash[12], hash[13], hash[14], hash[15]);
-			Logger.v("Updating MVID: {0}", guid.ToString("B"));
-			module.Mvid = guid;
 		}
 
 		void RemoveTypesWithInvalidBaseTypes() {
