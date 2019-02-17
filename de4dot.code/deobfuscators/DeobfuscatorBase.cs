@@ -163,6 +163,7 @@ namespace de4dot.code.deobfuscators {
 			RestoreBaseType();
 			FixMDHeaderVersion();
 
+			module.Mvid = Guid.NewGuid();
 			module.EnableTypeDefFindCache = cacheState;
 		}
 
