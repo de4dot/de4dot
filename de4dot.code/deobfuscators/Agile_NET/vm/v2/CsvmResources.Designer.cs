@@ -119,5 +119,15 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm.v2 {
                 return ((byte[])(obj));
             }
         }
-    }
+		/// <summary>
+		///   Looks up a localized resource of type System.Byte[].
+		/// </summary>
+		internal static byte[] CSVM7 {
+			get {
+				object obj = ResourceManager.GetObject("CSVM7", resourceCulture);
+				return ((byte[])(obj));
+			}
+		}
+
+	}
 }
