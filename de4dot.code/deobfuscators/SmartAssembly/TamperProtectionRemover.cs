@@ -162,7 +162,7 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			21	0043	brfalse.s	27 (0057) ldstr "Assembly has been tampered"
 			22	0045	ldloc.0
 			23	0046	callvirt	instance string [mscorlib]System.Reflection.Assembly::get_FullName()
-			24	004B	ldstr	"64bee40f6e1c14f0"
+			24	004B	ldstr	"aabbccddee123456"
 			25	0050	callvirt	instance bool [mscorlib]System.String::EndsWith(string)
 			26	0055	brtrue.s	30 (0062) ret 
 			27	0057	ldstr	"Assembly has been tampered"
