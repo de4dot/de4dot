@@ -210,29 +210,29 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 				index = index2;
 
 				index = FindCallMethod(block, index, false, (calledMethod) => calledMethod.ToString() == "System.String System.String::Replace(System.String,System.String)");
-				if (index < 0) { return false; }
+				if (index < 0) return false;
 				index++;
 				index2 = index;
 
 				index = FindCallMethod(block, index, false, (calledMethod) => calledMethod.ToString() == "System.String System.String::Replace(System.String,System.String)");
-				if (index < 0) { return false; }
+				if (index < 0) return false;
 				index++;
 				index2 = index;
 
 				index = FindCallMethod(block, index, false, (calledMethod) => calledMethod.ToString() == "System.String System.Uri::get_LocalPath()");
-				if (index < 0) { return false; }
+				if (index < 0) return false;
 				index2 = index + 1;
 				instr = instrs[--index];
-				if (!instr.IsLdloc()) { return false; }
+				if (!instr.IsLdloc()) return false;
 				instr = instrs[--index];
-				if (!instr.IsStloc()) { return false; }
+				if (!instr.IsStloc()) return false;
 				index = index2;
 
 				index = FindCallMethod(block, index, false, (calledMethod) => {
 					tamperBlocks.pinvokeMethod = DotNetUtils.GetMethod(module, calledMethod);
 					return DotNetUtils.IsPinvokeMethod(tamperBlocks.pinvokeMethod, "mscorwks", "StrongNameSignatureVerificationEx");
 				});
-				if (index < 0) { return false; }
+				if (index < 0) return false;
 			}
 			index++;
 
