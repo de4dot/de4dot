@@ -137,6 +137,40 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			 * brfalse bad_code / brtrue good_code
 			 */
 
+			/*
+			0	0000	ldc.i4.0
+			1	0001	stloc.1
+			2	0002	call	class [mscorlib]System.Reflection.Assembly [mscorlib]System.Reflection.Assembly::GetExecutingAssembly()
+			3	0007	stloc.0
+			4	0008	ldloc.0
+			5	0009	callvirt	instance string [mscorlib]System.Reflection.Assembly::get_CodeBase()
+			6	000E	ldstr	"%"
+			7	0013	ldstr	"%25"
+			8	0018	callvirt	instance string [mscorlib]System.String::Replace(string, string)
+			9	001D	ldstr	"#"
+			10	0022	ldstr	"%23"
+			11	0027	callvirt	instance string [mscorlib]System.String::Replace(string, string)
+			12	002C	newobj	instance void [System]System.Uri::.ctor(string)
+			13	0031	stloc.2
+			14	0032	ldloc.2
+			15	0033	callvirt	instance string [System]System.Uri::get_LocalPath()
+			16	0038	ldc.i4.1
+			17	0039	ldloca.s	V_1 (1)
+			18	003B	call	bool LiquidTechnologies.Licensing.ClientLicenseManager2::StrongNameSignatureVerificationEx(string, bool, bool&)
+			19	0040	brfalse.s	27 (0057) ldstr "Assembly has been tampered"
+			20	0042	ldloc.1
+			21	0043	brfalse.s	27 (0057) ldstr "Assembly has been tampered"
+			22	0045	ldloc.0
+			23	0046	callvirt	instance string [mscorlib]System.Reflection.Assembly::get_FullName()
+			24	004B	ldstr	"aabbccddee123456"
+			25	0050	callvirt	instance bool [mscorlib]System.String::EndsWith(string)
+			26	0055	brtrue.s	30 (0062) ret 
+			27	0057	ldstr	"Assembly has been tampered"
+			28	005C	newobj	instance void [mscorlib]System.Security.SecurityException::.ctor(string)
+			29	0061	throw
+			30	0062	ret
+			*/
+			
 			var instrs = block.Instructions;
 			int end = instrs.Count - 1;
 			Instr instr;
@@ -157,17 +191,49 @@ namespace de4dot.code.deobfuscators.SmartAssembly {
 			if (!instr.IsLdcI4())
 				return false;
 
+			int index2 = index;
 			index = FindCallMethod(block, index, false, (calledMethod) => calledMethod.ToString() == "System.String System.Reflection.Assembly::get_Location()");
-			if (index < 0)
-				return false;
+			if (index < 0) {
+				index = index2;
+				index = FindCallMethod(block, index, false, (calledMethod) => calledMethod.ToString() == "System.String System.Reflection.Assembly::get_CodeBase()");
+				if (index < 0)
+					return false;
+			}
 			index++;
+			index2 = index;
 
 			index = FindCallMethod(block, index, false, (calledMethod) => {
 				tamperBlocks.pinvokeMethod = DotNetUtils.GetMethod(module, calledMethod);
 				return DotNetUtils.IsPinvokeMethod(tamperBlocks.pinvokeMethod, "mscorwks", "StrongNameSignatureVerificationEx");
 			});
-			if (index < 0)
-				return false;
+			if (index < 0) {
+				index = index2;
+
+				index = FindCallMethod(block, index, false, (calledMethod) => calledMethod.ToString() == "System.String System.String::Replace(System.String,System.String)");
+				if (index < 0) { return false; }
+				index++;
+				index2 = index;
+
+				index = FindCallMethod(block, index, false, (calledMethod) => calledMethod.ToString() == "System.String System.String::Replace(System.String,System.String)");
+				if (index < 0) { return false; }
+				index++;
+				index2 = index;
+
+				index = FindCallMethod(block, index, false, (calledMethod) => calledMethod.ToString() == "System.String System.Uri::get_LocalPath()");
+				if (index < 0) { return false; }
+				index2 = index + 1;
+				instr = instrs[--index];
+				if (!instr.IsLdloc()) { return false; }
+				instr = instrs[--index];
+				if (!instr.IsStloc()) { return false; }
+				index = index2;
+
+				index = FindCallMethod(block, index, false, (calledMethod) => {
+					tamperBlocks.pinvokeMethod = DotNetUtils.GetMethod(module, calledMethod);
+					return DotNetUtils.IsPinvokeMethod(tamperBlocks.pinvokeMethod, "mscorwks", "StrongNameSignatureVerificationEx");
+				});
+				if (index < 0) { return false; }
+			}
 			index++;
 
 			if (!instrs[index].IsBrfalse()) {
