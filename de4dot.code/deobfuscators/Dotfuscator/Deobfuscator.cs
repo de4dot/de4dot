@@ -16,6 +16,7 @@
     You should have received a copy of the GNU General Public License
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 using System;
 using System.Collections.Generic;
 using dnlib.DotNet;
@@ -121,8 +122,7 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 			cflowDescrypter.CflowClean();
 		}
 		
-		private void DoStringBuilderClean()
-		{
+		void DoStringBuilderClean() {
 			var decrypter = new StringBuilderDecrypter(module);
 			decrypter.StringBuilderClean();
 		}
