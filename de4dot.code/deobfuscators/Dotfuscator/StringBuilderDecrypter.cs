@@ -1,3 +1,22 @@
+/*
+    Copyright (C) 2011-2015 de4dot@gmail.com
+
+    This file is part of de4dot.
+
+    de4dot is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    de4dot is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -5,8 +24,8 @@ using System.Text;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
-namespace de4dot.code.deobfuscators.Dotfuscator 
-{
+namespace de4dot.code.deobfuscators.Dotfuscator {
+
 	/// <summary>
 	///     remove stringbuilder crypter
 	/// </summary>
@@ -30,24 +49,19 @@ namespace de4dot.code.deobfuscators.Dotfuscator
 
 		public StringBuilderDecrypter(ModuleDefMD module) => this.module = module;
 
-
-		public void StringBuilderClean()
-		{
-			foreach (var type in module.GetTypes())
-			{
+		public void StringBuilderClean() {
+			foreach (var type in module.GetTypes()) {
 				if (!type.HasMethods)
 					continue;
 
-				foreach (var method in type.Methods) 
-				{
+				foreach (var method in type.Methods) {
 					CleanStringBuilder(method);
 
 				}
 			}
 		}
 
-		private void CleanStringBuilder(MethodDef method)
-		{
+		void CleanStringBuilder(MethodDef method) {
 			if (!method.HasBody)
 				return;
 			if (!method.Body.HasInstructions)
@@ -60,27 +74,20 @@ namespace de4dot.code.deobfuscators.Dotfuscator
 			var instructions = method.Body.Instructions;
 
 			GetStringBuilderFixIndexs(instructions, out var nopIdxs, out var ldstrIdxs);
-			if (nopIdxs.Count > 0)
-			{
-				foreach (var idx in nopIdxs)
-				{
-					method.Body.Instructions[idx].OpCode  = OpCodes.Nop;
-					method.Body.Instructions[idx].Operand = null;
-				}
+
+			foreach (var idx in nopIdxs) {
+				method.Body.Instructions[idx].OpCode = OpCodes.Nop;
+				method.Body.Instructions[idx].Operand = null;
 			}
 
-			if (ldstrIdxs.Count > 0)
-			{
-				foreach (var idx in ldstrIdxs)
-				{
-					method.Body.Instructions[idx.Key].OpCode  = OpCodes.Ldstr;
-					method.Body.Instructions[idx.Key].Operand = idx.Value;
-				}
+			foreach (var idx in ldstrIdxs) {
+				method.Body.Instructions[idx.Key].OpCode = OpCodes.Ldstr;
+				method.Body.Instructions[idx.Key].Operand = idx.Value;
 			}
 		}
 
 
-		private static void GetStringBuilderFixIndexs(IList<Instruction> instructions, out List<int> nopIdxs, out Dictionary<int, string> ldstrIdxs) {
+		static void GetStringBuilderFixIndexs(IList<Instruction> instructions, out List<int> nopIdxs, out Dictionary<int, string> ldstrIdxs) {
 			var insNoNops = instructions.Where(ins => ins.OpCode != OpCodes.Nop).ToList();
 
 			nopIdxs = new List<int>();
@@ -107,7 +114,7 @@ namespace de4dot.code.deobfuscators.Dotfuscator
 							index = TryGetStringBuilderAppendData(insNoNops, i + 7, data);
 						}
 					}
-					if (arrLength == 2) {
+					else if (arrLength == 2) {
 						if (i + 10 < insNoNops.Count &&
 							insNoNops[i + 10].OpCode == OpCodes.Newobj &&
 							insNoNops[i + 10].Operand is MemberRef memberRef &&
@@ -123,7 +130,7 @@ namespace de4dot.code.deobfuscators.Dotfuscator
 						}
 					}
 					else {
-						if (i + 2 < insNoNops.Count &&
+						if (i + 5 < insNoNops.Count &&
 							insNoNops[i + 2].OpCode == OpCodes.Ldtoken &&
 							insNoNops[i + 2].Operand is FieldDef fieldDef &&
 							fieldDef.InitialValue != null &&
@@ -142,16 +149,17 @@ namespace de4dot.code.deobfuscators.Dotfuscator
 					}
 
 					if (index != 0 && data != null) {
-						var sb = new StringBuilder();
-						foreach (var d in data) {
-							sb.Append((char)d);
+						var array = new char[data.Length];
+
+						for (int j = 0; j < data.Length; j++) {
+							array[j] = (char)data[j];
 						}
 
 						for (var j = i - 1; j < index; j++) {
 							nopIdxs.Add(instructions.IndexOf(insNoNops[j]));
 						}
 
-						ldstrIdxs.Add(instructions.IndexOf(insNoNops[index]), sb.ToString());
+						ldstrIdxs.Add(instructions.IndexOf(insNoNops[index]), new string(array));
 
 						i = index;
 					}
@@ -159,38 +167,29 @@ namespace de4dot.code.deobfuscators.Dotfuscator
 			}
 		}
 
-		private static int TryGetStringBuilderAppendData(IList<Instruction> instructions, int index, int[] data)
-		{
-			var lenght = data.Length;
+		static int TryGetStringBuilderAppendData(IList<Instruction> instructions, int index, int[] data) {
+			var length = data.Length;
 
-			if (instructions.Count                                                > index + lenght * 9 + 2 &&
-			    instructions[index + 9 * lenght + 2].OpCode                       == OpCodes.Callvirt      &&
-			    (instructions[index + 9 * lenght + 2].Operand as MemberRef)?.Name == "ToString")
-			{
-				if (instructions[index + 9 * lenght + 3].IsStloc() ||
-				    instructions[index + 9 * lenght + 3].OpCode == OpCodes.Pop)
-				{
-					for (var j = 0; j < lenght; j++)
-					{
+			if (index + length * 9 + 3 < instructions.Count &&
+				instructions[index + 9 * length + 2].OpCode == OpCodes.Callvirt &&
+				(instructions[index + 9 * length + 2].Operand as MemberRef)?.Name == "ToString") {
+				if (instructions[index + 9 * length + 3].IsStloc() ||
+					instructions[index + 9 * length + 3].OpCode == OpCodes.Pop) {
+					for (var j = 0; j < length; j++) {
 						var insNoNop = instructions[index + j * 9 + 5];
-						if (insNoNop.IsLdcI4())
-						{
+						if (insNoNop.IsLdcI4()) {
 							data[j] += insNoNop.GetLdcI4Value();
 						}
-						else
-						{
+						else {
 							return 0;
 						}
 					}
 
-					return index + 9 * lenght + 2;
+					return index + 9 * length + 2;
 				}
 			}
 
 			return 0;
 		}
-
 	}
-
-
 }
