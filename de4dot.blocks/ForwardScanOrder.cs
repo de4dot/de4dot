@@ -19,6 +19,7 @@
 
 using System;
 using System.Collections.Generic;
+using dnlib.DotNet.Emit;
 
 namespace de4dot.blocks {
 	// This class makes sure that each block that is entered with a non-empty stack has at
@@ -67,7 +68,12 @@ namespace de4dot.blocks {
 		}
 
 		void CreateBlockInfos() {
-			int firstBlockStackStart = scopeBlock is TryHandlerBlock ? 1 : 0;
+			int firstBlockStackStart = 0;
+			if ((scopeBlock is HandlerBlock || scopeBlock is FilterHandlerBlock) &&
+				scopeBlock.Parent is TryHandlerBlock tryHandlerBlock &&
+				(tryHandlerBlock.HandlerType == ExceptionHandlerType.Catch || tryHandlerBlock.HandlerType == ExceptionHandlerType.Filter)) {
+				firstBlockStackStart = 1;
+			}
 			foreach (var bb in GetStartBlocks()) {
 				int stackStart = ReferenceEquals(bb, sorted[0]) ? firstBlockStackStart : 0;
 				ScanBaseBlock(bb, stackStart);
