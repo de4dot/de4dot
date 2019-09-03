@@ -17,6 +17,7 @@
     along with de4dot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Collections.Generic;
 using dnlib.DotNet;
 using de4dot.blocks;
@@ -96,6 +97,7 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 		public override void DeobfuscateBegin() {
 			base.DeobfuscateBegin();
 			DoCflowClean();
+			DoStringBuilderClean();
 			foreach (var info in stringDecrypter.StringDecrypterInfos)
 				staticStringInliner.Add(info.method, (method, gim, args) => stringDecrypter.Decrypt(method, (string)args[0], (int)args[1]));
 			DeobfuscatedFile.StringDecryptersAdded();
@@ -118,6 +120,11 @@ namespace de4dot.code.deobfuscators.Dotfuscator {
 		void DoCflowClean() {
 			var cflowDescrypter = new CflowDecrypter(module);
 			cflowDescrypter.CflowClean();
+		}
+		
+		void DoStringBuilderClean() {
+			var decrypter = new StringBuilderDecrypter(module);
+			decrypter.StringBuilderClean();
 		}
 	}
 }
