@@ -12,4 +12,17 @@
     <ProjectReference Include="..\de4dot.cui\de4dot.cui.csproj" />
   </ItemGroup>
 
+   <ItemGroup>
+    <LicenseFiles Include="$(MSBuildThisFileDirectory)\..\LICENSE.*" />
+    <LicenseFiles Include="$(MSBuildThisFileDirectory)\..\COPYING" />
+  </ItemGroup>
+
+  <Target Name="CopyLicenseFiles_AfterBuild" AfterTargets="AfterBuild">
+    <Copy SourceFiles="@(LicenseFiles)" DestinationFolder="$(TargetDir)LICENSES" />
+  </Target>
+
+  <Target Name="CopyLicenseFiles_Publish" AfterTargets="Publish">
+    <Copy SourceFiles="@(LicenseFiles)" DestinationFolder="$(PublishDir)LICENSES" />
+  </Target>
+
 </Project>
