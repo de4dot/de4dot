@@ -10,9 +10,10 @@ jobs:
       - uses: actions/checkout@v1
 
       - name: Build
+        shell: pwsh
         run: |
-          set PATH=C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin\amd64;%PATH%
-          build.cmd
+          $env:PATH = 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin\amd64;' + $env:PATH
+          .\build.ps1
 
       - uses: actions/upload-artifact@v1
         with:
