@@ -12,13 +12,19 @@ jobs:
       - name: Build
         shell: pwsh
         run: |
-          $env:PATH = 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin\amd64;' + $env:PATH
+          $msbuildPath = Join-Path (Get-ChildItem "${env:ProgramFiles(x86)}\Microsoft Visual Studio" | Where-Object { $_.Name -match '^\d{4}$' -and $_.PSIsContainer } | Sort-Object Name -Descending)[0] 'Enterprise\MSBuild\Current\Bin\amd64'
+          $env:PATH = $msbuildPath + ';' + $env:PATH
           .\build.ps1
 
       - uses: actions/upload-artifact@v1
         with:
           name: de4dot-net35
           path: Release/net35
+
+      - uses: actions/upload-artifact@v1
+        with:
+          name: de4dot-net45
+          path: Release/net45
 
       - uses: actions/upload-artifact@v1
         with:
