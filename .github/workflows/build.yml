@@ -12,7 +12,7 @@ jobs:
       - name: Build
         shell: pwsh
         run: |
-          $msbuildPath = Join-Path (Get-ChildItem "${env:ProgramFiles(x86)}\Microsoft Visual Studio" | Where-Object { $_.Name -match '^\d{4}$' -and $_.PSIsContainer } | Sort-Object Name -Descending)[0] 'Enterprise\MSBuild\Current\Bin\amd64'
+          $msbuildPath = Split-Path (& "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.Component.MSBuild -find MSBuild\Current\Bin\amd64\MSBuild.exe | Select-Object -First 1) -Parent
           $env:PATH = $msbuildPath + ';' + $env:PATH
           .\build.ps1
 
