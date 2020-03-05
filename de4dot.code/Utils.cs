@@ -96,6 +96,8 @@ namespace de4dot.code {
 			sb.Append(c);
 		}
 
+		public static string RemoveBackslash(this string s) => s.Replace("\\", string.Empty);
+
 		public static string RemoveNewlines(object o) => RemoveNewlines(o.ToString());
 		public static string RemoveNewlines(string s) => s.Replace('\n', ' ').Replace('\r', ' ');
 

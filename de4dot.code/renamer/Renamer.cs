@@ -533,8 +533,10 @@ namespace de4dot.code.renamer {
 			var renamedTypes = new List<TypeInfo>();
 			foreach (var type in module.GetAllTypes()) {
 				var info = memberInfos.Type(type);
-				if (info.oldFullName != info.type.TypeDef.FullName)
+				if (info.oldFullName != info.type.TypeDef.FullName) {
+					info.oldFullName = info.oldFullName.RemoveBackslash();
 					renamedTypes.Add(info);
+				}
 			}
 			if (renamedTypes.Count == 0)
 				return;
