@@ -19,7 +19,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Text.RegularExpressions;
 using dnlib.DotNet;
 using de4dot.code.renamer.asmmodules;
@@ -534,50 +533,13 @@ namespace de4dot.code.renamer {
 			var renamedTypes = new List<TypeInfo>();
 			foreach (var type in module.GetAllTypes()) {
 				var info = memberInfos.Type(type);
-				if (info.oldFullName != info.type.TypeDef.FullName) {
-					info.oldFullName = EscapeTypeName(info.oldFullName);
+				if (info.oldFullName != info.type.TypeDef.FullName)
 					renamedTypes.Add(info);
-				}
 			}
 			if (renamedTypes.Count == 0)
 				return;
 
 			new ResourceRenamer(module).Rename(renamedTypes);
-		}
-
-		static bool IsReservedTypeNameChar(char c) {
-			switch (c) {
-			case ',':
-			case '[':
-			case ']':
-			case '&':
-			case '*':
-			case '+':
-			case '\\':
-				return true;
-			default:
-				return false;
-			}
-		}
-
-		static bool HasReservedTypeNameChar(string s) {
-			foreach (var c in s) {
-				if (IsReservedTypeNameChar(c))
-					return true;
-			}
-			return false;
-		}
-
-		static string EscapeTypeName(string name) {
-			if (!HasReservedTypeNameChar(name))
-				return name;
-			var sb = new StringBuilder();
-			foreach (var c in name) {
-				if (IsReservedTypeNameChar(c))
-					sb.Append('\\');
-				sb.Append(c);
-			}
-			return sb.ToString();
 		}
 
 		// Make sure the renamed types are using valid CLS names. That means renaming all
