@@ -150,7 +150,8 @@ namespace de4dot.code.renamer {
 					continue;
 				if (newNames.ContainsKey(resource))
 					continue;
-				var newName = info.type.TypeDef.FullName + (resource.Name.EndsWith(".g.resources") ? ".g.resources" : ".resources");
+				var newTypeName = info.type.TypeDef.FullName;
+				var newName = newTypeName + resource.Name.String.RemoveBackslash().Substring(oldFullName.Length);
 				newNames[resource] = new RenameInfo(resource, info, newName);
 
 				Logger.v("Renamed resource in resources: {0} => {1}", Utils.RemoveNewlines(resource.Name), newName);
