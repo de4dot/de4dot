@@ -58,7 +58,7 @@ namespace de4dot.code.renamer {
 		void RenameResourceNamesInCode(List<TypeInfo> renamedTypes) {
 			var oldNameToTypeInfo = new Dictionary<string, TypeInfo>(StringComparer.Ordinal);
 			foreach (var info in renamedTypes)
-				oldNameToTypeInfo[info.oldFullName] = info;
+				oldNameToTypeInfo[info.oldReflectionFullName] = info;
 
 			foreach (var method in module.GetAllMethods()) {
 				if (!method.HasBody)
@@ -77,7 +77,7 @@ namespace de4dot.code.renamer {
 
 					if (!oldNameToTypeInfo.TryGetValue(codeString, out var typeInfo))
 						continue;
-					var newName = typeInfo.type.TypeDef.FullName;
+					var newName = typeInfo.type.TypeDef.ReflectionFullName;
 
 					bool renameCodeString = module.ObfuscatedFile.RenameResourcesInCode ||
 											IsCallingResourceManagerCtor(instrs, i, typeInfo);
@@ -143,13 +143,13 @@ namespace de4dot.code.renamer {
 		void RenameResources(List<TypeInfo> renamedTypes) {
 			var newNames = new Dictionary<Resource, RenameInfo>();
 			foreach (var info in renamedTypes) {
-				var oldFullName = info.oldFullName;
-				if (!nameToResource.TryGetValue(oldFullName, out var resource))
+				var oldReflectionFullName = info.oldReflectionFullName;
+				if (!nameToResource.TryGetValue(oldReflectionFullName, out var resource))
 					continue;
 				if (newNames.ContainsKey(resource))
 					continue;
-				var newTypeName = info.type.TypeDef.FullName;
-				var newName = newTypeName + resource.Name.String.Substring(oldFullName.Length);
+				var newTypeName = info.type.TypeDef.ReflectionFullName;
+				var newName = newTypeName + resource.Name.String.Substring(oldReflectionFullName.Length);
 				newNames[resource] = new RenameInfo(resource, info, newName);
 
 				Logger.v("Renamed resource in resources: {0} => {1}", Utils.RemoveNewlines(resource.Name), newName);

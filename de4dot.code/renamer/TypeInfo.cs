@@ -29,6 +29,7 @@ namespace de4dot.code.renamer {
 	public class TypeInfo : MemberInfo {
 		public string oldNamespace;
 		public string newNamespace;
+		public string oldReflectionFullName;
 		public VariableNameState variableNameState = VariableNameState.Create();
 		public MTypeDef type;
 		MemberInfos memberInfos;
@@ -40,6 +41,7 @@ namespace de4dot.code.renamer {
 			type = typeDef;
 			this.memberInfos = memberInfos;
 			oldNamespace = typeDef.TypeDef.Namespace.String;
+			oldReflectionFullName = typeDef.TypeDef.ReflectionFullName;
 		}
 
 		bool IsWinFormsClass() => memberInfos.IsWinFormsClass(type);
