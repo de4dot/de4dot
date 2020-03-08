@@ -33,5 +33,5 @@ jobs:
 
       - uses: actions/upload-artifact@v1
         with:
-          name: de4dot-netcoreapp3.0
-          path: publish-netcoreapp3.0
+          name: de4dot-netcoreapp3.1
+          path: publish-netcoreapp3.1
