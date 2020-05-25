@@ -276,7 +276,11 @@ namespace de4dot.code.deobfuscators {
 				case FlowControl.Call:
 					return instr;
 				default:
-					return null;
+					instr = instructions[instrIndex + 1];
+					var flowInstr = instructions.FirstOrDefault(i => i.Operand is Instruction instruction && instruction == instr);
+					if (flowInstr == null) return null;
+					instrIndex = instructions.IndexOf(flowInstr);
+					return flowInstr;
 				}
 			}
 		}
