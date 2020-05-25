@@ -18,6 +18,7 @@
 */
 
 using System.Collections.Generic;
+using System.Linq;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
@@ -46,19 +47,6 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		public Instruction GetEnd(int i) => Get(args.Count - 1 - i);
-
-		public void FixDups() {
-			Instruction prev = null, instr;
-			for (int i = 0; i < NumValidArgs; i++, prev = instr) {
-				instr = args[i];
-				if (instr == null || prev == null)
-					continue;
-				if (instr.OpCode.Code != Code.Dup)
-					continue;
-				args[i] = prev;
-				instr = prev;
-			}
-		}
 	}
 
 	public static class MethodStack {
@@ -92,6 +80,7 @@ namespace de4dot.code.deobfuscators {
 				if (instr.OpCode.Code == Code.Dup) {
 					pushes = 1;
 					pops = 0;
+					instr = GetPushedArgInstructions(instructions, index, 1).GetEnd(0) ?? instr;
 				}
 				if (pushes > 1)
 					break;
@@ -108,16 +97,6 @@ namespace de4dot.code.deobfuscators {
 					skipPushes += pops;
 				}
 			}
-			instr = pushedArgs.Get(0);
-			if (instr != null && instr.OpCode.Code == Code.Dup) {
-				instr = GetPreviousInstruction(instructions, ref index);
-				if (instr != null) {
-					instr.CalculateStackUsage(false, out int pushes, out int pops);
-					if (pushes == 1 && pops == 0)
-						pushedArgs.Set(0, instr);
-				}
-			}
-			pushedArgs.FixDups();
 
 			return pushedArgs;
 		}
