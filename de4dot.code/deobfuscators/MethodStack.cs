@@ -19,6 +19,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using de4dot.blocks;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
@@ -55,7 +56,7 @@ namespace de4dot.code.deobfuscators {
 			try {
 				instructions[index].CalculateStackUsage(false, out int pushes, out int pops);
 				if (pops != -1)
-					return GetPushedArgInstructions(instructions, index, pops);
+					return GetPushedArgInstructions(instructions, index, pops, new HashSet<Instruction>());
 			}
 			catch (System.NullReferenceException) {
 				// Here if eg. invalid metadata token in a call instruction (operand is null)
@@ -64,13 +65,13 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		// May not return all args. The args are returned in reverse order.
-		static PushedArgs GetPushedArgInstructions(IList<Instruction> instructions, int index, int numArgs) {
+		static PushedArgs GetPushedArgInstructions(IList<Instruction> instructions, int index, int numArgs, HashSet<Instruction> visited) {
 			var pushedArgs = new PushedArgs(numArgs);
 
 			Instruction instr;
 			int skipPushes = 0;
 			while (index >= 0 && pushedArgs.CanAddMore) {
-				instr = GetPreviousInstruction(instructions, ref index);
+				instr = GetPreviousInstruction(instructions, ref index, visited);
 				if (instr == null)
 					break;
 
@@ -80,7 +81,7 @@ namespace de4dot.code.deobfuscators {
 				if (instr.OpCode.Code == Code.Dup) {
 					pushes = 1;
 					pops = 0;
-					instr = GetPushedArgInstructions(instructions, index, 1).GetEnd(0) ?? instr;
+					instr = GetPushedArgInstructions(instructions, index, 1, new HashSet<Instruction>(visited)).GetEnd(0) ?? instr;
 				}
 				if (pushes > 1)
 					break;
@@ -261,7 +262,7 @@ namespace de4dot.code.deobfuscators {
 			return new ByRefSig(elementType);
 		}
 
-		static Instruction GetPreviousInstruction(IList<Instruction> instructions, ref int instrIndex) {
+		static Instruction GetPreviousInstruction(IList<Instruction> instructions, ref int instrIndex, HashSet<Instruction> visited) {
 			while (true) {
 				instrIndex--;
 				if (instrIndex < 0)
@@ -271,17 +272,14 @@ namespace de4dot.code.deobfuscators {
 					continue;
 				if (instr.OpCode.OpCodeType == OpCodeType.Prefix)
 					continue;
-				switch (instr.OpCode.FlowControl) {
-				case FlowControl.Next:
-				case FlowControl.Call:
+				if (Instr.IsFallThrough(instr.OpCode))
 					return instr;
-				default:
-					instr = instructions[instrIndex + 1];
-					var flowInstr = instructions.FirstOrDefault(i => i.Operand is Instruction instruction && instruction == instr);
-					if (flowInstr == null) return null;
-					instrIndex = instructions.IndexOf(flowInstr);
-					return flowInstr;
-				}
+				instr = instructions[instrIndex + 1];
+				var flow = instructions.FirstOrDefault(i => i.Operand == instr && visited.Add(i));
+				if (flow == null)
+					return null;
+				instrIndex = instructions.IndexOf(flow);
+				return flow;
 			}
 		}
 	}
