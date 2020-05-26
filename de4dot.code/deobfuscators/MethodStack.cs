@@ -18,7 +18,6 @@
 */
 
 using System.Collections.Generic;
-using System.Linq;
 using de4dot.blocks;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
@@ -275,11 +274,14 @@ namespace de4dot.code.deobfuscators {
 				if (Instr.IsFallThrough(instr.OpCode))
 					return instr;
 				instr = instructions[instrIndex + 1];
-				var flow = instructions.FirstOrDefault(i => i.Operand == instr && visited.Add(i));
-				if (flow == null)
-					return null;
-				instrIndex = instructions.IndexOf(flow);
-				return flow;
+				for (int brIndex = 0; brIndex < instructions.Count; brIndex++) {
+					var brInstr = instructions[brIndex];
+					if (brInstr.Operand == instr && visited.Add(brInstr)) {
+						instrIndex = brIndex;
+						return brInstr;
+					}
+				}
+				return null;
 			}
 		}
 	}
