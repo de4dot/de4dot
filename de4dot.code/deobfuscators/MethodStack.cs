@@ -68,7 +68,7 @@ namespace de4dot.code.deobfuscators {
 			var pushedArgs = new PushedArgs(numArgs);
 
 			Instruction instr;
-			int skipPushes = 0;
+			int skipPushes = 0, addPushes = 1;
 			while (index >= 0 && pushedArgs.CanAddMore) {
 				instr = GetPreviousInstruction(instructions, ref index, visited);
 				if (instr == null)
@@ -77,10 +77,10 @@ namespace de4dot.code.deobfuscators {
 				instr.CalculateStackUsage(false, out int pushes, out int pops);
 				if (pops == -1)
 					break;
-				if (instr.OpCode.Code == Code.Dup) {
+				var isDup = instr.OpCode.Code == Code.Dup;
+				if (isDup) {
 					pushes = 1;
 					pops = 0;
-					instr = GetPushedArgInstructions(instructions, index, 1, new HashSet<Instruction>(visited)).GetEnd(0) ?? instr;
 				}
 				if (pushes > 1)
 					break;
@@ -92,8 +92,18 @@ namespace de4dot.code.deobfuscators {
 					skipPushes += pops;
 				}
 				else {
-					if (pushes == 1)
-						pushedArgs.Add(instr);
+					if (pushes == 1) {
+						if (isDup)
+							addPushes++;
+						else {
+							for (; addPushes > 0; addPushes--) {
+								pushedArgs.Add(instr);
+								if (!pushedArgs.CanAddMore)
+									return pushedArgs;
+							}
+							addPushes = 1;
+						}
+					}
 					skipPushes += pops;
 				}
 			}
