@@ -39,6 +39,7 @@ namespace de4dot.code.deobfuscators {
 
 		public void Add(Instruction instr) => args[nextIndex--] = instr;
 		public void Set(int i, Instruction instr) => args[i] = instr;
+		internal void Pop() => args[++nextIndex] = null;
 
 		public Instruction Get(int i) {
 			if (0 <= i && i < args.Count)
@@ -55,7 +56,7 @@ namespace de4dot.code.deobfuscators {
 			try {
 				instructions[index].CalculateStackUsage(false, out int pushes, out int pops);
 				if (pops != -1)
-					return GetPushedArgInstructions(instructions, index, pops, new HashSet<Instruction>());
+					return GetPushedArgInstructions(instructions, index, pops);
 			}
 			catch (System.NullReferenceException) {
 				// Here if eg. invalid metadata token in a call instruction (operand is null)
@@ -64,52 +65,144 @@ namespace de4dot.code.deobfuscators {
 		}
 
 		// May not return all args. The args are returned in reverse order.
-		static PushedArgs GetPushedArgInstructions(IList<Instruction> instructions, int index, int numArgs, HashSet<Instruction> visited) {
+		static PushedArgs GetPushedArgInstructions(IList<Instruction> instructions, int index, int numArgs) {
 			var pushedArgs = new PushedArgs(numArgs);
 			if (!pushedArgs.CanAddMore) return pushedArgs;
 
-			Instruction instr;
-			int skipPushes = 0, addPushes = 1;
-			while (index >= 0) {
-				instr = GetPreviousInstruction(instructions, ref index, visited);
-				if (instr == null)
-					break;
-
-				instr.CalculateStackUsage(false, out int pushes, out int pops);
-				if (pops == -1)
-					break;
-				var isDup = instr.OpCode.Code == Code.Dup;
-				if (isDup) {
-					pushes = 1;
-					pops = 0;
-				}
-				if (pushes > 1)
-					break;
-
-				if (skipPushes > 0) {
-					skipPushes -= pushes;
-					if (skipPushes < 0)
-						break;
-					skipPushes += pops;
-				}
-				else {
-					if (pushes == 1) {
-						if (isDup)
-							addPushes++;
-						else {
-							for (; addPushes > 0; addPushes--) {
-								pushedArgs.Add(instr);
-								if (!pushedArgs.CanAddMore)
-									return pushedArgs;
-							}
-							addPushes = 1;
-						}
+			Dictionary<int, Branch> branches = null;
+			var states = new Stack<State>();
+			var state = new State(index, null, 0, 0, 1, new HashSet<int>());
+			var isBacktrack = false;
+			states.Push(state.Clone());
+			while (true) {
+				while (state.index >= 0) {
+					if (branches != null && branches.TryGetValue(state.index, out var branch) && state.visited.Add(state.index)) {
+						branch.current = 0;
+						var brState = state.Clone();
+						brState.branch = branch;
+						states.Push(brState);
 					}
-					skipPushes += pops;
+					if (!isBacktrack)
+						state.index--;
+					isBacktrack = false;
+					var update = UpdateState(instructions, state, pushedArgs);
+					if (update == Update.Finish)
+						return pushedArgs;
+					if (update == Update.Fail)
+						break;
+				}
+
+				if (states.Count == 0)
+					return pushedArgs;
+
+				var prevValidArgs = state.validArgs;
+				state = states.Pop();
+				if (state.validArgs < prevValidArgs)
+					for (int i = state.validArgs + 1; i <= prevValidArgs; i++)
+						pushedArgs.Pop();
+
+				if (branches == null)
+					branches = GetBranches(instructions);
+				else {
+					isBacktrack = true;
+					state.index = state.branch.Variants[state.branch.current++];
+					if (state.branch.current < state.branch.Variants.Count)
+						states.Push(state.Clone());
+					else
+						state.branch = null;
 				}
 			}
 
-			return pushedArgs;
+		}
+
+		class Branch {
+			public int current;
+			public List<int> Variants { get; }
+			public Branch() => Variants = new List<int>();
+		}
+
+		class State {
+			public int index;
+			public Branch branch;
+			public int validArgs;
+			public int skipPushes;
+			public int addPushes;
+			public HashSet<int> visited;
+
+			public State(int index, Branch branch, int validArgs, int skipPushes, int addPushes, HashSet<int> visited) {
+				this.index = index;
+				this.branch = branch;
+				this.validArgs = validArgs;
+				this.skipPushes = skipPushes;
+				this.addPushes = addPushes;
+				this.visited = visited;
+			}
+
+			public State Clone() => new State(index, branch, validArgs, skipPushes, addPushes, new HashSet<int>(visited));
+		}
+
+		enum Update { Ok, Fail, Finish };
+
+		private static Update UpdateState(IList<Instruction> instructions, State state, PushedArgs pushedArgs) {
+			var instr = instructions[state.index];
+			if (!Instr.IsFallThrough(instr.OpCode))
+				return Update.Fail;
+			instr.CalculateStackUsage(false, out int pushes, out int pops);
+			if (pops == -1)
+				return Update.Fail;
+			var isDup = instr.OpCode.Code == Code.Dup;
+			if (isDup) {
+				pushes = 1;
+				pops = 0;
+			}
+			if (pushes > 1)
+				return Update.Fail;
+
+			if (state.skipPushes > 0) {
+				state.skipPushes -= pushes;
+				if (state.skipPushes < 0)
+					return Update.Fail;
+				state.skipPushes += pops;
+			}
+			else {
+				if (pushes == 1) {
+					if (isDup)
+						state.addPushes++;
+					else {
+						for (; state.addPushes > 0; state.addPushes--) {
+							pushedArgs.Add(instr);
+							state.validArgs++;
+							if (!pushedArgs.CanAddMore)
+								return Update.Finish;
+						}
+						state.addPushes = 1;
+					}
+				}
+				state.skipPushes += pops;
+			}
+			return Update.Ok;
+		}
+
+		private static IList<Instruction> CacheInstructions = null;
+		private static Dictionary<int, Branch> CacheBranches = null;
+
+		// cache last branches based on instructions object
+		private static Dictionary<int, Branch> GetBranches(IList<Instruction> instructions) {
+			if (CacheInstructions == instructions) return CacheBranches;
+			CacheInstructions = instructions;
+			CacheBranches = new Dictionary<int, Branch>();
+			for (int b = 0; b < instructions.Count; b++) {
+				var br = instructions[b];
+				if (br.Operand is Instruction target) {
+					var t = instructions.IndexOf(target);
+					if (!CacheBranches.TryGetValue(t, out var branch)) {
+						branch = new Branch();
+						CacheBranches.Add(t, branch);
+					}
+					branch.Variants.Add(b);
+				}
+			}
+			return CacheBranches;
 		}
 
 		public static TypeSig GetLoadedType(MethodDef method, IList<Instruction> instructions, int instrIndex) =>
@@ -272,28 +365,5 @@ namespace de4dot.code.deobfuscators {
 			return new ByRefSig(elementType);
 		}
 
-		static Instruction GetPreviousInstruction(IList<Instruction> instructions, ref int instrIndex, HashSet<Instruction> visited) {
-			while (true) {
-				instrIndex--;
-				if (instrIndex < 0)
-					return null;
-				var instr = instructions[instrIndex];
-				if (instr.OpCode.Code == Code.Nop)
-					continue;
-				if (instr.OpCode.OpCodeType == OpCodeType.Prefix)
-					continue;
-				if (Instr.IsFallThrough(instr.OpCode))
-					return instr;
-				instr = instructions[instrIndex + 1];
-				for (int brIndex = 0; brIndex < instructions.Count; brIndex++) {
-					var brInstr = instructions[brIndex];
-					if (brInstr.Operand == instr && visited.Add(brInstr)) {
-						instrIndex = brIndex;
-						return brInstr;
-					}
-				}
-				return null;
-			}
-		}
 	}
 }
