@@ -66,10 +66,11 @@ namespace de4dot.code.deobfuscators {
 		// May not return all args. The args are returned in reverse order.
 		static PushedArgs GetPushedArgInstructions(IList<Instruction> instructions, int index, int numArgs, HashSet<Instruction> visited) {
 			var pushedArgs = new PushedArgs(numArgs);
+			if (!pushedArgs.CanAddMore) return pushedArgs;
 
 			Instruction instr;
 			int skipPushes = 0, addPushes = 1;
-			while (index >= 0 && pushedArgs.CanAddMore) {
+			while (index >= 0) {
 				instr = GetPreviousInstruction(instructions, ref index, visited);
 				if (instr == null)
 					break;
