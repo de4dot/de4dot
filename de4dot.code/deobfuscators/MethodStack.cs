@@ -144,6 +144,8 @@ namespace de4dot.code.deobfuscators {
 		enum Update { Ok, Fail, Finish };
 
 		private static Update UpdateState(IList<Instruction> instructions, State state, PushedArgs pushedArgs) {
+			if (state.index < 0 || state.index >= instructions.Count)
+				return Update.Fail;
 			var instr = instructions[state.index];
 			if (!Instr.IsFallThrough(instr.OpCode))
 				return Update.Fail;
