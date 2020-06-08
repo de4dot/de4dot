@@ -106,6 +106,10 @@ namespace de4dot.code.deobfuscators.Agile_NET.vm {
 					if (arrayType == null)
 						break;
 					operandType = arrayType.Next;
+					if (!operandType.IsValueType) {
+						newOpCode = OpCodes.Ldelem_Ref;
+						operandType = null;
+					}
 					break;
 
 				case Code.Ldobj:
