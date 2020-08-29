@@ -1,5 +1,13 @@
 name: GitHub CI
-on: push
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  release:
+    types: released
 
 jobs:
   build:
@@ -17,21 +25,25 @@ jobs:
           .\build.ps1
 
       - uses: actions/upload-artifact@v1
+        if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
         with:
           name: de4dot-net35
           path: Release/net35
 
       - uses: actions/upload-artifact@v1
+        if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
         with:
           name: de4dot-net45
           path: Release/net45
 
       - uses: actions/upload-artifact@v1
+        if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
         with:
           name: de4dot-netcoreapp2.1
           path: publish-netcoreapp2.1
 
       - uses: actions/upload-artifact@v1
+        if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
         with:
           name: de4dot-netcoreapp3.1
           path: publish-netcoreapp3.1
