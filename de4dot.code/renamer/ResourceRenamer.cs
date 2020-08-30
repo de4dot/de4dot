@@ -36,8 +36,8 @@ namespace de4dot.code.renamer {
 			// Rename the longest names first. Otherwise eg. b.g.resources could be renamed
 			// Class0.g.resources instead of Class1.resources when b.g was renamed Class1.
 			renamedTypes.Sort((a, b) => {
-				var aesc = EscapeTypeName(a.oldFullName);
-				var besc = EscapeTypeName(b.oldFullName);
+				var aesc = GetResourceName(a.oldNamespace, a.oldName);
+				var besc = GetResourceName(b.oldNamespace, b.oldName);
 				if (besc.Length != aesc.Length)
 					return besc.Length.CompareTo(aesc.Length);
 				return besc.CompareTo(aesc);
@@ -61,7 +61,7 @@ namespace de4dot.code.renamer {
 		void RenameResourceNamesInCode(List<TypeInfo> renamedTypes) {
 			var oldNameToTypeInfo = new Dictionary<string, TypeInfo>(StringComparer.Ordinal);
 			foreach (var info in renamedTypes)
-				oldNameToTypeInfo[EscapeTypeName(info.oldFullName)] = info;
+				oldNameToTypeInfo[GetResourceName(info.oldNamespace, info.oldName)] = info;
 
 			foreach (var method in module.GetAllMethods()) {
 				if (!method.HasBody)
@@ -80,7 +80,7 @@ namespace de4dot.code.renamer {
 
 					if (!oldNameToTypeInfo.TryGetValue(codeString, out var typeInfo))
 						continue;
-					var newName = EscapeTypeName(typeInfo.type.TypeDef.FullName);
+					var newName = GetResourceName(typeInfo.type.TypeDef.Namespace, typeInfo.type.TypeDef.Name);
 
 					bool renameCodeString = module.ObfuscatedFile.RenameResourcesInCode ||
 											IsCallingResourceManagerCtor(instrs, i, typeInfo);
@@ -146,12 +146,12 @@ namespace de4dot.code.renamer {
 		void RenameResources(List<TypeInfo> renamedTypes) {
 			var newNames = new Dictionary<Resource, RenameInfo>();
 			foreach (var info in renamedTypes) {
-				var oldFullName = EscapeTypeName(info.oldFullName);
+				var oldFullName = GetResourceName(info.oldNamespace, info.oldName);
 				if (!nameToResource.TryGetValue(oldFullName, out var resource))
 					continue;
 				if (newNames.ContainsKey(resource))
 					continue;
-				var newTypeName = EscapeTypeName(info.type.TypeDef.FullName);
+				var newTypeName = GetResourceName(info.type.TypeDef.Namespace, info.type.TypeDef.Name);
 				var newName = newTypeName + resource.Name.String.Substring(oldFullName.Length);
 				newNames[resource] = new RenameInfo(resource, info, newName);
 
@@ -193,6 +193,11 @@ namespace de4dot.code.renamer {
 				sb.Append(c);
 			}
 			return sb.ToString();
+		}
+
+		internal static string GetResourceName(string @namespace, string typeName) {
+			string name = EscapeTypeName(typeName);
+			return string.IsNullOrEmpty(@namespace) ? name : $"{@namespace}.{name}";
 		}
 	}
 }
